@@ -96,5 +96,7 @@ bash $KIT_DIR/workers/run-worker.sh ~/wt/my-task ~/wt/my-task.md          # from
 python3 $KIT_DIR/workers/audit.py ~/wt/my-task                            # before merging: MISSING must say none
 ```
 
+`run-worker.sh` makes a fresh worktree ready to test before the worker starts; the project's Toolkit note says how.
+
 Log: `~/wt/reports/my-task.log`. A late change goes into `~/wt/reports/inbox-my-task.md` under a `## heading`; the
 worker re-reads it before each commit. `--resume` as a third argument sends a follow-up to the same worker.

@@ -3,6 +3,7 @@
 mod assets;
 mod comments;
 mod crates;
+mod dialogue;
 mod layers;
 mod layout;
 mod script_comments;
@@ -81,6 +82,9 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     let (notes, skipped) = repo.sources(|path| path.starts_with(vault::VAULT_ROOT) && path.ends_with(".md"));
     problems.extend(unreadable(&skipped));
     problems.extend(vault::check(&notes, &repo.files, |path| repo.read(path)));
+    let (story, skipped) = repo.sources(|path| path.starts_with(dialogue::STORY_ROOT));
+    problems.extend(unreadable(&skipped));
+    problems.extend(dialogue::check(&story));
     problems
 }
 

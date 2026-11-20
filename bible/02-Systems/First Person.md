@@ -11,14 +11,15 @@ code:
   - client/src/firstperson/fpFrames.ts#weaponPicture
   - client/src/firstperson/heldPictures.ts#gunPicture
   - client/src/firstperson/riding.ts#RideMotion
-  - client/src/firstperson/climbing.ts#gripPlace
+  - client/src/firstperson/climbHands.ts#ClimbHands
+  - client/src/firstperson/climbing.ts#climbPlace
 ---
 # First Person
 
 What the player holds in first person, from the [[Sprite Forge]]'s first-person pictures, as DFO plays it
 ([[The Player Plays as in DFO]]). The [[Test Ground]] hands `FirstPerson` the attack button and the player's state each
 frame: what is in each hand, the gauntlets and boots worn, whether the hands are drawn, walking or running, the metres
-walked, a cast, a climb, a ride and the look's bearing. It answers the blow that lands or the shot that leaves, and from
+walked, a cast, a climb, a ride and the look's bearing and tilt. It answers the blow that lands or the shot that leaves, and from
 which hand, and reports the swing or shot under way, so the figure seen from outside plays a matching move.
 
 ## How it works
@@ -50,8 +51,10 @@ rules refuse (no stamina, a stagger) is not drawn. A swing the rules begin once 
 strike again, a pair's from the other hand, so no held swing is lost to the frames' rounding; one the rules end early
 (a dodge, a flinch, a guard) ends in the first person at once, and a bow's draw let go too soon to shoot is put away
 without a loose. A swing takes five of DFO's strike frames, and its blow lands as the third begins: a frame lasts
-0.199 s for a sword, DFO's swing law at an average Speed. A dagger and bare hands come round quicker; a mace, a flail
-and the two-handed weapons slower. The strike's own frames run faster than that
+0.149 s for a sword, three quarters of DFO's swing law at an average Speed ([[Combat]]). A dagger and bare hands come
+round quicker; a mace, a flail and the two-handed weapons slower. In a fight the rules' own swing paces each strike,
+whatever the weapon: its blow's frame shows on the tick they land it and it ends with their swing, and a pair's flurry,
+drawn from the hand already raised, lands when they land it. The strike's own frames run faster than that
 ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]): the first is held until a quarter of
 the way to the blow, the first two run through the last three quarters of that time, the third shows as the blow
 lands, and the last two run over a little over half that time after. The weapon is then at rest while the swing runs
@@ -92,8 +95,13 @@ it while it reloads is the blade's.
 ### Shooting
 
 The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads, but not while
-aiming, where each shot takes a fresh pull as the rules ask. Aiming zooms the weapon with the view, about the middle of
-the screen, and its muzzle with it, so a tracer starts where it is drawn
+aiming, where each shot takes a fresh pull as the rules ask. In a fight, any weapon, a bow too, plays a shot only as
+the fight's rules let one go, so a pull they refuse (no ammunition, a reload, a swap of loadouts) plays nothing; a gun
+with no shot left clicks dry ([[Combat]], "Shots"). Its reload ends when the rules' does, which a quicker reload or
+a kill that reloads ([[Gear]], "Perks") makes sooner than the weapon's own clock, so the next shot they let go plays;
+a brace's two guns load once both have fired. A weapon changed while the rules are busy (a swing, a guard, a reload, a
+draw) stays in hand until they take the new one up at rest, as the swap begins. Aiming zooms the weapon with the view,
+about the middle of the screen, and its muzzle with it, so a tracer starts where it is drawn
 ([[First-Person Aiming Zooms the Weapon With the View]]). A shot plays its frames at its own rate, then the weapon
 reloads:
 
@@ -159,8 +167,9 @@ the right. A gun, or one crossbow, is carried across the chest at a run, from th
 gauntlets worn; a pair of crossbows keeps its own frames. A cast shows both casting hands for 0.28 s and hides the
 weapon meanwhile. In an armour set's gauntlets each casting hand is the set's whole arm, dyed as its fists are, under
 the element's light; with none it is the linen sleeve and the leather glove. An Art's cast is lit by its light,
-Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its element's glow ([[Arts]]). A new look's pictures are composed ahead
-and kept on the GPU.
+Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its element's glow ([[Arts]]). A new look's
+pictures are composed ahead and kept on the GPU, and so are the other loadout's weapon's, so a swap shows it at once;
+the figure's are composed ahead in the glow the other weapon will show once drawn.
 
 ### Climbing
 
@@ -168,6 +177,24 @@ A climb lowers what is held out of the bottom of the screen and brings both hand
 painting of a left hand as drawn and the right its mirror, each 93 pixels from the middle, the sleeve 34 pixels under
 the screen's foot. Each hand opens as it comes and closes on the stone as it arrives. In an armour set's gauntlets the
 arm is the set's, dyed as its fists are; with none it is the linen sleeve and the leather glove, laid as drawn, undyed.
+
+The hands move as the climbing body does, as DFO's climbing hands do
+([[First-Person Hands Climb, Shimmy and Reach When Looking Away]]):
+
+- **Hanging still**, they sway a little with the body.
+- **Shimmying**, the hand the body goes toward lets go, lifts, opens and reaches first, and the other closes up after
+  it: a grip every quarter metre along the lip. A hand holding the lip keeps its stone as the body passes it.
+- **Climbing**, they go hand over hand, a grip every 0.45 m: one holds while the other reaches, and a hand holding its
+  stone goes down the view as the body climbs past it.
+- **Going over a top**, they go down the view as the body rises past them, press open on the top and let go as it
+  stands. A vault plants them on the top and lets go as the body passes over.
+- **Looking away from the wall**, from 40 degrees off its face and wholly by 75, the hand on that side lets go and
+  becomes the reaching arm: up from that side's edge, open toward the middle, feeling for a hold. The other holds on.
+  Looked back, it comes back onto the stone.
+
+The fists stay on the wall, not the screen: turning or tilting the view carries them across it with the stone, and
+up the view no further than the sleeve's slack. Only the reaching arm stays on the screen. Looked 50 degrees or more
+down, the hands go out of the view, wholly by 80.
 
 ### Riding
 
@@ -186,9 +213,7 @@ rein, not its fist up.
 
 - No weapon shows wear, and no gun's flash lights the room.
 - The swing's pace takes no account of the player's Speed and Strength or the weapon's weight, nor a pair's off hand
-  feeling its weapon heavier. A Greatsword's swings are the sword's in first person, though the rules land its blows
-  at its own pace.
-- The climbing hands only hold on: no shimmy, no reach while looking away from the wall, no press over a top.
+  feeling its weapon heavier. A Greatsword's swings are the sword's pictures in first person, at its own pace.
 - The horse is always the forge's bay. There is no cart, bench wagon, petting or feeding.
 - A cast always shows both casting hands; no spell is held ready in a free hand beside a weapon.
 - The tools, the instruments and the held map are not drawn.

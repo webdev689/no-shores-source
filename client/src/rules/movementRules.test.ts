@@ -13,7 +13,7 @@ async function movement() {
 }
 
 /** The movement crate's agreement test holds the same fingerprint, course and script (crates/movement/tests/agree.rs). */
-const RUN_HASH = 'b9d4096edbfbdc78';
+const RUN_HASH = '2267bd9bb6ecb0ec';
 
 /** A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step. */
 const COURSE: readonly Block[] = [

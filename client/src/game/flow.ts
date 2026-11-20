@@ -1,9 +1,10 @@
 /**
- * Where the player is in the game's loop: on foot in a node, back at their ship on the sea, or over an island's side
- * choosing where to land. Travel between them passes through a loading veil. On foot and at sea a menu may be open
- * over the play. Pure: the page feeds it what happened and draws what it answers.
+ * Where the player is in the game's loop: in the story that opens the game, on foot in a node, back at their ship on
+ * the sea, or over an island's side choosing where to land. Travel between them passes through a loading veil. On
+ * foot and at sea a menu may be open over the play. Pure: the page feeds it what happened and draws what it answers.
  */
 export type Flow =
+  | { readonly mode: 'story' }
   | { readonly mode: 'loading'; readonly words: string; readonly then: Flow }
   | { readonly mode: 'foot'; readonly node: string; readonly menu: boolean }
   | { readonly mode: 'sea'; readonly menu: boolean }
@@ -19,7 +20,8 @@ export type Happening =
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
   | { readonly kind: 'pass'; readonly node: string; readonly name: string; readonly into: boolean }
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
-  | { readonly kind: 'back' };
+  | { readonly kind: 'back' }
+  | { readonly kind: 'story-ended'; readonly node: string; readonly name: string };
 
 /** The first flow: the player arrives in a node, as they wash up on Overlook's shore. */
 export function arriving(node: string, name: string): Flow {
@@ -62,6 +64,9 @@ export function next(flow: Flow, happening: Happening): Flow {
         words: `Joining your company at ${happening.name}`,
         then: { mode: 'foot', node: happening.node, menu: false },
       };
+    case 'story-ended':
+      // The story hands the player to the game where it leaves them: Overlook's social space.
+      return flow.mode === 'story' ? arriving(happening.node, happening.name) : flow;
     case 'back':
       if (flow.mode === 'landing') return { mode: 'sea', menu: false };
       return (flow.mode === 'foot' || flow.mode === 'sea') && flow.menu ? { ...flow, menu: false } : flow;

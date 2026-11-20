@@ -7,7 +7,7 @@ import type { FightEvent } from '../network/messages.ts';
 import type { Placed } from '../player/figures.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import { type Action, type FighterView, type StatusName, fighterView } from '../rules/fighters.ts';
-import { playSample } from '../soundSamples.ts';
+import { playSample, rushOfCue } from '../soundSamples.ts';
 import { blowLook } from './cues.ts';
 import type { Fighting } from './fighting.ts';
 import { elementOfArt } from './spellLooks.ts';
@@ -89,6 +89,8 @@ const FRESH_TICKS = 10;
 /** An Anima's release is heard once a caster in this long (seconds): a Tempest's later orbs are the same cast. */
 const ONE_RELEASE_S = 2;
 const FOE_ALERT = 2;
+/** The rules' tick, seconds. */
+const TICK_S = 1 / 60;
 
 /** A fighter as last heard. */
 interface Kept {
@@ -140,10 +142,14 @@ export class WorldSounds {
   private crates: number | null = null;
   private down = false;
   private voices: { readonly source: AudioBufferSourceNode; readonly distance: number }[] = [];
+  /** The seconds into a cue's recording its rush comes, which a swing's whoosh is started that far ahead of its blow
+   *  for. */
+  private readonly rush: (cue: string) => number;
 
-  constructor(live: () => WorldOutput | null, play: Play = playSample) {
+  constructor(live: () => WorldOutput | null, play: Play = playSample, rush: (cue: string) => number = rushOfCue) {
     this.live = live;
     this.play = play;
+    this.rush = rush;
   }
 
   frame(frame: WorldFrame): void {
@@ -244,7 +250,11 @@ export class WorldSounds {
       const air = airCue(kept?.air ?? null, view.mode, view.z);
       this.kept.set(id, { action: view.action, air: air.air, travelled, at, drawn, statuses, alert });
       if (!kept) continue;
-      hear(actionCue(kept.action, view.action, view.arms), at, id);
+      hear(
+        actionCue(kept.action, view.action, view.arms, (cue) => this.rush(cue) / TICK_S),
+        at,
+        id,
+      );
       hear(air.cue, at, id);
       for (const cue of statusCues(kept.statuses, statuses)) hear(cue, at, id);
       if (drawn !== null && kept.drawn !== null && drawn !== kept.drawn)
@@ -340,7 +350,7 @@ export class WorldSounds {
 }
 
 /** The listener at the eye facing its yaw (clockwise from north, -y), up the world's up. */
-function listen(listener: AudioListener, eye: Point, yaw: number): void {
+export function listen(listener: AudioListener, eye: Point, yaw: number): void {
   const [ahead, along] = [Math.sin(yaw), -Math.cos(yaw)];
   // Browsers without the listener's parameters take its older calls.
   if (!(listener.positionX as AudioParam | undefined)) {

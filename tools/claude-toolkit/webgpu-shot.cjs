@@ -8,23 +8,39 @@
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first, or, where another
 // checkout holds 5173, Vite on any port with "anyPort": true, and the driver fetches R2 for the page.
 //
-// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "anyPort": true, "steps":
-// [ ... ] }, each step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" },
-// { "click": [x, y] }, { "wheel": [x, y, deltaY, notches] }, { "hold": ["ArrowLeft", seconds] },
-// { "clickText": "Return to ship" }, { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow
-// headless frames: an arrow turns the player about 0.03 rad a second. { "frames": n } waits until the page has drawn n
-// more frames: read what a frame writes (a panel, a note) only after one has drawn. Every frame is paced from the
-// first: the page's next animation frame waits until the GPU has done the last one's work, so SwiftShader never builds
-// a backlog that a picture then waits minutes behind. The console's errors are printed. The game takes one wheel notch
-// a frame, so a wheel step sends its notches (1 unless said) 0.1 s apart: from the arrival's 4.5 m, about 20 notches in
-// (deltaY < 0) reach first person. To arrive in a camera instead, the address asks for it as it asks for a spawn:
-// `&view=first` or `&view=third,<metres>`. Many views in one load (a page takes minutes to load), offline behind the
-// same `&spawn=` flag: { "views": [[east, south, bearing, "first" | "third,<m>[,<degrees down>]", "name"], ...] or "<list.json>",
-// "zone": "<key of the list>", "into": "<folder>", "settle": seconds } arrives the body at each view in turn, inside
-// the node the page loaded, waits `settle` seconds (the ground and the sky come in) and writes `<into>/<name>.png`,
-// or `<into>/<number>.png` without a name. A view outside the node is said to be refused and skipped.
+// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "anyPort": true, "init": "js
+// run before the page's own, e.g. a shifted Date.now for the world's hour", "steps": [ ... ] }, each step one of
+// { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
+// { "wheel": [x, y, deltaY, notches] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
+// { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
+// player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
+// writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
+// frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
+// waits minutes behind. The console's errors are printed, and so is every shader that fails to compile: WebGPU
+// reports those only as warnings, so a broken shader would otherwise draw nothing and say nothing. The game takes one
+// wheel notch a frame, so a wheel step sends its notches (1 unless said) 0.1 s apart: from the arrival's 4.5 m, about
+// 20 notches in (deltaY < 0) reach first person. To arrive in a camera instead, the address asks for it as it asks
+// for a spawn: `&view=first` or `&view=third,<metres>`. Many views in one load (a page takes minutes to load),
+// offline behind the same `&spawn=` flag: { "views": [[east, south, bearing, "first" | "third,<m>[,<degrees down>]",
+// "name"], ...] or "<list.json>", "zone": "<key of the list>", "into": "<folder>", "settle": seconds } arrives the
+// body at each view in turn, inside the node the page loaded, waits `settle` seconds (the ground and the sky come in)
+// and writes `<into>/<name>.png`, or `<into>/<number>.png` without a name. A view outside the node is said to be
+// refused and skipped.
 const { chromium } = require('playwright');
 const { mkdirSync, readFileSync } = require('node:fs');
+
+const SHADER_ERRORS = () => {
+  const create = GPUDevice.prototype.createShaderModule;
+  GPUDevice.prototype.createShaderModule = function (descriptor) {
+    const made = create.call(this, descriptor);
+    made.getCompilationInfo().then((info) => {
+      for (const note of info.messages)
+        if (note.type === 'error')
+          console.error(`WGSL ${note.lineNum}: ${note.message} | ${(descriptor.code.split('\n')[note.lineNum - 1] ?? '').trim()}`);
+    });
+    return made;
+  };
+};
 
 const OWN_TEXTURE = () => {
   const kept = new WeakMap();
@@ -133,6 +149,8 @@ async function main() {
     );
   }
   await page.addInitScript(OWN_TEXTURE);
+  await page.addInitScript(SHADER_ERRORS);
+  if (plan.init) await page.addInitScript({ content: plan.init });
   await page.goto(plan.url);
   for (const step of plan.steps) {
     const started = Date.now();

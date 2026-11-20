@@ -9,8 +9,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - The scaffold: the TypeScript client on WebGPU, the Rust repo checks, CI, this vault.
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
-- The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP and Context7 keys are
-  network secrets on the Default environment. Kit fixes are logged with task-observer for the co-dev; the log lives
+- The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP key is a network secret
+  on the personal Default environment, with `SKILLSMP_API_KEY` set there to `proxy-injected`; Context7 runs on its
+  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives
   in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
   provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
@@ -161,8 +162,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   - The bars do what DFO's Enhanced Plus does with them ([[Pick - Enhanced Plus UI]], read at DFO's fc2a8e6): a
     hit's piece breaks off and falls, each foe's health is remembered, the poise track says Iron, Staggered and Open,
     the target plate follows the foe last struck and fades after 6 s, the vitals rest when whole, ships' plates read a
-    hit the same way; and plates stay light: only near the crosshair or for foes fought in the last minute, never
-    larger, never through a block, none past 60 m.
+    hit the same way; and plates stay light: never larger, never through a block, none past 60 m (which plates show,
+    and their sizes, change on #95).
   - DFO's compass across the top, with the boss bar and the target's plate under it; the vitals kept in their window
     at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]); the plates just over a foe's head.
   - The gear loop fitted in, `main` with #60 merged into #61: the garrisons stand at their island's levels raised by
@@ -216,15 +217,99 @@ Where the work stands now, for the next session. Each session rewrites this note
   the cost on a real GPU is unchecked. Still wrong ([[Nature]]): near cypresses look thinner since the cards shrank,
   the rainforest seen 2 km off from 90 m up shows bare trunks between 300 m and 1 km, tundra spruces read as dark
   dots far off. The next steps for the cost: indexed near meshes and fewer cards.
+- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought
+  #71's ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story
+  Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
+  asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
+  it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
+  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck
+  at night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger
+  walks the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in;
+  its fires are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky),
+  heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
+  theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
+  Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
+  the intro, each started on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and
+  a click starts the intro over the cloud at first light.
 
 ## Waiting on the owner
-
 - **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
   none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
   places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
   are wanted as a cliff climb of their own, beside the ledges' stairs, and where.
 - The Dungeons session (#82, the owner's loop decisions) plans to move each patrol's procedural dungeon entrances
   onto the layouts' places, and will coordinate before it touches the layout code.
+- **#95, fewer plates, sized by rank, after Destiny**, a draft from branch `ccr-800481d9-kbbd62`, waits on the
+  owner's yes ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate,
+  the foe in sight nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and
+  shows none over its head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's
+  bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates.
+  Three audits of it (the code; its fidelity to the approval and its records; its frame cost and look) are fixed on
+  it, each fix with a test seen to fail without it. Tested offline: the full check; headless on the built page,
+  walking into the Saltgrass Downs garrison, six plates on `main` against one on #95, over the foe at the crosshair
+  (the foes stayed wary, so no blow was traded in the pictures); and each rank's plate whole and at three quarters.
+  Claude's calls, listed in its description, are the owner's to change: the cone's numbers and its hold; no second
+  plate by the cone while the foe at the crosshair is fought, locked or a Boss; a fought plate fading within the 6 s,
+  as the target plate does; the bars' sizes; thirds only over figures; the words of blows clear only of plates drawn;
+  ships' plates as they are. Not yet seen on a real GPU or with blows traded. The target's own plate over its head is
+  to be looked at again once the owner has played with which plates show. Found in passing, not on #95: the compass
+  writes its marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
+- **#96, the kit's first review**, a draft from branch `ccr-800481d9-kbbd62-kit`, waits on the owner's yes: a fidelity
+  review (`workers/fidelity-review.sh`, a fixed brief) with a CI check that fails a pull request changing a decision
+  without its verdict, as the owner chose for a rule broken three times in one task; workers' worktrees made ready to
+  test; the observation log kept on the branch `toolkit-data`, saved by a git merge so a parallel session's save is
+  kept, with a test check-tools runs; `cargo xtask check` naming the commit it checked; and Toolkit rows for web research
+  and for measuring text before sizing a box. Tested offline: the full check, check-tools with a headless worker, the
+  save's test, and a fidelity review of #95, whose eight findings are fixed or answered there. Open for the owner, in
+  its description: where the claude-mem store lives (an archive, kept out of git), whether CI should require the verdict
+  to name the pull request's head (a new review after each push), and making the check required on GitHub.
+- **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
+  day and night, its music and its sound.
+- **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
+  storm and creation once begun; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about
+  25 s; the story's sea fight sails in the story's wind, not the world's, so the Brig makes way in the storm drawn
+  round her. Waits on the owner's yes to merge, which deploys the page and the rooms.
+- **The sea's sounds from Freesound (#94)** ([[The Sea's Sounds Come From Freesound]]): all 27, the open sea's, the
+  story's, the sea fight's (new) and the shore's, are the owner's picks from the sea sound sheet,
+  https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its store's `picks` collection holds each
+  cue's Freesound number), published on R2 and in `content/audio/sounds.json`. The seven long beds play their
+  steadiest minute, mono. Not yet: any of them heard in the game, or their level judged by ear. The main sound sheet
+  (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
+- **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
+  the prologue names the Cube or a crystal, and the voice in the deep is not named.
+- **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
+  repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
+  `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
+  its published model here with `--dry-run`, whose level hash must match the log's: a build elsewhere can lay a
+  slightly different ground.
+- fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
+  session that finished the prologue, so the likeness is unchecked.
+- Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch
+  layer yet"). A touch player can start the story but not play its fights.
+- Without `?room=` the page has no accounts, so creation's account step only says accounts are kept online. The online
+  default is the owner's.
+- #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
+  then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
+  the owner's yes to merge: foes show their level, patrol
+  beats, climb by the navmesh's links, spread out, answer at the fight's pace, chase a target walking away, fight as
+  a group (one blow at a target each 1.2 s beat, one going in, a line on their side, one flanker) and share
+  themselves out across players ([[Foes Spread Across the Players They Fight]]); melee swings a quarter faster and
+  strikes every foe in reach; the soft lock lets go past 70 degrees; a click during a swap swings as it ends; a
+  locked-on dodge rolls the way it goes; a slot's grid closes off hover; the inventory holds Aurem alone and its
+  stacks in Destiny's grid; a full Ammo box says Ammo full; and the display's vitals stand at the top left and its
+  Arts and weapons at the bottom left, after the owner's two pictures
+  ([[The Vitals Go Top Left and the Arts and Weapons Bottom Left]], Claude's choices in
+  [[The Display as Claude Lays It Out]]). The display was looked at headless in the Test Ground at three sizes and a
+  pixel ratio of 2, on the game's page at a patrol and in Overlook, and in every state on a page running the real
+  display; not yet on a real GPU, in a fight with the player's own swing, or beside the owner's pictures, which stayed
+  in the session that took them. Its open choices, each in #68's description: the group's numbers; the display's
+  numbers; a locked-on backstep turning round or not; the vitals' frames over a night sky; starving foes in a crowd
+  of sixteen; a lone crossbowman drawn long; a foe under a ledge; a flanker changing hands; ripostes not held to the
+  beat; patience at one over the cap; sixteen foes about 1.4 m apart; node rooms baking no boxes; no height cap on
+  climbs. `tools/install-flatc.sh` is missing from the rooms' deploy filter, a workflow edit for the owner. Its known
+  limits, left open with reasons in the description: a crowd of many dresses composed ahead only as room comes
+  (keeping more needs a GPU measurement), small objects made each frame, and the Test Ground's panels running the
+  room on while the pointer is free.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
@@ -237,7 +322,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   port's label giving way, and DFO's other ships back.
 - The bars' proposals, the owner's to choose: a foe's alert "!" showing its plate through the cone for a second;
   a setting to switch the vitals' rest off; near plates growing (DFO's own law grows them to 1.5×, ours caps them);
-  ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss shown once; a mark for
+  ships' plates fading with distance; a soft-locked Boss shown once; a mark for
   a Major; the display scaled with the screen; one look for both kinds of death in the Game. DFO's blade face is
   left out: its pictures are another person's ([[Own Work]]).
 - The attack feel plays in the game on #69 at the [[Test Ground]]'s defaults, with the light layer on, as Claude's call
@@ -259,9 +344,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Sloop Is About 18 m Long]]).
 - #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
   playing alone; when it happens is the owner's to say.
-- Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
-  unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
-  renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
+- Which cloud environment sessions run on. The personal Default (unrestricted) holds the SkillsMP key, and
+  check-tools passes there with no FAIL. Whether a second Default and a personal `overlook-source` environment still
+  exist is unchecked: none is listed to a session on the personal Default. A Context7 key, if wanted, goes on the
+  environment the same way.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - #60's audit calls are made, under the owner's "All decisions are yours" ([[The Audit's Calls Are Claude's]]); the
   owner can change any. What stays theirs: the Workers plan (a password sign-in takes about 50 ms of CPU, the Free plan
@@ -273,8 +359,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   make the accounts' database.
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
   shield comes back after a while; and which foes beyond the patrols' carry them.
-- **#69, the Arts round, waits on the owner's yes to merge**, which deploys the page and the rooms. Every number and
-  call the owner left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
+- **#69, the Arts round, is on `main`**, merged and deployed with the owner's yes. Every number and call the owner
+  left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
   cooldowns, the fragments, the new perks' columns and rules (Marked Shot an opener, Exploit for the spec's
   Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 3.5 m up and 1.5 m along its
   caster's aim, the Armsmith's wares, the seven named armour pieces that gave Bulwark and now give another armour
@@ -282,13 +368,26 @@ Where the work stands now, for the next session. Each session rewrites this note
   leather ramp, the view held still for reduced motion. Left to the owner by the screens' critique: emptying a Core
   slot, and resting the ability bar with the vitals. The forge's gun puff is blue in its art
   (`tools/forge/tools/sprite-forge/guns3p.py`); a re-render would change it.
-- **Every world sound on #69 is the owner's pick**, over seven passes on the sound sheet
+- **Every world sound is the owner's pick**, over seven passes on the sound sheet
   ([[The World Sounds From the Sound Picker]]): 63 Freesound recordings, DFO's own steps and Voidrend
   ([[DFO's Own Sounds Join the Sound Sheet]]), the Duskraven's fire
   ([[The Duskraven Sounds With Fire Under Its Raven]]); Exposed, Charged and Haste make none
   ([[Exposed, Charged and Haste Make No Sound]]). Claude's calls in the layer, the
   owner's to change: a gun's ball on a body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the
   [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
+- **#73, the music and the ambience, is on `main`**, merged and deployed with the owner's yes
+  ([[Music and Ambience Come From DFO's Synthesiser]], [[Music]], [[Ambience]]). The owner kept every piece on the
+  sound sheet, Landfall as made again after their "Less jolly" ([[Landfall Is Kept as Made Again]]), and picked the
+  seven recordings. Claude's calls, the owner's to confirm: Thule plays the Boarding, Corvane the Reckoning, any other Boss
+  the Wrath; the climates' families and each family's key, metre and tempo; Saltmere's theme as written; the sounds
+  nearest "no glass" (wet's kalimba drips, cold's high tremolo, Landfall's soft bell, the fights' reverse-cymbal
+  risers).
+- **#76, the weather and day and night, and #79, every shader checked offline, are on `main`**, merged and deployed
+  with the owner's yes ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]],
+  [[Sky]], [[Weather]], [[Every Shader Is Checked Offline]]).
+  Claude made the calls the owner left open ([[Weather and Day as Claude Shapes It]]), the owner's to change. The
+  owner judged the weather's first sounds and picked the gutters and both thunders from Freesound
+  ([[The Weather's Gutters and Thunder Come From Freesound]]); those picks are on R2.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -296,10 +395,23 @@ Where the work stands now, for the next session. Each session rewrites this note
 - A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- The cleanup audit (#70): dead code out of the overworld, naval and player, and the Overworld note, its pick and the
-  [[Code Map]] brought in line with the code, in files no open pull request changes. Its description lists what it
-  found in #63's, #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted. Whether the
-  Overworld's rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
+- The cleanup audit (#70, merged and deployed with the owner's yes): its description lists what it found in #63's,
+  #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted; whether the Overworld's
+  rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
+- The sea's open choices ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): being the pirate, the opening voyage
+  (to be talked through first), and which of DFO's companion systems the crew comes from ([[Open Questions]]).
+
+- **#86, #87, #89 and #90 are on `main`**, merged and deployed with the owner's yes. #86 forges the Arts' birds in
+  Blender in eight directions ([[The Arts' Birds Are Forged in Blender]]); its `forge` workflow renders them on main
+  and adds them to the forge's renders on R2. #87 splits the sea's view and the held map out of `sea.ts` and `game.ts`
+  and lights the Sloop's deck with a carried torch. #89 cuts the sky's and the water's haze's work per pixel, with the
+  same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
+  fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
+  fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
+- **The kit's observation log** has had its first review: all five observations are actioned, their fixes on #96,
+  waiting on the owner's merge. The log is on the orphan branch `toolkit-data` (#96's `toolkit-data.sh`; until #96
+  merges, its restore and save are on that branch only). The earlier review's four changes to the instructions, and one
+  closing, were lost with their container; only that session's report has them.
 
 - From a worker branch (`wt-bodies`), tested offline: the movement rules find a body's blocks through a grid
   ([[Movement]], "The blocks near a body"), every answer the same to the bit, a tick among a patrol area's boxes
@@ -334,20 +446,34 @@ Where the work stands now, for the next session. Each session rewrites this note
   test (the pull request lists them). On a cloud session's machine continent 1's layouts settle in about 2.3 s
   natively, and the World Editor's whole settle of continent 1 takes about 3.5 s. Left: switchbacks (waiting on the
   owner, above), and the other 24 zones take heights once the owner has looked at Saltmere's.
-- **#63 conflicts with `main`** since #74, #90 and #91 merged: 31 files, about 50 hunks, in movement, the navmesh,
-  the garrison, the game's client, xtask and the bible. Beyond the marked hunks, `main`'s foes (climbing square into
-  a wall, spreading out, tactics) are written against `main`'s movement: a public `blocking_at` over a slice, and
-  blocks with no underside. This branch's movement has undersides and the spatial index, so merging `main` means
-  porting that foe code onto them, and the agreement pins move with `main`'s climb rule. CI runs on #63 only once
-  `main` is merged in.
 - The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
   low enough to climb in places: its runs will need their end arenas cut deeper or walled.
 - The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
   is the terrain's only), and the land texts and the city's assets fetch the same files twice.
 - The layouts' open ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities
   that will stand on the sites (public events, beacons, resource nodes, foes).
-- **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
-  renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+- **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
+  through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
+  with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
+  whether its foes can be seen well enough away from the fires.
+- **The weather and day and night (#76, on `main`)**, tested offline: the full check, the weather's statistics per
+  climate and its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under
+  cloud, at sunset and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to
+  compile. Four audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old
+  wind, a fleet sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun
+  for moon in daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording
+  held under its synthesised sound's peak. Pictures across the islands (#90) have since shown bolts at Mistfall by day
+  and night, snow on the tundra and at Rimeholt, a sandstorm, dawn fog and clear nights; `?at=<node id>` lands the
+  page at any node, and the pictures' steps are made by freezing the page's clock at a moment. Not yet: ships and
+  marks under the lamps, a real GPU's frame time, and a person playing through an hour's day.
+- **The music and the ambience (#73, on `main`)**, tested offline: every piece rendered and measured, and the built
+  game headless in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the
+  green score in as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both
+  running. Left open, now done on #74: the story's songs and its hearing in the director. #76 gives the night
+  ambiences their time of day, plays the four sea songs while sailing, and sets each recording at the loudness of the
+  synthesised sound it replaces.
+- **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
+  its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
   heard in the game, the layer on foot in a browser, the walking blows looked at frame by frame.
 - **Publishing the world's picks**: read the sheet's `marks` with ArtifactData; set each Freesound pick as the cue's
@@ -358,20 +484,20 @@ Where the work stands now, for the next session. Each session rewrites this note
   synthesised sounds come from its `tools/{climb,gather,lock,storefront,naval}Sfx.mjs`: import their `CLIPS` and
   render each `make()` at 44.1 kHz 16-bit, from a scratch folder, since `navalSfx.mjs` writes `public/sfx` on import.
 
-- **The Arts round (#69)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and verbs with
-  foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar, the verb
-  perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not yet
-  seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a live
-  room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
-- **Its second round, attack visuals beyond the limits (#69)**, tested offline in the Test Ground, and the game's own
-  page headless at 960x540: swing arcs, struck figures, impacts, crits and kills with elemental finishers, damage
-  words, guns, tracers, telegraphs, every spell landing, the Anima moment, the light layer, marks drawn in depth
-  ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). Not yet seen: a fight in the game's own view
-  with the player's swing (headless has no pointer lock), the water's order at a coast, any GPU timing (the light's
-  0.4-0.5 ms is an estimate). Left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the
-  marks still copied into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still light;
-  `camera.ts` `shifted` keeps the HUD matrix's translation in float32 (about 0.25 m off far out); whether a bow or
-  gun drawn can punch, and in what element.
+- **The Arts round (#69, on `main`)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and
+  verbs with foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar,
+  the verb perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not
+  yet seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a
+  live room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
+- **Its second round, attack visuals beyond the limits (#69, on `main`)**, tested offline in the Test Ground, and the
+  game's own page headless at 960x540: swing arcs, struck figures, impacts, crits and kills with elemental finishers,
+  damage words, guns, tracers, telegraphs, every spell landing, the Anima moment, the light layer, marks drawn in depth
+  ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). Not yet seen: a fight in the game's own view with
+  the player's swing (headless has no pointer lock), the water's order at a coast, any GPU timing (the light's 0.4-0.5
+  ms is an estimate). Left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the marks still
+  copied into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still light; `camera.ts`
+  `shifted` keeps the HUD matrix's translation in float32 (about 0.25 m off far out); whether a bow or gun drawn can
+  punch, and in what element.
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
@@ -442,7 +568,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   they played, not heard: the owner should listen for their level and character. A ware bought at the
   Quartermaster's counter, and a Vestige opened at the Reader's, were not walked to headless.
 - **Sounds come from Freesound** ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the owner judges every
-  sound and piece of music on the sound sheet, https://claude.ai/artifact/YT29RAFbgdPRLByLUVC7nh (private to them),
+  sound and piece of music on the sound sheet, https://claude.ai/artifact/YT29RAFbgdPRLByLUVC7nh (private to them, in
+  four tabs: Interface, World, Music, Ambience),
   marking each Keep, Redo or a candidate picked, with a note; the marks are its store's `marks` collection, read with
   ArtifactData. Candidates come from the `freesound` workflow on GitHub's machines, with no key: it reads Freesound's
   public pages for the cues in `content/audio/freesound.json` and keeps each cue's first four CC0 or Attribution
@@ -478,7 +605,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
   crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
   which boarding needs, is the `movement` crate's grid of heights, walked on the player's own Sloop.
-- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
+- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell (on #76 the weather's
+  wind drives the sails, the chop and the whitecaps; the long swell is still one swell).
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
 - The fight's open ends ([[Combat]], [[Foes]]): running's stamina, casting's harm. Whether players may harm one another

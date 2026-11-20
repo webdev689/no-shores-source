@@ -38,6 +38,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Art(gear::arts::ArtAsk::SetCore { art: 2, slot: 1, fragment: 5 }),
         Asked::Grant(Grant::Ammo(360)),
         Asked::Grant(Grant::Crates(2)),
+        Asked::Grant(Grant::Worn(Kind::Thunderlock)),
     ]
 }
 
@@ -82,10 +83,37 @@ fn furnished() -> (Room, PlayerId) {
     ask(&mut room, 3, Asked::Gear(Ask::Wear { item: sword, slot: Slot::Melee }));
     ask(&mut room, 4, Asked::Gather { node: 0 });
     ask(&mut room, 5, Asked::Grant(Grant::Vestige { rarity: Rarity::Atheric, slot: Slot::Head, level: 20 }));
+    // Each stock a count of its own, so a reader can tell them apart by their order.
+    let mut kept = room.kept_character(player).expect("a player of the room");
+    for (key, count) in STOCKS {
+        kept = with_count(&kept, key, count);
+    }
+    assert!(room.restore_character(player, &kept), "the character kept again");
     ask(&mut room, 6, Asked::Grant(Grant::Crates(2)));
     ask(&mut room, 7, Asked::Grant(Grant::Ammo(gear::ammo::AMMO_FULL / 2)));
     room.lay_drop(player, Dropped::AmmoBox, [1.0, 2.0, 0.0]);
     (room, player)
+}
+
+/// The stocks as a character keeps them, each with the count `furnished` gives it, in the gear message's order.
+const STOCKS: [(&str, u16); 5] =
+    [("weapon_fragments", 11), ("armor_fragments", 12), ("weapon_essence", 13), ("armor_essence", 14), ("fruit", 2)];
+
+/// A kept character's text with the count under `key` set to `count`.
+fn with_count(text: &str, key: &str, count: u16) -> String {
+    let field = format!("\"{key}\":");
+    let start = text.find(&field).expect("the field") + field.len();
+    let end = start + text[start..].find(|character: char| !character.is_ascii_digit()).expect("its end");
+    format!("{}{count}{}", &text[..start], &text[end..])
+}
+
+#[test]
+fn a_players_stocks_cross_in_the_order_the_browser_names_them() {
+    let (room, player) = furnished();
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    let stocks: Vec<u16> = gear.stocks().expect("stocks").iter().collect();
+    assert_eq!(stocks, STOCKS.map(|(_, count)| count));
 }
 
 #[test]

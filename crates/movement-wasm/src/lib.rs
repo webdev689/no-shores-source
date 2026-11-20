@@ -280,7 +280,7 @@ mod tests {
             assert_eq!(Body::from_floats(stepped.as_slice().try_into().unwrap()), expected);
             body = expected;
         }
-        assert_eq!(body.mode, Mode::Ground);
+        assert_eq!(body.mode, Mode::Climb, "run into a ledge too high to grab, 17 degrees off square, it takes hold");
         assert!(body.y > ledge.max_y, "the ledge stops the body, at {}", body.y);
     }
 

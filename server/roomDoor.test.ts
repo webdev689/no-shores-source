@@ -46,6 +46,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     dressed: [],
     node: null,
     protocol,
+    epoch: 0,
   });
   assert.equal(room.input(first, asking(1, walk, walking, '{"body":"male"}')), 'taken');
   for (let sequence = 2; sequence <= 30; sequence++)
@@ -74,6 +75,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     dressed: [{ player: first, dress: '{"body":"male"}' }],
     node: null,
     protocol,
+    epoch: 0,
   });
 });
 
@@ -179,6 +181,7 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
     dressed: [],
     node,
     protocol: PROTOCOL,
+    epoch: 0,
   });
   // The browser stands bodies on the same ground and boxes, and finds the same bodies, to the bit.
   const movement = await startMovementRules(await built('movement_wasm'));
@@ -298,7 +301,7 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), '644e1cba3156ebb0');
+  assert.equal(hash.toString(16).padStart(16, '0'), 'b116514817fbd4ae');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
@@ -339,7 +342,7 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   const rules = startFleetRules(compiled);
   const helms = Array.from({ length: 149 }, (unused, index) => helmAt(index + 2));
   const hurts = { wrecked: false, sail: last?.hurts.sail ?? 0, maxSail: last?.hurts.maxSail ?? 0 };
-  const predicted = rules.predict(put?.ship ?? [], hurts, 151 / 60, helms);
+  const predicted = rules.predict(put?.ship ?? [], hurts, 151 / 60, 0, helms);
   assert.deepEqual(Array.from(predicted?.ship ?? []), Array.from(last?.ship ?? []), 'her ship, to the bit');
   assert.equal(room.input(first, orders(151, { call: 'captain' })), 'taken');
   room.tick();

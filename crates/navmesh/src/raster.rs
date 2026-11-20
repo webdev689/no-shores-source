@@ -121,8 +121,15 @@ fn gentle(heights: &[f64], grid: &Grid, ix: usize, iy: usize, max_slope: f64) ->
 }
 
 /// Voxelises the ground under every cell of `bounds` and the colliders standing on it. Each column's ground is solid
-/// from one voxel under the lowest ground up to the ground's height at its centre, and is floor where it is gentle.
-pub(crate) fn voxelise(colliders: &[Collider], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Heightfield {
+/// from one voxel under the lowest ground up to the ground's height at its centre, and is floor where it is gentle and
+/// `ground_walks` (never on the open sea).
+pub(crate) fn voxelise(
+    colliders: &[Collider],
+    ground: &dyn Terrain,
+    bounds: Bounds,
+    agent: &Agent,
+    ground_walks: bool,
+) -> Heightfield {
     let (cell, voxel) = (agent.cell_size, agent.cell_height);
     let (cells_x, cells_y) = cells(bounds, cell);
     let mut grid =
@@ -143,7 +150,7 @@ pub(crate) fn voxelise(colliders: &[Collider], ground: &dyn Terrain, bounds: Bou
     grid.voxels = ((max_z - min_z) / voxel).ceil().max(1.0) as i64;
     let mut field = Heightfield { grid, columns: vec![Vec::new(); cells_x * cells_y] };
     for column in 0..cells_x * cells_y {
-        let walkable = gentle(&heights, &grid, column % cells_x, column / cells_x, agent.max_slope);
+        let walkable = ground_walks && gentle(&heights, &grid, column % cells_x, column / cells_x, agent.max_slope);
         field.add_span(column, min_z, heights[column], walkable);
     }
     for collider in colliders {

@@ -95,7 +95,7 @@ A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>`
 
 - The weather is one field over the whole map, computed from world time and position by the shared Rust rules, so the
   wind a ship sails by is the wind the server judges. DFO's dynamic weather and clouds draw from it, rewritten for
-  WebGPU ([[WebGPU Only]]).
+  WebGPU ([[WebGPU Only]], [[Weather and Day and Night Come From DFO, Much Improved]], [[Weather]]).
 - Ships sail faster than real speed, and faster still in the Overworld, DFO's raised travel camera over the same
   world. The speeds are tuning numbers, set by playing.
 

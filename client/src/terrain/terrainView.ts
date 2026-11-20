@@ -1,5 +1,6 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { SHADOW_WGSL, ShadowMap } from '../shadow.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -100,7 +101,7 @@ const DEFAULT_SNOW_M = 2300;
  * same point to the bit. It is the bed: the water is drawn over it afterwards, from the same splines. Points are
  * measured from the eye, and from the noise's anchor.
  */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${SHADOW_WGSL}
 ${GROUND_COLOUR_WGSL}
@@ -156,7 +157,6 @@ struct Surface {
 const QUADS = ${CLIPMAP_QUADS}u;
 const CORNERS = array<vec2u, 6>(vec2u(0u, 0u), vec2u(1u, 0u), vec2u(0u, 1u), vec2u(0u, 1u), vec2u(1u, 0u), vec2u(1u, 1u));
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
-const AMBIENT = 0.35;
 const RIVER = vec3f(0.18, 0.42, 0.72);
 const ROAD = vec3f(0.62, 0.48, 0.30);
 const TOWN = vec3f(0.75, 0.30, 0.22);
@@ -279,7 +279,7 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
 
   var wet = bed_colour(max(depth, 0.0), slope, fresh);
   let light = caustics(local, view.eye.w) * fine * exp(-max(depth, 0.0) / 9.0) * smoothstep(0.0, 0.4, depth);
-  wet += SUN_LIGHT * light * select(0.32, 0.12, fresh);
+  wet += sky_state.key_light.rgb * light * select(0.32, 0.12, fresh);
 
   let world = view.world.xy + point;
   // The dirt's grain is read once a pixel: the land, the roads and the paths all wear it.
@@ -295,11 +295,21 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   dry = mix(mix(mix(dry, ROAD * dirt_grain, road), TOWN, 0.6 * town), PORT, port);
   dry = painted(dry, laid, local, footprint, dirt_grain);
 
-  var colour = mix(dry, wet, under);
-  let direct = max(dot(normal, SUN), 0.0);
   let on_ground = vec3f(surface.offset, bed * view.brush.w - view.eye.z);
-  let sun = select(1.0, sunlit(on_ground, normal), direct > 0.0);
-  colour *= AMBIENT + (1.0 - AMBIENT) * direct * sun;
+  // Fresh snow whitens the flat ground where the weather laid it; rain darkens the dry ground and pools in its
+  // hollows, above the swash and under no snow.
+  let snow = sky_fresh_snow(bed, slope);
+  dry = sky_snowed(dry, snow);
+  let open_ground = (1.0 - under) * smoothstep(0.5, 1.5, bed) * (1.0 - snow);
+  let puddle = sky_puddle(on_ground, slope) * open_ground;
+  let soaked = max(sky_state.ambient_sky.w * open_ground * 0.8, puddle);
+  dry = sky_soaked(dry, soaked);
+  var colour = mix(dry, wet, under);
+  let lit_normal = normalize(mix(normal, vec3f(0.0, 0.0, 1.0), puddle));
+  let direct = max(dot(lit_normal, sky_state.key.xyz), 0.0);
+  let sun = select(1.0, sunlit(on_ground, lit_normal), direct > 0.0) * sky_dapple(on_ground);
+  colour *= sky_ambient(lit_normal) + sky_direct(lit_normal, sun) + sky_lamps(on_ground, lit_normal);
+  colour += sky_sheen(lit_normal, on_ground, soaked * (0.4 + 0.6 * puddle));
   let ring = 1.0 - smoothstep(0.0, ring_width * 1.5, abs(from_brush - view.brush.z));
   colour = mix(colour, RING, select(0.0, ring, view.brush.z > 0.0));
 
@@ -586,6 +596,7 @@ export class TerrainView {
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
+    skyUniformFor(this.gpu.device).bindAuto(pass, this.pipeline, [2]);
     pass.draw(CLIPMAP_QUADS * CLIPMAP_QUADS * 6, CLIPMAP_LEVELS);
   }
 }

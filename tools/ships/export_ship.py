@@ -22,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
 sys.path.insert(0, HERE)
-from deck import MANIFEST, deck_of, mesh_triangles, write_manifest  # noqa: E402
+from deck import HELM_AFT_M, MANIFEST, deck_of, mesh_triangles, write_manifest  # noqa: E402
 from r2 import PUBLIC, published, put  # noqa: E402
 
 # The parts the game paints, numbered as her mesh numbers them (client/src/textures/shipPictures.ts).
@@ -274,9 +274,10 @@ def outline_corners(polygons):
 
 def sails(depsgraph, offset):
     """Her sails' corners, in the ship's frame moved by `offset`, fore to aft: a staysail's three (its head the
-    highest, its tack the foremost of the others, its clew the last) and a gaff sail's four (its luff the two nearest
-    the bow, its tack and throat, the foot's after end its clew, the head's its peak). The game builds each canvas on
-    them (client/src/ships/sails.ts)."""
+    highest, its tack the foremost of the others, its clew the last), a gaff sail's four (its luff the two nearest
+    the bow, its tack and throat, the foot's after end its clew, the head's its peak), and a square sail's four, it
+    hanging across her (its foot the lower two, each corner named by its side). The game builds each canvas on them
+    (client/src/ships/sails.ts), which knows the first two kinds today."""
     hidden = render_hidden(bpy.context.scene)
     found = []
     for instance in depsgraph.object_instances:
@@ -310,6 +311,13 @@ def sails(depsgraph, offset):
                 head = max(corners, key=lambda corner: corner[2])
                 tack, clew = sorted((corner for corner in corners if corner is not head), key=lambda corner: -corner[0])
                 found.append({'kind': 'stay', 'tack': point(tack), 'clew': point(clew), 'head': point(head)})
+            elif len(corners) == 4 and spread(corners, 1) > spread(corners, 0):
+                foot = sorted(corners, key=lambda corner: corner[2])[:2]
+                head = [corner for corner in corners if corner not in foot]
+                # Her frame's y is to starboard: a pair's port corner is its lesser y.
+                found.append({'kind': 'square', **{f'{edge}_{side}': point(pick(pair, key=lambda corner: corner[1]))
+                                                   for edge, pair in (('foot', foot), ('head', head))
+                                                   for side, pick in (('port', min), ('starboard', max))}})
             elif len(corners) == 4:
                 luff = sorted(corners, key=lambda corner: -corner[0])[:2]
                 leech = [corner for corner in corners if corner not in luff]
@@ -318,9 +326,14 @@ def sails(depsgraph, offset):
                 found.append({'kind': 'gaff', 'tack': point(tack), 'clew': point(clew), 'throat': point(throat),
                               'peak': point(peak)})
             else:
-                sys.exit(f'a sail of {len(corners)} corners is neither a staysail (3) nor a gaff sail (4)')
+                sys.exit(f'a sail of {len(corners)} corners is neither a staysail (3) nor a gaff or square sail (4)')
         item.to_mesh_clear()
     return sorted(found, key=lambda sail: -max(sail[corner][0] for corner in sail if corner != 'kind'))
+
+
+def spread(corners, axis):
+    """How far some corners reach along one axis."""
+    return max(corner[axis] for corner in corners) - min(corner[axis] for corner in corners)
 
 
 def moved(faces, offset):
@@ -402,7 +415,17 @@ def main():
             file.write(mesh)
         return
     # Her deck from the mesh as published, so this and tools/ships/deck.py measure the same numbers.
-    publish(args.name, args.blend, mesh, size, armed, struck, rigged, deck_of(mesh_triangles(mesh)))
+    publish(args.name, args.blend, mesh, size, armed, struck, rigged,
+            deck_of(mesh_triangles(mesh), helm_aft(bpy.data.objects, offset)))
+
+
+def helm_aft(objects, offset):
+    """How far aft of her middle her helm is kept: where an empty named `Helm` stands in her model (as
+    tools/ships/build_ship.py places it), or the Sloop's spot for a model without one."""
+    helm = objects.get('Helm')
+    if helm is None:
+        return HELM_AFT_M
+    return round(-(helm.matrix_world.translation.x + offset[0]), 4)
 
 
 if __name__ == '__main__':

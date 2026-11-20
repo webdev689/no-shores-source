@@ -1,3 +1,4 @@
+import { SKY_WGSL } from '../sky/skyUniform.ts';
 import { HULLS } from './hullMask.ts';
 import { FRESH_LEVEL_M, FRESH_SINK_M, SHORE } from './shore.ts';
 
@@ -45,16 +46,14 @@ export function wideTexels(
 }
 
 /**
- * Noise, the sky and the caustics: the WGSL the water and the land under it share. `cells` is cellular noise (the
- * distances to the nearest two of one jittered point a cell), each point dancing on its own clock when `time` moves.
+ * Noise, the sky's uniform and the caustics: the WGSL the water and the land under it share. `cells` is cellular noise
+ * (the distances to the nearest two of one jittered point a cell), each point dancing on its own clock when `time`
+ * moves.
  * Points are measured from the anchor (ANCHOR_M).
  */
 export const SHARED_WGSL = /* wgsl */ `
 const TAU = 6.2831853;
-const SUN = vec3f(-0.5417, 0.5417, 0.6428);
-const SUN_LIGHT = vec3f(1.0, 0.94, 0.82);
-const ZENITH = vec3f(0.20, 0.42, 0.80);
-const HORIZON = vec3f(0.70, 0.81, 0.92);
+${SKY_WGSL}
 
 fn hash2(cell: vec2f) -> vec2f {
   var bits = vec2u(vec2i(floor(cell)) & vec2i(255));
@@ -274,28 +273,6 @@ fn marked(marks: texture_2d<u32>, at: vec2f, first: u32, last: u32) -> f32 {
   return smoothstep(0.3, 0.7, cover);
 }
 
-// The sky along 'direction'. 'blur' is how far apart, in radians, the rays a pixel gathers are: a reflection off
-// waves too small to draw gathers a cone of them, so the clouds' detail finer than that averages out.
-fn sky(direction: vec3f, slow_time: f32, blur: f32) -> vec3f {
-  let up = direction.z;
-  var colour = mix(HORIZON, ZENITH, sqrt(clamp(up, 0.0, 1.0)));
-  colour = mix(colour, HORIZON * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
-  if (up > 0.0) {
-    let plane = direction.xy / (up + 0.08) * 0.9 + vec2f(slow_time * 0.004, slow_time * 0.0013);
-    // How far the blur moves a point on the clouds' plane, furthest near the horizon, and each octave's share kept.
-    let reach = blur * 0.9 / ((up + 0.08) * (up + 0.08));
-    let keep = vec3f(1.0) - smoothstep(vec3f(0.25), vec3f(1.0), reach * vec3f(1.0, 2.3, 5.1));
-    let weights = vec3f(0.55, 0.3, 0.15) * keep;
-    let octaves = vec3f(value_noise(plane), value_noise(plane * 2.3), value_noise(plane * 5.1)) - 0.5;
-    let puff = 0.5 + dot(weights, octaves);
-    // The detail averaged away softens the clouds' edge, so however blurred they keep their mean cover (a sixth).
-    let lost = length(vec3f(0.55, 0.3, 0.15) - weights) * 0.27;
-    let cover = smoothstep(0.52 - lost, 0.78 + lost, puff) * smoothstep(0.0, 0.25, up);
-    colour = mix(colour, vec3f(0.97, 0.97, 0.99) * (0.86 + 0.14 * puff), cover * 0.9);
-  }
-  let toward = max(dot(direction, SUN), 0.0);
-  return colour + SUN_LIGHT * (pow(toward, 900.0) * 16.0 + pow(toward, 14.0) * 0.16);
-}
 `;
 
 /**
@@ -318,7 +295,8 @@ struct Frame {
   swell_terms: vec4f,
   local: vec4f,
   waves: array<vec4f, ${MOST_WAVES * 2}>,
-  chop: array<vec4f, ${CHOP_WAVES}>,
+  // The chop along the wind's bearing now, then along the one it fades from (coarse_area.z is how far it has come).
+  chop: array<vec4f, ${CHOP_WAVES * 2}>,
   // Each ship's footprint: her middle from the eye, and the sine and cosine of her heading; then her fitted half
   // length and half beam, her way, and whether she is there.
   hulls: array<vec4f, ${HULLS * 2}>,
@@ -495,16 +473,24 @@ fn ripple_at(offset: vec2f) -> vec3f {
 // a whole number of waves along the anchor's step. Rivers carry theirs downstream with their 'flow' (metres a
 // second); 'calm' scales them, 1 at sea.
 fn chop_slope(local: vec2f, flow: vec2f, calm: f32, footprint: f32) -> vec2f {
+  let share = frame.coarse_area.z;
+  var slope = chop_set(0, local, flow, footprint) * share;
+  if (share < 1.0) { slope += chop_set(${CHOP_WAVES}, local, flow, footprint) * (1.0 - share); }
+  return slope * calm;
+}
+
+// One bearing's chop, its waves from 'first' in the frame.
+fn chop_set(first: i32, local: vec2f, flow: vec2f, footprint: f32) -> vec2f {
   let time = frame.eye.w;
   var slope = vec2f(0.0);
   for (var index = 0; index < ${CHOP_WAVES}; index++) {
-    let wave = frame.chop[index];
+    let wave = frame.chop[first + index];
     let number = length(wave.xy);
     let fade = smoothstep(footprint * 1.5, footprint * 4.0, TAU / number);
     let angle = dot(wave.xy, local - flow * time) - wave.z * time + wave.w;
     // Strengths from 0.55 to 1.15 of the mean, so no two waves cross evenly into a grid.
     let strength = 0.55 + 0.6 * fract(f32(index) * 0.754877 + 0.31);
-    slope += wave.xy / number * cos(angle) * 0.042 * strength * fade * calm;
+    slope += wave.xy / number * cos(angle) * 0.042 * strength * fade;
   }
   return slope;
 }
@@ -543,16 +529,31 @@ fn scene_distance(pixel: vec2f) -> f32 {
   return forward * length(ray_through(pixel));
 }
 
+// The haze between the eye and what it sees: the air's, toward the dome's colour, and the weather's fog, which lies
+// thickest low down (its density falls by e every 60 m up), toward the fog's colour.
 fn aerial(colour: vec3f, direction: vec3f, distance_to: f32) -> vec3f {
-  let haze = 1.0 - exp(-distance_to / frame.view.z);
-  return mix(colour, sky(vec3f(direction.xy, max(direction.z, 0.02)), frame.eye.w, 0.0) * 0.95, haze);
+  let eye_height = frame.eye.z / frame.depth_terms.w;
+  let from_height = max(eye_height, 0.0);
+  let to_height = max(eye_height + direction.z * min(distance_to, 1e5) / frame.depth_terms.w, 0.0);
+  let rise = to_height - from_height;
+  let low_from = exp(-from_height / 60.0);
+  let low_to = exp(-to_height / 60.0);
+  let low = select(60.0 * (low_from - low_to) / rise, low_from, abs(rise) < 1.0);
+  let ground_fog = sky_state.fog.w * 1.5 * clamp(low, 0.0, 1.0) * distance_to;
+  let haze = 1.0 - exp(-distance_to / frame.view.z - ground_fog);
+  let foggy = clamp(sky_state.fog.w * frame.view.z + ground_fog * 0.2, 0.0, 1.0);
+  // Only what the fog leaves of the dome's colour is worked out, and the fog's only where there is fog.
+  var air = vec3f(0.0);
+  if (foggy < 1.0) { air = sky_haze(vec3f(direction.xy, max(direction.z, 0.02))) * 0.95; }
+  if (foggy > 0.0) { air = mix(air, fog_light(direction), foggy); }
+  return mix(colour, air, haze);
 }
 
 // Light seen through 'distance_to' metres of water 'below' metres under its surface: the light the water scatters
 // back, deeper blue the deeper it is, and the sun's shafts.
 fn underwater_light(fresh: bool, below: f32) -> vec3f {
   let body = select(SEA_BODY, FRESH_BODY, fresh);
-  return body * (2.4 + 1.2 * SUN.z) * exp(-0.045 * max(below, 0.0));
+  return body * (2.4 * sky_level() + 1.2 * key_toward().z * sky_state.key.w) * exp(-0.045 * max(below, 0.0));
 }
 
 fn through_water(colour: vec3f, fresh: bool, below: f32, distance_to: f32) -> vec3f {

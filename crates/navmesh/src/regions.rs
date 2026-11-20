@@ -1,14 +1,17 @@
 //! Regions: a watershed over the distance field splits the walkable surface into well-shaped chunks (rooms, runs of
 //! corridor) whose outlines the contours trace. Slivers merge into their largest neighbour, and every part not joined
-//! to the largest one, which no walk reaches, is dropped from the walkable surface.
+//! to the largest one, by a walk or a link's climb or drop, is dropped from the walkable surface; over the open sea,
+//! where no ground joins the parts, only those too small to stand in are.
 
 use crate::compact::CompactField;
 
-/// The walkable spans laid out flat: each one's distance, where it lives, and its neighbours by flat index.
+/// The walkable spans laid out flat: each one's distance, where it lives, its neighbours by flat index, and each
+/// column's spans' flat indices.
 struct Flat {
     dist: Vec<i32>,
     owner: Vec<(usize, usize)>,
     neighbours: Vec<[Option<usize>; 4]>,
+    index_of: Vec<Vec<Option<usize>>>,
 }
 
 fn flatten(field: &CompactField) -> Flat {
@@ -43,7 +46,7 @@ fn flatten(field: &CompactField) -> Flat {
             found
         })
         .collect();
-    Flat { dist, owner, neighbours }
+    Flat { dist, owner, neighbours, index_of }
 }
 
 /// The watershed's working state: each flat span's region (0 for none yet).
@@ -133,8 +136,10 @@ fn resolve(remap: &[usize], mut region: usize) -> usize {
 }
 
 /// Partitions the walkable surface into regions, writing each span's region (1 up, 0 for none) and clearing
-/// `walkable` on every span dropped.
-pub(crate) fn partition(field: &mut CompactField) {
+/// `walkable` on every span dropped. The spans each of `joins` names, (column, index), are joined as a walk joins
+/// them, so a floor a link reaches is kept. With `every_part` each part big enough to stand in is kept, not the
+/// largest alone.
+pub(crate) fn partition(field: &mut CompactField, joins: &[[(usize, usize); 2]], every_part: bool) {
     let cell = field.grid.cell;
     let merge_area = (2.0 / (cell * cell)).round() as i64;
     let min_component = (4.0 / (cell * cell)).round() as i64;
@@ -211,14 +216,26 @@ pub(crate) fn partition(field: &mut CompactField) {
         }
     }
 
-    let (component, component_area) = components(&remap, &count, &adjacent);
+    // A link joins two floors only once slivers have merged: no top merges into the ground beside it.
+    let mut joined = adjacent;
+    for [one, other] in joins {
+        let region_of = |(column, index): (usize, usize)| flat.index_of[column][index].map(|at| region[at]);
+        let (Some(one), Some(other)) = (region_of(*one), region_of(*other)) else { continue };
+        let (one, other) = (resolve(&remap, one), resolve(&remap, other));
+        if one != 0 && other != 0 && one != other {
+            add_once(&mut joined[one], other);
+            add_once(&mut joined[other], one);
+        }
+    }
+    let (component, component_area) = components(&remap, &count, &joined);
     let largest = (1..component_area.len())
         .fold(0, |largest, at| if component_area[at] > component_area[largest] { at } else { largest });
     let mut culled = vec![false; regions];
     for first in 1..regions {
         let own = resolve(&remap, first);
         if count[own] > 0 {
-            let kept = component[own] == Some(largest) && component_area[largest] >= min_component;
+            let kept = component[own]
+                .is_some_and(|part| (every_part || part == largest) && component_area[part] >= min_component);
             culled[own] = !kept;
         }
     }

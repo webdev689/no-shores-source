@@ -25,7 +25,7 @@ export interface ReliefScene {
  *  each cell's mark (rivers, roads, towns, ports), the frame's edge and the brush; where a tile of the exact ground
  *  is kept (reliefTiles.ts), the finest one over a pixel is drawn instead, its cliffs in rock, faded into the 1 km
  *  land at the kept tiles' edge. */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 
 struct View {

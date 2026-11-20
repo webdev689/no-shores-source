@@ -192,3 +192,22 @@ fn a_body_set_down_overlapping_a_block_is_pushed_out_the_shortest_way_and_walks_
         );
     }
 }
+
+#[test]
+fn blocks_that_tile_a_deck_hold_every_point_of_it_their_seams_and_outer_edges_too() {
+    // Two half-metre squares of deck laid side by side, as a ship's deck is, far from the origin where a sum lands
+    // on a seam exactly; and a step between two heights, where the higher holds the seam.
+    let (east, south) = (23817.0, -4120.0);
+    let deck = [
+        Block { min_x: east, min_y: south, max_x: east + 0.5, max_y: south + 0.5, top: 2.2, bottom: 0.0 },
+        Block { min_x: east + 0.5, min_y: south, max_x: east + 1.0, max_y: south + 0.5, top: 2.2, bottom: 0.0 },
+        Block { min_x: east + 1.0, min_y: south, max_x: east + 1.5, max_y: south + 0.5, top: 2.4, bottom: 0.0 },
+    ];
+    for x in [east, east + 0.5, east + 0.25, east + 1.0, east + 1.5] {
+        for y in [south, south + 0.25, south + 0.5] {
+            let ground = ground_at(&deck, &Flat, x, y, f64::INFINITY);
+            assert!(ground >= 2.2, "the deck holds ({x}, {y}), not the sea under it: {ground}");
+        }
+    }
+    assert_eq!(ground_at(&deck, &Flat, east + 1.0, south + 0.25, f64::INFINITY), 2.4, "the higher holds a seam");
+}

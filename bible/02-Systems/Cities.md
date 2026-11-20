@@ -185,8 +185,9 @@ nearest up close and mipmapped far off. Daggerfall's stone is dark, so a solid's
 warmer, a factor a channel, as its own layer. The ground's tiles and the solids' pictures come first, then the
 forged models' by how much the city wears them. Up to four workers paint them; a layer shows its guessed colour until
 painted, and what is painted is kept for the next city. Gold, iron and bone are plain colours; the glow is lit warm
-and unshaded. Faces are lit as the land is, with a little light thrown back onto walls from the ground. In the game
-the solids cast into the sun's near and far shadow maps, the near cells' models into the near one, and each
+and unshaded, brighter at night, and each glowing solid is a lamp ([[Sky]]). Faces are lit as the land is, with a
+little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen.
+In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one, and each
 building's masses (its hull past where the masses are drawn) into the far one, a few boxes standing in for a model
 whose shadow at the far map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]).
 

@@ -9,8 +9,16 @@ import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from './gpu.ts';
 export const SHADOW_SIZE = 2048;
 /** Over the ground higher than this the eye sees no shadow worth a pass: at sea, over an island's side. */
 export const SHADOW_HIGHEST_M = 400;
-/** The way to the sun, as SHARED_WGSL's SUN (water/waterCommon.ts) has it. */
-const SUN: readonly [number, number, number] = [-0.5417, 0.5417, 0.6428];
+/** The clear afternoon's sun, which the shadows are cast along until a sky sets the key light. */
+const AFTERNOON_SUN: Vector = [-0.5417, 0.5417, 0.6428];
+/** The way to the key light the shadows are cast along this frame, held just above the horizon as the sky's WGSL
+ *  `key_toward` holds it, so a low sun's shadows stay finite and agree with the shading. */
+let toward: Vector = AFTERNOON_SUN;
+
+/** The key light's way, as `key_toward` in sky/skyUniform.ts holds it. */
+export function heldToward(key: Vector): Vector {
+  return normalised([key[0], key[1], Math.max(key[2], 0.08)]);
+}
 const MATRIX_FLOATS = 16;
 /** The receivers' uniforms: both cascades' matrices, then a map's texel and whether shadows are on. */
 const RECEIVER_FLOATS = 2 * MATRIX_FLOATS + 4;
@@ -39,9 +47,9 @@ const normalised = (a: Vector): Vector => {
   return [a[0] / length, a[1] / length, a[2] / length];
 };
 
-/** The maps' axes: across them (right and up on a map) and along the sun's light, away from the sun. */
+/** The maps' axes: across them (right and up on a map) and along the key light, away from it. */
 export function sunAxes(): { right: Vector; up: Vector; along: Vector } {
-  const along = normalised([-SUN[0], -SUN[1], -SUN[2]]);
+  const along = normalised([-toward[0], -toward[1], -toward[2]]);
   const right = normalised([along[1], -along[0], 0]);
   const up: Vector = [
     right[1] * along[2] - right[2] * along[1],
@@ -83,7 +91,7 @@ export function shadowMatrix(eye: Vector, ahead: readonly [number, number], casc
   return matrix;
 }
 
-const AXES = sunAxes();
+let axes = sunAxes();
 /** How far past its square a cascade takes casters, in its texels: the snap of its middle and the taps' reach. */
 const CAST_MARGIN_TEXELS = 4;
 
@@ -93,7 +101,7 @@ const CAST_MARGIN_TEXELS = 4;
  */
 export function boxReaches(cascade: Cascade, ahead: readonly [number, number], low: Vector, high: Vector): boolean {
   const reach = cascade.reachM * (1 + (2 * CAST_MARGIN_TEXELS) / SHADOW_SIZE);
-  for (const axis of [AXES.right, AXES.up]) {
+  for (const axis of [axes.right, axes.up]) {
     // The box's span along the axis, from the square's middle.
     const middle = ahead[0] * axis[0] + ahead[1] * axis[1];
     let [least, most] = [-middle, -middle];
@@ -158,7 +166,7 @@ fn sunlit(from_eye: vec3f, normal: vec3f) -> f32 {
   if (shadow.map.w < 0.5) {
     return 1.0;
   }
-  let slant = 1.0 - abs(dot(normal, SUN));
+  let slant = 1.0 - abs(dot(normal, key_toward()));
   // Biases of 12 cm and of 1 m along the sun, with the lifts off the surface, against a surface's own shadow.
   let near = cascade_light(shadow.near, 0, shadow.map.x, ${(0.12 / (2 * NEAR.depthM)).toExponential(4)},
     from_eye + normal * (0.08 + 0.12 * slant));
@@ -244,9 +252,12 @@ export class ShadowMap {
     return made;
   }
 
-  /** Sets the maps for a frame from an eye at `eye` (world metres) looking along `yaw`, `aboveM` over the ground: each
-   *  square stands ahead of the camera, where most of what it sees lies. */
-  update(eye: Vector, yaw: number, aboveM: number): void {
+  /** Sets the maps for a frame from an eye at `eye` (world metres) looking along `yaw`, `aboveM` over the ground, cast
+   *  along the key light `key` (east, south, up): each square stands ahead of the camera, where most of what it sees
+   *  lies. */
+  update(eye: Vector, yaw: number, aboveM: number, key: Vector = AFTERNOON_SUN): void {
+    toward = heldToward(key);
+    axes = sunAxes();
     this.active = aboveM < SHADOW_HIGHEST_M;
     this.aheads = CASCADES.map((cascade) => aheadOf(cascade, yaw));
     this.write(

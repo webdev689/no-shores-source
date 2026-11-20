@@ -103,6 +103,21 @@ impl Blocks {
         index
     }
 
+    /// Stands `block` among them, after the rest, the grid laid again: a course closing a way while it is played.
+    pub fn push(&mut self, block: Block) {
+        let mut list = std::mem::take(&mut self.list);
+        list.push(block);
+        *self = Self::new(list);
+    }
+
+    /// Takes out the block at `index` (the order kept for the rest), the grid laid again: a course opening a way.
+    pub fn remove(&mut self, index: usize) -> Block {
+        let mut list = std::mem::take(&mut self.list);
+        let taken = list.remove(index);
+        *self = Self::new(list);
+        taken
+    }
+
     /// Lists each block in every cell its grown footprint reaches, counting first so the lists sit in one array.
     fn fill(&mut self, grown: impl Fn(&Block) -> [f64; 4]) {
         let spans: Vec<[usize; 4]> = self

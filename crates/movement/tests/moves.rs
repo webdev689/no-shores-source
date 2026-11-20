@@ -158,6 +158,25 @@ fn pressing_into_a_wall_too_high_to_grab_climbs_it_to_its_lip_and_over() {
 }
 
 #[test]
+fn pressing_into_a_tall_wall_off_square_climbs_it_squared_within_45_degrees_and_slides_on_past_them() {
+    let tower = block(-5.0, -4.0, 5.0, -1.0, 4.0);
+    let degrees = std::f64::consts::PI / 180.0;
+    let pressed = |angle: f64| {
+        let held = holding(move |controls| {
+            controls.forward = 1.0;
+            controls.yaw = angle * degrees;
+        });
+        run(standing(0.0, 0.0), held, 0.8, &[tower], None)
+    };
+    for angle in [0.5, 20.0, 44.0, -30.0] {
+        let body = pressed(angle);
+        assert_eq!(body.mode, Mode::Climb, "{angle} degrees off square takes hold");
+        close(body.facing, 0.0, 1e-9);
+    }
+    assert_eq!(pressed(50.0).mode, Mode::Ground, "past 45 degrees it slides on along the wall");
+}
+
+#[test]
 fn mounted_the_body_rides_at_the_horses_paces_and_does_not_jump() {
     let riding = holding(|controls| {
         controls.forward = 1.0;

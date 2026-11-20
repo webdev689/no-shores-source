@@ -26,7 +26,7 @@ pub const GARRISON_NODE: &str = r#"{ "id": "glade", "kind": "mission", "name": "
             -50] } } }"#;
 
 /// Both tests hold this value; a change to the garrison, the foes or the fight changes it in both, on purpose.
-pub const GARRISON_HASH: &str = "bcc9eeb1";
+pub const GARRISON_HASH: &str = "d86eafed";
 
 /// Ticks the player runs north into the garrison, then stands and swings each SWING_EVERY ticks until RUN_TICKS.
 const RUN_IN: u32 = 420;
@@ -64,4 +64,37 @@ fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s
 
 fn input_of(player: PlayerId, input: &room::Input) -> i32 {
     super::input(player, &protocol::input_bytes(input))
+}
+
+/// Both tests hold this value: two players in one node's room, the garrison's foes shared out between them.
+pub const GARRISON_PAIR_HASH: &str = "b7555d2c";
+
+#[test]
+fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
+    assert!(open_node(GARRISON_NODE.as_bytes()));
+    let players = [room_join(), room_join()];
+    let (mut hash, mut struck) = (0x811c_9dc5_u32, [0, 0]);
+    for tick in 1..=RUN_TICKS {
+        for (index, player) in players.into_iter().enumerate() {
+            // The second player swings half a beat of swings after the first.
+            let running = tick <= RUN_IN;
+            let swing = !running && (tick + 15 * u32::try_from(index).unwrap()) % SWING_EVERY == 0;
+            let controls = Controls { forward: if running { 1.0 } else { 0.0 }, run: true, ..Controls::default() };
+            let combat = CombatInput { attack: swing.then_some(Stroke::Down), ..CombatInput::default() };
+            let intent = combat::Intent { controls, combat };
+            let input = room::Input { sequence: tick, intent, seen: u64::from(tick - 1), ..room::Input::default() };
+            assert_eq!(input_of(player, &input), TAKEN);
+        }
+        room_tick();
+        let bytes = snapshot();
+        hash = bytes.iter().fold(hash, |hash, &byte| (hash ^ u32::from(byte)).wrapping_mul(0x0100_0193));
+        let seen = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+        for event in seen.events().iter().flatten() {
+            if let Some(index) = players.iter().position(|player| *player == event.defender()) {
+                struck[index] += u32::from(event.striker() != event.defender());
+            }
+        }
+    }
+    assert!(struck.iter().all(|blows| *blows > 0), "the garrison fights both players: {struck:?}");
+    assert_eq!(format!("{hash:08x}"), GARRISON_PAIR_HASH);
 }

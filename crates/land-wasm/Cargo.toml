@@ -15,6 +15,7 @@ land = { path = "../land" }
 layout = { path = "../layout" }
 naval = { path = "../naval" }
 sailing = { path = "../sailing" }
+sky = { path = "../sky" }
 world = { path = "../world" }
 serde_json.workspace = true
 

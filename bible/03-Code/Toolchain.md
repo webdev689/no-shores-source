@@ -16,8 +16,10 @@ code:
 - **TypeScript 6.0**, strict, with only erasable syntax, so Node runs the tests' TypeScript directly with no build step.
   TypeScript 7, the faster native compiler, is not yet supported by the TypeScript lint tooling; we move when it is.
 - **Two configurations**: `tsconfig.json` for the client (browser types, no Node types) and `tsconfig.node.json` for
-  the tests and the build configuration (with Node's types).
-- **Node 22.18 or later** runs the tests (`node --test`).
+  the tests and the build configuration (with Node's types, and Vite's, since a test can reach client code that
+  imports a stylesheet).
+- **Node 22.18 or later** runs the tests (`node --test`). `tools/testStyles.mjs` reads a stylesheet a module imports
+  as an empty module, so a test can load the client's interface code as Vite would build it.
 - **Vite 8** serves and builds the client from `client/` into `dist/`. CI publishes the client to GitHub Pages after
   `cargo xtask check` passes on a merge into `main` ([[The World Editor Is on GitHub Pages]]).
 - **ESLint 10** with `typescript-eslint`: spelled-out names, no `any`, type-only imports marked.

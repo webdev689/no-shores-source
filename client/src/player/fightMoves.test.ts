@@ -98,6 +98,22 @@ test('a foe that moved over a snapshot of several ticks walks at its own pace, n
   assert.deepEqual([walked.moving, walked.running, Math.round(walked.speed * 100) / 100], [true, false, 3]);
 });
 
+test('a foe climbing a wall shows the climb going, as it rises; held on the wall, its first frame', () => {
+  const dress = foeDress(swordsman);
+  assert.ok(dress);
+  const frames = (anim: string) => ({ climb: 4 })[anim] ?? 1;
+  const onWall = { ...standing, mode: 'climb' as const, z: 1.5 };
+  const climbing = shownMove(foeDoing({ ...onWall, z: 1.52 }, onWall, dress, 1 / 60), frames, () => true);
+  assert.deepEqual(climbing, { anim: 'climb', frame: null, frameSeconds: 0.25 }, 'rising 1.2 m/s with no ground speed');
+  const held = shownMove(foeDoing(onWall, onWall, dress, 1 / 60), frames, () => true);
+  assert.deepEqual(held, { anim: 'climb', frame: 0, frameSeconds: 0 });
+  assert.equal(
+    foeDoing({ ...standing, z: 0.02 }, standing, dress, 1 / 60).moving,
+    false,
+    'on its feet, a rise is no walk',
+  );
+});
+
 test('a flinch plays its hurt frames once; a stagger reels through them forth and back; a Charge holds still', () => {
   assert.equal(struckProgress('flinch', FIGHT_TICKS.flinch), 0);
   assert.ok(struckProgress('flinch', 5) > struckProgress('flinch', 10));

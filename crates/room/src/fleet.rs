@@ -5,6 +5,7 @@
 //! It has no network and no clock: whatever hosts it hands it orders and ticks, and sends out what it sees.
 
 use crate::players::{CATCH_UP, PLAYERS_MOST, SLACK_TICKS, VIEW_LAG, WAITING_LIMIT};
+use crate::winds::epoch_of;
 use crate::{PlayerId, Refused};
 use land::sea::Swell;
 use naval::fight::{Aim, End, Event, Fight, Orders};
@@ -12,7 +13,8 @@ use naval::ranks::Commission;
 use naval::shots::ShipId;
 use sailing::TICK_SECONDS;
 use sailing::ship::{Helm, Ship};
-use sailing::waters::{OpenSea, steady_wind};
+use sailing::waters::OpenSea;
+use sailing::waters::sea_wind_at;
 use std::collections::{BTreeMap, VecDeque};
 use std::f64::consts::TAU;
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
@@ -82,13 +84,13 @@ struct Taken {
     calls: Vec<(PlayerId, Call)>,
 }
 
-/// A fleet room: its clock in ticks, its swell and wind, its fight, its players, the next number for a ship, and what
-/// happened since it was last asked.
+/// A fleet room: its clock in ticks, world time at its first tick, its swell, its fight, its players, the next number
+/// for a ship, and what happened since it was last asked.
 #[derive(Debug)]
 pub struct Fleet {
     clock: u64,
+    epoch_s: f64,
     swell: Swell,
-    wind: [f64; 2],
     fight: Fight,
     players: BTreeMap<PlayerId, Helmsman>,
     next_ship: ShipId,
@@ -102,13 +104,17 @@ impl Default for Fleet {
 }
 
 impl Fleet {
-    /// An empty fleet room on the open sea under the world's swell, in the steady wind.
+    /// An empty fleet room on the open sea under the world's swell.
     #[must_use]
     pub fn new() -> Self {
-        let swell = Swell::default();
-        let wind = steady_wind(&swell);
         let fight = Fight::new(SEED);
-        Self { clock: 0, swell, wind, fight, players: BTreeMap::new(), next_ship: 1, events: Vec::new() }
+        let swell = Swell::default();
+        Self { clock: 0, epoch_s: 0.0, swell, fight, players: BTreeMap::new(), next_ship: 1, events: Vec::new() }
+    }
+
+    /// Sets the wall's time at the room's first tick, milliseconds since 1970.
+    pub fn set_epoch(&mut self, unix_ms: f64) {
+        self.epoch_s = epoch_of(unix_ms);
     }
 
     /// The room's time, seconds: what the swell rolls by.
@@ -122,10 +128,10 @@ impl Fleet {
         self.clock
     }
 
-    /// The swell and the wind the room's ships sail in.
+    /// The swell the room's ships ride; each sails in the weather's wind where she is.
     #[must_use]
-    pub fn weather(&self) -> (&Swell, [f64; 2]) {
-        (&self.swell, self.wind)
+    pub fn swell(&self) -> &Swell {
+        &self.swell
     }
 
     /// The fight: every ship in the room, the balls aloft.
@@ -196,7 +202,7 @@ impl Fleet {
         }
         let swell = self.swell.clone();
         let waters = OpenSea { swell: &swell };
-        let events = self.fight.step(&orders, &waters, self.wind, time);
+        let events = self.fight.step(&orders, &waters, &|at| sea_wind_at(at, self.epoch_s + time), time);
         let gone: Vec<ShipId> = events
             .iter()
             .filter_map(|event| if let Event::Gone { ship, .. } = event { Some(*ship) } else { None })

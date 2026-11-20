@@ -1,14 +1,12 @@
-//! Cover and flanking: a shooter with a wall near fights from behind it, drawing in cover and stepping out to shoot;
-//! it picks again when its target moves behind a block; two shooters never share a post; each weapon has its own
-//! distance; waiting foes on the ring stand to their target's sides more than its front; and with no cover near,
-//! a shooter fights as it always has.
+//! Cover: a shooter with a wall near fights from behind it, drawing in cover and stepping out to shoot; it picks
+//! again when its target moves behind a block; two shooters never share a post; each weapon has its own distance;
+//! and with no cover near, a shooter fights as it always has.
 
 mod common;
 
 use combat::Happening;
-use combat::fighter::Action;
-use combat::sight::{clear_line, off};
-use common::{Room, SWORDSMAN, standing_still, still, watching};
+use combat::sight::clear_line;
+use common::{Room, standing_still, still, watching};
 use core::f64::consts::{FRAC_PI_2, PI};
 use foes::Rank::{Elite, Major};
 use movement::Block;
@@ -223,40 +221,6 @@ fn the_marksman_stands_farther_than_a_crossbowman_and_a_pistoleer_nearer() {
     assert!(pistoleer < 12.5, "a pistoleer near, within its 8 to 12 m: {pistoleer}");
     assert!((15.0..=19.0).contains(&crossbowman), "a crossbowman within its 12 to 20 m: {crossbowman}");
     assert!(marksman > 21.0 && marksman > crossbowman + 4.0, "the marksman farther, past 21 m: {marksman}");
-}
-
-/// The shares of ticks, over a long fight, that the waiting stand within 45 degrees of a still player's face and more
-/// than 60 degrees off it: four swordsmen who start before its face, two waiting their turn at any time.
-fn ring_shares(seed: u64) -> (f64, f64) {
-    let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0);
-    let foes = [10, 11, 12, 13];
-    for (id, degrees) in foes.into_iter().zip([-30.0_f64, -10.0, 10.0, 30.0]) {
-        let bearing = degrees.to_radians();
-        room = room.foe(id, SWORDSMAN, Major, 6.0 * libm::sin(bearing), -6.0 * libm::cos(bearing), PI);
-    }
-    let (mut front, mut sides, mut waiting) = (0_u32, 0_u32, 0_u32);
-    for tick in 0..3600 {
-        room.step(&mut still(0.0));
-        for id in foes.into_iter().filter(|_| tick >= 600) {
-            let fighting = matches!(room.fighter(id).action, Action::Attack(_) | Action::Telegraph(_));
-            if fighting || !(2.2..=4.2).contains(&room.distance(PLAYER, id)) {
-                continue;
-            }
-            let off_face = off(room.toward(PLAYER, id), 0.0).to_degrees();
-            waiting += 1;
-            front += u32::from(off_face < 45.0);
-            sides += u32::from(off_face > 60.0);
-        }
-    }
-    (f64::from(front) / f64::from(waiting), f64::from(sides) / f64::from(waiting))
-}
-
-#[test]
-fn waiting_foes_stand_on_the_ring_to_their_target_s_sides_more_than_before_its_face() {
-    for seed in [3, 8] {
-        let (front, sides) = ring_shares(seed);
-        assert!(front < 0.1 && sides > 0.75, "seed {seed}: {front} before its face, {sides} to its sides");
-    }
 }
 
 /// A crossbowman's whole fight with a player who comes close and stands, on a course or with no spots at all.

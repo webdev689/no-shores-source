@@ -7,6 +7,8 @@ publish.workspace = true
 description = "The repository's own checks and chores, run as `cargo xtask <command>`."
 
 [dependencies]
+naga = { version = "30.0.2", features = ["wgsl-in"] }
+serde_json.workspace = true
 
 [lints]
 workspace = true

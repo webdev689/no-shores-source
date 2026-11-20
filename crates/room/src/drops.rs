@@ -101,15 +101,16 @@ impl Room {
     }
 
     /// Takes every drop at rest a player has walked over and has room for, and lets go of those that have lain their
-    /// time.
+    /// time, telling their player so their page stops showing them.
     pub(crate) fn pick_up_drops(&mut self) {
         let clock = self.clock;
         let mut kept = Vec::with_capacity(self.drops.len());
         for drop in std::mem::take(&mut self.drops) {
+            let Some(found) = self.players.get_mut(&drop.player) else { continue };
             if clock >= drop.until {
+                found.gear_changed = true;
                 continue;
             }
-            let Some(found) = self.players.get_mut(&drop.player) else { continue };
             let body = found.fighter.body;
             let near = libm::hypot(body.x - drop.at[0], body.y - drop.at[1]) <= PICK_UP_REACH
                 && (body.z - drop.at[2]).abs() <= PICK_UP_HEIGHT;
