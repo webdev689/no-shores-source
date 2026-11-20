@@ -1,23 +1,21 @@
 """The Ravager, the Husk gone ranged. After the owner's own in project-final: the Husk's body, red, reading apart by
-what it carries, not its colour: a ragged crystal hood over its head in place of the Husk's great crystal, open at the
-front so the face reads in shadow with its two eyes glowing through, swept back to a peak, ragged points hanging off
-its rim; a mantle of two rows of hanging shards round the shoulders, open at the front and longer behind; and a
-crystal blade grown out of each hand, its edge the weapon when cornered. Project-final's gun-blades are reshaped:
-no firearms, so it hurls the shards that grow on its blades. In a townsman's vest. Drawn by render.py; its moves are
-ravager_moves.py's."""
+what it carries, not its colour: a ragged crystal hood closed over its skull in place of the Husk's great crystal,
+open at the front so the face reads in its shadow with two eyes glowing through, swept back to a peak, ragged points
+hanging off its rim; a mantle of two rows of dark shards hanging from the shoulders, open at the front and longer
+behind; and a crystal blade grown out of each fist, its edge the weapon when cornered. Project-final's gun-blades are
+reshaped: no firearms, so it hurls the shards that grow on its blades, a layer of their own the game takes away as
+they are thrown. In a townsman's vest. Drawn by render.py; its moves are ravager_moves.py's."""
 import numpy as np
 
 import growth
-import materials
-from gear import hang
 from ravager_moves import MOVES  # noqa: F401
-from rig import rest
 
 STRAIN = 'red'
 SEED = 17
 OUTFIT = ['shirt_short_v', 'vest', 'belt', 'casual_pants', 'tall_boots']   # a townsman's, the forge's archive 384
-PARTS = ['shroud', 'blades']
+PARTS = ['shroud', 'blades', 'ammunition']
 EYES = (1.0, 0.25, 0.18)
+HUNCHED = np.radians(34)   # how far its chest leans in every move (husk_moves.py `HUNCH`, spine and chest)
 BLADE = dict(length=0.56, width=0.11, thick=0.042)   # project-final's own blade, metres past the knuckles
 
 CLUSTERS = [
@@ -33,94 +31,76 @@ CLUSTERS = [
 
 
 def hood(fighter, crystal, eye):
-    """Shards round the head but its face, swept back to a peak, ragged points off the rim about the face, and two
-    eyes glowing in the shadow under it."""
-    skin = fighter.skins[0]
-    p = skin.rest
-    normals = np.array([v.normal for v in skin.me.vertices])
-    head = np.nonzero(p[:, 2] > 1.52)[0]
+    """A dark cowl over the skull but its face, a shell of the skin, and over it shards, swept back to a peak; ragged
+    points off its rim about the face; and two eyes glowing in the shadow under it, on the face's own skin. Returns
+    the cowl, and the rest."""
+    p, ways, piece = growth.skin_of(fighter)
+    head = np.nonzero(piece == 'skull')[0]
     front = p[head, 1].min()
+    cowl = (piece == 'skull') & (p[:, 1] > front + 0.035)
+    fighter.skins.append(fighter.skins[0].shell('ravager_cowl', growth.DEEP[crystal.name], cowl, 0.004))
     pick = np.random.default_rng(SEED)
-    behind = head[p[head, 1] > front + 0.05]   # all of the head but its face
+    behind = head[p[head, 1] > front + 0.05]
     made = []
-    for k, at in enumerate(pick.choice(behind, size=18, replace=False)):
-        peak = max(0.0, p[at, 1] - front - 0.1) * 1.2 + max(0.0, p[at, 2] - 1.7) * 1.2   # longer up and back
-        made.append(growth.shard(f'ravager_hood_{k}', p[at], normals[at] + np.array((0.0, 0.5, 0.2)),
-                                 0.05 + peak + pick.uniform(0, 0.04), 0.032, pick.uniform(0, np.pi), crystal))
+    for k, at in enumerate(pick.choice(behind, size=26, replace=False)):
+        peak = max(0.0, p[at, 1] - front - 0.1) * 0.9 + max(0.0, p[at, 2] - 1.7) * 0.9   # longer up and back
+        # laid back and down at rest, so they sweep back once its head bows with its hunch
+        made.append(growth.shard(f'ravager_hood_{k}', p[at], ways[at] + np.array((0.0, 0.9, -0.5)),
+                                 0.04 + peak + pick.uniform(0, 0.03), 0.04, pick.uniform(0, np.pi), crystal))
     rim = head[np.abs(p[head, 1] - front - 0.06) < 0.02]
-    for k, at in enumerate(pick.choice(rim, size=min(8, len(rim)), replace=False)):
+    for k, at in enumerate(pick.choice(rim, size=min(6, len(rim)), replace=False)):
         made.append(growth.shard(f'ravager_rim_{k}', p[at] + np.array((0.0, -0.02, 0.0)), (0.0, -0.3, -1.0),
-                                 pick.uniform(0.05, 0.1), 0.016, k, crystal))
+                                 pick.uniform(0.05, 0.08), 0.018, k, crystal))
     for side in (1.0, -1.0):
-        made.append(growth.shard(f'ravager_eye_{side:+.0f}', np.array((0.032 * side, front + 0.004, 1.635)),
-                                 (0.0, -1.0, 0.0), 0.012, 0.009, 0.0, eye, widest=0.5))
-    return made
+        at = growth.nearest(p, np.array((0.032 * side, front, 1.635)))
+        made.append(growth.shard(f'ravager_eye_{side:+.0f}', p[at], ways[at], 0.02, 0.016, 0.0, eye, widest=0.5))
+    return fighter.skins[-1].ob, made
 
 
 def mantle(crystal):
-    """Two rows of shards hanging from a ring round the shoulders, open at the front, longer behind."""
+    """Two rows of broad shards hanging from a ring round the shoulders, open at the front, longer behind, dark but
+    for their points; laid forward at rest by its hunch's lean, so they hang straight down as it stands."""
     pick = np.random.default_rng(SEED + 1)
+    hang_down = np.array((0.0, -np.sin(HUNCHED), -np.cos(HUNCHED)))
     made = []
     for row, (ring, drop) in enumerate(((0.31, 0.0), (0.25, 0.08))):
-        for k, t in enumerate(np.linspace(0, 2 * np.pi, 16, endpoint=False)):
+        for k, t in enumerate(np.linspace(0, 2 * np.pi, 12, endpoint=False)):
             out = np.array((np.cos(t), np.sin(t), 0.0))   # y > 0 behind
             if out[1] < -0.55:   # open at the front, for the arms
                 continue
             behind = (out[1] + 1) / 2
             base = np.array((out[0] * ring, out[1] * ring * 0.8, 1.5 - drop))
-            way = out * 0.12 + np.array((0.0, 0.1, -1.0))   # hanging, not swept
-            made.append(growth.shard(f'ravager_mantle_{row}_{k}', base, way,
-                                     0.14 + 0.28 * behind * (1.0 - row * 0.3) + pick.uniform(0, 0.06), 0.03, t,
-                                     crystal, widest=0.2))
+            made.append(growth.shard(f'ravager_mantle_{row}_{k}', base, out * 0.12 + hang_down,
+                                     0.14 + 0.28 * behind * (1.0 - row * 0.3) + pick.uniform(0, 0.06), 0.045, t,
+                                     crystal, widest=0.6))
     return made
 
 
 def blade(side, crystal):
-    """A flat blade grown from the knuckles along the fist's line, a diamond in section, widest a third of the way."""
-    import bpy
+    """A flat blade grown from the knuckles along the fist's line, a diamond in section, widest a third of the way;
+    and the shards it throws, growing along its back edge."""
     x = 1.0 if side == 'L' else -1.0
-    wrist = np.array(rest(f'hand_{side}'))
-    way = wrist - np.array(rest(f'farm_{side}'))
-    way /= np.linalg.norm(way)
+    wrist, way = growth.forearm(side)
     start = wrist + way * 0.09
     edge, flat = np.array((x * 0.5, -0.86, 0.0)), np.array((x * 0.86, 0.5, 0.0))
-    points, faces = [], []
-    stations = [(0.0, 0.5), (0.33, 1.0), (0.8, 0.6), (1.0, 0.0)]
-    for s, wide in stations:
-        at = start + way * BLADE['length'] * s
-        half = BLADE['width'] * wide / 2
-        points += [at + edge * half, at + flat * BLADE['thick'] / 2, at - edge * half, at - flat * BLADE['thick'] / 2]
-    for k in range(len(stations) - 1):
-        a, b = 4 * k, 4 * (k + 1)
-        faces += [(a + i, a + (i + 1) % 4, b + (i + 1) % 4, b + i) for i in range(4)]
-    mesh = bpy.data.meshes.new(f'ravager_blade_{side}')
-    mesh.from_pydata([tuple(q) for q in points], [], faces)
-    mesh.materials.append(growth.DEEP.get(crystal.name, crystal))
-    mesh.materials.append(crystal)
-    mesh.polygons.foreach_set('material_index', [1 if i in (0, 3) else 0 for _ in range(len(stations) - 1) for i in range(4)])
-    mesh.update()
-    # the shards it throws, growing along its back edge
-    ammunition = [growth.shard(f'ravager_ammo_{side}_{k}', start + way * BLADE['length'] * s - edge * BLADE['width'] * 0.4,
-                               -edge + way * 0.5 + flat * 0.3, 0.07, 0.016, k, crystal)
-                  for k, s in enumerate((0.15, 0.35, 0.55, 0.72))]
-    return [growth.linked(mesh.name, mesh), *ammunition]
+    made = growth.blade(f'ravager_blade_{side}', start, way, edge, flat,
+                        (BLADE['length'], BLADE['width'], BLADE['thick']),
+                        [(0.0, 0.5), (0.33, 1.0), (0.8, 0.6), (1.0, 0.0)], crystal)
+    ammunition = [growth.shard(f'ravager_ammo_{side}_{k}', start + way * BLADE['length'] * share
+                               - edge * BLADE['width'] * 0.4, -edge + way * 0.5 + flat * 0.3, 0.07, 0.016, k, crystal)
+                  for k, share in enumerate((0.15, 0.35, 0.55, 0.72))]
+    return [made], ammunition
 
 
 def parts(fighter):
     crystal = growth.crystal_material('red')
-    eye = materials.plain('lattice.ravager_eye', EYES, rough=0.1)
-    shader = eye.node_tree.nodes['Principled BSDF']
-    shader.inputs['Emission Color'].default_value = (*EYES, 1)
-    shader.inputs['Emission Strength'].default_value = 4.0
-    shroud = hood(fighter, crystal, eye)
-    for ob in shroud:
-        hang(fighter.parts, ob, 'head')
-    cloak = mantle(crystal)
-    for ob in cloak:
-        hang(fighter.parts, ob, 'chest')
-    blades = []
+    eye = growth.glowing('lattice.ravager_eye', tuple(c * 0.25 for c in EYES), 1.6, EYES, rough=0.1)
+    cowl, hooded = hood(fighter, crystal, eye)
+    shroud = growth.hung(fighter, 'head', hooded)
+    cloak = growth.hung(fighter, 'chest', mantle(crystal))
+    blades, ammunition = [], []
     for side in ('L', 'R'):
-        for ob in blade(side, crystal):
-            hang(fighter.parts, ob, f'hand_{side}')
-            blades.append(ob)
-    return {'shroud': shroud + cloak, 'blades': blades}
+        edge, shards = blade(side, crystal)
+        blades += growth.hung(fighter, f'hand_{side}', edge)
+        ammunition += growth.hung(fighter, f'hand_{side}', shards)
+    return {'shroud': [cowl, *shroud, *cloak], 'blades': blades, 'ammunition': ammunition}

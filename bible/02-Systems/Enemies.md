@@ -38,6 +38,8 @@ how much it takes, how it defends and which telegraphed blows it throws. The own
 throws more often than an Elite, a Boss's called foes fall with it and a garrison leashes to its posts
 ([[Foes Leash to Their Posts and Fall With Their Boss]]); the roster and the numbers are Claude's
 ([[The Enemies as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
+The Lattice, the next faction, is drawn and not yet built ([[The Lattice Are the Ruined Ports' People, Overtaken]],
+[[Lattice]]).
 
 ## Factions
 

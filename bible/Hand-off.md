@@ -178,7 +178,23 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
+- The world's lore and its first crystal faction, on #77, not yet merged. The owner's decisions: Raum's lore adapted
+  into one mystery ([[Raum's Lore Is Adapted Into One Mystery]]), shown and hardly told
+  ([[The Game Shows the Mystery and Explains Almost None of It]]); an ageless world with quiet nods to DFO and
+  Daggerfall; three ports left, the rest ruined; the Grey Tithe's tenth, which Overlook does not pay; and the Lattice,
+  the ruined ports' people overtaken by the crystal ([[The Lattice Are the Ruined Ports' People, Overtaken]]). The
+  six Lattice foes are drawn by the [[Sprite Forge]] through `tools/lattice/` ([[Lattice]]), each with its look and
+  moves, after a detailed pass and a full audit of every frame, its code and these notes
+  ([[The Lattice Is Drawn Whole Before It Comes Into the Game]], [[The Lattice as Claude Shapes It]]). Tested
+  offline: every move posed numerically (feet on the ground, blades, maul and anchor clear of the ground and the
+  body) and rendered.
+
 ## Waiting on the owner
+
+- #77's merge, the owner's yes. Then the Lattice's way into the game, the owner's to choose ([[Open Questions]], "The
+  Lattice in the game"): whether it shows in the [[Test Ground]] only at first; its skin colour; its pictures snapped
+  to the palette and published to R2; the faction in the enemy system. What the pictures leave for the game to draw
+  is in [[Lattice]], "Limits".
 
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over

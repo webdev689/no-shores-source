@@ -5,15 +5,23 @@ type: index
 
 Decisions waiting on the owner. None is in force until the owner decides it and it moves to [[Decisions]].
 
-- **Enemy factions.** Whether presence shifts over time, and what sets one faction apart
+- **Enemy factions.** Whether presence shifts over time, what sets one faction apart, and where each is present
   ([[Enemy Factions Start With the Grey Tithe]]).
 - **Hulls.** Which hulls the ranks of ships sail, and whether Claude builds them in Blender or the owner models them
   ([[Hulls]]).
 - **The Grey Tithe.** Its roster, its boss on land and where its garrisons stand are built as Claude chose them, to
   rename or change ([[The Enemies as Claude Builds Them]]). How deep the Covenant under them goes, and when the
-  player learns it ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]).
-- **The Lattice.** Whether it comes to sea ([[The Lattice Are the Ruined Ports' People, Overtaken]]).
+  player learns it. Whether its sails are unmarked, as the lore has them, or fly its colours and flag, as its ships at
+  sea do ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]).
+- **The Lattice in the game.** Whether it comes to sea; where it stands beside the Grey Tithe's garrisons; its
+  emblem; its foes' numbers on their roles, without the parries and guards the roles give, and with their own blows;
+  the Heart's fight, its phases and the Husks it tears out; the skin each foe is coloured. Its looks and moves are
+  Claude's to change ([[The Lattice Are the Ruined Ports' People, Overtaken]], [[The Lattice as Claude Shapes It]]).
 - **The one mystery.** What the Cube is called, how long it stays unseen, and what calls in the deep
   ([[Raum's Lore Is Adapted Into One Mystery]]).
-- **Discoveries.** [[The World Map]] has them fading when nobody is near; the owner has since said islands do not
-  come and go, the smaller ones planned and not yet added. Whether discoveries still fade.
+- **The islands.** The owner's "Islands dont come and go" beside the discoveries that fade when nobody is near
+  ([[The World Map]]) and the small islands of the sea that appear and fade in the owner's loop decisions, on their
+  own branch.
+- **The opening.** The prologue's first attackers are pirates, its own call; the lore has the opening's ships the Grey
+  Tithe's, unknown under grey sails. The chart that disagrees with the coast is not in it yet
+  ([[The Game Shows the Mystery and Explains Almost None of It]]).

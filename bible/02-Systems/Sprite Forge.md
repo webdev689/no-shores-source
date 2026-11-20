@@ -51,6 +51,8 @@ holds the depth of each pixel in red and green, and the part of the body (torso,
 horse, hair) in blue. The forge's index (`forgeLooks.json`) gives each move's cell and the root, where the feet stand.
 It also holds each layer's moves, and the order, cover and under values that decide which layer shows where two meet.
 
+The Lattice's foes are drawn by it, with their own looks and moves, from beside it: [[Lattice]].
+
 ## Where it lives
 
 `tools/forge/` holds the forge as DFO laid it out, so its paths work unchanged: the code in `tools/sprite-forge/`, the

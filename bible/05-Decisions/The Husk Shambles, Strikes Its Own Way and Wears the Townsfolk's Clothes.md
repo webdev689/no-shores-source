@@ -20,8 +20,8 @@ status: in force
 ## What it settles
 
 - **The Husk's look** is the prototype's: the forge's own body, red crystal broken out of the skull, the right eye,
-  both shoulders, the spine and the left forearm ([[The Lattice Are the Ruined Ports' People, Overtaken]]).
-- **More gore**: torn flesh round every wound, and blood run down the skin from each wound and from the mouth.
+  both shoulders and the spine ([[The Lattice Are the Ruined Ports' People, Overtaken]]).
+- **More gore.**
 - **Its walk is its own**, more like the walking dead's than a person's.
 - **Its blows**: an attack of its own, and the lunge.
 - **It wears the townsfolk's clothes**, torn: the clothes of the ports' people it was.

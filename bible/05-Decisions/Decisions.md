@@ -122,10 +122,12 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The World Is Ageless, With Quiet Nods to DFO and Daggerfall]]
 - [[Raum's Lore Is Adapted Into One Mystery]]
 - [[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]
-- [[The Mystery Shows in Its Effects, Never Its Cause]]
+- [[The Game Shows the Mystery and Explains Almost None of It]]
 - [[The Lattice Are the Ruined Ports' People, Overtaken]]
 - [[The Husk Shambles, Strikes Its Own Way and Wears the Townsfolk's Clothes]]
 - [[The Lattice as Claude Shapes It]]
+- [[The Heart Is the Port's People Fused Into One Giant]]
+- [[The Lattice Is Drawn Whole Before It Comes Into the Game]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

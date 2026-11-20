@@ -24,4 +24,3 @@ status: in force
 - The first callback is the Warp in the West's idea: a world where more than one history came true and the map was
   redrawn. Overlook's islands being rewritten and its history garbled are that idea
   ([[Raum's Lore Is Adapted Into One Mystery]]).
-- Saltmere's climate already starts from the Iliac Bay's profile ([[The Continents' Biomes]]).
