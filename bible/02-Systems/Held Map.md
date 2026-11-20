@@ -67,10 +67,10 @@ war, and a click on it sets the ship's destination.
   holders' swatches and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". It stands in a
   corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name, no mark
   and no hand: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper
-  left, upper right. With every corner taken it is laid in one row in the middle of the parchment's margin under the
-  map, where the row fits; where it does not, it takes the first corner clear of land, the hands, the marks and the
-  ports' names, and the other names under it are dropped. So it moves only when it must, and never back and forth while
-  the map stands still (`keyPlace`).
+  left, upper right. With none clear it takes the first corner clear of land, the hands, the marks and the ports' and
+  the chosen place's names, else the first clear of all but land, and the other names under it are dropped. So it
+  moves only when it must, and never back and forth while the map stands still (`keyPlace`). It is never laid on the
+  parchment's margin, where the page's hints stand under the map.
 - **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
   a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
   is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
@@ -141,5 +141,5 @@ The player starts with the island they arrive on, its port, the place they arriv
 - The waters' wash is laid when the map is raised, as the charted sea's is. A water's label point is a 4.8 km cell's
   middle, so its words may stand over a small isle.
 - A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.
-- The key is left off where no corner is clear of land, the hands, the marks and the ports' names and the margin has
-  no room for its row: on a phone's screen with much land in view, often.
+- With every corner taken by marks, ports' names or the hands the key is left off; on a screen as narrow as a phone's
+  with the whole world in view, it may cover a corner's coast.

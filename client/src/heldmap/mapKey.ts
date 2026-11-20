@@ -1,6 +1,6 @@
 // The held map's key: one framed panel naming the waters' holders by their colours, and under them the difficulty
-// ramp, each group under its title. It stands in a corner of the map that covers no land, no word and no mark, or,
-// with every corner taken, in one row on the parchment's margin under the map.
+// ramp, each group under its title. It stands in a corner of the map that covers no land, no word, no mark and no
+// hand (mapLayout.ts says what it yields to when no corner is clear).
 import { type CoastField, NO_ISLAND } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
 import { HOLDER_COLOURS, HOLDER_WORDS, levelColour } from './watersWash.ts';
@@ -18,10 +18,9 @@ const TITLES = { holders: 'Held by', levels: 'Levels' } as const;
 const RAMP = { from: '1', to: '30', steps: 9, step: 6 } as const;
 const RAMP_LEVELS = Array.from({ length: RAMP.steps }, (unused, step) => 1 + (step * 29) / (RAMP.steps - 1));
 
-/** Where the key stands: in a corner of the map, or in one row on the parchment's margin under it; its box in ink
- *  pixels. */
+/** Where the key stands: the corner of the map, and its box in ink pixels. */
 export type Corner = 'lower-left' | 'lower-right' | 'upper-left' | 'upper-right';
-export type KeyPlace = { readonly corner: Corner | 'margin'; readonly box: Rect };
+export type KeyPlace = { readonly corner: Corner; readonly box: Rect };
 const CORNERS: readonly Corner[] = ['lower-left', 'lower-right', 'upper-left', 'upper-right'];
 
 type Measure = { measureText(text: string): { width: number }; font: string };
@@ -32,8 +31,8 @@ const overlaps = (one: Rect, other: Rect) =>
   one.y < other.y + other.height &&
   other.y < one.y + one.height;
 
-/** The key's panel's width and height, and its width laid in one row, units, as `painter` measures its words. */
-export function keySize(painter: Measure): { width: number; height: number; row: number } {
+/** The key's panel's width and height, units, as `painter` measures its words. */
+export function keySize(painter: Measure): { width: number; height: number } {
   painter.font = KEY_FONT;
   const width = (text: string) => painter.measureText(text).width;
   const item = (words: string) => KEY.swatch[0] + KEY.gap + width(words);
@@ -43,15 +42,9 @@ export function keySize(painter: Measure): { width: number; height: number; row:
   const ramp =
     width(TITLES.levels) + KEY.gap * 2 + width(RAMP.from) + KEY.gap * 2 + RAMP.steps * RAMP.step + width(RAMP.to);
   const holders = (columns[0] ?? 0) + KEY.columnGap + (columns[1] ?? 0);
-  const row =
-    width(TITLES.holders) +
-    HOLDER_WORDS.reduce((sum, [, words]) => sum + KEY.columnGap + item(words), 0) +
-    KEY.columnGap * 2 +
-    ramp;
   return {
     width: KEY.padding * 2 + Math.max(width(TITLES.holders), holders, ramp),
     height: KEY.padding * 2 + 4 * KEY.line + 3 * KEY.rowGap,
-    row: row + KEY.padding * 2,
   };
 }
 
@@ -93,29 +86,23 @@ function cornerBox(
   return { x: left, y: top, width: size.width, height: size.height };
 }
 
-/** Where the key goes on a map `ink` wide and high, its panel `size` and its `row` in ink pixels: the corner it stands
- *  in while that stays clear of land (`land`) and of every word's, mark's and hand's box (`taken`), else the first
- *  clear corner, lower left first; with none clear, one row in the middle of the parchment's margin under the map,
- *  `ink.margin` high, where the row fits it; else null. So it moves only when it must, and never back and forth while
- *  the map stands still. */
+/** Where the key goes on a map `ink` wide and high, its panel `size` in ink pixels: the corner it stands in while
+ *  that stays clear of land (`land`) and of every box `taken`, else the first clear corner, lower left first; null
+ *  with none clear. So it moves only when it must, and never back and forth while the map stands still. */
 export function keyPlace(
-  ink: { readonly width: number; readonly height: number; readonly margin: number },
+  ink: { readonly width: number; readonly height: number },
   size: { readonly width: number; readonly height: number },
-  row: { readonly width: number; readonly height: number },
   scale: number,
   taken: readonly Rect[],
   land: (box: Rect) => boolean,
   current: KeyPlace | null,
 ): KeyPlace | null {
   const clear = (box: Rect) => !taken.some((each) => overlaps(each, box)) && !land(box);
-  const order = current && current.corner !== 'margin' ? [current.corner, ...CORNERS] : CORNERS;
-  for (const corner of order) {
+  for (const corner of current ? [current.corner, ...CORNERS] : CORNERS) {
     const box = cornerBox(corner, ink, size, KEY.inset * scale);
     if (clear(box)) return { corner, box };
   }
-  if (row.width > ink.width || row.height > ink.margin) return null;
-  const y = ink.height + (ink.margin - row.height) / 2;
-  return { corner: 'margin', box: { x: (ink.width - row.width) / 2, y, width: row.width, height: row.height } };
+  return null;
 }
 
 type KeyPainter = Measure & {
@@ -133,8 +120,7 @@ type KeyPainter = Measure & {
 };
 
 /** The key's panel at `place`, `scale` times its units: framed by a double rule, the holders' title over their
- *  swatches and words in two columns, then the levels' title and the ramp, "1" to "30"; laid in one row on the
- *  margin. */
+ *  swatches and words in two columns, then the levels' title and the ramp, "1" to "30". */
 export function paintKey(painter: KeyPainter, place: KeyPlace, scale: number): void {
   const { box } = place;
   painter.save();
@@ -147,7 +133,7 @@ export function paintKey(painter: KeyPainter, place: KeyPlace, scale: number): v
   painter.strokeStyle = INK;
   painter.lineWidth = 1;
   painter.strokeRect(0.5, 0.5, width - 1, height - 1);
-  if (place.corner !== 'margin') painter.strokeRect(2.5, 2.5, width - 5, height - 5);
+  painter.strokeRect(2.5, 2.5, width - 5, height - 5);
   painter.textAlign = 'left';
   const measure = (text: string) => painter.measureText(text).width;
   const item = (words: string, holder: keyof typeof HOLDER_COLOURS, x: number, y: number) => {
@@ -155,30 +141,20 @@ export function paintKey(painter: KeyPainter, place: KeyPlace, scale: number): v
     painter.fillRect(x, y - KEY.swatch[1] / 2, KEY.swatch[0], KEY.swatch[1]);
     painter.fillStyle = INK;
     painter.fillText(words, x + KEY.swatch[0] + KEY.gap, y);
-    return x + KEY.swatch[0] + KEY.gap + measure(words);
   };
-  if (place.corner === 'margin') {
-    const y = height / 2;
-    painter.fillStyle = INK;
-    painter.fillText(TITLES.holders, KEY.padding, y);
-    let x = KEY.padding + measure(TITLES.holders);
-    for (const [holder, words] of HOLDER_WORDS) x = item(words, holder, x + KEY.columnGap, y);
-    paintRamp(painter, x + KEY.columnGap * 2, y);
-  } else {
-    const line = (index: number) => KEY.padding + KEY.line * (index + 0.5) + KEY.rowGap * index;
-    painter.fillStyle = INK;
-    painter.fillText(TITLES.holders, KEY.padding, line(0));
-    const first = Math.max(
-      ...HOLDER_WORDS.filter((unused, index) => index % 2 === 0).map(
-        ([, words]) => KEY.swatch[0] + KEY.gap + measure(words),
-      ),
-    );
-    HOLDER_WORDS.forEach(([holder, words], index) => {
-      const x = KEY.padding + (index % 2 === 0 ? 0 : first + KEY.columnGap);
-      item(words, holder, x, line(1 + Math.floor(index / 2)));
-    });
-    paintRamp(painter, KEY.padding, line(3));
-  }
+  const line = (index: number) => KEY.padding + KEY.line * (index + 0.5) + KEY.rowGap * index;
+  painter.fillStyle = INK;
+  painter.fillText(TITLES.holders, KEY.padding, line(0));
+  const first = Math.max(
+    ...HOLDER_WORDS.filter((unused, index) => index % 2 === 0).map(
+      ([, words]) => KEY.swatch[0] + KEY.gap + measure(words),
+    ),
+  );
+  HOLDER_WORDS.forEach(([holder, words], index) => {
+    const x = KEY.padding + (index % 2 === 0 ? 0 : first + KEY.columnGap);
+    item(words, holder, x, line(1 + Math.floor(index / 2)));
+  });
+  paintRamp(painter, KEY.padding, line(3));
   painter.restore();
 }
 

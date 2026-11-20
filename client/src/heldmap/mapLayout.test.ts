@@ -23,7 +23,7 @@ test('every word at a 1280 x 720 screen is at least 13 px tall, and grows with t
 });
 
 const ASK: LayoutAsk = {
-  ink: { width: 600, height: 400, margin: 18 },
+  ink: { width: 600, height: 400 },
   scale: 1,
   covers: [],
   places: [],
@@ -75,8 +75,8 @@ test('a water’s name under a hand moves inward clear of it rather than vanishi
 test('the key yields to nothing but land, marks, hands and ports’ names: with no corner clear it drops the lesser names under it', () => {
   const crowded = layOut({
     ...ASK,
-    ink: { width: 300, height: 200, margin: 4 },
-    key: { width: 120, height: 80, row: 500 },
+    ink: { width: 300, height: 200 },
+    key: { width: 120, height: 80 },
     waters: [
       { text: 'Fen', x: 60, y: 160, colour: '#256327' },
       { text: 'Rime', x: 240, y: 160, colour: '#256327' },
@@ -104,4 +104,9 @@ test('a port the ship lies at keeps its name, beside the ship’s arrow where a 
   assert.equal(port?.side, 'right');
   const box = nameBox(port!, 'right', widthOf('Overlook', 'port'), 1);
   assert.ok(box.x >= 303 + 10, 'clear of the arrow');
+});
+
+test('with every corner over land the key still takes one clear of marks, hands and names, rather than vanishing', () => {
+  const lettering = layOut({ ...ASK, key: { width: 120, height: 80 }, land: () => true });
+  assert.equal(lettering.key?.corner, 'lower-left');
 });

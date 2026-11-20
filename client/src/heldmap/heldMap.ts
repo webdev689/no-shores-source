@@ -95,7 +95,7 @@ export class HeldMap {
   private key: KeyPlace | null = null;
   /** The words' widths and the key's size as last measured, and the face's loading they were measured in. */
   private readonly widths = new Map<string, number>();
-  private keySize: { width: number; height: number; row: number } | null = null;
+  private keySize: { width: number; height: number } | null = null;
   private measuredFonts = '';
   private letteredShape = '';
   private phase: Phase = { kind: 'closed' };
@@ -291,7 +291,6 @@ export class HeldMap {
     if (this.lettering.width !== width || this.lettering.height !== height)
       [this.lettering.width, this.lettering.height] = [width, height];
     const inkAt = { x: stage.ink.x - parchment.x, y: stage.ink.y - parchment.y };
-    const margin = parchment.y + parchment.height - (stage.ink.y + stage.ink.height);
     this.layer.style.opacity = String(lift);
     // Words are measured again once the face has loaded.
     const fonts = this.lettering.ownerDocument.fonts.status;
@@ -299,7 +298,7 @@ export class HeldMap {
       [this.measuredFonts, this.keySize] = [fonts, null];
       this.widths.clear();
     }
-    const lettering = this.layout(scene, stage.sprite, drop, margin);
+    const lettering = this.layout(scene, stage.sprite, drop);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const shape = JSON.stringify([width, height, inkAt, dpr, fonts, lettering]);
     const letteringChanged = shape !== this.letteredShape;
@@ -354,7 +353,7 @@ export class HeldMap {
   /** What is lettered on the map this frame (`layOut`): each place on it and each charted water named, the ship's
    *  arrow and the key, all clear of the gauntlets on the painting at `sprite`; and the card over the parchment,
    *  `drop` pixels down its lowering. */
-  private layout(scene: HeldMapScene, sprite: Rect, drop: number, margin: number): Lettering {
+  private layout(scene: HeldMapScene, sprite: Rect, drop: number): Lettering {
     const onSheet = (x: number, y: number) => x >= 0 && y >= 0 && x <= this.ink.width && y <= this.ink.height;
     this.placed = [];
     const places = [];
@@ -366,7 +365,7 @@ export class HeldMap {
     }
     const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
     const lettering = layOut({
-      ink: { width: this.ink.width, height: this.ink.height, margin },
+      ink: { width: this.ink.width, height: this.ink.height },
       scale: letterScale(this.ink),
       covers: handsCover(sprite, this.ink),
       places,

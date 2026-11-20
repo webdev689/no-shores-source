@@ -79,7 +79,7 @@ export interface Lettering {
 /** What the map asks to letter: places and waters at their points, ink pixels, and the key's size, in the words'
  *  units (pixels at a scale of 1). */
 export interface LayoutAsk {
-  readonly ink: { readonly width: number; readonly height: number; readonly margin: number };
+  readonly ink: { readonly width: number; readonly height: number };
   readonly scale: number;
   /** What the hands cover, ink pixels (`handsCover`). */
   readonly covers: readonly Rect[];
@@ -90,8 +90,8 @@ export interface LayoutAsk {
   readonly widthOf: (text: string, kind: string) => number;
   /** Whether discovered land lies under a box, ink pixels. */
   readonly land: (box: Rect) => boolean;
-  /** The key's size in a corner and laid in one row, units; null while the waters are not open. */
-  readonly key: { readonly width: number; readonly height: number; readonly row: number } | null;
+  /** The key's panel's size, units; null while the waters are not open. */
+  readonly key: { readonly width: number; readonly height: number } | null;
   readonly current: KeyPlace | null;
 }
 
@@ -216,13 +216,16 @@ export function layOut(ask: LayoutAsk): Lettering {
   }
   if (!ask.key) return { letters: laid.filter((letter) => letter !== null), ship: ask.ship, key: null, scale };
   const size = { width: ask.key.width * scale, height: ask.key.height * scale };
-  const row = { width: ask.key.row * scale, height: LINE * scale };
-  let key = keyPlace(ink, size, row, scale, taken, ask.land, ask.current);
+  let key = keyPlace(ink, size, scale, taken, ask.land, ask.current);
   if (!key) {
-    // No corner clear and no room on the margin: the key takes the first corner clear of land, the hands, the marks
-    // and the chosen place's and ports' names, and the waters', ruins' and nodes' names under it are dropped.
+    // No corner clear: the key takes the first corner clear of land, the hands, the marks and the chosen place's and
+    // ports' names, else the first clear of all but land, and the waters', ruins' and nodes' names under it are
+    // dropped.
     const kept = boxes.filter((box, index) => box && (asked[index]?.chosen || rankOf(asked[index]?.kind ?? '') === 0));
-    key = keyPlace(ink, size, row, scale, [...ask.covers, ...marks, ...(kept as Rect[])], ask.land, ask.current);
+    const yielding = [...ask.covers, ...marks, ...(kept as Rect[])];
+    key =
+      keyPlace(ink, size, scale, yielding, ask.land, ask.current) ??
+      keyPlace(ink, size, scale, yielding, () => false, ask.current);
     if (key) {
       const under = key.box;
       boxes.forEach((box, index) => {
