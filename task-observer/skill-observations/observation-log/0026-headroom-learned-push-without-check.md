@@ -23,3 +23,9 @@ CLAUDE.md requires. A later learn run may write it back over the hand edit.
 
 **Suggested improvement:** the session's end step reviews headroom learn's diff before applying (run without --apply,
 then apply only lines that agree with CLAUDE.md); or the stop hook stays quiet while a full check is running.
+
+**Seen again, 2026-11-20 (ship-power pick-up session):** `headroom learn --project . --apply` wrote "A Stop hook blocks
+the session from ending while commits are unpushed. Push right after committing, before writing the final report."
+into MEMORY.md, again against the check before every push. Reworded by hand to push once `cargo xtask check` passes.
+The same session nearly pushed past a failed check by piping `cargo xtask check | tail` without `pipefail`; a check
+wrapped in a pipe needs `set -o pipefail` before its `&&`.
