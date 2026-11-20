@@ -120,12 +120,12 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
         let fight = fleet.fight();
         let ships = fight.sighted();
         let own = ships.iter().find(|ship| ship.id == player).copied().unwrap();
-        let her = ships.iter().find(|ship| ship.id != player).copied().unwrap();
-        let (east, south) = (her.ship.x - own.ship.x, her.ship.y - own.ship.y);
+        let other = ships.iter().find(|ship| ship.id != player).copied().unwrap();
+        let (east, south) = (other.ship.x - own.ship.x, other.ship.y - own.ship.y);
         let bearing = (naval::captain::course::heading_to([0.0, 0.0], [east, south]) - own.ship.heading).to_degrees();
         let bearing = (bearing + 180.0).rem_euclid(360.0) - 180.0;
         let eye = [own.ship.x, own.ship.y, 2.0];
-        let ray = [[eye[0], eye[1], eye[2]], [east, south, her.pose.heave + 0.6 - 2.0]];
+        let ray = [[eye[0], eye[1], eye[2]], [east, south, other.pose.heave + 0.6 - 2.0]];
         let aim = Aim { bearing_deg: bearing, range_m: (east * east + south * south).sqrt(), ray: Some(ray) };
         let time = fleet.time();
         let waters = sailing::waters::OpenSea { swell: fleet.weather().0 };
@@ -142,7 +142,7 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
         request.extend([1.0, aim.bearing_deg, aim.range_m, 1.0]);
         request.extend(ray.iter().flatten());
         request.push(time);
-        request.extend(sighted(&her));
+        request.extend(sighted(&other));
         (shown, request)
     })
     .unwrap();

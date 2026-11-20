@@ -182,16 +182,16 @@ fn stop_numbers(stop: Option<&Stop>) -> [f64; STOP_NUMBERS] {
 
 /// A captain's mind as the browser of the player sailing `me` shows it: her mode, whether she is hostile to them, and
 /// her sides run out.
-fn captain_numbers(her: &Captain, me: ShipId) -> [f64; 4] {
-    let mode = match her.mode {
+fn captain_numbers(mind: &Captain, me: ShipId) -> [f64; 4] {
+    let mode = match mind.mode {
         Mode::Cruise => 0.0,
         Mode::Engage => 1.0,
         Mode::Flee => 2.0,
         Mode::Struck => 3.0,
         Mode::Sinking => 4.0,
     };
-    let run_out = |side: Side| f64::from(u8::from(her.run.out(side).is_some()));
-    [mode, f64::from(u8::from(her.hostile_to(me))), run_out(Side::Port), run_out(Side::Starboard)]
+    let run_out = |side: Side| f64::from(u8::from(mind.run.out(side).is_some()));
+    [mode, f64::from(u8::from(mind.hostile_to(me))), run_out(Side::Port), run_out(Side::Starboard)]
 }
 
 /// The fight as the browser of the player sailing `me` shows it, after a tick whose events are `events`, its lay the
@@ -231,19 +231,19 @@ pub fn view_numbers(
     let mut numbers = vec![fight.clock, over];
     numbers.extend(vessel_numbers(player));
     numbers.extend(vessel_numbers(captain));
-    numbers.extend(captain_numbers(&command.her, me));
+    numbers.extend(captain_numbers(&command.mind, me));
     let others: Vec<(ShipId, &Vessel, &Captain)> = fight
         .ships
         .iter()
         .filter(|(id, vessel)| **id != first && vessel.in_fight())
-        .filter_map(|(id, vessel)| vessel.command().map(|command| (*id, vessel, &command.her)))
+        .filter_map(|(id, vessel)| vessel.command().map(|command| (*id, vessel, &command.mind)))
         .collect();
     numbers.push(others.len() as f64);
     // Each with the number her events name her by, as one may leave the fight and the rest move up the list.
-    for (id, vessel, her) in others {
-        numbers.extend([seen(id), f64::from(her.commission.faction), f64::from(her.commission.rank.number())]);
+    for (id, vessel, mind) in others {
+        numbers.extend([seen(id), f64::from(mind.commission.faction), f64::from(mind.commission.rank.number())]);
         numbers.extend(vessel_numbers(vessel));
-        numbers.extend(captain_numbers(her, me));
+        numbers.extend(captain_numbers(mind, me));
     }
     let balls: Vec<&_> = fight.balls.iter().filter(|ball| ball.fired).collect();
     numbers.push(balls.len() as f64);

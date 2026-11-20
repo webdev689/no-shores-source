@@ -222,9 +222,9 @@ fn a_broadside_takes_as_much_hull_canvas_men_and_fire_from_her_whatever_hull_fir
         let sloop = broadsides(3, rank, shot, zone);
         for guns in [5, 7, 10] {
             let other = broadsides(guns, rank, shot, zone);
-            for (part, (mine, hers)) in ["hull", "canvas", "men", "fires"].iter().zip(other.iter().zip(sloop)) {
-                let near = (mine - hers).abs() <= 0.02 * hers.max(0.05);
-                assert!(near, "{guns} guns, {rank:?} {shot:?} {zone:?}: {part} {mine} against the Sloop's {hers}");
+            for (part, (mine, theirs)) in ["hull", "canvas", "men", "fires"].iter().zip(other.iter().zip(sloop)) {
+                let near = (mine - theirs).abs() <= 0.02 * theirs.max(0.05);
+                assert!(near, "{guns} guns, {rank:?} {shot:?} {zone:?}: {part} {mine} against the Sloop's {theirs}");
             }
         }
     }

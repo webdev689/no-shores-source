@@ -240,7 +240,7 @@ pub fn fleet_snapshot_bytes(
             let run_out = command.map_or(0, |command| {
                 Side::BOTH
                     .iter()
-                    .filter(|side| command.her.run.out(**side).is_some())
+                    .filter(|side| command.mind.run.out(**side).is_some())
                     .fold(0, |sides, side| sides | (1 << side.index()))
             });
             let args = messages::VesselArgs {
@@ -254,12 +254,12 @@ pub fn fleet_snapshot_bytes(
                 guns: guns_numbers,
                 load: load_code(Some(guns.load)),
                 braced: guns.braced,
-                mode: command.map_or(0, |command| mode_code(command.her.mode)),
-                target: command.and_then(|command| command.her.target()).unwrap_or(0),
+                mode: command.map_or(0, |command| mode_code(command.mind.mode)),
+                target: command.and_then(|command| command.mind.target()).unwrap_or(0),
                 run_out,
                 acknowledged: acknowledged(id).unwrap_or(0),
                 faction: vessel.flag().number(),
-                rank: command.map_or(0, |command| command.her.commission.rank.number()),
+                rank: command.map_or(0, |command| command.mind.commission.rank.number()),
                 hull: vessel.hull.number(),
             };
             messages::Vessel::create(&mut builder, &args)

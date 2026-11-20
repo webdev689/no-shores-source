@@ -33,7 +33,7 @@ fn two_captains(first: Commission, second: Commission) -> Fight {
     fight.enlist(SECOND, sloop_at(400.0, 0.0), second, 12, &Open, 0.0);
     for vessel in fight.ships.values_mut() {
         if let Sailor::Captain(command) = &mut vessel.sailor {
-            command.her.temper = Temper::Bold;
+            command.mind.temper = Temper::Bold;
         }
     }
     fight
@@ -57,8 +57,8 @@ fn a_tithe_captain_and_a_pirate_take_each_other_on_and_trade_broadsides_with_no_
     let mut fight = two_captains(elite(GREY_TITHE), elite(PIRATES));
     tick(&mut fight);
     for (id, other) in [(FIRST, SECOND), (SECOND, FIRST)] {
-        let her = &command(&fight, id).her;
-        assert_eq!((her.target(), her.mode), (Some(other), Mode::Engage), "ship {id} marks the other faction's");
+        let mind = &command(&fight, id).mind;
+        assert_eq!((mind.target(), mind.mode), (Some(other), Mode::Engage), "ship {id} marks the other faction's");
     }
     let mut struck = [false; 2];
     for _ in 0..180 * 60 {
@@ -84,8 +84,8 @@ fn two_captains_of_one_faction_never_take_each_other_on() {
             let events = tick(&mut fight);
             assert!(!events.iter().any(|event| matches!(event, Event::Shot(ShotEvent::Hit { .. }))));
             for id in [FIRST, SECOND] {
-                let her = &command(&fight, id).her;
-                assert_eq!((her.target(), her.mode), (None, Mode::Cruise), "faction {faction}, ship {id}");
+                let mind = &command(&fight, id).mind;
+                assert_eq!((mind.target(), mind.mode), (None, Mode::Cruise), "faction {faction}, ship {id}");
             }
         }
     }
@@ -123,13 +123,13 @@ fn hulled(rank: Rank, share: f64) -> (State, Mode) {
     fight.enlist(FIRST, sloop_at(0.0, 0.0), Commission { faction: PIRATES, rank }, 11, &Open, 0.0);
     let Some(vessel) = fight.ships.get_mut(&FIRST) else { panic!("her ship") };
     if let Sailor::Captain(command) = &mut vessel.sailor {
-        command.her.temper = Temper::Bold;
+        command.mind.temper = Temper::Bold;
     }
     let hull = vessel.damage.max_hull - (vessel.damage.max_hull * share).floor();
     vessel.damage.apply(Hurt { hull, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     tick(&mut fight);
     let Some(vessel) = fight.vessel(FIRST) else { panic!("her ship") };
-    (vessel.damage.state, command(&fight, FIRST).her.mode)
+    (vessel.damage.state, command(&fight, FIRST).mind.mode)
 }
 
 #[test]
@@ -155,7 +155,7 @@ fn each_rank_runs_and_strikes_at_its_own_share_of_her_hull() {
 fn recommissioned(fight: &Fight, commission: Commission) -> Fight {
     let mut changed = fight.clone();
     if let Some(Sailor::Captain(command)) = changed.ships.get_mut(&FIRST).map(|vessel| &mut vessel.sailor) {
-        command.her.commission = commission;
+        command.mind.commission = commission;
     }
     changed
 }
@@ -229,7 +229,7 @@ fn a_captain_of_a_higher_rank_runs_down_a_wary_one_sailing_away_at_the_same_poin
     let away = Ship { heading: 141f64.to_radians(), ..sloop_at(400.0, 0.0) };
     fight.enlist(SECOND, away, Commission { faction: PIRATES, rank: Rank::Minor }, 12, &Open, 0.0);
     if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&SECOND).map(|vessel| &mut vessel.sailor) {
-        command.her.temper = Temper::Wary;
+        command.mind.temper = Temper::Wary;
     }
     for _ in 0..10 * 60 * 60 {
         let hit = tick(&mut fight)

@@ -188,12 +188,12 @@ fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &naval::captain::Captain)
     let player = fight.vessel(PLAYER).ok_or("the fight has no player's ship")?;
     let captain = fight.vessel(CAPTAIN).ok_or("the fight has no captain")?;
     let Sailor::Captain(command) = &captain.sailor else { return Err("a captain sails the captain's ship".into()) };
-    Ok((player, captain, &command.her))
+    Ok((player, captain, &command.mind))
 }
 
 /// The fight as the browser shows it, its lay over `waters` at `time`.
 fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
-    let Ok((player, captain_ship, her)) = the_two(fight) else {
+    let Ok((player, captain_ship, mind)) = the_two(fight) else {
         return json!({ "error": "the fight has lost its ships" });
     };
     let balls: Vec<[f64; 4]> = fight
@@ -206,13 +206,13 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters
         })
         .collect();
     let mut captain = vessel_json(captain_ship);
-    captain["name"] = json!(her.build.name);
-    captain["faction"] = json!(her.commission.faction);
-    captain["rank"] = json!(her.commission.rank.number());
-    captain["mode"] = json!(mode_name(her.mode));
-    captain["hostile"] = json!(her.hostile_to(PLAYER));
+    captain["name"] = json!(mind.build.name);
+    captain["faction"] = json!(mind.commission.faction);
+    captain["rank"] = json!(mind.commission.rank.number());
+    captain["mode"] = json!(mode_name(mind.mode));
+    captain["hostile"] = json!(mind.hostile_to(PLAYER));
     captain["run_out"] = json!(
-        Side::BOTH.iter().filter(|side| her.run.out(**side).is_some()).map(|side| side.name()).collect::<Vec<_>>()
+        Side::BOTH.iter().filter(|side| mind.run.out(**side).is_some()).map(|side| side.name()).collect::<Vec<_>>()
     );
     json!({
         "clock": fight.clock,

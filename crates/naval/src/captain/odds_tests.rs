@@ -15,9 +15,9 @@ fn a_better_gunner_hits_more_often_at_a_duels_range() {
 #[test]
 fn the_odds_either_way_are_each_others_inverse() {
     let player = Power::player(&LARGE_BOAT, 1.0);
-    let her = pirate(1.0, 1.0);
-    let ours = odds(&player, &her, [&SLOOP_ARMS, &SLOOP_ARMS]);
-    assert!((ours * odds(&her, &player, [&SLOOP_ARMS, &SLOOP_ARMS]) - 1.0).abs() < 1e-12);
+    let theirs = pirate(1.0, 1.0);
+    let ours = odds(&player, &theirs, [&SLOOP_ARMS, &SLOOP_ARMS]);
+    assert!((ours * odds(&theirs, &player, [&SLOOP_ARMS, &SLOOP_ARMS]) - 1.0).abs() < 1e-12);
 }
 
 #[test]

@@ -42,7 +42,7 @@ fn hit(target: ShipId, zone: Zone, point: [f64; 3], sail: Option<usize>, harm: f
     ShotEvent::Hit { shooter: PLAYER, target, zone, point, flight: 0.5, gun, shot: Shot::Round, sail }
 }
 
-fn strike_her(fight: &mut Fight) {
+fn strike_it(fight: &mut Fight) {
     let clock = fight.clock;
     let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap().damage;
     damage.apply(Hurt { hull: damage.max_hull * 0.8, sail: 0.0, crew: 0.0, fire: false }, clock, 0.0);
@@ -53,7 +53,7 @@ fn strike_her(fight: &mut Fight) {
 fn a_captain_who_struck_lies_hove_to_ninety_seconds_and_is_then_scuttled() {
     let mut fight = alongside();
     run(&mut fight, 1);
-    strike_her(&mut fight);
+    strike_it(&mut fight);
     if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&CAPTAIN).map(|vessel| &mut vessel.sailor) {
         command.struck_at = Some(fight.clock);
     }
@@ -71,7 +71,7 @@ fn a_captain_who_struck_lies_hove_to_ninety_seconds_and_is_then_scuttled() {
 fn a_captain_boarded_is_not_scuttled_and_her_boarding_is_told_once() {
     let mut fight = alongside();
     assert_eq!(fight.board(CAPTAIN), None, "she has not struck");
-    strike_her(&mut fight);
+    strike_it(&mut fight);
     if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&CAPTAIN).map(|vessel| &mut vessel.sailor) {
         command.struck_at = Some(fight.clock);
     }
@@ -174,10 +174,10 @@ fn a_wary_captain_falls_on_a_sloop_she_outguns_or_one_nearly_gone() {
             "the weaker she finds a Sloop, the likelier she falls on her"
         );
     }
-    let her = crate::captain::Captain::new(elite, 0, 0.0, crate::arms::arms_of(elite.hull()));
+    let mind = crate::captain::Captain::new(elite, 0, 0.0, crate::arms::arms_of(elite.hull()));
     let prize = crate::captain::odds::Power::player(&crate::arms::LARGE_BOAT, 0.6);
     let odds = crate::captain::odds::odds(
-        &her.power(&elite.damage()),
+        &mind.power(&elite.damage()),
         &prize,
         [crate::arms::arms_of(elite.hull()), crate::arms::arms_of(HullKind::Sloop)],
     );

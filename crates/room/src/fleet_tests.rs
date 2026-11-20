@@ -258,7 +258,7 @@ fn a_captain_called_comes_of_the_faction_and_rank_asked_for() {
         .fight()
         .ships
         .values()
-        .filter_map(|vessel| vessel.command().map(|command| (command.her.commission, vessel.damage.max_hull)))
+        .filter_map(|vessel| vessel.command().map(|command| (command.mind.commission, vessel.damage.max_hull)))
         .collect();
     let frigates = (264.0 * 5.0 * naval::ranks::hull_exposure(Rank::Boss.hull())).round();
     assert_eq!(called, [(boss, frigates)], "a Boss of the Grey Tithe, her hull five times a Major's in her Frigate's");

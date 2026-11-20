@@ -35,14 +35,14 @@ fn fleet(first: f64, second: f64, temper: Temper) -> Fight {
     let captain = fight.ships.get_mut(&PIRATE).unwrap_or_else(|| panic!("the captain"));
     captain.ship = sloop_at(0.0, 0.0);
     if let Sailor::Captain(command) = &mut captain.sailor {
-        (command.her.temper, command.her.cruise) = (temper, 0.0);
+        (command.mind.temper, command.mind.cruise) = (temper, 0.0);
     }
     fight
 }
 
-fn her(fight: &Fight) -> &Captain {
+fn mind(fight: &Fight) -> &Captain {
     match fight.vessel(PIRATE).map(|vessel| &vessel.sailor) {
-        Some(Sailor::Captain(command)) => &command.her,
+        Some(Sailor::Captain(command)) => &command.mind,
         _ => panic!("a captain sails her"),
     }
 }
@@ -60,21 +60,21 @@ fn run(fight: &mut Fight, orders: &[(ShipId, Orders)], ticks: u32) -> Vec<Event>
 fn a_bold_captain_takes_on_the_nearer_player() {
     let mut fight = fleet(400.0, -200.0, Temper::Bold);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(SECOND));
+    assert_eq!(mind(&fight).target(), Some(SECOND));
 }
 
 #[test]
 fn she_holds_the_ship_she_fights_against_one_a_little_nearer() {
     let mut fight = fleet(300.0, -330.0, Temper::Bold);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(PLAYER));
+    assert_eq!(mind(&fight).target(), Some(PLAYER));
     // The other comes a little nearer than the one she fights, but not a fifth nearer.
     fight.ships.get_mut(&SECOND).unwrap_or_else(|| panic!("second")).ship = sloop_at(-280.0, 0.0);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(PLAYER), "held");
+    assert_eq!(mind(&fight).target(), Some(PLAYER), "held");
     fight.ships.get_mut(&SECOND).unwrap_or_else(|| panic!("second")).ship = sloop_at(-150.0, 0.0);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(SECOND), "far nearer, she turns on her");
+    assert_eq!(mind(&fight).target(), Some(SECOND), "far nearer, she turns on her");
 }
 
 #[test]
@@ -106,9 +106,9 @@ fn she_is_provoked_by_the_player_who_struck_her_only() {
     let fire = Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 50.0, ray: None }), fire: true, ..IDLE };
     run(&mut fight, &[(PLAYER, fire), (SECOND, IDLE)], 1);
     run(&mut fight, &idle_both(), 120);
-    let her = her(&fight);
-    assert_eq!(her.target(), Some(PLAYER), "the wary captain fights the one who struck her");
-    assert!(!her.hostile_to(SECOND));
+    let mind = mind(&fight);
+    assert_eq!(mind.target(), Some(PLAYER), "the wary captain fights the one who struck her");
+    assert!(!mind.hostile_to(SECOND));
 }
 
 #[test]
@@ -129,11 +129,11 @@ fn a_captain_leaves_only_once_past_every_players_ship() {
 fn a_player_who_leaves_is_forgotten_and_her_rival_fought() {
     let mut fight = fleet(200.0, -400.0, Temper::Bold);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(PLAYER));
+    assert_eq!(mind(&fight).target(), Some(PLAYER));
     fight.leave(PLAYER);
-    assert_eq!(her(&fight).target(), None);
+    assert_eq!(mind(&fight).target(), None);
     run(&mut fight, &[(SECOND, IDLE)], 1);
-    assert_eq!(her(&fight).target(), Some(SECOND));
+    assert_eq!(mind(&fight).target(), Some(SECOND));
 }
 
 #[test]
@@ -172,8 +172,8 @@ fn a_captain_is_called_onto_the_ring_round_the_ship_she_is_called_to() {
     fight
         .call_captain(PIRATE, &sloop_at(5000.0, -300.0), Commission::default(), &Open, 0.0)
         .unwrap_or_else(|error| panic!("{error}"));
-    let her = fight.vessel(PIRATE).map_or([0.0; 2], |vessel| [vessel.ship.x - 5000.0, vessel.ship.y + 300.0]);
-    assert!((SPAWN_RING[0]..=SPAWN_RING[1]).contains(&(her[0] * her[0] + her[1] * her[1]).sqrt()));
+    let off = fight.vessel(PIRATE).map_or([0.0; 2], |vessel| [vessel.ship.x - 5000.0, vessel.ship.y + 300.0]);
+    assert!((SPAWN_RING[0]..=SPAWN_RING[1]).contains(&(off[0] * off[0] + off[1] * off[1]).sqrt()));
     assert_eq!(fight.over(), None, "she is in the fight");
     assert_eq!(Fight::new(9).over(), None, "a fight with no captain has not ended");
 }

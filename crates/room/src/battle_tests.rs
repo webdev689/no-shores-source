@@ -47,7 +47,7 @@ fn a_hostile_ship_within_sight_of_a_fight_joins_it_on_her_own_side() {
     assert!(fights.join_hostile(&tithe, &[], 0.0));
     let fought = &fights.list[0];
     let joined = fought.fight.vessel(CAPTAIN + 1).and_then(Vessel::command).expect("a captain under the next number");
-    assert_eq!(joined.her.commission.faction, GREY_TITHE);
+    assert_eq!(joined.mind.commission.faction, GREY_TITHE);
     assert_eq!(fought.hostiles.get(&(CAPTAIN + 1)).map(|pirate| pirate.id), Some(12));
     let far = Pirate { x: 5_000.0, ..tithe };
     assert!(!fights.join_hostile(&far, &[], 0.0));
@@ -106,7 +106,7 @@ fn a_ships_level_raises_her_hull_men_and_guns_as_a_foes_level_raises_it_on_land_
         let mut fights = Fights::default();
         fights.begin_met((1, sloop(0.0, 0.0), [1.0; 3]), &at_level(level), (still(), &[]), 0.0);
         let captain = fights.list[0].fight.vessel(CAPTAIN).unwrap();
-        let strength = captain.command().unwrap().her.strength;
+        let strength = captain.command().unwrap().mind.strength;
         (captain.damage.max_hull, captain.damage.max_crew, strength)
     };
     let (four, twenty_seven) = (met(4), met(27));

@@ -53,7 +53,7 @@ fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
     let afloat = pose_of(&vessel.ship, vessel.hull.hull(), waters, time);
     vessel.pose = match &vessel.sailor {
         Sailor::Captain(command) => {
-            let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
+            let (drop, pitch, roll) = founder(&vessel.damage, command.mind.seed, command.under);
             Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat }
         }
         Sailor::Player => afloat,
@@ -126,14 +126,14 @@ impl Fight {
         let share = RECOIL_SHARE * if vessel.guns.braced { BRACE_TAKEN } else { 1.0 };
         let ways: Vec<[f64; 2]> = stem.ways.iter().map(|(_, way)| *way).collect();
         let mine = &vessel.damage;
-        let struck = self.ships.iter().find_map(|(target, her)| {
-            let fair = her.flag() != vessel.flag() && her.in_fight() && her.damage.state == State::Afloat;
+        let struck = self.ships.iter().find_map(|(target, other)| {
+            let fair = other.flag() != vessel.flag() && other.in_fight() && other.damage.state == State::Afloat;
             if !fair || stem.rammed.contains_key(target) {
                 return None;
             }
-            let contact = ram_contact(&hull_block(&her.ship, &her.pose, her.arms()), point, RAM_REACH)?;
-            let closing = ram_closing(&ways, velocity_of(&her.ship), contact.normal);
-            let blow = ram_blow(closing, contact.side, mine.max_hull, her.damage.max_hull);
+            let contact = ram_contact(&hull_block(&other.ship, &other.pose, other.arms()), point, RAM_REACH)?;
+            let closing = ram_closing(&ways, velocity_of(&other.ship), contact.normal);
+            let blow = ram_blow(closing, contact.side, mine.max_hull, other.damage.max_hull);
             let blow = self.fitted_ram(id, *target, blow);
             let blow = ram_paid(blow, recoil_room(mine), share);
             (blow >= 1.0).then_some((*target, blow))
@@ -146,16 +146,16 @@ impl Fight {
         }
         let roll = self.draws.draw();
         let clock = self.clock;
-        let Some(her) = self.ships.get_mut(&target) else { return };
-        let dealt = blow.min(ram_room(&her.damage));
+        let Some(other) = self.ships.get_mut(&target) else { return };
+        let dealt = blow.min(ram_room(&other.damage));
         let crew = ram_men(dealt, roll, SHIP_TOUGHNESS);
-        let floor = ram_line(&her.damage);
-        let change = her.damage.apply(Hurt { hull: blow, sail: 0.0, crew, fire: false }, clock, floor);
-        if let Sailor::Captain(command) = &mut her.sailor {
+        let floor = ram_line(&other.damage);
+        let change = other.damage.apply(Hurt { hull: blow, sail: 0.0, crew, fire: false }, clock, floor);
+        if let Sailor::Captain(command) = &mut other.sailor {
             if change == Some(State::Struck) {
                 command.struck_at = Some(clock);
             }
-            command.her.provoke(id);
+            command.mind.provoke(id);
         }
         events.push(Event::Ram { ship: target, by: id, point, dealt });
         if let Some(state) = change {

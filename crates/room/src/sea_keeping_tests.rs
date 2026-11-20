@@ -144,10 +144,10 @@ fn a_boarder_comes_over_her_rail_on_the_side_their_own_ship_lies() {
         let (mut sea, player) = met(20.0, Rank::Minor);
         let clock = sea.fights.of_mut(player).unwrap().0.fight.clock;
         let heading = vessel_mut(&mut sea, player, CAPTAIN).ship.heading;
-        let her = vessel_mut(&mut sea, player, CAPTAIN).ship;
+        let other = vessel_mut(&mut sea, player, CAPTAIN).ship;
         // Her starboard lies a quarter turn clockwise of her heading.
         let own = &mut vessel_mut(&mut sea, player, PLAYER).ship;
-        (own.x, own.y) = (her.x + aside * libm::cos(heading), her.y + aside * libm::sin(heading));
+        (own.x, own.y) = (other.x + aside * libm::cos(heading), other.y + aside * libm::sin(heading));
         let vessel = vessel_mut(&mut sea, player, CAPTAIN);
         vessel.damage.apply(Hurt { hull: vessel.damage.max_hull * 0.8, sail: 0.0, crew: 0.0, fire: false }, clock, 0.0);
         if let Sailor::Captain(command) = &mut vessel.sailor {

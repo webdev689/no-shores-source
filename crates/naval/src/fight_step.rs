@@ -4,7 +4,7 @@
 
 use super::{
     DESPAWN_BEYOND, End, Event, Fight, HOSTILE_NEAR_M, Hurts, Orders, Part, STRUCK_GRACE_S, STRUCK_HOLD_S, Sailor,
-    carry_of, floats, her_of, sail_hurt, sighting_of, sink_depth,
+    carry_of, floats, own_of, sail_hurt, sighting_of, sink_depth,
 };
 use crate::arms::{LARGE_BOAT, Side, arms_of, unposed};
 use crate::captain::course::distance;
@@ -142,16 +142,16 @@ impl Fight {
         let (sightings, traffic) = (self.sightings(id), self.traffic(id));
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
-        let her = her_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+        let own = own_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
         let hull = vessel.hull.hull();
         let is_water = |x, y| floats(waters, hull, x, y, time);
-        let helm = command.her.steer(&her, (&sightings, &traffic), TICK_SECONDS, &is_water);
+        let helm = command.mind.steer(&own, (&sightings, &traffic), TICK_SECONDS, &is_water);
         // Her rank's way pulls her sails and her oars alike.
-        let way = command.her.commission.rank.scale().way;
+        let way = command.mind.commission.rank.scale().way;
         let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way, oars: way, turn: 1.0 };
         vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull);
         let afloat = pose_of(&vessel.ship, hull, waters, time);
-        let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
+        let (drop, pitch, roll) = founder(&vessel.damage, command.mind.seed, command.under);
         vessel.pose =
             Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat };
     }
@@ -161,17 +161,17 @@ impl Fight {
         let sightings = self.sightings(id);
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
-        let enemy = command.her.target().and_then(|target| sightings.iter().find(|seen| seen.id == target));
-        let her = her_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
-        let battery = command.her.aim(&her, enemy, &mut self.draws);
+        let enemy = command.mind.target().and_then(|target| sightings.iter().find(|seen| seen.id == target));
+        let own = own_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+        let battery = command.mind.aim(&own, enemy, &mut self.draws);
         if let Some(side) = battery.run_out {
             events.push(Event::RunOut { ship: id, side });
         }
         if let Some(laid) = battery.fire {
             let seed = self.draws.seed();
-            let commission = command.her.commission;
-            let laid = Lay { gun: commission.armed(laid.gun, command.her.strength), ..laid };
-            let (skill, carry) = (command.her.build.skill, carry_of(&vessel.ship));
+            let commission = command.mind.commission;
+            let laid = Lay { gun: commission.armed(laid.gun, command.mind.strength), ..laid };
+            let (skill, carry) = (command.mind.build.skill, carry_of(&vessel.ship));
             let flag = Flag::Faction(commission.faction);
             self.balls.extend(volley(&laid, carry, skill, seed, self.clock, (id, flag)));
             vessel.guns.fired(laid.side, vessel.damage.crew_share(), true);
@@ -269,7 +269,7 @@ impl Fight {
                 command.struck_at = Some(clock);
             }
             if shooter_in_fight {
-                command.her.provoke(shooter);
+                command.mind.provoke(shooter);
             }
         }
         if let Some(state) = state {
@@ -285,8 +285,8 @@ impl Fight {
             let hostile_near = captains.iter().any(|captain| {
                 let Some(vessel) = self.ships.get(captain) else { return false };
                 let Some(command) = vessel.command() else { return false };
-                let her = her_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
-                let would = command.her.would_take(&her, &sighting);
+                let own = own_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+                let would = command.mind.would_take(&own, &sighting);
                 would && distance([vessel.ship.x, vessel.ship.y], [sighting.ship.x, sighting.ship.y]) < HOSTILE_NEAR_M
             });
             let clock = self.clock;
@@ -316,8 +316,8 @@ impl Fight {
             .collect();
         // The ships a captain engages: one of them stays in her fight however far she is out of reach.
         let hunted: Vec<ShipId> = (self.ships.values().filter_map(|vessel| vessel.command()))
-            .filter(|command| command.gone.is_none() && command.her.mode == Mode::Engage)
-            .filter_map(|command| command.her.target())
+            .filter(|command| command.gone.is_none() && command.mind.mode == Mode::Engage)
+            .filter_map(|command| command.mind.target())
             .collect();
         let clock = self.clock;
         for id in self.ids(true) {
@@ -329,7 +329,7 @@ impl Fight {
             let (sunk, struck) =
                 (vessel.damage.state == State::Sunk, matches!(vessel.damage.state, State::Struck | State::Sinking));
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
-            let engaging = command.her.mode == Mode::Engage;
+            let engaging = command.mind.mode == Mode::Engage;
             // Out of every foe's guns and not engaging: she breaks off once that has lasted her give-up time.
             command.out_of_reach_since =
                 if out_of_reach && !engaging && !struck { command.out_of_reach_since.or(Some(clock)) } else { None };

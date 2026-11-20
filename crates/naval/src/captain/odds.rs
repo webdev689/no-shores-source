@@ -141,10 +141,10 @@ pub fn wary_takes(commission: crate::ranks::Commission, strength: f64, hull_shar
         return true;
     }
     let arms = crate::arms::arms_of(commission.hull());
-    let her = super::Captain::new(commission, 0, 0.0, arms).raised(strength);
+    let mind = super::Captain::new(commission, 0, 0.0, arms).raised(strength);
     let prize = Power::player(&crate::arms::LARGE_BOAT, hull_share);
     let sloop = crate::arms::arms_of(sailing::HullKind::Sloop);
-    odds(&her.power(&commission.damage_at(strength)), &prize, [arms, sloop]) >= super::WARY_ODDS
+    odds(&mind.power(&commission.damage_at(strength)), &prize, [arms, sloop]) >= super::WARY_ODDS
 }
 
 #[cfg(test)]

@@ -65,14 +65,14 @@ impl Clash {
     #[must_use]
     pub fn settled(&self) -> bool {
         let mut captains = self.fight.ships.values().filter(|vessel| vessel.in_fight()).filter_map(Vessel::command);
-        !captains.any(|command| command.her.mode == Mode::Engage)
+        !captains.any(|command| command.mind.mode == Mode::Engage)
     }
 
     /// The ships that sail on once it is over, where the fight left them: each afloat, unstruck and not running.
     #[must_use]
     pub fn sail_on(&self) -> Vec<Pirate> {
         let sails_on = |vessel: &Vessel| {
-            vessel.damage.fighting() && vessel.command().is_some_and(|command| command.her.mode != Mode::Flee)
+            vessel.damage.fighting() && vessel.command().is_some_and(|command| command.mind.mode != Mode::Flee)
         };
         let afloat = self.crews.iter().filter_map(|(id, pirate)| {
             let ship = self.fight.vessel(*id).filter(|vessel| sails_on(vessel))?.ship;

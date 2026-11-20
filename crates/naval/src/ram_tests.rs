@@ -55,10 +55,10 @@ fn worn(whole: f64, hull: f64) -> Damage {
 
 #[test]
 fn a_ram_takes_a_ship_to_her_line_and_no_further() {
-    let mut her = worn(538.0, 538.0);
-    assert_eq!((ram_line(&her), ram_room(&her)), (134.5, 403.5));
-    let change = her.apply(Hurt { hull: 1000.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, ram_line(&her));
-    assert_eq!((her.hull, change, ram_room(&her)), (134.5, Some(State::Struck), 0.0));
+    let mut other = worn(538.0, 538.0);
+    assert_eq!((ram_line(&other), ram_room(&other)), (134.5, 403.5));
+    let change = other.apply(Hurt { hull: 1000.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, ram_line(&other));
+    assert_eq!((other.hull, change, ram_room(&other)), (134.5, Some(State::Struck), 0.0));
     assert_eq!(recoil_room(&worn(672.0, 672.0)), 503.0);
     assert_eq!((recoil_room(&worn(672.0, 169.5)), recoil_room(&worn(672.0, 170.5))), (0.0, 1.0));
 }
@@ -75,18 +75,18 @@ fn a_ram_is_as_hard_as_the_rammer_can_pay_for_and_takes_men_by_its_blow() {
 
 #[test]
 fn rams_into_her_side_from_whole_bring_her_to_strike_at_her_line_on_the_sixth() {
-    let (mut her, mut mine) = (Damage::new(&PIRATE_SLOOP, false), Damage::new(&LARGE_BOAT, true));
+    let (mut other, mut mine) = (Damage::new(&PIRATE_SLOOP, false), Damage::new(&LARGE_BOAT, true));
     let mut rams = 0;
-    while her.state == State::Afloat {
-        let blow = ram_paid(ram_blow(8.0, true, mine.max_hull, her.max_hull), recoil_room(&mine), RECOIL_SHARE);
+    while other.state == State::Afloat {
+        let blow = ram_paid(ram_blow(8.0, true, mine.max_hull, other.max_hull), recoil_room(&mine), RECOIL_SHARE);
         assert!(blow >= 1.0, "she always has the room to ram");
-        her.apply(Hurt { hull: blow, sail: 0.0, crew: 0.0, fire: false }, 0.0, ram_line(&her));
+        other.apply(Hurt { hull: blow, sail: 0.0, crew: 0.0, fire: false }, 0.0, ram_line(&other));
         let recoil = rounded(blow * RECOIL_SHARE).min(recoil_room(&mine));
         mine.apply(Hurt { hull: recoil, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
         rams += 1;
-        assert!(her.hull >= ram_line(&her) && mine.hull > ram_line(&mine), "neither under her line");
+        assert!(other.hull >= ram_line(&other) && mine.hull > ram_line(&mine), "neither under her line");
     }
-    assert_eq!((rams, her.hull, her.state, mine.hull), (6, 66.0, State::Struck, 108.0));
+    assert_eq!((rams, other.hull, other.state, mine.hull), (6, 66.0, State::Struck, 108.0));
 }
 
 fn flat(middle: [f64; 2], heading: f64) -> Flat {

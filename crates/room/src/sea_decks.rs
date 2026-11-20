@@ -92,9 +92,9 @@ impl Sea {
     /// The side of her (`ship` in the player's fight) their own ship lies on: 1 her starboard, -1 her port.
     fn side_of(&mut self, player: PlayerId, ship: naval::shots::ShipId) -> f64 {
         let Some((fought, crew)) = self.fights.of_mut(player) else { return 1.0 };
-        let (Some(own), Some(her)) = (fought.fight.vessel(crew.ship), fought.fight.vessel(ship)) else { return 1.0 };
-        let (own, her) = (own.ship, her.ship);
-        let across = (own.x - her.x) * libm::cos(her.heading) + (own.y - her.y) * libm::sin(her.heading);
+        let (Some(own), Some(other)) = (fought.fight.vessel(crew.ship), fought.fight.vessel(ship)) else { return 1.0 };
+        let (own, other) = (own.ship, other.ship);
+        let across = (own.x - other.x) * libm::cos(other.heading) + (own.y - other.y) * libm::sin(other.heading);
         if across < 0.0 { -1.0 } else { 1.0 }
     }
 

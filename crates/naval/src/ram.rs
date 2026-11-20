@@ -52,20 +52,20 @@ pub fn ram_contact(block: &Block, point: [f64; 3], reach: f64) -> Option<Contact
 /// The closing way toward a face of outward `normal`: the most, over the stem's ways (`ways`, its velocities over the
 /// last moments), of its way less `hers` along it.
 #[must_use]
-pub fn ram_closing(ways: &[[f64; 2]], hers: [f64; 2], normal: [f64; 2]) -> f64 {
-    let closing = |way: &[f64; 2]| -((way[0] - hers[0]) * normal[0] + (way[1] - hers[1]) * normal[1]);
+pub fn ram_closing(ways: &[[f64; 2]], theirs: [f64; 2], normal: [f64; 2]) -> f64 {
+    let closing = |way: &[f64; 2]| -((way[0] - theirs[0]) * normal[0] + (way[1] - theirs[1]) * normal[1]);
     ways.iter().map(closing).fold(f64::NEG_INFINITY, f64::max)
 }
 
 /// A ram's blow (hull points), before her line: none under `RAM_SPEED`; else the stem's share of the lesser of the two
 /// whole hulls (`mine` the rammer's, `hers` the struck ship's), by the pace and the face.
 #[must_use]
-pub fn ram_blow(closing: f64, side: bool, mine: f64, hers: f64) -> f64 {
+pub fn ram_blow(closing: f64, side: bool, mine: f64, theirs: f64) -> f64 {
     if closing.is_nan() || closing < RAM_SPEED {
         return 0.0;
     }
     let pace = (closing / RAM_FULL_SPEED).min(1.0);
-    let lesser = mine.min(hers).max(0.0);
+    let lesser = mine.min(theirs).max(0.0);
     rounded(RAM_SHARE * lesser * pace * if side { 1.0 } else { RAM_GLANCE })
 }
 

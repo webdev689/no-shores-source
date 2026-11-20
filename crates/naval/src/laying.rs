@@ -83,17 +83,17 @@ fn look_on(shooter: &Sighted, square: &Lay, [eye, look]: [[f64; 3]; 2], ships: &
         .iter()
         .filter(|other| other.flag != shooter.flag && other.id != shooter.id && other.afloat)
         .filter_map(|other| {
-            let her = other.target();
-            let hull = segment_entry(eye, far, &her.hull, 0.0).map(|share| (share, false));
-            let rig = her.rig.iter().filter_map(|sail| segment_entry(eye, far, sail, 0.0)).map(|share| (share, true));
+            let mark = other.target();
+            let hull = segment_entry(eye, far, &mark.hull, 0.0).map(|share| (share, false));
+            let rig = mark.rig.iter().filter_map(|sail| segment_entry(eye, far, sail, 0.0)).map(|share| (share, true));
             let first = hull.into_iter().chain(rig).min_by(|one, other| one.0.total_cmp(&other.0))?;
-            Some((first, other, her.hull.centre))
+            Some((first, other, mark.hull.centre))
         })
         .min_by(|one, other| one.0.0.total_cmp(&other.0.0));
-    let ((share, on_rig), her, middle) = met?;
+    let ((share, on_rig), mark, middle) = met?;
     let met = [0, 1, 2].map(|axis| eye[axis] + (far[axis] - eye[axis]) * share);
     let point = if on_rig && square.shot != Shot::Chain { middle } else { met };
-    let (way, fire, from) = (carry_of(&her.ship), square.dir, &shooter.ship);
+    let (way, fire, from) = (carry_of(&mark.ship), square.dir, &shooter.ship);
     // DFO's own flight time: the way out over 0.97 of the muzzle speed, the ball's speed along the water.
     let flown = libm::hypot(point[0] - from.x, point[1] - from.y) / (square.gun.speed * 0.97).max(1.0);
     let along = (way[0] * fire[0] + way[1] * fire[1]) * flown;

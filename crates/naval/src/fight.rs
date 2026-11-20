@@ -7,7 +7,7 @@
 use crate::arms::{Arms, LARGE_BOAT, arms_of, posed};
 use crate::ballistics::Ball;
 use crate::captain::odds::Power;
-use crate::captain::{Captain, Her, Sighting};
+use crate::captain::{Captain, Own, Sighting};
 use crate::damage::{Damage, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State, WRECKED_OARS, way_share_of};
 use crate::gunnery::Guns;
 use crate::guns::Shot;
@@ -60,7 +60,7 @@ pub enum Sailor {
 /// A captain in command: her mind, how deep she settles going down, when she struck, and how she left the fight.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Command {
-    pub her: Captain,
+    pub mind: Captain,
     pub under: f64,
     pub struck_at: Option<f64>,
     pub gone: Option<End>,
@@ -76,7 +76,7 @@ impl Vessel {
     pub fn flag(&self) -> Flag {
         match &self.sailor {
             Sailor::Player => Flag::Player,
-            Sailor::Captain(command) => Flag::Faction(command.her.commission.faction),
+            Sailor::Captain(command) => Flag::Faction(command.mind.commission.faction),
         }
     }
 
@@ -233,7 +233,7 @@ fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
     let damage = &vessel.damage;
     let power = match vessel.command() {
         None => Power::player(&LARGE_BOAT, damage.hull_share()),
-        Some(command) => command.her.power(damage),
+        Some(command) => command.mind.power(damage),
     };
     Sighting {
         id,
@@ -247,13 +247,13 @@ fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
 }
 
 /// A captain's ship of `hull` as she works it, in the wind, from its parts: her command is borrowed apart from them.
-fn her_of<'vessel>(
+fn own_of<'vessel>(
     hull: HullKind,
     (ship, pose): (&'vessel Ship, &'vessel Pose),
     (damage, guns): (&'vessel Damage, &'vessel Guns),
     wind: [f64; 2],
-) -> Her<'vessel> {
-    Her { ship, pose, damage, guns, arms: arms_of(hull), hull: hull.hull(), wind }
+) -> Own<'vessel> {
+    Own { ship, pose, damage, guns, arms: arms_of(hull), hull: hull.hull(), wind }
 }
 
 impl Fight {
@@ -369,10 +369,10 @@ impl Fight {
         time: f64,
     ) {
         let hull = commission.hull();
-        let her = Captain::new(commission, seed, ship.heading, arms_of(hull));
+        let mind = Captain::new(commission, seed, ship.heading, arms_of(hull));
         let damage = commission.damage();
         let under = sink_depth(seed, arms_of(hull));
-        let command = Command { her, under, struck_at: None, gone: None, boarded: false, out_of_reach_since: None };
+        let command = Command { mind, under, struck_at: None, gone: None, boarded: false, out_of_reach_since: None };
         let vessel = Vessel {
             hull,
             pose: pose_of(&ship, hull.hull(), waters, time),
@@ -390,8 +390,8 @@ impl Fight {
     pub fn raise(&mut self, id: ShipId, strength: f64) {
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
-        command.her = command.her.clone().raised(strength);
-        vessel.damage = command.her.commission.damage_at(strength);
+        command.mind = command.mind.clone().raised(strength);
+        vessel.damage = command.mind.commission.damage_at(strength);
     }
 
     /// A ship leaves the fight: the captains forget her; balls she fired fly on.
@@ -401,7 +401,7 @@ impl Fight {
         self.fittings.remove(&id);
         for vessel in self.ships.values_mut() {
             if let Sailor::Captain(command) = &mut vessel.sailor {
-                command.her.forget(id);
+                command.mind.forget(id);
             }
         }
     }
@@ -464,7 +464,7 @@ impl Fight {
             };
             numbers.extend([command.struck_at.unwrap_or(-1.0), vessel.damage.struck_at, command.under, gone]);
             numbers.push(flag(command.boarded));
-            numbers.extend(command.her.numbers());
+            numbers.extend(command.mind.numbers());
         }
         for ball in &self.balls {
             numbers.extend(ball.start.into_iter().chain(ball.launch));

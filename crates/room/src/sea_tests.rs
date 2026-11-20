@@ -312,9 +312,9 @@ fn a_fight_steps_by_the_players_orders_and_moves_their_ship_with_it() {
     sea.orders(player, Orders { helm, ..QUIET }).unwrap();
     ticks(&mut sea, 600);
     let fought = &sea.fights().next().unwrap().1.fight;
-    let her = sailed(fought, PLAYER);
-    assert!(her.heading != 0.0, "she answered her helm");
-    assert_eq!(ship(&sea, player), Ship { x: her.x, y: her.y, heading: her.heading, pace: 0, rate: 0 });
+    let other = sailed(fought, PLAYER);
+    assert!(other.heading != 0.0, "she answered her helm");
+    assert_eq!(ship(&sea, player), Ship { x: other.x, y: other.y, heading: other.heading, pace: 0, rate: 0 });
     assert_eq!(sea.orders(2, QUIET), Err(CourseRefused::Fighting), "no fight, no orders");
 }
 
@@ -420,7 +420,7 @@ fn a_ship_met_at_sea_fights_under_her_own_faction_and_rank() {
     sea.tick();
     let (_, fought) = sea.fights().next().expect("a fight");
     let captain = fought.fight.vessel(CAPTAIN).and_then(naval::fight::Vessel::command);
-    assert_eq!(captain.map(|command| command.her.commission), Some(commission));
+    assert_eq!(captain.map(|command| command.mind.commission), Some(commission));
     assert_eq!(sea.fight_views().into_iter().map(|seen| seen.captain).collect::<Vec<_>>(), [commission]);
 }
 
@@ -487,7 +487,7 @@ fn a_player_who_comes_within_sight_of_a_clash_joins_it_and_its_captains_choose_w
     );
     sea.tick();
     let fought = &sea.fights().next().expect("the fight goes on").1.fight;
-    let elite = fought.vessel(CAPTAIN).and_then(Vessel::command).map(|command| command.her.target());
+    let elite = fought.vessel(CAPTAIN).and_then(Vessel::command).map(|command| command.mind.target());
     assert_eq!(elite, Some(Some(CAPTAIN + 1)), "the Elite holds her nearer rival against the player");
 }
 

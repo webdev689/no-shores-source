@@ -22,7 +22,7 @@ const GAP_M: f64 = 0.67;
 
 /// Where a captain heading east lies north of the player's Sloop at `south` heading north: her starboard side `GAP_M`
 /// off the player's bow, both on the Sloop's hull.
-fn her_y(south: f64) -> f64 {
+fn their_y(south: f64) -> f64 {
     let [_, high] = crate::arms::SLOOP_ARMS.hull;
     south - high[0] - GAP_M - high[1]
 }
@@ -34,15 +34,15 @@ fn bow_to_side(south: f64, way: f64) -> Fight {
     let player = Ship { x: 0.0, y: south, heading: 0.0, ahead: way, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 1 };
     fight.put_to_sea(PLAYER, player, &Open, 0.0);
     fight.call_captain(CAPTAIN, &player, Commission::default(), &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
-    let her = fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain"));
-    her.ship = Ship {
+    let theirs = fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain"));
+    theirs.ship = Ship {
         x: 0.0,
-        y: her_y(south),
+        y: their_y(south),
         heading: std::f64::consts::FRAC_PI_2,
         ..Ship { rung: 0, ahead: 0.0, ..player }
     };
-    if let Sailor::Captain(command) = &mut her.sailor {
-        (command.her.temper, command.her.cruise) = (crate::captain::Temper::Wary, std::f64::consts::FRAC_PI_2);
+    if let Sailor::Captain(command) = &mut theirs.sailor {
+        (command.mind.temper, command.mind.cruise) = (crate::captain::Temper::Wary, std::f64::consts::FRAC_PI_2);
     }
     fight
 }
@@ -69,8 +69,8 @@ fn a_sloop_driven_into_her_side_rams_her_and_pays_its_recoil() {
     for tick in 1..30 {
         fight.step(&[(PLAYER, ROWING)], &Open, WIND, f64::from(tick) / 60.0);
     }
-    let her = fight.vessel(CAPTAIN).and_then(Vessel::command).map(|command| command.her.target());
-    assert_eq!(her, Some(Some(PLAYER)), "rammed, the wary captain fights the rammer");
+    let theirs = fight.vessel(CAPTAIN).and_then(Vessel::command).map(|command| command.mind.target());
+    assert_eq!(theirs, Some(Some(PLAYER)), "rammed, the wary captain fights the rammer");
 }
 
 #[test]
@@ -93,9 +93,9 @@ fn a_ship_once_rammed_is_not_rammed_again_by_her_for_three_seconds() {
         fight.step(&[(PLAYER, ROWING)], &Open, WIND, f64::from(tick) / 60.0);
     }
     let again = Ship { x: 0.0, y: 0.5, heading: 0.0, ahead: 6.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 1 };
-    let her = Ship { x: 0.0, y: her_y(0.5), heading: std::f64::consts::FRAC_PI_2, ahead: 0.0, rung: 0, ..again };
+    let theirs = Ship { x: 0.0, y: their_y(0.5), heading: std::f64::consts::FRAC_PI_2, ahead: 0.0, rung: 0, ..again };
     fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("player")).ship = again;
-    fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = her;
+    fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = theirs;
     events.extend(fight.step(&[(PLAYER, ROWING)], &Open, WIND, 2.0));
     assert_eq!(rams(&events).len(), 1, "the second within three seconds does not land");
 }
@@ -112,11 +112,11 @@ fn a_wreck_rams_nothing() {
 #[test]
 fn hulls_that_overlap_are_pushed_apart() {
     let mut fight = bow_to_side(0.5, 0.0);
-    let her = Ship { x: 1.2, y: 0.5, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = her;
+    let theirs = Ship { x: 1.2, y: 0.5, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = theirs;
     let flats = |fight: &Fight| {
         [PLAYER, CAPTAIN].map(|id| {
-            let ship = fight.vessel(id).map_or(her, |vessel| vessel.ship);
+            let ship = fight.vessel(id).map_or(theirs, |vessel| vessel.ship);
             let (forward, starboard) = sailing::pose::frame(ship.heading);
             let middle = [ship.x + forward[0] * 0.28125, ship.y + forward[1] * 0.28125];
             Flat { middle, forward, starboard, half_length: 3.55105, half_beam: 1.0009 }

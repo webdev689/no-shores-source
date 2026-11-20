@@ -42,7 +42,7 @@ fn rival_ships_fight_where_the_fight_has_them_until_one_strikes_or_runs_and_the_
         }
         if ticks == 60 {
             let fighting = |clash: &Clash| {
-                clash.fight.ships.values().filter_map(Vessel::command).any(|command| command.her.mode == Mode::Engage)
+                clash.fight.ships.values().filter_map(Vessel::command).any(|command| command.mind.mode == Mode::Engage)
             };
             assert!(clashes.iter().all(fighting), "the bold one takes the other on");
         }

@@ -167,7 +167,7 @@ impl SeaFight {
     /// The commission of its first captain, as a view shows her.
     fn first_captain(&self) -> Commission {
         let captain = self.fight.ships.values().find_map(Vessel::command);
-        captain.map_or_else(Commission::default, |command| command.her.commission)
+        captain.map_or_else(Commission::default, |command| command.mind.commission)
     }
 }
 

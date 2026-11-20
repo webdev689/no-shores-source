@@ -43,14 +43,14 @@ fn captain_mut(fight: &mut Fight) -> &mut Vessel {
     fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain is in the fight"))
 }
 
-fn her(fight: &Fight) -> &Captain {
+fn mind(fight: &Fight) -> &Captain {
     let Sailor::Captain(command) = &captain(fight).sailor else { panic!("a captain sails her") };
-    &command.her
+    &command.mind
 }
 
-fn her_mut(fight: &mut Fight) -> &mut Captain {
+fn mind_mut(fight: &mut Fight) -> &mut Captain {
     let Sailor::Captain(command) = &mut captain_mut(fight).sailor else { panic!("a captain sails her") };
-    &mut command.her
+    &mut command.mind
 }
 
 fn begun(seed: u32) -> Fight {
@@ -61,8 +61,8 @@ fn begun(seed: u32) -> Fight {
 fn alongside(x: f64, temper: Temper) -> Fight {
     let mut fight = begun(1);
     captain_mut(&mut fight).ship = sloop_at(x, 0.0);
-    her_mut(&mut fight).temper = temper;
-    her_mut(&mut fight).cruise = 0.0;
+    mind_mut(&mut fight).temper = temper;
+    mind_mut(&mut fight).cruise = 0.0;
     fight
 }
 
@@ -74,10 +74,10 @@ fn run(fight: &mut Fight, orders: &Orders, ticks: u32) -> Vec<Event> {
 fn a_captain_is_put_to_sea_on_the_ring_round_the_player() {
     for seed in 1..50 {
         let fight = begun(seed);
-        let her = captain(&fight).ship;
-        let out = (her.x * her.x + her.y * her.y).sqrt();
+        let captain_ship = captain(&fight).ship;
+        let out = (captain_ship.x * captain_ship.x + captain_ship.y * captain_ship.y).sqrt();
         assert!((SPAWN_RING[0]..=SPAWN_RING[1]).contains(&out), "{seed}: {out}");
-        assert!((0.0..TAU).contains(&her.heading));
+        assert!((0.0..TAU).contains(&captain_ship.heading));
     }
 }
 
@@ -122,7 +122,7 @@ fn a_broadside_laid_on_her_strikes_her() {
         events.iter().filter(|event| matches!(event, Event::Shot(ShotEvent::Hit { target: CAPTAIN, .. }))).count();
     assert!(hits >= 1, "{events:?}");
     assert!(captain(&fight).damage.hull < PIRATE_SLOOP.hull);
-    assert!(her(&fight).hostile_to(PLAYER), "struck, she is provoked");
+    assert!(mind(&fight).hostile_to(PLAYER), "struck, she is provoked");
 }
 
 #[test]
@@ -318,7 +318,7 @@ impl Waters for Headland {
 fn a_captain_sails_round_land_that_lies_between_her_and_the_player() {
     let mut fight = begun(1);
     captain_mut(&mut fight).ship = Ship { heading: 1.5 * std::f64::consts::PI, ..sloop_at(400.0, 0.0) };
-    her_mut(&mut fight).temper = Temper::Bold;
+    mind_mut(&mut fight).temper = Temper::Bold;
     let mut closest = f64::INFINITY;
     // Head to wind she rows (her oars beat her canvas there), so give her five minutes.
     for tick in 0..60 * 300 {
@@ -334,8 +334,8 @@ fn a_wreck_does_not_mend_while_a_pirate_who_would_take_her_lies_near() {
     let mut fight = alongside(60.0, Temper::Bold);
     player_mut(&mut fight).damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     run(&mut fight, &IDLE, 60 * 60);
-    let her = captain(&fight).ship;
-    let apart = (her.x * her.x + her.y * her.y).sqrt();
+    let captain_ship = captain(&fight).ship;
+    let apart = (captain_ship.x * captain_ship.x + captain_ship.y * captain_ship.y).sqrt();
     assert!(apart < HOSTILE_NEAR_M, "{apart}");
     assert_eq!(player(&fight).damage.hull, 0.0, "a bold pirate within 700 m would take her: her hands stand by");
 }
@@ -390,8 +390,8 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_her() {
         [before.hull - after.hull, before.crew - after.crew]
     };
     let (whole, frigates) = (lost(1.0), lost(0.3));
-    for (sloops, hers) in whole.iter().zip(frigates) {
-        assert!((hers - sloops * 0.3).abs() < 1.0, "{hers} against a share of {sloops}");
+    for (sloops, frigate) in whole.iter().zip(frigates) {
+        assert!((frigate - sloops * 0.3).abs() < 1.0, "{frigate} against a share of {sloops}");
     }
     assert!(whole[0] >= 40.0, "the Sloop's ten balls take whole: {whole:?}");
 }
@@ -405,7 +405,7 @@ fn a_captain_coming_to_engage_is_round_to_her_broadside_as_the_range_comes_to_he
         let seed = (1..).find(|seed| crate::captain::temper_for(commission, *seed) == Temper::Bold).unwrap();
         let coming = Ship { heading: std::f64::consts::PI, ..sloop_at(0.0, -700.0) };
         let mut fight = Fight::meet(sloop_at(0.0, 0.0), coming, commission, seed, &Open, 0.0);
-        let her = |fight: &Fight| {
+        let gauge = |fight: &Fight| {
             let vessel = captain(fight);
             let reach =
                 lay(&vessel.ship, &vessel.pose, arms_of(vessel.hull), Side::Starboard, vessel.guns.load, 0.0, None);
@@ -416,7 +416,7 @@ fn a_captain_coming_to_engage_is_round_to_her_broadside_as_the_range_comes_to_he
         let mut came = None;
         for _ in 0..600 * 60 {
             fight.step(&[(PLAYER, IDLE)], &Open, WIND, 0.0);
-            let (apart, reach, off_beam) = her(&fight);
+            let (apart, reach, off_beam) = gauge(&fight);
             if apart <= reach {
                 came = Some(off_beam);
                 break;
@@ -437,8 +437,8 @@ fn a_captain_raised_to_a_strength_fights_with_that_many_times_her_hull_men_and_g
     assert_eq!((raised.max_hull, raised.hull, raised.max_crew), (build.hull, build.hull, build.crew), "sound, raised");
     assert_eq!(raised.struck_at, plain.struck_at, "she strikes at her rank's share");
     let Sailor::Captain(command) = &captain(&fight).sailor else { panic!("a captain") };
-    assert_eq!(command.her.strength, 2.0);
-    let gun = commission.armed(crate::guns::SWIVEL, command.her.strength);
+    assert_eq!(command.mind.strength, 2.0);
+    let gun = commission.armed(crate::guns::SWIVEL, command.mind.strength);
     assert_eq!(gun.hull, commission.armed(crate::guns::SWIVEL, 1.0).hull * 2.0, "her guns' harm as many times");
     assert!(!crate::captain::wary_takes(commission, 1.0, 1.0), "a wary Minor will not fall on a whole Sloop");
     assert!(crate::captain::wary_takes(commission, 6.0, 1.0), "six times as strong, she outguns her");

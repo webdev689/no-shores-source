@@ -137,7 +137,7 @@ pub struct Sighting {
 
 /// Her own ship as she works it, in the wind.
 #[derive(Debug, Clone, Copy)]
-pub struct Her<'a> {
+pub struct Own<'a> {
     pub ship: &'a Ship,
     pub pose: &'a Pose,
     pub damage: &'a Damage,
@@ -309,8 +309,8 @@ impl Captain {
     /// Whether she would take this ship on, sparing aside: afloat, and provoked or of a mind to take her. Her hands
     /// hold off mending her wreck while she lies near.
     #[must_use]
-    pub fn would_take(&self, her: &Her, enemy: &Sighting) -> bool {
-        her.damage.fighting() && (self.provoked_by(enemy.id) || self.takes_prize(her, enemy))
+    pub fn would_take(&self, vessel: &Own, enemy: &Sighting) -> bool {
+        vessel.damage.fighting() && (self.provoked_by(enemy.id) || self.takes_prize(vessel, enemy))
     }
 
     /// A ship struck her: she is hostile to it, whatever her temper, for a while.
@@ -320,16 +320,16 @@ impl Captain {
 
     /// Whether she takes a ship on: always if bold; if wary, only a wreck, a hull nearly gone, or one she outguns
     /// well.
-    fn takes_prize(&self, her: &Her, enemy: &Sighting) -> bool {
+    fn takes_prize(&self, vessel: &Own, enemy: &Sighting) -> bool {
         if self.temper == Temper::Bold || enemy.wrecked || enemy.hull_share < GRAPPLE_HULL {
             return true;
         }
-        odds(&self.power(her.damage), &enemy.power, [her.arms, arms_of(enemy.hull)]) >= WARY_ODDS
+        odds(&self.power(vessel.damage), &enemy.power, [vessel.arms, arms_of(enemy.hull)]) >= WARY_ODDS
     }
 
     /// The share of her way her canvas gives her: what her hurts leave it, by her rank's way.
-    fn way_share(&self, her: &Her) -> f64 {
-        her.damage.way_share() * self.commission.rank.scale().way
+    fn way_share(&self, vessel: &Own) -> f64 {
+        vessel.damage.way_share() * self.commission.rank.scale().way
     }
 
     /// Her fighting power as her hurts leave it: her hull and her strike as her rank sets them, and her guns' harm
@@ -386,15 +386,15 @@ impl Captain {
 
     /// Her enemy among the ships she sees, and how far off: the nearest she would fight and does not spare, within
     /// her sight (farther for the one she fights), the one she fights reckoned nearer.
-    fn choose<'seen>(&self, her: &Her, sightings: &'seen [Sighting]) -> Option<(&'seen Sighting, f64)> {
-        let me = [her.ship.x, her.ship.y];
+    fn choose<'seen>(&self, vessel: &Own, sightings: &'seen [Sighting]) -> Option<(&'seen Sighting, f64)> {
+        let me = [vessel.ship.x, vessel.ship.y];
         let mut chosen: Option<(&Sighting, f64)> = None;
         let mut best = f64::INFINITY;
         for sighting in sightings {
             let apart = distance(me, [sighting.ship.x, sighting.ship.y]);
             let held = self.target == Some(sighting.id) && self.mode == Mode::Engage;
             let sight = ENGAGE_RANGE * if held { DISENGAGE } else { 1.0 };
-            let hostile = self.provoked_by(sighting.id) || self.takes_prize(her, sighting);
+            let hostile = self.provoked_by(sighting.id) || self.takes_prize(vessel, sighting);
             if apart < sight && hostile && !self.spares(sighting.id) {
                 let rank = if held { apart * HELD_NEARER } else { apart };
                 if rank < best {
@@ -406,8 +406,8 @@ impl Captain {
     }
 
     /// The nearest ship within `FLEE_RANGE` that struck her lately: a threat she may run from.
-    fn threat<'seen>(&self, her: &Her, sightings: &'seen [Sighting]) -> Option<&'seen Sighting> {
-        let me = [her.ship.x, her.ship.y];
+    fn threat<'seen>(&self, vessel: &Own, sightings: &'seen [Sighting]) -> Option<&'seen Sighting> {
+        let me = [vessel.ship.x, vessel.ship.y];
         let apart = |sighting: &Sighting| distance(me, [sighting.ship.x, sighting.ship.y]);
         sightings.iter().filter(|sighting| self.provoked_by(sighting.id) && apart(sighting) < FLEE_RANGE).fold(
             None,
@@ -447,7 +447,7 @@ impl Captain {
     /// where it is and its way), over water `is_water` says she can float in.
     pub fn steer(
         &mut self,
-        her: &Her,
+        vessel: &Own,
         (sightings, traffic): (&[Sighting], &[Traffic]),
         seconds: f64,
         is_water: &impl Fn(f64, f64) -> bool,
@@ -456,16 +456,16 @@ impl Captain {
         let clock = self.clock;
         self.provoked.retain(|_, at| *at > clock - PROVOKED_S);
         self.spared.retain(|_, until| *until > clock);
-        if !her.damage.fighting() {
+        if !vessel.damage.fighting() {
             self.run.clear();
             (self.present, self.chase, self.target) = (None, None, None);
             self.mode =
-                if matches!(her.damage.state, State::Sinking | State::Sunk) { Mode::Sinking } else { Mode::Struck };
+                if matches!(vessel.damage.state, State::Sinking | State::Sunk) { Mode::Sinking } else { Mode::Struck };
             self.sails = (self.sails - 0.5 * seconds).max(0.0);
-            return self.helm(her, her.ship.heading, 0.0);
+            return self.helm(vessel, vessel.ship.heading, 0.0);
         }
-        let me = [her.ship.x, her.ship.y];
-        let chosen = self.choose(her, sightings);
+        let me = [vessel.ship.x, vessel.ship.y];
+        let chosen = self.choose(vessel, sightings);
         if let Some((enemy, _)) = chosen {
             self.mark(enemy.id);
         }
@@ -475,10 +475,11 @@ impl Captain {
             (self.chase, self.wreck_since) = (None, None);
         }
         seen = seen && chosen.is_some_and(|(enemy, _)| self.wreck_on(enemy.wrecked, enemy.id));
-        let threat = self.threat(her, sightings);
-        let outgunned = threat
-            .is_some_and(|threat| odds(&threat.power, &self.power(her.damage), [arms_of(threat.hull), her.arms]) > 1.0);
-        let runs = (her.damage.hull_share() < self.commission.rank.scale().runs_at && (threat.is_some() || seen))
+        let threat = self.threat(vessel, sightings);
+        let outgunned = threat.is_some_and(|threat| {
+            odds(&threat.power, &self.power(vessel.damage), [arms_of(threat.hull), vessel.arms]) > 1.0
+        });
+        let runs = (vessel.damage.hull_share() < self.commission.rank.scale().runs_at && (threat.is_some() || seen))
             || (self.temper == Temper::Wary && outgunned);
         let enemy = chosen.filter(|_| seen).map(|(enemy, _)| enemy);
         self.target = enemy.map(|enemy| enemy.id);
@@ -486,22 +487,22 @@ impl Captain {
         let plan = match (runs, from, enemy) {
             (true, Some(from), _) => {
                 self.mode = Mode::Flee;
-                Plan { want: flee_course(me, from, her.wind), sails: 1.0, track: false }
+                Plan { want: flee_course(me, from, vessel.wind), sails: 1.0, track: false }
             }
             (false, _, Some(enemy)) => {
                 self.mode = Mode::Engage;
                 self.follow(enemy, seconds);
-                self.engage(her, enemy, apart, is_water)
+                self.engage(vessel, enemy, apart, is_water)
             }
             _ => {
                 self.mode = Mode::Cruise;
                 Plan { want: self.cruise, sails: 1.0, track: false }
             }
         };
-        let own = (me, her.ship.heading, velocity_of(her.ship));
-        let want = traffic_course(own, plan.want, traffic, pass_reach(her.arms));
-        let look = self.lookout(her);
-        let want = avoid_land(&mut self.avoid, (self.clock, me, her.ship.heading), want, &look, is_water);
+        let own = (me, vessel.ship.heading, velocity_of(vessel.ship));
+        let want = traffic_course(own, plan.want, traffic, pass_reach(vessel.arms));
+        let look = self.lookout(vessel);
+        let want = avoid_land(&mut self.avoid, (self.clock, me, vessel.ship.heading), want, &look, is_water);
         let asked = if self.avoid.boxed() { plan.sails.min(BOXED_SAILS) } else { plan.sails };
         self.sails = (self.sails + (asked - self.sails).clamp(-0.5 * seconds, 0.4 * seconds)).clamp(0.0, 1.0);
         let lead = if plan.track {
@@ -510,7 +511,7 @@ impl Captain {
             (self.want_prev, self.want_rate) = (None, 0.0);
             0.0
         };
-        self.helm(her, want, lead)
+        self.helm(vessel, want, lead)
     }
 
     /// Her mark's velocity, smoothed.
@@ -521,30 +522,31 @@ impl Captain {
         *smoothed = [smoothed[0] + (now[0] - smoothed[0]) * share, smoothed[1] + (now[1] - smoothed[1]) * share];
     }
 
-    fn lookout(&self, her: &Her) -> land::Lookout {
-        let own = pace(her.hull, her.wind, self.way_share(her));
-        let length = her.arms.hull[1][0] - her.arms.hull[0][0];
+    fn lookout(&self, vessel: &Own) -> land::Lookout {
+        let own = pace(vessel.hull, vessel.wind, self.way_share(vessel));
+        let length = vessel.arms.hull[1][0] - vessel.arms.hull[0][0];
         // Her turning circle at her own pace: a ship lying still is about to gather way.
-        let paced = Ship { rung: SAILS_SET, ahead: own, abeam: 0.0, ..*her.ship };
-        let radius = (length * 0.5).max(own / (swing_rate(&paced, her.hull) * DEG).max(1e-6));
-        let way = length_of(her.ship);
-        land::lookout(her.arms.hull[1][0], (her.arms.hull[1][1] - her.arms.hull[0][1]) / 2.0, way, radius)
+        let paced = Ship { rung: SAILS_SET, ahead: own, abeam: 0.0, ..*vessel.ship };
+        let radius = (length * 0.5).max(own / (swing_rate(&paced, vessel.hull) * DEG).max(1e-6));
+        let way = length_of(vessel.ship);
+        land::lookout(vessel.arms.hull[1][0], (vessel.arms.hull[1][1] - vessel.arms.hull[0][1]) / 2.0, way, radius)
     }
 
     /// Her rudder and her rung for `want`, leading a turning want by `lead` (radians a second): DFO's commanded swing
     /// as a share of her own, and the rung whose way is nearest her share of sail.
-    fn helm(&mut self, her: &Her, want: f64, lead: f64) -> Helm {
-        let most = swing_rate(her.ship, her.hull) * DEG;
-        let error = self.avoid.helm_error(wrap(want - her.ship.heading));
+    fn helm(&mut self, vessel: &Own, want: f64, lead: f64) -> Helm {
+        let most = swing_rate(vessel.ship, vessel.hull) * DEG;
+        let error = self.avoid.helm_error(wrap(want - vessel.ship.heading));
         let command = (error / (4.0 * TURN_TAU) + lead).clamp(-most, most);
-        let (forward, _) = frame(her.ship.heading);
-        let sail_way = pace(her.hull, her.wind, self.way_share(her)) * point_of_sail(off_run_deg(forward, her.wind));
-        let asked = self.sails * pace(her.hull, her.wind, self.way_share(her));
+        let (forward, _) = frame(vessel.ship.heading);
+        let sail_way =
+            pace(vessel.hull, vessel.wind, self.way_share(vessel)) * point_of_sail(off_run_deg(forward, vessel.wind));
+        let asked = self.sails * pace(vessel.hull, vessel.wind, self.way_share(vessel));
         let ways =
             [(0_i8, 0.0), (1, HANDLING.move_speed_oar * self.commission.rank.scale().way), (SAILS_SET, sail_way)];
         let rung =
             ways.into_iter()
-                .filter(|(rung, _)| *rung != SAILS_SET || her.damage.sail > 0.0)
+                .filter(|(rung, _)| *rung != SAILS_SET || vessel.damage.sail > 0.0)
                 .fold((0_i8, f64::INFINITY), |best, (rung, way)| {
                     if (way - asked).abs() <= best.1 { (rung, (way - asked).abs()) } else { best }
                 })
@@ -552,18 +554,18 @@ impl Captain {
         Helm {
             steer: if most > 0.0 { command / most } else { 0.0 },
             crab: false,
-            climb: (rung - her.ship.rung).signum(),
+            climb: (rung - vessel.ship.rung).signum(),
         }
     }
 
     /// Her guns after her step: against her enemy (`enemy`, the ship she has as her target, as she sees it now)
     /// while she is not a wreck.
-    pub fn aim(&mut self, her: &Her, enemy: Option<&Sighting>, draws: &mut Mulberry32) -> Battery {
+    pub fn aim(&mut self, vessel: &Own, enemy: Option<&Sighting>, draws: &mut Mulberry32) -> Battery {
         let Some(enemy) = enemy.filter(|enemy| self.target == Some(enemy.id) && !enemy.wrecked) else {
             self.run.clear();
             return Battery { run_out: None, fire: None };
         };
-        if !her.damage.fighting() {
+        if !vessel.damage.fighting() {
             self.run.clear();
             return Battery { run_out: None, fire: None };
         }
@@ -575,7 +577,7 @@ impl Captain {
             level: enemy.level,
             arms: arms_of(enemy.hull),
         };
-        let (ship, pose, arms, guns, build) = (her.ship, her.pose, her.arms, her.guns, &self.build);
+        let (ship, pose, arms, guns, build) = (vessel.ship, vessel.pose, vessel.arms, vessel.guns, &self.build);
         let aboard = Aboard { ship, pose, arms, guns, build, aim_error: self.commission.rank.scale().aim_error };
         captain_guns(&mut self.run, &aboard, &mark, self.clock, draws)
     }
