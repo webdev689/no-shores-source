@@ -258,14 +258,17 @@ impl Weekly {
 
 /// The draws' own seed, apart from every room's ("ACTIVITY"); the kind of draw is the dice's tick.
 const DRAWS: u64 = 0x4143_5449_5649_5459;
-/// The kinds of draw: the day's dungeons, the day's modifier, the week's dungeons and the week's modifiers.
+/// The kinds of draw: the day's dungeons, the day's modifier, the week's dungeons and the week's modifiers, and the
+/// board's bounties.
 const DAY_DUNGEONS: u64 = 0;
 const DAY_MODIFIER: u64 = 1;
 const WEEK_DUNGEONS: u64 = 2;
 const WEEK_MODIFIERS: u64 = 3;
+/// The board's bounties.
+pub(crate) const BOUNTY_DRAWS: u64 = 4;
 
 /// One of `count`, drawn for a day or a week by the kind of draw and its place among that kind's draws.
-fn drawn(period: u64, kind: u64, nth: u32, count: usize) -> usize {
+pub(crate) fn drawn(period: u64, kind: u64, nth: u32, count: usize) -> usize {
     Dice { seed: DRAWS ^ period, tick: kind, player: 0 }.pick(Purpose::Draw, nth, count)
 }
 

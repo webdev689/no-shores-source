@@ -4,6 +4,7 @@
 use crate::asks::{Done, Refusal};
 use crate::character::Character;
 use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet};
 
 /// A character's progress through the story.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -11,19 +12,29 @@ use serde::{Deserialize, Serialize};
 pub struct Story {
     /// Whether they have finished the prologue.
     pub prologue: bool,
+    /// Each side quest taken up and not finished, by its id, with its count so far.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub quests: BTreeMap<String, u32>,
+    /// The side quests finished, by id.
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub finished: BTreeSet<String>,
+    /// What a later build kept here, kept as it was through a rollback.
+    #[serde(flatten)]
+    pub unknown: serde_json::Map<String, serde_json::Value>,
 }
 
 impl Story {
     /// One kept before the story was: past the prologue, so no one who played before it is shut out of the patrols.
     #[must_use]
     pub fn kept_before() -> Self {
-        Self { prologue: true }
+        Self { prologue: true, ..Self::default() }
     }
 
-    /// Every step either story has taken: the story only moves forward, whichever side heard of a step first.
+    /// Every step either story has taken: the story only moves forward, whichever side heard of a step first. Its side
+    /// quests are this story's, since only a kept character takes one up.
     #[must_use]
     pub fn merged(self, other: &Self) -> Self {
-        Self { prologue: self.prologue || other.prologue }
+        Self { prologue: self.prologue || other.prologue, ..self }
     }
 }
 

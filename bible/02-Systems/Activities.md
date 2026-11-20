@@ -8,6 +8,8 @@ code:
   - crates/gear/src/gate.rs#shut
   - crates/gear/src/activities.rs#week_dungeons
   - crates/gear/src/clears.rs#clear_of_the_day
+  - crates/gear/src/objectives.rs#saw
+  - crates/gear/src/bounties.rs#board
   - crates/room/src/run.rs#modded_blow
   - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/abyss.rs#start_over
@@ -143,9 +145,11 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
 ## What it pays, once
 
 - **Each character keeps its day and its week** with the account (`Character.activity`): `today` holds the tiers of
-  the dungeon of the day it has cleared and its bounties, each by its board place with its count; `this_week` holds
-  whether it cleared each of the week's two dungeons and whether it holds the Abyss boon. Each begins anew at its
-  first touch in a later day or week, and never turns back, so a room whose clock is behind cannot pay twice.
+  the dungeon of the day it has cleared, its bounties, each by its board place with its count, and the places it
+  turned in (`turned_in`); `this_week` holds whether it cleared each of the week's two dungeons and whether it holds
+  the Abyss boon. Each begins anew at its first touch in a later day or week, and never turns back, so a room whose
+  clock is behind cannot pay twice. `today` and `story` keep any key a later build wrote in them, so a rollback to
+  this build loses none.
 - **What a first clear pays** is `gear::clears`. Each writes the record, and none pays for a day or a week behind the
   one the record holds, so a room a few seconds behind 09:00 cannot write yesterday's clear into today.
 - **The dungeon of the day**, the first clear at each tier each day, on any island's: its cache, raised by the tier,
@@ -168,15 +172,23 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
 
 ## Quests and bounties
 
-One engine counts both, since the owner's side quests and the board's bounties ask the same things.
+One engine counts both, since the owner's side quests and the board's bounties ask the same things
+(`gear::objectives`).
 
-- **An objective** is a count of something the room sees happen: foes of a faction or rank felled on an island,
-  materials gathered, ships sunk in a water, a dungeon cleared. The room counts it as it happens; the account keeps
-  the count.
+- **An objective** (`Objective`) is a count of something the room sees happen: foes of a faction or rank felled on an
+  island, resource nodes gathered, ships sunk or taken in a water, a dungeon cleared at a tier. A rank or a tier
+  counts it and every one above; a place named counts only a feat known to be there. The room tells the rules each
+  feat (`Feat`) as it happens, and `Character::saw` counts it toward each bounty held today and each side quest held,
+  up to its target; the account keeps the count. A room whose day is not the record's counts no bounty.
 - **The bounty board** stands in Overlook's plaza and opens after the prologue, on the counters' pattern of the
-  plaza's keepers. It offers six bounties a day, the same for everyone, on land, at sea and in dungeons. A character
-  takes any of them; each pays XP and Aurem once when turned in, and all end at the daily reset.
-- **Side quests** use the same objectives, kept until done, and are written with the story's missions.
+  plaza's keepers. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
+  places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an
+  island or a water, since the islands' bands run from 1 to 30. A character takes any of them; each pays once when
+  turned in, 1,000 XP and 60 Aurem at level 5, raised as a kill is by the character's level, and all end at the daily
+  reset.
+- **Side quests** use the same objectives, kept until done, and are written with the story's missions as data
+  (`content/gear/quests.json`, read by `gear::quests`, none written yet). A character keeps each held quest's count
+  in `Character.story.quests` and each finished one in `story.finished`; finishing one pays its XP and Aurem once.
 
 ## What opens when
 

@@ -2,13 +2,15 @@
 //! their nodes unlocked by XP and bought with Aurem, fragments, island resources and Essence; Prestige carried by
 //! armour raising a player past level 20; a weapon's Attack and armour's Defense against a foe's level; Vestiges, the
 //! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems; everything a player holds;
-//! the game's one clock, its day and week; and what is on, drawn by the day and the week.
+//! the game's one clock, its day and week; what is on, drawn by the day and the week; and the bounties and side
+//! quests, one engine counting both.
 
 pub mod activities;
 pub mod activity;
 pub mod ammo;
 pub mod arts;
 pub mod asks;
+pub mod bounties;
 pub mod catalogue;
 pub mod character;
 pub mod clears;
@@ -20,8 +22,10 @@ pub mod gate;
 pub mod grid;
 pub mod item;
 pub mod kinds;
+pub mod objectives;
 mod old_hands;
 pub mod power;
+pub mod quests;
 pub mod rarity;
 pub mod rewards;
 pub mod shown;
@@ -58,6 +62,8 @@ mod gate_tests;
 mod item_tests;
 #[cfg(test)]
 mod keep_tests;
+#[cfg(test)]
+mod objectives_tests;
 #[cfg(test)]
 mod old_hands_tests;
 #[cfg(test)]

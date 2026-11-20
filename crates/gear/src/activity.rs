@@ -1,7 +1,7 @@
 //! What a character has done this day and this week, kept with the account: the tiers of the dungeon of the day it
-//! has cleared, its bounties, the week's two dungeons it has cleared and the Abyss boon. Each record begins anew at its
-//! first touch in a later day or week (`crate::clock`), and never turns back, so a room whose clock is a few seconds
-//! behind another's cannot give a reward twice.
+//! has cleared, its bounties and the places it turned in, the week's two dungeons it has cleared and the Abyss boon.
+//! Each record begins anew at its first touch in a later day or week (`crate::clock`), and never turns back, so a room
+//! whose clock is a few seconds behind another's cannot give a reward twice.
 
 use crate::world::Difficulty;
 use serde::{Deserialize, Serialize};
@@ -26,6 +26,12 @@ pub struct Today {
     pub day: u64,
     pub cleared: BTreeSet<Difficulty>,
     pub bounties: BTreeMap<u8, u32>,
+    /// The board's places turned in today: each pays once.
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub turned_in: BTreeSet<u8>,
+    /// What a later build kept here, kept as it was through a rollback.
+    #[serde(flatten)]
+    pub unknown: serde_json::Map<String, serde_json::Value>,
 }
 
 /// The week's record: whether the Elite and the Abyss Dungeon of the week were cleared, and whether the Abyss boon is
@@ -56,10 +62,11 @@ impl Activity {
         &mut self.this_week
     }
 
-    /// Made whole as read: no bounty past the board's six places.
+    /// Made whole as read: no bounty held or turned in past the board's six places.
     #[must_use]
     pub fn kept(mut self) -> Self {
         self.today.bounties.retain(|place, _| *place < BOUNTIES);
+        self.today.turned_in.retain(|place| *place < BOUNTIES);
         self
     }
 }
