@@ -74,7 +74,9 @@ code:
   - client/src/forge/cosmetics.ts#rampOf
   - client/src/game/companyHud.ts#startCompanyHud
   - client/src/game/stationPages.ts#vaultPage
-  - client/src/game/stationPages.ts#vendorPage
+  - client/src/game/npc/npcScreen.ts#npcPage
+  - client/src/game/npc/factionRows.ts#factionRows
+  - content/story/keepers.json
   - client/src/game/gearDom.ts#itemMarks
   - client/src/game/gearDom.ts#nodeRing
   - client/src/game/elementGlyphs.ts#elementSvg

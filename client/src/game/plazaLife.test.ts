@@ -30,10 +30,7 @@ const PLAZA: NodeInfo = {
 };
 
 test('a counter that deals with the player opens its screen; a trader’s, and one out of reach, offer nothing', () => {
-  assert.deepEqual(offerAt(STATIONS, 960.8, 1950), {
-    words: 'The Mage: identify your Vestiges',
-    opens: { view: 'inventory' },
-  });
+  assert.deepEqual(offerAt(STATIONS, 960.8, 1950), { words: 'The Mage', opens: { view: 'mage' } });
   assert.deepEqual(offerAt(STATIONS, 1039.2, 1949)?.opens, { view: 'weaponsmith' });
   assert.equal(offerAt(STATIONS, 1000, 1949), null, 'the chandler sells nothing a player keeps');
   assert.equal(offerAt(STATIONS, 960.8, 1948.4 + SERVED_M + 0.1), null);
