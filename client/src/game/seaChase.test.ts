@@ -36,7 +36,7 @@ test('a chase plans again each half second while she is sighted, says whom, and 
   assert.equal(chase.words, null, 'another course set');
 });
 
-test('the room is told whom the ship chases, and told none when another course is set, never when she is lost', () => {
+test('the room is told whom the ship chases, and told none when another course is set or she is lost', () => {
   const told: (number | null)[] = [];
   const chase = new Chase((ship) => told.push(ship));
   const pirate: SeenPirate = { id: 4, x: 0, y: -8_000, heading: 0, faction: 2, rank: 1, sight: 25_920, way: 2.16 };
@@ -45,5 +45,8 @@ test('the room is told whom the ship chases, and told none when another course i
   chase.stop();
   chase.begin('hostile-4', [pirate], [0, 0]);
   chase.step(CHASE_EVERY_S, [], [0, 0]);
-  assert.deepEqual(told, [4, null, 4], 'lost: the room lets go of its own once she leaves the sea');
+  assert.deepEqual(told, [4, null, 4, null], 'lost: let go');
+  chase.begin('hostile-4', [pirate], [0, 0]);
+  chase.step(CHASE_EVERY_S, [{ ...pirate, y: -500 }], [0, 0]);
+  assert.deepEqual(told, [4, null, 4, null, 4], 'met: the room meets her, untold');
 });

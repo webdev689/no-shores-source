@@ -376,7 +376,8 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         self.fights.retain(|_, fought| fought.fight.over().is_none());
-        let pirates: Vec<_> = self.pirates().iter().map(|pirate| ([pirate.x, pirate.y], pirate.quarry)).collect();
+        let closing = |pirate: &Pirate| pirate.quarry.filter(|_| pirate.closing);
+        let pirates: Vec<_> = self.pirates().iter().map(|pirate| ([pirate.x, pirate.y], closing(pirate))).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;

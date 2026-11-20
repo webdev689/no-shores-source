@@ -53,8 +53,8 @@ export interface SeenShip {
 
 /** A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
  *  from north, her faction (1 the Grey Tithe, 2 pirates), her rank (1 Minor to 5 Boss), her hull (0 the Sloop to 3
- *  the Frigate), her level (0 none) and the distance she is sighted from, metres (0 from a room that sends none), and her way at sea, metres a second at the
- *  world's own time. */
+ *  the Frigate), her level (0 none), the distance she is sighted from, metres (0 from a room that sends none), and her
+ *  way at sea, metres a second at the world's own time. */
 export interface SeenPirate {
   readonly id: number;
   readonly x: number;

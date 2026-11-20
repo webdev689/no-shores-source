@@ -325,3 +325,15 @@ fn a_bold_ship_leads_a_player_under_way_and_lets_one_fighting_be() {
     pirates.tick(1.0, &[voyager(1, [4_000.0, 0.0], 0, true)], &PIRATE_WATER);
     assert_eq!((pirates.sailing[0].heading, pirates.sailing[0].quarry), (0.0, None));
 }
+
+#[test]
+fn a_ship_coming_for_a_player_closes_on_their_voyage_pace_but_not_in_shared_waters() {
+    let alone = voyager(1, [4_000.0, 0.0], 60, false);
+    let mut pirates = Pirates { sailing: vec![standing(1, [0.0, 0.0], 0.0, true)], ..Pirates::default() };
+    pirates.tick(0.1, &[alone], &PIRATE_WATER);
+    pirates.tick(0.1, &[alone], &PIRATE_WATER);
+    assert!(pirates.sailing[0].closing, "on his voyage's pace, which the hold keeps him under");
+    let other = voyager(2, [4_500.0, 0.0], 0, false);
+    pirates.tick(0.1, &[alone, other], &PIRATE_WATER);
+    assert!(!pirates.sailing[0].closing, "shared waters keep real time: no hold for her");
+}

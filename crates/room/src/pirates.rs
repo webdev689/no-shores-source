@@ -54,15 +54,30 @@ pub struct Pirate {
     pub y: f64,
     pub heading: f64,
     pub bold: bool,
-    /// The player a bold ship comes for, from her sighting them until she meets or loses them.
+    /// The player a bold ship comes for, from her sighting them until she meets or loses them; and whether she sails
+    /// on that player's voyage pace, which the hold then keeps them under (not in shared waters, nor while another
+    /// player is nearer her).
     pub quarry: Option<PlayerId>,
+    pub closing: bool,
 }
 
 impl Pirate {
     /// A ship of level 0 seen from the least sight, as tests and doors stand one by hand.
     #[must_use]
     pub fn standing(id: u32, seed: u32, commission: Commission, [x, y]: [f64; 2], heading: f64, bold: bool) -> Self {
-        Pirate { id, seed, commission, level: 0, sight_m: SIGHT_LEAST_M, x, y, heading, bold, quarry: None }
+        Pirate {
+            id,
+            seed,
+            commission,
+            level: 0,
+            sight_m: SIGHT_LEAST_M,
+            x,
+            y,
+            heading,
+            bold,
+            quarry: None,
+            closing: false,
+        }
     }
 
     /// Whether a point lies within her sight.
@@ -117,22 +132,22 @@ pub(crate) fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
 
 /// The rate a ship sails at: the clock of the player nearest her that keeps her at sea, but real time where another
 /// player sails within `SHARE_M` of that one, or none is near.
-fn clock_at(pirate: &Pirate, ships: &[Voyager]) -> f64 {
+fn clock_at(pirate: &Pirate, ships: &[Voyager]) -> (f64, bool) {
     let at = [pirate.x, pirate.y];
     let nearest = ships
         .iter()
         .filter(|ship| pirate.kept_by(ship.at))
         .min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
-    let Some(nearest) = nearest else { return 1.0 };
+    let Some(nearest) = nearest else { return (1.0, false) };
     let shared = ships.iter().any(|other| other.player != nearest.player && apart(other.at, nearest.at) <= SHARE_M);
     // One coming for the player keeps their voyage's pace while the hold eases theirs, so she closes on them.
     let coming = pirate.quarry == Some(nearest.player);
     if shared {
-        1.0
+        (1.0, false)
     } else if coming {
-        f64::from(nearest.pace.max(1))
+        (f64::from(nearest.pace.max(1)), true)
     } else {
-        nearest.clock
+        (nearest.clock, false)
     }
 }
 
@@ -203,12 +218,13 @@ impl Pirates {
             let at = [pirate.x, pirate.y];
             let closest = ships.iter().min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
             let sight = closest.map_or(pirate.sight_m, |ship| sight_for(f64::from(ship.pace)).max(pirate.sight_m));
-            let clock = clock_at(&pirate, ships);
+            let (clock, closing) = clock_at(&pirate, ships);
             let (heading, quarry) = come_for(&pirate, ships, (seconds, clock));
             let step = way_of(pirate.commission.rank) * seconds * clock;
             let ahead = [pirate.x + libm::sin(heading) * step, pirate.y - libm::cos(heading) * step];
             let sailed = &mut self.sailing[index];
             (sailed.sight_m, sailed.heading, sailed.quarry) = (sight, heading, quarry);
+            sailed.closing = closing && quarry == pirate.quarry;
             if chart.open(at, ahead) {
                 [sailed.x, sailed.y] = ahead;
             } else {
@@ -305,7 +321,19 @@ impl Pirates {
         let heading = lane.map_or(slanted, |(_, (_, way))| along_lane(way, slanted));
         let bold = matches!(temper_for(commission, seed), Temper::Bold);
         let [x, y] = at;
-        Some(Pirate { id: self.next_id, seed, commission, level, sight_m, x, y, heading, bold, quarry: None })
+        Some(Pirate {
+            id: self.next_id,
+            seed,
+            commission,
+            level,
+            sight_m,
+            x,
+            y,
+            heading,
+            bold,
+            quarry: None,
+            closing: false,
+        })
     }
 
     /// Ships back at sea from a fight among them, where it left them: any two of them have parted.

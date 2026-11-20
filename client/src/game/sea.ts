@@ -313,7 +313,8 @@ export class Sea {
 
   /** Chases the hostile ship whose mark is chosen, if one is still sighted: true then. */
   chaseChosen(): boolean {
-    return this.chosen !== null && this.chosen.startsWith(HOSTILE_PREFIX) && this.sailToMark(this.chosen);
+    const chosen = this.chosen;
+    return this.view.kind === 'sail' && chosen !== null && chosen.startsWith(HOSTILE_PREFIX) && this.sailToMark(chosen);
   }
 
   /** Docks or goes ashore as the landfall offers: flies the view up over the island's side the ship lies off, its

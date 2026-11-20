@@ -596,11 +596,7 @@ fn a_player_who_turns_away_from_a_bold_ship_outruns_her() {
     let course = [[50_000.0, 400_000.0], [50_000.0, 900_000.0]];
     let (mut sea, player) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, true);
     assert!(fight_within_ten_minutes(&mut sea).is_none(), "evaded");
-    assert!(
-        ship(&sea, player).rate == 60 || ship(&sea, player).pace == 0,
-        "the hold let go: x{}",
-        ship(&sea, player).rate
-    );
+    assert!(ship(&sea, player).rate == 60, "astern of her beam, the hold let go: x{}", ship(&sea, player).rate);
 }
 
 #[test]

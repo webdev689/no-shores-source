@@ -78,7 +78,8 @@ export class Chase {
     const id = this.quarry.id;
     const pirate = sightedHostiles(pirates, ship).find((each) => each.id === id);
     // Lost from sight, or met: within a captain's 750 m a bold one takes the ship on, and a wary one is caught up.
-    // The room ends its side itself, once she has left the sea.
+    // Lost, the room is told; met, the room meets her itself, so it is not told to let her go first.
+    if (!pirate) this.stop();
     if (!pirate || Math.hypot(pirate.x - ship[0], pirate.y - ship[1]) <= MET_M) {
       this.quarry = null;
       return null;
