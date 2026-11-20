@@ -209,7 +209,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     companyPlaces: () => companyPlaces(link),
     drawers: dungeons,
   });
-  const screens = startActivityScreens(hudRoot, roomModule, world.nodes, () => foot, trips);
+  const screens = startActivityScreens(hudRoot, roomModule, world.nodes, () => foot, trips, link);
 
   const goSea = async () => {
     leaveHere();

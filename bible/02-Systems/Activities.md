@@ -17,6 +17,7 @@ code:
   - client/src/game/activityWords.ts#thisWeekOf
   - client/src/game/activityWords.ts#entranceCardOf
   - server/accounts/finding.ts#Queue
+  - client/src/game/companyFinder.ts#findCompany
 ---
 # Activities
 
@@ -26,8 +27,8 @@ Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign'
 [[The Story Is Nine Missions, With Side Quests Between Them]], [[Where You Go and the Seas You Choose Set the
 Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
-([[The Activities Are Built in Full, Before the Story's Missions]]). Its core, its dungeons and its screens are built
-(steps 1 to 3); companies of four, Find a Company and the quests are not.
+([[The Activities Are Built in Full, Before the Story's Missions]]). Steps 1 to 4 are built: the core, the
+dungeons, the screens, and companies of four with Find a Company; the quests and bounties are not.
 
 ## What it is for
 
@@ -105,8 +106,10 @@ Company]]).
   (`Keeper.forCompany`); a player from another is sent back saying "This run is another company's.", and one it cannot keep (no session, or no token in time)
   saying "Sign in to enter this run.". No one plays in a run unkept. It is forgotten a minute after its last player
   leaves.
-- **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band. A run
-  starts with four, or with fewer after a minute's wait.
+- **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band (tens of
+  levels, from the level their room last kept), from the entrance's card. A run starts with four, or with fewer after
+  a minute's wait, never with two where one blocks the other, and those found go into it together ([[Accounts]],
+  "Find a Company"). A group found is no company: it shares that one run alone.
 - **The Abyss Dungeon of the week is never matched**, as Destiny 1's hardest weekly strike was not: a company forms
   it.
 
@@ -211,7 +214,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
 - **At a dungeon's entrance**, E opens a card ([[Interface]], "At a dungeon's entrance"): the run's tier and level,
   its rules and modifiers, what it pays or that it is taken, and why it is shut if it is, with Enter. A patrol's
   dungeon carries the day's modifier at Elite and Abyss seas while it is its island's dungeon of the day. An Elite
-  Dungeon's card is its week's run where `eliteRun` picks it, else its run at Normal.
+  Dungeon's card is its week's run where `eliteRun` picks it, else its run at Normal, and offers Find a Company
+  while it is open.
 
 ## How it is built
 
@@ -239,9 +243,9 @@ room is named and closed, and each Elite Dungeon's Boss.
 
 ## Claude's calls
 
-Each is Claude's, open to the owner's change: the resets at 09:00 UTC and Tuesday; a dungeon of the day on each
-island rather than one, with three rewards a day across them; Elite and Abyss seas opening at levels 10 and 20; the
-week's two with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a run starting short after a
-minute; five shared revives, restored by a wipe; the modifier set; the rewards above and the quarter-more boon; six
-bounties a day paying XP and Aurem; one engine for quests and bounties; and the screen's names, This Week and Find a
-Company.
+Each is Claude's, open to the owner's change: the resets at 09:00 UTC and Tuesday; a dungeon of the day on each island
+rather than one, with three rewards a day across them; Elite and Abyss seas opening at levels 10 and 20; the week's two
+with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a run starting short after a minute, Find
+a Company's bands of ten levels, and a group found sharing one run without becoming a company; five shared revives,
+restored by a wipe; the modifier set; the rewards above and the quarter-more boon; six bounties a day paying XP and
+Aurem; one engine for quests and bounties; and the screen's names, This Week and Find a Company.

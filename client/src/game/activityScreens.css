@@ -100,3 +100,7 @@
   margin-top: 10px;
   color: var(--loss);
 }
+.entrance-card-body .entrance-card-finding {
+  margin-top: 10px;
+  color: var(--brass-lit);
+}

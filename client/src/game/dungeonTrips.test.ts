@@ -271,3 +271,16 @@ test('out of a sea island’s dungeon a player stands before its door, facing th
   await settled();
   assert.deepEqual(ways[1], ['sea', { x: 10 + BEFORE_DOOR_M, y: 20, facing: Math.PI / 2 }], 'a door facing east');
 });
+
+test('a run Find a Company found is entered by its own name, and one of another dungeon is not', async () => {
+  const grotto = recorded({ foot: standing(elite('krakens-grotto', 'Kraken’s Grotto'), 'normal') });
+  grotto.trips.enter(0, 'Kraken’s Grotto', 'node-krakens-grotto--run-m9n8b7v6');
+  await grotto.settled();
+  assert.equal(grotto.ways[0]?.[2], 'node-krakens-grotto--run-m9n8b7v6');
+  for (const run of ['node-pearl-tomb--run-m9n8b7v6', 'node-krakens-grotto--run-m9n8', 'node-krakens-grotto']) {
+    const wrong = recorded({ foot: standing(elite('krakens-grotto', 'Kraken’s Grotto'), 'normal') });
+    wrong.trips.enter(0, 'Kraken’s Grotto', run);
+    await wrong.settled();
+    assert.deepEqual(wrong.happenings, [], `not this entrance’s run: ${run}`);
+  }
+});

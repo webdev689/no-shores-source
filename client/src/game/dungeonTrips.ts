@@ -64,7 +64,9 @@ export function dungeonTrips(
   game: TripGame,
   chance: { readonly instance: () => string; readonly minute: () => number } = CHANCE,
 ): {
-  enter(number: number, name: string): void;
+  /** In by entrance `number`, its dungeon named `name`; into `found`, a run Find a Company found, only where it is
+   *  one of this entrance's, else nowhere. */
+  enter(number: number, name: string, found?: string): void;
   leave(): void;
   /** Out by the way in, the veil saying the company fell: before the entrance, or back to the sea. */
   fell(): void;
@@ -108,15 +110,21 @@ export function dungeonTrips(
       out = (fell) => away(layout, fell);
     };
   return {
-    enter: (number, name) => {
+    enter: (number, name, found) => {
       const from = game.foot();
       if (!from || from.dungeon) return;
       const { node, seas } = from;
       const entrance = from.held.entrances.entrances[number];
       const outside = { node, text: from.text };
+      // A run found is gone into by its name alone; one of another dungeon or tier, or no run, goes nowhere.
+      const fits = (base: string) => found === undefined || sharedRun(base, [found]) !== null;
+      const roomFor = (base: string, tier: Difficulty, always: boolean) =>
+        found === undefined ? roomOf(base, tier, always) : async () => found;
       if (node.kind !== 'dungeon') {
         const ask = { patrol: node.id, name: node.name, number };
-        const room = roomOf(dungeonRoom(node, seas, number), seas, false);
+        const base = dungeonRoom(node, seas, number);
+        if (!fits(base)) return;
+        const room = roomFor(base, seas, false);
         const work = into(outside, { number, ask }, seas, room, toNode(node, seas, number, entrance), entrance);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon-${number}`, name }, work);
         return;
@@ -127,7 +135,9 @@ export function dungeonTrips(
         const run = eliteRun(node.id, seas, activitiesAt(module, chance.minute()));
         const words = run.seas === 'normal' ? node.name : `${node.name}, the ${run.words}`;
         const ask = { place: node.id, name: node.name };
-        const room = roomOf(nodeRoom(node, run.seas), run.seas, true);
+        const base = nodeRoom(node, run.seas);
+        if (!fits(base)) return;
+        const room = roomFor(base, run.seas, true);
         const away = toNode(node, run.seas, number, entrance);
         const work = into(outside, { number, ask }, run.seas, room, away, entrance);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name: words }, work);

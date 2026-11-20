@@ -125,6 +125,11 @@ export class AccountLink {
     this.key = this.base === LIVE_ACCOUNTS ? KEY : `${KEY}@${this.base}`;
   }
 
+  /** Where Find a Company is for a run's base, by WebSocket, at these accounts. */
+  finderAt(base: string): string {
+    return `${this.base.replace(/^http/, 'ws')}/v1/find/${base}`;
+  }
+
   /** The session's token, if the page holds one. */
   get token(): string | null {
     const token = this.kept.getItem(this.key);

@@ -432,6 +432,14 @@ built again as the minute or the character's word changes. While it stands the w
 and no key of the game's or the menu's acts behind it. It goes if the player falls, goes into a dungeon or leaves
 the place.
 
+Where the run is matched (an Elite Dungeon at Normal, or the Elite Dungeon of the week), it is open, and the page is
+signed in to the accounts, Find a Company (F) stands on the footer beside Enter. While it finds, the card shows
+"Finding a company · 0:23", counting up, and "A run starts with four, or with fewer after a minute.", and the press
+is Stop finding (F). A run found closes the card and goes into it. Enter goes in alone and Close or Escape leaves,
+each stopping the search. A search that ended unasked says why on the card ("You are finding a company in another
+tab.", or "The search stopped. Try again."). A search for a run the card no longer opens ends, as when the week
+turns while it finds.
+
 ## The social space's counters
 
 The vault, the vendors and the Tailor keep counters in the social space, as Destiny's keep theirs in the Tower; E at

@@ -172,6 +172,9 @@ never the Abyss Dungeon of the week, whose company forms it.
   lets them in together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their
   socket closed. The finder judges no gate and keeps no clock: the room is the authority, and the page offers Find a
   Company only where the gate is open.
+- **The page's side** (`findCompany`): it opens `AccountLink.finderAt(base)`, the accounts' own address by `ws://`
+  or `wss://`, sends the session's token once open, and takes only a run of the base it asked for. Offline, or with
+  no session, it offers none.
 
 ## Running it here
 
