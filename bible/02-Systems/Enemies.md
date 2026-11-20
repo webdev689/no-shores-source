@@ -207,6 +207,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   through a block or the land, nor past 60 m; each shrinks with distance as its figure does ([[Interface]]).
 - **Plates never overlap.** The nearest foe's stays over it, in front; a farther one that would cover it is lifted
   just clear, and the plates hold still from frame to frame ([[Interface]]).
+- **Plates stand still however far out.** Each is placed through the camera's matrix kept in 64-bit numbers
+  (`shiftedExactly`): out at sea, some 2,800 km from the world's origin, a 32-bit matrix rounds its offset to a quarter
+  metre, and every plate shook some 30 px as the camera moved.
 - **The boss bar**: for the nearest living Boss that is alert or struck, the same plate wide across the top of the
   screen: its level, its name and faction, "Phase n of 3", its health in yellow marked at 2/3 and 1/3, and its poise
   track under it. A Boss has no plate over its head.

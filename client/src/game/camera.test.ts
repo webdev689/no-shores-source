@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { inverted } from '../cinema/inverted.ts';
-import { frameOf, fromEyeMatrix, lookOf, onScreen, panShot, type Shot, shifted, shotOfOrbit } from './camera.ts';
+import {
+  frameOf,
+  fromEyeMatrix,
+  lookOf,
+  onScreen,
+  panShot,
+  type Shot,
+  shifted,
+  shiftedExactly,
+  shotOfOrbit,
+} from './camera.ts';
 
 const shot: Shot = { eye: [1_000_000, 2_000_000, 100], yaw: 0, pitch: 0, fov: Math.PI / 2, near: 1, far: 10_000 };
 const size = { width: 800, height: 400 };
@@ -110,4 +120,30 @@ test("a pixel's depth reads back into the point drawn there, from the eye, near 
     const away = Math.hypot(...point);
     assert.ok(missed < away * 1e-4 + 1e-3, `${point.join(',')} came back ${missed.toFixed(5)} m off`);
   }
+});
+
+test('a world point far out at sea projects to the hair through the exact matrix, as it does from the eye', () => {
+  // The wreck lies some 2,800 km from the world's origin, where a 32-bit offset rounds to a quarter metre.
+  const far: Shot = { eye: [2_815_903.95, 1_176_449.3, 4.6], yaw: 0.7, pitch: 0.2, fov: 1.2, near: 0.1, far: 2_000 };
+  const fromEye = fromEyeMatrix(far, 16 / 9);
+  const clip = (matrix: ArrayLike<number>, [east, south, up]: readonly [number, number, number]) =>
+    [0, 1, 3].map(
+      (row) =>
+        east * (matrix[row] ?? 0) +
+        south * (matrix[4 + row] ?? 0) +
+        up * (matrix[8 + row] ?? 0) +
+        (matrix[12 + row] ?? 0),
+    );
+  const screen = (values: number[]) => [(values[0] ?? 0) / (values[2] ?? 1), (values[1] ?? 0) / (values[2] ?? 1)];
+  const head: [number, number, number] = [far.eye[0] + 3.1, far.eye[1] - 4.2, 2.3];
+  const fromTheEye = screen(clip(fromEye, [head[0] - far.eye[0], head[1] - far.eye[1], head[2] - far.eye[2]]));
+  const exact = screen(clip(shiftedExactly(fromEye, [-far.eye[0], -far.eye[1], -far.eye[2]]), head));
+  const rounded = screen(clip(shifted(fromEye, [-far.eye[0], -far.eye[1], -far.eye[2]]), head));
+  const apart = (one: number[], other: number[]) =>
+    Math.hypot((one[0] ?? 0) - (other[0] ?? 0), (one[1] ?? 0) - (other[1] ?? 0));
+  assert.ok(apart(exact, fromTheEye) < 1e-6, `exact: ${apart(exact, fromTheEye)}`);
+  assert.ok(
+    apart(rounded, fromTheEye) > 1e-3,
+    `the 32-bit matrix is off by ${apart(rounded, fromTheEye)} of the screen`,
+  );
 });
