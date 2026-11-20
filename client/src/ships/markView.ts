@@ -3,6 +3,7 @@ import { SHADOW_WGSL, ShadowMap } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import type { Mark } from './effects.ts';
+import { PuffView } from './puffView.ts';
 import type { ShipCamera } from './shipView.ts';
 
 /** The most marks drawn in a frame: past it the rest wait. */
@@ -208,9 +209,12 @@ export class MarkView {
 
   /** The device it draws with, which the aim draws with too. */
   readonly gpu: Gpu;
+  /** The see-through puffs, set aside as the solid marks are drawn and drawn after the water. */
+  private readonly puffs: PuffView;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
+    this.puffs = new PuffView(gpu);
     this.device = gpu.device;
     const meshes = shapes();
     const module = gpu.device.createShaderModule({ code: MARK_SHADER });
@@ -277,13 +281,19 @@ export class MarkView {
     });
   }
 
-  /** Draws `marks` (window metres, heights as drawn) into a pass the land's pipelines draw into. */
+  /** Draws the solid `marks` (window metres, heights as drawn) into a pass the land's pipelines draw into, and sets
+   *  the see-through ones aside for `drawOver` and `drawLight`. */
   drawInto(
     pass: GPURenderPassEncoder,
-    marks: readonly Mark[],
+    every: readonly Mark[],
     camera: ShipCamera,
     shadow: ShadowMap = ShadowMap.none(this.gpu),
   ): void {
+    this.puffs.set(
+      every.filter((mark) => mark.blend),
+      camera,
+    );
+    const marks = every.filter((mark) => !mark.blend);
     const count = Math.min(marks.length, MOST_MARKS);
     if (count === 0) return;
     // Grouped by shape, each shape's marks one run of instances.
@@ -313,5 +323,16 @@ export class MarkView {
       if (last > first) pass.drawIndexed(mesh.count, last - first, mesh.first, mesh.base, first);
       first = last;
     });
+  }
+
+  /** The see-through puffs of the last `drawInto` over the finished picture `target`, after the water, hidden where
+   *  the scene's `depth` stands nearer. */
+  drawOver(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture): void {
+    this.puffs.drawOver(encoder, target, depth);
+  }
+
+  /** Their glows' and lights' light, into the light layer's pass. */
+  drawLight(pass: GPURenderPassEncoder): void {
+    this.puffs.drawLight(pass);
   }
 }

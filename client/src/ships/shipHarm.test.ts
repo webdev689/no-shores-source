@@ -107,8 +107,10 @@ test('her colours come down her mast when she strikes, and are gone once down', 
   assert.equal(flagAt(masthead, harm, [{ footZ: 2, topZ: 12 }], STRIKE_S).shows, false);
 });
 
-test('her going down keeps its time: the rules send her pose, which she is drawn in as it comes', () => {
+test('sinking, she is under in twenty seconds', () => {
   const harm = new ShipHarm(SLOOP);
+  assert.equal(harm.sunkShare(10), 0);
   harm.sink(0);
-  assert.ok(harm.sunkShare(SINK_S / 2) > 0 && harm.sunkShare(SINK_S * 2) === 1);
+  assert.ok(harm.sunkShare(SINK_S / 4) > 0 && harm.sunkShare(SINK_S / 4) < 1);
+  assert.equal(harm.sunkShare(SINK_S * 2), 1);
 });

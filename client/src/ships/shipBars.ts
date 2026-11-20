@@ -34,6 +34,17 @@ export function shipName(faction: number, hull = 0): string {
   return sloop.replace(/Sloop$/, HULL_NAMES[hull] ?? 'Sloop');
 }
 
+/** A distance as the sea says it: metres to the nearest ten near, kilometres past one. */
+export function distanceWords(metres: number): string {
+  if (metres < 1000) return `${Math.round(metres / 10) * 10} m`;
+  return metres < 20_000 ? `${(metres / 1000).toFixed(1)} km` : `${Math.round(metres / 1000)} km`;
+}
+
+/** The one sentence a ship is sighted in, on the voyage and in a fight alike. */
+export function sightedWords(name: string, metres: number): string {
+  return `${/^[AEIOU]/i.test(name) ? 'An' : 'A'} ${name} sighted, ${distanceWords(metres)} off.`;
+}
+
 /** A rank's bar colour: Minor red, Major orange, Elite and Miniboss yellow; a Boss's bar yellow too. */
 export function rankColour(rank: number): string {
   return FILLS[rankBand(rank)];

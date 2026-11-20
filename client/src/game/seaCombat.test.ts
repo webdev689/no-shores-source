@@ -231,3 +231,29 @@ test("out of the aim the wheel zooms the fight's camera by half again a notch, a
   assert.ok(closest && Math.abs(away(closest, her) - 11.4) < 1e-6, 'no nearer than DFO keeps');
   assert.equal(orders.filter((sent) => sent.load).length, 0);
 });
+
+test("each captain's plate is keyed by her own fight number, so plates in a fight of three never share a lift", () => {
+  const second = { ...captain, ship: [5420, 5500, 2, 0, 0, 0, 0, 2], number: 5 };
+  const third = { ...captain, ship: [5440, 5500, 2, 0, 0, 0, 0, 2] };
+  const fight = new SeaCombat(ROOM, { ...FIRST, others: [second, third] }, MARKS, 0);
+  assert.deepEqual(
+    fight.bars(1).map((bar) => bar.key),
+    [1, 5, 3],
+  );
+});
+
+test("her own gun's kick shakes the fight's eye, and it stands still again within a second", async () => {
+  const fight = new SeaCombat(ROOM, FIRST, MARKS, 0);
+  const still = fight.frame(0.1, 1, 1000, () => undefined);
+  const muzzle = { kind: 'muzzle', ship: 0, point: [5000, 6002, 2], launch: [0, 300, 0] } as const;
+  const room = { orders: () => undefined, takeFight: () => ({ ...FIRST, events: [muzzle] }) } as unknown as SeaRoom;
+  const kicked = new SeaCombat(room, FIRST, MARKS, 0);
+  kicked.frame(0.1, 1, 1000, () => undefined);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  kicked.frame(0.05, 1.05, 1000, () => undefined);
+  kicked.draw({} as GPURenderPassEncoder, { fromEye: new Float32Array(16), eye: [5000, 6000, 10] }, 1.05);
+  const shaken = kicked.frame(0.1, 1.2, 1000, () => undefined);
+  const moved = (shot: Shot) => Math.hypot(...shot.eye.map((value, axis) => value - (still.eye[axis] ?? 0)));
+  assert.ok(moved(shaken) > 0.005, `${moved(shaken)}`);
+  assert.ok(moved(kicked.frame(0.1, 2.5, 1000, () => undefined)) < 1e-9);
+});

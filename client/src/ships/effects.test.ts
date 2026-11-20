@@ -1,132 +1,193 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Effects, FLASH_S, ROUND_SHOT_M, SMOKE_S, SPLASH_M, SPLASH_S, SPLINTERS } from './effects.ts';
+import {
+  Effects,
+  FLASH_S,
+  GUN_SMOKE_LIFE,
+  GUN_SMOKE_SWELL,
+  type Mark,
+  MUZZLE_LIGHT,
+  PUFF_BUDGET,
+  ROUND_SHOT_M,
+  SPLINTERS,
+} from './effects.ts';
+import { EVICT_RANK, fadeOf } from './puffLaw.ts';
 
 const highest = (marks: readonly { z: number }[]) => Math.max(...marks.map((mark) => mark.z));
-const FLASH_COLOUR = [1, 0.78, 0.35];
+const blended = (marks: readonly Mark[], blend: Mark['blend']) => marks.filter((mark) => mark.blend === blend);
+const mean = (values: readonly number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
 
-test("a gun's flash lasts a tenth of a second, its smoke rolls out with the shot and thins over seven", () => {
+test("a gun's flash is light added unlit for a tenth of a second, its light reaching DFO's 26 m", () => {
   const effects = new Effects(1);
   effects.fire([0, 0, 0], [0, 5, 1.5], [0, 400, 3], 0);
-  const flashes = (now: number) =>
-    effects.marks(now).filter((mark) => mark.colour.every((value, axis) => value === FLASH_COLOUR[axis]));
-  assert.equal(flashes(0.05).length, 1);
-  assert.ok((flashes(0.05)[0]?.radius ?? 0) > 0.5, 'it flashes at its full size, not shrinking from the start');
-  assert.equal(flashes(FLASH_S + 0.01).length, 0);
-  const early = effects.marks(0.5);
-  const later = effects.marks(4);
-  const meanOut = (marks: readonly { y: number }[]) => marks.reduce((sum, mark) => sum + mark.y, 0) / marks.length;
-  assert.ok(meanOut(later) > meanOut(early) + 1, 'the smoke rolls out the way the ball went');
-  const late = effects.marks(SMOKE_S - 0.3);
-  const meanRadius = (marks: readonly { radius: number }[]) =>
-    marks.reduce((sum, mark) => sum + mark.radius, 0) / marks.length;
-  assert.ok(late.length === 0 || meanRadius(late) < meanRadius(later), 'it thins');
-  assert.equal(effects.marks(SMOKE_S + 0.1).length, 0);
+  const glows = blended(effects.marks(0.02), 'glow');
+  assert.equal(glows.length, 2, 'the bloom and its tongue along the shot');
+  assert.ok(glows.every((mark) => (mark.alpha ?? 0) > 0.4));
+  // Read in time's order: a puff once spent is let go.
+  const lights = blended(effects.marks(0.05), 'light');
+  assert.equal(lights.length, 1);
+  assert.equal(lights[0]?.radius, MUZZLE_LIGHT.reachM);
+  assert.equal(blended(effects.marks(FLASH_S + 0.005), 'glow').length, 0);
+  assert.equal(blended(effects.marks(MUZZLE_LIGHT.seconds + 0.01), 'light').length, 0);
 });
 
-test('powder smoke drifts downwind', () => {
+test("a broadside's smoke is blended, swells as it thins, and hangs DFO's nine to fourteen seconds", () => {
   const effects = new Effects(2);
+  effects.fire([0, 0, 0], [0, 4, 2], [0, 300, 3], 0);
+  const smoke = (now: number) => blended(effects.marks(now), 'smoke');
+  assert.equal(smoke(0.5).length, 8, 'five puffs and three a unit of gun');
+  const [early, late] = [smoke(1), smoke(8)];
+  assert.ok(mean(late.map((mark) => mark.radius)) > mean(early.map((mark) => mark.radius)) * 1.5, 'it swells');
+  assert.ok(mean(late.map((mark) => mark.alpha ?? 1)) < mean(early.map((mark) => mark.alpha ?? 1)), 'as it thins');
+  assert.ok(Math.max(...late.map((mark) => mark.radius)) <= GUN_SMOKE_SWELL[1] / 2);
+  assert.ok(smoke(GUN_SMOKE_LIFE[0] - 0.5).length > 0, 'still hanging at nine seconds');
+  assert.equal(smoke(GUN_SMOKE_LIFE[1] + 0.1).length, 0);
+});
+
+test('powder smoke comes to ride the wind', () => {
+  const effects = new Effects(3);
   effects.blow(Math.PI / 2);
   effects.fire([0, 0, 0], [0, 0, 1], [0, 1, 0], 0);
-  const smoke = effects.marks(5);
+  const smoke = blended(effects.marks(6), 'smoke');
   assert.ok(smoke.length > 0);
   assert.ok(
-    smoke.every((mark) => mark.x > 4),
-    'the wind blowing east has taken it east',
+    smoke.every((mark) => mark.x > 15),
+    'the wind blowing east at four metres a second has taken it east',
   );
 });
 
-test("a round shot's splash: water thrown about four metres up, white at its head, back in a second, a ragged patch", () => {
-  const effects = new Effects(3);
+test("a round shot's splash: blended spray and a spout falling back, and a ring of foam spreading flat on the water", () => {
+  const effects = new Effects(4);
   const stir = effects.splash([5, 6, 0], 0);
   assert.deepEqual([stir.x, stir.y], [5, 6]);
-  // Read in time's order: a puff once spent is let go.
-  const rising = effects.marks(0.3).filter((mark) => mark.z > 0.3);
-  const head = Math.max(...rising.map((mark) => mark.z));
-  const white = (mark: { readonly colour: readonly number[] }) => (mark.colour[0] ?? 0) > 0.85;
-  assert.ok(rising.filter((mark) => mark.z > head * 0.75).some(white), 'white at its head');
+  const marks = effects.marks(0.4);
   assert.ok(
-    rising.filter((mark) => mark.z < head * 0.5).some((mark) => !white(mark)),
-    'clear lower down',
+    marks.every((mark) => mark.blend === 'smoke'),
+    'water is blended, never a lit ball',
   );
-  const width = (now: number) =>
-    Math.max(
-      ...effects
-        .marks(now)
-        .filter((mark) => mark.z > 0.3)
-        .map((mark) => Math.hypot(mark.x - 5, mark.y - 6)),
-    );
-  assert.ok(width(0.5) > width(0.3), 'it spreads as it rises');
-  let top = 0;
-  for (let now = 0.3; now < SPLASH_S; now += 0.05) top = Math.max(top, highest(effects.marks(now)));
-  assert.ok(top > SPLASH_M * 0.8 && top < SPLASH_M * 1.2, `${top}`);
-  const spray = effects.marks(SPLASH_S + 0.01).filter((mark) => mark.z > 0.01);
-  assert.equal(spray.length, 0, 'the column has fallen back');
-  const foam = effects.marks(SPLASH_S + 0.2);
-  assert.ok(foam.length >= 12 && foam.every((mark) => Math.abs(mark.z) < 0.01), 'its foam lies on the water');
-  const apart = foam.map((mark) => Math.hypot(mark.x - 5, mark.y - 6));
-  assert.ok(Math.min(...apart) < 0.5 * Math.max(...apart), 'a patch over where it fell, not a ring round it');
-  assert.equal(effects.marks(5).length, 0);
+  assert.ok(highest(marks) > 3, 'its spout stands high');
+  const rings = (now: number) => effects.marks(now).filter((mark) => mark.flat);
+  assert.equal(rings(0.4).length, 1);
+  assert.ok((rings(2)[0]?.radius ?? 0) > (rings(0.4)[0]?.radius ?? 0), 'the ring spreads');
+  assert.equal(effects.marks(2.3).filter((mark) => !mark.flat).length, 0, 'the spray has fallen back');
+  assert.equal(effects.marks(2.5).length, 0);
 });
 
-test('a heavier ball throws a taller splash', () => {
-  const [round, heavy] = [new Effects(4), new Effects(4)];
+test('a heavier ball throws a bigger splash', () => {
+  const [round, heavy] = [new Effects(5), new Effects(5)];
   round.splash([0, 0, 0], 0, ROUND_SHOT_M);
   heavy.splash([0, 0, 0], 0, ROUND_SHOT_M * 1.5);
+  assert.ok(heavy.count > round.count);
   const tallest = (effects: Effects) =>
-    Math.max(...Array.from({ length: 20 }, (unused, step) => highest(effects.marks(step * 0.05))));
-  assert.ok(tallest(heavy) > tallest(round) * 1.3);
+    Math.max(...Array.from({ length: 30 }, (unused, step) => highest(effects.marks(step * 0.05))));
+  assert.ok(tallest(heavy) > tallest(round));
 });
 
-test("a broadside's smoke has thinned to under half its size four seconds on, what it hid showing again", () => {
-  const effects = new Effects(5);
-  effects.fire([0, 0, 0], [0, 4, 2], [0, 300, 3], 0);
-  const meanRadius = (now: number) => {
-    const smoke = effects.marks(now);
-    return smoke.reduce((sum, mark) => sum + mark.radius, 0) / smoke.length;
-  };
-  assert.ok(meanRadius(4) < meanRadius(1) / 2, `${meanRadius(1)} then ${meanRadius(4)}`);
-  assert.ok(Math.min(...effects.marks(3).map((mark) => mark.z)) > 1.5, 'it lifts off the water');
-});
-
-test('a piece gathered leaves a ring of gold glints rising and a little water thrown up, gone in a second', () => {
+test('a hull hit throws splinters of her paint that fall to the water, a puff of smoke and a small flash', () => {
   const effects = new Effects(6);
-  effects.gathered([3, 4, 0], 0);
-  const shown = effects.marks(0.3);
-  assert.ok(shown.some((mark) => mark.colour[2] < 0.5) && shown.some((mark) => mark.colour[2] > 0.9));
-  assert.ok(shown.every((mark) => Math.hypot(mark.x - 3, mark.y - 4) < 2));
-  assert.equal(effects.marks(1).length, 0);
-});
-
-test('a hull hit bursts a few dozen chips of her paint that fall to the water', () => {
-  const effects = new Effects(4);
   const paint = [0.1, 0.2, 0.3] as const;
   effects.splinter([0, 0, 0], [0, 3, 1.5], [0, 1], paint, 0);
-  const chips = effects.marks(0.1).filter((mark) => mark.radius < 0.2);
+  const chips = effects.marks(0.05).filter((mark) => mark.blend === undefined);
   assert.equal(chips.length, SPLINTERS);
-  assert.ok(chips.filter((mark) => mark.colour === paint).length > SPLINTERS / 2, "most are her paint's");
+  assert.ok(chips.filter((mark) => mark.colour === paint).length > SPLINTERS / 3, "many are her paint's");
+  assert.ok(blended(effects.marks(0.05), 'smoke').length >= 3);
+  assert.equal(blended(effects.marks(0.05), 'glow').length, 1);
   assert.ok(
-    effects.marks(1.5).every((mark) => mark.z >= 0),
+    effects.marks(2).every((mark) => mark.z >= 0),
     'none falls through the water',
   );
-  assert.ok(highest(effects.marks(1.5).filter((mark) => mark.radius < 0.2)) < 0.5, 'they lie on the water');
+});
+
+test('a ship afire burns in unlit flames and embers under dark blended smoke', () => {
+  const effects = new Effects(7);
+  for (let frame = 0; frame < 60; frame++) effects.burn([0, 0, 0], [0, 0, 2.4], 1, 1.5, frame / 30, 1 / 30);
+  const marks = effects.marks(2);
+  assert.ok(blended(marks, 'glow').length > 10);
+  assert.ok(blended(marks, 'smoke').some((mark) => (mark.colour[0] ?? 1) < 0.3));
+  assert.ok(marks.every((mark) => mark.z >= 2.4));
+  const quiet = new Effects(8);
+  quiet.burn([0, 0, 0], [0, 0, 2.4], 0, 1.5, 0, 1);
+  assert.equal(quiet.marks(0).length, 0);
+});
+
+test('past the budget, the spray and foam go first and the smoke last', () => {
+  const effects = new Effects(9);
+  for (let gun = 0; gun < 40; gun++) effects.fire([0, 0, 0], [gun, 0, 1], [0, 300, 0], 0);
+  // Powder smoke is the grey of the blended puffs; spray and foam are white.
+  const powder = (now: number) => blended(effects.marks(now), 'smoke').filter((mark) => (mark.colour[2] ?? 1) < 0.85);
+  const smoke = powder(0.01).length;
+  for (let fall = 0; fall < 60; fall++) effects.splash([fall, 50, 0], 0.01);
+  assert.equal(effects.count, PUFF_BUDGET);
+  assert.equal(powder(0.02).length, smoke, 'every puff of smoke kept');
+  assert.ok(EVICT_RANK.spray < EVICT_RANK.smoke && EVICT_RANK.foam < EVICT_RANK.flash);
+});
+
+test("each kind fades by DFO's law: smoke in and out, a flash at once, splinters only at the end", () => {
+  assert.equal(fadeOf('smoke', 0), 0);
+  assert.ok(fadeOf('smoke', 0.2) > 0.75);
+  assert.equal(fadeOf('flash', 0), 1);
+  assert.equal(fadeOf('debris', 0.5), 1);
+  assert.ok(fadeOf('debris', 0.9) < 0.5);
+});
+
+test('water thrown over a rail by a fall alongside goes toward her deck and more of it the nearer', () => {
+  const [near, far] = [new Effects(10), new Effects(10)];
+  near.drench([0, 0, 0], [10, 0, 2], 1, 0);
+  far.drench([0, 0, 0], [10, 0, 2], 0, 0);
+  assert.ok(near.count > far.count);
+  assert.ok(mean(near.marks(0.6).map((mark) => mark.x)) > 1, 'toward her');
+});
+
+test('a magazine blows in a fireball, a column of smoke, splinters and a big splash', () => {
+  const effects = new Effects(11);
+  effects.blast([0, 0, 0], 0);
+  const marks = effects.marks(0.2);
+  assert.ok(blended(marks, 'glow').length >= 10);
+  assert.ok(blended(marks, 'smoke').length >= 12);
+  assert.ok(
+    marks.some((mark) => mark.blend === undefined),
+    'splinters',
+  );
+  assert.ok(blended(marks, 'light').length === 1);
+});
+
+test('a battered hull smokes along her deck, more the more she is hurt', () => {
+  const [hurt, whole] = [new Effects(12), new Effects(12)];
+  for (let frame = 0; frame < 90; frame++) {
+    hurt.smolder([0, 0, 0], [-6, 0, 2], [6, 0, 2], 1, frame / 30, 1 / 30);
+    whole.smolder([0, 0, 0], [-6, 0, 2], [6, 0, 2], 0, frame / 30, 1 / 30);
+  }
+  assert.ok(hurt.count >= 8);
+  assert.equal(whole.count, 0);
+  assert.ok(hurt.marks(3).every((mark) => Math.abs(mark.x) < 9));
+});
+
+test('a battery running out glints at her ports, brighter as the guns come out', () => {
+  const effects = new Effects(13);
+  const ports = [
+    [-3, 2.5, 1.5],
+    [0, 2.5, 1.5],
+    [3, 2.5, 1.5],
+  ] as const;
+  for (let frame = 0; frame < 30; frame++) effects.glint([0, 0, 0], ports, 1, frame / 30, 1 / 30);
+  const glints = blended(effects.marks(29 / 30), 'glow');
+  assert.ok(glints.length > 0 && glints.every((mark) => (mark.alpha ?? 0) > 0));
 });
 
 test('at the raised view every puff is drawn as many times larger about where it came from', () => {
-  const [near, far] = [new Effects(5), new Effects(5)];
+  const [near, far] = [new Effects(14), new Effects(14)];
   for (const effects of [near, far]) effects.splash([10, 10, 0], 0);
   const [one, four] = [near.marks(0.4, 1), far.marks(0.4, 4)];
   assert.equal(one.length, four.length);
   one.forEach((mark, index) => {
     const big = four[index];
     assert.ok(big && Math.abs(big.radius - mark.radius * 4) < 1e-9);
-    assert.ok(Math.abs(big.z - mark.z * 4) < 1e-9);
     assert.ok(Math.abs(big.x - 10 - (mark.x - 10) * 4) < 1e-9);
   });
 });
 
 test('a ball aloft leaves a faint trail that fades behind it', () => {
-  const effects = new Effects(6);
+  const effects = new Effects(15);
   effects.trail([[0, 0, 5]], 0);
   effects.trail([[1, 0, 5]], 0.01);
   assert.equal(effects.marks(0.02).length, 1, 'a puff every few hundredths of a second');
@@ -135,21 +196,11 @@ test('a ball aloft leaves a faint trail that fades behind it', () => {
   assert.equal(effects.marks(1).length, 0);
 });
 
-test('a ship afire flames and smokes over her deck while she burns', () => {
-  const effects = new Effects(7);
-  for (let frame = 0; frame < 30; frame++) effects.burn([0, 0, 0], [0, 0, 2.4], 1, 1.5, frame / 30, 1 / 30);
-  assert.ok(effects.marks(1).length > 5);
-  assert.ok(effects.marks(1).every((mark) => mark.z >= 2.4));
-  const quiet = new Effects(8);
-  quiet.burn([0, 0, 0], [0, 0, 2.4], 0, 1.5, 0, 1);
-  assert.equal(quiet.marks(0).length, 0);
-});
-
-test('where a ship went down the water foams and bubbles rise to it', () => {
-  const effects = new Effects(9);
+test('where a ship went down foam rings lie on the water and the air boils up in drops', () => {
+  const effects = new Effects(16);
   for (let frame = 0; frame < 30; frame++) effects.foam([0, 0, 0], 6, frame / 30, 1 / 30);
   const marks = effects.marks(1);
-  assert.ok(marks.length > 20);
-  assert.ok(marks.every((mark) => Math.hypot(mark.x, mark.y) < 6.5 && mark.z <= 0.01));
+  assert.ok(marks.some((mark) => mark.flat) && marks.some((mark) => !mark.flat));
+  assert.ok(marks.every((mark) => Math.hypot(mark.x, mark.y) < 8));
   assert.equal(effects.marks(10).length, 0);
 });

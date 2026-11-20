@@ -113,7 +113,7 @@ test('a captain sent off before she comes is never taken up, nor one called befo
   await letGo();
   assert.equal(naval.fighting, true, 'the second call stands');
   assert.equal(asked.begins, 1, 'only the call that stands reaches the door');
-  assert.ok(naval.lines(0).includes('A Pirate Sloop is sighted, 1000 m off.'), naval.lines(0).join(' | '));
+  assert.ok(naval.lines(0).includes('A Pirate Sloop sighted, 1.0 km off.'), naval.lines(0).join(' | '));
 });
 
 test("she takes each answer's numbers for the Sloop, and none from a fight since ended", async () => {
