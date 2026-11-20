@@ -188,13 +188,14 @@ from the sea, fresh water and the claim's edge), then:
    Moors three valleys and two climbs.
 7. **The great works**, across and along the canyons, so they make the ways and the bounds, each where a work as wide
    as the great wall would keep 12 m off every outcrop (the outcrops are placed first): a colossal
-   ruined wall of ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed
+   ruined wall of ashlar dammed across the longest track's straightest run, as high as the lower of its canyon's two
+   cliff tops (each the highest the carved land stands within its face) and 10 m over, its ends sunk in the cliffs, buttressed
    and battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from
-   cliff top to cliff top on piers and arches, one span fallen into the gorge, a pier that would stand on a way moved
+   cliff top to cliff top on piers and arches, its deck 0.92 of the way up to the lower top, one span fallen into the gorge, a pier that would stand on a way moved
    out from the middle until it stands clear (half a span at most) or left out, so each arch spans two piers that
    stand; a natural arch of rock (the rock arch,
    [[Cities]]) left standing over a third canyon, its feet on the canyon's floor either side of the way and out into
-   its cliffs, its opening the way and 6 m either side, its crown over the massif's top, the way running under it; and
+   its cliffs, its opening the way and 6 m either side, its crown 2 to 6 m over the lower cliff top, the way running under it; and
    retaining walls along part of the wider basins' feet, each length where the cliff really rises from the floor and
    clear of every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the section, every
    130 to 210 m where the massif stands over the floor, its top level enough to hold one and no way runs out, stand
@@ -356,7 +357,7 @@ rock. A coven or a cave at the land's own level opens into a cavern (`caverns`):
 along which its floor gives onto rock well inside the claim and dry, a tunnel 12 to 36 m long and 12 m wide into a
 hollow of 20 m reach, both cut into the rock at its level before the climbs, runs and dead rock are found; each roofed
 with rock (a cave roof, [[Cities]]) 7 m over the hollow's floor and 5 m over the tunnel's, its edges resting 5 m on
-the rock round it and its top at the massif's, and a tunnel mouth of rock where the tunnel opens onto the floor. The
+the rock round it and its top at the highest the rock stands round the hollow's faces, and a tunnel mouth of rock where the tunnel opens onto the floor. The
 map takes the cavern as a roofed space joined to its area by a tunnel. In the Vale the Hollow Coven opens into one.
 
 ## The map

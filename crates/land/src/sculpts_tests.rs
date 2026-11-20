@@ -14,6 +14,7 @@ fn sculpt() -> Sculpts {
         runs: vec![[-200.0, -300.0, 100.0, -300.0, 4.0, 0.0, 0.0], [-200.0, 300.0, 100.0, 300.0, 4.0, 0.0, 1.0]],
         wings: Vec::new(),
         levels: Vec::new(),
+        terraced: false,
     }])
 }
 
@@ -29,6 +30,7 @@ fn a_run_climbing_round_a_bend_rises_without_a_step() {
         runs: vec![[0.0, 0.0, 0.0, 20.0, 2.5, 0.2, 0.4], [0.0, 20.0, 14.0, 34.0, 2.5, 0.4, 0.6]],
         wings: Vec::new(),
         levels: Vec::new(),
+        terraced: false,
     }]);
     // Along each passage 1.5 m either side of its line, where the step was, through the bend.
     for [x1, y1, x2, y2] in [[0.0_f64, 0.0, 0.0, 20.0], [0.0, 20.0, 14.0, 34.0]] {
@@ -59,6 +61,7 @@ fn a_wing_carries_the_massif_past_the_ring() {
         runs: Vec::new(),
         wings: vec![[50.0, 0.0, 350.0, 0.0, 40.0]],
         levels: Vec::new(),
+        terraced: false,
     }]);
     let beyond = sculpts.raise(300.0, 30.0, 1000.0);
     assert!(beyond > 15.0, "the massif stands 250 m past the ring along the wing: {beyond}");
@@ -181,6 +184,7 @@ fn a_neighbours_massif_never_buries_a_floor_and_meets_it_without_a_step() {
             runs: Vec::new(),
             wings: Vec::new(),
             levels: Vec::new(),
+            terraced: false,
         },
         Sculpt {
             claim: square(1100.0, 2000.0),
@@ -192,6 +196,7 @@ fn a_neighbours_massif_never_buries_a_floor_and_meets_it_without_a_step() {
             runs: Vec::new(),
             wings: Vec::new(),
             levels: Vec::new(),
+            terraced: false,
         },
     ]);
     for x in [1000.0, 1050.0, 1150.0, 1250.0] {
@@ -214,6 +219,7 @@ fn the_massif_has_no_step_at_a_bucket_edge_or_beside_a_climbs_top() {
         runs: Vec::new(),
         wings: Vec::new(),
         levels: Vec::new(),
+        terraced: false,
     }]);
     let worst = largest_step(&sculpts, (0..100).map(|row| -200.0 + f64::from(row) * 4.0), -200.0, 220.0);
     assert!(worst.0 < STRATA_STEP_M, "a step of {:.2} m at {:.2},{:.2}", worst.0, worst.1, worst.2);
@@ -248,6 +254,7 @@ fn standing(outcrop: Outcrop) -> Sculpts {
         runs: Vec::new(),
         wings: Vec::new(),
         levels: Vec::new(),
+        terraced: false,
     }])
 }
 
@@ -417,4 +424,50 @@ fn the_floor_level_is_the_nearest_floors_or_climbs() {
     }
     // Off a climb, nearer it than any floor, its level there.
     assert!((level(120.0, -50.0) - level(120.0, -40.0)).abs() < 0.5, "beside a climb, the climb's level");
+}
+
+/// A wide claim with one raised way across its middle, terraced or not.
+fn terraced(terraced: bool) -> Sculpts {
+    Sculpts::from(vec![Sculpt {
+        claim: vec![[-1500.0, -1500.0], [1500.0, -1500.0], [1500.0, 1500.0], [-1500.0, 1500.0]],
+        floors: Vec::new(),
+        outcrops: Vec::new(),
+        rise: 30.0,
+        seed: 11,
+        climbs: Vec::new(),
+        runs: Vec::new(),
+        wings: Vec::new(),
+        levels: vec![[-1200.0, 0.0, 1200.0, 0.0, 10.0, 0.5, 0.5]],
+        terraced,
+    }])
+}
+
+#[test]
+fn a_terraced_massif_stands_in_plateaus_and_walls_every_floor() {
+    let (flat, stepped) = (terraced(false), terraced(true));
+    // Far from the way, on a grid 1.1 km across: the plateaus of each tier, by the share of the rise they stand at.
+    let mut tiers = [0_u32; 3];
+    let mut lower = 0_u32;
+    for row in -10..=10 {
+        for column in -10..=10 {
+            let (x, y) = (f64::from(column) * 55.0, 200.0 + f64::from(row) * 55.0);
+            let (rough, terraced) = (flat.raise(x, y, 1000.0), stepped.raise(x, y, 1000.0));
+            assert!(terraced <= rough + 1e-9, "a terraced top never stands over the table it was: {x},{y}");
+            lower += u32::from(terraced < rough - 3.0);
+            let share = terraced / rough.max(1.0);
+            tiers[usize::from(share > 0.6) + usize::from(share > 0.86)] += 1;
+        }
+    }
+    assert!(tiers.iter().all(|&count| count >= 40), "every tier stands as plateaus: {tiers:?}");
+    assert!(lower >= 100, "and the top is lower than the table over much of it: {lower}");
+    // Past the way's face and its wander, within the rock it holds: a wall 0.4 of the rise over the way's level, at
+    // the least the rise's noise and its roughness let it.
+    for step in 0..=240 {
+        let x = -1200.0 + f64::from(step) * 10.0;
+        for side in [-1.0, 1.0] {
+            let wall =
+                stepped.raise(x, side * (10.0 * 1.35 + CLIFF_RUN_M + 1.5), 1000.0) - stepped.raise(x, 0.0, 1000.0);
+            assert!(wall >= 0.4 * 30.0 * 0.68 - 2.0, "a wall of {wall:.1} m over the way at {x},{side}");
+        }
+    }
 }

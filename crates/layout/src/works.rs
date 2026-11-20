@@ -77,7 +77,7 @@ fn clear_of_outcrops(run: &Run, outcrops: &[Outcrop]) -> bool {
 
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
 /// longest path's and a natural arch over a third, each clear of the outcrops.
-pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], (rise, outcrops): (f64, &[Outcrop]), carved: &Sculpts) {
+pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: &[Outcrop], carved: &Sculpts) {
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
         .filter_map(|path| longest_run(path, areas).map(|run| (path.tier, run)))
@@ -86,21 +86,21 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], (rise, outcrops): (f
     runs.sort_by(|first, second| second.1.2.total_cmp(&first.1.2));
     let wall = runs.iter().find(|(tier, _)| *tier == Tier::Track).or(runs.first()).copied();
     if let Some((tier, (middle, way, _, half))) = wall {
-        great_wall(kit, (middle, way, half), tier, rise, paths);
+        great_wall(kit, (middle, way, half), tier, paths, carved);
     }
     // The viaduct stands well away from the wall, so each is a place of its own.
     let apart = |run: &&(Tier, Run)| wall.is_none_or(|(_, (middle, ..))| distance(middle, run.1.0) > WORKS_APART_M);
     let viaduct_at = runs.iter().find(apart).copied();
     if let Some((tier, (middle, way, _, half))) = viaduct_at {
-        viaduct(kit, (middle, way, half), tier, rise, paths);
+        viaduct(kit, (middle, way, half), tier, paths, carved);
     }
     // A natural arch over a third canyon, apart from both.
     let clear_of =
         |work: Option<(Tier, Run)>, at: [f64; 2]| work.is_none_or(|(_, run)| distance(run.0, at) > WORKS_APART_M);
-    if let Some((_, (middle, way, ..))) =
+    if let Some((_, (middle, way, _, half))) =
         runs.iter().find(|(_, run)| clear_of(wall, run.0) && clear_of(viaduct_at, run.0))
     {
-        crate::skyline::natural_arch(kit, (*middle, *way), rise, carved);
+        crate::skyline::natural_arch(kit, (*middle, *way, *half), carved);
     }
 }
 
@@ -117,13 +117,13 @@ pub fn retaining_walls(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: 
 /// buttressed on both faces, battlemented, and broken through where the track runs, the breach's sides stepped where
 /// its courses fell and their stones heaped below. The breach opens until no piece stands on a way, and no fallen
 /// stone lies on one.
-fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, rise: f64, paths: &[Path]) {
+fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path], carved: &Sculpts) {
     let run = land::sculpts::CLIFF_RUN_M;
     let floor = kit.height(middle);
     let across = [-way[1], way[0]];
     let turn = turn_along(across);
     let reach = (half * 1.35 + run) + 26.0;
-    let top = floor + rise + WALL_OVER_M;
+    let top = crate::skyline::rim_across(kit, carved, middle, way, half) + WALL_OVER_M;
     let pieces = |breach: f64| {
         let mut pieces = Vec::new();
         for side in [-1.0, 1.0] {
@@ -185,12 +185,12 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, rise: f64, 
 
 /// A viaduct: a deck from cliff top to cliff top across the canyon, on piers standing at the canyon's sides with
 /// arches between them, and one span fallen, its stones lying in the gorge beside the way.
-fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, rise: f64, paths: &[Path]) {
+fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path], carved: &Sculpts) {
     let run = land::sculpts::CLIFF_RUN_M;
     let floor = kit.height(middle);
     let across = [-way[1], way[0]];
     let turn = turn_along(across);
-    let deck = floor + rise * 0.92;
+    let deck = floor + (crate::skyline::rim_across(kit, carved, middle, way, half) - floor) * 0.92;
     let reach = half * 1.35 + run + 10.0;
     let spans = ((2.0 * reach) / SPAN_M).ceil() as i32;
     let span = 2.0 * reach / f64::from(spans);

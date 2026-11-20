@@ -73,6 +73,7 @@ pub fn find(field: &Field, areas: &[Area], levels: &[f64], laid: Laid, (rise, se
         runs: Vec::new(),
         wings: Vec::new(),
         levels: raised.to_vec(),
+        terraced: false,
     }]);
     let mut found = Vec::new();
     for (number, area) in areas.iter().enumerate() {
@@ -108,13 +109,21 @@ pub fn find(field: &Field, areas: &[Area], levels: &[f64], laid: Laid, (rise, se
 }
 
 /// A cavern's rock, on the land as carved: a roof over its hollow and one over its tunnel, each resting on the rock
-/// round it with its top at the massif's, and a tunnel mouth where the tunnel opens onto the area's floor.
-pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts, rise: f64) {
+/// round it with its top at the massif's highest round the hollow (its faces' tops), and a tunnel mouth where the
+/// tunnel opens onto the area's floor.
+pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts) {
     let turn = turn_along(cavern.way);
     let floor = carved_at(kit, carved, cavern.middle);
+    let rim = (0..16)
+        .map(|step| {
+            let (sine, cosine) = land::exact::sin_cos(std::f64::consts::TAU * f64::from(step) / 16.0);
+            let out = cavern.reach * (1.0 + land::sculpts::WANDER) + CLIFF_RUN_M;
+            carved_at(kit, carved, [cavern.middle[0] + sine * out, cavern.middle[1] + cosine * out])
+        })
+        .fold(f64::NEG_INFINITY, f64::max);
     let mut seed = || (kit.draw() * f64::from(u32::MAX)) as u32;
     let (hollow_seed, tunnel_seed, mouth_seed) = (seed(), seed(), seed());
-    let top = (floor + rise).max(floor + HOLLOW_UP_M + 6.0);
+    let top = rim.max(floor + HOLLOW_UP_M + 6.0);
     let side = 2.0 * (cavern.reach + RESTS_M);
     let roof = [cavern.middle[0], cavern.middle[1], floor + HOLLOW_UP_M];
     kit.solid(

@@ -25,6 +25,23 @@ pub(crate) fn carved_at(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
     kit.height(at) + carved.raise(at[0], at[1], kit.ground.coast.at(at[0], at[1]))
 }
 
+/// The lower of a canyon's two cliff tops square to its way at `middle`, metres: on each side the highest the carved
+/// land stands from its floor's half-width `half` to the top of the face past its wander, so a work spanning the
+/// canyon meets the lower rim and stands against the higher one's face.
+pub(crate) fn rim_across(kit: &Kit, carved: &Sculpts, middle: [f64; 2], way: [f64; 2], half: f64) -> f64 {
+    let across = [-way[1], way[0]];
+    let far = half * (1.0 + land::sculpts::WANDER) + land::sculpts::CLIFF_RUN_M + 4.0;
+    [-1.0, 1.0]
+        .iter()
+        .map(|side| {
+            let steps = ((far - half) / 2.0).ceil() as i32;
+            (0..=steps)
+                .map(|step| carved_at(kit, carved, ahead(middle, across, side * (half + f64::from(step) * 2.0), 0.0)))
+                .fold(f64::NEG_INFINITY, f64::max)
+        })
+        .fold(f64::INFINITY, f64::min)
+}
+
 /// Ruins along the cliff tops round the section, walked at even steps, each where the massif stands over it. Laid by
 /// settle on `carved` with every layout's sculpt in it, so each stands on the ground as settled.
 pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], (paths, outcrops): (&[Path], &[Outcrop]), carved: &Sculpts) {
@@ -232,13 +249,13 @@ const ARCH_OPEN_M: f64 = 8.5;
 /// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet on the canyon's floor
 /// either side of the way and out into its cliffs, its crown a little over the massif's top, boulders fallen at its
 /// feet; the way runs under it.
-pub fn natural_arch(kit: &mut Kit, (middle, way): ([f64; 2], [f64; 2]), rise: f64, carved: &Sculpts) {
+pub fn natural_arch(kit: &mut Kit, (middle, way, half): ([f64; 2], [f64; 2], f64), carved: &Sculpts) {
     // Between its feet a rock arch stands open over the middle 0.28 of its span (city's rock.rs): the way and 6 m
     // either side of it.
     let span = 2.0 * ARCH_OPEN_M / 0.28;
     let depth = 7.0 + kit.draw() * 5.0;
-    let tall = rise + 3.0 + kit.draw() * 4.0;
     let floor = carved_at(kit, carved, middle);
+    let tall = rim_across(kit, carved, middle, way, half) - floor + 3.0 + kit.draw() * 4.0;
     let seed = (kit.draw() * f64::from(u32::MAX)) as u32;
     let arch = Solid::upright(
         Shape::RockArch { seed },

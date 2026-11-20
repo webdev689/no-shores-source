@@ -248,9 +248,9 @@ pub fn plan(
     let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
-    works::build(&mut kit, &areas, &paths, (rise, &sculpt.outcrops), &carved);
+    works::build(&mut kit, &areas, &paths, &sculpt.outcrops, &carved);
     for cavern in &caverns {
-        caverns::build(&mut kit, cavern, &carved, rise);
+        caverns::build(&mut kit, cavern, &carved);
     }
     if brief.heights {
         for area in areas.iter().filter(|area| area.kind == AreaKind::Gate) {

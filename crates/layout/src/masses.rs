@@ -225,8 +225,9 @@ pub fn ruin(kit: &mut Kit, climb: &[[f64; 7]; 2], carved: &Sculpts, outcrops: &[
     }
 }
 
-/// The dead masses of a claim (the field's): the patches of land raised over half the massif's height (`rise`), more
-/// than 150 m from every floor, climb and run and 120 m inside the claim's edge, each wider than a fighting space.
+/// The dead masses of a claim (the field's): the patches of land raised over a quarter of the massif's height
+/// (`rise`; a terraced massif's lowest plateau stands at about a third), more than 150 m from every floor, climb and
+/// run and 120 m inside the claim's edge, each wider than a fighting space.
 #[must_use]
 pub fn dead_masses(field: &Field, sculpts: &Sculpts, rise: f64) -> Vec<Mass> {
     let (columns, rows) = (field.columns.div_ceil(STRIDE), field.rows.div_ceil(STRIDE));
@@ -247,7 +248,7 @@ pub fn dead_masses(field: &Field, sculpts: &Sculpts, rise: f64) -> Vec<Mass> {
             let [x, y] = centre(at);
             field.inside[cell(at)] > FROM_EDGE_M
                 && off[at] * STRIDE as f64 > FROM_FLOORS_M
-                && sculpts.raise(x, y, field.to_sea[cell(at)]) - sculpts.floor_level(x, y) > rise / 2.0
+                && sculpts.raise(x, y, field.to_sea[cell(at)]) - sculpts.floor_level(x, y) > rise / 4.0
         })
         .collect();
     let mut seen = vec![false; dead.len()];
@@ -341,6 +342,7 @@ mod tests {
             runs: Vec::new(),
             wings: Vec::new(),
             levels: Vec::new(),
+            terraced: false,
         };
         Sculpts::from(vec![sculpt])
     }

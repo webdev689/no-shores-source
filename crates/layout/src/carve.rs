@@ -301,12 +301,13 @@ pub fn carve(
         runs: Vec::new(),
         wings: Vec::new(),
         levels: raised.clone(),
+        terraced: heights,
     }]);
     let mut climbs = climbs(field, areas, &bare, rise, seed);
     climbs.extend(terraces);
     let outcrops = outcrops(areas, Ways { paths, climbs: &climbs }, seating, (shape, rise), seed);
-    let sculpt =
-        Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new(), levels: raised };
+    let (runs, wings, levels, terraced) = (Vec::new(), Vec::new(), raised, heights);
+    let sculpt = Sculpt { claim, floors, outcrops, rise, seed, climbs, runs, wings, levels, terraced };
     (sculpt, basins, caverns)
 }
 

@@ -72,4 +72,4 @@ The owner's answers to the questions that followed:
 - **The land gains real 3D rock**: cave ceilings, overhanging cliffs, natural arches and tunnel mouths, lit and
   collided like the rest, where the ground's one height a point cannot reach.
 
-It builds on [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]].
+It builds on [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]. [[Handcrafted Playspaces Are Scripted in Blender]] builds on it.

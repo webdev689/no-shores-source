@@ -26,13 +26,23 @@ const RUN_BLEND_M: f64 = 3.0;
 const BUCKET_M: f64 = 32.0;
 /// How much a floor's or outcrop's edge wanders out from its stated reach, as a share: never in, so what was placed
 /// stays on it.
-pub(crate) const WANDER: f64 = 0.35;
+pub const WANDER: f64 = 0.35;
 /// The highest a floor's ceiling stands, metres: over any massif, and finite so a level blended under it stays a number.
 const CEILING_M: f64 = 1000.0;
 /// How far a floor reaches past its edge for its top's roughness and the ceiling it sets on other sculpts, metres:
 /// three cliffs' runs, where its ceiling stands at three times its massif's height, over the top of any neighbour of
 /// the same height (a landmass's sculpts share one).
 const FLOOR_REACH_M: f64 = 3.0 * CLIFF_RUN_M;
+/// A terraced massif's plateaus, as shares of its height, and where its slow noise steps from one to the next, each
+/// riser a narrow band of the noise so it stands as a cliff.
+const TIERS: [f64; 3] = [0.45, 0.72, 1.0];
+const TIER_STEPS: [f64; 2] = [0.4, 0.6];
+const RISER: f64 = 0.025;
+/// How high a terraced massif stands at least over a floor, climb or run beside it, a share of its height, so no body
+/// climbs out; how far past the floor's edge it holds that, and over how far it then falls to its plateau, metres.
+const WALL_SHARE: f64 = 0.4;
+const HOLD_M: f64 = CLIFF_RUN_M + 8.0;
+const HOLD_FALL_M: f64 = 6.0;
 
 /// One layout's sculpt: its claim (where it reaches fully), the floor of its network as capsules (a segment and its
 /// half-width; a basin is a capsule of no length), the outcrops raised on that floor (`Outcrop`), the
@@ -57,6 +67,9 @@ pub struct Sculpt {
     /// places. Each is carved as its climbs are, the land at its level, and is floor to all that asks for floor.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub levels: Vec<[f64; 7]>,
+    /// Whether its massif's top stands in plateaus at several heights (`top_at`), not as one table.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub terraced: bool,
 }
 
 /// The floors, the outcrops, the climbs, the runs and the raised floors near one bucket, by their places in a sculpt's
@@ -371,6 +384,24 @@ impl Sculpts {
         sculpt.rise * (0.7 + 0.45 * (0.5 + 0.5 * fbm(sculpt.seed ^ 0x51, x / 230.0, y / 230.0, 3)))
     }
 
+    /// A sculpt's massif's top at a point, metres: its rise, or on a terraced sculpt one of its plateaus, held up to
+    /// a wall's height over each floor, raised floor, climb and run near it (`near`, each its off and level).
+    fn top_at(&self, number: usize, x: f64, y: f64, rise: f64, near: [(f64, f64); 3]) -> f64 {
+        let sculpt = &self.sculpts[number];
+        if !sculpt.terraced {
+            return rise;
+        }
+        let noise = 0.5 + 0.5 * fbm(sculpt.seed ^ 0x7E7A, x / 170.0, y / 170.0, 2);
+        let stepped = |at: usize| (TIERS[at + 1] - TIERS[at]) * smooth(-RISER, RISER, noise - TIER_STEPS[at]);
+        let tier = TIERS[0] + stepped(0) + stepped(1);
+        let held = near
+            .iter()
+            .filter(|(off, _)| off.is_finite())
+            .map(|&(off, share)| (share + WALL_SHARE).min(1.0) * (1.0 - smooth(HOLD_M, HOLD_M + HOLD_FALL_M, off)))
+            .fold(tier, f64::max);
+        rise * held
+    }
+
     /// The level of a sculpt's raised floor at a point on it, metres; 0 off every raised floor.
     fn raised_level(&self, number: usize, x: f64, y: f64) -> f64 {
         let (off, share) = self.off_level(number, x, y);
@@ -459,13 +490,15 @@ impl Sculpts {
         let sculpt = &self.sculpts[number];
         let off = self.off_floor(number, x, y);
         let rise = self.rise_at(number, x, y);
+        let cuts = [self.off_level(number, x, y), self.off_climb(number, x, y)];
         let mut height = if rough {
             if off > 0.0 {
                 // A face in ledges up to the top's roughness.
                 let stepped = face(off);
                 let rough =
                     4.0 * fbm(sculpt.seed ^ 0x77, x / 48.0, y / 48.0, 3) * smooth(0.0, 1.0, off / (2.0 * CLIFF_RUN_M));
-                rise * stepped + rough.max(-2.0) * stepped
+                let top = self.top_at(number, x, y, rise, [(off, 0.0), cuts[0], cuts[1]]);
+                top * stepped + rough.max(-2.0) * stepped
             } else {
                 0.0
             }
@@ -475,7 +508,7 @@ impl Sculpts {
         // A raised floor is cut first, then a climb into what it leaves, each at its own level with its own face
         // rising from it to the top: the land is the lower, so a way up runs along the cliff with a drop on its floor's
         // side, and a terrace stands on a raised floor as on the land's own.
-        for (off, share) in [self.off_level(number, x, y), self.off_climb(number, x, y)] {
+        for (off, share) in cuts {
             if off.is_finite() {
                 let level = rise * share;
                 // On it the land is its level, an embankment where the floor's face runs lower; off it, over a

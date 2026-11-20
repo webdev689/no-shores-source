@@ -104,6 +104,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Run on the Rock's Top Is Held by Out of Bounds]]
 - [[Patrol Zones and Missions Open as Their Pass Is Done]]
 - [[Zones Rise and Fall, Above and Below Ground]]
+- [[Handcrafted Playspaces Are Scripted in Blender]]
 - [[The World Editor Draws the Layouts' Buildings]]
 - [[The Well House's Roof Is Fixed]]
 - [[The Face Is Mended Whole, and the Gauge Counts Upgrades]]
