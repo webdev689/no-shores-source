@@ -191,10 +191,11 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     let squeeze = (1.0 + swell.stretch.x) * (1.0 + swell.stretch.y) - swell.stretch.z * swell.stretch.z;
     // Whitecaps: crests folding, and, as the sea rises, every crest standing high in the sea round it, a rough sea's
     // and a storm's breaking white; read from far off as the share of the sea they cover.
-    let standing = swell.height / max(swell.most, 1e-3);
+    // How many of the sea's own spreads (its waves' root mean square) a crest stands above still water.
+    let standing = swell.height / max(sqrt(swell.energy * 0.5), 1e-3);
     // Broken into patches, as wind-blown caps are, never whole crest lines.
     let broken = smoothstep(0.45, 0.8, value_noise(local * 0.045 + vec2f(frame.eye.w * 0.05, 0.0)));
-    let caps = smoothstep(mix(0.8, 0.5, rise), mix(0.95, 0.7, rise), standing) * smoothstep(1.1, 2.6, height_here) * broken;
+    let caps = smoothstep(mix(2.0, 1.1, rise), mix(2.6, 1.7, rise), standing) * smoothstep(1.1, 2.6, height_here) * broken;
     whitecap = max(1.0 - smoothstep(0.28, 0.6, squeeze), caps);
     drift = breaker.toward_shore * frame.eye.w * 0.45 * breaker.broken;
   }

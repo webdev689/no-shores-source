@@ -398,8 +398,8 @@ struct Swell {
   height: f32,
   slope: vec2f,
   stretch: vec3f,
-  // The waves' heights summed, so a crest can be told against the sea it stands in.
-  most: f32,
+  // The waves' heights squared and summed, so a crest can be told against the sea it stands in.
+  energy: f32,
 };
 
 // The swell at the water whose rest is 'offset' metres from the eye: sea.rs's waves, each fading where 'footprint'
@@ -424,7 +424,7 @@ fn swell_at(offset: vec2f, depth: f32, footprint: f32) -> Swell {
     let shift = second.y * fade / max(sheltered, 1.0);
     swell.shift += shift * first.xy * cosine;
     swell.height += amplitude * sine;
-    swell.most += amplitude;
+    swell.energy += amplitude * amplitude;
     swell.slope += amplitude * first.z * first.xy * cosine;
     let pinch = shift * first.z * sine;
     swell.stretch -= pinch * vec3f(first.x * first.x, first.y * first.y, first.x * first.y);

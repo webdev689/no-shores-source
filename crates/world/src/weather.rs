@@ -96,6 +96,15 @@ pub const FETCH_SHARE: [f64; 2] = [0.25, 1.0];
 pub const HARBOUR_M: f64 = 3_000.0;
 pub const HARBOUR_EASE_M: f64 = 500.0;
 pub const HARBOUR_SHARE: f64 = 0.3;
+/// The rays the fetch is judged along: the wind's own and 10 and 20 degrees either side, as each turn's cosine and
+/// sine.
+const FAN: [(f64, f64); 5] = [
+    (0.939_692_620_785_908_4, -0.342_020_143_325_668_7),
+    (0.984_807_753_012_208, -0.173_648_177_666_930_3),
+    (1.0, 0.0),
+    (0.984_807_753_012_208, 0.173_648_177_666_930_3),
+    (0.939_692_620_785_908_4, 0.342_020_143_325_668_7),
+];
 /// The march upwind never steps less than this, metres, so a march along a coast lying with the wind takes 120 steps
 /// at most: the fetch's shares change over kilometres.
 const LEAST_STEP_M: f64 = 500.0;
@@ -121,12 +130,18 @@ pub fn fetch_m(waters: &Waters, point: [f64; 2], wind: [f64; 2]) -> f64 {
     FETCH_M[1]
 }
 
-/// The share of the open sea's swell a point of sea is left by the land round it: by its fetch upwind (`fetch_m`),
-/// and calm within `HARBOUR_M` of a roadstead. The second number says how much of the harbour's calm holds, 0 to 1.
+/// The share of the open sea's swell a point of sea is left by the land round it: by its fetch upwind (`fetch_m`, the
+/// mean share over a fan of rays about the wind), and calm within `HARBOUR_M` of a roadstead. The second number says
+/// how much of the harbour's calm holds, 0 to 1.
 #[must_use]
 pub fn shelter(waters: &Waters, roadsteads: &[Point], point: [f64; 2], wind: [f64; 2]) -> (f64, f64) {
-    let fetch = fetch_m(waters, point, wind);
-    let open = through(&[(FETCH_M[0], FETCH_SHARE[0]), (FETCH_M[1], FETCH_SHARE[1])], fetch);
+    // The open water over a fan either side of the wind: one ray alone flips from a few kilometres to sixty as a
+    // coast lying along the wind passes, and the swell is raised by the whole fan.
+    let fan = FAN.iter().map(|&(cosine, sine)| {
+        let turned = [wind[0] * cosine - wind[1] * sine, wind[0] * sine + wind[1] * cosine];
+        through(&[(FETCH_M[0], FETCH_SHARE[0]), (FETCH_M[1], FETCH_SHARE[1])], fetch_m(waters, point, turned))
+    });
+    let open = fan.sum::<f64>() / FAN.len() as f64;
     let nearest = roadsteads.iter().fold(f64::INFINITY, |least, roadstead| {
         let (east, south) = (point[0] - roadstead.x as f64, point[1] - roadstead.y as f64);
         least.min((east * east + south * south).sqrt())

@@ -180,7 +180,8 @@ source of each.
 - The wind veers smoothly across a system about the prevailing westerlies; its strength follows the sea state, from a
   calm's 2 m/s through 4, 9 and 15 m/s at the bands' meetings to a storm's 25 m/s.
 - The open water shelters the sea: the fetch, the open water upwind of a point out to 60 km (marched by the
-  clearance to the nearest coast), leaves the swell a quarter of its height at under 2 km and all of it at 60 km.
+  clearance to the nearest coast, in steps of 500 m at least), leaves the swell a quarter of its height at under 2 km
+  and all of it at 60 km, the share taken as the mean over five rays, the wind's and 10 and 20 degrees either side.
   Within 3 km of a port's roadstead the sea is calm, the swell 0.3 of a moderate sea's whatever the weather, easing
   back to the open sea's over the next 500 m ([[Water]]).
 - DFO's dynamic weather and clouds will draw from it, rewritten for WebGPU ([[WebGPU Only]]).

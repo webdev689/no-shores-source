@@ -124,7 +124,7 @@ fn the_lee_of_land_is_sheltered_by_its_fetch_and_the_open_sea_is_not() {
     assert_eq!(shelter(&waters, &[], [1_101_000.0, 1_050_000.0], east_wind), (FETCH_SHARE[0], 0.0));
     // 31 km east, half the shares' way along.
     let (half, _) = shelter(&waters, &[], [1_131_000.0, 1_050_000.0], east_wind);
-    assert!((half - (0.25 + 0.75 * 29.0 / 58.0)).abs() < 0.01, "{half}");
+    assert!((half - (0.25 + 0.75 * 29.0 / 58.0)).abs() < 0.03, "about half its fan's way along: {half}");
     // West of it, upwind, the open sea.
     assert_eq!(fetch_m(&waters, [990_000.0, 1_050_000.0], east_wind), FETCH_M[1]);
     assert_eq!(shelter(&waters, &[], [990_000.0, 1_050_000.0], east_wind).0, 1.0);

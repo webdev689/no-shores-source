@@ -120,5 +120,5 @@ test('the sea by weather is calm in a roadstead and the deep sea holds to the fi
   assert.ok(Math.abs(Math.hypot(...swell.wind) - Math.hypot(swell.wind[0], swell.wind[1])) < 1e-9);
   const grid = rules.seaHeights([roadstead[0] - 2_000, roadstead[1] - 2_000], 1_000, 4, 4, time);
   assert.equal(grid.length, 16);
-  assert.equal(rules.seaHash(SEA_POINTS, time), '9253bce77cd855e8');
+  assert.equal(rules.seaHash(SEA_POINTS, time), 'aa8b7cd0624a292d');
 });

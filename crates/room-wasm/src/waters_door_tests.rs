@@ -68,7 +68,7 @@ pub fn sea_points() -> Vec<f64> {
 
 /// The deep sea's height under the weather at `sea_points` at a moment of 2026 (watersRules.test.ts asks the built
 /// module for the same).
-pub const WORLD_SEA_HASH: &str = "9253bce77cd855e8";
+pub const WORLD_SEA_HASH: &str = "aa8b7cd0624a292d";
 
 #[test]
 fn the_sea_by_weather_is_calm_in_a_roadstead_and_holds_to_its_fingerprint() {
