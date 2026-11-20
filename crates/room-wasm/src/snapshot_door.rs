@@ -23,8 +23,12 @@ struct SeaParts {
 }
 
 impl SeaParts {
-    fn bytes(&self, harbour: &protocol::SeaHarbour) -> Vec<u8> {
-        protocol::sea_snapshot_bytes(self.tick, &self.ships, &self.pirates, &self.fights, &self.aboard, harbour)
+    fn bytes(
+        &self,
+        fights: &[(PlayerId, Vec<f64>, naval::ranks::Commission)],
+        harbour: &protocol::SeaHarbour,
+    ) -> Vec<u8> {
+        protocol::sea_snapshot_bytes(self.tick, &self.ships, &self.pirates, fights, &self.aboard, harbour)
     }
 }
 
@@ -34,6 +38,8 @@ thread_local! {
 
 /// Takes the room's snapshot after its last tick: what happened since the last is taken with it.
 pub fn prepare() {
+    // One that fails to take leaves none, never the last tick's again.
+    PREPARED.with(|kept| *kept.borrow_mut() = None);
     let prepared = with_open(|opened| match opened {
         Opened::Land { room, .. } => Prepared::Everyone(land_snapshot(room)),
         Opened::Sea(sea) => {
@@ -89,7 +95,9 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                     .cloned()
                     .collect(),
             };
-            parts.bytes(&harbour)
+            // Each player's fight view is theirs alone too.
+            let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.0 == player).cloned().collect();
+            parts.bytes(&fights, &harbour)
         }
     })
 }
@@ -103,7 +111,7 @@ pub fn snapshot() -> Vec<u8> {
     PREPARED.with(|kept| match kept.borrow().as_ref() {
         None => Vec::new(),
         Some(Prepared::Everyone(bytes)) => bytes.clone(),
-        Some(Prepared::Sea(parts)) => parts.bytes(&parts.harbour),
+        Some(Prepared::Sea(parts)) => parts.bytes(&parts.fights, &parts.harbour),
     })
 }
 

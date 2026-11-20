@@ -100,3 +100,9 @@ test('washed up, the player’s ship lies where the room moored her, taken once,
   assert.equal(room.takeWashed(), null, 'only the snapshot that tells it moors her');
   assert.deepEqual(room.takeTold().told, [[20, 5, 0, 1]]);
 });
+
+test('back at sea, her ship lies where the room last kept her', async () => {
+  const { room, atTick } = await joined();
+  atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 2, pace: 0 }], [[23, 5, 61_000, 50_000, 2]]);
+  assert.deepEqual(room.takeWashed(), { x: 61_000, y: 50_000, heading: 2 });
+});

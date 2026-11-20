@@ -473,6 +473,10 @@ export class Sea {
     if (combat?.done) {
       this.passage.placeAt(this.room?.takeWashed() ?? combat.lying);
       this.combat = null;
+    } else if (!combat) {
+      // Out of a fight, where the room moored her is where she lies.
+      const moored = this.room?.takeWashed();
+      if (moored) this.passage.placeAt(moored);
     }
     const others = this.room?.others ?? [];
     const pirates = this.room?.pirates ?? [];

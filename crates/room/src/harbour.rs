@@ -79,7 +79,17 @@ impl Harbours {
             let by_sea = self.ways.as_ref().and_then(|ways| ways.length(point(at), point(port.1)));
             by_sea.unwrap_or_else(|| libm::hypot(port.1[0] - at[0], port.1[1] - at[1]))
         };
-        let lengths: Vec<f64> = self.ports.iter().map(apart).collect();
+        let mut lengths: Vec<f64> = self.ports.iter().map(apart).collect();
+        // Where some port is reached by sea, one no way reaches is no nearer for a short straight line.
+        let by_sea = |port: &(String, [f64; 2])| self.ways.as_ref()?.length(point(at), point(port.1));
+        let reached: Vec<bool> = self.ports.iter().map(|port| by_sea(port).is_some()).collect();
+        if reached.contains(&true) {
+            lengths
+                .iter_mut()
+                .zip(&reached)
+                .filter(|(_, reached)| !**reached)
+                .for_each(|(length, _)| *length = f64::INFINITY);
+        }
         (0..lengths.len()).min_by(|one, other| lengths[*one].total_cmp(&lengths[*other]))
     }
 

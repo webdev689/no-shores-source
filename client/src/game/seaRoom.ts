@@ -34,6 +34,8 @@ const COURSE_EVERY_TICKS = 45;
 const SETTLE_TICKS = 60;
 /** The sea's word that the player washed up at a port city (crates/room/src/harbour.rs `WASHED_UP`). */
 const WASHED_UP = 20;
+/** The sea's word that her ship lies where the room last kept her, once the accounts gave her back (`MOORED`). */
+const MOORED = 23;
 
 export class SeaRoom {
   own: number;
@@ -133,15 +135,21 @@ export class SeaRoom {
       this.naval.push(...view.naval);
     } else if (this.fight?.over === null) this.fight = null;
     // An ended fight's last view, shown in one snapshot, is kept until it is taken.
-    const washed = snapshot.told.some((told) => told.player === this.own && told.numbers[0] === WASHED_UP);
-    if (washed) this.washUp(snapshot);
+    const told = snapshot.told.filter((each) => each.player === this.own).map((each) => each.numbers[0]);
+    if (told.includes(WASHED_UP)) this.washUp(snapshot);
+    else if (told.includes(MOORED)) this.moor(snapshot);
   }
 
   /** The player washed up: their fight is over for them, and their ship lies where the room moored her. */
   private washUp(snapshot: Snapshot): void {
+    this.moor(snapshot);
+    if (this.fight?.over === null) this.fight = { ...this.fight, over: 'sunk', events: [] };
+  }
+
+  /** Her ship lies where the room has her now. */
+  private moor(snapshot: Snapshot): void {
     const moored = snapshot.ships.find((ship) => ship.player === this.own);
     if (moored) this.washedAt = { x: moored.x, y: moored.y, heading: moored.heading };
-    if (this.fight?.over === null) this.fight = { ...this.fight, over: 'sunk', events: [] };
   }
 
   /** Where the room moored the player's ship once they washed up, taken once. */

@@ -69,6 +69,7 @@ impl Sea {
             }
         };
         let boarded = &mut self.decks.boarded[index];
+        // A deck room just made always has room; only one already full refuses, and it keeps its boarders.
         let Some(boarder) = boarded.room.join() else { return Err(crate::battle::BoardRefused::NoneAlongside) };
         if let Some(text) = self.harbour.characters.get(&player).map(gear::Character::to_json) {
             boarded.room.restore_character(boarder, &text);

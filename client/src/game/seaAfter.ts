@@ -1,7 +1,6 @@
 // What the sea's fights leave the player, as the page tells them (crates/room/src/harbour.rs, flotsam.rs, battle.rs):
 // who joins their fight, a captain's colours struck, what floats gathered and what it held, washing up at a port city,
-// and their ship's repair by one. The sea decides all of
-// it; the page shows its word and sends the player's asks.
+// and their ship's repair by one. The sea decides all of it; the page shows its word and sends the player's asks.
 import type { NavalEvent } from '../network/seaFight.ts';
 import { shipName } from '../ships/shipBars.ts';
 import type { SeaRoom } from './seaRoom.ts';
