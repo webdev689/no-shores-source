@@ -54,8 +54,9 @@ pub(crate) struct Foe {
     pub shield: Option<gear::element::Shield>,
 }
 
-/// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
-/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield.
+/// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase, how
+/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching) and how it holds up (0 steady, 1 broken, 2 raging), its
+/// fighter, its level and its shield.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FoeSeen {
     pub foe: FighterId,
@@ -65,6 +66,7 @@ pub struct FoeSeen {
     pub faction: u8,
     pub phase: u8,
     pub alert: u8,
+    pub mood: u8,
     pub fighter: Fighter,
     pub level: u8,
     pub shield: Option<gear::element::Shield>,
@@ -576,6 +578,7 @@ impl Room {
                 faction: brain.foe_type.faction,
                 phase: brain.phase(),
                 alert: brain.alertness() as u8,
+                mood: brain.mood(self.clock) as u8,
                 fighter: found.fighter,
                 level: found.level,
                 shield: found.shield,

@@ -14,8 +14,8 @@ use crate::steer::{Ask, way_to};
 use crate::tell::aim_ready;
 use crate::tuning::{
     AIMED_SHARE, ASIDE_STRIDE, ASIDE_WEIGHT, BAND_BOW, BAND_CROSSBOW, BAND_PISTOLET, BAND_THUNDERLOCK, BAND_WEIGHT,
-    COVER_WEIGHT, EYE, FLANK_WEIGHT, HIDE, KITE_OUT, NEAR_WEIGHT, PEEK, POST_GAP, POST_LEAVE, POST_RETRY, POST_SEEK,
-    POST_TRIES, REPICK, ROUTE_TRIES, RUN_FROM, SHOOT_RANGE, STEP_ASIDE,
+    COVER_WEIGHT, DEFEND_HIDE, EYE, FLANK_WEIGHT, HIDE, KITE_OUT, NEAR_WEIGHT, PEEK, POST_GAP, POST_LEAVE, POST_RETRY,
+    POST_SEEK, POST_TRIES, REPICK, ROUTE_TRIES, RUN_FROM, SHOOT_RANGE, STEP_ASIDE,
 };
 use combat::fighter::Action;
 use combat::sight::{apart, bearing, clear_line, off};
@@ -221,6 +221,12 @@ fn aims(brain: &Brain, here: &Here<'_, '_>, board: &Board, sight: &Sight) -> boo
     ready && aim_ready(brain, here, sight) && Dice { tick: since, ..here.dice }.roll(Purpose::PostAim) < AIMED_SHARE
 }
 
+/// How long a shooter hides behind its cover before it looks out again: longer while its group defends its ground.
+fn hide_ticks(brain: &Brain, here: &Here<'_, '_>) -> u64 {
+    let hide = here.dice.between(Purpose::Hide, HIDE);
+    Here::ticks(if brain.orders.defend { hide * DEFEND_HIDE } else { hide })
+}
+
 /// A shooter's tick at its post, or None to fight as on open ground. Hidden, it waits out its hiding (or its hurt),
 /// then looks out from its post's line for a while, raising its weapon behind its cover when it has its turn and
 /// loosing once drawn on the line; a turn that is an aimed shot sends it out at once, unraised, to aim on the line. A
@@ -253,7 +259,7 @@ pub fn hold(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
     let aim = has && !hurt && aims(brain, here, board, sight);
     if brain.bow.peeking && (hurt || spent || matches!(action, Action::Reload { .. })) {
         brain.bow.peeking = false;
-        brain.bow.turn_at = tick + Here::ticks(here.dice.between(Purpose::Hide, HIDE));
+        brain.bow.turn_at = tick + hide_ticks(brain, here);
     } else if !brain.bow.peeking && !hurt && (tick >= brain.bow.turn_at || aim) {
         brain.bow.peeking = true;
         brain.bow.turn_at = tick + Here::ticks(PEEK);
@@ -273,7 +279,7 @@ pub fn hold(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
     if shooting.combat.telegraph.is_some() {
         // Its aimed shot loosed, it falls back behind its cover as a reload would send it.
         brain.bow.peeking = false;
-        brain.bow.turn_at = tick + Here::ticks(here.dice.between(Purpose::Hide, HIDE));
+        brain.bow.turn_at = tick + hide_ticks(brain, here);
     }
     if shooting.combat.telegraph.is_some() || distance <= THERE {
         return Some(shooting);

@@ -31,7 +31,7 @@ pub mod tuning;
 
 pub use awareness::Alertness;
 pub use board::Board;
-pub use brain::{Brain, Calls, notice};
+pub use brain::{Brain, Calls, Mood, Orders, notice};
 pub use combat::{Fighter, FighterId, Intent};
 pub use director::{Caps, Director, Pressed};
 pub use factions::{FACTIONS, Faction, faction};

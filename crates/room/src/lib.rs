@@ -118,6 +118,8 @@ pub struct Room {
     pub(crate) seed: u64,
     pub(crate) foes_most: usize,
     pub(crate) garrison: Vec<garrison::Post>,
+    /// A mission's or a dungeon's garrison as one encounter, giving ground as it falls.
+    pub(crate) encounter: Option<garrison::Encounter>,
     pub(crate) world_seed: u64,
     /// How many rolls the room has made for players, so no two share one, even in one tick.
     pub(crate) rolls: u64,
@@ -186,6 +188,7 @@ impl Room {
             seed: SEED,
             foes_most: FOES_MOST,
             garrison: Vec::new(),
+            encounter: None,
             world_seed: SEED,
             rolls: 0,
             past: VecDeque::new(),

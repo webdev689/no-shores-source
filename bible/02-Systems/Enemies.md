@@ -21,6 +21,11 @@ code:
   - crates/room/src/garrison.rs#raise_garrison
   - crates/room/src/garrison.rs#walk_beats
   - crates/room/src/beat.rs#Beat
+  - crates/room/src/groups.rs#leader_of
+  - crates/room/src/groups.rs#lead_groups
+  - crates/room/src/groups.rs#give_ground
+  - crates/room/src/groups.rs#arrive
+  - client/src/combat/foeMoods.ts#FoeMoods
   - crates/room-wasm/src/roster_door.rs#roster_json
   - client/src/rules/roster.ts#rankBand
   - client/src/rules/roster.ts#rankMark
@@ -39,8 +44,10 @@ how much it takes, how it defends and which telegraphed blows it throws. The own
 ([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]]), and that a Miniboss
 throws more often than an Elite, a Boss's called foes fall with it and a garrison leashes to its posts
 ([[Foes Leash to Their Posts and Fall With Their Boss]]), and that fewer plates show and their size goes with rank
-([[Fewer Plates Show, Sized by Rank, After Destiny]]); the roster and the numbers are Claude's
-([[The Enemies as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
+([[Fewer Plates Show, Sized by Rank, After Destiny]]), and that garrisons fight in groups that lead, break and give
+ground, after Bungie's ([[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]); the roster, the
+numbers and how the groups do it are Claude's ([[The Enemies as Claude Builds Them]],
+[[Foe Groups as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
 
 ## Factions
 
@@ -180,6 +187,28 @@ WebAssembly, so names, factions and weapons are read in one place.
   whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight began, so it walks
   back to its place round that spot, and the group walks its beat on once all its foes are idle in their places. It
   is still its group's: a walk home never clears a group or stands it again.
+- **Its leader** is its highest rank, a Captain first among equals, else the first of them. When it falls, every other
+  foe of its group that is stirred breaks, once each time the group stands: one rages (a brute first, then a
+  skirmisher, then a swordsman, the one nearest its target; never a shooter or a captain, and none if one of them
+  rages already), and the rest break by their role for 8 s ([[Foes]], "Its group").
+- **Its breaking point**: once half the foes it stood have fallen, it defends its ground until it stands again: its
+  places gather back at its post, its foes fighting elsewhere fall back to them, and each fights only near its place.
+- **The Grey Tithe's tactic**: its shield-bearers hold the line before their target, as every shield-bearer does, and
+  its leader waits behind them, screened, while one of its followers that is not broken fights hand to hand at its
+  target; once none of them stands unbroken, it goes in at once.
+- **A mission's or a dungeon's garrison gives ground** as one encounter, by the share of the foes it stood that stand
+  (its waves not counted). More than three quarters standing, it holds its territory: each group its own post and
+  beat. More than half, it falls back: each group's places gather 2.5 m round its fallback point, halfway along the
+  navmesh's way from its post to the last stand's post, the post farthest from the spawns (its own post where that
+  point is off the mesh, outside the section or within 25 m of a spawn). Less, it makes its last stand: the last
+  stand's group at its places there and every other foe 5 m round it, all defending, led by the highest rank standing
+  as it begins; that one's fall breaks every foe there. As groups stand again the share rises, and they go back.
+- **A mission's waves**: as its garrison falls back, a wave comes, and another for its last stand: each a band drawn
+  as its bands are (two to four Runners, Collectors and Crossbowmen, Minor or Major) at the island's levels, a shield
+  drawn as any foe's, standing at the open post farthest from every player and at least 25 m from each, alert toward
+  the nearest, its places at the last stand. A wave has its own leader, breaking point and break; it never stands
+  again once fallen, comes once each time the garrison holds its territory, and only while the room's living foes
+  leave room for all of it.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
   its beat begun again from there, 120 s later, once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.
@@ -215,6 +244,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   an icon for its Expose in Cosmic purple and its Charge in Volt blue, and once a Charge ends, a faded Charge while it
   cannot be Charged again, each over a thin line that shrinks as its time runs out ([[Combat]], "Statuses";
   [[Interface]]). A Charged foe's poise track says "Charged". A Veiled player is no foe's target ([[Foes]]).
+- **How it holds up**: over a foe as it breaks, the fear emote ([[Speech]], a drop of sweat in blue), and as it starts
+  to rage, the anger emote (a red mark), each popped once with its sound and standing just over its plate; neither
+  shows where a block or the land hides its head. The room sends each foe's mood: steady, broken or raging.
 - **Their dress**: the Grey Tithe in grey over leather or iron by role (Runner and Deckhand in leather; Crossbowman
   and Pistoleer women in leather; the Marksman under a grey hooded cloak; Collector and Tithe-Mate iron under a grey
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with
@@ -230,5 +262,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   baking a section's whole ring costs more time and memory than a room has. A garrison foe gives up a player who
   leaves the mesh; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
 - A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
+- A wave stands at its post from nowhere, at least 25 m from every player: a node's land has no ships to bring it,
+  and its room's navmesh no ground beyond its square to walk it in from.
+- A wave still standing as its garrison holds its territory again stays at the last stand, its places there.
+- A group's leader is fixed as it stands: a leader walking home or leashed still leads it.
 - Only the Sloop's hull for every rank of ship ([[Hulls]]).
 - The Hookman's axe takes both hands, so he carries no shield.

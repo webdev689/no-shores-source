@@ -27,6 +27,8 @@ export interface MarkedFoe {
   readonly level?: number;
   readonly shield?: FoeShield | null;
   readonly statuses?: FoeStatuses;
+  /** How it holds up (`MOOD`): none for steady. */
+  readonly mood?: number;
 }
 
 /** A plate's tier by its foe's rank: a Minor's, a Major's, or an Elite's and up. */

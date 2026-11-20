@@ -52,7 +52,8 @@ line keeps to [[Dialogue]].
   its own is ringed in the page's outline, to read over a bright sky. Each pops a step larger as it shows, moves as
   its feeling does (alarm bobs fast, fear slowly, anger shakes, pain jolts, cheer rises, silence stays still), fades
   out, and is heard with a few syllables of the one voice, the same each time. With reduced motion there is no pop,
-  bob or shake. A bark over an emote stands above the glyph.
+  bob or shake. A bark over an emote stands above the glyph. In a fight, fear and anger pop over a foe as it breaks
+  or starts to rage ([[Enemies]], "How it holds up").
 
 ## Limits
 

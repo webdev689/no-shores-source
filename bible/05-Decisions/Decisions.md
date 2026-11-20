@@ -149,6 +149,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Arts' Birds Are Forged in Blender]]
 - [[Every Shader Is Checked Offline]]
 - [[Fewer Plates Show, Sized by Rank, After Destiny]]
+- [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]
+- [[Foe Groups as Claude Builds Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

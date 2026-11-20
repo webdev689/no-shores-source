@@ -96,6 +96,8 @@ export interface SeenFoe {
   readonly shield: FoeShield | null;
   /** Its debuffs; none for a foe made by hand. */
   readonly statuses?: FoeStatuses;
+  /** How it holds up: 0 steady, 1 broken by its leader's fall, 2 raging; none for a foe made by hand. */
+  readonly mood?: number;
 }
 
 /** A foe's debuffs as the room keeps them: the ticks left of its Expose and its Charge, and of the immunity a Charge
@@ -335,7 +337,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const named = { type: foe.type(), rank: foe.rank(), faction: foe.faction(), phase: foe.phase() };
       const statuses = { expose: foe.expose(), charge: foe.charge(), chargeImmune: foe.chargeImmune() };
       const read = { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
-      return { ...read, statuses };
+      return { ...read, statuses, mood: foe.mood() };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);

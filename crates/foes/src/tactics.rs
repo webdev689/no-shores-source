@@ -4,7 +4,7 @@
 //! whoever waited longest; one that waited past its patience goes in anyway, one over the count at most, and a target
 //! that turns its back or walks inside the ring is open to anyone. The waiting stand apart, a ring farther out for those
 //! a ring has no room for. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers blows at it
-//! first, then takes the openings it is given.
+//! first, then takes the openings it is given, as its group asks: broken, raging, defending or screened.
 
 use crate::board::Board;
 use crate::brain::{Brain, Plan};
@@ -13,16 +13,17 @@ use crate::dice::Purpose;
 use crate::flank::{drift, in_place, ring_of};
 use crate::leash::{leash, unoccupied};
 use crate::pace;
-use crate::react::{defend, opening};
+use crate::react::{Reactions, defend, opening};
+use crate::roles::Role;
 use crate::senses::{Here, Sight, sense};
 use crate::share::share;
 use crate::shoot::{ranged, shooting};
 use crate::steer::{Ask, taken, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
-    BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
-    FLEE_SHARE, FOLLOW, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RECOVER, RECOVER_HOP, RING_ROOM,
-    RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
+    BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, DEFEND, FLEE,
+    FLEE_SHARE, FOLLOW, GUARD_RESERVE, HOME_REACHED, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RANK_GAP, RECOVER,
+    RECOVER_HOP, RING_ROOM, RING_SLACK, RUN_FROM, SHARE_HOLD, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
 };
 use combat::arms::{stroke_shape, swing_ticks, weapon};
 use combat::fighter::Action;
@@ -38,6 +39,11 @@ use movement::{TICK_SECONDS, TUNING};
 pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask {
     let me = here.me;
     let hurt = brain.hurt(here.fighter.health, here.fighter.health_max, here.tick());
+    if brain.raging {
+        // A rage lasts its fight; raging, it answers no blow.
+        brain.raging = brain.awareness.alert;
+        brain.reactions = Reactions::default();
+    }
     if let Some(ask) = leash(brain, here, board) {
         return ask;
     }
@@ -93,7 +99,11 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         brain.plan = Plan::Wait;
         return unoccupied(brain, here, was_alert);
     };
+    broken(brain, here, board, &sight);
     if let Some(ask) = flee(brain, here, board, &sight) {
+        return ask;
+    }
+    if let Some(ask) = hold_ground(brain, here, board, &sight) {
         return ask;
     }
     // A shooter out of sight behind its own post's cover hid there on purpose: it keeps to its post.
@@ -194,11 +204,13 @@ fn held(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Option<Ask
     Some(Ask::default())
 }
 
-/// Its blow done: a hop out, its ground held for a beat, its turn handed on to whoever waited longest.
+/// Its blow done: a hop out, its ground held for a beat (raging, the hop alone), its turn handed on to whoever waited
+/// longest.
 fn recover(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) {
     let tick = here.tick();
     brain.plan = Plan::Recover;
-    brain.until = tick + Here::ticks(here.dice.between(Purpose::Recover, RECOVER));
+    let held = if brain.raging { RECOVER_HOP } else { here.dice.between(Purpose::Recover, RECOVER) };
+    brain.until = tick + Here::ticks(held);
     brain.hop_until = tick + Here::ticks(RECOVER_HOP);
     brain.ready_at = None;
     if let Some(target) = brain.target {
@@ -206,10 +218,51 @@ fn recover(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) {
     }
 }
 
-/// A coward below a fifth of its health runs from its target, once, for a while.
+/// Broken by its leader's fall, for the break's time it gives its turn up: a skirmisher runs, and any other backs off,
+/// a shooter behind its cover, a fighter hand to hand huddled on a farther ring, its guard up if it bears a shield.
+fn broken(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) {
+    let tick = here.tick();
+    let breaking = if brain.role() == Role::Skirmisher { Plan::Flee } else { Plan::Backoff };
+    if tick >= brain.broken_until || (brain.plan == breaking && brain.until >= brain.broken_until) {
+        return;
+    }
+    brain.plan = breaking;
+    (brain.until, brain.hop_until, brain.ready_at) = (brain.broken_until, brain.broken_until, None);
+    board.hand_on(sight.id, here.me, tick);
+}
+
+/// Its group defending its ground, a fighter hand to hand fights only a target within DEFEND of its place, or one
+/// whose blow struck it in the last SHARE_HOLD: past that it gives its turn up, keeps to its place and faces its
+/// target, its guard up if it bears a shield.
+fn hold_ground(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Option<Ask> {
+    let home = brain.home.filter(|_| brain.orders.defend && !here.numbers.shooter && !brain.raging)?;
+    let tick = here.tick();
+    let struck = brain.struck_at.is_some_and(|at| tick < at + Here::ticks(SHARE_HOLD));
+    if struck || apart([home.at[0], home.at[1]], [sight.spot[0], sight.spot[1]]) <= DEFEND {
+        return None;
+    }
+    board.forget(here.me);
+    if brain.plan == Plan::Engage {
+        brain.plan = Plan::Wait;
+    }
+    brain.ready_at = None;
+    let guard = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
+    let left = apart(here.at(), [home.at[0], home.at[1]]);
+    let back = (left > HOME_REACHED).then(|| way_to(here, home.at)).flatten();
+    let ask = back.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, 1.0, sight.toward));
+    Some(ask.guarded(guard))
+}
+
+/// A coward below a fifth of its health runs from its target, once, for a while; a foe raging never runs.
 fn flee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Option<Ask> {
     let tick = here.tick();
     let fighter = &here.fighter;
+    if brain.raging {
+        if brain.plan == Plan::Flee {
+            brain.plan = Plan::Wait;
+        }
+        return None;
+    }
     if here.numbers.coward && !brain.fled && fighter.health < FLEE_SHARE * fighter.health_max {
         brain.fled = true;
         brain.plan = Plan::Flee;
@@ -228,10 +281,13 @@ fn flee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight
 }
 
 /// A quarter of its health lost in a few seconds (`hurt`, its share), or its poise near breaking for one that defends
-/// itself: out to a farther ring for a while, its turn handed on, at most once a cooldown.
+/// itself: out to a farther ring for a while, its turn handed on, at most once a cooldown; never while it rages.
 fn back_off(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight, hurt: f64) {
     let tick = here.tick();
     let fighter = &here.fighter;
+    if brain.raging {
+        return;
+    }
     let breaking =
         here.numbers.defends() && fighter.poise >= POISE_NEAR * fighter.poise_max && fighter.poise_immune == 0;
     if (hurt >= HURT_SHARE || breaking) && brain.plan != Plan::Backoff && tick >= brain.backoff_ready {
@@ -265,8 +321,16 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     let inside = sight.distance < ring - RING_SLACK && (closing || brain.plan == Plan::Engage);
     let opened = (back_turned && sight.distance <= ring + RING_SLACK) || inside;
     let open = board.opening(sight.id, me, opened && !board.holds(sight.id, me, false));
-    let patience = Here::ticks(pressed.patience);
-    if brain.plan == Plan::Wait && (board.take(sight.id, me, false, tick, patience, director.caps()) || open) {
+    // A leader its followers screen takes no turn while they fight; raging, or going in now they are gone, it takes
+    // one at once, one over the count at most.
+    let screened = brain.orders.screened && !brain.raging;
+    if screened && board.holds(sight.id, me, false) {
+        board.hand_on(sight.id, me, tick);
+    }
+    let patience = if brain.raging || brain.orders.push { 0 } else { Here::ticks(pressed.patience) };
+    if brain.plan == Plan::Wait
+        && ((!screened && board.take(sight.id, me, false, tick, patience, director.caps())) || open)
+    {
         brain.plan = Plan::Engage;
     }
     if brain.plan == Plan::Engage && !board.holds(sight.id, me, false) && !open {
@@ -282,7 +346,8 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
         Plan::Engage => engage(brain, here, board, sight, reach),
         Plan::Backoff => hold_ring(brain, here, sight, ring + BACKOFF_GAP),
         Plan::Wait => {
-            let ring = ring_of(brain, here, board, sight, ring);
+            // Screened, it waits a ring farther out, behind its followers.
+            let ring = ring_of(brain, here, board, sight, ring) + if screened { RANK_GAP } else { 0.0 };
             hold_ring(brain, here, sight, ring)
         }
         _ => hold_ring(brain, here, sight, ring),
@@ -336,7 +401,7 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
         return if near && !chasing {
             Ask::stepping(way, 1.0, sight.toward)
         } else {
-            Ask::walking(way, 1.0, chasing || sight.distance > RUN_FROM)
+            Ask::walking(way, 1.0, chasing || brain.raging || sight.distance > RUN_FROM)
         };
     }
     let reserve = if here.numbers.guards() { GUARD_RESERVE } else { 0.0 };
@@ -433,7 +498,8 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: raised near the
     // ring's line, and kept up across the ring's give and the step back in from just past it, so a target swaying about
     // the ring's edge never has it drop and rise again tick by tick.
-    let shield = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
+    // Raging, it never guards.
+    let shield = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE && !brain.raging;
     let guarding = shield && matches!(here.fighter.action, Action::Guard { .. });
     if brain.plan == Plan::Backoff && sight.distance >= ring - RING_SLACK {
         // Out at its farther ring its walk out is over: a target that follows it turns it to face them, not back.

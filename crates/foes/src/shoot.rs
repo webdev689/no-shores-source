@@ -138,6 +138,12 @@ pub fn turn(here: &Here<'_, '_>, board: &mut Board, target: FighterId) -> bool {
 pub fn ranged(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Ask {
     let tick = here.tick();
     let (me, target) = (here.me, sight.id);
+    if tick < brain.broken_until {
+        // Broken, it holds its fire and falls back to its cover; in the open it steps back from its target, facing it.
+        board.forget(me);
+        return hold(brain, here, board, sight, false)
+            .unwrap_or_else(|| Ask::stepping(sight.toward + PI, 1.0, sight.toward));
+    }
     let has = turn(here, board, target);
     let walked = std::mem::take(&mut brain.bow.walked);
     let (kite_in, kite_out) = (KITE_IN * here.numbers.standoff, KITE_OUT * here.numbers.standoff);

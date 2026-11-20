@@ -19,6 +19,11 @@ code:
   - crates/foes/src/tactics.rs#decide
   - crates/foes/src/leash.rs#leash
   - crates/foes/src/leash.rs#unoccupied
+  - crates/foes/src/brain.rs#Orders
+  - crates/foes/src/brain.rs#breaks
+  - crates/foes/src/tactics.rs#broken
+  - crates/foes/src/tactics.rs#hold_ground
+  - crates/foes/src/leash.rs#fall_back
   - crates/foes/src/brain.rs#keep_to
   - crates/foes/src/flank.rs#drift
   - crates/foes/src/flank.rs#ring_of
@@ -153,6 +158,24 @@ phases) is [[Enemies]].
   foe keeps to its place: one a stir drew off, or an ally walking past moved, walks back to it once idle. While its
   group walks its beat it keeps up with its place, walking at the share of a walk that its distance behind is of 2 m,
   a full walk at most, and faces its way.
+- **Its group.** A garrison foe does as its group asks ([[Enemies]], "A garrison";
+  [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]):
+  - **Broken**, as its group's leader falls, for 8 s it gives its turn up: a skirmisher runs from its target as a
+    coward does; a shooter holds its fire and falls back behind its cover, or in the open steps back facing its
+    target; any other huddles on the farther ring a foe backs off to, its guard up if it bears a shield.
+  - **Raging**, for the rest of its fight: it takes a turn at once, one over the turns' cap at most, never backs off
+    or runs, never parries, blocks or dodges a blow nor holds up its guard, runs at its target, and after a blow only
+    hops back before it waits again. The beat between blows holds it as it holds any foe. Its rage ends as its fight
+    does: its awareness let go, or its leash given up.
+  - **Defending**, a fighter hand to hand fights only a target within 8 m of its place in its group, or one whose blow
+    struck it in the last 5 s; past that it gives its turn up, keeps to its place and faces its target, its guard up
+    if it bears a shield. A shooter hides twice as long between its looks out.
+  - **Falling back**, as its group's places move to where it gives ground, a foe fighting gives its turn up and runs
+    there by the room's routes, its target and its awareness kept, striking nothing on the way (a wind-up of its own
+    it finishes first), and fights again once within 1 m of its place.
+  - **Screened**, a leader waits a ring farther out than its place in the line, behind its followers, taking no turn
+    and never flanking; walked in on, it fights back where it stands. **Going in**, its screen gone, it takes a turn
+    at once, one over the cap at most.
 - **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
   three shoot at it (the director, below). One of those with a turn goes in at a time, the rest keeping to the ring
   until it has struck: it walks in to its reach, squares up within 22.5 degrees, waits 0.3 to 0.9 s and swings once;

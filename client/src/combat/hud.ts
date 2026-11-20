@@ -7,6 +7,7 @@ import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts
 import { AmmoCounter } from './ammoCounter.ts';
 import { edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
+import { type EmoteSink, FoeMoods } from './foeMoods.ts';
 import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
@@ -15,6 +16,7 @@ import { wearFightSheet } from './hudSheet.ts';
 import { element, setStyle, showNode } from './meter.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import type { Cards } from '../player/cards.ts';
+import { PLATES } from '../plus/barLayout.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 import { UNABLE } from './casting.ts';
 import { type HudLayout, hudLayout } from './hudLayout.ts';
@@ -129,6 +131,26 @@ export function veilOf(
   return { words: `You fell. Standing again in ${seconds} s`, link: false };
 }
 
+/** Where a foe's mood stands on the screen: clear over the plate over its head, in CSS pixels; null off the screen
+ *  or where a block or the land hides its head. */
+function moodHead(
+  frame: Pick<HudFrame, 'matrix' | 'width' | 'height'>,
+  view: FighterView,
+  viewing: PlateViewing,
+): readonly [number, number] | null {
+  const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
+  const spot = project(frame.matrix, point, frame.width, frame.height);
+  const eye = viewing.camera?.eye;
+  if (!spot || (eye && viewing.blocked(eye, point))) return null;
+  return [spot.x, spot.y - PLATES.overhead.height - MOOD_OVER_PLATE_PX];
+}
+
+/** How far a mood stands over the top of a plate, in CSS pixels. */
+const MOOD_OVER_PLATE_PX = 4;
+
+/** A sink that shows nothing, for a display given none. */
+const QUIET: EmoteSink = { emote: () => 0, frame: () => undefined };
+
 /** Whether the line from `from` to `to` meets one of `blocks` short of its last `SIGHT_SKIN_M`. */
 export function blockedBy(
   blocks: readonly Block[],
@@ -152,6 +174,7 @@ export class Hud {
   private readonly crosshair: HTMLElement;
   private readonly ammo: AmmoCounter;
   private readonly foeBars: FoeBars;
+  private readonly moods: FoeMoods;
   private readonly foeTarget = new FoeTarget();
   private readonly words: Words;
   /** The side the next number with no stroke to follow is thrown to. */
@@ -175,12 +198,14 @@ export class Hud {
 
   /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's abilities stand at the bottom left;
    *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces in `beside` (the game's
-   *  hints) are kept clear of as the display's corners are. */
+   *  hints) are kept clear of as the display's corners are. With `emotes`, a foe's mood pops over its head through
+   *  the sink it makes in the layer it is given. */
   constructor(
     root: HTMLElement,
     pictures: ((art: number) => ArtPictures | null) | null = null,
     forge: Cards | null = null,
     beside: readonly HTMLElement[] = [],
+    emotes: ((layer: HTMLElement) => EmoteSink) | null = null,
   ) {
     wearFightSheet(root.ownerDocument);
     root.classList.add('fight-hud');
@@ -195,6 +220,9 @@ export class Hud {
     this.weapons = new WeaponRows(this.arms, forge && new ItemPictures(forge));
     this.mark = element('div', 'mark', root);
     this.over = element('div', 'over', root);
+    // The moods' layer is laid here, under the display's own; its sink is made only as the first pops.
+    const moods = element('div', 'moods', root);
+    this.moods = new FoeMoods(() => emotes?.(moods) ?? QUIET);
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
@@ -261,6 +289,7 @@ export class Hud {
     };
     if (viewing.camera) this.compass.update(headingOf(viewing.camera.forward));
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
+    this.moods.update(frame.foes, (view) => moodHead(frame, view, viewing), seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
     if (frame.abilities) this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''));
