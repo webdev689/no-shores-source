@@ -40,6 +40,7 @@ impl Sea {
             // A boarded ship sunk under her boarders sends them back to their own ships.
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
+            self.harbour.changed.extend(crate::ship_power::pay_sinking(ship, &mut self.harbour.characters));
         }
     }
 

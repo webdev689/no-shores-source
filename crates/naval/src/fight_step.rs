@@ -10,7 +10,7 @@ use crate::arms::{LARGE_BOAT, Side, arms_of, unposed};
 use crate::captain::course::distance;
 use crate::captain::{CHASE_GIVE_UP_S, Mode};
 use crate::damage::{PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, State, Zone, founder, shot_harm};
-use crate::gunnery::{Lay, lay, volley};
+use crate::gunnery::{Lay, RELOAD_SINGLEHANDED, lay, volley};
 use crate::guns::{fire_chance, rig_fire, shot_reach};
 use crate::rigging::Torn;
 use crate::shots::{Flag, ShipId, ShotEvent, step_balls};
@@ -41,6 +41,9 @@ impl Fight {
         for (id, order) in orders.iter().filter(|(_, order)| order.fire) {
             self.player_fires(*id, order, &mut events);
         }
+        for (id, order) in orders {
+            self.gunner_fires(*id, order);
+        }
         let targets = self.targets();
         let mut balls = std::mem::take(&mut self.balls);
         for event in step_balls(&mut balls, self.clock, &targets, waters, time) {
@@ -58,6 +61,7 @@ impl Fight {
                 }
             }
         }
+        self.patch(seconds);
         self.mend(wind, &mut events);
         self.scuttle_unboarded(&mut events);
         self.see_off(&mut events);
@@ -106,7 +110,7 @@ impl Fight {
             {
                 events.push(Event::Load { ship: *id, shot });
             }
-            let hurts = Hurts::of(&player.damage);
+            let hurts = Hurts::of(&player.damage).fitted(self.fittings.get(id));
             let (ship, refused) = sail_hurt(&player.ship, player.hull.hull(), order.helm, hurts, waters, wind, time);
             if let Some(wrecked) = refused {
                 events.push(Event::NoSail { ship: *id, wrecked });
@@ -144,7 +148,7 @@ impl Fight {
         let helm = command.her.steer(&her, (&sightings, &traffic), TICK_SECONDS, &is_water);
         // Her rank's way pulls her sails and her oars alike.
         let way = command.her.commission.rank.scale().way;
-        let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way, oars: way };
+        let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way, oars: way, turn: 1.0 };
         vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull);
         let afloat = pose_of(&vessel.ship, hull, waters, time);
         let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
@@ -178,14 +182,36 @@ impl Fight {
     /// A player's release: her lay fired, or why her guns would not.
     fn player_fires(&mut self, id: ShipId, order: &Orders, events: &mut Vec<Event>) {
         match self.fire_order(id, order.aim.as_ref()) {
-            Ok(laid) => {
-                let seed = self.draws.seed();
-                let Some(player) = self.ships.get_mut(&id) else { return };
-                let carry = carry_of(&player.ship);
-                self.balls.extend(volley(&laid, carry, LARGE_BOAT.skill, seed, self.clock, (id, Flag::Player)));
-                player.guns.fired(laid.side, 1.0, false);
-            }
+            Ok(laid) => self.player_volley(id, laid),
             Err(refusal) => events.push(Event::Refused { ship: id, refusal }),
+        }
+    }
+
+    /// A player's laid side fired: its scatter and its reload as her fitting trims them.
+    fn player_volley(&mut self, id: ShipId, laid: Lay) {
+        let trim = self.fittings.get(&id).map(|fitted| fitted.trim).unwrap_or_default();
+        let scatter = |spread: f64| spread * trim.scatter;
+        let gun = crate::guns::Gun {
+            yaw_spread_deg: scatter(laid.gun.yaw_spread_deg),
+            pitch_spread_deg: scatter(laid.gun.pitch_spread_deg),
+            ..laid.gun
+        };
+        let laid = Lay { gun, ..laid };
+        let seed = self.draws.seed();
+        let Some(player) = self.ships.get_mut(&id) else { return };
+        let carry = carry_of(&player.ship);
+        self.balls.extend(volley(&laid, carry, LARGE_BOAT.skill, seed, self.clock, (id, Flag::Player)));
+        // Her hands work her guns: whole, at the pace one player alone always loaded them; thinned, slower.
+        player.guns.fired(laid.side, player.damage.crew_share(), true);
+        player.guns.pace_reload(laid.side, RELOAD_SINGLEHANDED * trim.reload);
+    }
+
+    /// Her Gunner's broadside, when he has one to fire: the side her own lay this tick does not take.
+    fn gunner_fires(&mut self, id: ShipId, order: &Orders) {
+        let own = order.aim.as_ref().and_then(|aim| self.laid(id, aim)).map(|laid| laid.side);
+        let afloat = self.ships.get(&id).is_some_and(|vessel| vessel.damage.fighting() && !vessel.guns.braced);
+        if let Some(laid) = self.gunners_lay(id, own).filter(|_| afloat) {
+            self.player_volley(id, laid);
         }
     }
 
@@ -199,6 +225,7 @@ impl Fight {
             return;
         };
         let gun = crate::guns::Gun { crew: gun.crew * shot_reach(shot, flight), ..gun };
+        let gun = self.fitted_gun(gun, shooter, target, zone);
         let clock = self.clock;
         // A ball strikes only another flag, so whoever fired it, a player or another faction's captain, is a foe.
         let shooter_in_fight = self.ships.contains_key(&shooter);
@@ -217,6 +244,9 @@ impl Fight {
         hurt.fire = burns && self.draws.draw() < fire_chance(shot) * gun.share;
         let hurt = vessel.damage.shared(hurt, gun.share);
         let state = vessel.damage.apply(hurt, clock, floor);
+        if let Some(fitted) = self.fittings.get_mut(&target) {
+            fitted.owe(&hurt);
+        }
         let rig = sail.filter(|_| zone == Zone::Rig);
         let part = match rig {
             None => Part::Hull,

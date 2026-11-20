@@ -126,6 +126,9 @@ impl Sea {
         deck.room.leave(boarder);
         if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             (character.ship, character.ship_at) = (held.ship, held.ship_at);
+            // What only the sea changes while they fight on foot: their ship's experience, materials and crew.
+            (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
+            character.crew.clone_from(&held.crew);
             self.harbour.characters.insert(player, character);
         }
         if deck.aboard.is_empty() {
@@ -154,6 +157,8 @@ impl Sea {
                 let players: Vec<PlayerId> = deck.aboard.keys().copied().collect();
                 let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind };
                 self.lay_flotsam(&sank, (2, 1));
+                let joined = crate::ship_power::officers_join(&sank, self.clock, &mut self.harbour.characters);
+                self.harbour.changed.extend(joined);
             }
             let deck = &self.decks.boarded[index];
             // Her hold taken or not, her boarders go back aboard their own ships `HOLD_TICKS` after her crew fell.

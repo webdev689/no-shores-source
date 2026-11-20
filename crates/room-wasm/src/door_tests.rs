@@ -178,7 +178,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "ba87501518ddb7fb";
+pub const SEA_CLASH_HASH: &str = "70c6585bed308bbb";
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
 pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
@@ -275,7 +275,11 @@ fn a_course_is_furnished_and_each_players_gear_is_theirs_alone() {
     assert!(gear(first).is_empty(), "and not again until it changes");
     let bytes = gear(second);
     let message = messages::root_as_from_room(&bytes).unwrap();
-    assert_eq!(message.gear().unwrap().items().unwrap().len(), 5, "the second player's own starting kit");
+    assert_eq!(
+        message.gear().unwrap().items().unwrap().len(),
+        9,
+        "the second player's own starting kit and her modules"
+    );
     assert!(open_sea(include_bytes!("../../../content/world/layout.json"), 7));
     assert!(gear(first).is_empty(), "the sea keeps no gear");
     assert!(set_difficulty(1), "a sea takes its tier, as a node's room does");
@@ -319,7 +323,7 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem_at_the_vendors_c
     let sent = gear(player);
     let message = messages::root_as_from_room(&sent).unwrap();
     let wares = message.gear().unwrap().wares().unwrap();
-    assert_eq!(wares.len(), 2 * gear::vendor::WARES, "the Quartermaster's and the Armsmith's");
+    assert_eq!(wares.len(), 3 * gear::vendor::WARES, "the Quartermaster's, the Armsmith's and the Shipwright's");
     assert_eq!((wares.get(0).price(), wares.get(5).price()), (2_000, 600), "Rare, then Magic");
     // Too poor to buy: refused, and the wares stay.
     let ask = room::Asked::Gear(gear::Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 4 });

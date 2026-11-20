@@ -2,7 +2,7 @@
 //! at the counter of the faction a player is pledged to; the pledge and their rank with it are read here, in one
 //! place, so the faction rules decide them.
 
-use crate::asks::{CounterKind, counter_for};
+use crate::asks::CounterKind;
 use crate::{PlayerId, Room};
 use gear::{Ask, Character};
 
@@ -29,6 +29,7 @@ impl Room {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::asks::counter_for;
 
     #[test]
     fn officers_are_signed_on_at_the_muster() {

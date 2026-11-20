@@ -27,6 +27,7 @@ mod players;
 mod power;
 pub mod sea;
 pub mod sea_weather;
+pub mod ship_power;
 pub mod sighting;
 mod spells;
 mod statuses;
