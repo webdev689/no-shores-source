@@ -9,6 +9,7 @@ Collapsed Vault.
 """
 import catalog
 from styles.crypt import doors, pieces, pit, tomb, vault
+from styles.crypt.hidden import off_border
 
 
 def build(kit):
@@ -26,4 +27,4 @@ def build(kit):
                  'crypt.collapsed-vault': vault.collapsed_vault}
     for entry in catalog.landmarks_of('crypt'):
         found[entry['module']] = landmarks[entry['module']](kit, entry)
-    return found
+    return {name: off_border(item) for name, item in found.items()}
