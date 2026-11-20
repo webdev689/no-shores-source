@@ -5,7 +5,7 @@ use crate::item::NAMED_LEVEL;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::rewards::Foe;
-use crate::vestige::{dropped, make, opens_to};
+use crate::vestige::{dropped, make, of_colours, opens_to};
 use crate::world::Difficulty;
 
 fn dice(seed: u64) -> Dice {
@@ -199,4 +199,13 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
         abyss_drops > normal_drops * 3 / 2,
         "Abyss drops about twice as often: {normal_drops} against {abyss_drops}"
     );
+}
+
+#[test]
+fn a_vestige_of_chosen_colours_keeps_the_gate_every_drop_keeps() {
+    let dice = Dice { seed: 3, tick: 0, player: 1 };
+    assert_eq!(of_colours([0, 0, 0, 1, 0], 26, &dice).0, Rarity::Legendary);
+    assert_eq!(of_colours([0, 0, 0, 1, 0], 12, &dice).0, Rarity::Rare, "no Legendary below 18");
+    assert_eq!(of_colours([0, 0, 0, 0, 1], 19, &dice).0, Rarity::Legendary, "no Atheric below 20");
+    assert_eq!(of_colours([0, 0, 0, 1, 0], 26, &dice).2, 20, "its item at the named level");
 }

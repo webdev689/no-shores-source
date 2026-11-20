@@ -7,6 +7,7 @@ code:
   - crates/gear/src/story.rs#Story
   - crates/gear/src/gate.rs#shut
   - crates/gear/src/activities.rs#week_dungeons
+  - crates/gear/src/clears.rs#clear_of_the_day
 ---
 # Activities
 
@@ -109,12 +110,16 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
   the dungeon of the day it has cleared and its bounties, each by its board place with its count; `this_week` holds
   whether it cleared each of the week's two dungeons and whether it holds the Abyss boon. Each begins anew at its
   first touch in a later day or week, and never turns back, so a room whose clock is behind cannot pay twice.
+- **What a first clear pays** is `gear::clears`. Each writes the record, and none pays for a day or a week behind the
+  one the record holds, so a room a few seconds behind 09:00 cannot write yesterday's clear into today.
 - **The dungeon of the day**, the first clear at each tier each day, on any island's: its cache, raised by the tier,
-  and a Vestige at the run's level. Three a day at most, under the rules every Vestige keeps now (no Legendary from
-  foes under level 18).
-- **The Elite Dungeon of the week**, once: a Legendary Vestige and Legendary materials.
-- **The Abyss Dungeon of the week**, once: a Legendary Vestige with a chance of Atheric, Legendary materials, and the
-  Abyss boon: a quarter more XP, and reputation once factions are in, until the week turns.
+  that is a Captain's kill at the run's level (XP 2,000 and Aurem 120 at level 5, times (5 + level) ÷ 10, times the
+  tier's 1, 1.5 or 2), and a sure Vestige in a boss's colours at the run's level. Three a day at most, under the rules
+  every Vestige keeps now (no Legendary from foes under level 18).
+- **The Elite Dungeon of the week**, once: a Legendary Vestige (its item at level 20) and 3 Essence of each stock.
+- **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
+  and the Abyss boon: a quarter more of each kill's XP, rounded down, and reputation once factions are in, until the
+  week turns.
 - **A clear again** in the same period pays its kills and its cache as any run, no more.
 
 ## Quests and bounties

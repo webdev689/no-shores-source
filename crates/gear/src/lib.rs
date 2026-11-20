@@ -11,6 +11,7 @@ pub mod arts;
 pub mod asks;
 pub mod catalogue;
 pub mod character;
+pub mod clears;
 pub mod clock;
 pub mod dice;
 pub mod element;
