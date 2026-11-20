@@ -1,4 +1,4 @@
-// The drawers that stand on the open landmass each frame, in the order they draw: its city and its nature, on foot the
+// The drawers that stand on the open landmass each frame, in the order they draw: its city, layouts and nature, on foot the
 // fight's blood, the ships near (with a sea fight's effects), the figures, and on foot the fight's marks over them.
 import type { CardAt } from '../player/cards.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
@@ -10,6 +10,8 @@ import type { SeaShip } from './seaShips.ts';
 /** What stands on the open landmass: its city and nature as opened, and the views that draw ships and figures. */
 export interface StandingParts {
   readonly city: Drawer | null | undefined;
+  /** The nodes' laid sections, drawn with the city layer near the eye. */
+  readonly layouts?: Drawer | null;
   readonly nature: Drawer | null | undefined;
   readonly shipModels: ShipModels;
   readonly figureView: FigureView;
@@ -27,6 +29,7 @@ export function standingDrawers(
 ): Drawer[] {
   const found: (Drawer | null | undefined)[] = [
     parts.city,
+    parts.layouts,
     parts.nature,
     parts.isles,
     fight?.under,
