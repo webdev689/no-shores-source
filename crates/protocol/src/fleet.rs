@@ -152,9 +152,9 @@ pub const NO_SAIL: u8 = 8;
 pub const LOAD: u8 = 9;
 pub const GONE: u8 = 10;
 pub const RAM: u8 = 11;
-/// The sea's own events, for the fight's feel: where on her a ball struck (her frame's point, the part as detail), a
-/// sail torn away and a mast fallen (its number as detail), her colours struck, her going down, what floats laid (its
-/// number as the ship, its kind as detail, where as the point) and gathered (by whom), and players gone aboard her.
+/// The sea's own events, for the fight's feel: where on it a ball struck (its frame's point, the part as detail), a
+/// sail torn away and a mast fallen (its number as detail), its colours struck, its going down, what floats laid (its
+/// number as the ship, its kind as detail, where as the point) and gathered (by whom), and players gone aboard it.
 pub const STRUCK_AT: u8 = 12;
 pub const SAIL_LOST: u8 = 13;
 pub const MAST_FELL: u8 = 14;
@@ -209,7 +209,7 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
     })
 }
 
-/// Every ship in a fleet room after its tick `tick`, each player's ship with the number of her last orders taken
+/// Every ship in a fleet room after its tick `tick`, each player's ship with the number of their last orders taken
 /// (`acknowledged`), the balls aloft, what happened in the fight since the last snapshot, the fight's clock, and the
 /// world time the room's clock started at (`world_start`), which sets its weather.
 #[must_use]

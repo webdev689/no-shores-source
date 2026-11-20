@@ -1,4 +1,4 @@
-//! A ship's guns: a reload clock for each broadside, the brace, the load, a side laid square to her hull for a range,
+//! A ship's guns: a reload clock for each broadside, the brace, the load, a side laid square to its hull for a range,
 //! and the volley it fires, rippled down the side and scattered by its seed.
 
 use crate::arms::{Arms, Side, posed};
@@ -27,7 +27,7 @@ pub fn reload_seconds(gun: &Gun, crew_share: f64, crewed: bool) -> f64 {
 }
 
 /// A ship's two broadsides: each one's seconds left to load and the length of its last reload, the load both fire,
-/// and whether her crew is braced (no gun fires and no gun loads).
+/// and whether its crew is braced (no gun fires and no gun loads).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Guns {
     clocks: [f64; 2],
@@ -113,7 +113,7 @@ impl Guns {
         [self.clocks[0], self.clocks[1], self.lengths[0], self.lengths[1], load, f64::from(u8::from(self.braced))]
     }
 
-    /// The clocks run, unless her crew is braced.
+    /// The clocks run, unless its crew is braced.
     pub fn step(&mut self, seconds: f64) {
         if self.braced {
             return;
@@ -124,9 +124,9 @@ impl Guns {
     }
 }
 
-/// A side laid: its guns' mouths in the world (through her heel), their middle, the direction it fires (square to her
+/// A side laid: its guns' mouths in the world (through its heel), their middle, the direction it fires (square to its
 /// upright hull, east and south), its elevation (radians), the gun as loaded with its load, and its longest throw from
-/// that middle over the water under her.
+/// that middle over the water under it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Lay {
     pub side: Side,
@@ -139,7 +139,7 @@ pub struct Lay {
     pub reach: f64,
 }
 
-/// `side` laid to throw `range` metres out along its fire, from her pose over still water at her heave: onto the
+/// `side` laid to throw `range` metres out along its fire, from its pose over still water at its heave: onto the
 /// water there, or onto a point `rise` metres above it. Each of its guns throws its share of the Sloop's broadside.
 #[must_use]
 pub fn lay(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, range: f64, rise: Option<f64>) -> Lay {
@@ -155,7 +155,7 @@ pub fn lay(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, range:
     Lay { side, mouths, centre, dir, elevation, gun, shot, reach: max_range(gun.speed, above, high) }
 }
 
-/// `side` laid on a point in the world: its range along her fire, its height under her guns' middle.
+/// `side` laid on a point in the world: its range along its fire, its height under its guns' middle.
 #[must_use]
 pub fn lay_on(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, target: [f64; 3]) -> Lay {
     let square = lay(ship, pose, arms, side, shot, 0.0, None);

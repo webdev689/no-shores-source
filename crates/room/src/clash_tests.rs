@@ -50,11 +50,11 @@ fn rival_ships_fight_where_the_fight_has_them_until_one_strikes_or_runs_and_the_
     assert!(clashes.is_empty(), "settled within twenty minutes");
     let sailing = &pirates.sailing;
     assert_eq!(sailing.len(), 1, "one sails on: {sailing:?}");
-    assert!(sailing[0].x != 0.0 && sailing[0].x != 400.0, "from where the fight left her");
+    assert!(sailing[0].x != 0.0 && sailing[0].x != 400.0, "from where the fight left it");
 }
 
 #[test]
-fn the_one_who_strikes_leaves_the_sea_and_the_winner_sails_on_from_where_she_lies() {
+fn the_one_who_strikes_leaves_the_sea_and_the_winner_sails_on_from_where_it_lies() {
     let met = [
         at_sea(3, Commission { faction: GREY_TITHE, rank: Rank::Elite }, 0.0, true),
         at_sea(4, Commission::default(), 400.0, true),
@@ -81,7 +81,7 @@ fn a_clash_no_player_is_near_leaves_the_sea_and_one_a_player_sights_is_theirs() 
     let mut clashes = vec![Clash::begin(met, still(), &[], 0.0)];
     let mut pirates = Pirates::default();
     step_clashes(&mut clashes, &mut pirates, &[[5_900.0, 0.0]], (&[], 0.0));
-    assert_eq!(clashes.len(), 1, "within 1.1 times her sight of a player, she stays");
+    assert_eq!(clashes.len(), 1, "within 1.1 times its sight of a player, it stays");
     step_clashes(&mut clashes, &mut pirates, &[[6_000.0, 0.0]], (&[], 0.0));
     assert!(clashes.is_empty() && pirates.sailing.is_empty(), "past it from every player, gone");
     let mut clashes = vec![Clash::begin(met, still(), &[], 0.0)];
@@ -107,13 +107,13 @@ fn a_clash_keeps_the_weather_it_began_in() {
 }
 
 #[test]
-fn a_level_27_ship_in_a_clash_has_her_raised_hull() {
+fn a_level_27_ship_in_a_clash_has_its_raised_hull() {
     let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
     let minor = Commission { faction: PIRATES, rank: Rank::Minor };
     let raised = Pirate { level: 27, ..at_sea(3, elite, 0.0, true) };
     let clash = Clash::begin([raised, at_sea(4, minor, 400.0, true)], still(), &[], 0.0);
     let hull = clash.fight.vessel(CAPTAIN).map(|vessel| vessel.damage.max_hull);
-    assert!(raised.strength() > 1.0, "level 27 raises her");
-    assert_eq!(hull, Some(elite.damage_at(raised.strength()).max_hull), "her hull as her level raises it");
+    assert!(raised.strength() > 1.0, "level 27 raises it");
+    assert_eq!(hull, Some(elite.damage_at(raised.strength()).max_hull), "its hull as its level raises it");
     assert!(hull > Some(elite.damage().max_hull));
 }

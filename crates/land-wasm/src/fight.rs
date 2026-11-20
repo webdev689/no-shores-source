@@ -1,4 +1,4 @@
-//! A fight over the open landmass: the player's Sloop and one pirate captain in her rank's hull (the naval crate's
+//! A fight over the open landmass: the player's Sloop and one pirate captain in its rank's hull (the naval crate's
 //! `Fight`). It stays here between calls, as the open landmass does; a request begins one, steps it, or ends it.
 //! Requests and answers are JSON: the fight's own numbers never cross, so a request carries only the player's orders.
 
@@ -28,7 +28,7 @@ thread_local! {
 /// The farthest a look may lay, metres: past every gun's reach.
 const MOST_RANGE_M: f64 = 1e5;
 
-/// Ends the fight, if one is on: the captain is gone and her balls with her.
+/// Ends the fight, if one is on: the captain is gone and its balls with it.
 pub fn end_fight() {
     FIGHT.with(|fight| *fight.borrow_mut() = None);
 }
@@ -98,8 +98,8 @@ fn piece_name(piece: Piece) -> &'static str {
     }
 }
 
-/// A tick's events as the page reads them: a ball's hit carries where on her it struck in her own frame and the part
-/// it struck, from the hit the fight tells just before it.
+/// A tick's events as the page reads them: a ball's hit carries where on the ship it struck, in the ship's own frame,
+/// and the part it struck, from the hit the fight tells just before it.
 fn events_json(events: &[Event]) -> Vec<Value> {
     let mut told = Vec::new();
     let mut struck = None;
@@ -108,7 +108,7 @@ fn events_json(events: &[Event]) -> Vec<Value> {
             struck = Some((ship, at, part));
         }
         let Some(mut shown) = event_json(event) else { continue };
-        // Her torn rig and her state may be told between the two: the hit waits for its ball's.
+        // The struck ship's torn rig and state may be told between the two: the hit waits for its ball's.
         if let Event::Shot(ShotEvent::Hit { target, .. }) = event
             && let Some((_, at, part)) = struck.take_if(|(ship, ..)| ship == target)
         {
@@ -126,7 +126,7 @@ fn events_json(events: &[Event]) -> Vec<Value> {
 }
 
 fn event_json(event: &Event) -> Option<Value> {
-    // The editor's fight has one player, so what happens to her ship goes without its number.
+    // The editor's fight has one player, so what happens to their ship goes without its number.
     Some(match *event {
         Event::Shot(ShotEvent::Muzzle { shooter, point, launch }) => {
             json!({ "kind": "muzzle", "ship": shooter, "point": point, "launch": launch })
@@ -183,7 +183,7 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
     })
 }
 
-/// The editor's fight's two ships: her Sloop and the captain's, with the captain's mind.
+/// The editor's fight's two ships: the player's Sloop and the captain's, with the captain's mind.
 fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &naval::captain::Captain), String> {
     let player = fight.vessel(PLAYER).ok_or("the fight has no player's ship")?;
     let captain = fight.vessel(CAPTAIN).ok_or("the fight has no captain")?;
@@ -242,7 +242,7 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         .and_then(|seed| u32::try_from(seed).ok())
         .ok_or("a fight's seed is a whole number under 2^32")?;
     let (time, _) = ticks_from(number(&request["time"], "the time")?, 0.0)?;
-    // Her captain's rank, a Major's unless asked: she sails its hull.
+    // The captain's rank, a Major's unless asked: it sails that rank's hull.
     let rank = match &request["rank"] {
         Value::Null => Rank::Major,
         asked => asked
@@ -284,7 +284,7 @@ fn orders_of(request: &Value) -> Result<(Orders, f64, u32), String> {
             let bearing_deg = number(&aim["bearing"], "the look's bearing")?;
             let range_m = number(&aim["range"], "the look's range")?;
             if !(-180.0..=180.0).contains(&bearing_deg) || !(0.0..=MOST_RANGE_M).contains(&range_m) {
-                return Err("a look bears within 180 degrees of her bow and lays within 100 km".into());
+                return Err("a look bears within 180 degrees of its bow and lays within 100 km".into());
             }
             let ray = match &aim["ray"] {
                 Value::Null => None,

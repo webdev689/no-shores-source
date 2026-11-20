@@ -1,6 +1,7 @@
-//! A voyage held as pirates close, by DFO's law for a fast journey: the pace a ship sails at is capped so that she
-//! takes `WARN_S` real seconds or more to reach a pirate's sight along her way, never under `FOE_PACE`, and within
-//! `HOSTILE_NEAR_M` of a pirate who would engage her she is held to the world's own time, where her guns can answer.
+//! A voyage held as pirates close, by DFO's law for a fast journey: the pace a ship sails at is capped so that it
+//! takes `WARN_S` real seconds or more to reach a pirate's sight along its way, never under `FOE_PACE`, and within
+//! `HOSTILE_NEAR_M` of a pirate who would engage it, the ship is held to the world's own time, where its guns can
+//! answer.
 
 use crate::pirates::{PIRATE_WAY_M_S, Pirate};
 use crate::sea::SHIP_SPEED_M_S;
@@ -10,9 +11,9 @@ use naval::fight::HOSTILE_NEAR_M;
 
 /// Real seconds of warning a ship always has before a pirate's sight.
 pub const WARN_S: f64 = 0.6;
-/// The slowest pace a pirate's cap brings a voyage down to, short of her hold.
+/// The slowest pace a pirate's cap brings a voyage down to, short of the pirate's hold.
 pub const FOE_PACE: f64 = 5.0;
-/// A pirate's reach: her sight, past the ring inside which she holds the voyage.
+/// A pirate's reach: its sight, past the ring inside which it holds the voyage.
 const REACH_M: f64 = if ENGAGE_RANGE > HOSTILE_NEAR_M { ENGAGE_RANGE } else { HOSTILE_NEAR_M };
 
 /// Metres along `way` (a unit vector east and south) before a point `east` and `south` of the ship is within `reach`:
@@ -36,8 +37,8 @@ pub fn metres_to_reach(east: f64, south: f64, reach: f64, [way_east, way_south]:
 /// warning holds whoever comes.
 const CLOSING_M_S: f64 = SHIP_SPEED_M_S + PIRATE_WAY_M_S * FASTEST_WAY;
 
-/// How far off a pirate may hold a voyage at its fastest pace, metres: her reach, and the warning at that pace closing
-/// as fast as any rank can. Past it no pirate slows her.
+/// How far off a pirate may hold a voyage at its fastest pace, metres: its reach, and the warning at that pace closing
+/// as fast as any rank can. Past it no pirate slows the ship.
 #[must_use]
 pub fn hold_reach_m() -> f64 {
     let most = crate::sea::PACES.iter().copied().max().unwrap_or(1);
@@ -51,8 +52,8 @@ pub fn step_down(rate: f64) -> f64 {
 }
 
 /// The pace a ship set to `pace` sails at, at `at` heading `heading` (radians clockwise from north), with pirates at
-/// `pirates`, each with whether she would engage this ship (`holds`): her pace, held down as one's sight comes near
-/// along her way, and to 1 within the hold of one that would engage.
+/// `pirates`, each with whether it would engage this ship (`holds`): its pace, held down as one's sight comes near
+/// along its way, and to 1 within the hold of one that would engage.
 #[must_use]
 pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterator<Item = ([f64; 2], bool)>) -> u16 {
     if pace == 0 {
@@ -78,9 +79,9 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterat
     rate
 }
 
-/// Whether a hostile ship holds a voyage at `at`, its hull at `hull` of whole, that she would meet: she is within her
-/// hold of it and bold, or chased by its player (`chased`, her number), or wary and one she would fall on
-/// (`wary_takes`). A ship beyond her hold, or one that will not engage, caps the pace only by the ladder.
+/// Whether a hostile ship holds a voyage at `at`, its hull at `hull` of whole, that it would meet: it is within its
+/// hold of it and bold, or chased by its player (`chased`, its number), or wary and one it would fall on
+/// (`wary_takes`). A ship beyond its hold, or one that will not engage, caps the pace only by the ladder.
 #[must_use]
 pub fn holds(pirate: &Pirate, at: [f64; 2], chased: Option<u32>, hull: f64) -> bool {
     libm::hypot(pirate.x - at[0], pirate.y - at[1]) <= HOSTILE_NEAR_M

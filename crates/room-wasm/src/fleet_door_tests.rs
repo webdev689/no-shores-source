@@ -30,7 +30,7 @@ fn orders(sequence: u32) -> Input {
     Input { sequence, orders: Orders { helm: helm_at(sequence), ..STANDING }, put_to_sea: None, call: Call::None }
 }
 
-/// A vessel as a snapshot shows her: her number, her ship's numbers, her pose's, her hurts, and her last orders taken.
+/// A vessel as a snapshot shows it: its number, its ship's numbers, its pose's, its hurts, and its last orders taken.
 #[derive(Clone, Debug)]
 struct Shown {
     id: u32,
@@ -70,7 +70,7 @@ fn a_fleet_room_puts_ships_to_sea_by_their_orders_and_shows_them() {
         shown.iter().map(|vessel| (vessel.id, vessel.acknowledged)).collect::<Vec<_>>(),
         [(first, 1), (second, 1)]
     );
-    assert_eq!(shown[0].ship[..2], AT[..2], "where she put to sea, her rudder swinging her that same tick");
+    assert_eq!(shown[0].ship[..2], AT[..2], "where it put to sea, its rudder swinging it that same tick");
     let welcome_bytes = joined(first);
     let welcome = messages::root_as_from_room(&welcome_bytes).unwrap();
     assert_eq!(welcome.joined().map(|joined| joined.player()), Some(first));
@@ -98,8 +98,8 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
     }
     let predicted = predict(&request);
     let bits = |numbers: &[f64]| numbers.iter().map(|number| number.to_bits()).collect::<Vec<_>>();
-    assert_eq!(bits(&predicted[..8]), bits(&last.ship), "her ship, the same numbers to the bit");
-    assert_eq!(bits(&predicted[8..]), bits(&last.pose), "her pose at the room's time");
+    assert_eq!(bits(&predicted[..8]), bits(&last.ship), "their ship, the same numbers to the bit");
+    assert_eq!(bits(&predicted[8..]), bits(&last.pose), "its pose at the room's time");
     assert!(predict(&[1.0, 2.0]).is_empty(), "numbers that are not a ship");
     let mut wild = request.clone();
     wild.extend([3.0, 0.0, 0.0]);
@@ -147,7 +147,7 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
     })
     .unwrap();
     let answer = lay(&request);
-    let shown = fight_preview.unwrap_or_else(|| panic!("a side bears on her"));
+    let shown = fight_preview.unwrap_or_else(|| panic!("a side bears on it"));
     assert_eq!(
         answer[..6],
         [

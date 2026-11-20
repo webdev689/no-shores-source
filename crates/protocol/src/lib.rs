@@ -144,24 +144,24 @@ pub fn read_course(bytes: &[u8]) -> Result<(Vec<[f64; 2]>, u16), String> {
     Ok((numbers.chunks_exact(2).map(|pair| [pair[0], pair[1]]).collect(), course.pace()))
 }
 
-/// What a ship's message asks of the sea room: a course; in a fight, her orders; off the helm, a numbered step of the
-/// player's walk on her deck; or the helm left or taken again; or the hostile ship she chases.
+/// What a ship's message asks of the sea room: a course; in a fight, its orders; off the helm, a numbered step of the
+/// player's walk on its deck; or the helm left or taken again; or the hostile ship it chases.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SeaInput {
     Course(Vec<[f64; 2]>, u16),
-    /// No points and one heading: she comes to rest turned to it.
+    /// No points and one heading: the ship comes to rest turned to it.
     Face(f64),
     Orders(Orders),
     Walk(u32, Controls),
     LeaveHelm,
     TakeHelm,
-    /// The hostile ship she chases, by her number, or none.
+    /// The hostile ship it chases, by that ship's number, or none.
     Chase(Option<u32>),
-    /// Her repair by a port city.
+    /// Its repair by a port city.
     Repair,
     /// To board a captain who struck.
     Board,
-    /// To leave her deck once her crew has fallen.
+    /// To leave its deck once its crew has fallen.
     LeaveDeck,
 }
 
@@ -200,7 +200,7 @@ pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
         return match (numbers.as_slice(), course.points().map_or(0, |points| points.len())) {
             (&[heading], 0) => Ok(SeaInput::Face(heading)),
             (_, 0) => Err(format!("a ship faces one heading, not {} numbers", numbers.len())),
-            _ => Err("a course's legs turn her: a facing comes with no points".to_owned()),
+            _ => Err("a course's legs turn it: a facing comes with no points".to_owned()),
         };
     }
     read_course(bytes).map(|(points, pace)| SeaInput::Course(points, pace))

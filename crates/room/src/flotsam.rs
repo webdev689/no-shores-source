@@ -1,6 +1,6 @@
-//! What floats where a captain's ship went down: her rank's pieces for each player who fought her, kept for that
-//! player alone as a land drop is, within `SPREAD_M` of where she sank, drifting downwind until they are gathered or
-//! lie their time. Each piece is a drop of the gear loop's own law for a foe of her rank and level (`gear::rewards`,
+//! What floats where a captain's ship went down: its rank's pieces for each player who fought it, kept for that
+//! player alone as a land drop is, within `SPREAD_M` of where it sank, drifting downwind until they are gathered or
+//! lie their time. Each piece is a drop of the gear loop's own law for a foe of its rank and level (`gear::rewards`,
 //! `gear::ammo`); for an Elite or higher one piece is a chest, rolled as a foe one rank higher. A player's ship within
 //! `GATHER_M` of one of their pieces gathers it, taking what it holds that they have room for.
 
@@ -15,14 +15,14 @@ use naval::random::Mulberry32;
 use naval::ranks::Rank;
 use std::f64::consts::TAU;
 
-/// How far from where she sank her pieces float, metres; how fast they drift downwind, metres a second; how long they
+/// How far from where it sank its pieces float, metres; how fast they drift downwind, metres a second; how long they
 /// lie, in the sea's ticks of 1/60 s (three minutes); and how near a player's ship comes to gather one, metres.
 pub const SPREAD_M: f64 = 30.0;
 pub const DRIFT_M_S: f64 = 0.3;
 pub const FLOAT_TICKS: u64 = 10_800;
 pub const GATHER_M: f64 = 25.0;
 
-/// How many pieces a ship of her rank leaves each player who fought her.
+/// How many pieces a ship of its rank leaves each player who fought it.
 #[must_use]
 pub fn pieces_of(rank: Rank) -> usize {
     match rank {
@@ -34,7 +34,7 @@ pub fn pieces_of(rank: Rank) -> usize {
     }
 }
 
-/// The foe whose kill a piece of a ship of her rank drops as: the rewards' foes, plainest to strongest, by her rank.
+/// The foe whose kill a piece of a ship of its rank drops as: the rewards' foes, plainest to strongest, by its rank.
 pub(crate) fn foe_of(rank: Rank) -> Foe {
     match rank {
         Rank::Minor => Foe::Skirmisher,
@@ -90,7 +90,7 @@ impl Flotsam {
         Flotsam { pieces: Vec::new(), next_id: 1, seed: u64::from(seed), difficulty: gear::Difficulty::Normal }
     }
 
-    /// Lays what floats where a ship sank, `times` over (twice from her hold), each chest rolled `chest_up` ranks
+    /// Lays what floats where a ship sank, `times` over (twice from its hold), each chest rolled `chest_up` ranks
     /// higher besides; answers each piece laid.
     pub fn lay(&mut self, sank: &Sank, clock: u64, (times, chest_up): (usize, u8)) -> Vec<Event> {
         let rank = sank.pirate.commission.rank;
@@ -160,7 +160,7 @@ impl Flotsam {
 }
 
 /// A piece opened into a character: the drop of a foe of its rank and level, each part taken where there is room.
-/// The chance a piece of a ship of `rank` holds a Vestige at `difficulty`: her foe's on land, raised as a harder
+/// The chance a piece of a ship of `rank` holds a Vestige at `difficulty`: its foe's on land, raised as a harder
 /// voyage raises a kill's.
 #[must_use]
 pub fn vestige_chance(rank: Rank, difficulty: gear::Difficulty) -> f64 {

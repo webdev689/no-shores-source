@@ -1,5 +1,5 @@
-//! A fleet room's side of the door, for a browser predicting its own ship: her ship stepped by the helms the room
-//! has not taken yet, as the room would step them; and her look's lay among the ships she sees, as the room would
+//! A fleet room's side of the door, for a browser predicting its own ship: the ship stepped by the helms the room
+//! has not taken yet, as the room would step them; and the ship's look's lay among the ships it sees, as the room would
 //! lay it. Both run the naval crate on the room's open sea, in little-endian 64-bit numbers.
 
 use land::sea::Swell;
@@ -52,9 +52,9 @@ fn helm_of(numbers: &[f64]) -> Option<Helm> {
     fits.then_some(Helm { steer, crab: crab == 1.0, climb: climb as i8 })
 }
 
-/// Her ship stepped by each helm in turn, as the fleet room steps a player's ship: from her ship's numbers, whether
-/// she is a wreck, her sail and her whole sail, the room's time for her pose, then three numbers a helm. Answers her
-/// ship's numbers and her pose at that time; none for numbers that are not that.
+/// The player's ship stepped by each helm in turn, as the fleet room steps it: from the ship's numbers, whether
+/// it is a wreck, its sail and its whole sail, the room's time for its pose, then three numbers a helm. Answers the
+/// ship's numbers and its pose at that time; none for numbers that are not that.
 #[must_use]
 pub fn predict(numbers: &[f64]) -> Vec<f64> {
     let (Some(ship), Some(rest)) = (numbers.get(..SHIP_FLOATS).and_then(ship_of), numbers.get(SHIP_FLOATS..)) else {
@@ -70,7 +70,7 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
     let hurts = Hurts::from_numbers(wrecked != 0.0, sail, max_sail);
     with_weather(|swell, wind| {
         let waters = OpenSea { swell };
-        // Out on the open sea a ship's step does not hang on the hour: only her pose does.
+        // Out on the open sea a ship's step does not hang on the hour: only its pose does.
         // A player sails the Sloop.
         let hull = HullKind::Sloop.hull();
         let ship = helms.iter().fold(ship, |ship, helm| sail_hurt(&ship, hull, *helm, hurts, &waters, wind, time).0);
@@ -79,8 +79,8 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
     })
 }
 
-/// The numbers of one other ship in a lay's request: her number, flag (0 a player's, else her faction's number), hull
-/// (0 the Sloop to 3 the Frigate, as the snapshot numbers it), ship, pose and whether she floats.
+/// The numbers of one other ship in a lay's request: its number, flag (0 a player's, else its faction's number), hull
+/// (0 the Sloop to 3 the Frigate, as the snapshot numbers it), ship, pose and whether it floats.
 const OTHER_FLOATS: usize = 4 + SHIP_FLOATS + POSE_FLOATS;
 
 fn sighted_of(numbers: &[f64]) -> Option<Sighted> {
@@ -93,14 +93,14 @@ fn sighted_of(numbers: &[f64]) -> Option<Sighted> {
     let flag = Flag::numbered(flag);
     let hull = (hull == hull.trunc() && (0.0..=f64::from(u8::MAX)).contains(&hull)).then_some(hull as u8)?;
     let hull = HullKind::numbered(hull)?;
-    // shortcut: the page is not sent her fallen masts, so its lay may meet rig a ball now passes; send them if it shows.
+    // shortcut: no fallen masts are sent to the page, so its lay may meet rig a ball now passes; send them if it shows.
     Some(Sighted { id, flag, hull, ship, pose, afloat, fallen: 0 })
 }
 
-/// Her look's lay as the fleet room would lay it: from her own ship as `sighted_of` reads one, her load (1 round to
-/// 4 heated), her look's bearing and range, 1 and its ray's six numbers or 0 and six of anything, the room's time,
-/// then every other ship she sees. Answers 0 for no side bearing; else 1, her side (0 port, 1 starboard), the
-/// elevation, the reach, the landing zone's radius, 1 if on target, and for each gun its launch's six numbers and
+/// A player's look's lay as the fleet room would lay it: from their own ship as `sighted_of` reads one, its load
+/// (1 round to 4 heated), their look's bearing and range, 1 and its ray's six numbers or 0 and six of anything, the
+/// room's time, then every other ship they see. Answers 0 for no side bearing; else 1, its side (0 port, 1 starboard),
+/// the elevation, the reach, the landing zone's radius, 1 if on target, and for each gun its launch's six numbers and
 /// where it stops: 1, the seconds, the point, 1 in the water, and 1 and a strike's point (or 0 and three zeros); or 0
 /// and eight zeros, still aloft.
 #[must_use]

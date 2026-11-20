@@ -13,7 +13,7 @@ pub const BALL_LIFE_S: f64 = 9.0;
 pub const BALL_STEP_S: f64 = 0.1;
 pub const GROUND_STEP_M: f64 = 4.0;
 
-/// A ship's number in a fight, never shared while she is in it.
+/// A ship's number in a fight, never shared while it is in it.
 pub type ShipId = u32;
 
 /// Whom a ship sails for: the players, or a faction by its number (`ranks`). A ball strikes only a ship that flies
@@ -41,7 +41,7 @@ impl Flag {
     }
 }
 
-/// A ship as a ball meets her: her number and flag, her hull's box, her sails' boxes, and whether she is still there
+/// A ship as a ball meets it: its number and flag, its hull's box, its sails' boxes, and whether it is still there
 /// to strike.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Target {
@@ -49,7 +49,7 @@ pub struct Target {
     pub flag: Flag,
     pub hull: Block,
     pub rig: Vec<Block>,
-    /// Each of her sails' boxes a ball may still strike, by her sail index: its mast stands.
+    /// Each of its sails' boxes a ball may still strike, by its sail index: its mast stands.
     pub up: Vec<bool>,
     pub alive: bool,
 }
@@ -63,7 +63,7 @@ pub enum ShotEvent {
         point: [f64; 3],
         launch: [f64; 3],
     },
-    /// A ball struck her; on her canvas, `sail` is the sail whose box it entered.
+    /// A ball struck it; on its canvas, `sail` is the sail whose box it entered.
     Hit {
         shooter: ShipId,
         target: ShipId,
@@ -243,7 +243,7 @@ pub fn step_balls(
 }
 
 /// Where a ball stops: seconds after it left its gun, the point, whether in the water, and where it first met a
-/// ship of another flag (her canvas or her hull), if it did.
+/// ship of another flag (its canvas or its hull), if it did.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Stop {
     pub time: f64,

@@ -1,4 +1,4 @@
-//! A player's lay among the ships of a fight: the side her look picks, laid on the point of a ship of another flag
+//! A player's lay among the ships of a fight: the side their look picks, laid on the point of a ship of another flag
 //! the look's ray meets (DFO's `lookOnShip`), else for the water's range; and where each gun's ball, unscattered,
 //! would stop. Free functions over the ships as numbers, so a browser lays the same lay the room fires.
 
@@ -19,7 +19,7 @@ use sailing::{HullKind, TICK_SECONDS};
 /// A look meets a ship within this far past the laid gun's longest throw (metres): DFO's `LOOK_REACH_PAD`.
 pub const LOOK_REACH_PAD_M: f64 = 60.0;
 
-/// A ship as a lay sees her: her number and flag, her hull, her helm's numbers, how she lies, and whether she floats.
+/// A ship as a lay sees it: its number and flag, its hull, its helm's numbers, how it lies, and whether it floats.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sighted {
     pub id: ShipId,
@@ -40,7 +40,7 @@ impl Sighted {
         Self { id, flag: vessel.flag(), hull: vessel.hull, ship: vessel.ship, pose: vessel.pose, afloat, fallen }
     }
 
-    /// Her as a ball meets her.
+    /// The ship as a ball meets it.
     #[must_use]
     pub fn target(&self) -> Target {
         Target {
@@ -54,8 +54,8 @@ impl Sighted {
     }
 }
 
-/// The side `shooter`'s look lays with `load`, as her guns would fire it now, if a side bears there: on the point
-/// of a ship of another flag the look's ray meets, else `range_m` out along her fire from her middle, so from her
+/// The side `shooter`'s look lays with `load`, as its guns would fire it now, if a side bears there: on the point
+/// of a ship of another flag the look's ray meets, else `range_m` out along its fire from its middle, so from its
 /// guns' middle less the way they stand out from it.
 #[must_use]
 pub fn lay_for(shooter: &Sighted, load: Shot, aim: &Aim, ships: &[Sighted]) -> Option<Lay> {
@@ -69,10 +69,10 @@ pub fn lay_for(shooter: &Sighted, load: Shot, aim: &Aim, ships: &[Sighted]) -> O
     Some(lay(ship, pose, arms, side, load, (aim.range_m - out).max(0.0), None))
 }
 
-/// The point to lay on where the look's ray first meets a ship of another flag, her hull or her canvas, within the
-/// square lay's longest throw and `LOOK_REACH_PAD_M` (DFO's `lookOnShip`). A look on her canvas lays chain for that
-/// very point and every other load for her hull's middle: a ball laid for a sail flies on through it. The point is
-/// led along the fire by her way over the ball's flight there; across the fire the timing is the helm's.
+/// The point to lay on where the look's ray first meets a ship of another flag, its hull or its canvas, within the
+/// square lay's longest throw and `LOOK_REACH_PAD_M` (DFO's `lookOnShip`). A look on its canvas lays chain for that
+/// very point and every other load for its hull's middle: a ball laid for a sail flies on through it. The point is
+/// led along the fire by its way over the ball's flight there; across the fire the timing is the helm's.
 fn look_on(shooter: &Sighted, square: &Lay, [eye, look]: [[f64; 3]; 2], ships: &[Sighted]) -> Option<[f64; 3]> {
     let length = (look[0] * look[0] + look[1] * look[1] + look[2] * look[2]).sqrt();
     if length <= 0.0 {
@@ -101,7 +101,7 @@ fn look_on(shooter: &Sighted, square: &Lay, [eye, look]: [[f64; 3]; 2], ships: &
 }
 
 /// Where each gun of `shooter`'s lay stops, its ball unscattered and flown by the law every ball flies by, with
-/// every other ship where her way will have carried her when it gets there; none for a ball still aloft past its
+/// every other ship where its way will have carried it when it gets there; none for a ball still aloft past its
 /// life.
 #[must_use]
 pub fn ends_of(shooter: &Sighted, lay: &Lay, ships: &[Sighted], waters: &impl Waters, time: f64) -> Vec<Option<Stop>> {
@@ -167,7 +167,7 @@ pub fn preview(
         })
         .collect();
     let range = splashes.iter().sum::<f64>() / splashes.len().max(1) as f64;
-    // Each gun's ball as it leaves, a ripple after the one before and carried on by her way meanwhile, as `ends_of`
+    // Each gun's ball as it leaves, a ripple after the one before and carried on by its way meanwhile, as `ends_of`
     // flies it: so each arc ends on its own stop.
     let carry = carry_of(&shooter.ship);
     let launches = (0..laid.mouths.len())
@@ -182,26 +182,26 @@ pub fn preview(
 }
 
 impl Fight {
-    /// The preview of a player's look as her guns would lay it now (`preview`), the fight's ships as they lie.
+    /// The preview of a player's look as their guns would lay it now (`preview`), the fight's ships as they lie.
     #[must_use]
     pub fn preview(&self, shooter: ShipId, aim: &Aim, waters: &impl Waters, time: f64) -> Option<Preview> {
         let vessel = self.vessel(shooter)?;
         preview(&Sighted::of(shooter, vessel), vessel.guns.load, aim, &self.sighted(), (waters, time))
     }
 
-    /// Every ship still in the fight as a lay and a ball see her, by number.
+    /// Every ship still in the fight as a lay and a ball see it, by number.
     #[must_use]
     pub fn sighted(&self) -> Vec<Sighted> {
         let in_fight = self.ships.iter().filter(|(_, vessel)| vessel.in_fight());
         in_fight.map(|(id, vessel)| Sighted::of(*id, vessel)).collect()
     }
 
-    /// Every ship still in the fight as a ball meets her, by number.
+    /// Every ship still in the fight as a ball meets it, by number.
     pub(crate) fn targets(&self) -> Vec<Target> {
         self.sighted().iter().map(Sighted::target).collect()
     }
 
-    /// The side a player's look lays, as her guns would fire it now; none for a ship not hers or no side bearing.
+    /// The side a player's look lays, as their guns would fire it now; none for a ship not theirs or no side bearing.
     #[must_use]
     pub fn laid(&self, shooter: ShipId, aim: &Aim) -> Option<Lay> {
         let vessel = self.vessel(shooter)?;
@@ -215,7 +215,7 @@ impl Fight {
         ends_of(&Sighted::of(shooter, vessel), lay, &self.sighted(), waters, time)
     }
 
-    /// A player's lay, or why her guns will not fire it.
+    /// A player's lay, or why their guns will not fire it.
     pub(crate) fn fire_order(&self, shooter: ShipId, aim: Option<&Aim>) -> Result<Lay, Refusal> {
         let lay = aim.and_then(|aim| self.laid(shooter, aim)).ok_or(Refusal::NoGuns)?;
         let player = self.vessel(shooter).ok_or(Refusal::NoGuns)?;

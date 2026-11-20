@@ -20,15 +20,15 @@ const ROWING: Orders =
 /// How far the captain's side lies off the player's bow at the start, metres.
 const GAP_M: f64 = 0.67;
 
-/// Where a captain heading east lies north of the player's Sloop at `south` heading north: her starboard side `GAP_M`
+/// Where a captain heading east lies north of the player's Sloop at `south` heading north: its starboard side `GAP_M`
 /// off the player's bow, both on the Sloop's hull.
 fn their_y(south: f64) -> f64 {
     let [_, high] = crate::arms::SLOOP_ARMS.hull;
     south - high[0] - GAP_M - high[1]
 }
 
-/// The player's Sloop at (0, `south`) heading north at `way` m/s on her oars, and a wary captain lying still north of
-/// her heading east, her starboard side to the player's bow (`her_y`).
+/// The player's Sloop at (0, `south`) heading north at `way` m/s on its oars, and a wary captain lying still north of
+/// the Sloop, heading east, its starboard side to the player's bow (`their_y`).
 fn bow_to_side(south: f64, way: f64) -> Fight {
     let mut fight = Fight::new(11);
     let player = Ship { x: 0.0, y: south, heading: 0.0, ahead: way, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 1 };
@@ -60,10 +60,10 @@ fn rams(events: &[Event]) -> Vec<(ShipId, ShipId, f64)> {
 }
 
 #[test]
-fn a_sloop_driven_into_her_side_rams_her_and_pays_its_recoil() {
+fn a_sloop_driven_into_its_side_rams_it_and_pays_its_recoil() {
     let mut fight = bow_to_side(0.5, 6.0);
     let events = fight.step(&[(PLAYER, ROWING)], &Open, WIND, 0.0);
-    // 0.15 of the lesser hull (240) at 6 of 8 m/s, into her side: 27; the recoil is 0.6 of it, 16.
+    // 0.15 of the lesser hull (240) at 6 of 8 m/s, into its side: 27; the recoil is 0.6 of it, 16.
     assert_eq!(rams(&events), [(CAPTAIN, PLAYER, 27.0)]);
     assert_eq!((hull_of(&fight, CAPTAIN), hull_of(&fight, PLAYER)), (264.0 - 27.0, 240.0 - 16.0));
     for tick in 1..30 {
@@ -85,10 +85,10 @@ fn a_bump_under_a_rams_way_does_no_harm() {
 }
 
 #[test]
-fn a_ship_once_rammed_is_not_rammed_again_by_her_for_three_seconds() {
+fn a_ship_once_rammed_is_not_rammed_again_by_it_for_three_seconds() {
     let mut fight = bow_to_side(0.5, 6.0);
     let mut events = fight.step(&[(PLAYER, ROWING)], &Open, WIND, 0.0);
-    // Back where she rammed from, at the same way, two seconds on.
+    // Back where it rammed from, at the same way, two seconds on.
     for tick in 1..120 {
         fight.step(&[(PLAYER, ROWING)], &Open, WIND, f64::from(tick) / 60.0);
     }

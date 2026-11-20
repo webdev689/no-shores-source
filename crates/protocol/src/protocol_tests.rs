@@ -169,8 +169,8 @@ impl sailing::waters::Waters for Open {
 }
 
 /// Two fights as a snapshot carries them: each its player, and its view with the player's look laid to starboard, the
-/// captain's port guns run out and the player's stem ramming her; player 2's with a pirate fighting too, player 5's the
-/// same fight without her (the client's test reads both back).
+/// captain's port guns run out and the player's stem ramming it; player 2's with a pirate fighting too, player 5's the
+/// same fight without it (the client's test reads both back).
 fn fights_seen() -> Vec<room::battle::FightSeen> {
     let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
         x,
@@ -411,18 +411,18 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
             )
         })
         .collect();
-    // The pace a ship crosses at is the one she sailed at, held down near a pirate, not the one asked.
+    // The pace a ship crosses at is the one it sailed at, held down near a pirate, not the one asked.
     let sent = SHIPS.map(|(player, ship)| (player, Ship { pace: ship.rate, ..ship }));
     assert_eq!((sea.tick(), ships), (77, sent.to_vec()));
     let pirate = sea.pirates().unwrap().get(0);
     assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
     let commission = PIRATES[0].commission;
     assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
-    assert_eq!(pirate.hull(), commission.hull().number(), "she sails her rank's hull");
-    assert_eq!((pirate.level(), pirate.sight()), (23, 25_920.0), "her level and the distance she is sighted from");
+    assert_eq!(pirate.hull(), commission.hull().number(), "it sails its rank's hull");
+    assert_eq!((pirate.level(), pirate.sight()), (23, 25_920.0), "its level and the distance it is sighted from");
     assert!((pirate.way() - 2.64).abs() < 1e-12, "an Elite's way at sea: {}", pirate.way());
     let fight = sea.fights().unwrap().get(0);
-    assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
+    assert_eq!((fight.faction(), fight.rank()), (1, 4), "the fight's captain a Grey Tithe Miniboss");
     assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
     assert!(fight.may_board() && !sea.fights().unwrap().get(1).may_board(), "whether each player may board");
     let numbers =
@@ -432,7 +432,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((fight.player(), numbers(fight.view())), (2, numbers(alone.view())));
     let (seen, others): (Vec<f64>, Vec<f64>) = (fights_seen()[0].numbers.clone(), numbers(fight.others()).unwrap());
     assert_eq!((others[0], others.len()), (1.0, 1 + 3 + naval::wire::VESSEL_NUMBERS + 4), "one other captain");
-    assert!(seen.windows(others.len()).any(|part| part == others), "her numbers as the fight's view holds them");
+    assert!(seen.windows(others.len()).any(|part| part == others), "its numbers as the fight's view holds them");
     assert_eq!((alone.player(), numbers(alone.others())), (5, None), "none, as a room from before others sends it");
     let walker = sea.players().unwrap().get(0);
     let body = body_of(&walker.fighter().unwrap().iter().collect::<Vec<_>>());
@@ -456,12 +456,12 @@ fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
     let args = messages::CourseArgs { points, facing, ..Default::default() };
     let both = messages::Course::create(&mut builder, &args);
     builder.finish(both, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "a course's legs turn her, not a facing");
+    assert!(read_sea_input(builder.finished_data()).is_err(), "a course's legs turn it, not a facing");
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let facing = Some(builder.create_vector(&[0.5, 1.0]));
     let two = messages::Course::create(&mut builder, &messages::CourseArgs { facing, ..Default::default() });
     builder.finish(two, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "she faces one heading");
+    assert!(read_sea_input(builder.finished_data()).is_err(), "it faces one heading");
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let walk = Some(builder.create_vector(&[1.0, 0.0]));
     let short = messages::Course::create(&mut builder, &messages::CourseArgs { walk, ..Default::default() });

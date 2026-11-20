@@ -1,7 +1,7 @@
-//! A captain's deck as a room, for the players who board her to fight her crew on foot by the land combat's own rules:
-//! a node's room whose floor is her deck's grid of heights (in her own frame, a wall off her planks), its ring her
-//! deck's bounds, its spawns at her rails amidships where boarders come over her side (clear of her masts, which stand
-//! on her middle line), and her faction's deck crew for her rank standing along her deck at her level (`foes::crews`).
+//! A captain's deck as a room, for the players who board it to fight its crew on foot by the land combat's own rules:
+//! a node's room whose floor is its deck's grid of heights (in its own frame, a wall off its planks), its ring the
+//! deck's bounds, its spawns at its rails amidships where boarders come over its side (clear of its masts, which stand
+//! on its middle line), and its faction's deck crew for its rank standing along its deck at its level (`foes::crews`).
 
 use crate::deck::Deck;
 use crate::floor::Floor;
@@ -9,18 +9,18 @@ use crate::{PlayerId, Room};
 use ::foes::Rank;
 use reach::Section;
 
-/// Her crew stand this far apart along her keel, from this far forward of amidships, metres, each pair either side of
-/// her middle line.
+/// A captain's crew stand this far apart along its keel, from this far forward of amidships, metres, each pair either
+/// side of its middle line.
 const CREW_APART_M: f64 = 1.6;
 const CREW_FROM_M: f64 = 2.0;
 const CREW_ASIDE_M: f64 = 0.8;
-/// A boarder stands this far in from her outermost plank at the rail they come over, metres, and the rail is sought
+/// A boarder stands this far in from its outermost plank at the rail they come over, metres, and the rail is sought
 /// in steps of this.
 const RAIL_IN_M: f64 = 0.5;
 const RAIL_STEP_M: f64 = 0.05;
 
-/// Where a boarder comes over her rail on `side` (1 her starboard, -1 her port): amidships, `RAIL_IN_M` in from her
-/// outermost plank there; at her helm where no plank lies across her middle.
+/// Where a boarder comes over its rail on `side` (1 its starboard, -1 its port): amidships, `RAIL_IN_M` in from its
+/// outermost plank there; at its helm where no plank lies across its middle.
 #[must_use]
 pub fn rail_spot(deck: &Deck, side: f64) -> [f64; 2] {
     let [[west, _], [east, _]] = deck.bounds;
@@ -55,10 +55,10 @@ impl Room {
         room
     }
 
-    /// A boarder comes aboard at `spot` (`rail_spot`), facing her bow and her crew; none when her room is full.
+    /// A boarder comes aboard at `spot` (`rail_spot`), facing the bow and the crew; none when the room is full.
     pub fn board_at(&mut self, spot: [f64; 2]) -> Option<PlayerId> {
         let id = self.join()?;
-        // Facing her bow (0, as her crew faces aft at a half turn), where her crew stands.
+        // Facing its bow (0, as its crew faces aft at a half turn), where its crew stands.
         let body = movement::Body { facing: 0.0, ..self.stand((spot[0], spot[1])) };
         if let Some(found) = self.players.get_mut(&id) {
             found.fighter.body = body;

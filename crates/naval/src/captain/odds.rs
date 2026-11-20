@@ -1,5 +1,5 @@
-//! A captain sizing up a fight, as DFO's: how long each ship's broadsides take to make the other strike (by her hull
-//! down to a quarter, or her last man), from her guns, reload, turn between volleys and the share of balls that hit
+//! A captain sizing up a fight, as DFO's: how long each ship's broadsides take to make the other strike (by its hull
+//! down to a quarter, or its last man), from its guns, reload, turn between volleys and the share of balls that hit
 //! at a duel's range; the odds are the one time over the other.
 
 use super::aim::{AIM_FREEBOARD, FIRE_EXTENT_K, FIRE_EXTENT_SKILL, LAY_ERR};
@@ -15,9 +15,9 @@ use std::f64::consts::PI;
 pub const DUEL_RANGE: f64 = 110.0;
 pub const TURN_PER_VOLLEY: f64 = 90.0;
 
-/// A ship's fighting power: her hull's points and share left, her crew's share and men, whether she strikes by her
-/// men, her gunners' skill, her turn (degrees a second), whether a crew loads her guns, the share of her hull she
-/// strikes at, and her guns' harm and reload over a Major's (`ranks::Scale`).
+/// A ship's fighting power: its hull's points and share left, its crew's share and men, whether it strikes by its
+/// men, its gunners' skill, its turn (degrees a second), whether a crew loads its guns, the share of its hull it
+/// strikes at, and its guns' harm and reload over a Major's (`ranks::Scale`).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Power {
     pub hull_hp: f64,
@@ -34,7 +34,7 @@ pub struct Power {
 }
 
 impl Power {
-    /// A captain as she knows herself.
+    /// A captain as it knows itself.
     #[must_use]
     pub fn captain(build: &Build, hull_share: f64, crew_share: f64) -> Self {
         Self {
@@ -52,8 +52,8 @@ impl Power {
         }
     }
 
-    /// A player's boat as a captain sizes her up: her hull's points and share, a gunner's skill, her helm at its best,
-    /// and a crew at her guns whatever she carries (DFO's own reckoning).
+    /// A player's boat as a captain sizes it up: its hull's points and share, a gunner's skill, its helm at its best,
+    /// and a crew at its guns whatever it carries (DFO's own reckoning).
     #[must_use]
     pub fn player(build: &Build, hull_share: f64) -> Self {
         Self {
@@ -80,8 +80,8 @@ pub fn hit_share(shooter: &Arms, target: &Arms, skill: f64) -> f64 {
 }
 
 /// The share of a broadside's balls from a ship of `shooter`'s arms that strike one of `target`'s `range` metres off,
-/// from gunners of `skill`: how much of the fall her hull's height and beam take, against the scatter and the lay's
-/// error, and how much of her length against the scatter and the miss a gunner allows.
+/// from gunners of `skill`: how much of the fall its hull's height and beam take, against the scatter and the lay's
+/// error, and how much of its length against the scatter and the miss a gunner allows.
 #[must_use]
 pub fn hit_share_at(shooter: &Arms, target: &Arms, skill: f64, range: f64) -> f64 {
     let gun = SWIVEL;
@@ -100,8 +100,8 @@ pub fn hit_share_at(shooter: &Arms, target: &Arms, skill: f64, range: f64) -> f6
     (deep / (2.0 * error)).min(1.0) * (half_length / across).min(1.0)
 }
 
-/// Seconds `one`'s fire takes to make `other` strike: her hull down to her strike, or her last man if she strikes by
-/// her men, her balls' harm and her reload as her rank paces them. `one` carries the first arms, `other` the second.
+/// Seconds `one`'s fire takes to make `other` strike: its hull down to its strike, or its last man if it strikes by
+/// its men, its balls' harm and its reload as its rank paces them. `one` carries the first arms, `other` the second.
 /// Every side throws the Sloop's broadside, however many guns share it.
 #[must_use]
 pub fn strike_time(one: &Power, other: &Power, [shooter, target]: [&Arms; 2]) -> f64 {
@@ -118,8 +118,8 @@ pub fn strike_time(one: &Power, other: &Power, [shooter, target]: [&Arms; 2]) ->
     by_hull.min(by_men)
 }
 
-/// How far `one` (of the first arms) outguns `other` (of the second): the time `other` takes to make her strike over
-/// the time she takes.
+/// How far `one` (of the first arms) outguns `other` (of the second): the time `other` takes to make `one` strike over
+/// the time `one` takes.
 #[must_use]
 pub fn odds(one: &Power, other: &Power, [own, theirs]: [&Arms; 2]) -> f64 {
     let (mine, theirs) = (strike_time(one, other, [own, theirs]), strike_time(other, one, [theirs, own]));
@@ -133,8 +133,8 @@ pub fn odds(one: &Power, other: &Power, [own, theirs]: [&Arms; 2]) -> f64 {
 }
 
 /// Whether a wary captain of `commission` at `strength` (`Captain::raised`), sound, falls on a player's Sloop met at
-/// sea with `hull_share` of her hull left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`, or one
-/// she outguns `WARY_ODDS` to one by their fighting powers.
+/// sea with `hull_share` of its hull left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`, or one
+/// it outguns `WARY_ODDS` to one by their fighting powers.
 #[must_use]
 pub fn wary_takes(commission: crate::ranks::Commission, strength: f64, hull_share: f64) -> bool {
     if hull_share < super::GRAPPLE_HULL {

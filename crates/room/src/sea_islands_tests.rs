@@ -41,7 +41,7 @@ fn at_rest(sea: &mut Sea) -> PlayerId {
 }
 
 #[test]
-fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_her() {
+fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_it() {
     let mut sea = sea_round("continent-4", "desert");
     at_rest(&mut sea);
     ticks(&mut sea, 60 * 60 * 3);
@@ -78,7 +78,7 @@ fn every_machine_rolls_the_same_islands_from_the_seas_seed() {
 }
 
 #[test]
-fn a_ship_finds_an_island_she_sails_near_and_is_told_of_those_in_sight() {
+fn a_ship_finds_an_island_it_sails_near_and_is_told_of_those_in_sight() {
     let mut sea = sea_round("continent-4", "desert");
     let player = at_rest(&mut sea);
     while sea.islands().standing.is_empty() {

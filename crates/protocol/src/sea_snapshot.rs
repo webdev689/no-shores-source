@@ -1,4 +1,4 @@
-//! The sea room's snapshot: every ship at sea, every hostile ship, each player's fight, each player off the helm on her
+//! The sea room's snapshot: every ship at sea, every hostile ship, each player's fight, each player off the helm on its
 //! deck, and what the sea keeps after its fights (what floats, each ship's kept hurts, what each player is told, and
 //! each deck boarded), and the islands each player sees or has found.
 
@@ -8,7 +8,7 @@ use naval::ranks::Commission;
 use room::pirates::Pirate;
 use room::sea::Ship;
 
-/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction, rank and hull,
+/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with its faction, rank and hull,
 /// each player's fight as the naval crate's numbers (`naval::wire::view_numbers`, its other captains parted off into a
 /// field of their own) with its captain's commission and hull, and each player off the helm with the number of their
 /// last step taken and their body on deck.
@@ -134,8 +134,8 @@ pub fn sea_snapshot_bytes(
 
 /// What the sea's snapshot carries beside its ships and fights: each piece of what floats (its player, its number,
 /// where it floats and its kind, 0 a crate, 1 a barrel, 2 a chest), each player's ship's kept hurts with the seconds
-/// her repair has left, what each player is told this tick, and each deck boarded (each boarder's number at sea with
-/// theirs on her deck, her hull, and her deck room's snapshot), and the islands the player sees or has found.
+/// its repair has left, what each player is told this tick, and each deck boarded (each boarder's number at sea with
+/// theirs on its deck, its hull, and its deck room's snapshot), and the islands the player sees or has found.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SeaHarbour {
     pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
@@ -157,6 +157,6 @@ pub struct IsleSeen {
     pub found: bool,
 }
 
-/// A deck boarded as the snapshot carries it: each boarder's number at sea with theirs on her deck, her hull, her deck
-/// room's snapshot, and the sea's ticks her won deck holds her boarders yet (none while her crew still fights).
+/// A deck boarded as the snapshot carries it: each boarder's number at sea with theirs on its deck, its hull, its deck
+/// room's snapshot, and the sea's ticks its won deck holds its boarders yet (none while its crew still fights).
 pub type SeaDeck = (Vec<(PlayerId, PlayerId)>, u8, Vec<u8>, Option<u64>);

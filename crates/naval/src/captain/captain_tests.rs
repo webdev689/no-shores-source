@@ -11,7 +11,7 @@ fn open(_x: f64, _y: f64) -> bool {
     true
 }
 
-/// Her Sloop heading north under sail at 2.5 m/s, sound.
+/// The captain's Sloop heading north under sail at 2.5 m/s, sound.
 struct Deck {
     ship: Ship,
     damage: Damage,
@@ -50,7 +50,7 @@ fn player_at(x: f64, y: f64) -> Sighting {
     }
 }
 
-/// Her helm against one player's ship, the only hull about her.
+/// The captain's helm against one player's ship, the only hull about it.
 fn steer_against(mind: &mut Captain, deck: &Deck, enemy: &Sighting, seconds: f64) -> Helm {
     let traffic = [([enemy.ship.x, enemy.ship.y], velocity_of(&enemy.ship), course::pass_reach(&SLOOP_ARMS))];
     mind.steer(&deck.own(), (std::slice::from_ref(enemy), &traffic), seconds, &open)
@@ -77,13 +77,13 @@ fn a_bold_captain_far_off_steers_to_meet_the_player_under_sail() {
 }
 
 #[test]
-fn within_reach_she_lays_her_starboard_side_abeam_of_a_player_off_her_starboard_beam() {
+fn within_reach_it_lays_its_starboard_side_abeam_of_a_player_off_its_starboard_beam() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);
     let helm = steer_against(&mut mind, &deck, &player_at(60.0, 0.0), 0.1);
     assert_eq!(mind.mode, Mode::Engage);
-    // Making way north, she lays on his lead, a few degrees abaft his beam.
-    assert!(helm.steer > 0.0 && helm.steer < 0.15, "she all but holds her heading: {}", helm.steer);
+    // Making way north, it lays on his lead, a few degrees abaft his beam.
+    assert!(helm.steer > 0.0 && helm.steer < 0.15, "it all but holds its heading: {}", helm.steer);
     assert_eq!(mind.present.map(|present| present.side), Some(Side::Starboard));
 }
 
@@ -96,11 +96,11 @@ fn a_wary_captain_lets_a_stronger_ship_be_and_runs_once_struck() {
     mind.provoke(0);
     let helm = steer_against(&mut mind, &deck, &player_at(200.0, 0.0), 0.1);
     assert_eq!(mind.mode, Mode::Flee);
-    assert!(helm.steer < -0.5, "the player lies east, so she turns away west: {}", helm.steer);
+    assert!(helm.steer < -0.5, "the player lies east, so it turns away west: {}", helm.steer);
 }
 
 #[test]
-fn a_pirate_hulled_past_seventy_percent_runs_whatever_her_temper() {
+fn a_pirate_hulled_past_seventy_percent_runs_whatever_its_temper() {
     let mut deck = Deck::new();
     deck.damage.apply(Hurt { hull: 190.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     let mut mind = captain(Temper::Bold);
@@ -109,7 +109,7 @@ fn a_pirate_hulled_past_seventy_percent_runs_whatever_her_temper() {
 }
 
 #[test]
-fn struck_she_brings_in_her_sails_and_comes_down_her_ladder() {
+fn struck_it_brings_in_its_sails_and_comes_down_its_ladder() {
     let mut deck = Deck::new();
     deck.damage.apply(Hurt { hull: 200.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     let mut mind = captain(Temper::Bold);
@@ -125,7 +125,7 @@ fn a_chase_that_gains_nothing_for_150_seconds_is_given_up_and_the_player_spared(
     while mind.mode == Mode::Engage || ticks == 0 {
         steer_against(&mut mind, &deck, &player_at(600.0, 0.0), 0.5);
         ticks += 1;
-        assert!(ticks < 400, "she never gave up");
+        assert!(ticks < 400, "it never gave up");
     }
     assert!((300..=304).contains(&ticks), "{ticks}");
     assert_eq!(mind.mode, Mode::Cruise);
@@ -136,7 +136,7 @@ fn a_chase_that_gains_nothing_for_150_seconds_is_given_up_and_the_player_spared(
 }
 
 #[test]
-fn she_leaves_a_wrecked_player_after_thirty_seconds() {
+fn it_leaves_a_wrecked_player_after_thirty_seconds() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);
     let wreck = Sighting { wrecked: true, hull_share: 0.0, ..player_at(100.0, 0.0) };
@@ -146,7 +146,7 @@ fn she_leaves_a_wrecked_player_after_thirty_seconds() {
         assert_eq!(
             mind.aim(&deck.own(), Some(&wreck), &mut Mulberry32::new(1)).run_out,
             None,
-            "she never fires on a wreck"
+            "it never fires on a wreck"
         );
     }
     steer_against(&mut mind, &deck, &wreck, 0.5);
@@ -155,7 +155,7 @@ fn she_leaves_a_wrecked_player_after_thirty_seconds() {
 }
 
 #[test]
-fn her_rudder_is_her_commanded_swing_as_a_share_of_her_own() {
+fn its_rudder_is_its_commanded_swing_as_a_share_of_its_own() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);
     let most = swing_rate(&deck.ship, &SLOOP) * DEG;
@@ -165,13 +165,13 @@ fn her_rudder_is_her_commanded_swing_as_a_share_of_her_own() {
 }
 
 #[test]
-fn her_rung_is_the_one_whose_way_is_nearest_her_share_of_sail() {
+fn its_rung_is_the_one_whose_way_is_nearest_its_share_of_sail() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);
     mind.sails = 1.0;
-    assert_eq!(mind.helm(&deck.own(), 0.0, 0.0).climb, 0, "sails set, as she wants");
+    assert_eq!(mind.helm(&deck.own(), 0.0, 0.0).climb, 0, "sails set, as it wants");
     mind.sails = 0.6;
-    assert_eq!(mind.helm(&deck.own(), 0.0, 0.0).climb, -1, "nearer her oars' way");
+    assert_eq!(mind.helm(&deck.own(), 0.0, 0.0).climb, -1, "nearer its oars' way");
     mind.sails = 0.0;
     let mut torn = Deck::new();
     torn.damage.apply(Hurt { hull: 0.0, sail: 96.0, crew: 0.0, fire: false }, 0.0, 0.0);
@@ -180,7 +180,7 @@ fn her_rung_is_the_one_whose_way_is_nearest_her_share_of_sail() {
 }
 
 #[test]
-fn presented_she_keeps_station_on_six_tenths_of_her_sail_or_more() {
+fn presented_it_keeps_station_on_six_tenths_of_its_sail_or_more() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);
     let plan = mind.engage(&deck.own(), &player_at(60.0, 0.0), 60.0, &open);
@@ -188,7 +188,7 @@ fn presented_she_keeps_station_on_six_tenths_of_her_sail_or_more() {
 }
 
 #[test]
-fn inside_her_dead_zone_she_opens_the_range_hard() {
+fn inside_its_dead_zone_it_opens_the_range_hard() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);
     let plan = mind.engage(&deck.own(), &player_at(1.5, 0.0), 1.5, &open);
@@ -198,7 +198,7 @@ fn inside_her_dead_zone_she_opens_the_range_hard() {
 }
 
 #[test]
-fn a_quarry_running_from_her_she_runs_down_and_sheers_out_to_its_beam() {
+fn a_quarry_running_from_the_captain_it_runs_down_and_sheers_out_to_its_beam() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);
     let running = Ship { ahead: 3.0, rung: 2, ..player_at(0.0, -60.0).ship };
@@ -208,7 +208,7 @@ fn a_quarry_running_from_her_she_runs_down_and_sheers_out_to_its_beam() {
 }
 
 #[test]
-fn her_lookout_reckons_her_turning_circle_at_her_own_pace_even_lying_still() {
+fn its_lookout_reckons_its_turning_circle_at_its_own_pace_even_lying_still() {
     let mut deck = Deck::new();
     deck.ship = Ship { ahead: 0.0, sail_way: 0.0, ..deck.ship };
     let mind = captain(Temper::Bold);
@@ -216,7 +216,7 @@ fn her_lookout_reckons_her_turning_circle_at_her_own_pace_even_lying_still() {
 }
 
 #[test]
-fn an_elite_and_above_is_bold_whatever_her_seed_and_a_minor_or_major_as_her_seed_says() {
+fn an_elite_and_above_is_bold_whatever_its_seed_and_a_minor_or_major_as_its_seed_says() {
     for rank in Rank::ALL {
         let commission = Commission { faction: PIRATES, rank };
         for seed in 0..200 {

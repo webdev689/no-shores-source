@@ -1,4 +1,4 @@
-//! The sea's side of what its fights leave (`harbour`): a ship's hurts kept with her and with the player's character,
+//! The sea's side of what its fights leave (`harbour`): a ship's hurts kept with it and with the player's character,
 //! the player who washes up at the nearest port city, what floats where a captain's ship sank and who gathers it, and
 //! the repairs by the ports, and the keeping of each player's character: what changed in it, and in a sea that keeps
 //! characters, no course sailed before the keeper has answered for the player.
@@ -14,7 +14,7 @@ use naval::wire::told_numbers;
 use std::collections::BTreeMap;
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 
-/// A player who leaves a fight with less than this share of her hull is kept as a sunk ship comes back.
+/// A player who leaves a fight with less than this share of their hull is kept as a sunk ship comes back.
 pub const LEFT_AS_SUNK: f64 = 1.0 / 3.0;
 
 impl Sea {
@@ -26,7 +26,7 @@ impl Sea {
     }
 
     /// What its fights' tick made of each player and each captain's ship that sank: a player's ship where the fight
-    /// has her, her hurts kept once it lets her go, a player whose ship went down washed up, and what floats laid for
+    /// has it, its hurts kept once it lets it go, a player whose ship went down washed up, and what floats laid for
     /// each player who fought a ship that sank.
     pub(super) fn after_fights(&mut self, outcomes: Vec<Outcome>, sank: &[Sank]) {
         for outcome in outcomes {
@@ -40,7 +40,7 @@ impl Sea {
             }
         }
         for ship in sank {
-            // A boarded ship sunk under her boarders sends them back to their own ships.
+            // A boarded ship sunk under its boarders sends them back to their own ships.
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
             self.tell_down(ship);
@@ -48,7 +48,7 @@ impl Sea {
         }
     }
 
-    /// The word for a captain's ship gone down: where, her rank and level, and the accounts of those who fought her.
+    /// The word for a captain's ship gone down: where, its rank and level, and the accounts of those who fought it.
     fn tell_down(&mut self, ship: &Sank) {
         let water = self.chart.water(ship.at);
         let accounts = &self.harbour.accounts;
@@ -106,7 +106,7 @@ impl Sea {
         }
     }
 
-    /// A player's ship where a fight has her, at rest, and the hurts she keeps if it let her go.
+    /// A player's ship where a fight has it, at rest, and the hurts it keeps if the fight let it go.
     fn moor(&mut self, player: PlayerId, ship: sailing::ship::Ship, kept: Option<[f64; 3]>) {
         let Some(berth) = self.berths.get_mut(&player) else { return };
         if let Some(kept) = kept {
@@ -166,7 +166,7 @@ impl Sea {
         Ok(())
     }
 
-    /// The hurts a player's ship keeps, with her and in their character.
+    /// The hurts a player's ship keeps, with it and in their character.
     pub(super) fn keep_hurts(&mut self, player: PlayerId, kept: [f64; 3]) {
         if let Some(berth) = self.berths.get_mut(&player) {
             keep(berth, &mut self.harbour.characters, player, kept);
@@ -191,7 +191,7 @@ impl Sea {
                 self.harbour.changed.insert(player);
             }
         }
-        // A boarder's ship gathers nothing while they stand on her enemy's deck, whose room holds their character.
+        // A boarder's ship gathers nothing while they stand on its enemy's deck, whose room holds their character.
         let on_deck = |player: &PlayerId| self.decks.boarded.iter().any(|deck| deck.aboard.contains_key(player));
         let ships: Vec<(PlayerId, [f64; 2])> = self
             .ships()
@@ -230,7 +230,7 @@ impl Sea {
         std::mem::take(&mut self.harbour.told)
     }
 
-    /// The shares of hull, canvas and men a player's ship keeps, and the seconds her repair has left (0 with none).
+    /// The shares of hull, canvas and men a player's ship keeps, and the seconds its repair has left (0 with none).
     #[must_use]
     pub fn kept(&self, player: PlayerId) -> Option<([f64; 3], f64)> {
         let kept = self.berths.get(&player)?.kept;
@@ -256,7 +256,7 @@ impl Sea {
         self.harbour.flotsam.for_player(player)
     }
 
-    /// A player's character as it is kept between sessions, their ship's hurts in it: a new one, with her hurts, until
+    /// A player's character as it is kept between sessions, their ship's hurts in it: a new one, with its hurts, until
     /// the accounts gave theirs; none for no player at sea.
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
@@ -264,10 +264,10 @@ impl Sea {
         // On a deck, its room holds their character as it fights.
         let held = self.deck_character(player).or_else(|| self.harbour.characters.get(&player).cloned());
         let mut character = held.unwrap_or_else(gear::Character::starting);
-        // In a fight, she is kept as the fight has her, and lies at the port city she would wash up at, as one who
+        // In a fight, the ship is kept as the fight has it, and lies at the port city it would wash up at, as one who
         // lost does: a player who leaves mid-fight comes back there.
         let (kept, at) = match self.fights.hurts_of(player) {
-            // Leaving a fight under a third of her hull counts as sunk: never more than she had.
+            // Leaving a fight under a third of its hull counts as sunk: never more than it had.
             Some((kept, at)) => (
                 if kept[0] < LEFT_AS_SUNK { std::array::from_fn(|at| kept[at].min(SUNK_KEPT[at])) } else { kept },
                 in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
@@ -285,7 +285,7 @@ impl Sea {
 
     /// From now on the sea keeps characters: each player's courses wait for the keeper's word on theirs, the character
     /// given back (`restore_character`) or none kept (`none_kept`), so a ship the room kept comes back where it kept
-    /// her, however late the page signs in.
+    /// it, however late the page signs in.
     pub fn keep_characters(&mut self) {
         self.harbour.awaiting.get_or_insert_with(BTreeMap::new);
     }
@@ -307,7 +307,7 @@ impl Sea {
     }
 
     /// The keeper has no character to give the player (none kept, or the page plays unkept): the course held for them
-    /// is judged and sailed as any course is, a refused one leaving her not yet at sea.
+    /// is judged and sailed as any course is, a refused one leaving it not yet at sea.
     pub fn none_kept(&mut self, player: PlayerId) {
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         if let Some((points, pace)) = held {
@@ -329,8 +329,8 @@ impl Sea {
     }
 
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea
-    /// or the text is not a character. Her ship lies where the room last kept her, wherever the page first put her to
-    /// sea: a fight she met from the page's spawn is over for her. With nowhere kept, the course held for her sails.
+    /// or the text is not a character. Their ship lies where the room last kept it, wherever the page first put it to
+    /// sea: a fight they met from the page's spawn is over for them. With nowhere kept, the course held for them sails.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
@@ -369,8 +369,8 @@ pub(crate) fn in_frame([x, y]: [f64; 2]) -> [f64; 2] {
     [x.clamp(0.0, width), y.clamp(0.0, height)]
 }
 
-/// Each wary ship at sea within `ENGAGE_RANGE` of a player not fighting whose Sloop she would take as her kept hull
-/// leaves her (`naval::captain::wary_takes`, DFO's `takesPrize`) meets them as a bold one does: she leaves the sea, and
+/// Each wary ship at sea within `ENGAGE_RANGE` of a player not fighting whose Sloop it would take as its kept hull
+/// leaves it (`naval::captain::wary_takes`, DFO's `takesPrize`) meets them as a bold one does: it leaves the sea, and
 /// the meeting joins `met`.
 pub(super) fn wary_meet(
     pirates: &mut crate::pirates::Pirates,
@@ -396,7 +396,7 @@ pub(super) fn wary_meet(
     }
 }
 
-/// Her hurts kept with her and with her player's character.
+/// Its hurts kept with it and with its player's character.
 pub(super) fn keep(
     berth: &mut Berth,
     characters: &mut BTreeMap<PlayerId, gear::Character>,

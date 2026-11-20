@@ -44,12 +44,12 @@ fn captain_mut(fight: &mut Fight) -> &mut Vessel {
 }
 
 fn mind(fight: &Fight) -> &Captain {
-    let Sailor::Captain(command) = &captain(fight).sailor else { panic!("a captain sails her") };
+    let Sailor::Captain(command) = &captain(fight).sailor else { panic!("a captain sails it") };
     &command.mind
 }
 
 fn mind_mut(fight: &mut Fight) -> &mut Captain {
-    let Sailor::Captain(command) = &mut captain_mut(fight).sailor else { panic!("a captain sails her") };
+    let Sailor::Captain(command) = &mut captain_mut(fight).sailor else { panic!("a captain sails it") };
     &mut command.mind
 }
 
@@ -82,7 +82,7 @@ fn a_captain_is_put_to_sea_on_the_ring_round_the_player() {
 }
 
 #[test]
-fn with_no_water_to_float_her_no_captain_comes() {
+fn with_no_water_to_float_it_no_captain_comes() {
     struct Dry;
     impl Waters for Dry {
         fn at(&self, _x: f64, _y: f64, _time: f64) -> Spot {
@@ -110,7 +110,7 @@ fn a_fight_is_the_same_every_time_it_is_fought() {
 }
 
 #[test]
-fn a_broadside_laid_on_her_strikes_her() {
+fn a_broadside_laid_on_it_strikes_it() {
     let mut fight = alongside(50.0, Temper::Wary);
     let fire = Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 50.0, ray: None }), fire: true, ..IDLE };
     let mut events = run(&mut fight, &fire, 1);
@@ -122,7 +122,7 @@ fn a_broadside_laid_on_her_strikes_her() {
         events.iter().filter(|event| matches!(event, Event::Shot(ShotEvent::Hit { target: CAPTAIN, .. }))).count();
     assert!(hits >= 1, "{events:?}");
     assert!(captain(&fight).damage.hull < PIRATE_SLOOP.hull);
-    assert!(mind(&fight).hostile_to(PLAYER), "struck, she is provoked");
+    assert!(mind(&fight).hostile_to(PLAYER), "struck, it is provoked");
 }
 
 #[test]
@@ -151,7 +151,7 @@ fn a_release_the_guns_cannot_answer_is_refused_with_its_reason() {
 }
 
 #[test]
-fn a_bold_captain_runs_out_her_guns_and_fires_on_the_player() {
+fn a_bold_captain_runs_out_its_guns_and_fires_on_the_player() {
     let mut fight = alongside(80.0, Temper::Bold);
     let events = run(&mut fight, &IDLE, 60 * 30);
     assert!(events.iter().any(|event| matches!(event, Event::RunOut { .. })), "the tell");
@@ -172,7 +172,7 @@ fn bare_yards_or_a_wreck_set_no_sail() {
 }
 
 #[test]
-fn the_fight_ends_when_she_has_sunk_or_sailed_off_out_of_it() {
+fn the_fight_ends_when_it_has_sunk_or_sailed_off_out_of_it() {
     let mut fight = alongside(60.0, Temper::Wary);
     captain_mut(&mut fight).damage.apply(Hurt { hull: 400.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     let events = run(&mut fight, &IDLE, 60 * 23);
@@ -184,12 +184,12 @@ fn the_fight_ends_when_she_has_sunk_or_sailed_off_out_of_it() {
 }
 
 #[test]
-fn the_rest_of_the_volley_that_made_her_strike_cannot_sink_her() {
+fn the_rest_of_the_volley_that_made_it_strike_cannot_sink_it() {
     let mut fight = alongside(60.0, Temper::Wary);
     captain_mut(&mut fight).damage.apply(Hurt { hull: 190.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     let gun = crate::guns::SWIVEL;
     let mut events = Vec::new();
-    // 74 of 264 left: a ball of 12 to 16 makes her strike, and the next ball of the volley would sink her.
+    // 74 of 264 left: a ball of 12 to 16 makes it strike, and the next ball of the volley would sink it.
     let hit = |hull: f64| ShotEvent::Hit {
         shooter: PLAYER,
         target: CAPTAIN,
@@ -207,18 +207,18 @@ fn the_rest_of_the_volley_that_made_her_strike_cannot_sink_her() {
 }
 
 #[test]
-fn a_look_lays_its_range_out_from_her_middle() {
+fn a_look_lays_its_range_out_from_its_middle() {
     let fight = alongside(500.0, Temper::Wary);
     let aim = Aim { bearing_deg: 90.0, range_m: 60.0, ray: None };
     let laid = fight.laid(PLAYER, &aim).map_or(f64::NAN, |lay| lay.elevation);
     let own = player(&fight);
     let out = SLOOP_ARMS.battery(Side::Starboard)[1][1];
     let from_guns = lay(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, 60.0 - out, None);
-    assert!((laid - from_guns.elevation).abs() < 1e-3, "her guns stand {out} m out from her middle");
+    assert!((laid - from_guns.elevation).abs() < 1e-3, "its guns stand {out} m out from its middle");
 }
 
 #[test]
-fn the_lay_reads_on_target_only_where_its_balls_would_strike_her() {
+fn the_lay_reads_on_target_only_where_its_balls_would_strike_it() {
     let fight = alongside(50.0, Temper::Wary);
     let on = |range_m: f64| {
         let laid = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None });
@@ -227,18 +227,18 @@ fn the_lay_reads_on_target_only_where_its_balls_would_strike_her() {
         })
     };
     assert!(on(50.0));
-    assert!(!on(44.0), "the balls splash short of her");
+    assert!(!on(44.0), "the balls splash short of it");
     assert!(!on(30.0));
 }
 
-/// A look from the player's starboard aim eye toward `at`, its water range far past her.
+/// A look from the player's starboard aim eye toward `at`, its water range far past it.
 fn looked(fight: &Fight, at: [f64; 3]) -> Aim {
     let eye = [5.1, 3.0, player(fight).pose.heave + 5.5];
     Aim { bearing_deg: 90.0, range_m: 300.0, ray: Some([eye, [0, 1, 2].map(|axis| at[axis] - eye[axis])]) }
 }
 
 #[test]
-fn a_look_on_her_hull_lays_on_that_point_and_its_unscattered_volley_strikes_her() {
+fn a_look_on_its_hull_lays_on_that_point_and_its_unscattered_volley_strikes_it() {
     let fight = alongside(50.0, Temper::Wary);
     let hull = Sighted::of(CAPTAIN, captain(&fight)).target().hull;
     let aim = looked(&fight, hull.centre);
@@ -254,14 +254,14 @@ fn a_look_on_her_hull_lays_on_that_point_and_its_unscattered_volley_strikes_her(
     let same = laid.clone().is_some_and(|laid| {
         (laid.elevation - on.elevation).abs() < 1e-12 && Lay { elevation: on.elevation, ..laid } == on
     });
-    assert!(same, "laid for the point the look meets on her side, not the water's 300 m: {laid:?} against {on:?}");
+    assert!(same, "laid for the point the look meets on its side, not the water's 300 m: {laid:?} against {on:?}");
     let ends = laid.map(|laid| fight.ends(PLAYER, &laid, &Open, 0.0)).unwrap_or_default();
     assert_eq!(ends.len(), 3);
     assert!(ends.iter().all(|end| end.is_some_and(|stop| stop.strike.is_some() && !stop.water)), "{ends:?}");
 }
 
 #[test]
-fn a_look_past_her_lays_for_the_water() {
+fn a_look_past_it_lays_for_the_water() {
     let fight = alongside(50.0, Temper::Wary);
     let aim = looked(&fight, [50.0, -60.0, 0.0]);
     assert_eq!(fight.laid(PLAYER, &aim), fight.laid(PLAYER, &Aim { ray: None, ..aim }));
@@ -315,33 +315,33 @@ impl Waters for Headland {
 }
 
 #[test]
-fn a_captain_sails_round_land_that_lies_between_her_and_the_player() {
+fn a_captain_sails_round_land_that_lies_between_it_and_the_player() {
     let mut fight = begun(1);
     captain_mut(&mut fight).ship = Ship { heading: 1.5 * std::f64::consts::PI, ..sloop_at(400.0, 0.0) };
     mind_mut(&mut fight).temper = Temper::Bold;
     let mut closest = f64::INFINITY;
-    // Head to wind she rows (her oars beat her canvas there), so give her five minutes.
+    // Head to wind it rows (its oars beat its canvas there), so give it five minutes.
     for tick in 0..60 * 300 {
         fight.step(&[(PLAYER, IDLE)], &Headland, WIND, f64::from(tick) * TICK_SECONDS);
         let ship = captain(&fight).ship;
         closest = closest.min((ship.x * ship.x + ship.y * ship.y).sqrt());
     }
-    assert!(closest < 120.0, "she never came round the headland: {closest}");
+    assert!(closest < 120.0, "it never came round the headland: {closest}");
 }
 
 #[test]
-fn a_wreck_does_not_mend_while_a_pirate_who_would_take_her_lies_near() {
+fn a_wreck_does_not_mend_while_a_pirate_who_would_take_it_lies_near() {
     let mut fight = alongside(60.0, Temper::Bold);
     player_mut(&mut fight).damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     run(&mut fight, &IDLE, 60 * 60);
     let captain_ship = captain(&fight).ship;
     let apart = (captain_ship.x * captain_ship.x + captain_ship.y * captain_ship.y).sqrt();
     assert!(apart < HOSTILE_NEAR_M, "{apart}");
-    assert_eq!(player(&fight).damage.hull, 0.0, "a bold pirate within 700 m would take her: her hands stand by");
+    assert_eq!(player(&fight).damage.hull, 0.0, "a bold pirate within 700 m would take it: its hands stand by");
 }
 
 #[test]
-fn a_captain_her_fires_made_strike_is_graced_against_the_volley_then_aloft() {
+fn a_captain_whose_fires_made_it_strike_is_graced_against_the_volley_then_aloft() {
     let mut fight = alongside(60.0, Temper::Wary);
     captain_mut(&mut fight).damage.apply(Hurt { hull: 197.0, sail: 0.0, crew: 0.0, fire: true }, 0.0, 0.0);
     for _ in 0..120 {
@@ -367,8 +367,8 @@ fn a_captain_her_fires_made_strike_is_graced_against_the_volley_then_aloft() {
 }
 
 #[test]
-fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_her() {
-    // Ten of a Frigate's balls, each a tenth of her broadside's three, against ten of the Sloop's on the same draws.
+fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_it() {
+    // Ten of a Frigate's balls, each a tenth of its broadside's three, against ten of the Sloop's on the same draws.
     let lost = |share: f64| {
         let mut fight = alongside(60.0, Temper::Wary);
         let gun = crate::guns::Gun { share, ..crate::guns::SWIVEL };
@@ -397,7 +397,7 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_her() {
 }
 
 #[test]
-fn a_captain_coming_to_engage_is_round_to_her_broadside_as_the_range_comes_to_her_reach() {
+fn a_captain_coming_to_engage_is_round_to_its_broadside_as_the_range_comes_to_its_reach() {
     use crate::captain::course::{distance, heading_to, wrap};
     use crate::ranks::{PIRATES, Rank};
     for rank in Rank::ALL {
@@ -422,24 +422,24 @@ fn a_captain_coming_to_engage_is_round_to_her_broadside_as_the_range_comes_to_he
                 break;
             }
         }
-        let off_beam = came.unwrap_or_else(|| panic!("{rank:?} never came within her reach"));
-        assert!(off_beam <= 30.0, "{rank:?} came within her reach {off_beam:.0} degrees off her beam");
+        let off_beam = came.unwrap_or_else(|| panic!("{rank:?} never came within its reach"));
+        assert!(off_beam <= 30.0, "{rank:?} came within its reach {off_beam:.0} degrees off its beam");
     }
 }
 
 #[test]
-fn a_captain_raised_to_a_strength_fights_with_that_many_times_her_hull_men_and_guns_harm() {
+fn a_captain_raised_to_a_strength_fights_with_that_many_times_its_hull_men_and_guns_harm() {
     let commission = Commission { faction: crate::ranks::PIRATES, rank: crate::ranks::Rank::Minor };
     let mut fight = Fight::meet(sloop_at(0.0, 0.0), sloop_at(0.0, -400.0), commission, 3, &Open, 0.0);
     fight.raise(CAPTAIN, 2.0);
     let (plain, raised, build) = (commission.damage(), &captain(&fight).damage, commission.build_at(2.0));
     assert!((build.hull / plain.max_hull - 2.0).abs() < 0.01 && (build.crew / plain.max_crew - 2.0).abs() < 0.1);
     assert_eq!((raised.max_hull, raised.hull, raised.max_crew), (build.hull, build.hull, build.crew), "sound, raised");
-    assert_eq!(raised.struck_at, plain.struck_at, "she strikes at her rank's share");
+    assert_eq!(raised.struck_at, plain.struck_at, "it strikes at its rank's share");
     let Sailor::Captain(command) = &captain(&fight).sailor else { panic!("a captain") };
     assert_eq!(command.mind.strength, 2.0);
     let gun = commission.armed(crate::guns::SWIVEL, command.mind.strength);
-    assert_eq!(gun.hull, commission.armed(crate::guns::SWIVEL, 1.0).hull * 2.0, "her guns' harm as many times");
+    assert_eq!(gun.hull, commission.armed(crate::guns::SWIVEL, 1.0).hull * 2.0, "its guns' harm as many times");
     assert!(!crate::captain::wary_takes(commission, 1.0, 1.0), "a wary Minor will not fall on a whole Sloop");
-    assert!(crate::captain::wary_takes(commission, 6.0, 1.0), "six times as strong, she outguns her");
+    assert!(crate::captain::wary_takes(commission, 6.0, 1.0), "six times as strong, the Minor outguns the Sloop");
 }

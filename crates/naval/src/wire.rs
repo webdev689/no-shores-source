@@ -23,7 +23,7 @@ const MOST_RANGE_M: f64 = 1e5;
 /// Each event's kind and how many numbers follow it: muzzle (ship, point, launch), hit (ship struck, by, zone,
 /// point), splash and land (point), run-out (side), state (ship, state), refused (why, side, seconds left), no-sail
 /// (wrecked), load (shot), ram (ship struck, by, point, hull dealt); then, each naming the fight's tick it happened on
-/// first: splash (x, y), hit (ship, point in her frame, part: 0 hull, 1 sail, 2 rig), sail lost (ship, sail), mast
+/// first: splash (x, y), hit (ship, point in its frame, part: 0 hull, 1 sail, 2 rig), sail lost (ship, sail), mast
 /// fell (ship, mast), struck (ship), sinking (ship), flotsam (its number, x, y, kind: 0 crate, 1 barrel, 2 chest),
 /// gathered (its number, the player), boarding (ship).
 pub const EVENT_NUMBERS: [usize; 19] = [7, 6, 3, 3, 1, 2, 3, 1, 1, 6, 3, 6, 3, 3, 2, 2, 5, 3, 2];
@@ -47,7 +47,7 @@ pub fn orders_from(numbers: &[f64]) -> Result<Orders, String> {
     }
     let aim = if flag(laid, "a look")? {
         if !(-180.0..=180.0).contains(&bearing_deg) || !(0.0..=MOST_RANGE_M).contains(&range_m) {
-            return Err("a look bears within 180 degrees of her bow and lays within 100 km".into());
+            return Err("a look bears within 180 degrees of its bow and lays within 100 km".into());
         }
         let ray = flag(rayed, "a ray")?.then_some([[eye_x, eye_y, eye_z], [east, south, up]]);
         Some(Aim { bearing_deg, range_m, ray })
@@ -172,7 +172,7 @@ pub fn told_numbers(event: &Event, tick: f64) -> Option<Vec<f64>> {
 }
 
 /// Where a gun's ball stops, `STOP_NUMBERS`: whether it does (0 still aloft, else 1), seconds after it left its gun,
-/// its point, whether in the water, and whether it strikes her (0 or 1) and where.
+/// its point, whether in the water, and whether it strikes a ship (0 or 1) and where.
 fn stop_numbers(stop: Option<&Stop>) -> [f64; STOP_NUMBERS] {
     let Some(stop) = stop else { return [0.0; STOP_NUMBERS] };
     let ([x, y, z], [strike_x, strike_y, strike_z]) = (stop.point, stop.strike.unwrap_or_default());
@@ -180,8 +180,8 @@ fn stop_numbers(stop: Option<&Stop>) -> [f64; STOP_NUMBERS] {
     [1.0, stop.time, x, y, z, water, struck, strike_x, strike_y, strike_z]
 }
 
-/// A captain's mind as the browser of the player sailing `me` shows it: her mode, whether she is hostile to them, and
-/// her sides run out.
+/// A captain's mind as the browser of the player sailing `me` shows it: its mode, whether it is hostile to them, and
+/// its sides run out.
 fn captain_numbers(mind: &Captain, me: ShipId) -> [f64; 4] {
     let mode = match mind.mode {
         Mode::Cruise => 0.0,
@@ -195,11 +195,11 @@ fn captain_numbers(mind: &Captain, me: ShipId) -> [f64; 4] {
 }
 
 /// The fight as the browser of the player sailing `me` shows it, after a tick whose events are `events`, its lay the
-/// look `aim` holds over `waters` at `time`: her ship, then the fight's first captain's, then any other captains still
-/// in it, each with her faction and rank; none for a fight without both. Its ships are numbered as a fight of one
-/// player and one captain numbers them (`Fight::meet`): hers as `PLAYER`, that captain's as `CAPTAIN`, and the two
-/// whose numbers those were as theirs. Each ship's numbers end with her hull (0 the Sloop, 1 the Schooner, 2 the Brig,
-/// 3 the Frigate). Only her own refusals, sails refused and loads are hers to see.
+/// look `aim` holds over `waters` at `time`: their ship, then the fight's first captain's, then any other captains
+/// still in it, each with its faction and rank; none for a fight without both. Its ships are numbered as a fight of one
+/// player and one captain numbers them (`Fight::meet`): the player's as `PLAYER`, that captain's as `CAPTAIN`, and
+/// the two whose numbers those were as theirs. Each ship's numbers end with its hull (0 the Sloop, 1 the Schooner, 2
+/// the Brig, 3 the Frigate). Only their own refusals, sails refused and loads are theirs to see.
 #[must_use]
 pub fn view_numbers(
     fight: &Fight,
@@ -239,7 +239,7 @@ pub fn view_numbers(
         .filter_map(|(id, vessel)| vessel.command().map(|command| (*id, vessel, &command.mind)))
         .collect();
     numbers.push(others.len() as f64);
-    // Each with the number her events name her by, as one may leave the fight and the rest move up the list.
+    // Each with the number its events name it by, as one may leave the fight and the rest move up the list.
     for (id, vessel, mind) in others {
         numbers.extend([seen(id), f64::from(mind.commission.faction), f64::from(mind.commission.rank.number())]);
         numbers.extend(vessel_numbers(vessel));
@@ -276,8 +276,8 @@ pub fn view_numbers(
     numbers
 }
 
-/// Where a view's other captains begin (after its clock, its end, the player's Sloop, the captain's ship and her mind),
-/// and each one's numbers (the number her events name her by, her faction and rank, her ship and her mind).
+/// Where a view's other captains begin (after its clock, its end, the player's Sloop, the captain's ship and its mind),
+/// and each one's numbers (the number its events name it by, its faction and rank, its ship and its mind).
 const OTHERS_AT: usize = 2 + 2 * VESSEL_NUMBERS + 4;
 const OTHER_NUMBERS: usize = 3 + VESSEL_NUMBERS + 4;
 

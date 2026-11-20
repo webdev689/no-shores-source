@@ -1,8 +1,8 @@
 //! Friendly traffic: ships sailing between the port cities all the time. One route joins every pair of them, planned
 //! round land, so each port trades with both others and the lanes cross the most waters. On each route a ship leaves
-//! each end every 1,200 s of world time, sails at 5 m/s, lies 600 s at her destination's roadstead and is then gone.
+//! each end every 1,200 s of world time, sails at 5 m/s, lies 600 s at its destination's roadstead and is then gone.
 //! World time is seconds since the Unix epoch, so every machine computes the same ships for the same time, and a
-//! ship's place comes in closed form from her departure, never by stepping her.
+//! ship's place comes in closed form from its departure, never by stepping it.
 
 use crate::geometry::Point;
 use crate::layout::Layout;
@@ -18,7 +18,7 @@ mod routes;
 pub const DEPARTURE_EVERY_S: f64 = 1_200.0;
 /// Every friendly ship sails at this speed, metres a second.
 pub const SPEED_M_S: f64 = 5.0;
-/// A ship lies at her destination's roadstead this long once she arrives, seconds, then is gone: with a ship arriving
+/// A ship lies at its destination's roadstead this long once it arrives, seconds, then is gone: with a ship arriving
 /// at each end of a route every `DEPARTURE_EVERY_S`, about one lies at each port's roadstead at any moment.
 pub const DWELL_S: f64 = 600.0;
 /// A roadstead lies this far out to sea from its port's nearest coast, metres, and farther if it must be.
@@ -34,7 +34,7 @@ pub const MASK_CLEAR_M: f64 = 3_000.0;
 /// Every leg stays more than this clear of every coast and isle, metres, so a hull drawn on it stays off the land.
 pub const LEG_CLEAR_M: f64 = 800.0;
 
-/// The bits of a ship's id below her departure number: her route in bits 1 to 7, her direction in bit 0.
+/// The bits of a ship's id below its departure number: its route in bits 1 to 7, its direction in bit 0.
 const DEPARTURE_SHIFT: u32 = 8;
 const ROUTE_BITS: u64 = (1 << (DEPARTURE_SHIFT - 1)) - 1;
 
@@ -110,7 +110,7 @@ impl Route {
 /// A friendly ship at one moment of world time.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrafficShip {
-    /// Her departure number, route and direction: `n << 8 | route << 1 | direction`.
+    /// Its departure number, route and direction: `n << 8 | route << 1 | direction`.
     pub id: u64,
     pub route: usize,
     /// Indices into the ports the traffic was made with.
@@ -119,22 +119,22 @@ pub struct TrafficShip {
     /// 0 sloop, 1 schooner, 2 brig, 3 frigate.
     pub hull: u8,
     pub position: [f64; 2],
-    /// The unit way she sails, along her leg.
+    /// The unit way it sails, along its leg.
     pub direction: [f64; 2],
-    /// How far she has sailed, metres.
+    /// How far it has sailed, metres.
     pub progress_m: f64,
-    /// Her route's length, metres.
+    /// Its route's length, metres.
     pub length_m: f64,
 }
 
-/// A ship's id from her route, her direction (0 from the route's first port, 1 back) and her departure number.
+/// A ship's id from its route, its direction (0 from the route's first port, 1 back) and its departure number.
 #[must_use]
 pub fn ship_id(route: usize, direction: u8, departure: u64) -> u64 {
     debug_assert!(route as u64 <= ROUTE_BITS, "a route number fits in its seven bits");
     (departure << DEPARTURE_SHIFT) | ((route as u64) << 1) | u64::from(direction & 1)
 }
 
-/// A ship's hull from a fixed hash of her id: a sloop four times in ten, a schooner three, a brig two, a frigate one.
+/// A ship's hull from a fixed hash of its id: a sloop four times in ten, a schooner three, a brig two, a frigate one.
 #[must_use]
 pub fn hull_of(id: u64) -> u8 {
     let mut hash = id.wrapping_add(0x9e37_79b9_7f4a_7c15);
@@ -218,8 +218,8 @@ impl Traffic {
         Self { ports: kept, routes: planned, roadsteads }
     }
 
-    /// The ship with this id at this world time; none if she has not left yet, has lain her `DWELL_S` at the end, or
-    /// never sails. Arrived, she lies at the route's end, heading as she came in.
+    /// The ship with this id at this world time; none if it has not left yet, has lain its `DWELL_S` at the end, or
+    /// never sails. Arrived, it lies at the route's end, heading as it came in.
     #[must_use]
     pub fn ship(&self, id: u64, time_s: f64) -> Option<TrafficShip> {
         let direction = (id & 1) as u8;
@@ -249,7 +249,7 @@ impl Traffic {
 
     /// Every ship within `radius_m` of `centre` at this world time, by id. Per route, the stretches of its path within
     /// the radius give the distances sailed that put a ship there, and those give the departures: never a walk over
-    /// every departure since 1970. Each candidate is then placed and judged exactly, as `ship` places her. A time or
+    /// every departure since 1970. Each candidate is then placed and judged exactly, as `ship` places it. A time or
     /// radius that is not a finite number, a negative radius, or a time past the last departure an id holds, finds
     /// none.
     #[must_use]

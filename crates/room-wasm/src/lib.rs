@@ -196,7 +196,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             },
         },
         Opened::Sea(sea) => {
-            // A boarder's inputs on her deck are a land room's.
+            // A boarder's inputs on its deck are a land room's.
             if sea.on_deck(player)
                 && let Ok(input) = protocol::read_input(bytes)
             {
@@ -305,8 +305,8 @@ pub unsafe extern "C" fn room_open(address: *const u8, length: usize) -> u32 {
     u32::from(open(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
-/// Opens a captain's deck as a room alone, as the sea holds one boarded: her hull's deck by its number, her faction's
-/// deck crew for her rank (1 Minor to 5 Boss) at her level. The page's tests and pictures of the fight on her deck
+/// Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's deck by its number, its faction's
+/// deck crew for its rank (1 Minor to 5 Boss) at its level. The page's tests and pictures of the fight on its deck
 /// stand on it; the sea opens its own. Answers whether the hull and the rank are ones.
 #[must_use]
 pub fn open_deck(hull: u8, faction: u8, rank: u8, level: u8) -> bool {
@@ -459,8 +459,8 @@ pub extern "C" fn room_take_foe_asks() {
     take_foe_asks();
 }
 
-/// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers her
-/// ship's and her pose's numbers.
+/// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers their
+/// ship's and its pose's numbers.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.

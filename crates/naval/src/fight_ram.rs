@@ -14,8 +14,8 @@ use sailing::pose::{Pose, frame, pose_of};
 use sailing::waters::Waters;
 use std::collections::{BTreeMap, VecDeque};
 
-/// A player's stem as the ram's law keeps it: her way over the last moments (the fight's clock, then her velocity),
-/// and when she last rammed each ship.
+/// A player's stem as the ram's law keeps it: its way over the last moments (the fight's clock, then its velocity),
+/// and when it last rammed each ship.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Stem {
     ways: VecDeque<(f64, [f64; 2])>,
@@ -34,7 +34,7 @@ impl Stem {
     }
 }
 
-/// A hull on the flat: her hull's box, its middle set forward of hers as the box is.
+/// A hull on the flat: its hull's box, its middle set forward of the hull's as the box is.
 fn flat_of(vessel: &Vessel) -> Flat {
     let [low, high] = vessel.arms().hull;
     let (forward, starboard) = frame(vessel.ship.heading);
@@ -48,7 +48,7 @@ fn flat_of(vessel: &Vessel) -> Flat {
     }
 }
 
-/// Her pose on the water at `time`, a captain's as she founders.
+/// Its pose on the water at `time`, a captain's as it founders.
 fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
     let afloat = pose_of(&vessel.ship, vessel.hull.hull(), waters, time);
     vessel.pose = match &vessel.sailor {
@@ -60,7 +60,7 @@ fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
     };
 }
 
-/// Moves her by `push` and cuts her way by how squarely she drove into it.
+/// Moves it by `push` and cuts its way by how squarely it drove into it.
 fn shove(vessel: &mut Vessel, push: [f64; 2]) {
     let (forward, _) = frame(vessel.ship.heading);
     let kept = 1.0 - driven_into(forward, push);
@@ -71,7 +71,7 @@ fn shove(vessel: &mut Vessel, push: [f64; 2]) {
 
 impl Fight {
     /// Hulls that overlap pushed apart, each pair in the order of their numbers: each out of the other by half the
-    /// overlap, her way cut by how squarely she drove into it. A ship gone down is no longer in the way.
+    /// overlap, its way cut by how squarely it drove into it. A ship gone down is no longer in the way.
     pub(super) fn keep_apart(&mut self, waters: &impl Waters, time: f64) {
         let ids: Vec<ShipId> = self
             .ships
@@ -94,7 +94,7 @@ impl Fight {
         }
     }
 
-    /// Each player's stem, after every ship has moved: her way kept for `RAM_MEMORY_S`, and, with way on along her
+    /// Each player's stem, after every ship has moved: its way kept for `RAM_MEMORY_S`, and, with way on along it
     /// keel and afloat, a ram on the first ship of another flag it meets, one a tick.
     pub(super) fn rams(&mut self, events: &mut Vec<Event>) {
         let clock = self.clock;
@@ -117,10 +117,10 @@ impl Fight {
         }
     }
 
-    /// Her stem on the first ship of another flag it meets, if its way drives a blow home she can pay for.
+    /// Its stem on the first ship of another flag it meets, if its way drives a blow home it can pay for.
     fn ram_from(&mut self, id: ShipId, events: &mut Vec<Event>) {
         let (Some(vessel), Some(stem)) = (self.ships.get(&id), self.stems.get(&id)) else { return };
-        // Her stem: the fore end of her own hull's box.
+        // Its stem: the fore end of its own hull's box.
         let [_, high] = vessel.arms().hull;
         let point = posed(&vessel.ship, &vessel.pose, [high[0], 0.0, 1.0]);
         let share = RECOIL_SHARE * if vessel.guns.braced { BRACE_TAKEN } else { 1.0 };

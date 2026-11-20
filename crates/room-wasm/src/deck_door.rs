@@ -1,6 +1,6 @@
-//! The Sloop's deck and build, for the sea room and for a browser. Her deck is read from the ships manifest the game is
+//! The Sloop's deck and build, for the sea room and for a browser. Its deck is read from the ships manifest the game is
 //! built with (content/ships/ships.json, which tools/ships/deck.py writes), so the room and every browser stand a
-//! walker on the same heights; her build is what the naval rules say she is, for a browser to show.
+//! walker on the same heights; its build is what the naval rules say it is, for a browser to show.
 
 use movement::Heights;
 use naval::arms::{LARGE_BOAT, SLOOP_ARMS};
@@ -24,7 +24,7 @@ struct Entry {
 }
 
 /// A deck as the manifest holds it: its grid's west and north edges and cell in metres, its columns and rows, each
-/// row's heights in centimetres over her waterline (none where no body stands), and the spot behind her wheel.
+/// row's heights in centimetres over its waterline (none where no body stands), and the spot behind its wheel.
 #[derive(Deserialize)]
 struct DeckEntry {
     cell_m: f64,
@@ -57,9 +57,9 @@ pub fn sloop_deck() -> &'static Deck {
     DECK.get_or_init(|| deck_of(MANIFEST, "sloop").unwrap_or_else(|why| panic!("the built-in manifest: {why}")))
 }
 
-/// The Sloop's build as JSON: her name, her hull and canvas whole, her crew, her guns on each side, and the loads her
+/// The Sloop's build as JSON: its name, its hull and canvas whole, its crew, its guns on each side, and the loads it
 /// guns take, in the order a gunner steps through them.
-/// Every hull's deck as the built-in manifest has it, by her hull's number: the Sloop's, the Schooner's, the Brig's and
+/// Every hull's deck as the built-in manifest has it, by its hull's number: the Sloop's, the Schooner's, the Brig's and
 /// the Frigate's.
 pub fn hull_decks() -> &'static [Deck] {
     static DECKS: OnceLock<Vec<Deck>> = OnceLock::new();
@@ -92,13 +92,13 @@ mod tests {
     use movement::Terrain;
 
     #[test]
-    fn the_built_in_sloops_deck_reads_and_her_helm_stands_on_it() {
+    fn the_built_in_sloops_deck_reads_and_its_helm_stands_on_it() {
         let deck = sloop_deck();
         let [x, y] = deck.helm;
-        assert!(deck.heights.stands_at(x, y), "behind her wheel is deck");
+        assert!(deck.heights.stands_at(x, y), "behind its wheel is deck");
         let height = deck.heights.height_at(x, y);
-        assert!(height > 1.5 && height < 3.6, "her planks stand over her waterline: {height}");
-        assert!(!deck.heights.stands_at(5.0, 0.0), "off her side is no deck");
+        assert!(height > 1.5 && height < 3.6, "its planks stand over its waterline: {height}");
+        assert!(!deck.heights.stands_at(5.0, 0.0), "off its side is no deck");
     }
 
     #[test]

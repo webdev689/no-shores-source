@@ -1,6 +1,6 @@
-//! The engagement course, as DFO's: far off she steers to intercept; a quarry running from her she runs down astern
-//! and then sheers out to its beam; else she brings the side that costs least to bear on where her balls will meet
-//! it, bent off the beam to open or close her range, and once presented keeps station with sail.
+//! The engagement course, as DFO's: far off it steers to intercept; a quarry running from it the captain runs down
+//! astern and then sheers out to its beam; else it brings the side that costs least to bear on where its balls will
+//! meet it, bent off the beam to open or close its range, and once presented keeps station with sail.
 
 use super::*;
 
@@ -28,8 +28,8 @@ impl Captain {
         let (me, them) = ([ship.x, ship.y], [enemy.ship.x, enemy.ship.y]);
         let my = velocity_of(ship);
         let rate = swing_rate(ship, vessel.hull).max(1.0) * DEG;
-        // Her own way toward the enemy, and the range a turn of `turn` (radians) closes: her turning circle's advance
-        // and her helm's ease, so she comes round to her broadside as the range comes to her reach, not after it.
+        // Its own way toward the enemy, and the range a turn of `turn` (radians) closes: its turning circle's advance
+        // and its helm's ease, so it comes round to its broadside as the range comes to its reach, not after it.
         let toward = ((my[0] * (them[0] - me[0]) + my[1] * (them[1] - me[1])) / apart.max(1e-6)).max(0.0);
         let closes = |turn: f64| toward * (libm::sin(turn.abs().min(90.0 * DEG)) / rate + 4.0 * TURN_TAU);
         if apart - closes(90.0 * DEG) > (range * CLOSE_FROM).max(reach) {

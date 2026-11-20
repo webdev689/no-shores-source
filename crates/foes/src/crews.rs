@@ -1,6 +1,6 @@
-//! A captain's deck crew, whom players who board her fight on foot: her faction's deck types by her rank. A Minor's
-//! is three Minors; a Major's four, one of them a Major; an Elite's five, one an Elite; a Miniboss's six, her mate (the
-//! Grey Tithe's Tithe-Mate, the pirates' Captain) the Miniboss; a Boss's her Boss and six. The plain hands are the
+//! A captain's deck crew, whom players who board it fight on foot: its faction's deck types by its rank. A Minor's
+//! is three Minors; a Major's four, one of them a Major; an Elite's five, one an Elite; a Miniboss's six, its mate (the
+//! Grey Tithe's Tithe-Mate, the pirates' Captain) the Miniboss; a Boss's its Boss and six. The plain hands are the
 //! faction's three plain deck types in turn, its skirmisher, its swordsman and its shot; the one of rank a Major's or
 //! an Elite's is its heavy (the Bosun, the pirates' Brute).
 
@@ -23,8 +23,8 @@ fn deck_of(faction: u8) -> Option<Deck> {
     }
 }
 
-/// The deck crew of a captain of `faction` at `rank`: each one's type (the roster's number) and rank, her own first
-/// where she has one; none for a faction with no deck types, or a Boss with no Boss of her faction.
+/// The deck crew of a captain of `faction` at `rank`: each one's type (the roster's number) and rank, its own first
+/// where it has one; none for a faction with no deck types, or a Boss with no Boss of its faction.
 #[must_use]
 pub fn deck_crew(faction: u8, rank: Rank) -> Vec<(u8, Rank)> {
     let Some(deck) = deck_of(faction) else { return Vec::new() };
@@ -48,7 +48,7 @@ mod tests {
     use crate::roster::foe_type;
 
     #[test]
-    fn each_rank_brings_its_crew_and_every_hand_is_a_deck_type_of_her_faction_at_a_rank_it_comes_in() {
+    fn each_rank_brings_its_crew_and_every_hand_is_a_deck_type_of_its_faction_at_a_rank_it_comes_in() {
         for faction in [GREY_TITHE, PIRATES] {
             let sizes: Vec<usize> = [Rank::Minor, Rank::Major, Rank::Elite, Rank::Miniboss]
                 .map(|rank| deck_crew(faction, rank).len())

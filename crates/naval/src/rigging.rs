@@ -1,18 +1,18 @@
-//! Her rig as the balls tear it: each sail takes its share of the canvas harm that strikes it, and once that passes
-//! its due (its share of her whole canvas) it tears away and her drive loses its share; a mast whose sails are all
-//! gone falls when her rig is struck there again, and her balls pass where it stood. A sail's share is the pull it
-//! gives at its crest over her whole canvas's (`sailing::helm::canvas`).
+//! Its rig as the balls tear it: each sail takes its share of the canvas harm that strikes it, and once that passes
+//! its due (its share of its whole canvas) it tears away and its drive loses its share; a mast whose sails are all
+//! gone falls when its rig is struck there again, and its balls pass where it stood. A sail's share is the pull it
+//! gives at its crest over its whole canvas's (`sailing::helm::canvas`).
 
 use crate::arms::arms_of;
 use sailing::HullKind;
 use sailing::helm::{SAIL_CREST_DEG, canvas, sail_power};
 use sailing::hull::SailKind;
 
-/// Square sails and gaffs whose fore edges lie within this of the last one's along her keel (metres) stand on one
+/// Square sails and gaffs whose fore edges lie within this of the last one's along its keel (metres) stand on one
 /// mast.
 pub const MAST_APART_M: f64 = 2.0;
 
-/// What a blow on her rig did: tore a sail away (her sail index, as her manifest lists them), or felled a mast (fore
+/// What a blow on its rig did: tore a sail away (its sail index, as its manifest lists them), or felled a mast (fore
 /// to aft).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Torn {
@@ -20,7 +20,7 @@ pub enum Torn {
     Mast(usize),
 }
 
-/// Her rig: each sail's share of her drive, the mast it stands on, the canvas harm it has taken, whether it is gone,
+/// Its rig: each sail's share of its drive, the mast it stands on, the canvas harm it has taken, whether it is gone,
 /// and whether each mast has fallen.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rigging {
@@ -31,8 +31,8 @@ pub struct Rigging {
     fallen: Vec<bool>,
 }
 
-/// The mast each sail of `hull` stands on, fore to aft: her square sails and gaffs by their fore edge along her keel,
-/// taken from the bow aft, one mast while each lies within `MAST_APART_M` of the last; a staysail stands on her
+/// The mast each sail of `hull` stands on, fore to aft: its square sails and gaffs by their fore edge along its keel,
+/// taken from the bow aft, one mast while each lies within `MAST_APART_M` of the last; a staysail stands on its
 /// foremost mast, its stay running to it.
 #[must_use]
 pub fn masts_of(hull: HullKind) -> Vec<usize> {
@@ -70,7 +70,7 @@ impl Rigging {
         Rigging { shares, masts, harm: vec![0.0; sails.len()], lost: vec![false; sails.len()], fallen }
     }
 
-    /// The share of her drive her standing sails give.
+    /// The share of its drive its standing sails give.
     #[must_use]
     pub fn standing(&self) -> f64 {
         self.shares.iter().zip(&self.lost).filter(|(_, lost)| !**lost).map(|(share, _)| share).sum()
@@ -94,7 +94,7 @@ impl Rigging {
         self.lost.get(sail).copied().unwrap_or(true)
     }
 
-    /// A ball's canvas harm `harm` on sail `sail` of her `max_sail`: torn away once its harm passes its due; struck
+    /// A ball's canvas harm `harm` on sail `sail` of its `max_sail`: torn away once its harm passes its due; struck
     /// where it was, with every sail of its mast gone, the mast falls.
     pub fn struck(&mut self, sail: usize, harm: f64, max_sail: f64) -> Option<Torn> {
         if !self.up(sail) {
@@ -117,7 +117,7 @@ impl Rigging {
         None
     }
 
-    /// Every number she holds, in a fixed order.
+    /// Every number it holds, in a fixed order.
     #[must_use]
     pub fn numbers(&self) -> Vec<f64> {
         let flag = |on: &bool| f64::from(u8::from(*on));

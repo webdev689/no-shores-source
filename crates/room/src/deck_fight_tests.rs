@@ -4,7 +4,7 @@ use ::foes::factions::{GREY_TITHE, PIRATES};
 use movement::Terrain;
 
 #[test]
-fn her_deck_room_stands_her_rank_and_factions_crew_at_her_level_on_her_planks() {
+fn a_captains_deck_room_stands_its_rank_and_factions_crew_at_its_level_on_its_planks() {
     let deck = test_deck();
     for (faction, rank, count) in
         [(PIRATES, Rank::Major, 4), (GREY_TITHE, Rank::Miniboss, 6), (PIRATES, Rank::Minor, 3)]
@@ -14,7 +14,7 @@ fn her_deck_room_stands_her_rank_and_factions_crew_at_her_level_on_her_planks() 
         for foe in room.foes.values() {
             assert_eq!(foe.level, 14);
             let body = foe.fighter.body;
-            assert!(deck.heights.stands_at(body.x, body.y), "{body:?} on her planks");
+            assert!(deck.heights.stands_at(body.x, body.y), "{body:?} on its planks");
             assert!((body.z - deck.heights.height_at(body.x, body.y)).abs() < 0.05);
         }
         assert!(!room.cleared());
@@ -22,19 +22,19 @@ fn her_deck_room_stands_her_rank_and_factions_crew_at_her_level_on_her_planks() 
 }
 
 #[test]
-fn a_boarder_comes_over_her_rail_on_their_ships_side_clear_of_her_middle_and_her_room_tells_when_crew_or_boarders_are_down()
+fn a_boarder_comes_over_the_rail_on_their_ships_side_clear_of_its_middle_and_its_room_tells_when_crew_or_boarders_are_down()
  {
     let deck = test_deck();
     let mut room = Room::deck(&deck, PIRATES, Rank::Minor, 3);
-    // Her rails amidships, half a metre in from her outermost planks (the test deck's are at 1 m either side).
+    // Its rails amidships, half a metre in from its outermost planks (the test deck's are at 1 m either side).
     let [starboard, port] = [rail_spot(&deck, 1.0), rail_spot(&deck, -1.0)];
     assert!((starboard[0] - 0.45).abs() < 0.06 && starboard[1] == 0.0, "{starboard:?}");
     assert!((port[0] + 0.5).abs() < 0.06 && port[1] == 0.0, "{port:?}");
     let player = room.board_at(port).expect("room aboard");
     let body = room.player(player).expect("aboard").fighter.body;
     assert!((body.x - port[0]).abs() + body.y.abs() < 1e-9 && (body.z - 0.8).abs() < 1e-9, "{body:?}");
-    assert!(body.facing.abs() < 1e-9, "facing her bow, where her crew stands");
-    // One with no plank across her middle comes aboard at her helm.
+    assert!(body.facing.abs() < 1e-9, "facing its bow, where its crew stands");
+    // One with no plank across its middle comes aboard at its helm.
     let mut holed = test_deck();
     holed.heights = movement::Heights::new(
         -1.0,

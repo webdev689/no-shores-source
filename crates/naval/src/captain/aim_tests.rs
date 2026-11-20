@@ -11,7 +11,7 @@ fn heading_north() -> Ship {
     Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 2 }
 }
 
-/// A still target `range` metres east of her: abeam to starboard, lying north-south.
+/// A still target `range` metres east of it: abeam to starboard, lying north-south.
 fn target_east(range: f64) -> Mark {
     Mark {
         place: [range, 0.0],
@@ -49,12 +49,12 @@ impl Deck {
 }
 
 #[test]
-fn the_window_narrows_with_range_and_her_gunners_skill() {
+fn the_window_narrows_with_range_and_its_gunners_skill() {
     let window = |range: f64, skill: f64| fire_window([0.0, 0.0], [range, 0.0], Some(0.0), &SLOOP_ARMS, skill);
     assert!(window(40.0, 0.45) > window(120.0, 0.45));
     assert!(window(120.0, 0.25) >= window(120.0, 0.75));
     assert!(window(10.0, 0.45) <= BEAR_DEG);
-    assert!(window(5000.0, 0.45) >= SWIVEL.yaw_spread_deg * 1.05 - 1e-12, "never under her scatter");
+    assert!(window(5000.0, 0.45) >= SWIVEL.yaw_spread_deg * 1.05 - 1e-12, "never under its scatter");
 }
 
 #[test]
@@ -67,11 +67,11 @@ fn a_loaded_side_bearing_in_reach_runs_out_then_fires_no_sooner_than_the_tell() 
     let fired = deck.step(1.4, &mark);
     let lay = fired.fire.map(|lay| lay.side);
     assert_eq!(lay, Some(Side::Starboard));
-    assert!(deck.run.out(Side::Starboard).is_none(), "fired, her side is run in");
+    assert!(deck.run.out(Side::Starboard).is_none(), "fired, its side is run in");
 }
 
 #[test]
-fn an_unloaded_side_a_mark_out_of_reach_or_off_her_beam_runs_nothing_out() {
+fn an_unloaded_side_a_mark_out_of_reach_or_off_its_beam_runs_nothing_out() {
     let mut deck = Deck::new();
     deck.guns.fired(Side::Starboard, 1.0, true);
     assert_eq!(deck.step(0.0, &target_east(60.0)).run_out, None, "loading");
@@ -79,7 +79,7 @@ fn an_unloaded_side_a_mark_out_of_reach_or_off_her_beam_runs_nothing_out() {
     assert_eq!(far.step(0.0, &target_east(400.0)).run_out, None, "out of reach");
     let mut ahead = Deck::new();
     let dead_ahead = Mark { place: [0.0, -60.0], ..target_east(60.0) };
-    assert_eq!(ahead.step(0.0, &dead_ahead).run_out, None, "dead ahead, off her beam");
+    assert_eq!(ahead.step(0.0, &dead_ahead).run_out, None, "dead ahead, off its beam");
 }
 
 #[test]
@@ -87,16 +87,16 @@ fn a_side_run_out_too_long_unfired_is_run_in_and_waits() {
     let mut deck = Deck::new();
     let mark = target_east(60.0);
     deck.step(0.0, &mark);
-    // The mark slips off her beam before the tell is out.
+    // The mark slips off its beam before the tell is out.
     let slipped = Mark { place: [10.0, -60.0], ..mark };
     let after = deck.step(0.5, &slipped);
-    assert!(after.fire.is_none() && deck.run.out(Side::Starboard).is_none(), "past 45 degrees she runs in");
-    assert_eq!(deck.step(1.0, &mark).run_out, None, "run in within 2 s, she waits");
+    assert!(after.fire.is_none() && deck.run.out(Side::Starboard).is_none(), "past 45 degrees it runs in");
+    assert_eq!(deck.step(1.0, &mark).run_out, None, "run in within 2 s, it waits");
     assert_eq!(deck.step(2.6, &mark).run_out, Some(Side::Starboard));
 }
 
 #[test]
-fn her_lay_is_long_or_short_by_her_crews_error() {
+fn its_lay_is_long_or_short_by_its_crews_error() {
     let ship = heading_north();
     let true_lay = |share: f64| {
         crate::gunnery::lay_on(
@@ -118,7 +118,7 @@ fn her_lay_is_long_or_short_by_her_crews_error() {
 }
 
 #[test]
-fn a_lay_passes_where_its_middle_gun_comes_abreast_of_the_mark_within_her_height() {
+fn a_lay_passes_where_its_middle_gun_comes_abreast_of_the_mark_within_its_height() {
     let ship = heading_north();
     let lay = crate::gunnery::lay_on(
         &ship,
@@ -131,18 +131,18 @@ fn a_lay_passes_where_its_middle_gun_comes_abreast_of_the_mark_within_her_height
     let top = SLOOP_ARMS.hull[1][2];
     assert!(lay_passes(&lay, [0.0; 3], [60.0, 0.0], [0.0, top]));
     assert!(!lay_passes(&lay, [0.0; 3], [60.0, 0.0], [top + 2.0, top + 3.0]));
-    assert!(!lay_passes(&lay, [0.0; 3], [-60.0, 0.0], [0.0, top]), "behind her guns");
+    assert!(!lay_passes(&lay, [0.0; 3], [-60.0, 0.0], [0.0, top]), "behind its guns");
 }
 
 #[test]
-fn her_dead_zone_alongside_a_sloop_is_a_few_metres() {
+fn its_dead_zone_alongside_a_sloop_is_a_few_metres() {
     let zone = dead_zone(&SLOOP_ARMS);
     assert!((1.0..10.0).contains(&zone), "{zone}");
 }
 
 #[test]
 fn whether_a_mark_bears_soon_is_read_from_its_smoothed_way() {
-    // 20 degrees forward of her beam and still, but its way smoothed over the last second sweeps it aft fast.
+    // 20 degrees forward of its beam and still, but its way smoothed over the last second sweeps it aft fast.
     let mark = Mark { place: [60.0, -21.84], smoothed: [0.0, 30.0], ..target_east(60.0) };
     let mut deck = Deck::new();
     assert_eq!(deck.step(0.0, &mark).run_out, Some(Side::Starboard));

@@ -153,7 +153,7 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
     let bounds = ground_around(walked, middle, around);
     match (floor, section) {
         (Floor::Flat, _) => NavMesh::bake(walked, bounds, &navmesh::AGENT),
-        // A deck's mesh covers her ring alone: her planks and the walls round them.
+        // A deck's mesh covers its ring alone: its planks and the walls round them.
         (Floor::Deck(_), Some(section)) => NavMesh::bake_on(walked, floor, ring_bounds(&section.ring), &navmesh::AGENT),
         _ => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
     }

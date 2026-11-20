@@ -28,7 +28,7 @@ fn at(x: f64, y: f64) -> Ship {
     Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }
 }
 
-/// A fight of the player's Sloop and a pirate Major lying 60 m east of her.
+/// A fight of the player's Sloop and a pirate Major lying 60 m east of it.
 fn alongside() -> Fight {
     Fight::meet(at(0.0, 0.0), at(60.0, 0.0), Commission { faction: PIRATES, rank: Rank::Major }, 3, &Open, 0.0)
 }
@@ -64,13 +64,13 @@ fn a_captain_who_struck_lies_hove_to_ninety_seconds_and_is_then_scuttled() {
     assert!(due.contains(&Event::Sinking { ship: CAPTAIN }), "{due:?}");
     assert!(due.contains(&Event::State { ship: CAPTAIN, state: State::Sinking }));
     let gone = run(&mut fight, (SINK_SECONDS * 60.0) as u32 + 2);
-    assert!(gone.contains(&Event::Gone { ship: CAPTAIN, end: End::Sunk }), "she goes down over 20 s");
+    assert!(gone.contains(&Event::Gone { ship: CAPTAIN, end: End::Sunk }), "it goes down over 20 s");
 }
 
 #[test]
-fn a_captain_boarded_is_not_scuttled_and_her_boarding_is_told_once() {
+fn a_captain_boarded_is_not_scuttled_and_its_boarding_is_told_once() {
     let mut fight = alongside();
-    assert_eq!(fight.board(CAPTAIN), None, "she has not struck");
+    assert_eq!(fight.board(CAPTAIN), None, "it has not struck");
     strike_it(&mut fight);
     if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&CAPTAIN).map(|vessel| &mut vessel.sailor) {
         command.struck_at = Some(fight.clock);
@@ -79,11 +79,11 @@ fn a_captain_boarded_is_not_scuttled_and_her_boarding_is_told_once() {
     assert_eq!(fight.board(CAPTAIN), None);
     run(&mut fight, (STRUCK_HOLD_S * 60.0) as u32 + 60);
     assert_eq!(fight.vessel(CAPTAIN).unwrap().damage.state, State::Struck);
-    assert!(fight.vessel(CAPTAIN).unwrap().in_fight(), "she lies on, far from no one, for her boarders");
+    assert!(fight.vessel(CAPTAIN).unwrap().in_fight(), "it lies on, far from no one, for its boarders");
 }
 
 #[test]
-fn her_colours_coming_down_and_her_going_down_are_told_as_their_own_events_on_their_tick() {
+fn its_colours_coming_down_and_its_going_down_are_told_as_their_own_events_on_their_tick() {
     let mut fight = alongside();
     let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap().damage;
     damage.hull = damage.max_hull * damage.struck_at + 1.0;
@@ -96,15 +96,15 @@ fn her_colours_coming_down_and_her_going_down_are_told_as_their_own_events_on_th
             break;
         }
     }
-    let struck = struck.expect("her fire brings her to strike");
+    let struck = struck.expect("its fire brings it to strike");
     assert!(struck.contains(&Event::Struck { ship: CAPTAIN }), "{struck:?}");
     let scuttled = fight.scuttle(CAPTAIN);
     assert_eq!(scuttled, vec![Event::State { ship: CAPTAIN, state: State::Sinking }, Event::Sinking { ship: CAPTAIN }]);
-    assert!(fight.scuttle(CAPTAIN).is_empty(), "she is going down already");
+    assert!(fight.scuttle(CAPTAIN).is_empty(), "it is going down already");
 }
 
 #[test]
-fn a_ball_that_strikes_her_is_told_where_in_her_own_frame_and_on_which_part() {
+fn a_ball_that_strikes_it_is_told_where_in_its_own_frame_and_on_which_part() {
     let mut fight = alongside();
     let mut events = Vec::new();
     fight.strike(&hit(CAPTAIN, Zone::Hull, [61.0, -2.0, 1.5], None, 1.0), &mut events);
@@ -113,7 +113,7 @@ fn a_ball_that_strikes_her_is_told_where_in_her_own_frame_and_on_which_part() {
     else {
         panic!("{events:?}")
     };
-    // Heading north, her bow is north (y falling) and her starboard east.
+    // Heading north, its bow is north (y falling) and its starboard east.
     let heave = fight.vessel(CAPTAIN).unwrap().pose.heave;
     assert!((at[0] - 2.0).abs() < 1e-9 && (at[1] - 1.0).abs() < 1e-9 && (at[2] - (1.5 - heave)).abs() < 1e-9, "{at:?}");
 }
@@ -131,7 +131,7 @@ fn a_sail_tears_away_as_its_harm_passes_its_due_and_a_bare_mast_struck_again_fal
     }
     assert!(events.contains(&Event::SailLost { ship: CAPTAIN, sail: 1 }), "{events:?}");
     let vessel = fight.vessel(CAPTAIN).unwrap();
-    assert!(vessel.damage.sail <= (max_sail * vessel.rigging.standing()).floor(), "her drive loses its share");
+    assert!(vessel.damage.sail <= (max_sail * vessel.rigging.standing()).floor(), "its drive loses its share");
     let mut events = Vec::new();
     for _ in 0..40 {
         fight.strike(&hit(CAPTAIN, Zone::Rig, [60.0, 0.0, 8.0], Some(0), 30.0), &mut events);
@@ -143,14 +143,14 @@ fn a_sail_tears_away_as_its_harm_passes_its_due_and_a_bare_mast_struck_again_fal
     assert!(events.contains(&Event::MastFell { ship: CAPTAIN, mast: masts_of(HullKind::Sloop)[0] }), "{events:?}");
     assert!(
         events.iter().any(|event| matches!(event, Event::Hit { part: Part::Rig, .. })),
-        "a bare spar's hit is her rig"
+        "a bare spar's hit is its rig"
     );
     let target = crate::laying::Sighted::of(CAPTAIN, fight.vessel(CAPTAIN).unwrap()).target();
-    assert!(target.up.iter().all(|up| !up), "a ball passes where her fallen mast stood");
+    assert!(target.up.iter().all(|up| !up), "a ball passes where its fallen mast stood");
 }
 
 #[test]
-fn a_players_ship_goes_down_at_none_and_is_no_ones_enemy_as_she_does() {
+fn a_players_ship_goes_down_at_none_and_is_no_ones_enemy_as_it_does() {
     let mut fight = alongside();
     let mut events = Vec::new();
     fight.ships.get_mut(&PLAYER).unwrap().damage.hull = 1.0;
@@ -162,7 +162,7 @@ fn a_players_ship_goes_down_at_none_and_is_no_ones_enemy_as_she_does() {
 }
 
 #[test]
-fn a_wary_captain_falls_on_a_sloop_she_outguns_or_one_nearly_gone() {
+fn a_wary_captain_falls_on_a_sloop_it_outguns_or_one_nearly_gone() {
     let minor = Commission { faction: PIRATES, rank: Rank::Minor };
     let elite = Commission { faction: PIRATES, rank: Rank::Elite };
     assert!(!wary_takes(minor, 1.0, 1.0), "a Minor does not outgun a sound Sloop");
@@ -171,7 +171,7 @@ fn a_wary_captain_falls_on_a_sloop_she_outguns_or_one_nearly_gone() {
         let taken: Vec<bool> = (0..=20).map(|share| wary_takes(commission, 1.0, f64::from(share) / 20.0)).collect();
         assert!(
             taken.windows(2).all(|pair| pair[0] || !pair[1]),
-            "the weaker she finds a Sloop, the likelier she falls on her"
+            "the weaker it finds a Sloop, the likelier the captain falls on it"
         );
     }
     let mind = crate::captain::Captain::new(elite, 0, 0.0, crate::arms::arms_of(elite.hull()));
@@ -185,14 +185,14 @@ fn a_wary_captain_falls_on_a_sloop_she_outguns_or_one_nearly_gone() {
 }
 
 #[test]
-fn a_wary_captain_who_will_not_engage_breaks_off_once_out_of_reach_for_her_give_up_time() {
+fn a_wary_captain_who_will_not_engage_breaks_off_once_out_of_reach_for_its_give_up_time() {
     let commission = Commission { faction: PIRATES, rank: Rank::Minor };
     let seed = (1..).find(|seed| crate::captain::temper_for(commission, *seed) == Temper::Wary).unwrap();
-    assert!(!wary_takes(commission, 1.0, 1.0), "she will not fall on a whole Sloop");
+    assert!(!wary_takes(commission, 1.0, 1.0), "it will not fall on a whole Sloop");
     let mut fight = Fight::meet(at(0.0, 0.0), at(0.0, -400.0), commission, seed, &Open, 0.0);
     let early = run(&mut fight, ((CHASE_GIVE_UP_S - 5.0) * 60.0) as u32);
-    assert!(!early.iter().any(|event| matches!(event, Event::Gone { .. })), "not before her give-up time");
+    assert!(!early.iter().any(|event| matches!(event, Event::Gone { .. })), "not before its give-up time");
     let late = run(&mut fight, 10 * 60);
-    assert!(late.contains(&Event::Gone { ship: CAPTAIN, end: End::Gone }), "she has broken off: {:?}", fight.over());
+    assert!(late.contains(&Event::Gone { ship: CAPTAIN, end: End::Gone }), "it has broken off: {:?}", fight.over());
     assert_eq!(fight.over(), Some(End::Gone), "and the fight is over for both");
 }

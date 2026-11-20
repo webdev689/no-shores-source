@@ -1,7 +1,7 @@
-//! A ship sailed over the open landmass. The request is little-endian 64-bit numbers: a ship, her helm, the world's
-//! time at her first tick, how many ticks to step, and her hull if it names one (0 the Sloop to 3 the Frigate; the
-//! Sloop without it). The answer is a header (`{}`, or `{ "error" }`) and then her numbers after the last tick and her
-//! pose then, as 64-bit numbers too. She sails in the weather's wind where she starts, its landmass's points and the
+//! A ship sailed over the open landmass. The request is little-endian 64-bit numbers: a ship, its helm, the world's
+//! time at its first tick, how many ticks to step, and its hull if it names one (0 the Sloop to 3 the Frigate; the
+//! Sloop without it). The answer is a header (`{}`, or `{ "error" }`) and then its numbers after the last tick and its
+//! pose then, as 64-bit numbers too. It sails in the weather's wind where it starts, its landmass's points and the
 //! time read as the world's (`world::weather`); its swell stays a moderate sea's, as the editor draws it.
 
 use super::{OPEN, error_view, view_bytes};
@@ -14,12 +14,12 @@ use sailing::{HullKind, TICK_SECONDS};
 use serde_json::json;
 use std::f64::consts::TAU;
 
-/// A ship, her helm, the time and the ticks: a request without her hull.
+/// A ship, its helm, the time and the ticks: a request without its hull.
 pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 2;
 /// The most ticks one request may step: a second's.
 pub const MOST_TICKS: f64 = 60.0;
-/// What no ship's numbers pass: a place a million kilometres out; a way (or her canvas's share of it) of 10 m/s, twice
-/// what any rig makes in the strongest sea wind; a swing of 45 degrees a second, twice her oars'; a world time past
+/// What no ship's numbers pass: a place a million kilometres out; a way (or its canvas's share of it) of 10 m/s, twice
+/// what any rig makes in the strongest sea wind; a swing of 45 degrees a second, twice its oars'; a world time past
 /// 30 years, where the swell's phases lose their bits.
 const MOST_PLACE_M: f64 = 1e9;
 const MOST_WAY: f64 = 10.0;
@@ -42,10 +42,10 @@ pub(crate) fn ship_from(numbers: &[f64]) -> Result<Ship, String> {
     let placed = x.abs() <= MOST_PLACE_M && y.abs() <= MOST_PLACE_M && (0.0..TAU).contains(&heading);
     let moving = ahead.abs() <= MOST_WAY && abeam.abs() <= MOST_WAY && turn.abs() <= MOST_TURN_DEG;
     if !placed || !moving || !(0.0..=MOST_WAY).contains(&sail_way) {
-        return Err("her place, heading, way or swing is none a ship could have".into());
+        return Err("its place, heading, way or swing is none a ship could have".into());
     }
     if !is_whole(rung) || !(-1.0..=f64::from(SAILS_SET)).contains(&rung) {
-        return Err("her rung is a whole number from -1 to 2".into());
+        return Err("its rung is a whole number from -1 to 2".into());
     }
     Ok(Ship { x, y, heading, ahead, abeam, turn, sail_way, rung: rung as i8 })
 }
@@ -53,7 +53,7 @@ pub(crate) fn ship_from(numbers: &[f64]) -> Result<Ship, String> {
 /// A helm's numbers, checked: a rudder within its throw, a crab or none, and a whole climb of one rung at most.
 pub(crate) fn helm_from(steer: f64, crab: f64, climb: f64) -> Result<Helm, String> {
     if !(-1.0..=1.0).contains(&steer) || !(crab == 0.0 || crab == 1.0) || ![-1.0, 0.0, 1.0].contains(&climb) {
-        return Err("her helm steers from -1 to 1, crabs or not, and climbs one rung at most".into());
+        return Err("its helm steers from -1 to 1, crabs or not, and climbs one rung at most".into());
     }
     Ok(Helm { steer, crab: crab == 1.0, climb: climb as i8 })
 }
@@ -75,7 +75,7 @@ fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32, HullKind), String> {
         request.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect();
     let fits = |count: usize| request.len() == count * 8 && numbers.len() == count;
     if !fits(REQUEST_FLOATS) && !fits(REQUEST_FLOATS + 1) {
-        return Err(format!("a sail request is {REQUEST_FLOATS} numbers, or one more naming her hull"));
+        return Err(format!("a sail request is {REQUEST_FLOATS} numbers, or one more naming its hull"));
     }
     if !numbers.iter().all(|number| number.is_finite()) {
         return Err(format!("a sail request is {REQUEST_FLOATS} finite numbers"));
@@ -88,7 +88,7 @@ fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32, HullKind), String> {
         [number] => Some(*number)
             .filter(|number| *number == number.trunc() && (0.0..=f64::from(u8::MAX)).contains(number))
             .and_then(|number| HullKind::numbered(number as u8))
-            .ok_or("her hull is a whole number from 0 to 3")?,
+            .ok_or("its hull is a whole number from 0 to 3")?,
         _ => return Err(format!("a sail request is {REQUEST_FLOATS} numbers")),
     };
     let ship = ship_from(&numbers[..SHIP_FLOATS])?;
@@ -97,7 +97,7 @@ fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32, HullKind), String> {
     Ok((ship, helm, time, ticks, hull))
 }
 
-/// Steps the ship the request holds over the open landmass and answers her and her pose.
+/// Steps the ship the request holds over the open landmass and answers it and its pose.
 #[must_use]
 pub fn sail_bytes(request: &[u8]) -> Vec<u8> {
     let sailed = read(request).and_then(|(ship, helm, time, ticks, hull)| {

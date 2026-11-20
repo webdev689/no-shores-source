@@ -144,11 +144,11 @@ pub struct Character {
     /// The Ranged loadout's ammunition, as a share of its capacity in `ammo::AMMO_FULL` parts.
     #[serde(default = "crate::ammo::full")]
     pub ammo: u16,
-    /// Their ship's hull, canvas and men, each in ten-thousandths of whole, kept until she is repaired (the sea
+    /// Their ship's hull, canvas and men, each in ten-thousandths of whole, kept until it is repaired (the sea
     /// room's).
     #[serde(default = "whole_ship")]
     pub ship: [u16; 3],
-    /// Where the sea last kept their ship, to the whole metre; none before she first put to sea.
+    /// Where the sea last kept their ship, to the whole metre; none before it first put to sea.
     #[serde(default)]
     pub ship_at: Option<[i64; 2]>,
     /// The experience the ship has earned in sea fights, which raises it to level 20 (`ship.rs`).
@@ -165,7 +165,7 @@ pub struct Character {
 /// A ship's hull, canvas or men whole, in ten-thousandths.
 pub const SHIP_WHOLE: u16 = 10_000;
 
-/// A ship as sound as she was built.
+/// A ship as sound as it was built.
 fn whole_ship() -> [u16; 3] {
     [SHIP_WHOLE; 3]
 }

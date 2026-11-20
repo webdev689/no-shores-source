@@ -4,8 +4,8 @@ use land::ground::Ground;
 use movement::blocks::ground_at;
 use movement::{Block, Body, Terrain, standing};
 
-/// The ground a room's fighters stand on: open ground at 0 m, a node's window of the land, a ship's deck in her own
-/// frame (its grid of heights over her waterline, a wall off her planks), or a sea island's fine ground in its own.
+/// The ground a room's fighters stand on: open ground at 0 m, a node's window of the land, a ship's deck in its own
+/// frame (its grid of heights over its waterline, a wall off its planks), or a sea island's fine ground in its own.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Floor {
     Flat,
