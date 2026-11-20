@@ -122,9 +122,10 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   land's own floor. `floor_share` is that level as a share of the massif's height, where a climb or a valley starts. Its raised floors
   (`levels`, capsules as climbs are) are floor at a height: a place standing high, a way graded between places. The
   land is cut to them first, then to its climbs, so a terrace stands on a raised floor as on the land's own; their
-  edges wander as a floor's do; and an outcrop standing on one rises from its level. A point takes the level of the
-  raised floor whose line runs nearest of those it stands on by their own reaches (else of the nearest), as the ways
-  were graded along their lines; the wander only carries a floor's outer edge out against the rock. Round a roofed
+  edges wander as a floor's do; and an outcrop standing on one rises from its level. A point within a raised
+  floor's own reach takes the level of the floor whose line runs nearest of those it stands on, as the ways were
+  graded along their lines, so a wide stretch of way never holds its level over the next as it ramps on, nor a floor's
+  wandered edge over a way; past every floor's own reach, in the wander, it takes the nearest wandered edge's. Round a roofed
   floor (a cavern's hollow and tunnel, `roofed`) every face rises in 4 m, out to 20 m past its widest edge and easing
   back to the 16 m run over 8 m more, so the rock a cave roof rests on stands whole under all its edges and the cliff
   its tunnel opens in stands sheer. A climb's and a raised floor's

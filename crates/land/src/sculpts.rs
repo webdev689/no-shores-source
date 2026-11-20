@@ -373,12 +373,11 @@ impl Sculpts {
     fn off_level(&self, number: usize, x: f64, y: f64) -> (f64, f64) {
         let sculpt = &self.sculpts[number];
         let Some((.., levels)) = self.near[number].get(&(bucket(x), bucket(y))) else { return (f64::INFINITY, 1.0) };
-        // A raised floor's edge wanders as a floor's does, so a place keeps its shape at any height. Which floor's
-        // level a point takes is by the floors' own reaches, as the ways were graded along their lines: of the floors
-        // it stands on, the one whose line runs nearest (so a wide stretch of way never holds its level over the next
-        // as it ramps on), else the nearest floor. The wander only carries a floor's outer edge out against the rock.
+        // A raised floor's edge wanders as a floor's does, so a place keeps its shape at any height. A point within a
+        // floor's own reach takes the level of the floor whose line runs nearest of those it stands on, as the ways
+        // were graded along their lines (so a wide stretch of way never holds its level over the next as it ramps
+        // on, nor a floor's wandered edge over a way); past every floor's own reach, the nearest wandered edge's.
         let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(sculpt.seed, x / 70.0, y / 70.0, 2));
-        let mut wandered = f64::INFINITY;
         let mut on: Vec<(f64, f64)> = Vec::new();
         let parts: Vec<(f64, f64)> = levels
             .iter()
@@ -386,14 +385,14 @@ impl Sculpts {
                 let [x1, y1, x2, y2, half, from, to] = sculpt.levels[level as usize];
                 let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
                 let share = from + (to - from) * along;
-                wandered = wandered.min(distance - half * wander);
                 if distance <= half {
                     on.push((distance, share));
                 }
-                (distance - half, share)
+                (distance - half * wander, share)
             })
             .collect();
-        (wandered, blended(if on.is_empty() { &parts } else { &on }).1)
+        let (wandered, share) = blended(&parts);
+        (wandered, if on.is_empty() { share } else { blended(&on).1 })
     }
 
     /// How much of a sculpt's carving stands at a point: 1 in its claim, falling to 0 over its fade past it.

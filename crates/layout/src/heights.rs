@@ -185,9 +185,9 @@ pub(crate) fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -
 }
 
 /// Each basin's floors as carved, at its area's level: at the land's own level as `floors`, else as raised floors
-/// (`raised`); with heights a ruin's tiered, but for a spoke a way runs through past its plaza, which keeps the
-/// plaza's level so the way crosses no tier's edge. Returns them all, with their levels, as the ways' grading holds
-/// them.
+/// (`raised`); with heights a ruin's tiered, but for a spoke a way runs on past its plaza (`walked_spokes`), which
+/// keeps the plaza's level so the way crosses no tier's edge. Returns them all, with their levels, as the ways' grading
+/// holds them.
 pub fn floors_of(
     basins: &[crate::basins::Basin],
     (areas, paths): (&[Area], &[Path]),
@@ -199,6 +199,7 @@ pub fn floors_of(
         let tiered = heights && area.kind == AreaKind::Ruin;
         // A tiered ruin's bowl is a plaza at its middle.
         let plaza = basin.floors.first().map_or(0.0, |floor| floor[4].min(area.radius * 0.55));
+        let walked = if tiered { walked_spokes(&basin.floors, area.at, plaza, paths) } else { Vec::new() };
         for (number, &[x1, y1, x2, y2, half]) in basin.floors.iter().enumerate() {
             let (near, far) = if distance([x1, y1], area.at) <= distance([x2, y2], area.at) {
                 ([x1, y1], [x2, y2])
@@ -211,12 +212,7 @@ pub fn floors_of(
                 [near[0] + (far[0] - near[0]) * share, near[1] + (far[1] - near[1]) * share]
             };
             let flat = plaza.min(length * 0.4);
-            let walked = paths.iter().any(|path| {
-                path.points
-                    .windows(2)
-                    .any(|pair| crate::paths::segments_apart([pair[0], pair[1]], [at(flat), far]) <= half + TIER_ROOM_M)
-            });
-            let capsules = if tiered && number > 0 && !walked {
+            let capsules = if tiered && number > 0 && !walked.contains(&number) {
                 // Each spoke runs on at the plaza's level to its edge, then a ramp up or down, at the steepest a track
                 // takes, to a flat tier where its block stands, so no building is tilted across a slope; a spoke too
                 // short for its ramp takes a lower tier. The tier reaches past the spoke's own reach, so what stands on
@@ -248,6 +244,38 @@ pub fn floors_of(
     held
 }
 
+/// The spokes of a ruin's basin (its floors past the first, its plaza) a way runs on past the plaza: at each point a
+/// way takes, every 4 m, the spoke whose line runs nearest of those it stands on, as the land reads a level.
+fn walked_spokes(floors: &[[f64; 5]], middle: [f64; 2], plaza: f64, paths: &[Path]) -> Vec<usize> {
+    let mut walked = Vec::new();
+    for path in paths {
+        for pair in path.points.windows(2) {
+            let steps = (distance(pair[0], pair[1]) / 4.0).ceil().max(1.0);
+            for step in 0..=steps as u32 {
+                let share = f64::from(step) / steps;
+                let at =
+                    [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share];
+                if distance(at, middle) <= plaza {
+                    continue;
+                }
+                let on = floors
+                    .iter()
+                    .enumerate()
+                    .skip(1)
+                    .map(|(number, &[x1, y1, x2, y2, half])| (number, off_line(at, [x1, y1], [x2, y2]), half))
+                    .filter(|&(_, off, half)| off <= half)
+                    .min_by(|first, second| first.1.total_cmp(&second.1));
+                if let Some((number, ..)) = on
+                    && !walked.contains(&number)
+                {
+                    walked.push(number);
+                }
+            }
+        }
+    }
+    walked
+}
+
 /// Each tiered ruin's spokes (with heights, a ruin's basin floors but its plaza), from its plaza to its tier's far end
 /// and as wide as the tier: walked from the plaza, so the outcrops keep off them as off a way.
 pub(crate) fn spokes(basins: &[crate::basins::Basin], areas: &[Area], heights: bool) -> Vec<[f64; 5]> {
@@ -258,14 +286,17 @@ pub(crate) fn spokes(basins: &[crate::basins::Basin], areas: &[Area], heights: b
         .collect()
 }
 
-/// The level of the basin floor under a point, as a share of the massif's height: of the first of the capsules
-/// (`[x1, y1, x2, y2, half, from, to]`) it lies on, at its place along it; none off them all.
+/// The level of the basin floor under a point, as a share of the massif's height: of the capsule
+/// (`[x1, y1, x2, y2, half, from, to]`) whose line runs nearest of those it lies on, as the land reads a level, at its
+/// place along it; none off them all.
 #[must_use]
 pub fn on_capsules(capsules: &[[f64; 7]], at: [f64; 2]) -> Option<f64> {
     capsules
         .iter()
-        .find(|&&[x1, y1, x2, y2, half, ..]| off_line(at, [x1, y1], [x2, y2]) <= half)
-        .map(|&[x1, y1, x2, y2, _, from, to]| from + (to - from) * along([x1, y1], [x2, y2], at))
+        .map(|capsule| (off_line(at, [capsule[0], capsule[1]], [capsule[2], capsule[3]]), capsule))
+        .filter(|&(off, capsule)| off <= capsule[4])
+        .min_by(|first, second| first.0.total_cmp(&second.0))
+        .map(|(_, &[x1, y1, x2, y2, _, from, to])| from + (to - from) * along([x1, y1], [x2, y2], at))
 }
 
 /// The tiers a spoke of a raised ruin's basin rises or falls to from its middle, in turn, as shares of the massif's
