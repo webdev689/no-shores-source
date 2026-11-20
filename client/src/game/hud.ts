@@ -75,10 +75,10 @@ interface MarkNode {
   readonly dress: { worn: string };
 }
 
-/** Dresses a mark as a hostile ship, or undresses it: her rank's colour on its ring and arrow, her faction's emblem in
+/** Dresses a mark as a hostile ship, or undresses it: its rank's colour on its ring and arrow, its faction's emblem in
  *  it, and over it a Miniboss's mark, the plates' own. */
 function dressHostile(shown: MarkNode, look: HostileLook | undefined): void {
-  // A mark keeps its dress from frame to frame: it is laid again only when her look changes.
+  // A mark keeps its dress from frame to frame: it is laid again only when the ship's look changes.
   const dress = look ? `${look.colour} ${look.emblem ?? ''} ${look.badge ?? ''}` : '';
   shown.badge.hidden = !look?.badge;
   if (shown.dress.worn === dress) return;
@@ -112,7 +112,7 @@ export class Hud {
   /** The compass at sea, heading its column at the top; on foot the fight's display stands its own there. */
   private readonly compassColumn = make('div', '', 'compass-column');
   private readonly seaCompass = new Compass(this.compassColumn);
-  /** Each captain's bar over her ship in a fight, drawn afresh each frame. */
+  /** Each captain's bar over its ship in a fight, drawn afresh each frame. */
   private readonly shipLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   private readonly shipPlates = new ShipPlates();
   private readonly marksShown = new Map<string, MarkNode>();
@@ -126,7 +126,7 @@ export class Hud {
   private readonly manageButton = hudButton('Manage  B', () => this.manageWanted());
   private readonly wheel: HTMLButtonElement;
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
-  /** The sea fight's readout: her plate and rose, the card and the tally, made in the root. */
+  /** The sea fight's readout: the ship's plate and rose, the card and the tally, made in the root. */
   private readonly fight: SeaFightReadout;
   /** What happened, as DFO's toasts say it, at the top right. */
   private readonly noticeStack: NoticeStack;
@@ -284,7 +284,7 @@ export class Hud {
     if (text !== null) this.veilText.textContent = text;
   }
 
-  /** Each captain's bar over her ship (world metres) as `pose` sees the picture; none out of a fight. */
+  /** Each captain's bar over its ship (world metres) as `pose` sees the picture; none out of a fight. */
   shipBars(bars: readonly ShipBar[], pose: CameraPose): void {
     this.shipLayer.replaceChildren();
     if (bars.length === 0) return;
@@ -370,7 +370,7 @@ export class Hud {
       readonly sailing: boolean;
       readonly resumable: boolean;
       readonly landfall: Landfall;
-      /** Whether the helm may be left (the ship is in the sea room, out of a fight) and she may be managed (out of
+      /** Whether the helm may be left (the ship is in the sea room, out of a fight) and it may be managed (out of
        *  a fight). */
       readonly canLeave: boolean;
       readonly canManage: boolean;
@@ -437,7 +437,7 @@ export class Hud {
       });
   }
 
-  /** Offers the helm at her wheel, or takes the offer away. */
+  /** Offers the helm at its wheel, or takes the offer away. */
   wheelOffer(shown: boolean): void {
     this.wheel.hidden = !shown;
   }
@@ -452,7 +452,7 @@ export class Hud {
     this.leaveWanted = leave;
   }
 
-  /** What the offer of the helm at her wheel does. */
+  /** What the offer of the helm at its wheel does. */
   onTakeHelm(take: () => void): void {
     this.wheelWanted = take;
   }
