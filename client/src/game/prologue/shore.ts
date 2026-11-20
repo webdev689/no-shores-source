@@ -13,7 +13,8 @@ import { type Beach, findBeach } from './beach.ts';
 import type { Beat, Tick } from './beat.ts';
 import { YOU_ID } from './helm.ts';
 import { islandFrame } from './introShots.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { sung } from './music.ts';
 import { MORNING } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -90,7 +91,6 @@ export class Shore implements Beat {
   constructor(story: Story) {
     this.story = story;
     const { stage } = story;
-    storyCue('shore');
     stage.weatherTowards(MORNING, 0);
     stage.parts.ambience.set({ deep: 0, waves: 0.8, gulls: 0.6, wind: 0.3, rain: 0.12, fire: 0, creak: 0 }, 2);
     stage.parts.screen.lids(1);
@@ -175,6 +175,14 @@ export class Shore implements Beat {
 
   private ground(x: number, y: number): number {
     return Math.max(0, this.story.stage.parts.scene.groundAt(x, y) ?? 0);
+  }
+
+  /** The shore's song a layer at a time: its floor as the player wakes, the theme raised as she comes and speaks, its
+   *  choir and horn as the two rise and walk up the shore. */
+  music(): Hearing {
+    const phase = this.phase;
+    if (phase === 'searching' || phase === 'waking') return sung('shore', 'tension');
+    return sung('shore', phase === 'talking' || phase === 'asking' ? 'combat' : 'peak');
   }
 
   frame(tick: Tick): StoryFrame | null {

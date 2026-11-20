@@ -171,7 +171,12 @@ function stillRun(
   const shot = { eye: [0, 0, 5], yaw: 0, pitch: 0, fov: 1, near: 0.1, far: 500 } as unknown as Shot;
   return {
     frame: () => ({
-      fight: { own: { action: { kind: own.dead ? 'dead' : 'idle' }, health: own.dead ? 0 : (own.health ?? 100) } },
+      fight: {
+        own: { action: { kind: own.dead ? 'dead' : 'idle' }, health: own.dead ? 0 : (own.health ?? 100), x: 0, y: 0 },
+        player: 1,
+        events: [],
+        foes: [],
+      },
       shot,
       hints: [],
       standing: { kind: 'inside' },

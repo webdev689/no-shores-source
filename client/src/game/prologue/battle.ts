@@ -8,7 +8,10 @@ import { HINTS } from '../hints.ts';
 import type { Beat, Tick } from './beat.ts';
 import { type Ambusher, type Going, type Happening, StoryFight, type StoryFightFrame } from './fightAtSea.ts';
 import { youAtHelm } from './helm.ts';
-import { storyCue } from './music.ts';
+import { SKY_NOW } from '../../sky/skyDriver.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { hearSea, heardSky } from '../audio/music/hearing.ts';
+import { fought, sung } from './music.ts';
 import type { Founder, Sailed, ShipDraw } from './sailing.ts';
 import { INBOUND_WAY_M_S, STORM_SOUND } from './sighted.ts';
 import { STORM } from './skies.ts';
@@ -129,7 +132,6 @@ export class Battle implements Beat {
     this.story = story;
     this.inbound = inbound;
     this.ambushers = ambushersFrom(story, inbound);
-    storyCue('battle');
     const { brig, stage } = story;
     stage.weatherTowards(STORM, 2);
     stage.parts.ambience.set(STORM_SOUND, 1.5);
@@ -198,6 +200,15 @@ export class Battle implements Beat {
         void stage.play(scene);
       } else if (this.clock - since > CRY_HELD_S) this.waiting.delete(happening);
     }
+  }
+
+  /** Before the fight begins, the storm whole; once it is on, the sea's own fight song, as any fight at sea plays. */
+  music(): Hearing {
+    const fight = this.fight;
+    if (!fight) return sung('storm', 'peak');
+    const { brig } = this.story;
+    const sea = { position: [brig.x, brig.y] as const, sighted: null, fight: fight.sides };
+    return fought(hearSea(sea, heardSky(SKY_NOW.current.reading)), null, 'silent');
   }
 
   frame(tick: Tick): StoryFrame | null {

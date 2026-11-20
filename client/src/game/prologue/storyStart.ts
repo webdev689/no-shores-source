@@ -33,6 +33,7 @@ import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import { type Landmass, openLandmass } from '../landmass.ts';
 import type { GameScene } from '../scene.ts';
+import type { MusicDirector } from '../audio/music/director.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { WorldData } from '../worldData.ts';
 import type { BeatName } from './beat.ts';
@@ -77,6 +78,7 @@ export interface StoryGame {
   readonly drawersOn: (landmass: Landmass) => LandDrawers;
   readonly terrainFor: (landmass: Landmass) => TerrainData;
   readonly closeSource: (left: number, top: number, step: number, size: number) => ReturnType<LandWorker['ground']>;
+  readonly music: MusicDirector;
 }
 
 /** The story and the epilogue it leaves for the game to play on foot. */
@@ -154,6 +156,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
       dialogue,
       overheads,
       ambience: new Ambience(worldOutput),
+      music: game.music,
       objective,
       cast: readCast,
       scenes: readScenes,

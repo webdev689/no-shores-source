@@ -4,6 +4,7 @@
 import { HoldToSkip } from '../../cinema/cues.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
+import { hushed } from './music.ts';
 import { asWreck, Battle, type Wreck } from './battle.ts';
 import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed } from './beat.ts';
 import { Deep } from './deep.ts';
@@ -265,6 +266,7 @@ export class Prologue {
       stage.parts.screen.showSkip(null);
     }
     const shown = beat.frame({ seconds, clock: this.clock, controls, size, viewport });
+    stage.parts.music.frame(beat.music?.() ?? hushed(), seconds);
     if (shown) {
       this.carried.shot = shown.shot;
       stage.draw(shown, size, this.clock, seconds);

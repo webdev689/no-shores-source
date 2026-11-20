@@ -12,7 +12,8 @@ import type { Beat, Tick } from './beat.ts';
 import { CALM_SOUND, DECK_VIEW, onBrig } from './calm.ts';
 import { type Wreck, wrecksOn } from './battle.ts';
 import { youAtHelm } from './helm.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { hushed, sung } from './music.ts';
 import type { Sailed } from './sailing.ts';
 import { STILL } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
@@ -82,7 +83,6 @@ export class Ram implements Beat {
     this.wrecks = wrecks;
     this.from = story.brig.heading + Math.PI / 2;
     const { stage, brig } = story;
-    storyCue('ram');
     stage.weatherTowards(STILL, 1);
     stage.parts.ambience.set(CALM_SOUND, 1);
     story.lightning.striking = false;
@@ -150,6 +150,11 @@ export class Ram implements Beat {
     this.skipped = true;
     this.cues.finish();
     this.done = true;
+  }
+
+  /** The Frigate's coming in Thule's half step, cut off by the crash and the black after it. */
+  music(): Hearing {
+    return this.struck >= 0 ? hushed(true) : sung('ram', 'peak');
   }
 
   frame(tick: Tick): StoryFrame {

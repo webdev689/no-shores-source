@@ -55,4 +55,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The way onto the Frigate | A stair from the Brig's fore deck over her bulwark to the Frigate's starboard rail, landing at the head of her waist; her forecastle closed | Every lane a body wide, over what is drawn |
 | Thule's cries in the fight | "Kneel." once, and again only after the player strikes him | [[Dialogue]] rule 2 |
 | The celebrating crew | Thule's crew leap and cry out as the player goes over | "the enemy celebrating" |
+| The story's music | One theme told through six songs of its own: D, A, B flat, A, a rise of a fifth and a sigh from the minor sixth, raised to D major on the shore | "Proper music storytelling": a theme the player hears grow, break and come home |
+| Which songs play where | The title over the intro; the storm's song growing from the storm to the sighting; the sea's own fight song in the fight; the calm's flute; the ram's swell in Thule's half step, cut by the crash; silence on waking; the Boarding's first phase through the wreck, until Thule wakes his own; the deep's voices; the shore's song | The game's own music where the story plays the game's fights; the story's own where it tells |
+| Where the shore leads | The shore's song ends on D, which leads into Saltmere's theme in G as the player arrives | The story hands the player to the game in one breath |
 | How long it runs | The intro about 80 s (75 s of shots, and a moment of cloud while each island opens); the whole story about 15 minutes played | A first session's length |

@@ -41,7 +41,7 @@ const quietSea: HeardSea = { fighting: false, captains: 0, strongest: 0, hull: 1
 
 /** The law run over frames of `seconds` each, from `memory`; the last verdict, with every sting met on the way. */
 function run(frames: readonly Hearing[], memory: Memory = QUIET, seconds = 0.1) {
-  let verdict: Verdict = { memory, mood: memory.mood, cue: memory.cue, sting: null };
+  let verdict: Verdict = { memory, mood: memory.mood, cue: memory.cue, sting: null, cut: false };
   const stings: string[] = [];
   for (const hearing of frames) {
     verdict = hear(verdict.memory, hearing, seconds);
@@ -189,4 +189,43 @@ test("the sea's law: its storm for two hostile ships or an Elite, else its fight
   assert.equal(seaSongFor({ ...quietSea, hostilesNear: 2, strongest: 1 }), 'storm');
   assert.equal(seaSongFor({ ...quietSea, hostilesNear: 1, strongest: 3 }), 'storm');
   assert.equal(seaSongFor({ ...quietSea, fighting: true, captains: 2 }), 'storm');
+});
+
+test("the story's own song plays in the layers of the mood it asks, keeping no fight, and its cut stops everything", () => {
+  const engaged = run(times(5, { ...calm, struck: true, foes: [foe({ alert: 2, engaged: true })] }));
+  assert.equal(engaged.mood, 'combat');
+  const told = run([{ ...calm, story: { kind: 'song', song: 'storm', mood: 'tension' } }], engaged.memory);
+  assert.deepEqual([told.cue, told.mood, told.cut], [{ kind: 'story', song: 'storm' }, 'tension', false]);
+  assert.equal(told.memory.lastFight, -Infinity, 'the fight before it is not held through it');
+  const cut = run([{ ...calm, story: { kind: 'silence', cut: true } }], told.memory);
+  assert.deepEqual([cut.cue, cut.mood, cut.cut], [{ kind: 'none' }, 'silent', true]);
+  const rung = run([{ ...calm, story: { kind: 'silence', cut: false } }], told.memory);
+  assert.equal(rung.cut, false, 'a silence let ring out fades as a fight does');
+});
+
+test("the wreck's fights play the Boarding's first part, tense at least, until Thule wakes his own, and his win ends it", () => {
+  const wreck: Hearing = {
+    ...calm,
+    place: { kind: 'sea' },
+    story: { kind: 'fight', score: 'boarding', least: 'tension' },
+  };
+  const waiting = run([wreck]);
+  assert.deepEqual([waiting.mood, waiting.cue], ['tension', { kind: 'boss', boss: 'boarding', part: 1 }]);
+  const fighting = run(times(3, { ...wreck, struck: true, foes: [foe({ alert: 2, engaged: true })] }));
+  assert.deepEqual([fighting.mood, fighting.cue], ['combat', { kind: 'boss', boss: 'boarding', part: 1 }]);
+  const thule = foe({ id: 9, name: 'Captain Brannoc Thule', rank: 5, alert: 2, engaged: true });
+  const woke = run([{ ...wreck, foes: [thule] }], fighting.memory);
+  assert.deepEqual([woke.mood, woke.stings], ['boss', ['wake']]);
+  const beaten = run([{ ...wreck, dead: true, foes: [thule] }], woke.memory);
+  assert.deepEqual(beaten.stings, ['defeat']);
+  assert.deepEqual(beaten.sting, { kind: 'defeat', cue: { kind: 'boss', boss: 'boarding', part: 1 } });
+  const atSea = run([
+    {
+      ...calm,
+      place: { kind: 'sea' },
+      sea: { ...quietSea, fighting: true, captains: 3 },
+      story: { kind: 'fight', score: null, least: 'silent' },
+    },
+  ]);
+  assert.deepEqual(atSea.cue, { kind: 'sea', song: 'storm' }, "the fight at sea is the sea's own");
 });

@@ -9,7 +9,8 @@ import type { Line } from '../../speech/cast.ts';
 import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
 import { youAtHelm } from './helm.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { sung } from './music.ts';
 import { type Wreck, wrecksOn } from './battle.ts';
 import { onDeck } from './sailing.ts';
 import { STILL } from './skies.ts';
@@ -85,7 +86,6 @@ export class Calm implements Beat {
     this.story = story;
     this.from = from;
     this.laid = wrecks;
-    storyCue('calm');
     const { stage, brig } = story;
     stage.weatherTowards(STILL, 4);
     stage.parts.ambience.set(CALM_SOUND, 4);
@@ -112,6 +112,11 @@ export class Calm implements Beat {
   skip(): void {
     this.skipped = true;
     this.done = true;
+  }
+
+  /** The calm's song: the theme on one flute, the wind gone. */
+  music(): Hearing {
+    return sung('calm', 'peak');
   }
 
   frame(tick: Tick): StoryFrame {

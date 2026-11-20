@@ -9,7 +9,8 @@ import type { ShipPlace } from '../../ships/shipView.ts';
 import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
 import { CREATION_LENS, creationEye, youAtHelm } from './helm.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { sung } from './music.ts';
 import { onDeck, type Sailed } from './sailing.ts';
 import { STORM, STORM_FOG } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
@@ -122,7 +123,6 @@ export class Sighted implements Beat {
     this.from = from;
     const { stage, brig } = story;
     const { ambience } = stage.parts;
-    storyCue('sighted');
     stage.weatherTowards(STORM_FOG, 1.5);
     ambience.set(STORM_SOUND, 1.5);
     story.lightning.striking = true;
@@ -157,6 +157,11 @@ export class Sighted implements Beat {
     this.cues.finish();
     this.since = SIGHTED_S;
     this.done = true;
+  }
+
+  /** The storm's song whole, its choir and brass with it, as the pirates come out of the dark. */
+  music(): Hearing {
+    return sung('storm', 'peak');
   }
 
   frame(tick: Tick): StoryFrame {

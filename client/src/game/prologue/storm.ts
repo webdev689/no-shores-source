@@ -7,7 +7,8 @@ import { type RailKey, railShot } from '../../cinema/rail.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
 import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { sung } from './music.ts';
 import { onDeck } from './sailing.ts';
 import { STORM } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
@@ -56,7 +57,6 @@ export class StormDive implements Beat {
     this.from = from;
     const { stage, lightning } = story;
     const { ambience, screen } = stage.parts;
-    storyCue('storm');
     screen.bars(true);
     stage.weatherTowards({ ...STORM, seaGain: 1.2, rain: 0.4 }, PULL_S);
     ambience.set({ wind: 0.6, rain: 0.5, waves: 0.5, gulls: 0 }, PULL_S);
@@ -100,6 +100,11 @@ export class StormDive implements Beat {
     this.cues.finish();
     this.since = PULL_S + RUN_S;
     this.done = true;
+  }
+
+  /** The storm's song, all but its peak, as the camera finds the Brig. */
+  music(): Hearing {
+    return sung('storm', 'combat');
   }
 
   frame(tick: Tick): StoryFrame {

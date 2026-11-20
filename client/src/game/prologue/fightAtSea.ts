@@ -177,6 +177,12 @@ export class StoryFight {
 
   /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times her
    *  size on `swell`. A step the rules refused is thrown here. */
+  /** The fight's two sides, as the music hears them: every captain in it, and the player's own vessel. */
+  get sides(): { readonly captains: readonly FightCaptain[]; readonly vessel: FightVessel } {
+    const view = this.answered.latest;
+    return { captains: [view.captain, ...(view.others ?? [])], vessel: view.player };
+  }
+
   frame(input: {
     seconds: number;
     time: number;

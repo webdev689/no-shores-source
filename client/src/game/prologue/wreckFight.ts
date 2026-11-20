@@ -9,7 +9,9 @@ import { onScreen, type Shot } from '../camera.ts';
 import type { Overlay } from '../scene.ts';
 import type { Beat, Tick } from './beat.ts';
 import { ACTOR_IDS, type Actor } from './actors.ts';
-import { storyCue } from './music.ts';
+import type { HeardFoe, Hearing } from '../audio/music/directorLaw.ts';
+import { type FootHeard, hearFoot } from '../audio/music/hearing.ts';
+import { fought } from './music.ts';
 import type { Nameplate } from './nameplate.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -51,6 +53,8 @@ export class WreckFight implements Beat {
   private wasDead = false;
   /** Seconds since the fight ended, while the screen fades out on it. */
   private ending: number | null = null;
+  /** The fight as the music last heard it. */
+  private heard: Hearing | null = null;
   done = false;
 
   constructor(story: Story, layout: WreckLayout, scenery: WreckScenery, run: Promise<WreckRun>, nameplate: Nameplate) {
@@ -91,7 +95,6 @@ export class WreckFight implements Beat {
 
   private bossComes(from: Shot): void {
     const { stage } = this.story;
-    storyCue('boss');
     stage.parts.ambience.whoosh();
     stage.parts.screen.bars(true);
     const kind = stage.parts.roster.find((each) => each.type === THULE);
@@ -141,6 +144,29 @@ export class WreckFight implements Beat {
     return { ...coming.from, eye, yaw: look.yaw, pitch: look.pitch, fov: coming.from.fov * (1 - 0.35 * eased) };
   }
 
+  /** The wreck's fights on the Boarding's first part, tense at least, with Thule's own score from his cry. */
+  music(): Hearing {
+    return fought(this.heard, 'boarding', 'tension');
+  }
+
+  /** The fight as the music hears it. Thule is heard from his cry on, before the room stands him, and as the one
+   *  foe throughout, so his score wakes once; the fight over, the player is beaten, and his score's end plays. */
+  private hearing(fight: FootHeard, distance: number): Hearing {
+    const thule: HeardFoe = {
+      id: THULE_ID,
+      name: 'Captain Brannoc Thule',
+      rank: 5,
+      alert: 2,
+      distance,
+      health: this.run?.boss ? this.run.boss.health / Math.max(1, this.run.boss.healthMax) : 1,
+      engaged: true,
+    };
+    const heard = hearFoot({ kind: 'sea' }, fight);
+    const foes = heard.foes.filter((foe) => foe.rank < thule.rank);
+    const beaten = !!this.run?.outcome;
+    return { ...heard, dead: heard.dead || beaten, foes: this.coming || this.fought ? [...foes, thule] : foes };
+  }
+
   frame(tick: Tick): StoryFrame | null {
     if (this.failure) throw this.failure;
     const run = this.run;
@@ -164,6 +190,9 @@ export class WreckFight implements Beat {
       held,
     });
     if (run.arena && !this.fought && !coming) this.bossComes(shown.shot);
+    const [thuleX, thuleY] = this.layout.arena.thule;
+    const own = shown.fight.own;
+    this.heard = this.hearing(shown.fight, own ? Math.hypot(own.x - thuleX, own.y - thuleY) : 0);
     this.fallen(shown.fight.own?.action.kind === 'dead');
     this.end(tick.seconds, !!run.outcome);
     const { footView, hud, scene } = stage.parts;

@@ -6,7 +6,8 @@ import type { Tick, Beat } from './beat.ts';
 import { accountStep, lookStep } from './creation.ts';
 import { creationShot, helmDeck, youAtHelm } from './helm.ts';
 import { armouredDress, keepLook, type Look } from './look.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { sung } from './music.ts';
 import { STORM } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -36,7 +37,6 @@ export class Making implements Beat {
   constructor(story: Story, steps: MakingSteps = { account: accountStep, look: lookStep }) {
     this.story = story;
     const { stage, lightning } = story;
-    storyCue('storm');
     stage.weatherTowards(STORM, 0);
     stage.parts.ambience.set({ wind: 1, rain: 1, waves: 1, creak: 0.5, gulls: 0 }, 1.5);
     lightning.striking = true;
@@ -73,6 +73,11 @@ export class Making implements Beat {
     this.story.look = look;
     this.story.dress = armouredDress(look);
     this.story.walker.you.dress = this.story.dress;
+  }
+
+  /** The storm's floor and its tension only, quieter, while the player makes their look at the helm. */
+  music(): Hearing {
+    return sung('storm', 'tension');
   }
 
   frame(tick: Tick): StoryFrame {

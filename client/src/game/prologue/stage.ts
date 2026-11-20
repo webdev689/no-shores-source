@@ -22,6 +22,7 @@ import type { FootView } from '../footView.ts';
 import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import type { Landmass } from '../landmass.ts';
+import type { MusicDirector } from '../audio/music/director.ts';
 import type { Drawer, GameScene, Overlay } from '../scene.ts';
 import { standingDrawers } from '../standing.ts';
 import { type Actor, actorCards } from './actors.ts';
@@ -64,6 +65,8 @@ export interface StageParts {
   readonly dialogue: DialogueBox;
   readonly overheads: Overheads;
   readonly ambience: Ambience;
+  /** The game's music, which the story's beats tell what to play. */
+  readonly music: MusicDirector;
   readonly objective: Objective;
   readonly footView: FootView;
   readonly cast: Cast;

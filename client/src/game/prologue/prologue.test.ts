@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { InputFrame } from '../../player/input.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
 import type { Beat, BeatName } from './beat.ts';
 import type { Islands } from './islands.ts';
 import type { Nameplate } from './nameplate.ts';
@@ -41,15 +42,34 @@ class Played implements Beat {
   }
 }
 
+/** A beat of the test's own that asks the music for the storm. */
+class Sounded extends Played {
+  music(): Hearing {
+    return { ...STILL, story: { kind: 'song', song: 'storm', mood: 'tension' } };
+  }
+}
+const STILL: Hearing = {
+  place: { kind: 'sea' },
+  dead: false,
+  health: 1,
+  struck: false,
+  kills: 0,
+  foes: [],
+  sea: null,
+  sky: null,
+};
+
 /** The director over a stage that writes down what it is asked, its beats the test's own. */
 function directed(made: Map<BeatName, Played>, from: BeatName) {
   const asked: string[] = [];
+  const heard: Hearing[] = [];
   const stage = {
     step: () => asked.push('step'),
     hush: () => asked.push('hush'),
     draw: () => asked.push('draw'),
     parts: {
       screen: { showSkip: (share: number | null) => asked.push(`skip ${share}`), clear: () => asked.push('clear') },
+      music: { frame: (hearing: Hearing) => heard.push(hearing) },
     },
   };
   Object.assign(globalThis, { localStorage: { getItem: () => null, setItem: () => undefined } });
@@ -62,7 +82,7 @@ function directed(made: Map<BeatName, Played>, from: BeatName) {
   }
   const story = { stage } as unknown as Story;
   const director = new Directed(story, {} as Islands, {} as Nameplate, {} as WreckContext, from);
-  return { director, asked };
+  return { director, asked, heard };
 }
 
 const controls = (holding: boolean) => ({ held: (action: string) => holding && action === 'jump' }) as InputFrame;
@@ -151,7 +171,7 @@ test('a beat that cannot even be made is passed over for the one after it', () =
     step: () => undefined,
     hush: () => asked.push('hush'),
     draw: () => undefined,
-    parts: { screen: { showSkip: () => undefined, clear: () => undefined } },
+    parts: { screen: { showSkip: () => undefined, clear: () => undefined }, music: { frame: () => undefined } },
   };
   Object.assign(globalThis, { localStorage: { getItem: () => null, setItem: () => undefined } });
   class Unmade extends Prologue {
@@ -208,4 +228,18 @@ test("a last beat that fails keeps the story's screen, so its black lifts only o
   assert.ok(director.end, 'the story ends');
   assert.ok(asked.includes('hush'));
   assert.ok(!asked.includes('clear'), 'the screen is left for the end of the story to lift');
+});
+
+test("each frame hands the game's music what the beat asks, and a beat that asks nothing lets it ring out", () => {
+  const made = new Map<BeatName, Played>([['creation', new Sounded('creation')]]);
+  const { director, heard } = directed(made, 'creation');
+  director.frame(controls(false), 0.1, SIZE, SIZE);
+  assert.deepEqual(heard.at(-1)?.story, { kind: 'song', song: 'storm', mood: 'tension' });
+  const creation = made.get('creation');
+  assert.ok(creation);
+  creation.done = true;
+  director.frame(controls(false), 0.1, SIZE, SIZE);
+  director.frame(controls(false), 0.1, SIZE, SIZE);
+  assert.equal(director.now.name, 'sighted');
+  assert.deepEqual(heard.at(-1)?.story, { kind: 'silence', cut: false });
 });

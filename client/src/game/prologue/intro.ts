@@ -21,7 +21,8 @@ import {
   titleEye,
 } from './introShots.ts';
 import type { Islands } from './islands.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { sung } from './music.ts';
 import type { Sailed, Sailing } from './sailing.ts';
 import { FAIR, HIGHLAND, OVER_CLOUD, RAIN, SALTMERE, SNOW } from './skies.ts';
 import type { Stage, StoryFrame } from './stage.ts';
@@ -80,7 +81,6 @@ export class Intro implements Beat {
     this.islands = islands;
     this.sailing = sailing;
     stage.parts.screen.fade(1, 0);
-    storyCue('title');
     void this.openFirst();
   }
 
@@ -249,6 +249,11 @@ export class Intro implements Beat {
   /** Where the camera stands when the beat after takes it up. */
   get shot(): Shot | null {
     return this.lastShot;
+  }
+
+  /** The theme, whole, over the cloud, the islands and the title. */
+  music(): Hearing {
+    return sung('theme', 'peak');
   }
 
   frame(tick: Tick): StoryFrame | null {

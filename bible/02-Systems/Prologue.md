@@ -7,6 +7,7 @@ code:
   - client/src/game/prologue/takeOrGiveBack.ts#takeOrGiveBack
   - client/src/game/prologue/stage.ts#Stage
   - client/src/game/prologue/beat.ts#BEATS
+  - client/src/game/prologue/music.ts#sung
   - client/src/game/prologue/tap.ts#tapToStart
   - client/src/game/prologue/intro.ts#Intro
   - client/src/game/prologue/introShots.ts#islandFrame
@@ -152,6 +153,14 @@ open it).
 **The intro's length.** First light 6 s, each of the four islands 13 s, Saltmere's glide 15 s and the prompt 2.4 s
 after the title: about 75 s, with a second or more in the cloud for each island to open.
 
+**The music** is the game's own director playing the story's songs ([[Music]]), one theme told through them. Every
+frame each beat asks for its moment (`music()`): the title, whole, over the intro; the storm's song without its peak
+as the storm comes on, only its floor and tension at the helm, whole as the pirates come; the sea's own fight song once
+the fight is on; the calm's flute; the ram's swell, which the crash cuts off with everything else. The wake is silent
+over the ringing and the heart until the camera rushes the wreck. Then the Boarding's first phase plays, tense, and
+grows with each fight; Thule's cry wakes his own score, and losing to him plays its end, which rings over the throw.
+The deep's song follows, then the shore's, its layers coming in as she comes, as she speaks and as the two rise.
+
 **The helm** (`Making`). The account step comes first ([[Accounts]]): create an account, sign in, sign in with
 Discord or play as a guest. A player already signed in is offered "Go on as" their username, or "Go on" for an account
 Discord alone keeps; with the accounts out of reach, "Go on without an account", as the game played before. An ask
@@ -255,7 +264,8 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
 - Every ship is a Sloop by the naval rules, whatever is drawn: the Brig's guns and hull are the Sloop's in the fight.
 - Thule's ship is drawn as the Frigate, without the Tithe Ram's iron ram bow ([[Hulls]]): the Tithe Ram is not built.
 - The look and whether the story was played are kept in the browser, not with the account.
-- Music is cued by beat (`storyCue`) but plays nothing until the music system arrives.
+- The story's songs are written to its beats' lengths, not timed to their moments: a song begins on the director's
+  bar line, so a moment can fall up to a bar from its music.
 - The decks are boxes half a metre across: a deck's camber and the slope of her sheer are steps of 5 cm, a mast or a
   gun inside her deck is walked through, and her hatches are walked over.
 - Every wall is climbable ([[Movement]]): the rails keep no one in who climbs them, and the sea brings them back.

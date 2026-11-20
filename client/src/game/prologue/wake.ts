@@ -10,7 +10,8 @@ import type { Actor } from './actors.ts';
 import type { Beat, Tick } from './beat.ts';
 import { type Pairing, fighters } from './fighters.ts';
 import { YOU_ID } from './helm.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { fought, hushed } from './music.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import { titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
@@ -109,7 +110,6 @@ export class Wake implements Beat {
     this.scenery = scenery;
     const { stage } = story;
     const { ambience, screen } = stage.parts;
-    storyCue('wreck');
     setAblaze(story, layout);
     ambience.heartbeat(true);
     screen.bars(false);
@@ -212,6 +212,11 @@ export class Wake implements Beat {
     this.since = CONTROL_S;
     this.cried = true;
     this.done = true;
+  }
+
+  /** Nothing over the ringing and the heart; then, as the camera rushes the wreck, the Boarding's first part, tense. */
+  music(): Hearing {
+    return this.since >= LEAVE_S ? fought(null, 'boarding', 'tension') : hushed(true);
   }
 
   frame(tick: Tick): StoryFrame {

@@ -8,7 +8,8 @@ import type { Shot } from '../camera.ts';
 import { type Actor, ACTOR_IDS } from './actors.ts';
 import type { Beat, Tick } from './beat.ts';
 import { YOU_ID } from './helm.ts';
-import { storyCue } from './music.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
+import { sung } from './music.ts';
 import { DEEP } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -58,7 +59,6 @@ export class Deep implements Beat {
     this.scenery = scenery;
     const { stage } = story;
     const { screen, ambience, flames } = stage.parts;
-    storyCue('deep');
     story.lightning.striking = false;
     stage.weatherTowards(DEEP, 0);
     ambience.set({ deep: 1, rain: 0, wind: 0, waves: 0.15, fire: 0.1, creak: 0, gulls: 0 }, 1);
@@ -100,6 +100,11 @@ export class Deep implements Beat {
   /** The player's body: under the surface and going down. */
   private body(): Point3 {
     return [this.over[0], this.over[1], -2.5 - this.since * SINK_M_S];
+  }
+
+  /** The deep's song: the theme slowed on voices under the sea. */
+  music(): Hearing {
+    return sung('deep', 'peak');
   }
 
   frame(tick: Tick): StoryFrame {

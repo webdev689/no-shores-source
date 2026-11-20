@@ -2,6 +2,7 @@
 // to show, until it says it is done. A cutscene's beat may be skipped by holding Space; it then runs its remaining
 // moments at once so the world is left as its end would leave it.
 import type { InputFrame } from '../../player/input.ts';
+import type { Hearing } from '../audio/music/directorLaw.ts';
 import type { StoryFrame } from './stage.ts';
 
 /** A frame's time and input, as a beat is handed them. */
@@ -29,6 +30,8 @@ export interface Beat {
   key?(key: string, down: boolean): boolean;
   /** Lets go of what the beat holds (a room, a fight, its fires). */
   leave?(): void;
+  /** What its moment asks of the music this frame (music.ts); a beat that asks nothing lets what plays ring out. */
+  music?(): Hearing;
 }
 
 /** The story's beats in order, as the owner set them: each name is where a page under development may start
