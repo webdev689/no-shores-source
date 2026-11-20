@@ -256,13 +256,12 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   above, with one warning; a pack that failed is asked for again when the next dungeon is entered.
 - **Its kits** (`dungeonKits.ts`) are placed from the layout alone, as `content/dungeon/kits.json` says: a door in
   every doorway, one taller than its frame (the lower of its two ceilings) squeezed above 2.4 m so its top meets the
-  frame, what stands under 2.4 m as built and none stretched up; a pillar's base, its shaft stretched to its capital, whose top is where the ceiling of the cells
-  round the pillar's corner comes lowest over it, so under a dome or a vault it holds the curve up; wall sets every
-  `wallEvery` cells along a straight
-  wall where `wallIn` says, the cap's top where the ceiling comes lowest over it, and in the mines a timber set on
-  both walls of a way with a beam across; up to `features` a room on its quiet cells' walls; and a sconce at every
-  torch, round the code-built flame, and arches round the portal and the exit door. Only the caverns stand sets on a
-  cave's rock (`cave rooms`). A set or a feature on a cave's rock stands back as far as the rock does most behind
+  frame, what stands under 2.4 m as built and none stretched up; a pillar's base, its shaft stretched to its capital,
+  whose top is where the ceiling of the cells round the pillar's corner comes lowest over it, so under a dome or a
+  vault it holds the curve up; wall sets every `wallEvery` cells along a straight wall where `wallIn` says, the cap's
+  top where the ceiling comes lowest over it, and in the mines a timber set on both walls of a way with a beam
+  across; up to `features` a room on its quiet cells' walls; and a sconce at every torch, round the code-built flame,
+  and arches round the portal and the exit door. Only the caverns stand sets on a cave's rock (`cave rooms`). A set or a feature on a cave's rock stands back as far as the rock does most behind
   it, and only where the rock over it, as drawn, comes out no more than 0.1 m past that (`caveWallRange`); elsewhere
   that spot is skipped and a feature tries its room's next wall. A set's cap rises to where the rock comes highest
   over it, so it meets the rock all over.
