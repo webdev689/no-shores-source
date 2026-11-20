@@ -156,7 +156,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 
 ## A dungeon
 
-A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's veil (`footTrips.ts`,
+A patrol's three dungeons and each Elite Dungeon ([[Dungeons]], [[Activities]]) are entered on foot from their
+node's entrances, and a sea island's from its door at sea, each through the Game's veil (`footTrips.ts`,
 `dungeonTrips`).
 
 - **The entrances.** The patrol's room says where each stands, among the player's gear (`Gear.dungeons`; alone too,
@@ -165,22 +166,34 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
   block's yaw turns a model, in the island's climate's pictures through the city's own pipelines, so the sun lights
   it and it casts its shadow. Its door is its door quad's middle, turned and lifted.
 - **Going in.** Within 2.5 m of a door E offers "Enter" and the dungeon's name, the room module's own `room_dungeon`
-  asked with the patrol's id, its name and the entrance's number. Taken, the veil says "Entering" the dungeon; the page
-  leaves the patrol's room and joins the dungeon's: online `node-<patrol id>--dungeon-<number>` (`--elite--` or
-  `--abyss--` before `dungeon` at a harder difficulty), alone a room opened in the page from the patrol's node file with
-  `room_open_dungeon`. The player stands at its way in, facing into its room. A trip in or out keeps the seas of the
-  room the player stands in, so a company stays together at its seas. "Go to them" for a member in a dungeon goes
-  into that dungeon, at their seas, the veil saying "Joining your company at" its name.
+  asked with the patrol's id, its name and the entrance's number, or an Elite Dungeon's node's own name. Taken, the
+  veil says "Entering" the dungeon; the page leaves the node's room and joins the dungeon's. A patrol's dungeon at
+  Normal is its one shared room, `node-<patrol id>--dungeon-<number>`. At Elite or Abyss it is a run: the run of a
+  company member already in that dungeon at that tier, found in a fresh Roster, or a new one
+  (`node-<patrol id>--abyss--dungeon-<number>--run-<instance>`). An Elite Dungeon's entrance opens the week's Elite or
+  Abyss Dungeon's run where its node was reached at that tier and it is this week's (`eliteRun`, by what is on at the
+  minute), the veil saying "Entering Saltworm Warrens, the Abyss Dungeon of the week"; otherwise the Elite Dungeon's
+  run at Normal. Alone, the shared room opens in the page from the patrol's node file with `room_open_dungeon`, and
+  any other from its name with `room_open_run`. The player stands at its way in, facing into its room. A trip in or
+  out keeps the seas of the room the player stands in, so a company stays together at its seas. "Go to them" for a
+  member in a dungeon goes into the very room they are in, at their seas, the veil saying "Joining your company at"
+  its name.
+- **A sea island's dungeon** is entered from its door in the sea's room by its room's name
+  (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`, with `--elite` or `--abyss` after it for
+  its tier), shared at Normal and a run above it. It is laid by its seed and style and named "The <Style> of the
+  Sea", the veil saying "Entering The Caverns of the Sea". Leaving it the veil says "Leaving" it and the player goes
+  back to the sea: to their ship for now, and before the island's door once the islands stand a player there
+  (`back`). A company member in one is not joined from the Roster: "They are across the sea.".
 - **On foot inside.** The player is predicted on the dungeon's own ground, as its room judges bodies: the fight's door
   is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays
   0.35 m off and cannot climb, with no course; the movement door finds the floor at 0 m. The camera keeps short of the
   rock beside each open cell and under the ceiling over it, and the shots stop on the rock. The place's name on the heads-up
   display is the dungeon's, over "Dungeon" and the island's name. Foes are never asked of a dungeon's room.
 - **Going out.** Within 2.5 m of the exit door E offers "Leave", and within 2.5 m of the return portal on the end
-  room's far wall while it stands open (while the cache does, once the Reeve has fallen). Taken, the veil says "Leaving" the dungeon, and the
-  patrol's room is joined at the entrance the player went in by: online its address with `?entrance=<number>`, alone
-  the patrol's room opened again in the page and joined with `room_join_at`. The player stands 1.5 m before the
-  entrance's door, facing away from it.
+  room's far wall while it stands open (while the cache does, once the end foe has fallen). Taken, the veil says
+  "Leaving" the dungeon, by the way out kept as the player went in: the node's room is joined at the entrance the
+  player went in by, online its address with `?entrance=<number>`, alone the node's room opened again in the page and
+  joined with `room_join_at`. The player stands 1.5 m before the entrance's door, facing away from it.
 
 **Its scene** (`DungeonScene`) has no land, sky, sea or sun: the dungeon and what stands in it, in one pass over a
 near-black, then the blows' arcs, the see-through marks and their light over the picture, as the game's scene draws

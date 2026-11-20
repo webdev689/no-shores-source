@@ -1,17 +1,23 @@
-// Going into a patrol's dungeons and out again on foot: what E offers at an entrance's door or a dungeon's exit
-// door, and the place a dungeon is played as.
+// Going into a dungeon and out again on foot: what E offers at a patrol's or an Elite Dungeon's entrance's door or a
+// dungeon's exit door, and the place a dungeon is played as.
+import { runAsk } from '../../../server/roomNames.ts';
+import { LocalRoom } from '../network/localRoom.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import type { Use } from './footGear.ts';
+import type { Heard } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** A dungeon the player plays in: its patrol, its number among the patrol's, and its layout. */
+/** A dungeon the player plays in: the place outside it (a patrol, an Elite Dungeon's node, or a sea island's
+ *  `seaPlace`), its number among that place's entrances, the ask it is laid by, its room's name, and its layout. */
 export interface InDungeon {
   readonly patrol: NodeInfo;
   readonly number: number;
+  readonly ask: DungeonAsk;
+  readonly room: string;
   readonly layout: DungeonLayout;
 }
 
@@ -50,6 +56,25 @@ export function dungeonPlace(patrol: NodeInfo, layout: DungeonLayout): NodeInfo 
   };
 }
 
+/** The place outside a sea island's dungeon, as a trip reads a patrol's: no place on land, its continent's climate. */
+export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
+  return { id: 'sea-dungeon', kind: 'dungeon', name: layout.name, continent, ring: [], spawns: [], centre: [0, 0] };
+}
+
+/** A dungeon's room in the page, played alone: a patrol's shared dungeon from the patrol's node file, any other room
+ *  (a run, a sea island's dungeon) from its name, as the servers open them (`runAsk`). */
+export function openAlone(
+  module: WebAssembly.Module,
+  outsideText: string,
+  into: { readonly number: number; readonly room: string },
+  heard: Heard,
+): LocalRoom {
+  const ask = runAsk(into.room, Math.floor(Date.now() / 60_000));
+  return ask === null
+    ? LocalRoom.openDungeon(module, outsideText, into.number, heard.snapshot, heard.gear)
+    : LocalRoom.openRun(module, ask, heard.snapshot, heard.gear);
+}
+
 /** Stands the fight's rules on the dungeon an ask names as its room stands its bodies, on the dungeon's own ground;
  *  the movement rules, which only find the floor, on open ground at 0 m with no course. */
 export function standInDungeon(movement: MovementRules, combat: CombatRules, ask: DungeonAsk): void {
@@ -71,8 +96,9 @@ export class Entrances {
     this.entrances = entrancesOf(numbers);
   }
 
-  /** The dungeon's name behind entrance `number`. */
+  /** The dungeon's name behind entrance `number`: an Elite Dungeon's node's own, or a patrol's dungeon's. */
   nameOf(module: WebAssembly.Module, patrol: NodeInfo, number: number): string {
+    if (patrol.kind === 'dungeon') return patrol.name;
     const known = this.names.get(number);
     if (known) return known;
     const named = askDungeon(module, patrol.id, patrol.name, number).name;
@@ -82,8 +108,8 @@ export class Entrances {
 }
 
 /** What E offers about going in and out where a player stands at (x, y): in a dungeon, "Leave" within reach of its
- *  exit door, or of its return portal while that stands open; on a patrol, "Enter" and the dungeon's name within
- *  reach of an entrance's door. */
+ *  exit door, or of its return portal while that stands open; on a patrol or an Elite Dungeon's node, "Enter" and the
+ *  dungeon's name within reach of an entrance's door. */
 export function tripAt(
   x: number,
   y: number,
@@ -104,7 +130,7 @@ export function tripAt(
     return out ? { words: 'Leave', run: () => trips.leave() } : null;
   }
   const props = trips.props();
-  if (here.patrol.kind !== 'patrol' || !props) return null;
+  if ((here.patrol.kind !== 'patrol' && here.patrol.kind !== 'dungeon') || !props) return null;
   const number = entranceAt(here.entrances.entrances, props, x, y);
   if (number === null) return null;
   const name = here.entrances.nameOf(here.module, here.patrol, number);

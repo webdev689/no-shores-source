@@ -99,3 +99,31 @@ test('a room whose gate shuts sends the player back to their ship, the veil sayi
   assert.deepEqual(next({ mode: 'foot', node: 'tidewall', menu: false }, { kind: 'shut', why }), back);
   assert.deepEqual(next({ mode: 'sea', menu: false }, { kind: 'shut', why }), { mode: 'sea', menu: false });
 });
+
+test('a sea island’s dungeon is entered from the sea and left back to it, the veil saying why', () => {
+  const enter = {
+    kind: 'enter',
+    node: 'sea-dungeon-continent-4-caverns-0a1b2c3d--dungeon',
+    name: 'The Caverns of the Sea',
+  } as const;
+  const inside = { mode: 'foot', node: enter.node, menu: false } as const;
+  assert.deepEqual(next({ mode: 'sea', menu: false }, enter), {
+    mode: 'loading',
+    words: 'Entering The Caverns of the Sea',
+    then: inside,
+  });
+  assert.deepEqual(next({ mode: 'sea', menu: true }, enter), { mode: 'sea', menu: true }, 'not with the menu open');
+  const surface = { kind: 'surface', name: 'The Caverns of the Sea', fell: false } as const;
+  const atSea = { mode: 'sea', menu: false } as const;
+  assert.deepEqual(
+    next({ ...inside, menu: true }, surface),
+    { mode: 'loading', words: 'Leaving The Caverns of the Sea', then: atSea },
+    'even with the menu open',
+  );
+  assert.deepEqual(next(inside, { ...surface, fell: true }), {
+    mode: 'loading',
+    words: 'Your company fell. Leaving The Caverns of the Sea',
+    then: atSea,
+  });
+  assert.deepEqual(next(atSea, surface), atSea);
+});

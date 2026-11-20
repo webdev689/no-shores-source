@@ -48,7 +48,9 @@ test("inside, E within 2.5 m of the exit door offers Leave; on a patrol, an entr
   const layout = { exitDoor: { x: 10, y: 0.02 }, portal: { x: 40, y: 6.38 }, cell: 3.2 } as unknown as DungeonLayout;
   const trips = noted();
   const entrances = new Entrances();
-  const inside = { dungeon: { patrol, number: 0, layout }, portalOpen: false, patrol, entrances, module: roomModule };
+  const ask = { patrol: patrol.id, name: patrol.name, number: 0 };
+  const dungeon = { patrol, number: 0, ask, room: 'node-saltgrass-downs--dungeon-0', layout };
+  const inside = { dungeon, portalOpen: false, patrol, entrances, module: roomModule };
   assert.equal(tripAt(10, 2.4, inside, trips)?.words, 'Leave');
   assert.equal(tripAt(10, 2.6, inside, trips), null);
   assert.equal(tripAt(40, 4.5, inside, trips), null, 'the return portal shut while the cache is');

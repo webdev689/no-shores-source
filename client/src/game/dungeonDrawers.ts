@@ -42,10 +42,10 @@ export class DungeonDrawers {
     void assets.then((loaded) => (this.props = loaded?.tables.props ?? null));
   }
 
-  /** A patrol's entrances as a drawer among its land's, set again whenever its room gives them anew; null off a
-   *  patrol or before the props' table has come. */
+  /** A patrol's or an Elite Dungeon's node's entrances as a drawer among its land's, set again whenever its room gives
+   *  them anew; null anywhere else or before the props' table has come. */
   entrancesOf(foot: Foot): Drawer | null {
-    if (foot.node.kind !== 'patrol' || !this.props) return null;
+    if ((foot.node.kind !== 'patrol' && foot.node.kind !== 'dungeon') || !this.props) return null;
     const now = foot.held.entrances.entrances;
     if (now !== this.shownEntrances) {
       this.shownEntrances = now;

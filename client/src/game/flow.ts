@@ -1,5 +1,5 @@
 /**
- * Where the player is in the game's loop: in the story that opens the game, on foot in a node or a patrol's dungeon,
+ * Where the player is in the game's loop: in the story that opens the game, on foot in a node or a dungeon,
  * back at their ship on the sea, or over an island's side choosing where to land. Travel between them passes through
  * a loading veil. On foot and at sea a menu may be open over the play. Pure: the page feeds it what happened and
  * draws what it answers.
@@ -22,6 +22,7 @@ export type Happening =
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
   | { readonly kind: 'enter'; readonly node: string; readonly name: string }
   | { readonly kind: 'leave'; readonly node: string; readonly name: string }
+  | { readonly kind: 'surface'; readonly name: string; readonly fell: boolean }
   | { readonly kind: 'back' }
   | { readonly kind: 'story-ended'; readonly node: string; readonly name: string }
   | { readonly kind: 'shut'; readonly why: string };
@@ -62,10 +63,17 @@ export function next(flow: Flow, happening: Happening): Flow {
       };
     case 'enter':
     case 'leave': {
-      // Into a patrol's dungeon, or out of one to its patrol, on foot with no menu open.
-      if (flow.mode !== 'foot' || flow.menu) return flow;
+      // Into a dungeon, on foot or from a sea island's door at sea, or out of one to its node, with no menu open.
+      const from = happening.kind === 'enter' && flow.mode === 'sea' ? 'sea' : 'foot';
+      if (flow.mode !== from || flow.menu) return flow;
       const words = `${happening.kind === 'enter' ? 'Entering' : 'Leaving'} ${happening.name}`;
       return { mode: 'loading', words, then: { mode: 'foot', node: happening.node, menu: false } };
+    }
+    case 'surface': {
+      // Out of a sea island's dungeon onto the sea, even with the menu open, as a company that fell is taken out.
+      if (flow.mode !== 'foot') return flow;
+      const words = `${happening.fell ? 'Your company fell. ' : ''}Leaving ${happening.name}`;
+      return { mode: 'loading', words, then: { mode: 'sea', menu: false } };
     }
     case 'story-ended':
       // The story hands the player to the game where it leaves them: Overlook's social space.

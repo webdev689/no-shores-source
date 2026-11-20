@@ -27,7 +27,7 @@ import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { HelmMap } from './helmMap.ts';
-import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
+import { accountOf, companyPlaces, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene, type Overlay } from './scene.ts';
 import { Sea } from './sea.ts';
 import { seaPointer } from './seaPointer.ts';
@@ -198,10 +198,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foot: () => foot,
     travel: (happening, work) => travel(happening, work),
     module: roomModule,
-    intoDungeon: (patrol, number, layout, seas) =>
-      goInto(() => Foot.enterDungeon(footContext, patrol, number, layout, seas)),
+    intoDungeon: (outside, into, layout, seas) =>
+      goInto(() => Foot.enterDungeon(footContext, outside, into, layout, seas)),
     ontoPatrol: (patrol, facing, seas, arriving) =>
       goInto(() => Foot.enter(footContext, patrol, facing, seas, arriving)),
+    // Back to the ship until the sea's islands stand a player before their door.
+    ontoSea: () => goSea(),
+    companyPlaces: () => companyPlaces(link),
     drawers: dungeons,
   });
 
@@ -273,7 +276,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
     discovered.nodes([node.id]);
     const facing = arrivalFacing(node, landmass.plan, null);
-    if (where.dungeon !== null) trips.join(node, where.dungeon, where.seas);
+    if (where.dungeon !== null || where.run !== null) trips.join(node, place);
     else travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
     return null;
   };

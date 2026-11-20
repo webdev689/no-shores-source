@@ -38,10 +38,10 @@ import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
-import { dungeonRoom, nodeRoom } from './rooms.ts';
-import { dungeonPlace, Entrances, type InDungeon, roomNameAt, standInDungeon, tripAt } from './footTrips.ts';
+import { nodeRoom } from './rooms.ts';
+import { dungeonPlace, Entrances, type InDungeon, openAlone, roomNameAt, standInDungeon, tripAt } from './footTrips.ts';
 import { cacheOf } from './dungeonChest.ts';
-import { ceilingAt, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
+import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
 import { otherCards } from './footFigures.ts';
@@ -217,22 +217,22 @@ export class Foot {
    *  alone opens it from), at its way in, and joins its room: online the server's at `seas`, alone one in the page. */
   static async enterDungeon(
     context: FootContext,
-    patrol: { readonly node: NodeInfo; readonly text: string },
-    number: number,
+    outside: { readonly node: NodeInfo; readonly text: string },
+    into: { readonly number: number; readonly ask: DungeonAsk; readonly room: string },
     layout: DungeonLayout,
     seas: Difficulty = 'normal',
   ): Promise<Foot> {
     const { module, rules } = await rulesOf(context);
-    standInDungeon(context.movement, rules.combat, { patrol: patrol.node.id, name: patrol.node.name, number });
+    standInDungeon(context.movement, rules.combat, into.ask);
     stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
-    const address = context.rooms?.(dungeonRoom(patrol.node, seas, number));
-    const dungeon = { patrol: patrol.node, number, layout };
-    return Foot.start(context, dungeonPlace(patrol.node, layout), rules, async (heard, session) => ({
+    const address = context.rooms?.(into.room);
+    const dungeon = { patrol: outside.node, ...into, layout };
+    return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
       link: address
         ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-        : LocalRoom.openDungeon(module, patrol.text, number, heard.snapshot, heard.gear),
+        : openAlone(module, outside.text, into, heard),
       boxes: seenBlocks(layout),
-      text: patrol.text,
+      text: outside.text,
       dungeon,
       seas,
     }));

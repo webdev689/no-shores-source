@@ -13,6 +13,7 @@ code:
   - crates/room/src/abyss.rs#start_over
   - crates/room-wasm/src/run_door.rs#open_run
   - client/src/game/activities.ts#eliteRun
+  - client/src/game/dungeonTrips.ts#dungeonTrips
 ---
 # Activities
 
@@ -24,8 +25,8 @@ Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
 ([[The Activities Are Built in Full, Before the Story's Missions]]). Its core is built (step 1): the clock, the tiers,
 the records, the story kept with the account and the gates. Of the dungeons (step 2), the rules are built: what is
-on, the Elite Dungeons and their Bosses, the modifiers, what a first clear pays, a run's room, and Abyss's revives and
-wipe. The server's runs and the page's trips are not, nor the rest.
+on, the Elite Dungeons and their Bosses, the modifiers, what a first clear pays, a run's room, Abyss's revives and
+wipe, the server's runs and the page's trips. Abyss on the screen is not, nor the rest.
 
 ## What it is for
 
