@@ -130,4 +130,4 @@ def grow(fighter, clusters, strain, seed):
         ob = linked(mesh.name, mesh)
         hang(fighter.parts, ob, cluster['joint'])
         made.append(ob)
-    return made, gore(fighter, wounds, strain, pick)
+    return made, gore(fighter, wounds, strain, pick) if wounds else []

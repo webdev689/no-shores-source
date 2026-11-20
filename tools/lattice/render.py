@@ -32,11 +32,10 @@ def foe_layers(foe, body, classify):
     own = foe.parts(fighter) if hasattr(foe, 'parts') else {}
     skins = {sk.ob.name: sk.ob for sk in fighter.skins}
     hands = [ob for kinds in fighter.hands.values() for ob in kinds.values()] if getattr(foe, 'HANDS', True) else []
-    return [layers.Layer('body', fighter, [skins['body'], *hands], classify),
-            layers.Layer(f'lattice_{name}', fighter, crystal, classify, order=THROUGH_CLOTH),
-            layers.Layer(f'lattice_{name}_gore', fighter, gore, classify, order=THROUGH_CLOTH),
-            *(layers.Layer(f'lattice_{name}_{part}', fighter, obs, classify, order=THROUGH_CLOTH)
-              for part, obs in own.items())]
+    body = [layers.Layer('body', fighter, [skins['body'], *hands], classify)] if getattr(foe, 'BODY', True) else []
+    grown = [(f'lattice_{name}', crystal), (f'lattice_{name}_gore', gore),
+             *((f'lattice_{name}_{part}', obs) for part, obs in own.items())]
+    return body + [layers.Layer(layer, fighter, obs, classify, order=THROUGH_CLOTH) for layer, obs in grown if obs]
 
 
 def main():
@@ -57,8 +56,9 @@ def main():
     dressed = layers.wardrobe_layers
     layers.wardrobe_layers = lambda body, classify, want=None: foe_layers(foe, body, classify) + dressed(body, classify,
                                                                                                         want)
-    drawn = ['body', f'lattice_{name}', f'lattice_{name}_gore', *(f'lattice_{name}_{p}' for p in getattr(foe, 'PARTS', ())),
-             *outfit]
+    grown = [f'lattice_{name}', f'lattice_{name}_gore'] if foe.CLUSTERS else []
+    drawn = [*(['body'] if getattr(foe, 'BODY', True) else []), *grown,
+             *(f'lattice_{name}_{p}' for p in getattr(foe, 'PARTS', ())), *outfit]
     sys.argv += ['--set', 'wardrobe', '--body', name, '--layers', ','.join(drawn)]
     layers.main()
 

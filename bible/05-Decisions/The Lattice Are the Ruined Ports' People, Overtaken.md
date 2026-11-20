@@ -43,4 +43,11 @@ status: in force
 - **No Swordsman**: the crystal does not guard or parry as a trained fighter does.
 - **Each is prototyped and developed in the same Blender pipeline** as the forge's figures ([[Sprite Forge]]).
 
+> Shown the Husk's moves in deeper detail: "Approved. I love this.
+>
+> Let's do this pass with all enemies before we do the full render and put this ingame"
+
+- **Every Lattice foe gets the Husk's pass**, its look and its moves in deep detail, before any of them is rendered
+  in full and brought into the game.
+
 The Husk's look, walk, blows and clothes: [[The Husk Shambles, Strikes Its Own Way and Wears the Townsfolk's Clothes]].
