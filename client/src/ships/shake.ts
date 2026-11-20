@@ -46,11 +46,23 @@ export class Shake {
     this.jars = this.jars.filter((jar) => now - jar.born < SHAKE.inS + SHAKE.outS);
     if (this.jars.length === 0) return STILL;
     const sum = [0, 0, 0, 0, 0];
-    for (const jar of this.jars) {
+    const strengths = this.jars.map((jar) => {
       const age = now - jar.born;
-      if (age < 0) continue;
-      const swell = age < SHAKE.inS ? age / SHAKE.inS : 1 - (age - SHAKE.inS) / SHAKE.outS;
-      const strength = jar.magnitude * Math.max(0, swell);
+      const swell = age < 0 ? 0 : age < SHAKE.inS ? age / SHAKE.inS : 1 - (age - SHAKE.inS) / SHAKE.outS;
+      return jar.magnitude * Math.max(0, swell);
+    });
+    // The jars at once add together, never past the most.
+    const held = Math.min(
+      1,
+      SHAKE.most /
+        Math.max(
+          1e-9,
+          strengths.reduce((total, each) => total + each, 0),
+        ),
+    );
+    for (const [index, jar] of this.jars.entries()) {
+      const age = now - jar.born;
+      const strength = (strengths[index] ?? 0) * held;
       for (let axis = 0; axis < 5; axis++) {
         const turn = 2 * Math.PI * SHAKE.roughness * 0.5 * age + jar.phase * (axis + 1);
         // Two waves a step apart, each within a quarter either way: the whole within a half, as the shaker's noise.

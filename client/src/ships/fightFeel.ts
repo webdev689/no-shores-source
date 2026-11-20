@@ -93,6 +93,8 @@ export const SMOKE_FROM = 0.6;
 const SMOKE_SPAN = 0.6;
 /** Her last volley's tally is shown this long once its last ball is down, seconds. */
 export const TALLY_S = 4;
+/** A volley is down this long after her last shot at the most, seconds: longer than any ball's flight. */
+const VOLLEY_S = 4;
 /** A ball last frame is the same ball this frame within this, metres. */
 const SAME_BALL_M = 40;
 
@@ -199,7 +201,9 @@ export class FightFeel {
     this.aloft = input.balls;
     const splashes = input.events.flatMap((event) => this.take(event, ships, now, toWindow, input.windBearing));
     this.moments(ships, now, input.seconds, toWindow);
-    if (this.volley && input.balls.length === 0 && now - this.volley.lastShot > 0.2) {
+    // Her last ball is down once none is aloft, or once the longest flight has passed (others' balls may stay up).
+    const since = this.volley ? now - this.volley.lastShot : 0;
+    if (this.volley && ((input.balls.length === 0 && since > 0.2) || since > VOLLEY_S)) {
       const { balls, hits, holed, rig } = this.volley;
       [this.tallied, this.volley] = [{ balls, hits, holed, rig, at: now }, null];
     }
@@ -292,7 +296,7 @@ export class FightFeel {
         return [];
       case 'Sinking':
         shipOf(event.ship)?.rig?.harm.sink(now);
-        this.goingDown(event.ship, shipOf(event.ship), now, toWindow);
+        this.goingDown(event.ship, shipOf(event.ship), now, toWindow, event.tick);
         return [];
       case 'state':
         if (event.state === 'sinking') this.goingDown(event.ship, shipOf(event.ship), now, toWindow);
@@ -404,21 +408,22 @@ export class FightFeel {
       }
       if (!last) continue;
       const [gap, before] = [hullGap(ship, [x, y, z]), hullGap(ship, last.ball as unknown as Point)];
-      if (gap <= NEAR_MISS_M && before > NEAR_MISS_M)
+      // A ball inside her box is one of hers just fired (or one striking her): neither whistles.
+      if (gap > 0 && gap <= NEAR_MISS_M && before > NEAR_MISS_M)
         this.call('ship.whistle', toWindow([x, y, z]), 0.55 + 0.45 * (1 - gap / NEAR_MISS_M));
     }
   }
 
   /** A ship begins to go down: heard once; afire, her own seed decides whether her magazine blows and when. */
-  private goingDown(number: number, ship: FeelShip | undefined, now: number, toWindow: Window): void {
+  private goingDown(number: number, ship: FeelShip | undefined, now: number, toWindow: Window, tick?: number): void {
     if (!ship || this.sinking.has(number)) return;
     this.sinking.add(number);
     const { middle } = lying(ship.vessel);
     this.call('ship.sinking', toWindow(middle));
     if (ship.vessel.fires <= 0) return;
-    // Her number and where she lies are the same for everyone in the fight.
-    const seed =
-      Math.imul(number + 1, 73_856_093) ^ Math.imul(Math.round(middle[0]), 19_349_663) ^ Math.round(middle[1]);
+    // Her number and the room's tick she began going down are the same for everyone in the fight; the World
+    // Editor's fight, which tells no tick, has only one machine.
+    const seed = Math.imul(number + 1, 73_856_093) ^ Math.imul(tick ?? Math.round(middle[0]), 19_349_663);
     const after = magazineOf(seed);
     if (after !== null) this.magazines.set(number, now + after);
   }

@@ -26,3 +26,13 @@ test('a harder kick shakes harder, and none past the most', () => {
   assert.ok(peak(2.4) > peak(0.7) * 2);
   assert.equal(peak(50), peak(SHAKE.most));
 });
+
+test('jars at once add together, but never past the most', () => {
+  const peak = (count: number) => {
+    const shake = new Shake(4);
+    for (let gun = 0; gun < count; gun++) shake.kick(2.5, 0);
+    return Math.max(...Array.from({ length: 80 }, (unused, step) => size(shake.jarAt(step / 100))));
+  };
+  assert.ok(peak(2) > peak(1));
+  assert.ok(peak(12) <= SHAKE.most * SHAKE.metres * Math.sqrt(3) * 0.5 + 1e-9, `${peak(12)}`);
+});

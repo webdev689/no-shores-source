@@ -502,17 +502,7 @@ export class Effects {
         life: 0.5 + this.draw() * 0.3,
       }));
       // DFO's embers, fourteen a second at a fire, and its gouts of smoke, five.
-      if (this.draw() < 14 / FLAMES_PER_S - 1)
-        this.add('ember', 1, anchor, now, () => ({
-          from: [from[0] + this.spread(0.8), from[1] + this.spread(0.8), from[2] + this.draw() * 0.5],
-          velocity: [this.spread(0.6), this.spread(0.6), 2 + this.draw() * 2.5],
-          drag: 0.5,
-          lift: 0.4,
-          colour: EMBER,
-          size: [0.22, 0.05],
-          life: 1 + this.draw() * 1.2,
-        }));
-      this.add('ember', 1, anchor, now, () => ({
+      this.add('ember', this.draw() < 14 / FLAMES_PER_S - 1 ? 2 : 1, anchor, now, () => ({
         from: [from[0] + this.spread(0.8), from[1] + this.spread(0.8), from[2] + this.draw() * 0.5],
         velocity: [this.spread(0.6), this.spread(0.6), 2 + this.draw() * 2.5],
         drag: 0.5,

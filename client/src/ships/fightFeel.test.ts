@@ -337,3 +337,51 @@ test('a burning ship lights the hulls round her, three at most', () => {
   const lights = feel.marks(0).filter((mark) => mark.blend === 'light' && mark.radius === 16);
   assert.equal(lights.length, 3);
 });
+
+test("her own next gun's ball, fired beside one already out, never whistles", () => {
+  const feel = new FightFeel(10);
+  const ships = new Map([[0, own()]]);
+  const step = (balls: [number, number, number, number][], now: number) =>
+    feel.frame({ events: [], ships, balls, now, seconds: 0.1, windBearing: 0, toWindow: here });
+  step([[12, 0, 3, 0.07]], 0);
+  step(
+    [
+      [14, 0, 3, 0.07],
+      [2, 0, 2, 0.07],
+    ],
+    0.1,
+  );
+  assert.deepEqual(sounds(feel), []);
+});
+
+test("a magazine's draw is her number and the tick she began going down, wherever each machine drew her", () => {
+  const blows = (east: number, tick: number) => {
+    const feel = new FightFeel(1);
+    const ships = new Map([[0, own()]]);
+    const ship = brig();
+    ships.set(2, { ...ship, vessel: { ...ship.vessel, ship: [east, 0, 0, 0], fires: 2 } });
+    frame(feel, ships, [{ kind: 'Sinking', ship: 2, tick }], 0);
+    for (let step = 1; step < 60; step++) frame(feel, ships, [], step / 10);
+    return feel.takeCues().some((cue) => cue.cue === 'ship.blast');
+  };
+  for (let tick = 0; tick < 12; tick++)
+    for (const east of [23.7, 31.2, 47.9, 66.4])
+      assert.equal(blows(20, tick), blows(east, tick), `tick ${tick} at ${east}`);
+});
+
+test("her volley's tally is told within four seconds of her last shot, though others' balls stay aloft", () => {
+  const feel = new FightFeel(11);
+  const step = (events: readonly FeelEvent[], now: number) =>
+    feel.frame({
+      events,
+      ships: new Map(),
+      balls: [[500, 500, 9, 0.07]],
+      now,
+      seconds: 0.1,
+      windBearing: 0,
+      toWindow: here,
+    });
+  step([{ kind: 'muzzle', ship: 0, point: [0, 2, 2], launch: [0, 300, 0] }], 0);
+  step([], 4.5);
+  assert.deepEqual(feel.tally(4.6), { balls: 1, hits: 0, holed: 0, rig: 0 });
+});

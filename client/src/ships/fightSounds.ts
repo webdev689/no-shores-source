@@ -28,6 +28,10 @@ const OTHER = { nearM: 10, mostM: 600 } as const;
 export const NEAR_BOOM_M = 260;
 const FAR_FADE_M = 60;
 const FAR_MATCH = 0.46;
+/** A volley's far roll plays once in this long, seconds. */
+const ROLL_S = 1.5;
+/** When each page's audio last rolled a far volley. */
+const rolledAt = new WeakMap<object, number>();
 
 /** Where the sounds play: a page's audio context and the node they go into. */
 export interface SoundOutput {
@@ -55,7 +59,6 @@ export function playCues(
     [listener.forwardX.value, listener.forwardY.value, listener.forwardZ.value] = [Math.sin(yaw), 0, -Math.cos(yaw)];
   }
   let played = 0;
-  let rolled = false;
   const sound = (cue: string, spot: Cue['at'], gain: number) => {
     const reach = SEA_SOUNDS[cue] ?? OTHER;
     if (gain <= 0 || Math.hypot(spot[0] - eye[0], spot[1] - eye[1], spot[2] - eye[2]) > reach.mostM) return;
@@ -87,8 +90,9 @@ export function playCues(
     const away = Math.hypot(at[0] - eye[0], at[1] - eye[1]);
     const far = Math.min(1, Math.max(0, (away - (NEAR_BOOM_M - FAR_FADE_M)) / (2 * FAR_FADE_M)));
     if (far < 1) sound(cue, at, gain * Math.cos((far * Math.PI) / 2));
-    if (far > 0 && !rolled) {
-      rolled = true;
+    const clock = (audio as { readonly currentTime?: number }).currentTime ?? 0;
+    if (far > 0 && clock - (rolledAt.get(audio) ?? -Infinity) >= ROLL_S) {
+      rolledAt.set(audio, clock);
       sound('ship.cannon-far', at, gain * FAR_MATCH * Math.sin((far * Math.PI) / 2));
     }
   }

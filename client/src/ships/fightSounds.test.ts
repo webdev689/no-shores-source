@@ -83,3 +83,10 @@ test("every sea sound is a cue on the sound sheet, DFO's own synthesised sounds 
   for (const cue of Object.keys(SEA_SOUNDS).filter((id) => id.startsWith('ship.')))
     assert.ok('dfo' in (sheet.get(cue) ?? {}), `${cue} offers DFO's own`);
 });
+
+test("a far volley's guns spread over frames roll once", () => {
+  const { output, played, play } = audio();
+  playCues(output, [{ cue: 'ship.cannon', at: east(1500) }], [0, 0, 0], 0, play);
+  playCues(output, [{ cue: 'ship.cannon', at: east(1500) }], [0, 0, 0], 0, play);
+  assert.equal(played.filter(({ cue }) => cue === 'ship.cannon-far').length, 1);
+});

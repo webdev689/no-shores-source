@@ -383,11 +383,10 @@ captain's number comes with her in the view, so one leaving the fight never move
   second, while her guns stand out.
 - **Battered**: under three fifths of her hull, the player's ship smokes grey along her deck, more as she is hurt.
 - **Struck** (`Struck`): her flag comes down her mast in 4 s to a metre over its foot and is gone.
-- **Sinking** (`Sinking`): over 20 s she settles, slowly then fast, by her worse-hit end (her bow if her holes lie
-  forward of her middle, trimmed 10 degrees), lists up to 20 degrees to the side most holed, and goes under; from
+- **Sinking** (`Sinking`): over 20 s she goes down in the pose the room's view gives her; from
   halfway down until 8 s after, rings of foam and the air boiling up in drops fill the water over her length. A ship
-going down afire blows her magazine at 55% of the time, 1.5 to 4.5 s in, decided by her own number and where she
-lies, so everyone in the fight sees the same: a fireball, a column of smoke, splinters and a big splash, jarring the
+going down afire blows her magazine at 55% of the time, 1.5 to 4.5 s in, decided by her own number and the room's tick she
+began going down, so everyone in the fight sees the same: a fireball, a column of smoke, splinters and a big splash, jarring the
 eye 2.4 at her side and less to none at 160 m. Her flotsam (`Flotsam`:
   crates, barrels and a chest, which the rules lay) rides the swell the water draws where it lies (bobbing 0.12 m every
   4 s where the page draws none), drawn at the size the view draws ships and lit and shadowed as the land is, each
