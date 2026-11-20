@@ -1,16 +1,16 @@
 /**
- * Companies, after Destiny 1's fireteams: up to three players, one of them its leader. A player alone leads their own. Another
- * joins by an invite, or by asking to, as the leader's privacy allows: anyone, the leader's friends, those invited, or
- * no one. The leader can remove a member or hand the lead on; a leader who leaves hands it to the longest there. A
- * member away from the game ten minutes leaves it.
+ * Companies: up to four players, as an Elite Dungeon's run is for, one of them its leader. A player alone leads their
+ * own. Another joins by an invite, or by asking to, as the leader's privacy allows: anyone, the leader's friends,
+ * those invited, or no one. The leader can remove a member or hand the lead on; a leader who leaves hands it to the
+ * longest there. A member away from the game ten minutes leaves it.
  */
 
 import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
 import { AWAY_MS, LAST_SEEN, accountNamed, blocks } from './people.ts';
 
-/** The most players a company holds, as Destiny 1's held for a patrol or a strike. */
-export const COMPANY_MOST = 3;
+/** The most players a company holds: four, as an Elite Dungeon's run is for. */
+export const COMPANY_MOST = 4;
 /** How long an invite stands. */
 export const INVITE_MS = 10 * 60_000;
 /** Who may join: anyone, the leader's friends, those invited, no one. */

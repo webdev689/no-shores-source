@@ -76,6 +76,15 @@ export function privateRun(room: string): boolean {
   return RUN_ENDING.test(room);
 }
 
+/** The most a run holds: a company's most (`accounts/companies.ts`), as an Elite Dungeon's run is for. */
+export const RUN_MOST = 4;
+
+/** Why a run sends away a player who would make it more than RUN_MOST, counting them; null for a run with room, or
+ *  a room that is no run. */
+export function runFull(room: string, players: number): string | null {
+  return privateRun(room) && players > RUN_MOST ? 'This run is full.' : null;
+}
+
 /** The tiers' old names in a node's room, by their names now. */
 const OLD_TIERS = new Map([
   ['rough', 'elite'],

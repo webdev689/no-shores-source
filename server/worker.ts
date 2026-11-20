@@ -5,7 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, TOKEN } from './keeping.ts';
-import { canonicalRoom, nodeRoom, privateRun, runAsk } from './roomNames.ts';
+import { canonicalRoom, nodeRoom, privateRun, runAsk, runFull } from './roomNames.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 interface Env {
@@ -120,6 +120,9 @@ export class RoomHost extends DurableObject<Env> {
     // Ticking first: a room waking from rest sets its first tick's time anew, which the welcome carries.
     this.startTicking();
     server.send(this.room.joined(player));
+    // Welcomed first, so the page reads the close as being sent away, not as a join that failed.
+    const full = runFull(this.name, this.open().length);
+    if (full) this.dismiss(server, SHUT, full);
     return new Response(null, { status: 101, webSocket: client });
   }
 

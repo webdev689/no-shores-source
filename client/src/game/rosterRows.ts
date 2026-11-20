@@ -32,8 +32,8 @@ export interface Action {
 
 /** The privacies, in the order the accounts number them. */
 export const PRIVACIES = ['Public', 'Friends Only', 'Invite Only', 'Closed'] as const;
-/** How many players a company holds. */
-export const COMPANY_MOST = 3;
+/** The most players a company holds: four, as an Elite Dungeon's run is for (`accounts/companies.ts`). */
+export const COMPANY_MOST = 4;
 /** How many rows a column shows a page. */
 export const ROWS_A_PAGE = 14;
 /** The fewest a page shows, where the screen is too short for fourteen. */

@@ -328,8 +328,10 @@ so every decision is Rust and the shell only carries bytes and time.
   socket closed with 4003 and "This run is another company's.". It keeps no one unkept: a token that is no session,
   or no token five seconds after the join (a claim's own waits), closes with 4003 and "Sign in to enter this run.",
   and a claim or a company the accounts never gave, each asked again after a claim's waits, closes with 1013 and
-  "Something went wrong. Try again.", which the page joins again on. An emptied run's room stays as its company left it for `RUN_LINGER_MS`, a minute, through a
-  dropped connection, and is then forgotten: the next to come opens a fresh run.
+  "Something went wrong. Try again.", which the page joins again on. A run holds four (`RUN_MOST`, a company's
+  most): a fifth player is welcomed and then sent away with 4003 and "This run is full.", so the page takes them back
+  as from a shut gate, saying why. An emptied run's room stays as its company left it for `RUN_LINGER_MS`, a minute,
+  through a dropped connection, and is then forgotten: the next to come opens a fresh run.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.

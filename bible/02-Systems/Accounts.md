@@ -121,7 +121,7 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
   for one that never asked.
-- **The company**, sized as Destiny's fireteam: three at most, one its leader; a player alone leads their own. A player is
+- **The company**: four at most, as an Elite Dungeon's run is for, one its leader; a player alone leads their own. A player is
   invited (the invite stands ten minutes, then is let go), or joins as the leader's privacy allows: Public, anyone;
   Friends Only (each player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though
   an invite still stands. The Roster shows the leader's privacy, the one that applies; a member's own applies once they

@@ -122,8 +122,11 @@ test('each player offers what their place in the lists allows, and what cannot b
     'away: no join',
   );
   assert.deepEqual(labels(lists, 'Ada'), ['Details', 'Leave guild'], 'oneself');
-  const full = roster({ company: { leader: 'Ada', members: [person('Ada'), person('Ben'), person('Cal')] } });
-  assert.ok(!labels(full, 'Dee').includes('Invite to company'), 'a full company invites no one');
+  const three = roster({ company: { leader: 'Ada', members: [person('Ada'), person('Ben'), person('Cal')] } });
+  assert.ok(labels(three, 'Dee').includes('Invite to company'), 'three of four invite one more');
+  const members = [person('Ada'), person('Ben'), person('Cal'), person('Dee')];
+  const full = roster({ company: { leader: 'Ada', members } });
+  assert.ok(!labels(full, 'Eve').includes('Invite to company'), 'a full company invites no one');
   assert.ok(labels(full, 'Ben').includes('Remove from company'), 'its leader removes');
   assert.ok(!labels(full, 'Ben').includes('Go to them'), 'in the same room');
   assert.ok(labels(full, 'Cal', 'node-saltgrass-downs').includes('Go to them'), 'a member playing elsewhere');

@@ -96,7 +96,7 @@ Company]]).
 
 ## Runs and companies
 
-- **A company** holds up to four. Companies hold three now.
+- **A company** holds up to four, and a run holds four too: a fifth is sent away saying "This run is full.".
 - **A run** is a private room for the company that enters: every dungeon at Elite or Abyss, every Elite Dungeon and
   both of the week's. A dungeon at Normal in a patrol stays in the patrol's shared room, as does a sea island's.
 - **A run's room** is named by an instance after its dungeon's name (`--run-` and eight lowercase letters or digits,
