@@ -354,6 +354,7 @@ impl Room {
         self.garrison[post].standing = standing;
         self.garrison[post].cleared_at = None;
         (self.garrison[post].broken, self.garrison[post].defending) = (false, false);
+        self.renew_last_stand();
         let clock = self.clock;
         if let Some(beat) = self.garrison[post].beat.as_mut() {
             beat.restart(clock);

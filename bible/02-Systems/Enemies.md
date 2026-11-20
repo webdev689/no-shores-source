@@ -191,25 +191,27 @@ WebAssembly, so names, factions and weapons are read in one place.
   skirmisher, then a swordsman, the one nearest its target; never a shooter or a captain, and none if one of them
   rages already), and the rest break by their role for 8 s ([[Foes]], "Its group").
 - **Its breaking point**: once half the foes it stood have fallen, it defends its ground until it stands again: its
-  places gather back at its post, its foes fighting elsewhere fall back to them, and each fights only near its place.
-- **The Grey Tithe's tactic**, its shield front: its shield-bearers hold the line before their target, and its leader
-  is screened by its lower ranks. While one of them that is not broken fights hand to hand at its target, the leader
-  waits behind them, right behind the nearest shield-bearer of them; once none of them stands unbroken, it goes in at
-  once ([[Foes]], "Its group").
+  places gather back at its post, its foes fighting elsewhere fall back to them, each fighter hand to hand fights only
+  near its place, and its shooters hide longer between their looks out ([[Foes]], "Its group").
+- **The Grey Tithe's tactic**, its shield front: its shield-bearers hold the line before their target, and its leader is
+  screened by its lower ranks that fight hand to hand. While one of them that is not broken fights at its target, within
+  its range and neither falling back nor holding ground away from it, the leader waits behind them, right behind the
+  nearest shield-bearer of them; once none of them stands unbroken, it goes in at once ([[Foes]], "Its group").
 - **A mission's or a dungeon's garrison gives ground** as one encounter, by the share of the foes it stood that stand
-  (its waves not counted). More than three quarters standing, it holds its territory: each group its own post and
-  beat. More than half, it falls back: each group's places gather 2.5 m round its fallback point, halfway along the
-  navmesh's way from its post to the last stand's post, the post farthest from the spawns (its own post where that
-  point is off the mesh, outside the section or within 25 m of a spawn). Less, it makes its last stand: the last
-  stand's group at its places there and every other of its foes 5 m round it, all defending (its waves come on, for
-  the players), led by the highest rank standing as it begins; that one's fall breaks every foe there. As groups stand again the share rises, and they go back.
+  (its waves not counted). More than three quarters standing, it holds its territory: each group its own post and beat.
+  More than half, it falls back: each group's places gather 2.5 m round its fallback point, halfway along the navmesh's
+  way from its post to the last stand's post, the post farthest from the spawns (its own post where that point is off
+  the mesh, outside the section or within 25 m of a spawn). Less, it makes its last stand: the last stand's group at its
+  places there and every other of its foes on one ring 5 m round it, a place each, all defending (its waves come on, for
+  the players), led by the highest rank standing as it begins; that one's fall breaks every foe there; groups standing
+  again at its last stand take a leader afresh. As groups stand again the share rises, and they go back.
 - **A mission's waves**: as its garrison falls back, a wave comes, and another for its last stand, both at once if it
-  gives up both at once: each a band drawn
-  as its bands are (two to four Runners, Collectors and Crossbowmen, Minor or Major) at the island's levels, a shield
-  drawn as any foe's, standing at the open post farthest from every player and at least 25 m from each, alert toward
-  the nearest, its places at the last stand. A wave has its own leader, breaking point and break; it never stands
-  again once fallen, comes once each time the garrison holds its territory, and only while the room's living foes
-  leave room for all of it.
+  gives up both at once: each a band drawn as its bands are (two to four Runners, Collectors and Crossbowmen, Minor or
+  Major), each wave its own, at the island's levels, a shield drawn as any foe's. It stands at the open point of the
+  post lattice nearest the players that is at least 25 m from each of them and 20 m from every wave standing, hunts the
+  nearest player, and holds there: its places are where it stood. A wave has its own leader, breaking point and break;
+  it never stands again once fallen. It comes once each time the garrison holds its territory, but not while a wave of
+  before stands, and only while the room's living foes leave room for all of it; a garrison sent away calls none.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
   its beat begun again from there, 120 s later, once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.
@@ -263,9 +265,10 @@ WebAssembly, so names, factions and weapons are read in one place.
   baking a section's whole ring costs more time and memory than a room has. A garrison foe gives up a player who
   leaves the mesh; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
 - A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
-- A wave stands at its post from nowhere, at least 25 m from every player: a node's land has no ships to bring it,
-  and its room's navmesh no ground beyond its square to walk it in from.
-- A wave still standing as its garrison holds its territory again stays at the last stand, its places there.
+- A wave stands from nowhere, at least 25 m from every player: a node's land has no ships to bring it, and its room's
+  navmesh no ground beyond its square to walk it in from.
+- A wave the room's limit leaves no room for does not come later, once foes have fallen, until its garrison holds its
+  territory again.
 - A group's leader is fixed as it stands: a leader walking home or leashed still leads it.
 - Only the Sloop's hull for every rank of ship ([[Hulls]]).
 - The Hookman's axe takes both hands, so he carries no shield.

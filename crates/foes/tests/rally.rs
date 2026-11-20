@@ -172,7 +172,14 @@ fn a_foe_defending_its_ground_fights_only_near_its_place_or_one_that_struck_it()
     assert!(from_place < 1.0, "the player 12 m from its place, it keeps to it: {from_place:.1} m off");
     assert!(room.swings(10).is_empty());
     assert_eq!(room.brain(10).fights(), Some(PLAYER), "its target kept");
-    // Struck from where it stands, it goes after the striker.
+    // Struck by another than the one it fights, it keeps its ground; struck by its target, it goes after it.
+    room.tell(10, Seen::Struck { by: 77, verdict: Verdict::Hit { damage: 1.0, poise: 0.0 } });
+    room.run(120, &mut still(0.0));
+    assert!(
+        room.distance(10, PLAYER) > 11.0,
+        "another's blow draws it off nothing: {:.1} m",
+        room.distance(10, PLAYER)
+    );
     let struck = room.tick;
     room.tell(10, Seen::Struck { by: PLAYER, verdict: Verdict::Hit { damage: 1.0, poise: 0.0 } });
     room.run(120, &mut still(0.0));
@@ -253,4 +260,44 @@ fn a_screened_leader_stands_right_behind_its_shield_bearer_not_the_middle_of_its
     assert!(mean < 0.2, "behind its shield-bearer, a mean {:.0} degrees round from it", mean.to_degrees());
     assert!(room.distance(10, PLAYER) > room.distance(11, PLAYER) + 1.0, "and farther out");
     assert!(room.swings(10).is_empty(), "screened, it strikes nothing");
+}
+
+#[test]
+fn a_foe_winding_up_as_its_group_falls_back_finishes_its_blow_then_falls_back() {
+    let mut room = Room::new(2).player(PLAYER, 0.0, 0.0, 0.0).foe(10, ENFORCER, Elite, 0.0, -3.0, PI);
+    brain_mut(&mut room, 10).posted_at([0.0, -3.0, 0.0], PI);
+    room = room.alert(10, PLAYER);
+    // Until its first telegraphed blow is under way.
+    for _ in 0..1800 {
+        room.step(&mut still(0.0));
+        if matches!(room.fighter(10).action, combat::fighter::Action::Telegraph(_)) {
+            break;
+        }
+    }
+    assert!(matches!(room.fighter(10).action, combat::fighter::Action::Telegraph(_)), "a wind-up under way");
+    let new_place = [0.0, -20.0, 0.0];
+    brain_mut(&mut room, 10).keep_to(new_place, PI, false);
+    brain_mut(&mut room, 10).fall_back();
+    let reached = (0..600).any(|_| {
+        room.step(&mut still(0.0));
+        let body = room.fighter(10).body;
+        combat::sight::apart([body.x, body.y], [new_place[0], new_place[1]]) <= FALLEN_BACK
+    });
+    assert!(reached, "its blow done, it fell back all the same");
+}
+
+#[test]
+fn a_foe_broken_out_of_its_range_neither_closes_on_nor_hunts_its_target() {
+    let mut room = facing_off(COLLECTOR, 3.0, 5);
+    // Its target walks off past its range; broken, it does not follow.
+    room.set(PLAYER, |fighter| fighter.body.y = 20.0);
+    let broke = room.tick;
+    brain_mut(&mut room, 10).breaks(broke, false);
+    let far = room.distance(10, PLAYER);
+    room.run(break_ticks() - 30, &mut still(0.0));
+    assert!(
+        room.distance(10, PLAYER) >= far - 0.5,
+        "it closed in while broken: {:.1} m of {far:.1}",
+        room.distance(10, PLAYER)
+    );
 }

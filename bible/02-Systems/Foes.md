@@ -164,14 +164,15 @@ phases) is [[Enemies]].
     fire behind its post's cover, and any foe runs behind the nearest firing spot within 11 m that hides it from its
     target and stands no nearer it, and holds it facing its target, its guard up if it bears a shield. In the open, a
     skirmisher runs from its target as a coward does, a shooter steps back facing its target, and any other huddles
-    on the farther ring a foe backs off to, its guard up if it bears a shield.
+    on the farther ring a foe backs off to, its guard up if it bears a shield. Broken, it neither hunts its target out
+    of sight nor closes on one past its range, and takes no opening but the riposte or the counter it earned.
   - **Raging**, for the rest of its fight: it takes a turn at once, one over the turns' cap at most, never backs off
     or runs, never parries, blocks or dodges a blow nor holds up its guard, runs at its target, and after a blow only
     hops back before it waits again. The beat between blows holds it as it holds any foe. Its rage ends as its fight
     does: its awareness let go, or its leash given up.
-  - **Defending**, a fighter hand to hand fights only a target within 8 m of its place in its group, or one whose blow
-    struck it in the last 5 s; past that it gives its turn up, keeps to its place and faces its target, its guard up
-    if it bears a shield. A shooter hides twice as long between its looks out.
+- **Defending**, a fighter hand to hand fights only a target within 8 m of its place in its group, or a target whose
+    blow struck it in the last 5 s; past that it gives its turn up, keeps to its place and faces its target, its guard
+    up if it bears a shield. A shooter hides twice as long between its looks out.
   - **Falling back**, as its group's places move to where it gives ground, a foe fighting gives its turn up and runs
     there by the room's routes, its target and its awareness kept, striking nothing on the way (a wind-up of its own
     it finishes first), and fights again once within 1 m of its place.

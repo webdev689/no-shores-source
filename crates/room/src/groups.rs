@@ -4,18 +4,20 @@
 //! garrison is one encounter that gives ground as it falls, Halo's territory, fallback and last stand: more than
 //! three quarters of it standing, each group holds its own post; more than half, each falls back halfway to the post
 //! farthest from the spawns; less, all gather there to defend it, and the fall of the highest rank there breaks them.
-//! A mission's reserve comes in a wave as it falls back and another as it makes its last stand.
+//! A mission's reserve comes in a wave as it falls back and another as it makes its last stand, hunting the players.
 
-use super::{PATROL, Post, SPAWN_CLEAR, SPREAD, draws_of, gird_of, ground_middle, index, open_points};
+use super::{PATROL, POSTS_APART, Post, SPAWN_CLEAR, SPREAD, draws_of, gird_of, ground_middle, index, open_points};
 use crate::Room;
 use ::foes::roles::Role;
-use ::foes::{Alertness, Mood, Orders, Rank, Seen, faction, foe_type, notice};
+use ::foes::tuning::{DEFEND, ENGAGE_RANGE};
+use ::foes::{Alertness, Mood, Orders, Rank, faction, foe_type};
 use combat::arms::OffHand;
 use combat::fighter::FighterId;
-use combat::sight::{apart, bearing};
+use combat::sight::apart;
 use core::f64::consts::TAU;
 use movement::Terrain;
 use reach::{Section, inside};
+use std::collections::BTreeMap;
 
 /// The waves are drawn from a stream of their own, apart from the garrison's and the beats'.
 const WAVE_STREAM: u64 = 0x7761_7665;
@@ -29,8 +31,9 @@ pub(crate) enum Stage {
 }
 
 /// A mission's or a dungeon's garrison as one encounter: how far it has given ground, the post its last stand
-/// gathers at, the last stand's leader and whether its fall broke it, whether waves come (a mission's), how many have
-/// come since it last held its territory, and the island's band of levels they stand at.
+/// gathers at, the last stand's leader and whether its fall broke it, whether waves come (a mission's) and how many
+/// have come since it last held its territory, how many ever have (each drawn apart), and the island's band of levels
+/// they stand at.
 #[derive(Debug)]
 pub(crate) struct Encounter {
     pub stage: Stage,
@@ -38,6 +41,7 @@ pub(crate) struct Encounter {
     pub leader: Option<FighterId>,
     pub broken: bool,
     pub waves: Option<u8>,
+    pub called: u32,
     pub levels: Option<(u8, u8)>,
 }
 
@@ -77,6 +81,12 @@ impl Room {
         self.garrison[post].standing.iter().filter(alive).copied().collect()
     }
 
+    /// The garrison's own living foes, its waves left out: all gathered at its last stand once it makes it.
+    fn gathered(&self) -> Vec<FighterId> {
+        let own = (0..self.garrison.len()).filter(|post| !self.garrison[*post].arrival);
+        own.flat_map(|post| self.living(post)).collect()
+    }
+
     fn alive(&self, id: FighterId) -> bool {
         self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead())
     }
@@ -107,6 +117,7 @@ impl Room {
             leader: None,
             broken: false,
             waves: mission.then_some(0),
+            called: 0,
             levels,
         })
     }
@@ -138,8 +149,11 @@ impl Room {
         for post in 0..self.garrison.len() {
             self.break_on_fall(post);
             self.defend_at_half(post);
+        }
+        let gathering = self.gathering(stage);
+        for post in 0..self.garrison.len() {
             let anchor = self.anchor_of(post, stage);
-            self.keep_anchor(post, anchor, stage);
+            self.keep_anchor(post, anchor, stage, &gathering);
             self.give_orders(post, stage);
         }
         self.break_last_stand(stage);
@@ -147,7 +161,8 @@ impl Room {
 
     /// The encounter's stage by the share of its garrison standing (its waves not counted): more than three quarters,
     /// its territory; more than half, its fallback; else its last stand. Giving ground, a mission calls a wave; its
-    /// last stand begun, the highest rank standing leads it; holding its territory again, all of that begins anew.
+    /// last stand begun, or begun again by groups standing again, the highest rank standing there leads it; holding its
+    /// territory again, all of that begins anew, its waves once none of the last stands.
     fn give_ground(&mut self) -> Option<Stage> {
         let encounter = self.encounter.as_ref()?;
         let was = encounter.stage;
@@ -163,17 +178,21 @@ impl Room {
         } else {
             Stage::LastStand
         };
-        if stage == was {
+        let leaderless = encounter.leader.is_none() && !encounter.broken;
+        if stage == was && !(stage == Stage::LastStand && leaderless) {
             return Some(stage);
         }
-        let everyone: Vec<FighterId> = (0..self.garrison.len()).flat_map(|post| self.living(post)).collect();
+        let everyone = self.gathered();
         let leader = (stage == Stage::LastStand).then(|| leader_of(self, &everyone)).flatten();
+        let waves_stand = self.garrison.iter().any(|post| post.arrival);
         let encounter = self.encounter.as_mut()?;
         encounter.stage = stage;
         match stage {
             Stage::Territory => {
                 (encounter.leader, encounter.broken) = (None, false);
-                encounter.waves = encounter.waves.map(|_| 0);
+                if !waves_stand {
+                    encounter.waves = encounter.waves.map(|_| 0);
+                }
             }
             Stage::LastStand => (encounter.leader, encounter.broken) = (leader, false),
             Stage::Fallback => {}
@@ -184,8 +203,8 @@ impl Room {
             && let Some(came) = waves
             && came < stage as u8
         {
-            for wave in came..stage as u8 {
-                self.arrive(wave);
+            for _ in came..stage as u8 {
+                self.arrive();
             }
             if let Some(encounter) = self.encounter.as_mut() {
                 encounter.waves = Some(stage as u8);
@@ -205,7 +224,23 @@ impl Room {
         self.break_foes(&followers);
     }
 
-    /// The last stand's leader fallen, every foe of the garrison standing breaks, once.
+    /// A group standing again at the last stand takes the last stand's leader afresh, as the next tick picks one.
+    pub(crate) fn renew_last_stand(&mut self) {
+        if let Some(encounter) = self.encounter.as_mut()
+            && encounter.stage == Stage::LastStand
+        {
+            (encounter.leader, encounter.broken) = (None, false);
+        }
+    }
+
+    /// No wave comes for the encounter until its garrison holds its territory again.
+    pub(crate) fn no_waves(&mut self) {
+        if let Some(encounter) = self.encounter.as_mut() {
+            encounter.waves = encounter.waves.map(|_| Stage::LastStand as u8);
+        }
+    }
+
+    /// The last stand's leader fallen, every foe of the garrison standing there breaks, once.
     fn break_last_stand(&mut self, stage: Option<Stage>) {
         let Some(encounter) = self.encounter.as_ref() else { return };
         if stage != Some(Stage::LastStand) || encounter.broken || encounter.leader.is_none_or(|id| self.alive(id)) {
@@ -214,7 +249,7 @@ impl Room {
         if let Some(encounter) = self.encounter.as_mut() {
             encounter.broken = true;
         }
-        let everyone: Vec<FighterId> = (0..self.garrison.len()).flat_map(|post| self.living(post)).collect();
+        let everyone = self.gathered();
         self.break_foes(&everyone);
     }
 
@@ -238,11 +273,12 @@ impl Room {
     }
 
     fn rager_of(&self, ids: &[FighterId]) -> Option<FighterId> {
+        // Only a foe that fights may rage: a rage lasts as long as its fight.
         let candidates = ids.iter().filter_map(|id| {
             let foe = self.foes.get(id)?;
             let order = rage_order(foe.brain.role())?;
             let body = foe.fighter.body;
-            let target = foe.brain.fights().and_then(|target| self.fighter(target));
+            let target = Some(foe.brain.fights()?).and_then(|target| self.fighter(target));
             let near = target.map_or(f64::INFINITY, |other| apart([body.x, body.y], [other.body.x, other.body.y]));
             Some((order, near, *id))
         });
@@ -261,7 +297,7 @@ impl Room {
     }
 
     /// Where a group's places are gathered: round its post once it defends, at its fallback as the encounter falls back,
-    /// at the last stand's post for its last stand; else its post and its beat as ever. A wave keeps its own.
+    /// at the last stand's post for its last stand; else its post and its beat as ever. A wave holds where it came.
     fn anchor_of(&self, post: usize, stage: Option<Stage>) -> Option<[f64; 3]> {
         let found = &self.garrison[post];
         let encounter = self.encounter.as_ref();
@@ -273,15 +309,24 @@ impl Room {
         }
     }
 
-    /// Gives a group's foes their places round its anchor, each tick, and those fighting fall back to them as it moves;
-    /// with none, a group holding its post goes back to its places there, and one on a beat walks it again.
-    fn keep_anchor(&mut self, post: usize, anchor: Option<[f64; 3]>, stage: Option<Stage>) {
+    /// Gives a group's foes their places round its anchor, each tick, and those fighting fall back to them as it moves:
+    /// at the last stand, its own places there or its place in the `gathering`. With none, a group holding its post
+    /// goes back to its places there, and one on a beat walks it again.
+    fn keep_anchor(
+        &mut self,
+        post: usize,
+        anchor: Option<[f64; 3]>,
+        stage: Option<Stage>,
+        gathering: &BTreeMap<FighterId, ([f64; 3], f64)>,
+    ) {
         let was = core::mem::replace(&mut self.garrison[post].anchor, anchor);
         let living = self.living(post);
         let places = match anchor {
-            Some(point) if point != self.garrison[post].at || stage == Some(Stage::LastStand) => {
-                self.round(post, point, living.len(), stage)
+            Some(_) if stage == Some(Stage::LastStand) && !self.garrison[post].arrival => {
+                let stood = self.stood_places(post, &living);
+                living.iter().zip(stood).map(|(id, own)| gathering.get(id).copied().unwrap_or(own)).collect()
             }
+            Some(point) if point != self.garrison[post].at => self.round_at(point, living.len(), SPREAD, 0.0),
             Some(_) => self.stood_places(post, &living),
             None if was.is_some() && self.garrison[post].beat.is_none() => self.stood_places(post, &living),
             None => return,
@@ -306,17 +351,18 @@ impl Room {
         living.iter().map(|id| place(id).unwrap_or((found.at, 0.0))).collect()
     }
 
-    /// `count` places round a point, facing out from it: SPREAD round a fallback; at the last stand, the last stand's
-    /// own group at its places there and every other gathered twice as far out.
-    fn round(&self, post: usize, point: [f64; 3], count: usize, stage: Option<Stage>) -> Vec<([f64; 3], f64)> {
-        if stage == Some(Stage::LastStand) && self.garrison[post].at == point {
-            let living = self.living(post);
-            return self.stood_places(post, &living);
+    /// The places at the last stand of every gathered foe not of the last stand's own group, which keeps its own: one
+    /// ring twice SPREAD round it, a place each, in the order the groups and their foes stood.
+    fn gathering(&self, stage: Option<Stage>) -> BTreeMap<FighterId, ([f64; 3], f64)> {
+        let Some(last) = self.encounter.as_ref().map(|encounter| encounter.last_stand) else { return BTreeMap::new() };
+        if stage != Some(Stage::LastStand) {
+            return BTreeMap::new();
         }
-        let out = if stage == Some(Stage::LastStand) { 2.0 * SPREAD } else { SPREAD };
-        // Each group starts its ring at its own turn, so two gathered at one place do not stand on each other.
-        let start = TAU * post as f64 / self.garrison.len().max(1) as f64 / count.max(1) as f64;
-        self.round_at(point, count, out, start)
+        let come =
+            (0..self.garrison.len()).filter(|post| !self.garrison[*post].arrival && self.garrison[*post].at != last);
+        let ids: Vec<FighterId> = come.flat_map(|post| self.living(post)).collect();
+        let places = self.round_at(last, ids.len(), 2.0 * SPREAD, 0.0);
+        ids.into_iter().zip(places).collect()
     }
 
     /// What each foe of a group is asked: to defend its ground while its group does or makes its last stand (not a
@@ -341,8 +387,20 @@ impl Room {
             below(brain.foe_type.number, brain.rank) && brain.mood(tick) != Mood::Broken
         };
         let screen: Vec<FighterId> = living.iter().filter(screens).copied().collect();
-        let at_target: Vec<FighterId> =
-            screen.iter().copied().filter(|id| self.foes[id].brain.fights() == fights).collect();
+        // A follower screens it only while it fights there: at its target within its range, neither falling back nor
+        // holding ground away from it.
+        let target = fights.and_then(|target| self.fighter(target)).map(|target| [target.body.x, target.body.y]);
+        let engaged = |id: &FighterId| {
+            let foe = &self.foes[id];
+            let body = [foe.fighter.body.x, foe.fighter.body.y];
+            let held = foe.brain.orders().defend
+                && foe.brain.home().zip(target).is_some_and(|(home, at)| apart([home.at[0], home.at[1]], at) > DEFEND);
+            foe.brain.fights() == fights
+                && target.is_some_and(|at| apart(body, at) <= ENGAGE_RANGE)
+                && !foe.brain.falling_back()
+                && !held
+        };
+        let at_target: Vec<FighterId> = screen.iter().copied().filter(engaged).collect();
         let screened = fronted && fights.is_some() && !at_target.is_empty();
         let shields = at_target.iter().filter(|id| self.foes[*id].fighter.arms.off_hand == OffHand::Shield);
         let behind = leader.filter(|_| screened).and_then(|leader| {
@@ -369,35 +427,41 @@ impl Room {
         }
     }
 
-    /// A mission's wave: a band drawn as its bands are, standing at the open post farthest from every player and at
-    /// least SPAWN_CLEAR from each, alert toward the nearest player, its places at the last stand; none while the
-    /// room's living foes leave it no room, or no post is that far from every player.
-    fn arrive(&mut self, wave: u8) {
+    /// A mission's wave: a band drawn as its bands are, apart from every other wave, standing at the open point of the
+    /// post lattice nearest the players that is at least SPAWN_CLEAR from each of them and POSTS_APART from every wave
+    /// standing, holding there, and hunting the nearest player; none while the room's living foes leave it no room, or
+    /// no point is that far from every player.
+    fn arrive(&mut self) {
         let (Some(section), Some(encounter)) = (self.section.clone(), self.encounter.as_ref()) else { return };
-        let (last_stand, levels) = (encounter.last_stand, encounter.levels);
-        let mut draws = draws_of(self.world_seed ^ WAVE_STREAM ^ u64::from(wave));
+        let (called, levels) = (encounter.called, encounter.levels);
+        let mut draws = draws_of(self.world_seed ^ WAVE_STREAM ^ u64::from(called));
         let size = 2 + index(&mut draws, 3);
         let members: Vec<(u8, Rank)> = (0..size).map(|_| PATROL[index(&mut draws, PATROL.len())]).collect();
         if self.living_foes() + members.len() > self.foes_most {
             return;
         }
-        let players: Vec<[f64; 2]> =
-            self.players.values().map(|player| [player.fighter.body.x, player.fighter.body.y]).collect();
-        let nearest =
-            |point: [f64; 2]| players.iter().map(|player| apart(point, *player)).fold(f64::INFINITY, f64::min);
+        let players: Vec<combat::Fighter> = self.players.values().map(|player| player.fighter).collect();
+        let nearest = |point: [f64; 2]| {
+            let apart_from = |fighter: &combat::Fighter| apart(point, [fighter.body.x, fighter.body.y]);
+            players.iter().map(apart_from).fold(f64::INFINITY, f64::min)
+        };
+        let waves: Vec<[f64; 3]> = self.garrison.iter().filter(|post| post.arrival).map(|post| post.at).collect();
+        let clear = |point: &[f64; 2]| {
+            nearest(*point) >= SPAWN_CLEAR && waves.iter().all(|at| apart(*point, [at[0], at[1]]) >= POSTS_APART)
+        };
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         let open = open_points(&section, ground_middle(&section, first));
-        let far = open.into_iter().map(|(x, y)| [x, y]).filter(|point| nearest(*point) >= SPAWN_CLEAR);
-        let Some(from) = far.max_by(|one, two| nearest(*one).total_cmp(&nearest(*two))) else { return };
+        let near = open.into_iter().map(|(x, y)| [x, y]).filter(clear);
+        let Some(from) = near.min_by(|one, two| nearest(*one).total_cmp(&nearest(*two))) else { return };
         let Some(at) = self.nav.nearest_point([from[0], from[1], self.floor.height_at(from[0], from[1])]) else {
             return;
         };
-        let toward = self.players.values().map(|player| player.fighter).min_by(|one, two| {
+        let hunted = self.players.iter().map(|(id, player)| (*id, player.fighter)).min_by(|one, two| {
             let distance = |fighter: &combat::Fighter| apart([at[0], at[1]], [fighter.body.x, fighter.body.y]);
-            distance(one).total_cmp(&distance(two))
+            distance(&one.1).total_cmp(&distance(&two.1)).then(one.0.cmp(&two.0))
         });
         let mut post = Post {
-            at: last_stand,
+            at,
             members: Vec::new(),
             girds: Vec::new(),
             beat: None,
@@ -406,35 +470,33 @@ impl Room {
             leader: None,
             broken: false,
             defending: false,
-            fallback: last_stand,
+            fallback: at,
             anchor: None,
             arrival: true,
         };
-        // Each wave starts its ring a radian on from the last's, so two waves' places do not fall together.
-        let homes = self.round_at(last_stand, members.len(), 2.0 * SPREAD, f64::from(wave));
-        let stands = self.round_at(at, members.len(), SPREAD, 0.0);
-        for (nth, (&(number, rank), ((home, facing), (place, _)))) in
-            members.iter().zip(homes.into_iter().zip(stands)).enumerate()
+        for (nth, (&(number, rank), (place, facing))) in
+            members.iter().zip(self.round_at(at, members.len(), SPREAD, 0.0)).enumerate()
         {
             let Some(foe_type) = foe_type(number) else { continue };
-            let toward_last = bearing([place[0], place[1]], [last_stand[0], last_stand[1]]);
-            let id = self.stand_foe(foe_type, rank, place, toward_last, None);
-            let (level, shield) = gird_of(self.world_seed ^ WAVE_STREAM, u32::from(wave) * 16 + nth as u32, levels);
-            let level = self.at_seas(level);
-            self.gird(id, level, shield);
+            let id = self.stand_foe(foe_type, rank, place, facing, None);
+            let (level, shield) = gird_of(self.world_seed ^ WAVE_STREAM, called * 16 + nth as u32, levels);
+            self.gird(id, self.at_seas(level), shield);
+            let clock = self.clock;
             if let Some(foe) = self.foes.get_mut(&id) {
-                foe.brain.posted_at(home, facing);
-                if let Some(player) = toward {
-                    let seen = Seen::Shouted { from: place, at: [player.body.x, player.body.y, player.body.z] };
-                    notice(&mut foe.brain, id, &seen, self.clock);
+                foe.brain.posted_at(place, facing);
+                if let Some((player, fighter)) = hunted {
+                    foe.brain.hunt(player, [fighter.body.x, fighter.body.y, fighter.body.z], clock);
                 }
             }
-            post.members.push((number, rank, home, facing));
+            post.members.push((number, rank, place, facing));
             post.girds.push((level, shield));
             post.standing.push(id);
         }
         post.leader = leader_of(self, &post.standing);
         self.garrison.push(post);
+        if let Some(encounter) = self.encounter.as_mut() {
+            encounter.called += 1;
+        }
     }
 
     /// `count` places `out` round a point, facing out from it, the first at `start` (radians, a turn's share).

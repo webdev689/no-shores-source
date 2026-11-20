@@ -129,13 +129,13 @@ pub struct Brain {
     /// A garrison foe's place at its post, and why it walks back there, if it does.
     pub(crate) home: Option<Home>,
     pub(crate) returning: Option<Homeward>,
-    /// What its group asks of it; until when it is broken, the cover it falls back behind, and whether it rages; when
-    /// a blow last struck it.
+    /// What its group asks of it; until when it is broken, the cover it falls back behind, and whether it rages; who
+    /// last struck it, and when.
     pub(crate) orders: Orders,
     pub(crate) broken_until: u64,
     pub(crate) cover: Option<[f64; 3]>,
     pub(crate) raging: bool,
-    pub(crate) struck_at: Option<u64>,
+    pub(crate) struck_at: Option<(FighterId, u64)>,
 }
 
 impl Brain {
@@ -199,6 +199,20 @@ impl Brain {
     #[must_use]
     pub fn returning(&self) -> bool {
         matches!(self.returning, Some(Homeward::Leashed | Homeward::Searched))
+    }
+
+    /// Called to a fight, it hunts `target` where it last stood, `at`, as though it had just seen it there: alert, it
+    /// runs there, and takes it on once it sees it.
+    pub fn hunt(&mut self, target: FighterId, at: [f64; 3], tick: u64) {
+        (self.target, self.last_seen) = (Some(target), Some(at));
+        (self.seen_at, self.taken_at) = (tick, tick);
+        (self.awareness.level, self.awareness.alert) = (1.0, true);
+    }
+
+    /// Whether it falls back with its group, running to its new place.
+    #[must_use]
+    pub fn falling_back(&self) -> bool {
+        self.returning == Some(Homeward::Falling)
     }
 
     /// Its group gives ground: fighting, it runs to its new place and fights from there.
@@ -313,7 +327,7 @@ pub fn notice(brain: &mut Brain, me: FighterId, seen: &Seen, tick: u64) {
         Seen::Loosed { by, speed } if by != me && alert => brain.reactions.saw_shot(by, speed, tick),
         Seen::Struck { by, .. } => {
             brain.awareness.level = 1.0;
-            brain.struck_at = Some(tick);
+            brain.struck_at = Some((by, tick));
             // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place;
             // fighting another, it weighs turning on it as it next thinks.
             if brain.target.is_none() {

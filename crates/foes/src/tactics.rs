@@ -7,7 +7,7 @@
 //! first, then takes the openings it is given, as its group asks: broken, raging, defending or screened.
 
 use crate::board::Board;
-use crate::brain::{Brain, Plan};
+use crate::brain::{Brain, Homeward, Plan};
 use crate::cover::{cover_from, hide_at, leave_post, unseen};
 use crate::dice::Purpose;
 use crate::flank::{drift, in_place, ring_of};
@@ -50,8 +50,8 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     let (before, was_alert) = (brain.target, brain.awareness.alert);
     let sight = sense(brain, here, board);
     let sight = share(brain, here, board, sight);
-    if sight.is_some() {
-        // Something to fight: any walk home is over.
+    if sight.is_some() && brain.returning != Some(Homeward::Falling) {
+        // Something to fight: any walk home is over; a fall back goes on once a wind-up of its own is done.
         brain.returning = None;
     }
     if brain.target != before {
@@ -110,6 +110,12 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     if let Some(ask) = hold_ground(brain, here, board, &sight) {
         return ask;
     }
+    if here.tick() < brain.broken_until && (!sight.seen || sight.distance > here.range()) {
+        // Broken, it neither hunts its target nor closes on it.
+        board.forget(me);
+        let guard = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
+        return Ask::facing(sight.toward).guarded(guard);
+    }
     // A shooter out of sight behind its own post's cover hid there on purpose: it keeps to its post.
     if !sight.seen
         && let Some(ask) = unseen(brain, here, board, &sight)
@@ -144,6 +150,8 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     // A riposte or a counter it earned it strikes at once; a spent target it punishes in its own beat.
     let earned = here.fighter.riposte.is_some() || here.fighter.counter > 0;
     let opened = opening(here, Some((sight.id, sight.seen)), engaged);
+    // Broken, it takes no opening but the riposte or the counter it earned.
+    let opened = opened.filter(|_| earned || here.tick() >= brain.broken_until);
     let opened = opened.filter(|_| earned || pace::may(here, board, sight.id, pace::swing_lands(here)));
     if let Some((whom, combat)) = opened {
         let toward = here.find(whom).map_or(sight.toward, |other| bearing(here.at(), [other.body.x, other.body.y]));
@@ -241,13 +249,13 @@ fn broken(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     brain.cover = cover_from(here, board, sight);
 }
 
-/// Its group defending its ground, a fighter hand to hand fights only a target within DEFEND of its place, or one
+/// Its group defending its ground, a fighter hand to hand fights only a target within DEFEND of its place, or a target
 /// whose blow struck it in the last SHARE_HOLD: past that it gives its turn up, keeps to its place and faces its
 /// target, its guard up if it bears a shield.
 fn hold_ground(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Option<Ask> {
     let home = brain.home.filter(|_| brain.orders.defend && !here.numbers.shooter && !brain.raging)?;
     let tick = here.tick();
-    let struck = brain.struck_at.is_some_and(|at| tick < at + Here::ticks(SHARE_HOLD));
+    let struck = brain.struck_at.is_some_and(|(by, at)| by == sight.id && tick < at + Here::ticks(SHARE_HOLD));
     if struck || apart([home.at[0], home.at[1]], [sight.spot[0], sight.spot[1]]) <= DEFEND {
         return None;
     }

@@ -238,8 +238,9 @@ fn a_dungeon_falls_back_halfway_to_its_last_stand_then_gathers_there_led_by_its_
 fn a_mission_calls_a_wave_as_it_falls_back_and_another_for_its_last_stand_and_a_fallen_wave_is_gone() {
     let mut room = node(NodeKind::Mission, "keep");
     let player = room.join().unwrap();
-    stand_player(&mut room, player, [-30.0, 110.0]);
-    let last = room.encounter.as_ref().unwrap().last_stand;
+    // On the room's navmesh, at the middle of its square, and past the grace a player who has just stood has.
+    stand_player(&mut room, player, [0.0, 160.0]);
+    run(&mut room, 200);
     let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
     let order: Vec<FighterId> = room.garrison.iter().rev().flat_map(|post| post.standing.clone()).collect();
     let waves = |room: &Room| room.garrison.iter().filter(|post| post.arrival).count();
@@ -248,32 +249,101 @@ fn a_mission_calls_a_wave_as_it_falls_back_and_another_for_its_last_stand_and_a_
         kill(&mut room, order[fallen]);
         fallen += 1;
     }
-    // It stands as the garrison steps, and hears its call as it next thinks.
-    run(&mut room, 2);
+    run(&mut room, 1);
     assert_eq!(waves(&room), 1, "a wave as it falls back");
     let wave = room.garrison.iter().find(|post| post.arrival).unwrap();
     assert!((2..=4).contains(&wave.standing.len()));
     let body = room.players[&player].fighter.body;
+    assert!(apart([wave.at[0], wave.at[1]], [body.x, body.y]) >= super::SPAWN_CLEAR, "standing well off the player");
     for id in &wave.standing {
         let foe = &room.foes[id];
-        let feet = [foe.fighter.body.x, foe.fighter.body.y];
-        assert!(apart(feet, [body.x, body.y]) >= super::SPAWN_CLEAR - 0.5, "standing well off the player");
-        assert_ne!(foe.brain.alertness(), ::foes::Alertness::Idle, "and coming for them");
+        assert_eq!(foe.brain.fights(), Some(player), "and hunting them");
         let home = foe.brain.home().unwrap().at;
-        assert!(apart([home[0], home[1]], [last[0], last[1]]) <= 2.0 * SPREAD + 0.5, "its place at the last stand");
+        assert!(apart([home[0], home[1]], [wave.at[0], wave.at[1]]) <= SPREAD + 0.5, "holding where it came");
     }
+    // It comes for the player and fights.
+    let first: Vec<FighterId> = wave.standing.clone();
+    let mut reached = false;
+    for _ in 0..600 {
+        whole(&mut room, player);
+        run(&mut room, 1);
+        let body = room.players[&player].fighter.body;
+        reached |= first.iter().any(|id| {
+            let foe = &room.foes[id].fighter.body;
+            apart([foe.x, foe.y], [body.x, body.y]) <= 6.0
+        });
+    }
+    assert!(reached, "a wave reaches the player it hunts");
     while (stood - fallen) * 2 > stood {
         kill(&mut room, order[fallen]);
         fallen += 1;
     }
     run(&mut room, 1);
     assert_eq!(waves(&room), 2, "and another for its last stand");
-    let first: Vec<FighterId> = room.garrison.iter().find(|post| post.arrival).unwrap().standing.clone();
+    let second = room.garrison.iter().filter(|post| post.arrival).nth(1).unwrap();
+    let apart_waves = apart(
+        [second.at[0], second.at[1]],
+        [
+            room.garrison.iter().find(|post| post.arrival).unwrap().at[0],
+            room.garrison.iter().find(|post| post.arrival).unwrap().at[1],
+        ],
+    );
+    assert!(apart_waves >= super::POSTS_APART, "the second well apart from the first");
     for id in first {
         kill(&mut room, id);
     }
     run(&mut room, 1);
     assert_eq!(waves(&room), 1, "a fallen wave is gone, never to stand again");
+}
+
+#[test]
+fn every_foe_gathered_at_the_last_stand_has_a_place_of_its_own() {
+    for (kind, id) in [(NodeKind::Dungeon, "glade"), (NodeKind::Mission, "keep"), (NodeKind::Mission, "ford")] {
+        let mut room = node(kind, id);
+        let player = room.join().unwrap();
+        stand_player(&mut room, player, [-190.0, -190.0]);
+        let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
+        let order: Vec<FighterId> = room.garrison.iter().rev().flat_map(|post| post.standing.clone()).collect();
+        let mut fallen = 0;
+        while (stood - fallen) * 2 > stood {
+            kill(&mut room, order[fallen]);
+            fallen += 1;
+        }
+        run(&mut room, 1);
+        let homes: Vec<[f64; 3]> = (0..room.garrison.len())
+            .flat_map(|post| living(&room, post))
+            .map(|id| room.foes[&id].brain.home().unwrap().at)
+            .collect();
+        for (at, one) in homes.iter().enumerate() {
+            for two in &homes[at + 1..] {
+                assert!(apart([one[0], one[1]], [two[0], two[1]]) >= 1.0, "{kind:?} {id}: two places on one spot");
+            }
+        }
+    }
+}
+
+#[test]
+fn a_last_stand_stood_again_takes_a_new_leader_and_a_garrison_sent_away_calls_no_wave() {
+    let mut room = node(NodeKind::Dungeon, "glade");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [-190.0, -190.0]);
+    for post in 0..room.garrison.len() {
+        super::garrison_tests::clear(&mut room, post);
+    }
+    run(&mut room, 1);
+    assert_eq!(room.encounter.as_ref().unwrap().leader, None, "no one stands to lead it");
+    // One group standing again, the garrison still under half: its last stand takes that group's leader.
+    room.stand_post(2);
+    run(&mut room, 1);
+    assert_eq!(room.encounter.as_ref().unwrap().stage, Stage::LastStand);
+    let leader = room.encounter.as_ref().unwrap().leader;
+    assert_eq!(leader, room.garrison[2].leader, "stood again, its last stand has a leader");
+    let mut mission = node(NodeKind::Mission, "keep");
+    let player = mission.join().unwrap();
+    stand_player(&mut mission, player, [-30.0, 110.0]);
+    mission.send_foes_away();
+    run(&mut mission, 2);
+    assert!(mission.garrison.iter().all(|post| !post.arrival), "sent away, not beaten: no wave");
 }
 
 #[test]
