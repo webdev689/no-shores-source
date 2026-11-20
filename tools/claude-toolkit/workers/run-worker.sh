@@ -16,7 +16,10 @@ cd "$WT"
 # Refuse a brief copied from brief-common-template.md whose <...> lines were never filled in (check-tools expects this).
 left=$(grep -oE '<(the hand-off doc|project rules:|the session.s attribution lines)[^>]*>' "$BRIEF" | head -3 | tr '\n' ' ')
 [ -z "$left" ] || { echo "run-worker.sh: brief $BRIEF still has: $left(fill in the template's <...> lines first)" >&2; exit 2; }
-INBOX="$OUT/inbox-$NAME.md"; [ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
+INBOX="$OUT/inbox-$NAME.md"
+# A fresh run starts an empty inbox: one left by an earlier worker of this name is kept aside, not handed on.
+[ "$MODE" != "--resume" ] && [ -f "$INBOX" ] && mv "$INBOX" "$OUT/inbox-$NAME.$(date +%Y%m%d%H%M%S).md"
+[ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
 echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT
 pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped worker can leave a stale lock
 [ -f .serena/project.yml ] || yes n | serena project create --name "$NAME" $(bash "$KIT_DIR/serena-languages.sh" "$WT") "$WT" >/dev/null 2>&1   # "n": extra-server prompts abort without a terminal
