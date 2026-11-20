@@ -56,10 +56,27 @@ CAVE=$(python3 -c "import re,os;print(re.sub(r'\A---.*?---\s*','',open(os.path.e
 NOTE="CAVEMAN MODE ACTIVE (worker only): your final reply goes to the controller Claude, never to a person. Keep code, comments, commits, docs, ledger and report files in normal prose.
 Your inbox is $INBOX: re-read it before each commit and before your final report, and act on anything new in it (the controller appends late owner changes there)."
 export TASK_OBSERVER_ROLE=worker WORKER_INBOX=$INBOX
-C=(); [ "$MODE" = "--resume" ] && C=(-c)
-claude "${C[@]}" -p "$(cat "$BRIEF")" --append-system-prompt "$CAVE
+TOOLS="Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*"
+REPLY="$OUT/$NAME.reply"
+# One run of the worker: its reply goes to the log, and alone to $REPLY for the finish check below.
+run() {
+  claude "$@" --append-system-prompt "$CAVE
 
-$NOTE" --strict-mcp-config --mcp-config "$CFG" \
-  --allowedTools "Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*" \
-  --max-turns 600 </dev/null >> "$OUT/$NAME.log" 2>&1
-echo "WORKER $NAME EXIT $?" >> "$OUT/$NAME.log"
+$NOTE" --strict-mcp-config --mcp-config "$CFG" --allowedTools "$TOOLS" --max-turns 600 </dev/null > "$REPLY" 2>&1
+  local rc=$?; cat "$REPLY" >> "$OUT/$NAME.log"; return $rc
+}
+# Finished: the reply carries the brief's INBOX and OBSERVATIONS lines, and nothing tracked is left uncommitted.
+finished() {
+  grep -q "INBOX:" "$REPLY" && grep -q "OBSERVATIONS:" "$REPLY" &&
+    [ -z "$(git -C "$WT" status --porcelain --untracked-files=no)" ]
+}
+C=(); [ "$MODE" = "--resume" ] && C=(-c)
+run "${C[@]}" -p "$(cat "$BRIEF")"; rc=$?
+# A run can end before its finish: a review skill's reply taken as the last, a reviewer left running in the
+# background. It is resumed once with the finish steps; still unfinished, the log says so.
+if [ $rc -eq 0 ] && ! finished; then
+  run -c -p "Your run ended before its finish. Wait for and read any reviewer sub-agent's findings and fix the real ones; run the full check in the background and watch it; commit; write your report file; then give your final reply, with its INBOX and OBSERVATIONS lines, as the last thing you write."
+  rc=$?
+  finished || echo "WORKER $NAME UNFINISHED" >> "$OUT/$NAME.log"
+fi
+echo "WORKER $NAME EXIT $rc" >> "$OUT/$NAME.log"
