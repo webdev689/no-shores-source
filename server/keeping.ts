@@ -17,8 +17,9 @@ export interface KeptRoom {
   restoreCharacter(player: number, kept: string): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
-  /** Why the room's gate shuts to a kept character, or to a new one (null); empty when it may enter. */
-  shut(kept: string | null): string;
+  /** Why the room's gate shuts to a player's kept character, or to a new one (null), with the story the player already
+   *  holds in the room carried forward; empty when it may enter. */
+  shut(player: number, kept: string | null): string;
 }
 
 /** How soon a change is saved, and how often a character is saved unchanged, to keep the room's hold. */
@@ -82,7 +83,7 @@ export class Keeper {
       claimed = await characters.claim(token, holder).catch(() => undefined);
     }
     if (!claimed) return false;
-    const shut = this.room.shut(claimed.body);
+    const shut = this.room.shut(player, claimed.body);
     if (shut !== '') {
       // Left as kept: the gate shuts here, so nothing of this room may be saved over it.
       await characters.release(claimed.account, holder, null).catch(() => false);

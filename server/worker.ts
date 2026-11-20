@@ -115,7 +115,7 @@ export class RoomHost extends DurableObject<Env> {
       restoreCharacter: (player: number, kept: string) =>
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
       own: (player: number, account: string) => this.guarded(() => this.room.own(player, account), false),
-      shut: (kept: string | null) => this.guarded(() => this.room.shut(kept), ''),
+      shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
     };
     const characters = {
       claim: (token: string, holder: string) => accounts.claim(token, holder),

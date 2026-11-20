@@ -142,8 +142,9 @@ One engine counts both, since the owner's side quests and the board's bounties a
 - **The rooms refuse a join a gate shuts**, and say why: no kept character passes a gate it has not opened. A player
   the accounts do not hand over plays unkept, as a new character, and keeps nothing. The gate is `gear::gate::shut`:
   a social space never shuts; a patrol and its dungeons need the prologue; then Elite seas need level 10 and Abyss
-  seas level 20, anywhere else. A room asks it before it gives a player their kept character, and a new one is judged
-  as it starts. The reasons read "This place opens after the prologue.", "Elite seas open at level 10." and "Abyss
+  seas level 20, anywhere else. A room asks it before it gives a player their kept character, with the story they
+  already hold in the room carried forward (`Story::merged`, which never goes back), and a new one is judged as it
+  starts. The reasons read "This place opens after the prologue.", "Elite seas open at level 10." and "Abyss
   seas open at level 20.". A sea island's dungeon is gated by its seas alone. The screen shows what is shut and what
   opens it.
 

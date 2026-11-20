@@ -401,13 +401,13 @@ test('a patrol’s dungeon opens from the patrol’s node file, and a patrol’s
 
 test('a node’s room says why its gate shuts to a character, and to a new one', () => {
   const room = startRoomDoor(compiled);
-  assert.equal(room.shut(null), '', 'no room open shuts nothing');
+  assert.equal(room.shut(0, null), '', 'no room open shuts nothing');
   assert.equal(room.openNode(nodeFile().text), true);
   assert.equal(room.difficulty(2), true);
-  assert.equal(room.shut(null), 'This place opens after the prologue.');
+  assert.equal(room.shut(0, null), 'This place opens after the prologue.');
   const player = room.join();
   const kept = JSON.parse(room.character(player) ?? '{}') as { story: { prologue: boolean } };
   kept.story.prologue = true;
-  assert.equal(room.shut(JSON.stringify(kept)), 'Abyss seas open at level 20.');
+  assert.equal(room.shut(player, JSON.stringify(kept)), 'Abyss seas open at level 20.');
   assert.equal(room.restoreCharacter(player, JSON.stringify(kept)), false, 'never given');
 });

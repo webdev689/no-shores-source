@@ -14,7 +14,7 @@ function roomOf(gate: (kept: string | null) => string = () => ''): KeptRoom & { 
     character: (player) => held.get(player) ?? null,
     restoreCharacter: (player, kept) => kept.startsWith('{') && held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
-    shut: gate,
+    shut: (_player, kept) => gate(kept),
   };
 }
 

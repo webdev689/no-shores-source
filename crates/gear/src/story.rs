@@ -19,6 +19,12 @@ impl Story {
     pub fn kept_before() -> Self {
         Self { prologue: true }
     }
+
+    /// Every step either story has taken: the story only moves forward, whichever side heard of a step first.
+    #[must_use]
+    pub fn merged(self, other: &Self) -> Self {
+        Self { prologue: self.prologue || other.prologue }
+    }
 }
 
 impl Character {

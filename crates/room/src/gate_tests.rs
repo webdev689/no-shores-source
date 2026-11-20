@@ -35,3 +35,23 @@ fn the_seas_shut_a_node_below_their_level_and_a_social_space_and_a_course_never_
     assert_eq!(social.shut(&gear::Character::starting()), None);
     assert_eq!(Room::new(Vec::new(), (0.0, 0.0)).shut(&gear::Character::starting()), None);
 }
+
+#[test]
+fn a_prologue_finished_in_the_room_before_the_claim_answers_is_kept_and_a_kept_story_never_goes_back() {
+    let (mut room, player) = node_of(NodeKind::Patrol, gear::Difficulty::Normal);
+    let ask = Some(Asked::Gear(gear::Ask::FinishPrologue));
+    room.input(player, Input { sequence: 1, ask, ..Input::default() }).expect("taken");
+    room.tick();
+    let claimed = gear::Character::starting();
+    assert_eq!(room.shut_to(player, &claimed), None, "the story it already holds here is carried forward");
+    assert!(room.restore_character(player, &claimed.to_json()));
+    assert!(room.players[&player].character.story.prologue, "and kept after the restore");
+
+    let (mut room, player) = node_of(NodeKind::Patrol, gear::Difficulty::Normal);
+    let mut ahead = gear::Character::starting();
+    ahead.story.prologue = true;
+    assert!(!room.players[&player].character.story.prologue);
+    assert_eq!(room.shut_to(player, &ahead), None);
+    assert!(room.restore_character(player, &ahead.to_json()));
+    assert!(room.players[&player].character.story.prologue, "a kept story ahead of the room's is never put back");
+}

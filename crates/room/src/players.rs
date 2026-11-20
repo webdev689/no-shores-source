@@ -295,10 +295,26 @@ impl Room {
         self.place.and_then(|place| gear::gate::shut(character, place, self.difficulty))
     }
 
+    /// Why the room's gate shuts to a player's kept character as it would be given them: with the story they already
+    /// hold in the room carried forward, since the page may tell the room before the accounts answer.
+    #[must_use]
+    pub fn shut_to(&self, player: PlayerId, character: &gear::Character) -> Option<gear::gate::Shut> {
+        self.shut(&self.carried_forward(player, character.clone()))
+    }
+
+    /// A kept character with the story its player already holds in the room carried forward, never put back.
+    fn carried_forward(&self, player: PlayerId, mut character: gear::Character) -> gear::Character {
+        if let Some(found) = self.players.get(&player) {
+            character.story = character.story.merged(&found.character.story);
+        }
+        character
+    }
+
     /// Gives a player the character kept for them, trimming their fight by it and sending them their gear; false if
-    /// they are not in the room, the text is not a character, or the room's gate shuts to it.
+    /// they are not in the room, the text is not a character, or the room's gate shuts to it (`shut_to`).
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let Some(character) = gear::Character::from_json(text) else { return false };
+        let character = self.carried_forward(player, character);
         if self.shut(&character).is_some() {
             return false;
         }
