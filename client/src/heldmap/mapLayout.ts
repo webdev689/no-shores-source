@@ -2,7 +2,7 @@
 // size that grows with the map, inside the part of the parchment the gauntlets leave clear, and never over another
 // word or mark. A word that finds no clear place is dropped, the least needed first. Nothing here draws.
 import { type Rect, stageOf } from './heldMapLaw.ts';
-import { type KeyPlace, keyPlace } from './mapKey.ts';
+import { keyCorners, type KeyPlace, keyPlace } from './mapKey.ts';
 
 /** The words' sizes at a 1280 x 720 screen, pixels: every word at least `WORD_PX`, a port's name a step larger. They
  *  grow with the map, `letterScale` times over, and every other length the lettering is drawn with grows with them. */
@@ -217,14 +217,20 @@ export function layOut(ask: LayoutAsk): Lettering {
   const size = { width: ask.key.width * scale, height: ask.key.height * scale };
   let key = keyPlace(ink, size, scale, taken, ask.land, ask.current);
   if (!key) {
-    // No corner clear: the key takes the first corner clear of land, the hands, the marks and the chosen place's and
-    // ports' names, else the first clear of all but land, and the waters', ruins' and nodes' names under it are
-    // dropped.
+    // No corner clear: the key takes a corner clear of the hands, the marks and the ports' and the chosen place's
+    // names, over no land where it can, dropping the fewest names under it, a water's counting as ten.
     const kept = boxes.filter((box, index) => box && (asked[index]?.chosen || rankOf(asked[index]?.kind ?? '') === 0));
     const yielding = [...ask.covers, ...marks, ...(kept as Rect[])];
-    key =
-      keyPlace(ink, size, scale, yielding, ask.land, ask.current) ??
-      keyPlace(ink, size, scale, yielding, () => false, ask.current);
+    const cost = (place: KeyPlace) =>
+      (ask.land(place.box) ? 1000 : 0) +
+      boxes.reduce(
+        (sum, box, index) => sum + (box && overlaps(box, place.box) ? (asked[index]?.kind === 'water' ? 10 : 1) : 0),
+        0,
+      );
+    const open = keyCorners(ink, size, scale, ask.current).filter(
+      (place) => !yielding.some((box) => overlaps(box, place.box)),
+    );
+    key = open.reduce<KeyPlace | null>((best, place) => (best && cost(best) <= cost(place) ? best : place), null);
     if (key) {
       const under = key.box;
       boxes.forEach((box, index) => {

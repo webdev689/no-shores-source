@@ -87,9 +87,21 @@ function cornerBox(
   return { x: left, y: top, width: size.width, height: size.height };
 }
 
-/** Where the key goes on a map `ink` wide and high, its panel `size` in ink pixels: the corner it stands in while
- *  that stays clear of land (`land`) and of every box `taken`, else the first clear corner, lower left first; null
- *  with none clear. So it moves only when it must, and never back and forth while the map stands still. */
+/** The key in each corner of a map `ink` wide and high, its panel `size` in ink pixels: the corner it stands in
+ *  (`current`) first, then lower left, lower right, upper left, upper right. */
+export function keyCorners(
+  ink: { readonly width: number; readonly height: number },
+  size: { readonly width: number; readonly height: number },
+  scale: number,
+  current: KeyPlace | null,
+): KeyPlace[] {
+  const order = current ? [current.corner, ...CORNERS.filter((corner) => corner !== current.corner)] : CORNERS;
+  return order.map((corner) => ({ corner, box: cornerBox(corner, ink, size, KEY.inset * scale) }));
+}
+
+/** Where the key goes (`keyCorners`): the corner it stands in while that stays clear of land (`land`) and of every box
+ *  `taken`, else the first clear corner; null with none clear. So it moves only when it must, and never back and
+ *  forth while the map stands still. */
 export function keyPlace(
   ink: { readonly width: number; readonly height: number },
   size: { readonly width: number; readonly height: number },
@@ -99,11 +111,7 @@ export function keyPlace(
   current: KeyPlace | null,
 ): KeyPlace | null {
   const clear = (box: Rect) => !taken.some((each) => overlaps(each, box)) && !land(box);
-  for (const corner of current ? [current.corner, ...CORNERS] : CORNERS) {
-    const box = cornerBox(corner, ink, size, KEY.inset * scale);
-    if (clear(box)) return { corner, box };
-  }
-  return null;
+  return keyCorners(ink, size, scale, current).find((place) => clear(place.box)) ?? null;
 }
 
 type KeyPainter = Measure & {

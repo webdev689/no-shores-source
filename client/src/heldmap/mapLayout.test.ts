@@ -110,3 +110,27 @@ test('with every corner over land the key still takes one clear of marks, hands 
   const lettering = layOut({ ...ASK, key: { width: 120, height: 80 }, land: () => true });
   assert.equal(lettering.key?.corner, 'lower-left');
 });
+
+test('with no corner clear the key takes the one dropping the fewest names, a water’s name weighing most', () => {
+  const lettering = layOut({
+    ...ASK,
+    ink: { width: 300, height: 200 },
+    key: { width: 120, height: 80 },
+    places: [{ text: 'Ruins', x: 150, y: 160, kind: 'ruin', chosen: false }],
+    waters: [
+      { text: 'Fen', x: 60, y: 160, colour: '#256327' },
+      { text: 'Gilt', x: 60, y: 40, colour: '#256327' },
+      { text: 'Cairn', x: 240, y: 40, colour: '#256327' },
+    ],
+  });
+  assert.equal(lettering.key?.corner, 'lower-right');
+  assert.deepEqual(
+    lettering.letters.map((letter) => [letter.text, letter.side]),
+    [
+      ['Ruins', null],
+      ['Fen', 'centre'],
+      ['Gilt', 'centre'],
+      ['Cairn', 'centre'],
+    ],
+  );
+});
