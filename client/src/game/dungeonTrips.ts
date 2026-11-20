@@ -114,20 +114,21 @@ export function dungeonTrips(
       const { node, seas } = from;
       const entrance = from.held.entrances.entrances[number];
       const outside = { node, text: from.text };
-      const away = toNode(node, seas, number, entrance);
       if (node.kind !== 'dungeon') {
         const ask = { patrol: node.id, name: node.name, number };
         const room = roomOf(dungeonRoom(node, seas, number), seas, false);
-        const work = into(outside, { number, ask }, seas, room, away, entrance);
+        const work = into(outside, { number, ask }, seas, room, toNode(node, seas, number, entrance), entrance);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon-${number}`, name }, work);
         return;
       }
-      // An Elite Dungeon's entrance opens the week's run where this is the week's, else the Elite Dungeon at Normal.
+      // An Elite Dungeon's entrance opens the week's run where this is the week's, else the Elite Dungeon at Normal;
+      // its way out is at the run's own seas, as a member's who came in by the Roster is, so the company stays as one.
       void game.module.then((module) => {
         const run = eliteRun(node.id, seas, activitiesAt(module, chance.minute()));
         const words = run.seas === 'normal' ? node.name : `${node.name}, the ${run.words}`;
         const ask = { place: node.id, name: node.name };
         const room = roomOf(nodeRoom(node, run.seas), run.seas, true);
+        const away = toNode(node, run.seas, number, entrance);
         const work = into(outside, { number, ask }, run.seas, room, away, entrance);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name: words }, work);
       });

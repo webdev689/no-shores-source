@@ -152,7 +152,7 @@ test('an Elite Dungeon is entered from its node as its run, the week’s where i
   ]);
   grotto.trips.leave();
   await grotto.settled();
-  assert.deepEqual(grotto.ways[1]?.slice(0, 4), ['onto', 'krakens-grotto', 0, 'abyss']);
+  assert.deepEqual(grotto.ways[1]?.slice(0, 4), ['onto', 'krakens-grotto', 0, 'normal'], 'at its run’s own seas');
   const warrens = recorded({ foot: standing(elite('saltworm-warrens', 'Saltworm Warrens'), 'abyss') });
   warrens.trips.enter(0, 'Saltworm Warrens');
   await warrens.settled();
@@ -244,4 +244,20 @@ test('a dungeon is shown with the entrance gone in by, so its exit door wears th
     await settled();
     assert.deepEqual(shown, [entrance], node.id);
   }
+});
+
+test('a company leaves an Elite Dungeon’s run together, at the run’s own seas, however each came in', async () => {
+  const grotto = elite('krakens-grotto', 'Kraken’s Grotto');
+  const entered = recorded({ foot: standing(grotto, 'elite') });
+  entered.trips.enter(0, 'Kraken’s Grotto');
+  await entered.settled();
+  entered.trips.leave();
+  const joined = recorded({ foot: null });
+  joined.trips.join(grotto, 'node-krakens-grotto--run-k3j4h5g6');
+  await joined.settled();
+  joined.trips.leave();
+  await Promise.all([entered.settled(), joined.settled()]);
+  const outTo = (ways: unknown[][]) => ways.find((way) => way[0] === 'onto')?.slice(1, 4);
+  assert.deepEqual(outTo(entered.ways), ['krakens-grotto', 0, 'normal']);
+  assert.deepEqual(outTo(joined.ways), outTo(entered.ways));
 });

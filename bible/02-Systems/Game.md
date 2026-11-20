@@ -175,8 +175,10 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   Abyss Dungeon's run where its node was reached at that tier and it is this week's (`eliteRun`, by what is on at the
   minute), the veil saying "Entering Saltworm Warrens, the Abyss Dungeon of the week"; otherwise the Elite Dungeon's
   run at Normal. Alone, the shared room opens in the page from the patrol's node file with `room_open_dungeon`, and
-  any other from its name with `room_open_run`. The player stands at its way in, facing into its room. A trip in or
-  out keeps the seas of the room the player stands in, so a company stays together at its seas. "Go to them" for a
+  any other from its name with `room_open_run`. The player stands at its way in, facing into its room. A trip in keeps
+  the seas of the room the player stands in, and every way out of a dungeon comes out at its room's own seas, so a
+  company stays together at its seas: an Elite Dungeon's run at Normal, gone into from Elite seas, comes out at
+  Normal, as a member who came in by the Roster does. "Go to them" for a
   member in a dungeon goes into the very room they are in, at their seas, the veil saying "Joining your company at"
   its name.
 - **A sea island's dungeon** is entered from its door in the sea's room by its room's name
