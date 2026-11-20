@@ -10,6 +10,7 @@ import {
   DOCK_REACH_M,
   easedNote,
   easedPace,
+  roomWords,
   followed,
   heldNote,
   HELM,
@@ -226,4 +227,11 @@ test('the page asks a pace again where the room sails her otherwise, but not whe
   assert.equal(paceToAskAgain(60, room(5), [{ x: 1_500, y: 0 }]), false, 'held by a hostile ship near');
   assert.equal(paceToAskAgain(1, room(5), [{ x: 1_500, y: 0 }]), true, 'faster than asked is never a hold');
   assert.equal(paceToAskAgain(60, room(40), [{ x: HOLD_REACH_M + 1, y: 0 }]), true, 'one past the hold’s reach');
+});
+
+test('the sea’s note speaks of its room only when the link is lost or being joined again, never of a player number', () => {
+  assert.equal(roomWords({ rejoining: false }, false), '');
+  assert.equal(roomWords({ rejoining: true }, false), ' · Reconnecting…');
+  assert.equal(roomWords(null, true), ' · The sea room was lost: sailing on alone');
+  assert.equal(roomWords(null, false), '');
 });

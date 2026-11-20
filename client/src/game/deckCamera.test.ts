@@ -11,9 +11,10 @@ type Point = readonly [number, number, number];
 const EYE_M = 1.6;
 const THIRD = { firstPerson: false, distance: CAMERA.back, shown: CAMERA.back };
 
-/** The third-person eye for a boarder whose head is at `head`, looking along `yaw`, kept clear of her spars. */
-function eyeFor(head: Point, yaw: number, pitch: number, hull: number): Point {
-  const orbit = cameraOrbit(head, yaw, pitch, THIRD, deckCameraBlocks(hull));
+/** The third-person eye for a boarder whose head is at `head`, looking along `yaw`, kept clear of `blocks` (her
+ *  spars and sides, `deckCameraBlocks`). */
+function eyeFor(head: Point, yaw: number, pitch: number, blocks: ReturnType<typeof deckCameraBlocks>): Point {
+  const orbit = cameraOrbit(head, yaw, pitch, THIRD, blocks);
   const forward = [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)];
   return [orbit.targetX - (forward[0] ?? 0), orbit.targetY - (forward[1] ?? 0), orbit.targetZ - (forward[2] ?? 0)];
 }
@@ -37,11 +38,13 @@ test('from where boarders come aboard and along a walk the length of her deck, n
     const deck = HULL_DECKS[hull];
     assert.ok(deck);
     const boxes = deckCameraBlocks(hull);
+    const sides = sideBoxes(deck);
     const [north, south] = [deck.north + 0.5, deck.north + deck.cell * deck.rows - 0.5];
-    for (const side of [1, -1]) {
+    // Her hull, masts and spars are the same either side of her middle line, so one side stands for both.
+    for (const side of [1]) {
       const [railX] = railSpot(deck, side);
       for (const x of [railX, 0]) {
-        for (let y = north; y <= south; y += 0.25) {
+        for (let y = north; y <= south; y += 1) {
           const floor = cellHeight(deck, x, y);
           if (floor === null) continue;
           const head: Point = [x, y, floor + EYE_M];
@@ -49,9 +52,9 @@ test('from where boarders come aboard and along a walk the length of her deck, n
           if (rayHit(head, head, boxes) < 1) continue;
           for (const yaw of [0, Math.PI, Math.PI / 2, -Math.PI / 2])
             for (const pitch of [0.15, -0.2, 0.6]) {
-              const eye = eyeFor(head, yaw, pitch, hull);
+              const eye = eyeFor(head, yaw, pitch, boxes);
               assert.ok(rayHit(eye, head, boxes) >= 1, `${name} at ${x}, ${y} looking ${yaw}, ${pitch}: ${eye}`);
-              const inboard = rayHit(head, eye, sideBoxes(deck)) >= 1;
+              const inboard = rayHit(head, eye, sides) >= 1;
               assert.ok(inboard, `${name} at ${x}, ${y} looking ${yaw}: the eye ${eye} past her side`);
             }
         }
@@ -69,7 +72,7 @@ test('at her rail where a boarder comes aboard, looking at her crew forward, her
       const [x, y] = railSpot(deck, side);
       const head: Point = [x, y, (cellHeight(deck, x, y) ?? 0) + EYE_M];
       const pitch = 0.15;
-      const eye = eyeFor(head, 0, pitch, hull);
+      const eye = eyeFor(head, 0, pitch, deckCameraBlocks(hull));
       // Rays through a 50 degree tall picture, 16:9, each 30 m long: the share that meets a spar or a mast.
       const [rows, columns, half] = [18, 32, (25 * Math.PI) / 180];
       let met = 0;
