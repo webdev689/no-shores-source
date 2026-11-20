@@ -1,5 +1,5 @@
 ---
-id: 5
+id: 52
 title: "Serena's replace_symbol_body drops a Rust symbol's doc comments and attributes, and rename_symbol failed"
 status: actioned
 type: open-source

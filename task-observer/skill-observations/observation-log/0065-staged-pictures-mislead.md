@@ -1,5 +1,5 @@
 ---
-id: 18
+id: 65
 title: "Staged pictures mislead when each staged input is set on its own, and the picture budget is overrun"
 status: open
 type: open-source
