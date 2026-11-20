@@ -150,7 +150,9 @@ const tenth = (value: number) => Math.round(value * 10) / 10;
 test('at its first level the screen shows what the room does: the same shares, lives, buffs and healing', async () => {
   const room = await measured();
   assert.equal(tenth(powerAt(1)), tenth(room.power), 'the share of harm and healing');
-  const spells = arts.arts.flatMap((each) => [each.anima, ...each.tenets]);
+  const spells = arts.arts.flatMap(
+    (each) => [each.anima, ...each.tenets] as readonly { key: string; lifeS?: number }[],
+  );
   const fragments = arts.arts.flatMap((each) => each.core as readonly { key: string; moreS?: number }[]);
   assert.deepEqual([...LASTING_LIFE].sort(), Object.keys(room.life).sort(), 'the spells whose life is weighed');
   for (const [key, seconds] of Object.entries(room.life)) {
