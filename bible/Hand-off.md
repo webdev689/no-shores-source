@@ -210,22 +210,21 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
 - **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**,
-  based on `main` (the prologue, #74, is merged), waits on the owner's yes to merge, which deploys the page and the
-  rooms. The owner named the factions and the elder, said yes to faction gear "with its own unique color", and chose
-  its colours (storm grey and silver with blue accents, white and gold, black and silver); every call made under the
-  owner's "autonomy" is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Seven independent
-  audits (the rules, the wire, the keepers, the looks, the Arts, the bible, the faction gear) and a regression review
-  found about eighty problems; every one is fixed with a test or recorded as a limit. Among the fixes: a dye worn now
-  covers every armour set (it showed on only half of them), cosmetics and faction colours others see are the room's
-  word, Shape never sells a piece twice, Arts keep their level and Core from the cast, the welcome comes to the player
-  and resumes after a reload, and the vault has its keeper's screen. Tested offline: the full check. Tested in a local
-  room (`npm run server`, the built page headless, Friday afternoon UTC): Shape present with his six wares and the
-  right time left, every keeper's screen, the inventory's Shapes, and Maren coming to the player, greeting them and
-  leading on. Not yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses
-  and faction gear, a faction set worn in the page (seen only composed offline from the published strips), and Maren's
-  whole walk (the headless page draws a few frames a second of game time). The open questions are in
-  [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge re-render. Sunspire's
-  and Rimeholt's ports are #75's; this round only locks their social spaces.
+  based on `main`, waits on the owner's yes to merge, which deploys the page and the rooms. The owner named the
+  factions and the elder, said yes to faction gear "with its own unique color" and chose its colours: the Stormcallers
+  "#1 with color accents" (storm grey and silver; the storm blue of the accents is Claude's), the Lamplighters "White
+  and gold", the Veiled "Black and silver"; then their look, "Top strip, fixes kept". The owner also decided that
+  characters made before the Arts' levels start every Art at level 1, that no save-keeping lands on `main` first (so a
+  rollback of the rooms after the merge loses this round's progress), that the page publishes only after the rooms
+  deploy, and that Maren keeps her ruins line before the ruins are drawn. Every call made under the owner's
+  "autonomy" is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full
+  check. Tested in a local room (`npm run server`, the built page headless): Shape present with his six wares, "From
+  level 20" and the right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its
+  colour. Not yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses and
+  faction gear, a faction set worn in the page (composed offline from the published strips), and Maren's walk: her
+  start, her coming by the lanes and her welcome of a browser that played the story before are tested offline. The
+  open questions are in [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge
+  re-render. Sunspire's and Rimeholt's ports are #75's; this round only locks their social spaces.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
   repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
   `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting

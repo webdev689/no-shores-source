@@ -343,9 +343,10 @@ every other figure drawn on from where the new room has it, though its clock sta
   list, the content they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in
   `rooms.yml`). A merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms`
   environment, which the next run compares with; with none found, it deploys. Without the secret it warns and deploys
-  nothing. Run by hand from `main`, it deploys whatever changed or not, and `npm run server:deploy` does the same from a
-  machine that holds the token itself. The same workflow deploys the [[Accounts]] first, since the rooms' service
-  binding names their Worker; should that fail, the rooms still deploy, beside the accounts last deployed.
+  nothing, and when the rooms had something to deploy the page is not published either. Run by hand from `main`, it
+  deploys whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token itself.
+  The same workflow deploys the [[Accounts]] first, since the rooms' service binding names their Worker; should that
+  fail, the rooms still deploy, beside the accounts last deployed.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **In the page**, the Test Ground and the [[Game]] played alone run the same room in its own WebAssembly, ticked by
   the page: the Test Ground's course, a node's room on the window and boxes the page cut, and the sea.
