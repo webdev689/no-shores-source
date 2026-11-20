@@ -13,4 +13,6 @@ status: in force
 
 ## Claude's calls
 
+- An emote's few syllables of voice, heard as its glyph popped, went with the glyph: with nothing shown over a head,
+  the sound would come from nowhere the player can see.
 - The scenes keep their emotes in their files, unshown, so a later look for them needs no content change.

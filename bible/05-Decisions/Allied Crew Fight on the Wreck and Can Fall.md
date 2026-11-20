@@ -18,11 +18,14 @@ arrives, able to win or die, so helping them matters.
 
 ## Claude's calls
 
-- Each zone with boarders stands as many crew as its wave has foes, two at least and three at most, at Minor and the
-  boarders' level: a swordsman and a skirmisher in turn, in the looks of the Brig's three plain hands. The named
-  speakers are never stood there, so none can die on the wreck and speak after it.
-- With no spot laid for them, a crewman stands 1.6 m from a boarder on the side the crew came from, facing him, so
-  the fight is on from its first tick. At most 18 crew live at once, so the boarders always have room.
+- Each zone with boarders stands three crew at spots laid with the wreck, each about 2 m from a boarder on his deck,
+  facing him, so the fight is on from its first tick; the export refuses a spot further than 4 m from a boarder. A
+  zone laid without spots stands as many as its wave has foes, two at least and three at most, 1.6 m from a boarder
+  toward the zone's checkpoint. At most 18 crew live at once, so the boarders always have room.
+- The crew are Minors at the boarders' level, a swordsman and a skirmisher in turn, in the looks of the Brig's three
+  plain hands. The named speakers are never stood there, so none can die on the wreck and speak after it.
+- The crew and the players cannot harm each other: no player's blow, shot or spell lands on a crewman, nor a
+  crewman's on a player.
 - An ally's plate shows no alert mark: it would tell the player nothing of a threat to them.
 
 [[Prologue]].

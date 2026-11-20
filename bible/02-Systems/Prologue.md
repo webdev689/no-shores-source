@@ -286,8 +286,9 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
 - **The tasks** (`Lessons`), in the tracker under the quest "Prologue". Waking, the task is "Learn the controls", four
   steps each ticked off once the player does it, read from what their body and fight did: Move (W A S D, 2 m walked
   from where they woke), Look round (Mouse, the view turned a radian in all), Attack (Right button, a swing begun)
-  and Block or dodge (F and V, a guard, a parry or a dodge). Once all four are met, or the first foes stand, the task
-  is "Fight your way through the wreck", counting the foes standing while any do, and it never goes back. The boss
+  and Block or dodge (F and V, a guard, a parry or a dodge). Foes standing further on, fighting the crew, leave it
+  up. Once a hostile foe takes the player as its target, or 1.5 s after all four are met, the task is "Fight your way
+  through the wreck", counting the hostile foes standing while any do, and it never goes back. The boss
   fight's task is "Face Captain Brannoc Thule". The tracker hides while a cutscene holds the fight.
 - **No Art.** The player fights the wreck with no Art ([[The Player Has No Art in the Prologue]]): its room is told
   to forbid them (`Room::forbid_arts`), so no ability bar shows and no cast is taken.

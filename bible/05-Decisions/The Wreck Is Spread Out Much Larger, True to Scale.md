@@ -18,5 +18,17 @@ spread it out at true size, and wrote: "#1, the playspace needs to be much large
 
 - The wreck is rebuilt in Blender much larger: its hulls pushed apart and joined by wide wreckage, so each fight has
   far more room. The ships stay true to scale.
-- Its look and its ambience stay as they are: the owner called them amazing.
 - Waking on it gives the player time to breathe and to learn the controls before the first foes reach them.
+
+## Claude's calls
+
+- The wreckage between the hulls is six wide rafts of torn decking on mast lengths and casks, ground a body can
+  circle on, kept clear of the swell. Every fight zone has at least four times its old ground, and the export refuses
+  a wreck where under 2,000 m² is walked.
+- The player wakes on the Brig's quiet stern: no wave, no crew and nothing across the way on. A zone's wave stands
+  only as the player enters it, well across from where they come in.
+- To join the ships, the Frigate's port side is stove in abreast her gun deck and her port bulwark broken forward,
+  where the way comes aboard from the wreckage; the Sloop floats higher, so her side stays out of the swell; the
+  Frigate's quarterdeck is cleared but for her wheel, and the arena's heap stands below its front, piled 3.7 m.
+- A rim round the wreck's blocks holds every body on it, and the sea is drawn round the hulls and rafts, not through
+  them.

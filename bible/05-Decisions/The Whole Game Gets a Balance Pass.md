@@ -12,7 +12,6 @@ Asked which fights it should cover (the prologue only, or the whole game), the o
 ## What it settles
 
 - Foes are eased and the player hits harder, everywhere: the prologue, patrols, dungeons and bosses alike.
-- The numbers chosen are recorded with the pass, as Claude's calls the owner can change.
 
 ## Claude's calls
 
