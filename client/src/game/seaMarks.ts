@@ -6,6 +6,7 @@ import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMa
 import type { Point2 } from '../overworld/ground.ts';
 import type { ScreenMark } from './hud.ts';
 import { distanceText } from './hudLaw.ts';
+import { LOCKED_WORDS, socialLocked } from './nodes.ts';
 import { declutter, namesShown, PORT_SEEN_M } from './seaLaw.ts';
 
 /** How far in from the picture's top and foot a held mark stands, clear of the place's name and, at sea, the sea's
@@ -13,6 +14,11 @@ import { declutter, namesShown, PORT_SEEN_M } from './seaLaw.ts';
 const MARK_EDGES = { sea: { top: 96, foot: 120 }, side: { top: 96, foot: 48 } } as const;
 /** Marks at sea nearer each other on the picture than this are one: the nearer is shown. */
 const MARK_GAP_PX = 30;
+
+/** The landing `id` among the side's marks, if a player may land there: a social space still locked is none. */
+export function landable(side: readonly Mark[], id: string): Mark | null {
+  return socialLocked(id) ? null : (side.find((mark) => mark.id === id) ?? null);
+}
 
 /** The marks laid for the view (`sail` over the ship, `landing` over an island's side, else none), the ship at `ship`,
  *  from `pose` on a picture of `viewport`: those placed, for a click to pick, and each as the HUD shows it. */
@@ -39,7 +45,7 @@ export function seaMarks(
     const mark = marks.find((one) => one.id === each.id);
     return {
       ...each,
-      note: distanceText(mark ? away(mark) : each.distance),
+      note: socialLocked(each.id) ? LOCKED_WORDS : distanceText(mark ? away(mark) : each.distance),
       chosen: each.id === chosen,
       named: named.has(each.id) || each.id === chosen,
     };

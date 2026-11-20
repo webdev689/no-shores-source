@@ -24,6 +24,7 @@ export interface CityPlan {
     readonly ring: readonly Point[];
     readonly spawns: readonly Point[];
     readonly stations?: readonly StationInfo[];
+    readonly visitor_spots?: readonly Point[];
   };
   readonly pads: readonly Pad[];
 }
@@ -54,7 +55,7 @@ export function windowRect(ring: readonly Point[]): Rect {
 
 /** A city's social space as a node: `<city id>-social`, named for its city, its plaza's section and spawns. */
 export function socialNode(plan: CityPlan, continent: string): NodeInfo {
-  const { ring, spawns, stations = [] } = plan.social;
+  const { ring, spawns, stations = [], visitor_spots: visitorSpots = [] } = plan.social;
   return {
     id: `${plan.id}-social`,
     kind: 'social',
@@ -64,7 +65,20 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
     spawns,
     centre: ringMiddle(ring),
     stations,
+    visitorSpots,
   };
+}
+
+/** The cities whose social spaces open, by id, as the city crate has them (`OPEN_SOCIAL_SPACES`): Overlook's alone.
+ *  The other ports' wait, locked, for later: shown so, and never gone to. */
+export const OPEN_SOCIAL_SPACES: readonly string[] = ['overlook'];
+/** What a locked social space says where it is offered. */
+export const LOCKED_WORDS = 'Opens later';
+const SOCIAL_SUFFIX = '-social';
+
+/** Whether the node `id` is a city's social space still locked. */
+export function socialLocked(id: string): boolean {
+  return id.endsWith(SOCIAL_SUFFIX) && !OPEN_SOCIAL_SPACES.includes(id.slice(0, -SOCIAL_SUFFIX.length));
 }
 
 /** The compass bearing from one point to another: 0 north (-y), a quarter turn east (+x). */
