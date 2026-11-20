@@ -28,13 +28,14 @@ export const COMPASS = { top: 18, width: 520, share: 0.6, height: 26, rule: 2, g
 /** How far down the first thing under the compass stands, in CSS pixels. */
 export const UNDER_COMPASS = COMPASS.top + COMPASS.height + COMPASS.rule + COMPASS.gap;
 
-/** What a ship is to the player, which colours her mark: one that would take her, another player's, or one whose
- *  colours are down. */
-export type ShipMarkKind = 'hostile' | 'ship' | 'struck';
+/** What a ship is to the player, which colours her mark: one that would take her, another player's, one whose
+ *  colours are down, or a friendly merchantman in Overlook's blue. */
+export type ShipMarkKind = 'hostile' | 'ship' | 'struck' | 'friendly';
 export const SHIP_MARK_COLOURS: Readonly<Record<ShipMarkKind, string>> = {
   hostile: '#ee5745',
   ship: '#ebe0c2',
   struck: '#8f8f8f',
+  friendly: '#2f5d9a',
 };
 /** Ships farther off than this, in metres, have no mark, but one that names her own range. */
 export const SHIP_MARK_RANGE_M = 900;

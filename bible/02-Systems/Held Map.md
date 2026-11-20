@@ -7,6 +7,10 @@ code:
   - client/src/heldmap/heldMapLaw.ts#clampView
   - client/src/heldmap/heldMapView.ts#HeldMapView
   - client/src/heldmap/coastField.ts#coastField
+  - client/src/heldmap/watersWash.ts#washOf
+  - client/src/heldmap/watersWash.ts#labelPoints
+  - client/src/heldmap/heldMapWaters.ts#HeldMapWaters
+  - client/src/heldmap/heldMapWaters.ts#ruinedPlaces
   - client/src/game/discovered.ts#Discovered
   - client/src/overworld/discovery.ts#chartAround
   - client/src/overworld/discovery.ts#sightIslands
@@ -38,9 +42,23 @@ war, and a click on it sets the ship's destination.
   third of a second, behind the veil on first going to sea): each cell's exact distance to the nearest coast within 60 km, negative on land, and whose coast
   it is. A discovered island's coast is drawn as a pen does, a soft wash on the sea's side and then the line, with
   engraved lines following it out to sea and fading; the charted sea carries a faint wash, its edge soft.
+- **The waters** ([[The Waters Come From the Islands]]). The page opens the waters once, just after its first frame
+  (about 0.6 s in WebAssembly, `FriendlyTraffic`), and takes their grid at the coast field's own 4.8 km cell
+  ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour:
+  Home green `#3f7f6f`, the Grey Tithe slate `#5d6670`, the pirates dark red `#8a2f2a`, Contested amber `#b8862f`.
+  Each cell blends the charted sea within a cell of it (`washOf`), and the map samples between cells, so a border is
+  soft over a cell or two and never stepped. The contested waters and the seam are hatched over their wash with fine
+  diagonal lines in the ink, 7 screen pixels apart. Fog of war is as it was: the wash is laid for the sea charted when
+  the map is raised.
+- **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
+  point, the middle of its sea cell farthest from land, from other waters and from the frame's edge (`labelPoints`,
+  chamfer distances in cells), once any of its sea is charted; in the map's ink, italic, as a page element. A key in
+  the map's lower left corner names the four holders by their colours.
 - **Places.** Each discovered port is named at its city, and each discovered node at its middle, in the ink, as page
-  elements over the parchment; the ship is a red-brown arrow along its heading. The voyage under way is inked as a
-  dashed red-brown line.
+  elements over the parchment. A city that is not a port (the waters' table names the three, [[Three Port Cities
+  Remain, and the Others Are Desolate and Destroyed]]) is drawn with a ruin's glyph, a dashed diamond, and named
+  "Ruins of <name>" (`ruinedPlaces`); until the waters are open every city is drawn as a port. The ship is a
+  red-brown arrow along its heading. The voyage under way is inked as a dashed red-brown line.
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not
   fill. A press that moves more than 6 px is a pan, not a click.
@@ -80,5 +98,5 @@ The player starts with the island they arrive on, its port, the place they arriv
 - The charted sea's wash is laid when the map is raised: what the ship charts while it is up shows the next time.
 - The route is inked through at most 128 of its points.
 - Quests are not tracked on the map yet.
-- The waters are not tinted yet: each water's owner, name and level band, and the contested seam, are decided and
-  not built ([[The Waters Come From the Islands]]).
+- The waters' wash is laid when the map is raised, as the charted sea's is. A water's label point is a 4.8 km cell's
+  middle, so its words may stand over a small isle.

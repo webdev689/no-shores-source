@@ -84,6 +84,10 @@ city's social space is arrived at as any other, empty, and named "Ruins of" and 
 `Foot` stands the player in one node, as the [[Player]] plays on the [[Test Ground]]: DFO's controls, first and
 third person, the forge's figure and the first person's hands, and the Test Ground's fight.
 
+- **Friendly ships from land.** At any node every friendly ship within 15 km of the eye is drawn on the sea at her
+  true size, sails set and filled, posed on the swell, her footprint on the water, as at sea (below); so ships coming
+  and going are seen from each port's plaza and harbour. They are lit as the ships layer lights every ship, by its
+  own sun, and cast no shadow.
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
   there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
   as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
@@ -254,6 +258,14 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   of her hull coloured by her rank), then back up when it ends. Ships of two factions that meet fight each other, drawn
   at sea where the room has them; coming within 750 m of such a fight joins it the same way, every captain in it under
   her own plate.
+- **Friendly ships** sail between the three port cities all the time ([[World Map]], "Traffic";
+  `friendlyShips.ts`). The page asks the waters' rules where they are at world time, seconds since the Unix epoch by
+  the page's clock (the sea room sends none), four times a second within the sea view's reach of her (its far plane),
+  and between answers reckons each on along her leg at 5 m/s; a new answer's gap, as at a turn onto her next leg, is
+  closed over about a second. Each is drawn by the ships layer as her hull in friendly colours, her sails set and
+  filled by the steady wind, posed on the swell, at the size every ship is drawn: the Overworld's from the raised view
+  and her true size on every view near hers (`shownScale`). Her footprint joins the water's with the nearest. The
+  compass marks those within 900 m in Overlook's blue (`#2f5d9a`).
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 
@@ -339,8 +351,8 @@ through the maps, each of its points asked of them from past that turned card, s
 shadow or a wall's and never by its own. Its contact shade stays under its feet where its own shadow is drawn, and
 past the near square leans the way the sun throws one, standing in for it.
 
-At sea the footprints of the player's ship and the seven ships nearest her (other players', pirates and a fight's
-captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round her bow under
+At sea the footprints of the player's ship and the seven ships nearest her (other players', pirates, friendly ships and
+a fight's captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round her bow under
 way.
 Under way the player's ship stirs the water's ripples at her bow and quarters, as the World Editor's does, and the
 ripples follow her.

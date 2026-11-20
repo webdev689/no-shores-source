@@ -22,6 +22,7 @@ import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { foesAsked } from './foesAsked.ts';
+import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { FootView } from './footView.ts';
 import { keptDiscovered } from './discovered.ts';
 import { Hud } from './hud.ts';
@@ -151,6 +152,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     land.ground(left, top, step, samples, samples);
   /** The held map, made when it is first asked for, since its coasts are worked out then. */
   let heldMap: HeldMap | null = null;
+  /** The waters, opened once off the first frame: the held map's tint and the friendly ships round the eye. */
+  const traffic = new FriendlyTraffic(roomModule, world, (waters) => heldMap?.setWaters(waters.map));
+  const waterHere = () => waterOf(scene.land?.swell, landmass.heightAt);
   let foot: Foot | null = null;
   let sea: Sea | null = null;
   let [ready, waited] = [false, 0];
@@ -316,6 +320,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea?.fromHelm();
       if (sail) sea?.sailTo(sail);
     });
+    if (traffic.waters) made.setWaters(traffic.waters.map);
     heldMap = made;
     return made;
   };
@@ -450,7 +455,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
-    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands });
+    const fleet = traffic.onFoot(shown.shot.eye, waterHere(), seconds, clock);
+    const more = { after: hands, hulls: fleet.hulls };
+    scene.draw(shown.shot, size, clock, seconds, standing(fleet.ships, shown.figures, fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.hints);
@@ -514,8 +521,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : shown.firstPerson
         ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
         : undefined;
-    const more = { hulls: shown.hulls, after, focus: shown.focus };
-    scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
+    const fleet = traffic.atSea(shown, waterHere(), seconds, clock);
+    const more = { hulls: fleet.hulls, after, focus: shown.focus };
+    scene.draw(shown.shot, size, clock, seconds, standing([...shown.ships, ...fleet.ships], shown.figures), more);
     showStanding({ kind: 'inside' });
     showSeaHud(hud, here, shown, {
       landing: flow.mode === 'landing',
@@ -526,6 +534,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       build: builtSloop,
       waterline: sloop.waterline,
       charting: charting !== null,
+      friendly: fleet.marks,
     });
     sinceChart += seconds;
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.

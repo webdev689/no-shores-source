@@ -25,6 +25,8 @@ export interface SeaHudState {
   readonly build: () => SloopBuild | null;
   readonly waterline: Waterline;
   readonly charting: boolean;
+  /** The friendly ships round her, for the compass. */
+  readonly friendly: readonly ShipMark[];
 }
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once her colours are
@@ -68,7 +70,9 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   hud.shipBars(shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
   // The held map raised at the helm covers the view, the compass with it.
   const ships = seaShipMarks(here.fight?.captains ?? null, here.sighted);
-  hud.compass(atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships });
+  hud.compass(
+    atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships: [...ships, ...state.friendly] },
+  );
   const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
   hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
   const build = aboard.managing ? state.build() : null;

@@ -6,6 +6,7 @@ import { FirstPersonView } from '../firstperson/firstPersonView.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { CoastField } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
+import type { WatersWash } from './watersWash.ts';
 
 /** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
 export const ROUTE_POINTS = 128;
@@ -29,11 +30,19 @@ struct Ink {
 @group(0) @binding(4) var soft: sampler;
 // Each of the route's points: where it lies, metres, and how far along the route.
 @group(0) @binding(5) var<storage, read> route: array<vec4f>;
+// The waters' wash over the charted sea, its holders' colours blended and its alpha how much is charted sea; and how
+// much of it is contested, which is hatched (watersWash.ts).
+@group(0) @binding(6) var wash: texture_2d<f32>;
+@group(0) @binding(7) var hatch: texture_2d<f32>;
 
 // Iron-gall ink, and the red-brown the route is drawn in.
 const INK_RGB = vec3f(58.0, 40.0, 22.0) / 255.0;
 const ROUTE_RGB = vec3f(120.0, 28.0, 20.0) / 255.0;
 const NO_ISLAND = 255u;
+// How strong the waters' wash and their hatching are, and the hatching's lines' spacing, screen pixels.
+const WASH_ALPHA = 0.2;
+const HATCH_ALPHA = 0.45;
+const HATCH_PX = 7.0;
 
 @vertex fn ink_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   let corners = array(vec2f(0, 0), vec2f(1, 0), vec2f(0, 1), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
@@ -101,9 +110,20 @@ fn route_at(world: vec2f) -> f32 {
       alpha = max(alpha, 0.28 * fade * (1.0 - smoothstep(0.3, 1.0, ring)) * step(4.0, pixels));
     }
   }
+  // The waters under the ink: their wash, and fine diagonal lines over the contested.
+  let sea = select(0.0, 1.0, metres > 0.0 && inside);
+  let tint = textureSampleLevel(wash, soft, world / size, 0.0);
+  let contested = textureSampleLevel(hatch, soft, world / size, 0.0).r;
+  let under = WASH_ALPHA * tint.a * sea;
+  let stripe = 1.0 - smoothstep(0.5, 1.1, abs(fract((at.x + at.y) / HATCH_PX) - 0.5) * HATCH_PX);
+  alpha = max(alpha, HATCH_ALPHA * contested * tint.a * sea * stripe);
   let course = route_at(world);
+  let over = max(alpha, 0.9 * course);
   let colour = mix(INK_RGB, ROUTE_RGB, step(alpha, course));
-  return vec4f(colour, max(alpha, 0.9 * course));
+  let shown = over + under * (1.0 - over);
+  let washed = tint.rgb / max(tint.a, 1e-4);
+  let mixed = (colour * over + washed * under * (1.0 - over)) / max(shown, 1e-4);
+  return vec4f(mixed, shown);
 }
 `;
 
@@ -136,6 +156,8 @@ export class HeldMapView {
   private readonly routeBuffer: GPUBuffer;
   private readonly charted: GPUTexture;
   private readonly chartedBytes: Uint8Array;
+  private readonly wash: GPUTexture;
+  private readonly hatch: GPUTexture;
   private readonly inkGroup: GPUBindGroup;
   private readonly field: CoastField;
   private pictures: { sheet: GPUTexture; hands: GPUTexture; frames: number } | null = null;
@@ -159,6 +181,8 @@ export class HeldMapView {
         { binding: 3, visibility: SHADER_STAGE.fragment, texture: {} },
         { binding: 4, visibility: SHADER_STAGE.fragment, sampler: {} },
         { binding: 5, visibility: SHADER_STAGE.fragment, buffer: { type: 'read-only-storage' } },
+        { binding: 6, visibility: SHADER_STAGE.fragment, texture: {} },
+        { binding: 7, visibility: SHADER_STAGE.fragment, texture: {} },
       ],
     });
     this.inking = device.createRenderPipeline({
@@ -186,6 +210,8 @@ export class HeldMapView {
     device.queue.writeTexture({ texture: islands }, field.island, { bytesPerRow: columns }, [columns, rows]);
     this.charted = texture('r8unorm');
     this.chartedBytes = new Uint8Array(columns * rows);
+    this.wash = texture('rgba8unorm');
+    this.hatch = texture('r8unorm');
     this.inkGroup = device.createBindGroup({
       layout: inkLayout,
       entries: [
@@ -195,6 +221,8 @@ export class HeldMapView {
         { binding: 3, resource: this.charted.createView() },
         { binding: 4, resource: device.createSampler({ magFilter: 'linear', minFilter: 'linear' }) },
         { binding: 5, resource: { buffer: this.routeBuffer } },
+        { binding: 6, resource: this.wash.createView() },
+        { binding: 7, resource: this.hatch.createView() },
       ],
     });
   }
@@ -233,6 +261,15 @@ export class HeldMapView {
       columns,
       rows,
     ]);
+  }
+
+  /** Lays the waters' wash on the map, on the coast field's own cells (`washOf`). */
+  setWash(wash: WatersWash): void {
+    const { columns, rows } = this.field;
+    if (wash.hatch.length !== columns * rows) throw new Error('the waters’ wash is not on the coast field’s cells');
+    const queue = this.gpu.device.queue;
+    queue.writeTexture({ texture: this.wash }, wash.colour, { bytesPerRow: columns * 4 }, [columns, rows]);
+    queue.writeTexture({ texture: this.hatch }, wash.hatch, { bytesPerRow: columns }, [columns, rows]);
   }
 
   /** Draws the held map over what `target` holds. */

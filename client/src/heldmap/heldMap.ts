@@ -26,6 +26,8 @@ import {
   zoomAt,
 } from './heldMapLaw.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
+import { HeldMapWaters, ruinedPlaces, wearHeldMapWaters } from './heldMapWaters.ts';
+import type { MapWaters } from './watersWash.ts';
 
 /** The world's frame, metres. */
 const WORLD = { width: WORLD_FRAME.widthM, height: WORLD_FRAME.heightM } as const;
@@ -97,6 +99,9 @@ export class HeldMap {
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
   private lowered: (sail: Point2 | null) => void = () => undefined;
+  /** The waters once they are open: their wash, letters and key, and which cities are ports. */
+  private waters: HeldMapWaters | null = null;
+  private charted: Uint8Array | null = null;
 
   constructor(gpu: Gpu, field: CoastField, store: ForgeStore, plan: (to: Point2) => Course, root: HTMLElement) {
     this.view = new HeldMapView(gpu, field);
@@ -105,6 +110,13 @@ export class HeldMap {
     this.layer.append(this.ship, this.card);
     this.layer.hidden = true;
     root.append(this.layer);
+    wearHeldMapWaters(root.ownerDocument);
+  }
+
+  /** The waters, opened once a page: the map tints, letters and keys them from now on, and marks the ruins. */
+  setWaters(waters: MapWaters): void {
+    this.waters = new HeldMapWaters(waters, this.layer);
+    if (this.charted) this.view.setWash(this.waters.chart(this.charted));
   }
 
   /** Whether the map is up, rising or lowering: the sea's own input waits while it is. */
@@ -128,6 +140,8 @@ export class HeldMap {
     if (this.phase.kind !== 'closed') return;
     if (gauntlets !== this.gauntlets) this.load(gauntlets);
     this.view.setCharted(charted);
+    this.charted = charted;
+    if (this.waters) this.view.setWash(this.waters.chart(charted));
     this.ink = stageOf(viewport).ink;
     this.mapView = viewOn(ship, this.ink, WORLD);
     this.choice = null;
@@ -299,25 +313,27 @@ export class HeldMap {
     const onSheet = (x: number, y: number) => x >= 0 && y >= 0 && x <= this.ink.width && y <= this.ink.height;
     this.placed = [];
     const seen = new Set<string>();
-    for (const place of scene.places) {
+    for (const place of ruinedPlaces(scene.places, this.waters?.waters.mainPorts ?? null)) {
       const [x, y] = toInk(this.mapView, place.at[0], place.at[1]);
       if (!onSheet(x, y)) continue;
       this.placed.push({ place, x, y });
       seen.add(place.id);
       let label = this.labels.get(place.id);
       if (!label) {
-        label = make('div', place.name, `held-mark ${place.kind}`);
+        label = make('div');
         this.labels.set(place.id, label);
         this.layer.append(label);
       }
+      if (label.textContent !== place.name) label.textContent = place.name;
+      label.className = `held-mark ${place.kind}${this.choice?.place === place.id ? ' chosen' : ''}`;
       label.style.transform = `translate(${this.ink.x + x}px, ${this.ink.y + y + drop}px)`;
-      label.classList.toggle('chosen', this.choice?.place === place.id);
     }
     for (const [id, label] of this.labels)
       if (!seen.has(id)) {
         label.remove();
         this.labels.delete(id);
       }
+    this.waters?.layout(this.ink, drop, (x, y) => toInk(this.mapView, x, y));
     const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
     this.ship.hidden = !onSheet(shipX, shipY);
     this.ship.style.transform = `translate(${this.ink.x + shipX}px, ${this.ink.y + shipY + drop}px) rotate(${scene.heading}rad)`;

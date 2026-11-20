@@ -83,7 +83,12 @@ test('ships are marked within 900 m of the player, and none farther', () => {
     { x: 1600, y: 1600, kind: 'struck' as const },
   ];
   assert.deepEqual(shipsMarked(ships, from), [ships[0], ships[2]]);
-  assert.deepEqual(SHIP_MARK_COLOURS, { hostile: '#ee5745', ship: '#ebe0c2', struck: '#8f8f8f' });
+  assert.deepEqual(SHIP_MARK_COLOURS, {
+    hostile: '#ee5745',
+    ship: '#ebe0c2',
+    struck: '#8f8f8f',
+    friendly: '#2f5d9a',
+  });
 });
 
 test('a hostile ship is marked as far off as she is sighted, and no farther', () => {
