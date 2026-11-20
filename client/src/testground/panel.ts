@@ -21,6 +21,8 @@ export interface PanelState {
   /** The kinds the player's gear wears in its Melee and Ranged loadouts (the gear crate's numbers, 0 for none), which
    *  their hands hold; null before the room first sends their gear. */
   readonly worn: { readonly melee: number; readonly ranged: number } | null;
+  /** The light picked for the player's left (a forge layer), held where the room's arms allow it; or null. */
+  readonly light: string | null;
   readonly playing: boolean;
   readonly status: string;
 }
@@ -36,6 +38,8 @@ export interface PanelHandlers {
   act(anim: string): void;
   /** Wears a loadout of this kind (the gear crate's number) through the player's gear, so the room fights with it. */
   wear(kind: number): void;
+  /** Carries a light (a forge layer, or null for none) in the player's left. */
+  carry(light: string | null): void;
   /** Stands a foe of a type and a rank, with a shield if asked, at a level (0, a foe of none) before the player, or
    *  sends every foe away. */
   fight(foe: FoeAsk, level: number): void;
@@ -113,9 +117,10 @@ function foeControls(roster: readonly FoeType[], fight: PanelHandlers['fight']):
   return section;
 }
 
-/** The player's own hands, when the chosen figure is theirs: what their gear wears, and the ask that wears another. */
-function own(state: PanelState, chosen: Placed, wear: PanelHandlers['wear']): OwnHands | null {
-  return chosen.id === state.playerId && state.worn ? { worn: state.worn, wear } : null;
+/** The player's own hands, when the chosen figure is theirs: what their gear wears and the light carried, and the asks
+ *  that change them. */
+function own(state: PanelState, chosen: Placed, { wear, carry }: PanelHandlers): OwnHands | null {
+  return chosen.id === state.playerId && state.worn ? { worn: state.worn, wear, light: state.light, carry } : null;
 }
 
 /** The Test Ground's panel: the foes to stand from the rules' `roster`, the figures, and the chosen one's move, facing
@@ -211,7 +216,7 @@ export function startPanel(
               chosen,
               garmentFilter,
               handlers.change,
-              own(state, chosen, handlers.wear),
+              own(state, chosen, handlers),
             ),
           ]
         : []),

@@ -46,6 +46,7 @@ import { AIM, type AimPlace } from '../player/playerCamera.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { Walker } from '../player/walker.ts';
 import { startAimPanel } from './aimPanel.ts';
+import { withLight } from './dressPanel.ts';
 import { startPanel } from './panel.ts';
 import { startStatusPanel } from './statusPanel.ts';
 import { startArtsPanel } from './artsPanel.ts';
@@ -131,6 +132,8 @@ async function start(): Promise<void> {
   // Declared before the panel: a foe asked for while the forge loads is not asked for.
   let fight: Fighting | null = null;
   const asks = new PanelAsks();
+  // The light the player's left carries, where the loadout drawn lets it: the dress panel's pick.
+  let light: string | null = null;
   const showPanel = startPanel(element<HTMLElement>('#panel'), roster, {
     add: () => {
       const ahead = 3;
@@ -158,6 +161,9 @@ async function start(): Promise<void> {
     },
     fight: (foe, level) => fight?.ask(foe, level),
     wear: (kind) => asks.ask(fight, { kind: ASKS.grantWorn, itemKind: kind }),
+    carry: (layer) => {
+      light = layer;
+    },
   });
   // The player's gear, as the room last sent it, and the panel that shows it and asks of it.
   let gear: GearState | null = null;
@@ -187,6 +193,7 @@ async function start(): Promise<void> {
     fps,
     playerId: PLAYER_ID,
     worn: gear && { melee: worn(gear, 0)?.kind ?? 0, ranged: worn(gear, 1)?.kind ?? 0 },
+    light,
     playing: input.locked,
     status: line,
   });
@@ -261,17 +268,24 @@ async function start(): Promise<void> {
     last = now;
     clock += seconds;
     const controls = input.frame();
-    // The figure wears what the gear wears, and the hands hold it: the room takes no other arms.
+    // The figure wears what the gear wears, and the hands hold it: the room takes no other arms. The left carries the
+    // panel's light only where the room's arms allow it.
     const ownGear = gear;
     const gearWorn =
       ownGear &&
-      JSON.stringify([you.dress.body, player.player.loadout, ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0)]);
+      JSON.stringify([
+        you.dress.body,
+        player.player.loadout,
+        light,
+        ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0),
+      ]);
     const bodyLayers = looks.bodies[you.dress.body]?.layers;
     if (ownGear && gearWorn && gearWorn !== gearWornKey && bodyLayers) {
       gearWornKey = gearWorn;
       const wardrobe = wardrobeOf(you.dress.body, bodyLayers);
       const outfit = gearOutfit(ownGear, wardrobe, you.dress.outfit, player.player.loadout);
-      you.dress = { ...you.dress, outfit };
+      const lit = withLight(outfit, light, ownGear.arms, (right, left) => combatRules.armsCode(right, left, true));
+      you.dress = { ...you.dress, outfit: lit };
       player.spare = spareOutfit(ownGear, wardrobe, outfit, player.player.loadout);
     }
     player.glow = feel.glow(heldElements(ownGear, player.player.loadout));
