@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import { feelOf, navalEventOf } from './seaFight.ts';
 
 const read = (numbers: number[]) => {
-  let at = 0;
-  return () => numbers[at++] ?? 0;
+  let index = 0;
+  return () => numbers[index++] ?? 0;
 };
 
 test('the sea’s own events reach the fight’s feel by its kinds; a ball’s splash and hit go with its shot’s', () => {

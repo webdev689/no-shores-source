@@ -65,3 +65,18 @@ test('a company member is joined from on foot or at sea, never while landing or 
   const landing: Flow = { mode: 'landing', chosen: null };
   assert.equal(next(landing, join), landing);
 });
+
+test('washed up from the sea, the veil says why and the player stands in the port city’s social space', () => {
+  const words = 'Washed up at Sunspire. Your ship lies at its moorings.';
+  const washUp = { kind: 'wash-up', node: 'sunspire-social', words } as const;
+  assert.deepEqual(next({ mode: 'sea', menu: false }, washUp), {
+    mode: 'loading',
+    words,
+    then: { mode: 'foot', node: 'sunspire-social', menu: false },
+  });
+  assert.deepEqual(next({ mode: 'foot', node: 'glade', menu: false }, washUp), {
+    mode: 'foot',
+    node: 'glade',
+    menu: false,
+  });
+});

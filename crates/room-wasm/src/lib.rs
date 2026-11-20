@@ -223,7 +223,8 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                     };
                 }
                 Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
-                Ok(SeaInput::Board) => return if sea.board(player).is_ok() { TAKEN } else { REFUSED },
+                // shortcut: no boarding is taken until the page can fight on her deck; take it (`sea.board`) once it can.
+                Ok(SeaInput::Board) => return REFUSED,
                 Ok(SeaInput::LeaveDeck) => return if sea.leave_deck(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =

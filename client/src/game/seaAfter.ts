@@ -1,17 +1,12 @@
-// What the sea's fights leave the player, as the page tells them (crates/room/src/harbour.rs, flotsam.rs, battle.rs,
-// sea_decks.rs): who joins their fight, a struck captain they may board and the boarding, the deck they fight on, what
-// floats gathered and what it held, washing up at a port city, and their ship's repair by one. The sea decides all of
+// What the sea's fights leave the player, as the page tells them (crates/room/src/harbour.rs, flotsam.rs, battle.rs):
+// who joins their fight, a captain's colours struck, what floats gathered and what it held, washing up at a port city,
+// and their ship's repair by one. The sea decides all of
 // it; the page shows its word and sends the player's asks.
 import type { NavalEvent } from '../network/seaFight.ts';
-import type { FightView } from '../rules/fightRules.ts';
 import { shipName } from '../ships/shipBars.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import type { Kept } from './shipPanel.ts';
 
-/** A player boards a captain who struck with their ship within this of hers, metres, both making less way than this,
- *  metres a second (crates/room/src/battle.rs). */
-export const BOARD_REACH_M = 30;
-export const BOARD_WAY_M_S = 2;
 /** The sea's own told codes (crates/room/src/harbour.rs). */
 const WASHED_UP = 20;
 const HELD = 21;
@@ -25,21 +20,16 @@ const MAIN_PORTS: readonly string[] = ['overlook', 'sunspire', 'rimeholt'];
 /** How long the latest of these lines stands in the sea's status line, seconds. */
 const LINE_S = 6;
 
-/** The port cities' names among `ports`, in their order, as the sea numbers them. */
-export function portCityNames(ports: readonly { readonly id: string; readonly name: string }[]): string[] {
-  return ports.filter((port) => MAIN_PORTS.includes(port.id)).map((port) => port.name);
+/** A port city as the page knows it: its id (its social space is the node `<id>-social`), name and continent. */
+export interface PortCity {
+  readonly id: string;
+  readonly name: string;
+  readonly continent: string;
 }
 
-/** Whether the player may board a captain of their fight: one who struck lies within `BOARD_REACH_M` of their ship,
- *  both making less way than `BOARD_WAY_M_S`. */
-export function boardable(fight: FightView): boolean {
-  const [x = 0, y = 0, , ahead = 0, abeam = 0] = fight.player.ship;
-  if (fight.player.state !== 'afloat' || Math.hypot(ahead, abeam) >= BOARD_WAY_M_S) return false;
-  return [fight.captain, ...(fight.others ?? [])].some((her) => {
-    const [herX = 0, herY = 0, , herAhead = 0, herAbeam = 0] = her.ship;
-    const near = Math.hypot(herX - x, herY - y) <= BOARD_REACH_M;
-    return her.state === 'struck' && near && Math.hypot(herAhead, herAbeam) < BOARD_WAY_M_S;
-  });
+/** The port cities among `ports`, in their order, as the sea numbers them. */
+export function portCities(ports: readonly PortCity[]): PortCity[] {
+  return ports.filter((port) => MAIN_PORTS.includes(port.id));
 }
 
 /** What a gathered piece held, in words. */
@@ -62,7 +52,7 @@ export function linesOf(
 ): string[] {
   const lines: string[] = [];
   for (const event of naval) {
-    if (event.kind === 'Struck') lines.push('Her colours are down: come alongside and press E to board her.');
+    if (event.kind === 'Struck') lines.push('Her colours are down.');
     if (event.kind === 'Boarding') lines.push('Boarders away: her crew stands to meet them.');
   }
   for (const numbers of told) {
@@ -91,8 +81,10 @@ export interface RepairShown {
 export class SeaAfter {
   /** Each piece of what floats laid for the player, by its number: what it looks like. */
   private readonly kinds = new Map<number, string>();
-  private readonly ports: readonly string[];
-  constructor(ports: readonly string[]) {
+  private readonly ports: readonly PortCity[];
+  /** The port city the player washed up at, by the sea's number, until they walk ashore there. */
+  private washed: number | null = null;
+  constructor(ports: readonly PortCity[]) {
     this.ports = ports;
   }
 
@@ -101,7 +93,13 @@ export class SeaAfter {
     for (const piece of room.flotsam) this.kinds.set(piece.id, piece.kind);
     const { naval, told } = room.takeTold();
     for (const event of naval) if (event.kind === 'Flotsam') this.kinds.set(event.id, event.kind_of);
-    return linesOf(told, naval, this.kinds, this.ports);
+    for (const numbers of told) if (numbers[0] === WASHED_UP) this.washed = numbers[2] ?? null;
+    return linesOf(
+      told,
+      naval,
+      this.kinds,
+      this.ports.map((port) => port.name),
+    );
   }
 
   /** The sea's status line at `now`: the latest line of the room's word while it stands, else `base`. */
@@ -113,6 +111,21 @@ export class SeaAfter {
   }
 
   private latest: { readonly line: string; readonly at: number } | null = null;
+
+  /** Once the landmass holding the port city she washed up at is open, its social space to walk into, standing there
+   *  as on arriving, and the veil's words saying why; taken once. */
+  ashore<Node extends { readonly id: string }>(landmass: {
+    readonly id: string;
+    readonly nodes: readonly Node[];
+  }): { readonly node: Node; readonly washUp: { kind: 'wash-up'; node: string; words: string } } | null {
+    const port = this.washed === null ? undefined : this.ports[this.washed];
+    if (!port || port.continent !== landmass.id) return null;
+    const node = landmass.nodes.find((each) => each.id === `${port.id}-social`);
+    if (!node) return null;
+    this.washed = null;
+    const words = `Washed up at ${port.name}. Your ship lies at its moorings.`;
+    return { node, washUp: { kind: 'wash-up', node: node.id, words } };
+  }
 
   /** Her repair as Manage offers it, from the room's word on her kept hurts. */
   static repairOf(room: SeaRoom): RepairShown | null {
