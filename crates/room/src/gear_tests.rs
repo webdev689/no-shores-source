@@ -384,3 +384,51 @@ fn a_shield_takes_blows_before_health_and_its_own_element_breaks_it_fastest() {
     assert!(broke);
     assert!((harmed - (plain - 1.0)).abs() < 1e-6, "{harmed}");
 }
+
+#[test]
+fn the_test_grounds_hands_pass_over_a_carried_weapon_above_the_players_level_and_hand_out_one_of_theirs() {
+    use crate::asks::Grant;
+    use gear::Kind;
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    room.answer(player, Asked::Grant(Grant::Item { kind: Kind::Crossbow, rarity: Rarity::Normal, level: 50 }));
+    let ranged = |room: &Room| room.player(player).and_then(|found| found.character.worn(Slot::Ranged)).cloned();
+    let crossbows = |room: &Room| {
+        room.player(player)
+            .expect("in")
+            .character
+            .items
+            .values()
+            .filter(|(item, _)| item.kind == Kind::Crossbow)
+            .count()
+    };
+    for kind in [Kind::Crossbow, Kind::Bow, Kind::Crossbow] {
+        room.answer(player, Asked::Grant(Grant::Worn(kind)));
+        assert_eq!(room.player(player).expect("in").answer, 0, "{kind:?} worn, never refused as too high");
+        let worn = ranged(&room).expect("a Ranged weapon worn");
+        assert_eq!((worn.kind, worn.level), (kind, 1));
+    }
+    assert_eq!(crossbows(&room), 2, "the level 50 one kept, and the one handed out worn again");
+}
+
+#[test]
+fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wears_one() {
+    use crate::asks::Grant;
+    use gear::{Item, Kind, character::At};
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    let [mace, bow] = [Kind::Mace, Kind::Bow].map(|kind| {
+        let id = character.take_id();
+        character.items.insert(id, (Item::new(id, kind, Rarity::Atheric, 1, kind.slot()), At::Carried));
+        id
+    });
+    room.answer(player, Asked::Grant(Grant::Worn(Kind::Mace)));
+    room.answer(player, Asked::Grant(Grant::Worn(Kind::Bow)));
+    let found = room.player(player).expect("in");
+    assert_eq!(found.answer, 0, "a bow worn, not refused for its Atheric");
+    let worn = found.character.worn(Slot::Ranged).expect("a bow worn");
+    assert_eq!((worn.kind, worn.rarity), (Kind::Bow, Rarity::Normal), "a Normal one handed out");
+    assert_eq!(found.character.at(bow), Some(At::Carried), "the Atheric one still carried");
+    assert_eq!(found.character.at(mace), Some(At::Worn(Slot::Melee)), "the Atheric mace carried was worn");
+}
