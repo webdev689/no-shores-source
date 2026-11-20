@@ -180,7 +180,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
-- On pull request #63 from branch `ccr-0f4acf2e-wd3195`, tested offline, not merged, as the owner decided it
+- On `main` (#63), merged and deployed with the owner's yes, as the owner decided it
   ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]): every patrol area and instance laid out
   ([[Layouts]]) from its brief (all 90 written): places scored on the land, a loop of tracks and footpaths, RMB
   hamlets, farms, ruins, keeps, graveyards, covens and caves seated building by building, set pieces of forged props
@@ -421,8 +421,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   where a body could not walk them: a stair laid in front of a door, a stairwell a head going up could hit, planks the
   land showed through ([[Layouts]]). Seen in pictures but not fixed, as it is the drawing's: an open building's door
   leaf is still drawn from outside, though bodies pass it.
-- #63: merging deploys the page and the rooms. The answer "3. A" was read as (a) of where RMB layouts go; the flora's
-  look (textured, not palette-snapped) was Claude's call, as the owner left it.
+- #63's readings the owner left to Claude: the answer "3. A" was read as (a) of where RMB layouts go; the flora's
+  look (textured, not palette-snapped) was Claude's call.
+- **Climbing over gates.** A body pressed square into a wall too high to grab climbs it, as `main`'s climbing has it.
+  So a gate's palisade and arch can be climbed, as can a rampart's walls. Whether a gate should keep bodies out is
+  the owner's to say.
 - Also on #63: the runs ([[Patrol Zones Stay as Built and Gain Linear Combat Areas]], [[Layouts]], "Runs"), three
   in each of Saltmere's zones, for the owner to look at before the other 24 zones get theirs; the client audit's
   fixes (far paths' tint, the ground paint swapped mid-frame, fine detail stepped by single precision, plate tiles);
@@ -433,8 +436,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is built on #63, tested
-  offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
+- **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is on `main` (#63),
+  tested offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
   kinds' levels on raised floors, every way graded between them as one network, walked without a step and carved no
   steeper than a track; a hamlet's blocks stepping up its hillside on terraces of their own, as the owner chose; a
   ruin's spokes on tiers; a terraced massif top in plateaus that follows the floors ([[Land]]); ledges with cliff
