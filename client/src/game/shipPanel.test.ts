@@ -22,7 +22,7 @@ test('a heading reads as whole degrees and the nearest of the eight points', () 
   assert.equal(compassOf(-Math.PI / 4), '315° NW');
 });
 
-test('Manage shows her vessel and her voyage, and nothing marked Later', () => {
+test('Manage shows its vessel and its voyage, and nothing marked Later', () => {
   const build = sloopBuildOf(BUILD);
   assert.ok(build);
   const panel = shipPanelOf(

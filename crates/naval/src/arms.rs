@@ -211,7 +211,7 @@ pub struct Build {
     pub crewed: bool,
 }
 
-/// DFO's Large Boat as the player owns her, with her hands: ten men, as a captain's Sloop has, who work her guns (a
+/// DFO's Large Boat as the player owns it, with its hands: ten men, as a captain's Sloop has, who work its guns (a
 /// thinned crew reloads them slower) and whom balls cut down; and the player's own aim.
 pub const LARGE_BOAT: Build =
     Build { name: "Sloop", hull: 240.0, sail: 96.0, crew: 10.0, skill: 0.6, range_m: 50.0, crewed: false };

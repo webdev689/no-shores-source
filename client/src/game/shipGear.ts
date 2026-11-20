@@ -1,5 +1,5 @@
-// What the ship's screens show, from the gear message's ship and her modules: her power and how far to her next
-// level, her four modules and those carried, each module's nodes priced in her own materials, infusion, her crew by
+// What the ship's screens show, from the gear message's ship and its modules: its power and how far to its next
+// level, its four modules and those carried, each module's nodes priced in its own materials, infusion, its crew by
 // name, post and grade with their duties and nodes, and the officers of the day at the muster. The page draws these
 // in `shipPages.ts`. The gear crate's numbers are taken as they are: its `ship/materials.rs` and `crew/officer.rs`.
 
@@ -60,7 +60,7 @@ export function gearName(item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'nam
 /** A kind's name, a module's among them. */
 export const gearKindName = (kind: number): string => moduleOf(kind)?.name ?? kindName(kind);
 
-/** Why the room refused an ask of her crew, past the gear's own refusals: answered one past each refusal's number. */
+/** Why the room refused an ask of its crew, past the gear's own refusals: answered one past each refusal's number. */
 const SHIP_REFUSALS: Readonly<Record<number, string>> = {
   131: 'There is no such officer.',
   132: 'Officers sign on through the faction you are pledged to.',
@@ -78,7 +78,7 @@ const priced = (aurem: number, materials: readonly (readonly [number, number])[]
     .filter(Boolean)
     .join(', ');
 
-/** A module's node, its price in her materials: its fragments are the module's first material, its resource the
+/** A module's node, its price in its materials: its fragments are the module's first material, its resource the
  *  second, its Essence Heartwood (`materials::price_of`). */
 export function moduleNode(item: GearItem, column: number, node: number): NodeShown | null {
   const shown = nodeShown(item, column, node);
@@ -93,7 +93,7 @@ export function moduleNode(item: GearItem, column: number, node: number): NodeSh
   return { ...shown, cost: `Costs ${price}.` };
 }
 
-/** The ship's power as Manage shows it: her level and how far to the next as a share, never as XP. */
+/** The ship's power as Manage shows it: its level and how far to the next as a share, never as XP. */
 export interface ShipPower {
   readonly level: number;
   readonly toNext: number;
@@ -109,10 +109,10 @@ const LEVEL_MOST = 30;
 export function shipPowerOf(ship: GearShip): ShipPower {
   const toNextWords =
     ship.level >= LEVEL_MOST
-      ? 'Her highest level'
+      ? 'The highest level'
       : ship.level < LEVEL_BY_XP
-        ? `Sea fights carry her to level ${ship.level + 1}`
-        : `Her modules' Prestige carries her to level ${ship.level + 1}`;
+        ? `Sea fights carry your ship to level ${ship.level + 1}`
+        : `Your modules' Prestige carries your ship to level ${ship.level + 1}`;
   return {
     level: ship.level,
     toNext: ship.level >= LEVEL_MOST ? 1 : Math.min(1, Math.max(0, ship.toNext)),

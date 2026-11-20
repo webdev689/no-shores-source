@@ -1,16 +1,16 @@
-//! Her hands boarding with their player: on a struck ship's deck, beside each player who comes over her rail, two of
-//! their ship's hands and as many more as her First Mate and her perks lead aboard, never more than she has left. They
-//! fight her crew on the players' side with a foe's own brain, by gear's power at their ship's level; a kill they have
-//! a hand in is their player's. Those who fall are men she has lost, kept with her hurts once the player is back aboard.
+//! Its hands boarding with their player: on a struck ship's deck, beside each player who comes over its rail, two of
+//! their ship's hands and as many more as its First Mate and its perks lead aboard, never more than it has left. They
+//! fight its crew on the players' side with a foe's own brain, by gear's power at their ship's level; a kill they have
+//! a hand in is their player's. Those who fall are men it has lost, kept with its hurts once the player is back aboard.
 
 use crate::companions::HAND_TYPE;
 use crate::{PlayerId, Room};
 use ::foes::{Rank, foe_type};
 use combat::fighter::{FighterId, Side};
 
-/// How many hands come over her rail with each player before her First Mate and perks lead more.
+/// How many hands come over its rail with each player before its First Mate and perks lead more.
 pub const HANDS_BOARD: u8 = 2;
-/// How far either side of their player along her rail hands come aboard, metres apart.
+/// How far either side of their player along its rail hands come aboard, metres apart.
 const ALONG_M: f64 = 1.2;
 
 /// A hand aboard a struck ship: their player, and their ship's level they fight at.
@@ -27,7 +27,7 @@ pub fn boarding(hands: u16, more: u8) -> u8 {
 }
 
 impl Room {
-    /// `count` of a player's hands come aboard beside them at `level`, along her rail fore and aft of them, facing as
+    /// `count` of a player's hands come aboard beside them at `level`, along its rail fore and aft of them, facing as
     /// they face.
     pub fn board_hands(&mut self, leader: PlayerId, count: u8, level: u8) {
         let (Some(at), Some(foe_type)) = (self.fighter(leader).copied(), foe_type(HAND_TYPE)) else { return };

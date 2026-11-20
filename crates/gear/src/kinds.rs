@@ -33,9 +33,9 @@ pub enum Kind {
     MaceAndShield = 21,
     Greatsword = 22,
     DoublePistolet = 23,
-    /// A ship's guns, which carry her Attack.
+    /// A ship's guns, which carry its Attack.
     Guns = 24,
-    /// A ship's hull, sails and rigging, which carry her Defense.
+    /// A ship's hull, sails and rigging, which carry its Defense.
     Hull = 25,
     Sails = 26,
     Rigging = 27,
@@ -216,7 +216,7 @@ impl Kind {
             Self::Torso => 0.3375,
             Self::Arms => 0.2625,
             Self::Legs => 0.2375,
-            // A ship's three, in the same sum as the four armour pieces': her hull takes the most.
+            // A ship's three, in the same sum as the four armour pieces': its hull takes the most.
             Self::Hull => 0.5,
             Self::Sails => 0.35,
             Self::Rigging => 0.3,

@@ -111,11 +111,11 @@ test('modules are named by their kind and rarity, and the new refusals are said 
   assert.equal(answerSaid(15), 'You do not have enough for it.');
 });
 
-test('her power shows as a level and a share to the next, never as XP', () => {
+test('its power shows as a level and a share to the next, never as XP', () => {
   const power = shipPowerOf(ship({ toNext: 1.4 }));
   assert.deepEqual([power.level, power.toNext, power.attack, power.defense, power.prestige], [4, 1, 50, 120, 6]);
   assert.doesNotMatch(power.toNextWords, /\d{3}|XP/);
-  assert.equal(shipPowerOf(ship({ level: 30 })).toNextWords, 'Her highest level');
+  assert.equal(shipPowerOf(ship({ level: 30 })).toNextWords, 'The highest level');
 });
 
 test('the four slots show what is fitted, and only carried modules are offered to fit', () => {
@@ -138,7 +138,7 @@ test('the four slots show what is fitted, and only carried modules are offered t
   );
 });
 
-test("a module's node is priced in her materials: first, second, and Heartwood for Essence", () => {
+test("a module's node is priced in its materials: first, second, and Heartwood for Essence", () => {
   const column = { kind: 0, traits: [], xp: 0, aurem: 300, fragments: 5, essence: 1, resource: 3 };
   const rigging = item({ kind: 27, columns: [column] });
   assert.equal(moduleNode(rigging, 0, 0)?.cost, 'Costs 300 Aurem, 5 Canvas, 3 Iron, 1 Heartwood.');

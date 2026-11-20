@@ -22,22 +22,22 @@ code:
 # Crew
 
 A ship's people ([[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]],
-[[The Ship's Power, Crew and Islands as Claude Shapes Them]]): her hands, a headcount, and her named officers, few and
-rare, who hold posts aboard or come ashore beside the player. Her power is [[Ship Power]]; DFO's crew is the
+[[The Ship's Power, Crew and Islands as Claude Shapes Them]]): its hands, a headcount, and its named officers, few and
+rare, who hold posts aboard or come ashore beside the player. Its power is [[Ship Power]]; DFO's crew is the
 specification ([[Pick - Crew and Ship Power]]).
 
 ## Hands
 
 - The player's Sloop carries ten hands (`LARGE_BOAT`). Balls cut them down as they cut a captain's men, at 3.2 blows a
-  man, and they load her guns: whole, a side in 5.6 s, the pace one player alone always loaded it; thinned, slower, to
-  10.1 s with none left. Her ship never strikes for want of them: the player is always aboard.
-- The share left is kept with her hurts until a port city repairs her, and the ship's panel shows her hands of her
+  man, and they load the ship's guns: whole, a side in 5.6 s, the pace one player alone always loaded it; thinned, slower, to
+  10.1 s with none left. The ship never strikes for want of them: the player is always aboard.
+- The share left is kept with its hurts until a port city repairs it, and the ship's panel shows its hands of its
   complement.
 - **Boarding** (`room::boarding_hands`): over a struck ship's rail with each player come two of their hands and as many
-  more as her First Mate and her perks lead aboard, never more than she has left. They fight her crew on the players'
+  more as the player's First Mate and perks lead aboard, never more than their ship has left. They fight the struck ship's crew on the players'
   side with a foe's own brain, as swordsmen of the deck roster at their ship's level, by gear's power as a matched
-  player's; a kill they have a hand in is their player's, and her deck is won once her crew is down whoever of them
-  stands. Each who falls is a man she has lost once the player is back aboard.
+  player's; a kill they have a hand in is their player's, and the deck is won once that crew is down whoever of them
+  stands. Each who falls is a man the player's ship has lost once the player is back aboard.
 
 ## Officers
 
@@ -62,14 +62,14 @@ specification ([[Pick - Crew and Ship Power]]).
 
 ## Posts
 
-Each post changes how she plays in a fight, its officer's strength times (`ship::trim`, `naval::fight::fitting`):
+Each post changes how it plays in a fight, its officer's strength times (`ship::trim`, `naval::fight::fitting`):
 
-- **First Mate**: up to four more hands lead aboard a struck ship, and her men fall up to 15% slower.
+- **First Mate**: up to four more hands lead aboard a struck ship, and its men fall up to 15% slower.
 - **Gunner**: fires the broadside the player is not laying, when it is loaded and squarely on a ship within its reach
-  (cosine 0.7 off its square), laid on that ship's middle; and her guns reload up to 10% faster.
-- **Bosun**: keeps up to half of the way her torn canvas costs her.
-- **Carpenter**: patches up to a quarter of each ball's harm to her hull back, two hull points a second, while she is
-  afloat; only a port city repairs her for good.
+  (cosine 0.7 off its square), laid on that ship's middle; and its guns reload up to 10% faster.
+- **Bosun**: keeps up to half of the way its torn canvas costs it.
+- **Carpenter**: patches up to a quarter of each ball's harm to its hull back, two hull points a second, while it is
+  afloat; only a port city repairs it for good.
 - **Lookout**: sights ships up to 40% farther.
 
 ## Signing on
@@ -80,8 +80,8 @@ Each post changes how she plays in a fight, its officer's strength times (`ship:
   4,000 and 9,000 Aurem. An officer already kept is not signed on twice.
 - **The pledge** is read in one place (`room::crew::pledge_of`), for the faction rules to decide; with no pledge no
   officer is offered.
-- **Taken**: a boarded deck won, each boarder rolls for her captain's officer to join them (`recruit::taken`): a
-  Minor's 3%, a Major's 5%, an Elite's 10% (Seasoned), a Miniboss's 18% and a Boss's 30% (Veteran), at her level.
+- **Taken**: a boarded deck won, each boarder rolls for its captain's officer to join them (`recruit::taken`): a
+  Minor's 3%, a Major's 5%, an Elite's 10% (Seasoned), a Miniboss's 18% and a Boss's 30% (Veteran), at its level.
 
 ## In the browser
 

@@ -1,6 +1,6 @@
-//! The ship's own power in the sea's fights: each fighting player's ship fitted by her character before each tick,
-//! her level, Attack and Defense against each captain's level by the gear crate's law (`gear::ship`), her modules' and
-//! officers' trim; and what a captain she fought going down or striking pays her and her officers.
+//! The ship's own power in the sea's fights: each fighting player's ship fitted by its character before each tick,
+//! its level, Attack and Defense against each captain's level by the gear crate's law (`gear::ship`), its modules' and
+//! officers' trim; and what a captain it fought going down or striking pays it and its officers.
 
 use crate::PlayerId;
 use crate::battle::{Fights, Sank};
@@ -14,7 +14,7 @@ use naval::fight::fitting::{Fitting, Trim};
 use naval::shots::ShipId;
 use std::collections::BTreeMap;
 
-/// Her trim as the naval rules take it.
+/// Its trim as the naval rules take it.
 #[must_use]
 pub fn trim_of(trim: &ShipTrim) -> Trim {
     Trim {
@@ -40,13 +40,16 @@ pub fn trim_of(trim: &ShipTrim) -> Trim {
     }
 }
 
-/// A player's ship fitted against each captain in her fight: her balls' harm on her by her Attack and level against
-/// her level, a captain's on her by her Defense, in place of what the captain's level makes of her guns.
+/// A player's ship fitted against each captain in its fight: its balls' harm on it by its Attack and level against
+/// its level, a captain's on it by its Defense, in place of what the captain's level makes of its guns.
 #[must_use]
 pub fn fitting(character: &Character, hostiles: &BTreeMap<ShipId, Pirate>) -> Fitting {
     let power = character.ship_power();
-    let dealt = hostiles.iter().map(|(id, her)| (*id, power.harm_dealt(her.level))).collect();
-    let taken = hostiles.iter().map(|(id, her)| (*id, power.harm_taken(her.level) / her.strength())).collect();
+    let dealt = hostiles.iter().map(|(id, other_ship)| (*id, power.harm_dealt(other_ship.level))).collect();
+    let taken = hostiles
+        .iter()
+        .map(|(id, other_ship)| (*id, power.harm_taken(other_ship.level) / other_ship.strength()))
+        .collect();
     Fitting { dealt, taken, trim: trim_of(&character.ship_trim()), patching: 0.0 }
 }
 
@@ -63,8 +66,8 @@ impl Fights {
     }
 }
 
-/// What a captain who went down pays each player who fought her, whose character the sea holds: her rank's foe's XP
-/// at her level to their ship and to their officers aboard. Answers who was paid.
+/// What a captain who went down pays each player who fought it, whose character the sea holds: its rank's foe's XP
+/// at its level to their ship and to their officers aboard. Answers who was paid.
 pub fn pay_sinking(sank: &Sank, characters: &mut BTreeMap<PlayerId, Character>) -> Vec<PlayerId> {
     let foe = crate::flotsam::foe_of(sank.pirate.commission.rank);
     let mut paid = Vec::new();
@@ -77,8 +80,8 @@ pub fn pay_sinking(sank: &Sank, characters: &mut BTreeMap<PlayerId, Character>) 
     paid
 }
 
-/// A won deck's captain's officer, now and then, joining a boarder who won it: each boarder rolls their own, at her
-/// level, more often the higher her rank (`gear::crew::recruit::taken`). Answers who gained one.
+/// A won deck's captain's officer, now and then, joining a boarder who won it: each boarder rolls their own, at its
+/// level, more often the higher its rank (`gear::crew::recruit::taken`). Answers who gained one.
 pub fn officers_join(won: &Sank, tick: u64, characters: &mut BTreeMap<PlayerId, Character>) -> Vec<PlayerId> {
     let mut joined = Vec::new();
     for player in &won.players {

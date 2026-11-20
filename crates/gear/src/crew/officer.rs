@@ -9,17 +9,17 @@ use crate::power;
 use crate::rarity::Rarity;
 use serde::{Deserialize, Serialize};
 
-/// The posts aboard, each changing how she plays. The numbers are the wire's.
+/// The posts aboard, each changing how it plays. The numbers are the wire's.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Post {
-    /// Keeps her men's nerve under fire, and leads more hands aboard a struck ship.
+    /// Keeps its men's nerve under fire, and leads more hands aboard a struck ship.
     FirstMate = 0,
     /// Fires the broadside the player is not laying, when it bears on a ship within reach and is loaded.
     Gunner = 1,
-    /// Trims her sails: in a fight she keeps more of the way her torn canvas costs her.
+    /// Trims its sails: in a fight it keeps more of the way its torn canvas costs it.
     Bosun = 2,
-    /// Patches her hull in a fight, giving back part of what each ball took once it has struck.
+    /// Patches its hull in a fight, giving back part of what each ball took once it has struck.
     Carpenter = 3,
     /// Sights ships farther off.
     Lookout = 4,

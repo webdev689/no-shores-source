@@ -54,7 +54,7 @@ pub struct Companion {
 pub(crate) struct Ashore {
     pub standing: BTreeMap<FighterId, Companion>,
     pub resting: BTreeMap<(PlayerId, u32), u64>,
-    /// A boarded deck's hands who came over her rail with their player, by fighter (`boarding_hands.rs`).
+    /// A boarded deck's hands who came over its rail with their player, by fighter (`boarding_hands.rs`).
     pub hands: BTreeMap<FighterId, crate::boarding_hands::Hand>,
     /// How many of each player's hands have fallen on this deck.
     pub fallen: BTreeMap<PlayerId, u8>,

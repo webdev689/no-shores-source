@@ -13,7 +13,7 @@ pub fn pledge_of(character: &Character) -> (u8, u32) {
     (0, 0)
 }
 
-/// Whether an ask is of the ship's: her modules, her materials or her crew. The sea keeps those while their player
+/// Whether an ask is of the ship's: its modules, its materials or its crew. The sea keeps those while their player
 /// fights on a boarded deck, so a deck refuses them.
 #[must_use]
 pub fn of_the_ship(ask: &Ask, character: &Character) -> bool {

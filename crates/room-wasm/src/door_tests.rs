@@ -278,7 +278,7 @@ fn a_course_is_furnished_and_each_players_gear_is_theirs_alone() {
     assert_eq!(
         message.gear().unwrap().items().unwrap().len(),
         9,
-        "the second player's own starting kit and her modules"
+        "the second player's own starting kit and its modules"
     );
     assert!(open_sea(include_bytes!("../../../content/world/layout.json"), 7));
     assert!(gear(first).is_empty(), "the sea keeps no gear");

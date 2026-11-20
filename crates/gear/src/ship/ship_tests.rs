@@ -33,12 +33,12 @@ fn a_new_ship_is_fitted_with_four_plain_modules_and_none_count_toward_the_charac
     assert!(character.ship_attack() > 0 && character.ship_defense() > 0);
     let without: u32 =
         character.all_worn().filter(|(slot, _)| !slot.ship()).filter_map(|(_, item)| item.defense()).sum();
-    assert_eq!(character.defense(), without, "her modules' Defense is hers, not the player's");
+    assert_eq!(character.defense(), without, "its modules' Defense is its, not the player's");
     assert_eq!(character.shown().worn.len(), 5);
 }
 
 #[test]
-fn a_kept_ship_is_fitted_once_and_her_modules_once_taken_off_stay_off() {
+fn a_kept_ship_is_fitted_once_and_its_modules_once_taken_off_stay_off() {
     let mut character = Character::starting();
     character.ask(Ask::TakeOff { slot: Slot::Guns }, Here::default(), &dice(0)).expect("off");
     let read = Character::from_json(&character.to_json()).expect("read");
@@ -50,11 +50,11 @@ fn a_kept_ship_is_fitted_once_and_her_modules_once_taken_off_stay_off() {
     object.remove("ship_fitted");
     object.insert("items".into(), serde_json::json!({}));
     let first = Character::from_json(&old.to_string()).expect("read");
-    assert_eq!(first.all_fitted().count(), 4, "a ship kept before modules is fitted as she is read");
+    assert_eq!(first.all_fitted().count(), 4, "a ship kept before modules is fitted as it is read");
 }
 
 #[test]
-fn her_level_climbs_by_her_own_experience_then_by_her_modules_prestige() {
+fn its_level_climbs_by_its_own_experience_then_by_its_modules_prestige() {
     let mut character = Character::starting();
     character.earn_ship_xp(u32::try_from(power::xp_for_level(12)).expect("fits"));
     assert_eq!(character.ship_level(), 12);
@@ -71,7 +71,7 @@ fn her_level_climbs_by_her_own_experience_then_by_her_modules_prestige() {
 }
 
 #[test]
-fn a_module_is_fitted_only_at_her_level_in_its_own_slot_and_one_atheric_among_her_modules() {
+fn a_module_is_fitted_only_at_its_level_in_its_own_slot_and_one_atheric_among_its_modules() {
     let mut character = Character::starting();
     let guns = carry(&mut character, Kind::Guns, Rarity::Rare, 10);
     let here = Here::default();
@@ -137,7 +137,7 @@ fn salvage_gives_ship_materials_and_its_modules_never_past_what_its_level_could_
 }
 
 #[test]
-fn salvage_taken_fills_her_stocks_to_their_most_and_carries_its_module() {
+fn salvage_taken_fills_its_stocks_to_their_most_and_carries_its_module() {
     let mut character = Character::starting();
     character.materials.ship = ShipStock { timber: 199, ..ShipStock::default() };
     let found = salvage(Source::Breach, 20, &dice(3));
@@ -149,7 +149,7 @@ fn salvage_taken_fills_her_stocks_to_their_most_and_carries_its_module() {
 }
 
 #[test]
-fn the_shipwright_sells_modules_at_her_level_and_a_sinking_pays_her_experience() {
+fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_its_experience() {
     let mut character = Character::starting();
     character.earn_ship_xp(u32::try_from(power::xp_for_level(9)).expect("fits"));
     let wares = vendor::wares(Vendor::Shipwright, 3, character.ship_level());
@@ -162,7 +162,7 @@ fn the_shipwright_sells_modules_at_her_level_and_a_sinking_pays_her_experience()
     let earned = character.reward_sinking(Foe::Brute, 10, Difficulty::Normal);
     assert_eq!(earned, 270);
     assert_eq!(character.ship_xp - before, 270);
-    assert_eq!(character.xp, 0, "the player earns nothing from her sinking a ship");
+    assert_eq!(character.xp, 0, "the player earns nothing from its sinking a ship");
 }
 
 #[test]
@@ -170,7 +170,7 @@ fn ship_power_meets_a_hostile_ships_level_by_the_characters_own_law() {
     let mut character = Character::starting();
     character.earn_ship_xp(u32::MAX);
     let power = character.ship_power();
-    assert!((power.harm_dealt(power.level + 4) - 0.0).abs() < 1e-12, "four levels under, her balls do nothing");
+    assert!((power.harm_dealt(power.level + 4) - 0.0).abs() < 1e-12, "four levels under, its balls do nothing");
     assert!(power.harm_taken(power.level + 2) > power.harm_taken(power.level));
     assert!((power.harm_dealt(1) - power::by_player(power.attack, power.level, 1)).abs() < 1e-12);
 }
@@ -205,14 +205,14 @@ fn infusion_raises_a_kept_module_to_the_fed_ones_level_keeping_its_nodes_for_aur
 }
 
 #[test]
-fn a_fitted_module_is_infused_no_higher_than_she_could_fit_it() {
+fn a_fitted_module_is_infused_no_higher_than_it_could_fit_it() {
     let mut character = Character::starting();
     let kept = character.fitted(Slot::Hull).expect("fitted").id;
     let fed = carry(&mut character, Kind::Hull, Rarity::Normal, 8);
     character.materials.aurem = 5_000;
     character.materials.ship.add(ShipMaterial::Timber, 50);
     let infuse = Ask::Infuse { item: kept, fed };
-    assert_eq!(character.ask(infuse, Here::default(), &dice(0)), Err(Refusal::TooLow), "she is level 1");
+    assert_eq!(character.ask(infuse, Here::default(), &dice(0)), Err(Refusal::TooLow), "it is level 1");
     character.earn_ship_xp(u32::try_from(power::xp_for_level(8)).expect("fits"));
     character.ask(infuse, Here::default(), &dice(0)).expect("infused");
     assert_eq!(character.item(kept).map(|module| module.level), Some(8));

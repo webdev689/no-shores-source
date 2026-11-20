@@ -100,7 +100,7 @@ pub fn offers(faction: u8, day: u64, level: u8, rank: u32) -> Vec<Officer> {
         .collect()
 }
 
-/// The chance a won deck's officer joins the winner, by her captain's rank (1 Minor to 5 Boss), and the grade they
+/// The chance a won deck's officer joins the winner, by its captain's rank (1 Minor to 5 Boss), and the grade they
 /// come in.
 #[must_use]
 pub fn taken_odds(rank: u8) -> (f64, Rarity) {

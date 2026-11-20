@@ -5,7 +5,7 @@
   flex-direction: column;
   gap: 6px;
 }
-/* Her papers beside her power, modules, materials and hands. */
+/* Its papers beside its power, modules, materials and hands. */
 .ship-manage {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
@@ -25,13 +25,13 @@
 .ship-power .gear-heading {
   margin: 4px 0 4px;
 }
-/* Her level, and her Attack, Defense and Prestige beside it, label over number. */
+/* Its level, and its Attack, Defense and Prestige beside it, label over number. */
 .ship-power-head {
   display: flex;
   align-items: center;
   gap: 22px;
 }
-/* The meter toward her next level, its words under it. */
+/* The meter toward its next level, its words under it. */
 .ship-progress {
   flex: 1;
   display: flex;
@@ -96,7 +96,7 @@
   gap: 4px;
   margin-bottom: 6px;
 }
-/* Her four materials keep to one row beside her papers. */
+/* Its four materials keep to one row beside its papers. */
 .ship-materials .gear-currency {
   gap: 4px;
   padding: 4px 8px 4px 4px;

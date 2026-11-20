@@ -1,4 +1,4 @@
-//! The ship's part of a player's gear message: her own power, her materials, her hands and her officers, and at a
+//! The ship's part of a player's gear message: its own power, its materials, its hands and its officers, and at a
 //! pledged faction's counter in a social space the officers of the day.
 
 use crate::gear_wire::column_number;
@@ -9,7 +9,7 @@ use gear::crew::Officer;
 use gear::crew::recruit::{offers, wage};
 use gear::grid::{column_xp, cost};
 
-/// The hands her complement holds: the player's Sloop's.
+/// The hands its complement holds: the player's Sloop's.
 pub const HANDS_MOST: f64 = naval::arms::LARGE_BOAT.crew;
 
 fn officer_offset<'built>(

@@ -100,7 +100,7 @@ number is one of [[Gear as Claude Shapes It]].
   named item of its slot (a Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled,
   never a trait twice.
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
-  a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and her officers have theirs
+  a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
   ([[Crew]]).
   An ask refused changes nothing and says why. A slot carries nine beside the one worn; the vault, reached in a
   social space, twenty weapons, twenty armour and twenty Vestiges. A slot read past nine from a kept character
@@ -119,7 +119,7 @@ number is one of [[Gear as Claude Shapes It]].
 - **Hands.** A player holds only what a loadout they wear puts in their hands, the fists with no Melee worn, or a
   torch beside a loadout that leaves the left hand free; the browser draws the hands from the loadout drawn, in a
   metal its rarity likes.
-- **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the loadout it
+- **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the loadout its
   came from (a shot the Ranged one's, as it was when the shot was loosed; a swing Melee's, or Ranged's while it is
   drawn or no Melee is worn), a foe's on a player by the player's Defense, each by the two levels. A foe of level 0
   fights by combat's own numbers.
@@ -130,7 +130,7 @@ number is one of [[Gear as Claude Shapes It]].
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
   stamina a kill, a parry or a block gives back, with Last Light's reload, and the verbs ("Verbs", below). A player's
-  perks are the armour's and the drawn loadout's alone: the other loadout's wait until it is drawn, and drawing it
+  perks are the armour's and the drawn loadout's alone: the other loadout's wait until it is drawn, and drawing its
   sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
   touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
@@ -205,7 +205,7 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
-  section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once it
+  section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once its
   rests.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes.

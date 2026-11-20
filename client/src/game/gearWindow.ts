@@ -404,7 +404,7 @@ export function startGearWindow(
         });
     }
     // Built again only when the room's word on the gear is new, or the player moved within the menu.
-    // The ship's papers change at sea, so her tab is built again with them.
+    // The ship's papers change at sea, so its tab is built again with them.
     const papers = view === 'ship' ? ship() : null;
     const state = JSON.stringify([view, slot, arts, artSlot, artPending, shelf, inspecting, drawn, !now, papers]);
     // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
@@ -431,7 +431,7 @@ export function startGearWindow(
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
       const why = now ? 'Loading…' : (lost ?? 'Your gear shows here on foot, when playing online.');
-      // Her papers show without the room's word on her power and crew.
+      // Its papers show without the room's word on its power and crew.
       body.replaceChildren(view === 'ship' ? shipPage(papers) : make('p', why, 'gear-hint gear-empty'));
       hinted([]);
       actions.replaceChildren(close);
@@ -500,7 +500,7 @@ export function startGearWindow(
         : view === 'inventory'
           ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
           : view === 'ship'
-            ? // On her tab the officer whose page is open stands in the slot's place, so Escape steps back from it.
+            ? // On its tab the officer whose page is open stands in the slot's place, so Escape steps back from it.
               shipTab(context, papers, [shelf, slot], (part, officer) => (([shelf, slot] = [part, officer]), render()))
             : view === 'harbourmaster'
               ? harbourPage(context)
@@ -524,7 +524,7 @@ export function startGearWindow(
     const hints = shown ? HINTS.item : worn ? ARTS_HINTS : view === 'inventory' ? shelfHints : HINTS[view];
     hinted(hints ?? []);
     actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || worn ? [stepBack] : [close]));
-    // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it
+    // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes its
     // goes back to the item's tile.
     const found = (key: string | null | undefined) =>
       key ? screen.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`) : null;

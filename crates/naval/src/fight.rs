@@ -131,18 +131,18 @@ pub struct Fight {
     pub ships: BTreeMap<ShipId, Vessel>,
     pub balls: Vec<Ball>,
     stems: BTreeMap<ShipId, ram::Stem>,
-    /// Each player's ship as her own gear fits her (`fitting.rs`).
+    /// Each player's ship as its own gear fits it (`fitting.rs`).
     fittings: BTreeMap<ShipId, fitting::Fitting>,
 }
 
-/// What a player's hurts leave her helm: whether she is a wreck, the canvas she has left, and the share of her way it
+/// What a player's hurts leave her helm: whether she is a wreck, the canvas she has left, and the share of her way its
 /// leaves her.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Hurts {
     pub wrecked: bool,
     pub sail: f64,
     pub way_share: f64,
-    /// The share of the turn her helm asks that her trim gives her.
+    /// The share of the turn its helm asks that its trim gives it.
     pub turn: f64,
 }
 
@@ -158,7 +158,7 @@ impl Hurts {
         Self { wrecked, sail, way_share: way_share_of(sail, max_sail), turn: 1.0 }
     }
 
-    /// Her hurts as her fitting trims them: the way her canvas leaves her, and her turn.
+    /// Its hurts as its fitting trims them: the way its canvas leaves it, and its turn.
     #[must_use]
     pub fn fitted(self, fitting: Option<&fitting::Fitting>) -> Self {
         let Some(fitting) = fitting else { return self };
@@ -167,7 +167,7 @@ impl Hurts {
 }
 
 /// A player's ship of `hull` stepped a tick by her helm, as her hurts let her: no sail sets on a wreck or with her
-/// rigging shot away, and her sails' and oars' pull is held back. Answers her and, when her helm climbed for sail it
+/// rigging shot away, and her sails' and oars' pull is held back. Answers her and, when her helm climbed for sail its
 /// could not set, whether that was for her being a wreck.
 #[must_use]
 pub fn sail_hurt(

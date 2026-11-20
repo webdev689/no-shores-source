@@ -213,9 +213,9 @@ export interface GearOfficer {
   readonly wage: number;
 }
 
-/** The ship's part of the gear message: her experience, level, Prestige, Attack and Defense and how far to her next;
- *  Timber, Canvas, Iron and Heartwood in `stocks`; her hands of her complement; her officers, the officers of the
- *  day at a pledged faction's counter, and her trim at sea. */
+/** The ship's part of the gear message: its experience, level, Prestige, Attack and Defense and how far to its next;
+ *  Timber, Canvas, Iron and Heartwood in `stocks`; its hands of its complement; its officers, the officers of the
+ *  day at a pledged faction's counter, and its trim at sea. */
 export interface GearShip {
   readonly xp: bigint;
   readonly level: number;

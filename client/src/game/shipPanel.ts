@@ -1,5 +1,5 @@
-// What Manage shows of the player's Sloop: what the naval rules say she is, her measure, where her voyage stands and
-// her repair. Her power, modules and crew come with the player's gear (`shipGear.ts`).
+// What Manage shows of the player's Sloop: what the naval rules say it is, its measure, where its voyage stands and
+// its repair. Its power, modules and crew come with the player's gear (`shipGear.ts`).
 
 /** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
 export interface SloopBuild {
@@ -128,7 +128,7 @@ export function shipPanelOf(
             },
           ]
         : []),
-      ...(kept ? [{ heading: 'Repair', rows: [['Repair her  R', kept.repair]] as const }] : []),
+      ...(kept ? [{ heading: 'Repair', rows: [['Repair its  R', kept.repair]] as const }] : []),
     ],
   };
 }

@@ -1,5 +1,5 @@
 // The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Sloop's papers as Manage
-// shows them (`shipPages.ts` puts her power and crew beside them); and Settings, which keeps the account and the
+// shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the account and the
 // volumes of the interface and the world.
 
 import { make } from '../editor/dom.ts';
@@ -20,7 +20,7 @@ export function laterPage(name: string, words: string): HTMLElement {
   return page;
 }
 
-/** Her papers: her name, then each part of them. */
+/** Its papers: its name, then each part of them. */
 export function shipPage(panel: ShipPanel | null): HTMLElement {
   const page = make('div', '', `gear-ship ${ROLES.panel}`);
   if (!panel) {

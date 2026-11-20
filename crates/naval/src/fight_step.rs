@@ -187,7 +187,7 @@ impl Fight {
         }
     }
 
-    /// A player's laid side fired: its scatter and its reload as her fitting trims them.
+    /// A player's laid side fired: its scatter and its reload as its fitting trims them.
     fn player_volley(&mut self, id: ShipId, laid: Lay) {
         let trim = self.fittings.get(&id).map(|fitted| fitted.trim).unwrap_or_default();
         let scatter = |spread: f64| spread * trim.scatter;
@@ -201,12 +201,12 @@ impl Fight {
         let Some(player) = self.ships.get_mut(&id) else { return };
         let carry = carry_of(&player.ship);
         self.balls.extend(volley(&laid, carry, LARGE_BOAT.skill, seed, self.clock, (id, Flag::Player)));
-        // Her hands work her guns: whole, at the pace one player alone always loaded them; thinned, slower.
+        // Its hands work its guns: whole, at the pace one player alone always loaded them; thinned, slower.
         player.guns.fired(laid.side, player.damage.crew_share(), true);
         player.guns.pace_reload(laid.side, RELOAD_SINGLEHANDED * trim.reload);
     }
 
-    /// Her Gunner's broadside, when he has one to fire: the side her own lay this tick does not take.
+    /// Its Gunner's broadside, when he has one to fire: the side its own lay this tick does not take.
     fn gunner_fires(&mut self, id: ShipId, order: &Orders) {
         let own = order.aim.as_ref().and_then(|aim| self.laid(id, aim)).map(|laid| laid.side);
         let afloat = self.ships.get(&id).is_some_and(|vessel| vessel.damage.fighting() && !vessel.guns.braced);

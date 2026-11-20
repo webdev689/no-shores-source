@@ -55,7 +55,7 @@ impl SeaParts {
                 })
         };
         let ships = self.ships.iter().filter(seen).copied().collect();
-        // A Lookout sights each ship from farther off: her sight, as this player is sent it, is that much longer.
+        // A Lookout sights each ship from farther off: its sight, as this player is sent it, is that much longer.
         let lookout = self.lookouts.iter().find(|(each, _)| *each == player).map_or(1.0, |(_, times)| *times);
         let sighted =
             self.pirates.iter().map(|pirate| room::pirates::Pirate { sight_m: pirate.sight_m * lookout, ..*pirate });

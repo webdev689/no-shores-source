@@ -23,7 +23,7 @@ impl Character {
         }
         let climbs = feeding.level.saturating_sub(keeping.level);
         let worn = matches!(self.at(kept), Some(At::Worn(_)));
-        // A module fitted rises no higher than she could fit it.
+        // A module fitted rises no higher than it could fit it.
         if climbs == 0 || worn && feeding.level > self.ship_level() {
             return Err(Refusal::TooLow);
         }

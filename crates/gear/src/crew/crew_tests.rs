@@ -115,7 +115,7 @@ fn one_officer_holds_each_post_two_go_ashore_and_eight_are_kept() {
 }
 
 #[test]
-fn a_posted_officer_changes_her_trim_by_their_post_and_their_perks_and_one_aboard_changes_nothing() {
+fn a_posted_officer_changes_its_trim_by_their_post_and_their_perks_and_one_aboard_changes_nothing() {
     let (mut character, ids) = with_officers(&[Post::Gunner, Post::FirstMate]);
     let plain = character.ship_trim();
     assert_eq!(plain, crate::ship::trim::ShipTrim::default());

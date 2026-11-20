@@ -1,5 +1,5 @@
 // The ship's glyphs, drawn pixel by pixel as the gear's are (`gearGlyphs.ts`, 12 × 12, a letter a colour of the
-// palette and a dot none): her four materials, Timber, Canvas, Iron and Heartwood, and her four modules, Guns, Hull,
+// palette and a dot none): its four materials, Timber, Canvas, Iron and Heartwood, and its four modules, Guns, Hull,
 // Sails and Rigging, which stand for a module's picture since the forge draws only what a figure wears.
 
 import { OUTLINE } from '../combat/dropPictures.ts';
@@ -87,7 +87,7 @@ export const SHIP_MAPS: Readonly<Record<ShipGlyph, readonly string[]>> = {
     'aeea.aeea...',
     '.aa...aa....',
   ],
-  // Her hull from the side, its gunports along her.
+  // Its hull from the side, its gunports along it.
   hull: [
     '............',
     '............',

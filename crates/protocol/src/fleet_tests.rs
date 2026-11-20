@@ -151,7 +151,7 @@ fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
     assert_eq!(
         vessels[0].hurts().unwrap().iter().collect::<Vec<_>>(),
         [240.0, 240.0, 96.0, 96.0, 10.0, 10.0],
-        "her hull, canvas and ten hands"
+        "its hull, canvas and ten hands"
     );
     assert_eq!((vessels[0].acknowledged(), vessels[1].acknowledged()), (12, 0));
     assert_eq!((vessels[0].load(), vessels[2].mode()), (1, 0), "round shot, cruising");

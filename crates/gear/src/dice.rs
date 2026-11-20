@@ -36,7 +36,7 @@ pub enum Purpose {
     ShipMaterial = 1_010,
     /// A port's officers of the day: post, name and traits (the officer's place, times 16, added).
     Recruit = 1_100,
-    /// Whether a boarded deck's officer joins the winner, and who she is.
+    /// Whether a boarded deck's officer joins the winner, and who it is.
     Taken = 1_900,
 }
 

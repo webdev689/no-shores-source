@@ -85,7 +85,7 @@ test('an ask crosses into an input with every field it names', () => {
   assert.equal(none.ask(), null, 'an input that asks nothing carries no ask');
 });
 
-test("the ship's part of the gear message reads back: her power, materials, hands, officers and offers", () => {
+test("the ship's part of the gear message reads back: its power, materials, hands, officers and offers", () => {
   const builder = new flatbuffers.Builder(256);
   const traits = GearColumn.createTraitsVector(builder, [builder.createString('steady_hand')]);
   const column = GearColumn.createGearColumn(builder, 3, traits, 400, 900, 0, 2, 0);

@@ -1,14 +1,14 @@
-//! What a ship's fitted modules and her posted officers make of her numbers at sea, as one trim the sea's rules read:
+//! What a ship's fitted modules and its posted officers make of its numbers at sea, as one trim the sea's rules read:
 //! each module's and officer's chosen perks by the words they are written with (`content/gear/traits.json`), and each
 //! post's own work, by how well its officer holds it. A factor of 1 changes nothing.
 
 use crate::character::Character;
 use crate::crew::{Duty, Post};
 
-/// Her trim: factors on her guns' reload and scatter, on what her balls do to a ship's hull, canvas and men (and to
-/// one below a third of her hull), on her way and her turning, on what balls do to her own hull, canvas and men (and to
-/// her hull below a third of it, and below her waterline), on her ram's harm, on her Carpenter's patches and on how
-/// far she sights; how many more hands board with her; and each post's work, 0 when none holds it.
+/// Its trim: factors on its guns' reload and scatter, on what its balls do to a ship's hull, canvas and men (and to
+/// one below a third of its hull), on its way and its turning, on what balls do to its own hull, canvas and men (and to
+/// its hull below a third of it, and below its waterline), on its ram's harm, on its Carpenter's patches and on how
+/// far it sights; how many more hands board with it; and each post's work, 0 when none holds it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ShipTrim {
     pub reload: f64,
@@ -59,9 +59,9 @@ impl Default for ShipTrim {
     }
 }
 
-/// What the post's own work is at full strength: her Gunner's reload and scatter, her Bosun's way kept turning and
-/// with torn canvas, the share of each ball's harm her Carpenter patches back, how much farther her Lookout sights,
-/// and the hands her First Mate leads aboard and how much slower her men fall.
+/// What the post's own work is at full strength: its Gunner's reload and scatter, its Bosun's way kept turning and
+/// with torn canvas, the share of each ball's harm its Carpenter patches back, how much farther its Lookout sights,
+/// and the hands its First Mate leads aboard and how much slower its men fall.
 pub const GUNNER_RELOAD: f64 = 0.1;
 pub const BOSUN_KEEPS: f64 = 0.5;
 pub const CARPENTER_PATCHES: f64 = 0.25;
@@ -166,7 +166,7 @@ impl ShipTrim {
 }
 
 impl Character {
-    /// Her trim at sea: her fitted modules' perks, and her posted officers' posts and perks.
+    /// Its trim at sea: its fitted modules' perks, and its posted officers' posts and perks.
     #[must_use]
     pub fn ship_trim(&self) -> ShipTrim {
         let mut trim = ShipTrim::default();

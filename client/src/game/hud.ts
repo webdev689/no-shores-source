@@ -26,7 +26,7 @@ function seaGroup(label: string, ...controls: HTMLElement[]): HTMLElement {
   return group;
 }
 
-/** A mark on the screen: a node, a port or a hostile ship, where it stands in CSS pixels, its size there, and what it
+/** A mark on the screen: a node, a port or a hostile ship, where it stands in CSS pixels, its size there, and what its
  *  says. */
 export interface ScreenMark {
   readonly id: string;
@@ -379,7 +379,7 @@ export class Hud {
     this.voyageWanted = toggle;
   }
 
-  /** Manage's panel over her deck: her name, and each part of it; null hides it.
+  /** Manage's panel over its deck: its name, and each part of it; null hides it.
    *  It is built again only when its shape changes, its values written in place, so a press on it is never lost. */
   shipPanel(panel: ShipPanel | null): void {
     this.panel.hidden = panel === null;

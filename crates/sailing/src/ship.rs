@@ -38,7 +38,7 @@ pub struct Helm {
 pub const SAILS_SET: i8 = 2;
 
 /// The shares of the way her sails and her oars may ask that her hurts leave her (naval combat's: canvas shot away,
-/// a wreck's oars), and of the turn her helm asks that her trim gives her; whole for a sound ship.
+/// a wreck's oars), and of the turn its helm asks that its trim gives it; whole for a sound ship.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pull {
     pub sail: f64,

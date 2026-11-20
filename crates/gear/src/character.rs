@@ -96,7 +96,7 @@ impl Materials {
             Stuff::Fragments(Stock::Armor) => &mut self.armor_fragments,
             Stuff::Essence(Stock::Weapon) => &mut self.weapon_essence,
             Stuff::Essence(Stock::Armor) => &mut self.armor_essence,
-            // A ship's materials are her own stock's.
+            // A ship's materials are its own stock's.
             Stuff::Fragments(Stock::Ship) | Stuff::Essence(Stock::Ship) => return 0,
             Stuff::Fruit => &mut self.fruit,
             Stuff::Resource(index) => {
@@ -151,13 +151,13 @@ pub struct Character {
     /// Where the sea last kept their ship, to the whole metre; none before she first put to sea.
     #[serde(default)]
     pub ship_at: Option<[i64; 2]>,
-    /// The experience the ship has earned in sea fights, which raises her to level 20 (`ship.rs`).
+    /// The experience the ship has earned in sea fights, which raises it to level 20 (`ship.rs`).
     #[serde(default)]
     pub ship_xp: u64,
-    /// Whether the ship has been fitted with her first modules; a ship never fitted is, as she is read.
+    /// Whether the ship has been fitted with its first modules; a ship never fitted is, as it is read.
     #[serde(default)]
     pub ship_fitted: bool,
-    /// Her named officers (`crew.rs`).
+    /// Its named officers (`crew.rs`).
     #[serde(default)]
     pub crew: crate::crew::Crew,
 }
@@ -397,7 +397,7 @@ impl Character {
     }
 
     /// Everything worn that gives its traits while a loadout is drawn: the armour and that loadout; never the ship's
-    /// modules, whose traits are hers (`ship_traits`).
+    /// modules, whose traits are the ship's (`ship_traits`).
     fn drawing(&self, drawn: Slot) -> impl Iterator<Item = &Item> {
         let gives = move |slot: &Slot| slot.group() == Group::Armour || *slot == drawn;
         self.all_worn().filter(move |(slot, _)| gives(slot)).map(|(_, item)| item)

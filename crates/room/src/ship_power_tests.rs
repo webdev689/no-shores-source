@@ -22,7 +22,7 @@ impl Waters for Open {
 const LEVEL: u8 = 20;
 const LONGEST_TICKS: u64 = 60 * 600;
 
-/// A player's character, her ship raised to `ship_level` by her experience and fitted with Rare modules of it.
+/// A player's character, its ship raised to `ship_level` by its experience and fitted with Rare modules of it.
 fn sailor(ship_level: u8) -> Character {
     let mut character = Character::starting();
     character.earn_ship_xp(u32::try_from(gear::power::xp_for_level(ship_level)).unwrap_or(u32::MAX));
@@ -56,8 +56,8 @@ fn hostile_of(rank: Rank, level: u8, nth: usize) -> (Pirate, Commission) {
     (pirate, commission)
 }
 
-/// Whether the captain struck or went down, whether the player's ship did, and the share of her hull the captain lost,
-/// after a fight of the plain player's orders, her ship fitted by `character`'s.
+/// Whether the captain struck or went down, whether the player's ship did, and the share of its hull the captain lost,
+/// after a fight of the plain player's orders, its ship fitted by `character`'s.
 fn fought(character: &Character) -> (bool, bool, f64) {
     fought_with(character, hostile())
 }
@@ -73,25 +73,25 @@ fn fought_with(character: &Character, (pirate, commission): (Pirate, Commission)
         let orders = plain_orders(&fight, PLAYER, tick, 300.0);
         fight.step(&[(PLAYER, orders)], &Open, [1.5, 0.0], 0.0);
         sunk |= fight.vessel(PLAYER).is_some_and(|own| matches!(own.damage.state, State::Sinking | State::Sunk));
-        let her = fight.vessel(CAPTAIN).expect("in the fight");
-        let done = her.command().is_some_and(|command| command.struck_at.is_some() || command.gone.is_some());
+        let other_ship = fight.vessel(CAPTAIN).expect("in the fight");
+        let done = other_ship.command().is_some_and(|command| command.struck_at.is_some() || command.gone.is_some());
         if done || sunk {
-            return (done, sunk, 1.0 - her.damage.hull / her.damage.max_hull);
+            return (done, sunk, 1.0 - other_ship.damage.hull / other_ship.damage.max_hull);
         }
     }
     (false, sunk, 0.0)
 }
 
 #[test]
-fn a_ships_level_decides_a_fight_with_a_ship_of_hers_as_a_players_does_a_foes_on_land() {
+fn a_ships_level_decides_a_fight_with_a_ship_of_that_level_as_a_players_does_a_foes_on_land() {
     let matched = fought(&sailor(LEVEL));
     let green = fought(&sailor(1));
-    assert!(matched.0 && !matched.1, "a ship of her level makes her strike: {matched:?}");
-    assert!(!green.0 && green.1 && green.2 < 0.05, "a level 1 ship barely harms her and goes down: {green:?}");
+    assert!(matched.0 && !matched.1, "a ship of its level makes its strike: {matched:?}");
+    assert!(!green.0 && green.1 && green.2 < 0.05, "a level 1 ship barely harms it and goes down: {green:?}");
 }
 
 #[test]
-fn her_fitting_reads_her_power_and_trim_and_an_officer_at_his_post_shapes_it() {
+fn its_fitting_reads_its_power_and_trim_and_an_officer_at_their_post_shapes_it() {
     let mut character = sailor(LEVEL);
     let (pirate, _) = hostile();
     let hostiles = [(CAPTAIN, pirate)].into();
@@ -107,7 +107,7 @@ fn her_fitting_reads_her_power_and_trim_and_an_officer_at_his_post_shapes_it() {
 }
 
 #[test]
-fn a_sinking_pays_her_and_her_officers_aboard_and_a_won_deck_now_and_then_gives_an_officer() {
+fn a_sinking_pays_its_and_its_officers_aboard_and_a_won_deck_now_and_then_gives_an_officer() {
     let (pirate, _) = hostile();
     let mut characters: BTreeMap<PlayerId, Character> = [(3, Character::starting()), (4, Character::starting())].into();
     let id =
@@ -129,24 +129,24 @@ fn dice() -> gear::dice::Dice {
 }
 
 #[test]
-fn a_captain_sails_her_own_way_whatever_the_players_fitting() {
+fn a_captain_sails_its_own_way_whatever_the_players_fitting() {
     let (pirate, commission) = hostile();
     let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     let mut fight = Fight::begin(ship, commission, pirate.seed, &Open, 0.0).expect("a fight");
     fight.fit(PLAYER, fitting(&sailor(LEVEL), &[(CAPTAIN, pirate)].into()));
-    assert!(matches!(fight.vessel(CAPTAIN).map(|her| &her.sailor), Some(Sailor::Captain(_))));
+    assert!(matches!(fight.vessel(CAPTAIN).map(|other_ship| &other_ship.sailor), Some(Sailor::Captain(_))));
     assert!(fight.fitting(CAPTAIN).is_none());
 }
 
-/// The sea's fights by ship level: a plain player against bold captains of each rank at each level, her ship at the
-/// starting level, three under and level with them by her experience (her Rare modules' Prestige carries her past
+/// The sea's fights by ship level: a plain player against bold captains of each rank at each level, its ship at the
+/// starting level, three under and level with them by its experience (its Rare modules' Prestige carries it past
 /// 20, as the table's level shows), `FIGHTS` fights a row on open water. Run by hand, in release:
 /// `cargo test -p room --release fights_by_ship_level -- --ignored --nocapture`.
 #[test]
 #[ignore = "a measurement, run by hand"]
 fn fights_by_ship_level() {
     const FIGHTS: usize = 6;
-    eprintln!("| Rank | Her level | Ship level | Won | Sunk | Her hull lost |");
+    eprintln!("| Rank | Its level | Ship level | Won | Sunk | Its hull lost |");
     eprintln!("|---|---|---|---|---|---|");
     for rank in [Rank::Minor, Rank::Major, Rank::Elite, Rank::Miniboss, Rank::Boss] {
         for level in [5_u8, 12, 20] {

@@ -1,5 +1,5 @@
-//! A ship's crew: her hands, a headcount that works her guns and sails (the men the sea keeps as a share of her
-//! complement, filled again at a port), and her named officers. An officer holds a post aboard that changes how she
+//! A ship's crew: its hands, a headcount that works its guns and sails (the men the sea keeps as a share of its
+//! complement, filled again at a port), and its named officers. An officer holds a post aboard that changes how its
 //! plays, or goes ashore beside the player as a companion; each has experience, a grid of nodes and perks of their
 //! own, as an item does (`grid.rs`). Officers are recruited at the player's faction's counter (`recruit.rs`), or
 //! taken rarely when a boarded deck is won.

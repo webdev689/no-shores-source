@@ -80,7 +80,7 @@ fn a_harder_seas_pieces_hold_a_vestige_as_often_as_a_harder_voyage_pays_one_on_l
 }
 
 #[test]
-fn every_piece_gathered_holds_ship_materials_for_her_and_what_was_taken_is_hers() {
+fn every_piece_gathered_holds_ship_materials_for_the_ship_and_what_was_taken_is_its() {
     let mut flotsam = Flotsam::new(1);
     flotsam.lay(&sank(Rank::Boss, vec![1]), 0, (1, 0));
     let mut characters = BTreeMap::from([(1, Character::starting())]);

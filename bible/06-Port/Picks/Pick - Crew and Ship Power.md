@@ -19,18 +19,18 @@ dfo_commit: 1c0fd68 (main)
 
 DFO's crew and its ship refits, read as the specification for Overlook's ship power and crew, which the owner asked
 for ([[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]]): named crew who hold posts aboard and go
-ashore as companions, recruited and now and then taken; and a ship whose parts are raised apart from her captain. How
+ashore as companions, recruited and now and then taken; and a ship whose parts are raised apart from its captain. How
 it works now: [[Ship Power]] and [[Crew]].
 
 ## What comes over
 
 - **Posts aboard** (`shipCrew.js`): DFO's First Mate, Gunner, Bosun, Carpenter and Lookout, one holding each post, a
   better hand counting where two could. DFO's posts were flat factors (a Gunner's 4 to 13% reload); Overlook's change
-  how she plays as well: the Gunner fires the broadside the player is not laying, the Carpenter patches part of each
-  ball's harm in a fight, the Bosun keeps way torn canvas costs her, the First Mate leads more hands aboard and keeps
-  her men's nerve, the Lookout sights farther ([[The Ship's Power, Crew and Islands as Claude Shapes Them]]).
+  how it plays as well: the Gunner fires the broadside the player is not laying, the Carpenter patches part of each
+  ball's harm in a fight, the Bosun keeps way torn canvas costs it, the First Mate leads more hands aboard and keeps
+  its men's nerve, the Lookout sights farther ([[The Ship's Power, Crew and Islands as Claude Shapes Them]]).
 - **Headcount** (`crewLife.js`): DFO's one named hand shown for every six crew becomes hands as a count of their own
-  beside the named officers, ten on the player's Sloop, who load her guns and fall to balls.
+  beside the named officers, ten on the player's Sloop, who load its guns and fall to balls.
 - **Companions ashore** (`crewCompanions.js`, `crewAshore.js`): two ashore at most, following behind the leader at
   DFO's distances, put back at their place when left 40 m behind, knocked out rather than killed and resting before
   they come ashore again, fighting with the foes' own minds on the players' side and never harmed by the player.

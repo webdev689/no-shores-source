@@ -17,12 +17,12 @@ impl Waters for Open {
 const STILL: Helm = Helm { steer: 0.0, crab: false, climb: 0 };
 const IDLE: Orders = Orders { helm: STILL, aim: None, fire: false, brace: false, load: None };
 
-/// A fight with her captain lying `east` metres off the player's starboard beam (both heading north), still.
+/// A fight with its captain lying `east` metres off the player's starboard beam (both heading north), still.
 fn abeam(east: f64) -> Fight {
     let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     let mut fight = Fight::begin(ship, Commission::default(), 3, &Open, 0.0).expect("a fight");
-    if let Some(her) = fight.ships.get_mut(&CAPTAIN) {
-        her.ship = Ship { x: east, y: 0.0, ..ship };
+    if let Some(other_ship) = fight.ships.get_mut(&CAPTAIN) {
+        other_ship.ship = Ship { x: east, y: 0.0, ..ship };
     }
     fight
 }
@@ -32,7 +32,7 @@ fn fitted(trim: Trim, dealt: f64, taken: f64) -> Fitting {
 }
 
 #[test]
-fn a_ship_with_no_fitting_strikes_and_is_struck_as_she_always_was() {
+fn a_ship_with_no_fitting_strikes_and_is_struck_as_it_always_was() {
     let fight = abeam(80.0);
     assert_eq!(fight.fitted_gun(SWIVEL, PLAYER, CAPTAIN, Zone::Hull), SWIVEL);
     assert_eq!(fight.fitted_gun(SWIVEL, CAPTAIN, PLAYER, Zone::Hull), SWIVEL);
@@ -40,7 +40,7 @@ fn a_ship_with_no_fitting_strikes_and_is_struck_as_she_always_was() {
 }
 
 #[test]
-fn her_power_meets_each_ship_she_fights_out_and_in_and_her_trim_shapes_each_part() {
+fn its_power_meets_each_ship_it_fights_out_and_in_and_its_trim_shapes_each_part() {
     let mut fight = abeam(80.0);
     let trim = Trim { harm_hull: 1.1, harm_crew: 1.5, sail_taken: 0.5, ram: 2.0, ..Trim::default() };
     fight.fit(PLAYER, fitted(trim, 2.0, 0.25));
@@ -53,13 +53,13 @@ fn her_power_meets_each_ship_she_fights_out_and_in_and_her_trim_shapes_each_part
 }
 
 #[test]
-fn her_finishing_her_cornered_hull_her_waterline_and_her_rallied_men_take_their_turn() {
+fn its_finishing_its_cornered_hull_its_waterline_and_its_rallied_men_take_their_turn() {
     let mut fight = abeam(80.0);
     let trim = Trim { finisher: 1.2, cornered: 0.5, holed_taken: 0.8, rally: 0.5, ..Trim::default() };
     fight.fit(PLAYER, fitted(trim, 1.0, 1.0));
-    assert_eq!(fight.fitted_gun(SWIVEL, PLAYER, CAPTAIN, Zone::Hull), SWIVEL, "her foe is sound");
-    if let Some(her) = fight.ships.get_mut(&CAPTAIN) {
-        her.damage.hull = her.damage.max_hull * 0.3;
+    assert_eq!(fight.fitted_gun(SWIVEL, PLAYER, CAPTAIN, Zone::Hull), SWIVEL, "its foe is sound");
+    if let Some(other_ship) = fight.ships.get_mut(&CAPTAIN) {
+        other_ship.damage.hull = other_ship.damage.max_hull * 0.3;
     }
     assert!((fight.fitted_gun(SWIVEL, PLAYER, CAPTAIN, Zone::Hull).hull - SWIVEL.hull * 1.2).abs() < 1e-9);
     assert!((fight.fitted_gun(SWIVEL, CAPTAIN, PLAYER, Zone::Holed).hull - SWIVEL.hull * 0.8).abs() < 1e-9);
@@ -72,7 +72,7 @@ fn her_finishing_her_cornered_hull_her_waterline_and_her_rallied_men_take_their_
 }
 
 #[test]
-fn her_carpenter_patches_part_of_each_balls_harm_back_over_the_seconds_after_never_past_her_whole() {
+fn its_carpenter_patches_part_of_each_balls_harm_back_over_the_seconds_after_never_past_its_whole() {
     let mut fight = abeam(80.0);
     fight.fit(PLAYER, fitted(Trim { carpenter: 1.0, ..Trim::default() }, 1.0, 1.0));
     let whole = fight.ships[&PLAYER].damage.max_hull;
@@ -96,24 +96,24 @@ fn her_carpenter_patches_part_of_each_balls_harm_back_over_the_seconds_after_nev
 }
 
 #[test]
-fn her_gunner_fires_the_broadside_her_look_does_not_lay_when_a_ship_bears_on_it() {
+fn its_gunner_fires_the_broadside_its_look_does_not_lay_when_a_ship_bears_on_it() {
     let mut fight = abeam(80.0);
     assert!(fight.gunners_lay(PLAYER, None).is_none(), "no Gunner posted");
     fight.fit(PLAYER, fitted(Trim { gunner: 0.8, ..Trim::default() }, 1.0, 1.0));
-    let laid = fight.gunners_lay(PLAYER, None).expect("her starboard battery bears");
+    let laid = fight.gunners_lay(PLAYER, None).expect("its starboard battery bears");
     assert_eq!(laid.side, crate::arms::Side::Starboard);
-    assert!(fight.gunners_lay(PLAYER, Some(crate::arms::Side::Starboard)).is_none(), "she lays that side herself");
+    assert!(fight.gunners_lay(PLAYER, Some(crate::arms::Side::Starboard)).is_none(), "it lays that side itself");
     let balls = fight.balls.len();
     let events = fight.step(&[(PLAYER, IDLE)], &Open, [1.5, 0.0], 0.0);
     assert!(fight.balls.len() > balls || events.iter().any(|event| matches!(event, crate::fight::Event::Shot(_))));
     assert!(fight.gunners_lay(PLAYER, None).is_none(), "the side is reloading");
     let mut far = abeam(5_000.0);
     far.fit(PLAYER, fitted(Trim { gunner: 0.8, ..Trim::default() }, 1.0, 1.0));
-    assert!(far.gunners_lay(PLAYER, None).is_none(), "out of her guns' reach");
+    assert!(far.gunners_lay(PLAYER, None).is_none(), "out of its guns' reach");
 }
 
 #[test]
-fn her_bosun_keeps_part_of_the_way_torn_canvas_costs_her_and_her_trim_turns_her() {
+fn the_bosun_keeps_part_of_the_way_torn_canvas_costs_and_the_trim_turns_the_ship() {
     let bosun = Fitting { trim: Trim { bosun: 1.0, way: 1.1, ..Trim::default() }, ..Fitting::default() };
     assert!((bosun.way_share(0.6) - 0.8 * 1.1).abs() < 1e-12);
     assert!((Fitting::default().way_share(0.6) - 0.6).abs() < 1e-12);

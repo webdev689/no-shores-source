@@ -75,7 +75,7 @@ impl Sea {
         let Some(boarder) = boarded.room.board_at(spot) else { return Err(crate::battle::BoardRefused::NoneAlongside) };
         if let Some(character) = self.harbour.characters.get(&player) {
             boarded.room.restore_character(boarder, &character.to_json());
-            // Her hands left of her complement, and those her First Mate and perks lead aboard beside the player.
+            // Its hands left of its complement, and those its First Mate and perks lead aboard beside the player.
             let left = f64::from(character.ship[2]) / f64::from(gear::character::SHIP_WHOLE);
             let hands = (left * naval::arms::LARGE_BOAT.crew).round() as u16;
             let count = crate::boarding_hands::boarding(hands, character.ship_trim().boarders);
@@ -140,7 +140,7 @@ impl Sea {
             for (id, entry) in held.items.iter().filter(|(_, (item, _))| item.kind.module()) {
                 character.items.insert(*id, entry.clone());
             }
-            // Her hands who fell on the deck are men she has lost, kept until a port city repairs her.
+            // Its hands who fell on the deck are men it has lost, kept until a port city repairs it.
             let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
             character.ship[2] = character.ship[2].saturating_sub(man.saturating_mul(u16::from(fallen)));
             self.harbour.characters.insert(player, character);
