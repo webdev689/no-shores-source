@@ -193,7 +193,7 @@ fn no_module_stands_on_a_place_kept_clear_or_on_the_door_landmark_wrecks_and_cam
                 plan.placements.iter().partition(|placement| set(catalog().module(placement.module).role));
             for placement in laid {
                 let (role, reach) = (catalog().module(placement.module).role, reach_of_placed(placement));
-                let apart = |point: [f64; 2]| (placement.at[0] - point[0]).hypot(placement.at[1] - point[1]);
+                let apart = |point: [f64; 2]| libm::hypot(placement.at[0] - point[0], placement.at[1] - point[1]);
                 for &(point, radius) in &clear {
                     assert!(apart(point) >= radius + reach - 1e-9, "{seed} {climate}: a {role:?} on a clear place");
                 }
@@ -215,7 +215,7 @@ fn an_isles_camp_stands_clear_of_its_quarry_and_each_group_has_its_post() {
     for seed in (0..4000).filter(|&seed| Kind::of(seed) == Kind::Quarry).take(40) {
         let plan = plan(seed, "steppe");
         let (quarry, camp) = (plan.shape.quarry.as_ref().expect("a quarry"), plan.sites.camp.expect("a camp"));
-        let off = (camp[0] - quarry.at[0]).hypot(camp[1] - quarry.at[1]);
+        let off = libm::hypot(camp[0] - quarry.at[0], camp[1] - quarry.at[1]);
         assert!(off >= quarry.radius + 13.0 - 1e-9, "{seed}: the camp {off} m from a {} m pit", quarry.radius);
         assert_eq!(plan.sites.guards, vec![plan.sites.guards[0], plan.sites.door.at, camp], "{seed}");
     }

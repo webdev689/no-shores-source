@@ -62,7 +62,7 @@ fn an_isles_guards_stand_by_its_landmark_at_its_door_and_at_its_camp() {
         let room = Room::island(&plan, AT, Some(PIRATES), Some((5, 9)));
         let near = |point: [f64; 2]| {
             let [x, y] = isle::placed(point, AT);
-            room.foes.values().filter(|foe| (foe.fighter.body.x - x).hypot(foe.fighter.body.y - y) <= 12.0).count()
+            room.foes.values().filter(|foe| libm::hypot(foe.fighter.body.x - x, foe.fighter.body.y - y) <= 12.0).count()
         };
         let [landmark, door, camp] = [plan.sites.guards[0], plan.sites.door.at, plan.sites.camp.expect("a camp")];
         assert!(near(landmark) >= 3, "{kind:?}: {} by the landmark", near(landmark));
