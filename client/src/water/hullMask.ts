@@ -51,8 +51,8 @@ export function hullFoam(mask: HullMask, point: readonly [number, number]): numb
 }
 
 /** How many ships' footprints the water holds: the player's and the ships nearest her, other players', the pirates
- *  round her and a fight's captains. */
-export const HULLS = 8;
+ *  round her and a fight's captains; or the wreck's ships and rafts. */
+export const HULLS = 12;
 
 /** The footprints' WGSL, read from the water's frame (`hulls`: each ship's place, then her size). */
 export const HULL_WGSL = /* wgsl */ `

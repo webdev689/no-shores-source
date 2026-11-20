@@ -79,7 +79,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   });
 });
 
-test('the roster reads from the rules: every enemy type with its name, faction, ranks and hands', () => {
+test('the roster reads from the rules: every type it drives with its name, faction, ranks and hands', () => {
   const roster = JSON.parse(startRoomDoor(compiled).roster()) as {
     type: number;
     name: string;
@@ -87,7 +87,7 @@ test('the roster reads from the rules: every enemy type with its name, faction, 
     ranks: number[];
     right: string;
   }[];
-  assert.equal(roster.length, 18);
+  assert.equal(roster.length, 20);
   const thule = roster.find((entry) => entry.type === 12);
   assert.deepEqual(
     [thule?.name, thule?.faction_name, thule?.ranks, thule?.right],
@@ -301,7 +301,7 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), 'b116514817fbd4ae');
+  assert.equal(hash.toString(16).padStart(16, '0'), 'dda792fcf5e3f828');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
@@ -352,6 +352,17 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
 
 /** How often, in ticks, the room sends one player's gear (`room::GEAR_EVERY_TICKS`). */
 const GEAR_EVERY_TICKS = 12;
+
+test('a room told to forbid Arts sends gear with no Art worn, so the page shows no ability bar', () => {
+  const room = startRoomDoor(compiled);
+  assert.equal(room.open(course.start, course.blocks, true), true);
+  room.forbidArts();
+  const player = room.join();
+  room.tick();
+  const gear = readFromRoom(room.gear(player));
+  assert.ok(gear?.kind === 'gear');
+  assert.deepEqual([gear.arts?.art, gear.arts?.anima], [0, 0]);
+});
 
 test('the Test Ground’s room lays out its stall and nodes, and sends each player their own gear when it changes', () => {
   const room = startRoomDoor(compiled);

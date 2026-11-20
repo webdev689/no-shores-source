@@ -32,8 +32,10 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 - **One crate for every machine.** The `combat` crate holds the rules, beside [[Movement]]'s, and steps a fighter in the
   same whole ticks of 1/60 s. A fighter is a body and everything a fight keeps for it: what it holds, health, stamina,
   poise, what it is doing, its aim and its soft lock's target, and its side: the players', or an enemy faction's by its
-  number ([[Enemies]]); fighters of different sides are each other's foes. What a fighter does to others is the host's
-  to ask: its tick says when a blow lands, and the host finds who it reaches and judges it against them.
+  number ([[Enemies]]); fighters of different sides are each other's foes. An ally the rules drive on the players' side
+  fights by a foe's rules, not a player's: a player's longer reach, wider parry window, flinch and aimed shot are a
+  player's own. What a fighter does to others is the host's to ask: its tick says when a blow lands, and the host
+  finds who it reaches and judges it against them.
 - **What it holds.** The forge layers in its hands decide its arms: a dagger, sword, mace, flail, axe, warhammer,
   staff or greatsword (a sword with both hands on its hilt), fists with nothing drawn, or a bow, crossbow, pistolet,
   double pistolet (a pistolet in each hand) or thunderlock. The left hand holds a shield, a second blade or mace (the

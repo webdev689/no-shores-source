@@ -3,11 +3,16 @@
 //! cell's edge, so a body walks every cell to its edge and is stopped there as ground rising past a step stops it. A
 //! terrain wall is never climbed, as a block's is.
 
+use crate::blocks::Block;
 use crate::body::{Body, standing};
 use crate::terrain::Terrain;
 
 /// How far a wall stands over the highest cell, metres: past any step or slope a body walks up.
 pub const WALL_RISE_M: f64 = 10.0;
+/// The cell of the rim held round a course laid over the sea, metres: the squares a wreck's ground is laid in
+/// (tools/wreck/wreck_course.py), so its rim follows them to the square. The room and the page's own steps take it
+/// from here, so their rims agree to the bit.
+pub const RIM_CELL_M: f64 = 0.3;
 /// The numbers a grid's shape crosses as, before its heights: its west and north edges, its cell, columns and rows.
 pub const SHAPE_FLOATS: usize = 5;
 
@@ -88,6 +93,42 @@ impl Heights {
     #[must_use]
     pub fn standing(&self, x: f64, y: f64) -> Body {
         Body { z: self.height_at(x, y), facing: 0.0, ..standing(x, y) }
+    }
+
+    /// The ground round a course of blocks laid over the open sea, as a ship's deck is held: open, at 0 m under the
+    /// blocks that stand bodies on their tops, in every cell of `cell` metres whose middle a block covers, and a wall in
+    /// every other. So a body walks, falls, vaults and climbs anywhere over the blocks, and is held at their edge: the
+    /// sea is never reached. The grid starts at the blocks' west and north edges, so blocks laid in squares of `cell`
+    /// from there are held to the square.
+    #[must_use]
+    pub fn rim(blocks: &[Block], cell: f64) -> Self {
+        let west = blocks.iter().map(|block| block.min_x).fold(f64::INFINITY, f64::min);
+        let north = blocks.iter().map(|block| block.min_y).fold(f64::INFINITY, f64::min);
+        let east = blocks.iter().map(|block| block.max_x).fold(f64::NEG_INFINITY, f64::max);
+        let south = blocks.iter().map(|block| block.max_y).fold(f64::NEG_INFINITY, f64::max);
+        let count = |span: f64| if span > 0.0 && span.is_finite() { (span / cell).ceil() as usize } else { 0 };
+        let (columns, rows) = (count(east - west), count(south - north));
+        let mut heights = vec![None; columns * rows];
+        // The cells whose middles lie from `low` to `high` along an edge starting at `start`.
+        let span = |low: f64, high: f64, start: f64, most: usize| {
+            let first = ((low - start) / cell - 0.5).ceil().max(0.0) as usize;
+            let last = ((high - start) / cell - 0.5).floor().min(most as f64 - 1.0);
+            (last >= first as f64).then_some(first..=last as usize)
+        };
+        for block in blocks {
+            let (Some(across), Some(down)) =
+                (span(block.min_x, block.max_x, west, columns), span(block.min_y, block.max_y, north, rows))
+            else {
+                continue;
+            };
+            for row in down {
+                for column in across.clone() {
+                    heights[row * columns + column] = Some(0.0);
+                }
+            }
+        }
+        let (west, north) = if columns * rows > 0 { (west, north) } else { (0.0, 0.0) };
+        Self::new(west, north, cell, columns, rows, heights).unwrap_or_else(|| unreachable!("a grid made to its shape"))
     }
 }
 

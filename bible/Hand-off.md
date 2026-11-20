@@ -263,8 +263,25 @@ Where the work stands now, for the next session. Each session rewrites this note
   container; the check names its own checkout's commit; the log is saved last at a session's end. Tested offline: the
   full check, and each fix's test seen to fail without it.
 
+- **The prologue's follow-ups and the sea's sounds**, on `main` (#94), merged and deployed with the owner's yes: the
+  title's prompt no longer stays over the storm and creation once begun; the intro goes straight to Saltmere
+  ([[The Intro Goes Straight to Saltmere]]), about 25 s; the story's sea fight sails in the story's wind, not the
+  world's; and all 27 sounds of the sea are the owner's Freesound picks, the sea fight's guns, hits, splashes and
+  break-ups new. Tested live, headless: the intro rises at first light over the cloud, the title over Saltmere asks to begin,
+  and a key hides the prompt.
+- **The second playthrough**, on `main` (#98), merged with the owner's yes ("Merge and deploy"), which deploys the
+  page and the rooms: the owner's thirteen points (the wreck spread out at true size, the Brig's crew fighting on the
+  players' side, no Art in the prologue, the whole game's balance pass, sea fights half again as fast and as hard, a
+  task tracker for every quest, the placeholder lines gone), the animations' strips fetched ahead, the blurbs without
+  glyphs, the plates held still on board through a 64-bit matrix, and a last audit's fixes. Tested offline: the full
+  check. Not yet seen on a real GPU, nor played through by hand.
+
 ## Waiting on the owner
 
+- **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
+  without HTML; whether the welcome's "Follow" moves onto the tracker, and whether the keepers' marks come back as
+  something else; the wreck's rebuilt look and its zones' size; whether a fire burns half again; and Thule's fight now
+  that a player's blows land at 0.94 of their worth.
 - **#102's and #107's open points**, both merged, in their descriptions: whether defending foes should hold their ground
   longer than a foe's patience; whether any lower rank screening any leader under a Miniboss is the screen meant by
   "Minors screening an Elite"; whether a wave is enough without a drop; whether a wave the room's limit has no room for
@@ -286,28 +303,27 @@ Where the work stands now, for the next session. Each session rewrites this note
   by ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
-- **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**,
-  based on `main`, waits on the owner's yes to merge, which deploys the page and the rooms. The owner named the
+- **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**, on
+  `main`, merged with the owner's yes ("Merge and deploy"), which deploys the page and the rooms. The owner named the
   factions and the elder, said yes to faction gear "with its own unique color" and chose its colours: the Stormcallers
   "#1 with color accents" (storm grey and silver; the storm blue of the accents is Claude's), the Lamplighters "White
   and gold", the Veiled "Black and silver"; then their look, "Top strip, fixes kept". The owner also decided that
   characters made before the Arts' levels start every Art at level 1, that no save-keeping lands on `main` first (so a
   rollback of the rooms after the merge loses this round's progress), that the page publishes only after the rooms
-  deploy, and that Maren keeps her ruins line before the ruins are drawn. Every call made under the owner's
-  "autonomy" is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full
-  check. Tested in a local room (`npm run server`, the built page headless): Shape present with his six wares, "From
-  level 20" and the right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its
-  colour; Maren greeting a browser that had played the story before, the keys' hints giving way while she speaks. Not
-  yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses and faction
-  gear, a faction set worn in the page (composed offline from the published strips), and Maren's whole walk (her start
-  and her coming by the lanes are tested offline; headless frames take about a second each). The
-  open questions are in [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge
-  re-render. Sunspire's and Rimeholt's ports are #75's; this round only locks their social spaces.
+  deploy, and that Maren keeps her ruins line before the ruins are drawn. Every call made under the owner's "autonomy"
+  is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full check. Tested in
+  a local room (`npm run server`, the built page headless): Shape present with his six wares, "From level 20" and the
+  right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its colour; Maren greeting a
+  browser that had played the story before, the keys' hints giving way while she speaks. Not yet seen: anything on a
+  real GPU or the deployed rooms, two players seeing each other's dyes, horses and faction gear, a faction set worn in
+  the page (composed offline from the published strips), and Maren's whole walk (her start and her coming by the lanes
+  are tested offline; headless frames take about a second each). The open questions are in [[Open Questions]]. The
+  Wraith Mist barding's first-person ride strips on R2 are blank: a forge re-render. Sunspire's and Rimeholt's ports are
+  #75's; this round only locks their social spaces.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
-  repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
-  `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
-  its published model here with `--dry-run`, whose level hash must match the log's: a build elsewhere can lay a
-  slightly different ground.
+  repository's Cloudflare token, as the ships workflow does. Each run keeps the `content/prologue/wreck.json` it
+  wrote as the artifact `wreck-level`: commit that file whole, its keys with its level, as a build elsewhere can lay a
+  slightly different ground from the published mesh.
 - fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
   session that finished the prologue, so the likeness is unchecked.
 - Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch

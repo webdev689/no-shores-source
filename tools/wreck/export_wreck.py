@@ -3,8 +3,8 @@
     <python with bpy> tools/wreck/export_wreck.py <lit.blend> <light.png> [--dry-run]
 
 Writes content/prologue/wreck.json: the mesh's and the light's keys on R2, the ground a body walks on as blocks, each
-heap's block, the fires, and the level (where the player wakes, the way to Thule, the zones and their waves, the
-arena), all in the game's frame (x east, y south, z up from the sea, metres). It refuses a level its own ground does
+heap's block, the fires, where the sea is not drawn, and the level (where the player wakes, the way to Thule, the zones
+with their waves and the Brig's crew, the arena), all in the game's frame (x east, y south, z up from the sea, metres). It refuses a level its own ground does
 not hold (wreck_level.check). With --dry-run it writes `wreck.mesh` into the working folder and uploads nothing; the
 keys are those the files would be published under.
 """
@@ -17,6 +17,7 @@ import struct
 import sys
 
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
+from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
@@ -25,17 +26,19 @@ sys.path.insert(0, TOOLS)
 sys.path.insert(0, os.path.join(TOOLS, 'ships'))
 from light_wreck import FIRE_FULL, SKY_FULL  # noqa: E402
 from wreck_course import CELL_M, SQUARE_CELLS, blocks, measure, squares  # noqa: E402
-from wreck_dress import GATES, gate_boxes  # noqa: E402
+from wreck_dress import gate_boxes  # noqa: E402
+from wreck_fields import footprints  # noqa: E402
 from wreck_fire import fires, standing_ground  # noqa: E402
 from wreck_frames import wreck_frames  # noqa: E402
 from wreck_level import ARENA_ZONE, FLIGHT_BACK, MASTS, PATH, THULE, WAKE, ZONES, check, game, game_area  # noqa: E402
 from wreck_reach import CLIMB_M, Reach  # noqa: E402
-from wreck_ships import SEA_Z  # noqa: E402
+from wreck_scene import BOW, FRIGATE, SLOOP, STERN  # noqa: E402
+from wreck_ships import SEA_Z, placing  # noqa: E402
 
 CONTENT = os.path.join(os.path.dirname(TOOLS), 'content', 'prologue', 'wreck.json')
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
 # The ground is measured over this box of the wreck's frame (west, south, east, north), round every piece.
-BOUNDS = (-26.0, -46.0, 26.0, 12.0)
+BOUNDS = (-38.0, -44.0, 38.0, 18.0)
 HALF_SQUARE_M = CELL_M * SQUARE_CELLS / 2
 # A vertex: position (3 × float32), normal (4 × snorm8), the picture's UV (2 × float32, metres), its part and piece
 # (4 × uint8), the light's UV (2 × unorm16).
@@ -98,7 +101,11 @@ def heaps(by_piece, frames):
     """Each heap's block in the game's frame, by the zone it closes: the ground it is piled over, as high as it is
     piled there."""
     found = []
-    for zone, (west, south, east, north) in enumerate(gate_boxes(frames)):
+    for zone, box in enumerate(gate_boxes(frames)):
+        if box is None:
+            found.append(None)
+            continue
+        west, south, east, north = box
         points = [corner[0] for triangle in by_piece.get(zone + 1, []) for corner in triangle]
         if not points:
             sys.exit(f'the heap closing zone {zone} has no faces')
@@ -128,6 +135,7 @@ def level(gates, burning, frames):
             'gate': gates[index] if index < len(gates) else None,
             'wave': [{'type': kind, 'rank': rank, 'at': centred(game(at)), 'facing': facing}
                      for kind, rank, at, facing in zone['wave']],
+            'crew': [centred(game(at)) for at in zone['crew']],
         })
     masts = [frames.on(ship, along, 0.0) for ship, along in MASTS]
     return {
@@ -137,11 +145,30 @@ def level(gates, burning, frames):
         'arena': {'zone': ARENA_ZONE, 'thule': centred(game(THULE))},
         'masts': [list(game((mast.x, mast.y))) for mast in masts],
         'flightBack': [[*game((x, y)), height] for x, y, height in FLIGHT_BACK],
+        'dry': dry(),
         'fires': [{'at': [round(fire['at'].x, 3), round(-fire['at'].y, 3), round(fire['at'].z - SEA_Z, 3)],
                    'size': fire['size'],
                    **({'along': [round(fire['along'].x, 3), round(-fire['along'].y, 3), round(fire['along'].z, 3)]}
                       if fire['along'] is not None else {})} for fire in burning],
     }
+
+
+# Each ship's waterline in her own frame, where the sea meets her: its middle along her, its half length and its half
+# breadth (the Sloop's, on her beam ends, is her depth), by her placement in wreck_scene.
+WATERLINES = ((STERN, -8.2, 7.8, 4.2), (BOW, 8.2, 7.8, 4.2), (FRIGATE, 0.0, 19.5, 5.1), (SLOOP, 0.0, 11.0, 2.2))
+
+
+def dry():
+    """Where the game draws no sea, as ellipses in the game's frame: each ship's waterline and each raft, [x, y, its
+    heading in radians clockwise from north, half length, half breadth]. The swell rises past their decks and would
+    show through them."""
+    ellipses = []
+    for place, along, half_length, half_breadth in WATERLINES:
+        middle = placing(**place) @ Vector((along, 0.0, SEA_Z))
+        ellipses.append((middle.x, middle.y, place['heading_deg'], half_length, half_breadth))
+    ellipses.extend(footprints())
+    return [[round(x, 3), round(-y, 3), round(math.radians(90.0 - heading), 4), half_length, half_breadth]
+            for x, y, heading, half_length, half_breadth in ellipses]
 
 
 def key_of(data, folder, extension):
@@ -165,13 +192,14 @@ def main():
     # either finds is one a body might take.
     shifted = measure([wreck], SEA_Z, tuple(edge + HALF_SQUARE_M for edge in BOUNDS), piece=0)
     for ground in (grid, shifted):
-        faults = check(Reach(ground, squares(ground)), [gate[:4] for gate in gates], CLIMB_M)
+        faults = check(Reach(ground, squares(ground)), [gate and gate[:4] for gate in gates], CLIMB_M,
+                       place=lambda at: tuple(centred(game(at))))
         if faults:
             sys.exit('the wreck does not hold its level:\n' + '\n'.join(faults))
     with open(os.path.abspath(given.light), 'rb') as file:
         light = file.read()
     laid = {'mesh': key_of(mesh, 'wreck', 'mesh'), 'light': key_of(light, 'wreck', 'png'),
-            'course': blocks(grid), **level(gates, fires(frames, standing_ground()), frames)}
+            'course': blocks(grid, game(WAKE[0])), **level(gates, fires(frames, standing_ground()), frames)}
     if given.dry_run:
         with open('wreck.mesh', 'wb') as file:
             file.write(mesh)

@@ -1,6 +1,6 @@
 // What every beat of the story draws and speaks with: the game's scene and figures, the hulls the story sails, the
 // weather, birds and fire, the voices, the screen's fades, and the sounds of the sea. A beat answers a frame of what
-// to show; the stage draws it as the game draws its own, then places the barks and emotes over the heads it names.
+// to show; the stage draws it as the game draws its own, then places the barks over the heads it names.
 import type { Birds } from '../../cinema/birds.ts';
 import type { Flames } from '../../cinema/flames.ts';
 import type { Ambience } from '../../cinema/ambience.ts';
@@ -30,7 +30,6 @@ import type { MusicDirector } from '../audio/music/director.ts';
 import type { Drawer, GameScene, Overlay } from '../scene.ts';
 import { standingDrawers } from '../standing.ts';
 import { type Actor, actorCards } from './actors.ts';
-import type { Objective } from './objective.ts';
 import type { Hull, ShipDraw } from './sailing.ts';
 import { STORY_DAY_S, overTheSky, toldSky } from './storySky.ts';
 
@@ -47,7 +46,7 @@ export interface StoryFrame {
   readonly focus?: readonly [number, number];
   /** Over the finished picture: the first person's hands. */
   readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void;
-  /** World points over the heads that speak or feel, by the name barks and emotes use. */
+  /** World points over the heads that speak, by the name barks use. */
   readonly heads?: ReadonlyMap<string, readonly [number, number, number]>;
   /** Whether the land's own drawers (its city and nature) are drawn: not under the sea's storm far from any coast. */
   readonly land?: boolean;
@@ -81,7 +80,6 @@ export interface StageParts {
   readonly worldSound: WorldAmbience;
   /** The game's music, which the story's beats tell what to play. */
   readonly music: MusicDirector;
-  readonly objective: Objective;
   readonly footView: FootView;
   readonly cast: Cast;
   readonly scenes: Readonly<Record<string, readonly Line[]>>;
@@ -162,7 +160,7 @@ export class Stage {
     return new Promise((resolve) => this.waiting.push({ until: this.clock + seconds, resolve }));
   }
 
-  /** Stops whatever is being said: the scene playing, the dialogue box, and every bark and emote over a head. */
+  /** Stops whatever is being said: the scene playing, the dialogue box, and every bark over a head. */
   hush(): void {
     this.scenes += 1;
     this.parts.dialogue.skip();
@@ -177,7 +175,7 @@ export class Stage {
    *  HUD without a death or a fight's panel, and no birds, fire or prompt of the story's; its screen, once clear, goes. */
   leave(): void {
     this.hush();
-    const { ambience, scene, birds, flames, objective, hud, footView, screen } = this.parts;
+    const { ambience, scene, birds, flames, hud, footView, screen } = this.parts;
     ambience.stop();
     this.weatherTowards(CLEAR, 0);
     scene.weather = CLEAR;
@@ -185,7 +183,9 @@ export class Stage {
     scene.lamps = [];
     birds.clear();
     flames.clear();
-    objective.clear();
+    hud.tasks.show(null);
+    hud.seaFight(null);
+    hud.toast();
     hud.reach({ kind: 'inside' });
     hud.hints([]);
     footView.hide();
@@ -253,7 +253,7 @@ export class Stage {
   }
 
   /** Draws a beat's frame: the land, its city and nature where asked, the ships, every figure, the birds and the fire,
-   *  and what the beat adds; then the barks and emotes over the heads it names, and the dialogue's typing. */
+   *  and what the beat adds; then the barks over the heads it names, and the dialogue's typing. */
   draw(
     frame: StoryFrame,
     size: { readonly width: number; readonly height: number },
@@ -313,7 +313,7 @@ export class Stage {
   }
 
   /** Plays a scene in order: each bark over its speaker's head, each run of lines together in the dialogue box (by
-   *  itself in a cutscene, `auto`, else as the player presses on), and every line's emote over its speaker's head.
+   *  itself in a cutscene, `auto`, else as the player presses on), its words alone, with no glyph over a head.
    *  `heads` maps a speaker to the head that says it, where the head's name is not the speaker's own; `saying` hears
    *  each line as it begins, for a beat whose camera answers what is said. */
   async play(
@@ -332,7 +332,6 @@ export class Stage {
       const head = heads[line.who] ?? line.who;
       if (line.kind === 'bark') {
         overheads.bark(head, line, cast);
-        if (line.emote) overheads.emote(head, line.emote);
         saying(line);
         index++;
         await this.wait(BARK_GAP_S);
@@ -342,10 +341,7 @@ export class Stage {
       while (lines[index] && lines[index]?.kind !== 'bark') run.push(lines[index++] as Line);
       await dialogue.play(run, cast, {
         auto,
-        onLine: (said) => {
-          if (said.emote) overheads.emote(heads[said.who] ?? said.who, said.emote);
-          saying(said);
-        },
+        onLine: saying,
       });
     }
   }

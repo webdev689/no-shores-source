@@ -64,14 +64,14 @@ const pointOf = (numbers: Float64Array | null): Point | null => {
   return x === undefined || y === undefined || z === undefined ? null : [x, y, z];
 };
 
-/** The Arts a gear message holds; a message from before them reads as Storm worn, nothing charged. */
+/** The Arts a gear message holds; Art 0 where none is worn, as in the prologue's room. */
 export function artsOf(gear: Gear): ArtState {
   const numbers = Array.from(gear.coresArray() ?? []);
   const cores = Array.from({ length: Math.ceil(numbers.length / CORE_SLOTS) }, (unused, art) =>
     numbers.slice(art * CORE_SLOTS, art * CORE_SLOTS + CORE_SLOTS).map((set) => (set === NO_FRAGMENT ? null : set)),
   );
   const [first = 0, second = 0] = Array.from(gear.tenetsArray() ?? []);
-  return { art: gear.art() || 1, cores, anima: gear.anima(), tenets: [first, second] };
+  return { art: gear.art(), cores, anima: gear.anima(), tenets: [first, second] };
 }
 
 /** Every spell a snapshot holds. */

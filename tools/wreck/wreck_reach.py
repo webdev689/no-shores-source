@@ -22,6 +22,7 @@ class Reach:
         self.squares = squares
         self.rows = len(squares)
         self.columns = len(squares[0]) if squares else 0
+        self.square_m2 = SIZE_M * SIZE_M
 
     def square_of(self, x, y):
         """The square (row, column) under the game's (x, y)."""
@@ -65,3 +66,21 @@ class Reach:
     def reaches(self, reached, point):
         """Whether the game's `point` stands in a square reached."""
         return self.square_of(*point) in reached
+
+    def clear(self, point, room):
+        """Whether every square whose middle lies within `room` of the game's `point` is ground within a step of the
+        square under it: nothing a body stands against, and no edge, round a figure standing there."""
+        row, column = self.square_of(*point)
+        own = self.height(row, column)
+        if own is None:
+            return False
+        span = int(room // SIZE_M) + 1
+        for near_row in range(row - span, row + span + 1):
+            for near_column in range(column - span, column + span + 1):
+                x, y = self.middle(near_row, near_column)
+                if (x - point[0]) ** 2 + (y - point[1]) ** 2 > room * room:
+                    continue
+                there = self.height(near_row, near_column)
+                if there is None or abs(there - own) > STEP_M:
+                    return False
+        return True

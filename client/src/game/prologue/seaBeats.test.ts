@@ -213,7 +213,7 @@ test('a ram skipped at once still leaves her struck and the screen black, and sa
   assert.ok(ram.meeting, 'where they met is kept for the wreck');
 });
 
-test('the fight begins on the story clock, tells how many ships are left, and leaves its beaten ships for the calm', async () => {
+test('the fight begins on the story clock, tasks the player with the ships left, and leaves its beaten ships for the calm', async () => {
   let begunAt = Number.NaN;
   const answers = [viewOf(['afloat', 'struck', 'afloat']), viewOf(['struck', 'struck', 'struck'])];
   const land = {
@@ -231,8 +231,10 @@ test('the fight begins on the story clock, tells how many ships are left, and le
     await new Promise((settle) => setTimeout(settle, 0));
   }
   assert.ok(Math.abs(begunAt - (40 + STEP_S)) < 1e-6, `begun at ${begunAt}`);
-  const told = done.filter((each) => each.startsWith('hints Ships'));
-  assert.ok(told.includes('hints Ships left: 3 of 3.') && told.includes('hints Ships left: 2 of 3.'), told.join());
+  const told = done.filter((each) => each.startsWith('task '));
+  const left = (ships: number) => `task Ships left ${ships}, Their men `;
+  const said = (ships: number) => told.some((each) => each.startsWith(left(ships)));
+  assert.ok(said(3) && said(2), told.join());
   assert.equal(battle.done, true, 'over once every captain is beaten');
   assert.equal(battle.wrecks?.length, 3);
   assert.ok(battle.wrecks?.every((wreck) => !wreck.ship.underWay));

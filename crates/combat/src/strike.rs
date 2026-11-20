@@ -19,7 +19,7 @@ pub fn weapon_reach(melee: WeaponClass, player: bool) -> f64 {
 /// How far this fighter's melee weapon reaches.
 #[must_use]
 pub fn reach_of(fighter: &Fighter) -> f64 {
-    weapon_reach(fighter.arms.melee, fighter.side.is_players())
+    weapon_reach(fighter.arms.melee, fighter.is_player())
 }
 
 /// The farthest a stroke of this weapon reaches, from the striker's feet to the middle of a body it strikes.
@@ -34,7 +34,7 @@ pub fn reaches(striker: &Fighter, attack: &Attack, feet: [f64; 3], blocks: &[Blo
     let body = striker.body;
     let shape = stroke_shape(attack.stroke);
     let distance = apart([body.x, body.y], [feet[0], feet[1]]);
-    let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.side.is_players());
+    let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.is_player());
     if distance > reach || (feet[2] - body.z).abs() > STRIKE_HEIGHT {
         return false;
     }

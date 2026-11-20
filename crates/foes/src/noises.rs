@@ -69,7 +69,7 @@ pub fn landed(striker: &Fighter, defender: &Fighter) -> Noise {
 /// so foes of two factions find each other across a room, where a player is never heard so.
 #[must_use]
 pub fn stir_of(fighter: &Fighter) -> Option<Noise> {
-    let foe = !fighter.side.is_players() && !fighter.dead();
+    let foe = !fighter.is_player() && !fighter.dead();
     foe.then(|| Noise::by(fighter, PRESENCE_LOUDNESS / 60.0, PRESENCE_REACH))
 }
 

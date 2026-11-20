@@ -34,9 +34,8 @@ export function speechCss(): string {
   width: ${BOX_WIDTH_PX}px; max-width: calc(100vw - 44px); text-align: center; pointer-events: none;
   font-size: 22px; line-height: 33px; color: ${TONES.wordDim}; opacity: 0.7; text-shadow: ${HALO}; }
 .speech-overheads { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: -1; }
-.speech-bark, .speech-emote { position: absolute; left: 0; top: 0; }
+.speech-bark { position: absolute; left: 0; top: 0; }
 .speech-bark { margin: 0; white-space: nowrap; font-size: 22px; line-height: 22px; color: ${TONES.word}; text-shadow: ${HALO}; }
-.speech-emote { image-rendering: pixelated; }
 `;
 }
 
