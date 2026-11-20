@@ -38,7 +38,7 @@ import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
-import { SeaAfter, fightAsk, portCities } from './seaAfter.ts';
+import { SeaAfter, deckKey, fightAsk, portCities } from './seaAfter.ts';
 import { waterNamer } from './seaHostiles.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
@@ -422,6 +422,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea.fromHelm();
       return;
     }
+    if (deckKey(key, flow.mode === 'sea' && !flow.menu ? sea : null, respawn)) return;
     if (key === 'enter' && retry) retry();
     else if (key === 'm') change({ kind: 'menu' });
     else if (key === 'escape' && flow.mode === 'landing') {

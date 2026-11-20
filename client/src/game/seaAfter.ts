@@ -62,6 +62,16 @@ export function fightAsk(sea: {
   return ask;
 }
 
+/** A key pressed on her deck: E asks the sea (to leave her won deck), Enter respawns, and the menu's keys are the
+ *  game's; every other is the fight's on foot, so the sea's own (a voyage, the pace, the map) wait. Answers whether
+ *  it was taken here. */
+export function deckKey(key: string, sea: Parameters<typeof fightAsk>[0] | null, respawn: () => void): boolean {
+  if (!sea?.boarding.onDeck || key === 'm' || key === 'escape') return false;
+  if (key === 'e') fightAsk(sea);
+  else if (key === 'enter') respawn();
+  return true;
+}
+
 /** What a gathered piece held, in words. */
 function heldWords(rarity: number, ammoBox: number, ammoCrate: number): string {
   const parts = [

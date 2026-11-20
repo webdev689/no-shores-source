@@ -465,6 +465,7 @@ export class Sea {
     // The fight's view, the helm's or one aboard, which the view comes down to from the sea's.
     const fought = combat?.frame(dt, time, seaShot.far, fail);
     const boarded = this.boarding.frame(this.room, combat?.view ?? null, input);
+    if (boarded) combat?.letGo();
     const down =
       combat && fought
         ? { near: boarded?.shot ?? fought, share: combat.share }

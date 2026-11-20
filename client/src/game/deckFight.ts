@@ -149,6 +149,8 @@ export class DeckFight {
   private near: readonly [number, number];
   /** The pieces of what floats the player had before her hold opened, and what it laid for them once it did. */
   private before = new Set<number>();
+  /** Where this fight hears her deck room's snapshots, let go of only while it is the sea's. */
+  private heard: DeckSea['hearDeck'] = null;
   private taken: readonly SeenFlotsam[] | null = null;
 
   private constructor(foot: Foot, boarder: number, deck: Deck, sea: DeckSea, near: readonly [number, number]) {
@@ -168,11 +170,16 @@ export class DeckFight {
     const her = HULL_DECKS[deck.hull] ?? HULL_DECKS[0];
     if (!her) throw new Error('no hull has a deck');
     const onHer = { ...context, groundAt: (x: number, y: number) => cellHeight(her, x, y) };
+    // What floats for the player as they board, so a hold won while the fight stands up is told apart from it.
+    const before = new Set(sea.flotsam.map((piece) => piece.id));
+    let heard: DeckSea['hearDeck'] = null;
     const foot = await stand(onHer, deckNode(her, 'Her deck'), deckFloats(her), (received) => {
-      sea.hearDeck = received;
+      [sea.hearDeck, heard] = [received, received];
       return deckLink(sea, boarder);
     });
-    return new DeckFight(foot, boarder, her, sea, near);
+    const fight = new DeckFight(foot, boarder, her, sea, near);
+    [fight.before, fight.heard] = [before, heard];
+    return fight;
   }
 
   /** Her ship in the fight `view`, the one boarded, and where she lies drawn `scale` times her size. */
@@ -209,6 +216,6 @@ export class DeckFight {
   /** Leaves her deck: her deck room's snapshots are heard no more. */
   leave(): void {
     this.foot.leave();
-    this.sea.hearDeck = null;
+    if (this.sea.hearDeck === this.heard) this.sea.hearDeck = null;
   }
 }

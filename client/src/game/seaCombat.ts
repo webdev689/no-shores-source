@@ -139,6 +139,11 @@ export class SeaCombat {
     return true;
   }
 
+  /** Lets go of every key the fight holds, as the player goes on foot on a deck and their keys are the foot's. */
+  letGo(): void {
+    this.held.clear();
+  }
+
   /** A drag of the view, in pixels: it turns the camera round her, or the aim's look. */
   drag(right: number, down: number): void {
     this.orbit = {

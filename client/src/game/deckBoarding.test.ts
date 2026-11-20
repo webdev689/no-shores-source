@@ -8,7 +8,7 @@ import { Boarding } from './deckBoarding.ts';
 import type { DeckSea } from './deckFight.ts';
 import type { Foot, FootContext, FootFrame } from './foot.ts';
 import type { StandOnDeck } from './deckFight.ts';
-import { fightAsk } from './seaAfter.ts';
+import { deckKey, fightAsk } from './seaAfter.ts';
 
 /** A ship of the fight lying at (x, y), still on the water. */
 const vessel = (x: number, state: FightVessel['state']): FightVessel =>
@@ -168,4 +168,57 @@ test('two boarders of one deck each fight there as themselves: the page’s own 
   // Boarded again as another number (left and come back), her deck is stood on anew.
   sea.deck = { ...sea.deck, aboard: [[1, 6]] };
   assert.equal(boarding.frame(sea, fight('struck'), INPUT), null);
+});
+
+test('on her deck the sea’s own keys wait: E asks, Enter respawns, the menu’s keys are the game’s, every other the foot’s', async () => {
+  const foot = standOnFoot();
+  const { sea, asked } = seaRoom();
+  const boarding = new Boarding(CONTEXT, foot.stand);
+  let respawned = 0;
+  const atSea = { fight: { view: fight('struck') }, boarding, sighted: sea };
+  assert.equal(
+    deckKey(' ', atSea, () => undefined),
+    false,
+    'off her deck the sea has its keys',
+  );
+  sea.deck = { aboard: [[1, 4]], hull: 0, snapshot: new Uint8Array(), holdLeft: null };
+  boarding.frame(sea, fight('struck'), INPUT);
+  await settle();
+  boarding.frame(sea, fight('struck'), INPUT);
+  for (const key of [' ', '[', 'n', 'h', 'l'])
+    assert.equal(
+      deckKey(key, atSea, () => undefined),
+      true,
+      key,
+    );
+  assert.equal(
+    deckKey('enter', atSea, () => (respawned += 1)),
+    true,
+  );
+  assert.equal(respawned, 1);
+  assert.equal(
+    deckKey('m', atSea, () => undefined),
+    false,
+  );
+  sea.deck = { ...sea.deck, holdLeft: 600 };
+  boarding.frame(sea, fight('struck'), INPUT);
+  assert.equal(
+    deckKey('e', atSea, () => undefined),
+    true,
+  );
+  assert.deepEqual(asked, ['leave-deck']);
+});
+
+test('a hold won while her deck stands up is still told apart from what floated for the player before', async () => {
+  const foot = standOnFoot();
+  const { sea } = seaRoom();
+  const boarding = new Boarding(CONTEXT, foot.stand);
+  sea.flotsam = [{ player: 1, id: 1, at: [0, 0], kind: 'barrel' }];
+  sea.deck = { aboard: [[1, 4]], hull: 0, snapshot: new Uint8Array(), holdLeft: null };
+  boarding.frame(sea, fight('struck'), INPUT);
+  sea.deck = { ...sea.deck, holdLeft: 3_000 };
+  sea.flotsam.push({ player: 1, id: 2, at: [20, 0], kind: 'chest' });
+  await settle();
+  boarding.frame(sea, fight('struck'), INPUT);
+  assert.match(boarding.words?.line ?? '', /^Her hold: a chest,/);
 });

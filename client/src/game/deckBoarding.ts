@@ -89,16 +89,14 @@ export class Boarding {
       this.fight.leave();
       this.fight = null;
     }
-    if (this.fight || boarder === null || boarder === this.starting || boarder === this.refused) return;
+    if (this.fight || this.starting !== null || boarder === null || boarder === this.refused) return;
     if (!sea?.deck || !view) return;
     this.starting = boarder;
     const [x = 0, y = 0] = view.player.ship;
     DeckFight.board(this.context, this.stand, sea, sea.deck, [x, y]).then(
       (fight) => {
-        this.starting = null;
-        // Left her deck while it stood up: it is let go at once.
-        if (this.fight) fight.leave();
-        else this.fight = fight;
+        // One deck stands up at a time: a deck left meanwhile is let go at the next frame's look at the sea's word.
+        [this.starting, this.fight] = [null, fight];
       },
       (error: unknown) => {
         [this.starting, this.refused] = [null, boarder];

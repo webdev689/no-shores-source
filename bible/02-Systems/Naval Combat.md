@@ -246,7 +246,9 @@ Pass]]) with Claude's numbers:
   (`deckTurn`) after the world camera's matrix. While she holds the player the fight's keys and pointer are the foot's.
   Won, the display says "Her deck is yours", the seconds of her minute left, her hold's take as the room laid it ("Her
   hold: 2 crates, a chest, afloat alongside"), and E to go back aboard; E or the minute's end, the room has the boarder
-  back at their own ship's helm and the view is the sea's fight's again. Beaten, they wash up as above. A player whose ship goes down, or who is beaten on a deck with no boarder left standing there, washes
+  back at their own ship's helm and the view is the sea's fight's again. Beaten, they wash up (below). On her deck
+  every key but E, Enter (respawn), the menu's and Escape is the fight's on foot.
+- **Losing.** A player whose ship goes down, or who is beaten on a deck with no boarder left standing there, washes
   up at the port city nearest by the sea's way round land (`world::traffic::SeaWays`, on the traffic's sea mask: one
   search from every port when the room opens gives each cell of open water its nearest, so asking is a lookup): on foot in its social space, their ship moored at its roadstead at rest, a sunk one with 10% of her hull, 25%
   of her canvas and half her men, a beaten boarder's with the hurts she had (a sunk ship's if she is going down). A
