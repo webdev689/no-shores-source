@@ -218,6 +218,10 @@ fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level
     use crate::vendor::{Vendor, WARES, price, wares};
     let today = wares(Vendor::Weaponsmith, 20_400, 12);
     assert_eq!(today.len(), WARES);
+    // The page cuts the message's wares into each vendor's six, so every vendor sends six, every day.
+    for (vendor, day) in Vendor::ALL.into_iter().flat_map(|vendor| (20_400..20_430).map(move |day| (vendor, day))) {
+        assert_eq!(wares(vendor, day, 12).len(), WARES, "{vendor:?} on day {day}");
+    }
     assert_eq!(today, wares(Vendor::Weaponsmith, 20_400, 12), "the same for everyone that day");
     assert_ne!(today, wares(Vendor::Weaponsmith, 20_401, 12), "and new the next");
     assert!(today.iter().all(|item| item.level == 12 && !item.rarity.named()));
