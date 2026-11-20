@@ -1,2 +1,5 @@
-2026-11-19 20:43 [overlook-source] session-start scan: files=0 parsed=0 principles=0
-2026-11-19 21:23 [user] session-start scan: files=0 parsed=0 principles=0
+2026-11-19 19:46 [overlook-source] session-start scan: files=0 parsed=0 principles=0
+2026-11-20 00:07 [overlook-source] session-start scan: files=11 parsed=11 principles=0
+2026-11-20 11:11 [user] session-start scan: files=16 parsed=16 principles=0
+2026-11-20 11:24 [overlook-source] session-start scan: files=16 parsed=16 principles=0
+2026-11-20 15:52 fix-sources merged: worker OBSERVATIONS (serena slow for scripted renames; stale protocol fixture until cargo test -p protocol; brief asked for told codes in protocol, which depends on room) judged one-off or project facts, no observation
