@@ -83,3 +83,13 @@ test("a blow's hit and the kill it made punch once, as hard as the kill; a shot 
   assert.ok((both.pushes[0]?.yaw ?? 0) < 0, 'along the hit’s stroke');
   assert.equal(kicksOf([{ ...event(EVENT.hit, 2, 1, 30), how: 6 }], 1).pushes.length, 0, 'an arrow');
 });
+
+test('one stroke landing on several punches once, as hard as its hardest; blows from several land each', () => {
+  const sweep = [2, 3, 4, 5].map((defender) => event(EVENT.hit, 1, defender, 20));
+  const one = kicksOf([event(EVENT.hit, 1, 2, 20)], 1);
+  assert.deepEqual(kicksOf(sweep, 1), one, 'four struck at once kick as one');
+  const slain = kicksOf([...sweep, event(EVENT.killed, 1, 4, 0, 0)], 1);
+  assert.deepEqual(slain, kicksOf([event(EVENT.killed, 1, 4, 0, 3)], 1), 'as hard as the kill among them');
+  const crowd = kicksOf([event(EVENT.hit, 2, 1, 20), event(EVENT.hit, 3, 1, 20)], 1);
+  assert.equal(crowd.pushes.length, 2, 'two foes landing on the player at once');
+});

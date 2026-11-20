@@ -8,7 +8,7 @@ use combat::{CombatInput, Fighter, Intent, Stroke, player_tick};
 use movement::{Block, Controls, standing};
 
 /// Both tests hold this value; a change to the fight changes it in both, on purpose.
-pub const FIGHT_HASH: &str = "c093ed4fb2b11f6e";
+pub const FIGHT_HASH: &str = "2bd58896a95c9e0f";
 
 const COURSE: [Block; 1] = [Block { min_x: -3.0, min_y: -8.0, max_x: 3.0, max_y: -7.0, top: 1.2 }];
 

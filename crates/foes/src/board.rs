@@ -1,7 +1,9 @@
-//! What the foes of a room share: for each target, who holds the turns to fight it hand to hand and to shoot at it,
-//! and since when each of the rest has waited. The longest waiter goes in next; past its patience, a foe goes in
-//! whatever the count. And the posts shooters hold, so no two take one place, and the tick one last picked a post, so
-//! only one picks a tick.
+//! What the foes of a room share: whom each fights, so a foe weighing its targets counts those already at each; for
+//! each target, who holds the turns to fight it hand to hand and to shoot at it, and since when each of the rest has
+//! waited. The longest waiter goes in next; past its patience, a foe goes in one over the count, never more, so a
+//! crowd's patience cannot pile it onto its target. When the latest blow begun at each target lands, so the next comes
+//! a beat after it; and which waiting foe works round to its flank. And the posts shooters hold, so no two take one
+//! place, and the tick one last picked a post, so only one picks a tick.
 
 use crate::director::Caps;
 use combat::FighterId;
@@ -16,6 +18,13 @@ struct Fight {
     waiting: BTreeMap<FighterId, (u64, bool)>,
     /// The one foe striking it on an opening, without a turn: a back turned to it, or a walk in on it.
     opportunist: Option<FighterId>,
+    /// The latest blow begun at it: by whom, and the tick it lands; the foe ready in reach that the beat after it
+    /// holds back longest, and the foe going in to strike next, each with the tick it last asked.
+    due: Option<(FighterId, u64)>,
+    next: Option<(FighterId, u64)>,
+    going: Option<(FighterId, u64)>,
+    /// The waiting foe working round to its flank, and how well its role suits that (the lower, the better).
+    flanker: Option<(FighterId, u8)>,
 }
 
 impl Fight {
@@ -28,18 +37,26 @@ impl Fight {
     }
 }
 
+/// Whether a place in line is free for `foe` at `tick`: empty, its own, or let go by a foe that did not ask last tick.
+fn free_for(place: Option<(FighterId, u64)>, foe: FighterId, tick: u64) -> bool {
+    place.is_none_or(|(holder, asked)| holder == foe || asked + 1 < tick)
+}
+
 /// What the foes of a room share: who holds the turns to fight each target, and since when each waits; and the spot
 /// each shooter holds as its post.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Board {
+    /// Whom each foe fights.
+    aims: BTreeMap<FighterId, FighterId>,
     fights: BTreeMap<FighterId, Fight>,
     posts: BTreeMap<FighterId, [f64; 3]>,
     picked: Option<u64>,
 }
 
 impl Board {
-    /// A foe that died or left gives up any turn it held and stops waiting.
+    /// A foe that died or left fights no one, gives up any turn it held and stops waiting.
     pub fn forget(&mut self, foe: FighterId) {
+        self.aims.remove(&foe);
         self.posts.remove(&foe);
         for fight in self.fights.values_mut() {
             fight.melee.remove(&foe);
@@ -48,8 +65,25 @@ impl Board {
             if fight.opportunist == Some(foe) {
                 fight.opportunist = None;
             }
+            if fight.flanker.is_some_and(|(flanker, _)| flanker == foe) {
+                fight.flanker = None;
+            }
         }
         self.fights.retain(|_, fight| !fight.empty());
+    }
+
+    /// Whom a foe fights now, if anyone.
+    pub fn aim(&mut self, foe: FighterId, target: Option<FighterId>) {
+        match target {
+            Some(target) => self.aims.insert(foe, target),
+            None => self.aims.remove(&foe),
+        };
+    }
+
+    /// How many foes but `foe` fight `target`.
+    #[must_use]
+    pub fn fighting(&self, target: FighterId, foe: FighterId) -> usize {
+        self.aims.iter().filter(|(other, aim)| **other != foe && **aim == target).count()
     }
 
     /// A foe fighting `target`, hand to hand or by shooting, joins its waiting unless it holds a token of that kind; a
@@ -67,8 +101,8 @@ impl Board {
     }
 
     /// Takes a token of its kind for a waiting foe if one is free under `caps` and nobody of its kind has waited
-    /// longer, or, past `patience` ticks of waiting, whatever the count. Answers whether it holds one. A holder keeps
-    /// its token when the caps drop, until it hands it on.
+    /// longer, or, past `patience` ticks of waiting, one over the cap at most. Answers whether it holds one. A holder
+    /// keeps its token when the caps drop, until it hands it on.
     pub fn take(
         &mut self,
         target: FighterId,
@@ -84,16 +118,85 @@ impl Board {
             return true;
         }
         let since = fight.waiting.get(&foe).map_or(tick, |&(since, _)| since);
-        let free = fight.tokens(ranged).len() < cap;
+        let out = fight.tokens(ranged).len();
+        let free = out < cap;
         let first = !fight.waiting.iter().any(|(other, &(other_since, other_ranged))| {
             *other != foe && other_ranged == ranged && other_since < since
         });
-        if !((free && first) || tick.saturating_sub(since) >= patience) {
+        if !((free && first) || (tick.saturating_sub(since) >= patience && out <= cap)) {
             return false;
         }
         fight.tokens(ranged).insert(foe, tick);
         fight.waiting.remove(&foe);
+        if fight.flanker.is_some_and(|(flanker, _)| flanker == foe) {
+            fight.flanker = None;
+        }
         true
+    }
+
+    /// Whether a foe ready at `tick` to begin a blow at `target` that lands at `lands` may: only `beat` ticks or more
+    /// after the latest another foe has begun there lands, and, of the foes the beat holds back, the first held goes
+    /// first; one that stops asking loses its place. A shot (`queues` false) takes no place: it is loosed only into a
+    /// beat no blow hand to hand waits for. Its own blows never hold a foe back.
+    pub fn may_strike(
+        &mut self,
+        target: FighterId,
+        foe: FighterId,
+        lands: u64,
+        beat: u64,
+        tick: u64,
+        queues: bool,
+    ) -> bool {
+        let fight = self.fights.entry(target).or_default();
+        let first = free_for(fight.next, foe, tick);
+        if first && queues {
+            fight.next = Some((foe, tick));
+        }
+        first && fight.due.is_none_or(|(by, at)| by == foe || lands >= at + beat)
+    }
+
+    /// Whether a foe in to fight `target` hand to hand may go in to strike at `tick`: no other is going in or waits in
+    /// reach for the beat. If it may, it is the one going in, as long as it asks each tick.
+    pub fn go_in(&mut self, target: FighterId, foe: FighterId, tick: u64) -> bool {
+        let fight = self.fights.entry(target).or_default();
+        let first = free_for(fight.going, foe, tick) && free_for(fight.next, foe, tick);
+        if first {
+            fight.going = Some((foe, tick));
+        }
+        first
+    }
+
+    /// A foe began a blow at `target` that lands at `lands`.
+    pub fn struck(&mut self, target: FighterId, foe: FighterId, lands: u64) {
+        let fight = self.fights.entry(target).or_default();
+        if fight.due.is_none_or(|(_, at)| lands >= at) {
+            fight.due = Some((foe, lands));
+        }
+        if fight.next.is_some_and(|(next, _)| next == foe) {
+            fight.next = None;
+        }
+        if fight.going.is_some_and(|(going, _)| going == foe) {
+            fight.going = None;
+        }
+    }
+
+    /// A waiting foe asks to work round to `target`'s flank, `suits` saying how well its role suits it (the lower, the
+    /// better; none, not at all). One foe flanks a target at a time: a better-suited one takes the flank from a worse,
+    /// the first keeps it on a tie, and one that may not lets go of it. Answers whether this foe flanks.
+    pub fn flank(&mut self, target: FighterId, foe: FighterId, suits: Option<u8>) -> bool {
+        let fight = self.fights.entry(target).or_default();
+        let held = fight.flanker;
+        let Some(suits) = suits else {
+            if held.is_some_and(|(flanker, _)| flanker == foe) {
+                fight.flanker = None;
+            }
+            return false;
+        };
+        if held.is_none_or(|(flanker, theirs)| flanker == foe || suits < theirs) {
+            fight.flanker = Some((foe, suits));
+            return true;
+        }
+        false
     }
 
     /// A holder hands its token on: it waits again, from now, behind everyone who waited longer.
@@ -134,6 +237,18 @@ impl Board {
             return true;
         }
         false
+    }
+
+    /// How many of the foes waiting for a melee turn at `target` have waited longer than this one (the lower number
+    /// first on a tie): its place in the line, 0 for the next to go in.
+    #[must_use]
+    pub fn in_line(&self, target: FighterId, foe: FighterId) -> usize {
+        let Some(fight) = self.fights.get(&target) else { return 0 };
+        let Some(&(since, _)) = fight.waiting.get(&foe) else { return 0 };
+        let before = |(other, &(other_since, ranged)): (&FighterId, &(u64, bool))| {
+            !ranged && (other_since, *other) < (since, foe)
+        };
+        fight.waiting.iter().filter(|&entry| before(entry)).count()
     }
 
     /// How many melee and ranged tokens `target` has out.

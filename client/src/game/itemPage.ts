@@ -27,7 +27,7 @@ import {
   traitNode,
 } from './gearDom.ts';
 import { itemDetailOf } from './gearScreen.ts';
-import { LARGE_CAP } from './iconFit.ts';
+import { LARGE_CAP } from '../player/iconFit.ts';
 import { moduleGlyph } from './shipGear.ts';
 
 /** The art's box: what the page's height leaves it, within these, in pixels. */

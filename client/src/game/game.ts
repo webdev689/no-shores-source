@@ -75,7 +75,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
   };
-  const footView = new FootView(gpu, hudRoot);
+  const footView = new FootView(gpu, hudRoot, forge, [hud.hintList]);
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
   const landmass = boot.landmass;

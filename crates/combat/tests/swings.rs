@@ -12,22 +12,22 @@ use movement::{Block, Controls};
 
 #[test]
 fn a_sword_swing_lands_its_blow_as_the_third_of_five_frames_begins_and_ends_at_the_fifth() {
-    assert_eq!(swing_ticks(WeaponClass::Sword), (24, 60));
-    assert_eq!(swing_ticks(WeaponClass::Dagger), (21, 54));
+    assert_eq!(swing_ticks(WeaponClass::Sword), (18, 45), "three quarters of DFO's 24 and 60");
+    assert_eq!(swing_ticks(WeaponClass::Dagger), (16, 40));
     let (warhammer_strike, warhammer_end) = swing_ticks(WeaponClass::Warhammer);
-    assert!(warhammer_strike > 24 && warhammer_end > 60, "two hands and weight swing slower");
-    let (fighter, happenings) = run(player_at(0.0, 0.0), swinging(0.0, Stroke::Down), 25, None);
+    assert!(warhammer_strike > 18 && warhammer_end > 45, "two hands and weight swing slower");
+    let (fighter, happenings) = run(player_at(0.0, 0.0), swinging(0.0, Stroke::Down), 19, None);
     assert!(matches!(happenings[0], (0, Happening::Swung(_))));
-    assert!(matches!(happenings[1], (24, Happening::Struck(attack)) if attack.elapsed == 24));
+    assert!(matches!(happenings[1], (18, Happening::Struck(attack)) if attack.elapsed == 18));
     assert_eq!(happenings.len(), 2);
     assert!((fighter.stamina - (100.0 - weapon(WeaponClass::Sword).stamina)).abs() < 1e-9);
 }
 
 #[test]
 fn holding_the_button_swings_again_as_each_blow_ends_and_a_tap_swings_once() {
-    let (_, held) = run(player_at(0.0, 0.0), swinging(0.0, Stroke::Left), 130, None);
+    let (_, held) = run(player_at(0.0, 0.0), swinging(0.0, Stroke::Left), 100, None);
     let swung = held.iter().filter(|(_, happening)| matches!(happening, Happening::Swung(_))).count();
-    assert_eq!(swung, 3, "swings begin at ticks 0, 60 and 120");
+    assert_eq!(swung, 3, "swings begin at ticks 0, 45 and 90");
     let mut fighter = player_at(0.0, 0.0);
     let mut swings = 0;
     for tick in 0..130 {
@@ -90,7 +90,7 @@ fn a_swing_moves_slowly_and_turns_its_blow_after_the_lock_target_in_reach() {
 }
 
 #[test]
-fn a_blow_reaches_the_nearest_foes_in_its_arc_and_reach_up_to_its_strokes_count() {
+fn a_blow_strikes_every_foe_its_arc_and_reach_hold_the_locks_target_first_then_the_nearest() {
     let striker = player_at(0.0, 0.0);
     let ahead = |x: f64, y: f64| foe_at(x, y, core::f64::consts::PI);
     let fighters = vec![
@@ -100,6 +100,7 @@ fn a_blow_reaches_the_nearest_foes_in_its_arc_and_reach_up_to_its_strokes_count(
         (5, ahead(0.0, -4.0)),
         (6, ahead(0.0, 1.5)),
         (7, player_at(0.3, -1.0)),
+        (8, ahead(1.1, -1.0)),
     ];
     let attack = |stroke| combat::fighter::Attack {
         stroke,
@@ -109,11 +110,11 @@ fn a_blow_reaches_the_nearest_foes_in_its_arc_and_reach_up_to_its_strokes_count(
         swing: Swing::Plain,
         left_hand: false,
     };
-    assert_eq!(struck(1, &striker, &attack(Stroke::Up), &fighters, &[]), vec![2], "a thrust strikes one");
+    assert_eq!(struck(1, &striker, &attack(Stroke::Up), &fighters, &[]), vec![2], "a thrust's narrow arc holds one");
     assert_eq!(
         struck(1, &striker, &attack(Stroke::Left), &fighters, &[]),
-        vec![2, 4, 3],
-        "a sweep three, nearest first"
+        vec![8, 2, 4, 3],
+        "a sweep strikes all four in its arc, nearest first, no cap"
     );
     assert!(
         struck(1, &striker, &attack(Stroke::Down), &fighters, &[]).iter().all(|id| *id != 5 && *id != 6 && *id != 7)
@@ -122,7 +123,11 @@ fn a_blow_reaches_the_nearest_foes_in_its_arc_and_reach_up_to_its_strokes_count(
     assert!(struck(1, &striker, &attack(Stroke::Left), &fighters, &wall).is_empty(), "nothing through a wall");
     let mut locked = striker;
     locked.target = Some(3);
-    assert_eq!(struck(1, &locked, &attack(Stroke::DownLeft), &fighters, &[]), vec![3, 2], "the lock's target first");
+    assert_eq!(
+        struck(1, &locked, &attack(Stroke::DownLeft), &fighters, &[]),
+        vec![3, 8, 2, 4],
+        "the lock's target first"
+    );
 }
 
 #[test]

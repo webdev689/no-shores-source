@@ -14,6 +14,23 @@ export function element(tag: string, className: string, parent: HTMLElement, tex
   return made;
 }
 
+/** What each node's style was last set to here, so a frame that changes nothing writes nothing to the page. */
+const written = new WeakMap<HTMLElement, Map<string, string>>();
+
+/** Sets `node`'s style property `name` (as CSS spells it, `z-index` not `zIndex`) to `value`, only when that changes
+ *  it. Whatever sets that property on that node must set it here, or this would think it unchanged. */
+export function setStyle(node: HTMLElement, name: string, value: string): void {
+  const last = written.get(node) ?? new Map<string, string>();
+  if (last.get(name) === value) return;
+  written.set(node, last.set(name, value));
+  node.style.setProperty(name, value);
+}
+
+/** Shows or hides `node`, only when that changes it. */
+export function showNode(node: HTMLElement, shown: boolean): void {
+  if (node.hidden === shown) node.hidden = !shown;
+}
+
 /** A falling piece: its node, its two halves and how long it has fallen. */
 interface Piece {
   readonly root: HTMLElement;
@@ -55,15 +72,15 @@ export class Meter {
   set(share: number, seconds: number): void {
     const was = this.loss;
     this.loss = stepLoss(was, share, seconds);
-    this.fill.style.width = percent(this.loss.share);
-    if (this.lost) this.lost.style.width = percent(this.loss.at);
+    setStyle(this.fill, 'width', percent(this.loss.share));
+    if (this.lost) setStyle(this.lost, 'width', percent(this.loss.at));
     for (const piece of this.pieces) this.fall(piece, piece.age + seconds);
     const bite = this.pieceLeast === null ? null : bitten(was, this.loss, this.pieceLeast);
     const piece = this.pieces[this.bites % 2];
     if (!bite || !piece || motionReduced()) return;
     this.bites += 1;
-    piece.root.style.left = percent(bite.left);
-    piece.root.style.width = percent(bite.width);
+    setStyle(piece.root, 'left', percent(bite.left));
+    setStyle(piece.root, 'width', percent(bite.width));
     this.fall(piece, 0);
   }
 
@@ -77,11 +94,11 @@ export class Meter {
   private fall(piece: Piece, age: number): void {
     piece.age = age;
     const [left, right] = [pieceAt(age, 'left'), pieceAt(age, 'right')];
-    piece.root.hidden = !left && !right;
+    showNode(piece.root, !!left || !!right);
     piece.halves.forEach((half, index) => {
       const place = index === 0 ? left : right;
-      half.style.transform = place ? `translate(${place.x}px, ${place.y}px)` : '';
-      half.style.opacity = place ? String(place.opacity) : '0';
+      setStyle(half, 'transform', place ? `translate(${place.x}px, ${place.y}px)` : '');
+      setStyle(half, 'opacity', place ? String(place.opacity) : '0');
     });
   }
 }

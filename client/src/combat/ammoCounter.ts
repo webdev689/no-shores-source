@@ -1,7 +1,7 @@
 // The shots left beside the crosshair while the Ranged loadout is drawn, as the fight's rules count them on the
 // player's own fighter: in brass once a fifth of the capacity or less is left, and "No ammo" in the loss colour at none.
 
-import { element } from '../plus/meter.ts';
+import { element, showNode } from '../plus/meter.ts';
 
 /** The share of the capacity at or under which the shots left read as low. */
 const LOW_SHARE = 0.2;
@@ -24,11 +24,13 @@ export class AmmoCounter {
   constructor(parent: HTMLElement) {
     this.root = element('div', 'ammo', parent);
     this.root.hidden = true;
+    // The weapon's row tells a screen reader its shots.
+    this.root.ariaHidden = 'true';
   }
 
   update(ammo: number | null | undefined, most: number | null = null): void {
     const said = ammoWords(ammo, most);
-    this.root.hidden = !said;
+    showNode(this.root, !!said);
     if (!said) return;
     if (this.root.textContent !== said.words) this.root.textContent = said.words;
     this.root.classList.toggle('empty', said.empty);

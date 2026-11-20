@@ -8,8 +8,8 @@ code:
   - crates/room/src/players.rs#VIEW_LAG
   - client/src/network/localRoom.ts#LocalRoom
   - client/src/combat/fighting.ts#Fighting
-  - crates/room/src/lib.rs#SLACK_TICKS
-  - crates/room/src/lib.rs#WAITING_LIMIT
+  - crates/room/src/players.rs#SLACK_TICKS
+  - crates/room/src/players.rs#WAITING_LIMIT
   - crates/room/src/sea.rs#Sea
   - crates/room/src/sea.rs#PACES
   - crates/room/src/fleet.rs#Fleet
@@ -68,13 +68,13 @@ on Cloudflare.
   look, on its navmesh, facing them, and holds at most twelve. A foe of level 0 has none and fights by combat's own
   numbers; one with a level has its health grown for it ([[Gear]]). A node's room takes no ask: as it opens, its
   node's kind and id stand its garrison at its island's levels, raised by its seas once the host sets them, one foe in
-  five shielded, and the garrison stands again as it is cleared; the room holds at most 24 ([[Enemies]]). A Boss's
-  called foes come the same way, at its level. Each
-  tick the fight's heat eases and every foe thinks over the room as it stands and steps by the same rules ([[Foes]]),
-  routing and taking cover on a [[Navmesh]] the room bakes when it opens: a course's over its blocks and 30 m round
-  them; a node's over a 70 m square of its land, its first spawn 15 m inside the square's edge toward the middle of
-  its section's ring, where its garrison stands. The room tells each foe the noises made and its allies'
-  shouts, and keeps the fight's heat, fed where blows are settled.
+  five shielded, each group but a Boss's or a Miniboss's walking a beat, and the garrison stands again as it is
+  cleared; the room holds at most 24 ([[Enemies]]). A Boss's called foes come the same way, at its level. Each tick
+  the fight's heat eases and every foe thinks over the room as it stands and steps by the same rules ([[Foes]]),
+  routing, taking cover, and climbing and dropping where its links say, on a [[Navmesh]] the room bakes when it
+  opens: a course's over its blocks and 30 m round them; a node's over a 70 m square of its land, its first spawn
+  15 m inside the square's edge toward the middle of its section's ring, where its garrison stands. The room tells
+  each foe the noises made and its allies' shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
 - **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at twelve
@@ -406,19 +406,32 @@ were blows that landed, deaths and stands again, and ticks the room stood a page
 lag behind, as a headless page's slow frames do. Stopped mid-fight and started again, the runtime had both pages say
 "Reconnecting…" and join again by themselves, within one wait of its coming back.
 
+The same two pages in a patrol node's room, nine of its eleven foes walking their beats each tick, and on the course
+with a swordsman climbing the ledge after one page's player and fighting both, held the same foes to the centimetre,
+with the same levels, health, alertness and actions, at all of the 2,582 and 2,997 room ticks they both kept (tested
+live, locally). On the course, each page swinging some 45 times, the room's word on its own fighter matched for 98%
+of inputs. The rest were blows that landed, stands again, and ticks the room stood a page still for its slow frames,
+which set a swing under way on by those ticks; the lock changed only where the room knew of a blow. Played offline
+at a steady 60 inputs a second with 2 to 8 ticks of lag each way, the same fight matched for 91 to 98% of inputs and
+set no swing on: every difference came within 2 s of a blow by or on the player, a death or a stand again.
+
 ## Limits
 
 - Each deploy starts every room afresh: whoever is in one is dropped and joins again by themselves as a new player,
   where the room stands them; their place, a fight and its foes are lost. A deployed node's window can lag the edits
   files until the next merge.
-- A room bakes its navmesh as it opens: 0.3 to 0.7 s of work for the [[Test Ground]]'s course (tested offline). The
+- A room bakes its navmesh as it opens: 0.1 to 0.2 s of WebAssembly for the [[Test Ground]]'s course, its links
+  among it (tested offline, on a busy machine). The
   account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
 - Any page can join a room, under any name; a player is known only by the session their page gives ([[Accounts]]).
 - A full sea of sockets each asking for the costliest course it may holds about a third of the sea's time: 40
   snapshots a second against 57, with 63 such sockets on the local runtime (tested offline).
 - A snapshot sends every player's whole fighter and look and every foe's glance every tick. The runtime deflates it
-  on the wire (WebSocket compression, on from the rooms' compatibility date): a dungeon's room with its garrison and
-  one player sends about 3.8 KB a tick, some 0.24 KB deflated (tested offline, on the local runtime).
+  on the wire (WebSocket compression, on from the rooms' compatibility date), its window reaching back over the
+  snapshots before, so what stands still costs next to nothing and a foe walking its beat costs most: a node's room
+  with its garrison and one player sends 1.8 to 4.7 KB a tick, 3.5 KB at the median over the 90 garrisoned nodes,
+  and 0.05 to 0.53 KB deflated, 0.35 KB at the median, about 21 KB a second (tested offline; 0.20 to 0.36 KB on the
+  local runtime, over four nodes).
 - A player's view may lag 24 ticks at most; a screen further behind is judged as it stands. A player could hold a
   claimed lag at the most to gain up to 24 ticks of reaction; nothing checks it.
 - Arrows and bolts are not judged as their shooter saw: they fly in the room's time.
@@ -436,8 +449,11 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
   the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
   is told to (`take_foe_asks`).
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
-  a foe that chases a player off it walks straight. A node's room opens in 0.18 to 0.67 s of WebAssembly, garrison
-  and all, 0.22 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).
+  a foe that chases a player off it walks straight. A node's room opens in 0.10 to 0.23 s of WebAssembly, garrison
+  and beats and all, 0.11 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).
+- A node's room with one player and every group but a Boss's or a Miniboss's walking its beat ticks in 0.02 to 0.12 ms
+  of WebAssembly at the median and in 0.65 ms at most at the 99th in a hundred, and its WebAssembly holds about 25 MB,
+  the same after an hour open (tested offline).
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.
 - Where a ship first puts to sea, with no place kept in its character (a new one, or a page unkept), is the player's

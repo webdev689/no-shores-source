@@ -13,11 +13,12 @@ import {
   SLOTS,
   VAULTED,
   WORN,
+  isModule,
   itemWords,
   nodeShown,
   wearAsks,
 } from '../player/gear.ts';
-import { gearKindName, gearName, isModule, moduleNode, modulePresses } from './shipGear.ts';
+import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts';
 
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;

@@ -21,10 +21,11 @@ import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { CARD_NEAREST_M, cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
-import { gearOutfit } from '../player/gearLooks.ts';
+import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
+import type { PlacedLoop } from '../player/playerMoves.ts';
 import type { OtherPlayers, Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
@@ -43,7 +44,7 @@ import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
 import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
-import { hearing, nextOtherId, rulesOf } from './footRoom.ts';
+import { OTHERS_FPS, folkCards, hearing, nextOtherId, rulesOf } from './footRoom.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
@@ -74,10 +75,6 @@ const CAMERA_CLEARANCE_M = 0.3;
 /** How far down a player arriving in a social space looks, radians: over the parapet onto the city, as the Tower's
  *  arrival looks out over the City. */
 const OVER_THE_PARAPET = 0.3;
-/** Other players' figures loop a move at this many frames a second where their screen gave no frame. */
-const OTHERS_FPS = 6;
-/** How far apart in time two figures' steps are, by their numbers, in seconds: a crowd never walks in step. */
-const STRIDE_APART_S = 0.37;
 /** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
 export const IDLE: InputFrame = {
   held: () => false,
@@ -147,6 +144,7 @@ export class Foot {
   private readonly steps: MovementRules;
   private readonly otherPlayers: OtherPlayers;
   private readonly otherGlides = new Glides();
+  private readonly folkLoops = new WeakMap<Placed, PlacedLoop>();
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
   /** The attack feel as made: the blows' arcs, hit-stops, the camera's kick and the lunge. */
@@ -296,8 +294,10 @@ export class Foot {
     if (wardrobe) {
       const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
       walker.you.dress = { ...walker.you.dress, outfit };
+      walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
     }
     walker.glow = heldElements(gear, loadout);
+    walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
   }
 
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
@@ -455,7 +455,7 @@ export class Foot {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fight.player, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
+      { id: fight.player, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
       ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
       ...[...otherViews].map(([number, view]) => ({
         id: number,
@@ -481,7 +481,10 @@ export class Foot {
       const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const drawing = walker.you.dress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
+    const drawing = walker.shownDress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
+    const held = gear?.gear;
+    // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
+    const full = (held?.ammoShare ?? 1) >= 1;
     const fought: FootFight = {
       own: ownView,
       foes: foes.marked(fight),
@@ -495,10 +498,17 @@ export class Foot {
       abilities: fight.abilities,
       // The shots left stand beside the crosshair, wherever it shows.
       ammo: sights ? (ownView?.ammo ?? null) : null,
-      ammoMost: this.gear?.gear?.ammoMost ?? null,
+      ammoMost: held?.ammoMost ?? null,
+      ammoFull: !!ownView && this.drops.ammoFull(held?.drops ?? [], [ownView.x, ownView.y, ownView.z], full),
       crosshair: sights
         ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
         : null,
+      arms: {
+        gear: this.gear?.gear ?? null,
+        loadout: walker.player.loadout,
+        drawn: walker.you.dress.outfit.drawn,
+        dress: walker.you.dress,
+      },
     };
     const edge = this.standing;
     const hints = edge.kind === 'dead' ? HINTS.dead : footHints(fight.arts?.art ?? 0);
@@ -555,16 +565,8 @@ export class Foot {
       if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
-    // A social space's people, each keeping a step of its own.
-    for (const one of this.folk) {
-      const { view, flip } = viewOf(one.facing, one.x, one.y, eyeX, eyeY);
-      const frames = forge.frames(one.dress.body, one.anim);
-      const own = clock + one.id * STRIDE_APART_S;
-      const frame = one.frame === null ? frameAt(own, frames, OTHERS_FPS) : Math.min(one.frame, frames - 1);
-      const card = forge.card(one.id, one.dress, one.anim, view, frame, flip);
-      if (card) cards.push({ card, ...cardStand(one.x, one.y, eyeX, eyeY), z: one.z, flip });
-    }
-    return cards;
+    const seconds = frameTicks * this.context.movement.tickSeconds;
+    return [...cards, ...folkCards(this.folk, this.folkLoops, forge, [eyeX, eyeY], clock, seconds)];
   }
 
   /** Where the player stands with the section's edge, as the room said. */

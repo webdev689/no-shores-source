@@ -483,6 +483,10 @@ pub unsafe extern "C" fn fleet_lay(address: *const u8, length: usize) -> u64 {
 }
 
 #[cfg(test)]
+#[path = "climb_door_tests.rs"]
+mod climb_door_tests;
+
+#[cfg(test)]
 #[path = "door_tests.rs"]
 mod door_tests;
 

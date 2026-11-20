@@ -47,11 +47,13 @@ pub struct Calls {
     pub cleanse: bool,
 }
 
-/// A garrison foe's place at its post and the way it faces there.
+/// A garrison foe's place in its group and the way it faces there, and whether the group walks on, its place moving
+/// with it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Home {
     pub at: [f64; 3],
     pub facing: f64,
+    pub marching: bool,
 }
 
 /// Why a garrison foe walks back to its post: its target led it past its leash, when it heeds nothing on the way but a
@@ -72,6 +74,11 @@ pub struct Brain {
     /// Where it believes its foe is: where it last saw its target, or what last stirred it.
     pub(crate) last_seen: Option<[f64; 3]>,
     pub(crate) seen_at: u64,
+    /// When it took its target and when a blow last drew it to one, and the fighter that struck it since while it
+    /// fought another.
+    pub(crate) taken_at: u64,
+    pub(crate) drawn_at: Option<u64>,
+    pub(crate) struck_by: Option<FighterId>,
     pub(crate) awareness: Awareness,
     /// The bearing it faces and steers by, turning at its own pace.
     pub(crate) heading: f64,
@@ -83,6 +90,8 @@ pub struct Brain {
     /// Its own place on the ring, a bearing from its target: it starts where the foe first stands on the ring, so foes
     /// do not cross each other to reach theirs.
     pub(crate) slot: Option<f64>,
+    /// Whether, waiting, it works round to its target's flank rather than hold the line.
+    pub(crate) flanking: bool,
     /// Its health at the last few samples, oldest first, and when the newest was taken.
     pub(crate) health: [f64; SAMPLES],
     pub(crate) sampled: u64,
@@ -114,6 +123,9 @@ impl Brain {
             target: None,
             last_seen: None,
             seen_at: 0,
+            taken_at: 0,
+            drawn_at: None,
+            struck_by: None,
             awareness: Awareness::default(),
             heading: facing,
             plan: Plan::Wait,
@@ -122,6 +134,7 @@ impl Brain {
             backoff_ready: 0,
             fled: false,
             slot: None,
+            flanking: false,
             health: [foe_type.numbers(rank, 1).health; SAMPLES],
             sampled: 0,
             ready_at: None,
@@ -139,7 +152,19 @@ impl Brain {
 
     /// Posts it at a garrison's place, facing `facing`: from now on it leashes to it.
     pub fn posted_at(&mut self, at: [f64; 3], facing: f64) {
-        self.home = Some(Home { at, facing });
+        self.home = Some(Home { at, facing, marching: false });
+    }
+
+    /// Moves its place, as its group walks its beat (`marching`) or stands at a point of it: it leashes to its place
+    /// as it is, and with nothing to fight keeps to it.
+    pub fn keep_to(&mut self, at: [f64; 3], facing: f64, marching: bool) {
+        self.home = Some(Home { at, facing, marching });
+    }
+
+    /// Its place in its group, if it is a garrison's.
+    #[must_use]
+    pub fn home(&self) -> Option<Home> {
+        self.home
     }
 
     /// Makes it a companion: it fights on the players' side and heels to its post (`posted_at`), which its room moves
@@ -200,6 +225,12 @@ impl Brain {
         self.plan
     }
 
+    /// Whom it fights: its chosen target, whatever blow it answers.
+    #[must_use]
+    pub fn fights(&self) -> Option<FighterId> {
+        self.target
+    }
+
     /// The fighter its soft lock should hold: its chosen target, but while it answers a blow, the one whose blow it
     /// is, so its guard and its dodge face that one.
     #[must_use]
@@ -232,11 +263,14 @@ pub fn notice(brain: &mut Brain, me: FighterId, seen: &Seen, tick: u64) {
         Seen::Loosed { by, speed } if by != me && alert => brain.reactions.saw_shot(by, speed, tick),
         Seen::Struck { by, .. } => {
             brain.awareness.level = 1.0;
-            // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place.
+            // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place;
+            // fighting another, it weighs turning on it as it next thinks.
             if brain.target.is_none() {
                 brain.target = Some(by);
-                brain.seen_at = tick;
+                (brain.seen_at, brain.taken_at, brain.drawn_at) = (tick, tick, Some(tick));
                 brain.last_seen = None;
+            } else if brain.target != Some(by) {
+                brain.struck_by = Some(by);
             }
         }
         // Its own side's noises it pays no heed; an ally's shout it does.

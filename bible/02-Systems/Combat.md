@@ -45,45 +45,48 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 
 | Weapon | Reach (m) | Damage | Weight | Stamina | Blow lands / swing ends (ticks) |
 |---|---|---|---|---|---|
-| Fists | 1.0 | 6 | 0.6 | 6 | 21 / 54 |
-| Dagger | 1.3 | 9 | 0.7 | 8 | 21 / 54 |
-| Sword | 1.8 | 14 | 1.0 | 12 | 24 / 60 |
-| Mace | 1.6 | 15 | 1.5 | 14 | 25 / 61 |
-| Flail | 1.8 | 16 | 1.5 | 15 | 25 / 63 |
-| Axe (two hands) | 2.0 | 22 | 1.44 | 20 | 27 / 66 |
-| Warhammer (two hands) | 2.0 | 24 | 1.73 | 22 | 27 / 67 |
-| Staff (two hands) | 2.2 | 13 | 1.15 | 14 | 25 / 61 |
-| Greatsword (two hands) | 2.3 | 24 | 1.50 | 21 | 27 / 67 |
+| Fists | 1.0 | 6 | 0.6 | 6 | 16 / 40 |
+| Dagger | 1.3 | 9 | 0.7 | 8 | 16 / 40 |
+| Sword | 1.8 | 14 | 1.0 | 12 | 18 / 45 |
+| Mace | 1.6 | 15 | 1.5 | 14 | 18 / 46 |
+| Flail | 1.8 | 16 | 1.5 | 15 | 19 / 47 |
+| Axe (two hands) | 2.0 | 22 | 1.44 | 20 | 20 / 50 |
+| Warhammer (two hands) | 2.0 | 24 | 1.73 | 22 | 20 / 50 |
+| Staff (two hands) | 2.2 | 13 | 1.15 | 14 | 18 / 46 |
+| Greatsword (two hands) | 2.3 | 24 | 1.50 | 21 | 20 / 50 |
 
-- **Swings.** DFO's swing law times them: five strike frames, each a fifth of a second for a sword, shorter or longer
-  by the weapon's handling and a two-handed weight; the blow lands as the third frame begins. Holding the button
-  swings again as each blow ends. A swing costs its stamina, and while it is struck the fighter moves at a third of its
-  pace. A click picks the stroke at random, as Daggerfall Unity's click to attack does, among the strokes that reach
-  the locked foe when some do (the page rolls it): up thrusts half a metre further at one foe, in a narrow arc;
-  down chops at one, heavier on poise and half again on a guard; left and right sweep a wide arc across three; the
-  diagonals slash at two. A blow reaches a fighter of another side within its reach and arc (close in, almost any way
-  it faces), near the striker's height, with no block between them; the soft lock's target first, then the nearest.
+- **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
+  frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
+  the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
+  struck the fighter moves at a third of its pace. A click picks the stroke at random, as Daggerfall Unity's click to
+  attack does, among the strokes that reach the locked foe when some do (the page rolls it): up thrusts half a metre
+  further, in a narrow arc; down chops, heavier on poise and half again on a guard; left and right sweep the widest arc;
+  the diagonals slash between. A blow strikes every fighter of another side within its reach and arc (close in, almost
+  any way it faces), near the striker's height, with no block between them, each taking the whole blow; the soft lock's
+  target first, then the nearest.
 - **Stamina.** 100. It comes back at 45 a second once it has rested half a second since it was last spent, slower
   behind a guard. A fighter with none cannot swing or dodge; spending never takes it below none.
 - **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a fifth of a second (12
-  ticks), which stays open for its whole length even if the button is let go at once, so a tap parries. A blow that
-  lands in the window, from within the guard's arc, is parried: it does nothing, its striker staggers for 54 ticks, the
-  parrier's lock turns on it, and the parrier's next swing at it within that time is a riposte, twice as hard, which no
-  guard stops (it does not also count the stagger's quarter more). A press within half a second of a window left unused
-  opens none, so mashing the button does not parry. After the window the guard blocks: a blade's guard covers 60 degrees
-  either side, a shield's 80; a blade lets a fifth of the blow through, a shield a twentieth; the guard pays the blow's
-  weight in stamina (a shield six tenths of it), and a blow it cannot pay for breaks it, staggering the fighter for 48
-  ticks with half the blow through. Guarding, a fighter moves at under half its pace. Iron blows and shots are never
-  parried, iron blows never blocked, and shots blocked only by a shield.
+  ticks; a foe's three quarters of that, 9, as it reads a swing at the fight's pace, [[Foes]]), which stays open for its
+  whole length even if the button is let go at once, so a tap parries. A blow that lands in the window, from within the
+  guard's arc, is parried: it does nothing, its striker staggers for 54 ticks, the parrier's lock turns on it, and the
+  parrier's next swing at it within that time is a riposte, twice as hard, which no guard stops (it does not also count
+  the stagger's quarter more). A press within half a second of a window left unused opens none, so mashing the button
+  does not parry. After the window the guard blocks: a blade's guard covers 60 degrees either side, a shield's 80; a
+  blade lets a fifth of the blow through, a shield a twentieth; the guard pays the blow's weight in stamina (a shield
+  six tenths of it), and a blow it cannot pay for breaks it, staggering the fighter for 48 ticks with half the blow
+  through. Guarding, a fighter moves at under half its pace. Iron blows and shots are never parried, iron blows never
+  blocked, and shots blocked only by a shield.
 - **The dodge.** A press dodges: a low, fast hop (3 m/s up, 10 m/s along) the way the keys point, or straight back with
-  none, landing about 3 m away. It costs 22 stamina, needs the ground under it, and is not taken on horseback. It
-  faces the soft lock's target if there is one, so a fighter hops aside still facing its foe. Blows pass through it
-  from 1 to 18 ticks after the press; one that lands within 12 is a perfect dodge, giving back 15 stamina and earning a
-  counter: the next swing within 48 ticks strikes half again as hard and twice as heavily. A dodge cancels a swing's
-  wind-up or its follow-through (never the blow's own tick), a bow's draw, and a flinch from its eighth tick; a swing,
-  a guard or another dodge may follow it 18 ticks after the press, as it lands. The
-  movement rules carry the hop with no steering, so it slides along a wall and falls off a ledge, and never catches a
-  lip.
+  none, landing about 3 m away. It costs 22 stamina, needs the ground under it, and is not taken on horseback. The
+  rules face it to the soft lock's target if there is one, so a fighter hops aside still facing its foe, its guard and
+  its back where they were; its figure is drawn facing the way it hops, so its roll goes that way
+  ([[A Locked-On Dodge Rolls the Way It Goes]]). Blows pass through it from 1 to 18 ticks after the press; one that
+  lands within 12 is a perfect dodge, giving back 15 stamina and earning a counter: the next swing within 48 ticks
+  strikes half again as hard and twice as heavily. A dodge cancels a swing's wind-up or its follow-through (never the
+  blow's own tick), a bow's draw, and a flinch from its eighth tick; a swing, a guard or another dodge may follow it 18
+  ticks after the press, as it lands. The movement rules carry the hop with no steering, so it slides along a wall and
+  falls off a ledge, and never catches a lip.
 - **Poise.** A blow that lands fills its fighter's poise meter by its weapon's weight times ten, by its stroke's share,
   half again from behind. Full, the fighter staggers (light 84 ticks, medium 72, heavy 60, massive 48), takes a quarter
   more from every blow, and no new poise stagger begins until three seconds after. The meter drains a quarter a second
@@ -93,14 +96,20 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   poise stagger can begin, blows do not fill the meter; an overreached foe staggers at the first blow whatever.
 - **Presses kept.** A press of the attack, the guard or the dodge is kept 8 ticks: one made while the fighter is busy
   (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as soon as it can
-  be. The newest press wins over a button only held: a click of the attack swings out of a held guard, and a
-  riposte is struck through one. The guard, held or pressed, cuts a swing's follow-through short once its blow has
-  landed, as the dodge does.
+  be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press wins over a
+  button only held: a click of the attack swings out of a held guard, and a riposte is struck through one. The guard,
+  held or pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
   (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
-  at once, but a swap begun as another was put away runs on.
+  at once, but a swap begun as another was put away runs on. A click made in a swap is kept until it ends, however
+  early, and its swing starts on the tick the swap ends, once, with the stroke the click rolled for the new weapon
+  ([[A Click During a Weapon Swap Swings as It Ends]]); the page predicts it by the same rules, so the first person
+  and the figure swing on that tick. A trigger pulled in a swap to a ranged weapon fires then if it is loaded, as a
+  pull at rest does, and does nothing if not. The newest press wins: a guard, a dodge or another swap pressed after
+  the click lets it go, and a click after them is kept. A blow that sets the fighter reeling (a flinch, a stagger, a
+  fall) stops the keeping: the click runs out in 8 ticks as any press does.
 - **Gear's trim.** A fighter carries what its armour and the loadout it has drawn trim of these numbers ([[Gear]],
   "Perks"; the other loadout trims nothing until it is drawn): what a swing, a dodge (and a dodge with a weapon drawn)
   and a guard's blow cost; how fast stamina comes back, and again below half health; a reload's time, a bow's draw to
@@ -111,19 +120,20 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   staggered foe, never count in it. A snapshot leaves the trim out of each fighter; the room sends a player theirs with
   their gear, and their browser puts it back before it predicts them. A fighter stood again after death keeps its trim.
 - **Numbers that are none.** A look, a push or a pitch that is not a number is never taken: the look keeps the aim.
-- **Death.** At no health a fighter dies and lies where it fell.
+- **Death.** At no health a fighter dies and lies where it fell. One killed on a wall or hanging from a lip lets go
+  and falls first.
 
 ## The soft lock
 
 As in Soulframe, there is no button. Each swing or guard takes the foe best ranked for it (by nearness to the look
-within 70 degrees and nearness within 9 m, in sight, by equal shares), but keeps the one it holds unless another
-ranks clearly better, so it does not flick between neighbours; one that strikes a fighter with no lock is taken too,
-and a parry turns the lock on the parried. A sweep that lands on three leaves the lock where it was. While it holds,
-and while the look is within 70 degrees of it, the fighter's swings turn after it in their wind-up (540 degrees a
-second, if it is within the weapon's reach and 2.5 m) and its guard turns to face it; turned to face another, the
-guard follows the look. The dodge faces it. It lets go when the foe dies, is past 15 m, has been out of sight for a
-second and a half, or the fighter's look has stayed more than 110 degrees away for half a second. The camera stays
-its player's.
+within 70 degrees and nearness within 9 m, in sight, by equal shares), but keeps the one it holds unless another ranks
+clearly better, so it does not flick between neighbours; one that strikes a fighter with no lock is taken too, and a
+parry turns the lock on the parried. A blow that lands on several leaves the lock where it was. While it holds, and
+while the look is within 70 degrees of it, the fighter's swings turn after it in their wind-up (540 degrees a second, if
+it is within the weapon's reach and 2.5 m) and its guard turns to face it; turned to face another, the guard follows the
+look. The dodge faces it, though its figure is drawn rolling the way it goes. It lets go when the foe dies, is past
+15 m, has been out of sight for a second and a half, or the fighter's look leaves the 70 degrees it takes within, at
+once. The camera stays its player's.
 
 ## Foes' telegraphed blows
 
@@ -234,13 +244,13 @@ The timings are set against shipped games and what a person can do, measured or 
 | No window for 30 ticks after one unused | Sekiro and Lies of P reset after 500 ms | Mashing does not parry; the guard still blocks |
 | Dodge safe 1 to 18 ticks (300 ms), perfect within 12 (200 ms) | A backstep or quickstep's 230 to 300 ms; Stellar Blade's perfect dodge 150 ms, more with upgrades | A short hop; the perfect stretch matches the parry window, so the two reads feel alike |
 | Stamina back at 45 a second after 0.5 s; a dodge 22 of 100 | The Souls games' 37 to 45 a second | Four dodges from full, back in about two seconds |
-| A sword's blow 24 ticks (400 ms) after the press | For Honor's quickest light, 400 ms, "reactable" | A foe's swing can be answered by a person who watches for it |
+| A sword's blow 18 ticks (300 ms) after the press | For Honor's quickest light, 400 ms, "reactable" | A foe's swing can be answered by a person who watches for it |
 | A press kept 8 ticks | Fighting games' 5 to 10 frame buffers | A press a moment early is not lost |
 | Lock takes within 9 m and 70 degrees; lets go past 15 m, after 1.5 s unseen | FromSoftware's 15 m lock and its keep time; God of War's on-screen targeting | Holds through a moment behind a pillar, and follows the look |
 
 A person reacts to what they see in 200 to 250 ms at best, more with a choice to make. Each blow is judged against
 the defender as their own screen showed it, so a player's lag never shortens these windows. Foes are held to the same
-human limits ([[Foes]]).
+human limits, read at the swings' pace ([[Foes]]).
 
 ## Limits
 

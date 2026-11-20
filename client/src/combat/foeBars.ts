@@ -3,7 +3,7 @@ import { motionReduced } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe } from './foePlate.ts';
-import { element } from '../plus/meter.ts';
+import { element, setStyle, showNode } from '../plus/meter.ts';
 import { coneStep, coneWant, offDegrees, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
 
 export type { MarkedFoe } from './foePlate.ts';
@@ -133,10 +133,10 @@ export class FoeBars {
       plate.show(foe, seconds, alertMark(foe.alert, since));
       const place = laid.get(foe.id) ?? { lift: 0, front: 0 };
       const moved = `translate(${x.toFixed(1)}px, ${(y - place.lift).toFixed(1)}px)`;
-      plate.root.style.transform = scale < 1 ? `${moved} scale(${scale.toFixed(3)})` : moved;
+      setStyle(plate.root, 'transform', scale < 1 ? `${moved} scale(${scale.toFixed(3)})` : moved);
       plate.scaled(scale);
-      plate.root.style.opacity = cone < 1 ? cone.toFixed(2) : '';
-      plate.root.style.zIndex = String(shown.length - place.front);
+      setStyle(plate.root, 'opacity', cone < 1 ? cone.toFixed(2) : '');
+      setStyle(plate.root, 'z-index', String(shown.length - place.front));
     }
     for (const [id, plate] of this.overheads) {
       if (laid.has(id)) continue;
@@ -154,7 +154,7 @@ export class FoeBars {
   }
 
   private showBoss(boss: MarkedFoe | null, seconds: number): void {
-    this.boss.root.hidden = !boss;
+    showNode(this.boss.root, !!boss);
     this.hud.classList.toggle('bossed', !!boss);
     if (!boss) return;
     const shown = bossBarOf(boss);

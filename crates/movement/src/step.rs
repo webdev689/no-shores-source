@@ -251,12 +251,38 @@ fn on_ground(
             ..next
         };
     }
-    // Pressing into a wall too high to grab, the body takes hold of it and climbs.
+    // Pressing into a wall too high to grab, the body takes hold of it, square to it, and climbs.
     let wall = if controls.forward > 0.0 && !controls.mounted { wall_ahead(blocks, &next, controls.yaw) } else { None };
-    match wall {
-        Some(wall) if wall.block.top - next.z > TUNING.reach && !moving => {
-            Body { mode: Mode::Climb, facing: controls.yaw, lip: wall.block.top, crouched: false, ..next }
-        }
-        _ => next,
+    let into = wall
+        .filter(|wall| wall.block.top - next.z > TUNING.reach)
+        .and_then(|wall| pressed_into(&wall.block, body, &next, controls.yaw).map(|facing| (wall.block.top, facing)));
+    match into {
+        Some((lip, facing)) => Body { mode: Mode::Climb, facing, lip, crouched: false, ..next },
+        None => next,
+    }
+}
+
+/// How near square to a wall a look must be for a body pressed into it to take hold of it.
+pub const CLIMB_SQUARE: f64 = 45.0 * PI / 180.0;
+
+/// The bearing square into the side of `block` a body stands against, if its move from `before` to `after` made no
+/// way into that side, however it slid along it, and the look is within `CLIMB_SQUARE` of square to it.
+fn pressed_into(block: &Block, before: &Body, after: &Body, yaw: f64) -> Option<f64> {
+    let into = square_into(block, after);
+    let stopped = if into == 0.0 || into == PI { after.y == before.y } else { after.x == before.x };
+    (stopped && wrap(yaw - into).abs() <= CLIMB_SQUARE).then_some(into)
+}
+
+/// The bearing square into the side of `block` nearest a body standing outside it.
+#[must_use]
+pub fn square_into(block: &Block, body: &Body) -> f64 {
+    let gap_x = (block.min_x - body.x).max(body.x - block.max_x);
+    let gap_y = (block.min_y - body.y).max(body.y - block.max_y);
+    if gap_y >= gap_x {
+        if body.y > block.max_y { 0.0 } else { PI }
+    } else if body.x > block.max_x {
+        -PI / 2.0
+    } else {
+        PI / 2.0
     }
 }

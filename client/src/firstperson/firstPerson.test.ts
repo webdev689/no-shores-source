@@ -88,6 +88,16 @@ test('aiming zooms the hands with the view, about the middle of the screen, and 
   assert.deepEqual(person.muzzle, [160 + (ownX - 160) * 2, 100 + (ownY - 100) * 2]);
 });
 
+test("the other loadout's weapon is asked for ahead of a swap, while the sword drawn shows", async () => {
+  const { frame, asked } = firstPerson(wholeFrames);
+  const shown = await frame(0.016, { ...standing, spare: { right: 'mace_iron', left: null } });
+  assert.equal(shown.quads.length, 1, 'the sword');
+  assert.ok(
+    asked.some((path) => path.startsWith('forge/WEAPON05/')),
+    'the mace asked for too',
+  );
+});
+
 test('a drawn sword rests 60 design pixels below and 40 right of its own place, and strikes from its own; sheathed, nothing shows', async () => {
   const { frame, asked } = firstPerson(wholeFrames);
   const shown = await frame(0.016, standing);

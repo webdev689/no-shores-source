@@ -1,8 +1,9 @@
-/* The prompt for E, low in the middle of the view, above the player's bars (client/src/game/usePrompt.ts). */
+/* The prompt for E, low in the middle of the view, over the Arts and weapons at the bottom left where the two meet on
+   a narrow screen (client/src/game/usePrompt.ts). */
 #hud .use-prompt {
   position: absolute;
   left: 50%;
-  bottom: 96px;
+  bottom: 110px;
   translate: -50% 0;
   display: flex;
   align-items: center;
@@ -30,4 +31,10 @@
   text-align: center;
   color: #f3cf86;
   background: rgba(192, 138, 62, 0.15);
+}
+/* Where the fight's display takes its larger step, its Arts and weapons stand taller. */
+@media (min-width: 1500px) and (min-height: 900px) {
+  #hud .use-prompt {
+    bottom: 154px;
+  }
 }

@@ -111,6 +111,30 @@ test('blows on one foe in quick succession add into one number, popped again; a 
     assert.equal(findAll(root, 'word').length, 2, 'too late to add');
   }));
 
+test('words said together never cover one another: a later one stands below one it would cover, and stays there', () =>
+  onFakePage((root) => {
+    const words = new Words(root);
+    const said = { text: '23', tone: 'dealt' as const, tags: [] };
+    const places = { near: [0, 0, 0], beside: [1, 0, 0], far: [9, 0, 0] } as const;
+    const project = (point: readonly [number, number, number]) => ({ x: 100 + point[0] * 30, y: 50 });
+    for (const place of [places.near, places.beside, places.far]) words.say(said, place, 0, 0.5);
+    words.update(project, 800, 600, 4 * FRAME);
+    const shown = () => findAll(root, 'word').map((word) => word.style['transform']);
+    assert.deepEqual(shown(), [
+      'translate(100.0px, 35.0px)',
+      'translate(130.0px, 59.0px)',
+      'translate(370.0px, 35.0px)',
+    ]);
+    words.say(said, places.near, 0, 0.5);
+    words.update(project, 800, 600, 4 * FRAME);
+    assert.deepEqual(shown().slice(0, 3), [
+      'translate(100.0px, 31.0px)',
+      'translate(130.0px, 55.0px)',
+      'translate(370.0px, 31.0px)',
+    ]);
+    assert.equal(shown()[3], 'translate(100.0px, 79.0px)', 'a word said later stands clear of those before it');
+  }));
+
 test('the words are the face at whole steps of its grid, outlined hard, an element’s number in its light', () => {
   const css = wordsCss();
   assert.match(css, /\.word \.rise \{[^}]*font-size: 22px/);
