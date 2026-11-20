@@ -198,9 +198,17 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
-- **The lore on #77 and #75, once merged**: the intro shows the highland in mist and the green island in rain as
-  living towns with ships off them, and #75 makes those cities ruins. Nothing in the prologue names the Cube or a
-  crystal, and the voice in the deep is not named.
+- **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
+  storm and creation once begun; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about
+  25 s; the story's sea fight sails in the story's wind, not the world's, so the Brig makes way in the storm drawn
+  round her. Waits on the owner's yes to merge, which deploys the page and the rooms.
+- **The sea's sounds from Freesound (#94)** ([[The Sea's Sounds Come From Freesound]]): 27 cues, the open sea's,
+  the story's, the sea fight's (new) and the shore's, wired so each pick plays with no further change. They wait on
+  the owner's picks on the sea sound sheet, made from the `freesound` workflow's candidates; then publish them as
+  "Publishing the world's picks" says. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the
+  session that made the sea sheet.
+- **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
+  the prologue names the Cube or a crystal, and the voice in the deep is not named.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
   repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
   `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
