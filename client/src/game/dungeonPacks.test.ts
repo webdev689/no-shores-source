@@ -1,9 +1,27 @@
 // Packs written as the exporter writes them, for the tests: any modules a test gives, and a style's whole kit and
-// its landmarks as boxes of the sizes the kits' envelopes allow, each box wearing every part in turn.
+// its landmarks as boxes of the sizes the kits' envelopes allow, each box wearing every part in turn; and a dungeon's
+// props' plans from the forged props, as the page reads them.
 import kits from '../../../content/dungeon/kits.json' with { type: 'json' };
 import table from '../../../content/dungeon/landmarks.json' with { type: 'json' };
-import type { StyleKey } from './dungeonLayout.ts';
+import type { ForgedModel } from '../models/model.ts';
+import { propModel } from '../models/props.ts';
+import { propTable } from '../models/fixtures.test.ts';
+import { propPlans, type Rect } from './dungeonCells.ts';
+import type { DungeonLayout, StyleKey } from './dungeonLayout.ts';
 import { type ModulePack, PARTS, readModulePack } from './dungeonModules.ts';
+
+const forged = new Map<number, ForgedModel | null>();
+/** A dungeon's props' plans, each from its forged model, built once an id. */
+export function propPlansOf(layout: DungeonLayout): Rect[] {
+  const modelOf = (id: number) => {
+    if (!forged.has(id)) forged.set(id, propModel(propTable, id));
+    return forged.get(id) ?? null;
+  };
+  return propPlans(
+    layout,
+    layout.props.map(([id]) => modelOf(id)),
+  );
+}
 
 /** A vertex as a test writes it: position, normal and part. */
 export type Vertex = readonly [x: number, y: number, z: number, nx: number, ny: number, nz: number, part: number];

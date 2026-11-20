@@ -63,7 +63,7 @@ const boundsOf = (layout: DungeonLayout, name: string) => {
 
 /** Each wall set's cap and shaft: the cap's top, and the shaft's laid vertices' lowest and highest. */
 function sets(layout: DungeonLayout) {
-  const placed = kitPlacements(layout, FULL_PACKS);
+  const placed = kitPlacements(layout, FULL_PACKS, []);
   const caps = named(placed, 'wall.cap');
   const shafts = named(placed, 'wall.shaft');
   assert.equal(caps.length, shafts.length);
@@ -91,7 +91,7 @@ test('in a room 2.8 m high a wall set and a pillar still stand: base, shaft and 
     assert.ok(Math.abs(top - 2.8) < EPS, 'the cap meets the ceiling');
     assert.ok(Math.abs(low - 0.5) < 1e-5 && Math.abs(high - cap.place.origin[2]) < 1e-5, 'the shaft from base to cap');
   }
-  const placed = kitPlacements(layout, FULL_PACKS);
+  const placed = kitPlacements(layout, FULL_PACKS, []);
   const [capital] = named(placed, 'pillar.capital');
   assert.ok(capital && Math.abs(capital.place.origin[2] + 0.6 - 2.8) < EPS);
   assert.equal(named(placed, 'feature.a').length, 0, 'a 3 m feature finds no wall low enough');
@@ -132,9 +132,9 @@ for (const [form, size, rise] of [
       risen += top > size[2] + 0.1 ? 1 : 0;
     }
     if (form === 'vault') assert.ok(risen > 0, 'a set on an end wall rises with the vault');
-    const bosses = named(kitPlacements(layout, FULL_PACKS), 'ceiling.a').concat(
-      named(kitPlacements(layout, FULL_PACKS), 'ceiling.b'),
-      named(kitPlacements(layout, FULL_PACKS), 'ceiling.c'),
+    const bosses = named(kitPlacements(layout, FULL_PACKS, []), 'ceiling.a').concat(
+      named(kitPlacements(layout, FULL_PACKS, []), 'ceiling.b'),
+      named(kitPlacements(layout, FULL_PACKS, []), 'ceiling.c'),
     );
     assert.equal(bosses.length, 1, 'one on the ridge of three cells, one under the dome');
     const [boss] = bosses;

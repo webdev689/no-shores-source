@@ -69,11 +69,12 @@ export function kitHash(name: string, cell: number, salt: string): number {
   return (hash ^ (hash >>> 16)) >>> 0;
 }
 
-/** What every placing reads of the layout: its packs, the cells with a doorway, a torch, the exit or the portal on
- *  them, the landmarks' cells, each cell's ceiling over its points, and the placements so far. */
+/** What every placing reads of the layout: its packs, its props' plans, the cells with a doorway, a torch, the exit
+ *  or the portal on them, the landmarks' cells, each cell's ceiling over its points, and the placements so far. */
 type Site = {
   readonly layout: DungeonLayout;
   readonly packs: ReadonlyMap<StyleKey, ModulePack>;
+  readonly props: readonly Rect[];
   readonly busy: ReadonlySet<number>;
   readonly covered: ReadonlySet<number>;
   readonly height: (cell: number) => (x: number, y: number) => number;
@@ -149,7 +150,7 @@ function wallSet(site: Site, [cell, side]: Wall): Piece[] | null {
   const [east, south] = stepOf(side);
   const turns = wallTurns(side);
   const flat: Place = { origin: [x + east * back, y + south * back, 0], turns };
-  if ([base, shaft, cap].some((piece) => crowded(layout, planOf(piece, flat), CLEAR_M))) return null;
+  if ([base, shaft, cap].some((piece) => crowded(layout, site.props, planOf(piece, flat), CLEAR_M))) return null;
   const over = planOf(cap, flat);
   const top = cave ? highestOver(site, cell, over) : Math.min(...heightsOver(site, cell, over));
   const capAt = top - cap.bounds[5];
@@ -332,7 +333,8 @@ function features(site: Site): void {
       const back = setBack(layout, cell, side, Math.max(-module.bounds[0], module.bounds[3]), module.bounds[5]);
       const place: Place = { origin: [x + east * back, y + south * back, 0], turns: wallTurns(side) };
       const fits = module.bounds[5] <= (layout.ceilings[cell] ?? 0);
-      if (fits && !crowded(layout, planOf(module, place), CLEAR_M) && put(site, cell, [[piece, place]])) used.add(cell);
+      const clear = fits && !crowded(layout, site.props, planOf(module, place), CLEAR_M);
+      if (clear && put(site, cell, [[piece, place]])) used.add(cell);
     }
   }
 }
@@ -423,7 +425,7 @@ function floorPiece(site: Site, cell: number, piece: string, [x, y]: readonly [n
   const room = site.layout.cells[cell];
   const under = cellsUnder(site.layout, plan);
   const fits = under.every((each) => floorFree(site, each) && site.layout.cells[each] === room);
-  return fits && !crowded(site.layout, plan, 0) && put(site, cell, [[piece, place]]);
+  return fits && !crowded(site.layout, site.props, plan, 0) && put(site, cell, [[piece, place]]);
 }
 
 /** The floor pieces: slabs on one quiet room cell in four, a runner along the corridors, a drain a room and a circle
@@ -499,10 +501,11 @@ function fittings(site: Site): void {
 }
 
 /** Every kit piece of a dungeon, each from the pack of the style its cell wears (a style with no pack lays none),
- *  and the mesh's own pieces they stand in place of. */
+ *  clear of its props' plans (`propPlans`), and the mesh's own pieces they stand in place of. */
 export function kitsOf(
   layout: DungeonLayout,
   packs: ReadonlyMap<StyleKey, ModulePack>,
+  props: readonly Rect[],
 ): { readonly placed: readonly KitPlacement[]; readonly fitted: Fitted } {
   const busy = new Set<number>([layout.wayIn.cell]);
   for (const [cell, side] of layout.frames) {
@@ -515,6 +518,7 @@ export function kitsOf(
   const site: Site = {
     layout,
     packs,
+    props,
     busy,
     covered: new Set(placedLandmarks(layout).flatMap((landmark) => landmark.cells)),
     height: ceilingHeights(layout),
@@ -532,5 +536,8 @@ export function kitsOf(
 }
 
 /** Every kit piece of a dungeon, as `kitsOf` lays them. */
-export const kitPlacements = (layout: DungeonLayout, packs: ReadonlyMap<StyleKey, ModulePack>) =>
-  kitsOf(layout, packs).placed;
+export const kitPlacements = (
+  layout: DungeonLayout,
+  packs: ReadonlyMap<StyleKey, ModulePack>,
+  props: readonly Rect[],
+) => kitsOf(layout, packs, props).placed;

@@ -9,7 +9,7 @@ import { placedLandmarks } from './dungeonLandmarks.ts';
 import { askDungeon, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { COLOUR, dungeonMesh, lookAt, ROLE } from './dungeonMesh.ts';
 import type { ModulePack } from './dungeonModules.ts';
-import { FULL_PACKS } from './dungeonPacks.test.ts';
+import { FULL_PACKS, propPlansOf } from './dungeonPacks.test.ts';
 
 const module = await WebAssembly.compile(new Uint8Array(readFileSync('client/public/room.wasm')));
 /** Real dungeons that stand landmarks, of every style. */
@@ -48,7 +48,7 @@ function floorOver(model: ForgedModel, layout: DungeonLayout, cell: number): boo
 }
 
 const dressed = (layout: DungeonLayout, packs: ReadonlyMap<StyleKey, ModulePack>) => {
-  const dressing = dressingOf(layout, packs, 'temperate');
+  const dressing = dressingOf(layout, packs, 'temperate', propPlansOf(layout));
   return { dressing, model: dungeonMesh(layout, DOOR, dressing.lay, dressing) };
 };
 
@@ -90,7 +90,7 @@ test("a landmark's piece is laid turned to fill its footprint, in the pictures o
       const only = { ...layout, landmarks: layout.landmarks.filter(([name]) => name === landmark.module) };
       const pack = new Map([[landmark.style, { style: landmark.style, modules: new Map([[landmark.module, piece]]) }]]);
       const mesh = meshBuilder();
-      dressingOf(only, pack, 'temperate').lay(mesh);
+      dressingOf(only, pack, 'temperate', propPlansOf(only)).lay(mesh);
       const model = mesh.model();
       const axis = (offset: number) =>
         Array.from(
@@ -163,13 +163,13 @@ test('the mesh leaves out only the pillars, brackets and portal arch whose kit p
   const pillared = LAYOUTS.filter((layout) => layout.pillars.length > 0);
   assert.ok(pillared.length > 2);
   for (const layout of pillared) {
-    const full = dressingOf(layout, FULL_PACKS, 'temperate');
+    const full = dressingOf(layout, FULL_PACKS, 'temperate', propPlansOf(layout));
     assert.ok(full.pillars.size > 0 && full.torches.size > 0 && full.portal);
     const bare = dungeonMesh(layout, DOOR, undefined, full);
     layout.pillars.forEach((pillar, index) =>
       assert.equal(pillarAt(bare, pillar, layout.pillarHalf), !full.pillars.has(index), `pillar ${index}`),
     );
-    const missing = dressingOf(layout, without('pillar.capital', 'sconce', 'portal'), 'temperate');
+    const missing = dressingOf(layout, without('pillar.capital', 'sconce', 'portal'), 'temperate', propPlansOf(layout));
     assert.deepEqual([missing.pillars.size, missing.torches.size, missing.portal], [0, 0, false]);
     const model = dungeonMesh(layout, DOOR, undefined, missing);
     for (const pillar of layout.pillars) assert.ok(pillarAt(model, pillar, layout.pillarHalf), 'the code pillar');

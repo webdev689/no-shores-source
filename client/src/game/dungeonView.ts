@@ -11,6 +11,7 @@ import { type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { ForgedModel } from '../models/model.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { dungeonBook, type SmallBook } from './dungeonBook.ts';
+import { propPlans } from './dungeonCells.ts';
 import { type Cache, chestMesh } from './dungeonChest.ts';
 import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { dressingOf } from './dungeonDressing.ts';
@@ -136,15 +137,16 @@ export class DungeonView {
     const { device } = this.gpu;
     const [timberArchive, timberRecord] = MATERIALS[climate.climate].timber;
     const wood = [timberArchive, timberRecord] as const;
-    const dressing = dressingOf(layout, packs, climate.climate);
+    const forged = layout.props.map(([id]) => propModel(props, id));
+    const dressing = dressingOf(layout, packs, climate.climate, propPlans(layout, forged));
     const model = dungeonMesh(
       layout,
       door,
       (mesh) => {
-        for (const [id, x, y, z, yaw] of layout.props) {
-          const forged = propModel(props, id);
-          if (forged) layModel(mesh, forged, [x, y, z], yaw);
-        }
+        layout.props.forEach(([, x, y, z, yaw], index) => {
+          const prop = forged[index];
+          if (prop) layModel(mesh, prop, [x, y, z], yaw);
+        });
         for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture, bedOf(layout, fixture));
         dressing.lay(mesh);
       },

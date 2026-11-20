@@ -267,7 +267,8 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   drain a room or a circle in a room of 3 × 3 cells or more, each on the clear cell nearest the room's middle (which
   mostly holds a prop or a pillar), or scree on one cell in five. No ceiling piece hangs below 2.4 m.
 - **Where kits never go.** A cell with a doorway, a torch, the exit or the portal holds only their own pieces, its
-  floor's and a boss. No wall piece stands where a prop stands against the wall. No floor piece lies under a solid,
+  floor's and a boss. No wall piece stands within 0.05 m of a prop as its forged model is drawn (`propPlans`), a
+  picture hung on the wall among them. No floor piece lies under a solid,
   on the arrival's cell, in the end room, where the cache stands, or in an alcove. Nothing stands on a landmark.
   Variants are drawn by `kitHash`: FNV-1a over the dungeon's name, the cell and a salt, then murmur3's fmix32, so
   a cell's variant, turn and draw are each its own.

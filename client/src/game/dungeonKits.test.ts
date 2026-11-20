@@ -16,7 +16,7 @@ import {
   type StyleKey,
 } from './dungeonLayout.ts';
 import { type ModulePack, turnAbout } from './dungeonModules.ts';
-import { FULL_PACKS, fullPack } from './dungeonPacks.test.ts';
+import { FULL_PACKS, fullPack, propPlansOf } from './dungeonPacks.test.ts';
 
 const wasm = (() => {
   try {
@@ -30,7 +30,9 @@ const module = await WebAssembly.compile(new Uint8Array(wasm));
 const LAYOUTS: readonly DungeonLayout[] = Array.from({ length: 40 }, (_unused, patrol) =>
   [0, 1, 2].map((number) => askDungeon(module, `patrol-${patrol}`, 'The Patrol', number)),
 ).flat();
-const PLACED = new Map(LAYOUTS.map((layout) => [layout, kitPlacements(layout, FULL_PACKS)] as const));
+const PLACED = new Map(
+  LAYOUTS.map((layout) => [layout, kitPlacements(layout, FULL_PACKS, propPlansOf(layout))] as const),
+);
 const EPS = 1e-6;
 
 type Rect = readonly [number, number, number, number];
@@ -128,10 +130,10 @@ test('every style lays its pieces from its own pack, and a style with no pack la
   const [first, deeper] = mixed.looks.map((look) => look.style);
   assert.ok(first && deeper);
   const one = new Map([[first, fullPack(first)]]);
-  const placed = kitPlacements(mixed, one);
+  const placed = kitPlacements(mixed, one, propPlansOf(mixed));
   assert.ok(placed.length > 0);
   assert.ok(placed.every((piece) => styleOf(piece.module) === first && styleAt(mixed, piece.cell) === first));
-  assert.deepEqual(kitPlacements(mixed, new Map()), []);
+  assert.deepEqual(kitPlacements(mixed, new Map(), propPlansOf(mixed)), []);
   each((layout, all) => assert.ok(all.every((piece) => styleOf(piece.module) === styleAt(layout, piece.cell))));
 });
 
@@ -348,7 +350,9 @@ test('stalactites hang where the cave comes lowest, their roots in the rock all 
   let refused = 0;
   for (const layout of LAYOUTS.filter((each) => each.looks.some((look) => look.style === 'caverns'))) {
     const height = ceilingHeights(layout);
-    const stalactites = kitPlacements(layout, long).filter(({ module: name }) => /ceiling/.test(name));
+    const stalactites = kitPlacements(layout, long, propPlansOf(layout)).filter(({ module: name }) =>
+      /ceiling/.test(name),
+    );
     for (const piece of stalactites) {
       const [minX, minY, maxX, maxY] = planOf(piece, long);
       const [x, y, top] = piece.place.origin;

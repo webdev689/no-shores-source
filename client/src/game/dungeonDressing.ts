@@ -3,6 +3,7 @@
 // stands as plain stone boxes of its solids, so nothing unseen stands in the way.
 import type { MeshBuilder } from '../models/model.ts';
 import type { Climate } from '../textures/climate.ts';
+import type { Rect } from './dungeonCells.ts';
 import { kitsOf } from './dungeonKits.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import { type DungeonLayout, styleAt, type StyleKey } from './dungeonLayout.ts';
@@ -23,13 +24,14 @@ export async function stylePacks(
  *  the piece lays, and the laying of every piece into a mesh. */
 export type Dressing = Kitted & { readonly lay: (mesh: MeshBuilder) => void };
 
-/** A dungeon's dressing from its styles' packs, on an island of `climate`. */
+/** A dungeon's dressing from its styles' packs, on an island of `climate`, its kits clear of its props' plans. */
 export function dressingOf(
   layout: DungeonLayout,
   packs: ReadonlyMap<StyleKey, ModulePack>,
   climate: Climate,
+  props: readonly Rect[],
 ): Dressing {
-  const { placed: kits, fitted } = kitsOf(layout, packs);
+  const { placed: kits, fitted } = kitsOf(layout, packs, props);
   const landmarks = placedLandmarks(layout).map((landmark) => ({
     ...landmark,
     piece: packs.get(landmark.style)?.modules.get(landmark.module) ?? null,

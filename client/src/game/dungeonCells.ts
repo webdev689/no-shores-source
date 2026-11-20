@@ -1,7 +1,9 @@
 // A dungeon's grid as the kits read it: each cell's neighbours and walls, its middle and its edges' middles, which
-// way a corridor runs through it, and where a piece's plan lies over the cells and the solids.
+// way a corridor runs through it, and where a piece's plan lies over the cells, the solids and the props.
+import type { ForgedModel } from '../models/model.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
 import { type ModuleMesh, type Place, turnAbout, type Turns } from './dungeonModules.ts';
+import { turned } from './entrances.ts';
 
 /** A plan seen from above: its least and greatest x and y (m). */
 export type Rect = readonly [minX: number, minY: number, maxX: number, maxY: number];
@@ -100,12 +102,36 @@ export function cellsUnder(layout: DungeonLayout, [minX, minY, maxX, maxY]: Rect
   return cells;
 }
 
-/** Whether any solid, or with `grow` any prop's origin (a hanging has no solid), stands within `grow` of a plan. */
-export function crowded(layout: DungeonLayout, [minX, minY, maxX, maxY]: Rect, grow: number): boolean {
-  const meets = (west: number, north: number, east: number, south: number) =>
+/** Each forged prop's plan seen from above as `layModel` lays it: its model's bounds turned by its yaw. `models` are
+ *  the props' models in their order, null where the forge builds none and nothing is drawn. A hung prop's origin
+ *  stands behind its wall's face and its picture in front of it, so only its model says where it is. */
+export function propPlans(layout: DungeonLayout, models: readonly (ForgedModel | null)[]): Rect[] {
+  return layout.props.flatMap(([, x, y, , yaw], index) => {
+    const model = models[index];
+    if (!model) return [];
+    // A model's x runs right and its z forward: the two axes of its plan.
+    const span = (axis: number) => {
+      const values = model.positions.filter((_value, place) => place % 3 === axis);
+      return [Math.min(...values), Math.max(...values)];
+    };
+    const ahead = span(2);
+    const corners = span(0).flatMap((right) => ahead.map((forward) => turned([right, 0, forward], yaw)));
+    const [eastings, southings] = [corners.map(([east]) => east), corners.map(([, south]) => south)];
+    return [
+      [x + Math.min(...eastings), y + Math.min(...southings), x + Math.max(...eastings), y + Math.max(...southings)],
+    ] as const;
+  });
+}
+
+/** Whether any solid, or with `grow` any prop's plan (`props`, as `propPlans` gives them; a hanging has no solid),
+ *  stands within `grow` of a plan. */
+export function crowded(
+  layout: DungeonLayout,
+  props: readonly Rect[],
+  [minX, minY, maxX, maxY]: Rect,
+  grow: number,
+): boolean {
+  const meets = ([west, north, east, south]: readonly [number, number, number, number, ...number[]]) =>
     west < maxX + grow - EPS && east > minX - grow + EPS && north < maxY + grow - EPS && south > minY - grow + EPS;
-  return (
-    layout.boxes.some(([west, north, east, south]) => meets(west, north, east, south)) ||
-    (grow > 0 && layout.props.some(([, x, y]) => meets(x, y, x, y)))
-  );
+  return layout.boxes.some(meets) || (grow > 0 && props.some(meets));
 }

@@ -6,7 +6,7 @@ import { placedLandmarks } from './dungeonLandmarks.ts';
 import { askDungeon, ceilingAt, courseOf, type DungeonLayout, readDungeon, seenBlocks } from './dungeonLayout.ts';
 import { burningOf } from './dungeonLight.ts';
 import { dungeonMesh } from './dungeonMesh.ts';
-import { FULL_PACKS } from './dungeonPacks.test.ts';
+import { FULL_PACKS, propPlansOf } from './dungeonPacks.test.ts';
 
 /** A room's cell and a corridor's in a row of three, rock past them. */
 const small = {
@@ -88,7 +88,9 @@ test('an older room module that answers no landmarks or glows is read as standin
   assert.deepEqual([read.landmarks, read.glows], [[], []]);
   assert.deepEqual(placedLandmarks(read), []);
   assert.equal(burningOf(read).length, laid.torches.length + laid.fixtures.length);
-  assert.ok(dungeonMesh(read, [56, 2], dressingOf(read, FULL_PACKS, 'temperate').lay).indices.length > 0);
+  assert.ok(
+    dungeonMesh(read, [56, 2], dressingOf(read, FULL_PACKS, 'temperate', propPlansOf(read)).lay).indices.length > 0,
+  );
   assert.deepEqual(readDungeon(JSON.stringify(laid)), laid, 'a newer one is read whole');
   assert.equal(readDungeon('null'), null);
 });
