@@ -379,3 +379,39 @@ fn a_players_gear_carries_its_day_and_board_and_no_bounty_held_from_another_day(
     assert_eq!(day, 20_779);
     assert!(next.iter().all(|row| !row.3 && row.2 == 0), "yesterday's bounty is held no more");
 }
+
+#[test]
+fn every_daily_list_a_player_is_sent_turns_at_nine_utc_and_not_at_midnight() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.counters = Some(Vec::new());
+    let player = room.join().expect("a room with space");
+    let level = room.player(player).expect("in the room").character.level();
+    // What the player is sent at a minute, and what the rules sell on a day: the smiths' wares, the Tailor's emblems,
+    // the Tailor's and the Tack's cosmetics, and the day they are of.
+    let sent = |room: &mut Room, minute: u64| {
+        room.set_minute(minute);
+        let bytes = gear_bytes(room, player).expect("written");
+        let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+        let wares: Vec<(u8, u8)> =
+            gear.wares().expect("wares").iter().map(|ware| (ware.kind(), ware.rarity())).collect();
+        let emblems: Vec<u16> = gear.emblems_sold().expect("emblems").iter().collect();
+        let cosmetics: Vec<u16> = gear.cosmetics_sold().expect("cosmetics").iter().collect();
+        (u64::from(gear.day()), wares, emblems, cosmetics)
+    };
+    let sold = |day: u64| {
+        use gear::cosmetics::{Seller, sold_on};
+        let wares = [gear::vendor::Vendor::Armorsmith, gear::vendor::Vendor::Weaponsmith]
+            .into_iter()
+            .flat_map(|vendor| gear::vendor::wares(vendor, day, level))
+            .map(|ware| (ware.kind as u8, ware.rarity as u8))
+            .collect();
+        let cosmetics = [Seller::Tailor, Seller::Tack].into_iter().flat_map(|seller| sold_on(seller, day)).collect();
+        (day, wares, gear::emblems::sold_on(day), cosmetics)
+    };
+    let friday_nine = 29_919_420;
+    assert_eq!(sent(&mut room, friday_nine - 9 * 60), sold(20_777), "Friday midnight, UTC: Thursday's day still");
+    assert_eq!(sent(&mut room, friday_nine - 1), sold(20_777), "08:59");
+    assert_eq!(sent(&mut room, friday_nine), sold(20_778), "09:00, a new day");
+    assert_ne!(sold(20_777).2, sold(20_778).2, "the Tailor's emblems turn");
+    assert_ne!(sold(20_777).3, sold(20_778).3, "and the dyes, coats and bardings");
+}

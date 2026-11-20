@@ -261,8 +261,8 @@ the factions' counters are in [[Factions]].
   only from kills at the Elite and Abyss seas: one in 33 kills at Elite, one in 17 at Abyss, and
   2 or 4 from a Boss or Miniboss; a player holds 200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
-  room steps, playing alone), whose day sets the wares and whose week sets Shape. It
-  sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
+  room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
+  Tuesday 09:00 UTC) sets Shape. It sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
   wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as

@@ -464,3 +464,20 @@ fn the_vendors_day_turns_at_nine_utc_and_every_player_is_sent_the_new_wares() {
     let here = room.here(player, &gear::Ask::UseCrate);
     assert_eq!((here.day, here.week), (20_778, 2_968));
 }
+
+#[test]
+fn a_ware_shown_before_nine_utc_sells_till_then_and_is_refused_once_the_day_turns() {
+    use crate::asks::{Counter, CounterKind};
+    use gear::vendor::Vendor;
+    let mut room = room();
+    room.counters = Some(vec![Counter { kind: CounterKind::Vendor(Vendor::Weaponsmith), at: [10.0, 0.0] }]);
+    room.set_minute(29_919_419); // A Friday, 08:59 UTC: still the clock's day 20,777.
+    let player = room.join().expect("a room with space");
+    move_to(&mut room, player, 8.0, 0.0);
+    room.players.get_mut(&player).expect("in").character.materials.add_aurem(10_000);
+    let vend = |day| Asked::Gear(Ask::Vend { vendor: Vendor::Weaponsmith, ware: 0, day });
+    assert_eq!(ask(&mut room, player, 1, vend(20_777)), 0, "sold at 08:59 as that day's");
+    room.set_minute(29_919_420);
+    assert_eq!(ask(&mut room, player, 2, vend(20_777)), answer_code(Err(Refusal::NotSold)), "shown before 09:00");
+    assert_eq!(ask(&mut room, player, 3, vend(20_778)), 0, "the new day's");
+}
