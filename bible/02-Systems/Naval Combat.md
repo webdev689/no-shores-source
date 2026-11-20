@@ -192,7 +192,7 @@ the Frigate. Their rank scales them, a Major at the numbers of the rest of this 
 | Miniboss | ×3 | ×1.2 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
 | Boss | ×5 | ×1.3 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
 
-Their level raises them as a foe's raises it on land ([[A Ship's Level Raises Her Strength, and the Tiers Reach the
+Their level raises them as a foe's raises it on land ([[A Ship's Level Raises Its Strength, and the Tiers Reach the
 Sea]], [[Foes]]): their hull, their men and their guns' harm are the table's times the land's `foe_health_times` at their level,
 1.07 a level (×1.31 at level 4, ×6.2 at level 27, `Pirate::strength`, `Captain::raised`); a ship of level 0, as the
 editor stands one, is the table's. A wary ship sizes a Sloop up at its raised strength. Their way, reload, aim and when
@@ -361,7 +361,7 @@ as the game's fight does ("The aim, as DFO's"), the look's bearing picks the sid
 lookReach), unless the look is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
 left click holds fire, the wheel changes shot, and `C` braces.
 
-The captain's ship is drawn in their hull and their faction's colours ([[Sailing]], "Her look"), and the water cuts its footprint
+The captain's ship is drawn in their hull and their faction's colours ([[Sailing]], "Its look"), and the water cuts its footprint
 as it does the player's. The balls are small lit spheres, the lay is drawn over the water as the game's fight draws
 it, and the fight looks as "How it looks" says. The player's own hull, canvas, crew and guns are the readout's plate and rose,
 beside the card and the tally, as at sea ("How it looks", "The readout"). The panel shows a line for each captain
@@ -412,7 +412,7 @@ captain's number comes with them in the view, so one leaving the fight never mov
   sail (a rig hit within 1.5 m of a cell of canvas), that cell is shot through for good, with nine pale scraps
   fluttering down; elsewhere in its rig, a burst of splinters at the spar. A ram's stem throws its splinters but leaves
   no hole. A ball striking the player's own ship jars the eye (1.6, a hole 2.5) and tells the side it came from.
-- **Torn sails**: a ship's sails' holes grow with its canvas's harm ([[Sailing]], "Her sails"). A sail torn away
+- **Torn sails**: a ship's sails' holes grow with its canvas's harm ([[Sailing]], "Its sails"). A sail torn away
   (`SailLost`) rips from its yard, head first, falls to leeward over the ship's side onto the water, and floats there 40 s
   as the ship sails on from it before it sinks. A fallen mast (`MastFell`) leans over the ship's leeward side with its yards and
   sails, slowly then fast, for 3 s until its head is in the water, then drifts astern and is gone after 40 s.

@@ -1,5 +1,5 @@
 // What every hull's view draws with, made once a device and shared: the ship shader, its pipeline (built off the
-// frame, so a hull first seen at sea does not stall one), and her parts' and the sides' flags' pictures and sampler.
+// frame, so a hull first seen at sea does not stall one), and its parts' and the sides' flags' pictures and sampler.
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL, shadowLayouts } from '../shadow.ts';
 import { levelsOf } from '../textures/levels.ts';
@@ -10,25 +10,25 @@ import { SAMPLES } from '../water/waterView.ts';
 import { flagPictures } from './flagPictures.ts';
 import { VERTEX_BYTES } from './shipMesh.ts';
 
-/** Her faces seen from outside reach the screen counter-clockwise, as the land's and the water's do: the export keeps
- *  each face's corners in the model's own order, and the world (east, south, up) is mirrored as her frame is. */
+/** Its faces seen from outside reach the screen counter-clockwise, as the land's and the water's do: the export keeps
+ *  each face's corners in the model's own order, and the world (east, south, up) is mirrored as its frame is. */
 export const FRONT_FACE: GPUFrontFace = 'ccw';
 
-/** A part's picture repeats at this many texels a metre over her, as a forged model's do. */
+/** A part's picture repeats at this many texels a metre over it, as a forged model's do. */
 const TEXELS_PER_METRE = 40;
 /** The most yards a hull carries, the Frigate's nine with room to spare. */
 export const MOST_YARDS = 12;
 /** The most masts a hull steps, the Frigate's three with room to spare. */
 export const MOST_MASTS = 4;
-/** A ship's uniforms: her place, look and paint (60 floats), then each yard's pivot and turn, then each mast's fall. */
+/** A ship's uniforms: its place, look and paint (60 floats), then each yard's pivot and turn, then each mast's fall. */
 export const PLACE_FLOATS = 60 + MOST_YARDS * 4 + MOST_MASTS * 8;
-/** Where in her uniforms each yard's pivot and turn start, and each mast's fall (`mastFall`). */
+/** Where in its uniforms each yard's pivot and turn start, and each mast's fall (`mastFall`). */
 export const YARD_FLOATS_AT = 60;
 export const MAST_FLOATS_AT = 60 + MOST_YARDS * 4;
 
 const [HULL_PART, SAIL_PART] = [SHIP_PARTS.indexOf('hull'), SHIP_PARTS.indexOf('sail')];
 
-/** What both her shaders share: her uniforms and pictures, and where each vertex of hers is drawn; her parts' pictures'
+/** What both its shaders share: its uniforms and pictures, and where each vertex of it is drawn; its parts' pictures'
  *  mean lightness given, as a side's paint keeps a picture's grain about its colour. */
 const placeShader = (hullLight: number, sailLight: number) => /* wgsl */ `
 ${SHARED_WGSL}
@@ -38,26 +38,26 @@ const SAIL_LIGHT = ${sailLight.toFixed(4)};
 const HULL_PART = ${HULL_PART}u;
 const SAIL_PART = ${SAIL_PART}u;
 const LIGHTNESS = vec3f(0.299, 0.587, 0.114);
-// Her UVs are metres; a picture repeats every SHIP_PICTURE_TEXELS / TEXELS_PER_METRE of them, standing upright.
+// Its UVs are metres; a picture repeats every SHIP_PICTURE_TEXELS / TEXELS_PER_METRE of them, standing upright.
 const PICTURE_PER_M = vec2f(${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS}, -${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS});
 
 struct Place {
   from_eye: mat4x4f,
   turn: mat4x4f,
-  // Her middle from the eye, metres as drawn.
+  // Its middle from the eye, metres as drawn.
   offset: vec4f,
-  // How light she is drawn: 1 as modelled, less for a darker ship.
+  // How light it is drawn: 1 as modelled, less for a darker ship.
   shade: vec4f,
-  // Her side's paint for her hull, her stripe and her canvas, each its colour and 1 where it is laid, 0 where not.
+  // Its side's paint for its hull, its stripe and its canvas, each its colour and 1 where it is laid, 0 where not.
   hull: vec4f,
   stripe: vec4f,
   canvas: vec4f,
-  // Her stripe's line in her frame: its height at her middle, its rise a metre toward her bow, and its half height.
+  // Its stripe's line in its frame: its height at its middle, its rise a metre toward its bow, and its half height.
   band: vec4f,
   unused: vec4f,
-  // Each yard's pivot on her centreline (x, y) and the cosine and sine of its brace.
+  // Each yard's pivot on its centreline (x, y) and the cosine and sine of its brace.
   yards: array<vec4f, ${MOST_YARDS}>,
-  // Each mast's fall, two a mast: its foot's height, the cosine and sine of its turn over her side, and 1 while it
+  // Each mast's fall, two a mast: its foot's height, the cosine and sine of its turn over its side, and 1 while it
   // shows; then how far astern it has drifted and how far it has sunk.
   masts: array<vec4f, ${MOST_MASTS * 2}>,
 };
@@ -71,19 +71,19 @@ struct Drawn {
   @location(0) normal: vec3f,
   @location(1) uv: vec2f,
   @location(2) @interpolate(flat) part: u32,
-  // 1 on the outside of her shell, 0 off it, blended across a face whose corners differ.
+  // 1 on the outside of its shell, 0 off it, blended across a face whose corners differ.
   @location(3) shell: f32,
-  // How high on her it is, and how far along her, in her own frame.
+  // How high on the ship it is, and how far along it, in its own frame.
   @location(4) model: vec2f,
   @location(5) from_eye: vec3f,
 };
 
-/** A vector of her frame turned by a yard's brace about a vertical axis. */
+/** A vector of its frame turned by a yard's brace about a vertical axis. */
 fn braced(vector: vec2f, brace: vec4f) -> vec2f {
   return vec2f(vector.x * brace.z - vector.y * brace.w, vector.x * brace.w + vector.y * brace.z);
 }
 
-/** Where a vertex of her frame is drawn from the eye, as her yards are braced and her masts stand or lie, and the way
+/** Where a vertex of its frame is drawn from the eye, as its yards are braced and its masts stand or lie, and the way
  *  its face turns there. */
 struct Placed {
   from_eye: vec3f,
@@ -99,7 +99,7 @@ fn placed(position: vec3f, normal: vec3f, part: vec4u) -> Placed {
     at = vec3f(yard.xy + braced(position.xy - yard.xy, yard), position.z);
     facing = vec3f(braced(normal.xy, yard), normal.z);
   }
-  // A fallen mast goes over her side with its yards, about the line along her at its foot, and drifts astern.
+  // A fallen mast goes over its side with its yards, about the line along it at its foot, and drifts astern.
   if (part.w > 0u) {
     let fall = place.masts[(part.w - 1u) * 2u];
     let drift = place.masts[(part.w - 1u) * 2u + 1u];
@@ -146,7 +146,7 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
   var colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
   let light = dot(colour, LIGHTNESS);
-  // A side paints the outside of her shell; her deck's fittings and the insides of her bulwarks keep their timber.
+  // A side paints the outside of its shell; its deck's fittings and the insides of its bulwarks keep their timber.
   if (drawn.part == HULL_PART && drawn.shell > 0.5) {
     let line = place.band.x + place.band.y * drawn.model.x;
     if (place.stripe.w > 0.0 && abs(drawn.model.y - line) < place.band.z) {
@@ -157,7 +157,7 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   } else if (drawn.part == SAIL_PART && place.canvas.w > 0.0) {
     colour = place.canvas.rgb * clamp(light / SAIL_LIGHT, 0.75, 1.15);
   }
-  // The land's light: the sky's, what the water throws back onto her sides, and the sun where the shadows let it.
+  // The land's light: the sky's, what the water throws back onto its sides, and the sun where the shadows let it.
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(normal.z));
   let direct = max(dot(normal, SUN), 0.0);
   let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0);
@@ -165,7 +165,7 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
 }
 `;
 
-/** Her shadow's shader: her faces drawn along the sun into its map (`SHADOW_CAST_WGSL`). */
+/** Its shadow's shader: its faces drawn along the sun into its map (`SHADOW_CAST_WGSL`). */
 const castShader = (hullLight: number, sailLight: number) => /* wgsl */ `
 ${placeShader(hullLight, sailLight)}
 ${SHADOW_CAST_WGSL}
@@ -181,7 +181,7 @@ fn cast_vertex(
 `;
 
 let painted: Picture[] | null = null;
-/** Her parts' pictures, a layer a part in `SHIP_PARTS`' order, then a flag a side in `SHIP_SIDES`': painted once. */
+/** Its parts' pictures, a layer a part in `SHIP_PARTS`' order, then a flag a side in `SHIP_SIDES`': painted once. */
 function pictures(): Picture[] {
   painted ??= [...shipPictures(), ...flagPictures()];
   return painted;
@@ -199,7 +199,7 @@ function lightnessOf(picture: Picture | undefined): number {
   return Math.max(0.05, sum / (picture.rgba.length / 4) / 255);
 }
 
-/** Her parts' pictures and the sides' flags on the GPU: a layer each, with every level. */
+/** Its parts' pictures and the sides' flags on the GPU: a layer each, with every level. */
 function picturesTexture(device: GPUDevice): GPUTexture {
   const side = SHIP_PICTURE_TEXELS;
   const levels = Math.log2(side) + 1;
@@ -223,7 +223,7 @@ function picturesTexture(device: GPUDevice): GPUTexture {
   return texture;
 }
 
-/** What every hull's view on a device shares: its pipeline and her shadow's, its pictures and their sampler. */
+/** What every hull's view on a device shares: its pipeline and its shadow's, its pictures and their sampler. */
 export interface ShipKit {
   readonly pipeline: GPURenderPipeline;
   readonly cast: GPURenderPipeline;
@@ -270,7 +270,7 @@ export function shipKit(gpu: Gpu): Promise<ShipKit> {
       depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
       multisample: { count: SAMPLES },
     });
-    // Her sails and planks are single faces, so both sides cast.
+    // Its sails and planks are single faces, so both sides cast.
     const casting = device.createRenderPipelineAsync({
       layout: device.createPipelineLayout({ bindGroupLayouts: [placeLayout, shadows.caster] }),
       vertex: { module: castModule, entryPoint: 'cast_vertex', buffers },

@@ -1,8 +1,8 @@
 // How a sea fight looks, sounds and jars round its ships, from the fight's events and what its view already says of
 // them (their hurts, fires, guns and states): each event becomes its puffs (`Effects`), its harm on the ship it struck
-// (`ShipHarm`, on her rig), its flotsam, its sound and, on the player's own ship, a jar of the eye. DFO's moments
-// (navalFeel.js) are here too: a ball going by her close whistles, a fall alongside throws its water over her rail, a
-// burning ship going down may blow her magazine, and her battered hull smokes. The World Editor's fights and the
+// (`ShipHarm`, on its rig), its flotsam, its sound and, on the player's own ship, a jar of the eye. DFO's moments
+// (navalFeel.js) are here too: a ball going by its close whistles, a fall alongside throws its water over its rail, a
+// burning ship going down may blow its magazine, and its battered hull smokes. The World Editor's fights and the
 // sea's draw through it.
 import type { RoomEvent } from '../rules/feelEvents.ts';
 import type { FightEvent, FightVessel, Point } from '../rules/fightRules.ts';
@@ -15,7 +15,7 @@ import { shipAxes } from './shipAxes.ts';
 import { BLOW_S, magazineOf, NEAR_MISS_M, NEAR_SPLASH_M } from './fightMoments.ts';
 import { KICKS } from './shake.ts';
 
-/** The fight's events as the feel reads them: the World Editor's, a ball's hit naming where on her it struck in her
+/** The fight's events as the feel reads them: the World Editor's, a ball's hit naming where on the ship it struck in its
  *  own frame and what it struck (from the room's `Hit` told with it), and the room's own. */
 export type FeelEvent =
   | Exclude<FightEvent, { kind: 'hit' } | { kind: 'splash' }>
@@ -41,7 +41,7 @@ export type FeelVessel = Pick<FightVessel, 'fires' | 'sail' | 'max_sail'> & {
   readonly ship: Iterable<number> & ArrayLike<number>;
   readonly pose: Iterable<number> & ArrayLike<number>;
   readonly state: string;
-  /** Her hull's hurt, her guns' reload (port, then starboard, seconds left) and a captain's sides run out, where the
+  /** Its hull's hurt, its guns' reload (port, then starboard, seconds left) and a captain's sides run out, where the
    *  view says them. */
   readonly hull?: number;
   readonly max_hull?: number;
@@ -49,8 +49,8 @@ export type FeelVessel = Pick<FightVessel, 'fires' | 'sail' | 'max_sail'> & {
   readonly run_out?: readonly string[];
 };
 
-/** A ship in the fight as the feel sees her: her numbers in its view, her rig (her harm is on it; null while her
- *  model has not come), her hull and her side. */
+/** A ship in the fight as the feel sees it: its numbers in its view, its rig (its harm is on it; null while its
+ *  model has not come), its hull and its side. */
 export interface FeelShip {
   readonly vessel: FeelVessel;
   readonly rig: SailRig | null;
@@ -67,7 +67,7 @@ export interface Cue {
   readonly kick?: number;
 }
 
-/** The side of her a blow came from. */
+/** The side of it a blow came from. */
 export type BlowSide = 'bow' | 'stern' | 'port' | 'starboard';
 
 type Window = (point: Point) => readonly [number, number, number];
@@ -77,40 +77,40 @@ const HOLE = [0.05, 0.04, 0.03] as const;
 const RAW_TIMBER = [0.66, 0.5, 0.32] as const;
 /** A sail is struck where a ball passed this close to one of its cells' middles, metres. */
 const SAIL_REACH_M = 1.5;
-/** A fire's flames rise from this far over the Sloop's waterline (metres): just over her deck. */
+/** A fire's flames rise from this far over the Sloop's waterline (metres): just over its deck. */
 const SLOOP_DECK_M = 2.4;
-/** The water foams where a ship went down this long after she is under, seconds. */
+/** The water foams where a ship went down this long after it is under, seconds. */
 const FOAM_AFTER_S = 8;
-/** Her hull under this share, she smokes along her deck, over this share of her length each way from amidships. */
+/** Its hull under this share, it smokes along its deck, over this share of its length each way from amidships. */
 export const SMOKE_FROM = 0.6;
 const SMOKE_SPAN = 0.6;
-/** Her last volley's tally is shown this long once its last ball is down, seconds. */
+/** Its last volley's tally is shown this long once its last ball is down, seconds. */
 export const TALLY_S = 4;
-/** A volley is down this long after her last shot at the most, seconds: longer than any ball's flight. */
+/** A volley is down this long after its last shot at the most, seconds: longer than any ball's flight. */
 const VOLLEY_S = 4;
 /** A ball last frame is the same ball this frame within this, metres. */
 const SAME_BALL_M = 40;
 
-/** How high over her waterline a hull's deck stands, metres: the Sloop's, raised as her guns' line is. */
+/** How high over its waterline a hull's deck stands, metres: the Sloop's, raised as its guns' line is. */
 export function deckOverM(hull: number): number {
   return SLOOP_DECK_M + hullPaint(hull).atM - hullPaint(SLOOP_HULL).atM;
 }
 
-/** Her middle (east, south, her heave) and her frame's axes, as her numbers say she lies. */
+/** Its middle (east, south, its heave) and its frame's axes, as its numbers say it lies. */
 function lying(vessel: FeelVessel) {
   const [x = 0, y = 0, heading = 0] = vessel.ship;
   const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
   return { middle: [x, y, heave] as Point, axes: shipAxes(heading, pitch, roll), heading };
 }
 
-/** A point of her frame as true metres off her middle in the world. */
+/** A point of its frame as true metres off its middle in the world. */
 function offOf(axes: ReturnType<typeof shipAxes>, spot: Point): Point {
   return [0, 1, 2].map(
     (axis) => spot[0] * (axes[0][axis] ?? 0) + spot[1] * (axes[1][axis] ?? 0) + spot[2] * (axes[2][axis] ?? 0),
   ) as unknown as Point;
 }
 
-/** A world point in her frame: her axes are square to one another, so their transpose turns it back. */
+/** A world point in its frame: its axes are square to one another, so their transpose turns it back. */
 export function frameOf(vessel: FeelVessel, point: Point): Point {
   const { middle, axes } = lying(vessel);
   const off = [point[0] - middle[0], point[1] - middle[1], point[2] - middle[2]];
@@ -125,22 +125,22 @@ export class FightFeel {
   private cues: Cue[] = [];
   /** The balls aloft at the last frame, for the size of the splash each makes. */
   private aloft: readonly (readonly [number, number, number, number])[] = [];
-  /** Where each ship went down and until when its water foams, by her number. */
+  /** Where each ship went down and until when its water foams, by its number. */
   private readonly wentDown = new Map<
     number,
     { readonly at: Point; readonly until: number; readonly radiusM: number }
   >();
-  /** The ships going down whose magazine waits, by her number, and when it goes. */
+  /** The ships going down whose magazine waits, by its number, and when it goes. */
   private readonly magazines = new Map<number, number>();
   /** Every ship told going down, so each is told once. */
   private readonly sinking = new Set<number>();
-  /** Her side a blow last came from, and when; and when each side of hers last came ready. */
+  /** Its side a blow last came from, and when; and when each side of it last came ready. */
   private lastBlow: { readonly side: BlowSide; readonly at: number } | null = null;
   private readonly ready: [number | null, number | null] = [null, null];
-  /** Her guns' reload and each captain's sides run out at the last frame. */
+  /** Its guns' reload and each captain's sides run out at the last frame. */
   private reloads: readonly [number, number] | null = null;
   private readonly runOut = new Map<number, number>();
-  /** Her volley while its balls are aloft, and its tally once the last is down. */
+  /** Its volley while its balls are aloft, and its tally once the last is down. */
   private volley: { balls: number; hits: number; holed: number; rig: number; lastShot: number } | null = null;
   private tallied: {
     readonly balls: number;
@@ -179,7 +179,7 @@ export class FightFeel {
     this.aloft = input.balls;
     const splashes = input.events.flatMap((event) => this.take(event, ships, now, toWindow, input.windBearing));
     this.moments(ships, now, input.seconds, toWindow);
-    // Her last ball is down once none is aloft, or once the longest flight has passed (others' balls may stay up).
+    // Its last ball is down once none is aloft, or once the longest flight has passed (others' balls may stay up).
     const since = this.volley ? now - this.volley.lastShot : 0;
     if (this.volley && ((input.balls.length === 0 && since > 0.2) || since > VOLLEY_S)) {
       const { balls, hits, holed, rig } = this.volley;
@@ -188,7 +188,7 @@ export class FightFeel {
     ships.forEach((ship, index) => {
       const { vessel, rig, hull } = ship;
       const harm = rig?.harm;
-      // What the view says before an event does: her canvas's hurt, her colours struck, her going down.
+      // What the view says before an event does: its canvas's hurt, its colours struck, its going down.
       harm?.wear(vessel.max_sail > 0 ? 1 - vessel.sail / vessel.max_sail : 0);
       if (vessel.state === 'struck') harm?.strike(now);
       if (vessel.state === 'sinking') harm?.sink(now);
@@ -202,7 +202,7 @@ export class FightFeel {
       const share = harm?.sunkShare(now) ?? 0;
       if (share > 0.5 || vessel.state === 'sunk') {
         const water = toWindow([middle[0], middle[1], 0]);
-        // Going down, her foam is kept up; once she is under, it lasts a while from when she went.
+        // Going down, its foam is kept up; once it is under, it lasts a while from when it went.
         if (vessel.state !== 'sunk' || !this.wentDown.has(index))
           this.wentDown.set(index, { at: water, until: now + FOAM_AFTER_S, radiusM: halfLength });
       }
@@ -246,7 +246,7 @@ export class FightFeel {
         this.effects.dust(toWindow(event.point), now);
         return [];
       case 'hit':
-        // A ball striking another ship while her volley is aloft is counted hers.
+        // A ball striking another ship while its volley is aloft is counted its own.
         if (this.volley && event.ship !== 0 && (event.by ?? 0) === 0) {
           this.volley.hits++;
           if (event.zone === 'holed') this.volley.holed++;
@@ -300,7 +300,7 @@ export class FightFeel {
     }
   }
 
-  /** A ball struck her: through her hull, a sail's canvas or her rig, at the point in her frame the rules name or,
+  /** A ball struck it: through its hull, a sail's canvas or its rig, at the point in its frame the rules name or,
    *  until they do, the world point turned into it. */
   private hit(event: Extract<FeelEvent, { kind: 'hit' }>, ship: FeelShip | undefined, now: number, toWindow: Window) {
     if (!ship) {
@@ -332,7 +332,7 @@ export class FightFeel {
     } else this.effects.spar(anchor, offOf(axes, spot), now);
   }
 
-  /** A blow through her hull at `spot` (her frame): her paint's splinters, and a hole that stays unless `scars` is
+  /** A blow through its hull at `spot` (its frame): its paint's splinters, and a hole that stays unless `scars` is
    *  false (a ram's stem). */
   private hullHit(ship: FeelShip, spot: Point, now: number, toWindow: Window, scars: boolean): void {
     const { middle, axes } = lying(ship.vessel);
@@ -348,13 +348,13 @@ export class FightFeel {
     this.cues = [...this.cues.slice(-31), { cue, at: spot, ...(gain === undefined ? {} : { gain }) }];
   }
 
-  /** A jar of the eye on her own ship. */
+  /** A jar of the eye on its own ship. */
   private kick(kick: number, spot: readonly [number, number, number]): void {
     this.cues = [...this.cues.slice(-31), { cue: 'kick', at: spot, kick }];
   }
 
-  /** A ball's fall at (x, y) (world metres) within `NEAR_SPLASH_M` of her hull throws its water over her rail and
-   *  rocks her, the more the nearer. */
+  /** A ball's fall at (x, y) (world metres) within `NEAR_SPLASH_M` of its hull throws its water over its rail and
+   *  rocks it, the more the nearer. */
   private drench(
     fell: readonly [number, number],
     spot: Point,
@@ -371,7 +371,7 @@ export class FightFeel {
     this.kick(KICKS.near * (0.4 + 0.6 * near), spot);
   }
 
-  /** Each ball aloft that comes within `NEAR_MISS_M` of her hull, nearing her, whistles as it goes by. */
+  /** Each ball aloft that comes within `NEAR_MISS_M` of its hull, nearing it, whistles as it goes by. */
   private whistles(
     balls: readonly (readonly [number, number, number, number])[],
     ship: FeelShip | undefined,
@@ -386,28 +386,28 @@ export class FightFeel {
       }
       if (!last) continue;
       const [gap, before] = [hullGap(ship, [x, y, z]), hullGap(ship, last.ball as unknown as Point)];
-      // A ball inside her box is one of hers just fired (or one striking her): neither whistles.
+      // A ball inside its box is one of its own just fired (or one striking it): neither whistles.
       if (gap > 0 && gap <= NEAR_MISS_M && before > NEAR_MISS_M)
         this.call('ship.whistle', toWindow([x, y, z]), 0.55 + 0.45 * (1 - gap / NEAR_MISS_M));
     }
   }
 
-  /** A ship begins to go down: heard once; afire, her own seed decides whether her magazine blows and when. */
+  /** A ship begins to go down: heard once; afire, its own seed decides whether its magazine blows and when. */
   private goingDown(number: number, ship: FeelShip | undefined, now: number, toWindow: Window, tick?: number): void {
     if (!ship || this.sinking.has(number)) return;
     this.sinking.add(number);
     const { middle } = lying(ship.vessel);
     this.call('ship.sinking', toWindow(middle));
     if (ship.vessel.fires <= 0) return;
-    // Her number and the room's tick she began going down are the same for everyone in the fight; the World
+    // Its number and the room's tick it began going down are the same for everyone in the fight; the World
     // Editor's fight, which tells no tick, has only one machine.
     const seed = Math.imul(number + 1, 73_856_093) ^ Math.imul(tick ?? Math.round(middle[0]), 19_349_663);
     const after = magazineOf(seed);
     if (after !== null) this.magazines.set(number, now + after);
   }
 
-  /** The frame's moments from the ships' numbers: magazines due go up, her sides coming ready and a captain running
-   *  out are heard, her ports glint while she stands run out, and her battered hull smokes. */
+  /** The frame's moments from the ships' numbers: magazines due go up, its sides coming ready and a captain running
+   *  out are heard, its ports glint while it stands run out, and its battered hull smokes. */
   private moments(ships: ReadonlyMap<number, FeelShip>, now: number, seconds: number, toWindow: Window): void {
     const own = ships.get(0);
     for (const [number, due] of this.magazines) {
@@ -470,12 +470,12 @@ export class FightFeel {
     this.effects.glint(toWindow(middle), ports, 1, now, seconds);
   }
 
-  /** The side of hers a blow last came from while it is told, or null. */
+  /** The side of it a blow last came from while it is told, or null. */
   blow(now: number): BlowSide | null {
     return this.lastBlow && now - this.lastBlow.at < BLOW_S ? this.lastBlow.side : null;
   }
 
-  /** Her last volley's tally while it is shown, or null. */
+  /** Its last volley's tally while it is shown, or null. */
   tally(
     now: number,
   ): { readonly balls: number; readonly hits: number; readonly holed: number; readonly rig: number } | null {
@@ -484,12 +484,12 @@ export class FightFeel {
     return { balls, hits, holed, rig };
   }
 
-  /** When her side (0 port, 1 starboard) last came ready, seconds, or null. */
+  /** When its side (0 port, 1 starboard) last came ready, seconds, or null. */
   readyAt(side: 0 | 1): number | null {
     return this.ready[side];
   }
 
-  /** Whether she is still drawn: not yet gone under. */
+  /** Whether it is still drawn: not yet gone under. */
   static afloat(ship: FeelShip, now: number): boolean {
     return ship.vessel.state !== 'sunk' && (ship.rig?.harm.sunkShare(now) ?? 0) < 1;
   }
@@ -512,7 +512,7 @@ export class FightFeel {
     water: ((x: number, y: number) => number) | null = null,
     eye: readonly [number, number, number] | null = null,
   ): Mark[] {
-    // Each burning ship's light on the hulls round her, flickering.
+    // Each burning ship's light on the hulls round it, flickering.
     const lights = this.burning.map(([x, y, z], index) => ({
       x,
       y,
@@ -525,7 +525,7 @@ export class FightFeel {
     return [...this.effects.marks(now, scale), ...lights, ...this.flotsam.marks(now, scale, water, eye)];
   }
 
-  /** The holes in each ship's hull, where she is drawn (window metres, heights as drawn, her scale). */
+  /** The holes in each ship's hull, where it is drawn (window metres, heights as drawn, its scale). */
   scars(ships: readonly ({ readonly ship: FeelShip; readonly place: ShipPlaceLike } | null)[]): Mark[] {
     const marks: Mark[] = [];
     for (const drawn of ships) {
@@ -535,7 +535,7 @@ export class FightFeel {
       const size = place.scale ?? 1;
       drawn.ship.rig.harm.scars.forEach((scar, index) => {
         // A ragged hole: a dark middle in a rim of splintered raw timber, its blots each its own size, standing just
-        // proud of her side; the pale rim reads on any paint, a black hull's too.
+        // proud of its side; the pale rim reads on any paint, a black hull's too.
         for (let blot = 0; blot < 4; blot++) {
           const turn = index * 2.1 + blot * 1.9;
           const spot: Point = [
@@ -576,12 +576,12 @@ export interface ShipPlaceLike {
   readonly scale?: number;
 }
 
-/** The side of her the wind blows to (1 starboard, -1 port): what tears from her falls that way. */
+/** The side of it the wind blows to (1 starboard, -1 port): what tears from it falls that way. */
 function leeward(ship: FeelShip, windBearing: number): 1 | -1 {
   return windOff(lying(ship.vessel).heading, windBearing) >= 0 ? 1 : -1;
 }
 
-/** How far a point (world metres) lies outside her hull's box: her waterline's length and beam, up to her deck. */
+/** How far a point (world metres) lies outside its hull's box: its waterline's length and beam, up to its deck. */
 function hullGap(ship: FeelShip, point: Point): number {
   const [ahead, aside, up] = frameOf(ship.vessel, point);
   const { lengthM, beamM } = hullWaterline(ship.hull);
@@ -589,7 +589,7 @@ function hullGap(ship: FeelShip, point: Point): number {
   return Math.hypot(out(ahead, lengthM / 2), out(aside, beamM / 2), Math.max(0, up - deckOverM(ship.hull), -up));
 }
 
-/** The side of her a blow at `spot` (her frame) struck: her bow or stern, or a beam, by which it lies nearer. */
+/** The side of it a blow at `spot` (its frame) struck: its bow or stern, or a beam, by which it lies nearer. */
 function blowSide(ship: FeelShip, spot: Point): BlowSide {
   const { lengthM, beamM } = hullWaterline(ship.hull);
   if (Math.abs(spot[0]) / (lengthM / 2) >= Math.abs(spot[1]) / (beamM / 2)) return spot[0] >= 0 ? 'bow' : 'stern';

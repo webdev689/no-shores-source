@@ -1,6 +1,6 @@
 // The friendly ships the waters' traffic sails between the port cities, as the page draws them at sea and from land:
 // asked of the waters' rules a few times a second round the eye at world time, moved smoothly between answers along
-// their way, each drawn as her hull in friendly colours, her sails set and filled (furled at anchor), posed on the swell.
+// their way, each drawn as its hull in friendly colours, its sails set and filled (furled at anchor), posed on the swell.
 import type { ShipMark } from '../plus/compass.ts';
 import type { Swell } from '../rules/landRules.ts';
 import type { TrafficShip } from '../rules/watersRules.ts';
@@ -14,10 +14,10 @@ import { HULLS, type HullMask } from '../water/hullMask.ts';
 
 /** How often the rules are asked where the ships are, seconds: a few times a second. */
 export const ASK_EVERY_S = 0.25;
-/** How fast a ship as drawn closes on where she is reckoned to be, a share a second: a turn onto her next leg is eased
+/** How fast a ship as drawn closes on where it is reckoned to be, a share a second: a turn onto its next leg is eased
  *  over about a second rather than taken at once. */
 const EASE_RATE = 4;
-/** Seconds a ship first seen is taken to have sailed as she is, so her sails are already set and trimmed. */
+/** Seconds a ship first seen is taken to have sailed as it is, so its sails are already set and trimmed. */
 const FIRST_SEEN_S = 5;
 /** How far from the eye friendly ships are drawn from land, metres. */
 export const SEEN_FROM_LAND_M = 15_000;
@@ -27,8 +27,8 @@ const UNDER_WAY = 4;
 /** World time: seconds since the Unix epoch, from the page's clock, so every machine sails the same ships. */
 export const worldTimeS = (): number => Date.now() / 1000;
 
-/** A friendly ship as drawn this frame: her id and hull, where she is and her heading (radians clockwise from north),
- *  and whether she lies at anchor at her route's end. */
+/** A friendly ship as drawn this frame: its id and hull, where it is and its heading (radians clockwise from north),
+ *  and whether it lies at anchor at its route's end. */
 export interface FriendlySailing {
   readonly id: number;
   readonly hull: number;
@@ -44,7 +44,7 @@ export interface FriendlyWater {
   depthAt(x: number, y: number): number;
 }
 
-/** A ship between answers: her last answer and when it came, and how far she is drawn off where it reckons her,
+/** A ship between answers: its last answer and when it came, and how far it is drawn off where it reckons it,
  *  closing as frames go. */
 interface Track {
   answer: TrafficShip;
@@ -54,10 +54,10 @@ interface Track {
 
 const headingOf = ([east, south]: readonly [number, number]) => Math.atan2(east, -south);
 
-/** Whether a ship has arrived and lies at anchor at her route's end. */
+/** Whether a ship has arrived and lies at anchor at its route's end. */
 const lyingOf = (answer: TrafficShip) => answer.progressM >= answer.lengthM;
 
-/** Where a ship answered at `answeredS` is reckoned at `nowS`: on along her leg at `speedMS`, or where she lies. */
+/** Where a ship answered at `answeredS` is reckoned at `nowS`: on along its leg at `speedMS`, or where it lies. */
 export function reckoned(
   answer: TrafficShip,
   answeredS: number,
@@ -96,7 +96,7 @@ export class FriendlyShips {
       for (const [id, answer] of answered) {
         const track = this.tracks.get(id);
         const heading = headingOf(answer.direction);
-        // A ship already drawn keeps where she was drawn: the gap to her new answer is closed over the next frames.
+        // A ship already drawn keeps where it was drawn: the gap to its new answer is closed over the next frames.
         const drawnNow = track && reckoned(track.answer, track.answeredS, nowS, this.speedMS);
         const offset =
           track && drawnNow
@@ -124,7 +124,7 @@ export class FriendlyShips {
     return sailing.sort((one, other) => away(one) - away(other));
   }
 
-  /** Each ship as the ships layer draws her, `scale` times her size, in friendly colours, her sails set and filled by
+  /** Each ship as the ships layer draws it, `scale` times its size, in friendly colours, its sails set and filled by
    *  the wind blowing toward `windBearing` (furled at anchor), posed on `water`'s swell at `time`. */
   drawn(
     ships: readonly FriendlySailing[],
@@ -218,7 +218,7 @@ export function friendlyFrame(
   return { ships, hulls: (first ? [first, ...others] : others).slice(0, HULLS), marks: friendlyMarks(near) };
 }
 
-/** Each ship's footprint on the water, `scale` times her size: under way, or still at anchor. */
+/** Each ship's footprint on the water, `scale` times its size: under way, or still at anchor. */
 export function friendlyHulls(ships: readonly FriendlySailing[], scale: number): HullMask[] {
   return ships.map(({ x, y, heading, hull, lying }) => {
     const { lengthM, beamM } = hullWaterline(hull);
@@ -250,7 +250,7 @@ export class FriendlyTraffic {
     );
   }
 
-  /** At sea: the ships within the view's reach of hers, at the size every ship is drawn now, as hers is
+  /** At sea: the ships within the view's reach of the player's, at the size every ship is drawn now, as the player's is
    *  (`shownScale`), their footprints joining the sea's, as many of each hull as the room's own leave room for. */
   atSea(shown: SeaFrame, water: FriendlyWater, seconds: number, time: number): FriendlyFrame {
     if (!this.fleet) return { ships: [], hulls: shown.hulls, marks: [] };

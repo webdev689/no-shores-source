@@ -1,5 +1,5 @@
 // What the held map letters on its parchment, painted where the layout put it (mapLayout.ts): each place's mark and
-// name, each water's name in her ring, the ship's arrow and the key (mapKey.ts). They are painted onto a picture of the
+// name, each water's name in its ring, the ship's arrow and the key (mapKey.ts). They are painted onto a picture of the
 // parchment that its ink pass lays down with the ink, so the gauntlets holding the map cover them as they cover the
 // parchment.
 import { FACE, INK, paintKey } from './mapKey.ts';
@@ -127,7 +127,7 @@ function word(painter: Painter, text: string, x: number, y: number, colour: stri
 }
 
 /** A mark and its name at the origin, units: a port's filled ring, a ruin's dashed diamond, a node's ring, the name
- *  beside it on its side, its middle on the mark's; a water's name centred in her ring. */
+ *  beside it on its side, its middle on the mark's; a water's name centred in its ring. */
 function paintLetter(painter: Painter, letter: MapLetter): void {
   painter.font = fontOf(letter.kind);
   if (letter.kind === 'water') {
@@ -166,8 +166,8 @@ function paintLetter(painter: Painter, letter: MapLetter): void {
   word(painter, letter.text, letter.side === 'right' ? offset : -offset, 0, letter.chosen ? ROUTE : ink);
 }
 
-/** A water's ring round her name, `half` wide either side of its middle and `taller` than one line: rounded at its
- *  ends, filled with the parchment and drawn in her difficulty's colour. */
+/** A water's ring round its name, `half` wide either side of its middle and `taller` than one line: rounded at its
+ *  ends, filled with the parchment and drawn in its difficulty's colour. */
 function paintRing(painter: Painter, half: number, taller: number, colour: string): void {
   const radius = LINE / 2 + 1;
   const straight = Math.max(0, half - radius);
@@ -185,7 +185,7 @@ function paintRing(painter: Painter, half: number, taller: number, colour: strin
   painter.stroke();
 }
 
-/** The ship's red-brown arrow along her heading (radians clockwise from north), ringed in the parchment. */
+/** The ship's red-brown arrow along its heading (radians clockwise from north), ringed in the parchment. */
 function paintShip(painter: Painter, heading: number): void {
   const point = (along: number, across: number): [number, number] => [
     Math.sin(heading) * along + Math.cos(heading) * across,

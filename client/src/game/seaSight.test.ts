@@ -16,7 +16,7 @@ const vessel: FightVessel = {
   fires: 0,
   guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
 };
-/** Heading north, her starboard guns fire east: two guns at her side, laid to fall 112 m out. */
+/** Heading north, its starboard guns fire east: two guns at its side, laid to fall 112 m out. */
 const LAY: FightLay = {
   side: 'starboard',
   launches: [
@@ -54,7 +54,7 @@ test('laid to their longest it says so; on target it says so and burns red', () 
   assert.equal(hot?.hot, true);
 });
 
-test('while the side reloads, braces or her guns are silent, the line says why and dims', () => {
+test('while the side reloads, braces or its guns are silent, the line says why and dims', () => {
   const loading = { ...vessel, guns: { ...vessel.guns, left: [0, 4.24] as const } };
   const reloading = aimLineOf({ ...LAY, on_target: true }, loading);
   assert.equal(reloading?.tail, ' - reloading 4.2\u00a0s');

@@ -214,9 +214,9 @@ be, so its land, its nodes and its plaza's floor stand as they would. Then what 
 - **Its harbour's** piers are broken off at 40 % of their length from the quay. Two wrecks lie in it (`wrecks`): a
   Sloop 70 m one side of the harbour's way out and a Schooner 80 m the other, each where the water first lies more
   than 4 m deep from 170 m out (none where no such water lies within 750 m), heeled 25 degrees, one to each side,
-  her heading across the way out turned a little by the city's seed. The page draws each with the ships layer's
-  mesh, every face more than 2 m over her highest deck left out (her masts and spars), settled in the water to her
-  deck's middle height and shaded 0.6 as light as a ship afloat, in no side's colours (her pictures as painted, no
+  its heading across the way out turned a little by the city's seed. The page draws each with the ships layer's
+  mesh, every face more than 2 m over its highest deck left out (its masts and spars), settled in the water to its
+  deck's middle height and shaded 0.6 as light as a ship afloat, in no side's colours (its pictures as painted, no
   flag), at the size every ship is drawn at: at sea the Overworld's four times and the size coming in
   (`shownScale`), true size on foot.
 - **Its ways** are strewn with rubble: four heaps in each avenue's cell, each 3 to 7 m by 2 to 5 m and 0.8 to 2 m
@@ -251,6 +251,6 @@ shows no port icon over its harbour and offers no docking there; its island's ot
 - The depth pull lets the city show through land within its share of the distance in front of it.
 - A ruin's building's break is ragged by squares, not broken stone; inside its open shell the forged model's own
   faces show, lit from the side seen. At sea a wreck is drawn as large as the ships, and so larger than the city
-  round her.
+  round it.
 - Fallen buildings' heaps and the ways' rubble are not walked against: only the plaza is.
-- A wreck is drawn only once her ship's mesh has come from the ships' bucket, and casts no shadow.
+- A wreck is drawn only once its ship's mesh has come from the ships' bucket, and casts no shadow.

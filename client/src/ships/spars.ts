@@ -1,8 +1,8 @@
-// A hull's masts and spars as boxes on her deck, from her sails in the ships manifest (tools/ships write it): each mast
-// a column from her deck up to her highest sail on it, each gaff sail's boom along its foot and its gaff along its head,
-// and each square sail's yards across her; and her sides, a wall past her outermost plank on each row and across her
-// bow and stern. The camera on her deck keeps a clear line to the boarder past them and stays inboard, as on land it
-// keeps off walls; nothing else stands on them, since her deck room knows only her planks.
+// A hull's masts and spars as boxes on its deck, from its sails in the ships manifest (tools/ships write it): each mast
+// a column from its deck up to its highest sail on it, each gaff sail's boom along its foot and its gaff along its head,
+// and each square sail's yards across it; and its sides, a wall past its outermost plank on each row and across its
+// bow and stern. The camera on its deck keeps a clear line to the boarder past them and stays inboard, as on land it
+// keeps off walls; nothing else stands on them, since its deck room knows only its planks.
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import type { Block } from '../rules/movementRules.ts';
 import { cellHeight, type Deck, HULL_DECKS } from './deck.ts';
@@ -13,11 +13,11 @@ type Corner = readonly number[];
 /** A mast's half thickness, and a spar's, metres. */
 const MAST_HALF_M = 0.3;
 const SPAR_HALF_M = 0.2;
-/** Her sides' walls: how thick, and how far over her planks they reach for the camera, metres. */
+/** Its sides' walls: how thick, and how far over its planks they reach for the camera, metres. */
 const SIDE_M = 0.3;
 const SIDE_HIGH_M = 6;
 
-/** A sail as the manifest lays it, in her mesh's frame: x to her bow, y across her, z over her waterline. */
+/** A sail as the manifest lays it, in its mesh's frame: x to its bow, y across it, z over its waterline. */
 type Sail =
   | {
       readonly kind: 'gaff';
@@ -35,8 +35,8 @@ type Sail =
     }
   | { readonly kind: 'stay' };
 
-/** A box round the line from `from` to `to` (her mesh's frame), `half` either side of it, on her deck (x to her
- *  starboard, y to her stern). */
+/** A box round the line from `from` to `to` (its mesh's frame), `half` either side of it, on its deck (x to its
+ *  starboard, y to its stern). */
 function sparBox(from: Corner, to: Corner, half: number): Block {
   const [fromX = 0, fromY = 0, fromZ = 0] = from;
   const [toX = 0, toY = 0, toZ = 0] = to;
@@ -50,12 +50,12 @@ function sparBox(from: Corner, to: Corner, half: number): Block {
   };
 }
 
-/** A mast standing at her mesh's `x` on her middle line, from below her deck to `top`. */
+/** A mast standing at its mesh's `x` on its middle line, from below its deck to `top`. */
 function mast(x: number, top: number): Block {
   return { minX: -MAST_HALF_M, maxX: MAST_HALF_M, minY: -x - MAST_HALF_M, maxY: -x + MAST_HALF_M, top };
 }
 
-/** Her sides as walls just past her outermost plank on each row of her deck, and across her bow and stern past her
+/** Its sides as walls just past its outermost plank on each row of its deck, and across its bow and stern past its
  *  first and last rows. */
 export function sideBoxes(deck: Deck): Block[] {
   const walls: Block[] = [];
@@ -86,13 +86,13 @@ export function sideBoxes(deck: Deck): Block[] {
   return walls;
 }
 
-/** What the camera on her deck keeps clear of and inboard of, by her hull's number: her sides, masts and spars. */
+/** What the camera on its deck keeps clear of and inboard of, by its hull's number: its sides, masts and spars. */
 export function deckCameraBlocks(hull: number): Block[] {
   const deck = HULL_DECKS[hull] ?? HULL_DECKS[0];
   return [...(deck ? sideBoxes(deck) : []), ...sparBoxes(hull)];
 }
 
-/** Her masts and spars by her hull's number (0 the Sloop to 3 the Frigate), as boxes on her deck. */
+/** Its masts and spars by its hull's number (0 the Sloop to 3 the Frigate), as boxes on its deck. */
 export function sparBoxes(hull: number): Block[] {
   const name = HULL_NAMES[hull] ?? HULL_NAMES[0];
   const sails = ships.ships[name].sails as readonly Sail[];

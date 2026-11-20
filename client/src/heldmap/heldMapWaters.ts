@@ -49,9 +49,9 @@ export class HeldMapWaters {
   }
 
   /** The charted waters in view on a map `ink` wide and high (`toWorld` the world point at a point of it, `toInk`
-   *  the reverse): each water's name, her difficulty's colour, and the spots her name may stand at, ink pixels. Her
+   *  the reverse): each water's name, its difficulty's colour, and the spots its name may stand at, ink pixels. Its
    *  label point comes first while it is on the map, then every point of a grid `SPOT_PX` apart over the map that
-   *  lies on her sea, nearest the middle of her sea in view first. */
+   *  lies on its sea, nearest the middle of its sea in view first. */
   letters(
     ink: { readonly width: number; readonly height: number },
     toInk: (x: number, y: number) => readonly [number, number],
@@ -92,8 +92,8 @@ export class HeldMapWaters {
 }
 
 /** How a water's name in `box` (ink pixels), the map showing `view`, stands on the sea of the water whose continent's
- *  index is `continent`: 2 wholly on hers; 1 on no land of any island (`field`), known or not, with its middle on hers,
- *  as across a sea too narrow for her name seen whole, where it runs over a neighbour's wash; 0 over land or off her
+ *  index is `continent`: 2 wholly on it; 1 on no land of any island (`field`), known or not, with its middle on it,
+ *  as across a sea too narrow for its name seen whole, where it runs over a neighbour's wash; 0 over land or off its
  *  sea. */
 export function onOwnSea(
   waters: MapWaters,

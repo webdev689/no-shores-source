@@ -327,8 +327,8 @@ export async function startLandEditor(
     requestFrame();
   }
 
-  /** Puts the Sloop to sea at the camera's target, or brings her in: the camera stands off her quarter. With a fleet
-   *  room, she joins it first. */
+  /** Puts the Sloop to sea at the camera's target, or brings it in: the camera stands off its quarter. With a fleet
+   *  room, it joins it first. */
   function toggleSail() {
     aim.reset();
     walking = false;
@@ -362,7 +362,7 @@ export async function startLandEditor(
     const data = viewMode === '3d' ? terrainData() : null;
     const places = session?.places(selected) ?? {};
     overlay.replaceChildren();
-    // Brought in, or walking or on the map before the room let her join, she leaves the fleet.
+    // Brought in, or walking or on the map before the room let it join, it leaves the fleet.
     if (fleet && !sailing && (fleet.sloop || (fleet.joining && (walking || viewMode === '2d')))) {
       if (fleet.joining) status = '';
       fleet.leave();
@@ -393,7 +393,7 @@ export async function startLandEditor(
         stroking: stroke !== null,
       });
       orbit = drawn.orbit;
-      // A refused Sail stands the camera back off, as bringing her in does.
+      // A refused Sail stands the camera back off, as bringing it in does.
       if (sailing && !drawn.sailing) orbit = { ...orbit, distance: 600, pitch: 0.5 };
       sailing = drawn.sailing;
       const flat = { width: canvas.clientWidth, height: canvas.clientHeight };

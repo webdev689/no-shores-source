@@ -22,7 +22,7 @@ function frame(feel: FightFeel, ships: Map<number, FeelShip>, events: readonly F
   return feel.frame({ events, ships, balls: [], now, seconds: 1 / 30, windBearing: Math.PI, toWindow: here });
 }
 
-test("a world point turned into her frame is her bow's forward and her starboard's side", () => {
+test("a world point turned into its frame is its bow's forward and its starboard's side", () => {
   const { vessel } = brig();
   const [ahead, aside, up] = frameOf(vessel, [110, 53, 2]);
   assert.ok(Math.abs(ahead - 10) < 1e-9 && Math.abs(aside - 3) < 1e-9 && Math.abs(up - 2) < 1e-9);
@@ -40,7 +40,7 @@ test('a splash event throws its spray, stirs the water and calls for the splash 
   assert.equal(feel.takeCues().length, 0);
 });
 
-test('a hull hit, by its point in the world or in her frame, splinters her paint and leaves a hole', () => {
+test('a hull hit, by its point in the world or in its frame, splinters its paint and leaves a hole', () => {
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(2);
   frame(feel, ships, [{ kind: 'hit', ship: 1, by: 0, zone: 'hull', point: [105, 54, 1.5] }], 0);
@@ -49,21 +49,21 @@ test('a hull hit, by its point in the world or in her frame, splinters her paint
   assert.equal(scars.length, 2);
   assert.ok(Math.abs((scars[0]?.at[0] ?? 0) - 5) < 1e-9 && Math.abs((scars[0]?.at[1] ?? 0) - 4) < 1e-9);
   const pirateHull = feel.marks(0.15).filter((mark) => mark.colour[0] < 0.2 && !mark.blend);
-  assert.ok(pirateHull.length >= 8, "her black paint flies, DFO's ten splinters a ball");
+  assert.ok(pirateHull.length >= 8, "its black paint flies, DFO's ten splinters a ball");
   const ship = ships.get(1) as FeelShip;
   const blots = feel.scars([{ ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0 } }]);
   assert.equal(blots.length, 8, 'each hole a ragged few blots');
   assert.ok(
     blots.some((blot) => blot.colour[0] < 0.1) && blots.some((blot) => blot.colour[0] > 0.5),
-    'a dark middle in a pale rim of raw timber, which reads on her black paint',
+    'a dark middle in a pale rim of raw timber, which reads on its black paint',
   );
   const drawnLarger = feel.scars([
     { ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0, scale: 4 } },
   ]);
-  assert.ok(Math.abs((drawnLarger[0]?.radius ?? 0) - (blots[0]?.radius ?? 0) * 4) < 1e-9, 'as large as she is drawn');
+  assert.ok(Math.abs((drawnLarger[0]?.radius ?? 0) - (blots[0]?.radius ?? 0) * 4) < 1e-9, 'as large as it is drawn');
 });
 
-test('a ball through her rig holes the sail it passed, or splinters the spar where there is none', () => {
+test('a ball through its rig holes the sail it passed, or splinters the spar where there is none', () => {
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(3);
   const rig = ships.get(1)?.rig as SailRig;
@@ -76,11 +76,11 @@ test('a ball through her rig holes the sail it passed, or splinters the spar whe
   assert.equal(
     rig.harm.holes.reduce((sum, holes) => sum + holes.size, 0),
     1,
-    'far over her canvas a ball only splinters her spars',
+    'far over its canvas a ball only splinters its spars',
   );
 });
 
-test('her hurts in the view hole her canvas, strike her colours and sink her before any event says so', () => {
+test('its hurts in the view hole its canvas, strike its colours and sink it before any event says so', () => {
   const ships = new Map([[1, brig('struck', 40)]]);
   const feel = new FightFeel(4);
   frame(feel, ships, [], 0);
@@ -92,7 +92,7 @@ test('her hurts in the view hole her canvas, strike her colours and sink her bef
   assert.ok(sinking.get(1)?.rig?.harm.sinking);
 });
 
-test("the contract's events tear her sails, fell her masts, strike and sink her", () => {
+test("the contract's events tear its sails, fell its masts, strike and sink it", () => {
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(5);
   const events: FeelEvent[] = [
@@ -104,7 +104,7 @@ test("the contract's events tear her sails, fell her masts, strike and sink her"
   frame(feel, ships, events, 0);
   const harm = ships.get(1)?.rig?.harm;
   assert.ok(harm?.sailLost(3, 1));
-  // The wind blows to the south, off her starboard side as she heads east: what falls goes to starboard.
+  // The wind blows to the south, off its starboard side as it heads east: what falls goes to starboard.
   assert.equal(harm?.mastFallen(1, 1)?.side, 1);
   assert.ok(harm && harm.struck(1) > 0 && harm.sinking);
   const ship = ships.get(1) as FeelShip;
@@ -112,7 +112,7 @@ test("the contract's events tear her sails, fell her masts, strike and sink her"
   assert.equal(FightFeel.afloat(ship, 20), false, 'gone under after twenty seconds');
 });
 
-test('where she went down the water foams, and her flotsam bobs there until gathered', () => {
+test('where it went down the water foams, and its flotsam bobs there until gathered', () => {
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(6);
   frame(feel, ships, [{ kind: 'Sinking', tick: 0, ship: 1 }], 0);
@@ -120,7 +120,7 @@ test('where she went down the water foams, and her flotsam bobs there until gath
   assert.ok(feel.marks(14).some((mark) => Math.hypot(mark.x - 100, mark.y - 50) < 20 && Math.abs(mark.z) < 0.01));
   const gone = new Map([[1, { ...brig('sunk') }]]);
   for (let now = 14; now < 40; now += 0.5) frame(feel, gone, [], now);
-  assert.equal(feel.effects.marks(40).length, 0, 'the foam is gone a while after she is under');
+  assert.equal(feel.effects.marks(40).length, 0, 'the foam is gone a while after it is under');
   frame(
     feel,
     ships,
@@ -143,14 +143,14 @@ test('where she went down the water foams, and her flotsam bobs there until gath
   assert.deepEqual(shapes().sort(), ['box', 'chest']);
 });
 
-test("a gun's smoke at the raised view rolls out from her side as far as she is drawn larger", () => {
+test("a gun's smoke at the raised view rolls out from its side as far as it is drawn larger", () => {
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(7);
   frame(feel, ships, [{ kind: 'muzzle', ship: 1, point: [100, 54, 2], launch: [0, 300, 2] }], 0);
   const [near, far] = [feel.marks(0.05, 1), feel.marks(0.05, 4)];
   const flash = (marks: typeof near) => marks.reduce((best, mark) => (mark.radius > best.radius ? mark : best));
   assert.ok(Math.abs(flash(near).y - 54) < 0.5, "the flash at the gun's mouth");
-  assert.ok(Math.abs(flash(far).y - 66) < 2, 'four times as far off her middle at four times her size');
+  assert.ok(Math.abs(flash(far).y - 66) < 2, 'four times as far off its middle at four times its size');
 });
 
 test("each of the room's events reaches the feel through the one mapping, kind by kind", () => {
@@ -179,7 +179,7 @@ test("each of the room's events reaches the feel through the one mapping, kind b
   assert.deepEqual(take({ kind: 'Boarding', tick: 1, ship: 1 }), { kind: 'Boarding', tick: 1, ship: 1 });
 });
 
-/** Her own Sloop at (0, 0) heading north, her hull `hull` of 100 and her guns as said. */
+/** The player's own Sloop at (0, 0) heading north, its hull `hull` of 100 and its guns as said. */
 function own(more: Partial<FeelShip['vessel']> = {}): FeelShip {
   return {
     vessel: {
@@ -210,7 +210,7 @@ const sounds = (feel: FightFeel) =>
     .filter((cue) => cue.kick === undefined)
     .map((cue) => cue.cue);
 
-test("her own gun kicks the eye and booms; a captain's booms and does not kick", () => {
+test("its own gun kicks the eye and booms; a captain's booms and does not kick", () => {
   const feel = new FightFeel(3);
   const ships = new Map([
     [0, own()],
@@ -224,7 +224,7 @@ test("her own gun kicks the eye and booms; a captain's booms and does not kick",
   assert.deepEqual(kicks(feel), []);
 });
 
-test("a ball striking her is heard and jars her eye, a hole harder; the side it came from is told for DFO's 1.4 s", () => {
+test("a ball striking it is heard and jars its eye, a hole harder; the side it came from is told for DFO's 1.4 s", () => {
   const feel = new FightFeel(4);
   const ships = new Map([[0, own()]]);
   frame(feel, ships, [{ kind: 'hit', ship: 0, at: [0, 2, 1], part: 'hull' }], 0);
@@ -241,19 +241,19 @@ test("a ball striking her is heard and jars her eye, a hole harder; the side it 
   assert.equal(feel.blow(2.1), 'bow');
 });
 
-test('a fall alongside throws its water over her rail and rocks her; one further off does neither', () => {
+test('a fall alongside throws its water over its rail and rocks it; one further off does neither', () => {
   const feel = new FightFeel(5);
   const ships = new Map([[0, own()]]);
   frame(feel, ships, [{ kind: 'splash', at: [5, 0] }], 0);
   const cues = feel.takeCues();
   const kick = cues.find((cue) => cue.kick !== undefined)?.kick ?? 0;
   assert.ok(kick > 0.28 && kick <= 0.7, `${kick}`);
-  assert.ok(feel.marks(0.6).filter((mark) => mark.x < 4.5 && mark.z > 1).length > 4, 'thrown toward her deck');
+  assert.ok(feel.marks(0.6).filter((mark) => mark.x < 4.5 && mark.z > 1).length > 4, 'thrown toward its deck');
   frame(feel, ships, [{ kind: 'splash', at: [40, 0] }], 1);
   assert.deepEqual(kicks(feel), []);
 });
 
-test('a ball going by her close whistles once, where it passed; her own going out never does', () => {
+test('a ball going by it close whistles once, where it passed; its own going out never does', () => {
   const feel = new FightFeel(6);
   const ships = new Map([[0, own()]]);
   const step = (balls: [number, number, number, number][], now: number) =>
@@ -268,7 +268,7 @@ test('a ball going by her close whistles once, where it passed; her own going ou
   assert.deepEqual(sounds(feel), []);
 });
 
-test('her side coming ready is heard and told, as a captain running out is heard', () => {
+test('its side coming ready is heard and told, as a captain running out is heard', () => {
   const feel = new FightFeel(7);
   const ships = new Map([
     [0, own({ guns: { left: [2, 0] } })],
@@ -284,11 +284,11 @@ test('her side coming ready is heard and told, as a captain running out is heard
   for (let tick = 2; tick < 20; tick++) frame(feel, ships, [], tick / 10);
   assert.ok(
     feel.marks(1.95).some((mark) => mark.blend === 'glow' && mark.x > 90),
-    'her ports glint',
+    'its ports glint',
   );
 });
 
-test('a burning ship going down may blow her magazine, decided by her own seed, the same for everyone', () => {
+test('a burning ship going down may blow its magazine, decided by its own seed, the same for everyone', () => {
   const blows = (seed: number) => {
     const feel = new FightFeel(seed);
     const ships = new Map([[0, own()]]);
@@ -311,11 +311,11 @@ test('a burning ship going down may blow her magazine, decided by her own seed, 
   assert.equal(
     other.takeCues().some((cue) => cue.cue === 'ship.blast'),
     blows(5),
-    "the feel's own seed does not decide it: her own does",
+    "the feel's own seed does not decide it: its own does",
   );
 });
 
-test('her hull battered under three fifths, she smokes along her deck; whole, she does not', () => {
+test('its hull battered under three fifths, it smokes along its deck; whole, it does not', () => {
   const [hurt, whole] = [new FightFeel(8), new FightFeel(8)];
   for (let tick = 0; tick < 90; tick++) {
     frame(hurt, new Map([[0, own({ hull: 20 })]]), [], tick / 30);
@@ -326,7 +326,7 @@ test('her hull battered under three fifths, she smokes along her deck; whole, sh
   assert.equal(smoke(whole), 0);
 });
 
-test('a burning ship lights the hulls round her, three at most', () => {
+test('a burning ship lights the hulls round it, three at most', () => {
   const feel = new FightFeel(9);
   const ships = new Map<number, FeelShip>();
   for (let number = 1; number <= 5; number++) {
@@ -338,7 +338,7 @@ test('a burning ship lights the hulls round her, three at most', () => {
   assert.equal(lights.length, 3);
 });
 
-test("her own next gun's ball, fired beside one already out, never whistles", () => {
+test("its own next gun's ball, fired beside one already out, never whistles", () => {
   const feel = new FightFeel(10);
   const ships = new Map([[0, own()]]);
   const step = (balls: [number, number, number, number][], now: number) =>
@@ -354,7 +354,7 @@ test("her own next gun's ball, fired beside one already out, never whistles", ()
   assert.deepEqual(sounds(feel), []);
 });
 
-test("a magazine's draw is her number and the tick she began going down, wherever each machine drew her", () => {
+test("a magazine's draw is its number and the tick it began going down, wherever each machine drew it", () => {
   const blows = (east: number, tick: number) => {
     const feel = new FightFeel(1);
     const ships = new Map([[0, own()]]);
@@ -369,7 +369,7 @@ test("a magazine's draw is her number and the tick she began going down, whereve
       assert.equal(blows(20, tick), blows(east, tick), `tick ${tick} at ${east}`);
 });
 
-test("her volley's tally is told within four seconds of her last shot, though others' balls stay aloft", () => {
+test("its volley's tally is told within four seconds of its last shot, though others' balls stay aloft", () => {
   const feel = new FightFeel(11);
   const step = (events: readonly FeelEvent[], now: number) =>
     feel.frame({

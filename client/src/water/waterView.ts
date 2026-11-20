@@ -53,7 +53,7 @@ export interface WaterScene {
   readonly eyeAboveM: number;
   /** Where the ripples follow, window metres. */
   readonly focus: readonly [number, number];
-  /** A ship on the water: no water inside her, foam round her bow. */
+  /** A ship on the water: no water inside it, foam round its bow. */
   readonly hulls: readonly HullMask[];
   /** The sun's shadows this frame, which shade the surface; none drawn without. */
   readonly shadow?: ShadowMap | undefined;

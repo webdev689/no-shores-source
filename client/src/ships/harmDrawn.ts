@@ -1,6 +1,6 @@
-// How her harm (`ShipHarm`) changes what her view draws: her torn sails falling to the sea and floating astern, her
-// fallen masts' sails going over with them, her canvas's holes left out, each mast's fall for her shader, and her
-// colours coming down her mast. Worked out on her own frame, so it is tested without a device.
+// How its harm (`ShipHarm`) changes what its view draws: its torn sails falling to the sea and floating astern, its
+// fallen masts' sails going over with them, its canvas's holes left out, each mast's fall for its shader, and its
+// colours coming down its mast. Worked out on its own frame, so it is tested without a device.
 import { type Fallen, dropOf, FALL_S, fallAngle, fallenPoint, type ShipHarm } from './shipHarm.ts';
 import { SAIL_COLUMNS, SAIL_ROWS } from './sails.ts';
 import { MOST_MASTS } from './shipShader.ts';
@@ -8,10 +8,10 @@ import type { MastSpan } from './shipTags.ts';
 
 type Point = readonly [number, number, number];
 
-/** A torn sail lands this far outboard of her side, metres. */
+/** A torn sail lands this far outboard of its side, metres. */
 const OVERBOARD_M = 3;
 
-/** A torn sail's point as it lies (`Fallen`), `seconds` after it tore: it drops to the water and is blown out over her
+/** A torn sail's point as it lies (`Fallen`), `seconds` after it tore: it drops to the water and is blown out over its
  *  side, then drifts astern; its head tears from the yard first, so its rows fall one after another. */
 function tornPoint(point: Point, row: number, lies: Fallen, seconds: number, overboardM: number): Point {
   const late = (1 - row / (SAIL_ROWS - 1)) * 0.3;
@@ -23,8 +23,8 @@ function tornPoint(point: Point, row: number, lies: Fallen, seconds: number, ove
   ];
 }
 
-/** Each sail's canvas as her harm leaves it `now`: a torn sail falling and afloat astern, a fallen mast's sails over
- *  her side with it; the rest as her rig sets them. */
+/** Each sail's canvas as its harm leaves it `now`: a torn sail falling and afloat astern, a fallen mast's sails over
+ *  its side with it; the rest as its rig sets them. */
 export function harmedCanvas(
   canvas: readonly Float32Array[],
   harm: ShipHarm,
@@ -40,7 +40,7 @@ export function harmedCanvas(
     const moved = new Float32Array(points.length);
     const span = masts[mast] ?? { footZ: 0, topZ: 0 };
     const turn = { footZ: span.footZ, most: fallAngle(span.footZ, span.topZ - span.footZ) };
-    // How far the whole sail is blown out, so its nearest edge lands clear of her side.
+    // How far the whole sail is blown out, so its nearest edge lands clear of its side.
     const across = points.filter((unused, index) => index % 3 === 1);
     const inboard = torn && torn.side > 0 ? Math.min(...across) : -Math.max(...across);
     const overboardM = Math.max(0, halfBeamM + OVERBOARD_M - inboard);
@@ -63,7 +63,7 @@ export function cellShows(harm: ShipHarm, sail: number, cell: number, now: numbe
   return !gone || gone.shows;
 }
 
-/** Each mast's fall for her shader, two vec4s a mast (`MAST_FLOATS_AT`): its foot, the turn over her side, whether
+/** Each mast's fall for its shader, two vec4s a mast (`MAST_FLOATS_AT`): its foot, the turn over its side, whether
  *  it shows; then its drift astern and how far it has sunk. A mast standing is turned by nothing. */
 export function mastFalls(harm: ShipHarm, masts: readonly MastSpan[], now: number): Float32Array {
   const values = new Float32Array(MOST_MASTS * 8);
@@ -79,7 +79,7 @@ export function mastFalls(harm: ShipHarm, masts: readonly MastSpan[], now: numbe
   return values;
 }
 
-/** Where her flag flies `now`, from her masthead: lowered down her mast to a metre over its foot as her colours are
+/** Where its flag flies `now`, from its masthead: lowered down its mast to a metre over its foot as its colours are
  *  struck, and gone once struck or once its mast has fallen. */
 export function flagAt(
   masthead: Point,

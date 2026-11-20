@@ -239,7 +239,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   };
 
-  /** Joins a company member where they play: a node of this landmass at their seas, the ship left where she lies. */
   /** Whether the player may be taken elsewhere: on foot or on deck with nothing else under way, never under the map,
    *  on the way to the helm, walking the deck, landing, or while another landmass opens. */
   const free = () =>
@@ -250,6 +249,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     !playing.sea?.aboard.active &&
     !charting.busy;
 
+  /** Joins a company member where they play: a node of this landmass at their seas, the ship left where it lies. */
   const joinAt = (place: string): string | null => {
     if (!free()) return 'You are in their company. Choose Go to them once nothing else is under way.';
     // As other games keep travel out of a fight, and the fallen respawn before they go anywhere.
@@ -382,7 +382,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       playing.sea?.fromHelm();
       if (!sail) return;
       const sea = playing.sea;
-      // Mid-fight she stays in the room she fights in; one switch at a time, each waiting for the last.
+      // Mid-fight the ship stays in the room it fights in; one switch at a time, each waiting for the last.
       if (!sea || sea.fight || made.difficulty === seaSeas) sea?.sailTo(sail);
       else {
         const seas = made.difficulty;
@@ -393,7 +393,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
             return enterSea(seas);
           })
           .then(() => sea.sailTo(sail))
-          // A room that will not open leaves her sailing alone, as a link lost does.
+          // A room that will not open leaves the ship sailing alone, as a link lost does.
           .catch(() => sea.sailTo(sail));
       }
     });
@@ -408,17 +408,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     playing.mapWanted = playing.sea.toHelm();
   };
 
-  /** Opens Manage over her deck, or closes it. */
+  /** Opens Manage over its deck, or closes it. */
   const manage = () => {
     if (playing.flow.mode === 'sea' && !playing.flow.menu && !playing.sea?.aboard.walking) playing.sea?.manage();
   };
 
-  /** The player leaves the helm to walk her deck, the pointer held to look round as on foot. */
+  /** The player leaves the helm to walk its deck, the pointer held to look round as on foot. */
   const leaveHelm = () => {
     if (playing.flow.mode === 'sea' && !playing.flow.menu && playing.sea?.leaveHelm()) input.lock();
   };
 
-  /** Takes the helm again, at her wheel. */
+  /** Takes the helm again, at its wheel. */
   const takeHelm = () => {
     if (playing.flow.mode === 'sea' && !playing.flow.menu) playing.sea?.takeHelm();
   };
@@ -451,7 +451,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onManage(manage);
   hud.onLeaveHelm(leaveHelm);
   hud.onTakeHelm(takeHelm);
-  // The Ship tab's papers: her voyage only while she is at sea.
+  // The Ship tab's papers: its voyage only while it is at sea.
   const shipNow = () =>
     shipPanelOnceBuilt(
       builtSloop(),

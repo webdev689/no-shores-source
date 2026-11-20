@@ -60,7 +60,7 @@ test('a name with no clear place is dropped by priority: a port before a water, 
   assert.equal(named['Ruins of Elmhaven'], 'left', 'the ruin the other side');
   assert.equal(named['Hollow Barrow'], null, 'the node keeps its mark, its name dropped');
   const lantern = lettering.letters.find((letter) => letter.kind === 'water');
-  assert.deepEqual([lantern?.x, lantern?.y], [200, 60], 'the water takes her next spot, clear of the port');
+  assert.deepEqual([lantern?.x, lantern?.y], [200, 60], 'the water takes its next spot, clear of the port');
 });
 
 test('a name runs right of its mark, and left where the right is the map’s edge', () => {
@@ -68,7 +68,7 @@ test('a name runs right of its mark, and left where the right is the map’s edg
   assert.equal(lettering.letters[0]?.side, 'left');
 });
 
-test('a water’s name under a hand takes her next spot clear of it rather than vanishing', () => {
+test('a water’s name under a hand takes its next spot clear of it rather than vanishing', () => {
   const cover = { x: 480, y: 150, width: 120, height: 80 };
   const lettering = layOut({
     ...ASK,
@@ -80,7 +80,7 @@ test('a water’s name under a hand takes her next spot clear of it rather than 
   assert.ok(!overlaps(nameBox(elmwater!, 'centre', widthOf(elmwater!.text, 'water'), 1), cover));
 });
 
-test('a water’s name stands only where it lies wholly on her own sea, else is dropped', () => {
+test('a water’s name stands only where it lies wholly on its own sea, else is dropped', () => {
   const lettering = layOut({
     ...ASK,
     sea: (box, continent) => (continent === 0 && box.x > 300 ? 2 : 0),
@@ -115,7 +115,7 @@ test('with no corner clear the key takes the one covering fewest names, a water�
   );
 });
 
-test('a water the key must cover is named again at her next spot clear of it', () => {
+test('a water the key must cover is named again at its next spot clear of it', () => {
   const lettering = layOut({
     ...ASK,
     ink: { width: 300, height: 200 },
@@ -154,7 +154,7 @@ test('with every corner over land the key still takes one clear of marks, hands 
   assert.equal(lettering.key?.corner, 'lower-left');
 });
 
-test('a water’s name takes a spot wholly on her own sea before an earlier one that runs over a neighbour’s', () => {
+test('a water’s name takes a spot wholly on its own sea before an earlier one that runs over a neighbour’s', () => {
   const lettering = layOut({
     ...ASK,
     sea: (box) => (box.x > 300 ? 2 : 1),

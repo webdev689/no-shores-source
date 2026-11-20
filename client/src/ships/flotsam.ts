@@ -1,5 +1,5 @@
 // What a ship sunk leaves on the water: crates, barrels and, for an Elite or greater, a chest, each laid by the fight
-// where she went down and bobbing there until it is gathered or the fight is over.
+// where it went down and bobbing there until it is gathered or the fight is over.
 import type { Mark } from './effects.ts';
 import type { MarkShape } from './markView.ts';
 

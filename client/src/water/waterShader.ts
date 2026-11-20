@@ -111,7 +111,7 @@ fn surface_vertex(@builtin(vertex_index) index: u32) -> Surface {
     let swell = swell_at(offset, depth, spacing);
     shift = swell.shift;
     height += swell.height + breaker_at(offset, max(depth, 0.0), spacing).height;
-    // Her wake's small waves, where the ships' frame says, drawn once the mesh is fine enough to hold them.
+    // Its wake's small waves, where the ships' frame says, drawn once the mesh is fine enough to hold them.
     height += wake_at(offset + shift).height * (1.0 - smoothstep(2.0, 8.0, spacing)) * reach(depth);
   }
   var surface: Surface;
@@ -159,7 +159,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let level = still.x;
   let depth = level - ground.x;
   let thin = level + top - surface.rest - ground.x;
-  // No water inside a ship's waterline: under her deck it is hidden anyway, and in her open hull it is not. Her
+  // No water inside a ship's waterline: under its deck it is hidden anyway, and in its open hull it is not. Its
   // footprint is tested where the water is drawn, a metre or two from its rest place once the swell carries it.
   let cover = wet_share(thin, length(ground.yz) * footprint, still, share) * (1.0 - hull_inside(surface.drawn.xy, footprint));
 
@@ -253,7 +253,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let thick = clamp(crest * 0.9 + 0.35, 0.0, 1.0) * select(1.0, 0.25, fresh);
   colour += SEA_GLOW * thick * (0.06 + 0.35 * back_lit) * (0.6 + 0.4 * max(dot(normal, SUN), 0.0));
 
-  // In a shadow (a ship's, beside her waterline) the surface loses the sun's glints and part of the light it scatters
+  // In a shadow (a ship's, beside its waterline) the surface loses the sun's glints and part of the light it scatters
   // and reflects, as water in shade does.
   let sun = sunlit(surface.drawn, vec3f(0.0, 0.0, 1.0));
   colour *= 1.0 - 0.35 * (1.0 - sun);

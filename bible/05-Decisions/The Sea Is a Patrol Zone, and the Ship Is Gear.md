@@ -18,10 +18,10 @@ status: in force
 > Offered things to do at sea (bounties from Overlook, public events, wrecks and flotsam to gather, and sea strikes
 > against a faction's flagship): "Approved"
 
-> Offered a fight that leads somewhere (sink her and gather what floats, or make her strike and board her for a fight
-> on her deck; a player who loses washes up at the nearest port, and the damage stays until repaired): "Approved"
+> Offered a fight that leads somewhere (sink it and gather what floats, or make it strike and board it for a fight
+> on its deck; a player who loses washes up at the nearest port, and the damage stays until repaired): "Approved"
 
-> Offered the ship as gear (her hull, guns, sails, and crew hired in Overlook, each with perks; ship power at sea;
+> Offered the ship as gear (its hull, guns, sails, and crew hired in Overlook, each with perks; ship power at sea;
 > paint, sails and figurehead as cosmetics): "Approved. Crew also can be utilized as the new companion system which
 > can be ported from DFO"
 

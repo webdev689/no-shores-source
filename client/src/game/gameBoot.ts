@@ -26,7 +26,7 @@ import { arrivalAt, loadWorld } from './worldData.ts';
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
 export const FIRST_NODE = 'overlook-social';
-/** The most ships of one hull drawn at sea in a frame: the player's, the room's and the friendly ships near her. */
+/** The most ships of one hull drawn at sea in a frame: the player's, the room's and the friendly ships near it. */
 export const SEA_SHIPS = 16;
 
 /** Boots the game behind the first veil, `shipScale` the size ships are drawn at each frame (a ruin's wrecks too). */

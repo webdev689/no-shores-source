@@ -179,7 +179,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times its length), so one reads from the raised
   view, and every hull the same four times its own, so a Frigate reads larger than a Sloop. Every other player's ship
   is the Sloop too. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
-  Sloop until the wire carries one ([[Sailing]], "Her look"); in a fight and in a fleet room too, each read through
+  Sloop until the wire carries one ([[Sailing]], "Its look"); in a fight and in a fleet room too, each read through
   `hullOfCaptain` (at sea and in a fleet its `hull`, in a fight's view its `hull_kind`). Every hull's model and its
   shell tags are made ready behind the sea's veil (`SeaHull.warm`), so the first of each seen holds no frame. At the
   helm every

@@ -17,11 +17,11 @@ test("each hull's model is fetched once, and a hull still coming is shown as the
     opened.push(hull);
     return viewOf([]);
   });
-  assert.equal(models.shown(3), SLOOP_HULL, 'the Frigate is the Sloop until hers comes');
+  assert.equal(models.shown(3), SLOOP_HULL, 'the Frigate is the Sloop until its own comes');
   models.model(3);
   await models.load(3);
   models.model(3);
-  assert.equal(models.shown(3), 3, 'and her own once it has');
+  assert.equal(models.shown(3), 3, 'and its own once it has');
   assert.deepEqual(opened, [3]);
 });
 

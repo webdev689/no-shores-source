@@ -10,26 +10,26 @@ import { HULL_NAMES, hullPaint } from '../ships/hulls.ts';
 import { type ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { Drawer } from './scene.ts';
 
-/** How far over her highest deck a wreck keeps anything: her masts broke off below this, metres. */
+/** How far over its highest deck a wreck keeps anything: its masts broke off below this, metres. */
 const STUMP_OVER_DECK_M = 2;
-/** How a wreck is drawn: in her own paint, no side's colours, weathered and waterlogged darker than a ship afloat. */
+/** How a wreck is drawn: in its own paint, no side's colours, weathered and waterlogged darker than a ship afloat. */
 const WRECK_LOOK: ShipLook = { side: 'player', shade: 0.6 };
 
 type Hull = Wreck['ship'];
 
-/** A ship's deck heights over her waterline, metres, from the manifest. */
+/** A ship's deck heights over its waterline, metres, from the manifest. */
 function deckHeights(ship: Hull): number[] {
   const deck = ships.ships[ship].deck;
   return deck.heights_cm.flat().flatMap((centimetres) => (centimetres === null ? [] : [centimetres / 100]));
 }
 
-/** How deep a wreck sits: her deck's middle height, so she is settled to her deck. */
+/** How deep a wreck sits: its deck's middle height, so it is settled to its deck. */
 export function settledDepth(ship: Hull): number {
   const heights = deckHeights(ship).sort((a, b) => a - b);
   return heights[Math.floor(heights.length / 2)] ?? 0;
 }
 
-/** Her mesh with every face that reaches over `stump` metres above her waterline left out: her masts and spars. */
+/** Its mesh with every face that reaches over `stump` metres above its waterline left out: its masts and spars. */
 export function brokenMesh(mesh: ShipMesh, stump: number): ShipMesh {
   const view = new DataView(mesh.vertices);
   const heightOf = (vertex: number): number => view.getFloat32(vertex * VERTEX_BYTES + 8, true);
@@ -41,8 +41,8 @@ export function brokenMesh(mesh: ShipMesh, stump: number): ShipMesh {
   return { ...mesh, indices: new Uint32Array(kept) };
 }
 
-/** A wreck's view of her ship, made once a page for every ruin. */
-// shortcut: one view a hull with one slot, so two ruins drawn in one frame would share her place; give each wreck a
+/** A wreck's view of its ship, made once a page for every ruin. */
+// shortcut: one view a hull with one slot, so two ruins drawn in one frame would share its place; give each wreck a
 // slot if more than one landmass is ever drawn at once.
 const views = new Map<Hull, Promise<ShipView>>();
 
@@ -58,7 +58,7 @@ function viewOf(gpu: Gpu, ship: Hull): Promise<ShipView> {
   return view;
 }
 
-/** A ruin's wrecks: each drawn once her ship's mesh has come. */
+/** A ruin's wrecks: each drawn once its ship's mesh has come. */
 export class Wrecks {
   private readonly drawn: { readonly wreck: Wreck; view: ShipView | null }[];
 
@@ -70,25 +70,25 @@ export class Wrecks {
           each.view = view;
         })
         .catch(() => {
-          // a mesh that does not come leaves her undrawn; the ruin stands without her
+          // a mesh that does not come leaves it undrawn; the ruin stands without it
         });
   }
 
-  /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world, `scale` times her size, in
+  /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world, `scale` times its size, in
    *  the sun's shadows. */
   drawInto(pass: GPURenderPassEncoder, camera: ShipCamera, scale: number, shadow: ShadowMap): void {
     for (const { wreck, view } of this.drawn)
       if (view) view.drawInto(pass, placeOf(wreck, scale), camera, 0, WRECK_LOOK, null, shadow);
   }
 
-  /** Draws every wreck's shadow, `scale` times her size, into the cascade of the sun's map being drawn. */
+  /** Draws every wreck's shadow, `scale` times its size, into the cascade of the sun's map being drawn. */
   castInto(pass: GPURenderPassEncoder, camera: ShipCamera, scale: number, shadow: ShadowMap): void {
     for (const { wreck, view } of this.drawn)
       if (view) view.castInto(pass, placeOf(wreck, scale), camera, 0, null, shadow);
   }
 }
 
-/** Where a wreck lies, drawn `scale` times her size: settled to her deck, heeled over. */
+/** Where a wreck lies, drawn `scale` times its size: settled to its deck, heeled over. */
 function placeOf(wreck: Wreck, scale: number) {
   return {
     x: wreck.at[0],

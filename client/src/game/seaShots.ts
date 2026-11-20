@@ -1,6 +1,6 @@
-// The sea's view and its shots: the Overworld's raised camera over her, turned, dragged and zoomed, brought in close by
-// the wheel; the flight up over an island's side and back; and the view coming down to her helm. `sea.ts` keeps her
-// voyage, her room and her fight, and asks this for the shot each frame.
+// The sea's view and its shots: the Overworld's raised camera over it, turned, dragged and zoomed, brought in close by
+// the wheel; the flight up over an island's side and back; and the view coming down to its helm. `sea.ts` keeps its
+// voyage, its room and its fight, and asks this for the shot each frame.
 import type { Point2 } from '../overworld/ground.ts';
 import { flyRig, frameSide, SIDE } from '../overworld/islandView.ts';
 import {
@@ -51,13 +51,13 @@ export type SeaView =
 /** The sea's camera and where its view is, and the shots it gives each frame. */
 export class SeaShots {
   private camera: OverworldCamera;
-  /** The sea's view as it last stood over her, which the flights leave from and come back to. */
+  /** The sea's view as it last stood over it, which the flights leave from and come back to. */
   private seaRig: Rig;
   private sideRig: Rig | null = null;
   view: SeaView = { kind: 'sail' };
   /** How far the view has come down to the helm, eased: 0 the sea's view, 1 at the helm. */
   helmShare = 0;
-  /** How far the wheel has brought the view in over her, past the Overworld's lowest. */
+  /** How far the wheel has brought the view in over it, past the Overworld's lowest. */
   readonly close = new CloseZoom();
   /** The picture's pose as last shown, brought in close or not, and its size: clicks and marks are taken on it. */
   pose: CameraPose | null = null;
@@ -103,12 +103,12 @@ export class SeaShots {
     this.view = { kind: 'fly', from: this.sideRig, to: this.seaRig, t: 0, seconds: FLY_BACK_SECONDS, then: 'sail' };
   }
 
-  /** The look keys turn and tilt the sea's view over her, `seconds` on. */
+  /** The look keys turn and tilt the sea's view over it, `seconds` on. */
   turn(turn: number, tilt: number, seconds: number): void {
     if (this.view.kind === 'sail') this.camera = keyTurn(this.camera, turn, tilt, seconds);
   }
 
-  /** A drag on the sea's view swings it round her. */
+  /** A drag on the sea's view swings it round it. */
   drag(moved: ReturnType<typeof pressMove>): void {
     if (this.view.kind === 'sail') this.camera = dragCamera(this.camera, moved);
   }
@@ -133,13 +133,13 @@ export class SeaShots {
     this.helmShare = smooth01(down);
   }
 
-  /** The helm's view, the eye behind her wheel riding her as she lies, looking along her heading. */
+  /** The helm's view, the eye behind its wheel riding it as it lies, looking along its heading. */
   helmShot(lying: Lying, far: number): Shot {
     return { eye: helmEye(lying), yaw: lying.heading, pitch: HELM.pitch, fov: FIELD_OF_VIEW, near: 0.3, far };
   }
 
-  /** One frame's shots, `seconds` on, over her lying at `ship` (`trueLying` at her true size): the Overworld's, and the
-   *  sea's as shown, brought in close over her unless the view stands over an island's side. */
+  /** One frame's shots, `seconds` on, over it lying at `ship` (`trueLying` at its true size): the Overworld's, and the
+   *  sea's as shown, brought in close over it unless the view stands over an island's side. */
   step(
     seconds: number,
     ship: { readonly x: number; readonly y: number },
@@ -168,7 +168,7 @@ export class SeaShots {
     return { overworld, seaShot, pose };
   }
 
-  /** The closest the wheel brings the view in over her, from the Overworld's shot. */
+  /** The closest the wheel brings the view in over it, from the Overworld's shot. */
   closest(overworld: Shot, trueLying: Lying): Shot {
     return this.close.closest(overworld, trueLying, this.camera.yaw, this.camera.tilt);
   }

@@ -31,7 +31,7 @@ function audio() {
 
 const east = (metres: number): Cue['at'] => [metres, 0, 0];
 
-test("each sea sound carries DFO's sea distances: a cannon to 2400 m, a whistle 90 m, her ready 80 m", () => {
+test("each sea sound carries DFO's sea distances: a cannon to 2400 m, a whistle 90 m, its ready 80 m", () => {
   assert.deepEqual(SEA_SOUNDS['ship.cannon'], { nearM: 30, mostM: 2400 });
   assert.deepEqual(SEA_SOUNDS['ship.whistle'], { nearM: 8, mostM: 90 });
   const { output, played, play } = audio();

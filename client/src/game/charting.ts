@@ -1,4 +1,4 @@
-// The sea's charting: once a second while the ship sails, the continent whose coast she nears is opened in the land's
+// The sea's charting: once a second while the ship sails, the continent whose coast it nears is opened in the land's
 // worker, one at a time; a continent that will not open is not tried again this visit.
 import type { Point2 } from '../overworld/ground.ts';
 import { continentToOpen } from './seaLaw.ts';

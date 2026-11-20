@@ -2,14 +2,14 @@
 // fight's feel (`ships/fightFeel.ts`): the sea room's decode, the fleet room's session and the feel all read these.
 import type { FightEvent, Point } from './fightRules.ts';
 
-/** The part of her a ball struck, and what floats looks like (crates/naval/src/fight_events.rs). */
+/** The part of a ship a ball struck, and what floats looks like (crates/naval/src/fight_events.rs). */
 export const PARTS = ['hull', 'sail', 'rig'] as const;
 export const PIECES = ['crate', 'barrel', 'chest'] as const;
 
 /** What the sea's fights tell beside the World Editor's events, each on the fight's tick it happened on: a ball's
- *  splash (x, y), a ball that struck a ship (where, in her own frame), a sail torn away (her sail index, as her
- *  manifest lists them), a mast fallen (0 fore to aft), her colours struck, her going down, a piece of what floats laid
- *  (by its number) or gathered (by a player's number), and players gone aboard her. Ships go by the view's numbers. */
+ *  splash (x, y), a ball that struck a ship (where, in its own frame), a sail torn away (its sail index, as its
+ *  manifest lists them), a mast fallen (0 fore to aft), its colours struck, its going down, a piece of what floats laid
+ *  (by its number) or gathered (by a player's number), and players gone aboard it. Ships go by the view's numbers. */
 export type NavalEvent =
   | { kind: 'Splash'; tick: number; at: [number, number] }
   | { kind: 'Hit'; tick: number; ship: number; at: Point; part: (typeof PARTS)[number] }

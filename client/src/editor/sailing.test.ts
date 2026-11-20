@@ -28,7 +28,7 @@ function fakeDoor(aground = false, holding = false) {
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 const ignore = () => undefined;
 
-test('putting to sea where the door answers her aground is refused with a reason', async () => {
+test('putting to sea where the door answers it aground is refused with a reason', async () => {
   const { source, asked } = fakeDoor(true);
   const answer = await Sailing.putToSea(source, 'square', 1000, 2000, 0.5, 10);
   assert.equal(typeof answer, 'string');
@@ -91,7 +91,7 @@ test('while one step is with the door, no other is asked, and a press waits for 
   assert.equal(asked[2]?.helm.climb, 0, 'the press went with the first step');
 });
 
-test('under way she stirs the water at her bow and quarters once she has run half a metre, and none at rest', async () => {
+test('under way it stirs the water at its bow and quarters once it has run half a metre, and none at rest', async () => {
   const moving: SailSource = {
     sail: async (_id, ship, _helm, _time, ticks) => {
       const next = new Float64Array(ship);
@@ -108,28 +108,28 @@ test('under way she stirs the water at her bow and quarters once she has run hal
   sailing.advance(3 / 60, new Set(), 1, ignore);
   await settle();
   const stirs = sailing.wake(view, waterline);
-  assert.equal(stirs.length, 3, 'she ran 1.2 m: her bow and quarters stir once a frame at most');
+  assert.equal(stirs.length, 3, 'it ran 1.2 m: its bow and quarters stir once a frame at most');
   const [bow] = stirs;
   assert.ok(
     bow && Math.abs(bow.x - 100) < 1e-9 && bow.y < 100 - 1.2 - 2,
-    `her bow is ahead, north: ${JSON.stringify(bow)}`,
+    `its bow is ahead, north: ${JSON.stringify(bow)}`,
   );
   assert.equal(sailing.wake(view, waterline).length, 0, 'taken once');
   const mask = sailing.hull(view, waterline);
   assert.deepEqual([mask.halfLength, mask.halfBeam, mask.way], [3, 1, 2]);
 });
 
-test('she is put to sea heading where the camera looks, as a heading within a turn', async () => {
+test('it is put to sea heading where the camera looks, as a heading within a turn', async () => {
   const { source, asked } = fakeDoor();
   await Sailing.putToSea(source, 'square', 0, 0, -0.5, 0);
   assert.ok(Math.abs((asked[0]?.ship[2] ?? 0) - (2 * Math.PI - 0.5)) < 1e-12);
 });
 
-test("her faces seen from outside reach the screen wound as her pipeline's front faces", async () => {
+test("its faces seen from outside reach the screen wound as its pipeline's front faces", async () => {
   const { FRONT_FACE, shipTurn } = await import('../ships/shipView.ts');
   const { viewProjection } = await import('./orbit.ts');
-  // A face on her starboard side as the export writes it: the model's corners in their own order, its y mirrored
-  // from port to starboard, so in her frame (b-a)x(c-a) points in while the face looks out to starboard.
+  // A face on its starboard side as the export writes it: the model's corners in their own order, its y mirrored
+  // from port to starboard, so in its frame (b-a)x(c-a) points in while the face looks out to starboard.
   const corners = [
     [0, 1, 0],
     [1, 1, 0],
@@ -137,7 +137,7 @@ test("her faces seen from outside reach the screen wound as her pipeline's front
   ] as const;
   for (const heading of [0, 0.7, 2.5, 4.4]) {
     const turn = shipTurn(heading, 0.05, -0.03);
-    // The camera stands off her starboard side and looks at her.
+    // The camera stands off its starboard side and looks at it.
     const orbit = { targetX: 0, targetY: 0, targetZ: 0, yaw: heading - Math.PI / 2, pitch: 0.3, distance: 20 };
     const matrix = viewProjection(orbit, 1.6);
     const screen = corners.map((corner) => {
@@ -161,7 +161,7 @@ test("her faces seen from outside reach the screen wound as her pipeline's front
   }
 });
 
-test('her helm is still once the step with the door has answered, and at once when none is', async () => {
+test('its helm is still once the step with the door has answered, and at once when none is', async () => {
   const { source, letGo } = fakeDoor(false, true);
   const pending = Sailing.putToSea(source, 'square', 0, 0, 0, 0);
   letGo();

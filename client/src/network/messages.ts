@@ -27,7 +27,7 @@ const STANDINGS = ['inside', 'warned', 'dead'] as const;
 
 /** One player as a room last stepped them, what their figure showed with it, the number of their last input it took,
  *  their whole fighter in the combat crate's order, and where they stand with its section. In the sea room, a player
- *  off the helm, their body on her deck, in her own frame, with no fighter. */
+ *  off the helm, their body on the ship's deck, in its own frame, with no fighter. */
 export interface SeenPlayer extends Look {
   readonly player: number;
   readonly acknowledged: number;
@@ -52,9 +52,9 @@ export interface SeenShip {
   readonly pace: number;
 }
 
-/** A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
- *  from north, her faction (1 the Grey Tithe, 2 pirates), her rank (1 Minor to 5 Boss), her hull (0 the Sloop to 3
- *  the Frigate), her level (0 none), the distance she is sighted from, metres (0 from a room that sends none), and her
+/** A captain's ship at sea, a pirate's or the Grey Tithe's: its number, where it is, its heading in radians clockwise
+ *  from north, its faction (1 the Grey Tithe, 2 pirates), its rank (1 Minor to 5 Boss), its hull (0 the Sloop to 3
+ *  the Frigate), its level (0 none), the distance it is sighted from, metres (0 from a room that sends none), and its
  *  way at sea, metres a second at the world's own time. */
 export interface SeenPirate {
   readonly id: number;
@@ -70,7 +70,7 @@ export interface SeenPirate {
 }
 
 /** A player's fight at sea as the room last stepped it: the naval crate's numbers (crates/naval/src/wire.rs), its other
- *  captains put back in the view (`withOthers`), which `fightViewOf` reads, and her captain's faction, rank and hull. */
+ *  captains put back in the view (`withOthers`), which `fightViewOf` reads, and its captain's faction, rank and hull. */
 export interface SeenSeaFight {
   readonly player: number;
   readonly view: Float64Array;
@@ -267,7 +267,7 @@ export function courseBytes(points: readonly (readonly [number, number])[], pace
   return builder.asUint8Array().slice();
 }
 
-/** A ship brought to rest turned to a heading (radians clockwise from north), as its bytes: the helm turned while she
+/** A ship brought to rest turned to a heading (radians clockwise from north), as its bytes: the helm turned while it
  *  lies still. */
 export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(64);
@@ -300,8 +300,8 @@ export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
   return builder.asUint8Array().slice();
 }
 
-/** What a player asks of the sea as its bytes, in a course's message: her repair by a port city, to board a captain
- *  who struck, or to leave her deck once her crew has fallen. */
+/** What a player asks of the sea as its bytes, in a course's message: a repair by a port city, to board a captain
+ *  who struck, or to leave its deck once its crew has fallen. */
 export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
   const number = { repair: 1, board: 2, 'leave-deck': 3 }[ask];

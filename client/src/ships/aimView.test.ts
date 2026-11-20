@@ -52,7 +52,7 @@ test("an arc is a ribbon as wide on the screen beside the eye as at 140 m, DFO's
     return Math.hypot(a[0] - b[0], a[1] - b[1]);
   };
   const wanted = ARC.widthVh * 1080;
-  assert.ok(Math.abs(across(first, 0, 1) - wanted) < 0.05 * wanted, `${across(first, 0, 1)} px beside her`);
+  assert.ok(Math.abs(across(first, 0, 1) - wanted) < 0.05 * wanted, `${across(first, 0, 1)} px beside it`);
   assert.ok(Math.abs(across(last, 3, 2) - wanted) < 0.05 * wanted, `${across(last, 3, 2)} px at 140 m`);
 });
 
@@ -87,7 +87,7 @@ test("the aim wears its tone's colours: brass laid, red hot, grey idle", () => {
   assert.ok(close(colour('idle'), AIM_TONES.idle.zone));
 });
 
-test('a strike mark stands out of her side toward the eye, so her hull never hides half of it', () => {
+test('a strike mark stands out of its side toward the eye, so its hull never hides half of it', () => {
   const strike = [1, -50, 2] as const;
   const { corners, blended } = aimCorners({ ...AIM, zone: [], strikes: [strike] }, camera(), 0);
   const { eye } = camera();

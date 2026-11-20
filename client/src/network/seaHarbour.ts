@@ -1,12 +1,12 @@
 // What the sea's snapshot carries after its fights (crates/protocol/src/sea_snapshot.rs): each piece of what floats
-// kept for a player, each player's ship's kept hurts with her repair's time left, what each player is told this tick
-// beside their fight's view, each deck boarded with her deck room's own snapshot, and the islands each player sees or
+// kept for a player, each player's ship's kept hurts with its repair's time left, what each player is told this tick
+// beside their fight's view, each deck boarded with its deck room's own snapshot, and the islands each player sees or
 // has found.
 import type { Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PIECES } from './seaFight.ts';
 
 /** The sea's own told words, by the code each line's first number holds (crates/room/src/harbour.rs): washed up at a
- *  port city, what a gathered piece held, who joined the fight, and her ship given back where the room kept her. */
+ *  port city, what a gathered piece held, who joined the fight, and its ship given back where the room kept it. */
 export const TOLD = { WASHED_UP: 20, HELD: 21, JOINED: 22, MOORED: 23 } as const;
 
 /** A piece of what floats for one player: theirs, its number, where it floats and what it looks like. */
@@ -17,7 +17,7 @@ export interface SeenFlotsam {
   readonly kind: (typeof PIECES)[number];
 }
 
-/** A player's ship's hurts as the sea keeps them: the shares of hull, canvas and men she has, and the seconds her
+/** A player's ship's hurts as the sea keeps them: the shares of hull, canvas and men it has, and the seconds its
  *  repair has left (0 with none under way). */
 export interface SeenKept {
   readonly player: number;
@@ -27,8 +27,8 @@ export interface SeenKept {
   readonly repairLeft: number;
 }
 
-/** A deck boarded: each boarder's number at sea with theirs on her deck, her hull, her deck room's snapshot's bytes (a
- *  room on land's, in her own frame), and the sea's ticks her won deck holds her boarders yet (null while her crew
+/** A deck boarded: each boarder's number at sea with theirs on its deck, its hull, its deck room's snapshot's bytes (a
+ *  room on land's, in its own frame), and the sea's ticks its won deck holds its boarders yet (null while its crew
  *  still fights). */
 export interface SeenDeck {
   readonly aboard: readonly (readonly [number, number])[];

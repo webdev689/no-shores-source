@@ -11,8 +11,8 @@ const MESSAGE_S = 3.5;
 const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
 
 /**
- * The owner's Sloop in a fleet room, as the World Editor shows her: her session there (her orders and her predicted
- * ship), her wake as she moves, and what the panel says of her, the nearest captain and what happened.
+ * The owner's Sloop in a fleet room, as the World Editor shows it: its session there (its orders and its predicted
+ * ship), its wake as it moves, and what the panel says of it, the nearest captain and what happened.
  */
 export class FleetSloop extends Afloat {
   readonly session: FleetSession;
@@ -38,19 +38,19 @@ export class FleetSloop extends Afloat {
     return this.session.balls(now);
   }
 
-  /** Her fires aboard by the room's word, on her deck as predicted (x, y, heave); none once she sinks. */
+  /** Its fires aboard by the room's word, on its deck as predicted (x, y, heave); none once it sinks. */
   fires(): readonly [number, number, number, number] {
     const own = this.session.own();
     const [x = 0, y = 0] = this.ship;
     return [x, y, this.pose.heave, own && own.state !== 'sinking' ? own.fires : 0];
   }
 
-  /** Her look's lay, as the room would lay it now. */
+  /** Its look's lay, as the room would lay it now. */
   lay(look: FleetLook, now: number): FleetLay | null {
     return this.session.lay(look, now);
   }
 
-  /** Her orders owed for `seconds` sent, her ship taken as predicted (her wake stirred by her run), and what happened
+  /** Its orders owed for `seconds` sent, its ship taken as predicted (its wake stirred by its run), and what happened
    *  made words for the panel. */
   advance(seconds: number, input: FleetInput, now: number): void {
     this.session.advance(seconds, input, now);
@@ -71,7 +71,7 @@ export class FleetSloop extends Afloat {
     return this.session.takeFeel();
   }
 
-  /** The panel's lines at `now`: her hurts and guns, the nearest captain's, her lay, the broadside warning, the fleet,
+  /** The panel's lines at `now`: its hurts and guns, the nearest captain's, its lay, the broadside warning, the fleet,
    *  and the messages. */
   lines(now: number, lay: FleetLay | null): string[] {
     const own = this.session.own();

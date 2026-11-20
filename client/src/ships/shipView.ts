@@ -22,8 +22,8 @@ import { tagShip, type ShipTags } from './shipTags.ts';
 
 export { FRONT_FACE } from './shipShader.ts';
 
-/** Where a ship is drawn: her middle in window metres (her height as drawn), her heading (radians clockwise from
- *  north), her bow's rise and her heel to starboard (radians), and how many times her size (1 unless said). */
+/** Where a ship is drawn: its middle in window metres (its height as drawn), its heading (radians clockwise from
+ *  north), its bow's rise and its heel to starboard (radians), and how many times its size (1 unless said). */
 export interface ShipPlace {
   readonly x: number;
   readonly y: number;
@@ -34,14 +34,14 @@ export interface ShipPlace {
   readonly scale?: number;
 }
 
-/** The camera she is drawn from: its matrix from the eye, and the eye in window metres as drawn. */
+/** The camera it is drawn from: its matrix from the eye, and the eye in window metres as drawn. */
 export interface ShipCamera {
   readonly fromEye: Float32Array;
   readonly eye: readonly [number, number, number];
 }
 
-/** The matrix (column-major, 4 × 4) that turns her own frame (x to her bow, y to starboard, z up) into the world's
- *  (east, south, up): her roll, then her pitch, then her heading. */
+/** The matrix (column-major, 4 × 4) that turns its own frame (x to its bow, y to starboard, z up) into the world's
+ *  (east, south, up): its roll, then its pitch, then its heading. */
 export function shipTurn(heading: number, pitch: number, roll: number): Float32Array<ArrayBuffer> {
   const turn = new Float32Array(16);
   shipAxes(heading, pitch, roll).forEach((column, index) => turn.set(column, index * 4));
@@ -49,7 +49,7 @@ export function shipTurn(heading: number, pitch: number, roll: number): Float32A
   return turn;
 }
 
-/** Her stripe stands this far either side of the line of her upper gunports, metres. */
+/** Its stripe stands this far either side of the line of its upper gunports, metres. */
 export const STRIPE_HALF_M = 0.3;
 
 /** A canvas's grid as triangles, two a cell, each sail's after the last's, but a cell `shows` says is gone (a hole,
@@ -70,9 +70,9 @@ export function canvasIndices(
   return new Uint32Array(corners);
 }
 
-/** The canvas's vertices, as her mesh's are, from each sail's grid now: a point's normal across its neighbours (the
- *  side its triangles face on the screen, as the export keeps hers), its UV the metres of its sail laid flat, its
- *  picture the sail's but where `layers` names another (her flag's). */
+/** The canvas's vertices, as its mesh's are, from each sail's grid now: a point's normal across its neighbours (the
+ *  side its triangles face on the screen, as the export keeps its own), its UV the metres of its sail laid flat, its
+ *  picture the sail's but where `layers` names another (its flag's). */
 export function canvasVertices(
   canvas: readonly Float32Array[],
   flat: readonly Float32Array[],
@@ -94,7 +94,7 @@ export function canvasVertices(
         const up = [0, 1, 2].map((axis) => pointAt(column, row + 1, axis) - pointAt(column, row - 1, axis));
         const [alongX, alongY, alongZ] = along as [number, number, number];
         const [upX, upY, upZ] = up as [number, number, number];
-        // The mirrored frame: a face's front is where (up × along) points, as her export's normals are.
+        // The mirrored frame: a face's front is where (up × along) points, as its export's normals are.
         const normal = [upY * alongZ - upZ * alongY, upZ * alongX - upX * alongZ, upX * alongY - upY * alongX];
         const length = Math.hypot(...normal) || 1;
         const byte = ((sail * SAIL_ROWS + row) * SAIL_COLUMNS + column) * VERTEX_BYTES;
@@ -112,7 +112,7 @@ export function canvasVertices(
   return bytes;
 }
 
-/** Where her tallest mast's head is, in her frame: the highest point of her spars. */
+/** Where its tallest mast's head is, in its frame: the highest point of its spars. */
 export function mastheadOf(mesh: ShipMesh): [number, number, number] {
   const view = new DataView(mesh.vertices);
   const spar = SHIP_PARTS.indexOf('spar');
@@ -131,9 +131,9 @@ export function mastheadOf(mesh: ShipMesh): [number, number, number] {
  *  captains'. */
 export const SHIP_SLOTS = 20;
 
-/** Draws a ship's mesh at her place, lit as the land is, into the land's pass so the water sees her, each part in its
- *  picture, her side's paint on her shell, her yards braced with her square sails, and her sails' canvas and her
- *  flag as her rig sets them: one model, up to `slots` ships of it a frame, each with her own place and canvas. */
+/** Draws a ship's mesh at its place, lit as the land is, into the land's pass so the water sees it, each part in its
+ *  picture, its side's paint on its shell, its yards braced with its square sails, and its sails' canvas and its
+ *  flag as its rig sets them: one model, up to `slots` ships of it a frame, each with its own place and canvas. */
 export class ShipView {
   private readonly gpu: Gpu;
   private readonly device: GPUDevice;
@@ -147,17 +147,17 @@ export class ShipView {
     readonly canvasIndices: GPUBuffer;
   }[];
   private readonly indexCount: number;
-  /** Her waterline, for her footprint on the water and her wake. */
+  /** Its waterline, for its footprint on the water and its wake. */
   readonly waterline: Waterline;
-  /** Her sails' corners, for each ship's rig. */
+  /** Its sails' corners, for each ship's rig. */
   readonly sails: readonly SailCorners[];
-  /** Her tallest mast's head, where her flag flies; where a side's paint goes on her (`hullPaint`); her yards. */
+  /** Its tallest mast's head, where its flag flies; where a side's paint goes on it (`hullPaint`); its yards. */
   private readonly masthead: readonly [number, number, number];
   private readonly paint: HullPaint;
   private readonly tags: ShipTags;
   private readonly flat: readonly Float32Array[];
 
-  /** Opens a hull's view on the device, her mesh tagged (`tagShip`) and the device's kit made if it is not yet. */
+  /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the device's kit made if it is not yet. */
   static async open(gpu: Gpu, mesh: ShipMesh, sails: readonly SailCorners[], paint: HullPaint, slots = SHIP_SLOTS) {
     return new ShipView(gpu, await shipKit(gpu), mesh, sails, paint, slots);
   }
@@ -184,7 +184,7 @@ export class ShipView {
     this.vertices = bufferOf(gpu.device, this.tags.vertices, BUFFER_USAGE.vertex);
     this.indices = bufferOf(gpu.device, mesh.indices, BUFFER_USAGE.index);
     this.indexCount = mesh.indices.length;
-    // Her sails' grids, then her flag's: each slot's own, as each ship's holes are her own.
+    // Its sails' grids, then its flag's: each slot's own, as each ship's holes are its own.
     const gridBytes = canvasIndices(sails.length + 1).byteLength;
     this.slots = Array.from({ length: slots }, () => {
       const uniforms = gpu.device.createBuffer({
@@ -211,9 +211,9 @@ export class ShipView {
     });
   }
 
-  /** Draws her into a pass the land's pipelines draw into (its formats, samples and reversed depth), in her own
-   *  `slot` of the frame, in her side's colours as light as `look` says, and her yards, canvas and flag as `rig` sets
-   *  them (none without a rig, her yards square), lit by the sun through `shadow`'s maps (none unless given). */
+  /** Draws it into a pass the land's pipelines draw into (its formats, samples and reversed depth), in its own
+   *  `slot` of the frame, in its side's colours as light as `look` says, and its yards, canvas and flag as `rig` sets
+   *  them (none without a rig, its yards square), lit by the sun through `shadow`'s maps (none unless given). */
   drawInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
@@ -227,7 +227,7 @@ export class ShipView {
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.pipeline, shadow.receiverGroup(this.kit.pipeline));
   }
 
-  /** Draws her shadow, as `drawInto` would draw her, into the cascade of the sun's map `shadow` is drawing. */
+  /** Draws its shadow, as `drawInto` would draw it, into the cascade of the sun's map `shadow` is drawing. */
   castInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
@@ -240,8 +240,8 @@ export class ShipView {
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.cast, shadow.casterGroup(this.kit.cast));
   }
 
-  /** Writes her slot's uniforms and canvas for a frame; answers how many of her canvas's indices are drawn, or null
-   *  for a slot she has not. */
+  /** Writes its slot's uniforms and canvas for a frame; answers how many of its canvas's indices are drawn, or null
+   *  for a slot it has not. */
   private prepare(
     place: ShipPlace,
     camera: ShipCamera,
@@ -256,7 +256,7 @@ export class ShipView {
     const values = new Float32Array(PLACE_FLOATS);
     values.set(camera.fromEye);
     const turn = shipTurn(place.heading, place.pitch, place.roll);
-    // A ship drawn larger than life: her frame's three axes stretched alike (the shader renormalises her normals).
+    // A ship drawn larger than life: its frame's three axes stretched alike (the shader renormalises its normals).
     for (let index = 0; index < 12; index++) turn[index] = (turn[index] ?? 0) * (place.scale ?? 1);
     values.set(turn, 16);
     values.set([place.x - camera.eye[0], place.y - camera.eye[1], place.z - camera.eye[2], 0], 32);
@@ -296,7 +296,7 @@ export class ShipView {
     return grid.length;
   }
 
-  /** Her hull, then `canvas` indices of her canvas, through `pipeline` with its group 1. */
+  /** Its hull, then `canvas` indices of its canvas, through `pipeline` with its group 1. */
   private encode(
     pass: GPURenderPassEncoder,
     slot: number,

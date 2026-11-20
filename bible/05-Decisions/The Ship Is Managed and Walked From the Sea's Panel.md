@@ -31,7 +31,7 @@ The owner's answers to the questions that followed:
 > What the first Manage view shows: "Vessel statistics", "You at the helm", "Stand-in crew wandering" and "Cargo &
 > crew marked Later"
 >
-> What the ship does while the player walks her deck: "Keeps sailing as your Helmsman takes over. If not moving, you
+> What the ship does while the player walks its deck: "Keeps sailing as your Helmsman takes over. If not moving, you
 > simply leave"
 >
 > How the player takes the helm again: "Walk to the wheel, press a key"
@@ -40,10 +40,10 @@ The owner's answers to the questions that followed:
 
 - **Two new buttons at sea**, Manage and Leave the helm, stand in the [[Interface]]: DFO's Enhanced Plus, brought
   over and adapted ([[Pick - Enhanced Plus UI]]).
-- **Manage** pans the view down to the player's ship, a management view where the crew wander her and the player
+- **Manage** pans the view down to the player's ship, a management view where the crew wander it and the player
   stands at the helm. It shows the vessel's statistics, cargo on board and crew management. Its first version shows
   the vessel's statistics, the player at the helm and stand-in crew wandering, with cargo and crew marked as later.
-- **Leave the helm** pans the view down to the ship and lets the player roam her on board. Under way, the helmsman
-  takes over and she keeps sailing; at rest, the player simply leaves the helm. The player takes the helm again by
+- **Leave the helm** pans the view down to the ship and lets the player roam it on board. Under way, the helmsman
+  takes over and the ship keeps sailing; at rest, the player simply leaves the helm. The player takes the helm again by
   walking to the wheel and pressing a key.
 - **The map view** shows the detailed 3D model of the ship, not the [[Overworld]]'s ([[Held Map]]).

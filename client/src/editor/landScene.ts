@@ -85,18 +85,18 @@ export interface SceneFrame {
   readonly exaggeration: number;
   readonly brush: TerrainOptions['brush'];
   readonly walking: boolean;
-  /** The Sloop is asked for: she is put to sea at the camera's target and sailed. */
+  /** The Sloop is asked for: it is put to sea at the camera's target and sailed. */
   readonly sailing: boolean;
   readonly held: ReadonlySet<string>;
   /** Keys pressed (not repeats) since the last frame; the scene takes them. */
   readonly pressed: string[];
-  /** The right mouse is held: the look lays her guns. */
+  /** The right mouse is held: the look lays its guns. */
   readonly aiming: boolean;
   /** Releases of the guns, and steps of the load (the wheel while aiming), since the last frame. */
   readonly fires: number;
   readonly loadSteps: number;
   readonly source: GroundSource | null;
-  /** Online: the Sloop's session in a fleet room, which sails her; the water then rolls by the room's clock. */
+  /** Online: the Sloop's session in a fleet room, which sails it; the water then rolls by the room's clock. */
   readonly fleet: FleetSloop | null;
   readonly editsVersion: number;
   /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
@@ -141,14 +141,14 @@ export class LandScene {
   private shownClose: CloseUp | null = null;
   private readonly depthCopy: GPURenderPipeline;
   private lastFrame = performance.now();
-  /** The Sloop and her model; and whether she may still sail (the rules have not refused her). */
+  /** The Sloop and its model; and whether it may still sail (the rules have not refused it). */
   private readonly harbour: Harbour<ShipView>;
-  /** Every hull's model; her sails' rig, once her model has come; and when the rigs were last stepped. */
+  /** Every hull's model; its sails' rig, once its model has come; and when the rigs were last stepped. */
   private readonly models: ShipModels;
   private rig: SailRig | null = null;
   private sailedAt = 0;
   private mayStillSail = true;
-  /** A captain's fight round the Sloop; or, online, the fleet she sails in. */
+  /** A captain's fight round the Sloop; or, online, the fleet it sails in. */
   private readonly marks: MarkView;
   private readonly naval: Naval;
   private fleet: FleetScene | null = null;
@@ -184,7 +184,7 @@ export class LandScene {
     this.fleet = null;
   }
 
-  /** The Sloop afloat: her fleet session's, online, or the editor's own. */
+  /** The Sloop afloat: its fleet session's, online, or the editor's own. */
   private get sailing(): Afloat | null {
     return this.fleet?.play ?? this.harbour.sailing;
   }
@@ -311,7 +311,7 @@ export class LandScene {
     });
     terrain.drawInto(pass);
     const ship = this.ship;
-    // Her rig, once her model has come.
+    // Its rig, once its model has come.
     if (ship && !this.rig) {
       this.rig = new SailRig(ship.sails);
       this.naval.ownRig = this.rig;
@@ -381,8 +381,8 @@ export class LandScene {
     return { orbit, feet, sailing: frame.sailing && this.mayStillSail };
   }
 
-  /** The Sloop: put to sea at the camera's target, then stepped by the rules with the keys' helm, her wake stirring
-   *  the water. Answers the camera's orbit, on her once she sails. */
+  /** The Sloop: put to sea at the camera's target, then stepped by the rules with the keys' helm, its wake stirring
+   *  the water. Answers the camera's orbit, on it once it sails. */
   private sail(frame: SceneFrame, seconds: number, time: number): Orbit {
     const { source, id, view, orbit } = frame;
     const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
@@ -400,7 +400,7 @@ export class LandScene {
       const look = frame.aiming ? this.naval.look(orbit, sailing, view) : null;
       const input = {
         held: frame.held,
-        // A rung press waits with her helm until the fight that takes it is on.
+        // A rung press waits with its helm until the fight that takes it is on.
         press: this.naval.fighting ? sailing.takePress() : undefined,
         look,
         fire: frame.fires > 0,
@@ -413,14 +413,14 @@ export class LandScene {
     for (const stir of waterline ? sailing.wake(view, waterline) : []) {
       this.water.stir(stir.x, stir.y, stir.radiusM, stir.strength);
     }
-    // Aiming may look over the horizon; the camera round her stays above it.
+    // Aiming may look over the horizon; the camera round the Sloop stays above it.
     const round = sailing.orbit(orbit, view);
     return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
   }
 
-  /** The Sloop in a fleet room: her orders from the keys (F calls a captain of the faction and rank the panel chose,
-   *  X sends them all off), her look while aiming, the fleet's effects on the water, and her wake. Answers the
-   *  camera's orbit, on her. */
+  /** The Sloop in a fleet room: its orders from the keys (F calls a captain of the faction and rank the panel chose,
+   *  X sends them all off), its look while aiming, the fleet's effects on the water, and its wake. Answers the
+   *  camera's orbit, on it. */
   private sailOnline(fleet: FleetScene, frame: SceneFrame, seconds: number, now: number): Orbit {
     const { view, orbit } = frame;
     this.harbour.fetchModel();
@@ -445,7 +445,7 @@ export class LandScene {
     return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
   }
 
-  /** The ships' footprints on the water: hers, and a captain's while she floats, or every ship of her fleet. */
+  /** The ships' footprints on the water: the Sloop's, and a captain's while it floats, or every ship of its fleet. */
   private hulls(view: LandView): HullMask[] {
     const waterline = this.ship?.waterline;
     if (!waterline || !this.sailing) return [];

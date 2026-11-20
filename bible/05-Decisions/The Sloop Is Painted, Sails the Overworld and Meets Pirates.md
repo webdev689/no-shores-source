@@ -11,7 +11,7 @@ status: in force
 
 The owner's answers to the questions that followed:
 
-> How the Sloop is textured once UV-mapped and split into her parts: in the game's own procedural textures, as the
+> How the Sloop is textured once UV-mapped and split into its parts: in the game's own procedural textures, as the
 > towns are; baked in Blender; or painted by the owner: "The game's painter (Recommended)"
 >
 > Which AI ships sail the Overworld, approving a port of DFO's sea traffic: pirates only, from DFO's director; pirates
@@ -20,7 +20,7 @@ The owner's answers to the questions that followed:
 > How the view goes to combat when an enemy ship comes for the player: at once; after a warning; or after a choice
 > to fight or flee: "Pan at once (Recommended)"
 
-Of the token that publishes her to R2: "brother it's in the repo"
+Of the token that publishes it to R2: "brother it's in the repo"
 
 And after: "We need to bring the animated sails over from dfo also"
 
@@ -30,12 +30,12 @@ And after: "We need to bring the animated sails over from dfo also"
 
 ## What it settles
 
-- **Her model.** The Sloop's `.blend` is UV-mapped and her faces sorted into her parts (hull, deck, wood, canvas,
-  iron), and her mesh carries both ([[Sailing]]).
-- **Her look.** Each part wears the [[Procedural Textures]] the forged towns wear, in Daggerfall's palette.
-- **Her sails** move as DFO's do: filled by the wind from the side it blows, flapping in its eye, the gaff trimmed
+- **Its model.** The Sloop's `.blend` is UV-mapped and its faces sorted into its parts (hull, deck, wood, canvas,
+  iron), and its mesh carries both ([[Sailing]]).
+- **Its look.** Each part wears the [[Procedural Textures]] the forged towns wear, in Daggerfall's palette.
+- **Its sails** move as DFO's do: filled by the wind from the side it blows, flapping in its eye, the gaff trimmed
   to leeward, and furled or set as the sails come down or go up.
-- **At sea.** She is the ship the player sails on the [[Overworld]].
+- **At sea.** It is the ship the player sails on the [[Overworld]].
 - **AI ships.** Pirates only, from DFO's director, trimmed: they come over the horizon round a player at sea and go
   when far off; DFO's captain, already ported ([[Naval Combat]]), decides whom each fights
   ([[Pick - Sailing and Naval Combat]]).

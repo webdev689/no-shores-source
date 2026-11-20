@@ -1,16 +1,16 @@
-// Each hull's own line at her waterline, read from her mesh: how wide she is there from her stern to her bow, so the
-// water keeps out of her and foams along her own sides rather than round an ellipse. Until her mesh has come, a fair
-// hull of her length and beam stands in.
+// Each hull's own line at its waterline, read from its mesh: how wide it is there from its stern to its bow, so the
+// water keeps out of it and foams along its own sides rather than round an ellipse. Until its mesh has come, a fair
+// hull of its length and beam stands in.
 import { FAIR_LINE, STATIONS } from '../water/hullMask.ts';
 import { HULL_NAMES, hullName } from './hulls.ts';
 import { loadShip, type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
 
-/** The station `along` (metres toward her bow from amidships, over her half length) falls nearest. */
+/** The station `along` (metres toward its bow from amidships, over its half length) falls nearest. */
 function stationOf(share: number): number {
   return Math.min(STATIONS - 1, Math.max(0, Math.round(((share + 1) / 2) * (STATIONS - 1))));
 }
 
-/** Her half beam at each station where her mesh's faces cross her waterline (z = 0), as a share of half her
+/** Its half beam at each station where its mesh's faces cross its waterline (z = 0), as a share of half its
  *  waterline's beam; a station no face crosses takes its neighbours' mean. */
 export function waterlineOf(mesh: ShipMesh): Float32Array {
   const view = new DataView(mesh.vertices);
@@ -59,7 +59,7 @@ function fillGaps(line: Float32Array): Float32Array {
   });
 }
 
-/** Every hull's line, each read from her mesh once it is asked for. */
+/** Every hull's line, each read from its mesh once it is asked for. */
 export class HullLines {
   private readonly load: (name: string) => Promise<ShipMesh>;
   private readonly lines = new Map<number, Float32Array>();
@@ -69,7 +69,7 @@ export class HullLines {
     this.load = load;
   }
 
-  /** Hull `hull`'s line: her mesh's once it has come, the fair line until then (asking for her mesh). */
+  /** Hull `hull`'s line: its mesh's once it has come, the fair line until then (asking for its mesh). */
   line(hull: number): Float32Array {
     const kept = this.lines.get(hull);
     if (kept) return kept;
@@ -77,7 +77,7 @@ export class HullLines {
       this.asked.add(hull);
       this.load(hullName(hull))
         .then((mesh) => this.lines.set(hull, waterlineOf(mesh)))
-        // A mesh that did not come leaves her the fair line: the ship itself retries hers (`ShipModels`).
+        // A mesh that did not come leaves it the fair line: the ship itself retries its own (`ShipModels`).
         .catch(() => undefined);
     }
     return FAIR_LINE;

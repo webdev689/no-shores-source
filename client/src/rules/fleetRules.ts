@@ -1,15 +1,15 @@
 import type { Helm, Pose } from './landRules.ts';
 
-/** A player's look while she aims: its bearing off her bow (degrees, to starboard), how far out it meets the water
- *  (metres), and its ray (the aim eye, then the way it looks), when she has one. */
+/** A player's look while they aim: its bearing off their bow (degrees, to starboard), how far out it meets the water
+ *  (metres), and its ray (the aim eye, then the way it looks), when they have one. */
 export interface FleetLook {
   readonly bearing: number;
   readonly range: number;
   readonly ray?: readonly number[];
 }
 
-/** A ship as a lay sees her: her number, her flag (0 a player's, else her faction's number), her hull (0 the Sloop to
- *  3 the Frigate, the Sloop unless named), her helm's numbers and pose, whether she floats. */
+/** A ship as a lay sees it: its number, its flag (0 a player's, else its faction's number), its hull (0 the Sloop to
+ *  3 the Frigate, the Sloop unless named), its helm's numbers and pose, whether it floats. */
 export interface LaySighted {
   readonly id: number;
   readonly flag: number;
@@ -44,14 +44,14 @@ export interface FleetLay {
 
 /** The fleet room's rules for one player's ship, running in WebAssembly: the same steps, to the bit, the room takes. */
 export interface FleetRules {
-  /** Her ship after each helm in turn, and her pose at `time`; null for numbers no ship could have. */
+  /** Its ship after each helm in turn, and its pose at `time`; null for numbers no ship could have. */
   predict(
     ship: ArrayLike<number>,
     hurts: { readonly wrecked: boolean; readonly sail: number; readonly maxSail: number },
     time: number,
     helms: readonly Helm[],
   ): { readonly ship: Float64Array; readonly pose: Pose } | null;
-  /** Her look's lay among the ships she sees, with her load (1 round to 4 heated); null when no side bears. */
+  /** Its look's lay among the ships it sees, with its load (1 round to 4 heated); null when no side bears. */
   lay(own: LaySighted, load: number, look: FleetLook, time: number, others: readonly LaySighted[]): FleetLay | null;
   /** Sets the world time the fleet room opened at, so its predictions sail in the room's weather. */
   setWorldStart(seconds: number): void;

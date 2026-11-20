@@ -47,8 +47,8 @@ export function ordersNumbers(orders: FightOrders): number[] {
   ];
 }
 
-/** Where a view's other captains sit (after its clock, its end, the player's Sloop, the captain's ship and her mind:
- *  crates/naval/src/wire.rs OTHERS_AT); each ship's numbers end with her hull. */
+/** Where a view's other captains sit (after its clock, its end, the player's Sloop, the captain's ship and its mind:
+ *  crates/naval/src/wire.rs OTHERS_AT); each ship's numbers end with its hull. */
 const OTHERS_AT = 2 + 2 * (SHIP_NUMBERS + POSE_NUMBERS + 15) + 4;
 
 /** A fight's numbers as `fightViewOf` reads them, from a room's view and its other captains, which the room sends apart
@@ -100,13 +100,13 @@ export function navalEventOf(kind: number, next: () => number): NavalEvent | nul
 /** One of the sea's own events as the fight's feel reads it: `ships/fightFeel.ts`'s, the one mapping. */
 export { feelOf };
 
-/** Who a fight's captain is: her name, her faction and her rank. */
+/** Who a fight's captain is: its name, its faction and its rank. */
 export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
 /** A captain the room has not named: a Major of the pirates. */
 const PIRATE_MAJOR: Commissioned = { name: 'Pirate Sloop', faction: 2, rank: 2 };
 
 /** The fight a sea room's numbers show, its captain `who` (a Major of the pirates unless told) and each other captain
- *  named by her faction (`nameOf`); throws where the numbers run short or name nothing. */
+ *  named by its faction (`nameOf`); throws where the numbers run short or name nothing. */
 export function fightViewOf(
   numbers: ArrayLike<number>,
   who: Commissioned = PIRATE_MAJOR,
@@ -143,12 +143,12 @@ export function fightViewOf(
     },
     hull_kind: next(),
   });
-  // A captain's Sloop, then her mode, whether she is hostile to the player, and her sides run out.
+  // A captain's Sloop, then its mode, whether it is hostile to the player, and its sides run out.
   const commanded = (commission: Commissioned): FightCaptain => {
-    const her = vessel();
+    const base = vessel();
     const mode = named(MODES);
     const hostile = next() === 1;
-    return { ...her, ...commission, mode, hostile, run_out: SIDES.filter(() => next() === 1) };
+    return { ...base, ...commission, mode, hostile, run_out: SIDES.filter(() => next() === 1) };
   };
   const clock = next();
   const over = named(OVER);
@@ -160,7 +160,7 @@ export function fightViewOf(
     return { ...other, number, name: nameOf(faction, other.hull_kind ?? 0) };
   });
   const balls = Array.from({ length: next() }, () => [next(), next(), next(), next()] as const);
-  // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes her.
+  // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes the ship.
   const stop = (): FightEnd | null => {
     const [stops, time, where, water, struck, strike] = [next() === 1, next(), point(), next() === 1, next(), point()];
     return stops ? { time, point: where, water, strike: struck === 1 ? strike : null } : null;
@@ -174,7 +174,7 @@ export function fightViewOf(
     lay = { side, elevation, reach, ends, radius, on_target: onTarget, launches };
   }
   const naval: NavalEvent[] = [];
-  // The hit the room tells just before its ball's, where on her it struck and on which part, for that ball's hit.
+  // The hit the room tells just before its ball's, where on the ship it struck and on which part, for that ball's hit.
   let struck: Extract<NavalEvent, { kind: 'Hit' }> | null = null;
   const told = Array.from({ length: next() }, (): FightEvent | null => {
     const kind = next();

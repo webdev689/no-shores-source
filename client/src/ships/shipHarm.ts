@@ -1,6 +1,6 @@
-// What a fight leaves on a ship as she is drawn: the holes shot in her hull and her canvas, the sails torn from her
-// yards, the masts gone over her side, her colours struck, and her going down. Only the look of it: the rules say
-// what happened (the fight's events, or her hurts in its view until an event says more), and this keeps it for the
+// What a fight leaves on a ship as it is drawn: the holes shot in its hull and its canvas, the sails torn from its
+// yards, the masts gone over its side, its colours struck, and its going down. Only the look of it: the rules say
+// what happened (the fight's events, or its hurts in its view until an event says more), and this keeps it for the
 // rest of the fight, each part's motion worked out from the moment it began.
 import { SAIL_CELLS, SAIL_COLUMNS, SAIL_ROWS, type SailCorners } from './sails.ts';
 
@@ -8,19 +8,19 @@ type Point = readonly [number, number, number];
 
 /** With no canvas left, a third of each sail's cells are shot through. */
 const MOST_HOLED_SHARE = 1 / 3;
-/** A sail's heads stand this close along her on one mast, metres (as her yards' tags say). */
+/** A sail's heads stand this close along the ship on one mast, metres (as its yards' tags say). */
 const MAST_M = 1.5;
-/** A mast falls over her side in this long, seconds; a torn sail takes this long to reach the water. */
+/** A mast falls over its side in this long, seconds; a torn sail takes this long to reach the water. */
 export const FALL_S = 3;
 /** A fallen mast or a torn sail floats this long once in the water, seconds, then is gone under. */
 export const FLOAT_S = 40;
-/** Her colours come down her mast in this long, seconds. */
+/** Its colours come down its mast in this long, seconds. */
 export const STRIKE_S = 4;
-/** She goes down in this long (her `Sinking` to her `Gone`), seconds: the foam's and the flag's timing. */
+/** It goes down in this long (its `Sinking` to its `Gone`), seconds: the foam's and the flag's timing. */
 export const SINK_S = 20;
 const GRAVITY = 9.81;
 
-/** Where her masts stand along her (x in her frame, fore to aft) and which mast each sail is on: a square sail's by its
+/** Where its masts stand along it (x in its frame, fore to aft) and which mast each sail is on: a square sail's by its
  *  head, a gaff's by its luff, a staysail's the mast its head is set to. */
 export interface MastLayout {
   readonly masts: readonly number[];
@@ -53,7 +53,7 @@ export function mastsOf(corners: readonly SailCorners[]): MastLayout {
   return { masts, sailMast };
 }
 
-/** A part gone from her: when (seconds of the page), to which side (1 starboard, -1 port), and how far astern of her
+/** A part gone from it: when (seconds of the page), to which side (1 starboard, -1 port), and how far astern of its
  *  it has drifted since it reached the water (metres). */
 interface Gone {
   readonly at: number;
@@ -71,7 +71,7 @@ export interface Fallen {
   readonly side: 1 | -1;
 }
 
-/** A hole in her hull: where in her frame, and how large (metres). */
+/** A hole in its hull: where in its frame, and how large (metres). */
 export interface Scar {
   readonly at: Point;
   readonly size: number;
@@ -99,7 +99,7 @@ export class ShipHarm {
     return this.seed / 4_294_967_296;
   }
 
-  /** A ball through her hull at `at` (her frame): a ragged hole stays there. */
+  /** A ball through its hull at `at` (its frame): a ragged hole stays there. */
   scar(spot: Point): void {
     this.scars.push({ at: spot, size: 0.4 + this.draw() * 0.3 });
   }
@@ -109,7 +109,7 @@ export class ShipHarm {
     if (!this.lost.has(sail) && cell >= 0 && cell < SAIL_CELLS) this.holes[sail]?.add(cell);
   }
 
-  /** Her canvas's harm, `share` of it gone (0 to 1): each sail standing is holed to match, new holes beside old. */
+  /** Its canvas's harm, `share` of it gone (0 to 1): each sail standing is holed to match, new holes beside old. */
   wear(share: number): void {
     const wanted = Math.round(Math.min(1, Math.max(0, share)) * SAIL_CELLS * MOST_HOLED_SHARE);
     this.holes.forEach((holes, sail) => {
@@ -134,13 +134,13 @@ export class ShipHarm {
     });
   }
 
-  /** A sail torn from her at `now`: it falls to leeward of her (`side`). */
+  /** A sail torn from it at `now`: it falls to leeward of it (`side`). */
   loseSail(sail: number, now: number, side: 1 | -1): void {
     if (!this.lost.has(sail) && sail >= 0 && sail < this.holes.length)
       this.lost.set(sail, { at: now, side, astern: 0 });
   }
 
-  /** A mast gone over her `side` at `now`, every sail on it with it. */
+  /** A mast gone over its `side` at `now`, every sail on it with it. */
   fellMast(mast: number, now: number, side: 1 | -1): void {
     if (this.fallen.has(mast) || mast < 0 || mast >= this.layout.masts.length) return;
     this.fallen.set(mast, { at: now, side, astern: 0 });
@@ -158,12 +158,12 @@ export class ShipHarm {
     return this.sinkingAt !== null;
   }
 
-  /** Whether a mast has gone over her side. */
+  /** Whether a mast has gone over its side. */
   isFallen(mast: number): boolean {
     return this.fallen.has(mast);
   }
 
-  /** Her gone parts drift astern of her as she sails on at `way` (m/s): a part in the water stays where it fell. */
+  /** Its gone parts drift astern of it as it sails on at `way` (m/s): a part in the water stays where it fell. */
   step(seconds: number, way: number, now: number): void {
     for (const gone of [...this.lost.values(), ...this.fallen.values()])
       if (now - gone.at >= FALL_S) gone.astern += Math.max(0, way) * seconds;
@@ -179,7 +179,7 @@ export class ShipHarm {
     return { down, astern: gone.astern, sunk, shows: afloat < FLOAT_S, side: gone.side };
   }
 
-  /** How a sail torn from her lies `now`; null while it stands. A sail on a fallen mast goes with the mast. */
+  /** How a sail torn from it lies `now`; null while it stands. A sail on a fallen mast goes with the mast. */
   sailLost(sail: number, now: number): Fallen | null {
     return this.lies(this.lost.get(sail), now);
   }
@@ -189,19 +189,19 @@ export class ShipHarm {
     return this.lies(this.fallen.get(mast), now);
   }
 
-  /** How far her colours have come down `now`: 0 flying, 1 struck. */
+  /** How far its colours have come down `now`: 0 flying, 1 struck. */
   struck(now: number): number {
     return this.struckAt === null ? 0 : Math.min(1, Math.max(0, now - this.struckAt) / STRIKE_S);
   }
 
-  /** How far she has gone down `now`, 0 afloat to 1 gone under. */
+  /** How far it has gone down `now`, 0 afloat to 1 gone under. */
   sunkShare(now: number): number {
     return this.sinkingAt === null ? 0 : Math.min(1, Math.max(0, now - this.sinkingAt) / SINK_S);
   }
 }
 
-/** Where a falling part's point goes as it lies (`Fallen`), in her frame: turned over her side about the line along
- *  her at `footZ` (a mast's foot; a torn sail drops instead, by `dropM`), drifted astern and sunk. */
+/** Where a falling part's point goes as it lies (`Fallen`), in its frame: turned over its side about the line along
+ *  it at `footZ` (a mast's foot; a torn sail drops instead, by `dropM`), drifted astern and sunk. */
 export function fallenPoint(
   point: Point,
   lies: Fallen,

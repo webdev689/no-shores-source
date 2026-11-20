@@ -86,7 +86,7 @@ test('the held map grid has its cells, and agrees with the water at each cell mi
 test('the table gives the sea’s facts as its rules have them: its reaches and every ship’s name', async () => {
   const { table } = await opened();
   assert.deepEqual([table.sea.engageM, table.sea.repairReachM], [750, 3_000]);
-  assert.ok(table.sea.holdReachM > table.sea.engageM, `the hold reaches past her sight: ${table.sea.holdReachM}`);
+  assert.ok(table.sea.holdReachM > table.sea.engageM, `the hold reaches past its sight: ${table.sea.holdReachM}`);
   assert.deepEqual(table.sea.shipNames[1], ['Tithe Sloop', 'Tithe Schooner', 'Tithe Brig', 'Tithe Frigate']);
 });
 
@@ -102,7 +102,7 @@ test('ships near a port sail their routes at the pace the table gives', async ()
     assert.ok(ship.hull >= 0 && ship.hull <= 3);
     assert.ok(Math.abs(Math.hypot(...ship.direction) - 1) < 1e-9);
     const later = rules.ship(ship.id, time + 10);
-    // Lying at her route's end she has stopped; under way she makes the table's pace.
+    // Lying at its route's end it has stopped; under way it makes the table's pace.
     if (later && later.progressM < later.lengthM)
       assert.ok(Math.abs(later.progressM - ship.progressM - table.friendlySpeedMS * 10) < 1e-6);
   }

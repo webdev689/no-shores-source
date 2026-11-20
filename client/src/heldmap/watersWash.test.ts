@@ -144,7 +144,7 @@ test('the difficulty ramp runs green at the easiest level to deep purple at the 
   );
 });
 
-test('a water takes the colour of the middle of her level band; one with no band takes none', () => {
+test('a water takes the colour of the middle of its level band; one with no band takes none', () => {
   assert.equal(difficultyColour([1, 4]), levelColour(2.5));
   assert.equal(difficultyColour([26, 30]), levelColour(28));
   assert.equal(difficultyColour(null), null);
@@ -183,7 +183,7 @@ test('the holders’ washes are told apart on the parchment, by colour or by the
   }
 });
 
-test('a holder’s wash as the map shows it is her colour at the wash’s strength over the parchment', () => {
+test('a holder’s wash as the map shows it is its colour at the wash’s strength over the parchment', () => {
   // Home's teal over the parchment reads as the map's olive green, 161, 152, 110 (worked out apart from the code).
   assert.equal(washedOver('home'), '#a1986e');
 });

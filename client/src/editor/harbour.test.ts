@@ -18,7 +18,7 @@ function door(aground: boolean): { source: SailSource; asked: number[] } {
   };
 }
 
-test('a model that fails to load is fetched once, and again only once she is brought in', async () => {
+test('a model that fails to load is fetched once, and again only once it is brought in', async () => {
   let fetched = 0;
   const failures: unknown[] = [];
   const harbour = new Harbour<string>(
@@ -41,7 +41,7 @@ test('a model that fails to load is fetched once, and again only once she is bro
   assert.equal(fetched, 2);
 });
 
-test('a refused putting to sea is asked once and says why once; brought in, she may be asked again', async () => {
+test('a refused putting to sea is asked once and says why once; brought in, it may be asked again', async () => {
   const failures: unknown[] = [];
   const harbour = new Harbour<string>(
     async () => 'model',
@@ -62,7 +62,7 @@ test('a refused putting to sea is asked once and says why once; brought in, she 
   assert.deepEqual(asked, [0, 0]);
 });
 
-test('put to sea, she sails with her model until she is brought in', async () => {
+test('put to sea, it sails with its model until it is brought in', async () => {
   const harbour = new Harbour<string>(
     async () => 'model',
     () => undefined,
@@ -74,7 +74,7 @@ test('put to sea, she sails with her model until she is brought in', async () =>
   assert.equal(harbour.view, 'model');
   harbour.leave();
   assert.equal(harbour.sailing, null);
-  assert.equal(harbour.view, 'model', 'her model is kept for the next time');
+  assert.equal(harbour.view, 'model', 'its model is kept for the next time');
 });
 
 test('an answer for a Sail since brought in is not taken by the next one', async () => {

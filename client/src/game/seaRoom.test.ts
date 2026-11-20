@@ -44,11 +44,11 @@ async function joined() {
 
 test('a course set sooner than the sea takes one waits for a later snapshot, the newest in place of the rest', async () => {
   const { room, sent, atTick } = await joined();
-  assert.equal(sent.length, 1, 'joining puts her to sea at once');
+  assert.equal(sent.length, 1, 'joining puts it to sea at once');
   room.course([[60_000, 150_000]], 10);
   room.course([[70_000, 150_000]], 20);
   atTick(1000);
-  assert.equal(sent.length, 1, 'the room took her first course by its first snapshot: the next waits on from there');
+  assert.equal(sent.length, 1, 'the room took its first course by its first snapshot: the next waits on from there');
   atTick(1044);
   assert.equal(sent.length, 1);
   atTick(1045);
@@ -66,7 +66,7 @@ test('a facing still waiting when the player leaves the helm is let go, and a co
   room.face(1.5);
   room.leaveHelm();
   atTick(1000);
-  assert.equal(sent.length, 2, 'the course that put her to sea, and the helm left: no facing');
+  assert.equal(sent.length, 2, 'the course that put it to sea, and the helm left: no facing');
   room.course([[60_000, 150_000]], 10);
   room.leaveHelm();
   assert.equal(sent.length, 2, 'the leave waits on the course');
@@ -78,31 +78,31 @@ test('a facing still waiting when the player leaves the helm is let go, and a co
   );
 });
 
-test('while its link rejoins the sea shows none of its ships; joined again, she is its new player, her course sent at once', async () => {
+test('while its link rejoins the sea shows none of its ships; joined again, it is its new player, its course sent at once', async () => {
   const { room, sent, atTick, link } = await joined();
   atTick(1000, [{ player: 1, x: 50_000, y: 150_000, heading: 0, pace: 0 }]);
   assert.ok(room.ownShip);
   link.rejoining = true;
   room.pump(0);
-  assert.equal(room.ownShip, null, 'the old room has her no more');
+  assert.equal(room.ownShip, null, 'the old room has it no more');
   Object.assign(link, { player: 4, joins: 2, rejoining: false });
   assert.deepEqual([room.rejoined(), room.rejoined(), room.own], [true, false, 4]);
   room.course([[50_000, 150_000]], 10);
   assert.equal(sent.length, 2, 'put to sea again at once, with no wait on the old room’s clock');
 });
 
-test('washed up, the player’s ship lies where the room moored her, taken once, and what the sea told is kept', async () => {
+test('washed up, the player’s ship lies where the room moored it, taken once, and what the sea told is kept', async () => {
   const { room, atTick } = await joined();
   const moored = { player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0 };
   atTick(5, [moored], [[20, 5, 0, 1]]);
   assert.deepEqual(room.takeWashed(), { x: 61_000, y: 50_000, heading: 1 });
   assert.equal(room.takeWashed(), null, 'taken once');
   atTick(6, [moored]);
-  assert.equal(room.takeWashed(), null, 'only the snapshot that tells it moors her');
+  assert.equal(room.takeWashed(), null, 'only the snapshot that tells it moors it');
   assert.deepEqual(room.takeTold().told, [[20, 5, 0, 1]]);
 });
 
-test('back at sea, her ship lies where the room last kept her', async () => {
+test('back at sea, its ship lies where the room last kept it', async () => {
   const { room, atTick } = await joined();
   atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 2, pace: 0 }], [[23, 5, 61_000, 50_000, 2]]);
   assert.deepEqual(room.takeWashed(), { x: 61_000, y: 50_000, heading: 2 });

@@ -1,10 +1,10 @@
-// A ship's flag at the head of her tallest mast: a cloth on the canvas's own grid, its hoist down the mast from her
+// A ship's flag at the head of its tallest mast: a cloth on the canvas's own grid, its hoist down the mast from its
 // masthead and its fly streaming the way the wind blows, waving along its length on the clock.
 import { SAIL_COLUMNS, SAIL_ROWS } from './sails.ts';
 
 type Point = readonly [number, number, number];
 
-/** A flag flies a tenth of her waterline's length, and is two thirds as deep as it flies. */
+/** A flag flies a tenth of its waterline's length, and is two thirds as deep as it flies. */
 export const FLAG_FLY_SHARE = 0.1;
 const FLAG_DEPTH = 2 / 3;
 /** Its wave: how far a crest stands out at the fly's end, a share of the fly; its crests along it; how fast they run. */
@@ -12,8 +12,8 @@ const WAVE = { share: 0.08, crests: 1.5, perS: 1.4 } as const;
 /** The metres of picture its UVs span either way: one picture of the ship's pictures, laid once over the flag. */
 export const FLAG_PICTURE_M = 1.6;
 
-/** Her flag's grid in her frame (x to her bow, y to starboard, z up), its columns from the hoist to the fly and its
- *  rows from its foot up, at `masthead` a waterline `lengthM` long, the wind `offDeg` off her bow at `time`. */
+/** Its flag's grid in its frame (x to its bow, y to starboard, z up), its columns from the hoist to the fly and its
+ *  rows from its foot up, at `masthead` a waterline `lengthM` long, the wind `offDeg` off its bow at `time`. */
 export function flagGrid(masthead: Point, lengthM: number, offDeg: number, time: number): Float32Array {
   const fly = lengthM * FLAG_FLY_SHARE;
   const depth = fly * FLAG_DEPTH;
