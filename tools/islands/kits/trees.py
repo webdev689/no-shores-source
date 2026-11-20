@@ -62,6 +62,28 @@ def broadleaf(kit, module, trunk_share=0.45, limbs=4, masses=7, part='leaf', bar
     return kit.join(made)
 
 
+def oak(kit, module, lobes=6, part='leaf', seed=None):
+    """An oak: a thick short trunk, heavy limbs spreading out and up from low on it, and a broad crown of `lobes`
+    leafy lobes, one over each limb's end, round a higher one in the middle, filling the width it is given."""
+    x, y, z = _size(module)
+    seed = seed or module
+    fork = z * 0.26
+    made = [limb(kit, (0, 0, -SINK_M), (0.0, 0.0, fork + 0.4), 0.42, 0.34, sides=8)]
+    draw = kit.seeded(f'{seed}.crown')
+    for number in range(lobes):
+        angle = math.tau * number / lobes + draw.uniform(-0.2, 0.2)
+        reach = x * draw.uniform(0.25, 0.29)
+        tip = (reach * math.cos(angle), reach * math.sin(angle) * y / x, z * draw.uniform(0.5, 0.56))
+        made.append(limb(kit, (0, 0, fork), tip, 0.3, 0.1, bow=(0, 0, 0.6), sides=6))
+        span = x * draw.uniform(0.34, 0.38)
+        low = tip[2] - z * 0.03
+        made.append(mass(kit, tip[0], tip[1], low, span, span * y / x, z * draw.uniform(0.2, 0.24),
+                         f'{seed}.l{number}', part))
+    # The crown is wider than it is deep, its top short of the size's height: an oak spreads, it does not tower.
+    made.append(mass(kit, 0, 0, z * 0.6, x * 0.6, y * 0.6, z * 0.25, f'{seed}.top', part))
+    return kit.join(made)
+
+
 def fins(kit, count, root, reach, height, part='bark'):
     """`count` buttress roots round a trunk of radius `root`: thin fins out to `reach`, `height` up it."""
     made = []

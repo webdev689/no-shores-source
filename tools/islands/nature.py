@@ -36,7 +36,7 @@ def bent(start, end, bow=(0.0, 0.0, 0.0), steps=4):
             for share in (step / steps for step in range(steps + 1))]
 
 
-def _sheet(rows):
+def sheet(rows):
     """Two-sided faces between rows of points (each row across the sheet), u across and v along."""
     faces = []
     for low, high in zip(rows, rows[1:]):
@@ -61,7 +61,7 @@ def frond(base, heading, reach, width, droop, rise=0.3, segments=4, fold=0.3):
         half = width / 2 * math.sin(math.pi * min(share * 1.15 + 0.08, 1.0)) if step < segments else 0.0
         rows.append([add(rib, add(mul(side, -half), (0, 0, -fold * half))), rib,
                      add(rib, add(mul(side, half), (0, 0, -fold * half)))])
-    return _sheet(rows)
+    return sheet(rows)
 
 
 def blade(base, heading, height, lean, width, bend=0.5, segments=2):
@@ -75,7 +75,7 @@ def blade(base, heading, height, lean, width, bend=0.5, segments=2):
         rib = add(base, add(mul(out, lean * share ** (1 + bend)), (0.0, 0.0, height * share)))
         half = width / 2 * (1 - share)
         rows.append([add(rib, mul(side, -half)), add(rib, mul(side, half))] if step < segments else [rib, rib])
-    return [face for face in _sheet(rows) if length(sub(face[0][0], face[2][0])) > 1e-9]
+    return [face for face in sheet(rows) if length(sub(face[0][0], face[2][0])) > 1e-9]
 
 
 def tuft(x, y, count, height, spread, width, seed=None, segments=2):

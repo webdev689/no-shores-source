@@ -5,6 +5,8 @@ Numbers are the module's frame: x east, y south, z up, metres; a hull's length r
 import math
 
 import catalog
+from details import seeded
+from nature import sheet
 from shapes import out_from, sweep, facing, flat, sub
 
 STRAKES = 7
@@ -86,12 +88,31 @@ def mast(kit, module):
     made.append(kit.cone((0.1, -y / 2 + 0.25, 0.35), (0.25, -y / 2, 0.55), 0.18, 0.0, sides=4, part='wood',
                          smooth=None))
     made.append(kit.tube([(-0.38, -y / 2 + 2.5, 0.15), (-0.3, y / 2, 0.15)], 0.13, sides=6, part='wood'))
-    sail = kit.drape(-2.6, 2.2, 0.55, -0.55, y=0.0, folds=5, depth=0.18, ragged=0.3, seed=f'{module}.sail')
-    made.append(kit.translate(kit.rotate_z(kit.rotate(sail, 90, 'x'), 90), 0, -1.5, 0.05))
+    made.append(kit.mesh(sail(-y / 2 + 1.0, 3.5, f'{module}.sail'), 'cloth', 'sail', None, closed=False))
     made.append(kit.tube(kit.sag_path((0.4, 1.0, 0.6), (0.5, y / 2 - 0.1, 0.05), -0.2, 8), 0.04, sides=4, part='rope'))
     made.append(kit.tube(kit.sag_path((-0.2, -3.0, 0.6), (-0.55, -1.0, 0.05), -0.1, 6), 0.04, sides=4, part='rope'))
     piece = kit.join(made)
     return kit.fit(piece, (-x / 2, -y / 2, -0.1), (x / 2, y / 2, z))
+
+
+def sail(y0, y1, seed):
+    """Torn canvas thrown over the fallen mast from y0 to y1: falling to the ground either side in folds, its
+    hems ragged and lifted where it tore."""
+    draw = seeded(seed)
+    rows = []
+    for step in range(15):
+        at = y0 + (y1 - y0) * step / 14
+        fold = 0.07 * math.sin(at * 2.3)
+        row = []
+        for k in range(9):
+            across = -0.6 + 1.2 * k / 8
+            height = 0.04 + 0.74 * math.cos(min(abs(across) / 0.62, 1.0) * math.pi / 2) ** 0.6 + fold
+            if k in (0, 8):
+                height += draw.uniform(0.0, 0.22)
+            # The crest lies over the mast, which lies 0.1 east of the middle.
+            row.append((across + 0.1, at, max(height, 0.02)))
+        rows.append(row)
+    return sheet(rows)
 
 
 def crate(kit, module):

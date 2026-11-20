@@ -137,11 +137,23 @@ def cliffs(kit, look, name):
 
 
 def stack(kit, look, name):
-    """A sea stack: a pillar of stone narrowing as it rises, its foot in the sea."""
+    """A sea stack standing from the sea, by look: granite and slate in narrowing tiers, sandstone a pillar with
+    ledges, basalt columns round a core."""
     x, y, z = _size(f'{name}.stack')
     if look == 'basalt':
-        made = columns(kit, -x / 2, -y / 2, x / 2, y / 2, -SINK_M, lambda px, py: z - 1.6 * (px * px + py * py) /
-                       (x * x / 4), 0.62, f'{name}.st', round_in=x / 2)
+        # Thick columns, the middle ones tallest, stepping down to the sea on the north: one mass, not a sheaf.
+        made = columns(kit, -x / 2, -y / 2, x / 2, y / 2, -SINK_M, lambda px, py: z - 3.0 * (px * px + py * py) /
+                       (x * x / 4) - 1.2 * max(0.0, -py), 1.02, f'{name}.st', round_in=x / 2)
+        core = kit.prism((0, 0, -SINK_M), (0, 0, z * 0.8), x * 0.36, sides=6, turn=30.0, part='rockAlt', smooth=None)
+        return kit.join(made + [core] + weed_line(kit, look, 0, 0, x * 0.8, y * 0.8, f'{name}.st'))
+    if look == 'sandstone':
+        # One worn pillar, its harder beds standing out from it as ledges and a cap.
+        made = [kit.rock(0, 0, -SINK_M, (x * 0.74, y * 0.74, z * 0.97 + SINK_M), seed=f'{name}.st', shape='cube',
+                         detail=2, roughness=0.14, base=0.0, part='rock', smooth=None)]
+        for number, (level, share, thick) in enumerate(((-SINK_M, 1.0, 1.4), (z * 0.3, 0.86, 0.7),
+                                                        (z * 0.58, 0.82, 0.6), (z * 0.84, 0.9, z * 0.16))):
+            made.append(kit.rock(0, 0, level, (x * share, y * share, thick), seed=f'{name}.bed{number}',
+                                 shape='cube', detail=1, roughness=0.1, base=0.0, part='rockAlt', smooth=None))
         return kit.join(made)
     tiers = [(1.0, 0.36), (0.8, 0.66), (0.64, 0.88), (0.42, 1.0)]
     made, low = [], -SINK_M
@@ -169,8 +181,15 @@ def boulders(kit, look, name):
                                                    (0, 1.4, 3.2, 3.0, 0.6), (-0.4, -1.8, 2.6, 2.4, 0.45),
                                                    (3.0, -1.9, 1.9, 2.0, 0.35)]):
         knot += lump(kit, look, px, py, -SINK_M, sx, sy, z * sz + SINK_M, f'{name}.oc{number}')
-    return {'boulder.a': kit.join(lump(kit, look, 0, 0, -SINK_M, a[0], a[1], a[2] + SINK_M, f'{name}.ba',
-                                       fine=True)),
+    if look != 'sandstone':
+        round_a = lump(kit, look, 0, 0, -SINK_M, a[0], a[1], a[2] + SINK_M, f'{name}.ba', fine=True)
+    else:
+        # A wind-scoured round boulder, a darker bed girdling it, unlike the stacked blocks of the small one.
+        round_a = [kit.rock(0, 0, -SINK_M, (a[0] * 0.94, a[1] * 0.94, a[2] + SINK_M), seed=f'{name}.ba', detail=2,
+                            roughness=0.12, base=0.1, part='rock'),
+                   kit.rock(0, 0, a[2] * 0.3, (a[0], a[1], a[2] * 0.25), seed=f'{name}.bab', detail=1,
+                            roughness=0.05, base=0.0, part='rockAlt')]
+    return {'boulder.a': kit.join(round_a),
             'boulder.b': kit.join(split), 'boulder.c': kit.join(small), 'outcrop': kit.join(knot)}
 
 
