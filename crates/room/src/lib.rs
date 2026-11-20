@@ -6,6 +6,7 @@
 
 mod arts;
 pub mod asks;
+mod bounties;
 pub mod clash;
 mod course;
 pub mod deck;
@@ -143,6 +144,8 @@ pub struct Room {
     pub(crate) place: Option<gear::gate::Place>,
     /// A dungeon's run (`run.rs`): what its clear pays, its modifiers and its revives; none in any other room.
     pub(crate) run: Option<run::Run>,
+    /// The island it stands on, by its continent's id, for the feats it counts (`bounties.rs`); none at sea.
+    pub(crate) island: Option<&'static str>,
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
@@ -211,6 +214,7 @@ impl Room {
             patrol: None,
             place: None,
             run: None,
+            island: None,
             facing: core::f64::consts::PI,
             cache: None,
             minute: 0,

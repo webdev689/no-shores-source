@@ -2,12 +2,14 @@
 //! to the foe's level and falls away below it, and a foe's blow on a player falls short of their Defense. A foe of
 //! level 0 fights by combat's own numbers. A player holds only what a loadout they wear puts in their hands. A foe's
 //! kill pays
-//! everyone who struck it in its last seconds, each their own XP, Aurem and what it drops for them alone (`drops.rs`).
+//! everyone who struck it in its last seconds, each their own XP, Aurem and what it drops for them alone (`drops.rs`),
+//! and counts toward their bounties (`bounties.rs`).
 
 use crate::{Foe, PlayerId, Room};
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
 use combat::fighter::{Fighter, FighterId};
 use combat::judge::{Blow, BlowKind};
+use gear::objectives::Feat;
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
 use gear::{Character, Kind, Slot};
 
@@ -171,6 +173,7 @@ impl Room {
         let Some(worth) = worth_of(brain.role() as u8) else { return };
         let at = [fighter.body.x, fighter.body.y, fighter.body.z];
         let week = gear::clock::week_of(self.minute);
+        let felled = Feat::Felled { faction: brain.foe_type.faction, rank: brain.rank as u8, island: self.island };
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
@@ -181,6 +184,7 @@ impl Room {
             found.character.boon_xp(week, reward.xp, Some(hand));
             found.gear_changed = true;
             self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
+            self.saw(player, &felled);
         }
     }
 }

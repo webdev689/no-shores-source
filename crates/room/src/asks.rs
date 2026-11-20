@@ -251,6 +251,7 @@ impl Room {
             patrol.gathered.entry(owner.clone()).or_default().push(node);
         }
         found.character.gather(usize::from(spot.resource));
+        self.saw(player, &gear::objectives::Feat::Gathered { resource: spot.resource });
         0
     }
 

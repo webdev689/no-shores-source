@@ -180,6 +180,10 @@ One engine counts both, since the owner's side quests and the board's bounties a
   counts it and every one above; a place named counts only a feat known to be there. The room tells the rules each
   feat (`Feat`) as it happens, and `Character::saw` counts it toward each bounty held today and each side quest held,
   up to its target; the account keeps the count. A room whose day is not the record's counts no bounty.
+- **The rooms count** each foe felled for each player who shares its kill, each resource node gathered, and each
+  dungeon cleared for each player the room keeps as its cache opens, the way the clear pays; a shared dungeon's
+  cache counts again each time it reopens. A room knows its island from its node's file, or from the patrol, the
+  Elite Dungeon or the sea island its dungeon is of (`Room::set_island`); a room on no island counts no place.
 - **The bounty board** stands in Overlook's plaza and opens after the prologue, on the counters' pattern of the
   plaza's keepers. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
   places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an

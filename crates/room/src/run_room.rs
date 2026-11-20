@@ -64,6 +64,7 @@ impl Room {
                 let levels = island_levels(island.continent);
                 let mut room = Self::laid_dungeon(&name, &Dungeon::forge(seed, style), levels, end_reeve, Some(run))?;
                 room.place = Some(Place::PatrolDungeon);
+                room.island = Some(island.continent);
                 room
             }
             RunOf::Elite { place } => {
@@ -94,13 +95,17 @@ impl Room {
                 let name = format!("{place}--elite-dungeon");
                 let mut room = Self::laid_dungeon(&name, &laid, levels, (elite.boss, Rank::Boss), Some(run))?;
                 room.place = Some(gated);
+                room.island = Some(island.continent);
                 room
             }
             RunOf::Sea { seed, style, continent } => {
                 let (levels, style) = (island_levels(continent)?, dungeon::style_of(style)?);
                 let name = format!("sea-dungeon-{continent}-{}-{seed:08x}", style.key);
                 let run = Run { revives, ..Run::default() };
-                Self::laid_dungeon(&name, &Dungeon::forge(*seed, style), Some(levels), end_reeve, Some(run))?
+                let mut room =
+                    Self::laid_dungeon(&name, &Dungeon::forge(*seed, style), Some(levels), end_reeve, Some(run))?;
+                room.set_island(continent);
+                room
             }
         };
         room.set_difficulty(tier);

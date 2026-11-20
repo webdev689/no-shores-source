@@ -146,6 +146,7 @@ pub fn open_node(text: &[u8]) -> bool {
     let levels = gear::world::island_levels(&node.continent);
     let floor = Floor::Land(Box::new(node.ground));
     let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
+    room.set_island(&node.continent);
     room.counters = (node.kind == NodeKind::Social).then(|| node.counters.iter().filter_map(counter_of).collect());
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == NodeKind::Patrol

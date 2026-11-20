@@ -118,6 +118,7 @@ impl Room {
         let (name, laid) = (format!("{patrol}--dungeon-{number}"), Dungeon::forge(seed, style));
         let mut room = Self::laid_dungeon(&name, &laid, levels, (REEVE, Miniboss), Some(Run::today(patrol, number)))?;
         room.place = Some(gear::gate::Place::PatrolDungeon);
+        room.island = gear::activities::island_of(patrol).map(|island| island.continent);
         Some(room)
     }
 
@@ -248,9 +249,14 @@ impl Room {
             }
             let level = self.at_seas(post.girds.first().map_or(0, |&(level, _)| level));
             let players: Vec<PlayerId> = self.players.keys().copied().collect();
+            let cleared = gear::objectives::Feat::Cleared { island: self.island, tier: self.difficulty };
             for player in players {
                 self.lay_cache_vestige(player, &cache, level);
                 self.pay_clear(player, level, &cache);
+                // Counted as the clear pays, for those the room keeps.
+                if self.players.get(&player).is_some_and(|found| found.owner.is_some()) {
+                    self.saw(player, &cleared);
+                }
             }
         }
         self.cache = Some(Cache { open, ..cache });
