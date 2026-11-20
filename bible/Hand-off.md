@@ -199,9 +199,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
   sound.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
-  repository's Cloudflare token, as the ships workflow does. Its log's last line names the keys for
-  `content/prologue/wreck.json` and the level's hash, which must match the committed level's. Until the keys are
-  committed from a run, the wreck is drawn only where its files are served by hand.
+  repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
+  `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
+  its published model here with `--dry-run`, whose level hash must match the log's: a build elsewhere can lay a
+  slightly different ground.
 - fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
   session that finished the prologue, so the likeness is unchecked.
 - Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch
