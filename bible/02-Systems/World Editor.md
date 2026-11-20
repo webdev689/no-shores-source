@@ -134,7 +134,7 @@ The Islands mode shows one of the sea's islands at a time, from a seed and a cli
 `room.wasm` exactly as its room builds it and drawn with the sea round it ([[Island Drawing]]). Next seed steps the
 seed; Next isle steps to the next ruin or quarry; Close up looks from about 40 m over its middle and From 3 km from
 afar. The panel counts the triangles and draws. `?mode=islands&isleSeed=<seed>&isleClimate=<climate>&isleView=afar`
-opens on an island, and on the dev page `?islePacks=<prefix>` reads the build's packs before they are published.
+opens on an island, and `?islePacks=<prefix>` reads the build's packs before they are published.
 
 ## How it works
 

@@ -33,8 +33,8 @@ modules [[Island Modules]]'s; this note is only the drawing.
 - **The modules.** Each kit's pack (the dungeon modules' pack format, format 1, its header's `style` the kit) is read
   by `readKitPack`, which refuses a pack it cannot trust whole, and kept once fetched; a failure is warned once and
   tried again on the next `show`. A pack comes from `content/islands/modules.json` once CI publishes it (`isleManifest.ts`
-  globs for it, so the page builds without it and draws the islands bare); on the dev page `?islePacks=<prefix>` reads
-  `<prefix><kit>.modules` instead, for pictures before publishing (copy the build's packs into
+  globs for it, so the page builds without it and draws the islands bare); a page's `?islePacks=<prefix>` reads `<prefix><kit>.modules`
+  instead, for pictures before publishing (copy the build's packs into
   `client/public/isle-packs/`, which git ignores). A placement's module number is its name's place in the contract's
   names sorted by byte order, the isle crate's catalog order.
 - **The ground.** `groundMesh` lays a vertex on each of the island's heights (2 m apart) at its cell's middle, exactly

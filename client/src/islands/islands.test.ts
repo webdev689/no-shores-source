@@ -40,7 +40,10 @@ test('a plan reads whole, its blocks with it', () => {
   assert.deepEqual(plan.blocks, [[0, 0, 1, 1, 4]]);
   const older: Record<string, unknown> = { ...PLAN, landmark: null };
   delete older.blocks;
-  assert.deepEqual(readIslePlan(JSON.stringify(older)).blocks, []);
+  const cove = readIslePlan(JSON.stringify(older));
+  assert.deepEqual(cove.blocks, []);
+  assert.equal(readIslePlan(JSON.stringify({ ...PLAN, camp: null })).camp, null);
+  assert.equal(plan.landing, 0.1);
 });
 
 test('the plan reader refuses bad JSON', () => {
@@ -51,6 +54,7 @@ test('the plan reader refuses bad JSON', () => {
     bad({ kind: 'castle' }),
     bad({ radius: 'big' }),
     bad({ landing: [1, 2] }),
+    bad({ camp: [1] }),
     bad({ door: { at: [0, 0], facing: 0 } }),
     bad({ placements: [[1, 2, 3]] }),
     bad({ placements: [[-1, 0, 0, 0, 0, 1, 1]] }),

@@ -10,7 +10,9 @@ const found = import.meta.glob<IsleManifest>('../../../content/islands/modules.j
 /** The published manifest, or null while none is. */
 export const ISLE_MANIFEST: IsleManifest | null = Object.values(found)[0] ?? null;
 
-/** The dev page's `?islePacks=<url prefix>`, which reads `<prefix><kit>.modules` in place of the manifest's. */
+/** A page's `?islePacks=<url prefix>`, which reads `<prefix><kit>.modules` in place of the manifest's: pictures of
+ *  the build's packs before they are published, on the dev page or a built one. A pack read is checked whole before
+ *  it is drawn. */
 export function islePacksPrefix(search: string): string | null {
-  return import.meta.env.DEV ? new URLSearchParams(search).get('islePacks') : null;
+  return new URLSearchParams(search).get('islePacks');
 }
