@@ -221,12 +221,6 @@ impl Room {
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
     }
 
-    /// Takes players' asks for foes from now on, as a course's room does: a node's room run in a page playing alone,
-    /// where the page asks for foes to fight on the node's land. A server's node room never takes them.
-    pub fn take_foe_asks(&mut self) {
-        self.takes_foe_asks = true;
-    }
-
     /// A new player, standing at the next spawn in turn with nothing drawn; none when the room is full.
     pub fn join(&mut self) -> Option<PlayerId> {
         if self.players.len() >= PLAYERS_MOST {

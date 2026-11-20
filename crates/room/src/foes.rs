@@ -209,6 +209,12 @@ impl Room {
         MeshSpots { mesh: &self.nav }
     }
 
+    /// Takes players' asks for foes from now on, as a course's room does: a node's room run in a page playing alone,
+    /// where the page asks for foes to fight on the node's land. A server's node room never takes them.
+    pub fn take_foe_asks(&mut self) {
+        self.takes_foe_asks = true;
+    }
+
     /// Stands each foe the players asked for before them, at the level and with the shield asked for, or sends every
     /// foe away.
     pub(crate) fn spawn_asked(&mut self) {

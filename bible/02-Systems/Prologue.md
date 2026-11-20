@@ -234,14 +234,14 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
   enters the zone and standing well across it from where they come in, so no foe of a zone fights before the player
   reaches it; and three spots near the wave on open deck where the Brig's crew stand (`crew`). At most 6 of the
   wreck's foes are alive at once.
-- **The Brig's crew** fight on in each zone with a wave, two or three of them ([[Allied Crew Fight on the Wreck and
-  Can Fall]]), stood with the zone's first boarder as the player enters, so they are fighting from the first. Each stands at
-  one of the zone's `crew` spots in the layout, facing the nearest boarder; for a zone that lays none, 1.6 m from one
-  of its first boarders on the same deck within the zone, toward its checkpoint where that stands. They are the
-  roster's crew, Minors at the boarders' level, a swordsman and a skirmisher in turn, dressed as the Brig's plain hands
-  in the storm with their weapons drawn, named "Crew" over a green bar. The boarders fight them and they fight back;
-  they can fall. The wreck's room holds 24 foes alive, as a node's; no more than 18 of the crew live at once, so the
-  boarders always have room. A zone is cleared once its boarders are down, whatever became of its crew.
+- **The Brig's crew** fight on in each zone with a wave, two or three of them ([[Allied Crew Fight on the Wreck and Can
+  Fall]]), stood with the zone's first boarder as the player enters, so they are fighting from the first. Each stands at
+  one of the zone's `crew` spots in the layout, facing the nearest boarder; for a zone that lays none, 1.6 m from one of
+  its first boarders on the same deck within the zone, toward its checkpoint where that stands. They are the roster's
+  crew, Minors at the boarders' level, a swordsman and a skirmisher in turn, dressed as the Brig's plain hands in the
+  storm with their weapons drawn, named "Crew" over a green bar. The boarders fight them and they fight back; they can
+  fall. The wreck's room holds 24 foes alive, as a node's; no more than 18 of the crew live at once, so the boarders
+  always have room. A zone is cleared once its boarders are down, whatever became of its crew.
 - **Heaps across the way.** Each zone but the first and the arena has a heap of wreckage across the way on from it,
   piled 2.9 m over its deck and out over the bulwarks (the arena's 3.7 m, past a jump from her quarterdeck), standing
   from the start. It is cleared once its zone's wave has stood whole and
