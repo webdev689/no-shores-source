@@ -55,6 +55,8 @@ pub enum Material {
     Crimson,
     Verdant,
     Black,
+    /// Straw and hay: bales, a cart's load, a stable's bedding.
+    Straw,
     /// A faction's own cloth, dyed as its capes are (content/gear/cosmetics.json names each dye).
     #[serde(rename = "stormcaller_blue")]
     StormcallerBlue,

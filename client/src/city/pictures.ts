@@ -22,6 +22,7 @@ export const COLOUR_LAYERS = {
   stormcaller_blue: 260,
   lamplighter_gold: 261,
   veiled_dusk: 262,
+  straw: 263,
 } as const;
 
 /** A dye's cloth colour: the middle of its four-step ramp (its second and third steps' mean), as a cape wears it. */
@@ -34,13 +35,14 @@ function dyeColour(dye: string): Tint {
 
 const factionDye = (key: string): string => factions.factions.find((each) => each.key === key)?.dye ?? '';
 
-/** Each cloth's colour (0 to 1 a channel): undyed linen, crimson, verdant and black, and each faction's own dye, so
+/** Each cloth's colour (0 to 1 a channel): undyed linen, crimson, verdant, black and straw, and each faction's own dye, so
  *  a chapel's hangings are its capes' colour. */
 export const CLOTH_COLOURS: Readonly<Record<ClothMaterial, Tint>> = {
   linen: [0.8, 0.75, 0.63],
   crimson: [0.56, 0.11, 0.12],
   verdant: [0.2, 0.42, 0.22],
   black: [0.1, 0.1, 0.11],
+  straw: [0.78, 0.66, 0.36],
   stormcaller_blue: dyeColour(factionDye('stormcallers')),
   lamplighter_gold: dyeColour(factionDye('lamplighters')),
   veiled_dusk: dyeColour(factionDye('veiled')),

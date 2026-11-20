@@ -57,7 +57,7 @@ test('gold, iron, bone and the glow are plain colours above the pictures', () =>
 test("cloth is plain colours of its own past the array, a faction's the middle of its dye", () => {
   const book = pictureBook(TEMPERATE, [], [2], noUses);
   const cloths = Object.keys(CLOTH_COLOURS) as (keyof typeof CLOTH_COLOURS)[];
-  assert.equal(cloths.length, 7);
+  assert.equal(cloths.length, 8);
   assert.equal(new Set(cloths.map((cloth) => book.materials[cloth])).size, cloths.length, 'each its own layer');
   assert.ok(cloths.every((cloth) => book.materials[cloth] >= PICTURE_LAYERS));
   // Stormcaller Blue's ramp runs 344557, 447cc0, 93b9f4, dcdcdc: its cloth is the second and third steps' mean.
