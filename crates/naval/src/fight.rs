@@ -33,7 +33,7 @@ pub const DESPAWN_BEYOND: f64 = 1900.0;
 pub const HOSTILE_NEAR_M: f64 = 700.0;
 /// The rest of the volley that made a ship strike, this long after (seconds), cannot sink her.
 pub const STRUCK_GRACE_S: f64 = 2.0;
-/// How much faster every ship sails and rows in a sea fight than at sea: half again, the owner's call.
+/// How much faster every ship sails and rows in a sea fight than at sea: half again, at the owner's word.
 pub const FIGHT_PACE: f64 = 1.5;
 
 /// A ship in the fight: her helm's numbers, how she lies, her hurts and her guns, and who sails her.

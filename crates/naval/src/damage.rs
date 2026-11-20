@@ -85,7 +85,7 @@ pub(crate) fn men(count: f64, roll: f64, tough: f64) -> f64 {
     if count > 0.0 { (count / tough + roll.clamp(0.0, 0.999_999)).floor() } else { 0.0 }
 }
 
-/// How much harder every ball strikes a ship than DFO's numbers: half again, the owner's call for sea fights.
+/// How much harder every ball strikes a ship than DFO's numbers: half again, at the owner's word.
 pub const SHOT_HARM: f64 = 1.5;
 
 /// One ball's harm, as the gun is loaded (grape's reach already in its men), by zone; `roll` is the ball's own draw
