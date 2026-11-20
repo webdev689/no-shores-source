@@ -9,6 +9,7 @@ description = "What the rooms read, made at build time: each node's section and 
 [dependencies]
 city = { path = "../city" }
 land = { path = "../land" }
+layout = { path = "../layout" }
 world = { path = "../world" }
 serde.workspace = true
 serde_json.workspace = true

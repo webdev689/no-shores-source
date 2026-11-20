@@ -48,6 +48,7 @@ decision, made in the same change as its entry here.
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
 | `client/src/plus/` | The [[Interface]]'s Enhanced Plus kit, which imports nothing: carved stone and brass, each surface painted by the role it plays |
+| `client/src/layout/` | The layouts in the browser: drawn with the city layer near the eye, the nodes' laid sections, and the ways through gates ([[Layouts]]) |
 | `client/src/speech/` | The speech layer, which imports `plus`: the voice made in the browser for every line, the dialogue box, barks over heads and emotes ([[Speech]]) |
 | `client/src/cinema/` | The cinema layer, which imports `water` and `combat`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |
 | `client/src/game/prologue/` | The [[Prologue]]: the tap to start, the intro and title, character creation and the story mission's beats, run by its director |
@@ -61,6 +62,7 @@ decision, made in the same change as its entry here.
 | `crates/land-wasm` | The land for the browser: a door crate, heights handed over as bytes |
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
+| `crates/layout` | The [[Layouts]] of patrol areas and instances: areas, paths, carved land, RMB villages, set pieces, great works, walk-in rooms, sites and sections |
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the links where the movement rules climb a block's side or drop off its edge, the paths across both, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows, shots in flight, and the statuses a fighter is given |
@@ -76,7 +78,7 @@ decision, made in the same change as its entry here.
 | `crates/bake` | The bake (`npm run bake`): each node's section, window of the ground and boxes, cut at build time for its room ([[Server]]) |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
 | `generated/` | What the tools make, never in git ([[Generated Files Stay Out of Git]]): `generated/messages/`, the messages' code `flatc` makes, and `generated/nodes/`, the bake's file for each node and their index, which the server's rooms read |
-| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, guns and hit boxes, `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too, and `content/gear/`, the [[Gear]]'s traits, named items, islands' resources, rolled items' names and emblems, built into the gear rules (the page reads the emblems too), `content/arts/arts.json`, the [[Arts]]' spells and fragments with their numbers, built into the gear rules and read by the page, and `content/audio/`, the cues searched on Freesound and `sounds.json`, the published sounds the game plays and credits, and `content/story/`, the cast's voices and each mission's scenes, held to [[Dialogue]] by the dialogue check |
+| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/world/open.json`, the patrol areas and missions open to players ([[World Map]]), `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, guns and hit boxes, `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too, and `content/gear/`, the [[Gear]]'s traits, named items, islands' resources, rolled items' names and emblems, built into the gear rules (the page reads the emblems too), `content/arts/arts.json`, the [[Arts]]' spells and fragments with their numbers, built into the gear rules and read by the page, and `content/audio/`, the cues searched on Freesound and `sounds.json`, the published sounds the game plays and credits credits, and `content/story/`, the cast's voices and each mission's scenes, held to [[Dialogue]] by the dialogue check |
 | `content/world/rmb/` | Daggerfall's RMB town blocks as data, for laying out towns: placements, ground tiles and flat counts ([[RMB Blocks]]) |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `.claude/settings.json` | The repository's Claude Code settings: a hook that says, as a session starts, when the toolkit is not installed in its container ([[Toolkit]]) |
@@ -110,7 +112,8 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 
 Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and `water`
 (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
-(imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain` and `ships`),
+(imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain`, `ships`, `city`
+and `layout`),
 `combat` (imports `rules`, `network`, `plus`, `player` and the editor's camera), `player` (imports `rules`, `network`,
 `forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`
 and the editor's panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and

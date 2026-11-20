@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { cross, dot, emptyMesh, type MeshData, minus } from './mesh.ts';
 import type { Solid, SolidShape } from './plan.ts';
-import { meshSolid, SOLID_TEXELS_PER_METRE, solidTurn } from './solidMesh.ts';
+import { rockMesh } from '../rules/rockMesh.ts';
+import { meshSolid, SOLID_TEXELS_PER_METRE, solidTurn, stretchedNormal } from './solidMesh.ts';
 
 const SURFACE = { layer: 7, width: 64, height: 128 };
 
@@ -99,4 +100,43 @@ test('a solid wears its picture coarser than a forged model, at twenty-four texe
   assert.equal(SOLID_TEXELS_PER_METRE, 24);
   assert.ok(Math.abs(Math.min(...downs) + 2) < 1e-9, 'a wall of 256 texels spans two 128-texel pictures');
   assert.ok(mesh.layers.every((layer) => layer === 7));
+});
+
+test('a rock is meshed as a solid, lit flat and wound out of it', () => {
+  const solid: Solid = {
+    shape: 'overhang',
+    seed: 12,
+    at: [1000, 2000, 50],
+    size: [10, 7, 6],
+    turn: 0.4,
+    lean: 0,
+    roll: 0,
+    material: 'rubble',
+  };
+  const mesh = emptyMesh();
+  meshSolid(solid, [1000, 2000], { layer: 3, width: 64, height: 64 }, mesh);
+  assert.equal(mesh.indices.length, rockMesh(solid, [10, 7, 6]).triangles.length * 3);
+  let volume = 0;
+  for (let k = 0; k < mesh.indices.length; k += 3) {
+    const [first, second, third] = [0, 1, 2].map((step) => {
+      const index = mesh.indices[k + step] * 3;
+      return [mesh.positions[index], mesh.positions[index + 1], mesh.positions[index + 2]] as const;
+    });
+    volume += dot(first, cross(second, third)) / 6;
+    // Each vertex's normal leans the way its triangle is wound: lit from outside.
+    const normal = mesh.normals.slice(mesh.indices[k] * 3, mesh.indices[k] * 3 + 3) as [number, number, number];
+    assert.ok(dot(normal, cross(minus(second, first), minus(third, first))) > -1e-6);
+  }
+  assert.ok(volume > 0.2 * 10 * 7 * 6, `${volume}`);
+  assert.ok(mesh.layers.every((layer) => layer === 3));
+});
+
+test('a stretched module keeps its normals square to its stretched surface', () => {
+  // A bevel at 45 degrees on a stair pressed down to three quarters of its height leans further from the vertical.
+  const [x, y, z] = stretchedNormal([Math.SQRT1_2, 0, Math.SQRT1_2], 0.75);
+  assert.ok(Math.abs(Math.hypot(x, y, z) - 1) < 1e-9, 'it stays a unit normal');
+  assert.ok(Math.abs(z / x - 1 / 0.75) < 1e-9, `its slope is scaled by the stretch's inverse: ${z / x}`);
+  // A surface facing straight up or straight out keeps its way.
+  assert.deepEqual(stretchedNormal([0, 0, 1], 0.75), [0, 0, 1]);
+  assert.deepEqual(stretchedNormal([1, 0, 0], 0.75), [1, 0, 0]);
 });

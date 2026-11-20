@@ -26,7 +26,7 @@ const CLASS = 'WDGSKV';
 
 /** Each transition record's classes at its top left, top right, bottom left and bottom right. */
 // prettier-ignore
-const CORNERS: Readonly<Record<number, string>> = {
+export const CORNERS: Readonly<Record<number, string>> = {
   0: 'WWWW', 1: 'DDDD', 2: 'GGGG', 3: 'SSSS',
   5: 'DWWW', 6: 'DWDW', 7: 'DDDW', 48: 'DWWD',
   10: 'GDDD', 11: 'GDGD', 12: 'GGGD', 51: 'GDDG',
@@ -39,7 +39,7 @@ const CORNERS: Readonly<Record<number, string>> = {
 };
 /** Each island record's surrounding class and the class of its island. */
 // prettier-ignore
-const ISLES: Readonly<Record<number, string>> = {
+export const ISLES: Readonly<Record<number, string>> = {
   4: 'WD', 8: 'DW', 9: 'DG', 13: 'GD', 14: 'GS', 18: 'SG', 19: 'WG', 23: 'GW', 24: 'DS', 28: 'SD', 29: 'WS', 33: 'SW',
 };
 /** A town's ground: paving, ground with paving across its lower right, and a ploughed field. */
