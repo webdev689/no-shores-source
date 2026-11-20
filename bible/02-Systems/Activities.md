@@ -10,6 +10,7 @@ code:
   - crates/gear/src/clears.rs#clear_of_the_day
   - crates/gear/src/objectives.rs#saw
   - crates/gear/src/bounties.rs#board
+  - crates/gear/src/quests.rs#step_at
   - crates/room/src/run.rs#modded_blow
   - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/abyss.rs#start_over
@@ -207,9 +208,14 @@ One engine counts both, since the owner's side quests and the board's bounties a
   it. When the sea's room keeps its sailors' characters, it counts each ship sunk or taken, by her water and rank, on
   the character it holds for each player who fought her, once each however often they are listed
   (`gear::objectives::count_ship_down`).
-- **Side quests** use the same objectives, kept until done, and are written with the story's missions as data
-  (`content/gear/quests.json`, read by `gear::quests`, none written yet). A character keeps each held quest's count
-  in `Character.story.quests` and each finished one in `story.finished`; finishing one pays its XP and Aurem once.
+- **Quests** (side quests, and the story's missions as quests of kind story) use the same objectives, kept until
+  done, and are written as data (`content/gear/quests.json`, read by `gear::quests`, none written yet): each its id,
+  its kind (story or side), its name, one line of its tale, an optional banner key, and its steps, each step a name,
+  its words, what it counts and how many. Its steps count in turn: a feat counts only toward the step its count
+  stands at. A character keeps one count a held quest across its steps in `Character.story.quests`, so its step is
+  read from it (`Quest::step_at`) and nothing else is kept, and each finished one in `story.finished`; it finishes
+  once every step is done, paying its XP and Aurem once. A name, tale or step name longer than its card holds fails
+  the content's test ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]).
 
 ## What opens when
 
