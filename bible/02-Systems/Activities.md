@@ -9,6 +9,7 @@ code:
   - crates/gear/src/activities.rs#week_dungeons
   - crates/gear/src/clears.rs#clear_of_the_day
   - crates/room/src/run.rs#modded_blow
+  - crates/room/src/run_room.rs#dungeon_run
 ---
 # Activities
 
@@ -19,7 +20,9 @@ Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign'
 Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
 ([[The Activities Are Built in Full, Before the Story's Missions]]). Its core is built (step 1): the clock, the tiers,
-the records, the story kept with the account and the gates; the rest is not.
+the records, the story kept with the account and the gates. Of the dungeons (step 2), the rules are built: what is
+on, the Elite Dungeons and their Bosses, the modifiers, what a first clear pays and a run's room. Abyss's revives and
+wipe, the server's runs and the page's trips are not, nor the rest.
 
 ## What it is for
 
@@ -77,7 +80,10 @@ Company]]).
 ## The Elite Dungeons
 
 - **Each named dungeon place** (two an island, the `kind: "dungeon"` nodes) becomes a dungeon the Forge lays, its
-  seed and style fixed by its place. It is longer than a patrol's, four or five blocks.
+  seed and style fixed by its place (`room::elite_laid`). It is longer than a patrol's, four or five blocks. Its room
+  is a run's (`Room::dungeon_run`): at Normal at its island's band, paying its kills and cache; at Elite or Abyss
+  only while it is that tier's dungeon of the week, every foe at 26 or 30 with the week's modifiers ([[Dungeons]],
+  "In the rooms").
 - **Its end** holds a Boss with its own name and nameplate in place of a Reeve: one of the roster's types 19 to 36
   (`ISLAND_PLACES` names each dungeon's), a land Captain of its garrison's faction fighting in Corvane's three phases
   ([[Enemies]]).
@@ -129,6 +135,11 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
   and the Abyss boon: a quarter more of each kill's XP, rounded down, and reputation once factions are in, until the
   week turns.
+- **Where it is paid.** The room pays as the cache opens, each player then in it, and lays the Vestige 1.4 m before
+  the cache (`pay_clear`). The day's pays in a patrol's dungeon, shared or a run, while it is its island's dungeon of
+  the day by the room's clock then. The week's pays only in the week its run was opened for, so a run opened before
+  Tuesday's 09:00 and cleared after it pays as a clear again. An Elite Dungeon at Normal and a sea island's pay
+  their kills and cache alone.
 - **A clear again** in the same period pays its kills and its cache as any run, no more.
 
 ## Quests and bounties

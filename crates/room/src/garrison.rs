@@ -363,9 +363,11 @@ impl Room {
         }
     }
 
-    /// A garrison level raised by the room's seas; 0, none, stays none.
+    /// A garrison level raised by the room's seas, or the week's run's own level whatever the seas; 0, none, stays
+    /// none.
     pub(crate) fn at_seas(&self, level: u8) -> u8 {
-        if level == 0 { 0 } else { self.difficulty.raise(level) }
+        let fixed = self.run.as_ref().and_then(|run| run.foes_at);
+        if level == 0 { 0 } else { fixed.unwrap_or_else(|| self.difficulty.raise(level)) }
     }
 
     /// Raises every garrison foe standing to its level at the room's seas, which a host sets once the room has opened:

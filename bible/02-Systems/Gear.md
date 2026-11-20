@@ -119,10 +119,13 @@ number is one of [[Gear as Claude Shapes It]].
   fights by combat's own numbers.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
-  for two minutes ("Drops", below).
-- **A dungeon's cache.** When a dungeon's Reeve falls, its cache opens, and every player then in the dungeon's room
-  finds a Vestige lying before it, theirs alone, whoever struck him: sure, at the Reeve's level, in the colours a
-  Reeve's kill leaves (a boss's), and lying for them as a kill's drop does ("Drops", below; [[Dungeons]], "In the rooms").
+  for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
+  them a quarter more of its XP, rounded down, to them and to the weapon that earned it (`boon_xp`).
+- **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens,
+  and every player then in the dungeon's room finds a Vestige lying before it, theirs alone, whoever struck it: sure,
+  at the end foe's level, in the colours a boss's kill leaves, and lying for them as a kill's drop does ("Drops",
+  below; [[Dungeons]], "In the rooms"). A run's first clear in its period lays a second, further out: the dungeon of
+  the day's, or the week's two's ([[Activities]], "What it pays, once").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the

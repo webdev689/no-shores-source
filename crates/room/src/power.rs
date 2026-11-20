@@ -170,6 +170,7 @@ impl Room {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
         let at = [fighter.body.x, fighter.body.y, fighter.body.z];
+        let week = gear::clock::week_of(self.minute);
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
@@ -177,6 +178,7 @@ impl Room {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
+            found.character.boon_xp(week, reward.xp, Some(hand));
             found.gear_changed = true;
             self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
         }

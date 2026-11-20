@@ -1,0 +1,159 @@
+//! A dungeon's room for a run: each Elite Dungeon laid by its style in four or five blocks to a Boss of its own; the
+//! week's two standing every foe at their own level, whatever the difficulty set after; each run's modifiers and
+//! revives; and what a first clear pays once in its period, and a clear again its cache alone.
+
+use super::*;
+use crate::PlayerId;
+use combat::Action;
+use dungeon::Dungeon;
+use gear::activities::{Modifier, Weekly};
+use std::collections::BTreeSet;
+
+/// A Friday's 09:00 UTC: day 20,778, in week 2,968.
+const FRIDAY_NINE: u64 = 29_919_420;
+
+/// A character, kept in the room.
+fn kept_in(room: &mut Room, character: &gear::Character) -> PlayerId {
+    let player = room.join().expect("a room with space");
+    assert!(room.restore_character(player, &character.to_json()));
+    player
+}
+
+/// Fells every foe of the end post, and ticks the room once.
+fn clear_the_end(room: &mut Room) {
+    for id in room.garrison[0].standing.clone() {
+        let found = room.foes.get_mut(&id).expect("standing");
+        (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    }
+    room.tick();
+}
+
+fn vestiges_for(room: &Room, player: PlayerId) -> usize {
+    room.drops.iter().filter(|drop| drop.player == player && matches!(drop.what, crate::Dropped::Vestige(_))).count()
+}
+
+#[test]
+fn every_elite_dungeon_lays_by_its_style_in_four_or_five_blocks_and_ends_at_a_boss_of_its_own() {
+    for elite in gear::activities::elite_dungeons() {
+        let (seed, style) = elite_laid(elite.id).expect(elite.id);
+        assert_eq!(style.key, elite.style);
+        assert!((4..=5).contains(&Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS).squares.len()));
+        assert_eq!(::foes::foe_type(elite.boss).map(|boss| boss.ranks), Some(&[::foes::Rank::Boss][..]));
+    }
+    for place in ["krakens-grotto", "smugglers-labyrinth", "brine-catacombs"] {
+        let of = RunOf::Elite { place: place.into() };
+        let room = Room::dungeon_run(&of, gear::Difficulty::Normal, FRIDAY_NINE).expect(place);
+        let elite = gear::activities::elite_dungeon(place).expect("one");
+        assert_eq!(room.garrison[0].members[0].0, elite.boss);
+        assert_eq!(room.garrison[0].members[0].1, ::foes::Rank::Boss);
+        assert_eq!(room.place, Some(gear::gate::Place::EliteDungeon));
+    }
+    assert_eq!(elite_laid("saltgrass-downs"), None);
+}
+
+#[test]
+fn the_weeks_dungeons_stand_every_foe_at_their_own_level_whatever_the_difficulty_set_after() {
+    let weeks = [("forsaken-cistern", gear::Difficulty::Elite, 26), ("saltworm-warrens", gear::Difficulty::Abyss, 30)];
+    for (place, tier, level) in weeks {
+        let mut room = Room::dungeon_run(&RunOf::Elite { place: place.into() }, tier, FRIDAY_NINE).expect(place);
+        room.set_difficulty(tier);
+        assert!(room.foes.values().all(|foe| foe.level == level), "{place}");
+        assert_eq!(room.place, Some(gear::gate::Place::Week(Weekly::of(tier).expect("a week's"))));
+    }
+    let elite = |place: &str| RunOf::Elite { place: place.into() };
+    let abyss = Room::dungeon_run(&elite("forsaken-cistern"), gear::Difficulty::Abyss, FRIDAY_NINE);
+    assert!(abyss.is_none(), "the Elite's, not the Abyss's");
+    let not_this_weeks = Room::dungeon_run(&elite("krakens-grotto"), gear::Difficulty::Elite, FRIDAY_NINE);
+    assert!(not_this_weeks.is_none(), "not this week's");
+}
+
+#[test]
+fn a_run_carries_its_days_or_weeks_modifiers_and_at_abyss_its_revives() {
+    let rules = |of: RunOf, tier| {
+        Room::dungeon_run(&of, tier, FRIDAY_NINE).and_then(|room| room.run.map(|run| (run.modifiers, run.revives)))
+    };
+    let patrol = |patrol: &str, number| RunOf::Patrol { patrol: patrol.into(), number };
+    use gear::Difficulty::{Abyss, Elite, Normal};
+    assert_eq!(rules(patrol("gullwing-vale", 0), Elite), Some((vec![Modifier::Burn(3)], None)));
+    assert_eq!(rules(patrol("gullwing-vale", 0), Abyss), Some((vec![Modifier::Burn(3)], Some(5))));
+    assert_eq!(rules(patrol("gullwing-vale", 0), Normal), Some((vec![], None)));
+    assert_eq!(rules(patrol("gullwing-vale", 1), Abyss), Some((vec![], Some(5))), "not today's");
+    assert_eq!(
+        rules(RunOf::Elite { place: "saltworm-warrens".into() }, Abyss),
+        Some((vec![Modifier::Lightswitch, Modifier::Burn(2), Modifier::Juggler], Some(5)))
+    );
+    assert_eq!(rules(RunOf::Elite { place: "forsaken-cistern".into() }, Elite), Some((vec![Modifier::Brawler], None)));
+    assert_eq!(rules(RunOf::Elite { place: "krakens-grotto".into() }, Normal), Some((vec![], None)));
+    assert_eq!(rules(patrol("glade", 0), Normal), None, "no island's");
+    assert_eq!(rules(patrol("gullwing-vale", 3), Normal), None);
+    let sea =
+        |style: &str, continent: &str| RunOf::Sea { seed: 4_242, style: style.into(), continent: continent.into() };
+    assert_eq!(rules(sea("caverns", "continent-4"), Abyss), Some((vec![], Some(5))));
+    assert_eq!(rules(sea("grotto", "continent-4"), Normal), None);
+    assert_eq!(rules(sea("caverns", "continent-0"), Normal), None);
+}
+
+#[test]
+fn the_first_clear_of_a_tier_on_any_islands_dungeon_of_the_day_pays_once_and_a_clear_again_its_cache_alone() {
+    let mut character = gear::Character::starting();
+    character.story.prologue = true;
+    character.earn_xp(45_000, None); // level 10, which Elite asks
+    let run = |patrol: &str, number, tier| {
+        let of = RunOf::Patrol { patrol: patrol.into(), number };
+        Room::dungeon_run(&of, tier, FRIDAY_NINE).expect(patrol)
+    };
+    let mut first = run("gullwing-vale", 0, gear::Difficulty::Elite);
+    let player = kept_in(&mut first, &character);
+    clear_the_end(&mut first);
+    assert_eq!(vestiges_for(&first, player), 2, "its cache's and the day's");
+    let kept = first.players[&player].character.clone();
+    assert_eq!(kept.activity.today.cleared, BTreeSet::from([gear::Difficulty::Elite]));
+    let mut other = run("highwater-fells", 2, gear::Difficulty::Elite);
+    let again = kept_in(&mut other, &kept);
+    clear_the_end(&mut other);
+    assert_eq!(vestiges_for(&other, again), 1, "Elite is taken today on every island: its cache alone");
+    let mut shared = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("the shared Normal room");
+    shared.set_minute(FRIDAY_NINE);
+    let plain = kept_in(&mut shared, &kept);
+    clear_the_end(&mut shared);
+    assert_eq!(vestiges_for(&shared, plain), 2, "Normal is its own tier");
+    let mut not_today = run("gullwing-vale", 1, gear::Difficulty::Normal);
+    let late = kept_in(&mut not_today, &shared.players[&plain].character.clone());
+    clear_the_end(&mut not_today);
+    assert_eq!(vestiges_for(&not_today, late), 1, "not the dungeon of the day");
+}
+
+#[test]
+fn a_weeks_run_cleared_after_the_week_turns_pays_as_a_clear_again() {
+    // A Tuesday's 08:59 UTC: the last minute of week 2,968
+    let last_minute = 29_925_179;
+    for (cleared_at, paid) in [(last_minute, true), (last_minute + 1, false)] {
+        let of = RunOf::Elite { place: "saltworm-warrens".into() };
+        let mut room =
+            Room::dungeon_run(&of, gear::Difficulty::Abyss, last_minute).expect("week 2,968's Abyss Dungeon");
+        let player = room.join().expect("in");
+        room.set_minute(cleared_at);
+        clear_the_end(&mut room);
+        let week = &room.players[&player].character.activity.this_week;
+        assert_eq!((week.abyss, week.boon), (paid, paid), "cleared at {cleared_at}");
+        assert_eq!(vestiges_for(&room, player), if paid { 2 } else { 1 });
+    }
+}
+
+#[test]
+fn a_kill_under_the_abyss_boon_pays_a_quarter_more_xp() {
+    let xp = |boon: bool| {
+        let mut room = Room::new(Vec::new(), (0.0, 0.0));
+        room.set_minute(FRIDAY_NINE);
+        let player = room.join().expect("in");
+        room.players.get_mut(&player).expect("in").character.activity.this_week(2_968).boon = boon;
+        let foe = crate::arts::arts_tests::stand_foe(&mut room, 2.0, 0.0, 1.0);
+        let clock = room.clock;
+        room.foes.get_mut(&foe).expect("standing").struck_by.insert(player, (clock, gear::Slot::Melee));
+        room.pay_kill(foe);
+        room.players[&player].character.xp
+    };
+    let (plain, boon) = (xp(false), xp(true));
+    assert!(plain > 0);
+    assert_eq!(boon, plain + plain / 4);
+}

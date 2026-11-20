@@ -28,6 +28,7 @@ code:
   - crates/room/src/dungeon_room.rs#dungeon_of
   - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/dungeon_room.rs#keep_cache
+  - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/floor.rs#Floor
   - crates/room/src/entrances.rs#laid
   - crates/room/src/entrances.rs#model_of
@@ -199,7 +200,20 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **A room for each at each difficulty.** A patrol's dungeon is the room `node-<patrol id>--dungeon-<number>`, and
   `node-<patrol id>--elite--dungeon-<number>` or `--abyss--dungeon-<number>` at the harder difficulties ([[Server]]).
   It opens from its patrol's node file, refused for a node that is no patrol, and its garrison stands at the patrol's
-  island band, raised by its difficulty.
+  island band, raised by its difficulty. Its first clear pays the day's while it is its island's dungeon of the day.
+- **A run's room** (`Room::dungeon_run`) stands any dungeon for a run at a tier, opened at a minute. The run is fixed
+  as it opens; at Abyss it carries five revives ([[Activities]]).
+
+| Run of | Its world seeds from | Levels | End foe | First clear pays | Modifiers | Gated as |
+|---|---|---|---|---|---|---|
+| A patrol's dungeon (an island's patrol, numbers 0 to 2) | `<patrol>--dungeon-<n>` | its island's band | the Reeve, a Miniboss | the day's | the day's, at Elite or Abyss while it is today's | a patrol's dungeon |
+| An Elite Dungeon at Normal | `<place>--elite-dungeon` | its island's band | its Boss | nothing more | none | an Elite Dungeon |
+| An Elite Dungeon at Elite or Abyss, only this week's of that tier | the same | every foe at 26 or 30 | its Boss | the week's | the week's | the week's dungeon |
+| A sea island's (its style known, its continent of a band) | `sea-dungeon-<continent>-<style>-<seed 8 hex>` | its continent's band | the Reeve, a Miniboss | nothing more | none | by its tier alone |
+
+- **An Elite Dungeon's room** lays its dungeon from its place (`elite_laid`: the seed `elite:<place>` and the style
+  `gear::activities` names) in four or five blocks, its Boss alone on the end post. The week's two hold every foe
+  at their own level whatever difficulty the host sets after (`at_seas`).
 - **Its world is the dungeon's frame**: x east and y south from the north-west corner, the floor at 0 m. Every point
   its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
   arrival, where a body joins and the dead stand again, facing into the room.
@@ -222,14 +236,16 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with every solid as
   its colliders, each a body's height at least, since the ground walls a solid however low, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It
   lays no links: a body climbs nothing in a dungeon, so no foe paths up a solid's side or off its top.
-- **Its garrison** ([[Enemies]]): the Reeve, a Miniboss, alone on the end room's cell nearest its middle; a band of
+- **Its garrison** ([[Enemies]]): the end foe (the Reeve, a Miniboss, or an Elite Dungeon's Boss) alone on the end
+  room's cell nearest its middle; a band of
   two to four in each other room past the way in's, one foe for each ten of its cells (`posts_for`), on its free cells
   nearest its middle, its quiet cells first, round its props. When the bands and the Reeve would pass the room's 24 foes, the most rooms that
   fit stand one, spread evenly along the walk from the way in to the end.
-- **The cache** stands 1.6 m from the Reeve's post, the first of the eight ways round it, north first, that is open
-  floor clear of every jamb, pillar, prop and fixture, facing the post. Shut while the Reeve stands; when he falls it opens and every
-  player then in the room finds a Vestige 0.8 m before it ([[Gear]]); it shuts when he stands again. Each snapshot
-  carries it.
+- **The cache** stands 1.6 m from the end foe's post, the first of the eight ways round it, north first, that is
+  open floor clear of every jamb, pillar, prop and fixture, facing the post. Shut while the end foe stands; when it
+  falls the cache opens and every player then in the room finds a Vestige 0.8 m before it ([[Gear]]), and, where the
+  run's first clear in its period pays, a second 1.4 m before it (`pay_clear`); it shuts when the end foe stands
+  again. Each snapshot carries it.
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for

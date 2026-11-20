@@ -53,9 +53,9 @@ impl Character {
         Some(Reward { xp, aurem, vestige: Some(Vestige { id: self.take_id(), rarity, slot, level }) })
     }
 
-    /// The week's Elite or Abyss Dungeon's first clear this week: a Legendary Vestige (the Abyss's Atheric one in five),
-    /// returned to be laid on the ground, Essence of each stock, and for the Abyss its boon. None once taken, or when
-    /// `week` is behind the record's.
+    /// The week's Elite or Abyss Dungeon's first clear this week: a Legendary Vestige (the Abyss's Atheric one in
+    /// five), returned to be laid on the ground, Essence of each stock, and for the Abyss its boon. None once taken, or
+    /// when `week` is behind the record's.
     pub fn clear_of_the_week(&mut self, week: u64, weekly: Weekly, dice: &Dice) -> Option<Vestige> {
         if week < self.activity.this_week.week {
             return None;
@@ -78,8 +78,8 @@ impl Character {
         Some(Vestige { id: self.take_id(), rarity, slot, level })
     }
 
-    /// A quarter more of a kill's XP while the Abyss boon is held this week, to the player and to `weapon` as the kill's
-    /// own XP goes; the XP it gave.
+    /// A quarter more of a kill's XP while the Abyss boon is held this week, to the player and to `weapon` as the
+    /// kill's own XP goes; the XP it gave.
     pub fn boon_xp(&mut self, week: u64, xp: u32, weapon: Option<Slot>) -> u32 {
         if !self.activity.this_week(week).boon {
             return 0;

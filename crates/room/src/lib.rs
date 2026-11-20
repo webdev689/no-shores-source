@@ -44,6 +44,7 @@ pub use players::{
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
 pub use power::{allowed_arms, arms_allowed, loadout_arms};
+pub use run::{RunOf, elite_laid};
 pub use spells::{BOLT, SpellSeen};
 
 use combat::arms::{Arms, BARE_HANDS};

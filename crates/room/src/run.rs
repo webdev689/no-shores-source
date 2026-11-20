@@ -1,20 +1,57 @@
-//! A dungeon's run and the modifiers it carries. Each modifier is one hook in the rules, read here: a blow's weight (`modded_blow`, in
-//! `empower_as`), a spell's (`spell_times`), a recharge (`recharge_times`, in `step_arts`), a heal (`heal_times`), the
-//! share of foes shielded (`shield_chance`, as the garrison girds) and the drops (`modded`, in `drop_spoils`). A room
-//! with no run weighs everything as it always has.
+//! A dungeon's run: what its first clear pays in its period, the modifiers it carries, the revives its company shares
+//! at Abyss and, in the week's two, the level every foe stands at. Each modifier is one hook in the rules, read here:
+//! a blow's weight (`modded_blow`, in `empower_as`), a spell's (`spell_times`), a recharge (`recharge_times`, in
+//! `step_arts`), a heal (`heal_times`), the share of foes shielded (`shield_chance`, as the garrison girds) and the
+//! drops (`modded`, in `drop_spoils`). A room with no run weighs everything as it always has.
 
 use crate::Room;
 use combat::fighter::FighterId;
 use combat::judge::{Blow, BlowKind};
 use gear::activities::{
     BRAWLER_TIMES, BURN_TIMES, EXPOSURE_TIMES, IRONCLAD_SHIELDS, LIGHTSWITCH_TIMES, MARKSMAN_TIMES, Modifier,
-    TRICKLE_TIMES,
+    TRICKLE_TIMES, Weekly,
 };
 
-/// A dungeon's run: the modifiers it carries.
+/// The revives an Abyss run's company shares.
+pub const REVIVES: u8 = 5;
+
+/// What a run's first clear in its period pays beside its kills and its cache.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Pays {
+    Nothing,
+    /// The dungeon of the day's, while this patrol's dungeon is its island's today.
+    Day {
+        patrol: String,
+        number: usize,
+    },
+    /// The week's Elite or Abyss Dungeon's, in the week the run was opened for.
+    Week {
+        weekly: Weekly,
+        week: u64,
+    },
+}
+
+/// A dungeon's run: what it pays, its modifiers, the revives left at Abyss, and the level every foe stands at in the
+/// week's two.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Run {
+    pub pays: Pays,
     pub modifiers: Vec<Modifier>,
+    pub revives: Option<u8>,
+    pub foes_at: Option<u8>,
+}
+
+impl Run {
+    /// A patrol's shared dungeon's: the day's clear while it is its island's dungeon of the day, and nothing more.
+    #[must_use]
+    pub fn day(patrol: &str, number: usize) -> Self {
+        Run {
+            pays: Pays::Day { patrol: patrol.to_owned(), number },
+            modifiers: Vec::new(),
+            revives: None,
+            foes_at: None,
+        }
+    }
 }
 
 impl Room {
@@ -81,3 +118,7 @@ impl Room {
 #[cfg(test)]
 #[path = "run_tests.rs"]
 mod run_tests;
+
+#[path = "run_room.rs"]
+mod run_room;
+pub use run_room::{RunOf, elite_laid};
