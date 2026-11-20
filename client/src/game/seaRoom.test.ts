@@ -27,7 +27,17 @@ async function joined() {
     10,
   );
   const atTick = (tick: number, ships: readonly SeenShip[] = []) =>
-    hand({ tick: BigInt(tick), players: [], ships, pirates: [], fights: [] } as unknown as Snapshot);
+    hand({
+      tick: BigInt(tick),
+      players: [],
+      ships,
+      pirates: [],
+      fights: [],
+      flotsam: [],
+      kept: [],
+      told: [],
+      decks: [],
+    } as unknown as Snapshot);
   return { room, sent, atTick, link };
 }
 
