@@ -18,13 +18,14 @@ export interface WeekOn {
   readonly opens: number;
 }
 
-/** What is on at a minute: the day's and the week's numbers, the minutes to the next of each, each island's dungeon
- *  of the day, the day's modifier, and the week's two. */
+/** What is on at a minute: the day's and the week's numbers, the minutes to the next of each and to Shape's leaving
+ *  (none while he is away), each island's dungeon of the day, the day's modifier, and the week's two. */
 export interface Activities {
   readonly day: number;
   readonly week: number;
   readonly untilDay: number;
   readonly untilWeek: number;
+  readonly untilShapeGoes: number;
   readonly ofTheDay: readonly { readonly continent: string; readonly patrol: string; readonly number: number }[];
   readonly dayModifier: string;
   readonly weekElite: WeekOn;

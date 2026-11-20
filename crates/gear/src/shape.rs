@@ -26,7 +26,14 @@ const LEGENDARIES: usize = 4;
 /// Whether Shape is in Overlook at a moment.
 #[must_use]
 pub fn present(unix_minutes: u64) -> bool {
-    (COMES_AT..GOES_AT).contains(&(WEEK_MINUTES - minutes_to_next_week(unix_minutes)))
+    minutes_left(unix_minutes) > 0
+}
+
+/// The minutes until Shape leaves Overlook, none while he is away.
+#[must_use]
+pub fn minutes_left(unix_minutes: u64) -> u64 {
+    let into = WEEK_MINUTES - minutes_to_next_week(unix_minutes);
+    if (COMES_AT..GOES_AT).contains(&into) { GOES_AT - into } else { 0 }
 }
 
 /// Where he stands in a week of the clock's (`clock::week_of`): one of the plaza's `PLACES`, by the week's dice.

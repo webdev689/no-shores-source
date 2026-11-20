@@ -14,7 +14,7 @@ import { emblemImage, emblemOf } from '../emblemArt.ts';
 import { type Hint, glyphImage } from '../gearDom.ts';
 import { STEP_BACK, type View } from '../gearScreen.ts';
 import { KEEPERS, KEEPER_KINDS, type KeeperKind } from '../keepers.ts';
-import { clockWords, secondsToMidnight, shapeSecondsLeft } from './npcClock.ts';
+import { clockWords, countdownsAt } from './npcClock.ts';
 import { factionOf, rankRewards, reputationOf } from './factionRows.ts';
 import { keeperFigure } from './npcFigure.ts';
 import { keeperMarkSvg, svgUrl } from './npcMarks.ts';
@@ -25,7 +25,7 @@ import { type Ware, purseOf, rowsOf } from './npcWares.ts';
 import { ARROWS, nearest } from '../arrowFocus.ts';
 import { vaultPage } from '../stationPages.ts';
 
-/** The keepers whose wares change each day at midnight. */
+/** The keepers whose wares change at each daily reset. */
 const DAILY: readonly KeeperKind[] = ['armorsmith', 'weaponsmith', 'tailor', 'tack'];
 /** The menu's brass, the ground of a keeper who serves no Art. */
 const BRASS = '#c08a3e';
@@ -117,7 +117,7 @@ function purseNode(context: PageContext, kind: KeeperKind): HTMLElement {
   return both;
 }
 
-/** The foot's countdown, kept to the second while the page stands: to midnight, or to Shape's leaving. */
+/** The foot's countdown, kept to the second while the page stands: to the daily reset, or to Shape's leaving. */
 function footNode(kind: KeeperKind, gear: GearState): HTMLElement | null {
   const shape = kind === 'shape' ? gear.shape : null;
   if (!DAILY.includes(kind) && !shape) return null;
@@ -125,8 +125,8 @@ function footNode(kind: KeeperKind, gear: GearState): HTMLElement | null {
   const label = make('span', shape ? 'Leaves in' : 'Stock refresh', 'npc-foot-label');
   const time = make('b', '', 'npc-foot-time');
   const tick = () => {
-    const now = Date.now();
-    time.textContent = clockWords(shape ? shapeSecondsLeft(now) : secondsToMidnight(now));
+    const left = countdownsAt(Date.now());
+    time.textContent = left ? clockWords(shape ? left.shape : left.stock) : '';
   };
   tick();
   const timer = window.setInterval(() => (foot.isConnected ? tick() : window.clearInterval(timer)), 1000);

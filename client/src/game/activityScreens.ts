@@ -14,6 +14,7 @@ import {
 import { type FinderSocket, type Finding, findCompany, findingWords } from './companyFinder.ts';
 import { weekBountiesOf } from './bountyBoard.ts';
 import { askDungeon } from './dungeonLayout.ts';
+import { countBy } from './npc/npcClock.ts';
 import { type TripFoot, type TripGame, dungeonTrips } from './dungeonTrips.ts';
 import { EntranceCardView } from './entranceCard.ts';
 import { type Trips, takeWipe } from './footTrips.ts';
@@ -205,6 +206,8 @@ export function startActivities(
 } {
   const trips = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
   const screens = startActivityScreens(root, game.module, nodes, game.foot, trips, link);
+  // The keepers' countdowns turn on the same clock, so they read the same rules.
+  countBy(game.module);
   return {
     trips,
     screens,

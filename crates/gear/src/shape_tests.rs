@@ -7,7 +7,7 @@ use crate::clock::week_of;
 use crate::dice::Dice;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
-use crate::shape::{PLACES, WARES, found, place, present, price, wares};
+use crate::shape::{PLACES, WARES, found, minutes_left, place, present, price, wares};
 use crate::world::Difficulty;
 
 const DICE: Dice = Dice { seed: 5, tick: 9, player: 1 };
@@ -25,6 +25,9 @@ fn shape_comes_friday_morning_and_goes_sunday_evening() {
     assert!(present(in_month(22, 20, 59)), "Sunday evening");
     assert!(!present(in_month(22, 21, 0)), "gone at nine on Sunday");
     assert!(!present(in_month(24, 12, 0)), "Tuesday");
+    assert_eq!(minutes_left(in_month(20, 9, 0)), 2 * 1_440 + 12 * 60, "as he comes");
+    assert_eq!(minutes_left(in_month(22, 20, 59)), 1, "a minute before he goes");
+    assert_eq!((minutes_left(in_month(22, 21, 0)), minutes_left(in_month(20, 8, 59))), (0, 0), "none while away");
 }
 
 #[test]

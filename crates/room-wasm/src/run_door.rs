@@ -86,10 +86,10 @@ fn of_week(week: u64, weekly: Weekly) -> Value {
     json!({ "place": place, "modifiers": modifiers, "level": weekly.foes_at(), "opens": weekly.opens_at() })
 }
 
-/// What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each, each
-/// island's dungeon of the day, the day's modifier, the week's two with their modifiers and levels, each island's
-/// band at each tier as its foes are raised, the revives an Abyss run's company shares, and the name and words of
-/// each modifier on.
+/// What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each and to
+/// Shape's leaving (none while he is away), each island's dungeon of the day, the day's modifier, the week's two with
+/// their modifiers and levels, each island's band at each tier as its foes are raised, the revives an Abyss run's
+/// company shares, and the name and words of each modifier on.
 #[must_use]
 pub fn activities_json(minute: u64) -> String {
     let (day, week) = (day_of(minute), week_of(minute));
@@ -117,6 +117,7 @@ pub fn activities_json(minute: u64) -> String {
         "week": week,
         "untilDay": minutes_to_next_day(minute),
         "untilWeek": minutes_to_next_week(minute),
+        "untilShapeGoes": gear::shape::minutes_left(minute),
         "ofTheDay": of_the_day,
         "dayModifier": modifier_of_the_day(day).key(),
         "weekElite": of_week(week, Weekly::Elite),
@@ -215,6 +216,7 @@ mod tests {
     fn what_is_on_reads_as_the_rules_draw_it() {
         let on: Value = serde_json::from_str(&activities_json(29_919_420)).expect("JSON");
         assert_eq!([&on["day"], &on["week"], &on["untilDay"], &on["untilWeek"]], [20_778, 2_968, 1_440, 5_760]);
+        assert_eq!(on["untilShapeGoes"], 3_600, "Friday 09:00: Shape has come, till Sunday 21:00");
         assert_eq!(on["ofTheDay"].as_array().map(Vec::len), Some(9));
         assert_eq!(on["ofTheDay"][0], json!({ "continent": "continent-1", "patrol": "gullwing-vale", "number": 0 }));
         assert_eq!(on["dayModifier"], "burn-shadow");
