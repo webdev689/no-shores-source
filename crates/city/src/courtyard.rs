@@ -5,7 +5,9 @@
 //! of a body (`collision`).
 
 use crate::landmarks::{ahead, turn_toward};
+use crate::life::{Keep, Post, Task, Ways};
 use crate::solids::{Material, Shape, Solid};
+use crate::stations::Station;
 
 /// The plaza as the courtyard is laid out in it: its middle, the way to the sea and the way across it (unit vectors
 /// square to the world), its depth toward the sea and its length across, and its level.
@@ -58,13 +60,176 @@ impl Frame {
 
 /// Where a visitor who keeps no counter may stand, each a quiet place by something of the courtyard's: beside each
 /// brazier on its seaward side, landward of the two outer benches, and before the portico's two ends. Clear of every
-/// solid, the processional way, the spawns and the townsfolk's lanes.
+/// solid, the processional way, the spawns and the townsfolk's ways and posts.
 #[must_use]
 pub fn visitor_spots(frame: &Frame) -> Vec<[f64; 2]> {
     let braziers = [-95.0, -45.0, 45.0, 95.0].map(|across| frame.at(2.5, across));
     let benches = [-120.0, 120.0].map(|across| frame.at(frame.depth / 2.0 - 20.0, across));
     let portico = [-30.0, 30.0].map(|across| frame.at(-frame.depth / 2.0 + PORTICO_M[1] + 12.0, across));
     braziers.into_iter().chain(benches).chain(portico).collect()
+}
+
+/// The townsfolk's ways, metres in the plaza's frame: rows toward the sea from its middle (the first before the
+/// arcades, clear of the portico's steps), columns across it, and the lines before the counters and the parapet,
+/// metres in from the plaza's landward and seaward edges. Each keeps 1.3 m clear of every piece either side.
+const ROWS_M: [f64; 4] = [-38.0, -14.0, 14.0, 34.0];
+const COLUMNS_M: [f64; 6] = [-110.0, -70.0, -20.0, 20.0, 70.0, 110.0];
+const COUNTER_LINE_IN_M: f64 = 13.5;
+const PARAPET_LINE_IN_M: f64 = 8.0;
+/// Where a customer stands before a counter, a looker at the parapet, and talkers before a bench, metres in from
+/// the plaza's edges; the benches the talkers stand at, metres across, the outer two's drinking.
+const AT_COUNTER_IN_M: f64 = 11.5;
+const AT_PARAPET_IN_M: f64 = 1.6;
+const AT_BENCH_IN_M: f64 = 17.4;
+const TALKED_BENCHES_M: [f64; 5] = [-80.0, -40.0, 0.0, 40.0, 80.0];
+const VIEWS_M: [f64; 7] = [-110.0, -80.0, -40.0, 0.0, 40.0, 80.0, 110.0];
+/// The band before the brazier west of the obelisk, its dancer, and a juggler before the one east of it: metres
+/// toward the sea and across.
+const BAND_M: [(Task, f64); 4] =
+    [(Task::PlayLute, -48.3), (Task::PlayFlute, -46.1), (Task::PlayRecorder, -43.9), (Task::PlayTambourine, -41.7)];
+const BAND_TOWARD_M: f64 = -3.5;
+const DANCER_M: [f64; 2] = [-7.5, -45.0];
+const JUGGLER_M: [f64; 2] = [-4.0, 45.0];
+/// The sweeper's round of the ring laid round the obelisk, in turn: metres toward the sea and across.
+const SWEPT_M: [[f64; 2]; 4] = [[-11.0, -7.0], [-11.0, 7.0], [11.0, 7.0], [11.0, -7.0]];
+
+/// A way across the plaza: along a row (`toward` held) or a column (`across` held), between two ends of the other.
+struct Line {
+    row: bool,
+    held: f64,
+    ends: [f64; 2],
+}
+
+/// The courtyard's ways and posts, from its rows and columns: the walkers visit every counter, the views over the
+/// parapet and the benches; a smith works before the Weaponsmith's alcove, a band of four plays with a dancer by
+/// the brazier west of the obelisk, a juggler by the one east of it, and a sweeper sweeps round the obelisk.
+#[must_use]
+pub fn townsfolk_life(frame: &Frame, stations: &[Station]) -> (Ways, Vec<Post>) {
+    let edge = frame.depth / 2.0;
+    let (counter_line, parapet_line) = (-edge + COUNTER_LINE_IN_M, edge - PARAPET_LINE_IN_M);
+    let column_ends = |across: f64| [if across.abs() > ARCADE_M[0] { counter_line } else { ROWS_M[0] }, parapet_line];
+    let mut lines: Vec<Line> = ROWS_M.map(|held| Line { row: true, held, ends: [COLUMNS_M[0], COLUMNS_M[5]] }).into();
+    lines.extend(COLUMNS_M.map(|held| Line { row: false, held, ends: column_ends(held) }));
+    lines.push(Line { row: true, held: parapet_line, ends: [COLUMNS_M[0], COLUMNS_M[5]] });
+    for side in [-1.0, 1.0] {
+        let ends = [side * ARCADE_M[0], side * ARCADE_M[1]];
+        lines.push(Line { row: true, held: counter_line, ends: [ends[0].min(ends[1]), ends[0].max(ends[1])] });
+    }
+    let mut plan = Life { frame, ways: Ways::default(), placed: Vec::new(), posts: Vec::new() };
+    for line in &lines {
+        for other in lines.iter().filter(|other| other.row != line.row) {
+            let crossing = if line.row { [line.held, other.held] } else { [other.held, line.held] };
+            if within(line, crossing) && within(other, crossing) {
+                plan.point(crossing, "");
+            }
+        }
+    }
+    let landward = frame.seaward.map(|axis| -axis);
+    for station in stations {
+        let across = plan.across_of(station.counter);
+        let kind = serde_json::to_value(station.kind).unwrap_or_default();
+        let from = plan.point([counter_line, across], &format!("counter:{}", kind.as_str().unwrap_or_default()));
+        plan.post(Task::Hold, [-edge + AT_COUNTER_IN_M, across], landward, Keep::Visited, from);
+    }
+    if let Some(forge) = stations.iter().find(|station| station.kind == crate::stations::StationKind::Weaponsmith) {
+        // Between the Weaponsmith's alcove and the next one out, before the arcade's columns.
+        let across = plan.across_of(forge.counter);
+        let between = across + across.signum() * (ARCADE_M[1] - ARCADE_M[0]) / 12.0;
+        let from = plan.point([counter_line, between], "smith");
+        plan.post(Task::Smith, [-edge + ARCADE_M[2] + 1.1, between], landward, Keep::Kept, from);
+    }
+    for (nth, across) in VIEWS_M.into_iter().enumerate() {
+        let from = plan.point([parapet_line, across], &format!("view:seaward-{}", nth + 1));
+        plan.post(Task::Idle, [edge - AT_PARAPET_IN_M, across], frame.seaward, Keep::Visited, from);
+    }
+    for (nth, across) in TALKED_BENCHES_M.into_iter().enumerate() {
+        let from = plan.point([ROWS_M[3], across], &format!("bench:{}", nth + 1));
+        let task = if across.abs() > 60.0 { Task::Drink } else { Task::Gesture };
+        let across_way = [-frame.seaward[1], frame.seaward[0]];
+        plan.post(task, [edge - AT_BENCH_IN_M, across - 0.75], across_way, Keep::Visited, from);
+        plan.post(task, [edge - AT_BENCH_IN_M, across + 0.75], across_way.map(|axis| -axis), Keep::Visited, from);
+    }
+    let band = plan.point([ROWS_M[1], DANCER_M[1]], "band");
+    for (task, across) in BAND_M {
+        plan.post(task, [BAND_TOWARD_M, across], landward, Keep::Kept, band);
+    }
+    plan.post(Task::Dance, DANCER_M, frame.seaward, Keep::Kept, band);
+    let juggler = plan.point([ROWS_M[1], JUGGLER_M[1]], "juggler");
+    plan.post(Task::Juggle, JUGGLER_M, landward, Keep::Kept, juggler);
+    for (nth, swept) in SWEPT_M.into_iter().enumerate() {
+        let row = if swept[0] < 0.0 { ROWS_M[1] } else { ROWS_M[2] };
+        let from = plan.point([row, swept[1]], &format!("ring:{}", nth + 1));
+        let next = SWEPT_M[(nth + 1) % SWEPT_M.len()];
+        let along = [next[0] - swept[0], next[1] - swept[1]];
+        plan.post_facing(Task::Sweep, swept, plan.bearing_in(along), Keep::Round(0), from);
+    }
+    for line in &lines {
+        let mut on: Vec<(f64, u32)> = (0..plan.placed.len())
+            .filter(|&index| {
+                let place = plan.placed[index];
+                (place[usize::from(!line.row)] - line.held).abs() < 1e-6 && within(line, place)
+            })
+            .map(|index| (plan.placed[index][usize::from(line.row)], index as u32))
+            .collect();
+        on.sort_by(|one, two| one.0.total_cmp(&two.0));
+        plan.ways.line(&on.iter().map(|&(_, index)| index).collect::<Vec<_>>());
+    }
+    (plan.ways, plan.posts)
+}
+
+/// Whether a place of the plaza's frame (toward the sea, across) lies between a line's ends.
+fn within(line: &Line, place: [f64; 2]) -> bool {
+    let along = place[usize::from(line.row)];
+    along >= line.ends[0] - 1e-6 && along <= line.ends[1] + 1e-6
+}
+
+/// The ways and posts as they are laid, with each point's place in the plaza's frame.
+struct Life<'frame> {
+    frame: &'frame Frame,
+    ways: Ways,
+    placed: Vec<[f64; 2]>,
+    posts: Vec<Post>,
+}
+
+impl Life<'_> {
+    /// The point at a place of the frame (toward the sea, across), laid once; named if it is not yet.
+    fn point(&mut self, place: [f64; 2], name: &str) -> u32 {
+        let found =
+            self.placed.iter().position(|at| (at[0] - place[0]).abs() < 1e-6 && (at[1] - place[1]).abs() < 1e-6);
+        if let Some(index) = found {
+            if self.ways.points[index].name.is_empty() {
+                name.clone_into(&mut self.ways.points[index].name);
+            }
+            return index as u32;
+        }
+        self.placed.push(place);
+        self.ways.point(self.frame.at(place[0], place[1]), name)
+    }
+
+    fn across_of(&self, point: [f64; 2]) -> f64 {
+        let off = [point[0] - self.frame.middle[0], point[1] - self.frame.middle[1]];
+        let across = self.frame.across();
+        off[0] * across[0] + off[1] * across[1]
+    }
+
+    /// The compass bearing of a way in the frame (toward the sea, across): radians clockwise from north.
+    fn bearing_in(&self, along: [f64; 2]) -> f64 {
+        let [toward, across] = along;
+        let (seaward, aside) = (self.frame.seaward, self.frame.across());
+        let east = seaward[0] * toward + aside[0] * across;
+        let south = seaward[1] * toward + aside[1] * across;
+        libm::atan2(east, -south)
+    }
+
+    /// A post at a place of the frame, facing along a way of the world.
+    fn post(&mut self, task: Task, place: [f64; 2], facing: [f64; 2], keep: Keep, from: u32) {
+        let facing = libm::atan2(facing[0], -facing[1]);
+        self.post_facing(task, place, facing, keep, from);
+    }
+
+    fn post_facing(&mut self, task: Task, place: [f64; 2], facing: f64, keep: Keep, from: u32) {
+        self.posts.push(Post { task, at: self.frame.at(place[0], place[1]), facing, keep, reached_from: from });
+    }
 }
 
 /// Everything the courtyard stands on the plaza.
@@ -202,6 +367,7 @@ fn inlays(frame: &Frame) -> Vec<Solid> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::life::{Keep, Post, Task, Ways};
 
     const FRAME: Frame =
         Frame { middle: [1000.0, 2000.0], seaward: [0.0, -1.0], depth: 120.0, length: 260.0, level: 80.0 };
@@ -227,40 +393,88 @@ mod tests {
         }
     }
 
-    /// The townsfolk's lanes as the page walks them (`content/world/social.json`), metres toward the sea and across.
-    #[derive(serde::Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct Lanes {
-        toward: Vec<f64>,
-        across: Vec<f64>,
-        at_counter: f64,
-        at_parapet: f64,
+    /// The plaza's floor at its level everywhere, as its pad sets it.
+    struct Level(f64);
+
+    impl movement::Terrain for Level {
+        fn height_at(&self, _x: f64, _y: f64) -> f64 {
+            self.0
+        }
     }
 
-    #[derive(serde::Deserialize)]
-    struct Social {
-        lanes: Lanes,
+    /// Everything a body walks among on the plaza: the courtyard, the stations, and the parapets round it, as boxes.
+    fn plaza_boxes() -> Vec<crate::collision::Box2> {
+        let (_, stalls) = crate::stations::stations(&FRAME);
+        let [west, north, east, south] = [870.0, 1940.0, 1130.0, 2060.0];
+        let top = FRAME.level + PARAPET_TOP_M;
+        let parapets = [
+            [west, north - 0.4, east, north + 0.4],
+            [west, south - 0.4, east, south + 0.4],
+            [west - 0.4, north, west + 0.4, south],
+            [east - 0.4, north, east + 0.4, south],
+        ];
+        let solids = courtyard(&FRAME).into_iter().chain(stalls).map(|solid| {
+            let [west, north, east, south, bottom, top] = solid.bounds();
+            [west, north, east, south, top, bottom]
+        });
+        solids.chain(parapets.map(|[west, north, east, south]| [west, north, east, south, top, 0.0])).collect()
     }
 
-    /// Shape stands off every lane, the line before the counters and the line at the parapet among them, so no one
-    /// walks through him.
+    fn life() -> (Ways, Vec<Post>) {
+        let (stations, _) = crate::stations::stations(&FRAME);
+        townsfolk_life(&FRAME, &stations)
+    }
+
+    /// Walked with the movement rules, every way keeps clear of the courtyard's pieces either side, and every post
+    /// is walked to.
     #[test]
-    fn every_visitor_spot_stands_off_the_townsfolks_lanes() {
-        let social: Social =
-            serde_json::from_str(include_str!("../../../content/world/social.json")).expect("social.json reads");
-        let Lanes { toward: rows, across: columns, at_counter, at_parapet } = social.lanes;
-        assert!(!rows.is_empty() && !columns.is_empty());
-        let rows: Vec<f64> = rows.into_iter().chain([at_counter, at_parapet]).collect();
-        for [x, y] in visitor_spots(&FRAME) {
-            let off = [x - FRAME.middle[0], y - FRAME.middle[1]];
-            let toward = off[0] * FRAME.seaward[0] + off[1] * FRAME.seaward[1];
-            let across = off[0] * FRAME.across()[0] + off[1] * FRAME.across()[1];
-            let nearest = rows
-                .iter()
-                .map(|lane| (lane - toward).abs())
-                .chain(columns.iter().map(|lane| (lane - across).abs()))
-                .fold(f64::INFINITY, f64::min);
-            assert!(nearest > 4.0, "the spot {toward} toward the sea, {across} across, stands {nearest} m off a lane");
+    fn the_courtyards_ways_are_walked_clear_of_every_piece() {
+        let (ways, posts) = life();
+        let ring = [[870.0, 1940.0], [1130.0, 1940.0], [1130.0, 2060.0], [870.0, 2060.0]];
+        let faults = crate::life::check::faults(&ways, &posts, &ring, &plaza_boxes(), &Level(FRAME.level));
+        assert!(faults.is_empty(), "{}", faults.join("\n"));
+    }
+
+    /// Every way of keeping a post is laid: kept posts, a round, and posts the walkers visit at every counter, view
+    /// and bench; every counter's way point is named for it.
+    #[test]
+    fn the_courtyard_has_kept_posts_a_round_and_visited_ones() {
+        let (ways, posts) = life();
+        let kept = |keep: Keep| posts.iter().filter(|post| post.keep == keep).count();
+        assert_eq!(kept(Keep::Kept), 7, "a smith, the band of four, a dancer and a juggler");
+        assert_eq!(kept(Keep::Round(0)), 4, "a sweeper's round of the obelisk's ring");
+        assert_eq!(kept(Keep::Visited), 12 + 7 + 10, "every counter, seven views and five benches' talkers");
+        let (stations, _) = crate::stations::stations(&FRAME);
+        for station in &stations {
+            let kind = serde_json::to_value(station.kind).expect("a kind writes");
+            let name = format!("counter:{}", kind.as_str().unwrap_or_default());
+            assert!(ways.points.iter().any(|point| point.name == name), "{name}");
+        }
+        let tasks: Vec<Task> = posts.iter().map(|post| post.task).collect();
+        for task in [Task::Smith, Task::Sweep, Task::PlayLute, Task::PlayTambourine, Task::Gesture, Task::Hold] {
+            assert!(tasks.contains(&task), "{task:?}");
+        }
+    }
+
+    /// Shape stands off every way and every post, so no one walks through him or works where he stands.
+    #[test]
+    fn every_visitor_spot_stands_off_the_townsfolks_ways_and_posts() {
+        let (ways, posts) = life();
+        for spot in visitor_spots(&FRAME) {
+            for &[one, two] in &ways.links {
+                let [from, to] = [ways.points[one as usize].at, ways.points[two as usize].at];
+                let along = [to[0] - from[0], to[1] - from[1]];
+                let share = (((spot[0] - from[0]) * along[0] + (spot[1] - from[1]) * along[1])
+                    / (along[0] * along[0] + along[1] * along[1]))
+                    .clamp(0.0, 1.0);
+                let near = [from[0] + along[0] * share, from[1] + along[1] * share];
+                let apart = libm::hypot(spot[0] - near[0], spot[1] - near[1]);
+                assert!(apart > 4.0, "the spot {spot:?} stands {apart:.2} m off the way {from:?} to {to:?}");
+            }
+            for post in &posts {
+                let apart = libm::hypot(spot[0] - post.at[0], spot[1] - post.at[1]);
+                assert!(apart > 4.0, "the spot {spot:?} stands {apart:.2} m from a post at {:?}", post.at);
+            }
         }
     }
 
