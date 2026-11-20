@@ -116,7 +116,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
   way while they show. On foot the status line stands under the place's name, and under a boss's bar while one
-  shows; at sea it stands under the compass, and in a sea fight under a Boss ship's plate. On foot the hints stand
+  shows; at sea it stands under the compass, and in a sea fight in the top right corner, off the sky the aim looks
+at. On foot the hints stand
   over the vitals; at sea they rise above the offer to dock or go ashore. The edge's warning stands under the
   compass's column. Where the hints grow to 22 px on a wide screen, the place line's small words grow with them
   ([[Game]]), so the water's name and holder are never the smallest words on the screen.
@@ -377,17 +378,20 @@ The Test Ground makes its own sound at full volume on the first click into its v
 ## The sea fight's readout
 
 In a sea fight the display shows DFO's helm readout in the Plus kit (`plus/seaFight.ts`), made once and updated each
-frame, never pressed ([[Naval Combat]]):
+frame, never pressed, from the fight's first frame to its last, at sea (`Hud.seaFight`) and in the World Editor's
+fight (`ships/fightOverlay.ts`); on a struck ship's deck it gives way to the fight on foot's display ([[Naval Combat]]).
+The fight's panel leaves her own hurts and guns to it:
 
 - **Her plate**, at the bottom right, 272 px wide: "Your Sloop", her hull, sails and crew as bars cut in ten bands
   (hull red, canvas bone, crew green), an "On fire" chip while she burns and a "Braced" chip while she braces.
 - **The battery rose** on the plate: bow over stern, port and starboard either side. Each side is a chip with its load
   ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
-  loaded, gold where the look lays it, flashing twice over 0.7 s as it comes ready. The side a blow came from (bow,
-  stern, port or starboard, by where it struck her) is outlined red for 1.4 s.
-- **The card**, centred under the compass, 400 px wide at most: the nearest captain's name, her class and how far
+  loaded, glowing gold round its edge where the look lays it, flashing twice over 0.7 s as it comes ready. The side a
+  blow came from (bow, stern, port or starboard, by where it struck her) is outlined red for 1.4 s.
+- **The card**, centred under the compass, 400 px wide at most, on the ship the look is on (while her guns are laid,
+  the captain nearest where they fall; else the nearest captain): her name, her class and how far
   ("Brig - 70 m"), her hull and sail bars, and her state: "Hostile", "Colors struck", "Colors struck - E: board"
-  once she can be boarded, or "Going down".
+  once she can be boarded, or "Going down". The ships' plates keep under it while it shows, as under the compass.
 - **The tally**, under the middle of the screen, for 4 s once her last volley's last ball is down: "3 of 6 balls
   struck - 1 below the waterline - 2 in the rigging".
 

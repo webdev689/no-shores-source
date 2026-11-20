@@ -97,6 +97,9 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const fighting = here.fight?.lines(state.clock) ?? null;
   hud.hints(deck ? deck.hints : seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
   hud.marks(shown.marks);
+  // Her plate, the battery rose, the card and the tally in a fight (on a struck ship's deck, the fight on foot's own),
+  // before the ships' plates, which keep under its card.
+  hud.seaFight(deck ? null : (here.fight?.display(state.clock) ?? null));
   const { eye, yaw, pitch, fov } = shown.shot;
   // Aboard her the ships' plates and the sea's bar give the view to the fight on foot's display, as on land.
   hud.shipBars(deck ? [] : shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));

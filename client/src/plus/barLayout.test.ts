@@ -100,3 +100,12 @@ test('a plate over a figure high on the screen, or lifted over another, stands u
   for (const [, top] of drawn) assert.ok(top >= UNDER_COMPASS, `a plate's top at ${top} px`);
   assertApart(high, new BarLayout().lay(high, Infinity));
 });
+
+test("while the sea fight's card stands under the compass, a plate high on the screen stands under the card", () => {
+  const high = [bar(1, 400, 10, 40), bar(2, 410, 20, 60)];
+  const layout = new BarLayout();
+  layout.top = 160;
+  const laid = layout.lay(high, Infinity);
+  for (const [, top] of boxes(high, laid)) assert.ok(top >= 160, `a plate's top at ${top} px`);
+  assertApart(high, laid);
+});

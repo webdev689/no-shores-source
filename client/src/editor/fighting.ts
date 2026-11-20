@@ -4,6 +4,7 @@ import {
   type FightEvent,
   type FightLook,
   type FightOrders,
+  type FightVessel,
   type FightView,
   SHOT_CYCLE,
   type ShipState,
@@ -180,20 +181,17 @@ export class Fighting {
     return taken;
   }
 
-  /** The panel's lines at `now`: her hurts and guns, each captain's within `LINE_REACH_M`, nearest first, the
-   *  broadside warning naming the nearest captain running out, and the messages. */
+  /** The panel's lines at `now`: each captain's within `LINE_REACH_M`, nearest first, the lay (on target only while
+   *  its side can fire), the broadside warning naming the nearest captain running out, and the messages. */
   lines(now: number): string[] {
     const { player, lay } = this.answer;
     const near = captainsOf(this.answer)
       .map((captain) => ({ captain, apart: Math.round(apart(this.answer, captain)) }))
       .filter(({ apart }) => apart <= LINE_REACH_M)
       .sort((one, other) => one.apart - other.apart);
-    const side = (index: 0 | 1) => (player.guns.left[index] > 0 ? `${player.guns.left[index].toFixed(1)} s` : 'ready');
     const whole = (have: number, most: number) => `${Math.ceil(have)}/${most}`;
+    // Her own hurts and guns are the readout's plate and rose.
     const lines = [
-      `Your Sloop: hull ${whole(player.hull, player.max_hull)}, sails ${whole(player.sail, player.max_sail)}.` +
-        ` Port ${side(0)}, starboard ${side(1)}. ${player.guns.load[0]?.toUpperCase() ?? ''}${player.guns.load.slice(1)} shot.` +
-        (player.guns.braced ? ' Braced.' : ''),
       ...near.map(
         ({ captain, apart }) =>
           `${captain.name}, ${apart} m off, ${MODE_WORDS[captain.state === 'afloat' ? captain.mode : captain.state]}: ` +
@@ -201,7 +199,8 @@ export class Fighting {
           `${Math.round(captain.crew)} men.`,
       ),
     ];
-    if (lay) lines.push(`Laying the ${lay.side} guns${lay.on_target ? ': on target.' : '.'}`);
+    if (lay)
+      lines.push(`Laying the ${lay.side} guns${lay.on_target && sideReady(player, lay.side) ? ': on target.' : '.'}`);
     const warning = captainsOf(this.answer)
       .filter((captain) => captain.run_out.length > 0 && captain.state === 'afloat')
       .sort((one, other) => apart(this.answer, one) - apart(this.answer, other))[0];
@@ -214,6 +213,14 @@ export class Fighting {
   end(): Promise<void> {
     return this.source.fightEnd();
   }
+}
+
+/** Whether her `side` can fire now: she is afloat, not braced, and its guns are loaded. */
+export function sideReady(
+  player: { readonly state: string; readonly guns: Pick<FightVessel['guns'], 'braced' | 'left'> },
+  side: 'port' | 'starboard',
+): boolean {
+  return player.state === 'afloat' && !player.guns.braced && (player.guns.left[side === 'port' ? 0 : 1] ?? 0) <= 0;
 }
 
 /** Every captain in the fight: the first, then any other. */

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { AIM_FLOATS, AIM_TONES, type AimDrawn, aimCorners, ARC, POST } from './aimView.ts';
+import { AIM_FLOATS, AIM_TONES, type AimDrawn, aimCorners, ARC, POST, ringStrength, STRIKE_HALF_M } from './aimView.ts';
 
 /** A camera at the window's origin, 5.5 m up, looking north (south negative) along the flat, 65° high, 16 by 9. */
 const FOCAL = 1 / Math.tan((65 * Math.PI) / 180 / 2);
@@ -85,4 +85,34 @@ test("the aim wears its tone's colours: brass laid, red hot, grey idle", () => {
   assert.ok(close(colour('laid'), AIM_TONES.laid.zone));
   assert.ok(close(colour('hot'), AIM_TONES.hot.zone));
   assert.ok(close(colour('idle'), AIM_TONES.idle.zone));
+});
+
+test('a strike mark stands out of her side toward the eye, so her hull never hides half of it', () => {
+  const strike = [1, -50, 2] as const;
+  const { corners, blended } = aimCorners({ ...AIM, zone: [], strikes: [strike] }, camera(), 0);
+  const { eye } = camera();
+  const away = (point: readonly number[]) => Math.hypot(...[0, 1, 2].map((axis) => (point[axis] ?? 0) - eye[axis]));
+  const middle = [0, 1, 2].map(
+    (axis) => [0, 2].reduce((sum, corner) => sum + (corners[(blended + corner) * AIM_FLOATS + axis] ?? 0), 0) / 2,
+  );
+  assert.ok(
+    Math.abs(away(strike) - away(middle) - STRIKE_HALF_M) < 1e-3,
+    'its middle a half mark nearer than where it struck',
+  );
+});
+
+test("a landing's ring is DFO's foam ring: brightest at 0.7 of its radius and broad, so it reads at 140 m", () => {
+  assert.equal(ringStrength(0.7), 1);
+  assert.ok(ringStrength(0.5) > 0.25 && ringStrength(0.9) > 0.25, 'lit across half its radius');
+  assert.equal(ringStrength(0.4), 0);
+  assert.equal(ringStrength(1.01), 0);
+});
+
+test("the grey a side shows while it cannot fire is DFO's, at DFO's strength", () => {
+  assert.deepEqual(AIM_TONES.idle, {
+    zone: [0.62, 0.64, 0.66, 0.3],
+    arc: [0.62, 0.64, 0.66, 0.22],
+    post: [0.6, 0.62, 0.64, 0.16],
+    strike: [0.62, 0.64, 0.66, 0.35],
+  });
 });

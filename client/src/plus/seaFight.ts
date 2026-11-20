@@ -1,6 +1,6 @@
 // The sea fight's readout in the Plus kit, after DFO's helm readout (navalHud.js): her SHIP PLATE at the bottom
 // right (her name, her hull, sails and crew as banded bars, a fire and a brace chip, and the BATTERY ROSE: bow over
-// stern, port and starboard either side, each side filling as it reloads, gold where the look lays it, brass-edged
+// stern, port and starboard either side, each side filling as it reloads, glowing gold where the look lays it, brass-edged
 // once loaded, flashing as it comes ready, and the side a blow came from flashed); the TARGET CARD under the compass
 // (her name, class and distance, her hull and sail bars, her state and the key that boards her); and the TALLY of her
 // last volley. A readout, never a window: made once, updated each frame, pressed never.
@@ -47,6 +47,9 @@ export interface SeaFightModel {
     readonly rig: number;
   } | null;
 }
+
+/** The gap between the card and a ship's plate under it, CSS pixels. */
+const CARD_GAP = 8;
 
 /** The bars' bands: each bar is cut in this many, as the vitals' are. */
 export const BANDS = 10;
@@ -142,6 +145,13 @@ export class SeaFightReadout {
     this.tally = made('div', 'seafight-tally', this.root);
   }
 
+  /** How far down the ships' plates may stand, CSS pixels: under the card while it shows, else under the compass. */
+  get under(): number {
+    return this.root.hidden || this.card.hidden
+      ? UNDER_COMPASS
+      : this.card.offsetTop + this.card.offsetHeight + CARD_GAP;
+  }
+
   /** Shows `model`, or hides the readout for none. */
   update(model: SeaFightModel | null): void {
     this.root.hidden = model === null;
@@ -216,7 +226,7 @@ export function seaFightCss(): string {
 .seafight-side.port, .seafight-side.starboard { position: relative; padding: 2px 4px; border: 1px solid ${TONES.stoneDim};
   background: linear-gradient(0deg, color-mix(in srgb, ${TONES.brassLo} 80%, transparent) var(--fill, 0%), ${TONES.groundChip} var(--fill, 0%)); }
 .seafight-side.ready { border-color: ${TONES.brass}; }
-.seafight-side.laid { background: color-mix(in srgb, ${TONES.brass} 70%, transparent); color: ${TONES.outline}; text-shadow: none; }
+.seafight-side.laid { box-shadow: 0 0 0 1px #050608, 0 0 8px rgba(243,207,134,0.45); color: ${TONES.brassHi}; border-color: ${TONES.brassHi}; }
 .seafight-side.fresh { animation: seafight-flash 0.35s steps(2) 2; }
 .seafight-side.blow { outline: 2px solid #ee5745; color: #ffd0c8; }
 @keyframes seafight-flash { 50% { background: ${TONES.brassHi}; color: ${TONES.outline}; } }
@@ -224,6 +234,8 @@ export function seaFightCss(): string {
 .seafight-tally { position: absolute; top: calc(50% + 64px); left: 50%; translate: -50% 0; font-size: 12px;
   letter-spacing: 0.1em; text-transform: uppercase; color: ${TONES.brassHi}; }
 .seafight-tally.miss { color: #b3a684; }
+/* In a sea fight the sea's status line stands in the top right corner, off the sky the aim looks at. */
+#hud:has(> .seafight:not([hidden])) > .status { left: auto; right: 28px; top: 22px; transform: none; }
 `;
 }
 

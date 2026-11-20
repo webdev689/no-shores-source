@@ -243,12 +243,19 @@ export class Effects {
     this.smoke(anchor, mouth, way, scale, Math.round(5 + 3 * scale), now, true);
   }
 
-  /** Each ball aloft (window metres) leaves a faint grey trail, a puff of it every few hundredths of a second. */
+  /** Each ball aloft (window metres) leaves a faint grey trail, a puff of it every few hundredths of a second, carried
+   *  off on the wind as the guns' smoke is. */
   trail(balls: readonly Point[], now: number): void {
     if (now - this.trailAt < TRAIL_EVERY_S) return;
     this.trailAt = now;
     for (const ball of balls)
-      this.add('smoke', 1, ball, now, () => ({ colour: TRAIL, alpha: 0.35, size: [0.3, 0.5], life: TRAIL_S }));
+      this.add('smoke', 1, ball, now, () => ({
+        colour: TRAIL,
+        alpha: 0.35,
+        size: [0.3, 0.5],
+        life: TRAIL_S,
+        drag: 1.4,
+      }));
   }
 
   /** A ball of `ballM` radius fell in the water at `spot` (window metres, the water's height): a column of spray

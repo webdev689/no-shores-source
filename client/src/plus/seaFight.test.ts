@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type RoseSide, type SeaFightModel, seaFightWords } from './seaFight.ts';
+import { type RoseSide, seaFightCss, type SeaFightModel, seaFightWords } from './seaFight.ts';
 
 const side = (more: Partial<RoseSide> = {}): RoseSide => ({
   fill: 1,
@@ -56,4 +56,18 @@ test("the tally counts her last volley's balls struck, below her waterline and t
     seaFightWords({ ship: null, card: null, tally: { balls, hits, holed, rig } }).tally;
   assert.equal(tally(6, 3, 1, 2), '3 of 6 balls struck - 1 below the waterline - 2 in the rigging');
   assert.equal(tally(1, 0, 0, 0), '0 of 1 ball struck');
+});
+
+test("in a sea fight the sea's status line stands in the top right corner, never over the sky the aim looks at", () => {
+  const rule = /#hud:has\(> \.seafight:not\(\[hidden\]\)\) > \.status \{([^}]*)\}/.exec(seaFightCss())?.[1] ?? '';
+  assert.match(rule, /right: 28px/);
+  assert.match(rule, /top: 22px/);
+  assert.match(rule, /left: auto/);
+  assert.match(rule, /transform: none/);
+});
+
+test("the side the look lays glows gold round its chip, as DFO's active battery does, its fill kept", () => {
+  const rule = /\.seafight-side\.laid \{([^}]*)\}/.exec(seaFightCss())?.[1] ?? '';
+  assert.match(rule, /box-shadow: 0 0 0 1px #050608, 0 0 8px rgba\(243, ?207, ?134, ?0\.45\)/);
+  assert.doesNotMatch(rule, /background/, 'its load still fills it');
 });

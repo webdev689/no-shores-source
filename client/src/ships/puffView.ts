@@ -2,8 +2,8 @@
 // the eye, or lying flat on the water as a ring of foam, in premultiplied alpha, so one blend draws both kinds: smoke,
 // spray and foam cover what is behind them by their alpha, and flash, flame, embers and glints add their light unlit
 // (alpha none). They are drawn after the water, far to near, over the finished picture, hidden by hand where the
-// scene's depth stands nearer, so the water's sky and surface never cover them. Each glow and each light also gives
-// light to what stands round it through the light layer: a muzzle's flash and a burning ship on the hulls near.
+// scene's depth stands nearer, so the water's sky and surface never cover them. Each glow also gives its stepped halo
+// through the light layer, as the land's bright things do.
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { Mark } from './effects.ts';
 import type { ShipCamera } from './shipView.ts';
@@ -13,7 +13,7 @@ export const MOST_PUFFS = 2048;
 /** A puff's floats: its place and radius, its colour and alpha, then whether it glows and whether it lies flat. */
 const PUFF_FLOATS = 12;
 
-/** The puffs to draw, far to near from `eye`, as their instance floats; the `light` kind only in the light pass. */
+/** The puffs to draw, far to near from `eye`, as their instance floats, and the glows' halos for the light pass. */
 export function puffFloats(
   marks: readonly Mark[],
   eye: readonly number[],
@@ -47,7 +47,10 @@ export function puffFloats(
     .map((mark) => ({ mark, away: away(mark) }))
     .sort((one, other) => other.away - one.away)
     .map(({ mark }) => mark);
-  return { picture: floats(picture), light: floats(marks.filter((mark) => mark.blend !== 'smoke')) };
+  // shortcut: a `light` mark (a muzzle's or a fire's reach, DFO's point light on the hulls near) is not drawn: the light
+  // layer halos the screen round what glows, so a 26 m reach became a banded disc over the sky and sea. Upgrade when
+  // the ships' shader takes point lights.
+  return { picture: floats(picture), light: floats(marks.filter((mark) => mark.blend === 'glow')) };
 }
 
 const PUFF_WGSL = /* wgsl */ `

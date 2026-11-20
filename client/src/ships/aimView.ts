@@ -52,6 +52,14 @@ export const ARC = { widthVh: 0.003, dashM: 6, dashDim: 0.35, dashSpeed: 9 } as 
 export const POST = { halfW: 0.45, halfH: 1.7 } as const;
 export const STRIKE_HALF_M = 1.1;
 const RING_OVER_M = 0.06;
+/** A landing's ring, DFO's foam ring: brightest this share of its radius out, falling to nothing this far either side
+ *  of it, and nothing past its edge. */
+const RING = { peak: 0.7, half: 0.28 } as const;
+
+/** How strong the ring is drawn `reach` (a share of its radius) out from its middle: the shader's own law. */
+export function ringStrength(reach: number): number {
+  return reach < 1 ? Math.max(0, 1 - Math.abs(reach - RING.peak) / RING.half) : 0;
+}
 
 /** The pictures a quad wears, drawn in its fragment: the arc's line, the ring, a soft dot. */
 const PICTURE = { line: 0, ring: 1, soft: 2 } as const;
@@ -131,7 +139,11 @@ export function aimCorners(
   }
   for (const point of aim.strikes) {
     if (quads() >= MOST_QUADS) break;
-    quad(point, scaled(frame.right, STRIKE_HALF_M), scaled(frame.up, STRIKE_HALF_M), tone.strike, PICTURE.soft);
+    // Stood a half mark out of her side toward the eye, so the hull it lies on never hides half of it.
+    const toEye = minus(camera.eye, point);
+    const out = STRIKE_HALF_M / (Math.hypot(...toEye) || 1);
+    const middle: Point = [point[0] + toEye[0] * out, point[1] + toEye[1] * out, point[2] + toEye[2] * out];
+    quad(middle, scaled(frame.right, STRIKE_HALF_M), scaled(frame.up, STRIKE_HALF_M), tone.strike, PICTURE.soft);
   }
   const march = time * ARC.dashSpeed;
   for (const arc of aim.arcs) {
@@ -210,7 +222,7 @@ fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
     strength = across * dash;
   } else if (drawn.picture == 1u) {
     let reach = length(drawn.uv);
-    strength = smoothstep(0.72, 0.86, reach) * (1.0 - smoothstep(0.92, 1.0, reach));
+    strength = select(0.0, max(0.0, 1.0 - abs(reach - ${RING.peak}) / ${RING.half}), reach < 1.0);
   } else {
     let reach = length(drawn.uv);
     strength = pow(max(0.0, 1.0 - reach), 1.6);

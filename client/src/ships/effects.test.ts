@@ -196,6 +196,14 @@ test('a ball aloft leaves a faint trail that fades behind it', () => {
   assert.equal(effects.marks(1).length, 0);
 });
 
+test("a ball's trail rides the wind as a gun's smoke does", () => {
+  const effects = new Effects(15);
+  effects.blow(Math.PI / 2);
+  effects.trail([[0, 0, 5]], 0);
+  const [puff] = effects.marks(0.4);
+  assert.ok(puff && puff.x > 0.2, 'the wind blowing east has taken it east');
+});
+
 test('where a ship went down foam rings lie on the water and the air boils up in drops', () => {
   const effects = new Effects(16);
   for (let frame = 0; frame < 30; frame++) effects.foam([0, 0, 0], 6, frame / 30, 1 / 30);

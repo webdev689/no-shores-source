@@ -158,6 +158,10 @@
       #land-overlay {
         pointer-events: none;
       }
+      /* The sea fight's readout stands beside the land's overlay, and goes with it. */
+      #land-overlay[hidden] + .seafight {
+        display: none;
+      }
     </style>
   </head>
   <body>

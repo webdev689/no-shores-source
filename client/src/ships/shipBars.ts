@@ -324,6 +324,11 @@ export class HullLosses {
 export class ShipPlates {
   private readonly layout = new BarLayout();
   private readonly hulls = new HullLosses();
+
+  /** How far down the highest plate's top may stand, CSS pixels: under the compass, or what stands under it. */
+  set top(pixels: number) {
+    this.layout.top = pixels;
+  }
   private drawnAt: number | null = null;
 
   /** Draws `bars` onto `svg` at `now` (seconds), each where `project` puts the point over her, the picture `width`
