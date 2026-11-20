@@ -19,10 +19,15 @@ pub const REVIVES: u8 = 5;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Pays {
     Nothing,
-    /// The dungeon of the day's, while this patrol's dungeon is its island's today.
-    Day {
+    /// The shared patrol room's: the dungeon of the day's at Normal alone, while this patrol's dungeon is its island's
+    /// as the cache opens. It carries no day's modifier, so it pays no harder tier.
+    Today {
         patrol: String,
         number: usize,
+    },
+    /// A run's opened as its island's dungeon of the day, with that day's modifier: the day's, in that day alone.
+    Day {
+        day: u64,
     },
     /// The week's Elite or Abyss Dungeon's, in the week the run was opened for.
     Week {
@@ -42,11 +47,12 @@ pub struct Run {
 }
 
 impl Run {
-    /// A patrol's shared dungeon's: the day's clear while it is its island's dungeon of the day, and nothing more.
+    /// A patrol's shared dungeon's: the day's clear at Normal while it is its island's dungeon of the day, and nothing
+    /// more.
     #[must_use]
-    pub fn day(patrol: &str, number: usize) -> Self {
+    pub fn today(patrol: &str, number: usize) -> Self {
         Run {
-            pays: Pays::Day { patrol: patrol.to_owned(), number },
+            pays: Pays::Today { patrol: patrol.to_owned(), number },
             modifiers: Vec::new(),
             revives: None,
             foes_at: None,

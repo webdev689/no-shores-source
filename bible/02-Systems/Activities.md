@@ -140,11 +140,13 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
   and the Abyss boon: a quarter more of each kill's XP, rounded down, and reputation once factions are in, until the
   week turns.
 - **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and lays
-  the Vestige 1.4 m before the cache (`pay_clear`). A player playing unkept finds the cache's own Vestige alone. The
-  day's pays in a patrol's dungeon, shared or a run, while it is its island's dungeon of
-  the day by the room's clock then. The week's pays only in the week its run was opened for, so a run opened before
-  Tuesday's 09:00 and cleared after it pays as a clear again. An Elite Dungeon at Normal and a sea island's pay
-  their kills and cache alone.
+  the Vestige 1.4 m before the cache (`pay_clear`). A player playing unkept finds the cache's own Vestige alone. A
+  run's first clear pays only in the day or the week it was opened for, as its modifiers are fixed then. The day's
+  pays in a run opened while its dungeon was its island's dungeon of the day, with that day's modifier at Elite and
+  Abyss, and cleared that day; and at Normal in a patrol's shared room while it is its island's dungeon of the day by
+  the room's clock then. The week's pays only in the week its run was opened for. So a run opened before a reset and
+  cleared after it pays as a clear again. An Elite Dungeon at Normal and a sea island's pay their kills and cache
+  alone.
 - **A clear again** in the same period pays its kills and its cache as any run, no more.
 
 ## Quests and bounties

@@ -188,3 +188,36 @@ fn a_player_playing_unkept_finds_the_caches_vestige_alone_and_their_kept_charact
     clear_the_end(&mut later);
     assert_eq!(vestiges_for(&later, again), 2, "its own clear takes the day's");
 }
+
+#[test]
+fn a_days_clear_pays_only_in_a_run_opened_as_that_days_dungeon_and_cleared_that_day_or_in_the_shared_room_at_normal() {
+    let mut shared = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("today's dungeon of the day, shared");
+    shared.set_difficulty(gear::Difficulty::Elite);
+    shared.set_minute(FRIDAY_NINE);
+    let player = kept_in(&mut shared, &past_the_prologue());
+    clear_the_end(&mut shared);
+    assert_eq!(vestiges_for(&shared, player), 1, "the shared room carries no day's modifier, so pays no Elite clear");
+    let run_at = |minute: u64| {
+        let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 0 };
+        Room::dungeon_run(&of, gear::Difficulty::Elite, minute).expect("a run of a patrol's dungeon")
+    };
+    let modifiers = |room: &Room| room.run.as_ref().map(|run| run.modifiers.clone());
+    let thursdays = gear::activities::dungeon_of_the_day(20_777, "continent-1");
+    assert_ne!(thursdays, Some(("gullwing-vale", 0)), "the day before, another is the dungeon of the day");
+    let mut early = run_at(FRIDAY_NINE - 1);
+    assert_eq!(modifiers(&early), Some(vec![]));
+    let player = kept_in(&mut early, &past_the_prologue());
+    early.set_minute(FRIDAY_NINE);
+    clear_the_end(&mut early);
+    assert_eq!(vestiges_for(&early, player), 1, "opened before the reset, when it was not the day's");
+    let mut today = run_at(FRIDAY_NINE);
+    assert_eq!(modifiers(&today), Some(vec![Modifier::Burn(3)]));
+    let player = kept_in(&mut today, &past_the_prologue());
+    clear_the_end(&mut today);
+    assert_eq!(vestiges_for(&today, player), 2, "opened as the day's, carrying its modifier");
+    let mut late = run_at(FRIDAY_NINE);
+    let player = kept_in(&mut late, &past_the_prologue());
+    late.set_minute(FRIDAY_NINE + gear::clock::DAY_MINUTES);
+    clear_the_end(&mut late);
+    assert_eq!(vestiges_for(&late, player), 1, "cleared after the next reset");
+}

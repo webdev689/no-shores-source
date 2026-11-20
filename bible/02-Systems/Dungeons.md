@@ -202,13 +202,14 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **A room for each at each difficulty.** A patrol's dungeon is the room `node-<patrol id>--dungeon-<number>`, and
   `node-<patrol id>--elite--dungeon-<number>` or `--abyss--dungeon-<number>` at the harder difficulties ([[Server]]).
   It opens from its patrol's node file, refused for a node that is no patrol, and its garrison stands at the patrol's
-  island band, raised by its difficulty. Its first clear pays the day's while it is its island's dungeon of the day.
+  island band, raised by its difficulty. Its first clear at Normal pays the day's while it is its island's dungeon of
+  the day; at Elite or Abyss it pays none, since it carries no day's modifier.
 - **A run's room** (`Room::dungeon_run`) stands any dungeon for a run at a tier, opened at a minute. The run is fixed
   as it opens; at Abyss it carries five revives the company shares, and a wipe starts it over ([[Activities]]).
 
 | Run of | Its world seeds from | Levels | End foe | First clear pays | Modifiers | Gated as |
 |---|---|---|---|---|---|---|
-| A patrol's dungeon (an island's patrol, numbers 0 to 2) | `<patrol>--dungeon-<n>` | its island's band | the Reeve, a Miniboss | the day's | the day's, at Elite or Abyss while it is today's | a patrol's dungeon |
+| A patrol's dungeon (an island's patrol, numbers 0 to 2) | `<patrol>--dungeon-<n>` | its island's band | the Reeve, a Miniboss | the day's, that day, when it opened as the day's | the day's, at Elite or Abyss when it opened as the day's | a patrol's dungeon |
 | An Elite Dungeon at Normal | `<place>--elite-dungeon` | its island's band | its Boss | nothing more | none | an Elite Dungeon |
 | An Elite Dungeon at Elite or Abyss, only this week's of that tier | the same | every foe at 26 or 30 | its Boss | the week's | the week's | the week's dungeon |
 | A sea island's (its style known, its continent of a band) | `sea-dungeon-<continent>-<style>-<seed 8 hex>` | its continent's band | the Reeve, a Miniboss | nothing more | none | by its tier alone |

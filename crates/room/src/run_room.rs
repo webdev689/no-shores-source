@@ -1,6 +1,7 @@
 //! A dungeon's room for a run: a patrol's dungeon at any tier, an Elite Dungeon (four or five blocks to its own Boss)
 //! at Normal or as the week's Elite or Abyss Dungeon, and a sea island's. The run is fixed as the room opens: what its
-//! first clear pays, the day's or the week's modifiers, five revives at Abyss and the week's fixed level. Its first
+//! first clear pays and in which day or week, the day's or the week's modifiers, five revives at Abyss and the week's
+//! fixed level. Its first
 //! clear in its period pays as the cache opens (`pay_clear`), by the record each character keeps (`gear::clears`).
 
 use super::{Pays, REVIVES, Run};
@@ -52,10 +53,12 @@ impl Room {
                 if *number >= dungeon::PER_PATROL {
                     return None;
                 }
+                // The day's pay and its modifier are fixed together as the run opens, as the week's are.
                 let today = dungeon_of_the_day(day, island.continent) == Some((patrol.as_str(), *number));
                 let modifiers =
                     if tier != Difficulty::Normal && today { vec![modifier_of_the_day(day)] } else { vec![] };
-                let run = Run { modifiers, revives, ..Run::day(patrol, *number) };
+                let pays = if today { Pays::Day { day } } else { Pays::Nothing };
+                let run = Run { pays, modifiers, revives, foes_at: None };
                 let (seed, style) = dungeon::of_patrol(patrol, *number);
                 let name = format!("{patrol}--dungeon-{number}");
                 let levels = island_levels(island.continent);
@@ -99,8 +102,9 @@ impl Room {
         Some(room)
     }
 
-    /// Pays a player the room keeps as the cache opens: the day's clear in today's dungeon of the day, the week's in the
-    /// week the run was opened for. Its Vestige lies BONUS_BEFORE_M before the cache; nothing once taken.
+    /// Pays a player the room keeps as the cache opens: the day's clear in the day the run was opened for, or at Normal
+    /// in the shared room of today's dungeon of the day, and the week's in the week the run was opened for. Its Vestige
+    /// lies BONUS_BEFORE_M before the cache; nothing once taken.
     pub(crate) fn pay_clear(&mut self, player: PlayerId, level: u8, cache: &Cache) {
         let Some(pays) = self.run.as_ref().map(|run| run.pays.clone()) else { return };
         let (day, now, tier) = (self.day(), week_of(self.minute), self.difficulty);
@@ -110,11 +114,15 @@ impl Room {
         let character = &mut found.character;
         let vestige = match pays {
             Pays::Nothing => None,
-            Pays::Day { patrol, number } => {
+            Pays::Today { patrol, number } => {
                 let today = island_of(&patrol).and_then(|island| dungeon_of_the_day(day, island.continent));
-                let paid = (today == Some((patrol.as_str(), number)))
+                let paid = (tier == Difficulty::Normal && today == Some((patrol.as_str(), number)))
                     .then(|| character.clear_of_the_day(day, tier, level, &dice))
                     .flatten();
+                paid.and_then(|reward| reward.vestige)
+            }
+            Pays::Day { day: opened } => {
+                let paid = (opened == day).then(|| character.clear_of_the_day(day, tier, level, &dice)).flatten();
                 paid.and_then(|reward| reward.vestige)
             }
             Pays::Week { weekly, week } => {

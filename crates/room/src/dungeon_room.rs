@@ -107,8 +107,8 @@ fn band_rooms(dungeon: &Dungeon, most: usize) -> Vec<usize> {
 
 impl Room {
     /// A patrol's dungeon by its number as its patrol's shared room, its garrison standing at the patrol's island band
-    /// of `levels`, its first clear paying the day's while it is its island's dungeon of the day: none for a number
-    /// past the patrol's dungeons.
+    /// of `levels`, its first clear at Normal paying the day's while it is its island's dungeon of the day: none for a
+    /// number past the patrol's dungeons.
     #[must_use]
     pub fn dungeon(patrol: &str, number: usize, levels: Option<(u8, u8)>) -> Option<Self> {
         if number >= dungeon::PER_PATROL {
@@ -116,7 +116,7 @@ impl Room {
         }
         let (seed, style) = dungeon::of_patrol(patrol, number);
         let (name, laid) = (format!("{patrol}--dungeon-{number}"), Dungeon::forge(seed, style));
-        let mut room = Self::laid_dungeon(&name, &laid, levels, (REEVE, Miniboss), Some(Run::day(patrol, number)))?;
+        let mut room = Self::laid_dungeon(&name, &laid, levels, (REEVE, Miniboss), Some(Run::today(patrol, number)))?;
         room.place = Some(gear::gate::Place::PatrolDungeon);
         Some(room)
     }
