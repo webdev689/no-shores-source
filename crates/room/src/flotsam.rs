@@ -139,11 +139,9 @@ impl Flotsam {
             let near = ships.iter().any(|(player, at)| {
                 *player == piece.player && libm::hypot(at[0] - piece.at[0], at[1] - piece.at[1]) <= GATHER_M
             });
-            if !near {
-                return true;
-            }
-            let held =
-                characters.get_mut(&piece.player).map(|character| open(piece, seed, character)).unwrap_or_default();
+            // Only a player whose character the room holds can take what it holds: for anyone else it floats on.
+            let Some(character) = characters.get_mut(&piece.player).filter(|_| near) else { return true };
+            let held = open(piece, seed, character);
             gathered.push((Event::Gathered { id: piece.id, by: piece.player }, piece.player, held));
             false
         });

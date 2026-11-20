@@ -21,8 +21,12 @@ pub struct Boarded {
     pub wind: [f64; 2],
     pub room: Room,
     pub aboard: BTreeMap<PlayerId, PlayerId>,
-    pub won: bool,
+    /// The sea's tick her crew fell on, once it has.
+    pub won_at: Option<u64>,
 }
+
+/// How long her boarders have to take her hold once her crew has fallen, in the sea's ticks of 1/60 s: a minute.
+pub const HOLD_TICKS: u64 = 3_600;
 
 /// Every deck boarded, and each hull's deck (the Sloop's, the Schooner's, the Brig's and the Frigate's) to board.
 #[derive(Debug, Default)]
@@ -60,7 +64,7 @@ impl Sea {
                 let deck = self.decks.hulls.get(hull).unwrap_or(&self.deck);
                 let (faction, rank) = (pirate.commission.faction, foe_rank(pirate.commission.rank));
                 let room = Room::deck(deck, faction, rank, pirate.level.max(1));
-                self.decks.boarded.push(Boarded { pirate, at, wind, room, aboard: BTreeMap::new(), won: false });
+                self.decks.boarded.push(Boarded { pirate, at, wind, room, aboard: BTreeMap::new(), won_at: None });
                 self.decks.boarded.len() - 1
             }
         };
@@ -93,7 +97,7 @@ impl Sea {
     pub fn leave_deck(&mut self, player: PlayerId) -> Result<(), LeaveRefused> {
         let index = self.decks.boarded.iter().position(|deck| deck.aboard.contains_key(&player));
         let index = index.ok_or(LeaveRefused::NotAboard)?;
-        if !self.decks.boarded[index].won {
+        if self.decks.boarded[index].won_at.is_none() {
             return Err(LeaveRefused::Fighting);
         }
         self.step_off(index, player);
@@ -107,7 +111,7 @@ impl Sea {
         let kept = deck.room.kept_character(boarder).and_then(|text| gear::Character::from_json(&text));
         deck.room.leave(boarder);
         if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
-            character.ship = held.ship;
+            (character.ship, character.ship_at) = (held.ship, held.ship_at);
             self.harbour.characters.insert(player, character);
         }
         if deck.aboard.is_empty() {
@@ -122,9 +126,15 @@ impl Sea {
         let mut index = 0;
         while index < self.decks.boarded.len() {
             let deck = &mut self.decks.boarded[index];
+            // One no boarder came aboard (her room was full) is scuttled as an empty one is.
+            if deck.aboard.is_empty() {
+                let pirate = self.decks.boarded.remove(index).pirate;
+                self.fights.scuttle_by(pirate.id);
+                continue;
+            }
             deck.room.tick();
-            if !deck.won && deck.room.cleared() {
-                deck.won = true;
+            if deck.won_at.is_none() && deck.room.cleared() {
+                deck.won_at = Some(self.clock);
                 // Her hold is opened: she lays no more when she goes down.
                 self.fights.forget_hold(deck.pirate.id);
                 let players: Vec<PlayerId> = deck.aboard.keys().copied().collect();
@@ -132,7 +142,14 @@ impl Sea {
                 self.lay_flotsam(&sank, (2, 1));
             }
             let deck = &self.decks.boarded[index];
-            if !deck.won && !deck.aboard.is_empty() && deck.room.all_down() {
+            // Her hold taken or not, her boarders go back aboard their own ships `HOLD_TICKS` after her crew fell.
+            if deck.won_at.is_some_and(|at| self.clock >= at + HOLD_TICKS) {
+                for player in deck.aboard.keys().copied().collect::<Vec<_>>() {
+                    self.step_off(index, player);
+                }
+                continue;
+            }
+            if deck.won_at.is_none() && !deck.aboard.is_empty() && deck.room.all_down() {
                 let (at, beaten): (_, Vec<PlayerId>) = (deck.at, deck.aboard.keys().copied().collect());
                 for player in beaten {
                     self.step_off(index, player);
@@ -148,13 +165,9 @@ impl Sea {
     }
 
     /// The character a boarder fights with on her deck, their ship's hurts in it.
-    pub(super) fn deck_character(&self, player: PlayerId) -> Option<String> {
+    pub(super) fn deck_character(&self, player: PlayerId) -> Option<gear::Character> {
         let deck = self.decks.boarded.iter().find(|deck| deck.aboard.contains_key(&player))?;
-        let mut character = gear::Character::from_json(&deck.room.kept_character(deck.aboard[&player])?)?;
-        if let Some(held) = self.harbour.characters.get(&player) {
-            character.ship = held.ship;
-        }
-        Some(character.to_json())
+        gear::Character::from_json(&deck.room.kept_character(deck.aboard[&player])?)
     }
 
     /// A deck whose ship went down under her boarders: each goes back to their own ship.

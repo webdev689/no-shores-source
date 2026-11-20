@@ -348,7 +348,8 @@ impl Sea {
     /// A fighting player's orders for the ticks to come: her helm, her lay, the fire, the brace and a load. The climb,
     /// the fire and the load act on the next tick alone.
     pub fn orders(&mut self, player: PlayerId, orders: Orders) -> Result<(), CourseRefused> {
-        if self.fights.orders(player, orders) { Ok(()) } else { Err(CourseRefused::Fighting) }
+        // On a deck her own ship takes no orders: the boarder fights on foot.
+        if !self.on_deck(player) && self.fights.orders(player, orders) { Ok(()) } else { Err(CourseRefused::Fighting) }
     }
 
     /// One tick: each ship out of a fight sails on along its course by its pace's distance, turning onto each leg as
@@ -399,7 +400,7 @@ impl Sea {
         let chart = SeaChart { coasts: &self.coasts, charted: &self.chart };
         let mut met = self.pirates.tick(TICK_SECONDS, &ships, &chart);
         ports::wary_meet(&mut self.pirates, &self.berths, &ships, &mut met);
-        let mut heave = |player| heave_to(&mut self.berths, &mut self.aboard, player);
+        let mut heave = |player| heave_to((&mut self.berths, &mut self.aboard, &mut self.harbour), player);
         let at_sea = (&mut self.clashes, &mut self.pirates);
         let joined = self.fights.take_in(met, &ships, at_sea, &mut heave, (&self.coasts, &self.weather, time));
         self.tell_joined(&joined);
@@ -452,11 +453,18 @@ impl Sea {
 /// Brings a player's ship to rest for a fight, calling them to the helm: the player, her Sloop hove to where she lies,
 /// and the hurts she keeps.
 fn heave_to(
-    berths: &mut BTreeMap<PlayerId, Berth>,
-    aboard: &mut BTreeMap<PlayerId, Aboard>,
+    (berths, aboard, harbour): (
+        &mut BTreeMap<PlayerId, Berth>,
+        &mut BTreeMap<PlayerId, Aboard>,
+        &mut crate::harbour::Harbour,
+    ),
     player: PlayerId,
 ) -> Option<(PlayerId, sailing::ship::Ship, [f64; 3])> {
     let berth = berths.get_mut(&player)?;
+    // A repair stops as she heaves to for a fight, keeping what it mended: the fight starts from that.
+    if let Some(mended) = harbour.repairs.stop(player) {
+        ports::keep(berth, &mut harbour.characters, player, mended);
+    }
     let kept = berth.kept;
     let sailing = berth.sailing.as_mut()?;
     sailing.course.clear();

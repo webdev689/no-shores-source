@@ -135,6 +135,8 @@ pub const WASHED_UP: f64 = 20.0;
 /// A player told that someone joined their fight: the code, the tick, the player's number (0 for a hostile ship),
 /// and a hostile ship's faction and rank (0 for a player).
 pub const JOINED: f64 = 22.0;
+/// A player told where their ship lies once the accounts gave her back: the code, the tick, x and y, and her heading.
+pub const MOORED: f64 = 23.0;
 /// A player told what a piece they gathered held: the code, the tick, the piece, the Vestige's rarity (0 none, else
 /// the gear crate's number and one), and whether it held an Ammo box and an Ammo crate (1 or 0).
 pub const HELD: f64 = 21.0;

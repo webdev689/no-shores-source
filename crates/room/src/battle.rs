@@ -231,10 +231,20 @@ impl Fights {
 
     /// A player leaves their fight afloat: their ship leaves it, with the hurts she keeps.
     pub fn release(&mut self, player: PlayerId) -> Option<[f64; 3]> {
-        let (fought, crew) = self.of_mut(player)?;
-        let kept = fought.fight.vessel(crew.ship).map(|vessel| kept_of(&vessel.damage));
+        let kept = self.hurts_of(player).map(|(kept, _)| kept);
         self.leave(player);
         kept
+    }
+
+    /// The hurts a fighting player's ship keeps as the fight has her now (a sunk ship's if she is going down), and
+    /// where she lies.
+    #[must_use]
+    pub fn hurts_of(&self, player: PlayerId) -> Option<([f64; 3], [f64; 2])> {
+        let fought = self.list.iter().find(|fought| fought.crews.contains_key(&player))?;
+        let vessel = fought.fight.vessel(fought.crews.get(&player)?.ship)?;
+        let going_down = matches!(vessel.damage.state, State::Sinking | State::Sunk);
+        let kept = if going_down { crate::harbour::SUNK_KEPT } else { kept_of(&vessel.damage) };
+        Some((kept, [vessel.ship.x, vessel.ship.y]))
     }
 
     /// A player leaves the sea: their ship leaves their fight, and a fight left with no player ends with them.

@@ -141,6 +141,9 @@ pub struct Character {
     /// room's).
     #[serde(default = "whole_ship")]
     pub ship: [u16; 3],
+    /// Where the sea last kept their ship, to the whole metre; none before she first put to sea.
+    #[serde(default)]
+    pub ship_at: Option<[i64; 2]>,
 }
 
 /// A ship's hull, canvas or men whole, in ten-thousandths.
@@ -167,6 +170,7 @@ impl Character {
             arts: crate::arts::WornArts::default(),
             ammo: crate::ammo::AMMO_FULL,
             ship: whole_ship(),
+            ship_at: None,
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),

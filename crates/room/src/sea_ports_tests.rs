@@ -7,7 +7,7 @@ use naval::ranks::{Commission, PIRATES, Rank};
 
 /// One square continent 100 km a side, its north-west corner 100 km from the frame's, and two port cities' roadsteads
 /// out at sea: the first 10 km east of where the tests' ships sail.
-fn sea() -> Sea {
+pub(super) fn sea() -> Sea {
     let text = r#"{ "continents": [{ "id": "continent-4", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
     sea.harbour.harbours =
@@ -15,14 +15,14 @@ fn sea() -> Sea {
     sea
 }
 
-fn ticks(sea: &mut Sea, count: usize) {
+pub(super) fn ticks(sea: &mut Sea, count: usize) {
     for _ in 0..count {
         sea.tick();
     }
 }
 
 /// A sea with a player at rest at (50 km, 50 km) and a bold ship of `rank` `out` metres north of them, met next tick.
-fn met(out: f64, rank: Rank) -> (Sea, PlayerId) {
+pub(super) fn met(out: f64, rank: Rank) -> (Sea, PlayerId) {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
@@ -34,11 +34,11 @@ fn met(out: f64, rank: Rank) -> (Sea, PlayerId) {
     (sea, player)
 }
 
-fn vessel_mut(sea: &mut Sea, player: PlayerId, ship: naval::shots::ShipId) -> &mut naval::fight::Vessel {
+pub(super) fn vessel_mut(sea: &mut Sea, player: PlayerId, ship: naval::shots::ShipId) -> &mut naval::fight::Vessel {
     sea.fights.of_mut(player).unwrap().0.fight.ships.get_mut(&ship).unwrap()
 }
 
-fn told(sea: &Sea, player: PlayerId, code: f64) -> Option<Vec<f64>> {
+pub(super) fn told(sea: &Sea, player: PlayerId, code: f64) -> Option<Vec<f64>> {
     sea.harbour
         .told
         .iter()

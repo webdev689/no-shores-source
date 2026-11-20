@@ -5,7 +5,7 @@
 use super::{Berth, Sea, Ship};
 use crate::PlayerId;
 use crate::battle::{Outcome, Sank};
-use crate::harbour::{HELD, JOINED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
+use crate::harbour::{HELD, JOINED, MOORED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
 use movement::TICK_SECONDS;
 use naval::fight::Event;
 use naval::wire::told_numbers;
@@ -174,18 +174,25 @@ impl Sea {
     /// the accounts gave theirs; none for no player at sea.
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
-        // On a deck, its room holds their character as it fights.
-        if let Some(text) = self.deck_character(player) {
-            return Some(text);
-        }
-        if let Some(character) = self.harbour.characters.get(&player) {
-            return Some(character.to_json());
-        }
         let berth = self.berths.get(&player)?;
-        let mut fresh = gear::Character::starting();
+        // On a deck, its room holds their character as it fights.
+        let held = self.deck_character(player).or_else(|| self.harbour.characters.get(&player).cloned());
+        let mut character = held.unwrap_or_else(gear::Character::starting);
+        // In a fight, she is kept as the fight has her, and lies at the port city she would wash up at, as one who
+        // lost does: a player who leaves mid-fight comes back there.
+        let (kept, at) = match self.fights.hurts_of(player) {
+            Some((kept, at)) => {
+                (kept, self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1))
+            }
+            None => {
+                (berth.kept, berth.sailing.as_ref().map_or([f64::NAN; 2], |sailing| [sailing.ship.x, sailing.ship.y]))
+            }
+        };
         let whole = f64::from(gear::character::SHIP_WHOLE);
-        fresh.ship = berth.kept.map(|share| (share.clamp(0.0, 1.0) * whole).round() as u16);
-        Some(fresh.to_json())
+        character.ship = kept.map(|share| (share.clamp(0.0, 1.0) * whole).round() as u16);
+        let kept_at = at.iter().all(|metres| metres.is_finite()).then(|| at.map(|metres| metres.round() as i64));
+        character.ship_at = kept_at.or(character.ship_at);
+        Some(character.to_json())
     }
 
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea
@@ -195,6 +202,18 @@ impl Sea {
             return false;
         };
         berth.kept = character.ship.map(|share| f64::from(share) / f64::from(gear::character::SHIP_WHOLE));
+        // Her ship lies where the room last kept her, wherever the page first put her to sea.
+        let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
+        if let (Some([x, y]), false) = (at, self.fights.fighting(player)) {
+            let heading = berth.sailing.as_ref().map_or(0.0, |sailing| sailing.ship.heading);
+            berth.sailing =
+                Some(super::Sailing { ship: Ship { x, y, heading, pace: 0, rate: 0 }, course: Default::default() });
+            self.harbour.told.push((player, vec![MOORED, self.clock as f64, x, y, heading]));
+        }
+        // A deck boarded before the accounts answered fights on with the real character.
+        if let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player)) {
+            deck.room.restore_character(deck.aboard[&player], text);
+        }
         self.harbour.characters.insert(player, character);
         true
     }
@@ -228,7 +247,12 @@ pub(super) fn wary_meet(
 }
 
 /// Her hurts kept with her and with her player's character.
-fn keep(berth: &mut Berth, characters: &mut BTreeMap<PlayerId, gear::Character>, player: PlayerId, kept: [f64; 3]) {
+pub(super) fn keep(
+    berth: &mut Berth,
+    characters: &mut BTreeMap<PlayerId, gear::Character>,
+    player: PlayerId,
+    kept: [f64; 3],
+) {
     berth.kept = kept;
     if let Some(character) = characters.get_mut(&player) {
         let whole = f64::from(gear::character::SHIP_WHOLE);
@@ -239,3 +263,7 @@ fn keep(berth: &mut Berth, characters: &mut BTreeMap<PlayerId, gear::Character>,
 #[cfg(test)]
 #[path = "sea_ports_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "sea_keeping_tests.rs"]
+mod keeping_tests;
