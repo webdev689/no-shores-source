@@ -7,17 +7,31 @@ use naval::fight::{Aim, Hurts, sail_hurt};
 use naval::guns::Shot;
 use naval::laying::{Sighted, preview};
 use naval::shots::Flag;
+use room::fleet::FLEET_AT;
+use room::sea_weather::open_sea_at;
 use sailing::HullKind;
 use sailing::floats::{HELM_FLOATS, POSE_FLOATS, SHIP_FLOATS};
 use sailing::pose::{Pose, pose_of};
 use sailing::ship::{Helm, Ship};
-use sailing::waters::{OpenSea, steady_wind};
-use std::sync::OnceLock;
+use sailing::waters::OpenSea;
+use std::cell::RefCell;
 
-/// The room's swell: the world's.
-fn swell() -> &'static Swell {
-    static SWELL: OnceLock<Swell> = OnceLock::new();
-    SWELL.get_or_init(Swell::default)
+thread_local! {
+    /// The fleet room's swell and wind as the browser predicts by them: the weather at its place when it opened.
+    static WEATHER: RefCell<(Swell, [f64; 2])> = RefCell::new(open_sea_at(FLEET_AT, 0.0));
+}
+
+/// Sets the world time the fleet room opened at, seconds since the Unix epoch, for the predictions: its weather is
+/// the room's (`Fleet::set_world_start`).
+pub fn set_world_start(seconds: f64) {
+    WEATHER.with(|weather| *weather.borrow_mut() = open_sea_at(FLEET_AT, seconds));
+}
+
+fn with_weather<T>(use_weather: impl FnOnce(&Swell, [f64; 2]) -> T) -> T {
+    WEATHER.with(|weather| {
+        let weather = weather.borrow();
+        use_weather(&weather.0, weather.1)
+    })
 }
 
 fn ship_of(numbers: &[f64]) -> Option<Ship> {
@@ -54,14 +68,15 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
         return Vec::new();
     };
     let hurts = Hurts::from_numbers(wrecked != 0.0, sail, max_sail);
-    let waters = OpenSea { swell: swell() };
-    let wind = steady_wind(swell());
-    // Out on the open sea a ship's step does not hang on the hour: only her pose does.
-    // A player sails the Sloop.
-    let hull = HullKind::Sloop.hull();
-    let ship = helms.iter().fold(ship, |ship, helm| sail_hurt(&ship, hull, *helm, hurts, &waters, wind, time).0);
-    let pose = pose_of(&ship, hull, &waters, time);
-    ship.to_floats().into_iter().chain(pose.to_floats()).collect()
+    with_weather(|swell, wind| {
+        let waters = OpenSea { swell };
+        // Out on the open sea a ship's step does not hang on the hour: only her pose does.
+        // A player sails the Sloop.
+        let hull = HullKind::Sloop.hull();
+        let ship = helms.iter().fold(ship, |ship, helm| sail_hurt(&ship, hull, *helm, hurts, &waters, wind, time).0);
+        let pose = pose_of(&ship, hull, &waters, time);
+        ship.to_floats().into_iter().chain(pose.to_floats()).collect()
+    })
 }
 
 /// The numbers of one other ship in a lay's request: her number, flag (0 a player's, else her faction's number), hull
@@ -111,8 +126,8 @@ fn lay_numbers(numbers: &[f64]) -> Option<Vec<f64>> {
     let ships: Vec<Sighted> = std::iter::once(Some(own))
         .chain(others.chunks_exact(OTHER_FLOATS).map(sighted_of))
         .collect::<Option<Vec<Sighted>>>()?;
-    let waters = OpenSea { swell: swell() };
-    let Some(shown) = preview(&own, load, &aim, &ships, (&waters, time)) else { return Some(vec![0.0]) };
+    let shown = with_weather(|swell, _| preview(&own, load, &aim, &ships, (&OpenSea { swell }, time)));
+    let Some(shown) = shown else { return Some(vec![0.0]) };
     let mut out = vec![1.0, shown.lay.side.index() as f64, shown.lay.elevation, shown.lay.reach, shown.radius];
     out.push(f64::from(u8::from(shown.on_target)));
     for (launch, end) in shown.launches.iter().zip(&shown.ends) {

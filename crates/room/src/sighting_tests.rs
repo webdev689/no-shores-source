@@ -70,3 +70,10 @@ fn a_heading_turns_toward_another_by_at_most_the_most_the_shorter_way() {
     assert!(close(turned_toward(1.0, 1.05, 0.1), 1.05), "near enough, there");
     assert!((HELM_TURN_RAD_S - 10.0_f64.to_radians()).abs() < 1e-12);
 }
+
+#[test]
+fn a_bold_ships_meeting_cone_is_where_her_way_can_meet_a_voyage_holding_its_course() {
+    let major = meeting_arc(Rank::Major);
+    assert!((major - libm::asin(0.2) * MEETING_MARGIN).abs() < 1e-12, "a fifth of his way: 11.5 degrees, shrunk");
+    assert!(meeting_arc(Rank::Minor) < major && major < meeting_arc(Rank::Miniboss));
+}

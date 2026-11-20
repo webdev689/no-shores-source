@@ -60,8 +60,9 @@ Work that fans out goes to headless workers, each in its own git worktree.
 - Start one with `bash tools/claude-toolkit/workers/run-worker.sh <worktree> <brief>` (Bash, in the background,
   timeout 7200000). Each gets Serena pinned to its worktree, Context7, Headroom, claude-mem and SkillsMP.
 - Every brief starts from `tools/claude-toolkit/workers/brief-common-template.md`.
-- A run that ends without its final reply's INBOX and OBSERVATIONS lines, or with tracked work left uncommitted, is
-  resumed once with the finish steps; still unfinished, its log says `WORKER <name> UNFINISHED`.
+- A run that ends without its final reply's OBSERVATIONS line (and its INBOX line, where the brief asks for one), or
+  with tracked work left uncommitted, is resumed once with the finish steps; still unfinished, its log says
+  `WORKER <name> UNFINISHED`.
 - A late change goes in the worker's inbox (`~/wt/reports/inbox-<name>.md`, under a `## <short heading>` line), not a
   stop and `--resume`.
 - Stop one with TaskStop or `bash tools/claude-toolkit/workers/stop-worker.sh <name>`, never `pkill -f <pattern>`.

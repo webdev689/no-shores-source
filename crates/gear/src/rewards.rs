@@ -77,8 +77,8 @@ impl Character {
         };
         let (xp, aurem) = (times(worth.xp), times(worth.aurem));
         self.earn_xp(xp, weapon);
-        if difficulty == Difficulty::Storm {
-            self.earn(crate::emblems::Deed::StormFoe);
+        if difficulty == Difficulty::Abyss {
+            self.earn(crate::emblems::Deed::AbyssFoe);
         }
         self.materials.add_aurem(aurem);
         let chance = (worth.vestige * difficulty.reward()).min(1.0);

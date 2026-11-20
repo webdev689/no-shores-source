@@ -17,7 +17,7 @@ code:
 
 The ships Overlook sails beyond the Sloop, chosen in her style for each rank of ship, the player's own hulls and the
 merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
-[[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]]).
+[[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]).
 The Sloop, the Schooner, the Brig and the Frigate are built and sail ([[Sailing]]): each captain sails her rank's
 ([[Naval Combat]], "Ranks and factions").
 
@@ -81,7 +81,7 @@ where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, w
 3. `paint_ship.py` sorts its faces into the five parts and lays its UVs; `export_ship.py` measures its waterline,
    guns, boxes, sails and deck, its helm where the model's empty named `Helm` stands, and publishes it to R2 with its
    entry in `content/ships/ships.json`. The `ships` workflow does this for every ship built. A
-   square sail is measured by its four corners, each named by its side; the game does not set one yet.
+   square sail is measured by its four corners, each named by its side.
 
 ## What the code needs
 
@@ -98,9 +98,12 @@ Done for the Schooner, the Brig and the Frigate:
 - **Never her strength**: her canvas drives her no harder than the Sloop's, and her side's broadside takes as much
   from a ship as the Sloop's, however many guns share it ([[Naval Combat]], "Ranks and factions").
 
+- **Drawing them**: every ship is drawn as her own hull in her side's colours, her square sails bellied and their
+  yards braced round ([[Sailing]], "Square sails"); a hull with no model yet is drawn as the Sloop.
+- **Her drawn size**: every hull grows by one law as the view comes in, never under her true size ([[Game]], "Her
+  size coming in").
+
 Left:
 
-- **Drawing them**: the game draws every ship as the Sloop, and bellies and swings only gaff sails and staysails.
 - **The ram**: a ram bow that strikes harder than a stem, for the Tithe Ram.
 - **The Fluyt**: not yet modelled.
-- **Its drawn size on the [[Overworld]]**.

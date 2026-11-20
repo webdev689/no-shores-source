@@ -85,7 +85,7 @@ distance, never reached. Each island has one major port city; Saltmere's is Over
 
 ## Waters
 
-The sea is split into nine waters, one an island ([[The Waters Come From the Islands]]). The `world` crate judges them
+The sea is split into nine waters, one an island ([[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]). The `world` crate judges them
 (`waters.rs`):
 
 - A point of sea belongs to the island whose coast (its continent's outline) is nearest, by straight-line distance in
@@ -169,12 +169,26 @@ source of each.
 
 ## Weather and travel
 
-- The weather is one field over the whole map, computed from world time and position by the shared Rust rules, so the
-  wind a ship sails by is the wind the server judges. DFO's dynamic weather and clouds draw from it, rewritten for
-  WebGPU ([[WebGPU Only]]).
+- The weather is one field over the whole map, computed from world time (seconds since the Unix epoch) and position
+  by the shared Rust rules (`crates/world/src/weather.rs`), so the wind a ship sails by is the wind the server judges.
+  It is built from + - * / and square root alone ([[Agree to the Bit]]).
+- Weather systems about 600 km across drift eastward at 10 m/s, so a front crosses an island in about a day, and
+  change as they go over about six hours. Each is smooth noise over space and time, never stepping. At a point and a
+  moment it gives the wind's way and strength and the sea state, 0 (calm) to 1 (storm), in four bands: calm under
+  0.2, moderate to 0.5, rough to 0.8 and storm above. Over days at many points the sea is calm about 15% of the time,
+  moderate 50%, rough 25% and in a storm 10%; the field's measured quantiles set those shares.
+- The wind veers smoothly across a system about the prevailing westerlies; its strength follows the sea state, from a
+  calm's 2 m/s through 4, 9 and 15 m/s at the bands' meetings to a storm's 25 m/s.
+- The open water shelters the sea: the fetch, the open water upwind of a point out to 60 km (marched by the
+  clearance to the nearest coast, in steps of 500 m at least), leaves the swell a quarter of its height at under 2 km
+  and all of it at 60 km, the share taken as the mean over five rays, the wind's and 10 and 20 degrees either side.
+  Within 3 km of a port's roadstead the sea is calm, the swell 0.3 of a moderate sea's whatever the weather, easing
+  back to the open sea's over the next 500 m ([[Water]]).
+- DFO's dynamic weather and clouds will draw from it, rewritten for WebGPU ([[WebGPU Only]]).
 - Ships sail faster than real speed, and faster still in the Overworld, DFO's raised travel camera over the same
   world. The speeds are tuning numbers, set by playing.
 
 ## Limits
 
 - No isles are placed yet; the nine continents are drawn and each has its biome ([[The Continents' Biomes]]).
+- The weather drives the sea and the wind alone: no clouds, rain or fog are drawn from it yet.

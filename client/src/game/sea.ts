@@ -19,19 +19,19 @@ import {
 import { dragCamera, keyTurn, type Press, pressAt, pressMove, zoomCamera } from '../overworld/overworldInput.ts';
 import type { Mark, PlacedMark } from '../overworld/overworldMarks.ts';
 import { pickAt } from '../overworld/overworldPick.ts';
-import { type Pace, SHIP_SPEED } from '../overworld/voyage.ts';
+import type { Pace } from '../overworld/voyage.ts';
 import { lookOf, panShot, type Shot } from './camera.ts';
 import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
-import { type Stir, wakeStirs } from '../ships/swellPose.ts';
 import { Aboard, type AboardContext } from './aboard.ts';
 import { CloseZoom } from './seaClose.ts';
 import { Passage } from './passage.ts';
 import type { SeaFrame, SeaInput } from './seaFrame.ts';
 import { Chase } from './seaChase.ts';
-import { HOSTILE_PREFIX, SeaWatch, sightedHostiles, type WaterNamed } from './seaHostiles.ts';
+import { Wake } from './seaWake.ts';
+import { HOSTILE_PREFIX, SeaWatch, type WaterNamed } from './seaHostiles.ts';
 import { seaMarks } from './seaMarks.ts';
 import { type SeaHull, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
@@ -45,9 +45,6 @@ const SHIP_DRAWN_M = 75;
 const FIRST_TILT = (30 * Math.PI) / 180;
 /** Seconds the view takes to fall back from an island's side to the ship. */
 const FLY_BACK_SECONDS = 1.4;
-/** Her wake stirs the ripples only where she is drawn near her own size, the ripples round her a 32 m field, and at
- *  most as often as they step, seconds. */
-const WAKE = { mostScale: 1.5, everyS: 1 / 60 } as const;
 /** Seconds the view takes to come down to the helm, or go back up from it. */
 const HELM_SECONDS = 1.1;
 /** A mark stands this far over the ground it marks, metres. */
@@ -88,7 +85,7 @@ export class Sea {
   /** The water at a point, once the page has opened the waters; and what the voyage's line says of them. */
   waterAt: ((point: Point2) => WaterNamed | null) | null = null;
   private readonly watch = new SeaWatch();
-  private readonly chase = new Chase();
+  private readonly chase = new Chase((ship) => this.room?.chase(ship));
   /** Where she lies and heads, her voyage and pace dial, and her courses to the sea room. */
   private readonly passage: Passage;
   private camera: OverworldCamera;
@@ -98,8 +95,8 @@ export class Sea {
   private helmShare = 0;
   /** How far the wheel has brought the view in over her, past the Overworld's lowest. */
   private readonly close = new CloseZoom();
-  /** Seconds since her wake last stirred the water; and whether the sea room's link was lost. */
-  private sinceStir = 0;
+  /** Her wake; and whether the sea room's link was lost. */
+  private readonly wake = new Wake();
   private roomLost = false;
   private side: readonly Mark[] = [];
   private sideRig: Rig | null = null;
@@ -300,27 +297,24 @@ export class Sea {
     if (!this.aboard.walking) this.passage.stepPace(direction);
   }
 
-  /** A mark chosen at sea: the ship sails for it, to the water nearest it; for a hostile ship's, she chases her, the
-   *  mark kept chosen so Enter chases her again. */
-  sailToMark(id: string): void {
-    const pirate = this.room?.pirates.find((each) => `${HOSTILE_PREFIX}${each.id}` === id);
-    if (pirate) {
+  /** A mark chosen at sea: the ship sails for it, to the water nearest it; for a sighted hostile ship's, she chases
+   *  her, the mark kept chosen while she does. True for a mark she sails for. */
+  sailToMark(id: string): boolean {
+    const toward = this.chase.begin(id, this.room?.pirates ?? [], this.position);
+    if (toward) {
       this.chosen = id;
-      this.passage.sailTo(this.chase.start(pirate, this.position));
-      return;
+      this.passage.sailTo(toward);
+      return true;
     }
     const mark = this.islandMarks.find((each) => each.id === id);
     if (mark) this.sailTo([mark.at[0], mark.at[1]]);
+    return mark !== undefined;
   }
 
-  /** Chases the hostile ship whose mark is chosen, if one is: true then. */
+  /** Chases the hostile ship whose mark is chosen, if one is still sighted: true then. */
   chaseChosen(): boolean {
     const chosen = this.chosen;
-    const pirates = sightedHostiles(this.room?.pirates ?? [], this.position);
-    const sighted = pirates.some((each) => `${HOSTILE_PREFIX}${each.id}` === chosen);
-    if (chosen === null || !sighted || this.view.kind !== 'sail') return false;
-    this.sailToMark(chosen);
-    return true;
+    return this.view.kind === 'sail' && chosen !== null && chosen.startsWith(HOSTILE_PREFIX) && this.sailToMark(chosen);
   }
 
   /** Docks or goes ashore as the landfall offers: flies the view up over the island's side the ship lies off, its
@@ -513,7 +507,7 @@ export class Sea {
         ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, this.helmShare > 0.5)
         : [],
       firstPerson: !combat && this.aboard.firstPerson,
-      stirs: combat ? combat.stirs() : own.underWay ? this.wake(lying, dt) : [],
+      stirs: combat ? combat.stirs() : own.underWay ? this.wake.stirs(lying, this.hull.waterline, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
       note: this.note(),
       landfall: this.landfall,
@@ -522,19 +516,6 @@ export class Sea {
       pace: this.passage.pace,
       overSide: this.view.kind === 'landing',
     };
-  }
-
-  /** Her bow and quarters stir the water under way, as she is drawn, at a ship's own way: near her own size, where
-   *  the ripples round her hold her, and as often as they step. */
-  private wake(lying: Lying, seconds: number): Stir[] {
-    this.sinceStir += seconds;
-    if (lying.scale > WAKE.mostScale || this.sinceStir < WAKE.everyS) return [];
-    this.sinceStir = 0;
-    const { lengthM, beamM } = this.hull.waterline;
-    return wakeStirs(lying, (lengthM / 2) * lying.scale, (beamM / 2) * lying.scale, SHIP_SPEED).map((stir) => ({
-      ...stir,
-      radiusM: stir.radiusM * lying.scale,
-    }));
   }
 
   /** The fight the sea room began for the player, while it is on screen. */

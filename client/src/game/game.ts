@@ -45,6 +45,7 @@ import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.t
 import { showSeaHud } from './seaHud.ts';
 import { offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo, portsOf } from './worldData.ts';
+import { seaWeatherOn } from '../water/seaWeather.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -110,6 +111,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     shipModels.load(SLOOP_HULL),
   ]);
   const { continents } = world;
+  // The sea by weather, the swell the sea is drawn with, and how far the view last reached.
+  const [seaWeather, seaView] = [seaWeatherOn(roomModule, world.layoutText, world.cities), { reachM: 0 }];
   const cityAssets = loadCityAssets(base);
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
   // The size ships are drawn at this frame, which a ruin's wrecks are drawn at too: the sea's, true size on foot.
@@ -483,7 +486,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
-    const swell = scene.land?.swell;
+    // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
+    const swell = seaWeather()?.follow(here.position, seaView.reachM, seconds) ?? scene.land?.swell;
     footView.hide();
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
     if (!paused && !heldMap?.shown)
@@ -526,8 +530,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : shown.firstPerson
         ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
         : undefined;
+    seaView.reachM = Math.max(0, shown.shot.eye[2]) * 6;
     const fleet = traffic.atSea(shown, waterHere(), seconds, clock);
-    const more = { hulls: fleet.hulls, after, focus: shown.focus };
+    const more = { hulls: fleet.hulls, after, focus: shown.focus, ...(swell ? { swell } : {}) };
     scene.draw(shown.shot, size, clock, seconds, standing([...shown.ships, ...fleet.ships], shown.figures), more);
     showStanding({ kind: 'inside' });
     showSeaHud(hud, here, shown, {

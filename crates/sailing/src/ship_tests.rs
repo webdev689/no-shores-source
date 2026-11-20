@@ -400,3 +400,38 @@ fn the_open_sea_is_the_swell_whole_as_it_rolls_over_any_sea_past_its_reach() {
         assert!(!crate::pose::shallower(&spot, SLOOP.draught_m), "nowhere aground");
     }
 }
+
+#[test]
+fn the_weathers_wind_blows_its_way_held_inside_the_sailing_band() {
+    use crate::helm::{WIND_RATED, WIND_SHARE};
+    use crate::waters::{RATED_M_S, weather_wind};
+    let rated = weather_wind([0.0, -RATED_M_S]);
+    assert!(rated[0].abs() < 1e-12 && (rated[1] + WIND_RATED).abs() < 1e-12, "{rated:?}");
+    let light = weather_wind([1.0, 0.0]);
+    assert!((light[0] - WIND_RATED * WIND_SHARE[0]).abs() < 1e-12, "a calm's light air still sails her: {light:?}");
+    let gale = weather_wind([-15.0, 20.0]);
+    let strength = (gale[0] * gale[0] + gale[1] * gale[1]).sqrt();
+    assert!((strength - WIND_RATED * WIND_SHARE[1]).abs() < 1e-12 && gale[0] < 0.0 && gale[1] > 0.0, "{gale:?}");
+    assert_eq!(weather_wind([0.0, 0.0]), [0.0, 0.0]);
+}
+
+#[test]
+fn a_bigger_hull_rides_the_swell_slower_and_still_water_holds_both_alike() {
+    use crate::FRIGATE;
+    use crate::pose::{LAG_S_PER_M, lag_of};
+    use crate::waters::OpenSea;
+    assert!((lag_of(&FRIGATE) / lag_of(&SLOOP) - FRIGATE.half_length_m / SLOOP.half_length_m).abs() < 1e-12);
+    assert!((lag_of(&SLOOP) - LAG_S_PER_M * 2.0 * SLOOP.half_length_m).abs() < 1e-12);
+    // The same hull lengths and beams, so only her inertia tells them apart.
+    let slow = Hull { half_length_m: SLOOP.half_length_m * 4.0, ..SLOOP };
+    let swell = land::sea::Swell::default();
+    let sea = OpenSea { swell: &swell };
+    let heave = |hull: &Hull| {
+        (0..600)
+            .map(|step| pose_of(&at_rest(0.3, 0), hull, &sea, f64::from(step) * 0.1).heave)
+            .map(|h| h * h)
+            .sum::<f64>()
+    };
+    assert!(heave(&slow) < heave(&SLOOP), "{} {}", heave(&slow), heave(&SLOOP));
+    assert_eq!(Flat.lagged(3.0, 4.0, 5.0, 9.0), Flat.at(3.0, 4.0, 5.0));
+}

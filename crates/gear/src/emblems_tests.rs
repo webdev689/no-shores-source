@@ -26,8 +26,8 @@ fn a_new_player_keeps_and_wears_the_starting_emblem_and_earns_by_level_and_deed(
     character.earn_xp(u32::MAX, None);
     assert!(character.keeps_emblem("deckhand") && character.keeps_emblem("captain"), "levels 5 to 20 reached");
     assert!(!character.keeps_emblem("stormborn"));
-    character.earn(Deed::StormFoe);
-    character.earn(Deed::StormFoe);
+    character.earn(Deed::AbyssFoe);
+    character.earn(Deed::AbyssFoe);
     assert_eq!(character.emblems.iter().filter(|kept| *kept == "stormborn").count(), 1, "kept once");
 }
 

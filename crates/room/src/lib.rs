@@ -21,6 +21,7 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+pub mod sea_weather;
 pub mod sighting;
 mod spells;
 mod statuses;
@@ -189,7 +190,7 @@ impl Room {
             resource_nodes: Vec::new(),
             drops: Vec::new(),
             spells: spells::Spells::default(),
-            difficulty: gear::Difficulty::Calm,
+            difficulty: gear::Difficulty::Normal,
             patrol: None,
             day: 0,
         }

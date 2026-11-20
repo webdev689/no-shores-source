@@ -226,10 +226,10 @@ fn ranks_come_by_their_band_and_a_level_evenly_from_it() {
 }
 
 #[test]
-fn under_way_a_ship_comes_ahead_within_60_degrees_at_her_sight_for_the_pace() {
+fn under_way_a_ship_comes_ahead_within_60_degrees_and_a_bold_one_within_her_meeting_cone() {
     let mut pirates = Pirates::default();
     let ship = Voyager { heading: TAU / 4.0, ..voyager(1, [0.0, 0.0], 60, false) };
-    let mut count = 0;
+    let (mut count, mut bold) = (0, 0);
     for _ in 0..4 * 3600 {
         pirates.sailing.clear();
         // Held in place, she rolls as if under way at x60, heading east.
@@ -241,10 +241,12 @@ fn under_way_a_ship_comes_ahead_within_60_degrees_at_her_sight_for_the_pace() {
             assert!((pirate.sight_m - sight).abs() < 1e-9);
             assert!((0.9 * sight - 3.0..=sight + 3.0).contains(&out), "{out} m out");
             let bearing = heading_to(ship.at, [pirate.x, pirate.y]);
-            assert!((bearing - TAU / 4.0).abs() <= TAU / 6.0 + 1e-3, "bearing {bearing}");
+            let arc = if pirate.bold { crate::sighting::meeting_arc(pirate.commission.rank) } else { TAU / 6.0 };
+            assert!((bearing - TAU / 4.0).abs() <= arc + 1e-3, "bearing {bearing}, bold {}", pirate.bold);
+            bold += usize::from(pirate.bold);
         }
     }
-    assert!(count > 15, "{count}");
+    assert!(count > 15 && bold > 0 && bold < count, "{count} ships, {bold} bold: a bold one within her meeting cone");
     assert!((sight_for(60.0) - SIGHT_HOLD_S * (12.0 + 2.4) * 60.0).abs() < 1e-9);
 }
 

@@ -142,6 +142,11 @@ fn ship_bytes(ships: &[TrafficShip]) -> Vec<u8> {
     bytes
 }
 
+/// What `use_open` makes of the open waters and their traffic; none before they are opened.
+pub(crate) fn with_waters<T>(use_open: impl FnOnce(&Waters, &Traffic) -> T) -> Option<T> {
+    OPEN.with(|open| open.borrow().as_ref().map(|(waters, traffic)| use_open(waters, traffic)))
+}
+
 /// The friendly ships within `radius_m` of `(x, y)` at world time `time_s` (seconds since the Unix epoch), by id,
 /// packed as `ship_bytes` says; empty before the waters are opened.
 #[must_use]

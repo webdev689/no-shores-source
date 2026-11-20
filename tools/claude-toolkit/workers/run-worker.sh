@@ -65,9 +65,10 @@ run() {
 $NOTE" --strict-mcp-config --mcp-config "$CFG" --allowedTools "$TOOLS" --max-turns 600 </dev/null > "$REPLY" 2>&1
   local rc=$?; cat "$REPLY" >> "$OUT/$NAME.log"; return $rc
 }
-# Finished: the reply carries the brief's INBOX and OBSERVATIONS lines, and nothing tracked is left uncommitted.
+# Finished: the reply carries its OBSERVATIONS line (and its INBOX line, where the brief asks for one), and nothing
+# tracked is left uncommitted.
 finished() {
-  grep -q "INBOX:" "$REPLY" && grep -q "OBSERVATIONS:" "$REPLY" &&
+  grep -q "OBSERVATIONS:" "$REPLY" && { ! grep -q "INBOX:" "$BRIEF" || grep -q "INBOX:" "$REPLY"; } &&
     [ -z "$(git -C "$WT" status --porcelain --untracked-files=no)" ]
 }
 C=(); [ "$MODE" = "--resume" ] && C=(-c)

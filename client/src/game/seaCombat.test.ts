@@ -100,3 +100,19 @@ test("a fight begun at the sea's view keeps the size she is drawn at, and eases 
   assert.equal(fight.share, 1, 'down at the fight');
   assert.equal(last, 1, 'her true size');
 });
+
+test("in a fight the player's footprint comes first, then the captains nearest her, and a sunk ship's goes", () => {
+  const far = { ...captain, ship: [9000, 6000, 0, 3, 0, 0, 0, 2] as typeof captain.ship };
+  const near = { ...captain, ship: [5100, 6000, 0, 0, 0, 0, 0, 2] as typeof captain.ship };
+  const sunk = { ...captain, ship: [5050, 6000, 0, 0, 0, 0, 0, 2] as typeof captain.ship, state: 'sunk' as const };
+  const fight = new SeaCombat(ROOM, { ...FIRST, captain: far, others: [sunk, near] }, MARKS, 0);
+  const hulls = fight.hulls(4);
+  assert.deepEqual(
+    hulls.map((hull) => [hull.x, hull.way > 0, hull.scale]),
+    [
+      [5000, false, 4],
+      [5100, false, 4],
+      [9000, true, 4],
+    ],
+  );
+});

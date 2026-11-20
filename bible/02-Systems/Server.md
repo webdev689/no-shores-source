@@ -166,13 +166,13 @@ will take it, by the room's own tick.
   port cities the Grey Tithe patrols; with a layout alone it has no lanes. The server opens it with the port cities
   read from the land files (`server/seaPorts.ts`), as the page does (`portsOf`).
 - **Measured** (`measure_tests.rs`, by hand in release): 20 players in each kind of water of the world's layout, each
-  voyaging at ×60 straight out 150 km and back for ten minutes, then the same with each chasing every ship she sights
-  (her course for the nearest each half second). With bold ships coming for the player and no chasing, the first
-  ship is sighted by 16 of 20 in the pirates' waters (median 119 s), 14 in the Grey Tithe's (208 s), 12 in contested
-  ones (135 s) and 9 in home waters (194 s, ships of the waters beside them); a ship stays in sight 40 to 75 s on
-  average, 90 to 95% of them 30 s and over; a fight comes by 5 minutes for 5 to 10% and by 10 for 5 to 10%. Chasing,
-  a fight comes by 5 minutes for 10 to 35% (the Grey Tithe's waters the most) and by 10 for 10 to 50%, 25% in the
-  pirates'; a wary ship chased never takes the player on, so she stays in sight minutes on end.
+  voyaging at ×60 straight out 150 km and back for ten minutes: sailing on whatever they sight, chasing every ship they
+  sight (the room told), or turning away from a ship coming for them. Sailing on, a fight comes by 5 minutes for 30 to
+  35% in the pirates' and the Grey Tithe's waters (10% contested) and by 10 for 40 to 65% (30% contested); the first
+  ship is sighted at a median of 132 to 160 s; a ship stays in sight 37 to 59 s on average, 68 to 92% of them 30 s and
+  over. Chasing, by 10 minutes 70 to 85% (by 5: 55 to 60%). Turning away, 35 of 36 a ship came for in hostile waters
+  never fought. A voyage is held under ×60 for 3 s at most as a ship comes near along its way, but for one contested
+  voyage, held up to 89 s.
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
@@ -284,8 +284,8 @@ each room's name. The object keeps its room in WebAssembly: the room and protoco
 so every decision is Rust and the shell only carries bytes and time.
 
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
-  continents; `node-<id>` is that node's room, from its baked file, and `node-<id>--rough` or `--storm` the same
-  node at a voyage's harder seas, a room of its own; `fleet-<name>` a fleet's place on the open sea;
+  continents; `node-<id>` is that node's room, from its baked file, and `node-<id>--elite` or `--abyss` the same
+  node at a voyage's harder difficulty, a room of its own; `fleet-<name>` a fleet's place on the open sea;
   any other name is the Test Ground's course,
   `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the

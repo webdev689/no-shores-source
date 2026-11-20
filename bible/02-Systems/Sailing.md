@@ -11,7 +11,9 @@ code:
   - crates/sailing/src/ship.rs#step_pulled
   - crates/sailing/src/pose.rs#pose_of
   - crates/sailing/src/waters.rs#LandWaters
-  - crates/sailing/src/waters.rs#steady_wind
+  - crates/sailing/src/waters.rs#weather_wind
+  - crates/sailing/src/pose.rs#lag_of
+  - crates/room/src/sea_weather.rs#SeaWeather
   - crates/sailing/src/waters.rs#OpenSea
   - crates/land/src/exact.rs#fingerprint
   - crates/land-wasm/src/sail.rs#sail_bytes
@@ -60,17 +62,23 @@ sail the other hulls ([[Hulls]]) by the same laws.
   sail running dead before it) by the point of sail (0.9 running dead
   before the wind, 1 on the quarter, 0.55 in the wind's eye), in the sea's wind, a fifth again. Under sail her rudder
   swings her at her steerage, read at her way over her rig's gain: 3 degrees a second at no way, about 12 at her best
-  way in the steady wind. On her oars she swings at 20.
+  way in her rated wind. On her oars she swings at 20.
 - **The ladder.** W climbs a rung, S comes down one: oars astern, oars at rest, oars ahead, sails set. A and D steer;
   backing water, the helm answers the other way. Shift with A or D pulls her sideways on her oars.
 - **A step.** Her swing and her way move toward what her rung asks, at the mod's rates under DFO's responsive helm.
   With her sails struck and her oars at rest, she coasts to a stop, faster for the share of her way her canvas made.
   She moves in her own frame, then swings, as the mod's boat did. Her heading stays in [0, 2π).
-- **The wind.** One steady wind blows where the swell runs, at a ship's rated wind (1.5 m/s), until weather drives
-  both.
-- **Her pose.** She takes the mean of the water under her bow, stern, sides and middle as her height, and its slope
-  along and across her as her pitch and roll. The swell replaces the mod's sine bob over a flat sea. She heels into a
-  turn as the mod's boat did, once she makes a wake (0.5 m/s). On a lake or river she floats at its level.
+- **The wind.** She sails in the weather's wind where she is ([[World Map]], "Weather and travel"): its way, and its
+  strength over 6.5 m/s (a moderate sea's middle) as a share of her rated wind (1.5), held between 0.3 and 2 of it
+  (`sea_wind`), so a calm's light air still moves her and a storm's gale does not run away with her
+  (`weather_wind`). The sea room's fights, the fleet room, a clash and the World Editor all take it. A fight takes the
+  wind where and when it began, and keeps it while it lasts (`sea_weather.rs`). A room counts its own ticks: its host
+  hands it the world time it opened at (`room_world_start`).
+- **Her pose.** She takes the mean of the water under her bow, stern, sides and middle at her waterline as her height,
+  and its slope along and across her as her pitch and roll, each felt through her inertia: every wave answered as a
+  first-order lag answers it, her time constant 0.02 s a metre of her waterline's length (`lag_of`), so a bigger hull
+  answers slower and rides the short waves less. The swell replaces the mod's sine bob over a flat sea. She heels into
+  a turn as the mod's boat did, once she makes a wake (0.5 m/s). On a lake or river she floats at its level.
 - **Her hurts.** A ship's damage holds back the way her sails and her oars may ask ([[Naval Combat]]): bare poles
   leave her 35% of it, and a wreck's oars pull 35%. A sound ship's step is unchanged.
 - **The ground.** Her keel has three points: aft, amidships and forward. A point is aground where the water over the
@@ -78,7 +86,8 @@ sail the other hulls ([[Hulls]]) by the same laws.
   already aground onto higher ground. Then she runs on unswung if only her swing grounds her, or swings clear if only
   her way does, as the mod refused only what ran into what she touched; else she is held and loses her way. Oars
   astern take her off a shore. Within a hand of her draught she touches, and the panel says so.
-- **The open sea.** A fleet room's waters ([[Server]]): deep water everywhere under the world's swell, and no land.
+- **The open sea.** A fleet room's waters ([[Server]]): deep water everywhere under the weather's swell where the
+  room lies (the world frame's middle) when it opened, and no land.
   The swell rolls whole over any sea 15 m deep or more, so wherever a landmass's sea is that deep, its water is the
   open sea's to the bit.
 - **One crate, every machine.** The browser steps her through `land-wasm`'s door, over the open landmass, in ticks of
@@ -208,8 +217,7 @@ Boat's sizes; a spanker is a gaff sail:
   from its yard, head first, and floats astern; her flag comes down her mast when she strikes. The harm goes with the
   fight.
 
-In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the steady one
-along the swell's bearing.
+In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the weather's.
 
 Sail (`B`) puts her to sea at the camera's target, heading where the camera looks; the rules refuse her where the
 water is shallower than her draught, and the camera stands back off. Each frame owes her its time in whole ticks, one
@@ -228,15 +236,20 @@ The Overworld's ships are drawn by the page, not stepped by the rules (`swellPos
 Editor's motion ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]), each in her own hull and her
 side's colours, her pose, her heel and her footprint on the water taken from her own hull's waterline:
 
-- **On the swell.** Each takes her pose as `pose_of` does, from the swell the page draws: the mean of the water under
-  her bow, stern, sides and middle at her drawn size, and its slope along and across her. Off the charts the sea is
-  deep; over shallows the swell fades as the water's does.
+- **On the swell.** Each takes her pose as `pose_of` does, from the swell the page draws, the weather's ([[Water]]):
+  the mean of the water under her bow, stern, sides and middle at her drawn size, and its slope along and across her,
+  felt through her inertia at her drawn length. Off the charts the sea is deep; over shallows the swell fades as the
+  water's does.
+- **Her bow.** Her bow slams when, pitching down, the crest at her stem rises over it faster than 1 m/s; each slam
+  throws a burst of spray from her bow by her way and the sea state, fading in 0.8 s, over the spray a rough sea
+  throws at way.
 - **Into a turn.** She heels as `turn_heel` has it, by her swing and a ship's own way under way, 12 m/s: the Sloop 3
   degrees with the helm hard over, and every other hull by the Sloop's beam over her own (`heelShare`), so the narrow
   Schooner heels more and the broad Frigate less. Her pose on the swell is her own hull's, from her waterline. Her swing is her heading's turn a second, followed at 3 a second and taken at most as the
   helm's 10 degrees, so a voyage turning onto its next leg heels her as a hard turn would.
-- **Her wake.** Under way the player's ship stirs the water's ripples at her bow and quarters each frame, as the
-  editor's does.
+- **Her wake.** Every ship under way leaves a Kelvin wake and throws a bow wave, foam along her own hull line and
+  spray, at her drawn size ([[Water]], "A ship on it"); the player's ship also stirs the water's ripples at her bow
+  and quarters each frame, as the editor's does.
 - **Her deck** and everyone on it lie with her: her heading, pitch, roll and drawn size (`deckToWorld`).
 
 ## Her deck
@@ -276,3 +289,5 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 - No current or cargo yet, and no crew but the stand-ins aboard ([[Game]]). Hulls are kept apart only in a fight
   ([[Naval Combat]]), as every fleet room is.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.
+- A fleet room's host does not hand it the world time yet, so its sea is the weather's at world time 0: the browser
+  predicting its ships must take the same time, and the room's snapshots do not carry it.

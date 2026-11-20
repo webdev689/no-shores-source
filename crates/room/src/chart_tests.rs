@@ -77,3 +77,44 @@ fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
     });
     assert_eq!(along.count(), tithe.len(), "each on a lane, heading along it");
 }
+
+#[test]
+fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rather_than_swinging_at_it() {
+    use crate::pirates::{Pirate, Pirates, Voyager};
+    let (layout, ports) = crate::measure_tests::world();
+    let charted = Charted::new(&layout, &ports);
+    let coasts = Coast::of(&layout);
+    let chart = SeaChart { coasts: &coasts, charted: &charted };
+    let holder = |at: [f64; 2]| chart.water(at).map(|water| water.holder);
+    // The edge of Overlook's home waters on a line due east: home water, then another holder's, 1 km on.
+    let edge = (0..4_000)
+        .flat_map(|row| (0..4_000).map(move |column| [f64::from(column) * 1_000.0, f64::from(row) * 1_000.0]))
+        .find(|&at| {
+            holder(at) == Some(Holder::Home)
+                && holder([at[0] + 1_000.0, at[1]]).is_some_and(|other| other != Holder::Home)
+        })
+        .expect("an edge of home waters on the layout");
+    let player =
+        Voyager { player: 1, at: [edge[0] - 2_000.0, edge[1]], heading: 0.0, pace: 0, fighting: false, clock: 1.0 };
+    let elite = naval::ranks::Commission { faction: naval::ranks::PIRATES, rank: naval::ranks::Rank::Elite };
+    let start = [edge[0] + 1_100.0, edge[1]];
+    let mut pirates = Pirates::new(1);
+    pirates.sailing.push(Pirate::standing(1, 1, elite, start, 1.5 * std::f64::consts::PI, true));
+    let (mut headings, mut sailed, mut last) = (Vec::new(), 0.0, start);
+    for _ in 0..600 {
+        pirates.tick(1.0, &[player], &chart);
+        let Some(ship) = pirates.sailing.iter().find(|ship| ship.id == 1) else { break };
+        assert_ne!(holder([ship.x, ship.y]), Some(Holder::Home), "never into home waters");
+        headings.push(ship.heading);
+        let (east, south) = (ship.x - last[0], ship.y - last[1]);
+        sailed += (east * east + south * south).sqrt();
+        last = [ship.x, ship.y];
+    }
+    let flips = headings.windows(2).filter(|pair| {
+        let turned =
+            (pair[1] - pair[0] + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI;
+        turned.abs() > std::f64::consts::FRAC_PI_2
+    });
+    assert_eq!(flips.count(), 0, "no swinging back and forth: {headings:?}");
+    assert!(sailed > 0.8 * crate::sighting::way_of(elite.rank) * 600.0, "she kept sailing along the edge: {sailed} m");
+}
