@@ -37,12 +37,19 @@ Her rank, by the lowest level of her water's band:
 | Band from | Minor | Major | Elite | Miniboss |
 |---|---|---|---|---|
 | 1 | 0.50 | 0.40 | 0.10 | 0 |
+| 4 | 0.45 | 0.42 | 0.13 | 0 |
+| 7 | 0.40 | 0.43 | 0.17 | 0 |
 | 10 | 0.35 | 0.45 | 0.20 | 0 |
 | 13 | 0.25 | 0.45 | 0.25 | 0.05 |
+| 16 | 0.20 | 0.45 | 0.27 | 0.08 |
 | 19 | 0.15 | 0.45 | 0.30 | 0.10 |
+| 22 | 0.13 | 0.43 | 0.32 | 0.12 |
 | 26 | 0.10 | 0.40 | 0.35 | 0.15 |
 
-- **No Boss by a roll.** Her level comes from her water's band. Her way is the Sloop's times 0.9 for a Minor, 1 for a
+- **How often one comes**: a roll's chance is 0.18 and 0.0225 more for each band out, to 0.36 at levels 26 to 30.
+  A water with no band rolls as the first; home water rolls none.
+- **No Boss by a roll.** Her level comes from her water's band, and her hull, men and guns' harm grow with it by the
+  land foes' own law. A harder voyage raises her Vestige chance by the land's own reward. Her way is the Sloop's times 0.9 for a Minor, 1 for a
   Major, 1.1 for an Elite and 1.2 for a Miniboss.
 - **Sighted** half a minute of the two closing head-on, 432 m a step of the voyage's pace, never under 5 km. She is
   kept until 1.1 times that; no roll launches while three sail in sight.
@@ -50,12 +57,17 @@ Her rank, by the lowest level of her water's band:
   the arcsine of her way over the ship's. A wary one comes within 60 degrees of the course, and at x10 and under both
   do. A pirate takes the place nearest a coast; a Tithe ship the place nearest a lane, along it.
 - **The chase**: a click on her mark sails to meet her, and within 750 m the fight begins.
+- **Leaving**: a captain that hunts no one and is hunted by no captain sails off once she has been out of every foe's
+  reach for 150 s.
+- **What the room sends**: to each player, the hostile ships within 1.1 times their sighting and the other players
+  within 60 km.
 
 ### Friendly ships
 
 - **Three lanes**, one between each pair of port cities, every leg more than 800 m clear of every coast.
 - **A ship** leaves each end every 1,200 s of world time at 5 m/s and is gone on arriving. Her hull comes from a hash
-  of her number: a Sloop four times in ten, a Schooner three, a Brig two, a Frigate one.
+  of her number: a Sloop four times in ten, a Schooner three, a Brig two, a Frigate one. Arrived, she lies at the
+  roadstead 600 s before she is gone, so about one ship lies at each port at any moment.
 - **A roadstead** lies 3 km out from its port's coast, and farther, 500 m at a time, until it is 1 km clear of every
   coast.
 
@@ -68,8 +80,9 @@ Her rank, by the lowest level of her water's band:
 - **Rigs and names.** Her handling gain is the matching rig's in DFO: the Large Boat V for the Schooner, the galleon
   for the Brig, the Carrack for the Frigate. Every sail is small. A captain is named by her side and hull, as "Tithe
   Brig".
-- **Colours.** The Grey Tithe's slate hull, bone stripe and grey canvas; the pirates' black hull, red stripe and dark
-  canvas; a friendly ship's own timber with a band of Overlook's blue, cream canvas and a blue flag.
+- **Colours.** The Grey Tithe's slate hull, bone stripe and grey canvas, and a flag `#8f9092` with its balance in
+  `#2e3438`, to read apart from the pirates' at fight range; the pirates' black hull, red stripe and dark canvas; a
+  friendly ship's own timber with a band of Overlook's blue, cream canvas and a blue flag.
 
 ### Close in
 
@@ -120,7 +133,7 @@ Her rank, by the lowest level of her water's band:
   Minor to Boss, each a kill's drop by the gear loop's law; from an Elite up, one piece is a chest a rank higher.
   They lie within 30 m, drift downwind at 0.3 m/s, are gone after 180 s, and are gathered within 25 m.
 - **Striking**: a struck ship lies hove to 90 s, then is scuttled.
-- **Boarding**: within 30 m of her, both ships under 2 m/s. Her crew are 3 hands at a Minor, 3 and a heavy at a
+- **Boarding**: within 30 m of her, both ships under 2 m/s, never a ship with no crew on her deck. Her crew are 3 hands at a Minor, 3 and a heavy at a
   Major, 4 and a heavy at an Elite, 5 and a mate at a Miniboss, 6 and her Boss at a Boss. Boarders come over her rail
   on their own ship's side, 0.5 m in, facing her bow, and a fallen one stands again at the nearest rail. A deck won is
   held 60 s, then she is scuttled.
@@ -142,6 +155,14 @@ Her rank, by the lowest level of her water's band:
 - **Rig**: a third of each sail's 7 by 6 cells shot through at no canvas left; a torn sail and a fallen mast fall to
   leeward and float 40 s; a mast falls in 3 s, taking every piece whose top lies within 2.5 m along her and 3 m over
   its foot; colours come down in 4 s.
-- **Going down**: trimmed 10 degrees by her end with more holes, listing to the side with more; 80 flecks of foam a
+- **Going down**: drawn in the pose the room sends, trimmed 10 degrees by her end with more holes, listing to the side with more; 80 flecks of foam a
   second over her from halfway down.
 - **What floats**: each piece under a gold mark 2.5 m over it, never under about ten pixels across.
+- **The aim**: the look runs from the eye as drawn, so the sight is where the guns lay. It reaches 0.15 rad over the
+  horizon, past 153 m, and zooms from DFO's nearest, 11.4 m, out to the fight camera's 75 m. A ship alongside blocks
+  the line by her waterline's length and beam, from her draught to 1 m over her guns.
+- **The readout**: her plate and battery rose at the bottom right, the laid side glowing gold. The card stands under
+  the compass on the ship her laid guns fall on, else the nearest. The volley's tally stands under the sight for 4 s,
+  the fight's status line at the top right. DFO's lights on nearby hulls are not drawn yet.
+- **Ship down**: one word to the room for each ship sunk or taken in a fight with players, naming her water, holder,
+  rank, level and players. Fights among captains alone give none.
