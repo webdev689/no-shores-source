@@ -93,6 +93,36 @@ fn a_drop_stays_where_it_was_thrown_from_behind_a_thin_wall_off_a_drop_or_past_t
     assert_eq!(room.rest_at(from, north), from, "not past the section's ring");
 }
 
+#[test]
+fn a_drop_thrown_onto_a_low_landmark_rests_within_its_players_reach() {
+    // Each a dungeon holding a lake, a pool, a dais or an altar's steps: solids nobody may stand on, low enough that a
+    // throw passes over them.
+    let mut tried = 0;
+    for (patrol, number) in [("aurora-wastes", 0), ("baobab-grasslands", 2), ("blackwater-marsh", 0)] {
+        let (seed, style) = dungeon::of_patrol(patrol, number);
+        let dungeon = Dungeon::forge(seed, style);
+        let room = Room::dungeon(patrol, number, Some((10, 14))).expect("a patrol's dungeon");
+        for placed in &dungeon.landmarks {
+            for &[min_x, min_y, max_x, max_y, top] in &placed.solids {
+                if top > TUNING.step || max_x - min_x < 2.0 {
+                    continue;
+                }
+                // Felled a half-width off its west edge, the drop thrown straight across it, east.
+                let from = [min_x - TUNING.radius - 0.01, (min_y + max_y) / 2.0, 0.0];
+                let at = room.rest_at(from, core::f64::consts::FRAC_PI_2);
+                let depth = room.floor.depth_in_solid(at[0], at[1]);
+                assert!(
+                    depth <= PICK_UP_REACH - TUNING.radius,
+                    "{patrol} {}: {at:?} lies {depth} m in",
+                    placed.landmark.module
+                );
+                tried += 1;
+            }
+        }
+    }
+    assert!(tried >= 3, "each dungeon's low landmark was tried: {tried}");
+}
+
 /// A place half a metre off a dungeon's north wall, and one a cell east of it, both on open floor along that wall.
 fn beside_a_north_wall(room: &Room, dungeon: &Dungeon) -> Option<([f64; 3], [f64; 2])> {
     let rock = |cell: Option<usize>| cell.is_none_or(|cell| dungeon.cells[cell] == Cell::Rock);

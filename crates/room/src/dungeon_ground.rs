@@ -108,6 +108,11 @@ impl DungeonGround {
         nearest
     }
 
+    /// How deep a point lies inside a jamb, a pillar, a prop or a landmark, metres: 0 on open floor.
+    pub(crate) fn depth_in_solid(&self, x: f64, y: f64) -> f64 {
+        (-self.clearance(x, y)).max(0.0)
+    }
+
     /// Whether the straight line between two points passes `keep` metres or more from every jamb and pillar: each box
     /// grown by `keep` is tested against the line by the slabs between its sides.
     #[must_use]

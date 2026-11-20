@@ -202,7 +202,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   below its top, as a block meets a line; a line looks only at the solids by the cells it crosses. A foe's eyes, a
   soft lock, a blow, a telegraphed shape, a charge's lane and a shooter's cover are stopped by them and see over a
   low coffin or table. A noise through them carries half as loud and half as far. A kill's drop thrown across a wall
-  or a tall solid rests where its foe fell; one thrown onto a low solid rests on its top. A shot stops where it first
+  or a tall solid rests where its foe fell; one thrown onto a low solid rests on its top, unless it would lie so deep
+  in it (a lake, a dais, a pool) that no body standing off it reaches it, when it too rests where its foe fell. A
+  shot stops where it first
   enters rock, the grid's edge or a solid below its top (`wall_entry`), however far it flies in a tick, passes over a
   solid lower than itself, and falls onto the floor alone (`floor_at`).
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with every solid as

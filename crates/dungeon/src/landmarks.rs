@@ -1,8 +1,8 @@
 //! The landmarks: set pieces a dungeon's rooms are remembered by, one in a dungeon of two or three blocks and two in
 //! one of four or five, each in a room of its own style and never the way in's or the end. A piece stands on whole
-//! cells of its room, clear of the room's rim, or with its back on the rock; never on or beside a doorway, a torch,
-//! the way in or the portal, and the room's other cells stay one walk and as many as its band. The room takes the
-//! landmark's role and name, and its purpose furnishes it round the piece.
+//! cells of its room, clear of the room's rim, or with its back on the rock; never on or beside a doorway, the way in
+//! or the portal, nor on a torch's cell, and the room's other cells stay one walk and as many as its band. The room
+//! takes the landmark's role and name, and its purpose furnishes it round the piece.
 
 use crate::landmark_table::LANDMARKS;
 use crate::lane::Lane;
