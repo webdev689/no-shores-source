@@ -4,6 +4,7 @@ import type { SeenDeck, SeenFlotsam } from '../network/seaHarbour.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
 import { deckToWorld } from '../ships/deck.ts';
+import { deckCameraBlocks } from '../ships/spars.ts';
 import { Boarding } from './deckBoarding.ts';
 import type { DeckSea } from './deckFight.ts';
 import type { Foot, FootContext, FootFrame } from './foot.ts';
@@ -52,9 +53,10 @@ const FRAME = {
 
 /** The fight on foot stood on her deck, as the land's is, its frames counted and its leaving. */
 function standOnFoot() {
-  const kept = { frames: 0, left: 0, grid: 0, stand: null as unknown as StandOnDeck };
-  kept.stand = (_context, _node, grid, open) => {
+  const kept = { frames: 0, left: 0, grid: 0, camera: 0, stand: null as unknown as StandOnDeck };
+  kept.stand = (context, _node, grid, open) => {
     kept.grid = grid.length;
+    kept.camera = context.cameraBlocks?.length ?? 0;
     open(() => undefined);
     const foot = {
       frame: () => ((kept.frames += 1), FRAME),
@@ -89,6 +91,7 @@ test('a struck captain alongside is boarded with E: the boarder stands on her de
   boarding.frame(sea, struck, INPUT);
   await settle();
   assert.ok(foot.grid > 5 && sea.hearDeck, 'her deck’s grid stood on, her deck room heard');
+  assert.equal(foot.camera, deckCameraBlocks(0).length, 'the camera kept clear of her masts and spars, and inboard');
   const shown = boarding.frame(sea, struck, INPUT);
   assert.ok(shown && boarding.onDeck);
   const her = { x: 20, y: 0, heading: 0.5, scale: 1, heave: 0.2, pitch: 0.01, roll: -0.03 };
@@ -121,11 +124,8 @@ test('her deck won holds the boarder a minute, its time left and her hold’s ta
   );
   boarding.frame(sea, view, INPUT);
   assert.equal(boarding.won, true);
-  assert.equal(
-    boarding.words?.line,
-    'Her hold: 2 crates, a chest, afloat alongside · 60 s to go back aboard your ship',
-  );
-  assert.equal(boarding.words?.hints[0], 'E: back aboard your ship');
+  assert.equal(boarding.words?.line, 'Her hold: 2 crates, a chest');
+  assert.equal(boarding.words?.hints[0], 'E: back aboard your ship · 60 s left');
   assert.equal(fightAsk({ fight: { view }, boarding, sighted: sea }), 'leave-deck');
   assert.deepEqual(asked, ['leave-deck']);
   // The room has the boarder back aboard their own ship: the view is the sea's fight's again, at their helm.
@@ -223,5 +223,5 @@ test('a hold won while her deck stands up is still told apart from what floated 
   sea.flotsam.push({ player: 1, id: 2, at: [20, 0], kind: 'chest' });
   await settle();
   boarding.frame(sea, fight('struck'), INPUT);
-  assert.match(boarding.words?.line ?? '', /^Her hold: a chest,/);
+  assert.match(boarding.words?.line ?? '', /^Her hold: a chest$/);
 });

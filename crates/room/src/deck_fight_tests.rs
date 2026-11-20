@@ -22,16 +22,30 @@ fn her_deck_room_stands_her_rank_and_factions_crew_at_her_level_on_her_planks() 
 }
 
 #[test]
-fn a_boarder_comes_over_her_side_amidships_or_at_her_helm_and_her_room_tells_when_her_crew_or_boarders_are_down() {
+fn a_boarder_comes_over_her_rail_on_their_ships_side_clear_of_her_middle_and_her_room_tells_when_crew_or_boarders_are_down()
+ {
     let deck = test_deck();
     let mut room = Room::deck(&deck, PIRATES, Rank::Minor, 3);
-    let player = room.join().expect("room aboard");
+    // Her rails amidships, half a metre in from her outermost planks (the test deck's are at 1 m either side).
+    let [starboard, port] = [rail_spot(&deck, 1.0), rail_spot(&deck, -1.0)];
+    assert!((starboard[0] - 0.45).abs() < 0.06 && starboard[1] == 0.0, "{starboard:?}");
+    assert!((port[0] + 0.5).abs() < 0.06 && port[1] == 0.0, "{port:?}");
+    let player = room.board_at(port).expect("room aboard");
     let body = room.player(player).expect("aboard").fighter.body;
-    // The test deck has a hole amidships, so she comes aboard at the helm.
-    assert!(
-        (body.x - deck.helm[0]).abs() + (body.y - deck.helm[1]).abs() < 1e-9 && (body.z - 0.8).abs() < 1e-9,
-        "{body:?}"
-    );
+    assert!((body.x - port[0]).abs() + body.y.abs() < 1e-9 && (body.z - 0.8).abs() < 1e-9, "{body:?}");
+    assert!(body.facing.abs() < 1e-9, "facing her bow, where her crew stands");
+    // One with no plank across her middle comes aboard at her helm.
+    let mut holed = test_deck();
+    holed.heights = movement::Heights::new(
+        -1.0,
+        -3.5,
+        0.1,
+        20,
+        70,
+        (0..1400).map(|cell| (cell / 20 != 35).then_some(0.8)).collect(),
+    )
+    .unwrap();
+    assert_eq!(rail_spot(&holed, 1.0), holed.helm);
     assert!(!room.all_down());
     for foe in room.foes.values_mut() {
         foe.fighter.health = 0.0;

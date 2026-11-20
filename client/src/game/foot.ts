@@ -19,19 +19,19 @@ import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomCon
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
-import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
+import { CARD_NEAREST_M, cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
-import { OtherPlayers, type Others } from '../player/others.ts';
+import type { OtherPlayers, Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
-import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
+import type { CombatRules } from '../rules/combatRules.ts';
 import { FIGHT_TICKS } from '../player/fightMoves.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
-import { type FoeType, rosterOf } from '../rules/roster.ts';
+import type { FoeType } from '../rules/roster.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
@@ -43,6 +43,7 @@ import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
 import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
+import { hearing, nextOtherId, rulesOf } from './footRoom.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
@@ -59,6 +60,8 @@ export interface FootContext {
   readonly groundAt: (x: number, y: number) => number | null;
   readonly foesAsked: readonly FoeAsk[];
   readonly session: Promise<string | null>;
+  /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
+  readonly cameraBlocks?: readonly Block[];
 }
 
 /** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
@@ -72,9 +75,6 @@ const OVER_THE_PARAPET = 0.3;
 const OTHERS_FPS = 6;
 /** How far apart in time two figures' steps are, by their numbers, in seconds: a crowd never walks in step. */
 const STRIDE_APART_S = 0.37;
-/** Other players' figures are numbered from here, clear of the player's own, and never twice in the page's life: the
- *  forge keeps each figure's last card by its number, so a number used again would first show another node's figure. */
-let nextOtherId = 100;
 /** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
 export const IDLE: InputFrame = {
   held: () => false,
@@ -85,9 +85,6 @@ export const IDLE: InputFrame = {
   wheel: 0,
   locked: true,
 };
-
-/** The fight's rules and roster on the room's module, made once. */
-const fightRules = new WeakMap<WebAssembly.Module, { combat: CombatRules; roster: readonly FoeType[] }>();
 
 /** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
  *  tells of that). */
@@ -119,40 +116,6 @@ async function standOn(
   if (!context.movement.setGround(ground) || !combat.setGround(ground))
     throw new Error('the ground of this place did not load');
   return { boxes, ground };
-}
-
-/** The fight's rules and roster on the context's room module, made once for it. */
-async function rulesOf(context: FootContext): Promise<{ combat: CombatRules; roster: readonly FoeType[] }> {
-  const module = await context.roomModule;
-  const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
-  fightRules.set(module, rules);
-  return rules;
-}
-
-/** Every other player's figure in a room, and what each of its snapshots shows of them and of the player's fight
- *  once `heard.fight` stands: before it there is no own number to tell the player from the others. */
-function hearing(forge: Cards) {
-  const players = new OtherPlayers({
-    place: (dress, x, y, facing) => ({
-      id: nextOtherId++,
-      x,
-      y,
-      z: 0,
-      facing,
-      dress,
-      anim: 'idle',
-      frame: null,
-      spin: false,
-    }),
-    remove: () => undefined,
-  });
-  const heard: { fight: Fighting | null } = { fight: null };
-  const received = (snapshot: Snapshot) => {
-    players.takeDresses(snapshot.dressed);
-    heard.fight?.receive(snapshot);
-    if (heard.fight) players.seen(snapshot.players, heard.fight.player, forge);
-  };
-  return { players, heard, received };
 }
 
 /** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
@@ -221,7 +184,7 @@ export class Foot {
     const floor = (x: number, y: number) => context.movement.standing(x, y).z;
     const placing: Others = {
       place: (dress, x, y, facing) => {
-        const one = { id: nextOtherId++, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
+        const one = { id: nextOtherId(), x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
         this.folk.push(one);
         return one;
       },
@@ -373,7 +336,7 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
-    const aimed = () => playerCamera(walker.player, movement, this.boxes);
+    const aimed = () => playerCamera(walker.player, movement, [...this.boxes, ...(this.context.cameraBlocks ?? [])]);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
@@ -394,6 +357,8 @@ export class Foot {
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
+    // Through the player's own eyes no other figure stands so near that it fills the view.
+    const nearest = firstPerson ? CARD_NEAREST_M : 0;
     const frameTicks = seconds / movement.tickSeconds;
     // Each figure drawn off where it stands by the attack feel, and kept as drawn, which its blow's arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, shot.yaw);
@@ -413,11 +378,20 @@ export class Foot {
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
     }
-    figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks, { shift, drawnAt, otherViews }));
+    figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks, { shift, drawnAt, otherViews, nearest }));
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
     const { tickSeconds } = movement;
     figures.push(
-      ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, tickSeconds, effects.flashes, foeFeel),
+      ...foes.cards(
+        fight,
+        forge,
+        { x: eyeX, y: eyeY, nearest },
+        clock,
+        frameTicks,
+        tickSeconds,
+        effects.flashes,
+        foeFeel,
+      ),
     );
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
@@ -533,6 +507,7 @@ export class Foot {
       shift: (id: number, view: FighterView | null) => Vector;
       drawnAt: Map<number, DrawnFigure>;
       otherViews: ReadonlyMap<number, FighterView>;
+      nearest: number;
     },
   ): CardAt[] {
     const { forge } = this.context;
@@ -558,7 +533,8 @@ export class Foot {
       const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
       const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
       feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
-      if (card) cards.push({ card, ...cardStand(atFeet[0], atFeet[1], eyeX, eyeY), z: atFeet[2], flip, flash, veiled });
+      const stand = cardStand(atFeet[0], atFeet[1], eyeX, eyeY, feel.nearest);
+      if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
     // A social space's people, each keeping a step of its own.

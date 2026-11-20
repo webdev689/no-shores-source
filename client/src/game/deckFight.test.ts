@@ -11,9 +11,9 @@ import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
 import type { SeenDeck, SeenFlotsam } from '../network/seaHarbour.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
-import { cellHeight, deckFloats, deckToWorld, HULL_DECKS, type Lying } from '../ships/deck.ts';
+import { cellHeight, deckFloats, deckToWorld, HULL_DECKS, type Lying, railSpot } from '../ships/deck.ts';
 import { fromEyeMatrix, shifted, type Shot } from './camera.ts';
-import { deckLink, deckNode, deckTurn, herLying, holdWords, laidOnHer, times } from './deckFight.ts';
+import { boardingSide, deckLink, deckNode, deckTurn, herLying, holdWords, laidOnHer, times } from './deckFight.ts';
 import type { FootFrame } from './foot.ts';
 import { SeaRoom } from './seaRoom.ts';
 
@@ -81,15 +81,27 @@ test('her ship is the fight’s captain lying nearest where she lay last, posed 
   assert.deepEqual(lying, { x: 10, y: 25, heading: 0.4, scale: 1, heave: 0.3, pitch: 0.01, roll: 0.02 });
 });
 
-test('her deck is a place on foot whose ring is her bounds and whose spawn is where her deck room stands a boarder', () => {
+test('her deck is a place on foot whose ring is her bounds and whose spawn is at her rail on the boarder’s side, as her room stands them', () => {
   const [sloop, schooner] = HULL_DECKS;
   assert.ok(sloop && schooner && HULL_DECKS.length === 4, 'the four hulls’ decks');
-  assert.deepEqual(deckNode(sloop, 'Her deck').spawns, [sloop.helm], 'the Sloop’s hatch amidships: at her helm');
-  const node = deckNode(schooner, 'Her deck');
+  const node = deckNode(schooner, 'Her deck', -1);
   const [west, north] = node.ring[0] ?? [0, 0];
   const [east, south] = node.ring[2] ?? [0, 0];
   assert.ok(west < 0 && east > 0 && north < 0 && south > 0, 'round amidships');
-  assert.deepEqual(node.spawns, [[0, 0]], 'amidships, where her planks lie');
+  const [[portX = 0, portY = 1]] = node.spawns;
+  assert.ok(portX < -1.5 && portY === 0, `at her port rail amidships: ${portX}`);
+  const [[starboardX = 0]] = deckNode(sloop, 'Her deck', 1).spawns;
+  assert.ok(starboardX > 1.5, `the Sloop’s starboard rail, clear of her hatch and mast: ${starboardX}`);
+  const view = (aside: number) =>
+    ({ player: { ship: [aside, 3, 0] }, captain: captain(0, 0, 'Her'), others: [] }) as unknown as FightView;
+  // Her heading 0.4 rad: her starboard lies east and a little south; a ship east of her lies to starboard.
+  assert.deepEqual([boardingSide(view(25)), boardingSide(view(-25))], [1, -1]);
+  // A captain still fighting nearer the player's ship is not the one boarded.
+  const afloat = { ...captain(24, 3, 'Afloat'), state: 'afloat', ship: [24, 3, 1.9] } as unknown as FightCaptain;
+  const two = { player: { ship: [25, 3, 0] }, captain: afloat, others: [captain(0, 0, 'Her')] } as unknown as FightView;
+  assert.equal(boardingSide(two), 1);
+  const turned = { ...two, captain: { ...afloat, ship: [24, 3, 1.9 + Math.PI] } } as unknown as FightView;
+  assert.equal(boardingSide(turned), 1, 'her side, whatever the other captain’s heading');
 });
 
 test('her deck room is reached through the sea’s link: the boarder’s inputs sent there, its gear the link’s', () => {
@@ -190,6 +202,9 @@ test('the page predicts its boarder on her deck exactly as her deck room steps t
   const fighting = new Fighting(rules, link);
   fight = fighting;
   link.pump(1 / 60);
+  // Her room stands its first boarder at her starboard rail, where the page reckons it.
+  const [railX, railY] = railSpot(schooner, 1);
+  assert.ok(Math.abs((fighting.own?.x ?? 0) - railX) < 1e-9 && fighting.own?.y === railY, `${fighting.own?.x}`);
   const steps = fighting.steps({ tickSeconds: 1 / 60 } as unknown as MovementRules);
   const still: Controls = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
   for (const [count, controls] of [
@@ -198,7 +213,7 @@ test('the page predicts its boarder on her deck exactly as her deck room steps t
   ] as const)
     for (let tick = 0; tick < count; tick += 1) {
       steps.step({} as Body, controls);
-      const predicted = JSON.stringify(fighting.own);
+      const predicted: string = JSON.stringify(fighting.own);
       link.pump(1 / 60);
       assert.equal(JSON.stringify(fighting.own), predicted, `the room's word is the page's, tick ${tick}`);
     }
