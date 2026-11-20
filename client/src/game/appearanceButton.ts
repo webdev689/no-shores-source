@@ -48,7 +48,7 @@ export function emblemCard(emblem: Emblem, kept: boolean, worn: boolean): HTMLEl
 }
 
 /**
- * The Appearance button, in the place the Emblem slot had: the wardrobe mark, with the emblem worn small in its corner.
+ * The Appearance button on the Character page: the wardrobe mark, with the emblem worn small in its corner.
  * Its card says what it opens; pressed, it opens the Appearance screen through the page's `appearance`, the focus on
  * the emblem worn.
  */

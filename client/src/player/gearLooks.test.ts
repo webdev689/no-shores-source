@@ -171,8 +171,18 @@ test("a faction's armour is its faction's own set, each of its layers named for 
   );
   assert.deepEqual([dressed.armour.cuirass, dressed.armour.pauldrons], ['mages', 'mages']);
   assert.deepEqual([dressed.dyes['cuirass_mages'], dressed.dyes['pauldrons_mages']], ['lamplighters', 'lamplighters']);
+  assert.equal(dressed.dyes['under_mages'], 'lamplighters', 'the padding under the cuirass too');
   assert.equal(dressed.armour.helm, 'knights', "a piece of no faction keeps its rarity's set");
-  assert.equal(Object.values(dressed.dyes).filter((dye) => dye === 'lamplighters').length, 2, 'the helm takes none');
+  assert.equal(Object.values(dressed.dyes).filter((dye) => dye === 'lamplighters').length, 3, 'the helm takes none');
+});
+
+test("a faction's piece on a body that lacks its set is drawn in its rarity's set, still in its faction's colour", () => {
+  const vestments = state([item({ id: 1, kind: 14, rarity: 3, at: 5, named: 'lamplighters_vestments' })]);
+  const dressed = gearOutfit(vestments, wardrobe, plain);
+  const set = dressed.armour.cuirass ?? '';
+  assert.ok(set && set !== 'mages', `drawn in ${set}`);
+  for (const layer of [`cuirass_${set}`, `pauldrons_${set}`, `under_${set}`])
+    assert.equal(dressed.dyes[layer], 'lamplighters', layer);
 });
 
 test("a faction's weapon is drawn in its faction's metal, its shield too, and each wears its colour", () => {

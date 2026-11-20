@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { cosmeticRamp } from '../../forge/cosmetics.ts';
+import { GAME_PALETTE } from './gamePalette.ts';
 import { CUIRASS_ROWS, WARDROBE_ROWS, coatSvg, dyeSvg, wardrobeSvg } from './appearanceMarks.ts';
 
 test('the marks are whole squares of pixels, every letter a colour of their palettes', () => {
@@ -12,12 +13,12 @@ test('the marks are whole squares of pixels, every letter a colour of their pale
 });
 
 test("a dye's tile is its ramp over the cuirass; a coat's a swatch of its ramp; none shows the own colours", () => {
-  const coral = cosmeticRamp('coral');
+  const coral = cosmeticRamp('coral', GAME_PALETTE);
   const hex = (step: number, ramp = coral) =>
     `#${(ramp?.[step] ?? [0, 0, 0]).map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
   assert.ok(dyeSvg(coral).includes(hex(14)), "the cuirass's light is the dye's");
   assert.notEqual(dyeSvg(null), dyeSvg(coral));
-  const grey = cosmeticRamp('grey');
+  const grey = cosmeticRamp('grey', GAME_PALETTE);
   assert.ok(coatSvg(grey).includes(hex(14, grey)) && coatSvg(grey).includes(hex(2, grey)), "the coat's ramp");
   assert.notEqual(coatSvg(null), coatSvg(grey));
   assert.match(coatSvg(grey), /viewBox="0 0 12 12"/);

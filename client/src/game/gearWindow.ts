@@ -459,6 +459,8 @@ export function startGearWindow(
         art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip, gear.standing),
       }),
       appearance: () => ((appearance = true), (slot = null), render()),
+      forge: now.forge ?? null,
+      dress,
     };
     const dressing = view === 'character' && appearance;
     const closeLooks = () => ((appearance = false), (returnTo = APPEARANCE_KEY), render());

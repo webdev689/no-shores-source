@@ -26,6 +26,12 @@ test("the horse is one picture whatever the rider's dye; the figure one whatever
   await horseOf(forge, horse('dun'));
   await horseOf(forge, horse('dun', 'coral'));
   assert.equal(asked.length, 1, 'a new dye composes no new horse');
+  const armoured = horse('dun');
+  await horseOf(forge, { ...armoured, outfit: { ...armoured.outfit, armour: { cuirass: 'steel' } } });
+  await horseOf(forge, { ...armoured, race: 'anole' });
+  assert.equal(asked.length, 1, "the rider's armour and race compose no new horse");
+  await horseOf(forge, { ...armoured, outfit: { ...armoured.outfit, barding: 'dawnfire' } });
+  assert.equal(asked.length, 2, 'a barding does');
   const figure = unhorsed({ ...horse('dun'), outfit: { ...horse('dun').outfit, barding: 'dawnfire' } });
   assert.deepEqual(figure, unhorsed(horse('grey')), 'the figure kept for one coat serves another');
 });

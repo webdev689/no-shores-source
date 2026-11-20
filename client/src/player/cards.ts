@@ -1,5 +1,6 @@
 import type { GlowElement, GlowField, GlowLook } from '../elementGlow.ts';
-import { type Colours, composeFrame } from '../forge/compose.ts';
+import type { Colours } from '../forge/compose.ts';
+import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import { type ForgeLooks, HORSE_LAYER, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
@@ -116,9 +117,7 @@ export class Cards {
   /** The dress each warmed frame was warmed for, so a warmed frame let go has its dress warmed again. */
   private readonly warmedBy = new Map<string, string>();
   private readonly scene: CardMaker;
-  private readonly store: ForgeStore;
   private readonly looks: ForgeLooks;
-  private readonly colours: Colours;
   private readonly dyes: DyeTable;
   private readonly limits: KeptCards;
   private readonly composer: Composer;
@@ -136,9 +135,7 @@ export class Cards {
     composer: Composer | null = null,
   ) {
     this.scene = scene;
-    this.store = store;
     this.looks = looks;
-    this.colours = colours;
     this.dyes = dyes;
     this.limits = limits;
     this.composer = composer ?? new PageComposer(looks, colours, (path) => store.strip(path));
@@ -166,19 +163,10 @@ export class Cards {
     const held = [dress.outfit.right, dress.outfit.left];
     const figure = flip ? { ...dressed, gear: mirroredGear(dressed.gear, anim, layers, held) } : dressed;
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
-    const strip = (path: string) => this.store.strip(path);
-    // The forge renders each layer by itself; read as a body that draws those layers alone, it stacks nothing else.
     const only = typeof alone === 'string' ? [alone] : alone;
-    const looks =
-      only && own
-        ? {
-            ...this.looks,
-            bodies: {
-              [dress.body]: { ...own, layers: Object.fromEntries(only.map((layer) => [layer, layers[layer] ?? []])) },
-            },
-          }
-        : this.looks;
-    const composed = await composeFrame(figure, anim, view, frame, looks, this.colours, ramps, strip);
+    // Through the composer the world's frames take, so a page's picture is composed off the page's thread too.
+    const job = { figure, anim, view, frame, ramps, glow: 0, alone: only } as const;
+    const composed = await this.composer.compose(`picture ${anim} ${view} ${frame} ${only?.join() ?? ''}`, job, 'now');
     if (!composed) return null;
     const { width, height } = composed;
     const pixels = new Uint8ClampedArray(composed.pixels);
@@ -232,7 +220,11 @@ export class Cards {
     const { dyes, dye, coat } = dress.outfit;
     // The coat counts only where the move draws the horse; the barding is in the figure only there.
     const horse = layers[HORSE_LAYER]?.includes(anim) ? (coat ?? null) : null;
-    return { figure, key: JSON.stringify([figure, dyes, dye ?? null, horse, anim, view, frame, glow]) };
+    const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
+    // The dye worn counts only where a layer takes it: each dye's ramp is one made once, so it is found by itself.
+    const worn = cosmeticRamp(dye, this.dyes.palette);
+    const dyed = worn && Object.values(ramps).includes(worn) ? dye : null;
+    return { figure, ramps, key: JSON.stringify([figure, dyes, dyed, horse, anim, view, frame, glow]) };
   }
 
   /** A figure's frame in a move and a view, composed `haste` if it is not kept or under way, and hurried if it is
@@ -249,7 +241,7 @@ export class Cards {
     glow: GlowLook = 0,
     haste: Haste = 'now',
   ): Card | null {
-    const { figure, key } = this.framed(dress, anim, view, frame, flip, glow);
+    const { figure, ramps, key } = this.framed(dress, anim, view, frame, flip, glow);
     const kept = this.kept.get(key);
     if (kept !== undefined) {
       // Asked again, it is kept the longest of all.
@@ -265,7 +257,6 @@ export class Cards {
     if (failed !== undefined && performance.now() - failed < RETRY_AFTER_MS) return null;
     this.failedAt.delete(key);
     this.composing.add(key);
-    const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
     this.composer
       .compose(key, { figure, anim, view, frame, ramps, glow }, haste)
       .then((composed) => {

@@ -109,6 +109,8 @@ export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit,
         // A faction's piece wears its own colour, which the outfit keeps by the layer's name.
         if (own) dyes[`${piece}_${set}`] = own;
       }
+      // So does the padding the forge draws under a cuirass or greaves with nothing on the chest.
+      if (own && (slot === TORSO || slot === LEGS)) dyes[`under_${set}`] = own;
       continue;
     }
     const clothes = CLOTHES[slot]?.[Math.min(item.rarity, MAGIC)] ?? [];

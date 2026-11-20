@@ -212,17 +212,13 @@
   filter: grayscale(1) brightness(0.6);
   opacity: 0.45;
 }
-/* Pictures at a whole multiple of their pixels: the Arts' and emblems' 24 and 12, a barding's mark's 11. */
+/* Pictures at a whole multiple of their pixels: the Arts' and emblems' 24 and 12, a barding's horse at its 48. */
 .npc-glyph,
 .npc-emblem,
 .npc-barding {
   width: 48px;
   height: 48px;
   image-rendering: pixelated;
-}
-.npc-barding {
-  width: 44px;
-  height: 44px;
 }
 .npc-price img.npc-coin,
 .npc-coin-line img.npc-coin {
@@ -305,7 +301,6 @@
     width: 72px;
     height: 72px;
   }
-  .npc-barding,
   .npc-swatch {
     width: 66px;
     height: 66px;

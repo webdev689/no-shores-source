@@ -49,6 +49,18 @@ import {
   reinPicture,
   ridePlace,
 } from './riding.ts';
+import {
+  CAST_SEQUENCE,
+  CAST_STEP,
+  MUZZLE,
+  SWORD_DROP,
+  SWORD_RIGHT,
+  atOwnPlace,
+  castPlace,
+  ducks,
+  holds,
+  zoomedOnScreen,
+} from './fpPlaces.ts';
 import type { AttackInput, Pace } from './weaponMachine.ts';
 
 /** What the first person shows this frame, from the one who sees it. `right` and `left` are forge layers (`sword_iron`,
@@ -91,8 +103,12 @@ export interface FirstPersonState {
   /** The fight's own timing of the swing it has begun, which a strike begun now keeps; none outside a fight. */
   readonly pace?: Pace | null;
   /** What the hands would hold drawing the other loadout, whose pictures are asked for ahead of a swap. */
-  readonly spare?: { readonly right: string | null; readonly left: string | null } | null;
+  readonly spare?: { readonly right: string | null; readonly left: string | null; readonly own?: Armed } | null;
 }
+
+/** The faction, by its key, whose own colour each hand's weapon of a loadout wears; none for none. */
+type Armed = { readonly right?: string | undefined; readonly left?: string | undefined };
+const armedKey = (armed: Armed) => `${armed.right ?? ''}/${armed.left ?? ''}`;
 
 /** What a blow of the player's own met, as the first person shows it: it landed, or it was blocked (or blocked one). */
 export type Contact = 'landed' | 'blocked';
@@ -121,79 +137,23 @@ interface Kept {
   readonly glows: Partial<Record<GlowElement, GPUTexture>>;
 }
 
-/** Where on each ranged weapon's picture its muzzle is, or its arrow's head drawn, in its own pixels, in the frame its
- *  shot leaves on, kicked up: where a tracer starts. Aiming zooms it with the hands, so it stays where drawn. */
-const MUZZLE: Readonly<Record<string, readonly [number, number] | undefined>> = {
-  pistolet: [82, 53],
-  thunderlock: [77, 42],
-  crossbow: [82, 73],
-  bow: [107, 150],
-};
-
-/** A point on the design screen as a view zoomed `zoom` times about the screen's middle shows it. */
-const zoomedOnScreen = (x: number, y: number, zoom: number): [number, number] => [
-  DESIGN_WIDTH / 2 + (x - DESIGN_WIDTH / 2) * zoom,
-  DESIGN_HEIGHT / 2 + (y - DESIGN_HEIGHT / 2) * zoom,
-];
-
-/** The casting hands step through their records and back to the first, a step every 0.04 s. */
-const CAST_SEQUENCE = [0, 1, 2, 3, 4, 5, 0] as const;
-const CAST_STEP = 0.04;
-/** The casting hands are laid out on a screen 300 wide; the small records are pushed in to sit where the wide ones
- *  put the hands. */
-const CAST_SCREEN_WIDTH = 300;
-const CAST_SMALL_INSET = 0.134;
 /** A held light's flame steps a frame this often, and a shield a frame toward its pose this often: our own pace. */
 const FLAME_STEP = 0.1;
 const SHIELD_STEP = 0.05;
+/** What the horse's picture from the saddle is kept by begins so: it never takes a dye. */
+const HORSE_KEY = 'ride|';
 /** A shield at rest is held a frame below raised, and raised whole for a block. */
 const SHIELD_REST = 1;
 const SHIELD_BLOCK = 0;
 /** Composed pictures kept on the GPU before all are let go and composed again as needed. */
 const KEPT_PICTURES = 1500;
-/** How far below its own place a sword rests, in design pixels, as the owner placed it. Its strikes keep their own
- *  places: lowered as far, they leave the screen. */
-const SWORD_DROP = 60;
-/** How far right of its own place a sword rests, its blade clear of the crosshair; in the left hand, as far left. */
-const SWORD_RIGHT = 40;
 const STILL: AttackInput = { attackHeld: false, attackPressed: false, attackReleased: false };
 const SIDES: readonly [Side, Hand][] = [
   ['R', 'right'],
   ['L', 'left'],
 ];
 
-/** Whether a held thing ducks below the screen while the weapon strikes: a shield or a torch, not a lantern. */
-const ducks = (held: Holding | null | undefined) =>
-  held?.kind === 'shield' || (held?.kind === 'light' && held.light === 'torch');
-
-/** A picture placed at its own corner on the design screen, mirrored about the screen's middle for the left hand,
- *  dropped `drop` design pixels and `lower` of its own height, and moved `across` design pixels after the mirror. */
-function atOwnPlace(flip: boolean, drop: number, lower = 0, across = 0) {
-  return (picture: Picture) => ({
-    x: (flip ? DESIGN_WIDTH - picture.at[0] - picture.width : picture.at[0]) + across,
-    y: picture.at[1] + drop + lower * picture.height,
-    width: picture.width,
-    height: picture.height,
-    flip,
-  });
-}
-
-/** A casting hand placed on the casting screen: the left as drawn at the left edge, the right mirrored at the right. */
-function castPlace(record: number, element: string, right: boolean) {
-  const small = record === 0 || record === 5 || (element === 'fire' && record === 4);
-  const inset = small ? CAST_SMALL_INSET * DESIGN_WIDTH : 0;
-  return (picture: Picture) => {
-    const width = (picture.width * DESIGN_WIDTH) / CAST_SCREEN_WIDTH;
-    const x = right ? DESIGN_WIDTH - inset - width : inset;
-    return { x, y: DESIGN_HEIGHT - picture.height, width, height: picture.height, flip: right };
-  };
-}
-
 const gaitOf = (state: FirstPersonState): Gait => (!state.moving ? 'stand' : state.running ? 'gallop' : 'walk');
-/** Whether a hand holds something other than its own bare fist. */
-const holds = (holding: Holding | null | undefined) =>
-  !!holding && !(holding.kind === 'weapon' && holding.wielded.kind === 'fists');
-
 /** The first person: the weapons, the held things or the hands in view, swung by the attack button and drawn over the
  *  scene. */
 export class FirstPerson {
@@ -223,6 +183,8 @@ export class FirstPerson {
   private horse: { readonly coat: string | null; readonly barding: string | null } = { coat: null, barding: null };
   /** The other loadout's hands whose pictures were last asked for ahead of a swap. */
   private spareLook = '';
+  /** The factions' colours the drawn loadout's weapons wear, which each of their pictures is kept by. */
+  private armed: Armed = {};
   private wanted: Wanted[] = [];
   private shown: ScreenQuad[] = [];
   private drawnMuzzle: readonly [number, number] | null = null;
@@ -318,19 +280,17 @@ export class FirstPerson {
     const shot = state.mounted ? this.ride.step(seconds, gaitOf(state), state.yaw ?? null) : null;
 
     this.horse = state.horse ?? this.horse;
-    // A new dye or faction's colour recolours what wears it: what was composed in the old is let go.
+    // A new dye, or a faction's colour on the gauntlets or the boots, recolours every hand and foot: what was composed
+    // in the old is let go, but the horse. The weapons' colours are in their own pictures' keys, so a swap keeps them.
     const { hands, feet, right, left } = state.own ?? {};
-    const dyed = [state.dye ?? '', hands, feet, right, left].join('|');
+    this.armed = { right, left };
+    const dyed = [state.dye ?? '', hands, feet].join('|');
     if (dyed !== this.dye) {
       this.dye = dyed;
-      const own = {
-        hands: factionRamp(hands),
-        feet: factionRamp(feet),
-        right: factionRamp(right),
-        left: factionRamp(left),
-      };
-      this.source = { ...this.source, dye: cosmeticRamp(state.dye), own };
-      this.letGo();
+      const { palette } = this.source.dyes;
+      const own = { hands: factionRamp(hands, palette), feet: factionRamp(feet, palette) };
+      this.source = { ...this.source, dye: cosmeticRamp(state.dye, palette), own };
+      this.letGo((key) => key.startsWith(HORSE_KEY));
       [this.look, this.spareLook] = ['', ''];
     }
     const lookKey = `${state.right}|${state.left}|${state.drawn}|${worn.hands}|${worn.feet}|${!!state.mounted}|${this.horse.coat}|${this.horse.barding}`;
@@ -342,8 +302,11 @@ export class FirstPerson {
       this.prefetch(worn, !!state.mounted);
     }
     const spare = state.spare ?? null;
-    const spareKey = spare ? `${spare.right}|${spare.left}|${worn.hands}|${worn.feet}` : '';
-    if (spare && spareKey !== this.spareLook) this.prefetchHands(handsPlan(spare.right, spare.left), worn);
+    const spareKey = spare
+      ? `${spare.right}|${spare.left}|${worn.hands}|${worn.feet}|${armedKey(spare.own ?? {})}`
+      : '';
+    if (spare && spareKey !== this.spareLook)
+      this.prefetchHands(handsPlan(spare.right, spare.left), worn, spare.own ?? {});
     this.spareLook = spareKey;
     return events;
   }
@@ -384,7 +347,14 @@ export class FirstPerson {
     return wanted;
   }
 
-  private viewWanted(view: HandView, worn: Worn, drop: number, sway: number): Wanted {
+  /** The source a loadout's weapons are painted from: each in its faction's colour. */
+  private sourceFor(armed: Armed): FrameSource {
+    const { palette } = this.source.dyes;
+    const weapons = { right: factionRamp(armed.right, palette), left: factionRamp(armed.left, palette) };
+    return { ...this.source, own: { ...this.source.own, ...weapons } };
+  }
+
+  private viewWanted(view: HandView, worn: Worn, drop: number, sway: number, armed = this.armed): Wanted {
     const across = view.hand === 'left' ? view.dx : -view.dx;
     const { holding } = view;
     const resting = holding.kind === 'weapon' && holding.wielded.kind === 'sword' && view.record === 0;
@@ -402,12 +372,12 @@ export class FirstPerson {
           : () => gunPicture(this.source, shooter, worn.hands, view.record, view.frame);
       return { key, ask, place, hand: view.hand, ...(tip ? { tip } : {}) };
     }
-    if (holding.kind !== 'weapon') return this.heldWanted(holding, worn, drop);
+    if (holding.kind !== 'weapon') return this.heldWanted(holding, worn, drop, this.heldFrame(holding), armed);
     const { wielded } = holding;
     let { record, frame } = view;
     if (wielded.kind === 'flail' && record === 0) [record, frame] = [SWAY_RECORD, swayFrame(sway, SWAY_FRAMES)];
-    const key = `weapon|${wielded.kind}|${wielded.make}|${wielded.bow}|${worn.hands}|${worn.feet}|${record}-${frame}|${view.flip}`;
-    const ask = () => weaponPicture(this.source, wielded, worn, record, frame, view.flip);
+    const key = `weapon|${wielded.kind}|${wielded.make}|${wielded.bow}|${worn.hands}|${worn.feet}|${record}-${frame}|${view.flip}|${armedKey(armed)}`;
+    const ask = () => weaponPicture(this.sourceFor(armed), wielded, worn, record, frame, view.flip);
     const hand = wielded.kind === 'fists' ? {} : { hand: view.hand };
     return { key, ask, place, ...hand, ...(tip ? { tip } : {}) };
   }
@@ -418,11 +388,18 @@ export class FirstPerson {
     return Math.floor(this.flameClock / FLAME_STEP) % LIGHT_FRAMES;
   }
 
-  private heldWanted(held: Holding, worn: Worn, drop: number, frame = this.heldFrame(held)): Wanted {
+  private heldWanted(
+    held: Holding,
+    worn: Worn,
+    drop: number,
+    frame = this.heldFrame(held),
+    armed = this.armed,
+  ): Wanted {
     const place = atOwnPlace(false, ducks(held) ? drop + lowerDrop(this.duck) : drop);
     if (held.kind === 'shield') {
-      const key = `shield|${held.archive}|${held.metal}|${worn.hands}|${frame}`;
-      return { key, ask: () => shieldPicture(this.source, held.archive, held.metal, worn.hands, frame), place };
+      const key = `shield|${held.archive}|${held.metal}|${worn.hands}|${frame}|${armedKey(armed)}`;
+      const ask = () => shieldPicture(this.sourceFor(armed), held.archive, held.metal, worn.hands, frame);
+      return { key, ask, place };
     }
     const light = held.kind === 'light' ? held.light : 'torch';
     const key = `light|${light}|${worn.hands}|${frame}`;
@@ -468,7 +445,7 @@ export class FirstPerson {
     };
     const { coat, barding } = this.horse;
     const horse = {
-      key: `ride|${shot.key}|${coat}|${barding}`,
+      key: `${HORSE_KEY}${shot.key}|${coat}|${barding}`,
       ask: () => horsePicture(this.source, shot, coat, barding),
       place: ridePlace(false),
     };
@@ -488,11 +465,11 @@ export class FirstPerson {
   }
 
   /** Asks for every picture the hands of `plan` show: the loadout drawn, or the other, so a swap shows it at once. */
-  private prefetchHands(plan: HandsPlan, worn: Worn): void {
-    for (const view of everyView(plan)) this.request(this.viewWanted(view, worn, 0, 0));
+  private prefetchHands(plan: HandsPlan, worn: Worn, armed = this.armed): void {
+    for (const view of everyView(plan)) this.request(this.viewWanted(view, worn, 0, 0, armed));
     const { held } = plan;
     const frames = held?.kind === 'shield' ? SHIELD_FRAMES : LIGHT_FRAMES;
-    if (held) for (let frame = 0; frame < frames; frame++) this.request(this.heldWanted(held, worn, 0, frame));
+    if (held) for (let frame = 0; frame < frames; frame++) this.request(this.heldWanted(held, worn, 0, frame, armed));
   }
 
   private request(wanted: Wanted): void {
@@ -511,16 +488,18 @@ export class FirstPerson {
       .catch(() => lettings === this.lettings && this.loading.delete(wanted.key));
   }
 
-  /** Lets every composed picture go, and any still composing, to be composed again as needed. */
-  private letGo(): void {
-    for (const kept of this.kept.values()) {
+  /** Lets the composed pictures go, but those `keeps` names, and every one still composing, to be composed again as
+   *  needed. */
+  private letGo(keeps: (key: string) => boolean = () => false): void {
+    for (const [key, kept] of this.kept) {
+      if (keeps(key)) continue;
+      this.kept.delete(key);
       if (!kept) continue;
       for (const texture of [kept.texture, ...Object.values(kept.glows)]) {
         this.view.forget(texture);
         texture.destroy();
       }
     }
-    this.kept.clear();
     this.loading.clear();
     this.lettings += 1;
     this.shown = [];

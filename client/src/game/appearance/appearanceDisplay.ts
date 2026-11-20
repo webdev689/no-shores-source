@@ -30,7 +30,8 @@ const HORSE_VIEW = 2;
 const KEPT_MOST = 96;
 const kept = new Map<string, Promise<Picture | null>>();
 
-/** A forge picture of a dress, composed once and kept. */
+/** A forge picture of a dress, composed once and kept by what of the dress it draws (`drawn`, the whole dress unless
+ *  told). */
 function pictureOf(
   forge: Cards,
   dress: Dress,
@@ -38,8 +39,9 @@ function pictureOf(
   view: number,
   flip: boolean,
   alone?: readonly string[],
+  drawn: unknown = dress,
 ): Promise<Picture | null> {
-  const key = JSON.stringify([dress, anim, view, flip, alone ?? null]);
+  const key = JSON.stringify([drawn, anim, view, flip, alone ?? null]);
   const found = kept.get(key);
   if (found) {
     kept.delete(key);
@@ -59,11 +61,13 @@ function pictureOf(
 /** A dress as its figure stands: no horse under it, so its coat and barding change nothing drawn. */
 export const unhorsed = (dress: Dress): Dress => ({ ...dress, outfit: { ...dress.outfit, coat: null, barding: null } });
 
-/** The horse of a dress by itself: its coat, and its barding stacked over it; the rider's dyes change nothing drawn. */
+/** The horse of a dress by itself: its coat, and its barding stacked over it; nothing of the rider changes it but the
+ *  body it is drawn for. */
 export function horseOf(forge: Cards, dress: Dress, view = HORSE_VIEW): Promise<Picture | null> {
   const barding = bardingLayer(dress.outfit.barding);
-  const horse = { ...dress, outfit: { ...dress.outfit, dye: null, dyes: {} } };
-  return pictureOf(forge, horse, 'horseidle', view, false, barding ? [HORSE_LAYER, barding] : [HORSE_LAYER]);
+  const { body, outfit } = dress;
+  const layers = barding ? [HORSE_LAYER, barding] : [HORSE_LAYER];
+  return pictureOf(forge, dress, 'horseidle', view, false, layers, [body, outfit.coat ?? null, barding]);
 }
 
 /** Draws a picture on a canvas `box` wide and tall at a whole multiple, `scale` texels a pixel, standing on the

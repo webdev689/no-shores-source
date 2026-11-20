@@ -69,7 +69,6 @@ export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
 }
 
-/** The climb a body is on, as the first person's hands follow it; null off a wall. */
 /** The faction, by its key, whose own colour each part of the first person wears: the gauntlets, the boots and each
  *  hand's weapon, as the outfit names it for the layer it is drawn with (gearLooks.ts). */
 export function ownColours(outfit: Outfit): NonNullable<FirstPersonState['own']> {
@@ -84,6 +83,7 @@ export function ownColours(outfit: Outfit): NonNullable<FirstPersonState['own']>
   return Object.fromEntries(Object.entries(own).filter(([, key]) => key !== undefined));
 }
 
+/** The climb a body is on, as the first person's hands follow it; null off a wall. */
 export function climbOf(body: Body): Climb | null {
   if (body.mode !== 'hang' && body.mode !== 'climb' && body.mode !== 'mantle' && body.mode !== 'vault') return null;
   const { over } = body;
@@ -280,7 +280,14 @@ export class Walker {
       pose: own ? guardPose(own.action) : null,
       zoom,
       pace: own ? paceOf(own.action, this.tickSeconds) : null,
-      spare: this.spare && { right: this.spare.right, left: this.spare.left },
+      spare: this.spare && {
+        right: this.spare.right,
+        left: this.spare.left,
+        // The other loadout's factions' colours, where its weapons wear any, so they are composed ahead in them.
+        ...(this.spare.dyes[this.spare.right ?? ''] || this.spare.dyes[this.spare.left ?? '']
+          ? { own: ownColours(this.spare) }
+          : {}),
+      },
     });
     const swing = firstPerson.swing;
     this.strokes = strokesAfter(this.strokes, this.swingWas, swing?.progress ?? null);

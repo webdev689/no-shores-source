@@ -10,13 +10,14 @@ import { cosmeticRamp } from '../../forge/cosmetics.ts';
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import type { Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
-import type { Picture } from '../../player/picture.ts';
 import { ROLES } from '../../plus/kit.ts';
 import { EMBLEMS, emblemImage } from '../emblemArt.ts';
 import { emblemCard } from '../appearanceButton.ts';
 import { type Hint, type HoverCard, cardNode, rarityOf, tileLabel } from '../gearDom.ts';
 import { STEP_BACK } from '../gearScreen.ts';
-import { appearanceDisplay, horseOf } from './appearanceDisplay.ts';
+import { appearanceDisplay } from './appearanceDisplay.ts';
+import { bardingTile } from './bardingTile.ts';
+import { GAME_PALETTE } from './gamePalette.ts';
 import { coatSvg, dyeSvg, svgUrl } from './appearanceMarks.ts';
 import { type AppearanceTile, appearanceRows, previewDress, previewHeld } from './appearanceModel.ts';
 import { ARROWS, nearest } from '../arrowFocus.ts';
@@ -55,33 +56,13 @@ function imageOf(src: string, size: number): HTMLImageElement {
   return image;
 }
 
-/** A barding's tile: the horse's head and chest from the side, at one texel a pixel, centred on its ears. */
-function horseTile(forge: Cards | null, dress: Dress | null, tile: AppearanceTile): HTMLCanvasElement {
-  const canvas = make('canvas', '', 'appearance-mark');
-  [canvas.width, canvas.height] = [TILE_PX, TILE_PX];
-  if (!forge || !dress) return canvas;
-  void horseOf(forge, previewDress(dress, tile)).then((picture: Picture | null) => {
-    if (!picture) return;
-    // The ears stand highest: the tile is cut round them, down the head and over the chest.
-    const top = picture.pixels.findIndex((_value, byte) => byte % 4 === 3 && picture.pixels[byte] !== 0);
-    if (top < 0) return;
-    const [column, row] = [(top >> 2) % picture.width, Math.floor((top >> 2) / picture.width)];
-    const own = document.createElement('canvas');
-    [own.width, own.height] = [picture.width, picture.height];
-    own.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(picture.pixels), picture.width), 0, 0);
-    const left = Math.max(0, Math.min(picture.width - TILE_PX, column - TILE_PX / 2));
-    canvas.getContext('2d')?.drawImage(own, left, row, TILE_PX, TILE_PX, 0, 0, TILE_PX, TILE_PX);
-  });
-  return canvas;
-}
-
 /** A tile's picture: an emblem's sign, a dye over a cuirass, a coat's swatch, or the horse in a barding. */
 function markOf(context: AppearanceContext, tile: AppearanceTile): HTMLElement {
   const emblem = EMBLEMS[tile.number];
   if (tile.kind === 'emblem' && emblem) return imageOf(emblemImage(emblem, 'sign'), TILE_PX);
-  if (tile.kind === 'dye') return imageOf(svgUrl(dyeSvg(cosmeticRamp(tile.id))), TILE_PX);
-  if (tile.kind === 'coat') return imageOf(svgUrl(coatSvg(cosmeticRamp(tile.id))), TILE_PX);
-  return horseTile(context.forge, context.dress, tile);
+  if (tile.kind === 'dye') return imageOf(svgUrl(dyeSvg(cosmeticRamp(tile.id, GAME_PALETTE))), TILE_PX);
+  if (tile.kind === 'coat') return imageOf(svgUrl(coatSvg(cosmeticRamp(tile.id, GAME_PALETTE))), TILE_PX);
+  return bardingTile(context.forge, context.dress, tile.id);
 }
 
 /** A cosmetic's card in the gear's style: its name on its rarity's band, its kind, its picture, its words, how it is
