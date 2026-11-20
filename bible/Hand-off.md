@@ -191,25 +191,28 @@ Where the work stands now, for the next session. Each session rewrites this note
   theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
   Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
   the intro, each started on its own with `?prologue=<beat>`.
+- **#74, the prologue**, is merged into `main`: the story mission at sea, its music, sound, sky and wreck
+  ([[Prologue]], [[The Prologue as Claude Shapes It]]).
 
 ## Waiting on the owner
 
-- **#92, Overlook's factions, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**, stacked on #74
-  (whose speech system it speaks through), waits on #74 and then the owner's yes to merge, which deploys the page and
-  the rooms. The owner named the factions (Stormcallers, Lamplighters, the Veiled) and the elder, and asked for
-  autonomy; every call made under it is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change.
-  Tested offline: the full check, three independent audits with every finding fixed, and every keeper's screen, the
-  Character page, the Appearance screen and the Art's screen in a local room (`npm run server`, the built page
-  headless). Not yet seen: Shape present in a room (he comes Fridays from 09:00 UTC), Maren's walk in a picture (the
-  software renderer is too slow for it; unit tests cover it), anything on a real GPU or the deployed rooms, and two
-  players seeing each other's dyes and horses. The open questions it leaves are in [[Open Questions]] (the two other
-  factions' keepers' names, faction gear, reputation's sources, Shape's hours, more horse looks). The Wraith Mist
-  barding's first-person ride strips on R2 are blank: a forge re-render. The rest of the world's ports (Sunspire,
-  Rimeholt) are #75's; this round only locks their social spaces ([[Only Overlook's Social Space Opens for Now]]).
-- **#74, the prologue**, now merges into `main` (it was stacked on #71, still open, so it carries #71's ships too),
-  and waits on the owner's yes, which deploys the page and the rooms. Every call inside the beats is in
-  [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
-  sound.
+- **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**,
+  based on `main` (the prologue, #74, is merged), waits on the owner's yes to merge, which deploys the page and the
+  rooms. The owner named the factions and the elder, said yes to faction gear "with its own unique color", and chose
+  its colours (storm grey and silver with blue accents, white and gold, black and silver); every call made under the
+  owner's "autonomy" is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Seven independent
+  audits (the rules, the wire, the keepers, the looks, the Arts, the bible, the faction gear) and a regression review
+  found about eighty problems; every one is fixed with a test or recorded as a limit. Among the fixes: a dye worn now
+  covers every armour set (it showed on only half of them), cosmetics and faction colours others see are the room's
+  word, Shape never sells a piece twice, Arts keep their level and Core from the cast, the welcome comes to the player
+  and resumes after a reload, and the vault has its keeper's screen. Tested offline: the full check. Tested in a local
+  room (`npm run server`, the built page headless, Friday afternoon UTC): Shape present with his six wares and the
+  right time left, every keeper's screen, the inventory's Shapes, and Maren coming to the player, greeting them and
+  leading on. Not yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses
+  and faction gear, a faction set worn in the page (seen only composed offline from the published strips), and Maren's
+  whole walk (the headless page draws a few frames a second of game time). The open questions are in
+  [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge re-render. Sunspire's
+  and Rimeholt's ports are #75's; this round only locks their social spaces.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
   repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
   `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
@@ -349,7 +352,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **After #92**: reputation from bounties and activities when they exist; Shape at Sunspire and Rimeholt when their
   social spaces open; a hide and mane mask from the forge for coats (the ride's `_uv` strips are one); the Elite and
-  Abyss tiers' names on the voyage's card (#82), where Shapes are found.
+  Abyss tiers' names on the voyage's card (#82), where Shapes are found; a faction set worn and two players seen in
+  the page on a real GPU; the welcome and the prologue's marks kept per character rather than per browser, if the
+  owner wants it.
 - **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
   through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
   with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge

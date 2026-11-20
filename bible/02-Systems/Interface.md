@@ -315,7 +315,8 @@ never while a press is held. Each press is an ask the room answers.
   (eight a row), every one of the catalogues: kept pieces lit and worn with a click or Enter, the rest dim, each card
   saying how it is had ("Sold by the Tailor.", "Reach the Lamplighters' second rank."); the worn one of each kind in
   brass with a brass corner. A dye's tile is its ramp over a cuirass, a coat's a swatch, a barding's the horse's head
-  and chest wearing it. Hovering or focusing a dye, coat or barding shows it on the display before it is worn; after the pointer leaves,
+  and chest wearing it, cut from 4 to 16 texels over the bare horse's ears so a crest shows and the head stays in;
+  the Tack's barding tiles are drawn the same way. Hovering or focusing a dye, coat or barding shows it on the display before it is worn; after the pointer leaves,
   a piece keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or
   barding and the horse's without the dyes, 96 at most, letting go of the least lately shown. Escape
   goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
@@ -440,8 +441,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
 - **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and
   thanks in lines of his own: what it keeps on the left and what the player carries on the right, each in
   weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
-  right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row,
-  an empty place a dark Vestige, as the inventory's.
+  right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row
+  (as many as fit, in the keepers' column), an empty place a dark Vestige, as the inventory's.
 - **A keeper's screen** (`npcPage`), one for every counter, after the owner's Destiny 1 references: the
   keeper large at the left, from the forge in their own dress (`keepers.ts`), idle and facing the viewer, grown by
   whole pixels and breathing between the idle's two frames (still with less motion asked for), over a ground lit in
@@ -459,15 +460,16 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   after. The Armorsmith: ARMOR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate
   with how many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS,
   the day's six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
-- **A faction's rows** (`factionRows`): REPUTATION (the rank, the meter, what the next ranks keep, and each package
-  waiting held to collect), PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a
-  Legendary cloak worn at any level, sold only to the pledged and not while nine cloaks are carried; kept says so),
-  ARMOUR and WEAPONS (the faction's four armour pieces and two weapons as the room makes them, each card naming the
-  colour it is drawn in; dim with "From rank 2" or "From rank 3" until the rank, then "From level 20" below the level
-  they are made at, "Its slot carries nine" while its slot is full), ART (the faction's Art: its level as five pips, its bar, and when the bar is
-  full a Rise press with the rise's price that opens a choice of the fragments not owned; with all six owned it rises
-  at once, "No fragment left to choose") and FRAGMENTS (the Art's six, owned lit, the rest dim with their price, sold
-  from the first rank).
+- **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen
+  scrolls to its armour: REPUTATION (the rank, the meter, what the next ranks keep, and each package waiting held to
+  collect), PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a Legendary cloak
+  worn at any level, sold only to the pledged and not while nine cloaks are carried; kept says so), ART (the faction's
+  Art: its level as five pips, its bar, and when the bar is full a Rise press with the rise's price that opens a choice
+  of the fragments not owned; with all six owned it rises at once, "No fragment left to choose"), FRAGMENTS (the Art's
+  six, owned lit, the rest dim with their price, sold from the first rank), then ARMOUR and WEAPONS (the faction's four
+  armour pieces and two weapons as the room makes them, each card naming the colour it is drawn in; dim with "From
+  rank 2" or "From rank 3" until the rank, then "From level 20" below the level they are made at, "Its slot carries
+  nine" while its slot is full). The rows scroll under a thin bar of the menu's.
 - **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape is away. He comes on
   Fridays."
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
