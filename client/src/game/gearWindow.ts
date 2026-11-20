@@ -386,8 +386,8 @@ export function startGearWindow(
     // Built again only when the room's word on the gear is new, or the player moved within the menu.
     // The ship's papers change at sea, so its tab is built again with them.
     const papers = view === 'ship' ? ship() : null;
-    const at = [view, slot, arts, appearance, artSlot, artPending, shelf, inspecting, drawn];
-    const state = JSON.stringify([...at, !now, papers]);
+    const where = [view, slot, arts, appearance, artSlot, artPending, shelf, inspecting, drawn];
+    const state = JSON.stringify([...where, !now, papers]);
     // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
     const holding = pressing || screen.querySelector('.gear-holding') !== null;
     if (holding || (gear === shownGear && state === shownState)) {
