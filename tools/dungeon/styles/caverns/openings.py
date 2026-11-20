@@ -218,7 +218,8 @@ def sconce(seed):
     foot = (0.0, 0.01, -0.5)
     axis = unit(sub(top, foot))
     neck = sub(top, mul(axis, 0.13))
-    wood = forms.rod(foot, neck, 0.02, 0.024, 5)
+    # The timber picture's grain runs along u, and a rod's u runs round it: swapped, the grain runs along the handle.
+    wood = [[(point, (v, u)) for point, (u, v) in face] for face in forms.rod(foot, neck, 0.02, 0.024, 5)]
     head = revolve([(0.024, 0.0), (0.038, 0.035), (0.037, 0.1), (0.033, 0.13)], neck, axis, 5)
     head = head[:-2] + head[-1:]
     tied = sub(top, mul(axis, 0.31))
