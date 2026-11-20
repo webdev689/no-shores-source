@@ -266,9 +266,9 @@ export class Naval {
   }
 
   /** Draws the balls aloft and the effects (the lay is `drawAimOver`'s), heights as drawn: each effect and ball
-   *  `scale` times its size, as the ships are drawn, and the holes in the hulls where `scarred` says each ship is drawn (by default her
-   *  own Sloop and her captain's); what floats on the drawn swell (`sea.water`, its height at a window point) where
-   *  the page has one, all in the sun's shadows when a map is given. */
+   *  `scale` times its size, as the ships are drawn, and the holes in the hulls where `scarred` says each ship is
+   *  drawn (by default her own Sloop and her captain's); what floats on the drawn swell (`sea.water`, its height at a
+   *  window point) where the page has one, all in the sun's shadows when a map is given. */
   draw(
     pass: GPURenderPassEncoder,
     view: Window,

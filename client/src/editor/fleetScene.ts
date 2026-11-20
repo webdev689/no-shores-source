@@ -25,7 +25,7 @@ const BALL_DRAWN = 2;
 const BALL = [0.12, 0.12, 0.12] as const;
 
 /** A lay as the aim draws it. */
-function arcsLay(lay: FleetLay | null): FightLay | null {
+function aimLay(lay: FleetLay | null): FightLay | null {
   if (!lay) return null;
   const ends = lay.ends.map((end) => end && { ...end });
   const { side, launches, elevation, reach, radius, onTarget } = lay;
@@ -194,7 +194,7 @@ export class FleetScene {
   ): void {
     const own = this.play.session.own();
     const guns = own && { left: own.guns.left, braced: own.braced };
-    const aim = own && guns && aimOf(arcsLay(this.lay), { state: own.state, guns }, view, shown);
+    const aim = own && guns && aimOf(aimLay(this.lay), { state: own.state, guns }, view, shown);
     if (aim) this.aimView?.drawOver(encoder, target, depth, aim, camera, now);
   }
 

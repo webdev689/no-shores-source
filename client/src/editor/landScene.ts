@@ -268,9 +268,9 @@ export class LandScene {
     }
     const own = this.harbour.sailing;
     const seen = fleet
-      ? fleet.aimCamera(orbit, view, shown, frame.aiming, seconds)
+      ? fleet.aimCamera(this.clearOfBed(orbit), view, shown, frame.aiming, seconds)
       : own && this.naval.fighting
-        ? this.naval.aimCamera(orbit, own, view, shown, frame.aiming, seconds)
+        ? this.naval.aimCamera(this.clearOfBed(orbit), own, view, shown, frame.aiming, seconds)
         : this.clearOfBed(orbit);
     const camera = cameraOf(seen);
     const fromEye = viewProjection(seen, frame.size.width / frame.size.height, true);

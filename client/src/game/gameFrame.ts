@@ -123,6 +123,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.hints(shown.hints);
     hud.marks([]);
     hud.seaBar(null);
+    hud.seaFight(null);
     hud.note(here.roomNote);
     return scene.closeReady(body.x, body.y);
   };
