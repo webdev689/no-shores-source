@@ -115,9 +115,9 @@ impl Fleet {
     }
 
     /// Sets the world time the room's clock started at, seconds since the Unix epoch: its sea takes the weather then,
-    /// and keeps it while the room lasts.
+    /// as a browser predicting it does (`room-wasm`'s fleet door), and keeps it while the room lasts.
     pub fn set_world_start(&mut self, seconds: f64) {
-        (self.swell, self.wind) = open_sea_at(FLEET_AT, seconds + self.time());
+        (self.swell, self.wind) = open_sea_at(FLEET_AT, seconds);
     }
 
     /// The room's time, seconds: what the swell rolls by.

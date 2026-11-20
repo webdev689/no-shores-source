@@ -354,10 +354,11 @@ impl Sea {
             }
         }
         let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
-        // Each clash under the weather where its ships are.
+        // Each clash under the weather where it began.
         for clash in std::mem::take(&mut self.clashes) {
-            let Some(at) = clash.ships().next().map(|ship| [ship.x, ship.y]) else { continue };
-            let (swell, wind) = self.weather.at(at, time);
+            let Some((swell, wind)) = self.weather.of_clash(clash.ships().map(|ship| ship.id)).cloned() else {
+                continue;
+            };
             let mut alone = vec![clash];
             step_clashes(
                 &mut alone,
@@ -367,6 +368,8 @@ impl Sea {
             );
             self.clashes.append(&mut alone);
         }
+        let captains: Vec<u32> = self.clashes.iter().flat_map(|clash| clash.ships().map(|ship| ship.id)).collect();
+        self.weather.keep_clashes(&captains);
         // Each player's waters run at the pace they sail, the world's own time at rest.
         let ships: Vec<(PlayerId, [f64; 2], bool, f64)> = self
             .ships()
@@ -392,7 +395,7 @@ impl Sea {
             self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new(), swell, wind });
         }
         for met in self.pirates.meet_rivals() {
-            let (swell, _) = self.weather.at([met[0].x, met[0].y], time);
+            let (swell, _) = self.weather.begin_clash(&[met[0].id, met[1].id], [met[0].x, met[0].y], time);
             self.clashes.push(Clash::begin(met, &CoastWaters { coasts: &self.coasts, swell: &swell }, time));
         }
         for &(player, at, _, _) in &ships {

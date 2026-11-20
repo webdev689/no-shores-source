@@ -66,7 +66,7 @@ fn the_sea_over_the_square_swells_to_its_fingerprint() {
 
 /// The deep sea under the weather round an island, at points from its lee to the open sea and a roadstead, at a moment
 /// of 2026 (watersRules.test.ts asks the room's door for the same).
-pub const WEATHER_SEA_HASH: &str = "20f8df87c5d6719e";
+pub const WEATHER_SEA_HASH: &str = "33a897e65c0a9658";
 
 #[test]
 fn the_sea_under_the_weather_swells_to_its_fingerprint() {

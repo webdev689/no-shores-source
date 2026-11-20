@@ -5,6 +5,7 @@
 use crate::sea::{Coast, on_land};
 use land::sea::{FULL_DEPTH_M, SEED, SeaHere, Swell};
 use sailing::waters::{Spot, Waters, weather_wind};
+use std::collections::BTreeMap;
 use world::geometry::Point;
 use world::layout::Layout;
 
@@ -14,12 +15,14 @@ use world::layout::Layout;
 pub struct SeaWeather {
     waters: world::waters::Waters,
     pub world_start_s: f64,
+    /// Each clash's swell and wind, kept from where it began, under each of its captains' numbers.
+    clashes: BTreeMap<u32, (Swell, [f64; 2])>,
 }
 
 impl SeaWeather {
     #[must_use]
     pub fn new(layout: &Layout) -> Self {
-        Self { waters: world::waters::Waters::new(layout), world_start_s: 0.0 }
+        Self { waters: world::waters::Waters::new(layout), world_start_s: 0.0, clashes: BTreeMap::new() }
     }
 
     /// The swell and the sailing wind at world point `at` at `time`, the room's seconds: the weather there then, the
@@ -28,6 +31,28 @@ impl SeaWeather {
     pub fn at(&self, at: [f64; 2], time: f64) -> (Swell, [f64; 2]) {
         let here = SeaHere::at(&self.waters, &[], at[0], at[1], self.world_start_s + time);
         (Swell::under(SEED, &here), weather_wind(here.wind))
+    }
+}
+
+impl SeaWeather {
+    /// Takes the weather at `at` and `time` for a clash among the captains numbered `captains`, kept while it lasts.
+    pub fn begin_clash(&mut self, captains: &[u32], at: [f64; 2], time: f64) -> (Swell, [f64; 2]) {
+        let weather = self.at(at, time);
+        for &captain in captains {
+            self.clashes.insert(captain, weather.clone());
+        }
+        weather
+    }
+
+    /// The weather a clash among `captains` began in; none for one this room never began.
+    #[must_use]
+    pub fn of_clash(&self, mut captains: impl Iterator<Item = u32>) -> Option<&(Swell, [f64; 2])> {
+        captains.find_map(|captain| self.clashes.get(&captain))
+    }
+
+    /// Forgets the weather of every clash but those among `captains`.
+    pub fn keep_clashes(&mut self, captains: &[u32]) {
+        self.clashes.retain(|captain, _| captains.contains(captain));
     }
 }
 
@@ -53,18 +78,16 @@ pub(crate) struct CoastWaters<'sea> {
 
 impl Waters for CoastWaters<'_> {
     fn at(&self, x: f64, y: f64, time: f64) -> Spot {
+        self.lagged(x, y, time, 0.0)
+    }
+
+    fn lagged(&self, x: f64, y: f64, time: f64, lag: f64) -> Spot {
         let point = Point::new(x.round() as i64, y.round() as i64);
         if on_land(self.coasts, point) {
             Spot { bed: DRY_M, surface: None }
         } else {
-            Spot { bed: -SEA_BED_M, surface: Some(self.swell.height_at(x, y, time, SEA_BED_M)) }
+            Spot { bed: -SEA_BED_M, surface: Some(self.swell.lagged_height_at(x, y, time, SEA_BED_M, lag)) }
         }
-    }
-
-    fn lagged(&self, x: f64, y: f64, time: f64, lag: f64) -> Spot {
-        let spot = self.at(x, y, time);
-        let surface = spot.surface.map(|_| self.swell.lagged_height_at(x, y, time, SEA_BED_M, lag));
-        Spot { surface, ..spot }
     }
 }
 

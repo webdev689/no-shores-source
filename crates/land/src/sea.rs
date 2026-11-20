@@ -89,12 +89,13 @@ impl Swell {
         let strength = (here.wind[0] * here.wind[0] + here.wind[1] * here.wind[1]).sqrt();
         let toward = if strength > 0.0 { [here.wind[0] / strength, here.wind[1] / strength] } else { [1.0, 0.0] };
         let spacing_cosine = sin_cos(TAU / BEARINGS as f64).1;
+        // A bearing a hair's weight from none is none: the wind on a set's bearing blends that set alone.
         let mut bearings: Vec<(usize, f64)> = (0..BEARINGS)
             .map(|index| {
                 let (east, north) = sin_cos(TAU * index as f64 / BEARINGS as f64);
                 (index, ((toward[0] * east - toward[1] * north - spacing_cosine) / (1.0 - spacing_cosine)).max(0.0))
             })
-            .filter(|&(_, weight)| weight > 0.0)
+            .filter(|&(_, weight)| weight > 1e-9)
             .collect();
         let total: f64 = bearings.iter().map(|&(_, weight)| weight * weight).sum::<f64>().sqrt();
         bearings.iter_mut().for_each(|(_, weight)| *weight /= total);
@@ -132,7 +133,7 @@ impl Swell {
     }
 
     /// As `displacement`, the height as a hull of time constant `lag` seconds feels it: each wave answered as a first
-    /// order lag answers a sine, its height shrunk by 1 / (1 + (frequency x lag)^2) and its crest come late, from
+    /// order lag answers a sine, its height shrunk by 1 / √(1 + (frequency x lag)^2) and its crest come late, from
     /// + - * / alone. A lag of 0 is the water itself, to the bit.
     fn lagged_displacement(&self, x: f64, y: f64, time: f64, depth: f64, lag: f64) -> [f64; 3] {
         let share = reach(depth);
@@ -147,7 +148,7 @@ impl Swell {
             out[1] += wave.shift * wave.direction[1] * cosine;
             if lag > 0.0 {
                 let slowness = wave.frequency * lag;
-                out[2] += wave.amplitude * (sine - slowness * cosine) / (1.0 + slowness * slowness);
+                out[2] += wave.amplitude * (sine + slowness * cosine) / (1.0 + slowness * slowness);
             } else {
                 out[2] += wave.amplitude * sine;
             }

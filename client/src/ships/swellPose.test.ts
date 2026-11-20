@@ -72,10 +72,10 @@ test('a bigger hull answers the swell slower, as the rules have her', () => {
 });
 
 test('her bow slams pitching down into a crest, throwing spray by her way and the sea state', () => {
-  assert.ok(slams(-RIDE.slamPitchRate * 1.5, 0.2));
-  assert.ok(!slams(-RIDE.slamPitchRate * 1.5, -0.1), 'her stem clear of the water');
-  assert.ok(!slams(-RIDE.slamPitchRate * 0.5, 0.2), 'pitching gently');
-  assert.ok(!slams(RIDE.slamPitchRate * 2, 0.2), 'rising');
+  assert.ok(slams(-0.02, 0.2, RIDE.slamClosingMS * 2));
+  assert.ok(!slams(-0.02, -0.1, RIDE.slamClosingMS * 2), 'her stem clear of the water');
+  assert.ok(!slams(-0.02, 0.2, RIDE.slamClosingMS * 0.5), 'meeting it gently');
+  assert.ok(!slams(0.1, 0.2, RIDE.slamClosingMS * 2), 'rising');
   assert.equal(sprayOf(0, 1, 0), 0, 'no way, no spray');
   assert.ok(sprayOf(1, 0.9, 0) > sprayOf(1, 0.1, 0), 'a rough sea throws more');
   assert.ok(sprayOf(1, 0.5, 0) > sprayOf(1, 0.5, 3 * RIDE.slamSprayS) * 1.5, 'a slam bursts, then fades');

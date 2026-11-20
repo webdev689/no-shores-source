@@ -12,9 +12,9 @@ const SAIL = { moveSpeed: 2, turnSpeedDeg: 10 } as const;
  *  wake threshold). */
 export const WAKE_WAY = 0.5;
 /** How a hull rides the swell: her time constant, seconds a metre of her waterline's length (crates/sailing/src/pose.rs
- *  \`LAG_S_PER_M\`, so a bigger hull answers slower); the rate her bow must pitch down into a crest to slam, radians a
- *  second; and how long a slam's spray lasts, seconds. */
-export const RIDE = { lagSPerM: 0.02, slamPitchRate: 0.08, slamSprayS: 0.8 } as const;
+ *  `LAG_S_PER_M`, so a bigger hull answers slower); how fast her stem must close on a crest to slam as she pitches
+ *  down into it, metres a second; and how long a slam's spray lasts, seconds. */
+export const RIDE = { lagSPerM: 0.02, slamClosingMS: 1, slamSprayS: 0.8 } as const;
 
 /** Her waterline's middle over still water, metres; her bow's rise and her heel to starboard, radians. */
 export interface SwellPose {
@@ -76,10 +76,11 @@ export function lagOf(lengthM: number): number {
   return RIDE.lagSPerM * lengthM;
 }
 
-/** Whether her bow slams: pitching down (`pitchRate`, radians a second, bow up positive) faster than a slam's rate
- *  while the water at her stem stands over it (`bowUnder`, metres: the sea's height there less her stem's). */
-export function slams(pitchRate: number, bowUnder: number): boolean {
-  return pitchRate < -RIDE.slamPitchRate && bowUnder > 0;
+/** Whether her bow slams: pitching down (`pitchRate`, radians a second, bow up positive) as the crest at her stem
+ *  rises over it (`bowUnder`, metres: the sea's height there less her stem's) faster than a slam's closing speed
+ *  (`closingMS`, how fast `bowUnder` grows). */
+export function slams(pitchRate: number, bowUnder: number, closingMS: number): boolean {
+  return pitchRate < 0 && bowUnder > 0 && closingMS > RIDE.slamClosingMS;
 }
 
 /** Her bow's spray, 0 to 1: a little at way, more the rougher the sea, and a burst `sinceSlamS` after a slam that

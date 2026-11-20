@@ -32,7 +32,7 @@ export function displacement(
     const slowness = wave.frequency * lag;
     out[0] += wave.shift * wave.direction[0] * cosine;
     out[1] += wave.shift * wave.direction[1] * cosine;
-    out[2] += (wave.amplitude * (sine - slowness * cosine)) / (1 + slowness * slowness);
+    out[2] += (wave.amplitude * (sine + slowness * cosine)) / (1 + slowness * slowness);
   }
   return [out[0] * share, out[1] * share, out[2] * share];
 }
@@ -43,10 +43,13 @@ export function displacement(
  * browser's sine is not the server's, so this is for drawing, never for a rule.
  */
 export function swellHeight(swell: ShelteredSwell, x: number, y: number, time: number, depth: number, lag = 0): number {
+  const sheltered = swell.shelterAt?.(x, y) ?? 1;
+  // The carry is the view's middle's at most, as the water's drawing has it.
+  const carry = Math.min(sheltered, 1);
   let [restX, restY] = [x, y];
   for (let step = 0; step < 4; step++) {
     const [east, south] = displacement(swell, restX, restY, time, depth);
-    [restX, restY] = [x - east, y - south];
+    [restX, restY] = [x - east * carry, y - south * carry];
   }
-  return displacement(swell, restX, restY, time, depth, lag)[2] * (swell.shelterAt?.(x, y) ?? 1);
+  return displacement(swell, restX, restY, time, depth, lag)[2] * sheltered;
 }

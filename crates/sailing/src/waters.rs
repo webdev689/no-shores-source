@@ -42,11 +42,13 @@ impl Waters for LandWaters<'_> {
     }
 
     fn lagged(&self, x: f64, y: f64, time: f64, lag: f64) -> Spot {
-        let spot = self.at(x, y, time);
-        match self.ground.water_at(x, y) {
-            WaterAt::Sea => Spot { surface: Some(self.swell.lagged_height_at(x, y, time, -spot.bed, lag)), ..spot },
-            _ => spot,
-        }
+        let bed = self.ground.height_at(x, y);
+        let surface = match self.ground.water_at(x, y) {
+            WaterAt::Sea => Some(self.swell.lagged_height_at(x, y, time, -bed, lag)),
+            WaterAt::Lake { surface } | WaterAt::River { surface } => Some(surface),
+            WaterAt::Dry => None,
+        };
+        Spot { bed, surface }
     }
 }
 

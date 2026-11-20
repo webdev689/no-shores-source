@@ -233,9 +233,9 @@ side's colours, her pose, her heel and her footprint on the water taken from her
   the mean of the water under her bow, stern, sides and middle at her drawn size, and its slope along and across her,
   felt through her inertia at her drawn length. Off the charts the sea is deep; over shallows the swell fades as the
   water's does.
-- **Her bow.** Her bow slams when it pitches down faster than 0.08 radians a second while the sea at her stem stands
-  over it; each slam throws a burst of spray from her bow by her way and the sea state, fading in 0.8 s, over the
-  spray a rough sea throws at way.
+- **Her bow.** Her bow slams when, pitching down, the crest at her stem rises over it faster than 1 m/s; each slam
+  throws a burst of spray from her bow by her way and the sea state, fading in 0.8 s, over the spray a rough sea
+  throws at way.
 - **Into a turn.** She heels as `turn_heel` has it, by her swing and a ship's own way under way, 12 m/s: the Sloop 3
   degrees with the helm hard over, and every other hull by the Sloop's beam over her own (`heelShare`), so the narrow
   Schooner heels more and the broad Frigate less. Her pose on the swell is her own hull's, from her waterline. Her swing is her heading's turn a second, followed at 3 a second and taken at most as the
@@ -282,3 +282,5 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 - No current or cargo yet, and no crew but the stand-ins aboard ([[Game]]). Hulls are kept apart only in a fight
   ([[Naval Combat]]), as every fleet room is.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.
+- A fleet room's host does not hand it the world time yet, so its sea is the weather's at world time 0: the browser
+  predicting its ships must take the same time, and the room's snapshots do not carry it.

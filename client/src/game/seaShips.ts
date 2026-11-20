@@ -97,9 +97,9 @@ export class SeaShips {
   private readonly shown: (hull: number) => number;
   private readonly rigs = new Map<string, { readonly hull: number; readonly rig: SailRig }>();
   private readonly swings = new Map<string, { heading: number; swing: number }>();
-  /** Each ship's pitch as last drawn, how long since her bow last slammed (seconds; negative before any) and her bow's
-   *  spray now. */
-  private readonly rides = new Map<string, { pitch: number; sinceSlamS: number; spray: number }>();
+  /** Each ship's pitch and the sea over her stem as last drawn, how long since her bow last slammed (seconds; negative
+   *  before any) and her bow's spray now. */
+  private readonly rides = new Map<string, { pitch: number; bowUnder: number; sinceSlamS: number; spray: number }>();
 
   /** Each hull's own line at her waterline, read from her mesh. */
   private readonly lines: Pick<HullLines, 'line'>;
@@ -155,18 +155,19 @@ export class SeaShips {
     seconds: number,
     time: number,
   ): void {
-    const last = this.rides.get(who) ?? { pitch: pose.pitch, sinceSlamS: -1, spray: 0 };
+    const last = this.rides.get(who) ?? { pitch: pose.pitch, bowUnder: 0, sinceSlamS: -1, spray: 0 };
     const stem: [number, number] = [
       lies.x + Math.sin(lies.heading) * halfLength,
       lies.y - Math.cos(lies.heading) * halfLength,
     ];
     const sea = water.swell ? swellHeight(water.swell, stem[0], stem[1], time, water.depthAt(stem[0], stem[1])) : 0;
     const bowUnder = sea - (pose.heave + Math.sin(pose.pitch) * halfLength);
-    const slammed = lies.underWay && slams((pose.pitch - last.pitch) / seconds, bowUnder);
+    const closing = (bowUnder - last.bowUnder) / seconds;
+    const slammed = lies.underWay && slams((pose.pitch - last.pitch) / seconds, bowUnder, closing);
     const sinceSlamS = slammed ? 0 : last.sinceSlamS < 0 ? -1 : last.sinceSlamS + seconds;
     const state = water.swell && 'state' in water.swell ? (water.swell.state ?? MODERATE_STATE) : MODERATE_STATE;
     const spray = sprayOf(lies.underWay ? 1 : 0, state, sinceSlamS);
-    this.rides.set(who, { pitch: pose.pitch, sinceSlamS, spray });
+    this.rides.set(who, { pitch: pose.pitch, bowUnder, sinceSlamS, spray });
   }
 
   /** The player's ship as `own` places her, every other player's and every captain's, `seconds` on at `time`, drawn

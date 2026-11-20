@@ -96,8 +96,9 @@ pub const FETCH_SHARE: [f64; 2] = [0.25, 1.0];
 pub const HARBOUR_M: f64 = 3_000.0;
 pub const HARBOUR_EASE_M: f64 = 500.0;
 pub const HARBOUR_SHARE: f64 = 0.3;
-/// The march upwind never steps less than this, metres, so a point hard by a coast ends in a few steps.
-const LEAST_STEP_M: f64 = 50.0;
+/// The march upwind never steps less than this, metres, so a march along a coast lying with the wind takes 120 steps
+/// at most: the fetch's shares change over kilometres.
+const LEAST_STEP_M: f64 = 500.0;
 
 /// The open water upwind of a point, metres, out to the longest fetch: the distance along the wind's way back to the
 /// first land. Marched by the clearance to the nearest coast, which no step can overshoot.

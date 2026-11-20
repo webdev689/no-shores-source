@@ -48,8 +48,10 @@ test('a hull slow to answer rides a wave lower and later, and a sheltered sea st
   // One wave alone: a first-order lag of time constant 1 / frequency answers it 1 / √2 as high (sea.rs holds the same).
   const wave = { direction: [1, 0] as const, number: 0.1, frequency: 1, amplitude: 1, shift: 0, phase: 0 };
   const lone = { waves: [wave], fullDepthM: 15, goneDepthM: 1, bearing: 0 };
-  const heights = Array.from({ length: 2000 }, (_value, step) => swellHeight(lone, 0, 0, step * 0.01, 300, 1));
+  const heights = Array.from({ length: 6283 }, (_value, step) => swellHeight(lone, 0, 0, step * 0.001, 300, 1));
   assert.ok(Math.abs(Math.max(...heights) - Math.SQRT1_2) < 1e-3);
+  // Late, not early: the water peaks at 3π/2 s, the hull an eighth of a period after.
+  assert.ok(Math.abs(heights.indexOf(Math.max(...heights)) * 0.001 - 1.75 * Math.PI) < 0.01);
   assert.equal(swellHeight(lone, 3, 0, 2, 300, 0), Math.sin(0.3 - 2));
   const sheltered = { ...lone, shelterAt: (x: number) => (x > 0 ? 0.25 : 1) };
   assert.equal(swellHeight(sheltered, 3, 0, 2, 300), Math.sin(0.3 - 2) * 0.25);

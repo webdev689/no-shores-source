@@ -45,10 +45,10 @@ lee of an island and rises high in a storm. Forty waves at most are summed.
 
 The swell feels the bottom: it is whole where the sea is 15 m deep and gone at 1 m, where the breakers take over. The
 sea's height at a point is found by following the water back to where it rests, as a wave carries water sideways.
-Sine and cosine are the land crate's own, made from + - * / alone. The land's door hands the browser a moderate sea's swell with
-each landmass, and the sea's height at any sampled point; the room module's door (`sea_door.rs`) hands it the swell
-under the weather at a point and its height over a grid round the view. The sea's height under the weather is held to
-one fingerprint natively and through WebAssembly.
+Sine and cosine are the land crate's own, made from + - * / alone. The land's door hands the browser a moderate sea's
+swell with each landmass, and the sea's height at any sampled point; the room module's door (`sea_door.rs`) hands it
+the swell under the weather at a point and its height over a grid round the view. The sea's height under the weather
+is held to one fingerprint natively and through WebAssembly.
 
 ## The breakers
 
@@ -95,8 +95,8 @@ ripple's own pace. The field follows the walker; its ripples fade at its edge.
 
 A ship drawn with the land hides the water behind her and is seen through it below her waterline. She rides the swell
 through her inertia: each wave answered as a first-order lag answers it, her time constant 0.02 s a metre of her
-waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Her bow slams when it pitches
-down faster than 0.08 radians a second while the sea at her stem stands over it, and throws spray.
+waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Her bow slams when, pitching
+down, the crest at her stem rises over it faster than 1 m/s, and throws spray.
 
 Her footprint is her own hull line at her waterline, read from her mesh where its faces cross it (16 stations, stern
 to bow; a fair hull until her mesh comes), a hair inside it: it holds no water, so none shows in her open hull or over
