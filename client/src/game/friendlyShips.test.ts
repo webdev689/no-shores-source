@@ -216,7 +216,7 @@ test('a ship at anchor at her roadstead lies with her sails furled; one under wa
     ship?.rig
       .canvas()
       .every((points, index) =>
-        points.every((point, at) => Math.abs(point - (ship.rig.sails[index]?.stowed[at] ?? 0)) < 1e-3),
+        points.every((point, place) => Math.abs(point - (ship.rig.sails[index]?.stowed[place] ?? 0)) < 1e-3),
       );
   const [lying, under] = [1, -1].map((side) => drawn.find((ship) => Math.sign(ship.place.x) === side));
   assert.ok(lying && under, 'both drawn');

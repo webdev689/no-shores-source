@@ -255,7 +255,7 @@ function spaced<T extends { x: number; y: number; kind: string }>(
   for (const { place, index } of order) {
     const boxAt = (x: number, y: number) => markBox(place.kind, x, y, scale);
     const clear = (box: Rect) => inside(box) && !laid.some((each) => overlaps(each, box));
-    let at: readonly [number, number] = [place.x, place.y];
+    let stand: readonly [number, number] = [place.x, place.y];
     const hit = laid.find((box) => overlaps(box, boxAt(place.x, place.y)));
     if (hit) {
       const [middleX, middleY] = [hit.x + hit.width / 2, hit.y + hit.height / 2];
@@ -270,17 +270,17 @@ function spaced<T extends { x: number; y: number; kind: string }>(
         for (let along = first; along < first + 6 * reach; along += scale) {
           const spot = [middleX + towardX * along, middleY + towardY * along] as const;
           if (clear(boxAt(...spot))) {
-            at = spot;
+            stand = spot;
             break search;
           }
         }
       }
     }
-    const box = boxAt(...at);
+    const box = boxAt(...stand);
     // Grown by a clear gap, so two marks never stand edge to edge, read as one.
     const gap = MARK_GAP * scale;
     laid.push({ x: box.x - gap, y: box.y - gap, width: box.width + gap * 2, height: box.height + gap * 2 });
-    out[index] = { ...place, x: at[0], y: at[1] };
+    out[index] = { ...place, x: stand[0], y: stand[1] };
   }
   return out;
 }
