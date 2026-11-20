@@ -49,12 +49,14 @@ pub const GRANT_ARTS: u8 = 36;
 /// The Ranged loadout's ammunition set to `count` parts of `gear::ammo::AMMO_FULL`, and `count` Ammo crates more.
 pub const GRANT_AMMO: u8 = 37;
 pub const GRANT_CRATES: u8 = 38;
-/// A First Mate and a Bosun of `level` signed on and sent ashore.
-pub const GRANT_OFFICERS: u8 = 39;
+/// A loadout of `item_kind` worn: one carried, or a Normal one handed out.
+pub const GRANT_WORN: u8 = 39;
 /// An Art worn, by its number in `column`; a fragment set in its Core, the Art in `column`, the slot (0 to 2) in
 /// `slot` and the fragment's place in its Art's list (0 to 5) in `node`.
 pub const WEAR_ART: u8 = 40;
 pub const SET_CORE: u8 = 41;
+/// A First Mate and a Bosun of `level` signed on and sent ashore.
+pub const GRANT_OFFICERS: u8 = 42;
 /// A sea island's wreck scavenged, by its place in the island's list in `node`.
 pub const SCAVENGE: u8 = 63;
 /// A Core slot with no fragment, as the gear message carries it.
@@ -132,6 +134,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         GRANT_AMMO => Asked::Grant(Grant::Ammo(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
         GRANT_CRATES => Asked::Grant(Grant::Crates(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
         GRANT_OFFICERS => Asked::Grant(Grant::Officers(ask.level())),
+        GRANT_WORN => Asked::Grant(Grant::Worn(Kind::from_number(ask.item_kind())?)),
         _ => return None,
     })
 }
@@ -196,6 +199,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Grant(Grant::Item { kind, rarity, level }) => {
             let (item_kind, rarity) = (*kind as u8, *rarity as u8);
             args = messages::AskArgs { kind: GRANT_ITEM, item_kind, rarity, level: *level, ..args };
+        }
+        Asked::Grant(Grant::Worn(kind)) => {
+            args = messages::AskArgs { kind: GRANT_WORN, item_kind: *kind as u8, ..args };
         }
         Asked::Grant(Grant::Materials(count)) => {
             args = messages::AskArgs { kind: GRANT_MATERIALS, count: u32::from(*count), ..args };

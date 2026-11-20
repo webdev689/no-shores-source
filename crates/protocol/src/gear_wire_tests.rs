@@ -40,6 +40,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Grant(Grant::Ammo(360)),
         Asked::Grant(Grant::Crates(2)),
         Asked::Grant(Grant::Officers(7)),
+        Asked::Grant(Grant::Worn(Kind::Thunderlock)),
     ]
 }
 

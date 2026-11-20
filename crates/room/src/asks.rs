@@ -57,6 +57,9 @@ pub enum Grant {
         rarity: Rarity,
         level: u8,
     },
+    /// A loadout of this kind worn: the first one carried that the player may wear, or else a Normal one of their level
+    /// handed out. The Test Ground's hands take up a weapon this way, so the room fights with what the figure holds.
+    Worn(Kind),
     /// This many of every material, and as much again of Aurem a hundred times over.
     Materials(u16),
     Xp(u32),
@@ -298,6 +301,7 @@ impl Room {
                 item.element = gear::element::rolled(kind, rarity, &dice);
                 return carry(character, item);
             }
+            Grant::Worn(kind) => return wear_kind(character, kind, &dice),
             Grant::Materials(count) => {
                 use gear::character::Stuff;
                 use gear::kinds::Stock;
@@ -338,6 +342,37 @@ impl Room {
         }
         0
     }
+}
+
+/// Wears a loadout of `kind`: the one worn already, else the first carried that the wear ask takes, else a Normal one
+/// of the character's level handed out; refused for anything but a Melee or a Ranged kind.
+fn wear_kind(character: &mut gear::Character, kind: Kind, dice: &Dice) -> u8 {
+    let slot = kind.slot();
+    if !matches!(slot, Slot::Melee | Slot::Ranged) {
+        return answer_code(Err(Refusal::NoSuchItem));
+    }
+    if character.worn(slot).is_some_and(|item| item.kind == kind) {
+        return 0;
+    }
+    // The wear ask judges each one carried by its own rules (its level, one Atheric) and changes nothing if it refuses.
+    let wear = |character: &mut gear::Character, item| character.ask(Ask::Wear { item, slot }, Here::default(), dice);
+    let carried: Vec<u32> = character
+        .items
+        .values()
+        .filter(|(item, at)| item.kind == kind && *at == gear::At::Carried)
+        .map(|(item, _)| item.id)
+        .collect();
+    if carried.into_iter().any(|id| wear(character, id).is_ok()) {
+        return 0;
+    }
+    let mut item = gear::vestige::rolled(character.take_id(), kind, Rarity::Normal, slot, character.level(), dice);
+    item.element = gear::element::rolled(kind, Rarity::Normal, dice);
+    let id = item.id;
+    let code = carry(character, item);
+    if code != 0 {
+        return code;
+    }
+    answer_code(wear(character, id).map(|_| ()))
 }
 
 /// Carries a granted item, if its slot has room.
