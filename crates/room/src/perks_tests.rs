@@ -94,19 +94,23 @@ fn a_blow_takes_on_its_strikers_perks_as_it_is_struck() {
     };
     let blow = combat::judge::swing_blow(player, &striker, &attack, brute);
     let close = |left: f64, right: f64| (left - right).abs() < 1e-9;
-    assert!(close(room.empower(blow, brute).damage, blow.damage * 1.05), "Honed");
+    let harm = crate::power::PLAYER_HARM;
+    assert!(close(room.empower(blow, brute).damage, blow.damage * harm * 1.05), "Honed");
     let mut staggered = *room.fighter(brute).expect("standing");
     staggered.action = combat::Action::Staggered { left: 30, cause: Cause::Poise };
     staggered.health = staggered.health_max / 3.0;
     room.set_fighter(brute, staggered);
-    assert!(close(room.empower(blow, brute).damage, blow.damage * 1.05 * 1.15 * 1.3), "Executioner, Undertow");
+    assert!(close(room.empower(blow, brute).damage, blow.damage * harm * 1.05 * 1.15 * 1.3), "Executioner, Undertow");
     let riposte = combat::judge::swing_blow(
         player,
         &striker,
         &combat::fighter::Attack { swing: combat::fighter::Swing::Riposte(brute), ..attack },
         brute,
     );
-    assert!(close(room.empower(riposte, brute).damage, riposte.damage * 1.05 * 1.3), "a riposte is no execution");
+    assert!(
+        close(room.empower(riposte, brute).damage, riposte.damage * harm * 1.05 * 1.3),
+        "a riposte is no execution"
+    );
     let shot = combat::judge::Blow { kind: combat::BlowKind::Shot(combat::Ranged::Pistolet), ..blow };
     let trim = room.fighter(player).expect("in").trim;
     assert!(close(Room::at_range(shot, 4.0, &trim).damage, shot.damage * 1.2), "Point Blank");

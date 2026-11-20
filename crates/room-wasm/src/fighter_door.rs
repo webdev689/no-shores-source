@@ -8,7 +8,9 @@ use combat::Fighter;
 use combat::floats::{FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS};
 use land::ground::Ground;
 use movement::Block;
+use movement::Heights;
 use movement::floats::BLOCK_FLOATS;
+use movement::heights::RIM_CELL_M;
 use room::Floor;
 use std::cell::RefCell;
 
@@ -51,6 +53,24 @@ pub fn set_heights(bytes: &[u8]) -> bool {
     let kept = deck.is_some();
     FLOOR.with(|floor| *floor.borrow_mut() = deck.map_or(Floor::Flat, |deck| Floor::Deck(Box::new(deck))));
     kept
+}
+
+/// Keeps the rim round a course laid over the sea for predicting a fighter without a room, from its blocks' numbers,
+/// five each: the floor the sea room holds its bodies by (`Floor::Sea`), so a fighter predicted at its edge is held
+/// as the room holds it. Answers whether the numbers were blocks.
+pub fn set_rim(bytes: &[u8]) -> bool {
+    let floats = floats_of(bytes);
+    if !floats.len().is_multiple_of(BLOCK_FLOATS) {
+        return false;
+    }
+    let blocks: Vec<Block> = floats
+        .chunks_exact(BLOCK_FLOATS)
+        .filter_map(|numbers| numbers.try_into().ok())
+        .map(Block::from_floats)
+        .collect();
+    let rim = Heights::rim(&blocks, RIM_CELL_M);
+    FLOOR.with(|floor| *floor.borrow_mut() = Floor::Sea(Box::new(rim)));
+    true
 }
 
 /// One tick of a player's fighter as a room would take it, on the ground kept (open ground unless set), from its
@@ -130,6 +150,16 @@ pub fn arms_code(text: &[u8]) -> u32 {
 pub unsafe extern "C" fn fighter_course(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_course(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the rim round the blocks written at `address` for predicting; 1 if they were blocks, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_rim(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_rim(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Keeps the ground written at `address` for predicting; 1 if it was ground or empty, 0 if not.

@@ -123,6 +123,10 @@ fn a_fight_with_more_captains_shows_each_other_one_with_its_faction_and_rank() {
     let second = fight.vessel(CAPTAIN + 1).map(|vessel| vessel.ship.to_floats()).unwrap_or_default();
     assert_eq!(numbers[others_at + 4..others_at + 12], second);
     assert_eq!(numbers.len(), others_at + 4 + VESSEL_NUMBERS + 4 + 3);
+    // Parted for the messages, the others go whole and the view is as a page that knows one captain reads it.
+    let (view, others) = parted(&numbers);
+    assert_eq!(others, numbers[others_at..others_at + 4 + VESSEL_NUMBERS + 4]);
+    assert_eq!(view, [&numbers[..others_at], &numbers[others_at + others.len()..]].concat());
     assert!(view_numbers(&Fight::among(&captains, &Open, 0.0), PLAYER, &[], None, &Open, 0.0).is_empty(), "no player");
 }
 

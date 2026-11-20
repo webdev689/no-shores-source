@@ -39,8 +39,16 @@ fn room_to_stand<B: Near + ?Sized>(blocks: &B, x: f64, y: f64, z: f64) -> bool {
 }
 
 /// Starts a mantle up onto a lip, or a vault over a low, thin block: the body goes over it in time with its rise.
-/// None where there is no room to stand over the lip, or where a vault lands, under a floor above it.
-fn go_over<B: Near + ?Sized>(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool, blocks: &B) -> Option<Body> {
+/// None where there is no room to stand over the lip, or where a vault lands, under a floor above it; or where the
+/// terrain walls the way over, as at a deck's edge: the body is never carried past one.
+fn go_over<B: Near + ?Sized>(
+    body: &Body,
+    ahead: &WallAhead,
+    bearing: f64,
+    vault: bool,
+    blocks: &B,
+    terrain: &dyn Terrain,
+) -> Option<Body> {
     let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
     let rise = ahead.block.top - body.z;
     let onto = TUNING.radius + 0.3;
@@ -52,6 +60,9 @@ fn go_over<B: Near + ?Sized>(body: &Body, ahead: &WallAhead, bearing: f64, vault
         return None;
     }
     let to = [body.x + dir_x * reach_over, body.y + dir_y * reach_over, if vault { body.z } else { ahead.block.top }];
+    if terrain.walled((body.x, body.y), (to[0], to[1])) {
+        return None;
+    }
     // DFO's mantle time at middling skill: (0.25 + 0.22 rise)(1.3 - 0.5 skill).
     let seconds = (0.25 + 0.22 * rise.max(0.0)) * 1.05;
     Some(Body {
@@ -174,7 +185,7 @@ fn on_wall<B: Near + ?Sized>(
     }
     if controls.forward > 0.0
         && lip_above <= TUNING.hang + 0.01
-        && let Some(over) = go_over(body, &ahead, body.facing, false, blocks)
+        && let Some(over) = go_over(body, &ahead, body.facing, false, blocks, terrain)
     {
         return over;
     }
@@ -182,8 +193,11 @@ fn on_wall<B: Near + ?Sized>(
     let pace = if climbing { TUNING.climb } else { TUNING.shimmy };
     let along = controls.sideways * pace * seconds;
     let moved = Body { x: body.x + along_x * along, y: body.y + along_y * along, ..*body };
-    // Off the end of the block, there is nothing to hold.
-    let (x, y) = if wall_ahead(blocks, &moved, body.facing).is_some() { (moved.x, moved.y) } else { (body.x, body.y) };
+    // Off the end of the block there is nothing to hold, and past the terrain's wall (a rim round a course laid over the
+    // sea) nowhere to be.
+    let holds =
+        wall_ahead(blocks, &moved, body.facing).is_some() && !terrain.walled((body.x, body.y), (moved.x, moved.y));
+    let (x, y) = if holds { (moved.x, moved.y) } else { (body.x, body.y) };
     let mut z = body.z;
     if climbing {
         let climbed = (z + controls.forward * TUNING.climb * seconds).max(terrain.height_at(x, y));
@@ -230,7 +244,8 @@ fn in_air<B: Near + ?Sized>(
         // A lip too low to hang from, with the feet clear of the ground, is climbed straight over.
         let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, terrain, x, y, body.z);
         if rise <= TUNING.vault || low_lip {
-            if let Some(over) = go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead), blocks) {
+            // Over it, unless the terrain walls the way past it: then it lands as if no lip stood there.
+            if let Some(over) = go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead), blocks, terrain) {
                 return over;
             }
         } else {
@@ -290,7 +305,8 @@ fn on_ground<B: Near + ?Sized>(
         let ahead = if controls.forward > 0.0 { wall_ahead(blocks, &next, controls.yaw) } else { None };
         // A lip in reach from the ground is vaulted if low and thin, else mantled; a higher one is caught in the air.
         if let Some(ahead) = ahead.filter(|ahead| ahead.block.top - next.z <= TUNING.reach)
-            && let Some(over) = go_over(&next, &ahead, controls.yaw, vaults(ahead.block.top - next.z, &ahead), blocks)
+            && let Some(over) =
+                go_over(&next, &ahead, controls.yaw, vaults(ahead.block.top - next.z, &ahead), blocks, terrain)
         {
             return over;
         }

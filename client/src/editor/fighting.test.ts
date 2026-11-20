@@ -18,6 +18,7 @@ const vessel: FightVessel = {
 };
 const captain: FightCaptain = {
   ...vessel,
+  id: 1,
   ship: [600, 800, 0, 0, 0, 0, 0, 2],
   hull: 264,
   max_hull: 264,
@@ -137,7 +138,7 @@ const brig = (number: number, lies: readonly [number, number], more: Partial<Fig
   ...captain,
   ship: [lies[0], lies[1], 0, 0, 0, 0, 0, 2],
   name: 'Pirate Brig',
-  number,
+  id: number,
   ...more,
 });
 
@@ -266,8 +267,8 @@ test('two releases queued behind one step both fire the lay the look held', asyn
 });
 
 test('a joined fight names its own ship, describes every captain afloat in reach and tells of any one striking', async () => {
-  const second: FightCaptain = { ...captain, name: 'Pirate Brig', ship: [0, 300, 0, 0, 0, 0, 0, 2] };
-  const sunk: FightCaptain = { ...captain, name: 'Sunk Sloop', ship: [0, 200, 0, 0, 0, 0, 0, 2], state: 'sunk' };
+  const second: FightCaptain = { ...captain, id: 2, name: 'Pirate Brig', ship: [0, 300, 0, 0, 0, 0, 0, 2] };
+  const sunk: FightCaptain = { ...captain, id: 3, name: 'Sunk Sloop', ship: [0, 200, 0, 0, 0, 0, 0, 2], state: 'sunk' };
   const first: FightView = { ...VIEW, others: [second, sunk] };
   const struck: FightEvent = { kind: 'state', ship: 2, state: 'struck' };
   const { fights } = source({ others: [{ ...second, run_out: ['port'] }, sunk], events: [struck] });

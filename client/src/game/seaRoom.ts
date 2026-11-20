@@ -177,7 +177,7 @@ export class SeaRoom {
   shipNamed(ship: number): string | null {
     const view = this.fight;
     if (!view) return null;
-    return [view.captain, ...(view.others ?? [])].find((captain) => (captain.number ?? 1) === ship)?.name ?? null;
+    return [view.captain, ...(view.others ?? [])].find((captain) => captain.id === ship)?.name ?? null;
   }
 
   /** Every other player's ship. */

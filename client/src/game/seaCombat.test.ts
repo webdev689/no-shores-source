@@ -24,6 +24,7 @@ const vessel: FightVessel = {
 };
 const captain: FightCaptain = {
   ...vessel,
+  id: 1,
   ship: [5400, 5500, 2, 0, 0, 0, 0, 2],
   name: 'Pirate Sloop',
   faction: 2,
@@ -72,6 +73,29 @@ test('a fight draws every ship, its footprint, everyone aboard and each bar at t
   );
   assert.equal(fight.ownAt(3)?.scale, 3);
   assert.deepEqual(fight.bars(3)[0]?.over, [5400, 5500, (0.2 + BAR_OVER_M) * 3]);
+});
+
+test('each captain keeps a plate of its own, keyed by its number in the fight, so a hit lowers its bar alone', () => {
+  const struck = { ...captain, id: 2, hull: captain.max_hull / 2 };
+  const third = { ...captain, id: 3, ship: [5600, 5500, 0, 0, 0, 0, 0, 0] };
+  const view: FightView = { ...FIRST, captain, others: [struck, third] };
+  const fight = new SeaCombat(ROOM, view, MARKS, 0);
+  const bars = fight.bars(1);
+  assert.deepEqual(
+    bars.map((bar) => bar.key),
+    [1, 2, 3],
+  );
+  assert.deepEqual(
+    bars.map((bar) => bar.share),
+    [1, 0.5, 1],
+  );
+  // The second gone from the fight, as the wire leaves it out: the third keeps its own plate.
+  const after: FightView = { ...view, others: [third] };
+  const later = new SeaCombat(ROOM, after, MARKS, 0).bars(1);
+  assert.deepEqual(
+    later.map((bar) => bar.key),
+    [1, 3],
+  );
 });
 
 test("a fight begun at the sea's view keeps the size it is drawn at, and eases to its true size as it comes down", () => {
@@ -124,8 +148,8 @@ test("in a fight the player's footprint comes first, then the captains nearest i
 
 test('a captain keeps its own harm when another leaves the fight and the view moves it up its list', async () => {
   const [north, south] = [
-    { ...captain, ship: [5100, 5800, 0, 0, 0, 0, 0, 2], number: 5 },
-    { ...captain, ship: [5300, 6200, 0, 0, 0, 0, 0, 2], number: 7 },
+    { ...captain, ship: [5100, 5800, 0, 0, 0, 0, 0, 2], id: 5 },
+    { ...captain, ship: [5300, 6200, 0, 0, 0, 0, 0, 2], id: 7 },
   ];
   const views: FightView[] = [
     // A ball through the hull of the captain the events name 7, the second of the others.
@@ -241,8 +265,8 @@ test("out of the aim the wheel zooms the fight's camera by half again a notch, a
 });
 
 test("each captain's plate is keyed by its own fight number, so plates in a fight of three never share a lift", () => {
-  const second = { ...captain, ship: [5420, 5500, 2, 0, 0, 0, 0, 2], number: 5 };
-  const third = { ...captain, ship: [5440, 5500, 2, 0, 0, 0, 0, 2] };
+  const second = { ...captain, ship: [5420, 5500, 2, 0, 0, 0, 0, 2], id: 5 };
+  const third = { ...captain, ship: [5440, 5500, 2, 0, 0, 0, 0, 2], id: 3 };
   const fight = new SeaCombat(ROOM, { ...FIRST, others: [second, third] }, MARKS, 0);
   assert.deepEqual(
     fight.bars(1).map((bar) => bar.key),

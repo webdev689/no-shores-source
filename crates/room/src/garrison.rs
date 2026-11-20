@@ -195,7 +195,7 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
     };
     match (floor, section) {
         (Floor::Flat, _) => NavMesh::bake(&walked, bounds, &navmesh::AGENT),
-        (Floor::Sea, _) => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
+        (Floor::Sea(_), _) => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
         // A deck's mesh covers its ring alone: its planks and the walls round them.
         (Floor::Deck(_), Some(section)) => {
             NavMesh::bake_on(&walked, floor, ring_bounds(&section.ring), &navmesh::AGENT)

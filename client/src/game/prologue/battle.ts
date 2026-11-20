@@ -1,10 +1,13 @@
 // The owner's fifth beat, played: the ships that came out of the dark are fought with the sea's own fight (its
 // camera, its aim and its guns), the Brig drawn as the player's with its crew at work, the crew crying out as it is
-// struck, as its balls strike home and as each ship goes down; it ends once every one is beaten, sunk or struck.
+// struck, as its balls strike home and as each ship goes down; it ends once every one is beaten, sunk or struck. The
+// tracker says their crews are the mark, as the rules strike a ship whose men are gone, and counts the ships and men
+// left.
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
 import { shipSails } from '../../ships/shipMesh.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { HINTS } from '../hints.ts';
+import { seaFightQuest } from '../seaPanel.ts';
 import type { Beat, Tick } from './beat.ts';
 import { type Ambusher, type Going, type Happening, StoryFight, type StoryFightFrame } from './fightAtSea.ts';
 import { youAtHelm } from './helm.ts';
@@ -15,6 +18,7 @@ import { fought, sung } from './music.ts';
 import type { Founder, Sailed, ShipDraw } from './sailing.ts';
 import { INBOUND_WAY_M_S, STORM_SOUND } from './sighted.ts';
 import { STORM } from './skies.ts';
+import { QUEST } from './lessons.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
@@ -51,11 +55,6 @@ export function ambushersFrom(story: Story, inbound: readonly Sailed[]): Ambushe
 }
 
 type View = { readonly width: number; readonly height: number };
-
-/** What is left to do, for as long as the fight lasts. */
-export function shipsLeft(left: number, total: number): string {
-  return `Ships left: ${left} of ${total}.`;
-}
 
 /** A beaten Sloop as the fight left it: where it lies, its founder, and how it goes on under if it is going. */
 export interface Wreck {
@@ -140,8 +139,8 @@ export class Battle implements Beat {
     brig.way = 0;
   }
 
-  /** The fight begun on the story's clock, so its first words ("... sighted") are on the panel a while, every ship
-   *  under the sail and way it was last drawn with. */
+  /** The fight begun on the story's clock, so its first words ("... sighted") stand a while, every ship under the
+   *  sail and way it was last drawn with. */
   private begin(now: number): void {
     this.begun = true;
     const { brig, land, marks, stage, sailing } = this.story;
@@ -165,7 +164,6 @@ export class Battle implements Beat {
           return;
         }
         this.fight = fight;
-        stage.parts.objective.show('Engage', 'Sink them, or make them strike.', 8);
       },
       (error: unknown) => (this.failure = error),
     );
@@ -238,8 +236,10 @@ export class Battle implements Beat {
     const heads = own ? brig.heads(own) : undefined;
     if (heads) this.sayCries(shown.shot, heads, tick.viewport);
     const { hud } = stage.parts;
-    hud.hints([shipsLeft(shown.left, shown.ships.length - 1), ...HINTS.fight]);
+    hud.hints(HINTS.fight);
     hud.seaFight(shown.over ? null : shown.display);
+    hud.tasks.show(seaFightQuest(QUEST, shown.readout.left, shown.readout.men));
+    hud.toast(...shown.readout.said);
     const { eye, yaw, pitch, fov } = shown.shot;
     hud.shipBars(shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
     if (shown.over) this.finish();
@@ -264,8 +264,10 @@ export class Battle implements Beat {
   private finish(): void {
     if (this.done) return;
     this.done = true;
-    const { hud, objective } = this.story.stage.parts;
-    objective.clear();
+    const { hud } = this.story.stage.parts;
+    hud.tasks.show(null);
+    hud.seaFight(null);
+    hud.toast();
     hud.hints([]);
     hud.seaFight(null);
     hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: [0, 1, 0] }, 1));

@@ -27,6 +27,8 @@ pub struct Faction {
 
 pub const GREY_TITHE: u8 = 1;
 pub const PIRATES: u8 = 2;
+/// The number the Brig's crew carry for a faction: none, as they fight on the players' side.
+pub const CREW: u8 = 0;
 
 pub const FACTIONS: [Faction; 2] = [
     Faction {

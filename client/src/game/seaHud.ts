@@ -1,6 +1,6 @@
 // What the heads-up display shows at sea each frame: where the player is, the keys for what they are doing, the marks,
-// the compass and the ships on it, a captain's bar and the fight's notices in a fight, the sea's bar, Manage's panel,
-// the offer at the ship's wheel, and the voyage's line.
+// the compass and the ships on it; in a fight each captain's bar, the fight's readout, its task and DFO's notices; the
+// sea's bar, Manage's panel, the offer at the ship's wheel, and the voyage's line.
 import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
 import { headingOf, type ShipMark } from '../plus/compass.ts';
 import type { FightCaptain } from '../rules/fightRules.ts';
@@ -12,6 +12,7 @@ import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { aimLineOf, SeaSight } from './seaSight.ts';
+import { seaFightQuest } from './seaPanel.ts';
 import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
 
 /** What the display reads off the game besides the sea: whether a landing is being chosen or the sea's controls are
@@ -99,9 +100,11 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const { fight } = here;
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.
-  const fighting = fight ? [] : null;
-  hud.hints(deck ? deck.hints : seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
+  hud.hints(deck ? deck.hints : seaHints({ fighting: fight !== null, landing: state.landing, atHelm, ...aboard.where }));
   hud.notices([...state.notices, ...(fight && !deck ? fight.messages(state.clock) : [])]);
+  // shortcut: at sea the tracker shows only a fight's task, so a quest's would be hidden; share it once quests sail.
+  const task = fight && !deck ? fight.readout(state.clock) : null;
+  hud.tasks.show(task && seaFightQuest('Sea fight', task.left, task.men));
   hud.marks(shown.marks);
   // The player's plate, the battery rose, the card and the tally in a fight (on a struck ship's deck, the fight on foot's own),
   // before the ships' plates, which keep under its card.

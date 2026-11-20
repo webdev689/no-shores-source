@@ -20,10 +20,9 @@ const VIEW = { width: 800, height: 600 };
 const FORGE = { frames: () => 1, card: (id: number, dress: unknown, anim: string) => ({ anim }) } as unknown as Cards;
 const animOf = (cards: CardAt[]) => (cards[0]?.card as unknown as { anim: string } | undefined)?.anim;
 
-/** A page's worth of the welcome's parts, every word and mark it shows written down. */
+/** A page's worth of the welcome's parts, every word and prompt it shows written down. */
 function page(played = false, kept = new Map<string, string>(played ? [[WELCOME_KEY, 'played']] : []), keeps = true) {
   const said: Line[][] = [];
-  const marks: string[] = [];
   const prompts: string[] = [];
   const shownFor: number[] = [];
   let removed = 0;
@@ -34,7 +33,6 @@ function page(played = false, kept = new Map<string, string>(played ? [[WELCOME_
       frame: () => undefined,
       remove: () => void (removed += 1),
     },
-    overheads: { emote: (head, kind) => void marks.push(`${head} ${kind}`), frame: () => undefined, remove: () => {} },
     objective: {
       show: (word, line, seconds) => void (prompts.push(`${word} ${line}`), shownFor.push(seconds ?? 6)),
       clear: () => void prompts.push('cleared'),
@@ -52,7 +50,6 @@ function page(played = false, kept = new Map<string, string>(played ? [[WELCOME_
   return {
     kept,
     said,
-    marks,
     prompts,
     shownFor,
     removed: () => removed,
@@ -125,7 +122,7 @@ test('the welcome holds a scene for each stop, the last hers, every line by a sp
 });
 
 test('once the stranger has gone she comes, her counter empty; the player following hears every stop, then it is played', async () => {
-  const { kept, said, marks, prompts, removed, after } = page();
+  const { kept, said, prompts, removed, after } = page();
   const welcome = after();
   welcome.storyEnded(stranger(3));
   assert.equal(await frames(welcome, 2, () => ARRIVAL), 0, 'the stranger first');
@@ -145,8 +142,6 @@ test('once the stranger has gone she comes, her counter empty; the player follow
     [MET_SCENE, ...STOPS.map((stop) => stop.scene)].map((scene) => SCENES[scene]?.[0]?.say).sort(),
   );
   assert.equal(kept.get(WELCOME_KEY), 'played', 'played once every stop is said');
-  assert.ok(marks.includes('mage alert') && marks.includes('veiled alert'), 'the keepers she names are marked');
-  assert.ok(!marks.includes('lamplighters alert'), 'at her own counter she speaks, unmarked over its place');
   assert.equal(prompts.at(-1), 'cleared');
   assert.ok(!awayFromCounters.has('lamplighters'), 'her own figure is back behind her counter');
   assert.equal(removed(), 1);

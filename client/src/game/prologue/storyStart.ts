@@ -40,7 +40,6 @@ import { Brig } from './brig.ts';
 import { Epilogue } from './epilogue.ts';
 import { FIRST_LOOK, armouredDress, keptLook, type Look } from './look.ts';
 import { Nameplate } from './nameplate.ts';
-import { Objective } from './objective.ts';
 import { stormPlaces } from './places.ts';
 import { Prologue } from './prologue.ts';
 import { Sailing } from './sailing.ts';
@@ -120,8 +119,6 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     took(() => dialogue.remove());
     const overheads = new Overheads(hudRoot, worldOutput);
     took(() => overheads.remove());
-    const objective = new Objective(hudRoot);
-    took(() => objective.remove());
     const nameplate = new Nameplate(hudRoot);
     took(() => nameplate.remove());
     const stage = new Stage({
@@ -143,7 +140,6 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
       ambience: new Ambience(worldOutput),
       music: game.music,
       worldSound: game.ambience,
-      objective,
       cast: readCast,
       scenes: readScenes,
       roster: game.roster,

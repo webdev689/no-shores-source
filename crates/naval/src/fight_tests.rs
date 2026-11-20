@@ -392,9 +392,10 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_it() {
         [before.hull - after.hull, before.crew - after.crew]
     };
     let (whole, frigates) = (lost(1.0), lost(0.3));
-    for (sloops, frigate) in whole.iter().zip(frigates) {
-        assert!((frigate - sloops * 0.3).abs() < 1.0, "{frigate} against a share of {sloops}");
-    }
+    // The hull's share to the point; the men are rolled whole from a share struck half again (`FIGHT_HARM`), so ten
+    // balls' men may fall a couple either side of the share.
+    assert!((frigates[0] - whole[0] * 0.3).abs() < 1.0, "hull {} against a share of {}", frigates[0], whole[0]);
+    assert!((frigates[1] - whole[1] * 0.3).abs() <= 2.0, "men {} against a share of {}", frigates[1], whole[1]);
     assert!(whole[0] >= 40.0, "the Sloop's ten balls take whole: {whole:?}");
 }
 
@@ -444,4 +445,27 @@ fn a_captain_raised_to_a_strength_fights_with_that_many_times_its_hull_men_and_g
     assert_eq!(gun.hull, commission.armed(crate::guns::SWIVEL, 1.0).hull * 2.0, "its guns' harm as many times");
     assert!(!crate::captain::wary_takes(commission, 1.0, 1.0), "a wary Minor will not fall on a whole Sloop");
     assert!(crate::captain::wary_takes(commission, 6.0, 1.0), "six times as strong, the Minor outguns the Sloop");
+}
+
+#[test]
+fn in_a_fight_a_sound_ship_sails_and_rows_half_again_as_fast_as_at_sea() {
+    let sound = Hurts { wrecked: false, sail: 1.0, way_share: 1.0, turn: 1.0 };
+    let run = |helm: Helm, fighting: bool| {
+        let mut ship = Ship { rung: if helm.climb > 0 { 0 } else { 1 }, ..sloop_at(0.0, 0.0) };
+        for tick in 0..1200_u32 {
+            let time = f64::from(tick) * TICK_SECONDS;
+            let order = if tick == 0 { helm } else { Helm { climb: 0, ..helm } };
+            ship = if fighting {
+                sail_hurt(&ship, &sailing::hull::SLOOP, order, sound, &Open, WIND, time).0
+            } else {
+                sailing::ship::step_ship(&ship, &order, &sailing::hull::SLOOP, WIND, &Open, time, TICK_SECONDS)
+            };
+        }
+        ship.ahead
+    };
+    let under_sail = Helm { climb: 2, ..STILL };
+    let ratio = run(under_sail, true) / run(under_sail, false);
+    assert!((ratio - FIGHT_PACE).abs() < 0.02, "under sail, {ratio}");
+    let ratio = run(STILL, true) / run(STILL, false);
+    assert!((ratio - FIGHT_PACE).abs() < 0.02, "under oars, {ratio}");
 }

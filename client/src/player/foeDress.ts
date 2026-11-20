@@ -30,7 +30,7 @@ const clothes = (
 /** Each type's clothes by its number. The Grey Tithe wear grey cloth, over leather when they skirmish or shoot and
  *  over iron when they stand and fight; their captain is in steel from head to foot under a long grey cloak, and their
  *  High Assessor in iron from head to foot under a grey surcoat and a long grey cloak. The pirates wear the Test
- *  Ground's five foes' clothes. */
+ *  Ground's five foes' clothes. The Brig's crew wear a plain hand's white shirt and brown breeches. */
 const CLOTHES: Readonly<Record<number, Clothes>> = {
   1: clothes(
     'male',
@@ -130,6 +130,8 @@ const CLOTHES: Readonly<Record<number, Clothes>> = {
   ),
   17: clothes('male', 0.55, every('ebony'), { shirt_long_v: 'Purple', breeches: 'Grey' }),
   18: clothes('male', 0.4, every('iron'), { breeches: 'Grey', dwynnen_surcoat: 'Grey', formal_cloak: 'Grey' }),
+  19: clothes('male', 0.45, {}, { shirt_long_v: 'White', breeches: 'DarkBrown', boots: 'DarkBrown' }),
+  20: clothes('female', 0.45, {}, { shirt_long_v: 'White', breeches: 'DarkBrown', boots: 'DarkBrown' }),
 };
 
 /** A type's dress: its own clothes, with the weapons the rules' roster puts in its hands drawn. Null for a type with

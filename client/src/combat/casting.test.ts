@@ -67,6 +67,7 @@ test('the bar runs each share on by its recharge from the room’s word, and hol
   assert.ok(Math.abs(after.tenets[0] - (0.2 + 50 / 91)) < 1e-9);
   assert.equal(after.tenets[1], 1, 'Arc Lash full, and held there');
   assert.equal(abilitiesAt(null, 0, 0), null);
+  assert.equal(abilitiesAt(state(0), 0, 0), null, 'no Art worn, as in the prologue: no bar');
 });
 
 test('a press casts its ability only when it is ready, then waits for the room’s word before another', () => {

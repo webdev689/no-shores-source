@@ -176,15 +176,17 @@ fn a_bosss_called_foes_fight_at_its_level_and_stand_with_no_shield() {
 }
 
 #[test]
-fn the_fights_heat_counts_a_blow_as_combat_is_tuned_for_at_any_level_and_what_a_shield_took() {
+fn the_fights_heat_counts_a_blow_as_combat_is_tuned_for_at_any_level_and_harm_and_what_a_shield_took() {
     let mut room = levelled(NodeKind::Patrol, "glade", (26, 30));
     let player = room.join().expect("room");
     let foe = room.garrison[0].standing[0];
     room.foes.get_mut(&foe).expect("standing").shield = None;
     let times = gear::power::foe_health_times(room.foes[&foe].level);
     let heat = room.director.heat;
-    // A matched player's blow is its tuned 10 times what the foe's level makes its health.
-    land(&mut room, player, foe, 10.0 * times);
+    // A matched player's blow is its tuned 10 times what the foe's level makes its health, struck twice as hard by the
+    // balance's ease, and heats the fight as the tuned 10.
+    let struck = 10.0 * times * crate::power::PLAYER_HARM;
+    land(&mut room, player, foe, struck);
     let dealt = room.director.heat - heat;
     assert!((dealt - 10.0 * ::foes::director::DEALT_GAIN).abs() < 1e-9, "{dealt}");
     // A blow a shield holds whole still heats the fight, by what the shield took.
@@ -192,10 +194,16 @@ fn the_fights_heat_counts_a_blow_as_combat_is_tuned_for_at_any_level_and_what_a_
     found.shield = Some(gear::element::Shield::whole(Element::Volt, 1e6));
     found.fighter.poise = 0.0;
     let (heat, health) = (room.director.heat, room.foes[&foe].fighter.health);
-    land(&mut room, player, foe, 10.0 * times);
+    land(&mut room, player, foe, struck);
     assert_eq!(room.foes[&foe].fighter.health, health, "held whole");
     assert_eq!(room.foes[&foe].fighter.poise, 0.0, "a blow the shield holds whole fills no poise");
     assert!((room.director.heat - heat - dealt).abs() < 1e-9);
+    // A foe's tuned blow on the player, eased to half, cools the fight as the tuned blow it is.
+    room.director.heat = 0.5;
+    let taken = Verdict::Hit { damage: 10.0 * crate::power::FOE_HARM, poise: 0.0 };
+    room.settle(&blow(foe, 0.0), How::Swing, player, taken, None);
+    let cooled = 0.5 - room.director.heat;
+    assert!((cooled - 10.0 * ::foes::director::TAKEN_LOSS).abs() < 1e-9, "{cooled}");
 }
 
 #[test]

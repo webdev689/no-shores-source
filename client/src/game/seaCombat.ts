@@ -30,6 +30,7 @@ import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { FightHeard } from './audio/ambience/seaFight.ts';
 import type { Shot } from './camera.ts';
+import { type FightReadout, readoutOf } from './seaPanel.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { worldOutput } from './uiSounds.ts';
@@ -95,6 +96,8 @@ export class SeaCombat {
   /** The world point the fight is drawn from, where it began: marks lie near it, so float32 holds them exactly. */
   private readonly window: Window;
   private last: FightView;
+  /** Her ship's kind, as the HUD names her. */
+  private readonly own: string;
   private orbit: { yaw: number; pitch: number };
   private readonly held = new Set<string>();
   private readonly presses: string[] = [];
@@ -138,6 +141,7 @@ export class SeaCombat {
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     const source = own?.source ?? roomSource(fought as SeaRoom, first);
     this.naval.join(Fighting.joined(source, 'sea', first, now, own?.own));
+    this.own = own?.own ?? 'Sloop';
     this.last = first;
     const [x = 0, y = 0, heading = 0] = first.player.ship;
     this.window = { leftM: Math.round(x), topM: Math.round(y) };
@@ -313,14 +317,14 @@ export class SeaCombat {
   }
 
   /** Every ship in the fight with its hull, side and the number its events name it by: the player's Sloop (0), then
-   *  each captain's (the first 1, each other by its own number, or its place after the first where none is given). */
+   *  each captain's by its own (`FightCaptain.id`). */
   private vessels(answer: FightView = this.last) {
     const player = { vessel: answer.player, hull: SLOOP_HULL, side: 'player' as const, number: 0 };
-    const captains = [answer.captain, ...(answer.others ?? [])].map((captain, index) => ({
+    const captains = [answer.captain, ...(answer.others ?? [])].map((captain) => ({
       vessel: captain,
       hull: this.shown(hullOfCaptain(captain)),
       side: factionSide(captain.faction),
-      number: index === 0 ? 1 : (captain.number ?? index + 1),
+      number: captain.id,
     }));
     return [player, ...captains];
   }
@@ -428,10 +432,11 @@ export class SeaCombat {
   /** Each captain's bar over its hull's masthead, in world metres, the ship drawn `scale` times its size, while it
    *  floats. */
   bars(scale: number): ShipBar[] {
-    // Each keyed by the number the fight names it by, so the plates' layout keeps them apart.
-    const bar = (captain: FightCaptain, index: number) =>
+    // Each keeps its own plate by its number in the fight, as its events name it, which a ship gone from it leaves
+    // to no other: plates sharing a key would share one plate's place and losses.
+    const bar = (captain: FightCaptain) =>
       barOver(
-        { ...captain, maxHull: captain.max_hull, id: index === 0 ? 1 : (captain.number ?? index + 1) },
+        { ...captain, maxHull: captain.max_hull },
         { leftM: 0, topM: 0 },
         scale,
         plateOverM(this.shown(hullOfCaptain(captain))),
@@ -448,6 +453,12 @@ export class SeaCombat {
   /** The fight's messages standing at `now`, DFO's toasts. */
   messages(now: number): string[] {
     return this.naval.messages(now);
+  }
+
+  /** What the fight's task counts at `now`: its ship as the fight last left it, DFO's messages, and how many captains
+   *  are still afloat. */
+  readout(now: number): FightReadout {
+    return readoutOf(this.last, this.own, this.naval.messages(now));
   }
 }
 

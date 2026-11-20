@@ -21,6 +21,7 @@ const captain = (name: string, east: number, more: Partial<FightCaptain> = {}): 
   ...vessel,
   ship: [east, 0, 0, 0, 0, 0, 0, 2],
   fires: 0,
+  id: 1,
   name,
   faction: 2,
   rank: 2,
@@ -34,7 +35,7 @@ const VIEW: FightView = {
   clock: 0,
   player: vessel,
   captain: captain('Pirate Brig', 200),
-  others: [captain('Tithe Sloop', 70, { state: 'struck', faction: 1, number: 2 })],
+  others: [captain('Tithe Sloop', 70, { state: 'struck', faction: 1, id: 2 })],
   balls: [],
   lay: { side: 'starboard', launches: [], elevation: 0, reach: 150, ends: [], radius: 3, on_target: false },
   events: [],
@@ -104,7 +105,7 @@ test("the broadside warning names the nearest captain running out its guns, as D
   const running = {
     ...VIEW,
     captain: captain('Pirate Brig', 200, { run_out: ['port'] }),
-    others: [captain('Tithe Sloop', 70, { state: 'struck', run_out: ['port'], number: 2 })],
+    others: [captain('Tithe Sloop', 70, { state: 'struck', run_out: ['port'], id: 2 })],
   };
   const model = fightDisplay(running, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
   assert.equal(model.warn, 'Broadside from the Pirate Brig - C: brace', 'a struck ship runs out no guns at the player');

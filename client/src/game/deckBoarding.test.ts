@@ -49,7 +49,7 @@ const FRAME = {
   marks: new Float32Array(),
   swings: new Float32Array(),
   fight: {},
-  hints: ['Mouse: swing'],
+  hints: [['Mouse', 'Swing']],
 } as unknown as FootFrame;
 
 /** The fight on foot stood on its deck, as the land's is, its frames counted and its leaving. */
@@ -129,7 +129,7 @@ test('its deck won holds the boarder a minute, its time left and its hold’s ta
   assert.equal(boarding.won, true);
   assert.equal(boarding.words?.place, 'Its deck is yours');
   assert.equal(boarding.words?.line, 'Its hold: 2 crates, a chest');
-  assert.equal(boarding.words?.hints[0], 'E back aboard your ship · 60 s left');
+  assert.deepEqual(boarding.words?.hints[0], ['E', 'Back aboard your ship · 60 s left']);
   assert.equal(fightAsk({ boarding, sighted: sea }), 'leave-deck');
   assert.deepEqual(asked, ['leave-deck']);
   // The room has the boarder back aboard their own ship: the view is the sea's fight's again, at their helm.

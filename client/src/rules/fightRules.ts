@@ -53,14 +53,14 @@ export interface FightVessel {
  *  its mode, whether it is hostile to the player, its sides run out, and, from the land worker's fight, what its
  *  hurts and its going down do to its pose (metres settled, trim and list in radians). */
 export interface FightCaptain extends FightVessel {
+  /** Its number in the fight, as its events name it (`ship`): the first captain 1, each other its own after. */
+  readonly id: number;
   readonly name: string;
   readonly faction: number;
   readonly rank: number;
   readonly mode: CaptainMode;
   readonly hostile: boolean;
   readonly run_out: readonly SideName[];
-  /** The number the fight's events name it by, at sea for a captain past the first (its place in the list can move). */
-  readonly number?: number;
   readonly founder?: readonly [number, number, number];
   /** While it goes down: how it will lie once sunk (as `founder`), and in how many seconds. */
   readonly sunk_founder?: readonly [number, number, number];

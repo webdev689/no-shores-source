@@ -29,15 +29,17 @@ fn the_closing_way_is_the_most_remembered_way_less_the_struck_ships_into_the_fac
 }
 
 #[test]
-fn a_rams_blow_is_a_share_of_the_lesser_hull_by_its_pace_and_face() {
+fn a_rams_blow_is_a_share_of_the_lesser_hull_by_its_pace_and_face_half_again_dfos() {
+    // DFO's share of the lesser hull, struck half again as hard in a sea fight.
+    let share = 0.15_f64 * 1.5;
     assert_eq!(ram_blow(1.59, true, 672.0, 538.0), 0.0, "a bump");
     assert_eq!(ram_blow(f64::NAN, true, 672.0, 538.0), 0.0);
-    assert_eq!(ram_blow(1.6, true, 672.0, 538.0), (0.15_f64 * 538.0 * 0.2 + 0.5).floor());
-    assert_eq!(ram_blow(8.0, true, 672.0, 538.0), 81.0);
-    assert_eq!(ram_blow(38.9, true, 672.0, 538.0), 81.0, "a storm's way rams no harder");
-    assert_eq!(ram_blow(4.0, true, 672.0, 538.0), (0.15_f64 * 538.0 * 0.5 + 0.5).floor());
-    assert_eq!(ram_blow(8.0, false, 672.0, 538.0), (0.15_f64 * 538.0 * 0.4 + 0.5).floor(), "into its bow");
-    let small = (0.15_f64 * 96.0 + 0.5).floor();
+    assert_eq!(ram_blow(1.6, true, 672.0, 538.0), (share * 538.0 * 0.2 + 0.5).floor());
+    assert_eq!(ram_blow(8.0, true, 672.0, 538.0), 121.0);
+    assert_eq!(ram_blow(38.9, true, 672.0, 538.0), 121.0, "a storm's way rams no harder");
+    assert_eq!(ram_blow(4.0, true, 672.0, 538.0), (share * 538.0 * 0.5 + 0.5).floor());
+    assert_eq!(ram_blow(8.0, false, 672.0, 538.0), (share * 538.0 * 0.4 + 0.5).floor(), "into its bow");
+    let small = (share * 96.0 + 0.5).floor();
     assert_eq!(
         (ram_blow(8.0, true, 96.0, 896.0), ram_blow(8.0, true, 896.0, 96.0)),
         (small, small),
@@ -74,7 +76,7 @@ fn a_ram_is_as_hard_as_the_rammer_can_pay_for_and_takes_men_by_its_blow() {
 }
 
 #[test]
-fn rams_into_its_side_from_whole_bring_it_to_strike_at_its_line_on_the_sixth() {
+fn rams_into_its_side_from_whole_bring_it_to_strike_at_its_line_on_the_fourth() {
     let (mut other, mut mine) = (Damage::new(&PIRATE_SLOOP, false), Damage::new(&LARGE_BOAT, true));
     let mut rams = 0;
     while other.state == State::Afloat {
@@ -86,7 +88,7 @@ fn rams_into_its_side_from_whole_bring_it_to_strike_at_its_line_on_the_sixth() {
         rams += 1;
         assert!(other.hull >= ram_line(&other) && mine.hull > ram_line(&mine), "neither under its line");
     }
-    assert_eq!((rams, other.hull, other.state, mine.hull), (6, 66.0, State::Struck, 108.0));
+    assert_eq!((rams, other.hull, other.state, mine.hull), (4, 66.0, State::Struck, 112.0));
 }
 
 fn flat(middle: [f64; 2], heading: f64) -> Flat {

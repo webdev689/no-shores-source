@@ -57,6 +57,8 @@ export class Naval {
   /** Where the player's own Sloop was drawn at the last step, and the wind's bearing the sails were last stepped in. */
   private own: FightingShip | null = null;
   private windBearing = 0;
+  /** The answer the last fight to end by itself ended on, until another begins. */
+  private ended: FightView | null = null;
   /** The fight's events the last step took, for whatever else hears them (the sea's sounds). */
   heard: readonly FightEvent[] = [];
   private readonly marks: MarkDrawer;
@@ -65,7 +67,7 @@ export class Naval {
   private readonly aimEye = new AimCamera();
   /** The hull a ship is drawn as: its own once its model has come. */
   private readonly shown: (hull: number) => number;
-  private farewell: { readonly lines: string[]; readonly until: number } | null = null;
+  private farewell: { readonly lines: string[]; readonly said: string[]; readonly until: number } | null = null;
   /** Its captain's rig, for the hull they sail. */
   private rig: { readonly hull: number; readonly rig: SailRig } | null = null;
 
@@ -80,9 +82,9 @@ export class Naval {
     return this.fight !== null;
   }
 
-  /** The fight's last answer, while one is on. */
+  /** The fight's last answer: while one is on, else the one a fight ended on, so its end is never missed. */
   get view(): FightView | null {
-    return this.fight?.view ?? null;
+    return this.fight?.view ?? this.ended;
   }
 
   /** Whether a fight is on or being called: either way its own helm stands. */
@@ -109,7 +111,7 @@ export class Naval {
         this.calling = false;
         if (fighting === 'sent off') return;
         if (typeof fighting === 'string') fail(new Error(fighting));
-        else this.fight = fighting;
+        else [this.fight, this.ended] = [fighting, null];
       })
       .catch((error: unknown) => {
         if (call !== this.call) return;
@@ -121,7 +123,7 @@ export class Naval {
   /** Takes up a fight begun elsewhere: the sea room's. */
   join(fighting: Fighting): void {
     this.end();
-    this.fight = fighting;
+    [this.fight, this.ended] = [fighting, null];
   }
 
   /** Ends the fight, if one is on or called. */
@@ -168,8 +170,8 @@ export class Naval {
     });
     if (answer.over) {
       this.ownRig?.mend();
-      this.farewell = { lines: fighting.lines(time), until: time + FAREWELL_S };
-      [this.fight, this.adopted] = [null, null];
+      this.farewell = { lines: fighting.lines(time), said: fighting.messages(time), until: time + FAREWELL_S };
+      [this.fight, this.adopted, this.ended] = [null, null, answer];
       fighting.end().catch(() => undefined);
     }
     return splashes;
@@ -243,9 +245,10 @@ export class Naval {
     return this.calling ? ['Calling a captain…'] : [];
   }
 
-  /** The fight's messages standing at `now` (`Fighting.messages`); none out of a fight. */
+  /** The fight's messages standing at `now` (`Fighting.messages`), or a fight's last for a while after it ends. */
   messages(now: number): string[] {
-    return this.fight?.messages(now) ?? [];
+    if (this.fight) return this.fight.messages(now);
+    return this.farewell && this.farewell.until > now ? this.farewell.said : [];
   }
 
   /** The fight's readout at `now` (`fightDisplay`): its plate and rose, the card on the nearest captain with `board`'s

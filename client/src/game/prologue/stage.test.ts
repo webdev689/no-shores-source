@@ -8,7 +8,7 @@ import { WRECK } from './skies.ts';
 import { HUD_VEIL_S, headOnView, Stage, type StageParts } from './stage.ts';
 import { STORY_DAY_S } from './storySky.ts';
 
-test('a scene plays in order: barks over heads, runs of lines together in the box, each line its emote', async () => {
+test('a scene plays in order, barks over heads and runs of lines in the box, its words with no glyph', async () => {
   const said: string[] = [];
   const lines: Line[] = [
     { who: 'lookout', say: 'Sails!', kind: 'bark', emote: 'alert' },
@@ -40,9 +40,7 @@ test('a scene plays in order: barks over heads, runs of lines together in the bo
   await playing;
   assert.deepEqual(said, [
     'bark lookout: Sails!',
-    'emote lookout: alert',
     'box: They mean to take us. / Guns are loaded.',
-    'emote mate: anger',
     'bark bosun: Brace!',
   ]);
 });
@@ -73,7 +71,6 @@ test('a hushed scene stops at once: no line after the hush is said, and the box 
     cast: { speakers: {}, voices: {} },
     overheads: {
       bark: (_head: string, line: Line) => said.push(line.say),
-      emote: () => undefined,
       clear: () => said.push('heads cleared'),
     },
     dialogue: {
@@ -99,8 +96,13 @@ test('leaving gives the game back its clear weather and its own sky, quiet, an H
     ambience: { stop: note('quiet') },
     birds: { clear: note('no birds') },
     flames: { clear: note('no fires') },
-    objective: { clear: note('no prompt') },
-    hud: { reach: (standing: { kind: string }) => done.push(`reach ${standing.kind}`), hints: note('no hints') },
+    hud: {
+      reach: (standing: { kind: string }) => done.push(`reach ${standing.kind}`),
+      hints: note('no hints'),
+      tasks: { show: (quest: unknown) => quest === null && done.push('no task') },
+      seaFight: (ship: unknown) => ship === null && done.push('no ship panel'),
+      toast: (...texts: string[]) => texts.length === 0 && done.push('no toasts'),
+    },
     footView: { hide: note('no fight panel') },
     screen: { clear: note('open view') },
     dialogue: { skip: note('box closed') },
@@ -113,8 +115,17 @@ test('leaving gives the game back its clear weather and its own sky, quiet, an H
   assert.deepEqual(scene.weather, CLEAR);
   assert.deepEqual(stage.weather, CLEAR);
   assert.equal(scene.sky.told, null, "the world's own sky");
-  for (const what of ['quiet', 'no birds', 'no fires', 'no prompt', 'reach inside', 'no hints', 'no fight panel'])
-    assert.ok(done.includes(what), what);
+  const cleared = [
+    'quiet',
+    'no birds',
+    'no fires',
+    'no task',
+    'no ship panel',
+    'no toasts',
+    'reach inside',
+    'no hints',
+  ];
+  for (const what of [...cleared, 'no fight panel']) assert.ok(done.includes(what), what);
   assert.ok(done.includes('box closed') && done.includes('heads cleared'));
   // The story's black holds while the game's veil rises over it, and goes once the veil is up.
   mock.timers.tick(HUD_VEIL_S * 1000 - 1);
@@ -139,7 +150,7 @@ test("a bark's gap is counted in the story's time, so a slow frame never lets th
   const parts = {
     scenes: { sighted: lines },
     cast: { speakers: {}, voices: {} },
-    overheads: { bark: (_head: string, line: Line) => said.push(line.say), emote: () => undefined },
+    overheads: { bark: (_head: string, line: Line) => said.push(line.say) },
     dialogue: {},
   } as unknown as StageParts;
   const stage = new Stage(parts);

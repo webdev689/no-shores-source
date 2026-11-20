@@ -5,6 +5,7 @@
 use crate::arts::Cast;
 use crate::arts::arts_tests::{cast, room_with_player, stand_foe, wearing};
 use crate::asks::{Asked, Counter, CounterKind, answer_code};
+use crate::power::PLAYER_HARM;
 use crate::{FighterId, Input, PlayerId, Room};
 use combat::Status;
 use gear::arts::ArtAsk;
@@ -53,7 +54,8 @@ fn an_art_at_its_first_level_harms_heals_and_lasts_its_share() {
     let near = stand_foe(&mut room, 2.0, -10.0, 1000.0);
     room.ready_arts(player);
     cast(&mut room, player, DAWNFLARE, None, 120);
-    assert!((1000.0 - health(&room, near) - 14.0 * 0.6).abs() < 1e-6, "burns 14 at level 5, its share at 1");
+    let burnt = 14.0 * 0.6 * PLAYER_HARM;
+    assert!((1000.0 - health(&room, near) - burnt).abs() < 1e-6, "burns 14 at level 5, its share at 1, struck twice");
     room.ready_arts(player);
     cast(&mut room, player, SUNWELL, None, 0);
     let lasts = |room: &Room| room.spells_seen().filter(|spell| spell.kind == SUNWELL).count();

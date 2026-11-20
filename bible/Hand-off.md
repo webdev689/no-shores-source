@@ -220,6 +220,19 @@ Where the work stands now, for the next session. Each session rewrites this note
   on through an `isle-<number>-<seed>` room; wrecks paid out through the ship's salvage; a beaten player washing up at
   a found island.
 
+- **The prologue's follow-ups and the sea's sounds**, on `main` (#94), merged and deployed with the owner's yes: the
+  title's prompt no longer stays over the storm and creation once begun; the intro goes straight to Saltmere
+  ([[The Intro Goes Straight to Saltmere]]), about 25 s; the story's sea fight sails in the story's wind, not the
+  world's; and all 27 sounds of the sea are the owner's Freesound picks, the sea fight's guns, hits, splashes and
+  break-ups new. Tested live, headless: the intro rises at first light over the cloud, the title over Saltmere asks to begin,
+  and a key hides the prompt.
+- **The second playthrough**, on `main` (#98), merged with the owner's yes ("Merge and deploy"), which deploys the
+  page and the rooms: the owner's thirteen points (the wreck spread out at true size, the Brig's crew fighting on the
+  players' side, no Art in the prologue, the whole game's balance pass, sea fights half again as fast and as hard, a
+  task tracker for every quest, the placeholder lines gone), the animations' strips fetched ahead, the blurbs without
+  glyphs, the plates held still on board through a 64-bit matrix, and a last audit's fixes. Tested offline: the full
+  check. Not yet seen on a real GPU, nor played through by hand.
+
 ## Waiting on the owner
 
 - #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,

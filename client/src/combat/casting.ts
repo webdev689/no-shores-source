@@ -44,15 +44,16 @@ export function coreHolds(state: ArtState, key: string): boolean {
 /** The Arts as the bar shows them at room tick `tick`: the room's word `taken` at `takenAt`, each share run on by its
  *  recharge since, as the room charges it; null before the room's first word. */
 export function abilitiesAt(taken: ArtState | null | undefined, takenAt: number, tick: number): AbilityState | null {
-  if (!taken) return null;
-  const art = artOf(taken.art);
+  const art = taken && artOf(taken.art);
+  // None worn (the prologue's player has none): no bar to show.
+  if (!taken || !art) return null;
   const seconds = Math.max(0, tick - takenAt) / 60;
   const runOn = (share: number, rechargeS: number | undefined) =>
     rechargeS ? Math.min(1, share + seconds / rechargeS) : share;
-  const [first, second] = art?.tenets ?? [];
+  const [first, second] = art.tenets;
   return {
     art: taken.art,
-    animaShare: runOn(taken.anima, art?.anima.rechargeS),
+    animaShare: runOn(taken.anima, art.anima.rechargeS),
     tenets: [runOn(taken.tenets[0], first?.rechargeS), runOn(taken.tenets[1], second?.rechargeS)],
   };
 }
