@@ -339,7 +339,7 @@ test('a character the room’s gate shuts is let go untouched, and its player se
   assert.equal(back.held.get(3), '{"level":1}', 'as it was kept, at once');
 });
 
-test('a run’s room keeps only the company of those kept in it, and anyone once none is', async () => {
+test('a run’s room keeps to the company of those it let in, though they all left a while', async () => {
   const made = accounts();
   const tokens: Record<string, string> = {};
   for (const name of ['Ada', 'Ben', 'Cal']) {
@@ -366,7 +366,10 @@ test('a run’s room keeps only the company of those kept in it, and anyone once
   assert.equal(await keeper.signIn(3, tokens['Ben'] ?? '', now, here), true, 'in Ada’s company');
   await keeper.leave(1);
   await keeper.leave(3);
-  assert.equal(await keeper.signIn(4, tokens['Cal'] ?? '', now, here), true, 'none kept: open to whoever has the name');
+  assert.equal(await keeper.signIn(4, tokens['Cal'] ?? '', now, here), false, 'none kept, and still theirs');
+  assert.equal(await keeper.signIn(1, tokens['Ada'] ?? '', now, here), true, 'Ada back in her run');
+  await made.ask('POST', '/v1/social/company/leave', {}, tokens['Ben']);
+  assert.equal(await keeper.signIn(3, tokens['Ben'] ?? '', now, here), true, 'let in before, though out of it now');
 });
 
 test('a run keeps no one unkept: a token that is no session, none in time, or no answer sends them away', async () => {

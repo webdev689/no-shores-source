@@ -67,6 +67,8 @@ export class Keeper {
   private readonly held = new Map<number, Held>();
   private readonly wait: (millis: number) => Promise<void>;
   private company = false;
+  /** The accounts a run has let in, for as long as it lives: one back after the rest left a while finds it theirs. */
+  private readonly admitted = new Set<string>();
 
   constructor(
     characters: Characters | null,
@@ -82,8 +84,8 @@ export class Keeper {
     this.wait = wait;
   }
 
-  /** Keeps this room to one company: a character is given only while no one is kept here, or to one in the company of
-   *  someone kept here; any other is let go untouched, its player sent away with the reason. A player it cannot keep
+  /** Keeps this room to one company: a character is given while no one was let in yet, to one let in before, or to
+   *  one in the company of someone let in; any other is let go untouched, its player sent away with the reason. A player it cannot keep
    *  is sent away too, since one unkept could play in it unseen by the company's check. */
   forCompany(): this {
     this.company = true;
@@ -113,7 +115,7 @@ export class Keeper {
       ? await characters.companions(claimed.account).catch(() => [claimed.account])
       : null;
     const shut =
-      this.room.shut(player, claimed.body) || (companions && !this.keptWith(companions) ? ANOTHER_COMPANY : '');
+      this.room.shut(player, claimed.body) || (companions && !this.admits(companions) ? ANOTHER_COMPANY : '');
     if (shut !== '') {
       // Left as kept: the gate shuts here, so nothing of this room may be saved over it.
       await characters.release(claimed.account, holder, null).catch(() => false);
@@ -127,6 +129,7 @@ export class Keeper {
       return false;
     }
     this.room.own(player, claimed.account);
+    if (this.company) this.admitted.add(claimed.account);
     this.held.set(player, {
       account: claimed.account,
       holder,
@@ -146,9 +149,9 @@ export class Keeper {
     if (here() && !signed()) this.lost(player, SIGN_IN_FOR_RUN, false);
   }
 
-  /** Whether no one is kept here, or someone among `companions` is. */
-  private keptWith(companions: readonly string[]): boolean {
-    return this.held.size === 0 || [...this.held.values()].some((held) => companions.includes(held.account));
+  /** Whether no one was let in yet, or someone among `companions` (a player and their company) was. */
+  private admits(companions: readonly string[]): boolean {
+    return this.admitted.size === 0 || companions.some((account) => this.admitted.has(account));
   }
 
   /** Notes that a player's character changed. */
