@@ -124,7 +124,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   at the top right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
   and in a sea fight under a Boss ship's plate. On foot the company stands under the vitals, and the prompt for E
   and the hints stand over the Arts and weapons; at sea the hints rise above the offer to dock or go ashore. The
-  line of keys wraps short of the Acquired feed. The edge's warning stands under the compass's column.
+  line of keys wraps short of the Acquired feed, and gives way while someone speaks in the dialogue box. The edge's
+  warning stands under the compass's column.
 - **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. It stands the compass at
   the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does; the vitals at the
   top left; and the Arts and weapons at the bottom left
