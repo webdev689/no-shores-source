@@ -10,7 +10,7 @@ import { cross, dot, minus } from '../models/vector.ts';
 import { CLIMATE_BASE, type Climate } from '../textures/climate.ts';
 import type { StyleKey } from './dungeonLayout.ts';
 import { COLOUR, IRON, ROLE } from './dungeonMesh.ts';
-import { uvOf } from './dungeonUv.ts';
+import { TILE_M } from './dungeonUv.ts';
 
 /** The parts a piece wears, by their number in its pack. */
 export const PARTS: readonly string[] = kits.parts;
@@ -30,6 +30,8 @@ export type ModuleMesh = {
   readonly name: string;
   readonly positions: Float32Array;
   readonly normals: Float32Array;
+  /** Each vertex's UV in metres as the piece was unwrapped: u along its surface, v up it. */
+  readonly uvs: Float32Array;
   readonly parts: Uint8Array;
   readonly indices: Uint32Array;
   readonly bounds: Bounds;
@@ -80,6 +82,7 @@ function entryOf(raw: unknown): Entry {
 function moduleOf(data: DataView, entry: Entry, vertices: number, corners: number): ModuleMesh {
   const positions = new Float32Array(entry.vertexCount * 3);
   const normals = new Float32Array(entry.vertexCount * 3);
+  const uvs = new Float32Array(entry.vertexCount * 2);
   const parts = new Uint8Array(entry.vertexCount);
   for (let vertex = 0; vertex < entry.vertexCount; vertex++) {
     const offset = vertices + (entry.vertexStart + vertex) * VERTEX_BYTES;
@@ -87,6 +90,8 @@ function moduleOf(data: DataView, entry: Entry, vertices: number, corners: numbe
       positions[vertex * 3 + axis] = data.getFloat32(offset + axis * 4, true);
       normals[vertex * 3 + axis] = Math.max(-1, data.getInt8(offset + 12 + axis) / 127);
     }
+    uvs[vertex * 2] = data.getFloat32(offset + 16, true);
+    uvs[vertex * 2 + 1] = data.getFloat32(offset + 20, true);
     parts[vertex] = data.getUint8(offset + 24);
     if (parts[vertex] >= PARTS.length) throw new Error(`a vertex of ${entry.name} wears part ${parts[vertex]}`);
   }
@@ -95,7 +100,7 @@ function moduleOf(data: DataView, entry: Entry, vertices: number, corners: numbe
     indices[corner] = data.getUint32(corners + (entry.indexStart + corner) * 4, true);
     if (indices[corner] >= entry.vertexCount) throw new Error(`a corner of ${entry.name} names no vertex of its own`);
   }
-  return { name: entry.name, positions, normals, parts, indices, bounds: entry.bounds };
+  return { name: entry.name, positions, normals, uvs, parts, indices, bounds: entry.bounds };
 }
 
 /** Reads a style's pack: its header's length, the header as JSON, then every vertex and every corner. It throws on
@@ -196,7 +201,8 @@ function stretched(z: number, stretch: Place['stretch']): number {
 }
 
 /** Lays a piece into `mesh` where `place` says, each triangle in the picture `pictureOf` gives its part, facing the
- *  way the piece's own normals face it and mapped by `uvOf` on its face normal. */
+ *  way the piece's own normals face it, each corner keeping its own normal and its UV in pictures of TILE_M (v runs
+ *  down a picture). A stretched corner's v moves with its height, so a stretched shaft's picture keeps its scale. */
 export function layModule(
   mesh: MeshBuilder,
   module: ModuleMesh,
@@ -204,7 +210,7 @@ export function layModule(
   pictureOf: (part: number) => readonly number[],
 ): void {
   const [shiftX, shiftY] = place.footprint ? footprintShift(place.footprint, place.turns) : [0, 0];
-  const { positions, normals } = module;
+  const { positions, normals, uvs } = module;
   const corner = (vertex: number): Point => {
     const local: Point = [
       positions[vertex * 3],
@@ -213,6 +219,10 @@ export function layModule(
     ];
     const [x, y, z] = turnAbout(local, place.turns);
     return [x + shiftX + place.origin[0], y + shiftY + place.origin[1], z + place.origin[2]];
+  };
+  const mapping = (vertex: number): readonly [number, number] => {
+    const rise = stretched(positions[vertex * 3 + 2], place.stretch) - positions[vertex * 3 + 2];
+    return [uvs[vertex * 2] / TILE_M, -(uvs[vertex * 2 + 1] + rise) / TILE_M];
   };
   for (let first = 0; first + 2 < module.indices.length; first += 3) {
     const vertices = [module.indices[first], module.indices[first + 1], module.indices[first + 2]];
@@ -225,7 +235,12 @@ export function layModule(
     const outward = turnAbout([summed(0), summed(1), summed(2)], place.turns);
     const sign = dot(across, outward) < 0 ? -1 : 1;
     const normal: Point = [(sign * across[0]) / area, (sign * across[1]) / area, (sign * across[2]) / area];
-    mesh.tri(pictureOf(module.parts[vertices[0]]), corners, normal, corners.map(uvOf(normal, 0)));
+    const kept = vertices.map((vertex): Point => {
+      const [x, y, z] = turnAbout([normals[vertex * 3], normals[vertex * 3 + 1], normals[vertex * 3 + 2]], place.turns);
+      const length = Math.hypot(x, y, z);
+      return length > 1e-6 ? [x / length, y / length, z / length] : normal;
+    });
+    mesh.tri(pictureOf(module.parts[vertices[0]]), corners, normal, vertices.map(mapping), kept);
   }
 }
 

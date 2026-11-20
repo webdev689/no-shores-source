@@ -17,7 +17,6 @@ import {
   turnAbout,
   wallTurns,
 } from './dungeonModules.ts';
-import { uvOf } from './dungeonUv.ts';
 
 /** A vertex as a test writes it: position, normal and part. */
 type Vertex = readonly [x: number, y: number, z: number, nx: number, ny: number, nz: number, part: number];
@@ -87,12 +86,14 @@ const near = (actual: readonly number[], expected: readonly number[], message?: 
     `${message ?? ''} ${actual.join()} is not ${expected.join()}`,
   );
 
-/** A one-triangle module of the corners given, its normals all `normal`, every vertex stone. */
+/** A one-triangle module of the corners given, its normals all `normal`, every vertex stone, each UV its x and z in
+ *  metres as a wall facing y is unwrapped. */
 function triangle(corners: readonly (readonly [number, number, number])[], normal = [0, 1, 0]): ModuleMesh {
   return {
     name: 'test.triangle',
     positions: Float32Array.from(corners.flat()),
     normals: Float32Array.from(corners.flatMap(() => normal)),
+    uvs: Float32Array.from(corners.flatMap((corner) => [corner[0], corner[2]])),
     parts: new Uint8Array(corners.length),
     indices: Uint32Array.from(corners.keys()),
     bounds: [0, 0, 0, 0, 0, 0],
@@ -111,7 +112,7 @@ function laid(module: ModuleMesh, place: Place) {
   return { model, points: listed(model.positions, 3), normals: listed(model.normals, 3), uvs: listed(model.uvs, 2) };
 }
 
-test('a pack round-trips: each module its vertices, normals, parts, corners from its own first vertex, and bounds', () => {
+test('a pack round-trips: each module its vertices, normals, UVs, parts, corners from its own first vertex, and bounds', () => {
   const pack = readModulePack(packOf([DOOR, FOOT]));
   assert.equal(pack.style, 'crypt');
   assert.deepEqual([...pack.modules.keys()], ['crypt.door.a', 'crypt.wall.base']);
@@ -124,6 +125,10 @@ test('a pack round-trips: each module its vertices, normals, parts, corners from
   near(
     Array.from(foot.normals),
     FOOT.vertices.flatMap((vertex) => vertex.slice(3, 6)),
+  );
+  near(
+    Array.from(foot.uvs),
+    FOOT.vertices.flatMap((vertex) => [vertex[0], vertex[2]]),
   );
   assert.deepEqual(Array.from(foot.parts), [6, 6, 6]);
   assert.deepEqual(Array.from(foot.indices), [0, 1, 2]);
@@ -209,27 +214,38 @@ test('a stretched unit shaft spans from its foot to its head, and what stands pa
   near(laid(sunk, { origin: [0, 0, 0], turns: 0, stretch: { from: 1, to: 3 } }).points[0], [0, 0, 0.95]);
 });
 
-test("each triangle's UVs are uvOf's on its world face normal, and it faces the way its piece's normals do", () => {
+test("each corner keeps its piece's UV in pictures, v down, and its own normal, turned with the piece", () => {
   // Wound so its corners' turn points -y, while its normals say +y: it is laid facing +y, then turned to face west.
-  const { points, normals, uvs } = laid(triangle(FOOT.vertices.map((vertex) => [vertex[0], vertex[1], vertex[2]])), {
+  const { normals, uvs } = laid(triangle(FOOT.vertices.map((vertex) => [vertex[0], vertex[1], vertex[2]])), {
     origin: [3, 4, 0.5],
     turns: 1,
   });
-  near(normals[0], [-1, 0, 0]);
-  points.forEach((point, index) => near(uvs[index], uvOf([-1, 0, 0], 0)(point as [number, number, number])));
-  const floor = laid(
-    triangle(
-      [
-        [0, 0, 0.02],
-        [1.6, 0, 0.02],
-        [0, 1.6, 0.02],
-      ],
-      [0, 0, 1],
-    ),
-    { origin: [6.4, 3.2, 0], turns: 2 },
-  );
-  near(floor.normals[0], [0, 0, 1]);
-  near(floor.uvs[1], [(6.4 - 1.6) / 3.2, 3.2 / 3.2]);
+  normals.forEach((normal) => near(normal, [-1, 0, 0]));
+  near(uvs[0], [0, 0]);
+  near(uvs[1], [0.5 / 3.2, 0]);
+  near(uvs[2], [0, -0.75 / 3.2]);
+  // A curve's corners keep their own normals, not the face's.
+  const bent = triangle([
+    [0, 0, 0],
+    [1, 0, 0],
+    [0, 0, 1],
+  ]);
+  bent.normals.set([0.6, 0.8, 0, 0, 1, 0, -0.6, 0.8, 0]);
+  const curved = laid(bent, { origin: [0, 0, 0], turns: 0 });
+  near(curved.normals[0], [0.6, 0.8, 0]);
+  near(curved.normals[2], [-0.6, 0.8, 0]);
+});
+
+test("a stretched corner's v moves with its height, so its picture keeps its scale", () => {
+  const shaft = triangle([
+    [0, 0, 0],
+    [1, 0, 0],
+    [0, 0, 1],
+  ]);
+  const { points, uvs } = laid(shaft, { origin: [0, 0, 0], turns: 0, stretch: { from: 0.5, to: 3.5 } });
+  near(points[2], [0, 0, 3.5]);
+  near(uvs[0], [0, -0.5 / 3.2]);
+  near(uvs[2], [0, -3.5 / 3.2]);
 });
 
 test('every part wears a picture: the look for its stone, the timber, the iron, the dressing set, or a colour', () => {
