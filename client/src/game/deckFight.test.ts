@@ -45,10 +45,11 @@ function near(actual: readonly number[], expected: readonly number[], within: nu
 test('her deck’s land frame follows her ship’s pose: each figure, the eye and every step on her deck lie where she carries them', () => {
   const turn = deckTurn(LYING);
   const origin = deckToWorld(LYING, 0, 0, 0);
-  for (const point of [
+  const points: readonly (readonly [number, number, number])[] = [
     [1.2, -3.4, 0.9],
     [-0.8, 5.1, 2.3],
-  ] as const) {
+  ];
+  for (const point of points) {
     const step = apply(turn, point).slice(0, 3);
     const world = deckToWorld(LYING, ...point);
     near(step, [world[0] - origin[0], world[1] - origin[1], world[2] - origin[2]], 1e-3, 'a step turned as she lies');
@@ -188,7 +189,7 @@ test('the page predicts its boarder on her deck exactly as her deck room steps t
   rules.setHeights(deckFloats(schooner));
   const fighting = new Fighting(rules, link);
   fight = fighting;
-  link.pump();
+  link.pump(1 / 60);
   const steps = fighting.steps({ tickSeconds: 1 / 60 } as unknown as MovementRules);
   const still: Controls = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
   for (const [count, controls] of [
@@ -198,7 +199,7 @@ test('the page predicts its boarder on her deck exactly as her deck room steps t
     for (let tick = 0; tick < count; tick += 1) {
       steps.step({} as Body, controls);
       const predicted = JSON.stringify(fighting.own);
-      link.pump();
+      link.pump(1 / 60);
       assert.equal(JSON.stringify(fighting.own), predicted, `the room's word is the page's, tick ${tick}`);
     }
   const own = fighting.own;

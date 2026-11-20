@@ -2,7 +2,7 @@
   // Code that runs in Node: the client's tests and the build config. Same strictness, with Node's types.
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node", "vite/client"]
   },
   "include": ["client/**/*.test.ts", "server/**/*.test.ts", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
