@@ -1,4 +1,5 @@
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
+import { ShadowMap, shadowLayouts } from '../shadow.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { RippleField } from './ripples.ts';
 import { GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
@@ -54,6 +55,8 @@ export interface WaterScene {
   readonly focus: readonly [number, number];
   /** A ship on the water: no water inside her, foam round her bow. */
   readonly hulls: readonly HullMask[];
+  /** The sun's shadows this frame, which shade the surface; none drawn without. */
+  readonly shadow?: ShadowMap | undefined;
   /** The land drawn so far: its colour and depth (a float a pixel) to see through, and the multisampled colour and
    *  depth the water's pass draws into, testing against the land's. */
   readonly drawn: {
@@ -128,7 +131,7 @@ export class WaterView {
     const module = device.createShaderModule({ code: WATER_SHADER });
     const pipeline = (entry: 'backdrop' | 'surface', depthCompare: GPUCompareFunction) =>
       device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
+        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadowLayouts(device).receiver] }),
         vertex: { module, entryPoint: `${entry}_vertex` },
         fragment: { module, entryPoint: `${entry}_fragment`, targets: [{ format: gpu.format }] },
         primitive: { topology: 'triangle-list', cullMode: 'none' },
@@ -211,6 +214,7 @@ export class WaterView {
       depthStencilAttachment: { view: scene.drawn.multidepth.createView(), depthReadOnly: true },
     });
     pass.setBindGroup(0, bindGroup);
+    pass.setBindGroup(1, (scene.shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.surface));
     pass.setPipeline(this.backdrop);
     pass.draw(3);
     pass.setPipeline(this.surface);
