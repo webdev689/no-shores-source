@@ -84,8 +84,8 @@ export function nameWidth(
 }
 
 /** What one frame letters on the parchment, ink pixels from the map's top-left: the words and marks (each place's
- *  first, in the order asked, at its mark), the ship's
- *  arrow (null off the map), the key, and how many times over they are drawn at their sizes (`letterScale`). */
+ *  first, in the order asked, at its mark), the ship's arrow (null off the map), the key, and how many times over
+ *  they are drawn at their sizes (`letterScale`). */
 export interface Lettering {
   readonly letters: readonly MapLetter[];
   readonly ship: { readonly x: number; readonly y: number; readonly heading: number } | null;
@@ -186,7 +186,7 @@ function besideSpots<T extends { x: number; y: number; kind: string }>(
  *  round it. */
 export function layOut(ask: LayoutAsk): Lettering {
   const { scale, ink } = ask;
-  const spacedPlaces = spaced(ask.places, scale);
+  const spacedPlaces = spaced(ask.places, scale, ink);
   const marks: Rect[] = spacedPlaces.map((place) => markBox(place.kind, place.x, place.y, scale));
   if (ask.ship) marks.push(markBox('ship', ask.ship.x, ask.ship.y, scale));
   const asked = [
@@ -236,29 +236,46 @@ const markRank = (kind: string) => {
   return rank < 0 ? 2 : rank;
 };
 
-/** The places with every mark clear of every other: a port's and a ruin's stand where they lie, and a mark that meets
- *  one laid before it moves out along the line between their middles, just far enough to clear it. */
-function spaced<T extends { x: number; y: number; kind: string }>(places: readonly T[], scale: number): T[] {
+/** The places with every mark clear of every other, laid ports first, then ruins, then nodes: a mark that meets one
+ *  laid before it moves out along the line between their middles, just far enough to clear every mark. */
+function spaced<T extends { x: number; y: number; kind: string }>(
+  places: readonly T[],
+  scale: number,
+  ink: { readonly width: number; readonly height: number },
+): T[] {
   const order = places
     .map((place, index) => ({ place, index }))
     .sort((one, other) => markRank(one.place.kind) - markRank(other.place.kind) || one.index - other.index);
   const laid: Rect[] = [];
   const out = [...places];
+  const inside = (box: Rect) =>
+    box.x >= 0 && box.y >= 0 && box.x + box.width <= ink.width && box.y + box.height <= ink.height;
   for (const { place, index } of order) {
-    let [x, y] = [place.x, place.y];
-    for (let tries = 0; tries < 8; tries++) {
-      const hit = laid.find((box) => overlaps(box, markBox(place.kind, x, y, scale)));
-      if (!hit) break;
+    const boxAt = (x: number, y: number) => markBox(place.kind, x, y, scale);
+    const clear = (box: Rect) => inside(box) && !laid.some((each) => overlaps(each, box));
+    let at: readonly [number, number] = [place.x, place.y];
+    const hit = laid.find((box) => overlaps(box, boxAt(place.x, place.y)));
+    if (hit) {
       const [middleX, middleY] = [hit.x + hit.width / 2, hit.y + hit.height / 2];
-      const [awayX, awayY] = x === middleX && y === middleY ? [1, 0] : [x - middleX, y - middleY];
-      const length = Math.hypot(awayX, awayY);
+      const line = place.x === middleX && place.y === middleY ? 0 : Math.atan2(place.y - middleY, place.x - middleX);
       const reach = hit.width / 2 + markHalf(place.kind) * scale;
-      // Out along the line until the boxes' edges meet, on whichever axis they part first.
-      const along = Math.min(reach / Math.abs(awayX / length), reach / Math.abs(awayY / length)) + 0.01;
-      [x, y] = [middleX + (awayX / length) * along, middleY + (awayY / length) * along];
+      // Out along the line from the mark it meets to the first spot clear of every mark and inside the map; where
+      // that way is blocked, the same a twelfth of a turn either side, then two. With none, it stands where it lies.
+      search: for (let turn = 0; turn < 12; turn++) {
+        const angle = line + (Math.PI / 6) * (turn % 2 ? -Math.ceil(turn / 2) : turn / 2);
+        const [towardX, towardY] = [Math.cos(angle), Math.sin(angle)];
+        const first = Math.min(reach / Math.abs(towardX), reach / Math.abs(towardY)) + 0.01;
+        for (let along = first; along < first + 6 * reach; along += scale) {
+          const spot = [middleX + towardX * along, middleY + towardY * along] as const;
+          if (clear(boxAt(...spot))) {
+            at = spot;
+            break search;
+          }
+        }
+      }
     }
-    laid.push(markBox(place.kind, x, y, scale));
-    out[index] = { ...place, x, y };
+    laid.push(boxAt(...at));
+    out[index] = { ...place, x: at[0], y: at[1] };
   }
   return out;
 }

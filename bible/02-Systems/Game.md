@@ -293,9 +293,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   port city is open the player walks into its social space behind the veil ("Washed up at Sunspire. Your ship lies at
   its moorings."), standing there as on arriving (`flow.ts`, `wash-up`). Manage's panel shows her hull, canvas and men
   (men only once her build has a crew) as the sea keeps them, her voyage's state under "Now", and a Repair part: R
-  asks for her repair, which the panel shows with its seconds left ("Repairing her: 13 s left"), "She is whole", or where it is had. Her voyage sails at the way her kept canvas
-  leaves her, as the room sails her (`seaLaw.ts` `followed`). Back at sea after a session, she lies where the room
-  last kept her.
+  asks for her repair, which the panel shows with its seconds left ("Repairing her: 13 s left"), "She is whole", or
+  where it is had. Her voyage sails at the way her kept canvas leaves her, as the room sails her (`seaLaw.ts`
+  `followed`). Back at sea after a session, she lies where the room last kept her.
 - **Friendly ships** sail between the three port cities all the time ([[World Map]], "Traffic";
   `friendlyShips.ts`). The page asks the waters' rules where they are at world time, seconds since the Unix epoch by
   the page's clock (the sea room sends none), four times a second within the sea view's reach of her (its far plane),

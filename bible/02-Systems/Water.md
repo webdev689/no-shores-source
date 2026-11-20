@@ -72,7 +72,7 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
 - **Light.** The sky and its clouds reflect, more at a glancing angle; the sun glints, its glitter blurring far off;
   a crest glows green where the sun shines through it. Caustics dance on the bed.
 - **Shadows.** The surface takes the sun's shadows: in a ship's, beside her waterline, it loses the sun's glints and a
-  third of the light it scatters and reflects. The seabed's shadows fade with the water over them, gone to an eighth
+  third of the light it scatters and reflects. The seabed's shadows fade with the water over them, about a seventh left
   three metres down, as the water scatters the light, so a ship's shadow lies on the surface by her and not on the
   bed apart from her (the land's shader, `terrainView.ts`).
 - **Blurred reflections.** Waves too small to draw fan each reflected pixel's rays about 0.2 radians at sea, less

@@ -36,7 +36,7 @@ test('the Arts’ line tells how to aim Dusk Daggers only while Shadow is worn',
   assert.deepEqual(footHints(3).slice(0, -1), HINTS.foot.slice(0, -1), 'the other lines as ever');
 });
 
-test('every key hint is written one way: the key, then the action, with no colon', () => {
+test('no key hint puts a colon between its key and its action, nor "to" after the wheel', () => {
   for (const line of Object.values(HINTS).flat())
     for (const hint of line.split(' · ')) {
       assert.ok(!hint.includes(':'), hint);

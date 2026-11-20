@@ -184,3 +184,28 @@ test("a node's mark over a ruin's moves out along the line between them, just cl
   assert.ok(Math.max(Math.abs(away), Math.abs(down)) < 9 + 0.5, 'by no more than the overlap');
   assert.ok(node.side && !overlaps(nameBox(node, node.side, widthOf(node.text, 'patrol'), 1), ruinBox), 'named beside');
 });
+
+test('a node between two marks clears both, and one on another mark takes a clear spot beside it', () => {
+  const lettering = layOut({
+    ...ASK,
+    places: [
+      { text: 'Sunspire', x: 100, y: 200, kind: 'port', chosen: false },
+      { text: 'Ruins of Cairnwatch', x: 110, y: 200, kind: 'ruin', chosen: false },
+      { text: 'The Highwater Fells', x: 105, y: 200, kind: 'patrol', chosen: false },
+      { text: 'The Ochre Wastes', x: 300, y: 100, kind: 'patrol', chosen: false },
+      { text: 'Shrine of Tides', x: 300, y: 100, kind: 'shrine', chosen: false },
+    ],
+  });
+  const marks = lettering.letters.map((letter) => markBox(letter.kind, letter.x, letter.y, 1));
+  marks.forEach((box, index) =>
+    marks.slice(index + 1).forEach((other) => assert.ok(!overlaps(box, other), lettering.letters[index]?.text)),
+  );
+  assert.deepEqual(
+    lettering.letters.slice(0, 2).map((letter) => [letter.x, letter.y]),
+    [
+      [100, 200],
+      [110, 200],
+    ],
+    'the port and the ruin where they lie',
+  );
+});

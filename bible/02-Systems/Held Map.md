@@ -108,10 +108,11 @@ war, and a click on it sets the ship's destination.
   - *The clear region.* The thumbs of every set of gauntlets reach over the parchment in any frame of their fidget, as
     measured from the forge's strips (274 × 181 texels a frame): the left over the painting's shares 0-0.29 across and
     0.45-0.56 down, the right over 0.71-1 across and 0.46-0.57 down (`HANDS_COVER`). No name and not the key stands
-    there; the ship's arrow and the places' marks stand where they lie.
-  - *Marks apart.* No two places' marks overlap. A port's and a ruin's stand where they lie; where a node's mark
-    meets one laid before it (ports, then ruins, then nodes), it moves out along the line between their middles just
-    far enough to clear it, and its name stands beside it there (`layOut`). A click picks a mark where it is drawn.
+    there; the ship's arrow and the places' marks stand where they lie, or just clear of a mark they meet (below).
+  - *Marks apart.* No two places' marks overlap. They are laid ports first, then ruins, then nodes, so a port's or a
+    ruin's stands where it lies over a node's. A mark that meets one laid before it moves out along the line between
+    their middles to the first spot clear of every mark and inside the map, else as near that line as it can, and
+    its name stands beside it there (`layOut`). A click picks a mark where it is drawn.
   - *Priority.* The ship's arrow and every place's mark are laid first and never dropped. Then the names, the place
     chosen first, then ports, waters, ruins and nodes, each where it covers no mark, no hand and no name laid before
     it, inside the map. A water's name takes the first of her spots wholly on her own sea, on one line or two; with
