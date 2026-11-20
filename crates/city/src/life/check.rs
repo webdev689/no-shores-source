@@ -1,4 +1,4 @@
-//! A social plan's ways and posts checked with the movement rules, for the courtyard's tests and the hub's: every
+//! A social plan's ways and posts checked with the movement rules, for the tests of every social plan's ways: every
 //! link walked by a body from end to end over the plan's ground and boxes, never stepping up or down more than a
 //! body steps, inside the ring, and `CLEAR_M` clear of every box in a body's way either side of its line; every point
 //! joined to the rest; every post walked to from its way point; no point or post inside a box.

@@ -124,3 +124,20 @@ test('no one stands or walks in any solid of the courtyard, nor where Shape stan
         assert.ok(Math.hypot(toward - spotToward, across - spotAcross) > 1, 'clear of Shape');
     }
 });
+
+test('two walking one way never walk in each other, whatever the seed', () => {
+  for (const seed of [42, 12345, 28910]) {
+    const life = new TownLife(WAYS, POSTS, seed);
+    for (const moment of MOMENTS) {
+      const people = life.everyoneAt(moment);
+      people.forEach((doing, nth) => {
+        if (doing.anim !== 'walk') return;
+        people.forEach((other, nthOther) => {
+          if (nthOther <= nth || other.anim !== 'walk' || Math.cos(other.facing - doing.facing) < 0.9) return;
+          const apart = Math.hypot(other.place[0] - doing.place[0], other.place[1] - doing.place[1]);
+          assert.ok(apart >= 1, `seed ${seed}: ${nth} and ${nthOther} walk ${apart.toFixed(2)} m apart`);
+        });
+      });
+    }
+  }
+});

@@ -17,9 +17,12 @@ const MOST_WALKERS = 24;
  *  on their way before the next comes. */
 const BETWEEN_S = 4;
 /** How far apart in time two walkers come to or leave posts reached from one way point, seconds at least: longer
- *  than a walk between a post and its way point takes, so no two are ever on those short walks at once, where they
- *  would cross. */
-const MOVES_APART_S = 10;
+ *  than the two walks between those posts and the way point take together (a bench's are some 7 s each), so no two
+ *  are ever on those short walks at once, where they would cross. */
+const MOVES_APART_S = 15;
+/** How far apart in time two walkers set out along one link of the ways the same way, seconds at least: at one pace,
+ *  they keep that gap the link's whole length, some 2.5 m, never walking in each other. */
+const ENTERED_APART_S = 2;
 /** How many loops are drawn for a walker before they are left out, where every one meets others at a post. */
 const ATTEMPTS = 12;
 
@@ -29,20 +32,35 @@ export function walkersFor(visited: number): number {
   return Math.min(MOST_WALKERS, Math.max(FEWEST_WALKERS, Math.ceil(visited / POSTS_A_WALKER)));
 }
 
+/** How far apart two seconds of the loop are, either way round it. */
+function apartInLoop(one: number, two: number): number {
+  const gap = (((one - two) % LOOP_S) + LOOP_S) % LOOP_S;
+  return Math.min(gap, LOOP_S - gap);
+}
+
 /** The stays booked at each post, seconds of the loop of the world's clock, each [from, to), and when walkers come to
  *  and leave the posts reached from each way point. */
 class Booked {
   private readonly held = new Map<Post, [number, number][]>();
   private readonly moves = new Map<number, number[]>();
+  private readonly entered = new Map<string, number[]>();
+
+  /** Whether no walker sets out along any of the links `entries` names, the same way, within `ENTERED_APART_S` of
+   *  when it says. */
+  clearAlong(entries: readonly (readonly [string, number])[]): boolean {
+    return entries.every(([link, time]) =>
+      (this.entered.get(link) ?? []).every((other) => apartInLoop(time, other) >= ENTERED_APART_S),
+    );
+  }
+
+  enter(entries: readonly (readonly [string, number])[]): void {
+    for (const [link, time] of entries) this.entered.set(link, [...(this.entered.get(link) ?? []), time]);
+  }
 
   /** Whether no walker comes to or leaves a post reached from `wayPoint` within `MOVES_APART_S` of `times`. */
   calm(wayPoint: number, times: readonly number[]): boolean {
-    const apart = (one: number, two: number) => {
-      const gap = (((one - two) % LOOP_S) + LOOP_S) % LOOP_S;
-      return Math.min(gap, LOOP_S - gap);
-    };
     const held = this.moves.get(wayPoint) ?? [];
-    return times.every((time) => held.every((other) => apart(time, other) >= MOVES_APART_S));
+    return times.every((time) => held.every((other) => apartInLoop(time, other) >= MOVES_APART_S));
   }
 
   moved(wayPoint: number, time: number): void {
@@ -86,11 +104,26 @@ export function walkerRoutines(
     if (!paths.has(key)) paths.set(key, pathBetween(graph, from, to));
     return paths.get(key) ?? null;
   };
+  // When a walker leaving one post at `leave` sets out along each link of the ways to the next, each link named the
+  // way it is walked.
+  const entries = (from: Post, to: Post, leave: number): [string, number][] => {
+    const route = graph.route(from.reached_from, to.reached_from);
+    let [walked, behind] = [0, from.at];
+    return route.flatMap((index, nth) => {
+      const point = graph.points[index] as readonly [number, number];
+      walked += Math.hypot(point[0] - behind[0], point[1] - behind[1]);
+      behind = point;
+      const next = route[nth + 1];
+      return next === undefined ? [] : [[`${index}>${next}`, leave + walked / WALK_M_S] as [string, number]];
+    });
+  };
   const routines: Routine[] = [];
   for (let walker = 0; walker < count && visited.length > 0; walker++) {
     for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
       const offset = random() * LOOP_S;
-      const stays = staysOf(visited, booked, offset, between, random);
+      const along = (from: Post, to: Post, leave: number) =>
+        entries(from, to, leave).map(([link, time]) => [link, time - offset] as [string, number]);
+      const stays = staysOf(visited, booked, offset, { between, along }, random);
       if (!stays) continue;
       const first = (stays[0] as Stay).post;
       const legs = legsOf(stays, first, between);
@@ -101,6 +134,8 @@ export function walkerRoutines(
         if (legs[nth - 1]?.path) booked.moved(post.reached_from, start - offset);
         if (legs[nth + 1]?.path) booked.moved(post.reached_from, end - offset);
       });
+      if (stays.length > 1)
+        stays.forEach((stay, nth) => booked.enter(along(stay.post, stays[nth + 1]?.post ?? first, stay.leave)));
       routines.push({ loop: LOOP_S, offset, legs });
       break;
     }
@@ -115,7 +150,13 @@ function staysOf(
   visited: readonly Post[],
   booked: Booked,
   offset: number,
-  between: (from: Post, to: Post) => Path | null,
+  {
+    between,
+    along,
+  }: {
+    readonly between: (from: Post, to: Post) => Path | null;
+    readonly along: (from: Post, to: Post, leave: number) => [string, number][];
+  },
   random: () => number,
 ): Stay[] | null {
   const free = (post: Post, from: number, to: number) =>
@@ -134,6 +175,7 @@ function staysOf(
       const arrive = here.leave + there.length / WALK_M_S;
       const leave = arrive + stayAt(post, random);
       if (leave + home.length / WALK_M_S > LOOP_S || !free(post, arrive, leave)) return false;
+      if (!booked.clearAlong(along(here.post, post, here.leave))) return false;
       stays.push({ post, arrive, leave });
       return true;
     });
@@ -147,7 +189,11 @@ function staysOf(
   };
   const home = () =>
     booked.free(first, homeAt() - offset - BETWEEN_S, LOOP_S - offset) &&
-    (stays.length === 1 || booked.calm(first.reached_from, [homeAt() - offset]));
+    (stays.length === 1 ||
+      (booked.calm(first.reached_from, [homeAt() - offset]) &&
+        booked.clearAlong(
+          along((stays[stays.length - 1] as Stay).post, first, (stays[stays.length - 1] as Stay).leave),
+        )));
   while (stays.length > 1 && !home()) stays.pop();
   return home() ? stays : null;
 }
