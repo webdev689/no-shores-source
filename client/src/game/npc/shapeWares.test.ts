@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS } from '../../network/gearMessages.ts';
 import { rowsOf } from './npcWares.ts';
-import { item, state } from './stateForTests.ts';
+import { item, state } from '../../network/gearForTests.ts';
 
 test('Shape’s pieces made at level 20 rest dim “From level 20” below it, and are asked for from it', () => {
   const wares = [item({ id: 0, rarity: 3, price: 7, level: 20 })];

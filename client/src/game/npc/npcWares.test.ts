@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS } from '../../network/gearMessages.ts';
 import { priceWord, purseOf, rowsOf } from './npcWares.ts';
-import { item, state } from './stateForTests.ts';
+import { item, state } from '../../network/gearForTests.ts';
 
 const headings = (rows: ReturnType<typeof rowsOf>) => rows.map((row) => row.heading);
 

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { COSMETICS, cosmeticRamp } from '../../forge/cosmetics.ts';
 import { GAME_PALETTE } from '../appearance/gamePalette.ts';
 import { rowsOf } from './npcWares.ts';
-import { state } from './stateForTests.ts';
+import { state } from '../../network/gearForTests.ts';
 
 const numberOf = (id: string) => COSMETICS.findIndex((each) => each.id === id);
 

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import type { Outfit } from '../forge/outfit.ts';
-import type { GearItem, GearState } from '../network/gearMessages.ts';
+import { item, state } from '../network/gearForTests.ts';
 import type { Wardrobe } from './dressing.ts';
 import { MELEE, RANGED_SLOT } from './gear.ts';
 import { gearOutfit } from './gearLooks.ts';
@@ -44,11 +44,6 @@ const plain: Outfit = {
   drawn: true,
   hair: { style: 'crop', colour: 'black' },
 };
-/** A faction piece worn, and nothing else: the gear message's other fields as an empty one's. */
-const wearing = (piece: Piece): GearState =>
-  ({
-    items: [{ id: 1, kind: piece.kind, rarity: 3, level: 20, named: piece.named, at: piece.at } as GearItem],
-  }) as GearState;
 /** Every colour that is a faction's: its own, by its key, and its dye, by its id. */
 const factionColours = new Set(factions.factions.flatMap((faction) => [faction.key, faction.dye]));
 
@@ -56,7 +51,12 @@ test("every layer the page dresses a faction piece's colour on is one the room l
   const all = await pieces();
   assert.equal(all.length, 21, 'seven pieces a faction');
   for (const piece of all) {
-    const dressed = gearOutfit(wearing(piece), wardrobe, plain, piece.ranged ? RANGED_SLOT : MELEE);
+    const dressed = gearOutfit(
+      state({ items: [item({ kind: piece.kind, rarity: 3, at: piece.at, named: piece.named })] }),
+      wardrobe,
+      plain,
+      piece.ranged ? RANGED_SLOT : MELEE,
+    );
     const coloured = Object.entries(dressed.dyes).filter(([, colour]) => factionColours.has(colour));
     assert.ok(coloured.length > 0, `${piece.named} is dressed in its faction's colour`);
     for (const [layer] of coloured)

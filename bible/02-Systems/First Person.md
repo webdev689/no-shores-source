@@ -143,7 +143,8 @@ or the plain wooden shield, under the hand on its grip. The torch and the lanter
 The forge draws every metal grey. A grey texel goes to the nearest step of Daggerfall's metal band and takes that
 step of the metal's ramp; every other colour snaps to the nearest palette colour. Steel, leather, chain and the guilds'
 sets keep their own colours, unless a dye or a faction's colour is worn: then the gauntlets and boots are covered whole
-by its light, as the figure's armour is ([[Gear]], "Cosmetics"). Bare hands take iron's.
+by its light, as the figure's armour is, and a faction's bow, staff and shield in its colour, each laid by its set's
+light on the player's body ([[Gear]], "Cosmetics"). Bare hands take iron's.
 
 ### On the screen
 

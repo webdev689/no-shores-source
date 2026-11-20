@@ -336,17 +336,22 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots). A faction's armour is its
   guild's set instead, in the faction's own colour over any dye ([[Factions]], "Its own colour").
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
-  cloak in its faction's dye whatever its rarity. The hands hold the loadout drawn, in the rarity's metal; a faction's
+  cloak in its faction's own gear colour whatever its rarity, covered as its armour is; the faction's rank-2 dye stays
+  a dye. The hands hold the loadout drawn, in the rarity's metal; a faction's
   weapon in its faction's metal and colour.
 - **Cosmetics** ("Cosmetics", above) ride the dress (`Outfit.dye`, `coat`, `barding`), so every player sees them. A
   dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) and snapped once to the
   game's palette where it is made, so the figure, first person, the Appearance tiles and the keepers' swatches draw the
-  same sixteen colours; each dye and faction colour keeps ten steps at least and stands apart from every other (a test
-  measures it). On armour and its padding a worn dye covers the whole piece, every texel by its light, as a shader
+  same sixteen colours; each dye and faction colour keeps ten steps at least, never steps darker (white dyes and coats
+  end at the palette's lightest neutral) and stands apart from every other (a test measures it). On armour and its padding a worn dye covers the whole piece, every texel by its light, as a shader
   covers a whole piece, since many of the forge's sets (leather, elven, dwarven, the knights', daedric, adamantium and
-  the guilds') are drawn in colours of their own a ramp on greys alone would leave. The covered pieces' light is spanned
-  across the ramp together (`lightSpan`, `coverStep`), darkest to its first step and brightest to its last, so a set
-  drawn dark and one drawn light both keep their shading and detail; first person's gauntlets and boots take it so too.
+  the guilds') are drawn in colours of their own a ramp on greys alone would leave. A ramp that covers a piece is laid
+  by its set's light (`coverLevels`, `coverColour`): every piece of the armour set and the padding under it (a weapon
+  with itself put away, a cape with its hangs), each read in the move it stands in, pooled, with the darkest and
+  brightest fiftieth left out, and spread so that each colour the ramp draws holds as many of the set's texels. A piece
+  therefore takes one shade whatever else is worn, in every move, in its item picture, on the Appearance screen and in
+  first person, where the gauntlets, boots, bow, staff and shield are laid by the same set's light on the player's
+  body.
   The ramp lies in place of the forge's own on every armour piece's layer, its padding and every garment but the cloak;
   never on a weapon, a shield, a sheath, the cloak or the hair. A coat lays its ramp on the horse's hide by its light
   (texels of the hide's hue, 25 to 65 degrees), leaving the saddle, blanket, mane and metal as the forge drew them; the

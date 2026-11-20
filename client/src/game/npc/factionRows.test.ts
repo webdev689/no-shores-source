@@ -5,7 +5,7 @@ import items from '../../../../content/gear/items.json' with { type: 'json' };
 import { ASKS } from '../../network/gearMessages.ts';
 import { KINDS, slotOf } from '../../player/gear.ts';
 import { factionRows, rankRewards, reputationOf } from './factionRows.ts';
-import { item, standing, state } from './stateForTests.ts';
+import { item, standing, state } from '../../network/gearForTests.ts';
 
 /** The Stormcallers (faction 1, first in the list) keep the Storm Art (Art 1, first). */
 const STORM = 1;

@@ -59,8 +59,9 @@ keeps a counter in Overlook's plaza ([[Cities]]).
   `gear.look`, four colours laid as a 16-step ramp and snapped to the game's palette): the armour in its guild set
   (`gear.armour`), each layer and the padding under it named for its faction in the outfit's dyes (`gearOutfit`), which
   `layerRamps` lays over any dye worn, covering every texel of the piece by its light (`whole`); the weapons in its metal
-  (`gear.metal`), their colour where the forge dyes a weapon (a bow, a staff, a shield, in hand or put away). The dress
-  carries it, so other players see it; first person lays it on the gauntlets, boots, bow, staff and shield.
+  (`gear.metal`), their colour covering a bow, a staff and a shield whole by their light, in hand or put away, while a
+  sword's or a dagger's blade keeps its metal; and the cape in it too. The dress carries it, so other players see it;
+  first person lays it on the gauntlets, boots, bow, staff and shield.
 - **An Art's level.** Each Art keeps a level (1 to 5), XP toward the next and the fragments it owns, one bit each
   (`WornArts`). Every kill's XP fills the worn Art's bar (`content/arts/arts.json` `levels.xp`: 8,000, 16,000, 32,000
   and 64,000) and stops when it is full. At the Art's faction's counter a full bar rises a level for its price
