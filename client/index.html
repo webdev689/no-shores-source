@@ -138,12 +138,13 @@
         color: var(--dim);
         margin-bottom: 10px;
       }
-      /* A long line of keys wraps short of the Acquired feed at the right. */
+      /* The key strip stands at the bottom right, under the dialogue box's foot, wrapping short of the Arts and
+         weapons at the left. */
       .hints {
         position: absolute;
-        left: 28px;
+        right: 28px;
         bottom: 22px;
-        max-width: calc(100vw - 384px);
+        max-width: calc(100vw - 480px);
         font-size: 11px;
         line-height: 19px;
         color: var(--ink);
@@ -159,25 +160,16 @@
       #hud:has(> .sea-bar:not([hidden])) .hints {
         bottom: 96px;
       }
-      /* The offer to dock or go ashore stands over the sea bar, where the hints would run into it. */
+      /* The offer to dock or go ashore stands over the sea bar, where the strip would run into it. */
       #hud:has(> .sea-bar:not([hidden])):has(> .landfall:not([hidden])) .hints {
         bottom: 148px;
       }
-      /* On foot the fight's Arts and weapons hold the bottom left, and the prompt for E stands over them where they
-         meet: the hints stand over both. */
-      #hud:has(> .fight:not([hidden])) .hints {
-        bottom: 156px;
-      }
-      /* Where the HUD is wide and not yet doubled, the hints stand at the face's next step, over the Arts and weapons
-         and the prompt, which grow there too. */
+      /* Where the HUD is wide and not yet doubled, the keys stand at the face's next step. */
       @media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
         (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
         .hints {
           font-size: 22px;
           line-height: 33px;
-        }
-        #hud:has(> .fight:not([hidden])) .hints {
-          bottom: 200px;
         }
       }
       /* On foot the fight's display holds the compass; the game's own is the sea's. */

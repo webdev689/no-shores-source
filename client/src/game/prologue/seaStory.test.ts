@@ -53,8 +53,17 @@ export function storied(options: { land?: LandWorker; refused?: boolean } = {}) 
       },
       dialogue: { skip: note('cut') },
       screen: { fade: note('fade'), flash: note('flash') },
-      objective: { show: note('objective'), clear: () => undefined },
-      hud: { hints: (lines: string[]) => done.push(`hints ${lines[0] ?? ''}`), shipBars: () => undefined },
+      hud: {
+        hints: (hints: (readonly [string, string])[]) => done.push(`hints ${hints[0]?.join(' ') ?? ''}`),
+        shipBars: () => undefined,
+        seaFight: () => undefined,
+        tasks: {
+          show: (quest: { steps: { text: string; count?: number }[] } | null) =>
+            quest &&
+            done.push(`task ${quest.steps.map((step) => `${step.text} ${step.count ?? ''}`.trim()).join(', ')}`),
+        },
+        toast: note('toast'),
+      },
     },
   };
   const brig = new Brig([10_000, 20_000], 0.7);

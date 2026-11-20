@@ -12,6 +12,10 @@ code:
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
   - client/src/game/hud.ts#Hud
+  - client/src/game/tasks.ts#TaskTracker
+  - client/src/game/seaPanel.ts#FightPanel
+  - client/src/game/seaPanel.ts#readoutOf
+  - client/src/game/seaPanel.ts#seaFightQuest
   - client/src/combat/hudSheet.ts#wearFightSheet
   - client/src/plus/tones.ts#HALO
   - client/src/plus/compass.ts#Compass
@@ -119,8 +123,12 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   way while they show. On foot the vitals hold the top left, so the place's name and the status line under it stand
   at the top right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
   and in a sea fight under a Boss ship's plate. On foot the company stands under the vitals, and the prompt for E
-  and the hints stand over the Arts and weapons; at sea the hints rise above the offer to dock or go ashore. The
-  line of keys wraps short of the Acquired feed. The edge's warning stands under the compass's column.
+  stands over the Arts and weapons. The key strip stands at the bottom right, under the dialogue box's foot and
+  wrapping short of the Arts and weapons; at sea it rises above the sea bar and the offer to dock or go ashore. The
+  task tracker stands at the right under the place's name, above the Acquired feed, and under the compass's column
+  in a view 900 px wide or less; her ship's panel in a sea fight at the bottom left, over the dialogue box's top in a
+  view 890 px wide or less; the toasts in the middle over the dialogue box's top. The edge's warning stands under
+  the compass's column.
 - **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. It stands the compass at
   the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does; the vitals at the
   top left; and the Arts and weapons at the bottom left
@@ -220,10 +228,10 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while
   the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
   the page's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
-  and one that would fall on the Arts and weapons, or on the game's hints over them, just above them.
+  and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round and a soft shade past it, as a ship's plate strokes its words (`HALO`), so they read over bright sky. The
-  [[Game]]'s place name and hints, laid straight on the world too, carry the same outline.
+  [[Game]]'s place name and key strip, laid straight on the world too, carry the same outline.
 - **A foe's plate**, after the owner's reference: its level in a chip square at the left, the number half the square
   high (over a figure; on the soft lock's and the boss bar's, 22 px on the face's grid), the square empty for a foe of
   no level; to its right its name above a long thin track, the meter in its rank's
@@ -234,6 +242,24 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
   foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
   seen starts whole at her bar.
+- **The task tracker** (`TaskTracker`) is a window naming the quest in its header band (11 px, in brass), the task
+  now under it at 22 px, and the task's steps at 11: each a box, its words, the keys that do it on keycaps, and a
+  count of what is left at 22 in brass. A step met has its box filled in brass and its words dimmed; the moment it is
+  met its row lights in brass and settles in four steps over 0.7 s, and a new task slides in from the right over
+  0.35 s. A quest hands it a name, a task and steps (`Quest`), so any quest uses it with data alone. It reads what
+  the player does, never a press of its own, so keys and touch tick it alike, and it writes the page only when its
+  words change. At the larger step its words stand at 22 and it is 396 px wide (264 below).
+- **A sea fight's panel** (`FightPanel`) is a window at the bottom left naming her ship in its header band ("Your
+  Brig"), with her hull, sails and crew as bars (each in a track, its numbers beside it), each side's guns (Ready,
+  the seconds left to reload, Laying or On target as the look lays them), the shot loaded in a chip and Braced in
+  another while she braces. While an afloat captain has a side run out at her, a warning in blood stands under the
+  header: Broadside! Brace, with C on its keycap. Each captain's hull stands on her own plate over her; the fight's
+  task in the tracker says to defeat their crews, counts the ships left (afloat) and their men, and says they need not
+  be sunk, as the rules strike a ship whose men are gone or whose hull is beaten low. DFO's messages are toasts.
+- **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
+  3.5 s), rising in over 0.2 s; one already shown keeps its place.
+- **The key strip** shows the keys of what the player does now, each on a keycap beside its words, wrapping right to
+  left. On foot it keeps to the fight's keys and the body's beyond walking and looking.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.
