@@ -6,6 +6,7 @@ import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import { type CardAt, openCards } from '../player/cards.ts';
+import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
@@ -59,6 +60,7 @@ const CHART_EVERY_S = 1;
 /** The forge's figures and the first person's hands, read from the forge's published renders. */
 async function openForge(gpu: Gpu, figures: FigureView) {
   const { forge, store } = await openCards(figures);
+  loadForgedBirds((path) => store.strip(path));
   return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
 }
 
