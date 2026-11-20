@@ -239,7 +239,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   sight half a minute and more. Each keeps the largest sight she has been given, from the pace of the player nearest
   her, and goes once no player is within 1.1 times it.
 - **Where.** Between 0.9 and 1 of her sight out from the player, within 60 degrees of their heading while under way and
-  anywhere at rest, no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
+  anywhere at rest; a bold ship, under way above ×10, within her meeting cone off their course shrunk to 0.8 of it
+  (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
   ten tries that fit, a pirate takes the one nearest a coast, keeping near coves; a Tithe ship the one nearest a
   friendly lane (a leg of a route between the port cities, `world::traffic`) within 50 km, heading along it the way
   nearer her slant toward the player. With no lane that near, she comes as a pirate does. Every other ship heads across
@@ -253,18 +254,17 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   clock (lead pursuit; straight at them where she cannot reach them, as when they sail away faster), turning at most
   at a Sloop's helm rate, 10 degrees a second of her clock. She keeps after the one she came for while they stay in
   her sight and out of a fight, until she meets them (750 m) or loses them. A wary ship keeps her own course: the
-  player may chase her, evade her or let her pass. While a ship coming for a player bears forward of 10 degrees
-  abaft their beam, the voyage's hold keeps their pace to the near-enemy ×5 and she sails at their voyage's own pace,
-  so on the voyage's clock she is the faster and meets them. In shared waters, or while another player is nearer her,
-  she keeps their clock instead, and the hold does not keep her quarry under for her. Turning away, she falls astern of the beam and the hold
-  lets go: at their own pace they outrun her until she loses them. That is evading.
+  player may chase her, evade her or let her pass. On the voyage's clock she sails at a fifth of the ship's way or
+  less, so she can meet a ship holding her course only from within the cone sin(angle) <= her way / 12 m/s off it
+  (11.5 degrees for a Major); lead pursuit cannot widen it. So a bold ship comes there (below, "Where"), and a player
+  who holds their course meets her, one who turns away evades her, until she loses them. The voyage's hold keeps its
+  own law as she comes near along the way.
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of
   her begins the fight with her whatever her temper, as a bold ship that meets a player does; a wary one runs as
   captains run. The room lets go of the chase once she has left the sea.
 - **Her clock.** As DFO's sea keeps the world's time, she sails on the clock of the player nearest her: their
   voyage's pace as it is held (144 m/s at ×60), the world's own while they lie at rest, and real time where another
-  player sails within 1.2 km of that one, a shared sea. One coming for a player keeps their voyage's pace as set,
-  unheld.
+  player sails within 1.2 km of that one, a shared sea.
 - **The voyage held.** As DFO holds a fast journey, a voyage eases down as a hostile ship comes near along its way: its
   pace is capped so the player takes 0.6 s of real time or more to reach her sight (750 m), closing at their ship's 12
   m/s and the fastest rank's 2.88, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she would
@@ -326,8 +326,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not
   come over. A fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
 - Only a bold pirate takes a player on; DFO's wary captains also fall on a ship they outgun.
-- A ship coming for a player holds the voyage to ×5 from as far out as she sights them, kilometres off; the hold
-  does not ease them by degrees as she closes. Following a coast round, she does not plan her way round an island.
+- A bold ship sighted off a voyage's course does not come at all where her way cannot meet it: she is sighted only
+  ahead, within her cone, kilometres out. Following a coast round, she does not plan her way round an island.
 - A pirate sails on the clock of the player nearest her, while another player's voyage is held as if she closed on
   them at their own: for the few ticks one player is nearest while she bears down on another, she may close faster
   than that one's hold allows.

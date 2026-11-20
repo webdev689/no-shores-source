@@ -211,8 +211,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   the voyage's clock), planned round the land as any route, again each half second. The voyage's line says "Chasing
   the Tithe Brig." until she is met, lost from sight, or another course is set (a click, the helm's keys, Stop or
   Resume, going ashore). Her way is the one the room sends with her (`Pirate.way`). The room is told whom she
-  chases: within 750 m of her the fight begins, whatever her temper. Evading is turning away from a ship coming for
-  her: once that ship is abaft her beam the hold lets go and she outruns her.
+  chases: within 750 m of her the fight begins, whatever her temper. Evading is turning away from a bold ship, sighted
+  ahead on the ship's course where she can meet it: held, the course meets her; turned away, the ship outruns her.
 - **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the sea's own view, close in or not:
   - A and D turn her at the helm's 10 degrees a second. Under way she takes a course straight on along her new
     heading; at rest she turns where she lies, and the room turns her too ([[Server]], "The sea").

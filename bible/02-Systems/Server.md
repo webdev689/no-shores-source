@@ -167,11 +167,12 @@ will take it, by the room's own tick.
   read from the land files (`server/seaPorts.ts`), as the page does (`portsOf`).
 - **Measured** (`measure_tests.rs`, by hand in release): 20 players in each kind of water of the world's layout, each
   voyaging at ×60 straight out 150 km and back for ten minutes: sailing on whatever they sight, chasing every ship they
-  sight (the room told), or turning away from a ship coming for them. Sailing on, a fight comes by 10 minutes for 40 to
-  50% in hostile waters (by 5: 15 to 40%), 10% of those setting out from home waters; a ship stays in sight 87 to 157 s
-  on average, 88 to 100% of them 30 s and over. Chasing, by 10 minutes 55 to 80% (by 5: 45 to 65%). Turning away, of
-  those a ship came for, 8 of 13 in contested waters and 10 of 12 in the pirates' never fought (3 of 13 in the Grey
-  Tithe's, where a course away is often refused by the coast); by 10 minutes 10 to 50% fought.
+  sight (the room told), or turning away from a ship coming for them. Sailing on, a fight comes by 5 minutes for 30 to
+  35% in the pirates' and the Grey Tithe's waters (10% contested) and by 10 for 40 to 65% (30% contested); the first
+  ship is sighted at a median of 132 to 160 s; a ship stays in sight 37 to 59 s on average, 68 to 92% of them 30 s and
+  over. Chasing, by 10 minutes 70 to 85% (by 5: 55 to 60%). Turning away, 35 of 36 a ship came for in hostile waters
+  never fought. A voyage is held under ×60 for 3 s at most as a ship comes near along its way; one stretch of 80 to 89
+  s was by a fight among captains near a contested voyage.
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
