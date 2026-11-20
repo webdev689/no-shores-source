@@ -7,6 +7,7 @@ use super::{Laid, ring, stand_at};
 use crate::Use;
 use crate::courtyard::Frame;
 use crate::grid::{Grid, SIDE_CELLS, index};
+use crate::life::{Keep, Post, Task};
 use crate::ramps::{Piece, Ramp};
 use crate::social::Social;
 use crate::solids::{Material, Shape, Solid};
@@ -58,6 +59,7 @@ pub fn harbour(social: &mut Social, frame: &Frame, way: &Harboured<'_>) {
     let mut rects = ring::platform_rects(frame);
     rects.extend(way.avenue.iter().map(|&(column, row)| way.grid.bounds(column, row)));
     let mut laid = Laid::default();
+    let mut pier_line: Option<([f64; 2], [f64; 2])> = None;
     let flight = ramps.iter().find(|ramp| (ramp.line[1][2] - QUAY_TOP_M).abs() < 0.01).copied();
     if let Some(flight) = flight {
         rects.push(flight.pad.bounds);
@@ -78,7 +80,9 @@ pub fn harbour(social: &mut Social, frame: &Frame, way: &Harboured<'_>) {
             if let Some(pier) = pier_at(way.works, root) {
                 let [west, north, east, south, _, _] = pier.bounds();
                 rects.push([west, north, east, south]);
-                laid.spots.push(pier_head(pier, root));
+                let head = pier_head(pier, root);
+                laid.spots.push(head);
+                pier_line = Some((root, head));
             }
         }
         offices([top[0], top[1], top[2]], [foot[0] - top[0], foot[1] - top[1]], &mut laid);
@@ -99,8 +103,101 @@ pub fn harbour(social: &mut Social, frame: &Frame, way: &Harboured<'_>) {
     laid.solids.extend(low_walls(way));
     social.ring = ring::outline(&rects);
     social.solids.extend(laid.solids);
+    walked(social, &ramps, pier_line, &laid.stations);
     social.stations.extend(laid.stations);
     social.visitor_spots.extend(laid.spots);
+}
+
+/// The harbour way's ways: from the Stair Yard's stair head down the switchback's pieces, up the avenue's ramps in turn
+/// (each joined to the next at its cell's middle, where the road turns), down the flight to the quay and out along the
+/// pier; a customer's point before each harbour stall; and its posts: lookers at the pier's head, drinkers and a
+/// porter by the flight's foot, a walker's view from each switchback landing.
+fn walked(
+    social: &mut Social,
+    ramps: &[&Ramp],
+    pier: Option<([f64; 2], [f64; 2])>,
+    stations: &[crate::stations::Station],
+) {
+    let Some(top) = social.ways.points.iter().position(|point| point.name == "stair:top") else { return };
+    let ways = &mut social.ways;
+    let mut last = u32::try_from(top).unwrap_or(0);
+    let chain = |ways: &mut crate::life::Ways, at: [f64; 2], name: &str, last: &mut u32| {
+        let here = ways.point(at, name);
+        ways.links.push([*last, here]);
+        *last = here;
+        here
+    };
+    // Down the switchback, top first: each piece from its top end to its foot end.
+    let switchback: Vec<&&Ramp> = ramps.iter().filter(|ramp| ramp.piece != Piece::Ramp).collect();
+    for piece in switchback.iter().rev() {
+        let [high, low] = piece.line;
+        chain(ways, [high[0], high[1]], "", &mut last);
+        chain(ways, [low[0], low[1]], "", &mut last);
+    }
+    // Along the road, from the head to the sea: each ramp entered at its end nearer the way so far, and each joined to
+    // the next where their lines cross, at the middle of the cell where the road turns.
+    let road: Vec<&&Ramp> = ramps.iter().filter(|ramp| ramp.piece == Piece::Ramp).collect();
+    for ramp in road.iter().rev() {
+        let from = ways.points[last as usize].at;
+        let ends = ramp.line.map(|[x, y, _]| [x, y]);
+        let (enter, leave) =
+            if distance(ends[0], from) <= distance(ends[1], from) { (ends[0], ends[1]) } else { (ends[1], ends[0]) };
+        let along_y = (ends[0][0] - ends[1][0]).abs() < 1e-6;
+        let corner = if along_y { [enter[0], from[1]] } else { [from[0], enter[1]] };
+        if distance(corner, from) > 1e-6 && distance(corner, enter) > 1e-6 {
+            chain(ways, corner, "", &mut last);
+        }
+        chain(ways, enter, "", &mut last);
+        chain(ways, leave, "", &mut last);
+    }
+    let quay = last;
+    let mut posts = Vec::new();
+    if let Some((root, head)) = pier {
+        chain(ways, root, "", &mut last);
+        let end = chain(ways, head, "view:pier-head", &mut last);
+        let out = [head[0] - root[0], head[1] - root[1]];
+        let bearing = libm::atan2(out[0], -out[1]);
+        for side in [-1.5, 1.5] {
+            let length = out[0].hypot(out[1]).max(1e-9);
+            let across = [-out[1] / length * side, out[0] / length * side];
+            let at = [head[0] + across[0], head[1] + across[1]];
+            posts.push(Post { task: Task::Idle, at, facing: bearing, keep: Keep::Visited, reached_from: end });
+        }
+        let at = ways.points[quay as usize].at;
+        let back = [root[0] - at[0], root[1] - at[1]];
+        let length = back[0].hypot(back[1]).max(1e-9);
+        let side = [-back[1] / length * 3.0, back[0] / length * 3.0];
+        posts.push(Post {
+            task: Task::Drink,
+            at: [at[0] + side[0], at[1] + side[1]],
+            facing: libm::atan2(-side[0], side[1]),
+            keep: Keep::Kept,
+            reached_from: quay,
+        });
+        posts.push(Post {
+            task: Task::Gesture,
+            at: [at[0] + side[0] * 1.6, at[1] + side[1] * 1.6],
+            facing: libm::atan2(side[0], -side[1]),
+            keep: Keep::Kept,
+            reached_from: quay,
+        });
+    }
+    for station in stations {
+        let out = [-libm::sin(station.facing), libm::cos(station.facing)];
+        let before = [station.counter[0] + out[0] * 2.6, station.counter[1] + out[1] * 2.6];
+        let kind = serde_json::to_value(station.kind).ok();
+        let name = format!("counter:{}", kind.as_ref().and_then(|kind| kind.as_str()).unwrap_or_default());
+        let nearest = (0..ways.points.len())
+            .min_by(|&one, &two| {
+                distance(ways.points[one].at, before).total_cmp(&distance(ways.points[two].at, before))
+            })
+            .unwrap_or(0);
+        let point = ways.point(before, &name);
+        ways.links.push([u32::try_from(nearest).unwrap_or(0), point]);
+        let at = [station.counter[0] + out[0] * 1.2, station.counter[1] + out[1] * 1.2];
+        posts.push(Post { task: Task::Hold, at, facing: station.facing, keep: Keep::Visited, reached_from: point });
+    }
+    social.posts.extend(posts);
 }
 
 fn distance(one: [f64; 2], two: [f64; 2]) -> f64 {

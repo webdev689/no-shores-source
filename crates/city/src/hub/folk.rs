@@ -91,7 +91,10 @@ const POINTS: &[(&str, &str, f64, f64)] = &[
     ("gate-e", "view:sealed-east", 115.0, -96.0),
     ("ww", "view:west-walk", -142.0, -40.0),
     ("ew", "", 140.0, -40.0),
-    ("tack", "counter:tack", 135.0, -62.0),
+    ("ew-s", "", 140.0, -96.0),
+    ("sy", "", 118.0, -128.0),
+    ("tack", "counter:tack", 92.0, -130.0),
+    ("stair", "stair:top", 146.0, -134.0),
     ("po-front", "", 0.0, -84.0),
     ("po-door", "", 0.0, -100.0),
     // The Hall: in by the door, down the aisles either side of the war table, through the columns' gaps.
@@ -187,8 +190,11 @@ const LINKS: &[(&str, &str)] = &[
     ("fy-s", "fy-se"),
     ("fy-se", "ew"),
     ("fy-sw", "bw70"),
-    ("ew", "tack"),
-    ("tack", "bw145"),
+    ("ew", "ew-s"),
+    ("bw145", "ew-s"),
+    ("ew-s", "sy"),
+    ("sy", "tack"),
+    ("sy", "stair"),
     ("bw-145", "bw-120"),
     ("bw-120", "bw-95"),
     ("bw-95", "bw-70"),
@@ -251,7 +257,7 @@ const POSTS: &[(Task, f64, f64, f64, Keep, &str)] = &[
     (Task::Idle, -98.0, 2.0, 180.0, Keep::Visited, "fo-n"),
     (Task::Idle, 88.0, -1.0, 90.0, Keep::Visited, "anvil"),
     (Task::Carry, 113.0, 39.0, 90.0, Keep::Kept, "fy-n"),
-    (Task::Sweep, 137.0, -55.0, 0.0, Keep::Kept, "tack"),
+    (Task::Sweep, 94.0, -121.0, 0.0, Keep::Kept, "tack"),
     (Task::Pray, -4.0, -156.0, 180.0, Keep::Kept, "h-s"),
     (Task::Gesture, 12.0, -126.0, 90.0, Keep::Kept, "h-ne"),
     (Task::Gesture, 14.0, -126.0, 270.0, Keep::Kept, "h-ne"),
@@ -294,7 +300,13 @@ pub(crate) fn life(frame: &Frame, laid: &Laid) -> (Ways, Vec<Post>) {
             let [x, y] = ways.points[number].at;
             let at = [x + frame.seaward[0] * 4.2, y + frame.seaward[1] * 4.2];
             let reached_from = u32::try_from(number).unwrap_or(0);
-            posts.push(Post { task: Task::Idle, at, facing: bearing_of(frame.seaward), keep: Keep::Visited, reached_from });
+            posts.push(Post {
+                task: Task::Idle,
+                at,
+                facing: bearing_of(frame.seaward),
+                keep: Keep::Visited,
+                reached_from,
+            });
         }
     }
     posts.extend(customers(&laid.stations, &ways));
@@ -302,19 +314,39 @@ pub(crate) fn life(frame: &Frame, laid: &Laid) -> (Ways, Vec<Post>) {
     for (module, socket, task, from) in worked {
         for nth in 1..=2 {
             for (at, facing) in laid.sockets_of(module, &format!("{socket}{nth}")) {
-                posts.push(Post { task, at: [at[0], at[1]], facing: bearing_of(facing), keep: Keep::Kept, reached_from: index(from) });
+                posts.push(Post {
+                    task,
+                    at: [at[0], at[1]],
+                    facing: bearing_of(facing),
+                    keep: Keep::Kept,
+                    reached_from: index(from),
+                });
             }
         }
     }
     let band = [Task::PlayLute, Task::PlayFlute, Task::PlayRecorder, Task::PlayTambourine];
     for (nth, task) in band.into_iter().enumerate() {
         for (at, facing) in laid.sockets_of("bandstand", &format!("player-{}", nth + 1)) {
-            posts.push(Post { task, at: [at[0], at[1]], facing: bearing_of(facing), keep: Keep::Kept, reached_from: index("band") });
+            posts.push(Post {
+                task,
+                at: [at[0], at[1]],
+                facing: bearing_of(facing),
+                keep: Keep::Kept,
+                reached_from: index("band"),
+            });
         }
     }
-    for (module, from) in [("market-stall-fish", "fish"), ("market-stall-fruit", "fruit"), ("market-stall-pots", "pots")] {
+    for (module, from) in
+        [("market-stall-fish", "fish"), ("market-stall-fruit", "fruit"), ("market-stall-pots", "pots")]
+    {
         for (at, facing) in laid.sockets_of(module, "keeper") {
-            posts.push(Post { task: Task::Gesture, at: [at[0], at[1]], facing: bearing_of(facing), keep: Keep::Kept, reached_from: index(from) });
+            posts.push(Post {
+                task: Task::Gesture,
+                at: [at[0], at[1]],
+                facing: bearing_of(facing),
+                keep: Keep::Kept,
+                reached_from: index(from),
+            });
         }
     }
     (ways, posts)

@@ -9,6 +9,7 @@
 
 mod adorn;
 mod courts;
+mod folk;
 mod hall;
 mod harbour;
 mod placing;
@@ -112,6 +113,7 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
     hall::hall(frame, &mut laid);
     adorn::adorn(frame, &mut laid);
     let spawns = SPAWNS_ACROSS_M.iter().map(|&across| frame.at(SPAWN_TOWARD_M, across)).collect();
+    let (ways, posts) = folk::life(frame, &laid);
     Social {
         bounds,
         level: frame.level,
@@ -120,5 +122,7 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
         solids: laid.solids,
         stations: laid.stations,
         visitor_spots: laid.spots,
+        ways,
+        posts,
     }
 }
