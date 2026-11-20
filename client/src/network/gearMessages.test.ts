@@ -28,7 +28,7 @@ test('a players own gear the server wrote reads back whole, every column spelled
   );
   assert.equal(gear.xp, 190_000n);
   assert.equal(gear.resources[4], 3, 'three of the node’s resource');
-  assert.equal(gear.items.length, 6);
+  assert.equal(gear.items.length, 10, 'six pieces and the four modules every ship is built with');
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);
   assert.deepEqual([sword.at, sword.attack, sword.rarity, sword.level, sword.xpMost], [2, 248, 3, 20, 90_000]);
