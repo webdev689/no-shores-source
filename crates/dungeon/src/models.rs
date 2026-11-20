@@ -353,7 +353,6 @@ pub const RUBBLE: &[PropModel] = &[
     PropModel { id: 41727, min: [-1.275, 0.0, 0.0], max: [0.4, 1.95, 0.225], piece: Piece::Plain },
     PropModel { id: 41728, min: [-1.225, 0.0, -0.225], max: [0.1, 1.525, 0.0], piece: Piece::Plain },
     PropModel { id: 41729, min: [-1.825, 0.0, -0.275], max: [0.65, 1.525, 0.0], piece: Piece::Plain },
-    PropModel { id: 43400, min: [-0.8, -1.6, -0.2], max: [0.8, -0.2, 0.2], piece: Piece::Plain },
 ];
 
 /// Standing stones.

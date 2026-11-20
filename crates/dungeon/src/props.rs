@@ -38,16 +38,6 @@ pub struct Prop {
     pub solid: Option<[f64; 5]>,
 }
 
-/// The side a quarter turn clockwise.
-pub(crate) const fn clockwise(side: Side) -> Side {
-    match side {
-        Side::North => Side::East,
-        Side::East => Side::South,
-        Side::South => Side::West,
-        Side::West => Side::North,
-    }
-}
-
 impl PropModel {
     /// Its plan with its front to `front`: how far it reaches east-west and north-south (m).
     pub(crate) fn plan(&self, front: Side) -> (f64, f64) {
@@ -58,7 +48,7 @@ impl PropModel {
     /// solid where `solid` says.
     pub(crate) fn stood(&self, centre: [f64; 2], front: Side, foot: f64, solid: bool) -> Prop {
         let [front_x, front_y] = front.unit();
-        let [right_x, right_y] = clockwise(front).unit();
+        let [right_x, right_y] = front.clockwise().unit();
         let (box_x, box_z) = ((self.min[0] + self.max[0]) / 2.0, (self.min[2] + self.max[2]) / 2.0);
         let at = [
             centre[0] - right_x * box_x - front_x * box_z,
@@ -77,7 +67,7 @@ impl PropModel {
     /// quarter more where it is deeper than wide, so its long side runs along the wall.
     pub(crate) fn against(&self, wall: Side) -> (Side, f64) {
         if self.depth() > self.width() {
-            (clockwise(wall.opposite()), self.width())
+            (wall.opposite().clockwise(), self.width())
         } else {
             (wall.opposite(), self.depth())
         }
