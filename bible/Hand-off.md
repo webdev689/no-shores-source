@@ -303,6 +303,17 @@ Where the work stands now, for the next session. Each session rewrites this note
   by ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
+- **#97, the activities**, stacked on #88 (and #88 on #72), waits on the owner's yes, which deploys the page and the
+  rooms: the clock, the gates, the dungeon of the day, Elite Dungeons and their Bosses, the week's two, modifiers,
+  Abyss's revives and wipes, private runs, companies of four and Find a Company, quests and bounties on one engine,
+  the bounty board in the plaza, and the Journal ([[The Journal Holds the Quests, the Bounties at Its Side and the
+  Timers at Its Top]]): the quests as cards, the bounties as tiles beside them, the timers dropping from DFO's
+  hourglass; and the board's screen as tiles after Destiny's Bounty Tracker, each bounty named. Claude's calls are in
+  its description. One question waits: #102's encounters (bands fall back, gather at a last stand, call waves) run on
+  Mission and Dungeon nodes, and #72's dungeon interiors stand their garrison another way, so they get groups but no
+  encounter; should dungeon interiors give ground and call waves the same way? Tested offline: the full check, and
+  pictures of the Journal and the board from a harness with the real modules (at 1280x720, 860x600 and 390x844, no box
+  wider than its room). Not yet tested live. At 390 px wide the menu's own tab row overlaps itself, as it did before.
 - **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**, on
   `main`, merged with the owner's yes ("Merge and deploy"), which deploys the page and the rooms. The owner named the
   factions and the elder, said yes to faction gear "with its own unique color" and chose its colours: the Stormcallers
@@ -500,6 +511,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **#88 once #72 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
   merge; then play a dungeon of each style in a deployed room. A change to `tools/dungeon/` or the contracts
   publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
+- **#97 once #88 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
+  merge; then play the Journal and the board in a deployed room (tested live): take a bounty, count it, turn it in,
+  and drop the timers with T.
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
   `server/garrison.test.ts`): its 13 foes stand all 1500 ticks and its player falls about tick 900, run straight into
   the wall #63 gave its node, steered round it, or with the starting sword asked for; its swings seem never to land.
