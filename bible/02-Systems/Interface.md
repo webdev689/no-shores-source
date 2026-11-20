@@ -69,7 +69,7 @@ code:
   - client/src/game/rosterRows.ts#actionsFor
   - client/src/game/playerDetails.ts#detailsPage
   - client/src/game/emblemArt.ts#emblemPixels
-  - client/src/game/emblemSlot.ts#appearanceButton
+  - client/src/game/appearanceButton.ts#appearanceButton
   - client/src/game/appearance/appearancePage.ts#appearancePage
   - client/src/forge/cosmetics.ts#rampOf
   - client/src/game/companyHud.ts#startCompanyHud

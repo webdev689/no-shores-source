@@ -13,12 +13,13 @@ import type { Dress } from '../../player/dressing.ts';
 import type { Picture } from '../../player/picture.ts';
 import { ROLES } from '../../plus/kit.ts';
 import { EMBLEMS, emblemImage } from '../emblemArt.ts';
-import { emblemCard } from '../emblemSlot.ts';
+import { emblemCard } from '../appearanceButton.ts';
 import { type Hint, type HoverCard, cardNode, rarityOf, tileLabel } from '../gearDom.ts';
 import { STEP_BACK } from '../gearScreen.ts';
 import { appearanceDisplay, horseOf } from './appearanceDisplay.ts';
 import { coatSvg, dyeSvg, svgUrl } from './appearanceMarks.ts';
 import { type AppearanceTile, appearanceRows, previewDress } from './appearanceModel.ts';
+import { ARROWS, nearest } from '../arrowFocus.ts';
 
 /** What the screen draws from: the gear the room last sent and the way to ask of it, the menu's hover card, the way
  *  back to the Character page, the forge and the player's dress (null while there is none), and the body's height. */
@@ -44,32 +45,6 @@ const TILE_PX = 48;
 /** The display's width beside the rows, and what the screen's body keeps clear of its height. */
 const DISPLAY_WIDTH = 360;
 const DISPLAY_AROUND = 24;
-/** Each arrow key's way across the screen. */
-const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
-  ArrowLeft: [-1, 0],
-  ArrowRight: [1, 0],
-  ArrowUp: [0, -1],
-  ArrowDown: [0, 1],
-};
-
-/** The tile nearest `from` the way an arrow points, favouring those straight on; null if none lies that way. */
-function nearest(from: HTMLElement, among: readonly HTMLElement[], [right, down]: readonly [number, number]) {
-  const centre = (node: HTMLElement) => {
-    const box = node.getBoundingClientRect();
-    return [box.left + box.width / 2, box.top + box.height / 2] as const;
-  };
-  const [fromX, fromY] = centre(from);
-  let best: { node: HTMLElement; score: number } | null = null;
-  for (const node of among) {
-    const [nodeX, nodeY] = centre(node);
-    const along = (nodeX - fromX) * right + (nodeY - fromY) * down;
-    const across = Math.abs((nodeX - fromX) * down - (nodeY - fromY) * right);
-    const score = along + across * 2;
-    if (node !== from && along > 1 && (!best || score < best.score)) best = { node, score };
-  }
-  return best?.node ?? null;
-}
-
 /** Each tile's preview, for the display to go back to the tile the focus is on once the pointer leaves another. */
 const PREVIEWS = new WeakMap<HTMLElement, () => void>();
 

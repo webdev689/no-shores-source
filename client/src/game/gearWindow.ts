@@ -12,7 +12,7 @@ import { ARTS_HINTS, ART_DIAMOND_KEY, type ArtsEntrance, artDiamond, artsPage } 
 import { coresOf, gearAskOf } from './artsCards.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
-import { APPEARANCE_KEY } from './emblemSlot.ts';
+import { APPEARANCE_KEY } from './appearanceButton.ts';
 import { DISMANTLE_KEY, type Hint, HoverCard, glyphImage, hintLine, letGoHold, pressOf } from './gearDom.ts';
 import {
   ACCOUNT_CHANGED,

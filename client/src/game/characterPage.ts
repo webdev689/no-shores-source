@@ -26,7 +26,7 @@ import {
 } from './gearDom.ts';
 import { characterOf } from './gearScreen.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
-import { appearanceButton } from './emblemSlot.ts';
+import { appearanceButton } from './appearanceButton.ts';
 
 /** What a page of the gear screen draws from: the gear, the way to ask of it, the card, the pictures, and the height
  *  the screen gives it. */

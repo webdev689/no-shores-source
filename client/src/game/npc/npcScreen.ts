@@ -22,6 +22,7 @@ import { type Asked, answeredWith } from './npcLines.ts';
 import { hush, keeperSays, speechBand } from './npcSpeech.ts';
 import { coinGlyph, meter, rowNode } from './npcTiles.ts';
 import { type Ware, purseOf, rowsOf } from './npcWares.ts';
+import { ARROWS, nearest } from '../arrowFocus.ts';
 
 /** The keepers whose wares change each day at midnight. */
 const DAILY: readonly KeeperKind[] = ['armorsmith', 'weaponsmith', 'tailor', 'tack'];
@@ -128,34 +129,15 @@ function footNode(kind: KeeperKind, gear: GearState): HTMLElement | null {
   return foot;
 }
 
-/** The arrows move among the tiles: along their row, and to the nearest tile in the row above or below. */
+/** The arrows move to the nearest tile that way (arrowFocus.ts). */
 function arrowsAmong(page: HTMLElement): void {
   page.addEventListener('keydown', (event) => {
-    const steps: Record<string, readonly [number, number]> = {
-      ArrowLeft: [-1, 0],
-      ArrowRight: [1, 0],
-      ArrowUp: [0, -1],
-      ArrowDown: [0, 1],
-    };
-    const step = steps[event.key];
+    const step = ARROWS[event.key];
     const from = document.activeElement;
     const tiles = [...page.querySelectorAll<HTMLElement>('.npc-tile')];
     if (!step || !(from instanceof HTMLElement) || !tiles.includes(from)) return;
     event.preventDefault();
-    const here = from.getBoundingClientRect();
-    const [across, down] = step;
-    const next =
-      across !== 0
-        ? tiles[tiles.indexOf(from) + across]
-        : tiles
-            .map((tile) => ({ tile, box: tile.getBoundingClientRect() }))
-            .filter(({ box }) => (down > 0 ? box.top >= here.bottom : box.bottom <= here.top))
-            .sort(
-              (one, other) =>
-                Math.abs(one.box.top - here.top) - Math.abs(other.box.top - here.top) ||
-                Math.abs(one.box.left - here.left) - Math.abs(other.box.left - here.left),
-            )[0]?.tile;
-    next?.focus();
+    nearest(from, tiles, step)?.focus();
   });
 }
 

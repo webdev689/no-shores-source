@@ -51,6 +51,7 @@ import type { Card } from './gearCards.ts';
 import { type Hint, type HoverCard, cardNode, elementGlyph, glyphImage } from './gearDom.ts';
 import { STEP_BACK } from './gearScreen.ts';
 import { play } from './uiSounds.ts';
+import { ARROWS, nearest } from './arrowFocus.ts';
 
 /** How the screen comes in when built: opened, another Art just worn, or neither. */
 export type ArtsEntrance = 'open' | 'wear' | null;
@@ -84,14 +85,6 @@ const WEAR: readonly Hint[] = [['Click', 'Wear it']];
 const CHANGE: readonly Hint[] = [['Click', 'Change it']];
 const CHOOSE: readonly Hint[] = [['Click', 'Choose a fragment']];
 const SET: readonly Hint[] = [['Click', 'Set it here']];
-/** Each arrow key's way across the screen. */
-const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
-  ArrowLeft: [-1, 0],
-  ArrowRight: [1, 0],
-  ArrowUp: [0, -1],
-  ArrowDown: [0, 1],
-};
-
 const pictureUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`;
 /** The key of a spell's tile, which the screen's focus starts on for the Anima. */
 const spellKey = (spell: Spell): string => `spell-${spell.key}`;
@@ -207,25 +200,6 @@ function tileOf(className: string, key: string, label: string, still = false): H
   tile.dataset['nav'] = '';
   tile.setAttribute('aria-label', label);
   return tile;
-}
-
-/** The control nearest `from` the way an arrow points, favouring those straight on; null if none lies that way. */
-function nearest(from: HTMLElement, among: readonly HTMLElement[], [right, down]: readonly [number, number]) {
-  const centre = (node: HTMLElement) => {
-    const box = node.getBoundingClientRect();
-    return [box.left + box.width / 2, box.top + box.height / 2] as const;
-  };
-  const [fromX, fromY] = centre(from);
-  let best: { node: HTMLElement; score: number } | null = null;
-  for (const node of among) {
-    const [nodeX, nodeY] = centre(node);
-    const along = (nodeX - fromX) * right + (nodeY - fromY) * down;
-    const across = Math.abs((nodeX - fromX) * down - (nodeY - fromY) * right);
-    if (node === from || along <= 1) continue;
-    const score = along + across * 2;
-    if (!best || score < best.score) best = { node, score };
-  }
-  return best?.node ?? null;
 }
 
 /** A row's heading over its tiles. */
