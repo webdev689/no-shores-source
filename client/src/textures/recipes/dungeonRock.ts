@@ -14,7 +14,7 @@ import { kitMats } from './thingMats.ts';
 /** A climate's rock sets: the mines' rock, timber, earth (how light it lies, whether moss grows on it) and gravel;
  *  the caverns' beds, veins, the wet in their seeps (null for none), floor sand, worn floor rock, pebbles and the
  *  stubs on their ceiling. */
-interface RockLook {
+export interface RockLook {
   readonly hewn: string;
   readonly timber: string;
   readonly earth: string;
@@ -31,7 +31,7 @@ interface RockLook {
 }
 
 /** The rock sets by climate: desert sandstone, mountain grey stone, temperate warm rubble, swamp green and dark. */
-const ROCK_LOOKS: Readonly<Record<number, RockLook>> = {
+export const ROCK_LOOKS: Readonly<Record<number, RockLook>> = {
   0: {
     hewn: 'adobe',
     timber: 'woodGrey',

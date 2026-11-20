@@ -14,7 +14,7 @@ import { snowsOver } from './recipes/wallFamilies.ts';
 import { paintWall, wallSeed, winterOver } from './recipes/walls.ts';
 import { SCALE, type Surface } from './surface.ts';
 
-export { climateArchive, type Climate, type Season } from './climate.ts';
+export { DRESSING_ARCHIVE, climateArchive, type Climate, type Season } from './climate.ts';
 export { pictureSize, type PictureSize } from './catalog.ts';
 export { PALETTE_RGB } from './palette.ts';
 export type { PictureUse } from './recipe.ts';
