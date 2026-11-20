@@ -37,6 +37,8 @@ export class HeldMapWaters {
   private readonly key = make('div', '', 'held-key');
   private readonly letters = new Map<number, HTMLElement>();
   private charted = new Set<number>();
+  /** Each name's width once measured, so the map is not laid out again every frame to read it. */
+  private readonly widths = new Map<HTMLElement, number>();
 
   constructor(waters: MapWaters, layer: HTMLElement) {
     this.waters = waters;
@@ -70,7 +72,13 @@ export class HeldMapWaters {
       const point = this.points.get(continent);
       const [x, y] = point ? toInk(point[0], point[1]) : [-1, -1];
       letters.hidden = !this.charted.has(continent) || x < 0 || y < 0 || x > ink.width || y > ink.height;
-      letters.style.transform = `translate(${ink.x + x}px, ${ink.y + y + drop}px) translate(-50%, -50%)`;
+      if (letters.hidden) continue;
+      // A name near the map's edge is held inside it, so none runs off the parchment.
+      const width = this.widths.get(letters) ?? letters.offsetWidth;
+      this.widths.set(letters, width);
+      const half = Math.min(width / 2, ink.width / 2);
+      const across = Math.min(Math.max(x, half), ink.width - half);
+      letters.style.transform = `translate(${ink.x + across}px, ${ink.y + y + drop}px) translate(-50%, -50%)`;
     }
     this.key.style.transform = `translate(${ink.x + KEY_INSET_PX}px, ${ink.y + ink.height + drop - KEY_INSET_PX}px) translate(0, -100%)`;
   }
