@@ -95,9 +95,15 @@ def blade(side, crystal):
         faces += [(a + i, a + (i + 1) % 4, b + (i + 1) % 4, b + i) for i in range(4)]
     mesh = bpy.data.meshes.new(f'ravager_blade_{side}')
     mesh.from_pydata([tuple(q) for q in points], [], faces)
+    mesh.materials.append(growth.DEEP.get(crystal.name, crystal))
     mesh.materials.append(crystal)
+    mesh.polygons.foreach_set('material_index', [1 if i in (0, 3) else 0 for _ in range(len(stations) - 1) for i in range(4)])
     mesh.update()
-    return growth.linked(mesh.name, mesh)
+    # the shards it throws, growing along its back edge
+    ammunition = [growth.shard(f'ravager_ammo_{side}_{k}', start + way * BLADE['length'] * s - edge * BLADE['width'] * 0.4,
+                               -edge + way * 0.5 + flat * 0.3, 0.07, 0.016, k, crystal)
+                  for k, s in enumerate((0.15, 0.35, 0.55, 0.72))]
+    return [growth.linked(mesh.name, mesh), *ammunition]
 
 
 def parts(fighter):
@@ -114,7 +120,7 @@ def parts(fighter):
         hang(fighter.parts, ob, 'chest')
     blades = []
     for side in ('L', 'R'):
-        ob = blade(side, crystal)
-        hang(fighter.parts, ob, f'hand_{side}')
-        blades.append(ob)
+        for ob in blade(side, crystal):
+            hang(fighter.parts, ob, f'hand_{side}')
+            blades.append(ob)
     return {'shroud': shroud + cloak, 'blades': blades}

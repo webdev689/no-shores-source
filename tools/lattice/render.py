@@ -3,10 +3,9 @@ Run from tools/forge/ with Blender's module:
 
     python -I ../lattice/render.py --enemy husk --anims husk_walk,husk_lunge,husk_gore --out <folder>
 
-The foe's module (husk.py and the rest) gives its make, clothes, crystal, own parts and moves. It writes the forge's
-strips with their depth twins into <folder>/<enemy>: its body; any clothes it wears; `lattice_<enemy>`, its crystal and
-torn edges; `lattice_<enemy>_gore`, its flesh and blood; and a layer for each of its own parts, such as a shield the
-game takes away when it breaks. The forge's index, keys and fitted lists go to <folder> too."""
+Its module (husk.py and the rest) gives its make, clothes, crystal, parts and moves. The strips go to <folder>/<enemy>:
+its body; its clothes; `lattice_<enemy>`, its crystal; `_gore`, its flesh and blood; `_veins`, under any cloth; and a
+layer for each of its own parts, such as a shield the game takes away. The forge's index and keys go to <folder> too."""
 import importlib
 import os
 import sys
@@ -29,14 +28,18 @@ def foe_layers(foe, body, classify):
     if hasattr(foe, 'reshape'):   # what the crystal has eaten of the body goes before it grows
         foe.reshape(fighter)
     torn_open = foe.wounds(fighter) if hasattr(foe, 'wounds') else ()   # what it tore open itself bleeds too
-    crystal, gore = growth.grow(fighter, foe.CLUSTERS, foe.STRAIN, foe.SEED, torn_open)
+    crystal, gore, veins = growth.grow(fighter, foe.CLUSTERS, foe.STRAIN, foe.SEED, torn_open)
     own = foe.parts(fighter) if hasattr(foe, 'parts') else {}
     skins = {sk.ob.name: sk.ob for sk in fighter.skins}
     hands = [ob for kinds in fighter.hands.values() for ob in kinds.values()] if getattr(foe, 'HANDS', True) else []
-    body = [layers.Layer('body', fighter, [skins['body'], *hands], classify)] if getattr(foe, 'BODY', True) else []
+    flesh = foe.flesh(fighter) if hasattr(foe, 'flesh') else []   # its own flesh, coloured as its skin is
+    body = ([layers.Layer('body', fighter, [skins['body'], *hands, *flesh], classify)]
+            if getattr(foe, 'BODY', True) else [])
+    under = ([layers.Layer(f'lattice_{name}_veins', fighter, veins, classify, order=clothes.ORDER['skin'])]
+             if veins else [])   # on the skin, under any cloth
     grown = [(f'lattice_{name}', crystal), (f'lattice_{name}_gore', gore),
              *((f'lattice_{name}_{part}', obs) for part, obs in own.items())]
-    return body + [layers.Layer(layer, fighter, obs, classify, order=THROUGH_CLOTH) for layer, obs in grown if obs]
+    return body + under + [layers.Layer(layer, fighter, obs, classify, order=THROUGH_CLOTH) for layer, obs in grown if obs]
 
 
 def main():
@@ -50,6 +53,9 @@ def main():
     layers.WORK = getattr(foe, 'WORK', layers.WORK)   # a larger work frame for a foe the forge's would cut off
     poses.ANIMS.update({move: pose for move, (pose, _) in foe.MOVES.items()})
     layers.ANIMS.update({move: len(keys) for move, (_, keys) in foe.MOVES.items()})   # before the forge loads its body
+    first = next(iter(foe.MOVES.values()))[0]   # a still of its first move's first frame, to judge its look by
+    poses.ANIMS[f'{name}_still'] = lambda frame, view, yaw: first(0, view, yaw)
+    layers.ANIMS[f'{name}_still'] = 1
     outfit = getattr(foe, 'OUTFIT', [])
     # the wardrobe asks DFO's game code what may be worn under each garment, and that code is not here: the outfit is
     # fixed, so what lies under each garment is the outfit's own garments in a lower band
@@ -57,7 +63,7 @@ def main():
     dressed = layers.wardrobe_layers
     layers.wardrobe_layers = lambda body, classify, want=None: foe_layers(foe, body, classify) + dressed(body, classify,
                                                                                                         want)
-    grown = [f'lattice_{name}', f'lattice_{name}_gore'] if foe.CLUSTERS else []
+    grown = [f'lattice_{name}', f'lattice_{name}_gore', f'lattice_{name}_veins'] if foe.CLUSTERS else []
     drawn = [*(['body'] if getattr(foe, 'BODY', True) else []), *grown,
              *(f'lattice_{name}_{p}' for p in getattr(foe, 'PARTS', ())), *outfit]
     sys.argv += ['--set', 'wardrobe', '--body', name, '--layers', ','.join(drawn)]

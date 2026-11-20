@@ -24,4 +24,8 @@ CLUSTERS = [
          count=5, spread=0.12, length=(0.06, 0.14), width=0.035, lean=(0.0, 0.8, 0.3)),   # down the spine
     dict(piece='arm_L', joint='farm_L', middle=lambda p, n: -4 * np.abs(p[:, 2] - 1.05) + n[:, 0] - n[:, 2],
          count=3, spread=0.05, length=(0.05, 0.12), width=0.03, lean=(0.6, 0.2, 0.1)),    # out of the left forearm
+    dict(piece='skull', joint='head', middle=lambda p, n: -np.abs(p[:, 2] - 1.56) - 2 * p[:, 1] + 1.5 * p[:, 0],
+         count=2, spread=0.03, length=(0.04, 0.08), width=0.018, lean=(0.4, -0.5, -0.3)),  # through the left jaw
+    dict(piece='leg_R', joint='shin_R', middle=lambda p, n: -np.abs(p[:, 2] - 0.52) - p[:, 1],
+         count=3, spread=0.05, length=(0.04, 0.1), width=0.026, lean=(-0.2, -0.6, 0.2)),   # the right knee
 ]

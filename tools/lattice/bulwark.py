@@ -95,7 +95,7 @@ def slab(crystal, core):
     faces += [((k + 1) % n, k, n + k, n + (k + 1) % n) for k in range(n)] + [tuple(range(2 * n - 1, n - 1, -1))]
     mesh = bpy.data.meshes.new('bulwark_slab')
     mesh.from_pydata([tuple(q) for q in points], [], faces)
-    mesh.materials.append(crystal)
+    mesh.materials.append(growth.DEEP.get(crystal.name, crystal))   # dark, so its lit seams, shards and core show
     mesh.update()
     made = [growth.linked(mesh.name, mesh)]
     pick = np.random.default_rng(SEED + 2)
@@ -113,6 +113,10 @@ def slab(crystal, core):
                                  pick.uniform(0.08, 0.15), 0.035, k, crystal))
     face = middle + out * 0.12
     made.append(growth.shard('bulwark_shield_core', face, out, 0.07, 0.075, 0.0, core, widest=0.5))
+    for k, turn in enumerate((0.4, 1.9, 3.3, 4.6)):   # seams glowing out from the core, cracks lit from within
+        crack = along * np.cos(turn) + across * np.sin(turn)
+        made.append(growth.shard(f'bulwark_seam_{k}', face - out * 0.05 + crack * 0.1, crack, 0.2, 0.01, 0.0, core,
+                                 widest=0.2))
     for k, turn in enumerate(np.linspace(0, 2 * np.pi, 7, endpoint=False)):
         ring = along * np.cos(turn) + across * np.sin(turn)
         made.append(growth.shard(f'bulwark_bezel_{k}', face + ring * 0.11, ring * 0.5 + out * 0.8, 0.08, 0.022, turn,
@@ -132,6 +136,37 @@ def club(crystal):
         out = pick.normal(0, 1, 3)
         made.append(growth.shard(f'bulwark_maul_{k}', head + out * 0.04, out / np.linalg.norm(out) + way * 0.3,
                                  pick.uniform(0.2, 0.34), pick.uniform(0.08, 0.12), k, crystal))
+    return made
+
+
+# Its own flesh, after the owner's "flesh slabs and lumps (pecs, belly roll, deltoids, a neckless trapezius hump)":
+# each the piece of skin it swells from, the joint carrying it, where (the vertex scoring highest) and its size.
+SLABS = [
+    ('torso', 'chest', lambda p, n: p[:, 2] + 2 * p[:, 1] - 3 * np.abs(p[:, 0]), (0.2, 0.11, 0.11)),    # the hump
+    ('arm_L', 'uarm_L', lambda p, n: p[:, 2] + n[:, 0], (0.09, 0.09, 0.11)),                            # deltoids
+    ('arm_R', 'uarm_R', lambda p, n: p[:, 2] - n[:, 0], (0.09, 0.09, 0.11)),
+    ('torso', 'pelvis', lambda p, n: -np.abs(p[:, 2] - 1.02) - 2 * p[:, 1] - np.abs(p[:, 0]), (0.18, 0.07, 0.07)),  # belly
+    ('torso', 'chest', lambda p, n: -np.abs(p[:, 2] - 1.3) - 2 * p[:, 1] - 3 * np.abs(p[:, 0] - 0.1), (0.1, 0.05, 0.07)),
+    ('torso', 'chest', lambda p, n: -np.abs(p[:, 2] - 1.3) - 2 * p[:, 1] - 3 * np.abs(p[:, 0] + 0.1), (0.1, 0.05, 0.07)),
+]
+
+
+def flesh(fighter):
+    """Each slab swelling from its skin, in the skin's own paint, so the game colours it as the body."""
+    from body import blob, blob_mesh
+    skin = fighter.skins[0]
+    points, normals = skin.rest, np.array([v.normal for v in skin.me.vertices])
+    piece = np.array(anatomy.PIECES)[np.argmax(skin.alpha, axis=1)]
+    made = []
+    for k, (where, joint, score, size) in enumerate(SLABS):
+        on = np.nonzero(piece == where)[0]
+        at = on[np.argmax(score(points[on], normals[on]))]
+        mesh = blob_mesh(f'bulwark_flesh_{k}', [blob(points[at] - normals[at] * min(size) * 0.4, size,
+                                                   along=tuple(normals[at]))], res=0.006)
+        mesh.materials.append(skin.me.materials[0])
+        ob = growth.linked(mesh.name, mesh)
+        hang(fighter.parts, ob, joint)
+        made.append(ob)
     return made
 
 

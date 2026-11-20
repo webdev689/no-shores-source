@@ -1,6 +1,7 @@
-"""The Lattice's crystal on a forge body: shards broken out through the skin in clusters, a torn wound round each, and
-the flesh and blood about them as shells of the skin. A foe's own module (husk.py and the rest) says where its crystal
-grows; this draws it the same way for every one."""
+"""The Lattice's crystal on a forge body: shards broken out through the skin in clusters, each dark at its root and
+bright toward its point; a torn wound round each; the flesh and blood about them, the blood spattered, and the
+crystal's veins creeping under the skin from every wound, as shells of the skin. A foe's own module (husk.py and the
+rest) says where its crystal grows; this draws it the same way for every one."""
 import bpy
 import numpy as np
 
@@ -18,6 +19,7 @@ STRAINS = {
                    flesh=(0.12, 0.06, 0.08), blood=(0.03, 0.006, 0.02)),
 }
 GLOW_STRENGTH = 0.35   # a little light of its own, so the crystal shows in shadow without drowning its facets
+DEEP = {}   # each crystal's darker twin, by name, for the roots of its shards (`shard`)
 MOUTH = lambda p: (p[:, 1] < -0.07) & (np.abs(p[:, 0]) < 0.025) & (np.abs(p[:, 2] - 1.6) < 0.015)   # noqa: E731
 
 
@@ -27,6 +29,11 @@ def crystal_material(strain, glow=GLOW_STRENGTH):
     shader = m.node_tree.nodes['Principled BSDF']
     shader.inputs['Emission Color'].default_value = (*colours['glow'], 1)
     shader.inputs['Emission Strength'].default_value = glow
+    deep = materials.plain(f'lattice.deep_{strain}', tuple(c * 0.4 for c in colours['crystal']), rough=0.12, spec=0.9)
+    shader = deep.node_tree.nodes['Principled BSDF']
+    shader.inputs['Emission Color'].default_value = (*colours['glow'], 1)
+    shader.inputs['Emission Strength'].default_value = glow * 0.25
+    DEEP[m.name] = deep
     return m
 
 
@@ -46,7 +53,8 @@ def frame_of(way):
 
 def shard(name, base, way, length, radius, turn, material, widest=0.66):
     """A six-sided shard: sunk a little under the skin at `base`, its widest ring `widest` of the way out, its point
-    at `length` along `way`. Flat faces, so each facet catches the light on its own."""
+    at `length` along `way`. Flat faces, so each facet catches the light on its own; a crystal with a darker twin
+    (`DEEP`) is dark from its root to its widest and bright from there to its point, so it reads as deep and lit."""
     way, side, other = frame_of(np.asarray(way, float))
     ring = [np.cos(turn + k * np.pi / 3) * side + np.sin(turn + k * np.pi / 3) * other for k in range(6)]
     root = base - way * radius
@@ -56,9 +64,62 @@ def shard(name, base, way, length, radius, turn, material, widest=0.66):
     faces += [(6 + k, 6 + (k + 1) % 6, 12) for k in range(6)] + [((k + 1) % 6, k, 13) for k in range(6)]
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata([tuple(p) for p in points], [], faces)
-    mesh.materials.append(material)
+    if material.name in DEEP:
+        mesh.materials.append(DEEP[material.name])
+        mesh.materials.append(material)
+        mesh.polygons.foreach_set('material_index', [0] * 6 + [1] * 6 + [0] * 6)
+    else:
+        mesh.materials.append(material)
     mesh.update()
     return linked(name, mesh)
+
+
+def tangent(normal, pick):
+    """A random way along the skin at a point whose way out is `normal`."""
+    way = pick.normal(0.0, 1.0, 3)
+    way -= normal * (way @ normal)
+    return way / np.linalg.norm(way)
+
+
+def creeping(points, normals, start, pick, steps):
+    """A vein's path over the skin from `start`: steps of 2.5 cm, each snapped to the skin and turned a little, now and
+    then forking. Returns the points along it."""
+    path, heads = [], [(start, tangent(normals[start], pick), steps)]
+    while heads:
+        at, way, left = heads.pop()
+        for _ in range(left):
+            ahead = points[at] + way * 0.025
+            at = int(np.argmin(np.linalg.norm(points - ahead, axis=1)))
+            path.append(points[at])
+            way = way + tangent(normals[at], pick) * 0.5
+            way -= normals[at] * (way @ normals[at])
+            way /= np.linalg.norm(way)
+            left -= 1
+            if left > 3 and pick.random() < 0.15:   # a fork
+                heads.append((at, tangent(normals[at], pick), left // 2))
+    return path
+
+
+def veins(fighter, wounds, strain, pick):
+    """The crystal's veins under the skin, three creeping from every wound, forking, narrowing as they go: a shell of
+    the skin a hair off it, so any cloth lies over them."""
+    skin = fighter.skins[0]
+    points = skin.rest
+    normals = np.array([v.normal for v in skin.me.vertices])
+    mask = np.zeros(len(points), bool)
+    for at, width in wounds:
+        start = int(np.argmin(np.linalg.norm(points - at, axis=1)))
+        for _ in range(3):
+            path = creeping(points, normals, start, pick, int(pick.integers(6, 13)))
+            for k, q in enumerate(path):
+                mask |= np.linalg.norm(points - q, axis=1) < 0.009 - 0.004 * k / max(len(path), 1)
+    colours = STRAINS[strain]
+    paint = materials.plain(f'lattice.vein_{strain}', tuple(c * 0.6 for c in colours['crystal']), rough=0.2, spec=0.8)
+    shader = paint.node_tree.nodes['Principled BSDF']
+    shader.inputs['Emission Color'].default_value = (*colours['glow'], 1)
+    shader.inputs['Emission Strength'].default_value = 0.15
+    fighter.skins.append(skin.shell('lattice_veins', paint, mask, 0.0012))
+    return [fighter.skins[-1].ob]
 
 
 def torn(at, normal, width, pick):
@@ -79,6 +140,7 @@ def gore(fighter, wounds, strain, pick):
     cloth is soaked with the blood and torn open on the flesh; the blood lies under the flesh."""
     skin = fighter.skins[0]
     p = skin.rest
+    normals = np.array([v.normal for v in skin.me.vertices])
     flesh = np.zeros(len(p), bool)
     blood = np.zeros(len(p), bool)
     mouth = [(p[MOUTH(p)].mean(axis=0), 0.012)] if MOUTH(p).any() else []   # a headless foe bleeds from none
@@ -91,6 +153,10 @@ def gore(fighter, wounds, strain, pick):
         across = (p[:, 0] - wander) ** 2 + 0.3 * (p[:, 1] - at[1]) ** 2
         run = pick.uniform(0.2, 0.5)
         blood |= (across < max(width * 0.6, 0.012) ** 2) & (p[:, 2] < at[2]) & (p[:, 2] > at[2] - run)
+        centre = int(np.argmin(near))
+        for _ in range(int(pick.integers(3, 7))):   # spatter: drops thrown from it, out across the skin
+            drop = p[centre] + tangent(normals[centre], pick) * pick.uniform(0.03, 0.09)
+            blood |= np.linalg.norm(p - drop, axis=1) < pick.uniform(0.006, 0.013)
     colours = STRAINS[strain]
     blood_paint = materials.plain(f'lattice.blood_{strain}', colours['blood'], rough=0.2, spec=0.8)
     flesh_paint = materials.plain(f'lattice.flesh_{strain}', colours['flesh'], rough=0.3, spec=0.6)
@@ -102,7 +168,7 @@ def gore(fighter, wounds, strain, pick):
 def grow(fighter, clusters, strain, seed, torn_open=()):
     """Every cluster's shards on the shaped body, and under each a torn wound round where it broke out; each cluster
     hung on its joint as the forge hangs a helm's pieces; `torn_open`, more wounds the foe made itself (a body
-    half out of it), each (where, how wide). Returns the crystal and wounds, and the gore."""
+    half out of it), each (where, how wide). Returns the crystal and wounds, the gore, and the veins."""
     skin = fighter.skins[0]
     points = skin.rest
     normals = np.array([v.normal for v in skin.me.vertices])
@@ -131,4 +197,6 @@ def grow(fighter, clusters, strain, seed, torn_open=()):
         ob = linked(mesh.name, mesh)
         hang(fighter.parts, ob, cluster['joint'])
         made.append(ob)
-    return made, gore(fighter, wounds, strain, pick) if wounds else []
+    if not wounds:
+        return made, [], []
+    return made, gore(fighter, wounds, strain, pick), veins(fighter, wounds, strain, pick)

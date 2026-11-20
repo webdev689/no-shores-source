@@ -49,6 +49,9 @@ FUSED = [
     ('leg_R', 'thigh_R', lambda p, n: -np.abs(p[:, 2] - 0.74) - 2 * p[:, 1], 'face'),       # its right thigh
     ('torso', 'chest', lambda p, n: -np.abs(p[:, 2] - 1.2) - 2 * np.abs(p[:, 0] - 0.06) + 2 * p[:, 1], 'torso'),  # back
     ('torso', 'pelvis', lambda p, n: -np.abs(p[:, 2] - 0.98) + 2 * p[:, 0] - p[:, 1], 'face'),   # its left hip
+    ('torso', 'chest', lambda p, n: p[:, 2] - 3 * np.abs(p[:, 0]) - 3 * p[:, 1], 'face'),            # under its chin
+    ('arm_R', 'farm_R', lambda p, n: -4 * np.abs(p[:, 2] - 1.06) - n[:, 0] - n[:, 1], 'arm'),      # its right forearm
+    ('arm_L', 'uarm_L', lambda p, n: -4 * np.abs(p[:, 2] - 1.3) + n[:, 0] - n[:, 1], 'face'),      # its left arm
 ]
 
 
@@ -210,6 +213,11 @@ def anchor(iron, crystal):
         at = top + way * pick.uniform(0.1, 0.6)
         made.append(growth.shard(f'anchor_crystal_{k}', at, pick.normal(0, 1, 3) + way * 0.3, pick.uniform(0.05, 0.1),
                                  0.022, k, crystal))
+    shells = [blob(foot + flat * s * pick.uniform(0.02, 0.2) - way * pick.uniform(0.0, 0.12) + pick.normal(0, 0.012, 3),
+                   (0.016, 0.016, 0.012)) for s in (1.0, -1.0) for _ in range(5)]   # barnacles from its years down
+    mesh = blob_mesh('anchor_barnacles', shells, res=0.003)
+    mesh.materials.append(materials.plain('lattice.heart_barnacle', (0.2, 0.19, 0.16), rough=0.9))
+    made.append(growth.linked(mesh.name, mesh))
     return made
 
 

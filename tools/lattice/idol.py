@@ -68,7 +68,9 @@ def emitter(crystal, lens):
     iris = [growth.shard(f'idol_iris_{k}', mouth_at + (np.cos(t) * side + np.sin(t) * other) * e['mouth'],
                          way * 0.6 + np.cos(t) * side + np.sin(t) * other, 0.11, 0.02, t, crystal)
             for k, t in enumerate(np.linspace(0, 2 * np.pi, 6, endpoint=False))]
-    return [hub, barrel, mouth, glass, *iris]
+    seams = [growth.shard(f'idol_seam_{s:+.0f}', wrist + other * e['radius'] * s, way, e['barrel'] * 0.95, 0.012, 0.0,
+                          crystal, widest=0.5) for s in (1.0, -1.0)]   # the welds' ridges along its top and bottom
+    return [hub, barrel, mouth, glass, *iris, *seams]
 
 
 def crowned(fighter, crystal, eye):

@@ -72,11 +72,15 @@ def blade(name, side, crystal):
         faces += [(a + i, a + (i + 1) % 4, b + (i + 1) % 4, b + i) for i in range(4)]
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata([tuple(p) for p in points], [], faces)
+    mesh.materials.append(growth.DEEP.get(crystal.name, crystal))
     mesh.materials.append(crystal)
+    # the faces either side of its leading edge bright, its back dark: an edge that reads as sharp
+    mesh.polygons.foreach_set('material_index', [1 if i in (0, 3) else 0 for _ in range(len(stations) - 1) for i in range(4)])
     mesh.update()
-    barb_at = wrist + way * BLADE['length'] * 0.45 - edge * BLADE['width'] * 0.3
-    barb = growth.shard(f'{name}_barb', barb_at, -edge + way * 0.6, BLADE['barb'], 0.022, 0.3, crystal)
-    return [growth.linked(name, mesh), barb]
+    barbs = [growth.shard(f'{name}_barb_{k}', wrist + way * BLADE['length'] * s - edge * BLADE['width'] * 0.3,
+                          -edge + way * 0.6, BLADE['barb'] * size, 0.022 * size, 0.3 + k, crystal)
+             for k, (s, size) in enumerate(((0.3, 0.7), (0.5, 1.0), (0.72, 0.6)))]   # barbs off its back edge
+    return [growth.linked(name, mesh), *barbs]
 
 
 def limb(name, side, crystal):

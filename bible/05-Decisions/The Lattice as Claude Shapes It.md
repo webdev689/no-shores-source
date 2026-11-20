@@ -18,6 +18,8 @@ status: in force
 
 > Shown the Heart of the Port standing: "I love it"
 
+> Shown every Lattice foe's moves: "Do a detailed pass on all models now"
+
 ## What it settles
 
 Claude's calls inside the owner's decisions on the Lattice
