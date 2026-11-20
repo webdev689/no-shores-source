@@ -119,7 +119,7 @@ export interface IsleManifest {
 }
 
 /** Where a kit's pack is read from: `<prefix><kit>.modules` when the page names an `islePacks` prefix (pictures
- *  before publishing, dev only), else the manifest's, else nowhere. */
+ *  before publishing), else the manifest's, else nowhere. */
 export function packUrl(kit: string, manifest: IsleManifest | null, prefix: string | null): string | null {
   if (prefix !== null) return `${prefix}${kit}.modules`;
   const key = manifest?.kits[kit];

@@ -185,6 +185,8 @@ test("the ground mesh's vertices stand at the heights given, at their cells' mid
   assert.equal(groundHeight(grid, -2, -2), 1);
   assert.equal(groundHeight(grid, -1, -2), 1.5);
   assert.equal(groundHeight(grid, 1, 1), null);
+  // A corner with no height is left out and the others weighed again, as movement::Heights does.
+  assert.ok(Math.abs((groundHeight(grid, 0.5, 0.5) ?? 0) - 5.8) < 1e-9);
   assert.equal(groundHeight(grid, -9, 0), null);
   assert.throws(() => gridOf(FLOATS.subarray(0, 12)));
 });
@@ -198,6 +200,12 @@ test('the far mesh takes every fourth height', () => {
   assert.equal(far.vertices[GROUND_FLOATS + 2], 4);
   assert.equal(far.vertices[GROUND_FLOATS], 9);
   assert.equal(far.indices.length, 4 * 6);
+  // A grid whose last sample is off the stride keeps its edge: ten columns give four, the last on column nine.
+  const ten = new Float64Array(5 + 10 * 10).fill(1);
+  ten.set([0, 0, 2, 10, 10]);
+  const edged = groundMesh(gridOf(ten), FAR_STRIDE);
+  assert.equal(edged.vertices.length, 16 * GROUND_FLOATS);
+  assert.equal(edged.vertices[3 * GROUND_FLOATS], 19);
 });
 
 test("a placement's turned corner lands where the isle crate's blocks turns a solid", () => {

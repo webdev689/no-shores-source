@@ -22,13 +22,14 @@ function sample(grid: IsleGrid, column: number, row: number): number {
 /** The ground's mesh on every `stride`th sample: each vertex at its sample's middle and height exactly, its normal
  *  from its neighbours, and two triangles a square whose four corners all have a height. */
 export function groundMesh(grid: IsleGrid, stride = 1): GroundMesh {
-  const columns = Math.floor((grid.columns - 1) / stride) + 1;
-  const rows = Math.floor((grid.rows - 1) / stride) + 1;
+  const columns = Math.ceil((grid.columns - 1) / stride) + 1;
+  const rows = Math.ceil((grid.rows - 1) / stride) + 1;
   const vertices = new Float32Array(columns * rows * GROUND_FLOATS);
   const step = grid.cell * stride;
   for (let row = 0; row < rows; row++) {
     for (let column = 0; column < columns; column++) {
-      const [across, down] = [column * stride, row * stride];
+      // The last row and column stand on the grid's own edge, so a coarse mesh reaches as far as the fine one.
+      const [across, down] = [Math.min(column * stride, grid.columns - 1), Math.min(row * stride, grid.rows - 1)];
       const height = sample(grid, across, down);
       const first = (row * columns + column) * GROUND_FLOATS;
       vertices[first] = grid.west + (across + 0.5) * grid.cell;
@@ -50,28 +51,34 @@ export function groundMesh(grid: IsleGrid, stride = 1): GroundMesh {
     for (let column = 0; column + 1 < columns; column++) {
       if (!has(column, row) || !has(column + 1, row) || !has(column, row + 1) || !has(column + 1, row + 1)) continue;
       const corner = row * columns + column;
-      // Wound anticlockwise seen from above with y south: north-west, south-west, north-east, and so on.
       indices.push(corner, corner + columns, corner + 1, corner + 1, corner + columns, corner + columns + 1);
     }
   }
   return { vertices, indices: new Uint32Array(indices) };
 }
 
-/** The ground's height at a point of the island's frame, straight between its four nearest samples; null off the grid
- *  or where any of them has none. */
+/** The ground's height at a point of the island's frame, as the room's `movement::Heights` reads it: null where the
+ *  point's own cell has none or lies off the grid, else straight between its four nearest samples, those with none
+ *  left out and the rest weighed again. */
 export function groundHeight(grid: IsleGrid, x: number, y: number): number | null {
+  if (!Number.isFinite(sample(grid, Math.floor((x - grid.west) / grid.cell), Math.floor((y - grid.north) / grid.cell))))
+    return null;
   const [along, onward] = [(x - grid.west) / grid.cell - 0.5, (y - grid.north) / grid.cell - 0.5];
   const [column, row] = [Math.floor(along), Math.floor(onward)];
-  const [across, down] = [along - column, onward - row];
-  const corners = [
-    sample(grid, column, row),
-    sample(grid, column + 1, row),
-    sample(grid, column, row + 1),
-    sample(grid, column + 1, row + 1),
+  const [east, south] = [along - column, onward - row];
+  const corners: [number, number][] = [
+    [sample(grid, column, row), (1 - east) * (1 - south)],
+    [sample(grid, column + 1, row), east * (1 - south)],
+    [sample(grid, column, row + 1), (1 - east) * south],
+    [sample(grid, column + 1, row + 1), east * south],
   ];
-  if (!corners.every(Number.isFinite)) return null;
-  const [west = 0, east = 0, southWest = 0, southEast = 0] = corners;
-  return (west * (1 - across) + east * across) * (1 - down) + (southWest * (1 - across) + southEast * across) * down;
+  let [sum, weight] = [0, 0];
+  for (const [height, share] of corners) {
+    if (!Number.isFinite(height)) continue;
+    sum += height * share;
+    weight += share;
+  }
+  return weight > 0 ? sum / weight : null;
 }
 
 /** A climate's ground: its inland colour, the colour its high ground turns to, and the height above which it lies

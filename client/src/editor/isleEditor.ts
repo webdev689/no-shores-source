@@ -124,9 +124,10 @@ export async function startIsleEditor(canvas: HTMLCanvasElement, panel: HTMLElem
     return node;
   };
 
+  const isSeed = (seed: string) => /^\d{1,20}$/.test(seed) && BigInt(seed) < 1n << 64n;
   const build = (): boolean => {
     const seed = seedInput.value.trim();
-    if (!/^\d{1,20}$/.test(seed) || BigInt(seed) >= 1n << 64n) {
+    if (!isSeed(seed)) {
       status = 'A seed is a whole number under 2^64.';
       return false;
     }
@@ -135,15 +136,21 @@ export async function startIsleEditor(canvas: HTMLCanvasElement, panel: HTMLElem
       status = `The contract does not dress ${climateInput.value}.`;
       return false;
     }
-    const plan = readIslePlan(text);
-    shown = {
-      id: 1,
-      at: [0, 0],
-      climate: climateInput.value,
-      plan,
-      heights: door.isleHeights(seed, climateInput.value),
-    };
-    isles.show([shown]);
+    try {
+      const plan = readIslePlan(text);
+      shown = {
+        id: 1,
+        at: [0, 0],
+        climate: climateInput.value,
+        plan,
+        heights: door.isleHeights(seed, climateInput.value),
+      };
+      isles.show([shown]);
+    } catch (error) {
+      status = `That island does not read: ${String(error)}`;
+      return false;
+    }
+    const { plan } = shown;
     status = `A ${plan.kind} of ${plan.placements.length} modules, ${Math.round(plan.radius * 2)} m across, its dungeon ${plan.dungeon}.`;
     return true;
   };
@@ -151,12 +158,19 @@ export async function startIsleEditor(canvas: HTMLCanvasElement, panel: HTMLElem
     build();
     redraw();
   };
+  /** Steps the seed on by one, or on to the next isle's: only the island stepped to is built. */
   const step = (isle: boolean) => {
     for (let tries = 0; tries < MOST_TRIES; tries++) {
-      seedInput.value = String(BigInt.asUintN(64, BigInt(seedInput.value.trim() || '0') + 1n));
-      if (!build()) break;
-      if (!isle || shown?.plan.kind !== 'cove') break;
+      const seed = seedInput.value.trim() || '0';
+      if (!isSeed(seed)) break;
+      seedInput.value = String(BigInt.asUintN(64, BigInt(seed) + 1n));
+      if (
+        !isle ||
+        (JSON.parse(door.islePlan(seedInput.value, climateInput.value) || '{}') as { kind?: string }).kind !== 'cove'
+      )
+        break;
     }
+    build();
     redraw();
   };
   const lookFrom = (to: Omit<Orbit, 'targetZ'>) => {
