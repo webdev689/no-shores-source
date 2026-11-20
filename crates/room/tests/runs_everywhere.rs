@@ -34,7 +34,7 @@ fn walked(floor: &Floor, blocks: &Blocks, from: [f64; 2], waypoints: &[[f64; 2]]
 }
 
 #[test]
-#[ignore = "about four minutes in release; and on the savanna, steppe, tundra and woodland a body still walks round some ledges' and ramparts' doors across their faces, which waits on the owner's call on the runs there"]
+#[ignore = "about two minutes in release; and on the savanna, steppe, tundra and woodland a body still walks round some ledges' and ramparts' doors across their faces, and at highwater-glen a ledge's way meets a face a body would climb, which wait on the owner's call on the runs there"]
 fn every_zone_given_every_run_walks_each_to_its_door_on_dry_land_raising_no_other_floor() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
