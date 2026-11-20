@@ -17,6 +17,8 @@
   max-width: none;
 }
 .ship-power {
+  border-width: 2px;
+  border-style: solid;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -118,6 +120,8 @@
 }
 .ship-officer,
 .ship-officer-page {
+  border-width: 2px;
+  border-style: solid;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -132,9 +136,16 @@
   font-size: var(--type-m);
   font-weight: 500;
 }
+/* The three duties side by side, each as wide as the others; under them the officer's page and paying them off, so
+   no press ever wraps under another. */
 .ship-duties {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.ship-officer-actions {
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 6px;
 }
 /* The duty an officer holds is lit, as a chosen shelf is. */
@@ -150,6 +161,8 @@
   gap: 12px;
 }
 .ship-muster {
+  border-width: 2px;
+  border-style: solid;
   margin: 0 18px 14px;
   padding: 12px 18px;
 }
