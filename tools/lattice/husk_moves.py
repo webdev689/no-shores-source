@@ -1,65 +1,18 @@
 """The Husk's own moves for the Sprite Forge: its shambling walk, its lunge and its Gore, each a pose a frame as the
-forge's own cast is (casting.py), registered by `register()` before the forge's `layers.main()` runs. Angles are
-degrees about each joint's rest axes (rig.py `Pose`): an arm or thigh swings forward on -X, a knee bends on +X, an elbow
-on -X, the trunk and head lean forward on +X; x is the body's left, -y its front. The owner's own Husk (project-final)
-sets the motion: irregular snap-then-plant footfalls, uneven strides, a constant tremor, the odd deep shudder, the head
-cocking on its own."""
+forge's own cast is (casting.py). The owner's own Husk (project-final) sets the motion: irregular snap-then-plant
+footfalls, uneven strides, a constant tremor, the odd deep shudder, the head cocking on its own. Angles as motion.py's."""
 import numpy as np
-from mathutils import Vector
 
-import layers
-import poses
-from rig import solve_arm
+from motion import (BUCKLE, COIL, CONTACT_L, CONTACT_R, CROUCH, DRIVE, LUNGE, PASSING_L, PASSING_R, drawn, reach,
+                    scaled, summed, through, tremor)
 
-TREMBLING = ('spine', 'chest', 'neck', 'head', 'uarm_L', 'uarm_R', 'farm_L', 'farm_R', 'hand_L', 'hand_R')
-ELBOW_L = (0.8, 0.5, -0.6)   # out, back and down, as the forge's cast bends them
-ELBOW_R = (-0.8, 0.4, -0.6)
-CROUCH = {'thigh_L': (-30, -8, -12), 'shin_L': (40, 0, 0), 'thigh_R': (10, 10, 16), 'shin_R': (44, 0, 0)}
-COIL = {'thigh_L': (-34, -8, -12), 'shin_L': (52, 0, 0), 'thigh_R': (14, 10, 16), 'shin_R': (56, 0, 0)}
-DRIVE = {'thigh_L': (-34, -8, -12), 'shin_L': (30, 0, 0), 'thigh_R': (24, 10, 16), 'shin_R': (12, 0, 0)}
-LUNGE = {'thigh_L': (-46, -8, -12), 'shin_L': (44, 0, 0), 'thigh_R': (34, 10, 16), 'shin_R': (6, 0, 0)}
-BUCKLE = {'thigh_L': (-40, -8, -12), 'shin_L': (62, 0, 0), 'thigh_R': (30, 10, 16), 'shin_R': (10, 0, 0)}
 HUNCH = {'spine': (20, 0, 0), 'chest': (14, 4, 0), 'neck': (14, 0, 0),
          'clav_L': (0, 0, -12), 'uarm_L': (-8, -6, 0), 'farm_L': (-10, 0, 0),
          'uarm_R': (-38, 10, 0), 'farm_R': (-30, 0, 0)}
 
-
-def summed(*parts):
-    """Rotations added joint by joint: a base pose, then each layer of motion over it."""
-    out = {}
-    for part in parts:
-        for joint, turn in part.items():
-            out[joint] = tuple(a + b for a, b in zip(out.get(joint, (0, 0, 0)), turn))
-    return out
-
-
-def blend(a, b, t):
-    return {j: tuple(x + (y - x) * t for x, y in zip(a.get(j, (0, 0, 0)), b.get(j, (0, 0, 0)))) for j in {*a, *b}}
-
-
-def through(keys, t):
-    """`keys` (poses at even steps from 0 to 1) at `t`, each step eased in and out."""
-    span = t * (len(keys) - 1)
-    k = min(int(span), len(keys) - 2)
-    u = span - k
-    return blend(keys[k], keys[k + 1], u * u * (3 - 2 * u))
-
-
-def tremor(move, frame, degrees):
-    """The constant tremor: a small shake of the trunk and arms, the same every time the frame is drawn."""
-    shake = np.random.default_rng(sum(map(ord, move)) * 100 + frame)
-    return {j: tuple(shake.normal(0.0, degrees, 3)) for j in TREMBLING}
-
-
-def drawn(rot, yaw, left_fist=False, right_fist=False):
-    return poses.stance(rot, yaw), {'fist': {'L': left_fist, 'R': right_fist}}
-
-
 # The walk's sixteen frames, two steps unlike each other on the forge's own walking keys. Frames 0-7: the right leg's
 # step, dragged, its knee barely lifting and its toe scraping. Frames 8-15: the left leg's, long, swung slow then
 # snapped down and stamped flat, the knee giving under the weight as it lands.
-CONTACT_L, PASSING_L = poses.WALK_LEGS
-CONTACT_R, PASSING_R = poses._mirror_legs(CONTACT_L), poses._mirror_legs(PASSING_L)
 DRAG = {'thigh_R': (12, 0, 0), 'shin_R': (-18, 0, 0), 'foot_R': (24, 0, 0)}   # its swing held low, the toe down
 GIVE = {'shin_L': (12, 0, 0), 'thigh_L': (-6, 0, 0)}
 # Each frame's upper body: the pelvis's roll onto the leg it stands on, the head (pitch, cock, turn) lagging the
@@ -77,18 +30,15 @@ WALK_BODY = [
 
 def shamble(frame, view, yaw):
     if frame < 8:
-        legs = summed(through([CONTACT_L, PASSING_L, CONTACT_R], frame / 8),
-                      {j: tuple(v * np.sin(np.pi * frame / 8) for v in d) for j, d in DRAG.items()})
+        legs = summed(through([CONTACT_L, PASSING_L, CONTACT_R], frame / 8), scaled(DRAG, np.sin(np.pi * frame / 8)))
     else:
         t = ((frame - 8) / 8) ** 1.6   # slow through the swing, then snapped down
-        landing = max(0.0, (frame - 13) / 2)
-        legs = summed(through([CONTACT_R, PASSING_R, CONTACT_L], t),
-                      {j: tuple(v * landing for v in d) for j, d in GIVE.items()})
-    roll, head, hitch, reach, shudder, clench = WALK_BODY[frame]
+        legs = summed(through([CONTACT_R, PASSING_R, CONTACT_L], t), scaled(GIVE, max(0.0, (frame - 13) / 2)))
+    roll, head, hitch, swing, shudder, clench = WALK_BODY[frame]
     rot = summed(HUNCH, legs, tremor('husk_walk', frame, 1.2), {
         'pelvis': (0, roll * 0.4, roll), 'chest': (shudder * 8, -roll * 0.6, -roll * 0.5),
         'spine': (shudder * 6, 0, 0), 'clav_L': (0, 0, -hitch), 'uarm_L': (roll * 1.2, 0, 0),
-        'uarm_R': (-reach * 2, 0, 0)})
+        'uarm_R': (-swing * 2, 0, 0)})
     rot['head'] = head   # the head's own, never shaken: its cock is the move
     return drawn(rot, yaw, right_fist=clench)
 
@@ -119,11 +69,7 @@ def lunge(frame, view, yaw):
     rot = summed(HUNCH, legs, tremor('husk_lunge', frame, held), {'chest': (lean, 0, 0)})
     rot['head'] = head
     p, gear = drawn(rot, yaw, grip, grip)
-    at = poses.root_matrix(p)
-    turn = at.to_3x3()
-    solve_arm(p, 'L', at @ Vector(left), turn @ Vector(ELBOW_L))
-    solve_arm(p, 'R', at @ Vector(right), turn @ Vector(ELBOW_R))
-    return p, gear
+    return reach(p, left, right), gear
 
 
 # The Gore's fourteen frames, each how much further the spine, chest and neck bow, the head (pitch, cock, turn), the
@@ -163,9 +109,3 @@ def gore_rush(frame, view, yaw):
 
 
 MOVES = {'husk_walk': (shamble, WALK_BODY), 'husk_lunge': (lunge, REACH), 'husk_gore': (gore_rush, GORE)}
-
-
-def register():
-    """The moves known to the forge before it loads its body, as a move must be (layers.py `load_body`)."""
-    poses.ANIMS.update({name: pose for name, (pose, _) in MOVES.items()})
-    layers.ANIMS.update({name: len(frames) for name, (_, frames) in MOVES.items()})
