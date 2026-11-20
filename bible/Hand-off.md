@@ -254,15 +254,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   ships' plates as they are. Not yet seen on a real GPU or with blows traded. The target's own plate over its head is
   to be looked at again once the owner has played with which plates show. Found in passing, not on #95: the compass
   writes its marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
-- **#96, the kit's first review**, a draft from branch `ccr-800481d9-kbbd62-kit`, waits on the owner's yes: a fidelity
-  review (`workers/fidelity-review.sh`, a fixed brief) with a CI check that fails a pull request changing a decision
-  without its verdict, as the owner chose for a rule broken three times in one task; workers' worktrees made ready to
-  test; the observation log kept on the branch `toolkit-data`, saved by a git merge so a parallel session's save is
-  kept, with a test check-tools runs; `cargo xtask check` naming the commit it checked; and Toolkit rows for web research
-  and for measuring text before sizing a box. Tested offline: the full check, check-tools with a headless worker, the
-  save's test, and a fidelity review of #95, whose eight findings are fixed or answered there. Open for the owner, in
-  its description: where the claude-mem store lives (an archive, kept out of git), whether CI should require the verdict
-  to name the pull request's head (a new review after each push), and making the check required on GitHub.
+- **#96, the kit's first review, is on `main`**: workers' worktrees made ready to test; the observation log kept on
+  the branch `toolkit-data`, saved by a git merge so a parallel session's save is kept, with a test check-tools runs;
+  `cargo xtask check` naming the commit it checked; and Toolkit rows for web research and for measuring text before
+  sizing a box. Open for the owner, in its description: where the claude-mem store lives (an archive, kept out of git).
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
 - **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
