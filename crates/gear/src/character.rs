@@ -157,6 +157,9 @@ pub struct Character {
     /// Whether the ship has been fitted with her first modules; a ship never fitted is, as she is read.
     #[serde(default)]
     pub ship_fitted: bool,
+    /// Her named officers (`crew.rs`).
+    #[serde(default)]
+    pub crew: crate::crew::Crew,
 }
 
 /// A ship's hull, canvas or men whole, in ten-thousandths.
@@ -186,6 +189,7 @@ impl Character {
             ship_at: None,
             ship_xp: 0,
             ship_fitted: false,
+            crew: crate::crew::Crew::default(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),
@@ -258,9 +262,11 @@ impl Character {
             character.items.insert(id, (item, at));
         }
         shields.settle(&mut character);
-        let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
+        let held = character.items.keys().chain(character.vestiges.keys()).chain(character.crew.officers.keys());
+        let highest = held.max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         character.arts = std::mem::take(&mut character.arts).kept();
+        character.crew = std::mem::take(&mut character.crew).kept();
         character.fit_first_modules();
         character.earn_due();
         Some(character)
@@ -271,10 +277,19 @@ impl Character {
         loop {
             let id = self.next_id;
             self.next_id = self.next_id.wrapping_add(1).max(1);
-            if !self.items.contains_key(&id) && !self.vestiges.contains_key(&id) {
+            if !self.items.contains_key(&id)
+                && !self.vestiges.contains_key(&id)
+                && !self.crew.officers.contains_key(&id)
+            {
                 return id;
             }
         }
+    }
+
+    /// Whether the next number taken would be clear of these.
+    #[cfg(test)]
+    pub(crate) fn take_id_clear_of(&self, ids: &[u32]) -> bool {
+        !ids.contains(&self.clone().take_id())
     }
 
     #[must_use]

@@ -156,7 +156,7 @@ fn the_shipwright_sells_modules_at_her_level_and_a_sinking_pays_her_experience()
     assert_eq!(wares.len(), vendor::WARES);
     assert!(wares.iter().all(|ware| ware.kind.module() && ware.level == 9));
     character.materials.aurem = 5_000;
-    let social = Here { social: true, day: 3 };
+    let social = Here { social: true, day: 3, pledge: 0, rank: 0 };
     character.ask(Ask::Vend { vendor: Vendor::Shipwright, ware: 0 }, social, &dice(0)).expect("sold");
     let before = character.ship_xp;
     let earned = character.reward_sinking(Foe::Brute, 10, Difficulty::Normal);
@@ -173,4 +173,32 @@ fn ship_power_meets_a_hostile_ships_level_by_the_characters_own_law() {
     assert!((power.harm_dealt(power.level + 4) - 0.0).abs() < 1e-12, "four levels under, her balls do nothing");
     assert!(power.harm_taken(power.level + 2) > power.harm_taken(power.level));
     assert!((power.harm_dealt(1) - power::by_player(power.attack, power.level, 1)).abs() < 1e-12);
+}
+
+#[test]
+fn infusion_raises_a_kept_module_to_the_fed_ones_level_keeping_its_nodes_for_aurem_and_material() {
+    let mut character = Character::starting();
+    let kept = character.fitted(Slot::Sails).expect("fitted").id;
+    character.items.get_mut(&kept).expect("held").0.bought = 1;
+    let fed = carry(&mut character, Kind::Sails, Rarity::Magic, 6);
+    let hull = carry(&mut character, Kind::Hull, Rarity::Magic, 9);
+    let infuse = Ask::Infuse { item: kept, fed };
+    assert_eq!(
+        character.ask(Ask::Infuse { item: kept, fed: hull }, Here::default(), &dice(0)),
+        Err(Refusal::DoesNotFit)
+    );
+    assert_eq!(
+        character.ask(Ask::Infuse { item: fed, fed: kept }, Here::default(), &dice(0)),
+        Err(Refusal::WrongPlace)
+    );
+    assert_eq!(character.ask(infuse, Here::default(), &dice(0)), Err(Refusal::Short));
+    character.materials.aurem = 1_000;
+    character.materials.ship.add(ShipMaterial::Canvas, 10);
+    character.ask(infuse, Here::default(), &dice(0)).expect("infused");
+    let module = character.item(kept).expect("kept");
+    assert_eq!((module.level, module.rarity, module.bought), (6, Rarity::Normal, 1));
+    assert!(character.item(fed).is_none());
+    assert_eq!((character.materials.aurem, character.materials.ship.canvas), (250, 0));
+    let lower = carry(&mut character, Kind::Sails, Rarity::Rare, 3);
+    assert_eq!(character.ask(Ask::Infuse { item: kept, fed: lower }, Here::default(), &dice(0)), Err(Refusal::TooLow));
 }

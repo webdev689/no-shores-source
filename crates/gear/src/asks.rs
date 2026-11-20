@@ -72,6 +72,34 @@ pub enum Ask {
     UseCrate,
     /// Buys an Ammo crate: at the Quartermaster's counter only.
     BuyCrate,
+    /// Feeds a carried module into a kept one of its kind, raising it to the fed one's level (`ship::infuse`).
+    Infuse {
+        item: u32,
+        fed: u32,
+    },
+    /// Signs on one of the officers of the day at the pledged faction's counter (`crew::recruit`).
+    Recruit {
+        offer: u8,
+    },
+    /// Puts an officer at their post, ashore or aboard.
+    Station {
+        officer: u32,
+        duty: crate::crew::Duty,
+    },
+    Dismiss {
+        officer: u32,
+    },
+    /// Buys an officer's node, and chooses one bought.
+    Train {
+        officer: u32,
+        column: u8,
+        node: u8,
+    },
+    ChooseOfficer {
+        officer: u32,
+        column: u8,
+        node: u8,
+    },
 }
 
 /// Why an ask was refused.
@@ -116,6 +144,13 @@ pub enum Refusal {
     CratesFull,
     /// No Ranged weapon is worn for an Ammo crate to fill: answered as 120, one past its number as every refusal is.
     NoRanged = 119,
+    NoSuchOfficer = 130,
+    /// The player is pledged to no faction, whose counter signs officers on.
+    NoPledge = 131,
+    /// Eight officers are kept already.
+    CrewFull = 132,
+    /// Two officers are ashore already.
+    AshoreFull = 133,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -126,11 +161,14 @@ pub enum Done {
     Identified(u32),
 }
 
-/// Where the player is when they ask, and the day, whose wares the vendors show.
+/// Where the player is when they ask, and the day, whose wares the vendors show; the faction they are pledged to (0
+/// none) and their rank with it, whose counter signs officers on.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Here {
     pub social: bool,
     pub day: u64,
+    pub pledge: u8,
+    pub rank: u32,
 }
 
 impl Character {
@@ -157,6 +195,12 @@ impl Character {
             Ask::BuyEmblem { emblem } => self.buy_emblem(emblem, here),
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
+            Ask::Infuse { item, fed } => self.infuse(item, fed),
+            Ask::Recruit { offer } => self.recruit(offer, here),
+            Ask::Station { officer, duty } => self.station(officer, duty),
+            Ask::Dismiss { officer } => self.dismiss(officer),
+            Ask::Train { officer, column, node } => self.train(officer, usize::from(column), node),
+            Ask::ChooseOfficer { officer, column, node } => self.choose_officer(officer, usize::from(column), node),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens.

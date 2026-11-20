@@ -4,7 +4,9 @@
 //! power decides every fight of ship against ship; character power everything on foot, and the two are never summed.
 
 pub mod found;
+pub mod infuse;
 pub mod materials;
+pub mod trim;
 
 #[cfg(test)]
 mod ship_tests;

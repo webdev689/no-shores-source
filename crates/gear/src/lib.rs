@@ -9,6 +9,7 @@ pub mod arts;
 pub mod asks;
 pub mod catalogue;
 pub mod character;
+pub mod crew;
 pub mod dice;
 pub mod element;
 pub mod emblems;

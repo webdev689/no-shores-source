@@ -26,6 +26,15 @@ pub const WEAR_EMBLEM: u8 = 13;
 pub const BUY_EMBLEM: u8 = 14;
 pub const USE_CRATE: u8 = 15;
 pub const BUY_CRATE: u8 = 16;
+/// A module fed into another: the kept one in `item`, the fed one in `count`.
+pub const INFUSE: u8 = 17;
+/// The crew's asks: an officer of the day signed on (`node` the offer), one stationed (`item` the officer, `slot` the
+/// duty: 0 aboard, 1 at their post, 2 ashore), paid off, and their nodes bought and chosen (`column`, `node`).
+pub const RECRUIT: u8 = 50;
+pub const STATION: u8 = 51;
+pub const DISMISS: u8 = 52;
+pub const TRAIN: u8 = 53;
+pub const CHOOSE_OFFICER: u8 = 54;
 pub const GATHER: u8 = 20;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
@@ -46,6 +55,23 @@ pub const WEAR_ART: u8 = 40;
 pub const SET_CORE: u8 = 41;
 /// A Core slot with no fragment, as the gear message carries it.
 pub const NO_FRAGMENT: u8 = 255;
+
+/// An officer's duty by its number on the wire.
+fn duty_of(number: u8) -> Option<gear::crew::Duty> {
+    use gear::crew::Duty;
+    [Duty::Aboard, Duty::Posted, Duty::Ashore].get(usize::from(number)).copied()
+}
+
+/// An officer's duty's number on the wire.
+#[must_use]
+pub fn duty_code(duty: gear::crew::Duty) -> u8 {
+    use gear::crew::Duty;
+    match duty {
+        Duty::Aboard => 0,
+        Duty::Posted => 1,
+        Duty::Ashore => 2,
+    }
+}
 
 /// An ask as the room takes it, or none for a number or a name it does not know.
 #[must_use]
@@ -70,6 +96,12 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         BUY_EMBLEM => Asked::Gear(Ask::BuyEmblem { emblem: u16::try_from(item).ok()? }),
         USE_CRATE => Asked::Gear(Ask::UseCrate),
         BUY_CRATE => Asked::Gear(Ask::BuyCrate),
+        INFUSE => Asked::Gear(Ask::Infuse { item, fed: ask.count() }),
+        RECRUIT => Asked::Gear(Ask::Recruit { offer: node }),
+        STATION => Asked::Gear(Ask::Station { officer: item, duty: duty_of(ask.slot())? }),
+        DISMISS => Asked::Gear(Ask::Dismiss { officer: item }),
+        TRAIN => Asked::Gear(Ask::Train { officer: item, column, node }),
+        CHOOSE_OFFICER => Asked::Gear(Ask::ChooseOfficer { officer: item, column, node }),
         GATHER => Asked::Gather { node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
@@ -125,6 +157,18 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::BuyEmblem { emblem } => args = messages::AskArgs { kind: BUY_EMBLEM, item: u32::from(emblem), ..args },
             Ask::UseCrate => args = messages::AskArgs { kind: USE_CRATE, ..args },
             Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
+            Ask::Infuse { item, fed } => args = messages::AskArgs { kind: INFUSE, item, count: fed, ..args },
+            Ask::Recruit { offer } => args = messages::AskArgs { kind: RECRUIT, node: offer, ..args },
+            Ask::Station { officer, duty } => {
+                args = messages::AskArgs { kind: STATION, item: officer, slot: duty_code(duty), ..args };
+            }
+            Ask::Dismiss { officer } => args = messages::AskArgs { kind: DISMISS, item: officer, ..args },
+            Ask::Train { officer, column, node } => {
+                args = messages::AskArgs { kind: TRAIN, item: officer, column, node, ..args };
+            }
+            Ask::ChooseOfficer { officer, column, node } => {
+                args = messages::AskArgs { kind: CHOOSE_OFFICER, item: officer, column, node, ..args };
+            }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {

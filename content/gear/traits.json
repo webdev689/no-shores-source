@@ -75,6 +75,25 @@
     {"id": "kraken_roar", "name": "Kraken's Roar", "column": "signature", "fits": "krakens_roar", "words": "Her balls hole a hull 12% more, and her guns reload 10% faster."},
     {"id": "leviathan_rib", "name": "Leviathan's Rib", "column": "signature", "fits": "leviathans_rib", "words": "Her hull takes 20% less from a ball."},
     {"id": "stormcaller", "name": "Stormcaller", "column": "signature", "fits": "stormcallers_sheet", "words": "She sails 12% faster, and her canvas tears 10% less."},
-    {"id": "spiders_web", "name": "Spider's Web", "column": "signature", "fits": "the_spiders_web", "words": "Four more hands board with you, and she turns 10% faster."}
+    {"id": "spiders_web", "name": "Spider's Web", "column": "signature", "fits": "the_spiders_web", "words": "Four more hands board with you, and she turns 10% faster."},
+    {"id": "weathered", "name": "Weathered", "column": "perk", "fits": "officer", "words": "Ashore, they have 15% more health."},
+    {"id": "brawler", "name": "Brawler", "column": "perk", "fits": "officer", "words": "Ashore, their blows land 10% harder."},
+    {"id": "old_salt", "name": "Old Salt", "column": "perk", "fits": "officer", "words": "They earn a sixth more experience."},
+    {"id": "steady_nerve", "name": "Steady Nerve", "column": "perk", "fits": "officer", "words": "Ashore, their poise holds 20% longer."},
+    {"id": "boarding_master", "name": "Boarding Master", "column": "perk", "fits": "first_mate", "words": "Two more hands board with you."},
+    {"id": "iron_discipline", "name": "Iron Discipline", "column": "perk", "fits": "first_mate", "words": "Her men fall 10% slower."},
+    {"id": "rally", "name": "Rally", "column": "perk", "fits": "first_mate", "words": "Below half her men, they fall 15% slower."},
+    {"id": "gun_captain", "name": "Gun Captain", "column": "perk", "fits": "gunner", "words": "Her guns reload 6% faster."},
+    {"id": "layer", "name": "Layer", "column": "perk", "fits": "gunner", "words": "Her broadsides scatter 10% less."},
+    {"id": "powder_master", "name": "Powder Master", "column": "perk", "fits": "gunner", "words": "Her balls hole a hull 6% more."},
+    {"id": "sail_trimmer", "name": "Sail Trimmer", "column": "perk", "fits": "bosun", "words": "She sails 4% faster."},
+    {"id": "helm_hand", "name": "Helm Hand", "column": "perk", "fits": "bosun", "words": "She turns 8% faster."},
+    {"id": "sailmaker", "name": "Sailmaker", "column": "perk", "fits": "bosun", "words": "Her canvas tears 10% less."},
+    {"id": "quick_patch", "name": "Quick Patch", "column": "perk", "fits": "carpenter", "words": "Their patches give back 25% more."},
+    {"id": "pumps", "name": "Pumps", "column": "perk", "fits": "carpenter", "words": "Her hull takes 6% less from a ball."},
+    {"id": "plug_master", "name": "Plug Master", "column": "perk", "fits": "carpenter", "words": "A ball below her waterline harms her 20% less."},
+    {"id": "eagle_eye", "name": "Eagle Eye", "column": "perk", "fits": "lookout", "words": "They sight ships 25% farther."},
+    {"id": "spotter", "name": "Spotter", "column": "perk", "fits": "lookout", "words": "Her broadsides scatter 5% less."},
+    {"id": "weather_eye", "name": "Weather Eye", "column": "perk", "fits": "lookout", "words": "She sails 2% faster."}
   ]
 }
