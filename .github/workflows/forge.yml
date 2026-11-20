@@ -1,24 +1,36 @@
 name: forge
 
 # Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds), and
-# publishes them to R2 with the repository's Cloudflare token, whenever their tools change. R2's objects are named by
-# their hashes, so a run changes nothing already published; the log ends with the forge's manifest on one line, which
-# a commit then takes into content/forge/renders.json.
+# publishes them to R2 with the repository's Cloudflare token, whenever their tools change on main or a run is asked
+# for on a branch. R2's objects are named by their hashes, so a run changes nothing already published; the log ends
+# with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
 on:
   push:
-    paths: [tools/forge/tools/sprite-forge/artbirds.py, .github/workflows/forge.yml]
+    branches: [main]
+    paths:
+      - tools/forge/tools/sprite-forge/artbirds.py
+      - tools/forge/tools/sprite-forge/artbirds-requirements.txt
+      - .github/workflows/forge.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Two runs would publish the same tables at once; the second waits for the first.
+concurrency:
+  group: forge
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # The token reaches only the two steps that check it and publish: pip runs others' install scripts.
+    # The token reaches only the two steps that check it and publish. What the publishing step imports (Pillow) is
+    # installed as the exact wheels the requirements name by their hashes, and the checkout keeps no git credential.
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -32,7 +44,8 @@ jobs:
           else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
       - name: Install Blender's module
         if: steps.token.outputs.set == 'true'
-        run: pip install bpy==5.2.3 pillow
+        run: |
+          pip install --require-hashes --only-binary=:all: -r tools/forge/tools/sprite-forge/artbirds-requirements.txt
       - name: Render the Arts' birds
         if: steps.token.outputs.set == 'true'
         working-directory: tools/forge

@@ -122,10 +122,12 @@ const daggers: { readonly key: string; readonly everyS?: number } | undefined = 
   ?.tenets.find((tenet) => tenet.key === 'duskDaggers');
 const DAGGER_EVERY_TICKS = Math.max(1, Math.round((daggers?.everyS ?? 1) / TICK_S));
 
-/** What a drawer keeps of each spell from frame to frame: the aim its caster had as it was first seen, the place and
- *  clock it last left a mark at, and the strikes it has marked. */
+/** What a drawer keeps of each spell from frame to frame: the aim its caster had as it was first seen, the way it last
+ *  flew (its caster's aim until it has flown), the place and clock it last left a mark at, and the strikes it has
+ *  marked. */
 export interface Kept {
   aim: number;
+  heading: number;
   mark: Point | null;
   markAt: number;
   marked: number;
@@ -257,12 +259,14 @@ function mend(frame: Frame, spell: KeptSpell, { at, first }: Where): void {
 
 function dawnflare(frame: Frame, spell: KeptSpell, { at, first, kept }: Where, lands: Lands): void {
   const heads = spell.heads ?? at;
+  // At its end, where it heads is where it is: it keeps the way it flew.
+  if (Math.hypot(heads[0] - at[0], heads[1] - at[1]) > 1e-3) kept.heading = bearing(at[0], at[1], heads[0], heads[1]);
   const bird = lift(at, FLARE_RAISE_M);
-  const flip = facesLeft(frame.eye, bird, [heads[0] - at[0], heads[1] - at[1]]);
+  const flip = facesLeft(frame.eye, bird, [Math.sin(kept.heading), -Math.cos(kept.heading)]);
   const beat = Math.floor(frame.clock * FLARE_BEATS_HZ) % 4;
   // The forge's bird, turned to the eye as it flies and its cells a figure's own pixels, once it has come; until then
   // the spell's own, coarser and side on.
-  const seen = viewOf(bearing(at[0], at[1], heads[0], heads[1]), bird[0], bird[1], frame.eye[0], frame.eye[1]);
+  const seen = viewOf(kept.heading, bird[0], bird[1], frame.eye[0], frame.eye[1]);
   const forged = forgedBird('fire', seen.view, beat, strikeOf(frame, spell));
   const picture = forged ?? birdSprite(FIRE_BIRD, beat, strikeOf(frame, spell));
   // As it flies out past the camera it would fill the view: its embers alone show there.

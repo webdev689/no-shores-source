@@ -295,9 +295,12 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **The birds** are drawn by the [[Sprite Forge]] in Blender (`artbirds.py`), each beat as light alone, which the
   page turns into its element's four steps, so a bird shows in whatever element its caster's Art is. Each is drawn in
   the forge's five views and turned to the eye as a figure is (eight directions, three of them mirrored), Dawnflare's
-  by the way it flies and Duskraven's by its caster's aim. Dawnflare's is a phoenix in a frame 110 pixels square: a crest of flame, a white-hot body, wings swept back and a long tail of plumes curling up.
-  Duskraven's is a raven in a frame 32 square: a heavy beak, a shaggy throat, fingered wings and a wedge of a tail, pale with its
-  own light. Until a bird's frames have come, the spell draws its own, coarser and side on, in their place.
+  by the way it flies and Duskraven's by its caster's aim; at its flight's end Dawnflare keeps the way it flew.
+  Dawnflare's is a phoenix in a frame 110 pixels square: a crest of flame, a white-hot body, wings swept back and a
+  long tail of plumes curling up. Duskraven's is a raven in a frame 40 square: a heavy beak, a shaggy throat, fingered
+  wings and a wedge of a tail, pale with its own light. Side on, each is as long as the spell's own bird. From ahead
+  and behind its wings are edge on, and their twist through each stroke turns their face to the eye once a beat.
+  Until all of a bird's frames have come, the spell draws its own, coarser and side on, in their place.
 - **What it costs.** Each picture is made once for each of its steps (the sun's 32 turns, the blades' 16, the orb's 16
   crackles, the birds' four beats each in eight flickers) and each run of its cells worked out once, and the spells' own
   layers are written over the last frame's in place. With every spell up at once, a frame of them takes under a

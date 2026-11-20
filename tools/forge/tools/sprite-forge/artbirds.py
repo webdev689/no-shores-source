@@ -6,8 +6,8 @@ eye, then turned to the eye's left an eighth at a time to its back (the other th
 
 Each frame is a brightness map, not a colour: the game turns its light into the four steps of the caster's element,
 so one render serves any Art. Writes `<bird>-<view>-<beat>.png` at the bird's size in the game's figure pixels, grey
-in its colour and its cover in its alpha, each view the same size, the body in its middle. Renders with Cycles on the CPU at four times the size, then each block of
-texels is averaged down, so its edges are clean at the game's size."""
+in its colour and its cover in its alpha, each view the same size, the body in its middle. Renders with Cycles on the
+CPU at four times the size, then each block of texels is averaged down, so its edges are clean at the game's size."""
 import argparse
 import math
 import os
@@ -18,16 +18,20 @@ from mathutils import Vector
 
 # Each bird's frame in figure pixels, as the game draws it, and the metres of the bird's own measure it spans: wide
 # and tall enough for its tail, its spread wings and its raised ones in every view, at the same pixels a unit.
-BIRDS = {'fire': (110, 110), 'raven': (32, 32)}
-SPANS = {'fire': 9.6, 'raven': 7.7}
+# Each as long side on as the spell's own bird was drawn: the phoenix 78 pixels, the raven 23.
+BIRDS = {'fire': (110, 110), 'raven': (40, 40)}
+SPANS = {'fire': 8.35, 'raven': 7.13}
 # The bird turned in each of the forge's views (its head on +X): facing the eye, then to the eye's left to its back,
 # as forge.py's VIEW_YAW turns a figure.
 VIEW_YAW = [-90.0, -135.0, -180.0, -225.0, -270.0]
 OVERSAMPLE = 4
 # How far back from straight out a wing reaches from its shoulder, degrees.
 SWEEP_BACK = 28
-# The wings' turn about the body's long axis at each beat, degrees (up on +), and the hand's fold.
-BEATS = [(62, 18), (8, 6), (-55, -10), (20, 26)]
+# The wings' turn about the body's long axis at each beat, degrees (up on +), the hand's fold, and their twist about
+# their own length (the trailing edge up on +): a bird's wing twists through its stroke, trailing edge up on the way
+# down and down on the way up, so its face, edge on from ahead and behind, turns to the front on the downstroke and
+# to the back on the upstroke.
+BEATS = [(62, 18, -10), (8, 6, 30), (-55, -10, 10), (20, 26, -25)]
 
 
 def clear():
@@ -103,8 +107,9 @@ def cone(name, root, tip, radius, mat, parent=None):
     return ob
 
 
-def wing(side, beat, fold, shapes, mats):
-    """A wing from its shoulder, turned `beat` degrees up about the body's long axis, its hand folded `fold` back: long
+def wing(side, beat, fold, twist, shapes, mats):
+    """A wing from its shoulder, twisted `twist` degrees about its length and turned `beat` degrees up about the
+    body's long axis, its hand folded `fold` back: long
     secondaries along the arm's trailing edge under lighter coverts, and the flight feathers fanned from the hand,
     straight out at the front to swept back behind."""
     sign = 1 if side == 'L' else -1
@@ -112,8 +117,8 @@ def wing(side, beat, fold, shapes, mats):
     bpy.context.collection.objects.link(pivot)
     pivot.location = shapes['shoulder']
     # the wing sweeps back from its shoulder, so a raised one points up and behind, as a bird's does
-    pivot.rotation_mode = 'ZYX'   # swept back first, then turned up or down about the body
-    pivot.rotation_euler = (math.radians(beat) * sign, 0, math.radians(SWEEP_BACK) * sign)
+    pivot.rotation_mode = 'ZYX'   # swept back first, then twisted, then turned up or down about the body
+    pivot.rotation_euler = (math.radians(beat) * sign, math.radians(twist), math.radians(SWEEP_BACK) * sign)
     arm, chord = shapes['span'] * 0.5, shapes['chord']
     for k in range(shapes['coverts']):
         t = (k + 0.5) / shapes['coverts']
@@ -135,16 +140,17 @@ def wing(side, beat, fold, shapes, mats):
 SHAPES = {
     # a phoenix: a slim body under a crest of flame, broad wings, and a long tail of plumes curling up at their ends
     'fire': {'body': (1.25, 0.5, 0.5), 'head': (1.35, 0.0, 0.42, 0.4), 'beak': ((1.7, 0, 0.36), (2.15, 0, 0.22), 0.11),
-             'shoulder': (0.25, 0.0, 0.3), 'span': 3.4, 'chord': 1.3, 'sweep': 34, 'coverts': 6, 'covert': 0.8, 'primaries': 7,
-             'primary': 2.0, 'curl': 0.35, 'tail': 6, 'tail_length': 3.4, 'tail_curl': 0.9, 'crest': 3},
+             'shoulder': (0.25, 0.0, 0.3), 'span': 3.4, 'chord': 1.3, 'sweep': 34, 'coverts': 6, 'covert': 0.8,
+             'primaries': 7, 'primary': 2.0, 'curl': 0.35, 'tail': 6, 'tail_length': 3.4, 'tail_curl': 0.9, 'crest': 3},
     # a raven: a heavy beak and a shaggy throat, fingered wings, a wedge of a tail
     'raven': {'body': (1.2, 0.55, 0.52), 'head': (1.3, 0.0, 0.3, 0.42), 'beak': ((1.65, 0, 0.3), (2.35, 0, 0.12), 0.17),
-              'shoulder': (0.2, 0.0, 0.28), 'span': 3.2, 'chord': 1.2, 'sweep': 26, 'coverts': 6, 'covert': 0.9, 'primaries': 6,
-              'primary': 1.8, 'curl': 0.12, 'tail': 7, 'tail_length': 1.6, 'tail_curl': 0.05, 'crest': 0},
+              'shoulder': (0.2, 0.0, 0.28), 'span': 3.2, 'chord': 1.2, 'sweep': 26, 'coverts': 6, 'covert': 0.9,
+              'primaries': 6, 'primary': 1.8, 'curl': 0.12, 'tail': 7, 'tail_length': 1.6, 'tail_curl': 0.05,
+              'crest': 0},
 }
 
 
-def build(bird, beat, fold, yaw):
+def build(bird, beat, fold, twist, yaw):
     """The bird posed at its beat, turned `yaw` degrees about its middle."""
     s = SHAPES[bird]
     fire = bird == 'fire'
@@ -163,7 +169,8 @@ def build(bird, beat, fold, yaw):
     blob('head', (hx, hy, hz), (hr, hr * 0.9, hr * 0.95), mats['head'])
     root, tip, radius = s['beak']
     cone('beak', root, tip, radius, mats['beak'])
-    blob('eye', (hx + hr * 0.45, -hr * 0.7, hz + hr * 0.25), (0.07, 0.04, 0.07), mats['eye'])
+    for side in (-1, 1):   # an eye each side, so it shows in each side view
+        blob(f'eye{side}', (hx + hr * 0.45, side * hr * 0.7, hz + hr * 0.25), (0.07, 0.04, 0.07), mats['eye'])
     if not fire:   # a raven's shaggy throat
         for k in range(4):
             feather(f'hackle{k}', (hx - 0.1, 0, hz - 0.15 - k * 0.06), (hx - 0.45, 0, hz - 0.55 - k * 0.08), 0.25,
@@ -178,7 +185,7 @@ def build(bird, beat, fold, yaw):
         feather(f'tail{k}', (-1.0, 0.0, t * 0.3), (-1.0 - length, 0.0, t * 1.6 * (1 if fire else 0.5)),
                 0.55 if fire else 0.5, mats['tail'], normal=(0, 1, 0), bend=-s['tail_curl'] * (1 + abs(t)))
     for side in 'LR':
-        wing(side, beat, fold, s, mats)
+        wing(side, beat, fold, twist, s, mats)
     root = bpy.data.objects.new('root', None)
     bpy.context.collection.objects.link(root)
     for ob in bpy.context.collection.objects:
@@ -201,7 +208,7 @@ def stage(bird):
     cam_data.ortho_scale = SPANS[bird]
     cam = bpy.data.objects.new('camera', cam_data)
     bpy.context.collection.objects.link(cam)
-    # From the bird's left, a little above it: its head to the right of the frame.
+    # Looking along +Y from a little above, as on the figures; each view turns the bird, not the camera.
     elevation = math.radians(20)
     cam.location = (0.0, -12 * math.cos(elevation), 12 * math.sin(elevation))
     cam.rotation_euler = (math.radians(90) - elevation, 0, 0)
@@ -224,7 +231,9 @@ def downsampled(path, bird):
     rgba = np.array(image.pixels[:], dtype=np.float32).reshape(height, width, 4)[::-1]
     bpy.data.images.remove(image)
     out_w, out_h = BIRDS[bird]
-    blocks = rgba.reshape(out_h, OVERSAMPLE, out_w, OVERSAMPLE, 4).mean(axis=(1, 3))
+    # A texel's light is its colour weighted by its cover: a half-covered edge is no brighter than what covers it.
+    weighted = np.concatenate([rgba[..., :3] * rgba[..., 3:4], rgba[..., 3:4]], axis=-1)
+    blocks = weighted.reshape(out_h, OVERSAMPLE, out_w, OVERSAMPLE, 4).mean(axis=(1, 3))
     alpha = blocks[..., 3:4]
     light = np.where(alpha > 1e-4, blocks[..., :3] / np.maximum(alpha, 1e-4), 0.0)
     grey = np.clip(light @ np.array([0.2126, 0.7152, 0.0722]), 0.0, 1.0)
@@ -249,10 +258,10 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     for bird in args.birds.split(','):
         for view, yaw in enumerate(VIEW_YAW):
-            for beat, (turn, fold) in enumerate(BEATS):
+            for beat, (turn, fold, twist) in enumerate(BEATS):
                 clear()
                 stage(bird)
-                build(bird, turn, fold, yaw)
+                build(bird, turn, fold, twist, yaw)
                 name = f'{bird}-{view}-{beat}'
                 work = os.path.join(args.out, f'.{name}-work.png')
                 bpy.context.scene.render.filepath = work

@@ -1,6 +1,7 @@
 // The Arts' birds as the forge draws them (tools/sprite-forge/artbirds.py): Dawnflare's bird of fire and Duskraven's
-// raven, each in its four wing beats and the forge's five views, rendered as light alone and turned here into its element's four stops, so they
-// show in whatever element their caster's Art is. Until a frame has come, the spells draw their own.
+// raven, each in its four wing beats and the forge's five views, rendered as light alone and turned here into its
+// element's four stops, so they show in whatever element their caster's Art is. Until all of a bird's frames have
+// come, its spell draws its own, so a bird is never drawn in two looks at once.
 import { CLEAR, HOT, type Sprite, hashOf } from './spellPixels.ts';
 
 export type ForgedBird = 'fire' | 'raven';
@@ -16,6 +17,8 @@ export interface Texels {
 export const birdPath = (bird: ForgedBird, view: number, beat: number) => `@art/arts/birds/${bird}-${view}-${beat}.png`;
 /** The forge's views of a bird: facing the eye, turned to its left an eighth at a time to its back. */
 const VIEWS = 5;
+/** Its wing beats in each view: up, half down, down, half up. */
+const BEATS = 4;
 
 /** The light at which each stop above the dark begins: the body, the light and the white-hot. */
 const CUTS = [0.3, 0.55, 0.8] as const;
@@ -63,26 +66,30 @@ export function flickered(picture: Sprite, outline: readonly number[], flicker: 
 
 const frames = new Map<string, { readonly picture: Sprite; readonly outline: readonly number[] }>();
 const shown = new Map<string, Sprite>();
+const come = new Map<ForgedBird, number>();
 
-/** Fetches every bird's beats from the forge's published pictures through `strip`; one that never comes leaves that
- *  bird drawn as its spell draws it. */
+/** Fetches every bird's beats from the forge's published pictures through `strip`; a frame that never comes leaves
+ *  its bird drawn as its spell draws it. */
 export function loadForgedBirds(strip: (path: string) => Promise<Texels | null>): void {
   for (const bird of ['fire', 'raven'] as const)
     for (let view = 0; view < VIEWS; view++)
-      for (let beat = 0; beat < 4; beat++)
+      for (let beat = 0; beat < BEATS; beat++)
         strip(birdPath(bird, view, beat))
           .then((texels) => {
-            if (!texels) return;
+            const key = `${bird}-${view}-${beat}`;
+            if (!texels || frames.has(key)) return;
             const picture = spriteOfTexels(texels);
-            frames.set(`${bird}-${view}-${beat}`, { picture, outline: outlineOf(picture) });
+            frames.set(key, { picture, outline: outlineOf(picture) });
+            come.set(bird, (come.get(bird) ?? 0) + 1);
           })
           .catch(() => undefined);
 }
 
 /** A bird in a forge view (`viewOf`'s, 0 to 4) at beat `beat` (0 to 3: up, half, down, half) as the forge draws it,
- *  its outline flickering afresh at each `strike`; null until that frame has come. */
+ *  its outline flickering afresh at each `strike`; null until all of its frames have come. */
 export function forgedBird(bird: ForgedBird, view: number, beat: number, strike: number): Sprite | null {
-  const beatShown = ((beat % 4) + 4) % 4;
+  if (come.get(bird) !== VIEWS * BEATS) return null;
+  const beatShown = ((beat % BEATS) + BEATS) % BEATS;
   const frame = frames.get(`${bird}-${view}-${beatShown}`);
   if (!frame) return null;
   const flicker = ((Math.floor(strike) % FLICKERS) + FLICKERS) % FLICKERS;

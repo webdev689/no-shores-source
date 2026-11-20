@@ -40,17 +40,21 @@ test("only a bird's outline flickers: some of its cells gone or a step lighter, 
   assert.ok(edges.includes(CLEAR) && edges.includes(LIGHT) && edges.includes(BODY), 'gone, lit and as drawn, in turn');
 });
 
-test("a bird's beats come from the forge's published pictures; none is drawn before it has come", async () => {
+test("a bird's beats come from the forge's published pictures; none is drawn before all of that bird's have", async () => {
   const asked: string[] = [];
+  const settled = () => new Promise((done) => setImmediate(done));
   assert.equal(forgedBird('raven', 2, 1, 0), null, 'not yet come');
+  const raven = (path: string) => path.includes('/raven-');
   loadForgedBirds((path) => {
     asked.push(path);
-    return Promise.resolve(path === birdPath('raven', 2, 1) ? strip([[200, 255]]) : null);
+    return Promise.resolve(raven(path) && path !== birdPath('raven', 1, 1) ? strip([[200, 255]]) : null);
   });
-  await new Promise((done) => setImmediate(done));
+  await settled();
   assert.equal(asked.length, 40, 'both birds, five views of four beats each');
   assert.ok(asked.includes('@art/arts/birds/fire-4-3.png'));
-  assert.equal(forgedBird('raven', 2, 5, 3)?.width, 1, 'beat 5 is beat 1');
-  assert.equal(forgedBird('raven', 1, 1, 0), null, 'another view not come');
-  assert.equal(forgedBird('fire', 2, 1, 0), null, 'one that never came stays the spell’s own');
+  assert.equal(forgedBird('raven', 2, 1, 0), null, 'one of its frames not come, the bird stays the spell’s own');
+  loadForgedBirds((path) => Promise.resolve(raven(path) ? strip([[200, 255]]) : null));
+  await settled();
+  assert.equal(forgedBird('raven', 2, 5, 3)?.width, 1, 'all come; beat 5 is beat 1');
+  assert.equal(forgedBird('fire', 2, 1, 0), null, 'a bird none of whose frames came stays the spell’s own');
 });

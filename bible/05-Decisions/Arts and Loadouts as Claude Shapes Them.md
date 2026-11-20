@@ -107,7 +107,7 @@ Cosmic two pixels thick, a Charged one crackles inside its own outline.
 The two birds, forged in Blender as the owner asked, are Claude's designs ([[The Arts' Birds Are Forged in Blender]]):
 the Dawnflare a phoenix with a crest of flame, a white-hot body, wings swept back and a long tail of plumes curling
 up; the Duskraven a raven pale with its own light, a heavy beak, a shaggy throat, fingered wings and a wedge tail.
-Each keeps its size in the world, and the phoenix three times the detail.
+Side on, each is as long as the spell's own bird was, the phoenix with three times the detail.
 
 ### Where they are seen
 
