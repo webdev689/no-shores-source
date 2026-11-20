@@ -51,6 +51,8 @@ export interface WatersTable {
   readonly mainPorts: readonly string[];
   readonly ports: readonly TrafficPort[];
   readonly routes: readonly TrafficRoute[];
+  /** The pace every friendly ship keeps, m/s. */
+  readonly friendlySpeedMS: number;
 }
 
 /** The water at a point of sea: its continent's index, its holder (contested on the seam), and the seam. */
@@ -154,6 +156,7 @@ interface TableAnswer {
   readonly main_ports: string[];
   readonly ports: TrafficPort[];
   readonly routes: { from_port: number; to_port: number; length_m: number; path: [number, number][] }[];
+  readonly friendly_speed_m_s: number;
 }
 
 /** Copies an answer's bytes out of the module's memory and gives the memory back. */
@@ -218,6 +221,7 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
           lengthM: route.length_m,
           path: route.path,
         })),
+        friendlySpeedMS: answer.friendly_speed_m_s,
       };
     },
     waterAt: ([x, y]) => {

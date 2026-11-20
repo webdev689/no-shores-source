@@ -38,7 +38,7 @@ fn brute_force(traffic: &Traffic, centre: [f64; 2], radius_m: f64, time_s: f64) 
     let mut ids = Vec::new();
     for (route_index, route) in traffic.routes.iter().enumerate() {
         let newest = (time_s / DEPARTURE_EVERY_S).floor() as u64;
-        let oldest = ((time_s - route.length_m / SPEED_M_S) / DEPARTURE_EVERY_S).floor().max(0.0) as u64;
+        let oldest = ((time_s - route.length_m / SPEED_M_S - DWELL_S) / DEPARTURE_EVERY_S).floor().max(0.0) as u64;
         for departure in oldest..=newest {
             for direction in 0..2 {
                 let Some(ship) = traffic.ship(ship_id(route_index, direction, departure), time_s) else { continue };
@@ -201,7 +201,7 @@ fn ships_near_finds_exactly_the_live_ships_in_the_radius() {
 }
 
 #[test]
-fn a_ship_sails_five_metres_a_second_and_is_gone_once_she_arrives() {
+fn a_ship_sails_five_metres_a_second_lies_at_her_destination_and_is_then_gone() {
     let (_, _, traffic) = world();
     let route = &traffic.routes[1];
     let departure = 1_500_000_u64;
@@ -221,10 +221,36 @@ fn a_ship_sails_five_metres_a_second_and_is_gone_once_she_arrives() {
         };
         assert!(moved <= 500.0 + 1e-6 && moved > 0.0);
         let arrives = left + route.length_m / SPEED_M_S;
-        assert!(traffic.ship(id, arrives - 1.0).is_some());
-        assert_eq!(traffic.ship(id, arrives), None, "gone on arrival");
+        let end_port = if direction == 0 { route.to_port } else { route.from_port };
+        let end = traffic.roadsteads[end_port];
+        for lying in [arrives, arrives + DWELL_S / 2.0, arrives + DWELL_S - 1.0] {
+            let there = traffic.ship(id, lying).unwrap();
+            assert_eq!(there.position, [end.x as f64, end.y as f64], "she lies at her destination's roadstead");
+            assert_eq!(there.progress_m, route.length_m);
+        }
+        assert_eq!(traffic.ship(id, arrives + DWELL_S), None, "gone once she has lain her while");
         let length = (start.direction[0] * start.direction[0] + start.direction[1] * start.direction[1]).sqrt();
         assert!((length - 1.0).abs() < 1e-12);
+    }
+}
+
+#[test]
+fn about_one_ship_lies_at_each_port_roadstead_at_any_moment() {
+    let (_, _, traffic) = world();
+    let start = 1_795_000_000.0;
+    let samples = 240;
+    for (port, roadstead) in traffic.roadsteads.iter().enumerate() {
+        let centre = [roadstead.x as f64, roadstead.y as f64];
+        let mut lying = 0;
+        for step in 0..samples {
+            let time = start + f64::from(step) * DEPARTURE_EVERY_S / f64::from(samples);
+            let here = traffic.ships_near(centre, 1.0, time);
+            let arrived = here.iter().filter(|ship| ship.to_port == port && ship.progress_m == ship.length_m).count();
+            assert!(arrived <= 2, "port {port}: {arrived} lie there at {time}");
+            lying += arrived;
+        }
+        let mean = lying as f64 / f64::from(samples);
+        assert!((mean - 1.0).abs() < 0.05, "port {port}: {mean} ships lie there on the mean");
     }
 }
 

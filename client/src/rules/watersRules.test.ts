@@ -83,8 +83,9 @@ test('the held map grid has its cells, and agrees with the water at each cell mi
   assert.throws(() => rules.grid(10), /no grid/);
 });
 
-test('ships near a port sail their routes at five metres a second', async () => {
-  const { rules, ports } = await opened();
+test('ships near a port sail their routes at the pace the table gives', async () => {
+  const { rules, table, ports } = await opened();
+  assert.ok(table.friendlySpeedMS > 0);
   const time = 1_795_000_000;
   const centre = ports[0]?.centre ?? [0, 0];
   const ships = rules.shipsNear(centre, 600_000, time);
@@ -94,7 +95,9 @@ test('ships near a port sail their routes at five metres a second', async () => 
     assert.ok(ship.hull >= 0 && ship.hull <= 3);
     assert.ok(Math.abs(Math.hypot(...ship.direction) - 1) < 1e-9);
     const later = rules.ship(ship.id, time + 10);
-    if (later) assert.ok(Math.abs(later.progressM - ship.progressM - 50) < 1e-6);
+    // Lying at her route's end she has stopped; under way she makes the table's pace.
+    if (later && later.progressM < later.lengthM)
+      assert.ok(Math.abs(later.progressM - ship.progressM - table.friendlySpeedMS * 10) < 1e-6);
   }
   const first = ships[0];
   assert.ok(first);
@@ -115,7 +118,11 @@ test('the sea by weather is calm in a roadstead and the deep sea holds to the fi
   const roadstead = table.ports[0]?.roadstead ?? [0, 0];
   const swell = rules.seaSwell(roadstead, time);
   assert.equal(swell.harbour, 1);
-  assert.equal(swell.height, 0.3);
+  // Calmer than a moderate sea, and as calm whatever the weather does out at sea.
+  const hours = [1, 2, 3, 4, 5, 6].map((hour) => time + hour * 3_600);
+  const out = new Set(hours.map((moment) => rules.seaSwell(SEA_POINTS.at(-1) ?? [0, 0], moment).height));
+  assert.ok(swell.height < 1 && out.size > 1, `roadstead ${swell.height}, open sea ${[...out].join(', ')}`);
+  for (const moment of hours) assert.equal(rules.seaSwell(roadstead, moment).height, swell.height);
   assert.ok(swell.waves.length > 0 && swell.waves.length <= 40);
   assert.ok(Math.abs(Math.hypot(...swell.wind) - Math.hypot(swell.wind[0], swell.wind[1])) < 1e-9);
   const grid = rules.seaHeights([roadstead[0] - 2_000, roadstead[1] - 2_000], 1_000, 4, 4, time);

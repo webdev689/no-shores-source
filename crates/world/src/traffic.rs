@@ -1,6 +1,7 @@
 //! Friendly traffic: ships sailing between the port cities all the time. One route joins every pair of them, planned
 //! round land, so each port trades with both others and the lanes cross the most waters. On each route a ship leaves
-//! each end every 1,200 s of world time, sails at 5 m/s and is gone when she arrives. World time is seconds since the
+//! each end every 1,200 s of world time, sails at 5 m/s, lies 600 s at her destination's roadstead and is then gone.
+//! World time is seconds since the
 //! Unix epoch, so every machine computes the same ships for the same time, and a ship's place comes in closed form
 //! from her departure, never by stepping her.
 
@@ -18,6 +19,9 @@ mod routes;
 pub const DEPARTURE_EVERY_S: f64 = 1_200.0;
 /// Every friendly ship sails at this speed, metres a second.
 pub const SPEED_M_S: f64 = 5.0;
+/// A ship lies at her destination's roadstead this long once she arrives, seconds, then is gone: with a ship arriving
+/// at each end of a route every `DEPARTURE_EVERY_S`, about one lies at each port's roadstead at any moment.
+pub const DWELL_S: f64 = 600.0;
 /// A roadstead lies this far out to sea from its port's nearest coast, metres, and farther if it must be.
 pub const ROADSTEAD_OUT_M: f64 = 3_000.0;
 /// A roadstead stays at least this clear of every coast, metres.
@@ -215,16 +219,18 @@ impl Traffic {
         Self { ports: kept, routes: planned, roadsteads }
     }
 
-    /// The ship with this id at this world time; none if she has not left yet, has arrived, or never sails.
+    /// The ship with this id at this world time; none if she has not left yet, has lain her `DWELL_S` at the end, or
+    /// never sails. Arrived, she lies at the route's end, heading as she came in.
     #[must_use]
     pub fn ship(&self, id: u64, time_s: f64) -> Option<TrafficShip> {
         let direction = (id & 1) as u8;
         let route_index = ((id >> 1) & ROUTE_BITS) as usize;
         let route = self.routes.get(route_index)?;
-        let sailed = SPEED_M_S * (time_s - (id >> DEPARTURE_SHIFT) as f64 * DEPARTURE_EVERY_S);
-        if !(0.0..route.length_m).contains(&sailed) {
+        let since = time_s - (id >> DEPARTURE_SHIFT) as f64 * DEPARTURE_EVERY_S;
+        if !(0.0..route.length_m / SPEED_M_S + DWELL_S).contains(&since) {
             return None;
         }
+        let sailed = (SPEED_M_S * since).min(route.length_m);
         let (position, way) = if direction == 0 { route.at(sailed) } else { route.at(route.length_m - sailed) };
         let (from_port, to_port) =
             if direction == 0 { (route.from_port, route.to_port) } else { (route.to_port, route.from_port) };
@@ -264,7 +270,9 @@ impl Traffic {
                         if direction == 0 { (start, end) } else { (route.length_m - end, route.length_m - start) };
                     // A metre either side, so rounding never loses a ship at the edge; the exact judging below drops
                     // any that fall outside.
-                    let first = ((time_s - (high + 1.0) / SPEED_M_S) / DEPARTURE_EVERY_S).ceil().max(0.0);
+                    // A stretch reaching the route's end also holds the ships lying there.
+                    let lying = if high + 1.0 >= route.length_m { DWELL_S } else { 0.0 };
+                    let first = ((time_s - (high + 1.0) / SPEED_M_S - lying) / DEPARTURE_EVERY_S).ceil().max(0.0);
                     let last = ((time_s - (low - 1.0) / SPEED_M_S) / DEPARTURE_EVERY_S).floor();
                     if last >= first {
                         for departure in first as u64..=last as u64 {
