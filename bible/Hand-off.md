@@ -239,37 +239,38 @@ Where the work stands now, for the next session. Each session rewrites this note
   shore's, the owner's picks from the sea sound sheet, https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to
   them; its store's `picks` collection holds each cue's Freesound number), published on R2 and in
   `content/audio/sounds.json`. The seven long beds play their steadiest minute, mono.
-- **#95, fewer plates, sized by rank, after Destiny**, merged to `main` with the owner's yes
-  ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate, the foe in sight
-  nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and shows none over its
-  head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's bar three fifths long
-  and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates. Not yet seen on a real GPU
-  or with blows traded. Found in passing: the compass writes its marks' place and visibility every frame, changed or
-  not (`client/src/plus/compass.ts`).
+- **#95, fewer plates, sized by rank, after Destiny**, merged to `main` with the owner's yes ([[Fewer Plates Show, Sized
+  by Rank, After Destiny]]): the cone round the crosshair shows one plate, the foe whose body the crosshair is on (the
+  nearest of them), else the one nearest it, measured to its body with its breadth (whole within 4°, none past 6°; a
+  Boss there takes the cone and shows none over its head); the soft lock's foe and the foes fought in the last 6 s show
+  wherever they are; a Minor's bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure;
+  the land hides plates. Not yet seen on a real GPU or with blows traded. Found in passing: the compass writes its
+  marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
 - **#96, the kit's first review**, merged with the owner's yes: workers' worktrees made ready to test; the observation
   log kept on the branch `toolkit-data`; `cargo xtask check` naming the commit it checked; Toolkit rows for web
   research and for measuring text before sizing a box. Its fidelity reviewer is taken out, at the owner's word (#105).
+- **#102, foes fight in groups that lead, break and give ground, after Bungie**, merged with the owner's yes ([[Foes
+  Fight in Groups That Lead, Break and Give Ground, After Bungie]]; Claude's calls in [[Foe Groups as Claude Builds
+  Them]]): every garrison group's leader, whose fall breaks the rest (to cover, or running or huddling in the open, one
+  raging); a group's breaking point at half, defending its post, a standoff lasting a foe's patience; a mission's or a
+  dungeon's garrison falling back halfway at three quarters standing and gathering at its last stand at half; the Grey
+  Tithe's leader screened behind a shield-bearer of its lower ranks; and a mission's two waves, hunting the players. No
+  blurbs pop over foes, as the owner asked. Tested offline: the full check, 32 new tests (each rule broken once and seen
+  to fail) and a simulation of 72 scripted fights. Not yet seen: a group fight played by hand on a real GPU.
+- **#107, the audit's fixes to #95 and #96**, merged with the owner's yes ([[Plates as Claude Shows Them]]): a plate
+  fading out of the cone lifts none over it; plates are kept hidden for their next showing; a word pushed down clear of
+  a plate stays down; the log's save keeps lines both sessions appended, moves on a number both took and restores once a
+  container; the check names its own checkout's commit; the log is saved last at a session's end. Tested offline: the
+  full check, and each fix's test seen to fail without it.
 
 ## Waiting on the owner
 
-- **#102, foes fight in groups that lead, break and give ground, after Bungie**, a draft from branch
-  `ccr-800481d9-kbbd62`, waits on the owner's yes ([[Foes Fight in Groups That Lead, Break and Give Ground, After
-  Bungie]]; Claude's calls in [[Foe Groups as Claude Builds Them]]): every garrison group's leader, whose fall breaks
-  the rest (to cover, or running or huddling in the open, one raging); a group's breaking point at half, defending its
-  post, a standoff lasting a foe's patience; a mission's or a dungeon's garrison falling back halfway at three quarters
-  standing and gathering at its last stand at half; the Grey Tithe's leader screened behind a shield-bearer of its lower
-  ranks; and a mission's two waves, hunting the players. No blurbs pop over foes, as the owner asked. Tested offline:
-  the full check, 32 new tests (each rule broken once and seen to fail), the comprehensive audit's fixes and a
-  simulation of 72 scripted fights. Left for the owner, in its description: a screened leader holding back while its
-  lower ranks fight before it; a wave the room's limit has no room for not coming later; whether "no blurbs" covers the
-  plate's alert mark too (nothing is added to it). Not yet seen: a group fight played by hand on a real GPU.
-- **#107, the audit's fixes to #95 and #96**, a draft from branch `ccr-800481d9-kbbd62-audit`, waits on the owner's yes:
-  the cone's plate goes to the foe whose body the crosshair is on, the nearest of them, measured with its breadth; a
-  plate fading lifts none over it; plates are kept hidden for their next showing; a word pushed down clear of a plate
-  stays down (its calls are recorded as Claude's in a note this pull request adds, "Plates as Claude Shows Them"). The
-  log's save keeps lines both sessions appended and moves on a number both took, and restores once a container; the
-  check names its own checkout's commit; the log is saved last at a session's end. Tested offline: the full check, and
-  each fix's test seen to fail without it.
+- **#102's and #107's open points**, both merged, in their descriptions: whether defending foes should hold their ground
+  longer than a foe's patience; whether any lower rank screening any leader under a Miniboss is the screen meant by
+  "Minors screening an Elite"; whether a wave is enough without a drop; whether a wave the room's limit has no room for
+  should come later; whether "no blurbs" also rules out a break's sound and the plate's alert mark; whether ships'
+  plates come under "enemy health bars" (Claude's recommendation: they stay as they are); whether a fought foe's plate
+  should stay whole the full 6 s; and whether a plate fading out of the cone may overlap the one taking it.
 - **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
   none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
   places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
