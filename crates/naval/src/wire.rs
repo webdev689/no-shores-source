@@ -223,9 +223,9 @@ pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: 
 }
 
 /// Where a view's other captains begin (after its clock, its end, the player's Sloop, the captain's and her mind), and
-/// each one's numbers (her faction and rank, her Sloop and her mind).
+/// each one's numbers (her number in the fight, her faction and rank, her Sloop and her mind).
 const OTHERS_AT: usize = 2 + 2 * VESSEL_NUMBERS + 4;
-const OTHER_NUMBERS: usize = 2 + VESSEL_NUMBERS + 4;
+const OTHER_NUMBERS: usize = 3 + VESSEL_NUMBERS + 4;
 
 /// A view (`view_numbers`) parted for the messages: the view without its other captains, as a page that knows one
 /// captain reads it, and the other captains (their count, then each one's numbers), empty when there are none, for a
