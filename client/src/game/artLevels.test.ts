@@ -142,7 +142,9 @@ test('the screen scales exactly what the room scales, and the buffs last what co
       const arm = armOf(spells, spell.key);
       assert.equal(/last\(ticks\(def\.life_s/.test(arm), LASTING_LIFE.has(spell.key), `${spell.key}'s life`);
     }
-  for (const key of LASTING_MORE) assert.match(spells, new RegExp(`"${key}"`), `${key} is scaled where it is read`);
+  // A fragment's seconds more are scaled when they are added inside the lasting's `last(...)`; Dread's are not.
+  for (const key of [...LASTING_MORE, 'dread'])
+    assert.equal(new RegExp(`last\\([^;]*\\b${key}\\b`).test(spells), LASTING_MORE.has(key), `${key}'s seconds`);
   assert.match(armOf(spells, 'quicken'), /last\(Status::Haste\.ticks\(\)/);
   assert.match(armOf(spells, 'mend'), /last\(Status::Crit\.ticks\(\)\)/);
   assert.match(armOf(spells, 'vanish'), /last\(Status::Veiled\.ticks\(\)/);

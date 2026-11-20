@@ -344,7 +344,10 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
     if (!owned) cell.append(picture(mapSvg(LOCK_MAP, art.element), 'arts-lock'));
     cell.addEventListener('click', () => {
       // A fragment set in another slot, or not owned, is refused here, before any ask; the one set here is chosen.
-      if (taken) return play('refused');
+      if (taken) {
+        refusal.textContent = '';
+        return play('refused');
+      }
       if (!owned) {
         refusal.textContent = answerText(114);
         return play('refused');

@@ -1,5 +1,6 @@
 // The Test Ground's Arts, to try every spell at once: the Art worn, each slot of its Core, each Art's level (owning
-// all its fragments), and the Anima filled and the Tenets readied. The room answers each ask as it would the Arts' screen's, and the panel shows its word.
+// all its fragments), and the Anima filled and the Tenets readied. The room answers each ask as it would the Arts'
+// screen's, and the panel shows its word.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { button, make } from '../editor/dom.ts';
 import type { ArtState } from '../network/artMessages.ts';
