@@ -60,6 +60,14 @@ when to install it and what each session does at its start and end; this note sa
 | Commit guard | The clone's pre-commit hook refuses archives and C2PA-stamped PNGs. Never bypass it with `--no-verify`. |
 | Browser QA | Playwright with the preinstalled Chromium; never run `playwright install` in a cloud session. Before a PR, drive an interactive feature once in the real editor with Playwright's keys and mouse. Poll the panel for state, not the clock: headless frames run the sim at about a fifth of real time. Pin a random outcome with an `addInitScript` stub of `crypto.getRandomValues`. Page screenshots of a WebGPU canvas are blank, and presenting to one loses the device headless: `node tools/claude-toolkit/webgpu-shot.cjs <steps.json>` gives the page's canvas a texture of its own and lays it under the HUD for each picture (its header says the steps; serve the page on port 5173, the only origin R2 answers). It prints each shader that fails to compile, which WebGPU reports only as a warning; `cargo xtask shaders` checks every shader offline first ([[Checks]]). Capture a built page, `npm run build` then `npx vite preview --port 5173`, never the dev server: an edit reloads a dev server's page mid-run and loses the rest of it. For a visual defect, patch one shader layer off per run at `GPUDevice.prototype.createShaderModule`, measure a crop, and look at one montage per round. Before fixing a box's width to fit a text, lay the real element on the built page, its sheets and face loaded, and compare `scrollWidth` with `clientWidth` for the longest text it holds: write the width only from that. |
 
+## Audits
+
+- After a feature of more than a few days, one read-only audit agent reviews it before it is called done, beside the
+  reviewer each worker ends with. Its brief gives the scope, what is already fixed and a findings format (file and
+  line, the failing case, confidence), and none of the builder's conclusions; it runs no builds, so the CPU stays free.
+- Each finding is measured before it is fixed: write the test that would catch it, run it, and size the fix to what
+  fails, not to the finding's wording.
+
 ## Workers
 
 Work that fans out goes to headless workers, each in its own git worktree.
