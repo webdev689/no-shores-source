@@ -64,7 +64,7 @@ export function chosenTraits(item: GearItem): string[] {
 }
 
 /** Each chosen trait's id and its column's kind. */
-function traitsOf(item: GearItem): { readonly id: string; readonly kind: number }[] {
+function traitsOf(item: Pick<GearItem, 'columns' | 'chosen'>): { readonly id: string; readonly kind: number }[] {
   return item.columns.flatMap((column, index) => {
     const chosen = item.chosen[index] ?? NONE;
     const id = chosen === NONE ? '' : (column.traits[chosen] ?? '');
@@ -72,8 +72,8 @@ function traitsOf(item: GearItem): { readonly id: string; readonly kind: number 
   });
 }
 
-/** The traits an item gives now, as its card and page list them. */
-export function traitsShown(item: GearItem): Trait[] {
+/** The traits an item, or an officer, gives now, as its card and page list them. */
+export function traitsShown(item: Pick<GearItem, 'columns' | 'chosen'>): Trait[] {
   return traitsOf(item).map(({ id, kind }) => ({ ...traitOf(id), kind }));
 }
 

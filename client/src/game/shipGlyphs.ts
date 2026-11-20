@@ -117,20 +117,20 @@ export const SHIP_MAPS: Readonly<Record<ShipGlyph, readonly string[]>> = {
     '.....a......',
     '.....a......',
   ],
-  // A coil of line, its end run out.
+  // A rigging block on its hook: the block's cheeks round its iron sheave, two falls of line run down from it.
   rigging: [
-    '............',
+    '.....aa.....',
+    '....aeea....',
+    '.....aa.....',
     '...aaaaaa...',
-    '..abbbbbba..',
-    '.abccccccba.',
-    '.abcaaaacba.',
-    '.abca..acba.',
-    '.abca..acba.',
-    '.abcaaaacba.',
-    '.abccccccba.',
-    '..abbbbbba..',
-    '...aaaaaaaa.',
-    '.........aba',
+    '..adddddda..',
+    '..adeeeeda..',
+    '..adeaaeda..',
+    '..adeeeeda..',
+    '..adddddda..',
+    '...abaaba...',
+    '...ab..ba...',
+    '...ac..ca...',
   ],
 };
 
@@ -143,5 +143,5 @@ export const SHIP_PALETTES: Readonly<Record<ShipGlyph, readonly string[]>> = {
   guns: [OUTLINE, '#4c5258', '#9aa3ab', WOOD, WOOD_DARK],
   hull: [OUTLINE, WOOD, WOOD_LIGHT, '#2a1a0e'],
   sails: [OUTLINE, '#e9e1c8', '#ffffff'],
-  rigging: [OUTLINE, '#b08a52', '#e0c08a'],
+  rigging: [OUTLINE, '#b08a52', '#e0c08a', WOOD, '#9aa3ab'],
 };

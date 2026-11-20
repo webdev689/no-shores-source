@@ -204,12 +204,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   - The held map tinted by holder, each water's name coloured by its difficulty; the tiers renamed Normal, Elite and
     Abyss.
 
-- Ships' own power, modules and crew, from pull request #99, merged into #75's branch and tested offline
-  ([[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]], [[Ship Power]], [[Crew]]): a ship's level,
-  Attack, Defense and Prestige by the character's law; four modules with the gear's grid, ship materials, salvage, the
-  Shipwright and infusion; officers at posts that change its fight, ashore as companions, recruited at a pledged
-  faction's counter or taken from won decks; ten hands who load its guns and board with the player. The sea's fights
-  measured by ship level are in #99's description.
+- Ships' own power, modules and crew, from pull requests #99 and #103 (its Enhanced Plus round), merged into #75's
+  branch and tested offline ([[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]], [[Ship Power]],
+  [[Crew]]): a ship's level, Attack, Defense and Prestige by the character's law; four modules with the gear's grid,
+  ship materials, salvage, the Shipwright and infusion; officers at posts that change its fight, ashore as companions,
+  recruited at a pledged faction's counter or taken from won decks; ten hands who load its guns and board with the
+  player. The sea's fights measured by ship level are in #99's description. Every kit-framed surface has a border
+  (`framed.test.ts`), officers' pages name their perks, and rarity names hold 4.5:1 (`rarityContrast.test.ts`).
 - The sea's procedural [[Islands]], from draft PR #101, merged into #75's branch and tested offline: coves
   and rarer guarded isles built from a seed by the `isle` crate (the same bits natively and in the page), dressed with
   95 Blender modules ([[Island Modules]]) and drawn by the islands layer ([[Island Drawing]]), with a World Editor
@@ -222,9 +223,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
-  change: a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in
+  change: a captain strikes from losing men at about 80% of its hull at every rank, and the foes' numbers are in
   [[Foes]].
-- **#99, ship power and crew**, merges into #75 through the Ship & Seas session. Recruiting needs #92's pledge
+- **#99, ship power and crew**, is in #75 through the Ship & Seas session; #103 follows it there. Recruiting needs #92's pledge
   (`room::crew::pledge_of`); every call beyond the design note is listed in #99's description, the owner's to change.
 - **#75, the sea, waits on the owner's yes to merge**, after #71, which deploys the page and the rooms. Left open
   there: the sky and the light do not follow the weather yet; off the helm the room now takes a change of pace (a

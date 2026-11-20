@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearOfficer, type GearShip, type GearState } from '../network/gearMessages.ts';
+import { traitsShown } from './gearCards.ts';
 import {
   NO_OFFERS,
   carriedModules,
@@ -214,4 +215,13 @@ test('the muster offers the officers of the day for their wage, or says why ther
   );
   assert.deepEqual(musterOf(state({ ship: ship({}) }), 3), []);
   assert.match(NO_OFFERS, /pledged/);
+});
+
+test("an officer's page names the perks they give, as a module's page does", () => {
+  const trained = officer({ chosen: [1], bought: 0b10 });
+  assert.deepEqual(
+    traitsShown(trained).map((perk) => perk.name),
+    ['Steady Lay'],
+  );
+  assert.deepEqual(traitsShown(officer({ chosen: [255] })), [], 'nothing chosen, nothing named');
 });

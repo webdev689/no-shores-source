@@ -7,7 +7,7 @@ import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
-import { ROLES } from '../plus/kit.ts';
+import { ROLES, wearKit } from '../plus/kit.ts';
 import { ARTS_HINTS, ART_DIAMOND_KEY, type ArtsEntrance, artDiamond, artsPage } from './artsPage.ts';
 import { coresOf, gearAskOf } from './artsCards.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
@@ -131,6 +131,8 @@ export function startGearWindow(
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
 ): void {
+  // The menu wears the kit itself, so every press and panel in it is dressed wherever the menu opens.
+  wearKit(root.ownerDocument);
   const screen = make('div', '', `gear-screen ${ROLES.window}`);
   screen.hidden = true;
   screen.setAttribute('role', 'dialog');

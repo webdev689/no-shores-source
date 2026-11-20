@@ -9,7 +9,8 @@ import { make } from '../editor/dom.ts';
 import type { GearItem, GearOfficer } from '../network/gearMessages.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
-import { glyphImage, heldPress, pressOf, rarityOf, tileLabel } from './gearDom.ts';
+import { traitsShown } from './gearCards.ts';
+import { glyphImage, heldPress, pressOf, rarityOf, tileLabel, traitNode } from './gearDom.ts';
 import { tileOf } from './gearScreen.ts';
 import { bar, nodeGrid } from './itemPage.ts';
 import { shipPage } from './menuPages.ts';
@@ -144,8 +145,9 @@ function officerRow(context: PageContext, officer: GearOfficer, open: (id: numbe
   const payOff = heldPress('Hold to pay off', () => context.ask(shown.dismiss), 'warn');
   payOff.dataset['key'] = `dismiss-${officer.id}`;
   payOff.setAttribute('aria-label', `Hold to pay off ${shown.name}: they leave, and nothing is given back`);
-  duties.append(nodes, payOff);
-  row.append(officerHead(shown, shown.duty), bar('Toward their next level', shown.toNext), duties);
+  const actions = make('div', '', 'ship-officer-actions');
+  actions.append(nodes, payOff);
+  row.append(officerHead(shown, shown.duty), bar('Toward their next level', shown.toNext), duties, actions);
   return row;
 }
 
@@ -153,8 +155,10 @@ function officerRow(context: PageContext, officer: GearOfficer, open: (id: numbe
 function officerPage(context: PageContext, officer: GearOfficer): HTMLElement {
   const page = make('div', '', `ship-officer-page ${ROLES.panel}`);
   rarityOf(page, officer.grade);
-  page.append(officerHead(officerShown(officer)), heading('Nodes'));
-  page.append(nodeGrid(context, officerAsItem(officer), officerColumns(officer)));
+  page.append(officerHead(officerShown(officer)));
+  const perks = traitsShown(officer);
+  if (perks.length > 0) page.append(heading('Perks'), ...perks.map((perk) => traitNode(perk)));
+  page.append(heading('Nodes'), nodeGrid(context, officerAsItem(officer), officerColumns(officer)));
   return page;
 }
 

@@ -13,6 +13,8 @@
   gap: 28px;
 }
 .roster-column {
+  border-width: 2px;
+  border-style: solid;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -167,6 +169,8 @@
 
 /* The panel beside a chosen row: where they are, then each thing that may be done. */
 .roster-panel {
+  border-width: 2px;
+  border-style: solid;
   position: absolute;
   z-index: 6;
   display: flex;
@@ -236,6 +240,8 @@
 
 /* Another player's details: their nameplate at four times its cells, then what is known of them and what they wear. */
 .roster-details {
+  border-width: 2px;
+  border-style: solid;
   max-width: 760px;
   margin: 12px auto;
   padding: 0 0 16px;
@@ -332,6 +338,8 @@
 }
 /* An invite on the HUD stands on a ground of its own, so it reads over the sky. */
 .company-invite {
+  border-width: 2px;
+  border-style: solid;
   width: fit-content;
   margin: 4px 0 0;
   padding: 4px 8px;
