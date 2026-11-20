@@ -2,7 +2,7 @@ import { make } from '../editor/dom.ts';
 import type { Account } from '../network/accounts.ts';
 import type { Picture } from '../player/picture.ts';
 import { pictureCanvas } from './gearDom.ts';
-import { drawnBounds } from './iconFit.ts';
+import { drawnBounds } from '../player/iconFit.ts';
 
 /** The portrait's size, its face drawn at whole pixels of the figure inside it. */
 const PORTRAIT_PX = 42;

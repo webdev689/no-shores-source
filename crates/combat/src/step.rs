@@ -7,10 +7,11 @@ use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, S
 use crate::shapes::Telegraph;
 use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
 use crate::sight::{apart, bearing, off, turned, wrap};
+use crate::strike::reach_of;
 use crate::tuning::{
     AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
-    FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, PARRY_WINDOW, POISE_REST, PRESS_KEPT,
-    STAMINA, STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH,
+    FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, POISE_REST, PRESS_KEPT, STAMINA,
+    STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH, parry_window,
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, pushed_out, slide};
@@ -61,7 +62,10 @@ pub fn step_fighter(fighter: &Fighter, intent: &Intent, around: &Surroundings<'_
     let mut next = Fighter { held: now, kept: kept(fighter, input, now), statuses, ..held };
     if let Action::Dead { elapsed } = fighter.action {
         next.action = Action::Dead { elapsed: elapsed.saturating_add(1) };
-        next.body = step_body(&fighter.body, &still(intent.controls), around.blocks, around.terrain, TICK_SECONDS);
+        // The dead let go of a wall or a lip they held, as a crouch does, and fall.
+        let holding = matches!(fighter.body.mode, Mode::Hang | Mode::Climb);
+        let controls = Controls { crouch: holding, ..still(intent.controls) };
+        next.body = step_body(&fighter.body, &controls, around.blocks, around.terrain, TICK_SECONDS);
         return (next, None);
     }
     rest(&mut next);
@@ -92,11 +96,24 @@ pub fn clean(intent: &Intent, aim: f64) -> Intent {
     }
 }
 
-/// The presses kept a tick on, and any new one: a press is kept PRESS_KEPT ticks or until it is acted on.
+/// The presses kept a tick on, and any new one: a press is kept PRESS_KEPT ticks or until it is acted on. A swap
+/// keeps a click, or a trigger pulled in it, for its end while nothing has the fighter reeling (struck, it runs out as
+/// any press); a guard or a dodge pressed in a swap is newer than either, and lets it go.
 fn kept(fighter: &Fighter, input: &CombatInput, now: Held) -> Kept {
     let age = |left: u8| left.saturating_sub(1);
     let was = fighter.kept;
-    let mut kept = Kept { attack: age(was.attack), stroke: was.stroke, guard: age(was.guard), dodge: age(was.dodge) };
+    let swapping = fighter.swap > 0;
+    let reeling = matches!(fighter.action, Action::Flinch { .. }) || fighter.staggered();
+    let held_on = |left: u8| if swapping && !reeling { left } else { age(left) };
+    let (attack, shoot) = (held_on(was.attack), held_on(was.shoot));
+    let mut kept = Kept { attack, stroke: was.stroke, guard: age(was.guard), dodge: age(was.dodge), shoot };
+    let overtaken = (now.guard && !fighter.held.guard) || (now.dodge && !fighter.held.dodge);
+    if swapping && overtaken {
+        (kept.attack, kept.shoot) = (0, 0);
+    }
+    if swapping && now.shoot && !fighter.held.shoot {
+        kept.shoot = PRESS_KEPT;
+    }
     if now.attack && !fighter.held.attack {
         kept.attack = PRESS_KEPT;
         kept.stroke = input.attack;
@@ -293,7 +310,8 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     // The trigger shoots at once, at the soft lock's target if it holds one the look is toward (turned away from it,
     // the shot flies along the look, as a swing turns only after a target within the lock's arc); the swing's button
     // swings a ranged holder's fists.
-    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot && next.swap == 0 && next.loaded()) {
+    let trigger = input.shoot || next.kept.shoot > 0;
+    if let Some(ranged) = next.arms.ranged.filter(|_| trigger && next.swap == 0 && next.loaded()) {
         let (chest, yaw) = (next.chest(), intent.controls.yaw);
         let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
         let (heading, pitch) =
@@ -303,9 +321,9 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     swing(next, intent)
 }
 
-/// The guard raised: a press opens a parry window, unless it comes hard on the heels of one left unused.
+/// The guard raised: a press opens its side's parry window, unless it comes hard on the heels of one left unused.
 fn raise_guard(next: &mut Fighter) -> Happening {
-    let window = if next.kept.guard > 0 && next.missed_parry == 0 { PARRY_WINDOW } else { 0 };
+    let window = if next.kept.guard > 0 && next.missed_parry == 0 { parry_window(next.side) } else { 0 };
     next.kept.guard = 0;
     next.action = Action::Guard { elapsed: 0, window };
     Happening::Guarded { window: window > 0 }
@@ -437,6 +455,7 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
 /// pistolet's right shot waits only for its firing frames, the left's for the reload of both.
 fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
     next.ammo = next.ammo.map(|left| left.saturating_sub(1));
+    next.kept.shoot = 0;
     let right = shot.ranged == Ranged::DoublePistolet && !next.fired_right;
     next.fired_right = right;
     let reload = if right { f64::from(BRACE_GAP) } else { f64::from(shot_numbers(shot.ranged).3) * next.trim.reload };
@@ -525,7 +544,7 @@ fn aim(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) {
     };
     next.aim = match next.action {
         Action::Attack(attack) if attack.elapsed < attack.strike => {
-            let reach = weapon(next.arms.melee).reach + STEER_REACH;
+            let reach = reach_of(next) + STEER_REACH;
             turned(next.aim, in_reach(reach).unwrap_or(yaw), AIM_TURN)
         }
         Action::Guard { .. } | Action::Parry { .. } => {

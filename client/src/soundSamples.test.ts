@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
-import { keysOf, levelOf, matchedLevel, measureOf, soundCredits, variantOf } from './soundSamples.ts';
+import { keysOf, levelOf, matchedLevel, measureOf, rushOf, soundCredits, variantOf } from './soundSamples.ts';
 
 test("every recorded sound is kept under its hash; Freesound's carry their whole credit, DFO's say where they came from", () => {
   const sounds = Object.entries(bank.sounds);
@@ -61,4 +61,14 @@ test("a sound's loudness is its loudest stretch, or the whole of it; a recording
   assert.ok(Math.abs(matchedLevel({ peak: 0.8, loud: 0.05 }, { peak: 1, loud: 0.1 }, 2) - 2) < 1e-9);
   assert.ok(Math.abs(matchedLevel({ peak: 0.9, loud: 0.01 }, { peak: 1, loud: 0.1 }, Infinity) - 10) < 1e-9);
   assert.equal(matchedLevel({ peak: 0, loud: 0 }, { peak: 0, loud: 0 }), 0, 'silence stands in for silence');
+});
+
+test("a whoosh's rush is where its loudest 20 ms come", () => {
+  const rate = 44100;
+  // Quiet hiss, then a burst 90 ms in, as a heavy swing's recording rises to its rush.
+  const whoosh = Float32Array.from({ length: rate / 3 }, (unused, index) => {
+    const seconds = index / rate;
+    return (Math.abs(seconds - 0.09) < 0.01 ? 0.8 : 0.02) * Math.sin(index);
+  });
+  assert.ok(Math.abs(rushOf([whoosh], rate) - 0.09) < 0.002, `rush at ${rushOf([whoosh], rate)}`);
 });

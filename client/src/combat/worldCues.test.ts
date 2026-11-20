@@ -125,10 +125,19 @@ const windingUp = (elapsed: number, over: Partial<Extract<Action, { kind: 'teleg
   ...over,
 });
 
-test("a fighter's action: a swing as it begins or begins again, a wound-up blow as it lands, a roll, a draw, a reload", () => {
-  assert.equal(actionCue(idle, swinging(1), arms(AXE)), 'swing.heavy');
-  assert.equal(actionCue(swinging(1), swinging(5), arms(AXE)), null, 'once a swing');
-  assert.equal(actionCue(swinging(18), swinging(0), arms(AXE)), 'swing.heavy', 'the next begun at once');
+test("a fighter's action: a swing as it sweeps to its blow, a wound-up blow as it lands, a roll, a draw, a reload", () => {
+  assert.equal(actionCue(idle, swinging(1), arms(AXE)), null, 'not as it is raised');
+  assert.equal(actionCue(swinging(8), swinging(10), arms(AXE)), 'swing.heavy', 'as its blow lands');
+  const rush = () => 3;
+  assert.equal(actionCue(swinging(6), swinging(7), arms(AXE), rush), 'swing.heavy', 'its rush ahead of the blow');
+  assert.equal(actionCue(swinging(7), swinging(9), arms(AXE), rush), null, 'once a swing');
+  assert.equal(
+    actionCue(swinging(18), swinging(0), arms(AXE), () => 12),
+    'swing.heavy',
+    'a rush longer than the raise',
+  );
+  assert.equal(actionCue(swinging(5), { kind: 'dodge', elapsed: 0, toward: [0, 1] }, 0), 'roll', 'cut short, no swing');
+  assert.equal(actionCue(idle, swinging(18), arms(AXE)), null, 'first seen well past its blow');
   assert.equal(actionCue(windingUp(37), idle, arms(MACE)), 'swing.light');
   assert.equal(actionCue(windingUp(10), { kind: 'staggered', left: 9, cause: 'poise' }, 0), null, 'cut short');
   assert.equal(actionCue(windingUp(37, { feintAt: 30 }), idle, 0), null, 'a feint');
