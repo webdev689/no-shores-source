@@ -143,7 +143,12 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
   90 and 100 ms, its links some 6 ms of that natively; a node's 70 m square in 85 to 95 ms natively, and 115 ms in
   WebAssembly; an open field 200 m across in about 0.9 and 1.2 s, needing some 170 MB while it bakes.
 - A node's room bakes none of its city's blocks, so its foes neither climb nor drop there; its layout's boxes inside
-  its square it does, links and all. MEASURE-DOWNS-BAKE
+  its square it does, links and all. Its links' tries step bodies through the movement rules' grid of blocks. On the
+  Saltgrass Downs, its square moved to where its boxes stand thickest (406 of them), the room opens natively in about
+  130 ms bare and 205 ms among its boxes (`cargo test --release -p room --test near_blocks -- --ignored --nocapture`,
+  tested offline on an idle machine).
+- A link is tried only from the highest floor beside a block's side, and off a block's top only where nothing stands
+  over its edge. So a floor under a deck or a roof gets no link onto a block beside it, and its foes go round.
 - A link crosses one side. A wall too thin to stand on is crossed only where it is vaulted (1.2 m high and 0.8 m
   deep at most); a taller thin wall is gone round. A ledge too narrow for the erosion to leave floor is not climbed.
 - The regions keep the floors a link joins either way, so a floor reached only by a drop is kept though no walk

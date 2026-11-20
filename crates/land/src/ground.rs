@@ -24,8 +24,9 @@ pub const COURSE_STEP_M: f64 = 50.0;
 /// The grain laid on the land, metres high, and its scale.
 pub const GRAIN_M: f64 = 4.0;
 pub const GRAIN_SCALE_M: f64 = 250.0;
-/// The side of the index's buckets, metres.
-const BUCKET_M: f64 = 2000.0;
+/// The side of the index's buckets, metres: small enough that a layout's ways, laid as roads every few metres, leave
+/// each bucket a few dozen segments to search, not the thousand a 2 km bucket holds over a patrol area.
+const BUCKET_M: f64 = 128.0;
 /// Within this many metres of the painted coast the land and the sea meet along it, not along the cells.
 pub const COAST_BLEND_M: f64 = 1000.0;
 /// The least the land stands above the sea, and the seabed under it, metres: met softly, so a spline sagging between

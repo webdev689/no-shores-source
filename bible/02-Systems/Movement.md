@@ -125,11 +125,10 @@ browser's (`client/src/rules/nodeWindow.test.ts`) generates the continent and se
 cuts the same windows there, and steps them through the movement door. Both hold the same value.
 
 A tick's cost among a patrol area's boxes: bodies run 600 ticks each from the Saltgrass Downs' spawns and from
-every fiftieth of its 4,429 boxes (92 runs), turning, running, jumping and crouching among its buildings. Natively
-(`cargo test --release -p room --test near_blocks -- --ignored --nocapture`) a tick took 112.7 µs over the whole
-list and 44.1 µs through the grid; through `movement.wasm` in Node, 27 µs before and 13 µs after (the same runs with no
-boxes at all take 18.6 µs, so what remains is the land's window and the door, not the blocks). The same test steps
-every run over the list and over the grid and holds them equal at every tick.
+every fiftieth of its 7,465 boxes (153 runs), turning, running, jumping and crouching among its buildings. Natively
+(`cargo test --release -p room --test near_blocks -- --ignored --nocapture`) a tick takes 37 µs over the whole list
+and 2.9 µs through the grid (tested offline, on an idle machine). The same test steps every run over the list and
+over the grid and holds them equal at every tick.
 
 ## Limits
 
