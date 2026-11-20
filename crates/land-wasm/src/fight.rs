@@ -151,13 +151,15 @@ fn event_json(event: &Event) -> Option<Value> {
         Event::Ram { ship, by, point, dealt } => {
             json!({ "kind": "ram", "ship": ship, "by": by, "point": point, "dealt": dealt })
         }
-        Event::SailLost { ship, sail } => json!({ "kind": "sail-lost", "ship": ship, "sail": sail }),
-        Event::MastFell { ship, mast } => json!({ "kind": "mast-fell", "ship": ship, "mast": mast }),
-        Event::Struck { ship } => json!({ "kind": "struck", "ship": ship }),
-        Event::Sinking { ship } => json!({ "kind": "sinking", "ship": ship }),
-        Event::Boarding { ship } => json!({ "kind": "boarding", "ship": ship }),
-        Event::Flotsam { id, at, kind } => json!({ "kind": "flotsam", "id": id, "at": at, "item": piece_name(kind) }),
-        Event::Gathered { id, by } => json!({ "kind": "gathered", "id": id, "by": by }),
+        Event::SailLost { ship, sail } => json!({ "kind": "SailLost", "ship": ship, "sail": sail }),
+        Event::MastFell { ship, mast } => json!({ "kind": "MastFell", "ship": ship, "mast": mast }),
+        Event::Struck { ship } => json!({ "kind": "Struck", "ship": ship }),
+        Event::Sinking { ship } => json!({ "kind": "Sinking", "ship": ship }),
+        Event::Boarding { ship } => json!({ "kind": "Boarding", "ship": ship }),
+        Event::Flotsam { id, at, kind } => {
+            json!({ "kind": "Flotsam", "id": id, "at": at, "kind_of": piece_name(kind) })
+        }
+        Event::Gathered { id, by } => json!({ "kind": "Gathered", "id": id, "by": by }),
         // A ball's own splash and hit are told with its shot's (`events_json`).
         Event::Splash { .. } | Event::Hit { .. } => return None,
     })

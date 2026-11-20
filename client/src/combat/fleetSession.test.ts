@@ -5,7 +5,8 @@ import { type RoomDoor, startRoomDoor } from '../../../server/roomDoor.ts';
 import { readFromRoom } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { startFleetRules } from '../rules/fleetRules.ts';
-import { FleetSession, type SessionInput } from './fleetSession.ts';
+import { FleetSession, fleetFeel, type SessionInput } from './fleetSession.ts';
+import type { NavalEvent } from '../network/fleetMessages.ts';
 
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)).catch(
@@ -209,4 +210,42 @@ test('a session whose link joins a new fleet puts her to sea again where she lay
   assert.deepEqual([...answers], ['taken'], 'every order numbered anew, from 1');
   const [atX = 0, atY = 0] = play.own()?.ship ?? [];
   assert.ok(Math.hypot(atX - x, atY - y) < 5, `the new fleet has her where she lay: ${atX}, ${atY}`);
+});
+
+test("a fleet room's events reach the feel by each ship's own number, the sea's kinds by the one mapping", () => {
+  const none = [0, 0, 0] as const;
+  const told = (
+    kind: NavalEvent['kind'],
+    ship: number,
+    detail = 0,
+    point: readonly [number, number, number] = none,
+    striker = 0,
+  ) => ({ tick: 3n, kind, ship, by: striker, detail, side: 0, point, launch: [40, 0, 2], left: 5 }) as NavalEvent;
+  const felt = fleetFeel([
+    told('muzzle', 12, 0, [1, 2, 3]),
+    told('struck-at', 31, 1, [2, -3, 1.5]),
+    told('hit', 31, 2, [9, 9, 1], 12),
+    told('splash', 12, 0, [4, 5, 0]),
+    told('sail-lost', 31, 2),
+    told('mast-fell', 31, 1),
+    told('struck', 31),
+    told('sinking', 31),
+    told('flotsam', 44, 2, [6, 7, 0]),
+    told('gathered', 44, 0, none, 12),
+    told('boarding', 31),
+    told('ram', 31, 0, [7, 8, 1], 12),
+  ]);
+  assert.deepEqual(felt, [
+    { kind: 'muzzle', ship: 12, point: [1, 2, 3], launch: [40, 0, 2] },
+    { kind: 'hit', ship: 31, by: 12, zone: 'rig', point: [9, 9, 1], at: [2, -3, 1.5], part: 'sail' },
+    { kind: 'splash', point: [4, 5, 0] },
+    { kind: 'SailLost', tick: 3, ship: 31, sail: 2 },
+    { kind: 'MastFell', tick: 3, ship: 31, mast: 1 },
+    { kind: 'Struck', tick: 3, ship: 31 },
+    { kind: 'Sinking', tick: 3, ship: 31 },
+    { kind: 'Flotsam', tick: 3, id: 44, at: [6, 7], kind_of: 'chest' },
+    { kind: 'Gathered', tick: 3, id: 44, by: 12 },
+    { kind: 'Boarding', tick: 3, ship: 31 },
+    { kind: 'ram', ship: 31, by: 12, point: [7, 8, 1], dealt: 5 },
+  ]);
 });

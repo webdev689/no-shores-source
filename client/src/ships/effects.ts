@@ -69,6 +69,8 @@ const SMOKE_DRIFT_MS = 1.5;
 export const SPLASH_M = 4;
 export const SPLASH_S = 1.5;
 const FOAM_S = 2.5;
+/** Foam flecks, and bubbles with them, a second over where a ship goes down. */
+const FOAM_PER_S = 80;
 /** A ball leaves a trail puff this often (seconds), each lasting this long. */
 const TRAIL_EVERY_S = 0.04;
 const TRAIL_S = 0.5;
@@ -167,13 +169,15 @@ export class Effects {
         life: SPLASH_S * Math.sqrt(share),
       };
     });
+    // A ragged ring: each fleck of foam its own size, a little in or out of the ring, spreading at its own pace.
     this.add(24, spot, now, (index) => {
-      const turn = (index / 24) * 2 * Math.PI;
+      const turn = ((index + this.spread(0.4)) / 24) * 2 * Math.PI;
+      const [start, speed] = [0.4 + this.spread(0.25), 2 + this.spread(0.6)];
       return {
-        from: [Math.cos(turn) * 0.4, Math.sin(turn) * 0.4, 0],
-        velocity: [Math.cos(turn) * 2, Math.sin(turn) * 2, 0],
+        from: [Math.cos(turn) * start, Math.sin(turn) * start, 0],
+        velocity: [Math.cos(turn) * speed, Math.sin(turn) * speed, 0],
         drag: 1.2,
-        radius: 0.35,
+        radius: 0.3 + this.draw() * 0.25,
         grow: 0.05,
         colour: FOAM,
         life: FOAM_S,
@@ -278,7 +282,7 @@ export class Effects {
 
   /** Where a ship goes down, over `seconds`: foam on the water over `radiusM` round `at`, and bubbles rising to it. */
   foam(spot: Point, radiusM: number, now: number, seconds: number): void {
-    this.owedFoam += 40 * seconds;
+    this.owedFoam += FOAM_PER_S * seconds;
     while (this.owedFoam >= 1) {
       this.owedFoam -= 1;
       const turn = this.draw() * 2 * Math.PI;

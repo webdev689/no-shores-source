@@ -30,6 +30,7 @@ code:
   - client/src/editor/aim.ts#lookReach
   - client/src/ships/effects.ts#Effects
   - client/src/ships/fightFeel.ts#FightFeel
+  - client/src/rules/feelEvents.ts#feelOf
   - client/src/ships/shipHarm.ts#ShipHarm
   - client/src/ships/harmDrawn.ts#harmedCanvas
   - client/src/ships/flotsam.ts#Flotsam
@@ -306,10 +307,17 @@ the panel reads "Laying the ... guns: on target.", only when an unscattered ball
 
 Only the look of it: the rules say what happened, in the fight's events and its view, and `FightFeel` turns each into
 puffs of small lit spheres (`Effects`), harm kept on the ship it struck (`ShipHarm`, on her rig), flotsam and sounds.
-Until an event of the fight's feel arrives, the view's own numbers stand in for it: her canvas's share left holes her
-sails, a ship `struck` lowers her colours and one `sinking` goes down.
+The view's own numbers stand in where no event says more: her canvas's share left holes her sails, a ship `struck`
+lowers her colours and one `sinking` goes down.
 
-- **A gun fired** (`muzzle`): a flash at its mouth for 0.1 s, and seven puffs of white powder smoke that roll out the
+The room's own events (`SailLost`, `MastFell`, `Struck`, `Sinking`, `Flotsam`, `Gathered`, `Boarding`) reach the feel
+by their own names through one mapping (`feelOf`, `rules/feelEvents.ts`, which every layer may read), on every fight path: the sea room's view, the fleet room's
+snapshot (whose events carry the sea's kinds after its own, 12 to 19) and the World Editor's fight. A ball's `Splash`
+and `Hit` come with its shot's own events, the hit carrying where on her it struck in her frame and the part. Each
+ship's harm is kept by the number the events name her by: at sea the player is 0, the first captain 1, and each other
+captain's number comes with her in the view, so one leaving the fight never moves another's holes onto her.
+
+- **A gun fired** (`muzzle`): a flash at its mouth for 0.1 s, and ten puffs of white powder smoke that roll out the
   way the ball went, slowing, then drift downwind at 1.5 m/s and thin away over 7 s. A broadside's guns each smoke
   from their own mouths, so the smoke hangs along her side.
 - **A ball in flight** keeps its sphere and leaves a faint grey trail, a puff every 0.04 s that lasts half a second.
@@ -331,8 +339,10 @@ sails, a ship `struck` lowers her colours and one `sinking` goes down.
   halfway down until 8 s after, foam and rising bubbles fill the water over her length. Her flotsam (`Flotsam`:
   crates, barrels and a chest, which the rules lay) bobs on the water there, 0.12 m up and down every 4 s, until
   gathered (`Gathered`) or the fight is over.
-- **Sounds**: each plays the game's own recording where it has one; a ball in the water plays its splash, and a gun,
-  a hit, a fall or a sinking stays silent until the owner picks one.
+- **Sounds**: each plays the game's own recording where it has one: a ball in the water plays its splash
+  (`shot.splash`). The sound sheet has none yet for a gun fired, a ball through a hull or a sail, a sail torn away, a
+  mast falling, colours struck, a ship sinking, what floats laid or gathered, or a boarding: each stays silent until
+  the owner picks one.
 - **From above**: at the raised view, where the ships are drawn larger ([[Overworld]]), every puff, ball, hole and
   piece of flotsam is drawn as many times larger about the point it came from, as the wakes are, so the fight reads
   from there; close in, all are their true size. The sea's splashes push its ripples as wide.

@@ -143,6 +143,14 @@ export const NAVAL_KINDS = [
   'load',
   'gone',
   'ram',
+  'struck-at',
+  'sail-lost',
+  'mast-fell',
+  'struck',
+  'sinking',
+  'flotsam',
+  'gathered',
+  'boarding',
 ] as const;
 export type NavalKind = (typeof NAVAL_KINDS)[number];
 

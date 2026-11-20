@@ -53,6 +53,14 @@ test('a fleet snapshot the server wrote reads back as its ships and what happene
       [10n, 'load', 3, 2],
       [11n, 'gone', 9, 0],
       [12n, 'ram', 9, 0],
+      [13n, 'struck-at', 9, 1],
+      [13n, 'sail-lost', 9, 2],
+      [13n, 'mast-fell', 9, 1],
+      [13n, 'struck', 9, 0],
+      [14n, 'sinking', 9, 0],
+      [15n, 'flotsam', 21, 2],
+      [16n, 'gathered', 21, 0],
+      [16n, 'boarding', 9, 0],
     ],
   );
   const ram = fleet.naval[9];

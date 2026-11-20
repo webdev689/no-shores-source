@@ -240,15 +240,16 @@ pub fn view_numbers(
     numbers.extend(vessel_numbers(player));
     numbers.extend(vessel_numbers(captain));
     numbers.extend(captain_numbers(&command.her, me));
-    let others: Vec<(&Vessel, &Captain)> = fight
+    let others: Vec<(ShipId, &Vessel, &Captain)> = fight
         .ships
         .iter()
         .filter(|(id, vessel)| **id != first && vessel.in_fight())
-        .filter_map(|(_, vessel)| vessel.command().map(|command| (vessel, &command.her)))
+        .filter_map(|(id, vessel)| vessel.command().map(|command| (*id, vessel, &command.her)))
         .collect();
     numbers.push(others.len() as f64);
-    for (vessel, her) in others {
-        numbers.extend([f64::from(her.commission.faction), f64::from(her.commission.rank.number())]);
+    // Each with the number her events name her by, as one may leave the fight and the rest move up the list.
+    for (id, vessel, her) in others {
+        numbers.extend([seen(id), f64::from(her.commission.faction), f64::from(her.commission.rank.number())]);
         numbers.extend(vessel_numbers(vessel));
         numbers.extend(captain_numbers(her, me));
     }
@@ -284,9 +285,9 @@ pub fn view_numbers(
 }
 
 /// Where a view's other captains begin (after its clock, its end, the player's Sloop, the captain's ship and her mind),
-/// and each one's numbers (her faction and rank, her ship and her mind).
+/// and each one's numbers (the number her events name her by, her faction and rank, her ship and her mind).
 const OTHERS_AT: usize = 2 + 2 * VESSEL_NUMBERS + 4;
-const OTHER_NUMBERS: usize = 2 + VESSEL_NUMBERS + 4;
+const OTHER_NUMBERS: usize = 3 + VESSEL_NUMBERS + 4;
 
 /// A view (`view_numbers`) parted for the messages: the view without its other captains, as a page that knows one
 /// captain reads it, and the other captains (their count, then each one's numbers), empty when there are none, for a
