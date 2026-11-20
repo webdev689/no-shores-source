@@ -103,8 +103,8 @@ test("the broadside warning over the sight names the nearest captain running out
   assert.equal(quiet.warn, null, 'none while no battery is run out');
   const running = {
     ...VIEW,
-    captain: captain('Pirate Brig', 200, { run_out: [1] }),
-    others: [captain('Tithe Sloop', 70, { state: 'struck', run_out: [1], number: 2 })],
+    captain: captain('Pirate Brig', 200, { run_out: ['port'] }),
+    others: [captain('Tithe Sloop', 70, { state: 'struck', run_out: ['port'], number: 2 })],
   };
   const model = fightDisplay(running, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
   assert.equal(model.warn, 'Broadside from the Pirate Brig - C: brace', 'a struck ship runs out no guns at her');

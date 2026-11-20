@@ -31,15 +31,22 @@ export class NoticeStack {
         row.remove();
         this.rows.delete(text);
       }
-    for (const text of kept) {
-      if (this.rows.has(text)) continue;
-      const row = this.root.ownerDocument.createElement('div');
-      row.className = `plus-notice ${ROLES.panel}`;
-      row.textContent = text;
-      this.rows.set(text, row);
-      this.root.append(row);
-    }
+    const order = [...kept].map((text) => this.rows.get(text) ?? this.made(text));
+    // In the order given, a line said again standing newest, last, as the fight's messages keep it; rows already in
+    // order are left where they are, so none slides in again.
+    const shown = [...this.root.children];
+    const first = order.findIndex((row, index) => shown[index] !== row);
+    if (first >= 0) this.root.append(...order.slice(first));
     this.root.hidden = this.rows.size === 0;
+  }
+
+  /** A new notice's row, kept by its words. */
+  private made(text: string): HTMLElement {
+    const row = this.root.ownerDocument.createElement('div');
+    row.className = `plus-notice ${ROLES.panel}`;
+    row.textContent = text;
+    this.rows.set(text, row);
+    return row;
   }
 }
 
