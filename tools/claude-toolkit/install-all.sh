@@ -98,6 +98,10 @@ if [ -n "$serena_proj" ] && [ -d "$serena_proj/.git" ]; then
   # a branch with its own base. Keep main's tracking ref fetched.
   git -C "$serena_proj" config --get-all remote.origin.fetch | grep -qE 'refs/heads/(\*|main):' ||
     git -C "$serena_proj" config --add remote.origin.fetch '+refs/heads/main:refs/remotes/origin/main'
+  # And the branch checked out, so its pushes leave a tracking ref and the Stop hook does not read them as unpushed.
+  b=$(git -C "$serena_proj" symbolic-ref --short -q HEAD)
+  [ -z "$b" ] || git -C "$serena_proj" config --get-all remote.origin.fetch | grep -qE "refs/heads/(\*|$b):" ||
+    git -C "$serena_proj" config --add remote.origin.fetch "+refs/heads/$b:refs/remotes/origin/$b"
   serena_where="--project $serena_proj"
 else
   serena_where="--project-from-cwd"

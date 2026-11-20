@@ -25,6 +25,9 @@ when to install it and what each session does at its start and end; this note sa
 - Plugins and MCP servers the install adds load in the next session. In the session that ran the install, use a
   skill by reading its `SKILL.md` (`find ~/.claude/plugins/cache -path '*skills/<name>/SKILL.md'`), and hand Serena
   and claude-mem work to a worker.
+- The install tracks `main` and the branch checked out. Before a new branch's first push in a clone made for one
+  branch, track it too (`git config --add remote.origin.fetch "+refs/heads/<b>:refs/remotes/origin/<b>"`), or its
+  pushes leave no tracking ref and the Stop hook reads them as unpushed.
 - `SHARED_DIR` defaults to `~/toolkit-data`, which a cloud container loses at its end: the claude-mem store and the
   task-observer log carry over only where `SHARED_DIR` points at storage that survives.
 - The SkillsMP and Context7 keys are network secrets the proxy adds to requests; their variables hold only the
@@ -36,7 +39,7 @@ when to install it and what each session does at its start and end; this note sa
 | Tool | How to use it |
 |---|---|
 | graphify | The code map. `graphify explain <symbol or file>` or `graphify path <A> <B>` for known names; `graphify query` only with a pointed question naming a function or file. Ask it before grepping or opening big files; update it after every merge or commit. Its `graphify-out/` is ignored by git. |
-| Serena | MCP, tools interface: `find_symbol`, `find_referencing_symbols`, `get_symbols_overview`, `replace_symbol_body`. graphify finds the file or system, Serena the exact symbol. Plain Edit only for small in-line changes and files Serena cannot parse. If only `serena_repl` shows, the install is broken: fix it first. Its project lists both `typescript` and `rust`. |
+| Serena | MCP, tools interface: `find_symbol`, `find_referencing_symbols`, `get_symbols_overview`, `replace_symbol_body`. graphify finds the file or system, Serena the exact symbol. Plain Edit only for small in-line changes and files Serena cannot parse. `replace_symbol_body` replaces what Serena counts as the symbol: give it the doc comments and attributes with the body, and read the diff after each Serena edit; rename across files with plain edits when `rename_symbol` refuses. If only `serena_repl` shows, the install is broken: fix it first. Its project lists both `typescript` and `rust`. |
 | claude-mem | Search it before re-investigating anything. Its `smart_search` and `smart_outline` are not for code: use Serena. |
 | Headroom | Compress big outputs with `headroom_compress` and `headroom_retrieve`. MCP only, never in the API path. |
 | Context7 | MCP: a library's current docs before guessing its API. |
@@ -49,9 +52,9 @@ when to install it and what each session does at its start and end; this note sa
 | SkillsMP | Find a skill for a new kind of job. |
 | claude-code-setup | Run "recommend Claude Code automations for this project" when the setup is reviewed or a new stack arrives; adopt only what the other tools do not already cover. |
 | task-observer | Log each correction, tool clash or slow rule with its `new-observation.sh` into `$SHARED_DIR/task-observer`, never the repo. Workers never log; they end with an "OBSERVATIONS:" line and the controller logs it. The owner approves every rule change at a review. |
-| Syntax hook | "syntax check failed" after an Edit or Write means fix it now. |
+| Syntax hook | Checks `.py` and `.js` syntax and `.rs` format (rustfmt) after each Edit or Write: "syntax check failed" or "rustfmt would change" means fix it now. |
 | Commit guard | The clone's pre-commit hook refuses archives and C2PA-stamped PNGs. Never bypass it with `--no-verify`. |
-| Browser QA | Playwright with the preinstalled Chromium; never run `playwright install` in a cloud session. Before a PR, drive an interactive feature once in the real editor with Playwright's keys and mouse. Poll the panel for state, not the clock: headless frames run the sim at about a fifth of real time. Pin a random outcome with an `addInitScript` stub of `crypto.getRandomValues`. Page screenshots of a WebGPU canvas are blank, and presenting to one loses the device headless: `node tools/claude-toolkit/webgpu-shot.cjs <steps.json>` gives the page's canvas a texture of its own and lays it under the HUD for each picture (its header says the steps; serve the page on port 5173, the only origin R2 answers). Capture a built page, `npm run build` then `npx vite preview --port 5173`, never the dev server: an edit reloads a dev server's page mid-run and loses the rest of it. For a visual defect, patch one shader layer off per run at `GPUDevice.prototype.createShaderModule`, measure a crop, and look at one montage per round. |
+| Browser QA | Playwright with the preinstalled Chromium; never run `playwright install` in a cloud session. Before a PR, drive an interactive feature once in the real editor with Playwright's keys and mouse. Poll the panel for state, not the clock: headless frames run the sim at about a fifth of real time. Pin a random outcome with an `addInitScript` stub of `crypto.getRandomValues`. Page screenshots of a WebGPU canvas are blank, and presenting to one loses the device headless: `node tools/claude-toolkit/webgpu-shot.cjs <steps.json>` gives the page's canvas a texture of its own and lays it under the HUD for each picture (its header says the steps). The page's url stays on `localhost:5173`, the only origin R2 answers: serve a built page (`npm run build`, then `npx vite preview --port <free port> --strictPort`) and name its origin in the steps' `servedAt`, so parallel workers never share a port. It refuses a dev server, which reloads the page on an edit mid-run. A staging script stays outside `client/`, given as `initScript`; move a staged clock forward rather than waiting out frames. Stop a preview server by its pid when done: a stale one keeps the port. For a visual defect, patch one shader layer off per run at `GPUDevice.prototype.createShaderModule`, measure a crop, and look at one montage per round. |
 
 ## Workers
 
@@ -70,5 +73,13 @@ Work that fans out goes to headless workers, each in its own git worktree.
   Serena `get_symbols_overview` on each source file it will change.
 - Every worker ends with superpowers:verification-before-completion, one reviewer sub-agent, then
   ponytail:ponytail-review on its diff, even for a one-line change.
+- Before fanning out work that wires into a shared file, split any such file within 30 lines of the 600-line cap on
+  the base branch, so every worker starts with room.
+- A round must fit the 2-hour limit: the brief budgets pictures. A run stopped at the limit or by a restart leaves no
+  EXIT line, and the next start's log says how long ago it began.
+- `run-worker.sh` refuses to start at 90% disk: remove each worktree once its branch is merged and no round is left
+  (`git worktree remove --force`, after checking its head is an ancestor of the base).
+- It tests claude-mem before the run (`check-tools.sh --only claude-mem`) and tells the worker when it is down;
+  `audit.py` counts failed claude-mem calls apart from missing ones.
 - Before merging a worker's branch: `python3 tools/claude-toolkit/workers/audit.py <worktree>` (its MISSING line must
   say none) and a ponytail review of its diff.

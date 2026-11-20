@@ -5,13 +5,17 @@
 // Headless SwiftShader has no shared-image backing for a WebGPU canvas, so presenting to one loses the device a few
 // seconds in. The page's canvas context is given a texture of its own instead, and a picture reads that texture back
 // and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. The
-// forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first.
+// forge's R2 bucket answers CORS for http://localhost:5173 alone, so the page's url is always on that origin; serve a
+// built page (`npm run build`, then `npx vite preview --port <free port> --strictPort`) and name its origin in
+// "servedAt" ("http://localhost:<port>"): the page's 5173 requests are answered from there, so any number of workers
+// take pictures at once. A dev server is refused: it reloads the page on any edit mid-run.
 //
-// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
+// steps.json: { "url": "...", "size": [w, h], "servedAt": "...", "initScript": "<a .js file run before the page's own,
+// kept outside client/ so the repo's checks never see it>", "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
 // step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
 // { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
-// player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
+// player about 0.03 rad a second. { "frames": n, "timeout": s } waits (600 s unless timed) until the page has drawn n more frames: read what a frame
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
 // waits minutes behind. The console's errors are printed.
@@ -108,11 +112,20 @@ async function main() {
     if (message.type() === 'error') console.log('console:', message.text().slice(0, 300));
   });
   page.on('pageerror', (error) => console.log('page error:', error.message.slice(0, 300)));
+  const origin = plan.servedAt ?? new URL(plan.url).origin;
+  if ((await (await fetch(origin)).text()).includes('/@vite/client'))
+    throw new Error(`${origin} is a dev server, which reloads on an edit: serve a built page with vite preview`);
+  if (plan.servedAt)
+    await page.route('http://localhost:5173/**', async (route) => {
+      const url = route.request().url().replace('http://localhost:5173', plan.servedAt);
+      await route.fulfill({ response: await route.fetch({ url }) });
+    });
   for (const [part, file] of Object.entries(plan.routes ?? {}))
     await page.route(`**/*${part}*`, (route) =>
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
     );
   await page.addInitScript(OWN_TEXTURE);
+  if (plan.initScript) await page.addInitScript({ path: plan.initScript });
   await page.goto(plan.url);
   for (const step of plan.steps) {
     const started = Date.now();
@@ -132,7 +145,9 @@ async function main() {
     else if (step.clickText) await page.getByText(step.clickText).first().click();
     else if (step.frames) {
       const from = await page.evaluate(() => window.__shotFrames);
-      await page.waitForFunction((until) => window.__shotFrames >= until, from + step.frames, { timeout: 600_000 });
+      await page.waitForFunction((until) => window.__shotFrames >= until, from + step.frames, {
+        timeout: (step.timeout ?? 600) * 1000,
+      });
     } else if (step.eval) console.log('eval:', JSON.stringify(await page.evaluate(step.eval)));
     else if (step.shot) {
       const why = await page.evaluate(() => window.__shotLay());
