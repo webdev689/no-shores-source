@@ -139,8 +139,9 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
   and the Abyss boon: a quarter more of each kill's XP, rounded down, and reputation once factions are in, until the
   week turns.
-- **Where it is paid.** The room pays as the cache opens, each player then in it, and lays the Vestige 1.4 m before
-  the cache (`pay_clear`). The day's pays in a patrol's dungeon, shared or a run, while it is its island's dungeon of
+- **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and lays
+  the Vestige 1.4 m before the cache (`pay_clear`). A player playing unkept finds the cache's own Vestige alone. The
+  day's pays in a patrol's dungeon, shared or a run, while it is its island's dungeon of
   the day by the room's clock then. The week's pays only in the week its run was opened for, so a run opened before
   Tuesday's 09:00 and cleared after it pays as a clear again. An Elite Dungeon at Normal and a sea island's pay
   their kills and cache alone.

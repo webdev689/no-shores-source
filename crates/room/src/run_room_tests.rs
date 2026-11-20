@@ -12,11 +12,20 @@ use std::collections::BTreeSet;
 /// A Friday's 09:00 UTC: day 20,778, in week 2,968.
 const FRIDAY_NINE: u64 = 29_919_420;
 
-/// A character, kept in the room.
+/// A character, kept in the room for an account.
 fn kept_in(room: &mut Room, character: &gear::Character) -> PlayerId {
     let player = room.join().expect("a room with space");
     assert!(room.restore_character(player, &character.to_json()));
+    assert!(room.own(player, "an account"));
     player
+}
+
+/// A character past the prologue at level 10, which Elite asks.
+fn past_the_prologue() -> gear::Character {
+    let mut character = gear::Character::starting();
+    character.story.prologue = true;
+    character.earn_xp(45_000, None);
+    character
 }
 
 /// Fells every foe of the end post, and ticks the room once.
@@ -132,6 +141,7 @@ fn a_weeks_run_cleared_after_the_week_turns_pays_as_a_clear_again() {
         let mut room =
             Room::dungeon_run(&of, gear::Difficulty::Abyss, last_minute).expect("week 2,968's Abyss Dungeon");
         let player = room.join().expect("in");
+        assert!(room.own(player, "an account"));
         room.set_minute(cleared_at);
         clear_the_end(&mut room);
         let week = &room.players[&player].character.activity.this_week;
@@ -156,4 +166,25 @@ fn a_kill_under_the_abyss_boon_pays_a_quarter_more_xp() {
     let (plain, boon) = (xp(false), xp(true));
     assert!(plain > 0);
     assert_eq!(boon, plain + plain / 4);
+}
+
+#[test]
+fn a_player_playing_unkept_finds_the_caches_vestige_alone_and_their_kept_character_still_takes_the_days_clear() {
+    let shared = || {
+        let mut room = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("today's dungeon of the day, shared");
+        room.set_minute(FRIDAY_NINE);
+        room
+    };
+    let mut first = shared();
+    let player = first.join().expect("in, unkept until its claim answers");
+    clear_the_end(&mut first);
+    assert_eq!(vestiges_for(&first, player), 1, "the cache's alone: a player playing unkept keeps nothing");
+    assert!(first.restore_character(player, &past_the_prologue().to_json()));
+    assert!(first.own(player, "an account"));
+    let kept = first.players[&player].character.clone();
+    assert!(kept.activity.today.cleared.is_empty(), "its record is unmarked");
+    let mut later = shared();
+    let again = kept_in(&mut later, &kept);
+    clear_the_end(&mut later);
+    assert_eq!(vestiges_for(&later, again), 2, "its own clear takes the day's");
 }

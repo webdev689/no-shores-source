@@ -99,13 +99,14 @@ impl Room {
         Some(room)
     }
 
-    /// Pays a player in the room as the cache opens: the day's clear in today's dungeon of the day, the week's in the
+    /// Pays a player the room keeps as the cache opens: the day's clear in today's dungeon of the day, the week's in the
     /// week the run was opened for. Its Vestige lies BONUS_BEFORE_M before the cache; nothing once taken.
     pub(crate) fn pay_clear(&mut self, player: PlayerId, level: u8, cache: &Cache) {
         let Some(pays) = self.run.as_ref().map(|run| run.pays.clone()) else { return };
         let (day, now, tier) = (self.day(), week_of(self.minute), self.difficulty);
         let dice = self.dice(player);
-        let Some(found) = self.players.get_mut(&player) else { return };
+        // A player playing unkept keeps nothing: their record would be marked on a character the accounts never see.
+        let Some(found) = self.players.get_mut(&player).filter(|found| found.owner.is_some()) else { return };
         let character = &mut found.character;
         let vestige = match pays {
             Pays::Nothing => None,
