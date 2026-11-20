@@ -2,6 +2,7 @@
 // Prestige, Defense and Attack, and what each slot wears), a slot's choices, an item's detail with its nodes, and the
 // vendors' wares. The page draws these in the Enhanced Plus kit.
 
+import { LEVEL_BY_XP, LEVEL_MOST } from '../rules/fleetRules.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
@@ -79,10 +80,6 @@ export interface Tile {
   readonly colour: string;
   readonly power: string;
 }
-
-/** The levels XP alone reaches, and the highest. */
-const LEVEL_BY_XP = 20;
-const LEVEL_MOST = 30;
 
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 const colourOf = (rarity: number) => RARITIES[rarity]?.colour ?? '';

@@ -245,7 +245,8 @@ impl Fleet {
     /// Fits each player's ship that has a level against every captain in the room by theirs, for the tick to come.
     fn fit(&mut self) {
         for (&id, found) in &self.players {
-            if found.ship_level == 0 || !found.at_sea {
+            if found.ship_level == 0 {
+                self.fight.unfit(id);
                 continue;
             }
             let captains = self.fight.ships.iter().filter(|(_, vessel)| vessel.command().is_some());

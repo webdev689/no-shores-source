@@ -278,6 +278,16 @@ impl Fights {
         Some((kept, [vessel.ship.x, vessel.ship.y]))
     }
 
+    /// A fighting player's ship loses `share` of its whole complement: hands who fell where the fight never saw them,
+    /// on a boarded deck, so the fight's count is the one kept when it ends.
+    pub fn lose_men(&mut self, player: PlayerId, share: f64) {
+        let Some((fought, crew)) = self.of_mut(player) else { return };
+        if let Some(vessel) = fought.fight.ships.get_mut(&crew.ship) {
+            let damage = &mut vessel.damage;
+            damage.crew = (damage.crew - share * damage.max_crew).max(0.0);
+        }
+    }
+
     /// A player leaves the sea: their ship leaves their fight, and a fight left with no player ends with them.
     pub fn leave(&mut self, player: PlayerId) {
         if let Some((fought, crew)) = self.of_mut(player) {

@@ -147,7 +147,7 @@ pub struct Player {
     pub gear_changed: bool,
     /// Where they stood as their gear was last sent: at the Reader, and in a social space. Both ride the gear
     /// message and change as they walk, so a change sends it again.
-    pub placed_sent: (bool, bool),
+    pub placed_sent: (bool, bool, bool),
     /// The tick their gear was last sent, and their last ask taken: a room sends one player's gear, and takes their
     /// asks, only so often.
     pub gear_sent: Option<u64>,
@@ -196,7 +196,7 @@ impl Player {
             dressed_at: None,
             character,
             gear_changed: true,
-            placed_sent: (false, false),
+            placed_sent: (false, false, false),
             gear_sent: None,
             asked_at: None,
             asks: VecDeque::new(),
@@ -277,7 +277,8 @@ impl Room {
     /// changes how they fight.
     pub fn take_gear_change(&mut self, player: PlayerId) -> bool {
         let clock = self.clock;
-        let placed = (self.at_reader(player), self.in_social_space(player));
+        // Coming within reach of the muster sends its offers.
+        let placed = (self.at_reader(player), self.in_social_space(player), self.recruiting_at(player).is_some());
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.gear_changed |= placed != found.placed_sent;
         let waiting = found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS);

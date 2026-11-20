@@ -9,7 +9,7 @@ use crate::asks::{Done, Here, Refusal};
 use crate::character::Character;
 use crate::grid::cost;
 use crate::item::NONE_CHOSEN;
-use crate::ship::materials::ShipMaterial;
+use crate::ship::materials::{ShipMaterial, ShipPrice};
 
 impl Character {
     /// Signs on one of the officers offered today at the counter of the faction the player is pledged to.
@@ -27,7 +27,7 @@ impl Character {
             return Err(Refusal::Short);
         }
         if self.crew.officers.values().any(|kept| kept.given == officer.given && kept.family == officer.family) {
-            return Err(Refusal::Kept);
+            return Err(Refusal::OfficerKept);
         }
         if self.crew.officers.len() >= OFFICERS_MOST {
             return Err(Refusal::CrewFull);
@@ -84,11 +84,12 @@ impl Character {
             return Err(Refusal::AlreadyBought);
         }
         let price = cost(officer.grade, officer.columns(), column);
-        if self.materials.aurem < price.aurem || self.materials.ship.of(ShipMaterial::Heartwood) < price.essence {
+        let none = (ShipMaterial::Heartwood, 0);
+        let heartwood = ShipPrice([(ShipMaterial::Heartwood, price.essence), none, none]);
+        if self.materials.aurem < price.aurem || !self.materials.ship.pay(&heartwood) {
             return Err(Refusal::Short);
         }
         self.materials.aurem -= price.aurem;
-        self.materials.ship.heartwood -= price.essence;
         if let Some(officer) = self.crew.officers.get_mut(&id) {
             officer.bought |= bit;
             if let Some(chosen) = officer.chosen.get_mut(column).filter(|chosen| **chosen == NONE_CHOSEN) {

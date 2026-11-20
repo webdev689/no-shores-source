@@ -28,12 +28,6 @@ pub enum Post {
 impl Post {
     pub const ALL: [Self; 5] = [Self::FirstMate, Self::Gunner, Self::Bosun, Self::Carpenter, Self::Lookout];
 
-    /// The post a number names, or none.
-    #[must_use]
-    pub fn from_number(number: u8) -> Option<Self> {
-        Self::ALL.into_iter().find(|post| *post as u8 == number)
-    }
-
     /// The key its traits fit by in the catalogue.
     #[must_use]
     pub fn key(self) -> &'static str {
@@ -196,6 +190,17 @@ impl Officer {
             _ => 1,
         };
         by_xp + each * self.upgrades()
+    }
+
+    /// Their way toward their next level, 0 to 1: their experience's to 20, then the share of their upgrades bought,
+    /// which carry them on.
+    #[must_use]
+    pub fn to_next(&self) -> f64 {
+        if power::xp_level(u64::from(self.xp)) < power::XP_LEVEL_MOST {
+            return power::to_next(u64::from(self.xp), 0).0;
+        }
+        let columns = self.columns().iter().filter(|column| **column == Column::Upgrade).count();
+        if columns == 0 { 1.0 } else { f64::from(self.upgrades()) / columns as f64 }
     }
 
     /// How well they hold their post, 0.5 at level 1 rising evenly to 1 at level 29: what their post's own work is

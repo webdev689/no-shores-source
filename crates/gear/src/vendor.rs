@@ -55,6 +55,11 @@ pub fn price(rarity: Rarity) -> u32 {
     }
 }
 
+/// A vendor's dice seed on a day: every vendor's apart from every other's on every day.
+fn seed(vendor: Vendor, day: u64) -> u64 {
+    day.wrapping_mul(Vendor::ALL.len() as u64).wrapping_add(vendor as u64)
+}
+
 /// A vendor's wares on a day, for a buyer of `level`: made at that level (at most 20), each by its own dice, so the
 /// same day and level shows the same wares to everyone. Their numbers are none until bought.
 #[must_use]
@@ -62,11 +67,27 @@ pub fn wares(vendor: Vendor, day: u64, level: u8) -> Vec<Item> {
     let slots = vendor.slots();
     (0..WARES)
         .filter_map(|ware| {
-            let dice = Dice { seed: day.wrapping_mul(2).wrapping_add(vendor as u64), tick: ware as u64, player: 0 };
+            let dice = Dice { seed: seed(vendor, day), tick: ware as u64, player: 0 };
             let rarity = if ware < WARES / 2 { Rarity::Rare } else { Rarity::Magic };
             // The slots turn with the day, so each is sold at each rarity in its turn.
             let slot = slots[(ware + (day % slots.len() as u64) as usize) % slots.len()];
             vestige::make(0, rarity, slot, level.clamp(1, NAMED_LEVEL), &dice)
         })
         .collect()
+}
+
+#[cfg(test)]
+mod seed_tests {
+    use super::{Vendor, seed};
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn no_two_vendors_ever_roll_from_one_seed_on_any_two_days() {
+        let mut seen = BTreeSet::new();
+        for day in 0..1000 {
+            for vendor in Vendor::ALL {
+                assert!(seen.insert(seed(vendor, day)), "{vendor:?} on day {day} shares a seed");
+            }
+        }
+    }
 }

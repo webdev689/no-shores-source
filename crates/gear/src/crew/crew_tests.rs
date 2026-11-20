@@ -70,7 +70,11 @@ fn an_officer_is_signed_on_only_at_a_pledged_counter_for_their_wage() {
     character.materials.aurem = 20_000;
     character.ask(first, counter(1, 0), &dice(0)).expect("signed on");
     assert_eq!(character.materials.aurem, 20_000 - wage(Rarity::Magic));
-    assert_eq!(character.ask(first, counter(1, 0), &dice(0)), Err(Refusal::Kept), "one officer is signed on once");
+    assert_eq!(
+        character.ask(first, counter(1, 0), &dice(0)),
+        Err(Refusal::OfficerKept),
+        "one officer is signed on once"
+    );
     let officer = character.crew.officers.values().next().expect("kept");
     assert_eq!(officer.duty, Duty::Aboard);
     let kept = Character::from_json(&character.to_json()).expect("read");
@@ -98,7 +102,8 @@ fn one_officer_holds_each_post_two_go_ashore_and_eight_are_kept() {
     let here = Here::default();
     character.ask(Ask::Station { officer: ids[0], duty: Duty::Posted }, here, &dice(0)).expect("posted");
     character.ask(Ask::Station { officer: ids[1], duty: Duty::Posted }, here, &dice(0)).expect("posted");
-    assert_eq!(character.crew.posted(Post::Gunner).map(|officer| officer.id), Some(ids[1]));
+    let posted = character.crew.officers.values().find(|each| each.duty == Duty::Posted && each.post == Post::Gunner);
+    assert_eq!(posted.map(|officer| officer.id), Some(ids[1]));
     assert_eq!(character.crew.officers[&ids[0]].duty, Duty::Aboard, "the one there goes aboard");
     for id in &ids[2..] {
         character.ask(Ask::Station { officer: *id, duty: Duty::Ashore }, here, &dice(0)).expect("ashore");
@@ -203,4 +208,26 @@ fn a_posted_lookout_sights_ships_farther_by_how_well_they_hold_their_post() {
     let perks = character.crew.officers[&ids[0]].active_traits().count();
     assert_eq!(perks, 0, "nothing bought yet");
     assert!((character.ship_trim().sight - (1.0 + 0.4 * strength)).abs() < 1e-12);
+}
+
+#[test]
+fn an_officers_way_to_their_next_level_runs_on_past_20_by_their_upgrades_bought() {
+    let mut officer = Officer::new(0, Post::Gunner, Rarity::Rare, 20);
+    officer.xp = u32::try_from(power::xp_for_level(power::XP_LEVEL_MOST)).unwrap();
+    assert_eq!(officer.level(), 20);
+    assert_eq!(officer.to_next(), 0.0, "none bought yet");
+    let upgrades: Vec<usize> = officer
+        .columns()
+        .iter()
+        .enumerate()
+        .filter(|(_, column)| **column == crate::grid::Column::Upgrade)
+        .map(|(index, _)| index)
+        .collect();
+    assert!(upgrades.len() > 1);
+    officer.bought |= officer.node_bit(upgrades[0], 0).unwrap();
+    assert_eq!(officer.level(), 22, "a Seasoned officer's upgrade carries them two levels");
+    let share = officer.to_next();
+    assert!((share - 1.0 / upgrades.len() as f64).abs() < 1e-12, "one of their upgrades: {share}");
+    let young = Officer::new(0, Post::Gunner, Rarity::Rare, 5);
+    assert_eq!(young.to_next(), power::to_next(u64::from(young.xp), 0).0, "under 20, their experience's");
 }
