@@ -7,13 +7,13 @@ import {
   SEAM_BIT,
   startWatersRules,
   type WatersGrid,
+  type SeaFacts,
   type WatersRules,
   type WatersTable,
 } from '../rules/watersRules.ts';
 import type { Point2 } from '../overworld/ground.ts';
-import { type PortCity, portCities } from './seaAfter.ts';
 import { waterNamer, type WaterNamed } from './seaHostiles.ts';
-import { portsOf, type WorldData } from './worldData.ts';
+import { type PortCity, portCities, portsOf, type WorldData } from './worldData.ts';
 
 /** The waters as the page opens them once: their rules, their table, and their grid at the held map's own cell in the
  *  map's terms. */
@@ -46,13 +46,19 @@ export function watersOnce(module: Promise<WebAssembly.Module>, world: WorldData
     .then((compiled) => openWaters(compiled, world));
 }
 
-/** What the sea reads of the page's waters: the water at a point, named, and the port cities, in the sea's order. */
+/** What the sea reads of the page's waters: the water at a point, named, the port cities, in the sea's order, and the
+ *  sea's facts its rules give. */
 export function seaWatersOf(
   open: OpenWaters,
   world: WorldData,
-): { readonly waterAt: (point: Point2) => WaterNamed | null; readonly ports: readonly PortCity[] } {
+): {
+  readonly waterAt: (point: Point2) => WaterNamed | null;
+  readonly ports: readonly PortCity[];
+  readonly facts: SeaFacts;
+} {
   return {
     waterAt: waterNamer(open.rules, open.table),
     ports: portCities(portsOf(world.cities), open.table.mainPorts),
+    facts: open.table.sea,
   };
 }

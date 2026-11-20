@@ -25,7 +25,7 @@ import { startGearWindow } from './gearWindow.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { nodeOfRoom, seaRoomName } from './rooms.ts';
 import { Sea } from './sea.ts';
-import { SeaAfter, deckKey, fightAsk } from './seaAfter.ts';
+import { SeaWord, deckKey, fightAsk } from './seaWord.ts';
 import { seaPointer } from './seaPointer.ts';
 import { shipPanelOnceBuilt } from './shipPanel.ts';
 import { offshore } from './seaLaw.ts';
@@ -73,7 +73,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     sea: null,
     // The held map, made when it is first asked for, since its coasts are worked out then.
     heldMap: null,
-    afterFights: null,
+    seaWord: null,
     landmass,
     drawers: drawersOn(landmass),
     ready: false,
@@ -176,9 +176,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         heading,
         footContext,
       );
-      const { waterAt, ports } = seaWatersOf(await waters, world);
+      const { waterAt, ports, facts } = seaWatersOf(await waters, world);
       playing.sea.waterAt = waterAt;
-      playing.afterFights = new SeaAfter(ports);
+      playing.sea.facts = facts;
+      playing.seaWord = new SeaWord(ports, facts);
     }
     playing.sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
@@ -355,7 +356,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       builtSloop(),
       sloop.waterline,
       playing.flow.mode === 'sea' ? playing.sea : null,
-      SeaAfter.keptOf(playing.sea?.sighted ?? null),
+      playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null,
     );
   const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);
   startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);

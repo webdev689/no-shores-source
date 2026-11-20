@@ -18,9 +18,6 @@ import type { NodeInfo } from './worldData.ts';
  *  the page's styles, which tests run without. */
 export type StandOnDeck = (typeof Foot)['onDeck'];
 
-/** The sea's ticks a second (crates/room/src/sea.rs). */
-const TICKS_PER_SECOND = 60;
-
 /** What the fight on her deck needs of the sea room: the deck the player stands on, their number at sea, the link's
  *  state and gear, where her deck room's snapshots go, and a way to send it the land's inputs. */
 export interface DeckSea {
@@ -166,6 +163,8 @@ export class DeckFight {
   /** Where this fight hears her deck room's snapshots, let go of only while it is the sea's. */
   private heard: DeckSea['hearDeck'] = null;
   private taken: readonly SeenFlotsam[] | null = null;
+  /** A tick of the sea's, seconds, as the rules' door gives it. */
+  private tickSeconds = 0;
 
   private constructor(foot: Foot, boarder: number, deck: Deck, sea: DeckSea, near: readonly [number, number]) {
     [this.foot, this.boarder, this.deck, this.sea, this.near] = [foot, boarder, deck, sea, near];
@@ -194,7 +193,7 @@ export class DeckFight {
       return deckLink(sea, boarder);
     });
     const fight = new DeckFight(foot, boarder, her, sea, near);
-    [fight.before, fight.heard] = [before, heard];
+    [fight.before, fight.heard, fight.tickSeconds] = [before, heard, context.movement.tickSeconds];
     return fight;
   }
 
@@ -208,7 +207,7 @@ export class DeckFight {
   /** The seconds her won deck holds the player yet, whole; null while her crew still fights. */
   get holdLeft(): number | null {
     const ticks = this.sea.deck?.holdLeft;
-    return ticks === null || ticks === undefined ? null : Math.ceil(ticks / TICKS_PER_SECOND);
+    return ticks === null || ticks === undefined ? null : Math.ceil(ticks * this.tickSeconds);
   }
 
   /** What her hold laid for the player once her crew fell, as the room gave it; null before. */

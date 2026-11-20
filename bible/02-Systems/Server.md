@@ -134,7 +134,9 @@ on Cloudflare.
 
 ## The sea
 
-The room named `sea` holds every player's ship. A player sets their ship's course: the world points it sails through
+The room named `sea` holds every player's ship at Normal; `sea--elite` and `sea--abyss` are the same sea at a
+voyage's harder difficulty, each a room of its own whose ships come at the levels that difficulty raises them to
+(`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
 or 1, the world's own time, which the page sails her at while its view is close on her ([[Game]], "At sea").
 A ship not yet at sea puts to sea at the course's first point; one at sea starts the course from where it is, to the
@@ -183,14 +185,17 @@ will take it, by the room's own tick.
   accounts answered for them waits, then sails from where the room last kept her once their character is given back
   (a fight met from the page's spot meanwhile is over for her), or as asked once the host says none is kept
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives her
-  back where she was kept). A new account's character is the one the room holds, given back to it. Whatever
+  back where she was kept). A new account's character is the one the room holds, given back to it. The account the
+  keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
+  they join once more, and the ships they fought are told as theirs (`ShipDown`'s accounts). Whatever
   changes a character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up, the character
   given back) is sent to the player as their gear (`room_gear`, written as a land room writes it), at most every 12
   ticks, which flags it for its save 2 s on. No ship is left outside the world's frame: a fight's waters run past it,
   but where the fight has her, where she washes up and where her next course starts are held within it. A course's message asks for a repair (1), a boarding (2) or leaving her deck (3). The sea's
   snapshot carries what floats for each player, each ship's kept hurts and her repair's seconds left, what each player
   is told beside their fight's view (the naval crate's numbers, or the sea's own: washed up, what a piece held, who
-  joined, moored), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot
+  joined with her hull, moored; their codes one export on the page, `seaHarbour.ts` `TOLD`), whether each fighting
+  player may board now (`may_board`), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot
   once a tick (`room_snapshot_prepare`) and sends each socket its own cut (`room_snapshot_for`): what floats, kept
   hurts, what is told and a deck's own snapshot reach only the players they are for, and each player is sent only the
   ships near them: the hostile ships within 1.1 times the distance each is sighted from (the share that keeps her at
@@ -312,7 +317,7 @@ each room's name. The object keeps its room in WebAssembly: the room and protoco
 so every decision is Rust and the shell only carries bytes and time.
 
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
-  continents; `node-<id>` is that node's room, from its baked file, and `node-<id>--elite` or `--abyss` the same
+  continents, and `sea--elite` or `sea--abyss` the sea at a harder difficulty (`roomNames.ts` `seaRoom`); `node-<id>` is that node's room, from its baked file, and `node-<id>--elite` or `--abyss` the same
   node at a voyage's harder difficulty, a room of its own; `fleet-<name>` a fleet's place on the open sea;
   any other name is the Test Ground's course,
   `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404.
