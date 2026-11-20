@@ -16,6 +16,8 @@ status: in force
 > different from the reference in project-final". Offered three: the Heart of the Port (the port's people fused into
 > one giant, a heart in a cage of crystal ribs, a ship's anchor), the Drowned Bell, the Keeper: "Try #1"
 
+> Shown the Heart of the Port standing: "I love it"
+
 ## What it settles
 
 Claude's calls inside the owner's decisions on the Lattice
