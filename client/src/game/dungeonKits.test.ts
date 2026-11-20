@@ -184,31 +184,78 @@ test('nothing but a doorway’s, a torch’s, the exit’s or the portal’s own
 });
 
 test('wall sets stand on straight walls every `wallEvery` cells, where each style stands them, facing into their cell', () => {
-  let paired = 0;
+  const paired = new Map<StyleKey, number>();
   each((layout, placed) => {
     const bases = kind(placed, /^wall\.base$/);
     for (const base of bases) {
       const side = wallSide(base);
       const style = styleOf(base.module);
+      const rule = kits.styles[style].wallIn;
       assert.ok(rockOn(layout, base.cell, side), 'on a wall');
-      assert.ok(!isCave(layout, base.cell), 'never on a cave’s rock');
-      if (kits.styles[style].wallIn !== 'rooms+corridors') assert.ok((layout.cells[base.cell] ?? -1) >= 0, 'in a room');
+      assert.equal(isCave(layout, base.cell), rule === 'cave rooms', 'on a cave’s rock only where its rule says');
+      if (rule !== 'rooms+corridors') assert.ok((layout.cells[base.cell] ?? -1) >= 0, 'in a room');
       if (style === 'mines') continue;
       // The next set along the same unbroken run of wall stands `wallEvery` cells on.
       const step = side % 2 === 1 ? 1 : layout.columns;
       for (let gap = 1, cell = base.cell + step; gap <= 6; gap++, cell += step) {
         const same =
           layout.cells[cell] === layout.cells[base.cell] && layout.cellLooks[cell] === layout.cellLooks[base.cell];
-        if (!same || !rockOn(layout, cell, side) || isCave(layout, cell)) break;
+        if (!same || !rockOn(layout, cell, side)) break;
         const next = bases.find((other) => other.cell === cell && wallSide(other) === side);
         if (!next) continue;
         assert.equal(gap % kits.styles[style].wallEvery, 0, `${layout.name}: sets ${gap} cells apart`);
-        paired++;
+        paired.set(style, (paired.get(style) ?? 0) + 1);
         break;
       }
     }
   });
-  assert.ok(paired > 100, `${paired} sets beside another along a wall`);
+  const all = [...paired.values()].reduce((sum, count) => sum + count, 0);
+  assert.ok(all > 100, `${all} sets beside another along a wall`);
+  assert.ok((paired.get('caverns') ?? 0) > 0, 'a pair in the caverns, whose caves’ straight walls are short');
+});
+
+test('in the caverns a set stands on a cave room’s rock, set back into it, its cap meeting the rock, none in head height past its room', () => {
+  let [sets, back] = [0, 0];
+  each((layout, placed) => {
+    const busy = busyCells(layout);
+    const height = ceilingHeights(layout);
+    for (const piece of placed.filter(({ module: name }) => /^caverns\.wall\./.test(name))) {
+      assert.ok(isCave(layout, piece.cell) && (layout.cells[piece.cell] ?? -1) >= 0, 'in a cave room');
+      assert.ok(!busy.has(piece.cell), `${piece.module} on a doorway’s, a torch’s, the exit’s or the portal’s cell`);
+      const side = wallSide(piece);
+      const [east = 0, south = 0] = SIDE_STEPS[side] ?? [];
+      const [column = 0, row = 0] = columnRow(layout, piece.cell);
+      const [wallX, wallY] = [(column + 0.5 + east / 2) * layout.cell, (row + 0.5 + south / 2) * layout.cell];
+      const into = (x: number, y: number) => -(east * (x - wallX) + south * (y - wallY));
+      const along = (x: number, y: number) => Math.abs(-south * (x - wallX) + east * (y - wallY));
+      const bounds = boundsOf(FULL_PACKS, piece.module);
+      const low = piece.place.origin[2] + bounds[2] + (piece.place.stretch?.from ?? 0);
+      const [minX, minY, maxX, maxY] = planOf(piece);
+      if (low < HEAD_M)
+        for (const [x, y] of [
+          [minX, minY],
+          [maxX, maxY],
+        ] as const) {
+          assert.ok(into(x, y) <= 0.3 + EPS && along(x, y) <= 0.8 + EPS, `${piece.module} in head height off its wall`);
+        }
+      if (/base$/.test(piece.module)) {
+        const [x, y] = piece.place.origin;
+        assert.ok(into(x, y) <= EPS, 'its back on the wall or behind it, in the rock');
+        back += into(x, y) < -EPS ? 1 : 0;
+        sets++;
+      }
+      if (!/cap$/.test(piece.module)) continue;
+      const top = piece.place.origin[2] + bounds[5];
+      const keep = (value: number, start: number) => Math.min(start + layout.cell, Math.max(start, value));
+      for (let step = 0; step <= 10; step++)
+        for (let across = 0; across <= 10; across++) {
+          const x = keep(minX + ((maxX - minX) * step) / 10, column * layout.cell);
+          const y = keep(minY + ((maxY - minY) * across) / 10, row * layout.cell);
+          assert.ok(top >= height(piece.cell)(x, y) - EPS, 'its cap meets the rock all over it');
+        }
+    }
+  });
+  assert.ok(sets > 50 && back > 0, `${sets} sets, ${back} set back`);
 });
 
 test('the mines stand timber sets: a set on both walls across the way and a beam over every cell between', () => {

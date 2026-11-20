@@ -75,7 +75,7 @@
     },
     "caverns": {
       "wallEvery": 3,
-      "wallIn": "hewn rooms",
+      "wallIn": "cave rooms",
       "ceiling": "hang",
       "floor": "scree",
       "features": 2,

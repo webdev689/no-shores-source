@@ -96,6 +96,22 @@ function heightsOver(site: Site, cell: number, [minX, minY, maxX, maxY]: Rect): 
   );
 }
 
+/** The highest a cave cell's rock comes over a plan kept to the cell: the most at the corners of every strip it lies
+ *  under. The rock is drawn flat between those corners, and its lattice, twice a strip, rises one way across each
+ *  strip, so no point of it over the plan stands higher. */
+function highestOver(site: Site, cell: number, [minX, minY, maxX, maxY]: Rect): number {
+  const [column, row] = columnRow(site.layout, cell);
+  const step = site.layout.cell / CUTS;
+  const corners = (low: number, high: number, start: number) => {
+    const first = Math.min(CUTS - 1, Math.max(0, Math.floor((low - start) / step)));
+    const last = Math.min(CUTS - 1, Math.max(first, Math.ceil((high - start) / step) - 1));
+    return Array.from({ length: last - first + 2 }, (_unused, index) => start + (first + index) * step);
+  };
+  const height = site.height(cell);
+  const across = corners(minY, maxY, row * site.layout.cell);
+  return Math.max(...corners(minX, maxX, column * site.layout.cell).flatMap((x) => across.map((y) => height(x, y))));
+}
+
 /** The piece `piece` of a cell's style, if its pack holds one. */
 function pieceOf(site: Site, cell: number, piece: string): ModuleMesh | null {
   const style = styleAt(site.layout, cell);
@@ -116,24 +132,33 @@ function put(site: Site, cell: number, pieces: readonly Piece[]): boolean {
 const free = (site: Site, cell: number) =>
   isOpen(site.layout, cell) && !site.busy.has(cell) && !site.covered.has(cell) && !alcove(site.layout, cell);
 
-/** A base, a shaft and a cap on a cell's wall: the base on the floor, the cap's top where the ceiling comes lowest
- *  over it, the shaft stretched between them. None where a prop stands against the wall or the wall is too low. */
+/** A base, a shaft and a cap on a cell's wall: the base on the floor, the shaft stretched up to the cap. Under a
+ *  vault or a dome the cap's top is where the ceiling comes lowest over it, so none shows through. On a cave's rock
+ *  the set stands back as far as the rock does most behind it, and the cap's top is where the rock comes highest
+ *  over it, so it meets the rock all over, what stands above hidden in it. None where a prop stands against the wall
+ *  or the wall is too low. */
 function wallSet(site: Site, [cell, side]: Wall): Piece[] | null {
   const pieces = ['wall.base', 'wall.shaft', 'wall.cap'];
   const [base, shaft, cap] = pieces.map((piece) => pieceOf(site, cell, piece));
   if (!base || !shaft || !cap || !free(site, cell) || site.walled.has(cell * 4 + side)) return null;
-  const [x, y] = wallPoint(site.layout, cell, side);
+  const { layout } = site;
+  const cave = isCave(layout, cell);
+  const half = Math.max(...[base, shaft, cap].map(({ bounds }) => Math.max(-bounds[0], bounds[3])));
+  const back = setBack(layout, cell, side, half, layout.ceilings[cell] ?? 0);
+  const [x, y] = wallPoint(layout, cell, side);
+  const [east, south] = stepOf(side);
   const turns = wallTurns(side);
-  const flat: Place = { origin: [x, y, 0], turns };
-  if ([base, shaft, cap].some((piece) => crowded(site.layout, planOf(piece, flat), CLEAR_M))) return null;
-  const top = Math.min(...heightsOver(site, cell, planOf(cap, flat)));
+  const flat: Place = { origin: [x + east * back, y + south * back, 0], turns };
+  if ([base, shaft, cap].some((piece) => crowded(layout, planOf(piece, flat), CLEAR_M))) return null;
+  const over = planOf(cap, flat);
+  const top = cave ? highestOver(site, cell, over) : Math.min(...heightsOver(site, cell, over));
   const capAt = top - cap.bounds[5];
   const [from, to] = [base.bounds[5], capAt + cap.bounds[2]];
   if (!(to > from)) return null;
   return [
     ['wall.base', flat],
     ['wall.shaft', { ...flat, stretch: { from, to } }],
-    ['wall.cap', { origin: [x, y, capAt], turns }],
+    ['wall.cap', { origin: [flat.origin[0], flat.origin[1], capAt], turns }],
   ];
 }
 
@@ -189,11 +214,16 @@ function runsOf(layout: DungeonLayout, holds: (cell: number) => boolean, alongX:
   return runs;
 }
 
-/** Whether a style stands its wall pieces in a cell: a room's but a cave's, and a corridor's where its rule says. */
-const wallsIn = (layout: DungeonLayout, rule: Rule, cell: number) =>
-  isOpen(layout, cell) &&
-  !isCave(layout, cell) &&
-  (rule.wallIn === 'rooms+corridors' || (layout.cells[cell] ?? CORRIDOR) >= 0);
+/** Whether a style stands its wall pieces in a cell, as its rule's `wallIn` says: `rooms`, a hewn room's;
+ *  `rooms+corridors`, a hewn room's or corridor's; `cave rooms`, a room's whose walls are a cave's rock. */
+function wallsIn(layout: DungeonLayout, rule: Rule, cell: number): boolean {
+  if (!isOpen(layout, cell)) return false;
+  const [room, cave] = [(layout.cells[cell] ?? CORRIDOR) >= 0, isCave(layout, cell)];
+  if (rule.wallIn === 'rooms') return room && !cave;
+  if (rule.wallIn === 'rooms+corridors') return !cave;
+  if (rule.wallIn === 'cave rooms') return room && cave;
+  throw new Error(`kits.json stands wall sets in "${rule.wallIn}", which the page does not know`);
+}
 
 /** The sets along every straight run of wall, every `wallEvery` cells. */
 function wallRuns(site: Site): void {
@@ -252,14 +282,14 @@ function timberSets(site: Site): void {
   });
 }
 
-/** How far a piece on a cave's wall stands back into the rock, so its back meets the rock where the wall stands back
- *  most behind it; none on a hewn wall. */
-function setBack(layout: DungeonLayout, cell: number, side: number, module: ModuleMesh): number {
+/** How far a piece on a cave's wall, `halfWidth` m either side of its middle and `top` m high, stands back into the
+ *  rock, so its back meets the rock where the wall stands back most behind it; none on a hewn wall. */
+function setBack(layout: DungeonLayout, cell: number, side: number, halfWidth: number, top: number): number {
   if (!isCave(layout, cell)) return 0;
   const [x, y] = wallPoint(layout, cell, side);
   const [east, south] = stepOf(side);
-  const half = Math.max(-module.bounds[0], module.bounds[3]) / layout.cell;
-  const rise = Math.min(1, module.bounds[5] / (layout.ceilings[cell] ?? 1));
+  const half = halfWidth / layout.cell;
+  const rise = Math.min(1, top / (layout.ceilings[cell] ?? 1));
   const shares = [-1, -0.5, 0, 0.5, 1];
   const backs = shares.flatMap((share) =>
     shares.map((upShare) => {
@@ -299,7 +329,7 @@ function features(site: Site): void {
       if (!module) continue;
       const [x, y] = wallPoint(layout, cell, side);
       const [east, south] = stepOf(side);
-      const back = setBack(layout, cell, side, module);
+      const back = setBack(layout, cell, side, Math.max(-module.bounds[0], module.bounds[3]), module.bounds[5]);
       const place: Place = { origin: [x + east * back, y + south * back, 0], turns: wallTurns(side) };
       const fits = module.bounds[5] <= (layout.ceilings[cell] ?? 0);
       if (fits && !crowded(layout, planOf(module, place), CLEAR_M) && put(site, cell, [[piece, place]])) used.add(cell);
@@ -335,7 +365,7 @@ function stalactite(site: Site, cell: number): void {
   const keep = (value: number, low: number, high: number) => Math.min(Math.max(value, low), Math.max(low, high));
   const x = keep(lowest.x, west - minX, west + layout.cell - maxX);
   const y = keep(lowest.y, north - minY, north + layout.cell - maxY);
-  const top = Math.max(...heightsOver(site, cell, planOf(module, { origin: [x, y, 0], turns })));
+  const top = highestOver(site, cell, planOf(module, { origin: [x, y, 0], turns }));
   hang(site, cell, piece, [x, y, top], turns);
 }
 

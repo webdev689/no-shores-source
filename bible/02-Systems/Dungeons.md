@@ -254,9 +254,11 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   above, with one warning; a pack that failed is asked for again when the next dungeon is entered.
 - **Its kits** (`dungeonKits.ts`) are placed from the layout alone, as `content/dungeon/kits.json` says: a door in
   every doorway; a pillar's base, its shaft stretched to its capital; wall sets every `wallEvery` cells along a straight
-  wall, the cap's top where the ceiling comes lowest over it, never on a cave's rock, and in the mines a timber set on
-  both walls of a way with a beam across; up to `features` a room on its quiet cells' walls, set back into a cave's
-  rock; and a sconce at every torch, round the code-built flame, and arches round the portal and the exit door.
+  wall where `wallIn` says, the cap's top where the ceiling comes lowest over it, and in the mines a timber set on
+  both walls of a way with a beam across; up to `features` a room on its quiet cells' walls; and a sconce at every
+  torch, round the code-built flame, and arches round the portal and the exit door. Only the caverns stand sets on a
+  cave's rock (`cave rooms`): a set or a feature there stands back as far as the rock does most behind it, and a
+  set's cap rises to where the rock comes highest over it, so it meets the rock all over.
 - **Overhead and underfoot**, by the style's `ceiling` and `floor`: a boss at a dome's top and every second cell of a
   vault's ridge; a beam across the way on every flat cell; stalactites from one cave cell in six, where its rock comes
   lowest, their roots in the rock; slabs on one quiet cell in four, a runner or rails along the straight corridors, a
