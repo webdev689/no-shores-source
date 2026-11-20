@@ -12,6 +12,7 @@ code:
   - client/src/sky/fall.ts#FallView
   - client/src/sky/bolts.ts#BoltView
   - client/src/sky/bolts.ts#boltPath
+  - client/src/sky/fall.ts#carriedOn
 ---
 # Weather
 
@@ -57,9 +58,11 @@ the tundra's fall is snow by night and sleet by day.
   from it.
 - **Rain, snow and sand** fall round the eye, drawn over the finished picture: up to 14,000 drops, 5,000 flakes and
   6,000 grains in a 24 m box that wraps round the eye, each standing in the world, so walking through the rain leaves
-  it where it is. Drops fall at 9 m/s and lean with half the wind, drawn as streaks; flakes fall at 1.1 m/s on small
-  eddies; sand runs low with the whole wind. Each takes the sky's light, brighter in a flash. What stands nearer in
-  the scene hides them, and none falls under the sea. Above 300 m over the ground none is drawn.
+  it where it is. Drops fall at 9 m/s and lean with half the wind, drawn as streaks; flakes fall at 1.1 m/s, each
+  swaying up to 0.4 m round its path; sand runs low with the whole wind. Each frame carries each kind on by its wind
+  and its fall over that frame, at most a tenth of a second, so a change of wind changes how fast it moves, never
+  where it stands. Each takes the sky's light, brighter in a flash. What stands nearer in the scene hides them, and
+  none falls under the sea. Above 300 m over the ground none is drawn.
 - **Lightning** is followed within 40 km of the eye and kept 80 s for its thunder. A strike flashes for a third of a
   second, a stroke and two return strokes, brightest near and to the ground, lighting the sky and the land. Its bolt
   is drawn while it flashes: to the ground, a jagged channel from the cloud's base (900 m, lower in a storm) with two
