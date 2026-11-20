@@ -19,6 +19,7 @@ code:
   - tools/lattice/heart.py
   - tools/lattice/heart_moves.py
   - tools/lattice/armoury.py
+  - tools/lattice/wave.py
 ---
 # Lattice
 
@@ -48,6 +49,13 @@ compose as it composes any figure ([[The Lattice Are the Ruined Ports' People, O
   sink where a leg cannot reach; a walk plants the foot bearing its weight. Every attack holds a frame or more before
   it lands, its tell, and starts and ends in the foe's idle stance. `<foe>_still` is a one-frame still of its first
   move, to judge its look by.
+- **Struck and killed.** Every foe flinches (`<foe>_hurt`, four frames) and staggers (`<foe>_stagger`, eight, a step
+  back; the Heart down on one knee, set on it as the forge sets a body down, `poses.py` `grounded_body`). None dies on
+  its own: a foe killed disperses in one wave of crystallized energy for all (`wave.py`), a burst of light where it
+  stood, its figure gone to crystal and flung up and out, a ring of shards rushing out along the ground on a band of
+  light, then gone. It is drawn once at a man's size from one side, as a brightness map, as the forge draws the Arts'
+  birds; the game tints it in the foe's crystal and scales it to the foe as it fades the foe's figure.
+  `python -I ../lattice/wave.py --out <folder>`.
 - **The Lattice's armour** (`armoury.py`), in Daedric's place
   ([[The Lattice's Armour and Weapons Take Daedric's Place]]): a set registered beside the forge's own, every piece
   its own make, built from the forge's armour kit (its bands, plates, blades, cuffs and helm shells), so it is graded
@@ -69,6 +77,7 @@ Run from `tools/forge/` with Blender's module, as the forge runs ([[Sprite Forge
 - The Lattice's armour is on hold, drawn standing still on the man's and the woman's bodies only; its every move,
   first person and its weapons and shields are not yet drawn, and the game still names Daedric.
 - The body's skin is coloured by the game as it composes a frame; the ashen skin each foe needs is not chosen yet.
+- The game is to play the wave at a foe's death, tinted and scaled, fading the foe's figure; it does not yet.
 - Left for the game to draw, since a picture's light cannot change from frame to frame: the Idol's beam and its
   lens's glow growing through the charge, the Bulwark's core flaring before it discharges, the shards the Ravager
   throws, a blink's dissolve. It also shows a part's layer only in the frames it belongs to: the Ravager's shards

@@ -6,7 +6,7 @@ forge's arm solver, its blade along the way it points (motion.py `laid`)."""
 import numpy as np
 
 from husk_moves import HUNCH, shambling
-from motion import CROUCH, DRIVE, drawn, laid, scaled, summed, tremor
+from motion import CROUCH, DRIVE, HURT, STAGGER, STEP_BACK, drawn, laid, recoil, scaled, summed, tremor
 
 READY = ((0.2, -0.32, 1.2), (-0.2, -0.32, 1.2))   # the fists up before the chest
 AHEAD = 8                                         # the blades' pitch at ready, degrees above level, pointed forward
@@ -107,5 +107,30 @@ def maul(frame, view, yaw):
     return armed(pose, wrists, (pitch, pitch)), gear
 
 
+def struck(wrists, hard):
+    """The fists knocked back and up by a blow, `hard` as it is."""
+    return tuple((x * (1 + 0.3 * hard), y + 0.1 * hard, z + 0.08 * hard) for x, y, z in wrists)
+
+
+def hurt(frame, view, yaw):
+    """Four frames: struck, thrown back and twisted, the fists knocked back and the blades up, the head snapped back."""
+    hard = HURT[frame]
+    rot = summed(HUNCH, SET, recoil(hard, -6 * hard), tremor('ravager_hurt', frame, 0.6 + hard, STEADY))
+    rot['head'] = (6 - 20 * hard, 8 + 10 * hard, 0)
+    pose, gear = drawn(rot, yaw, True, True)
+    return armed(pose, struck(READY, hard), (AHEAD + 30 * hard, AHEAD + 30 * hard)), gear
+
+
+def stagger(frame, view, yaw):
+    """Eight frames: thrown back a step, the fists flung wide for its balance, the blades up, finding its feet."""
+    hard = STAGGER[frame]
+    rot = summed(HUNCH, SET, scaled(STEP_BACK, min(1.0, hard)), recoil(hard, 8 * hard),
+                 tremor('ravager_stagger', frame, 0.6 + hard, STEADY))
+    rot['head'] = (6 - 18 * hard, -14 * hard, 0)
+    pose, gear = drawn(rot, yaw, True, True)
+    wide = tuple((x * (1 + 0.8 * hard), y + 0.12 * hard, z + 0.05 * hard) for x, y, z in READY)
+    return armed(pose, wide, (AHEAD + 40 * hard, AHEAD + 40 * hard)), gear
+
+
 MOVES = {'ravager_idle': (idle, IDLE), 'ravager_walk': (walk, range(16)), 'ravager_hurl': (hurl, HURL),
-         'ravager_maul': (maul, MAUL)}
+         'ravager_maul': (maul, MAUL), 'ravager_hurt': (hurt, HURT), 'ravager_stagger': (stagger, STAGGER)}

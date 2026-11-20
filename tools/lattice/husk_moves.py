@@ -4,8 +4,8 @@ footfalls, uneven strides, a constant tremor, the odd deep shudder, the head coc
 end in its idle's stance. Angles as motion.py's."""
 import numpy as np
 
-from motion import (BUCKLE, COIL, CONTACT_L, CONTACT_R, CROUCH, DRIVE, LUNGE, PASSING_L, PASSING_R, STAND, drawn,
-                    reach, scaled, summed, through, tremor)
+from motion import (BUCKLE, COIL, CONTACT_L, CONTACT_R, CROUCH, DRIVE, HURT, LUNGE, PASSING_L, PASSING_R, STAGGER,
+                    STAND, STEP_BACK, blend, drawn, reach, recoil, scaled, summed, through, tremor)
 
 HUNCH = {'spine': (20, 0, 0), 'chest': (14, 4, 0), 'neck': (-14, 0, 0),   # bowed, its head raised to its prey
          'clav_L': (0, 0, -12), 'uarm_L': (-8, -6, 0), 'farm_L': (-10, 0, 0),
@@ -132,5 +132,25 @@ def gore_rush(frame, view, yaw):
     return drawn(rot, yaw)
 
 
+def hurt(frame, view, yaw):
+    """Four frames: struck, the trunk and head thrown back and twisted, the arms flung up, back to its stance."""
+    hard = HURT[frame]
+    rot = summed(HUNCH, STAND, recoil(hard, -6 * hard), tremor('husk_hurt', frame, 1.0 + hard),
+                 {'uarm_L': (-20 * hard, -10 * hard, 0), 'uarm_R': (-10 * hard, 14 * hard, 0)})
+    rot['head'] = (6 - 22 * hard, 20 + 10 * hard, 6)
+    return drawn(rot, yaw)
+
+
+def stagger(frame, view, yaw):
+    """Eight frames: thrown back off its feet, a step back, the arms out for its balance, finding its feet."""
+    hard = STAGGER[frame]
+    rot = summed(HUNCH, blend(STAND, STEP_BACK, min(1.0, hard)), recoil(hard, 8 * hard),
+                 tremor('husk_stagger', frame, 1.0 + hard), {'uarm_L': (-10 * hard, -40 * hard, 0),
+                                                             'uarm_R': (-6 * hard, 40 * hard, 0),
+                                                             'farm_L': (-20 * hard, 0, 0), 'farm_R': (-20 * hard, 0, 0)})
+    rot['head'] = (6 - 18 * hard, 20 - 30 * hard, -10 * hard)
+    return drawn(rot, yaw)
+
+
 MOVES = {'husk_idle': (idle, IDLE), 'husk_walk': (shamble, WALK_BODY), 'husk_lunge': (lunge, REACH),
-         'husk_gore': (gore_rush, GORE)}
+         'husk_gore': (gore_rush, GORE), 'husk_hurt': (hurt, HURT), 'husk_stagger': (stagger, STAGGER)}

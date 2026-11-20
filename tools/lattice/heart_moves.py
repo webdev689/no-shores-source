@@ -5,8 +5,8 @@ and it claws one of its own people out of its body and flings it into the fight,
 holds a frame or more before it lands, its tell. Angles and places as motion.py's."""
 import numpy as np
 
-from motion import (CONTACT_L, CONTACT_R, CROUCH, DRIVE, PASSING_L, PASSING_R, TRUNK, drawn, laid, scaled, summed,
-                    through, tremor)
+from motion import (CONTACT_L, CONTACT_R, CROUCH, DRIVE, HURT, PASSING_L, PASSING_R, TRUNK, blend, downed, drawn, laid,
+                    recoil, scaled, summed, through, tremor)
 
 HUNCH = {'spine': (18, 0, 0), 'chest': (14, 0, 0), 'neck': (10, 0, 0), 'head': (14, 6, 0),
          'clav_L': (0, 0, 8), 'clav_R': (0, 0, -8)}
@@ -153,6 +153,43 @@ def tear(frame, view, yaw):
     return laid(pose, 'L', wrist, way, up=(0.0, 0.0, 1.0) if held_up else (-1.0, 0.0, 0.0)), gear
 
 
+def lowered(wrist, way, by):
+    """A wrist `by` metres lower, the anchor's way tilted so its crown still rests on the ground."""
+    x, y, z = wrist
+    z -= by
+    flat = np.array(way[:2]) / np.linalg.norm(way[:2])
+    down = -(z - 0.06) / 1.05
+    return (x, y, z), (*(flat * (1 - down * down) ** 0.5), down)
+
+
+def hurt(frame, view, yaw):
+    """Four frames: struck, rocked back and heaving, its fused people shuddering through it, the anchor kept."""
+    hard = HURT[frame]
+    rot = summed(HUNCH, scaled(BRACE, 0.4), recoil(hard * 0.8, 6 * hard), tremor('heart_hurt', frame, 0.7 + hard * 2, TRUNK),
+                 {'clav_L': (0, 0, 6 * hard), 'clav_R': (0, 0, -6 * hard)})
+    rot['head'] = (14 - 20 * hard, 6 + 8 * hard, 0)
+    pose, gear = drawn(rot, yaw, False, True)
+    return held(pose), gear
+
+
+# The stagger, eight frames, when its heart is struck hard: rocked back, then down on its right knee, holding there,
+# its chest thrown open, the heart before whoever struck it; then heaved up again. Each frame: how far it is rocked
+# back, and how far down on its knee.
+STAGGERED = [(0.8, 0.0), (1.2, 0.45), (0.9, 0.9), (0.6, 1.0), (0.6, 1.0), (0.5, 0.9), (0.3, 0.5), (0.0, 0.0)]
+ONE_KNEE = {'thigh_L': (-88, -6, -8), 'shin_L': (125, 0, 0), 'foot_L': (-40, 0, 0),
+            'thigh_R': (10, 6, 8), 'shin_R': (96, 0, 0), 'foot_R': (40, 0, 0)}   # the right knee on the ground
+
+
+def stagger(frame, view, yaw):
+    hard, knee = STAGGERED[frame]
+    rot = summed(HUNCH, blend(scaled(BRACE, 0.4), ONE_KNEE, knee), recoil(hard, -8 * hard),
+                 tremor('heart_stagger', frame, 0.7 + hard * 2, TRUNK))
+    rot['head'] = (14 - 18 * hard, -10 * hard, 0)
+    pose, gear = (downed if knee > 0.5 else drawn)(rot, yaw, False, True)
+    left, left_way = HANGING_L
+    return held(pose, lowered(*CARRIED, 0.42 * knee), ((left[0], left[1], left[2] - 0.42 * knee), left_way)), gear
+
+
 MOVES = {'heart_stand': (stand, range(1)), 'heart_idle': (idle, IDLE), 'heart_walk': (walk, WALK),
          'heart_sweep': (sweep, SWEEP), 'heart_slam': (slam, SLAM), 'heart_stomp': (stomp, STOMP),
-         'heart_tear': (tear, TEAR)}
+         'heart_tear': (tear, TEAR), 'heart_hurt': (hurt, HURT), 'heart_stagger': (stagger, STAGGERED)}

@@ -198,9 +198,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   the ruined ports' people overtaken by the crystal ([[The Lattice Are the Ruined Ports' People, Overtaken]]). The
   six Lattice foes are drawn by the [[Sprite Forge]] through `tools/lattice/` ([[Lattice]]), each with its look and
   moves, after a detailed pass and a full audit of every frame, its code and these notes
-  ([[The Lattice Is Drawn Whole Before It Comes Into the Game]], [[The Lattice as Claude Shapes It]]). Tested
-  offline: every move posed numerically (feet on the ground, blades, maul and anchor clear of the ground and the
-  body) and rendered.
+  ([[The Lattice Is Drawn Whole Before It Comes Into the Game]], [[The Lattice as Claude Shapes It]]). Then each
+  foe's flinch and stagger, and in place of deaths one wave of crystallized energy for all, the owner's pick
+  (`tools/lattice/wave.py`). Tested offline: every move posed numerically (feet on the ground, blades, maul and
+  anchor clear of the ground and the body) and rendered.
 
 ## Waiting on the owner
 

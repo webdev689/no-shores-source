@@ -110,6 +110,24 @@ def drawn(rot, yaw, left_fist=False, right_fist=False, plant='LR', drop=0.0):
     return pose, {'fist': {'L': left_fist, 'R': right_fist}}
 
 
+def downed(rot, yaw, left_fist=False, right_fist=False):
+    """The pose of `rot` set down on whatever of it touches the ground first, a knee, a hip, the chest or an arm, as
+    the forge sets a body down (poses.py `grounded_body`): for a body down on a knee."""
+    pose = poses.stance(rot, yaw, ground=lambda p: poses.grounded_body(p, arms=True))
+    return pose, {'fist': {'L': left_fist, 'R': right_fist}}
+
+
+# A body struck: the trunk thrown back and twisted, the head after it (`recoil`, by how hard).
+def recoil(hard, twist=0.0):
+    return {'spine': (-6 * hard, 0, twist * 0.4), 'chest': (-10 * hard, 0, twist), 'neck': (-6 * hard, 0, 0),
+            'clav_L': (0, 0, 8 * hard), 'clav_R': (0, 0, -8 * hard)}
+
+
+HURT = (1.0, 0.65, 0.3, 0.0)                              # a flinch's four frames, how hard each is thrown
+STAGGER = (0.7, 1.3, 1.5, 1.2, 0.8, 0.45, 0.18, 0.0)      # a stagger's eight: thrown back off its feet, finding them
+STEP_BACK = {'thigh_L': (-14, -6, -6), 'shin_L': (16, 0, 0), 'thigh_R': (22, 6, 6), 'shin_R': (20, 0, 0)}
+
+
 def reach(pose, left=None, right=None):
     """Each wrist given (body space, metres) laid there, the elbows bent as the forge's cast bends them."""
     at = poses.root_matrix(pose)

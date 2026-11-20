@@ -3,7 +3,8 @@ its emitter is held low and to its right, dormant; to fire it raises it, thrust 
 holds its facing through the charge, the tell, its lens's glow growing as the game draws it; then the beam, and it
 blinks away to a perch. Both wrists stay welded at the breech in every pose, the right hand pointing the barrel.
 Angles and places as motion.py's."""
-from motion import BRACE, COIL, STAND, blend, drawn, laid, scaled, summed, through, tremor
+from motion import (BRACE, COIL, HURT, STAGGER, STAND, STEP_BACK, blend, drawn, laid, recoil, scaled, summed, through,
+                    tremor)
 
 POISE = summed(STAND, {'spine': (6, 0, 0), 'chest': (4, 0, 0), 'neck': (4, 0, 0)})
 LOW = ((-0.15, -0.22, 1.06), (-0.3, -0.6, -0.74))   # the breech and the barrel's way, dormant: down past its right hip
@@ -85,5 +86,27 @@ def arrive(frame, view, yaw):
     return welded(pose, *between(TUCKED, LOW, eased(t))), gear
 
 
+def hurt(frame, view, yaw):
+    """Four frames: struck, thrown back, its emitter jerked up off its line and settling, the head snapped back."""
+    hard = HURT[frame]
+    rot = summed(POISE, recoil(hard, 6 * hard), tremor('idol_hurt', frame, 0.6 + hard))
+    rot['head'] = (10 - 22 * hard, 4, 0)
+    pose, gear = drawn(rot, yaw)
+    (x, y, z), way = LOW
+    return welded(pose, (x, y + 0.05 * hard, z + 0.08 * hard), way), gear
+
+
+def stagger(frame, view, yaw):
+    """Eight frames: thrown back a step, its emitter swung up and out as it finds its balance, back to dormant."""
+    hard = STAGGER[frame]
+    rot = summed(POISE, scaled(STEP_BACK, min(1.0, hard)), recoil(hard, -6 * hard),
+                 tremor('idol_stagger', frame, 0.6 + hard))
+    rot['head'] = (10 - 18 * hard, -10 * hard, 0)
+    pose, gear = drawn(rot, yaw)
+    (x, y, z), way = LOW
+    return welded(pose, (x - 0.06 * hard, y + 0.06 * hard, z + 0.12 * hard), way), gear
+
+
 MOVES = {'idol_idle': (idle, IDLE), 'idol_aim': (aim, range(4)), 'idol_charge': (charge, range(8)),
-         'idol_fire': (fire, FIRE), 'idol_arrive': (arrive, range(6))}
+         'idol_fire': (fire, FIRE), 'idol_arrive': (arrive, range(6)), 'idol_hurt': (hurt, HURT),
+         'idol_stagger': (stagger, STAGGER)}

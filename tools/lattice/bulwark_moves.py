@@ -4,8 +4,8 @@ deep shudders, a slow unsettling sway/cock of the crystal head on its own, and a
 new sway/cock/tilt and holds". Shielded, it walks and stands with its shield arm across its front and discharges from
 the shield's core; exposed, it swings the maul that formed in its hand two-handed, held out to its right so it never
 crosses its crystal head, and rears up to slam it down."""
-from motion import (COIL, CONTACT_L, CONTACT_R, CROUCH, DRIVE, LUNGE, PASSING_L, PASSING_R, TRUNK, drawn, laid,
-                    scaled, summed, through, tremor)
+from motion import (COIL, CONTACT_L, CONTACT_R, CROUCH, DRIVE, HURT, LUNGE, PASSING_L, PASSING_R, STAGGER, STEP_BACK,
+                    TRUNK, drawn, laid, recoil, scaled, summed, through, tremor)
 
 HUNCH = {'spine': (16, 0, 0), 'chest': (12, 0, 0), 'neck': (18, 0, 0), 'clav_L': (0, 0, -6), 'clav_R': (0, 0, -8)}
 BRACE = {'thigh_L': (-22, -12, -12), 'shin_L': (24, 0, 0), 'thigh_R': (12, 12, 14), 'shin_R': (22, 0, 0)}
@@ -149,5 +149,27 @@ def slam(frame, view, yaw):
     return gripped(pose, wrist, way), gear
 
 
+def hurt(frame, view, yaw):
+    """Four frames: struck, rocked back, the shield arm jolted up and out, the crystal head knocked back and round."""
+    hard = HURT[frame]
+    rot = summed(HUNCH, SET, recoil(hard * 0.7, 6 * hard), tremor('bulwark_hurt', frame, 0.8 + hard, TRUNK))
+    rot['head'] = (14 - 16 * hard, 10 * hard, 8 * hard)
+    pose, gear = drawn(rot, yaw, True, True)
+    x, y, z = GUARD[0]
+    return guarded(pose, (x + 0.06 * hard, y + 0.08 * hard, z + 0.1 * hard)), gear
+
+
+def stagger(frame, view, yaw):
+    """Eight frames: rocked back a heavy step, the shield arm thrown wide, the head lolling, finding its feet."""
+    hard = STAGGER[frame]
+    rot = summed(HUNCH, SET, scaled(STEP_BACK, min(1.0, hard)), recoil(hard * 0.7, -6 * hard),
+                 tremor('bulwark_stagger', frame, 0.8 + hard, TRUNK))
+    rot['head'] = (14 - 14 * hard, -16 * hard, -8 * hard)
+    pose, gear = drawn(rot, yaw, True, True)
+    x, y, z = GUARD[0]
+    return guarded(pose, (x + 0.16 * hard, y + 0.14 * hard, z + 0.06 * hard)), gear
+
+
 MOVES = {'bulwark_idle': (idle, IDLE), 'bulwark_walk': (walk, WALK), 'bulwark_discharge': (discharge, DISCHARGE),
-         'bulwark_change': (change, range(8)), 'bulwark_sweep': (sweep, SWEEP), 'bulwark_slam': (slam, SLAM)}
+         'bulwark_change': (change, range(8)), 'bulwark_sweep': (sweep, SWEEP), 'bulwark_slam': (slam, SLAM),
+         'bulwark_hurt': (hurt, HURT), 'bulwark_stagger': (stagger, STAGGER)}

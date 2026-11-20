@@ -4,7 +4,8 @@ its tell; its strikes are a kinetic chain, the hips first and the blade whipping
 running: a left slash, a right slash, and both blades brought down overhead a beat apart, since both swiping the same
 arc at once "reads as a toy". Its blades are longer than its wrists are high, so every pose keeps them clear of the
 ground. Angles as motion.py's; a pose for the right blade is the left's mirrored."""
-from motion import COIL, CROUCH, blend, drawn, mirrored, scaled, summed, through, tremor
+from motion import (COIL, CROUCH, HURT, STAGGER, STEP_BACK, blend, drawn, mirrored, recoil, scaled, summed, through,
+                    tremor)
 
 # Its stance: the knees bent and wide, the trunk forward, the blades held out, down and forward.
 READY = {'pelvis': (0, 0, 0), 'spine': (10, 0, 0), 'chest': (6, 0, 0), 'neck': (12, 0, 0),
@@ -116,6 +117,25 @@ def overhead(frame, view, yaw):
     return drawn(rot, yaw)
 
 
+def hurt(frame, view, yaw):
+    """Four frames: struck, the trunk thrown back and twisted, the stump snapped back, both blades flung out wide."""
+    hard = HURT[frame]
+    rot = summed(READY, recoil(hard, 8 * hard), tremor('flicker_hurt', frame, 1.0 + hard),
+                 {'neck': (-12 * hard, 10 * hard, 0), 'uarm_L': (-10 * hard, -30 * hard, 0),
+                  'uarm_R': (-10 * hard, 30 * hard, 0)})
+    return drawn(rot, yaw)
+
+
+def stagger(frame, view, yaw):
+    """Eight frames: thrown back off its feet a step, its blades flung wide for its balance, finding them."""
+    hard = STAGGER[frame]
+    rot = summed(READY, scaled(STEP_BACK, min(1.0, hard)), recoil(hard, -8 * hard),
+                 tremor('flicker_stagger', frame, 1.0 + hard),
+                 {'neck': (-10 * hard, -12 * hard, 0), 'uarm_L': (-8 * hard, -50 * hard, 0),
+                  'uarm_R': (-8 * hard, 50 * hard, 0)})
+    return drawn(rot, yaw)
+
+
 MOVES = {'flicker_idle': (idle, IDLE), 'flicker_arrive': (arrive, range(6)),
          'flicker_slash_left': (slash_left, SLASH), 'flicker_slash_right': (slash_right, SLASH),
-         'flicker_overhead': (overhead, OVERHEAD)}
+         'flicker_overhead': (overhead, OVERHEAD), 'flicker_hurt': (hurt, HURT), 'flicker_stagger': (stagger, STAGGER)}
