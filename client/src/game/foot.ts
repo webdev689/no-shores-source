@@ -202,7 +202,7 @@ export class Foot {
   /** Lands the player in a node at its first spawn, facing `facing`, keeping how they hold the camera, and joins its
    *  room: online the server's at the voyage's `seas`, signed in with the session's token; alone one in the page that
    *  may stand the foes the context asks for. */
-  static async enter(context: FootContext, node: NodeInfo, facing: number, seas: Difficulty = 'calm'): Promise<Foot> {
+  static async enter(context: FootContext, node: NodeInfo, facing: number, seas: Difficulty = 'normal'): Promise<Foot> {
     const { movement, walker, rooms, forge } = context;
     const module = await context.roomModule;
     const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };

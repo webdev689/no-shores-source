@@ -84,11 +84,11 @@ type Phase =
 type Choice = { readonly at: Point2; readonly name: string; readonly course: Course; readonly place: string | null };
 
 /** The difficulty a voyage sets out at: its island's foes as they are, or raised, paying more. */
-export type Difficulty = 'calm' | 'rough' | 'storm';
+export type Difficulty = 'normal' | 'elite' | 'abyss';
 const DIFFICULTY_WORDS: readonly (readonly [Difficulty, string, string])[] = [
-  ['calm', 'Calm', 'The island’s foes as they are.'],
-  ['rough', 'Rough', 'Foes two levels higher; half again the XP, Aurem and Vestiges.'],
-  ['storm', 'Storm', 'Foes three levels higher; twice the XP, Aurem and Vestiges.'],
+  ['normal', 'Normal', 'The island’s foes as they are.'],
+  ['elite', 'Elite', 'Foes two levels higher; half again the XP, Aurem and Vestiges.'],
+  ['abyss', 'Abyss', 'Foes three levels higher; twice the XP, Aurem and Vestiges.'],
 ];
 
 export class HeldMap {
@@ -109,9 +109,9 @@ export class HeldMap {
   private press: { x: number; y: number; view: View; panning: boolean } | null = null;
   private choice: Choice | null = null;
   /** The difficulty the voyage set out at: what the card showed when the player set sail. */
-  difficulty: Difficulty = 'calm';
+  difficulty: Difficulty = 'normal';
   /** The difficulty chosen on the card, kept only once the player sets sail with it. */
-  private picked: Difficulty = 'calm';
+  private picked: Difficulty = 'normal';
   private placed: { readonly place: MapPlace; readonly x: number; readonly y: number }[] = [];
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;

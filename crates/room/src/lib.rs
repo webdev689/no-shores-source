@@ -189,7 +189,7 @@ impl Room {
             resource_nodes: Vec::new(),
             drops: Vec::new(),
             spells: spells::Spells::default(),
-            difficulty: gear::Difficulty::Calm,
+            difficulty: gear::Difficulty::Normal,
             patrol: None,
             day: 0,
         }
