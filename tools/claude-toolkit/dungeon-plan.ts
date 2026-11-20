@@ -8,6 +8,7 @@
 //
 //     node tools/claude-toolkit/dungeon-plan.ts <room-qa.wasm> <patrol id> <number> <out dir> [most rooms | review]
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import table from '../../content/dungeon/landmarks.json' with { type: 'json' };
 import manifest from '../../content/dungeon/modules.json' with { type: 'json' };
 import { cellAt, centreOf, isOpen, ontoWall, stepOf, wallPoint, wayTurns } from '../../client/src/game/dungeonCells.ts';
 import { kitPlacements } from '../../client/src/game/dungeonKits.ts';
@@ -180,7 +181,13 @@ if (!review) {
     const middle = middleOf(landmark.cells);
     chosen.add(index);
     overview(index, middle, `${landmark.module} in ${roomLabel(index)}`);
-    const sides = [[1, 0], [0, 1], [-1, 0], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]];
+    // A wall piece is seen from the side it faces first: modelled facing south, turned as it is laid.
+    const facing = turnAbout([0, 1, 0], landmark.place.turns).slice(0, 2);
+    const wall = table.landmarks.find((entry) => entry.module === landmark.module)?.wall ?? false;
+    const sides = [
+      ...(wall ? [facing] : []),
+      ...[[1, 0], [0, 1], [-1, 0], [0, -1], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]],
+    ];
     const sizes = landmark.cells.length > 1 ? [5.5, 5, 4.5, 6, 4] : [3.5, 3, 4, 2.6];
     sides.some((out) => close(middle, out, sizes, 0.45, `${landmark.module} close`, index));
   }
