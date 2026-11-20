@@ -258,8 +258,10 @@ export class SeaCombat {
 
   /** Each captain's bar over her masthead, in world metres, her drawn `scale` times her size, while she floats. */
   bars(scale: number): ShipBar[] {
-    const bar = (captain: FightCaptain) =>
-      barOver({ ...captain, maxHull: captain.max_hull }, { leftM: 0, topM: 0 }, scale);
+    // Each keeps her own plate by her number in the fight (the captain 1, each other after her), as its events name
+    // her: plates sharing one key would share one plate's place and losses, the last ship's drawn over the rest.
+    const bar = (captain: FightCaptain, index: number) =>
+      barOver({ ...captain, id: index + 1, maxHull: captain.max_hull }, { leftM: 0, topM: 0 }, scale);
     return this.captains.map(bar).filter((shown) => shown !== null);
   }
 

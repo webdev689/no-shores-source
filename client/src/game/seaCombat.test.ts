@@ -66,6 +66,21 @@ test('a fight draws every Sloop, her footprint, everyone aboard and each bar at 
   assert.deepEqual(fight.bars(3)[0]?.over, [5400, 5500, (0.2 + BAR_OVER_M) * 3]);
 });
 
+test('each captain keeps a plate of her own, keyed by her number in the fight, so a hit lowers her bar alone', () => {
+  const struck = { ...captain, hull: captain.max_hull / 2 };
+  const view: FightView = { ...FIRST, captain, others: [struck, { ...captain, ship: [5600, 5500, 0, 0, 0, 0, 0, 0] }] };
+  const fight = new SeaCombat(roomSource(ROOM, view), view, MARKS, [], 0);
+  const bars = fight.bars(1);
+  assert.deepEqual(
+    bars.map((bar) => bar.key),
+    [1, 2, 3],
+  );
+  assert.deepEqual(
+    bars.map((bar) => bar.share),
+    [1, 0.5, 1],
+  );
+});
+
 test("a fight begun at the sea's view keeps the size she is drawn at, and eases to her true size as it comes down", () => {
   const fight = new SeaCombat(roomSource(ROOM, FIRST), FIRST, MARKS, [], 0);
   const her = [5000, 6000, 0] as const;
