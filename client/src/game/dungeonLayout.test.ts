@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { askDungeon, ceilingAt, courseOf, type DungeonLayout, seenBlocks } from './dungeonLayout.ts';
+import { dressingOf } from './dungeonDressing.ts';
+import { placedLandmarks } from './dungeonLandmarks.ts';
+import { askDungeon, ceilingAt, courseOf, type DungeonLayout, readDungeon, seenBlocks } from './dungeonLayout.ts';
+import { burningOf } from './dungeonLight.ts';
+import { dungeonMesh } from './dungeonMesh.ts';
+import { FULL_PACKS } from './dungeonPacks.test.ts';
 
 /** A room's cell and a corridor's in a row of three, rock past them. */
 const small = {
@@ -58,6 +63,34 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
     'each glow x, y, z, kind',
   );
   assert.notEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 1), laid);
+});
+
+test('an older room module that answers no landmarks or glows is read as standing none', async (context) => {
+  let bytes: Buffer;
+  try {
+    bytes = readFileSync('client/public/room.wasm');
+  } catch {
+    context.skip('room.wasm is not built: run `npm run wasm`');
+    return;
+  }
+  const laid = askDungeon(
+    await WebAssembly.compile(new Uint8Array(bytes)),
+    'saltgrass-downs',
+    'The Saltgrass Downs',
+    0,
+  );
+  assert.ok(laid.landmarks.length > 0 && laid.glows.length > 0);
+  const older: Partial<DungeonLayout> = { ...laid };
+  delete older.landmarks;
+  delete older.glows;
+  const read = readDungeon(JSON.stringify(older));
+  assert.ok(read);
+  assert.deepEqual([read.landmarks, read.glows], [[], []]);
+  assert.deepEqual(placedLandmarks(read), []);
+  assert.equal(burningOf(read).length, laid.torches.length + laid.fixtures.length);
+  assert.ok(dungeonMesh(read, [56, 2], dressingOf(read, FULL_PACKS, 'temperate').lay).indices.length > 0);
+  assert.deepEqual(readDungeon(JSON.stringify(laid)), laid, 'a newer one is read whole');
+  assert.equal(readDungeon('null'), null);
 });
 
 test("the ceiling over a point is its open cell's, and none over rock or off the grid", () => {

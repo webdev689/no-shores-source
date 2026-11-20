@@ -106,10 +106,18 @@ export function askDungeon(module: WebAssembly.Module, patrol: string, name: str
   if (known) return known;
   const door = doors.get(module) ?? startRoomDoor(module);
   doors.set(module, door);
-  const layout = JSON.parse(door.dungeon(patrol, name, number)) as DungeonLayout | null;
+  const layout = readDungeon(door.dungeon(patrol, name, number));
   if (!layout) throw new Error(`${patrol} has no dungeon ${number}`);
   laid.set(key, layout);
   return layout;
+}
+
+/** A dungeon as the room module answers it, null for none. A module older than the landmarks answers none of them
+ *  or their glows, and a page newer than it reads that as none of each. */
+export function readDungeon(answer: string): DungeonLayout | null {
+  const read = JSON.parse(answer) as
+    (Omit<DungeonLayout, 'landmarks' | 'glows'> & Partial<Pick<DungeonLayout, 'landmarks' | 'glows'>>) | null;
+  return read && { ...read, landmarks: read.landmarks ?? [], glows: read.glows ?? [] };
 }
 
 /** Whether a cell lies on the grid and is open: a room's or a corridor. */

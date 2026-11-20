@@ -239,7 +239,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 ## In the Game
 
 The page reads a dungeon from the room module's own `room_dungeon` (`askDungeon`) and plays it as [[Game]] says ("A
-dungeon").
+dungeon"). A module older than the landmarks answers no landmarks or glows, and is read as standing none
+(`readDungeon`).
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
