@@ -424,7 +424,9 @@ async function start(): Promise<void> {
     scene.setSwings(feel.arcsMesh(clock, strikers, figuresDrawn, cameraOf(camera).eye, inFirstPerson));
     blood.frame(seconds, events, fighting, bloodCamera(camera, aspect));
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
-      if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
+      // The Test Ground keeps a clear afternoon: its hands are drawn as made.
+      if (inFirstPerson)
+        firstPerson.draw(encoder, view, { width: canvas.width, height: canvas.height, light: [1, 1, 1] });
     });
     const where = (id: number): [number, number, number] | null => {
       if (id === fighting.player && own) return [own.x, own.y, own.z];

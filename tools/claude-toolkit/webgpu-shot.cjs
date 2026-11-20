@@ -7,16 +7,31 @@
 // and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. The
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first.
 //
-// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
+// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "init": "js run before the
+// page's own, e.g. a shifted Date.now for the world's hour", "steps": [ ... ] }, each
 // step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
 // { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
-// waits minutes behind. The console's errors are printed.
+// waits minutes behind. The console's errors are printed, and so is every shader that fails to compile: WebGPU
+// reports those only as warnings, so a broken shader would otherwise draw nothing and say nothing.
 const { chromium } = require('playwright');
 const { readFileSync } = require('node:fs');
+
+const SHADER_ERRORS = () => {
+  const create = GPUDevice.prototype.createShaderModule;
+  GPUDevice.prototype.createShaderModule = function (descriptor) {
+    const made = create.call(this, descriptor);
+    made.getCompilationInfo().then((info) => {
+      for (const note of info.messages)
+        if (note.type === 'error')
+          console.error(`WGSL ${note.lineNum}: ${note.message} | ${(descriptor.code.split('\n')[note.lineNum - 1] ?? '').trim()}`);
+    });
+    return made;
+  };
+};
 
 const OWN_TEXTURE = () => {
   const kept = new WeakMap();
@@ -113,6 +128,8 @@ async function main() {
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
     );
   await page.addInitScript(OWN_TEXTURE);
+  await page.addInitScript(SHADER_ERRORS);
+  if (plan.init) await page.addInitScript({ content: plan.init });
   await page.goto(plan.url);
   for (const step of plan.steps) {
     const started = Date.now();

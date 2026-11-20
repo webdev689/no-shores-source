@@ -22,7 +22,7 @@ export interface ReliefScene {
 
 /** One full-screen pass over a landmass's window: the seabed by depth, the land by height under a hillshade, lakes,
  *  each cell's mark (rivers, roads, towns, ports), the frame's edge and the brush. */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 
 struct View {

@@ -104,6 +104,9 @@ table Joined {
   bounds: [double];
   // The protocol's version: the schema's hash, so a page built from another schema knows to load again.
   protocol: uint;
+  // World time at the room's first tick, seconds: a tick's world time is this and its ticks' seconds, which the
+  // room's weather is read at and a browser's prediction reads it at too.
+  epoch: double;
 }
 
 // One player as the room last stepped them: the number of their last input it took, what their figure showed with
