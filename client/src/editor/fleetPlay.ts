@@ -56,7 +56,8 @@ export class FleetSloop extends Afloat {
     this.session.advance(seconds, input, now);
     this.moveTo(new Float64Array(this.session.shipFloats()) as ShipFloats, this.session.shipPose());
     for (const event of this.session.takeEvents()) {
-      const words = event.kind === 'gone' ? goneWords(event.ship, event.sunk) : wordsFor(event, 'captain’s Sloop');
+      const words =
+        event.kind === 'gone' ? goneWords(event.ship, event.sunk) : wordsFor(event, () => 'captain’s Sloop');
       if (words) this.say(words, now);
     }
   }
@@ -105,7 +106,7 @@ export class FleetSloop extends Afloat {
     const broadside = captains.some(
       (vessel) => vessel.target === id && vessel.runOut !== 0 && vessel.state === 'afloat',
     );
-    if (broadside) lines.push('BROADSIDE! Brace (C).');
+    if (broadside) lines.push('Broadside: C to brace.');
     const players = this.others().length - captains.length;
     lines.push(
       `In the fleet: ${players} other ${players === 1 ? 'ship' : 'ships'}, ${captains.length} ${captains.length === 1 ? 'captain' : 'captains'}. F calls a captain, X sends them off.`,

@@ -143,3 +143,13 @@ test('a captain keeps her own harm when another leaves the fight and the view mo
   assert.equal(scarsOf(5300), 1, 'the one struck keeps her hole');
   assert.equal(scarsOf(5000), 0);
 });
+
+test("each captain's plate is keyed by her own fight number, so plates in a fight of three never share a lift", () => {
+  const second = { ...captain, ship: [5420, 5500, 2, 0, 0, 0, 0, 2], number: 5 };
+  const third = { ...captain, ship: [5440, 5500, 2, 0, 0, 0, 0, 2] };
+  const fight = new SeaCombat(ROOM, { ...FIRST, others: [second, third] }, MARKS, 0);
+  assert.deepEqual(
+    fight.bars(1).map((bar) => bar.key),
+    [1, 5, 3],
+  );
+});

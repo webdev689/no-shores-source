@@ -340,9 +340,10 @@ export class SeaCombat {
   /** Each captain's bar over her hull's masthead, in world metres, her drawn `scale` times her size, while she
    *  floats. */
   bars(scale: number): ShipBar[] {
-    const bar = (captain: FightCaptain) =>
+    // Each keyed by the number the fight names her by, so the plates' layout keeps them apart.
+    const bar = (captain: FightCaptain, index: number) =>
       barOver(
-        { ...captain, maxHull: captain.max_hull },
+        { ...captain, maxHull: captain.max_hull, id: index === 0 ? 1 : (captain.number ?? index + 1) },
         { leftM: 0, topM: 0 },
         scale,
         plateOverM(this.shown(hullOfCaptain(captain))),
