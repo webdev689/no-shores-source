@@ -56,14 +56,14 @@ test('a hull hit bursts a few dozen chips of her paint that fall to the water', 
   const effects = new Effects(4);
   const paint = [0.1, 0.2, 0.3] as const;
   effects.splinter([0, 0, 0], [0, 3, 1.5], [0, 1], paint, 0);
-  const chips = effects.marks(0.1).filter((mark) => mark.radius < 0.1);
+  const chips = effects.marks(0.1).filter((mark) => mark.radius < 0.2);
   assert.equal(chips.length, SPLINTERS);
   assert.ok(chips.filter((mark) => mark.colour === paint).length > SPLINTERS / 2, "most are her paint's");
   assert.ok(
     effects.marks(1.5).every((mark) => mark.z >= 0),
     'none falls through the water',
   );
-  assert.ok(highest(effects.marks(1.5).filter((mark) => mark.radius < 0.1)) < 0.5, 'they lie on the water');
+  assert.ok(highest(effects.marks(1.5).filter((mark) => mark.radius < 0.2)) < 0.5, 'they lie on the water');
 });
 
 test('at the raised view every puff is drawn as many times larger about where it came from', () => {

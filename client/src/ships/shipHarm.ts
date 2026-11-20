@@ -104,7 +104,7 @@ export class ShipHarm {
 
   /** A ball through her hull at `at` (her frame): a ragged hole stays there. */
   scar(spot: Point): void {
-    this.scars.push({ at: spot, size: 0.25 + this.draw() * 0.2 });
+    this.scars.push({ at: spot, size: 0.4 + this.draw() * 0.3 });
   }
 
   /** A ball through a sail's cell: the canvas there is gone. */

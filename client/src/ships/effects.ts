@@ -129,12 +129,12 @@ export class Effects {
   fire(anchor: Point, mouth: Point, launch: Point, now: number): void {
     const speed = Math.hypot(launch[0], launch[1]) || 1;
     const out = [launch[0] / speed, launch[1] / speed] as const;
-    this.add(1, anchor, now, () => ({ from: mouth, radius: 0.4, grow: 4, colour: FLASH, life: FLASH_S, holds: 1 }));
-    this.add(7, anchor, now, (index) => ({
+    this.add(1, anchor, now, () => ({ from: mouth, radius: 0.8, grow: 6, colour: FLASH, life: FLASH_S, holds: 1 }));
+    this.add(10, anchor, now, (index) => ({
       from: mouth,
       velocity: [out[0] * (2 + index * 1.6) + this.spread(0.5), out[1] * (2 + index * 1.6) + this.spread(0.5), 0.3],
       drag: 0.9,
-      radius: 0.35 + this.draw() * 0.2,
+      radius: 0.9 + this.draw() * 0.5,
       grow: 0.45,
       windborne: true,
       colour: POWDER,
@@ -147,7 +147,7 @@ export class Effects {
   trail(balls: readonly Point[], now: number): void {
     if (now - this.trailAt < TRAIL_EVERY_S) return;
     this.trailAt = now;
-    for (const ball of balls) this.add(1, ball, now, () => ({ radius: 0.07, colour: TRAIL, life: TRAIL_S, holds: 0 }));
+    for (const ball of balls) this.add(1, ball, now, () => ({ radius: 0.12, colour: TRAIL, life: TRAIL_S, holds: 0 }));
   }
 
   /** A ball fell in the water at `at` (window metres, the water's height): a column of spray about 4 m high, back
@@ -155,11 +155,11 @@ export class Effects {
   splash(spot: Point, now: number): Splash {
     // Up 4 m and down again in 1.5 s: launched at 4h/T and pulled down at 8h/T².
     const [rise, pull] = [(4 * SPLASH_M) / SPLASH_S, (8 * SPLASH_M) / SPLASH_S ** 2];
-    this.add(14, spot, now, () => {
+    this.add(28, spot, now, () => {
       const share = 0.6 + this.draw() * 0.4;
       return {
         velocity: [this.spread(0.5), this.spread(0.5), rise * Math.sqrt(share)],
-        radius: 0.22 + this.draw() * 0.1,
+        radius: 0.4 + this.draw() * 0.2,
         grow: 0.15,
         gravity: pull,
         floor: 0,
@@ -167,13 +167,13 @@ export class Effects {
         life: SPLASH_S * Math.sqrt(share),
       };
     });
-    this.add(16, spot, now, (index) => {
-      const turn = (index / 16) * 2 * Math.PI;
+    this.add(24, spot, now, (index) => {
+      const turn = (index / 24) * 2 * Math.PI;
       return {
         from: [Math.cos(turn) * 0.4, Math.sin(turn) * 0.4, 0],
         velocity: [Math.cos(turn) * 2, Math.sin(turn) * 2, 0],
         drag: 1.2,
-        radius: 0.2,
+        radius: 0.35,
         grow: 0.05,
         colour: FOAM,
         life: FOAM_S,
@@ -204,7 +204,7 @@ export class Effects {
         out[1] * (2 + this.draw() * 4) + this.spread(2),
         1 + this.draw() * 4,
       ],
-      radius: 0.04 + this.draw() * 0.04,
+      radius: 0.08 + this.draw() * 0.08,
       gravity: GRAVITY,
       floor: 0,
       colour: this.draw() < 0.3 ? TIMBER : colour,
@@ -214,7 +214,7 @@ export class Effects {
     this.add(2, anchor, now, () => ({
       from: spot,
       velocity: [0, 0, 0.6],
-      radius: 0.25,
+      radius: 0.6,
       grow: 0.5,
       colour: POWDER,
       life: 2,
@@ -226,7 +226,7 @@ export class Effects {
     this.add(12, anchor, now, () => ({
       from: spot,
       velocity: [this.spread(2.5), this.spread(2.5), this.spread(1.5)],
-      radius: 0.04,
+      radius: 0.08,
       gravity: GRAVITY,
       floor: 0,
       colour: TIMBER,
@@ -240,7 +240,7 @@ export class Effects {
     this.add(6, anchor, now, () => ({
       from: spot,
       velocity: [this.spread(1.5), this.spread(1.5), this.draw()],
-      radius: 0.07,
+      radius: 0.15,
       gravity: GRAVITY / 4,
       colour: CANVAS,
       life: 1.8,
