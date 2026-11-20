@@ -262,17 +262,17 @@ fn dressed_vector<'builder>(
     builder.create_vector(&each)
 }
 
-/// The welcome to a joining player: their number, every dress in the room so far, and in a node's room its id and
-/// the rect its ground is cut to (west, north, east, south).
+/// The welcome to a joining player: their number, every dress in the room so far, in a node's room its id and the
+/// rect its ground is cut to (west, north, east, south), and the world time at the room's first tick.
 #[must_use]
-pub fn joined_bytes(player: u32, dressed: &[(PlayerId, &str)], node: Option<(&str, [f64; 4])>) -> Vec<u8> {
+pub fn joined_bytes(player: u32, dressed: &[(PlayerId, &str)], node: Option<(&str, [f64; 4])>, epoch: f64) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let dressed = Some(dressed_vector(&mut builder, dressed));
     let bounds = node.map(|(_, bounds)| builder.create_vector(&bounds));
     let node = node.map(|(id, _)| builder.create_string(id));
     let joined = messages::Joined::create(
         &mut builder,
-        &messages::JoinedArgs { player, dressed, node, bounds, protocol: PROTOCOL },
+        &messages::JoinedArgs { player, dressed, node, bounds, protocol: PROTOCOL, epoch },
     );
     let message = messages::FromRoom::create(
         &mut builder,

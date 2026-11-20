@@ -11,7 +11,7 @@ import type { PropTable } from '../models/tables.ts';
 import type { FigureView } from './figureView.ts';
 import type { Foot, FootFrame } from './foot.ts';
 import type { CityAssets } from './landDrawers.ts';
-import type { Drawer } from './scene.ts';
+import type { Drawer, Overlay } from './scene.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** The door picture of Daggerfall's dungeon doors, where the props' table has not come. */
@@ -71,14 +71,14 @@ export class DungeonDrawers {
   }
 
   /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, and
-   *  the figures lit by the torches; `after` may draw over the finished picture. */
+   *  the figures lit by the torches; `after` may draw over the finished picture, in the light where the eye stands. */
   draw(
     foot: Foot,
     shown: FootFrame,
     size: { width: number; height: number },
     time: number,
     fight: { under: Drawer; over: Drawer },
-    after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void,
+    after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void,
   ): void {
     this.view.setCache(foot.held.cache);
     const { figures } = shown;
@@ -92,6 +92,9 @@ export class DungeonDrawers {
       },
       fight.over,
     ];
-    this.scene.draw(shown.shot, size, time, drawers, after);
+    // What the eye holds is lit as a figure is, held under the sky's 1.2 so a torch beside it does not burn it white.
+    const held = light(shown.shot.eye).map((part) => Math.min(1.2, part)) as [number, number, number];
+    const over = { width: size.width, height: size.height, light: held };
+    this.scene.draw(shown.shot, size, time, drawers, after && ((encoder, view) => after(encoder, view, over)));
   }
 }

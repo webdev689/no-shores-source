@@ -22,6 +22,8 @@ export class LocalRoom implements RoomLink {
   readonly joins = 1;
   readonly rejoining = false;
   readonly lost = null;
+  /** World time at the room's first tick, seconds, as its welcome says. */
+  readonly epoch: number;
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
@@ -37,6 +39,8 @@ export class LocalRoom implements RoomLink {
     this.snapshot = snapshot;
     this.gear = gear;
     this.player = player;
+    const welcome = readFromRoom(door.joined(this.player));
+    this.epoch = welcome?.kind === 'joined' ? welcome.epoch : 0;
   }
 
   /** Opens a room on a course from the compiled `room-wasm` module, its player standing at `spawn`, with its stall and
@@ -51,6 +55,7 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.open(spawn, blocks)) throw new Error('the course is not one a room can stand on');
+    door.epoch(Date.now());
     door.furnish(furnishing.stall, furnishing.nodes);
     door.day(Math.floor(Date.now() / 86_400_000));
     return new LocalRoom(door, snapshot, gear);
@@ -68,6 +73,7 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
+    door.epoch(Date.now());
     if (foeAsks) door.takeFoeAsks();
     // An entrance the room does not have is an ordinary join, as the servers take it.
     const player = (entrance === undefined ? 0 : door.joinAt(entrance)) || door.join();
@@ -98,6 +104,7 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openSea(layoutText, seed)) throw new Error('the world’s layout is not one the sea can open round');
+    door.epoch(Date.now());
     return new LocalRoom(door, snapshot, () => undefined);
   }
 

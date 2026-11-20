@@ -20,6 +20,11 @@ decision, made in the same change as its entry here.
 | `client/src/canvasSize.ts` | A canvas's drawing buffer in device pixels, from its size on the page and the screen's pixel ratio, for every page's canvas |
 | `client/src/editorPage.ts` | The [[World Editor]]'s entry point: offers the editor a fleet room, through the combat layer, when its address carries `?room=`, then starts it |
 | `client/src/game/` | The game layer: the [[Game]]'s flow from arriving to landing, on foot in a node, at sea in the [[Overworld]], the scene every drawer draws into, and the heads-up display |
+| `client/src/game/audio/music/` | The [[Music]]: the FM voice bank, the song player, the score format with its layer roles, the scores (the sea's six songs and the three boss scores), and the director that plays them as danger nears, with what it hears of the game on foot and at sea |
+| `client/src/game/audio/ambience/ambience.ts`, `player.ts`, `graph.ts` | The [[Ambience]] the game calls each frame on foot and at sea, one place sounding, and its nodes: rooms, beds' emitters and calls' chains |
+| `client/src/game/audio/ambience/scapes.ts`, `law.ts`, `places.ts` | The eleven ambiences as data, and the pure laws: place to ambience, the time of day, breathing and gusts, call gaps, crossfades, and where each call stands |
+| `client/src/game/audio/ambience/dsp.ts`, `beds.ts`, `calls.ts`, `songs.ts`, `noises.ts`, `sounds.ts` | The ambience's synthesiser: its kit, its seamless beds, its beasts' and birds' calls and the world's noises, and the jobs that name them |
+| `client/src/game/audio/ambience/ambienceWorker.ts`, `bank.ts` | The worker that makes the ambience's beds and calls off the page's thread, and the page's side that asks it and keeps their buffers |
 | `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's controls, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, the crosshair, and the [[Arts]]' pictures |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `client/src/face.css`, `face.ts`, `trueType.ts` | Every page's face: Pixelify Sans at its sizes, with the glyphs it misreads or lacks drawn in code and made into a font in the page ([[Interface]], "The face") |
@@ -31,6 +36,7 @@ decision, made in the same change as its entry here.
 | `client/testground/`, `client/src/testground/` | The [[Test Ground]]: its page, and the layer that plays and dresses the forge's figures on open ground, with a course to climb |
 | `client/src/forge/` | The forge layer: reads the [[Sprite Forge]]'s published strips and composes a figure's frames from them |
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
+| `client/src/sky/` | The sky layer, which imports nothing: the world's clock set right by the rooms, the [[Sky]] and [[Weather]] read from the sky crate through its own WebAssembly, and what the scene draws by them |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
 | `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display and its stylesheet, the ground's marks for telegraphed blows and shots, the shots' tracers, the drops lying for the player ([[Gear]], "Drops"), and [[Blood]]; the [[Arts]]' casting keys, ability bar and every spell's view; and a Sloop's session in a fleet room ([[Naval Combat]]), her orders sent and her ship predicted |
 | `client/src/nature/` | The nature layer: each biome's trees, plants and rocks, made in code, scattered over the ground round the eye and drawn on WebGPU ([[Nature]]). Imports `rules` and `water` |
@@ -57,6 +63,7 @@ decision, made in the same change as its entry here.
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the links where the movement rules climb a block's side or drop off its edge, the paths across both, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows, shots in flight, and the statuses a fighter is given |
 | `crates/foes` | [[Enemies]] and [[Foes]]: factions, roles, the roster and ranks, and the brain each foe fights with: awareness and noises, turns at a target, the ring and flanking, cover, the combat director, telegraphed blows and phases, and answers to blows |
+| `crates/sky` | The world's clock, its sun, moon and stars, and its weather: one field over the whole map from world time and place, with its wind, lightning and the ground's wetness ([[Sky]], [[Weather]]) |
 | `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
 | `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, weapons' elements and foes' shields, emblems, the [[Arts]] a player wears, and what a player holds and shows others |
 | `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, and a captain who fights, one tick at a time |
@@ -80,7 +87,7 @@ decision, made in the same change as its entry here.
 | `tools/ships/export_ship.py` | Exports a ship's `.blend` to Overlook's mesh, with her waterline, guns, the boxes a ball can strike, her sails' corners and her deck, and publishes the model and mesh to R2 ([[Sailing]], [[Naval Combat]]) |
 | `tools/ships/ship_pictures.ts` | Writes the pictures a ship's parts wear, from the procedural painter, for `paint_ship.py` to pack into her model |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
-| `tools/freesound/` | Finds candidate sounds on Freesound's public pages for the cues in `content/audio/freesound.json`, on GitHub's machines (the `freesound` workflow), and publishes the owner's picks to R2 with their credits ([[Sounds Come From Freesound, Judged on a Test Sheet]]) |
+| `tools/freesound/` | Finds candidate sounds on Freesound's public pages for the cues in `content/audio/freesound.json`, on GitHub's machines (the `freesound` workflow), and publishes the owner's picks to R2 with their credits ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the workflow runs on each push that changes the cue list, `tools/freesound/` or itself, cuts long picks in a step that holds no key, then puts the picks on R2 with the repository's Cloudflare token, keeping the game's `sounds.json` in its download for a commit to take in |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
 | `bible/` | This vault |
 | `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `pages.yml` to publish the client to GitHub Pages, while that commit is still `main`'s head; actions are pinned by commit |

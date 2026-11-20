@@ -27,6 +27,7 @@ pub mod sea;
 mod spells;
 mod statuses;
 pub mod threat;
+pub mod winds;
 
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};

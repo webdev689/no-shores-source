@@ -7,18 +7,33 @@
 // and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. The
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first.
 //
-// steps.json: { "url": "...", "size": [w, h], "scale": deviceScaleFactor (1 unless given),
-// "init": "js run before the page's own scripts", "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
+// steps.json: { "url": "...", "size": [w, h], "scale": deviceScaleFactor (1 unless given), "routes":
+// { "<url part>": "<local file>" }, "init": "js run before the page's own, e.g. a shifted Date.now for the world's
+// hour", "steps": [ ... ] }, each
 // step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
 // { "eval": "js" }, { "viewport": [w, h] } (a small one walks a long way faster), { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
-// waits minutes behind. The console's errors and warnings are printed, each the first time it is said: WebGPU
-// reports a refused frame (a buffer too small for its binding) only as a warning, and repeats it every frame.
+// waits minutes behind. The console's errors and warnings are printed, each the first time it is said, and so is
+// every shader that fails to compile, with its line: WebGPU reports a refused frame (a buffer too small for its
+// binding) and a broken shader only as warnings, and a refused frame repeats every frame.
 const { chromium } = require('playwright');
 const { readFileSync } = require('node:fs');
+
+const SHADER_ERRORS = () => {
+  const create = GPUDevice.prototype.createShaderModule;
+  GPUDevice.prototype.createShaderModule = function (descriptor) {
+    const made = create.call(this, descriptor);
+    made.getCompilationInfo().then((info) => {
+      for (const note of info.messages)
+        if (note.type === 'error')
+          console.error(`WGSL ${note.lineNum}: ${note.message} | ${(descriptor.code.split('\n')[note.lineNum - 1] ?? '').trim()}`);
+    });
+    return made;
+  };
+};
 
 const OWN_TEXTURE = () => {
   const kept = new WeakMap();
@@ -119,7 +134,8 @@ async function main() {
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
     );
   await page.addInitScript(OWN_TEXTURE);
-  if (plan.init) await page.addInitScript(plan.init);
+  await page.addInitScript(SHADER_ERRORS);
+  if (plan.init) await page.addInitScript({ content: plan.init });
   await page.goto(plan.url);
   for (const step of plan.steps) {
     const started = Date.now();

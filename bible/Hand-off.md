@@ -260,8 +260,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   make the accounts' database.
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
   shield comes back after a while; and which foes beyond the patrols' carry them.
-- **#69, the Arts round, waits on the owner's yes to merge**, which deploys the page and the rooms. Every number and
-  call the owner left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
+- **#69, the Arts round, is on `main`**, merged and deployed with the owner's yes. Every number and call the owner
+  left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
   cooldowns, the fragments, the new perks' columns and rules (Marked Shot an opener, Exploit for the spec's
   Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 3.5 m up and 1.5 m along its
   caster's aim, the Armsmith's wares, the seven named armour pieces that gave Bulwark and now give another armour
@@ -269,13 +269,25 @@ Where the work stands now, for the next session. Each session rewrites this note
   leather ramp, the view held still for reduced motion. Left to the owner by the screens' critique: emptying a Core
   slot, and resting the ability bar with the vitals. The forge's gun puff is blue in its art
   (`tools/forge/tools/sprite-forge/guns3p.py`); a re-render would change it.
-- **Every world sound on #69 is the owner's pick**, over seven passes on the sound sheet
+- **Every world sound is the owner's pick**, over seven passes on the sound sheet
   ([[The World Sounds From the Sound Picker]]): 63 Freesound recordings, DFO's own steps and Voidrend
   ([[DFO's Own Sounds Join the Sound Sheet]]), the Duskraven's fire
   ([[The Duskraven Sounds With Fire Under Its Raven]]); Exposed, Charged and Haste make none
   ([[Exposed, Charged and Haste Make No Sound]]). Claude's calls in the layer, the
   owner's to change: a gun's ball on a body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the
   [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
+- **#73, the music and the ambience, waits on the owner's yes to merge**, which deploys the page and the rooms
+  ([[Music and Ambience Come From DFO's Synthesiser]], [[Music]], [[Ambience]]). The owner kept every piece on the
+  sound sheet, Landfall as made again after their "Less jolly" ([[Landfall Is Kept as Made Again]]), and picked the
+  seven recordings. Claude's calls, the owner's to confirm: Thule plays the Boarding, Corvane the Reckoning, any other Boss
+  the Wrath; the climates' families and each family's key, metre and tempo; Saltmere's theme as written; the sounds
+  nearest "no glass" (wet's kalimba drips, cold's high tremolo, Landfall's soft bell, the fights' reverse-cymbal
+  risers).
+- **#76, the weather and day and night, waits on the owner's yes to merge**, stacked on #73
+  ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]], [[Sky]], [[Weather]]).
+  Claude made the calls the owner left open ([[Weather and Day as Claude Shapes It]]), the owner's to change. The
+  owner judged the weather's first sounds and picked the gutters and both thunders from Freesound
+  ([[The Weather's Gutters and Thunder Come From Freesound]]); those picks are on R2.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -294,6 +306,168 @@ Where the work stands now, for the next session. Each session rewrites this note
   deployed room (tested live): a band's fight, the Reeve's fall, the cache's Vestige and the portal out.
 - **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
   `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA).
+- **The weather and day and night (#76)**, tested offline: the full check, the weather's statistics per climate and
+  its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under cloud, at sunset
+  and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to compile. Four
+  audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old wind, a fleet
+  sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun for moon in
+  daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording held under
+  its synthesised sound's peak. Not yet: lightning's bolts seen in a picture (no strike falls near Saltmere by day in
+  60 world days, and the page always arrives there), ships and marks under the lamps, snow, a carried light on the
+  Sloop's deck, a real GPU's frame time (the sky reads some ten noise lookups a pixel, twice while one cloud pattern
+  fades into the next), and a person playing through an hour's day.
+- **Every shader checked offline (#79)**, stacked on #76, waits on the owner's yes with it
+  ([[Every Shader Is Checked Offline]]): `cargo xtask check` writes out every shader the client compiles and naga
+  validates each.
+- **The music and the ambience (#73)**, tested offline: every piece rendered and measured, and the built game headless
+  in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the green score in
+  as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both running. Left
+  open: the prologue's `storyCue(name)` (branch `claude/loving-darwin-sw4eae`) routed to the director as a new cue kind,
+  by whichever reaches `main` second. #76 gives the night ambiences their time of day, plays the four sea songs while
+  sailing, and sets each recording at the loudness of the synthesised sound it replaces.
+- **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
+  its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+  layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
+  heard in the game, the layer on foot in a browser, the walking blows looked at frame by frame.
+- **Publishing the world's picks**: read the sheet's `marks` with ArtifactData; set each Freesound pick as the cue's
+  `picked` in `content/audio/freesound.json`, and a redone cue's heard numbers in its `skip`; let the `freesound`
+  workflow run, then `tools/freesound/publish.py <download>`. A pick of DFO's own (`dfo:<name>` on the sheet) sets
+  the cue's `dfo` to its name and goes in by `tools/freesound/own.py`. DFO's steps are in DFO's `vendor/cc0-sounds`
+  at its commit `b59b6d2` (branch `ccr-301db909-jfymaq`): a surface's six files go in as one cue's variants. DFO's
+  synthesised sounds come from its `tools/{climb,gather,lock,storefront,naval}Sfx.mjs`: import their `CLIPS` and
+  render each `make()` at 44.1 kHz 16-bit, from a scratch folder, since `navalSfx.mjs` writes `public/sfx` on import.
+
+- **The Arts round (#69, on `main`)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and
+  verbs with foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar,
+  the verb perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not
+  yet seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a
+  live room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
+- **Its second round, attack visuals beyond the limits (#69, on `main`)**, tested offline in the Test Ground, and the
+  game's own page headless at 960x540: swing arcs, struck figures, impacts, crits and kills with elemental finishers,
+  damage words, guns, tracers, telegraphs, every spell landing, the Anima moment, the light layer, marks drawn in depth
+  ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). Not yet seen: a fight in the game's own view with
+  the player's swing (headless has no pointer lock), the water's order at a coast, any GPU timing (the light's 0.4-0.5
+  ms is an estimate). Left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the marks still
+  copied into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still light; `camera.ts`
+  `shifted` keeps the HUD matrix's translation in float32 (about 0.25 m off far out); whether a bow or gun drawn can
+  punch, and in what element.
+- Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
+  seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
+  not yet known.
+- **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
+  choices in [[Gear as Claude Shapes It]]), is on `main` (#60, merged with the owner's yes); its patrols' camps give
+  way to #61's garrisons, now on `main` too. On it: the `gear` crate ([[Gear]]); gear held by the
+  rooms, blows by Attack, level and Defense, kills paying XP, Aurem and Vestiges; perks trimming the fight
+  ([[Combat]]); accounts on Cloudflare D1 keeping a character between visits ([[Accounts]]); the gear screens after
+  Destiny on Enhanced Plus ([[The Gear Screens Follow Destiny, on Enhanced Plus]], [[Interface]]); gear on the
+  figure; island levels and the voyage's seas ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]);
+  patrols with camps and resource spots ([[Server]]); Overlook's stations, vendors, keepers and townsfolk
+  ([[Cities]]); the fight on foot in the game; and on the ground, beams over the nodes and Vestiges, with E to use a
+  counter or gather ([[Game]], "On foot"). Then two full audits and two design passes of the gear screens, every
+  finding fixed with a test where it could be ([[The Audit's Calls Are Claude's]] for the calls they left): a
+  session sent only where it belongs and lapsing for an account with a way back in, Discord by one-time code, the
+  loot's seed secret and apart from the foes', an arrow striking as it was loosed, asks queued in turn and a change to
+  how a player fights sent at once, the welcome carrying the schema's hash, leaving saves retried through an outage,
+  and the screens on Enhanced Plus's fit law, frames, nodes and keycaps, with Destiny 1's gear shelf. Tested offline.
+  Its open ends: **the patrols' look is the next pull request**: camps with tents, fires and goods, which the bake and
+  the room must place alike, so the layout of camps moves to a crate both use (the owner wants patrols extremely
+  detailed); a voyage's seas are the client's to name, so a signed ticket from the sea room should name the node and
+  the seas a player may join at; Breaches, Elite Dungeons and Missions as loot sources; the wardrobe; a ranged
+  weapon's fight on foot untested headless.
+- **The owner's next round is on #60 too**: Pixelify Sans as the one face, its sizes on its 11 px grid and its
+  misreading glyphs mended ([[Pixelify Sans Is Overlook's Font]], [[Interface]], "The face"); the menu's seven tabs,
+  the vault and the vendors moved to their counters, and friends on the Social tab, which became the Roster
+  ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]], [[Accounts]], "The Roster"); the Plain Text
+  rule, with progress shown on icons and nodes instead of XP counts ([[Text Is Plain]]); and weapon elements with
+  foes' shields ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]], [[Gear]], "Elements and
+  shields"). Tested offline: the full check, headless pictures of every page at 1280×720 and 1920×1080 against
+  local accounts and rooms, the friends list against the local accounts, and a shielded foe in the Test Ground. Not
+  yet seen headless: a blow on a shield in the game, its words and its breaking (the room's tests cover them).
+  A third audit of this round is fixed on #60: friends asked by both at once make one friendship, a list counts only
+  its own asks and friends, and a name no one holds answers as any other; a blow the shield holds whole fills no
+  poise; the menu lets go of a held press and stops the game under it; focus goes back to the tile an item's page came
+  from; and the mended glyphs sit on the grid at weight 500.
+- **The owner's answers to the third audit are on #60 too**
+  ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]], [[The Roster Follows Destiny 1, With Blocking]],
+  [[Cosmetics Follow Destiny, Shown in Many Places]]): the face's 5, Z, brackets and symbols drawn in code and made into
+  a font in the page; the gauge counting nodes bought; the room serving each ask only at its counter; the Social tab as
+  Destiny 1's Roster with blocking, companies, guilds, reports and details; and 25 emblems, kept and worn, sold by the
+  Tailor, shown on the Roster, the header, the HUD and the Emblem slot. A group of players is a company, as the owner
+  named it ([[A Group of Players Is a Company]]). The menu's tabs share its whole top, and under them the player's
+  banner runs its full width, drawn to that width so none of it is cut off
+  ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]).
+- **A fourth audit and design pass are on #60 too**, every finding checked before it was fixed: a leaving player's
+  last save kept; blocks holding against a whole company; no stranger shown a player's place; the report limit, the
+  Roster's races and its query over every account fixed; the Reader's Open shown where it works; Gilded earned only by
+  a Legendary or Atheric piece; Escape giving the Roster's panel and details their own step; a join travelling only when
+  nothing else is under way; the menu's words at the names' size, the Roster fitted to the screen, long icons on the
+  diagonal, the banner kept once shown. Tested offline: the full check, and headless at 1920×1080 and 1280×720.
+- **The owner's answers to the fourth audit are on #60 too**
+  ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]],
+  [[Names Follow Guidelines, Checked by the Accounts]]): names, guild names, tags and mottos judged by one module
+  of the accounts, with own-written blocked words, reserved names and look-alikes refused, and the owner's way to rename
+  in [[Names]]; the HUD's "In the room" line gone; no join from a fight at sea or a fall; letter spacing in whole
+  pixels and the Character page's words at 22 on a wide screen; the menu doubled past 1440p; Destiny 1's three-by-three
+  gear shelf; a held weapon's picture whole, grip and all; a glyph of its own for each material; and DFO's profile mark
+  at the menu's top right, the player's face in a brass well, opening Settings. Tested offline: the full check, and
+  headless at 1920×1080, 1280×720 and 2560×1440.
+- **The owner's next asks are on #60 too**
+  ([[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]]): the inventory without gear, its
+  Vestiges under the currencies, ten places as Destiny 2's engrams are; dismantling held over a tile (F) or on an
+  item's page, longer the rarer, the item charging until it breaks into shards; feeding a Fruit held, the item
+  charging; what is gained shown at the right, in play and over the menu; and every interaction sounding, made by the
+  browser's synthesiser, with a volume in Settings. Tested offline: the full check, a dismantle by F against the local
+  rooms (the feed showed its Aurem and fragments), and pictures at 1920×1080 and 2560×1440. The sounds were counted as
+  they played, not heard: the owner should listen for their level and character. A ware bought at the
+  Quartermaster's counter, and a Vestige opened at the Reader's, were not walked to headless.
+- **Sounds come from Freesound** ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the owner judges every
+  sound and piece of music on the sound sheet, https://claude.ai/artifact/YT29RAFbgdPRLByLUVC7nh (private to them, in
+  four tabs: Interface, World, Music, Ambience),
+  marking each Keep, Redo or a candidate picked, with a note; the marks are its store's `marks` collection, read with
+  ArtifactData. Candidates come from the `freesound` workflow on GitHub's machines, with no key: it reads Freesound's
+  public pages for the cues in `content/audio/freesound.json` and keeps each cue's first four CC0 or Attribution
+  previews as the run's download; a cue the owner settled names its pick, keeps the game's own sound or is made by
+  the synthesiser, and is searched no more, and `skip` lists what they already heard. The picks are on R2 and in the
+  game: `tools/freesound/publish.py <download>` reads a run's `picks.json` and pick files (each pick read from its own
+  page for its exact licence), puts each on R2 by its hash and writes `content/audio/sounds.json`, whose credits
+  Settings lists. All thirteen cues are settled: six recordings, the gains' Brass bells and a hold's Shimmer made by
+  the synthesiser, and the tab, close and refusal kept as the synthesiser's own.
+- **A fifth audit and design pass are on #60 too**, each finding checked against the code before its fix: F dismantles
+  the piece last pointed at or focused, never one focused earlier; Ctrl, Cmd or Alt with F, leaving the window, or the
+  pointer leaving the piece lets go; the shards fly whole; the focus stays near a dismantled piece; a tab opened lets go
+  of a hold; the feed counts nothing in the ten seconds after a room first gives the gear, while the player's character
+  is claimed, and stands low and under the card over the menu; sound wakes only on a press or key, so none waits to play
+  at once; a quick tap's build-up is silent; recordings levelled by loudness as well as peak; credits say CC BY 4.0 and
+  which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check each pick before it
+  goes to R2, and keep each pick's own page in the run. The design pass: the hover card above the footer, the footer and
+  the item page at the names' size on a wide screen, empty Vestige places as dark Vestiges, the vault's rows of ten
+  where the menu is wide, three wares a row, glyphs at whole multiples. Left as they are: the Roster's rows and its
+  count, and a shelf of more than six gains showing only its last six. The `freesound` workflow runs on this push: if it
+  ends red with "Picks not read whole", Freesound's own pages link more than one licence, and `pages/pick-*.html` in its
+  download shows where.
+- Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
+  as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
+  R2 as a bake.
+- A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
+  larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's
+  wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare
+  runtime; a cloud session's proxy cannot open a WebSocket, so none was tested live in a deployed room.
+- Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
+  [[Naval Combat]] are on `main`, with the sea's pirates and fights, and ramming and the fleet room. The rest of
+  the pick's step 3 is boarding, crew, quays and ports ([[Pick - Sailing and Naval Combat]]); and at sea a fight's
+  hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
+  crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
+  which boarding needs, is the `movement` crate's grid of heights, walked on the player's own Sloop.
+- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell (on #76 the weather's
+  wind drives the sails, the chop and the whitecaps; the long swell is still one swell).
+- Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
+  the same rules everywhere.
+- The fight's open ends ([[Combat]], [[Foes]]): running's stamina, casting's harm. Whether players may harm one another
+  is the owner's to decide.
+- The enemies' open ends ([[Enemies]], [[Naval Combat]], [[Server]]): a garrison stands within its room's 70 m
+  navmesh, not across its whole section; a player waiting near a fallen group holds it from standing again; a rejoin
+  loses the player's place, any fight and its foes; the planned hulls ([[Hulls]]); and the boarding fight on a deck
+  that the deck crews are for. None of it is tested in a deployed room yet.
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them

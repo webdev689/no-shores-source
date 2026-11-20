@@ -17,7 +17,7 @@ struct Frame {
   anchor: vec4f,
   // Seconds, the wind's way (east, south), and the gusts' phase at the anchor.
   wind: vec4f,
-  // The snow line, metres.
+  // The snow line, metres, how hard the wind bends the plants (1 a fresh breeze), and how gusty it is (0 to 1).
   land: vec4f,
   // The biome's low ground, and 1 when it is known.
   ground: vec4f,
@@ -56,7 +56,6 @@ struct Vertex {
 };
 
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
-const AMBIENT = 0.35;
 const SNOW = vec3f(0.94, 0.95, 0.97);
 // The ambient's tint from below (light bounced off the ground) and from above (the sky).
 const BOUNCE = vec3f(0.95, 0.9, 0.76);
@@ -132,9 +131,11 @@ fn standing_of(vertex: Vertex, which: u32) -> Standing {
   let tilt = select(0.0, fract(item.look.w * 13.7) * fract(item.look.w * 3.3) * 0.09, form.thin.z > 0.0);
   offset += vec2f(cos(tilt_way), sin(tilt_way)) * tilt * local.z;
   // Gusts roll downwind across the land; each plant also rocks on its own beat, its leaves trembling.
-  let gust = 0.6 + 0.4 * sin(frame.wind.w + dot(foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S);
+  let gusting = 0.25 + 0.5 * frame.land.z;
+  let rolling = frame.wind.w + dot(foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S;
+  let gust = 1.0 - gusting + gusting * sin(rolling);
   let sway = 0.35 * sin(frame.wind.x * 2.3 + item.look.w * 40.0);
-  let bend = vertex.colour.a * form.thin.z * item.look.y * (gust + sway);
+  let bend = vertex.colour.a * form.thin.z * item.look.y * (gust + sway) * frame.land.y;
   offset += frame.wind.yz * bend;
   let tremble = vertex.normal.w * 0.03 * sin(frame.wind.x * 7.0 + dot(vertex.position, vec3f(3.1, 2.3, 1.7)));
   out.point = foot.from_eye + vec3f(offset, local.z - abs(bend) * 0.2 + tremble);
@@ -227,14 +228,20 @@ fn plant_fragment(shaded: Shaded, @builtin(front_facing) front: bool) -> Drawn {
     normal = vec3f(-normal.xy, normal.z);
   }
   // The sun as the shadow map lets it through: a tree under another's crown, or in a wall's shadow, is in shade.
-  let sun = sunlit(shaded.from_eye, normal);
-  let direct = max(dot(normal, SUN), 0.0) * sun;
-  let ambient = AMBIENT * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5);
+  let sun = sunlit(shaded.from_eye, normal) * sky_dapple(shaded.from_eye);
+  let direct = sky_direct(normal, sun);
+  let ambient = sky_ambient(normal) * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5);
   // Leaves pass on the sky and the ground's bounce, and the sun behind them: a crown's underside is green, never black.
-  let through = shaded.leaf * (0.2 + 0.3 * max(-dot(normal, SUN), 0.0) * sun);
-  var colour = shaded.colour * (ambient + (1.0 - AMBIENT) * direct) + shaded.colour * SUN_LIGHT * through;
+  let behind = 0.3 * max(-dot(normal, sky_state.key.xyz), 0.0) * sun;
+  // The key light carries its own brightness: the sky's share is untinted by it, the sun's taken once.
+  let through = shaded.leaf * (vec3f(0.2 * sky_level()) + sky_state.key_light.rgb * behind);
+  let lamps = sky_lamps(shaded.from_eye, normal);
+  var colour = shaded.colour * (ambient + direct + lamps) + shaded.colour * through;
   let settled = shaded.snow * smoothstep(0.35, 0.75, normal.z);
-  colour = mix(colour, SNOW * (AMBIENT + (1.0 - AMBIENT) * direct), settled);
+  colour = mix(colour, SNOW * (sky_ambient(normal) + direct + lamps), settled);
+  // Wet leaves glisten; bark only darkens.
+  let wet = sky_state.ambient_sky.w * (1.0 - settled);
+  colour = sky_soaked(colour, wet * (1.0 - shaded.leaf) * 0.6) + sky_sheen(normal, shaded.from_eye, wet * shaded.leaf);
   return Drawn(vec4f(colour, 1.0), mask);
 }
 
@@ -261,7 +268,7 @@ fn shade_vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) whic
   let corner = index % 3u;
   let angle = f32(index / 3u + select(0u, 1u, corner == 2u)) / ${SHADE_SEGMENTS}.0 * TAU;
   let rim = select(1.0, 0.0, corner == 0u);
-  let lean = -SUN.xy / SUN.z * form.shade.y * item.look.y * 0.35;
+  let lean = -key_toward().xy / key_toward().z * form.shade.y * item.look.y * 0.35;
   let offset = lean + vec2f(cos(angle), sin(angle)) * form.shade.x * item.look.x * rim;
   let ground = item.ground.w + dot(item.ground.xy, offset) + 0.12;
   let point = vec3f(foot.from_eye.xy + offset, ground * frame.anchor.w + frame.anchor.z);

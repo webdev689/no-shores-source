@@ -160,7 +160,7 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "644e1cba3156ebb0";
+pub const SEA_CLASH_HASH: &str = "b116514817fbd4ae";
 
 #[test]
 fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {

@@ -3,7 +3,7 @@
 import type { Gpu } from '../gpu.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
-const DEPTH_COPY = /* wgsl */ `
+export const DEPTH_COPY = /* wgsl */ `
 @group(0) @binding(0) var depths: texture_depth_multisampled_2d;
 @vertex fn copy_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   let corner = vec2f(f32((index << 1u) & 2u), f32(index & 2u));

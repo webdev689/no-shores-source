@@ -18,6 +18,7 @@ naval = { path = "../naval" }
 navmesh = { path = "../navmesh" }
 reach = { path = "../reach" }
 sailing = { path = "../sailing" }
+sky = { path = "../sky" }
 world = { path = "../world" }
 
 [dev-dependencies]
