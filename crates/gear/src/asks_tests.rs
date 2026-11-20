@@ -7,8 +7,8 @@ use crate::power::xp_for_level;
 use crate::rarity::Rarity;
 
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
-const AFIELD: Here = Here { social: false, day: 0 };
-const IN_TOWN: Here = Here { social: true, day: 0 };
+const AFIELD: Here = Here { social: false, day: 0, week: 0 };
+const IN_TOWN: Here = Here { social: true, day: 0, week: 0 };
 
 fn give(character: &mut Character, kind: Kind, rarity: Rarity, level: u8, bucket: Slot) -> u32 {
     let id = character.take_id();
@@ -153,7 +153,7 @@ fn dismantling_gives_back_fragments_essence_and_a_third_of_what_was_spent() {
 fn a_vestige_opens_only_in_a_social_space_into_the_slot_it_holds() {
     let mut character = Character::starting();
     let id = character.take_id();
-    character.vestiges.insert(id, (Vestige { id, rarity: Rarity::Magic, slot: Slot::Arms, level: 4 }, false));
+    character.vestiges.insert(id, (Vestige::new(id, Rarity::Magic, Slot::Arms, 4), false));
     assert_eq!(character.ask(Ask::Identify { vestige: id }, AFIELD, &DICE), Err(Refusal::NotHere));
     let Ok(Done::Identified(item)) = character.ask(Ask::Identify { vestige: id }, IN_TOWN, &DICE) else {
         panic!("identified in town");
@@ -216,21 +216,25 @@ fn the_vault_is_reached_in_a_social_space_and_holds_twenty_of_each() {
 #[test]
 fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level() {
     use crate::vendor::{Vendor, WARES, price, wares};
-    let today = wares(Vendor::Armsmith, 20_400, 12);
+    let today = wares(Vendor::Weaponsmith, 20_400, 12);
     assert_eq!(today.len(), WARES);
-    assert_eq!(today, wares(Vendor::Armsmith, 20_400, 12), "the same for everyone that day");
-    assert_ne!(today, wares(Vendor::Armsmith, 20_401, 12), "and new the next");
+    assert_eq!(today, wares(Vendor::Weaponsmith, 20_400, 12), "the same for everyone that day");
+    assert_ne!(today, wares(Vendor::Weaponsmith, 20_401, 12), "and new the next");
     assert!(today.iter().all(|item| item.level == 12 && !item.rarity.named()));
     assert_eq!(today.iter().filter(|item| item.rarity == Rarity::Rare).count(), WARES / 2);
-    assert!(wares(Vendor::Quartermaster, 20_400, 12).iter().all(|item| item.kind.armour()));
+    assert!(wares(Vendor::Armorsmith, 20_400, 12).iter().all(|item| item.kind.armour()));
     let ranged = today.iter().filter(|item| item.kind.ranged()).count();
     assert_eq!((today.len() - ranged, ranged), (4, 2), "two Melee to each Ranged");
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(12);
-    let here = Here { social: true, day: 20_400 };
-    let vend = Ask::Vend { vendor: Vendor::Armsmith, ware: 0 };
+    let here = Here { social: true, day: 20_400, week: 0 };
+    let vend = Ask::Vend { vendor: Vendor::Weaponsmith, ware: 0, day: 20_400 };
     assert_eq!(character.ask(vend, here, &DICE), Err(Refusal::Short), "no Aurem yet");
     character.materials.add_aurem(5_000);
+    let yesterdays = Ask::Vend { vendor: Vendor::Weaponsmith, ware: 0, day: 20_399 };
+    assert_eq!(character.ask(yesterdays, here, &DICE), Err(Refusal::NotSold), "a ware shown as the day turned");
+    let unnamed = Ask::Vend { vendor: Vendor::Weaponsmith, ware: 0, day: 0 };
+    assert_eq!(character.ask(unnamed, here, &DICE), Err(Refusal::NotSold), "an ask that names no day");
     assert_eq!(character.ask(vend, Here { social: false, ..here }, &DICE), Err(Refusal::NotHere));
     let before = character.items.len();
     assert_eq!(character.ask(vend, here, &DICE), Ok(Done::Done));
@@ -238,15 +242,18 @@ fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level
     assert_eq!(character.materials.aurem, 5_000 - price(Rarity::Rare));
     let bought = character.items.values().find(|(item, _)| item.level == 12).expect("the ware");
     assert_eq!(bought.1, At::Carried);
-    assert_eq!(character.ask(Ask::Vend { vendor: Vendor::Armsmith, ware: 9 }, here, &DICE), Err(Refusal::NoSuchItem));
+    assert_eq!(
+        character.ask(Ask::Vend { vendor: Vendor::Weaponsmith, ware: 9, day: 20_400 }, here, &DICE),
+        Err(Refusal::NoSuchItem)
+    );
 }
 
 #[test]
-fn over_four_days_the_quartermaster_sells_every_armour_piece_at_each_rarity() {
+fn over_four_days_the_armorsmith_sells_every_armour_piece_at_each_rarity() {
     use crate::vendor::{Vendor, wares};
     let mut seen = std::collections::BTreeSet::new();
     for day in 20_000..20_004 {
-        for ware in wares(Vendor::Quartermaster, day, 20) {
+        for ware in wares(Vendor::Armorsmith, day, 20) {
             seen.insert((ware.bucket, ware.rarity));
         }
     }

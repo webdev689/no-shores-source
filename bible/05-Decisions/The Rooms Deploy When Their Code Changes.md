@@ -17,3 +17,6 @@ status: in force
 - The page still publishes on every merge ([[The World Editor Is on GitHub Pages]]); the owner's yes to a merge
   covers both ([[Ask Before Deploying]]).
 - It replaces [[The Rooms Deploy on Each Merge]].
+
+Replaced in part by [[The Page Publishes Only After the Rooms Deploy]]: the page publishes on a merge once the rooms
+have deployed or had nothing to.

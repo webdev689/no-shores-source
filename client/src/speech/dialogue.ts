@@ -1,6 +1,7 @@
 // The dialogue box, bottom centre in the Enhanced Plus kit: the speaker's name over their words, typed as they are
-// heard. A speaker with no name is a voice from nowhere, its words alone in the middle of the screen. The pacing is
-// the conversation's (conversation.ts); this file only shows it and sounds it.
+// heard. A speaker with no name is a voice from nowhere, its words alone in the middle of the screen. A screen reader
+// hears each line once it is typed whole, from a polite copy kept off the screen. The pacing is the conversation's
+// (conversation.ts); this file only shows it and sounds it.
 import { ROLES } from '../plus/kit.ts';
 import type { Cast, Line } from './cast.ts';
 import { Conversation } from './conversation.ts';
@@ -26,6 +27,8 @@ export class DialogueBox {
   private readonly name: HTMLElement;
   private readonly words: ReturnType<typeof wordsNode>;
   private readonly nowhere: ReturnType<typeof wordsNode>;
+  /** The line for a screen reader, once typed whole: who says it, and what. */
+  private readonly heard: HTMLElement;
   private readonly voiceOut: VoiceOut;
   private talk: Conversation | null = null;
   private cast: Cast | null = null;
@@ -45,8 +48,13 @@ export class DialogueBox {
     this.box.append(this.name, this.words.node);
     this.nowhere = wordsNode(page, 'speech-nowhere');
     this.box.hidden = this.nowhere.node.hidden = true;
+    // Read aloud whole from the live copy, not letter by letter as the words type.
+    for (const typed of [this.words, this.nowhere]) typed.node.setAttribute('aria-hidden', 'true');
+    this.heard = page.createElement('p');
+    this.heard.className = 'speech-heard';
+    this.heard.setAttribute('aria-live', 'polite');
     // First in the HUD, so every HUD layer laid before or after the story's stands over the words.
-    root.prepend(this.box, this.nowhere.node);
+    root.prepend(this.box, this.nowhere.node, this.heard);
   }
 
   get open(): boolean {
@@ -81,6 +89,7 @@ export class DialogueBox {
   skip(): void {
     this.talk = null;
     this.box.hidden = this.nowhere.node.hidden = true;
+    this.heard.textContent = '';
     const resolve = this.resolve;
     this.resolve = null;
     resolve?.();
@@ -91,6 +100,7 @@ export class DialogueBox {
     this.skip();
     this.box.remove();
     this.nowhere.node.remove();
+    this.heard.remove();
   }
 
   /** The typewriter and its voice. */
@@ -126,5 +136,7 @@ export class DialogueBox {
     }
     words.typed.data = talk.typing.visible;
     words.unseen.textContent = talk.typing.hidden;
+    const whole = talk.typing.done ? `${name === '' ? '' : `${name}: `}${talk.typing.text}` : '';
+    if (this.heard.textContent !== whole) this.heard.textContent = whole;
   }
 }

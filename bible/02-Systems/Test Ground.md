@@ -109,7 +109,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   for its own time or for as many seconds as asked (ten minutes at most), through the room's own door, as a spell or a
   perk will: the icons show on the foes' plates and under the vitals, and the rules act on them. Only a course's room
   grants them; a node's refuses.
-- **Arts.** The panel wears an Art and sets each slot of its Core, showing the room's word on both, and a button fills
+- **Arts.** The player joins with every Art at level 5 owning every fragment. The panel wears an Art, sets each slot of
+  its Core and each Art's level (a row of buttons, 1 to 5: a press sets that level, the one shown too, and owns every
+  fragment of that Art again), showing the room's word on all of them, and a button fills
   the Anima and readies both Tenets at once, so every spell can be tried in turn ([[Arts]]). After each ask the room's
   next word sets every list back to what it holds, so a choice it refused does not stay shown. The ability bar stands at
   the bottom left, beside the weapons. An Anima's release pushes the view in and frames the screen in its element, as in

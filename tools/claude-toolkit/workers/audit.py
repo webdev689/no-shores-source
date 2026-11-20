@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tool audit of a headless worker: which tools it really called (from its transcript), not what it says.
 usage: python3 audit.py <worktree dir> ...   (reads ~/.claude/projects/<dir with / -> ->/*.jsonl, newest)"""
-import collections, glob, json, os, re, sys
+import collections, glob, json, os, re, subprocess, sys
 for wt in sys.argv[1:]:
     d = os.path.expanduser('~/.claude/projects/' + re.sub(r'[^A-Za-z0-9]', '-', os.path.abspath(wt)))
     fs = sorted(glob.glob(d + '/*.jsonl'), key=os.path.getmtime)
@@ -53,3 +53,6 @@ for wt in sys.argv[1:]:
     miss = [h for h in heads if 'INBOX:' not in last_text or h.lower()[:40] not in low]
     if miss: print(f'  INBOX NOT ACKED: {len(miss)} of {len(heads)} inbox item(s) not named in the final reply: ' + '; '.join(m[:50] for m in miss))
     if c['task-observer (worker must not)']: print('  DEFECT: worker used task-observer (controller logs, workers report)')
+    # The branch is the deliverable: a run that ends with its edits uncommitted has handed back nothing.
+    dirty = [l for l in subprocess.run(['git', '-C', wt, 'status', '--porcelain'], capture_output=True, text=True).stdout.splitlines() if 'graphify-out/' not in l]
+    if dirty: print(f'  UNCOMMITTED (defect): {len(dirty)} file(s) changed and not committed in the worktree')

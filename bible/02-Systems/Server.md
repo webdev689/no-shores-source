@@ -106,8 +106,10 @@ on Cloudflare.
   alone for two minutes and is picked up by walking within 1.5 m.
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
   them. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
-  file names: a Vestige opened at the Reader's, the vault at a vault's, a ware at its own vendor's, an emblem at the Tailor's; the Test Ground's
-  course serves them all within 4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
+  file names: a Vestige opened at the Mage's, the vault at a vault's, a ware at its own smith's, an emblem or a dye at
+  the Tailor's, a coat or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
+  at his place of the week while he is there ([[Factions]], [[Gear]]); the Test Ground's course serves them all within
+  4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
   spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
   nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
@@ -215,13 +217,15 @@ A drawn node's section, spawns and boxes are its layout's: the bake settles ever
 city ([[Layouts]]), so the window is cut from the carved land. A node's file holds its id, kind, name and continent; its section's ring and spawns; the rect its window covers (the
 ring's bounds and 100 m past them, beyond the 60 m where a body dies); the exact window of the ground over that rect,
 city terraces and the layouts' carving included; the boxes of the city and the layouts a body runs into there, each
-with its top and its underside; for a social space, the counters that serve a player's gear (the Reader's, the
-vaults', the Quartermaster's, the Armsmith's and the Tailor's); and whether it is locked: each patrol area and mission
-the open list, `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"). The bake
+with its top and its underside; for a social space, the counters that serve a player's gear (the Mage's, the vaults',
+the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the three factions'), and Shape's eight places
+(`shape_spots`, Overlook's alone); and whether it is locked: each patrol area and mission the open list,
+`content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"), and each social space but
+Overlook's ([[Only Overlook's Social Space Opens for Now]]). A locked node's room opens but takes no player. The bake
 takes about 17 s for the nine continents' 99 nodes, a few at a time, and writes about 15.2 MB in all, a patrol area's
-file the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and rock's boxes). `server`, `server:bundle` and `server:deploy` run it
-first. It fails, writing nothing, when two nodes of the world share an id, when one is called `index`, or when an id
-is too long for its room's name, `node-<id>`, of at most 40 characters.
+file the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and rock's boxes). `server`, `server:bundle` and
+`server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is called
+`index`, or when an id is too long for its room's name, `node-<id>`, of at most 40 characters.
 
 ## Messages
 
@@ -235,7 +239,7 @@ an older reader skips them.
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the pirates' type in that role, a Major), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go) |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading she faces at rest; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called (with her faction and rank; 0 for both is the pirates' Major) or every one sent off |
-| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window, and the protocol's version: the schema's hash, so a page built from another schema loads again, once |
+| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window, and the protocol's version: the hash of the schema and of the content the wire numbers by place (cosmetics, emblems, factions, items, resources, rolled names and the Arts), so a page built from another schema or another order of that content loads again, once |
 | Snapshot | The room | The room's tick; every player: their number, their fighter without its gear's trim (its first 22 numbers their body, its statuses' ticks left after its action's numbers, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves; the fight's events since the last snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the last snapshot as its last segment with the point it left its gun; and at sea every ship: its player, position, heading and pace, 0 at rest; every other ship (a pirate's or the Grey Tithe's, sailing or in a fight among captains): her number, position, heading, faction and rank; each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship, a captain's with her faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
@@ -261,13 +265,17 @@ field holds (an input's or orders' number, the arms, a foe's type, a load, a cal
 `RangeError`), and one the room takes within a range (a frame, the tick seen, a rank, the rudder, a rung, a look) is
 held within it.
 
-Looks and dresses are each player's own word, passed on and decided nothing about: a look goes out with the tick that
+Looks and dresses are each player's own word, passed on and decided nothing about, but for the cosmetics: the room
+puts the dye, coat and barding the character wears into each dress it relays, none for a start piece, and keeps a
+faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another a piece
+it does not keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after the player's gear
+is sent. A look goes out with the tick that
 takes its input, a dress once each time it changes, and every dress to whoever joins. The room refuses a move name
 that is not lowercase letters, digits and underscores or is over 40 bytes, and a dress over 4 KB. A browser takes
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; whether they stand where a Vestige opens (the Reader's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Quartermaster's price for one |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); and the day the wares are of, which a smith's ware is asked by |
 
 ## The host
 
@@ -290,7 +298,11 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - A browser's one text message is its session's token. In a node's room the player's character is claimed with it
-  from the [[Accounts]], saved as it changes and let go when they leave. At sea, where no character is kept, the room
+  from the [[Accounts]], saved as it changes and let go when they leave. A save keeps the keys a room does not know,
+  at its top, in its materials, Arts, allegiance and cosmetics and in each item and Vestige, so a room that
+  knows fewer fields carries the newer ones through; a room built before this keeping drops them, so a rollback to one
+  loses them. A new value of a kind the room knows (a slot, a rarity) reads as a broken save, which is left untouched,
+  and a list longer than the room's Arts or factions is cut to them. At sea, where no character is kept, the room
   tells the accounts the player is there, again every 30 seconds, and that they left, for the Roster. A second text
   message, or any other, closes the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
@@ -332,15 +344,16 @@ every other figure drawn on from where the new room has it, though its clock sta
 ## Running it
 
 - **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`. CI
-  deploys it after a merge into `main`, once the same commit has passed the check, as it publishes the page
-  ([[The Rooms Deploy When Their Code Changes]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret,
-  only while that commit is still `main`'s head, and only when what the rooms are built from differs from the commit
-  they were last deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker, the content
-  they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`). A merge
-  of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms` environment, which the next run
-  compares with; with none found, it deploys. Without the secret it warns and deploys nothing. Run by hand from `main`,
-  it deploys whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token
-  itself.
+  deploys it after a merge into `main`, once the same commit has passed the check, and publishes the page only once the
+  rooms have deployed or had nothing to ([[The Rooms Deploy When Their Code Changes]],
+  [[The Page Publishes Only After the Rooms Deploy]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN`
+  secret, only while that commit is still `main`'s head, and only when what the rooms are built from differs from the
+  commit they were last deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker and its
+  list, the content they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in
+  `rooms.yml`). A merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms`
+  environment, which the next run compares with; with none found, it deploys. Without the secret it warns and deploys
+  nothing, and when the rooms had something to deploy the page is not published either. Run by hand from `main`, it
+  deploys whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token itself.
   The same workflow deploys the [[Accounts]] first, since the rooms' service binding names their Worker; should that
   fail, the rooms still deploy, beside the accounts last deployed.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.

@@ -1,5 +1,5 @@
 //! The Arts on a character: the file read whole, Storm worn from the start and by every save made before the Arts,
-//! wearing an Art and setting its Core, and every ask the room must refuse.
+//! wearing an Art and setting its Core with fragments owned, and every ask the room must refuse.
 
 use crate::arts::{ArtAsk, ArtRefusal, CORE_SLOTS, arts};
 use crate::character::Character;
@@ -30,21 +30,31 @@ fn a_save_from_before_the_arts_wears_storm_with_every_core_empty() {
     assert_eq!((back.arts.worn, back.core_of(1)), (1, [None, Some(1), None]), "made whole");
 }
 
+/// A character who owns every fragment of every Art.
+fn owning_all() -> Character {
+    let mut character = Character::starting();
+    character.arts.owned = Some(vec![0b11_1111; arts().arts.len()]);
+    character
+}
+
 #[test]
 fn wearing_an_art_and_setting_its_core_keep_through_a_save() {
-    let mut character = Character::starting();
+    let mut character = owning_all();
     assert_eq!(character.ask_art(ArtAsk::Wear { art: 3 }), Ok(()));
     assert_eq!(character.ask_art(ArtAsk::SetCore { art: 3, slot: 0, fragment: 0 }), Ok(()));
     assert_eq!(character.ask_art(ArtAsk::SetCore { art: 1, slot: 2, fragment: 5 }), Ok(()));
     assert_eq!(character.fragment("hunger").map(|found| found.heal_share), Some(1.0), "the worn Art's own");
     assert!(character.fragment("gale").is_none(), "another Art's Core counts only while it is worn");
+    assert_eq!(character.fragment_of(1, "gale").map(|found| found.radius), Some(18.0), "its own Art's Core, not worn");
+    assert!(character.fragment_of(1, "overload").is_none(), "not set in Storm's Core");
+    assert!(character.fragment_of(3, "gale").is_none(), "a fragment of another Art");
     let back = Character::from_json(&character.to_json()).expect("a character");
     assert_eq!((back.art().key.as_str(), back.core_of(3)[0], back.core_of(1)[2]), ("shadow", Some(0), Some(5)));
 }
 
 #[test]
 fn an_unknown_art_a_slot_or_fragment_out_of_range_or_one_set_twice_is_refused() {
-    let mut character = Character::starting();
+    let mut character = owning_all();
     let before = character.clone();
     assert_eq!(character.ask_art(ArtAsk::Wear { art: 0 }), Err(ArtRefusal::NoSuchArt));
     assert_eq!(character.ask_art(ArtAsk::SetCore { art: 4, slot: 0, fragment: 0 }), Err(ArtRefusal::NoSuchArt));
@@ -56,4 +66,17 @@ fn an_unknown_art_a_slot_or_fragment_out_of_range_or_one_set_twice_is_refused() 
     assert_eq!(character.ask_art(ArtAsk::SetCore { art: 1, slot: 0, fragment: 4 }), Ok(()), "its own slot again");
     assert_eq!(character.ask_art(ArtAsk::SetCore { art: 2, slot: 1, fragment: 4 }), Ok(()), "another Art's Core");
     assert_eq!(ArtRefusal::FragmentSet as u8, 113);
+}
+
+#[test]
+fn a_fragment_not_owned_is_never_set() {
+    let mut character = Character::starting();
+    let before = character.clone();
+    assert_eq!(character.ask_art(ArtAsk::SetCore { art: 1, slot: 0, fragment: 0 }), Err(ArtRefusal::NotOwned));
+    assert_eq!(character, before, "a refusal changes nothing");
+    assert_eq!(ArtRefusal::NotOwned as u8, 114);
+    // A kept Core that holds a fragment no longer owned loses it as it is read.
+    character.arts.cores[0][2] = Some(3);
+    let back = Character::from_json(&character.to_json()).expect("a character");
+    assert_eq!(back.core_of(1), [None; CORE_SLOTS]);
 }

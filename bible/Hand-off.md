@@ -217,20 +217,37 @@ Where the work stands now, for the next session. Each session rewrites this note
   the cost on a real GPU is unchecked. Still wrong ([[Nature]]): near cypresses look thinner since the cards shrank,
   the rainforest seen 2 km off from 90 m up shows bare trunks between 300 m and 1 km, tundra spruces read as dark
   dots far off. The next steps for the cost: indexed near meshes and fewer cards.
-- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought
-  #71's ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story
-  Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
-  asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
-  it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
-  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck
-  at night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger
-  walks the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in;
-  its fires are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky),
-  heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
-  theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
-  Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
-  the intro, each started on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and
-  a click starts the intro over the cloud at first light.
+- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought #71's
+  ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story Mission at Sea]]),
+  with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then asked
+  ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on it:
+  the intro at first light, down through the cloud to Saltmere's title; the storm at evening and the Brig; creation at
+  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck at
+  night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger walks
+  the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in; its fires
+  are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky), heard in the
+  game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one theme ([[Music]]).
+  The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]). Tested offline: the
+  full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and the intro, each started
+  on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and a click starts the intro
+  over the cloud at first light.
+- The prologue's follow-ups on `main` (#94), merged with the owner's yes after they played it live: the title's prompt
+  goes once the story begins; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about 25 s;
+  the story's sea fight sails in the story's wind, so the Brig makes way in the storm drawn round her; and the sea's 27
+  sounds from Freesound ([[The Sea's Sounds Come From Freesound]]), the open sea's, the story's, the sea fight's and the
+  shore's, the owner's picks from the sea sound sheet, https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to
+  them; its store's `picks` collection holds each cue's Freesound number), published on R2 and in
+  `content/audio/sounds.json`. The seven long beds play their steadiest minute, mono.
+- **#95, fewer plates, sized by rank, after Destiny**, merged to `main` with the owner's yes
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate, the foe in sight
+  nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and shows none over its
+  head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's bar three fifths long
+  and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates. Not yet seen on a real GPU
+  or with blows traded. Found in passing: the compass writes its marks' place and visibility every frame, changed or
+  not (`client/src/plus/compass.ts`).
+- **#96, the kit's first review**, merged with the owner's yes: workers' worktrees made ready to test; the observation
+  log kept on the branch `toolkit-data`; `cargo xtask check` naming the commit it checked; Toolkit rows for web
+  research and for measuring text before sizing a box. Its fidelity reviewer is taken out, at the owner's word (#105).
 
 ## Waiting on the owner
 - **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
@@ -239,39 +256,32 @@ Where the work stands now, for the next session. Each session rewrites this note
   are wanted as a cliff climb of their own, beside the ledges' stairs, and where.
 - The Dungeons session (#82, the owner's loop decisions) plans to move each patrol's procedural dungeon entrances
   onto the layouts' places, and will coordinate before it touches the layout code.
-- **#95, fewer plates, sized by rank, after Destiny**, a draft from branch `ccr-800481d9-kbbd62`, waits on the
-  owner's yes ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate,
-  the foe in sight nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and
-  shows none over its head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's
-  bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates.
-  Three audits of it (the code; its fidelity to the approval and its records; its frame cost and look) are fixed on
-  it, each fix with a test seen to fail without it. Tested offline: the full check; headless on the built page,
-  walking into the Saltgrass Downs garrison, six plates on `main` against one on #95, over the foe at the crosshair
-  (the foes stayed wary, so no blow was traded in the pictures); and each rank's plate whole and at three quarters.
-  Claude's calls, listed in its description, are the owner's to change: the cone's numbers and its hold; no second
-  plate by the cone while the foe at the crosshair is fought, locked or a Boss; a fought plate fading within the 6 s,
-  as the target plate does; the bars' sizes; thirds only over figures; the words of blows clear only of plates drawn;
-  ships' plates as they are. Not yet seen on a real GPU or with blows traded. The target's own plate over its head is
-  to be looked at again once the owner has played with which plates show. Found in passing, not on #95: the compass
-  writes its marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
-- **#96, the kit's first review, is on `main`**: workers' worktrees made ready to test; the observation log kept on
-  the branch `toolkit-data`, saved by a git merge so a parallel session's save is kept, with a test check-tools runs;
-  `cargo xtask check` naming the commit it checked; and Toolkit rows for web research and for measuring text before
-  sizing a box. Open for the owner, in its description: where the claude-mem store lives (an archive, kept out of git).
+- **#95's and #96's open points**, both merged: the target's own plate over its head is to be looked at again once the
+  owner has played with which plates show, and #95's calls (in its description) are the owner's to change; for #96,
+  where the claude-mem store lives (an archive, kept out of git).
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
-- **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
-  storm and creation once begun; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about
-  25 s; the story's sea fight sails in the story's wind, not the world's, so the Brig makes way in the storm drawn
-  round her. Waits on the owner's yes to merge, which deploys the page and the rooms.
-- **The sea's sounds from Freesound (#94)** ([[The Sea's Sounds Come From Freesound]]): all 27, the open sea's, the
-  story's, the sea fight's (new) and the shore's, are the owner's picks from the sea sound sheet,
-  https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its store's `picks` collection holds each
-  cue's Freesound number), published on R2 and in `content/audio/sounds.json`. The seven long beds play their
-  steadiest minute, mono. Not yet: any of them heard in the game, or their level judged by ear. The main sound sheet
-  (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
+- **The sea's sounds** ([[The Sea's Sounds Come From Freesound]]): none yet heard in the game, nor their level judged
+  by ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
+- **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**,
+  based on `main`, waits on the owner's yes to merge, which deploys the page and the rooms. The owner named the
+  factions and the elder, said yes to faction gear "with its own unique color" and chose its colours: the Stormcallers
+  "#1 with color accents" (storm grey and silver; the storm blue of the accents is Claude's), the Lamplighters "White
+  and gold", the Veiled "Black and silver"; then their look, "Top strip, fixes kept". The owner also decided that
+  characters made before the Arts' levels start every Art at level 1, that no save-keeping lands on `main` first (so a
+  rollback of the rooms after the merge loses this round's progress), that the page publishes only after the rooms
+  deploy, and that Maren keeps her ruins line before the ruins are drawn. Every call made under the owner's
+  "autonomy" is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full
+  check. Tested in a local room (`npm run server`, the built page headless): Shape present with his six wares, "From
+  level 20" and the right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its
+  colour; Maren greeting a browser that had played the story before, the keys' hints giving way while she speaks. Not
+  yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses and faction
+  gear, a faction set worn in the page (composed offline from the published strips), and Maren's whole walk (her start
+  and her coming by the lanes are tested offline; headless frames take about a second each). The
+  open questions are in [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge
+  re-render. Sunspire's and Rimeholt's ports are #75's; this round only locks their social spaces.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
   repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
   `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
@@ -403,9 +413,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
   fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
   fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
-- **The kit's observation log** has had its first review: all five observations are actioned, their fixes on #96,
-  waiting on the owner's merge. The log is on the orphan branch `toolkit-data` (#96's `toolkit-data.sh`; until #96
-  merges, its restore and save are on that branch only). The earlier review's four changes to the instructions, and one
+- **The kit's observation log** has had its first review: all five observations are actioned, their fixes merged with
+  #96. The log is on the orphan branch `toolkit-data` (`toolkit-data.sh`). The earlier review's four changes to the instructions, and one
   closing, were lost with their container; only that session's report has them.
 
 - From a worker branch (`wt-bodies`), tested offline: the movement rules find a body's blocks through a grid
@@ -450,6 +459,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   is the terrain's only), and the land texts and the city's assets fetch the same files twice.
 - The layouts' open ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities
   that will stand on the sites (public events, beacons, resource nodes, foes).
+- **After #92**: reputation from bounties and activities when they exist; Shape at Sunspire and Rimeholt when their
+  social spaces open; a hide and mane mask from the forge for coats (the ride's `_uv` strips are one); the Elite and
+  Abyss tiers' names on the voyage's card (#82), where Shapes are found; a faction set worn and two players seen in
+  the page on a real GPU; the welcome and the prologue's marks kept per character rather than per browser, if the
+  owner wants it.
 - **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
   through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
   with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
