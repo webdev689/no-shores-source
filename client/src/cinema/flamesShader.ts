@@ -1,14 +1,16 @@
 // The fires' WGSL. Every part is a quad from one instance: smoke a soft puff facing the eye, a tongue of flame standing
 // up from its base and leaning with the wind, an ember a hot point, and a glow the light a fire throws round it, drawn
 // only into the light layer. Smoke and fire are laid over the finished picture, tested against the scene's depth by
-// hand, so the water laid after the land never covers a fire burning above it.
-import { LIGHT_WGSL } from '../combat/lightLayer.ts';
+// hand, so the water laid after the land never covers a fire burning above it. A glow reads the scene's depth back
+// into the point drawn at each pixel and lights it by how near it stands to the fire, so only what stands round a
+// fire is lit, never the sea or the sky seen past it.
+import { LIGHT } from '../combat/lightLayer.ts';
 
 /** Each part's kind, as the instance's fourth float carries it. */
 export const PART = { smoke: 0, tongue: 1, ember: 2, glow: 3 } as const;
 
 export const FLAMES_WGSL = /* wgsl */ `
-struct View { from_eye: mat4x4f, time: vec4f }
+struct View { from_eye: mat4x4f, to_eye: mat4x4f, time: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
 
 struct Part {
@@ -21,6 +23,7 @@ struct Out {
   @location(0) along: vec2f,
   @location(1) colour: vec4f,
   @location(2) @interpolate(flat) kind_seed: vec2f,
+  @location(3) @interpolate(flat) light: vec4f, // a glow's fire, from the eye, then its reach
 }
 
 const CORNERS = array<vec2f, 6>(vec2f(-1.0, 0.0), vec2f(1.0, 0.0), vec2f(1.0, 1.0),
@@ -43,12 +46,36 @@ fn noise2(point: vec2f, seed: f32) -> f32 {
     mix(corner_value(base + vec2f(0.0, 1.0), seed), corner_value(base + vec2f(1.0, 1.0), seed), eased.x), eased.y);
 }
 
+// The screen's rectangle round a fire's light: every corner of the box round its sphere projected, or the whole
+// screen when the eye stands too near the box for that.
+fn light_rect(centre: vec3f, reach: f32) -> vec4f {
+  var low = vec2f(1.0);
+  var high = vec2f(-1.0);
+  for (var corner = 0u; corner < 8u; corner++) {
+    let signs = vec3f(f32(corner & 1u), f32((corner >> 1u) & 1u), f32((corner >> 2u) & 1u)) * 2.0 - 1.0;
+    let clip = view.from_eye * vec4f(centre + signs * reach, 1.0);
+    if (clip.w < 0.05) { return vec4f(-1.0, -1.0, 1.0, 1.0); }
+    low = min(low, clip.xy / clip.w);
+    high = max(high, clip.xy / clip.w);
+  }
+  return vec4f(clamp(low, vec2f(-1.0), vec2f(1.0)), clamp(high, vec2f(-1.0), vec2f(1.0)));
+}
+
 @vertex fn part_vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) instance: u32, part: Part) -> Out {
   let corner = CORNERS[index];
   let matrix = view.from_eye;
   let right = normalize(vec3f(matrix[0].x, matrix[1].x, matrix[2].x));
   let up = normalize(vec3f(matrix[0].y, matrix[1].y, matrix[2].y));
   let kind = u32(part.place.w);
+  var out: Out;
+  out.colour = part.colour;
+  out.kind_seed = vec2f(f32(kind), f32(instance % 997u));
+  if (kind == ${PART.glow}u) {
+    let rect = light_rect(part.place.xyz, part.shape.x);
+    out.position = vec4f(mix(rect.xy, rect.zw, vec2f(corner.x * 0.5 + 0.5, corner.y)), 0.5, 1.0);
+    out.light = vec4f(part.place.xyz, part.shape.x);
+    return out;
+  }
   var world: vec3f;
   var along: vec2f;
   if (kind == ${PART.tongue}u) {
@@ -64,11 +91,8 @@ fn noise2(point: vec2f, seed: f32) -> f32 {
     world = part.place.xyz + (right * centred.x + up * centred.y) * radius;
     along = centred;
   }
-  var out: Out;
   out.position = matrix * vec4f(world, 1.0);
   out.along = along;
-  out.colour = part.colour;
-  out.kind_seed = vec2f(f32(kind), f32(instance % 997u));
   return out;
 }
 
@@ -109,9 +133,18 @@ fn shaded(in: Out) -> vec4f {
   return shaded(in);
 }
 
-${LIGHT_WGSL}
+// The light pass is a quarter of the picture each way: each of its pixels reads the scene's depth at its block's
+// middle, as the light layer's own depth does.
 @fragment fn light_fragment(in: Out) -> @location(0) vec4f {
-  let share = max(1.0 - length(in.along), 0.0) * in.colour.a;
-  return light_of(in.colour.rgb, share);
+  let size = vec2i(textureDimensions(depths));
+  let pixel = min(vec2i(in.position.xy) * ${LIGHT.scale} + ${LIGHT.scale / 2}, size - 1);
+  let depth = textureLoad(depths, pixel, 0).r;
+  if (depth <= 0.0) { discard; }
+  let ndc = (vec2f(pixel) + 0.5) / vec2f(size) * vec2f(2.0, -2.0) + vec2f(-1.0, 1.0);
+  let seen = view.to_eye * vec4f(ndc, depth, 1.0);
+  let near = length(seen.xyz / seen.w - in.light.xyz) / in.light.w;
+  if (near >= 1.0) { discard; }
+  // A fire's glow is light itself, so it is added as it is rather than only where its colour passes white-hot.
+  return vec4f(in.colour.rgb * (1.0 - near) * in.colour.a, 0.0);
 }
 `;

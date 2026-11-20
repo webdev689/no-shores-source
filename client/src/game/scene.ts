@@ -24,8 +24,9 @@ export interface Drawer {
   /** Draws over the finished picture `target`, after the water, tested against the scene's `depth` (one float a pixel,
    *  reversed) by hand: what is seen through and must not be covered by the water laid over the land. */
   overWater?(encoder: GPUCommandEncoder, target: GPUTextureView, fromEye: Float32Array, depth: GPUTexture): void;
-  /** Draws its light into the light layer's pass (`LightLayer.encode`), after the water and under the hands. */
-  lightInto?(pass: GPURenderPassEncoder, fromEye: Float32Array): void;
+  /** Draws its light into the light layer's pass (`LightLayer.encode`), after the water and under the hands; the
+   *  scene's `depth` (one float a pixel, reversed) is there for a light that lights only what stands near it. */
+  lightInto?(pass: GPURenderPassEncoder, fromEye: Float32Array, depth: GPUTexture): void;
 }
 
 /** Where the exact ground round a point comes from: the land worker's sampler. */
@@ -267,7 +268,7 @@ export class GameScene {
     for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
-        for (const drawer of drawers) drawer.lightInto?.(light, fromEye);
+        for (const drawer of drawers) drawer.lightInto?.(light, fromEye, targets.depth);
       });
     // Clear weather, the game's own, lays nothing: no frame for the pass is made.
     if (!drawsNothing(this.weather))

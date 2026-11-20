@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Fire, fireParts } from './flames.ts';
+import { lightLevel } from '../combat/lightLayer.ts';
+import { type Fire, fireParts, GLOW_COLOUR } from './flames.ts';
 
 const FIRE: Fire = { at: [10, 20, 3], sizeM: 1, seed: 4 };
 const CALM = [0, 0] as const;
@@ -51,4 +52,13 @@ test('embers fly up from the fire and burn out', () => {
     assert.ok(ember.position[2] >= FIRE.at[2] && ember.position[2] <= FIRE.at[2] + 4);
     assert.ok(ember.brightness >= 0 && ember.brightness <= 1);
   }
+});
+
+test("a fire's light steps from a red rim through orange to a gold heart, and no other colour", () => {
+  const steps: string[] = [];
+  for (let share = 0; share <= 1.0001; share += 0.001) {
+    const step = GLOW_COLOUR.map((channel) => lightLevel(channel * share)).join(' ');
+    if (steps.at(-1) !== step) steps.push(step);
+  }
+  assert.deepEqual(steps, ['0 0 0', '0.5 0 0', '1 0.5 0', '1 1 0']);
 });

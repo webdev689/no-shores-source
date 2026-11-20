@@ -20,6 +20,7 @@ code:
   - client/src/cinema/birds.ts#birdAt
   - client/src/cinema/flames.ts#Flames
   - client/src/cinema/flames.ts#fireParts
+  - client/src/cinema/inverted.ts#inverted
   - client/src/cinema/flamesShader.ts#FLAMES_WGSL
   - client/src/cinema/seeded.ts#hashUnit
   - client/src/game/scene.ts#GameScene
@@ -117,8 +118,12 @@ the scene's pass with depth, and never smaller than a speck however far off.
 fire's parts come from its seed and the clock: five tongues of flame whose height wanders within a band and leans a
 little downwind, twelve puffs of smoke that rise, grow, thin and lean with `Flames.wind`, and ten embers that fly up
 and burn out. Smoke and flame are laid over the picture after the water, tested against the scene's depth, so the
-water never covers a fire burning above it. Each fire also throws a glow twice its height into the light layer ([[Weapon Glow]]),
-which lights what stands round it in the game's stepped halo.
+water never covers a fire burning above it. Each fire also throws its light into the light layer ([[Weapon Glow]]): the
+glow reads the scene's depth back into the point drawn at each pixel and lights it by how near it stands to the
+fire's middle, out to three times the fire's height, so the deck round a fire and whoever stands there are lit and
+the sea and sky seen past it are not. The glow is light itself, so it is added as it is, not only where it passes
+white-hot; its green is half its red and its blue never steps, so it runs from a red rim through orange to a gold
+heart.
 
 ### Trying it
 
@@ -130,5 +135,6 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
 - The overcast's ceiling and the mist are laid over the water's own sky, not drawn into it: a storm's sun still sets
   the water's highlights, only dimmed.
 - Rain and snow are drawn round the eye only; they do not wet or whiten the ground.
-- A fire's light is the light layer's, so it is stepped and screen-wide, not cast onto the deck as a shadowed lamp.
+- A fire's light is the light layer's, so it is stepped and casts no shadow: what stands behind a mast is lit too.
+- The water writes no depth, so a fire's light never falls on the sea's surface round it.
 - Ships are posed on the rules' swell, so in a storm's gained sea a hull may sit into a drawn crest.

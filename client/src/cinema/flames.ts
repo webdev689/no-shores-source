@@ -4,6 +4,7 @@
 import { LIGHT_DEPTH, LIGHT_TARGET } from '../combat/lightLayer.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { FLAMES_WGSL, PART } from './flamesShader.ts';
+import { inverted } from './inverted.ts';
 import { hashUnit, smoothNoise } from './seeded.ts';
 
 type Point = readonly [number, number, number];
@@ -82,11 +83,12 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
 const PART_FLOATS = 12;
 const SMOKE_COLOUR = [0.13, 0.12, 0.12] as const;
 const EMBER_COLOUR = [1, 0.55, 0.15] as const;
-/** How far a fire's glow reaches, in times its height: the light layer cuts each channel to three levels, so a wider
- *  glow lays its steps as coloured rings across all it reaches; this far, it lights what stands by the fire. */
-const GLOW_REACH = 2;
-/** The glow's colour, bright enough that the light layer takes it as light. */
-const GLOW_COLOUR = [1, 0.85, 0.6] as const;
+/** How far a fire's light reaches from its middle, in times its height: the deck round it and whoever stands there. */
+export const GLOW_REACH = 3;
+/** The light at a fire's middle, as the light layer takes it before its cut, which steps each channel on its own. Its
+ *  green is half its red, so green's first step falls with red's second, and its blue never steps: the light runs
+ *  from a red rim through orange to a gold heart, never a yellow, grey or pink step. */
+export const GLOW_COLOUR = [0.6, 0.3, 0.03] as const;
 const PREMULTIPLIED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
 
 /** Fires, lit and put out by id, drawn as one of the scene's drawers over the water and into the light layer. */
@@ -99,7 +101,6 @@ export class Flames {
   private readonly overPipeline: GPURenderPipeline;
   private readonly lightPipeline: GPURenderPipeline;
   private readonly view: GPUBuffer;
-  private readonly lightGroup: GPUBindGroup;
   private bound: { depth: GPUTexture; group: GPUBindGroup } | null = null;
   private readonly fires = new Map<number, Fire>();
   private nextId = 1;
@@ -117,7 +118,6 @@ export class Flames {
         { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
       ],
     });
-    const lightLayout = device.createBindGroupLayout({ entries: [uniform] });
     const vertex: GPUVertexState = {
       module: this.module,
       entryPoint: 'part_vertex',
@@ -143,18 +143,15 @@ export class Flames {
       },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
     });
+    // The glow tests the scene's own depth in its light, point by point, so the layer's coarser depth is not asked.
     this.lightPipeline = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [lightLayout] }),
+      layout: device.createPipelineLayout({ bindGroupLayouts: [this.overLayout] }),
       vertex,
       fragment: { module: this.module, entryPoint: 'light_fragment', targets: [LIGHT_TARGET] },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
-      depthStencil: LIGHT_DEPTH,
+      depthStencil: { ...LIGHT_DEPTH, depthCompare: 'always' },
     });
-    this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
-    this.lightGroup = device.createBindGroup({
-      layout: lightLayout,
-      entries: [{ binding: 0, resource: { buffer: this.view } }],
-    });
+    this.view = device.createBuffer({ size: 144, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
   }
 
   /** Lights a fire `sizeM` tall (half a metre to four) with its base at `base` (world metres); gives its id. */
@@ -212,13 +209,37 @@ export class Flames {
       });
     }
     this.device.queue.writeBuffer(this.instances, 0, values);
-    this.device.queue.writeBuffer(this.view, 0, Float32Array.from([...fromEye.subarray(0, 16), time, 0, 0, 0]));
+    const toEye = inverted(fromEye) ?? new Float32Array(16);
+    this.device.queue.writeBuffer(
+      this.view,
+      0,
+      Float32Array.from([...fromEye.subarray(0, 16), ...toEye, time, 0, 0, 0]),
+    );
   }
 
   /** The smoke, flames and embers over the finished picture `target`, hidden where the scene's `depth` (one float a
    *  pixel, reversed) stands nearer. */
   overWater(encoder: GPUCommandEncoder, target: GPUTextureView, _fromEye: Float32Array, depth: GPUTexture): void {
     if (!this.instances || this.counts.shown === 0) return;
+    const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
+    pass.setPipeline(this.overPipeline);
+    pass.setBindGroup(0, this.groupFor(depth));
+    pass.setVertexBuffer(0, this.instances);
+    pass.draw(6, this.counts.shown);
+    pass.end();
+  }
+
+  /** Each fire's glow, into the light layer's pass (`LightLayer.encode`), lighting the scene drawn into `depth`. */
+  lightInto(pass: GPURenderPassEncoder, _fromEye: Float32Array, depth: GPUTexture): void {
+    if (!this.instances || this.counts.glows === 0) return;
+    pass.setPipeline(this.lightPipeline);
+    pass.setBindGroup(0, this.groupFor(depth));
+    pass.setVertexBuffer(0, this.instances);
+    pass.draw(6, this.counts.glows, 0, this.counts.shown);
+  }
+
+  /** The view and the scene's `depth` (one float a pixel, reversed), bound once for each depth texture. */
+  private groupFor(depth: GPUTexture): GPUBindGroup {
     if (this.bound?.depth !== depth) {
       const group = this.device.createBindGroup({
         layout: this.overLayout,
@@ -229,20 +250,6 @@ export class Flames {
       });
       this.bound = { depth, group };
     }
-    const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
-    pass.setPipeline(this.overPipeline);
-    pass.setBindGroup(0, this.bound.group);
-    pass.setVertexBuffer(0, this.instances);
-    pass.draw(6, this.counts.shown);
-    pass.end();
-  }
-
-  /** Each fire's glow, into the light layer's pass (`LightLayer.encode`). */
-  lightInto(pass: GPURenderPassEncoder, _fromEye: Float32Array): void {
-    if (!this.instances || this.counts.glows === 0) return;
-    pass.setPipeline(this.lightPipeline);
-    pass.setBindGroup(0, this.lightGroup);
-    pass.setVertexBuffer(0, this.instances);
-    pass.draw(6, this.counts.glows, 0, this.counts.shown);
+    return this.bound.group;
   }
 }
