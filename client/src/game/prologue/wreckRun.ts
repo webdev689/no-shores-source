@@ -26,7 +26,7 @@ import { IDLE, type FootFight, type FootFrame } from '../foot.ts';
 import { footHints } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
 import { WreckCrew } from './wreckCrew.ts';
-import { courseOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
+import { courseOf, rimOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
 
@@ -124,8 +124,9 @@ export class WreckRun {
     const module = await context.roomModule;
     const course = courseOf(layout);
     const combat = startCombatRules(module);
-    // The open sea under the decks: no land's window, only the blocks.
+    // The open sea under the decks: no land's window, only the blocks, held round their edge as the room holds them.
     for (const rules of [movement, combat]) rules.setGround(null);
+    movement.setHeights(rimOf(course));
     const [x, y] = layout.wake.at;
     const { facing } = layout.wake;
     walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
@@ -393,9 +394,11 @@ export class WreckRun {
     return { shot, figures, standing: { kind: 'inside' }, marks, swings, fight: fought, hints };
   }
 
-  /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, and the room let go of. */
+  /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, the wreck's rim taken from the page's
+   *  movement, and the room let go of. */
   leave(): void {
     showAnimaEdge(QUIET);
+    this.context.movement.setHeights(null);
     this.room = null;
   }
 }

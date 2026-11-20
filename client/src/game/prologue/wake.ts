@@ -158,12 +158,20 @@ export class Wake implements Beat {
     ];
     // The path ends at Thule's place, in the arena: the flight stops at its gate, so he is first seen in the push in.
     const path = this.layout.path.slice(0, -1);
+    // Each point is flown to by how far along the path it lies, so the flight keeps one pace down the wreck.
+    const walked = path.map((unused, index) =>
+      path.slice(1, index + 1).reduce((sum, [x, y], step) => {
+        const [fromX, fromY] = path[step] ?? [x, y];
+        return sum + Math.hypot(x - fromX, y - fromY);
+      }, 0),
+    );
+    const length = Math.max(1e-6, walked.at(-1) ?? 0);
     const along = path.map(([x, y], index): RailKey => {
       const next = path[Math.min(path.length - 1, index + 1)] ?? [x, y];
       const deck = topAt(this.layout.course, x, y);
       const [east, south] = this.clearOfMasts(x, y);
       return {
-        at: LEAVE_S + 2 + (index / Math.max(1, path.length - 1)) * 6,
+        at: LEAVE_S + 2 + ((walked[index] ?? 0) / length) * 6,
         eye: [x + east, y + south, deck + 5.5],
         look: [next[0] + (next[0] - x) * 2, next[1] + (next[1] - y) * 2, deck + 1.5],
       };
@@ -238,6 +246,7 @@ export class Wake implements Beat {
       shot,
       actors,
       drawers: [this.scenery.drawer],
+      hulls: this.scenery.hulls,
       heads: this.heads,
       focus: [shot.eye[0], shot.eye[1]],
       heard: { at: 'sea', deck: true, sailing: false },

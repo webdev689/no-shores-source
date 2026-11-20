@@ -19,7 +19,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), 'ships'))
 from paint_ship import paint, picture_materials, read_pictures  # noqa: E402
 from wreck_dress import blockers, gates, ramps, wreckage  # noqa: E402
 from wreck_frames import Frames  # noqa: E402
-from wreck_scene import assemble, bridges, clear_lane  # noqa: E402
+from wreck_fields import fields  # noqa: E402
+from wreck_scene import assemble, clear_lane  # noqa: E402
 from wreck_ships import Ground, meshes  # noqa: E402
 
 
@@ -32,11 +33,12 @@ def main():
     given = arguments.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])
     bpy.ops.wm.read_factory_settings(use_empty=True)
     groups, hulls, places = assemble(os.path.abspath(given.sloop), os.path.abspath(given.shaped))
-    groups['Bridges'] = bridges(Ground(groups.values()), 101)
-    # The torn deck crosses the Brig's two broken ends, and her port gangway is the way along her fallen waist:
-    # nothing of hers stands in either.
-    clear_lane((groups['Brig.Stern'], groups['Brig.Bow']), (-4.4, 1.4, 5.4, 4.2), 2.4, 5.6)
-    clear_lane((groups['Brig.Stern'],), (-11.6, 2.2, -4.4, 4.6), 2.6, 4.9)
+    groups['Fields'] = fields(101)
+    # Each half's broken end where a ramp leads off it onto the wreckage of her waist: nothing of hers stands there.
+    clear_lane((groups['Brig.Stern'],), (-19.6, 6.2, -15.5, 9.6), 2.4, 5.6)
+    clear_lane((groups['Brig.Bow'],), (16.0, 7.2, 20.6, 10.8), 2.4, 5.6)
+    # Her port gangway is the way along her fallen waist.
+    clear_lane((groups['Brig.Stern'],), (-26.2, 7.9, -19.0, 10.3), 2.6, 5.2)
     # The timber fallen from the Frigate's gun deck lands on her quarterdeck: what stood there was knocked down, her
     # companionway with it.
     clear_lane((groups['Frigate'],), (-1.7, -33.8, 1.7, -30.0), 4.4, 7.0)
@@ -45,7 +47,7 @@ def main():
     frames = Frames(places, hulls, Ground(groups.values()))
     groups['Blockers'] = blockers(frames, 301)
     groups['Wreckage'] = wreckage(frames, 401)
-    for zone, group in enumerate(gates(frames, 501)):
+    for zone, group in gates(frames, 501).items():
         groups[f'Gate.{zone}'] = group
     materials = picture_materials(read_pictures(given.pictures) if given.pictures else None)
     for item in [item for group in groups.values() for item in meshes(group)]:

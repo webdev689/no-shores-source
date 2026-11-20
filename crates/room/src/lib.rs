@@ -290,6 +290,7 @@ impl Room {
         self.spawn_asked();
         self.keep_patrol();
         self.step_foes();
+        self.keep_on_course();
         self.fly_shots();
         self.step_arts();
         self.judge_waiting();

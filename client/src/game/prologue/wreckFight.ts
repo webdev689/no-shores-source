@@ -236,6 +236,7 @@ export class WreckFight implements Beat {
       cards: shown.figures,
       actors: thule ? [thule] : [],
       drawers: [this.scenery.drawer, fight.under, fight.over],
+      hulls: this.scenery.hulls,
       after: hands,
       heads,
       focus: [shown.shot.eye[0], shown.shot.eye[1]],

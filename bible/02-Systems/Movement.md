@@ -58,7 +58,10 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   the highest cell, a wall at that cell's edge that no step or slope takes and no climb starts on, a climb holding
   to blocks alone. A wall is judged along the whole of a move, each cell it passes through in turn and both cells
   beside a corner it crosses, so a run's tick, longer than a cell, never carries a body through a wall one cell thick,
-  nor between two walls that meet at a corner. So a passage one cell wide is walked to its end. A body standing on it
+  nor between two walls that meet at a corner. So a passage one cell wide is walked to its end. A vault or a mantle is never
+  taken across one of these walls: at a deck's edge the body stays on its side of a rail it jumps at. A course of
+  blocks laid over the open sea is held so by its rim (`Heights::rim`): open under the blocks wherever one covers a
+  cell's middle, a wall everywhere else, so no body leaves the blocks for the sea. A body standing on it
   faces north (her bow). The browser hands it to its door as numbers (the grid's shape, then each height, NaN for
   none), the same numbers the sea room stands its walkers on.
 - **Foes move by the same rules.** A foe's brain asks for the controls a player's keys would, and its room steps its

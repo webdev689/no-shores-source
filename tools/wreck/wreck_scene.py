@@ -11,15 +11,16 @@ from wreck_damage import carve, faces_where, pieces_where, snap_mast, splinter_b
 from wreck_pieces import deck_section, seeded
 from wreck_ships import SEA_Z, bake_placement, build_ship, meshes, move, placing, split
 
-# Where each piece lies in the wreck's frame (x east, y north): the Frigate bow on into the Brig's starboard side; the
-# Brig's halves pushed apart by her bow, each turned about its far end and settled lower at its break; the Sloop on
-# her beam ends east of the Frigate's bow, her port side up and her masts flat on the sea away from the Frigate.
+# Where each piece lies in the wreck's frame (x east, y north): the Frigate bow on into where the Brig's waist was; the
+# Brig's halves thrown far apart by her bow, each turned about its far end and settled a little lower at its break, the
+# wreckage of her waist between them; the Sloop on her beam ends east of the Frigate's bow, her port side up and her
+# masts flat on the sea away from the Frigate, floating high enough that her side stays out of the swell.
 FRIGATE = {'at': (0.0, -19.2, 0.0), 'heading_deg': 90.0, 'pitch_deg': -1.5, 'roll_deg': 2.0}
-STERN = {'pivot': (-17.0, 0.0, SEA_Z), 'at': (-19.4, 0.3, SEA_Z), 'heading_deg': 6.0, 'pitch_deg': 2.0,
+STERN = {'pivot': (-17.0, 0.0, SEA_Z), 'at': (-34.0, 6.0, SEA_Z), 'heading_deg': 6.0, 'pitch_deg': 1.0,
          'roll_deg': -3.0}
-BOW = {'pivot': (16.0, 0.0, SEA_Z), 'at': (18.8, 0.6, SEA_Z + 0.2), 'heading_deg': -9.0, 'pitch_deg': -3.0,
-       'roll_deg': -6.0}
-SLOOP = {'at': (11.6, -11.0, SEA_Z - 1.7), 'heading_deg': 95.0, 'roll_deg': 88.0, 'pitch_deg': 1.5,
+BOW = {'pivot': (16.0, 0.0, SEA_Z), 'at': (34.0, 6.5, SEA_Z + 0.2), 'heading_deg': -9.0, 'pitch_deg': -1.5,
+       'roll_deg': -4.0}
+SLOOP = {'at': (25.0, -15.0, SEA_Z - 0.5), 'heading_deg': 95.0, 'roll_deg': 88.0, 'pitch_deg': 1.5,
          'pivot': (0.0, 0.0, SEA_Z)}
 BREAK_X = 0.0
 
@@ -96,10 +97,27 @@ def frigate(sloop, seed):
           keep=('Cannon',))
     pieces_where(ship, lambda point: front[0] < point.x < front[2] and front[1] < point.y < front[3]
                  and deck(point.x) - 0.2 < point.z < hull.floor_at(point.x) + 2.0)
+    # The binnacle before her wheel and the skylight on her quarterdeck were smashed and swept away: Thule's ground is
+    # open from her quarterdeck's front to her wheel.
+    pieces_where(ship, lambda point: -16.0 < point.x < -11.4 and abs(point.y) < 1.4
+                 and point.z > hull.floor_at(point.x) - 0.05, parts=('hull', 'iron', 'spar'))
     # Her starboard bulwark stove in amidships, where the fallen yard from the Sloop leans on her.
     faces_where(ship, ('Cannon.Starboard.4',), lambda point, part: 4.2 < point.x < 8.4 and point.y < -4.4
                 and point.z > deck(point.x) + 0.1)
     pieces_where(ship, lambda point: 4.2 < point.x < 8.4 and point.y < -3.8 and point.z > deck(point.x) - 0.2)
+    # Her port bulwark forward, broken where the wreckage off her port bow drifted against her: the way onto it.
+    faces_where(ship, (), lambda point, part: 7.8 < point.x < 10.2 and point.y > hull.half_beam(point.x) - 0.45
+                and point.z > deck(point.x) + 0.12)
+    pieces_where(ship, lambda point: 7.8 < point.x < 10.2 and point.y > hull.half_beam(point.x) - 0.9
+                 and point.z > deck(point.x) - 0.2)
+    # Her port side stove in abreast her gun deck, where her mizzen fell over it: her gangway there and her side down
+    # to her gun deck are gone, the way out onto the wreckage off her port quarter. Her side goes down past her gun
+    # deck's planking, which stays, so none of it leans over the way out.
+    side = (-9.2, 3.3, -4.8, 5.6)
+    carve(ship, side, lambda point, part: lower - 0.3 < point.z < deck(point.x) + 2.0
+          and not (part == 'deck' and abs(point.z - lower) < 0.1), keep=('Cannon',))
+    pieces_where(ship, lambda point: side[0] < point.x < side[2] and side[1] < point.y < side[3] + 0.4
+                 and lower + 0.35 < point.z < deck(point.x) + 2.0)
     move(ship, placing(**FRIGATE))
     return ship, hull
 
@@ -141,32 +159,6 @@ def sloop(shaped):
     pieces_where(ship, lambda point: True, parts=('sail',))
     move(ship, placing(**SLOOP))
     return ship
-
-
-def bridges(ground, seed):
-    """The way across the gap between the Brig's halves: a section of her deck torn away whole, lying from one
-    half's broken end to the other's, on the lower length of her fallen mainmast, which spans the gap under it; its
-    upper length went into the sea."""
-    rng = seeded(seed)
-    way = collection('Bridges')
-    piece = Piece()
-    start = Vector((-3.6, 2.9, 0))
-    end = Vector((3.4, 2.4, 0))
-    start.z = (ground.z(start.x, start.y) or 3.0) + 0.06
-    end.z = (ground.z(end.x, end.y) or 3.0) + 0.06
-    deck_section(piece, start, end, 2.3, rng)
-    item = piece.build('Bridge.Deck', way)
-    item['walk'] = True
-    mast = Piece()
-    across = (end - start).normalized()
-    foot = start + across * 1.1 - Vector((0, 0.35, 0.5))
-    tip = end - across * 1.1 - Vector((0, 0.35, 0.5))
-    mast.prism(tuple(foot), tuple(tip), 0.32, 'spar', sides=8)
-    # Its upper length, broken off, lies afloat beside the gap.
-    afloat = Vector((4.5, 8.5, SEA_Z + 0.05))
-    mast.prism(tuple(afloat), tuple(afloat + Vector((14.0, 3.2, 0.0))), 0.3, 'spar', sides=8, end_radius=0.22)
-    mast.build('Bridge.Mainmast', way)
-    return way
 
 
 def clear_lane(groups, box, low, high):
