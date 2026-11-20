@@ -124,10 +124,10 @@ test('a city that is no port is drawn as ruins and named so; the ports as they a
 });
 
 test('the difficulty ramp runs green at the easiest level to deep purple at the hardest, blended between', () => {
-  assert.equal(levelColour(1), '#2f7d32');
+  assert.equal(levelColour(1), '#256327');
   assert.equal(levelColour(30), '#5a1f6e');
   assert.equal(levelColour(22), '#a3241f', 'a stop is its own colour');
-  assert.equal(levelColour(0), '#2f7d32', 'under the easiest, the easiest');
+  assert.equal(levelColour(0), '#256327', 'under the easiest, the easiest');
   assert.equal(levelColour(40), '#5a1f6e', 'past the hardest, the hardest');
   const greens = [1, 8, 15, 22].map((level) => Number.parseInt(levelColour(level).slice(3, 5), 16));
   assert.ok(

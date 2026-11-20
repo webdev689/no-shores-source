@@ -43,11 +43,11 @@ export const HOLDER_WORDS: readonly (readonly [WaterHolder, string])[] = [
 ];
 
 /** The difficulty ramp from the easiest level to the hardest: green, gold, orange, red, deep purple, each dark enough
- *  to read as ink on the parchment. */
+ *  to read as ink on the parchment, at least 5 : 1 against the parchment a water's ring is filled with. */
 const DIFFICULTY_STOPS: readonly (readonly [number, readonly [number, number, number]])[] = [
-  [1, [47, 125, 50]],
-  [8, [154, 123, 10]],
-  [15, [176, 86, 26]],
+  [1, [37, 99, 39]],
+  [8, [106, 85, 7]],
+  [15, [137, 67, 20]],
   [22, [163, 36, 31]],
   [30, [90, 31, 110]],
 ];

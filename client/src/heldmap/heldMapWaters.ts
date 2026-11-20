@@ -1,8 +1,7 @@
 // The waters on the held map: each charted water's name and level band, lettered at its label point and held inside
-// the map, and the places it names, a city that is no port named as the ruins it is. What is lettered is painted with
-// the parchment's ink (mapLetters.ts).
+// the map, and the places it names, a city that is no port named as the ruins it is. What is lettered is laid out
+// (mapLayout.ts) and painted with the parchment's ink (mapLetters.ts).
 import type { MapPlace } from './heldMap.ts';
-import type { MapLetter } from './mapLetters.ts';
 import {
   chartedWaters,
   difficultyColour,
@@ -44,20 +43,18 @@ export class HeldMapWaters {
 
   /** The charted waters' names on a map `ink` wide and high, `toInk` giving a world point's place on it, `widthOf` a
    *  name's width: each at its label point while that is on the map, held inside the map's edges. */
+  /** The charted waters' names on a map `ink` wide and high, `toInk` giving a world point's place on it: each at its
+   *  label point while that is on the map, in her difficulty's colour. The layout holds each inside the map. */
   letters(
     ink: { readonly width: number; readonly height: number },
     toInk: (x: number, y: number) => readonly [number, number],
-    widthOf: (text: string) => number,
-  ): MapLetter[] {
-    return this.waters.waters.flatMap((water): MapLetter[] => {
+  ): { text: string; x: number; y: number; colour: string | undefined }[] {
+    return this.waters.waters.flatMap((water) => {
       const point = this.points.get(water.continent);
       if (!point || !this.charted.has(water.continent)) return [];
       const [x, y] = toInk(point[0], point[1]);
       if (x < 0 || y < 0 || x > ink.width || y > ink.height) return [];
-      const text = waterWords(water);
-      const half = Math.min(widthOf(text) / 2, ink.width / 2);
-      const colour = difficultyColour(water.levels) ?? undefined;
-      return [{ text, x: Math.min(Math.max(x, half), ink.width - half), y, kind: 'water', chosen: false, colour }];
+      return [{ text: waterWords(water), x, y, colour: difficultyColour(water.levels) ?? undefined }];
     });
   }
 }
