@@ -82,7 +82,7 @@ fn clear_of_boxes(hub: &Hub, point: [f64; 2], floor: f64) -> f64 {
         .map(|&[west, north, east, south, _, _]| {
             let dx = (west - point[0]).max(point[0] - east).max(0.0);
             let dy = (north - point[1]).max(point[1] - south).max(0.0);
-            dx.hypot(dy)
+            libm::hypot(dx, dy)
         })
         .fold(f64::INFINITY, f64::min)
 }
@@ -94,7 +94,7 @@ fn every_keeper_stands_in_a_stall_of_their_own_behind_its_counter_inside_the_rin
     let kinds: Vec<_> = social.stations.iter().map(|station| station.kind).collect();
     assert_eq!(social.stations.len(), 12, "eleven kinds of keeper, the vault twice: {kinds:?}");
     for station in &social.stations {
-        let apart = (station.counter[0] - station.keeper[0]).hypot(station.counter[1] - station.keeper[1]);
+        let apart = libm::hypot(station.counter[0] - station.keeper[0], station.counter[1] - station.keeper[1]);
         assert!((0.6..=4.0).contains(&apart), "{:?}'s keeper stands {apart:.2} m from the counter", station.kind);
         assert!(room_inside(&social.ring, station.counter), "{:?}'s counter is in the hub", station.kind);
     }

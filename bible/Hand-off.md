@@ -276,50 +276,45 @@ Where the work stands now, for the next session. Each session rewrites this note
   glyphs, the plates held still on board through a 64-bit matrix, and a last audit's fixes. Tested offline: the full
   check. Not yet seen on a real GPU, nor played through by hand.
 
-## In progress: Overlook's hub (branch `claude/game-experience-factions-94un6s`, not yet passing the check)
+## In progress: Overlook's hub (branch `claude/game-experience-factions-94un6s`, draft #113)
 
 The owner's words are in [[Overlook Becomes a Hub of Courts and Ways, After the Tower]] ("Build this to perfection
 ... Return when this is 100%"; then wall adornments and banners); every call is in [[Overlook's Hub as Claude Shapes
-It]]. Paused when the owner's usage limit was reached; nothing is reviewed, audited or seen whole yet.
+It]]. Nothing is audited or seen whole in the page yet.
 
-Built on the branch (each part committed, merged from its worker's branch `wk/hub-*`):
+Built on the branch, `main` merged in (#98, #102, #107):
 - **The hub** (`crates/city/src/hub/`, Overlook's own social plan; other cities keep the courtyard): the seaward walk
   and spawns, the Watch Court (obelisk, two vault houses, the Mage's study, the notice board's landing
   `hub::BOARD_LANDING_M` for the activities session's board), two stone ranges with arched passages, the West Court
-  (Tailor, fountain, bandstand) and the Forge Yard (Weaponsmith, Armorsmith, anvil yard), the Beacon Walk with its
-  market lane and the portico, the Hall of the Arts inside the Beacon's now hollow base (the three factions' chapels,
+  (Tailor, fountain, bandstand, well) and the Forge Yard (Weaponsmith, Armorsmith, anvil yard), the Beacon Walk with
+  its market lane and the portico, the Hall of the Arts inside the Beacon's hollow base (the three factions' chapels,
   the war table), the Stair Yard round the base's east side (the Tack's stable at the Harbour Stair's head), sealed
   gates, and the harbour way down the city's switchback and ramps to the quay (Harbourmaster, chandler) and the pier,
-  with two ships moored there (drawn on foot). The ring is the outline of every walked rectangle (`hub/ring.rs`).
-  Adornments are placed in `hub/adorn.rs` (banners, sconces, lanterns, bunting, signs, planters, ivy, statues, quay
-  things) but their modules are not built yet, so they stand nowhere.
-- **Ramps** for every city's avenues (`crates/city/src/ramps.rs`, sloped pads in `land::pads`), a switchback at each
-  avenue's head and a flight from each harbour avenue onto the quay; drawn by the page; walked in a room test.
+  with two ships moored there. The ring is the outline of every walked rectangle (`hub/ring.rs`).
+- **Its modules** (`tools/modules`, [[Modules]]): every keeper's stall, the chapels, ranges, gates, war table,
+  bandstand, fountain, market stalls and props, and the 29 adornments `hub/adorn.rs` hangs and stands
+  (`tools/modules/adorn.py`), each rendered and looked at in Blender. The bake now writes each group sorted, so it
+  makes the same bytes each run (the chapels' exact booleans did not). A piece the manifest lacks fails the hub's
+  tests (`debug_assert` in `Laid`).
+- **Ramps** for every city's avenues (`crates/city/src/ramps.rs`), a switchback at each avenue's head and a flight
+  onto the quay; walked in a room test.
 - **The fall**: in a social space a fall of 6 m or more kills at once; dead bodies fall on; the camera holds and turns
-  after the tumbling body; "You fell." once it lands (`crates/reach`, `client/src/game/fallLaw.ts`, `fallWatch.ts`).
+  after the body; "You fell." once it lands. Going over the edge in the air starts no warning until the feet are down
+  (`crates/reach`).
 - **Townsfolk on ways** (`crates/city/src/life.rs`, `client/src/game/life/`): A* over the plan's ways, keeping right,
-  routines looped on the world clock (every browser sees the same), workers and players at posts, the band heard by
-  distance, Maren on the ways. `life/check.rs` walks every way with the movement rules.
-- **Stalls** (`tools/modules`: every keeper's stall, the chapels, ranges and gate, sealed gate, war table, bandstand,
-  fountain, market stalls, props) and cloth colours: committed as the worker left them when stopped, unreviewed; the
-  manifest is the last local bake's. Renders were in a scratch folder the container loses.
+  routines on the world clock, the band heard by distance, Maren on the ways. `life/check.rs` walks every way and
+  every post a walker comes to; a kept post (a market keeper, a smith) is checked standing clear, not walked to.
+
+Tested offline: `cargo test -p city`, `cargo test -p room --test hub_walked`, `cargo test -p reach`.
 
 Left to do, in order:
-1. Bake the modules (`/root/wt/bpyenv` held bpy 5.3.0; `pip install bpy==5.3.0` on Python 3.13 again), check the
-   manifest, give every stall a `sign` socket and every fronted module a `front` socket (the hub stands modules by
-   `front`, `counter`, `keeper`, `wall`, `end-1`, `smith-1/2`, `player-1..4`), and drop any real-world symbol (the
-   armoury's shields carried crosses).
-2. Build the adornments family (the brief was `/root/wt/reports/brief-hub-adorn.md`; the list is the names
-   `hub/adorn.rs` asks for: `banner-overlook(-long)`, the three faction banners, `bunting-24/12`, `sconce`,
-   `lantern-hung`, `wall-brazier`, `shop-sign-<keeper>`, `planter`, `flower-box`, `ivy`, `potted-tree`,
-   `statue-keeper`, `statue-sentinel`, `shield-wall`, `weapon-rack-wall`, `rug-long`, `nets-and-rope`, `crab-pots`,
-   `fish-crates`, `mooring-posts`, `well`, `cart`, `sacks-grain`, `amphorae`).
-3. Run `cargo test -p city hub::` (keepers in stalls, Shape's eight places, every way walked clear on continent 1)
-   and `cargo test -p room --test hub_walked`; fix each fault at its cause; then `cargo xtask check` whole.
-4. Pictures in a local room of every court, the Hall, the Harbour Stair, the road and the pier; the fall; the
-   townsfolk. The worker's pictures showed a "Return to the area" warning flashing during a fall: drop it.
-5. Bible notes for the hub, ramps, the fall and the townsfolk (Cities, Modules, Reach, Movement, Navmesh, Ambience,
-   Interface, Code Map), independent audits, then the draft pull request's description for the owner.
+1. `cargo xtask check` whole on the head, and CI's `modules` run publishing the meshes to R2.
+2. Pictures of the built page (`?at=overlook-social&spawn=...`, `webgpu-shot.cjs` with a `views` list; the hub's
+   middle is east 2809214, south 1201297, seaward is north) of every court, the Hall, the Harbour Stair, the road and
+   the pier; the fall; the townsfolk. Look at the signs on their stalls and the banners on the ranges: neither has
+   been seen in place.
+3. Bible notes for the hub, ramps, the fall and the townsfolk (Cities, Reach, Movement, Navmesh, Ambience, Interface,
+   Code Map), independent audits, then the draft pull request's description for the owner.
 - Coordination: the activities session (#97) reads `Social.board` from its branch and checks its board against the
   ways; whichever merges second sets `Social.board` from `hub::BOARD_LANDING_M`. It keeps `gear::clock`'s moves.
 
