@@ -153,16 +153,14 @@ export class SeaFightReadout {
     this.warn = made('div', 'seafight-warn', this.root);
   }
 
-  /** How far down the ships' plates may stand, CSS pixels: under the card while it shows, else under the compass. */
-  get under(): number {
-    return this.root.hidden || this.card.hidden
-      ? UNDER_COMPASS
-      : this.card.offsetTop + this.card.offsetHeight + CARD_GAP;
-  }
+  /** How far down the ships' plates may stand, CSS pixels: under the card and the warning while they show, else under
+   *  the compass; measured once a frame, as the readout is shown. */
+  under = UNDER_COMPASS;
 
   /** Shows `model`, or hides the readout for none. */
   update(model: SeaFightModel | null): void {
     this.root.hidden = model === null;
+    this.under = UNDER_COMPASS;
     const clock = performance.now() / 1000;
     const seconds = this.shownAt === null ? 0 : Math.min(0.1, Math.max(0, clock - this.shownAt));
     this.shownAt = model ? clock : null;
@@ -211,8 +209,13 @@ export class SeaFightReadout {
     this.tally.classList.toggle('miss', model.tally?.hits === 0);
     this.warn.hidden = model.warn === null;
     if (this.warn.textContent !== (model.warn ?? '')) this.warn.textContent = model.warn ?? '';
-    // Under the card, or the compass while none shows: clear of the sight and the ship aimed at.
-    if (model.warn !== null) this.warn.style.top = `${this.under}px`;
+    // The warning under the card, or the compass while none shows: clear of the sight and the ship aimed at; the
+    // ships' plates under both.
+    if (card) this.under = this.card.offsetTop + this.card.offsetHeight + CARD_GAP;
+    if (model.warn !== null) {
+      this.warn.style.top = `${this.under}px`;
+      this.under += this.warn.offsetHeight + CARD_GAP;
+    }
   }
 }
 

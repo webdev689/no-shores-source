@@ -133,7 +133,11 @@ export class SeaWord {
   /** The notices of the room's word standing at `now`, the newest last: each line for `LINE_S`. */
   notices(room: SeaRoom | null, now: number): string[] {
     const fresh = (room ? this.step(room) : []).map((line) => ({ line, at: now }));
-    this.said = [...this.said, ...fresh].filter((each) => now - each.at < LINE_S);
+    // A line said again stands newest, once, as the fight's messages keep theirs.
+    const again = new Set(fresh.map((each) => each.line));
+    this.said = [...this.said.filter((each) => !again.has(each.line)), ...fresh].filter(
+      (each) => now - each.at < LINE_S,
+    );
     return this.said.map((each) => each.line);
   }
 

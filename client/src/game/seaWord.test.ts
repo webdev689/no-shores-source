@@ -101,3 +101,16 @@ test('each line of the sea’s word stands as a notice for a while, as DFO’s t
   assert.deepEqual(word.notices(room, 6.5), ['Player 4 joined the fight.'], 'each stands its own while');
   assert.deepEqual(word.notices(null, 8), []);
 });
+
+test('a line the sea says again stands newest, once', () => {
+  const told = [[[22, 1, 4, 0, 0, 0]], [[22, 2, 5, 0, 0, 0]], [[22, 3, 4, 0, 0, 0]]];
+  const room = {
+    flotsam: [],
+    takeTold: () => ({ naval: [], told: told.shift() ?? [] }),
+    shipNamed: () => null,
+  } as unknown as Parameters<SeaWord['step']>[0];
+  const word = new SeaWord([], FACTS);
+  word.notices(room, 0);
+  word.notices(room, 1);
+  assert.deepEqual(word.notices(room, 2), ['Player 5 joined the fight.', 'Player 4 joined the fight.']);
+});

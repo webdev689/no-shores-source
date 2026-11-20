@@ -93,3 +93,18 @@ test('the plate and the card wear the very rules the on-foot vitals and target p
   assert.ok(seaFightCss().includes(barSheetCss('.seafight')), 'at sea');
   assert.equal(rules('.seafight'), rules('.fight-hud'));
 });
+
+test('the warning stands under the card, and the ships’ plates under both, never over the sight', () => {
+  onPage((root) => {
+    const readout = new SeaFightReadout(root);
+    const [card] = findAll(root, 'plate', 'target');
+    const [warn] = findAll(root, 'seafight-warn');
+    Object.assign(card as object, { offsetTop: 56, offsetHeight: 37 });
+    Object.assign(warn as object, { offsetHeight: 29 });
+    readout.update({ ...MODEL, warn: 'Broadside from the Pirate Brig - C: brace' });
+    assert.equal(warn?.style['top'], '101px', 'the card’s foot and the gap');
+    assert.equal(readout.under, 138, 'the plates under the warning');
+    readout.update(MODEL);
+    assert.equal(readout.under, 101, 'under the card alone while none warns');
+  });
+});

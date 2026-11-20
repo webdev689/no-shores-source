@@ -64,6 +64,6 @@ export const FILLS = {
   health: '#b53a2e',
   stamina: '#2f9152',
   poise: '#c08a3e',
-  // A ship's sails, in bone.
-  sails: '#e2d6b4',
+  // A ship's sails, in a dusky bone the bar's light words still read on.
+  sails: '#9c8f68',
 } as const;
