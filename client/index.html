@@ -433,10 +433,10 @@
         transform-origin: 6px 9px;
       }
       .held-card {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: auto auto auto;
         align-items: center;
-        gap: 14px;
+        gap: 6px 14px;
         padding: 8px 14px;
         background: var(--panel);
         border: 1px solid var(--gold);
@@ -447,13 +447,14 @@
       .held-card button {
         pointer-events: auto;
       }
-      /* A difficulty the player's level shuts rests on the card, the first reason under its row. */
+      /* A difficulty the player's level shuts rests on the card, the first reason under its row, as wide as it. */
       .held-card-label {
         margin-right: 8px;
         color: var(--ink);
       }
       .held-card-why {
-        flex-basis: 100%;
+        grid-column: 1 / -1;
+        white-space: normal;
         color: var(--ink);
       }
       .mark {

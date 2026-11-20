@@ -37,11 +37,16 @@
   gap: 12px;
   padding: 3px 0;
 }
+/* Its name and what is said of it each keep to one line, the second going under the first where both do not fit. */
 .gear-week-what {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  column-gap: 10px;
   min-width: 0;
+}
+.gear-week-what > * {
+  white-space: nowrap;
 }
 .gear-week-what b {
   font-weight: 500;
@@ -81,12 +86,17 @@
 #hud .gear-screen.entrance-card {
   inset: 0;
   margin: auto;
-  width: min(460px, calc(100% - 64px));
+  width: min(520px, calc(100% - 64px));
   height: fit-content;
   max-height: calc(100% - 48px);
 }
 .entrance-card .gear-head {
   padding: 4px 18px;
+}
+/* A long dungeon's name takes a second line close under its first. */
+.entrance-card .gear-station-name {
+  padding: 10px 0;
+  line-height: 1.3;
 }
 .entrance-card-body p {
   margin: 4px 0;
@@ -103,4 +113,8 @@
 .entrance-card-body .entrance-card-finding {
   margin-top: 10px;
   color: var(--brass-lit);
+}
+/* A reset's time reads as it is said, never shouted as the rule heading over it is. */
+.gear-week-part .gear-heading .gear-chip {
+  text-transform: none;
 }
