@@ -125,6 +125,14 @@ class KitEnvelopes(unittest.TestCase):
         self.fails('crypt.ceiling.c', shapes.box(-0.2, -0.2, -0.3, 0.2, 0.2, 0.1), 'z > 0')
         self.fails('crypt.ceiling.b', shapes.box(-1.7, -0.1, -0.3, 1.6, 0.1, 0), 'x < -1.6')
 
+    def test_a_ceiling_piece_under_a_dome_or_a_vault_keeps_near_its_origin(self):
+        arms = shapes.box(-0.9, -0.1, -0.2, 0.9, 0.1, 0)
+        self.fails('sanctum.ceiling.c', arms, 'x > 0.8')
+        self.fails('halls.ceiling.a', shapes.box(-0.1, -0.85, -0.2, 0.1, 0.1, 0), 'y < -0.8')
+        self.passes('crypt.ceiling.b', shapes.box(-0.8, -0.8, -0.2, 0.8, 0.8, 0))
+        self.passes('cells.ceiling.c', arms)
+        self.passes('caverns.ceiling.a', arms)
+
     def test_floor(self):
         self.passes('crypt.floor.b', shapes.box(-1.6, -1.6, -0.2, 1.6, 1.6, 0.05))
         self.fails('crypt.floor.a', shapes.box(-1.7, -1.0, 0, 1.0, 1.0, 0.03), 'x < -1.6')
@@ -185,7 +193,7 @@ class LandmarkEnvelopes(unittest.TestCase):
     def test_geometry_over_one_solid_or_out_of_the_walk_zone_passes(self):
         landmark = catalog.landmark('caverns.stone-teeth')
         solids = [face for x0, y0, x1, y1, top in landmark['solids'] for face in shapes.box(x0, y0, 0, x1, y1, top)]
-        rug = shapes.box(0, 0, 0, 6.4, 6.4, 0.05) + shapes.box(0, 0, -1.0, 6.4, 6.4, -0.5)
+        rug = shapes.box(0, 0, -0.05, 6.4, 6.4, 0.05) + shapes.box(0, 0, -1.0, 6.4, 6.4, -0.5)
         high = [((0.5, 0.5, 2.2), (5.9, 0.5, 2.2), (5.9, 5.9, 2.3))]
         self.assertEqual(broken('caverns.stone-teeth', triangles(solids + rug) + high), [])
 
@@ -203,6 +211,25 @@ class LandmarkEnvelopes(unittest.TestCase):
             found = broken('caverns.stone-teeth', moved)
             self.assertTrue(any('floor is open' in problem for problem in found), (lift, found))
         self.assertFalse(any('floor is open' in problem for problem in broken('caverns.stone-teeth', floor)))
+
+    def test_a_landmark_floor_meets_the_rooms_at_its_edge_or_is_skirted(self):
+        landmark = catalog.landmark('caverns.stone-teeth')
+        width, depth = (cells * catalog.CELL_M for cells in landmark['cells'])
+        for low, top, fails in ((0.0, 0.01, True), (-0.02, 0.01, True), (-0.05, -0.01, True), (-0.05, 0.01, False),
+                                (-0.05, 0.0, False), (0.0, 0.001, False)):
+            found = broken('caverns.stone-teeth', triangles(shapes.box(0, 0, low, width, depth, top)))
+            self.assertEqual(any('edge' in problem for problem in found), fails, (low, top, found))
+        raised = [tuple((x, y, 0.01) for x, y, _ in corners) for corners in footprint_floor(landmark)]
+        found = broken('caverns.stone-teeth', raised)
+        self.assertTrue(any('edge' in problem for problem in found), found)
+
+    def test_a_landmark_floor_off_the_rooms_over_a_solid_at_its_edge_passes(self):
+        rest = [face for x0, y0, x1, y1 in ((0, 0, 0.6, 3.2), (5.8, 0, 6.4, 3.2), (0.6, 1.2, 5.8, 3.2))
+                for face in shapes.box(x0, y0, -0.01, x1, y1, 0)]
+        hearth = shapes.box(0.6, 0, 0, 5.8, 1.2, 0.01)
+        self.assertEqual(broken('halls.great-hearth', triangles(rest + hearth)), [])
+        wider = shapes.box(0.2, 0, 0, 5.8, 1.2, 0.01)
+        self.assertTrue(any('edge' in problem for problem in broken('halls.great-hearth', triangles(rest + wider))))
 
 
 def read_pack(data):

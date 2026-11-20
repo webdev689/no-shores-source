@@ -18,6 +18,11 @@ SLENDER_R = 0.045
 # The wall's three: a middle shaft and two smaller beside it, engaged in the wall.
 TRIPLE = [((0.0, 0.1), 0.095, 8), ((0.19, 0.07), 0.065, 6), ((-0.19, 0.07), 0.065, 6)]
 EIGHTH = math.radians(22.5)
+# The smallest dome, over a room two cells square, rises this high over this radius (dungeonCeilings.ts), metres.
+DOME_RADIUS_M = 3.2
+DOME_RISE_M = 1.92
+# How far out a boss's ribs run: the envelope keeps a piece at a dome's top within 0.8 of it.
+RIB_REACH_M = 0.74
 
 
 def springer(start, end, steps=8):
@@ -186,7 +191,7 @@ def ceiling_a(kit):
     censer = [(0.0, 0.0), (0.04, 0.02), (0.13, 0.1), (0.15, 0.16), (0.12, 0.2), (0.05, 0.29), (0.0, 0.33)]
     made.append(kit.mesh(motifs.lobed(censer, lobes=4, depth=0.08, centre=(0.0, 0.0, -1.62), sides=8), 'brass',
                          'censer', ROUND))
-    return kit.join(made)
+    return under_dome(kit.join(made))
 
 
 def ceiling_b(kit):
@@ -194,28 +199,38 @@ def ceiling_b(kit):
     profile = [(0.34, 0.0), (0.33, -0.04), (0.28, -0.07), (0.25, -0.11), (0.18, -0.13), (0.14, -0.18), (0.07, -0.2),
                (0.0, -0.24)]
     made = [motifs.turned(kit, profile, 0.0, 0.0, 0.0, 16, 'trim')]
-    made += [rib(kit, number * TAU / 4, (0.3, -0.12), (1.05, -0.012), part='stone') for number in range(4)]
-    return kit.join(made)
+    made += [rib(kit, number * TAU / 4, (0.3, -0.12), (RIB_REACH_M, -0.012), part='stone') for number in range(4)]
+    return under_dome(kit.join(made))
 
 
 def ceiling_c(kit):
     """A star boss: an eight-pointed carved star, a brass star on it and a fluted drop, and ribs running out from its
     points into a wider star."""
-    made = [kit.bevel(kit.extrude_outline(motifs.star(8, 0.6, 0.27), -0.07, 0.0, part='relief'), 0.012),
-            kit.extrude_outline(motifs.star(8, 0.36, 0.17, math.pi / 8), -0.09, -0.07, part='brass'),
-            kit.mesh(motifs.lobed([(0.15, -0.09), (0.15, -0.13), (0.09, -0.19), (0.0, -0.25)], lobes=8, depth=0.1,
-                                  sides=16, caps=False), 'relief', 'drop', ROUND, False)]
+    made = [kit.bevel(kit.extrude_outline(motifs.star(8, 0.42, 0.19), -0.06, 0.0, part='relief'), 0.01),
+            kit.extrude_outline(motifs.star(8, 0.25, 0.12, math.pi / 8), -0.078, -0.06, part='brass'),
+            kit.mesh(motifs.lobed([(0.11, -0.078), (0.11, -0.108), (0.065, -0.155), (0.0, -0.205)], lobes=8,
+                                  depth=0.1, sides=16, caps=False), 'relief', 'drop', ROUND, False)]
     ends = []
     for number in range(8):
         turn = number * TAU / 8
-        made.append(kit.mesh(motifs.keeled([(0.55 * math.cos(turn), 0.55 * math.sin(turn), -0.012),
-                                            (1.45 * math.cos(turn), 1.45 * math.sin(turn), -0.012)], 0.05, 0.1, down),
-                             'stone', 'rib', None, False))
-        ends.append((1.45 * math.cos(turn), 1.45 * math.sin(turn), -0.012))
+        made.append(kit.mesh(motifs.keeled([(0.38 * math.cos(turn), 0.38 * math.sin(turn), -0.01),
+                                            (RIB_REACH_M * math.cos(turn), RIB_REACH_M * math.sin(turn), -0.01)],
+                                           0.04, 0.08, down), 'stone', 'rib', None, False))
+        ends.append((RIB_REACH_M * math.cos(turn), RIB_REACH_M * math.sin(turn), -0.01))
         middle = turn + TAU / 16
-        ends.append((0.98 * math.cos(middle), 0.98 * math.sin(middle), -0.012))
-    made.append(kit.mesh(motifs.keeled(ends + ends[:1], 0.04, 0.08, down), 'trim', 'liernes', None, False))
-    return kit.join(made)
+        ends.append((0.5 * math.cos(middle), 0.5 * math.sin(middle), -0.01))
+    made.append(kit.mesh(motifs.keeled(ends + ends[:1], 0.032, 0.065, down), 'trim', 'liernes', None, False))
+    return under_dome(kit.join(made))
+
+
+def under_dome(item):
+    """A ceiling piece bent down as the smallest dome falls away from its top, where the piece is laid, so no point
+    of it rises through the curve; a larger dome or a vault falls away less, and the piece hangs just under it."""
+    for vertex in item.data.vertices:
+        reach = min(1.0, math.hypot(vertex.co.x, vertex.co.y) / DOME_RADIUS_M)
+        vertex.co.z -= DOME_RISE_M * (1 - math.sqrt(1 - reach * reach))
+    item.data.update()
+    return item
 
 
 def down(point, direction):

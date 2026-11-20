@@ -5,6 +5,8 @@ frame, and a landmark's footprint, height, walk zone and floor. Plain Python, wi
 y south, z up, metres), and gives every rule it breaks as a readable line; an empty list passes. A rule is a box the
 piece may not reach into, so a triangle that only crosses it, its corners all outside, is caught as well.
 """
+import math
+
 import catalog
 
 # How far, metres, geometry may touch a limit without breaking it: a face laid on the limit itself keeps it.
@@ -28,6 +30,14 @@ WALK_HIGH_M = 2.2
 WALK_GROW_M = 0.05
 # A landmark's floor is sampled on this grid, metres, to find holes into the void.
 FLOOR_STEP_M = 0.2
+BUCKET_M = 4 * FLOOR_STEP_M
+# The page lays no room floor under a landmark, so where its floor stands off the room's z 0 at its edge the void
+# shows as a hairline, unless a skirt closes the side down to SKIRT_M. The edge is sampled this far inside, metres.
+EDGE_IN_M = 0.005
+SKIRT_M = -0.05
+# Under a dome or a vault the ceiling curves down from a ceiling piece's origin, laid at its top, so a wide piece
+# pokes through the curve: one keeps within this of its origin, metres.
+APEX_HALF_M = 0.8
 # The code's torch flame stands on the sconce's cup, at x ±0.06, y 0.29..0.41, z -0.15..-0.07 (metres). Something
 # must reach in under the flame's foot: a cup's floor or a solid cup, not an arm ending at its edge.
 CUP = ((-0.04, 0.04), (0.31, 0.39), (-0.155, -0.065))
@@ -69,9 +79,10 @@ def _band(why, z, half_x=None, y_high=None, half_y=None):
     return rules
 
 
-def kit_rules(piece, least, height):
+def kit_rules(piece, least, height, apex=False):
     """The boxes a kit piece may not reach into, each with why: `least` is the style's least ceiling and `height` the
-    piece's own top, metres (a wall's cap hangs from the ceiling by it)."""
+    piece's own top, metres (a wall's cap hangs from the ceiling by it); `apex` when the style lays its ceiling pieces
+    at a dome's top or a vault's ridge."""
     low = (-FAR, 2.4)
     if piece in ('door.a', 'door.b'):
         return (_within('a doorway edge spans x ±1.6; faces stand at most 0.12 proud', x=(-1.6, 1.6), y=(-0.12, 0.42))
@@ -107,8 +118,11 @@ def kit_rules(piece, least, height):
         return _within('a feature keeps y ≤ 0.3, |x| ≤ 0.8, z ≤ 3.0', x=(-0.8, 0.8), y=(None, 0.3), z=(None, 3.0))
     if piece in ('ceiling.a', 'ceiling.b', 'ceiling.c'):
         hang = round(least - 2.4, 4)
+        near = (-APEX_HALF_M, APEX_HALF_M)
         return (_within('a ceiling piece keeps to its cell, ±1.6', x=(-1.6, 1.6), y=(-1.6, 1.6))
-                + _within(f'a ceiling piece hangs at most {hang:g} (least ceiling less 2.4) under z 0', z=(-hang, 0)))
+                + _within(f'a ceiling piece hangs at most {hang:g} (least ceiling less 2.4) under z 0', z=(-hang, 0))
+                + (_within(f"a ceiling piece at a dome's top or a vault's ridge keeps within ±{APEX_HALF_M:g}",
+                           x=near, y=near) if apex else []))
     if piece in ('floor.a', 'floor.b'):
         return _within('a floor piece lies within ±1.6, z ≤ 0.05', x=(-1.6, 1.6), y=(-1.6, 1.6), z=(None, 0.05))
     if piece == 'sconce':
@@ -208,44 +222,82 @@ def walk_zone(triangles, landmark):
     return list(corners_out), spans
 
 
+def _bucketed(triangles):
+    """Triangles filed by the BUCKET_M squares they cover seen from above (x and y), to find those over a point."""
+    buckets = {}
+    for corners in triangles:
+        (ax, ay, az), (bx, by, bz), (cx, cy, cz) = corners
+        area = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay)
+        if abs(area) < 1e-9:
+            continue
+        xs, ys = (ax, bx, cx), (ay, by, cy)
+        for column in range(int(min(xs) // BUCKET_M), int(max(xs) // BUCKET_M) + 1):
+            for row in range(int(min(ys) // BUCKET_M), int(max(ys) // BUCKET_M) + 1):
+                buckets.setdefault((column, row), []).append((ax, ay, az, bx, by, bz, cx, cy, cz, area))
+    return buckets
+
+
+def _heights(buckets, x, y):
+    """The height (z) at (x, y) of each filed triangle that covers it seen from above."""
+    for ax, ay, az, bx, by, bz, cx, cy, cz, area in buckets.get((int(x // BUCKET_M), int(y // BUCKET_M)), ()):
+        first = ((bx - x) * (cy - y) - (cx - x) * (by - y)) / area
+        second = ((cx - x) * (ay - y) - (ax - x) * (cy - y)) / area
+        if first >= -1e-6 and second >= -1e-6 and first + second <= 1 + 1e-6:
+            yield first * az + second * bz + (1 - first - second) * cz
+
+
 def floor_gaps(triangles, landmark):
     """The points of a grid over the footprint, FLOOR_STEP_M apart, that no floor covers seen from above. Where a body
     can stand, outside every solid grown by WALK_GROW_M, only a floor within WALK_LOW_M of the room's own counts (a
     puddle's dip hides under a foot), so a sunk or a raised one leaves the body hanging; over a solid (a pit, a basin,
     a lake) anything that closes the void does."""
     width, depth = (cells * catalog.CELL_M for cells in landmark['cells'])
-    bucket_m = 4 * FLOOR_STEP_M
-
-    def bucketed(chosen):
-        buckets = {}
-        for corners in chosen:
-            (ax, ay, _), (bx, by, _), (cx, cy, _) = corners
-            area = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay)
-            if abs(area) < 1e-9:
-                continue
-            xs, ys = (ax, bx, cx), (ay, by, cy)
-            for column in range(int(min(xs) // bucket_m), int(max(xs) // bucket_m) + 1):
-                for row in range(int(min(ys) // bucket_m), int(max(ys) // bucket_m) + 1):
-                    buckets.setdefault((column, row), []).append((ax, ay, bx, by, cx, cy, area))
-        return buckets
-
-    anywhere = bucketed(triangles)
-    level = bucketed([corners for corners in triangles
-                      if all(-WALK_LOW_M <= corner[2] <= WALK_LOW_M for corner in corners)])
-
-    def covered(buckets, x, y):
-        for ax, ay, bx, by, cx, cy, area in buckets.get((int(x // bucket_m), int(y // bucket_m)), ()):
-            first = ((bx - x) * (cy - y) - (cx - x) * (by - y)) / area
-            second = ((cx - x) * (ay - y) - (ax - x) * (cy - y)) / area
-            if first >= -1e-6 and second >= -1e-6 and first + second <= 1 + 1e-6:
-                return True
-        return False
-
+    anywhere = _bucketed(triangles)
+    level = _bucketed([corners for corners in triangles
+                       if all(-WALK_LOW_M <= corner[2] <= WALK_LOW_M for corner in corners)])
     solids = _grown(landmark)
     columns, rows = round(width / FLOOR_STEP_M), round(depth / FLOOR_STEP_M)
     points = [((column + 0.5) * FLOOR_STEP_M, (row + 0.5) * FLOOR_STEP_M) for column in range(columns)
               for row in range(rows)]
-    return [point for point in points if not covered(anywhere if _over(point, solids) else level, *point)]
+    return [point for point in points if not _covered(anywhere if _over(point, solids) else level, *point)]
+
+
+def edge_steps(triangles, landmark):
+    """The points FLOOR_STEP_M apart along the footprint's edges, EDGE_IN_M inside and outside every solid grown by
+    WALK_GROW_M, where the topmost floor (at most WALK_LOW_M high) stands off z 0 by more than TOUCH_M and no skirt
+    closes the side from it, or from z 0 if it is sunk, down to SKIRT_M: each (x, y, its height or None)."""
+    width, depth = (cells * catalog.CELL_M for cells in landmark['cells'])
+    over = _bucketed(triangles)
+    solids = _grown(landmark)
+    found = []
+    for axis, edge, inward, length in ((0, 0.0, 1, depth), (0, width, -1, depth), (1, 0.0, 1, width),
+                                       (1, depth, -1, width)):
+        other = 1 - axis
+        # A skirt stands in the edge's plane: seen from the room, it covers (along, z) there.
+        near = [corners for corners in triangles if all(abs(corner[axis] - edge) <= EDGE_IN_M for corner in corners)]
+        skirt = _bucketed([tuple((corner[other], corner[2], corner[axis]) for corner in corners) for corners in near])
+        for step in range(round(length / FLOOR_STEP_M)):
+            along = (step + 0.5) * FLOOR_STEP_M
+            point = [0.0, 0.0]
+            point[axis], point[other] = edge + inward * EDGE_IN_M, along
+            if _over(point, solids):
+                continue
+            top = max((z for z in _heights(over, *point) if z <= WALK_LOW_M), default=None)
+            if top is None or (abs(top) > TOUCH_M and not _closed(skirt, along, top)):
+                found.append((point[0], point[1], top))
+    return found
+
+
+def _covered(buckets, x, y):
+    return next(_heights(buckets, x, y), None) is not None
+
+
+def _closed(skirt, along, top):
+    """Whether a skirt (faces in an edge's plane, filed by along and z) closes the side at `along` from a floor's
+    `top`, or from z 0 over a sunk one, down to SKIRT_M: sampled every centimetre."""
+    high, low = max(top, 0.0) - TOUCH_M, SKIRT_M + TOUCH_M
+    count = math.ceil((high - low) / 0.01)
+    return all(_covered(skirt, along, low + (high - low) * k / count) for k in range(count + 1))
 
 
 def landmark_problems(landmark, triangles):
@@ -270,6 +322,12 @@ def landmark_problems(landmark, triangles):
     if gaps:
         found.append(f'{module}: the floor is open at {len(gaps)} point(s) of the footprint, e.g. '
                      f'({gaps[0][0]:.2f}, {gaps[0][1]:.2f}): a landmark draws its own floor over all of it')
+    steps = edge_steps(triangles, landmark)
+    if steps:
+        x, y, z = steps[0]
+        height = 'no floor' if z is None else f'z {z:.3f}'
+        found.append(f'{module}: the floor stands off the room\'s z 0 at {len(steps)} point(s) of its edge with no '
+                     f'skirt to {SKIRT_M:g}, e.g. ({x:.3f}, {y:.3f}) at {height}: the void shows there')
     return found
 
 
@@ -286,7 +344,8 @@ def kit_problems(module, piece, triangles):
     if len(triangles) > budget:
         found.append(f'{module}: {len(triangles)} triangles, over the {budget} a {piece} may have')
     height = max((corner[2] for corners in triangles for corner in corners), default=0.0)
-    found += _broken(module, triangles, kit_rules(piece, catalog.least_ceiling(style), height))
+    apex = catalog.STYLES[style]['ceiling'] == 'apex'
+    found += _broken(module, triangles, kit_rules(piece, catalog.least_ceiling(style), height, apex))
     if piece == 'sconce' and not any(reaches(corners, _box(*CUP)) for corners in triangles):
         found.append(f"{module}: nothing holds the code's flame: the cup stands at (0, 0.35, -0.15..-0.07)")
     return found

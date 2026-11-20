@@ -15,11 +15,15 @@ from styles.caverns import forms
 
 MIDDLE = 3.2
 WATER_Z = -0.1
+# The page lays the room's floor at z 0 up to the footprint's edge and none under it, so a cave floor eases down to
+# meet it over this much, metres, and stands at z 0 on the edge itself.
+EDGE_EASE_M = 0.6
 
 
 def _rock_floor(seed, size, lift=0.02, basins=()):
     """A cave floor over the footprint: gently uneven, never over `lift` + 0.012, sunk into shallow basins at
-    `basins` ((x, y, radius) each). Gives its faces and its height at a point."""
+    `basins` ((x, y, radius) each), and easing to z 0 at the footprint's edge. Gives its faces and its height at a
+    point."""
     noise = forms.Noise(seed)
 
     def height_at(x, y):
@@ -28,7 +32,8 @@ def _rock_floor(seed, size, lift=0.02, basins=()):
             share = math.hypot(x - bx, y - by) / radius
             if share < 1:
                 z = min(z, -0.035 * (1 - share * share) + 0.008 * share)
-        return z
+        edge = max(0.0, min(1.0, min(x, y, size - x, size - y) / EDGE_EASE_M))
+        return z * edge * edge * (3 - 2 * edge)
 
     return forms.ground(0.0, 0.0, size, size, 0.32, height_at), height_at
 

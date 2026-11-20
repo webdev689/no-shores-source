@@ -82,7 +82,10 @@ def collapsed_vault(kit, entry):
     def height(x, y):
         edge = min(x - EDGE, SIDE - EDGE - x, y - EDGE, SIDE - EDGE - y)
         if edge <= 0:
-            return 0.012 + 0.012 * math.sin(x * 7.1) * math.sin(y * 5.3) ** 2
+            # The page lays the room's floor at z 0 up to the footprint's edge and none under it: the dust eases
+            # down to meet it there.
+            share = max(0.0, edge / EDGE + 1)
+            return (0.012 + 0.012 * math.sin(x * 7.1) * math.sin(y * 5.3) ** 2) * share * share * (3 - 2 * share)
         fall = min(1.0, edge / FALL) ** 1.4
         mound = 0.7 * math.exp(-((x - 3.0) ** 2 + (y - 3.45) ** 2) / 3.2) + ground.lumps(heaped, x, y)
         return 0.024 + fall * mound
