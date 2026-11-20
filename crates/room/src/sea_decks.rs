@@ -128,6 +128,8 @@ impl Sea {
         let Some(deck) = self.decks.boarded.get_mut(index) else { return };
         let Some(boarder) = deck.aboard.remove(&player) else { return };
         let kept = deck.room.kept_character(boarder).and_then(|text| gear::Character::from_json(&text));
+        // A hand who fell this very tick is counted before their player leaves.
+        deck.room.keep_hands();
         let fallen = deck.room.fallen_hands(boarder);
         deck.room.leave(boarder);
         if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
@@ -135,6 +137,9 @@ impl Sea {
             // What only the sea changes while they fight on foot: their ship's experience, materials and crew.
             (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
             character.crew.clone_from(&held.crew);
+            for (id, entry) in held.items.iter().filter(|(_, (item, _))| item.kind.module()) {
+                character.items.insert(*id, entry.clone());
+            }
             // Her hands who fell on the deck are men she has lost, kept until a port city repairs her.
             let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
             character.ship[2] = character.ship[2].saturating_sub(man.saturating_mul(u16::from(fallen)));

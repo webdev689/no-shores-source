@@ -13,6 +13,25 @@ pub fn pledge_of(character: &Character) -> (u8, u32) {
     (0, 0)
 }
 
+/// Whether an ask is of the ship's: her modules, her materials or her crew. The sea keeps those while their player
+/// fights on a boarded deck, so a deck refuses them.
+#[must_use]
+pub fn of_the_ship(ask: &Ask, character: &Character) -> bool {
+    let module = |item: &u32| character.item(*item).is_some_and(|held| held.kind.module());
+    match ask {
+        Ask::Wear { slot, .. } | Ask::TakeOff { slot } => slot.ship(),
+        Ask::Buy { item, .. } | Ask::Choose { item, .. } | Ask::Dismantle { item } => module(item),
+        Ask::Infuse { .. }
+        | Ask::Recruit { .. }
+        | Ask::Station { .. }
+        | Ask::Dismiss { .. }
+        | Ask::Train { .. }
+        | Ask::ChooseOfficer { .. } => true,
+        Ask::Vend { vendor, .. } => vendor.for_ship(),
+        _ => false,
+    }
+}
+
 /// The counter that signs officers on.
 pub const MUSTER: CounterKind = CounterKind::Vendor(gear::vendor::Vendor::Shipwright);
 

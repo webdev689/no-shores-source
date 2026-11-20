@@ -38,6 +38,7 @@ impl Room {
             let id = self.stand_foe(foe_type, Rank::Major, spot, at.body.facing, Some(leader));
             let Some(foe) = self.foes.get_mut(&id) else { continue };
             foe.fighter.side = Side::Players;
+            foe.brain.joins_players();
             foe.level = level;
             self.ashore.hands.insert(id, Hand { leader, level });
         }

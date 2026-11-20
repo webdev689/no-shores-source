@@ -202,3 +202,17 @@ fn infusion_raises_a_kept_module_to_the_fed_ones_level_keeping_its_nodes_for_aur
     let lower = carry(&mut character, Kind::Sails, Rarity::Rare, 3);
     assert_eq!(character.ask(Ask::Infuse { item: kept, fed: lower }, Here::default(), &dice(0)), Err(Refusal::TooLow));
 }
+
+#[test]
+fn a_fitted_module_is_infused_no_higher_than_she_could_fit_it() {
+    let mut character = Character::starting();
+    let kept = character.fitted(Slot::Hull).expect("fitted").id;
+    let fed = carry(&mut character, Kind::Hull, Rarity::Normal, 8);
+    character.materials.aurem = 5_000;
+    character.materials.ship.add(ShipMaterial::Timber, 50);
+    let infuse = Ask::Infuse { item: kept, fed };
+    assert_eq!(character.ask(infuse, Here::default(), &dice(0)), Err(Refusal::TooLow), "she is level 1");
+    character.earn_ship_xp(u32::try_from(power::xp_for_level(8)).expect("fits"));
+    character.ask(infuse, Here::default(), &dice(0)).expect("infused");
+    assert_eq!(character.item(kept).map(|module| module.level), Some(8));
+}

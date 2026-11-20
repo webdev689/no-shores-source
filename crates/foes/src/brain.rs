@@ -149,6 +149,17 @@ impl Brain {
         self.heel = Some(heel);
     }
 
+    /// Makes it fight on the players' side where it stands, its post its own: a ship's hand come aboard a struck deck.
+    pub fn joins_players(&mut self) {
+        self.side = Side::Players;
+    }
+
+    /// The side it thinks as: whose noises it heeds and whose it hunts.
+    #[must_use]
+    pub fn side(&self) -> Side {
+        self.side
+    }
+
     /// Whether it walks back to its post, its fight given up or its search let go.
     #[must_use]
     pub fn returning(&self) -> bool {

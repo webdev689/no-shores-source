@@ -67,3 +67,29 @@ fn her_hands_go_back_aboard_when_their_player_leaves_her_deck() {
     assert!(room.ashore.hands.is_empty());
     assert_eq!(room.fallen_hands(player), 0, "leaving is no loss");
 }
+
+#[test]
+fn a_deck_refuses_what_the_sea_keeps_of_her_ship_and_answers_the_rest() {
+    let (mut room, player) = boarded(2, 6);
+    let not_here = crate::asks::answer_code(Err(gear::Refusal::NotHere));
+    let guns = room.player(player).and_then(|found| found.character.fitted(gear::Slot::Guns)).map(|item| item.id);
+    for ask in [
+        gear::Ask::Station { officer: 1, duty: gear::crew::Duty::Posted },
+        gear::Ask::Train { officer: 1, column: 0, node: 0 },
+        gear::Ask::Infuse { item: 1, fed: 2 },
+        gear::Ask::TakeOff { slot: gear::Slot::Guns },
+        gear::Ask::Buy { item: guns.expect("fitted"), column: 0, node: 0 },
+    ] {
+        room.answer(player, crate::Asked::Gear(ask));
+        assert_eq!(room.player(player).map(|found| found.answer), Some(not_here), "{ask:?}");
+    }
+    room.answer(player, crate::Asked::Gear(gear::Ask::TakeOff { slot: gear::Slot::Head }));
+    assert_eq!(room.player(player).map(|found| found.answer), Some(0), "her own gear is hers to change");
+}
+
+#[test]
+fn her_hands_think_as_the_players_side() {
+    let (room, _) = boarded(1, 6);
+    let id = room.ashore.hands.keys().next().expect("a hand");
+    assert!(room.foes[id].brain.side().is_players());
+}

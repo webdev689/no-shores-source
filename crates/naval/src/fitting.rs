@@ -155,8 +155,8 @@ impl Fight {
         self.fittings.get(&rammer).map_or(blow, |fitted| blow * fitted.dealt_to(target) * fitted.trim.ram)
     }
 
-    /// Each Carpenter's patching for a tick: whole hull points given back as they come due, never past her whole,
-    /// none to a ship going down.
+    /// Each Carpenter's patching for a tick: `PATCH_PER_S` of what is owed given back, never past her whole, none to
+    /// a ship not afloat.
     pub(crate) fn patch(&mut self, seconds: f64) {
         for (id, fitted) in &mut self.fittings {
             let Some(vessel) = self.ships.get_mut(id) else { continue };

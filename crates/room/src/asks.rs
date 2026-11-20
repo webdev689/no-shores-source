@@ -206,8 +206,10 @@ impl Room {
         let code = match asked {
             Asked::Gear(ask) => {
                 let here = self.here(player, &ask);
+                let deck = matches!(self.floor, crate::Floor::Deck(_));
                 let Some(found) = self.players.get_mut(&player) else { return };
-                match found.character.ask(ask, here, &dice) {
+                let ship_ask = crate::crew::of_the_ship(&ask, &found.character);
+                match if deck && ship_ask { Err(Refusal::NotHere) } else { found.character.ask(ask, here, &dice) } {
                     Ok(gear::Done::Identified(item)) => {
                         found.identified = item;
                         0

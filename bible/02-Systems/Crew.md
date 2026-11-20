@@ -93,5 +93,5 @@ Each post changes how she plays in a fight, its officer's strength times (`ship:
 
 - Until the factions' pledges reach this branch, `pledge_of` answers none, so no counter offers an officer; officers
   join from won decks.
-- An officer stationed while their player fights on a boarded deck is stationed as the sea last held them once they
-  come back aboard.
+- A boarded deck refuses asks of the ship's modules, materials and crew (`room::crew::of_the_ship`): the sea keeps
+  them while the player fights on foot, and gives them back as they were when the player comes aboard again.
