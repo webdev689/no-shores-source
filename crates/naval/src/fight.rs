@@ -33,6 +33,8 @@ pub const DESPAWN_BEYOND: f64 = 1900.0;
 pub const HOSTILE_NEAR_M: f64 = 700.0;
 /// The rest of the volley that made a ship strike, this long after (seconds), cannot sink her.
 pub const STRUCK_GRACE_S: f64 = 2.0;
+/// How much faster every ship sails and rows in a sea fight than at sea: half again, the owner's call.
+pub const FIGHT_PACE: f64 = 1.5;
 
 /// A ship in the fight: her helm's numbers, how she lies, her hurts and her guns, and who sails her.
 #[derive(Debug, Clone, PartialEq)]
@@ -215,8 +217,8 @@ pub fn sail_hurt(
         helm.climb = if ship.rung >= SAILS_SET { -1 } else { 0 };
     }
     let pull = Pull {
-        sail: if hurts.wrecked { 0.0 } else { hurts.way_share },
-        oars: if hurts.wrecked { WRECKED_OARS } else { 1.0 },
+        sail: if hurts.wrecked { 0.0 } else { hurts.way_share * FIGHT_PACE },
+        oars: if hurts.wrecked { WRECKED_OARS } else { 1.0 } * FIGHT_PACE,
     };
     (step_pulled(ship, &helm, &SLOOP, wind, waters, time, TICK_SECONDS, pull), refused)
 }

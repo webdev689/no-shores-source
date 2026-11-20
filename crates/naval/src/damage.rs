@@ -85,21 +85,29 @@ pub(crate) fn men(count: f64, roll: f64, tough: f64) -> f64 {
     if count > 0.0 { (count / tough + roll.clamp(0.0, 0.999_999)).floor() } else { 0.0 }
 }
 
+/// How much harder every ball strikes a ship than DFO's numbers: half again, the owner's call for sea fights.
+pub const SHOT_HARM: f64 = 1.5;
+
 /// One ball's harm, as the gun is loaded (grape's reach already in its men), by zone; `roll` is the ball's own draw
 /// (each ball does 85 to 115%), `tough` the struck crew's toughness. Its fire is rolled by whoever applies it.
 #[must_use]
 pub fn shot_harm(gun: &Gun, zone: Zone, braced: bool, roll: f64, tough: f64) -> Hurt {
-    let taken = if braced { BRACE_TAKEN } else { 1.0 };
+    let taken = if braced { BRACE_TAKEN } else { 1.0 } * SHOT_HARM;
     let spread = 0.85 + 0.3 * roll.clamp(0.0, 1.0);
     if zone == Zone::Rig {
         let sail = rounded((gun.sail * 2.0).max(gun.hull * 0.5) * taken * spread);
-        return Hurt { hull: 0.0, sail, crew: men(if gun.crew > 0.0 { 1.0 } else { 0.0 }, roll, tough), fire: false };
+        return Hurt {
+            hull: 0.0,
+            sail,
+            crew: men(if gun.crew > 0.0 { SHOT_HARM } else { 0.0 }, roll, tough),
+            fire: false,
+        };
     }
     let holed = if zone == Zone::Holed { 1.0 + HOLED_BONUS } else { 1.0 };
     Hurt {
         hull: rounded(gun.hull * holed * taken * spread),
         sail: rounded(gun.sail * 0.25 * taken * spread),
-        crew: men(gun.crew, roll, tough),
+        crew: men(gun.crew * SHOT_HARM, roll, tough),
         fire: false,
     }
 }

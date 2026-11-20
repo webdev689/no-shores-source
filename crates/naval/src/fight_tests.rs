@@ -363,3 +363,26 @@ fn a_captain_her_fires_made_strike_is_graced_against_the_volley_then_aloft() {
     fight.strike(&hit, &mut events);
     assert_eq!((captain(&fight).damage.state, captain(&fight).damage.hull), (State::Struck, 1.0));
 }
+
+#[test]
+fn in_a_fight_a_sound_ship_sails_and_rows_half_again_as_fast_as_at_sea() {
+    let sound = Hurts { wrecked: false, sail: 1.0, way_share: 1.0 };
+    let run = |helm: Helm, fighting: bool| {
+        let mut ship = Ship { rung: if helm.climb > 0 { 0 } else { 1 }, ..sloop_at(0.0, 0.0) };
+        for tick in 0..1200_u32 {
+            let time = f64::from(tick) * TICK_SECONDS;
+            let order = if tick == 0 { helm } else { Helm { climb: 0, ..helm } };
+            ship = if fighting {
+                sail_hurt(&ship, order, sound, &Open, WIND, time).0
+            } else {
+                sailing::ship::step_ship(&ship, &order, &SLOOP, WIND, &Open, time, TICK_SECONDS)
+            };
+        }
+        ship.ahead
+    };
+    let under_sail = Helm { climb: 2, ..STILL };
+    let ratio = run(under_sail, true) / run(under_sail, false);
+    assert!((ratio - FIGHT_PACE).abs() < 0.02, "under sail, {ratio}");
+    let ratio = run(STILL, true) / run(STILL, false);
+    assert!((ratio - FIGHT_PACE).abs() < 0.02, "under oars, {ratio}");
+}

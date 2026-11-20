@@ -92,8 +92,9 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
 - **What stops a ball** is the first hull of another flag, water or ground it meets: a player's ball passes through
   another player's ship, and a captain's through any ship of her own faction. A ball tears through any canvas it crosses
   (once a ship) and flies on. The water is the swell's surface under it, and the ground the land's, sampled every 4 m.
-- **The harm** of a ball is DFO's: by where it struck (holed within 1.1 m of the water under it, 40% more; the hull
-  above; the canvas), 85 to 115% by its own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
+- **The harm** of a ball is half again DFO's (`SHOT_HARM`, the owner's call): by where it struck (holed within 1.1 m
+  of the water under it, 40% more; the hull above; the canvas), 85 to 115% by its own roll. A captain's men stand 1.6
+  blows each, a player's crew 3.2.
 - **A ship** has hull, canvas and men. A captain strikes at her rank's share of her hull (a Major's quarter) or with no
   men left, and goes down over 22 s at none, listing and trimming by her seed and settling slowly, then fast. The rest
   of the volley that made her strike cannot sink her. The player's Sloop is wrecked at none, never sunk: no sail sets,
@@ -101,6 +102,8 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   of her way. Braced, she takes half the harm to hull and canvas, but her guns are silent and do not load. Unhurt for 15
   s, with no ship within 700 m that would take her, her hands mend her to half, and a wreck floats again past 15%.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
+- **The pace** of every ship in a fight is half again her pace at sea, under sail and under oars alike
+  (`FIGHT_PACE`, the owner's call).
 - **The wind** every ship sails in is the world's where she is, read each minute of world time; a fight a story
   plays is told its own instead, the weather drawn round it ([[Prologue]]), so a storm drawn is a storm sailed.
 
