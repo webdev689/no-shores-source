@@ -40,7 +40,7 @@ decision, made in the same change as its entry here.
 | `client/src/game/seaAfter.ts`, `client/src/network/seaHarbour.ts` | What the sea's fights leave the player as the page tells it: the joins, the board offer, what floats gathered, washing up and Manage's repair, from the sea snapshot's own part ([[Game]], "At sea") |
 | `client/src/game/seaHostiles.ts` | The hostile ships the sea's view marks, the voyage's line on each first sighted and on other waters entered, and the water named for the status line ([[Game]], "At sea") |
 | `client/src/rules/watersRules.ts` | The waters' and the friendly traffic's doors for a page, on the room module ([[World Map]]) |
-| `client/src/heldmap/` | The held map: the parchment raised at the helm, the world inked on it under fog of war, the waters tinted by holder, lettered and keyed, the ruins marked, panned, zoomed and clicked for a destination ([[Held Map]]) |
+| `client/src/heldmap/` | The held map: the parchment raised at the helm, the world inked on it under fog of war, the waters tinted by holder, its words laid out by priority clear of the gauntlets and keyed in one panel, the ruins marked, panned, zoomed and clicked for a destination ([[Held Map]]) |
 | `client/src/game/friendlyShips.ts` | The waters opened once a page, and the friendly ships round the eye at sea and on foot: asked at world time, eased between answers, drawn and marked on the compass ([[Game]]) |
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |

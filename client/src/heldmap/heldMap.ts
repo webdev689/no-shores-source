@@ -27,19 +27,10 @@ import {
   zoomAt,
 } from './heldMapLaw.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
-import { HeldMapWaters, ruinedPlaces } from './heldMapWaters.ts';
-import {
-  type KeyPlace,
-  keyPlace,
-  keySize,
-  keyWidths,
-  landUnder,
-  LETTER_FONT,
-  letterBox,
-  type Lettering,
-  type MapLetter,
-  paintLettering,
-} from './mapLetters.ts';
+import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
+import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
+import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
+import { fontOf, paintLettering } from './mapLetters.ts';
 import type { MapWaters } from './watersWash.ts';
 
 /** The world's frame, metres. */
@@ -102,6 +93,10 @@ export class HeldMap {
   private readonly painter: CanvasRenderingContext2D;
   private readonly field: CoastField;
   private key: KeyPlace | null = null;
+  /** The words' widths and the key's size as last measured, and the face's loading they were measured in. */
+  private readonly widths = new Map<string, number>();
+  private keySize: { width: number; height: number } | null = null;
+  private measuredFonts = '';
   private letteredShape = '';
   private phase: Phase = { kind: 'closed' };
   private mapView: View = { left: 0, top: 0, scale: 1 };
@@ -296,11 +291,15 @@ export class HeldMap {
     if (this.lettering.width !== width || this.lettering.height !== height)
       [this.lettering.width, this.lettering.height] = [width, height];
     const inkAt = { x: stage.ink.x - parchment.x, y: stage.ink.y - parchment.y };
-    const margin = parchment.y + parchment.height - (stage.ink.y + stage.ink.height);
     this.layer.style.opacity = String(lift);
-    const lettering = this.layout(scene, drop, margin);
-    // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
+    // Words are measured again once the face has loaded.
     const fonts = this.lettering.ownerDocument.fonts.status;
+    if (fonts !== this.measuredFonts) {
+      [this.measuredFonts, this.keySize] = [fonts, null];
+      this.widths.clear();
+    }
+    const lettering = this.layout(scene, stage.sprite, drop);
+    // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const shape = JSON.stringify([width, height, inkAt, dpr, fonts, lettering]);
     const letteringChanged = shape !== this.letteredShape;
     if (letteringChanged) paintLettering(this.painter, this.lettering, inkAt, dpr, lettering);
@@ -351,33 +350,52 @@ export class HeldMap {
     return frame < HANDS_FRAMES ? frame : 0;
   }
 
-  /** What is lettered on the map this frame: each place on it and each charted water named, the ship's arrow and the
-   *  key, laid where it covers no land, word or mark; and the card over the parchment, `drop` pixels down its
-   *  lowering. */
-  private layout(scene: HeldMapScene, drop: number, margin: number): Lettering {
+  /** What is lettered on the map this frame (`layOut`): each place on it and each charted water named, the ship's
+   *  arrow and the key, all clear of the gauntlets on the painting at `sprite`; and the card over the parchment,
+   *  `drop` pixels down its lowering. */
+  private layout(scene: HeldMapScene, sprite: Rect, drop: number): Lettering {
     const onSheet = (x: number, y: number) => x >= 0 && y >= 0 && x <= this.ink.width && y <= this.ink.height;
-    this.painter.font = LETTER_FONT;
-    const widthOf = (text: string) => this.painter.measureText(text).width;
     this.placed = [];
-    const letters: MapLetter[] = [];
+    const places = [];
     for (const place of ruinedPlaces(scene.places, this.waters?.waters.mainPorts ?? null)) {
       const [x, y] = toInk(this.mapView, place.at[0], place.at[1]);
       if (!onSheet(x, y)) continue;
       this.placed.push({ place, x, y });
-      letters.push({ text: place.name, x, y, kind: place.kind, chosen: this.choice?.place === place.id });
+      places.push({ text: place.name, x, y, kind: place.kind, chosen: this.choice?.place === place.id });
     }
-    letters.push(...(this.waters?.letters(this.ink, (x, y) => toInk(this.mapView, x, y), widthOf) ?? []));
     const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
-    const ship = onSheet(shipX, shipY) ? { x: shipX, y: shipY, heading: scene.heading } : null;
-    const taken = letters.map((letter) => letterBox(letter, widthOf(letter.text)));
-    if (ship) taken.push({ x: ship.x - 10, y: ship.y - 10, width: 20, height: 20 });
-    const widths = keyWidths(this.painter);
-    const land = (box: Rect) => landUnder(this.field, scene.knownIslands, this.mapView, box);
-    this.key = this.waters
-      ? keyPlace({ ...this.ink, margin }, keySize(widths.words, widths.ramp), widths.row, taken, land, this.key)
-      : null;
+    const lettering = layOut({
+      ink: { width: this.ink.width, height: this.ink.height },
+      scale: letterScale(this.ink),
+      covers: handsCover(sprite, this.ink),
+      places,
+      waters:
+        this.waters?.letters(
+          this.ink,
+          (x, y) => toInk(this.mapView, x, y),
+          (x, y) => toWorld(this.mapView, x, y),
+        ) ?? [],
+      ship: onSheet(shipX, shipY) ? { x: shipX, y: shipY, heading: scene.heading } : null,
+      widthOf: (text, kind) => this.widthOf(text, kind),
+      land: (box) => landUnder(this.field, scene.knownIslands, this.mapView, box),
+      sea: (box, continent) =>
+        this.waters ? onOwnSea(this.waters.waters, this.field, this.mapView, box, continent) : 2,
+      key: this.waters ? (this.keySize ??= keySize(this.painter)) : null,
+      current: this.key,
+    });
+    this.key = lettering.key;
     this.layoutCard(drop);
-    return { letters, ship, key: this.key };
+    return lettering;
+  }
+
+  /** A word's width in its kind's face, units, measured once a word and kind. */
+  private widthOf(text: string, kind: string): number {
+    const known = this.widths.get(`${kind} ${text}`);
+    if (known !== undefined) return known;
+    this.painter.font = fontOf(kind);
+    const width = this.painter.measureText(text).width;
+    this.widths.set(`${kind} ${text}`, width);
+    return width;
   }
 
   private layoutCard(drop: number): void {
