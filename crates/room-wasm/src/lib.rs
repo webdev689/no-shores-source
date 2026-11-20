@@ -146,7 +146,8 @@ pub fn open_node(text: &[u8]) -> bool {
         return false;
     }
     let blocks = node.boxes.iter().map(Block::from_floats);
-    let section = Section { ring: node.ring, spawns: node.spawns };
+    // A social space's fall of `reach::FALL_M` kills; a patrol's or a mission's does no harm.
+    let section = Section { ring: node.ring, spawns: node.spawns, falls_kill: node.kind == NodeKind::Social };
     // Its garrison stands at its island's levels; a city's social space serves a player's gear at its counters; a
     // patrol keeps its island's resource nodes.
     let levels = gear::world::island_levels(&node.continent);

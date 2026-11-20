@@ -52,9 +52,9 @@ use judging::{Check, Group, Pending, how_of_swing};
 pub use land::sites::NodeKind;
 #[cfg(test)]
 use movement::standing;
-use movement::{Block, Body};
+use movement::{Block, Body, Mode};
 use players::Player;
-use reach::respawn_point;
+use reach::{Place, respawn_point};
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -307,8 +307,9 @@ impl Room {
     /// Each player's inputs step their fighter, as many as the clock allows and CATCH_UP at most; a player whose
     /// inputs have stopped coming is stepped standing still once they fall a view's lag behind, so nothing they were
     /// doing (a dodge's safe stretch, a guard's parry window) outlasts its time while they are away. A body the section
-    /// killed lies still: its inputs are taken without moving it, and one asking to respawn, once the section allows,
-    /// stands it at the spawn nearest where it fell. Then each player is judged against the section.
+    /// killed falls under its own weight (`lying_still`): its inputs are taken without steering it, and one asking to
+    /// respawn, once the section allows, stands it at the spawn nearest where it fell. Then each player is judged
+    /// against the section, from the height their feet last stood at.
     fn step_players(&mut self) {
         // The kept views are lent to each input, not copied: they stand aside while the players step.
         let past = std::mem::take(&mut self.past);
@@ -332,6 +333,8 @@ impl Room {
                 if let Standing::Dead { .. } = found.standing {
                     found.shown = input.shown;
                     found.remember(seen);
+                    let (still, fallen) = (lying_still(&found.fighter), found.armed(found.fighter));
+                    found.fighter = player_tick(id, &fallen, &still, &view, &self.blocks, &self.floor).0;
                     if input.respawn && found.standing.may_respawn() {
                         let fallen = found.fighter;
                         let body = self.stand_again(fallen.body.x, fallen.body.y);
@@ -359,28 +362,29 @@ impl Room {
                 self.stand_stalled(id);
             }
             if let (Some(section), Some(found)) = (&self.section, self.players.get_mut(&id)) {
-                let body = found.fighter.body;
-                found.standing = found.standing.tick(section, body.x, body.y);
+                let Body { x, y, z, mode, .. } = found.fighter.body;
+                let at = Place { x, y, z, aloft: mode == Mode::Air };
+                found.standing = found.standing.tick(section, at, found.stood);
+                found.stood = reach::stood(found.stood, at);
             }
         }
         self.past = past;
     }
 
     /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim;
-    /// a body the section killed lies still, but the tick counts, so time spent dead is not banked to catch up on.
+    /// a body the section killed falls on as `lying_still` steps it, and the tick counts, so time spent dead is not
+    /// banked to catch up on.
     fn stand_stalled(&mut self, id: PlayerId) {
         let clock = self.clock;
         let Some(found) = self.players.get_mut(&id) else { return };
         if found.stepped + VIEW_LAG >= clock - found.joined {
             return;
         }
-        if matches!(found.standing, Standing::Dead { .. }) {
-            found.stepped += 1;
-            return;
-        }
-        let standing = combat::Intent {
-            controls: movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() },
-            combat: combat::CombatInput::default(),
+        let standing = if matches!(found.standing, Standing::Dead { .. }) {
+            lying_still(&found.fighter)
+        } else {
+            let controls = movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() };
+            combat::Intent { controls, combat: combat::CombatInput::default() }
         };
         let view = self.fighters();
         let Some(found) = self.players.get_mut(&id) else { return };
@@ -584,3 +588,13 @@ mod ring_tests;
 mod room_tests;
 #[cfg(test)]
 mod spread_tests;
+
+/// What a body the section killed is stepped by each tick: no push and its facing kept, letting go of any wall or lip
+/// it held, so it falls under its own weight and lies where it lands, as a fight's dead do. The page steps its own
+/// dead body by the same (`combat/fighting.ts`).
+#[must_use]
+fn lying_still(fighter: &Fighter) -> combat::Intent {
+    let holding = matches!(fighter.body.mode, Mode::Hang | Mode::Climb);
+    let controls = movement::Controls { yaw: fighter.body.facing, crouch: holding, ..movement::Controls::default() };
+    combat::Intent { controls, combat: combat::CombatInput::default() }
+}

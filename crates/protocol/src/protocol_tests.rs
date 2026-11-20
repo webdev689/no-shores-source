@@ -294,7 +294,12 @@ fn a_course_reads_back_as_its_points_and_pace_and_odd_numbers_are_refused() {
 
 #[test]
 fn every_standing_crosses_and_comes_back() {
-    for standing in [Standing::Inside, Standing::Warned { ticks_left: 599 }, Standing::Dead { ticks: 241 }] {
+    for standing in [
+        Standing::Inside,
+        Standing::Warned { ticks_left: 599 },
+        Standing::Dead { ticks: 241, fell: false },
+        Standing::Dead { ticks: 3, fell: true },
+    ] {
         let (kind, ticks) = standing_parts(standing);
         assert_eq!(standing_of(kind, ticks), standing);
     }

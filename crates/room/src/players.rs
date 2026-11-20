@@ -123,6 +123,8 @@ pub struct Player {
     pub fighter: Fighter,
     /// Where the player stands with the room's section: always inside a room with none.
     pub standing: Standing,
+    /// The height their feet last stood at, that a fall in a social space is measured from (`reach::stood`).
+    pub stood: f64,
     pub shown: Shown,
     /// The dress as others are shown it (`dressed`), and whether it changed since it was last passed on.
     pub dress: String,
@@ -190,6 +192,7 @@ impl Player {
         Player {
             fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },
             standing: Standing::Inside,
+            stood: fighter.body.z,
             shown: Shown::default(),
             dress: String::new(),
             dress_changed: false,
