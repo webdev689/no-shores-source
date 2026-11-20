@@ -192,7 +192,7 @@ export class ClimbHands {
   /** The hands `seconds` on, on `climb` (null off the wall), `present` of the way onto it (0 under the screen, 1 on the
    *  stone), seen through `look`. Off the wall they leave from where they were. */
   step(seconds: number, climb: Climb | null, look: ClimbLook, present: number): ClimbShown {
-    const time = Math.max(0, Math.min(0.1, seconds));
+    const time = Math.max(0, Math.min(0.1, Number.isFinite(seconds) ? seconds : 0));
     this.clock += time;
     const moved: [number, number, number] =
       climb && this.feet
@@ -200,7 +200,8 @@ export class ClimbHands {
         : [0, 0, 0];
     this.feet = climb ? climb.feet : null;
     if (climb) this.place(time, climb, Math.hypot(...moved) > 1 ? [0, 0, 0] : moved, look, present);
-    else if (present <= 0) [this.mode, this.base, this.start, this.carry] = [null, null, null, pair()];
+    // Lowered out of the view, they are new hands: nothing of the last climb carries into the next.
+    else if (present <= 0) Object.assign(this, new ClimbHands());
     return this.layout(look, present);
   }
 

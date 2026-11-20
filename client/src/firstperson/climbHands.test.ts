@@ -142,3 +142,37 @@ test('the gaits: a limb holds its stone through its duty, then reaches one strid
   assert.deepEqual(shimmyGait(0, 0.5, 0.125, 0.2), { anchor: 0, next: 0, swing: 0, cycle: -1 });
   assert.ok(Math.abs(shimmyGait(0.1, 0.5, 0.125, 0.2).swing - 0.375) < 1e-12);
 });
+
+test('lowered out of the view, the hands forget the last climb: a new hold looked at square shows both fists', () => {
+  const hands = new ClimbHands();
+  run(hands, held(30, hanging()));
+  const away = run(hands, held(60, hanging()), { ...SQUARE, yaw: (90 * Math.PI) / 180 });
+  assert.ok(away.reach, 'reaching while looked away');
+  hands.step(FRAME, null, SQUARE, 0);
+  const caught = hands.step(FRAME, hanging(), SQUARE, 1);
+  assert.equal(caught.reach, null, 'no reaching arm on the new hold');
+  assert.equal(caught.grips.length, 2, 'both fists on it');
+});
+
+test('a frame of no known length moves nothing, and the hands go on from it', () => {
+  const hands = new ClimbHands();
+  run(hands, held(30, hanging()));
+  hands.step(Number.NaN, hanging(), SQUARE, 1);
+  const shown = run(hands, held(5, hanging()));
+  assert.equal(shown.grips.length, 2);
+  assert.ok(shown.grips.every((each) => Number.isFinite(each.x) && Number.isFinite(each.y)));
+});
+
+test('looked down, the fists rise with the wall up to their slack, then go out of the view', () => {
+  const hands = new ClimbHands();
+  run(hands, held(30, hanging()));
+  // A step of no time lays the hands out again without moving them.
+  const tilted = (degrees: number) =>
+    grip(hands.step(0, hanging(), { ...SQUARE, pitch: (degrees * Math.PI) / 180 }, 1), 'left');
+  const level = tilted(0)?.y ?? 0;
+  const [up, slight, deep] = [tilted(-3)?.y ?? 0, tilted(3)?.y ?? 0, tilted(45)?.y ?? 0];
+  assert.ok(up > level, 'looked up, they go down the view');
+  assert.ok(slight < level && slight > level - 34, 'a little down, they rise');
+  assert.equal(deep, Math.max(200 - 150, level - 34), 'further down, no higher than the slack');
+  assert.equal(tilted(85), undefined, 'straight down, out of the view');
+});

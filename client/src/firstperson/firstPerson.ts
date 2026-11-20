@@ -200,7 +200,7 @@ export class FirstPerson {
   private lower = 0;
   private readonly climbHands = new ClimbHands();
   private climbShown: ClimbShown = { grips: [], reach: null };
-  /** The screen's width over its height when last drawn, the lens the hands on a wall are pinned through. */
+  /** The screen's width over its height when last drawn with a size, the lens the hands on a wall are pinned through. */
   private aspect = DESIGN_WIDTH / DESIGN_HEIGHT;
   /** How far a shield or a torch has ducked out of a strike's way, 0 held to 1 gone below the screen. */
   private duck = 0;
@@ -522,7 +522,7 @@ export class FirstPerson {
   /** Draws the first person over what `colourView` holds, `width` by `height` pixels. Until every picture wanted is
    *  composed, the last whole set stays on the screen. */
   draw(encoder: GPUCommandEncoder, colourView: GPUTextureView, width: number, height: number): void {
-    this.aspect = width / Math.max(1, height);
+    if (width > 0 && height > 0) this.aspect = width / height;
     const quads: ScreenQuad[] = [];
     let ready = true;
     let muzzle: readonly [number, number] | null = null;

@@ -175,6 +175,20 @@ test('a climb lowers the weapon out of sight and brings both hands up onto the w
   assert.deepEqual((await frame(1, standing)).quads.length, 1);
 });
 
+test('a screen drawn with no width keeps the last lens, so the fists on a wall stay where they were', async () => {
+  const { frame, person } = firstPerson(wholeFrames);
+  const climb = { mode: 'hang', feet: [0, 0, 1], wall: 0, over: 0, rise: 0 } as const;
+  const hanging = { ...standing, climbing: 1, climb, yaw: 0.3, fov: 0.9 };
+  const before = await frame(1, hanging);
+  person.draw({} as GPUCommandEncoder, {} as GPUTextureView, 0, 400);
+  const after = await frame(0, hanging);
+  assert.equal(after.quads.length, 2);
+  assert.deepEqual(
+    after.quads.map((quad) => Math.round(quad.x)),
+    before.quads.map((quad) => Math.round(quad.x)),
+  );
+});
+
 test('a flail at rest wears its chain swing, mirrored in the left hand', async () => {
   const { frame, asked } = firstPerson(wholeFrames);
   await frame(0.016, { ...standing, right: 'flail_iron' });

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import type { Body } from '../rules/movementRules.ts';
 import { plainDress } from './dressing.ts';
-import { shownDress, strokesAfter } from './walker.ts';
+import { climbOf, shownDress, strokesAfter } from './walker.ts';
 
 test('a stroke is counted when a swing begins, and again when the next begins within a frame', () => {
   assert.equal(strokesAfter(0, null, null), 0, 'no swing');
@@ -16,4 +17,34 @@ test('on a wall or a ledge the weapon is worn, not held', () => {
   assert.equal(shownDress(drawn, true).outfit.drawn, true);
   assert.equal(shownDress(drawn, false).outfit.drawn, false);
   assert.equal(shownDress(drawn, true), drawn, 'held hands show the dress as it is');
+});
+
+test('the climb the hands follow is read off the body: its move, feet and facing, and a mantle under way', () => {
+  const body: Body = {
+    x: 1,
+    y: 2,
+    z: 3,
+    vx: 0,
+    vy: 0,
+    vz: 0,
+    facing: 0.5,
+    mode: 'hang',
+    crouched: false,
+    crouch: 0,
+    grounded: 0,
+    over: null,
+    lip: 4.5,
+    moving: false,
+  };
+  assert.deepEqual(climbOf(body), { mode: 'hang', feet: [1, 2, 3], wall: 0.5, over: 0, rise: 0 });
+  const over = { from: [1, 2, 3], to: [1, 1.5, 4.5], progress: 0.25, seconds: 0.7 } as const;
+  assert.deepEqual(climbOf({ ...body, mode: 'mantle', over }), {
+    mode: 'mantle',
+    feet: [1, 2, 3],
+    wall: 0.5,
+    over: 0.25,
+    rise: 1.5,
+  });
+  assert.equal(climbOf({ ...body, mode: 'ground' }), null);
+  assert.equal(climbOf({ ...body, mode: 'air' }), null);
 });
