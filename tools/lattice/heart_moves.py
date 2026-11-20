@@ -1,94 +1,154 @@
-"""The Heart's own moves for the Sprite Forge, on the forge's body that carries it (heart.py). After the owner's own in
-project-final: it floats seated in its cradle, bobbing and spinning; it opens its shell's port toward what it throws
-at, the tell, and looses it; descended, the core rides low on its tendrils and crawls, planting them; close in, it
-rears up, its tendrils raised and splayed, and slams them down. Its shell's scatter and its core's pulse are the
-game's to draw over these. Angles as motion.py's; its legs are held straight and unseen until it descends."""
+"""The Heart's own moves for the Sprite Forge: a giant of fused people, slow and heavy, the anchor in its right fist.
+It heaves where it stands; it lumbers, each step landing with a jolt, the anchor dragging; it sweeps the anchor round;
+it raises the anchor in both hands and slams it down; it stomps; and it claws one of its own people out of its body and
+flings it into the fight, where it rises a Husk. Each attack holds a frame or more before it lands, its tell. Angles
+and places as motion.py's."""
 import numpy as np
 
-from motion import blend, drawn, reach, summed, through, tremor
+from motion import CONTACT_L, CONTACT_R, CROUCH, DRIVE, PASSING_L, PASSING_R, drawn, laid, scaled, summed, through, \
+    tremor
 
-SPIN = 360 / 7   # a seventh of a turn brings its shell back to itself (heart.py `SECTORS`)
-TUCKED = {'uarm_L': (-20, 30, 0), 'farm_L': (-130, 0, 0), 'uarm_R': (-20, -30, 0), 'farm_R': (-130, 0, 0)}
-
-
-def float_legs(bend):
-    """Legs straight under it but for `bend` degrees at the knee, the foot kept flat for the cradle on it."""
-    return {f'{part}_{side}': turn for side in 'LR'
-            for part, turn in (('thigh', (-bend, 0, 0)), ('shin', (2 * bend, 0, 0)), ('foot', (-bend, 0, 0)))}
-
-
-def floating(frame, view, yaw):
-    """Sixteen frames: two sevenths of a turn and one bob, so it loops; sealed or bare, as the game shows its shell."""
-    bob = 22 + 14 * np.sin(2 * np.pi * frame / 16)
-    rot = summed(TUCKED, float_legs(bob), {'chest': (2 * np.sin(2 * np.pi * frame / 16), 0, frame * 2 * SPIN / 16)})
-    return drawn(rot, yaw)
+HUNCH = {'spine': (18, 0, 0), 'chest': (14, 0, 0), 'neck': (10, 0, 0), 'head': (14, 6, 0),
+         'clav_L': (0, 0, 8), 'clav_R': (0, 0, -8)}
+BRACE = {'thigh_L': (-18, -10, -10), 'shin_L': (20, 0, 0), 'thigh_R': (10, 10, 12), 'shin_R': (18, 0, 0)}
+TRUNK = ('spine', 'chest', 'neck', 'head')
+HANGING_L = ((0.36, -0.1, 0.86), (0.1, -0.2, -1.0))        # the left hand hanging heavy, its knuckles low
+CARRIED = ((-0.36, -0.06, 0.92), (-0.05, 0.1, -1.0))       # the anchor hanging from the right fist, its crown low
 
 
-# The lob's ten frames: the port tilted open toward what it aims at (the neck's tilt), held three frames as the core
-# flares, the tell; the discharge rocks it back; the port shut again. Each: the port's tilt, the gem's rock.
-LOB = [(0, 0), (10, 0), (24, 1), (34, 2), (35, 2), (36, 2), (42, -9), (30, -5), (14, -2), (0, 0)]
+def held(pose, right=CARRIED, left=HANGING_L):
+    """Both wrists laid: the right with the anchor, the left hanging or on the anchor's shank."""
+    laid(pose, 'R', *right, up=(1.0, 0.0, 0.0))
+    return laid(pose, 'L', *left, up=(-1.0, 0.0, 0.0))
 
 
-def lob(frame, view, yaw):
-    tilt, rock = LOB[frame]
-    rot = summed(TUCKED, float_legs(22), tremor('heart_lob', frame, 1.2 if 3 <= frame <= 5 else 0.4, ('spine',)),
-                 {'neck': (tilt, 0, 0), 'chest': (rock, 0, 0)})
-    return drawn(rot, yaw)
+def stand(frame, view, yaw):
+    p, gear = drawn(HUNCH, yaw, False, True)
+    return held(p), gear
 
 
-# Descended: the core low, its legs splayed wide and bent, its arms reaching out and down to the ground about it.
-LOW = {'pelvis': (0, 0, 0), 'spine': (10, 0, 0),
-       'thigh_L': (-30, -60, -20), 'shin_L': (80, 0, 0), 'foot_L': (-20, 0, 0),
-       'thigh_R': (-30, 60, 20), 'shin_R': (80, 0, 0), 'foot_R': (-20, 0, 0)}
-PLANTED = ((0.78, -0.56, 0.06), (-0.78, -0.56, 0.06))   # where its arms' tips stand on the ground
+# The idle's twelve frames: each the breath (the chest's heave and the shoulders' rise), the sway, and the head; at
+# frame 7 a shudder through it, the fused people's weight shifting.
+IDLE = [(0, -3, (14, 6, 0)), (2, -2, (14, 7, 1)), (4, -1, (15, 8, 2)), (5, 1, (15, 8, 2)), (4, 2, (14, 6, 1)),
+        (2, 3, (14, 4, 0)), (0, 3, (13, 2, -1)), (3, 2, (20, -8, -6)), (1, 1, (17, -5, -4)), (-1, 0, (15, -2, -2)),
+        (-1, -2, (14, 2, 0)), (0, -3, (14, 5, 0))]
 
 
-def descend(frame, view, yaw):
-    """Twelve frames from floating to low: its legs folding and splaying, its arms unfolding to the ground."""
-    t = frame / 11
-    rot = summed(through([summed(TUCKED, float_legs(22)), blend(float_legs(22), LOW, 0.5), LOW], t),
-                 tremor('heart_descend', frame, 0.8, ('spine', 'chest')))
-    p, gear = drawn(rot, yaw)
-    if t < 0.35:
-        return p, gear
-    reach_t = (t - 0.35) / 0.65
-    tucked = ((0.2, -0.3, 1.4), (-0.2, -0.3, 1.4))
-    wrists = [tuple(a + (b - a) * reach_t for a, b in zip(w0, w1)) for w0, w1 in zip(tucked, PLANTED)]
-    return reach(p, *wrists), gear
+def idle(frame, view, yaw):
+    breath, sway, head = IDLE[frame]
+    shudder = 1.0 if frame == 7 else 0.0
+    rot = summed(HUNCH, scaled(BRACE, 0.4), tremor('heart_idle', frame, 0.7 + shudder * 2.0, TRUNK), {
+        'chest': (-breath * 0.6, 0, 0), 'clav_L': (0, 0, breath), 'clav_R': (0, 0, -breath),
+        'pelvis': (0, sway * 0.4, sway)})
+    rot['head'] = head
+    p, gear = drawn(rot, yaw, False, True)
+    return held(p, (CARRIED[0][:2] + (CARRIED[0][2] + breath * 0.004,), CARRIED[1])), gear
 
 
-def crawl(frame, view, yaw):
-    """Twelve frames: its tendrils stepping in diagonal pairs, the left arm with the right leg, each pair lifted and
-    set down ahead while the others drag the core on, the core rocking over them."""
-    phase = frame / 12
-    step = [np.sin(2 * np.pi * (phase + k * 0.5)) for k in (0, 1)]
-    lift = [max(0.0, s) for s in step]
-    rot = summed(LOW, tremor('heart_crawl', frame, 0.6, ('spine', 'chest')), {
-        'thigh_R': (-20 * step[0], 0, 0), 'shin_R': (-30 * lift[0], 0, 0),
-        'thigh_L': (-20 * step[1], 0, 0), 'shin_L': (-30 * lift[1], 0, 0),
-        'chest': (0, 4 * step[0], 6 * step[0])})
-    p, gear = drawn(rot, yaw)
-    left = (PLANTED[0][0], PLANTED[0][1] - 0.18 * step[0], PLANTED[0][2] + 0.22 * lift[0])
-    right = (PLANTED[1][0], PLANTED[1][1] - 0.18 * step[1], PLANTED[1][2] + 0.22 * lift[1])
-    return reach(p, left, right), gear
+# The walk's sixteen frames, two steps on the forge's own keys, each swung five frames and landed three, the landing a
+# jolt down through it; each frame: the step's share, the jolt.
+WALK = [(0.0, 0), (0.15, 0), (0.35, 0), (0.6, 0), (0.85, 0), (1.0, 1), (1.0, 0.5), (1.0, 0.2),
+        (0.0, 0), (0.15, 0), (0.35, 0), (0.6, 0), (0.85, 0), (1.0, 1), (1.0, 0.5), (1.0, 0.2)]
 
 
-# The slam's twelve frames: reared up, the gem tipped back, its arms raised and splayed high, held three frames, the
-# tell; slammed down before it; the jolt; back to low. Each: the arms' tips, the spine's tip.
-RAISED = ((0.62, -0.1, 1.95), (-0.62, -0.1, 1.95))
-STRUCK = ((0.42, -0.95, 0.04), (-0.42, -0.95, 0.04))
-SLAM = [(PLANTED, 0), (((0.7, -0.4, 0.9), (-0.7, -0.4, 0.9)), -8), (RAISED, -16), (RAISED, -18), (RAISED, -18),
-        (RAISED, -18), (((0.55, -0.6, 1.1), (-0.55, -0.6, 1.1)), 4), (STRUCK, 22), (STRUCK, 26), (STRUCK, 22),
-        (((0.6, -0.8, 0.06), (-0.6, -0.8, 0.06)), 12), (PLANTED, 0)]
+def walk(frame, view, yaw):
+    share, jolt = WALK[frame]
+    first = frame < 8
+    legs = through([CONTACT_L, PASSING_L, CONTACT_R] if first else [CONTACT_R, PASSING_R, CONTACT_L], share)
+    roll = (-1 if first else 1) * 9
+    rot = summed(HUNCH, legs, tremor('heart_walk', frame, 0.6 + jolt * 2.2, TRUNK), {
+        'pelvis': (0, roll * 0.4, roll), 'chest': (jolt * 6, -roll * 0.5, -roll * 0.3), 'spine': (jolt * 4, 0, 0)})
+    rot['head'] = (14 + jolt * 8, roll * 0.6, 0)
+    p, gear = drawn(rot, yaw, False, True)
+    drag = ((-0.38, 0.12, 0.9), (-0.05, 0.45, -0.9))   # the anchor trailing behind on the ground
+    swing = np.sin(np.pi * frame / 8) * 0.08
+    left = ((0.36, -0.1 - swing * (1 if first else -1), 0.86), HANGING_L[1])
+    return held(p, drag, left), gear
+
+
+# The sweep's fourteen frames: the anchor drawn back and up over its right shoulder, held two frames, its tell; swung
+# round flat across its front to its left; carried on, twisted; back. Each: the right wrist, the anchor's way, the
+# chest's turn, the legs.
+SWEEP = [(CARRIED[0], CARRIED[1], 0, {}), ((-0.4, 0.05, 1.2), (-0.6, 0.3, 0.6), 14, BRACE),
+         ((-0.36, 0.2, 1.55), (-0.4, 0.6, 0.6), 30, BRACE), ((-0.35, 0.22, 1.6), (-0.4, 0.62, 0.6), 34, BRACE),
+         ((-0.35, 0.23, 1.61), (-0.4, 0.63, 0.6), 34, BRACE), ((-0.44, -0.1, 1.35), (-1.0, -0.1, 0.0), 22, DRIVE),
+         ((-0.2, -0.5, 1.25), (-0.4, -1.0, -0.05), 0, DRIVE), ((0.2, -0.52, 1.22), (0.45, -0.9, -0.05), -22, DRIVE),
+         ((0.44, -0.18, 1.2), (1.0, -0.15, -0.05), -40, DRIVE), ((0.4, 0.1, 1.15), (0.8, 0.5, -0.2), -48, BRACE),
+         ((0.3, 0.1, 1.0), (0.4, 0.4, -0.8), -40, BRACE), ((0.0, -0.1, 0.95), (0.0, -0.2, -1.0), -22, BRACE),
+         ((-0.22, -0.08, 0.92), (-0.05, 0.0, -1.0), -8, {}), (CARRIED[0], CARRIED[1], 0, {})]
+
+
+def sweep(frame, view, yaw):
+    wrist, way, turn, legs = SWEEP[frame]
+    rot = summed(HUNCH, legs, tremor('heart_sweep', frame, 1.6 if frame in (3, 4) else 0.6, TRUNK),
+                 {'chest': (0, 0, turn), 'pelvis': (0, 0, turn * 0.35)})
+    rot['head'] = (14, 0, -turn * 0.4)
+    p, gear = drawn(rot, yaw, False, True)
+    return held(p, (wrist, way), HANGING_L), gear
+
+
+# The slam's fourteen frames: the left hand to the shank, the anchor raised high over its head in both, rearing back,
+# held three frames, its tell; brought down to strike the ground before it; the jolt; wrenched free; back. Each: the
+# right wrist, the anchor's way, the spine's bow, the legs.
+HIGH = ((-0.04, 0.12, 2.0), (0.0, 0.5, 0.86))
+SLAM = [(CARRIED[0], CARRIED[1], 0, {}), ((-0.2, -0.2, 1.2), (0.0, -0.3, 0.95), 4, CROUCH),
+        ((-0.1, 0.0, 1.7), (0.0, 0.3, 0.95), -6, BRACE), (*HIGH, -16, BRACE), (*HIGH, -18, BRACE), (*HIGH, -18, BRACE),
+        ((0.0, -0.32, 1.8), (0.0, -0.55, 0.83), 0, DRIVE), ((0.0, -0.68, 1.3), (0.0, -0.95, -0.2), 22, DRIVE),
+        ((0.0, -0.78, 0.98), (0.0, -0.45, -0.89), 36, DRIVE), ((0.0, -0.77, 0.96), (0.0, -0.44, -0.9), 40, DRIVE),
+        ((0.0, -0.7, 1.02), (0.0, -0.45, -0.89), 34, DRIVE), ((-0.06, -0.5, 1.2), (0.0, -0.6, -0.3), 22, BRACE),
+        ((-0.2, -0.3, 1.05), (0.0, -0.3, -0.9), 8, {}), (CARRIED[0], CARRIED[1], 0, {})]
 
 
 def slam(frame, view, yaw):
-    wrists, tip = SLAM[frame]
-    shake = 1.6 if 3 <= frame <= 5 else (2.6 if frame == 8 else 0.6)
-    rot = summed(LOW, tremor('heart_slam', frame, shake, ('spine', 'chest')), {'spine': (tip, 0, 0)})
-    p, gear = drawn(rot, yaw)
-    return reach(p, *wrists), gear
+    wrist, way, bow, legs = SLAM[frame]
+    shake = 1.8 if 3 <= frame <= 5 else (2.8 if frame == 9 else 0.6)   # its tell, and the jolt of the blow
+    rot = summed(HUNCH, legs, tremor('heart_slam', frame, shake, TRUNK), {'spine': (bow, 0, 0), 'chest': (bow * 0.5, 0, 0)})
+    rot['head'] = (14 + bow * 0.4, 0, 0)
+    p, gear = drawn(rot, yaw, True, True)
+    shank = tuple(w + d * 0.22 for w, d in zip(wrist, way))   # the left hand further up the shank
+    return held(p, (wrist, way), (shank if frame not in (0, 13) else HANGING_L[0], way if frame not in (0, 13) else
+                                  HANGING_L[1])), gear
 
 
-MOVES = {'heart_float': (floating, range(16)), 'heart_lob': (lob, LOB), 'heart_descend': (descend, range(12)),
-         'heart_crawl': (crawl, range(12)), 'heart_slam': (slam, SLAM)}
+# The stomp's ten frames: its right knee raised high, the weight rocked onto the left, held two frames, its tell;
+# stamped down, the ground struck all round it; the jolt; back. Each: the right thigh's raise, the knee, the spine.
+STOMP = [(0, 0, 0), (-30, 40, -4), (-62, 84, -10), (-66, 88, -12), (-66, 88, -12), (-10, 20, 10), (0, 6, 16),
+         (0, 8, 14), (0, 4, 6), (0, 0, 0)]
+
+
+def stomp(frame, view, yaw):
+    raise_, knee, bow = STOMP[frame]
+    shake = 1.6 if frame in (3, 4) else (3.0 if frame == 6 else 0.6)
+    rot = summed(HUNCH, tremor('heart_stomp', frame, shake, TRUNK), {
+        'thigh_R': (raise_, 10, 12), 'shin_R': (knee, 0, 0), 'pelvis': (0, -6 if 1 <= frame <= 4 else 0, -8),
+        'spine': (bow, 0, 0)})
+    rot['head'] = (14 + bow, 0, 0)
+    p, gear = drawn(rot, yaw, True, True)
+    return held(p), gear
+
+
+# The tear's fourteen frames: its left hand clawing into its own side, gripping, held four frames shuddering as it
+# pulls, its tell; ripped out and the arm flung wide, the body recoiling; the hand opened, flinging what it tore out
+# ahead of it; back. Each: the left wrist, its way, the fist, the spine's recoil.
+CLAW = ((-0.1, -0.24, 1.02), (-0.8, -0.3, -0.2))
+TEAR = [(HANGING_L[0], HANGING_L[1], False, 0), ((0.1, -0.3, 1.0), (-0.6, -0.6, -0.2), False, 4),
+        (*CLAW, False, 8), (*CLAW, True, 10), (*CLAW, True, 12), (*CLAW, True, 12), (*CLAW, True, 12),
+        ((0.3, -0.42, 1.12), (0.9, -0.3, 0.1), True, -10), ((0.48, -0.36, 1.3), (0.9, -0.1, 0.4), True, -14),
+        ((0.3, -0.62, 1.2), (0.3, -1.0, 0.1), False, 6), ((0.24, -0.66, 1.08), (0.2, -1.0, -0.2), False, 10),
+        ((0.34, -0.4, 0.96), (0.2, -0.5, -0.8), False, 6), ((0.36, -0.2, 0.9), (0.1, -0.3, -1.0), False, 2),
+        (HANGING_L[0], HANGING_L[1], False, 0)]
+
+
+def tear(frame, view, yaw):
+    wrist, way, fist, recoil = TEAR[frame]
+    shake = 2.2 if 3 <= frame <= 6 else 0.7
+    rot = summed(HUNCH, scaled(BRACE, 0.6), tremor('heart_tear', frame, shake, TRUNK),
+                 {'spine': (recoil * 0.6, 0, 0), 'chest': (recoil * 0.4, 0, recoil * 0.8)})
+    rot['head'] = (14 + recoil * 0.5, -recoil * 0.6, 0)
+    p, gear = drawn(rot, yaw, fist, True)
+    return held(p, CARRIED, (wrist, way)), gear
+
+
+MOVES = {'heart_stand': (stand, range(1)), 'heart_idle': (idle, IDLE), 'heart_walk': (walk, WALK),
+         'heart_sweep': (sweep, SWEEP), 'heart_slam': (slam, SLAM), 'heart_stomp': (stomp, STOMP),
+         'heart_tear': (tear, TEAR)}

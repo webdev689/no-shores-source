@@ -3,27 +3,13 @@ footfalls with uneven strides (some long, the odd stunted one), under a constant
 deep shudders, a slow unsettling sway/cock of the crystal head on its own, and a forward hunch"; the head "snaps to a
 new sway/cock/tilt and holds". Shielded, it walks and stands with its shield arm across its front and discharges from
 the shield's core; exposed, it swings the maul that formed in its hand two-handed, and rears up to slam it down."""
-from mathutils import Vector
-
-import poses
 from motion import COIL, CONTACT_L, CONTACT_R, CROUCH, DRIVE, LUNGE, PASSING_L, PASSING_R, drawn, scaled, summed, \
     through, tremor
-from rig import solve_arm
+from motion import laid as arm
 
 HUNCH = {'spine': (16, 0, 0), 'chest': (12, 0, 0), 'neck': (18, 0, 0), 'clav_L': (0, 0, -6), 'clav_R': (0, 0, -8)}
 BRACE = {'thigh_L': (-22, -12, -12), 'shin_L': (24, 0, 0), 'thigh_R': (12, 12, 14), 'shin_R': (22, 0, 0)}
 GUARD = ((-0.04, -0.4, 1.24), (-1.0, -0.1, 0.25))   # the left wrist across its front, the forearm toward its right
-
-
-def arm(pose, side, wrist, way, up=(0.0, -1.0, 0.0)):
-    """A wrist laid (body space) with its hand along `way` and its back toward `up`: the shield's face, which is the
-    back of the forearm, turned to the front."""
-    at = poses.root_matrix(pose)
-    turn = at.to_3x3()
-    elbow = (0.8, 0.5, -0.6) if side == 'L' else (-0.8, 0.4, -0.6)
-    solve_arm(pose, side, at @ Vector(wrist), turn @ Vector(elbow), hand_dir=(turn @ Vector(way)).normalized(),
-              hand_up=turn @ Vector(up))
-    return pose
 
 
 def gripped(pose, wrist, way):

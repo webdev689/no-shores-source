@@ -28,7 +28,8 @@ def foe_layers(foe, body, classify):
     fighter = layers.Bare(body, 'axe')
     if hasattr(foe, 'reshape'):   # what the crystal has eaten of the body goes before it grows
         foe.reshape(fighter)
-    crystal, gore = growth.grow(fighter, foe.CLUSTERS, foe.STRAIN, foe.SEED)
+    torn_open = foe.wounds(fighter) if hasattr(foe, 'wounds') else ()   # what it tore open itself bleeds too
+    crystal, gore = growth.grow(fighter, foe.CLUSTERS, foe.STRAIN, foe.SEED, torn_open)
     own = foe.parts(fighter) if hasattr(foe, 'parts') else {}
     skins = {sk.ob.name: sk.ob for sk in fighter.skins}
     hands = [ob for kinds in fighter.hands.values() for ob in kinds.values()] if getattr(foe, 'HANDS', True) else []

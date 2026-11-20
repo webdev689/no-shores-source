@@ -99,9 +99,10 @@ def gore(fighter, wounds, strain, pick):
     return [fighter.skins[-2].ob, fighter.skins[-1].ob]
 
 
-def grow(fighter, clusters, strain, seed):
+def grow(fighter, clusters, strain, seed, torn_open=()):
     """Every cluster's shards on the shaped body, and under each a torn wound round where it broke out; each cluster
-    hung on its joint as the forge hangs a helm's pieces. Returns the crystal and wounds, and the gore."""
+    hung on its joint as the forge hangs a helm's pieces; `torn_open`, more wounds the foe made itself (a body
+    half out of it), each (where, how wide). Returns the crystal and wounds, and the gore."""
     skin = fighter.skins[0]
     points = skin.rest
     normals = np.array([v.normal for v in skin.me.vertices])
@@ -109,7 +110,7 @@ def grow(fighter, clusters, strain, seed):
     pick = np.random.default_rng(seed)
     crystal = crystal_material(strain)
     wound = materials.plain(f'lattice.wound_{strain}', STRAINS[strain]['wound'], rough=0.25, spec=0.7)
-    made, wounds = [], []
+    made, wounds = [], list(torn_open)
     for c, cluster in enumerate(clusters):
         on = np.nonzero(piece == cluster['piece'])[0]
         middle = on[np.argmax(cluster['middle'](points[on], normals[on]))]

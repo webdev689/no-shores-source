@@ -63,3 +63,13 @@ def reach(pose, left=None, right=None):
         if wrist is not None:
             solve_arm(pose, side, at @ Vector(wrist), turn @ Vector(elbow))
     return pose
+
+
+def laid(pose, side, wrist, way, up=(0.0, -1.0, 0.0)):
+    """A wrist laid (body space) with its hand along `way` and its back toward `up`, the elbow bent as the cast's."""
+    at = poses.root_matrix(pose)
+    turn = at.to_3x3()
+    elbow = ELBOW_L if side == 'L' else ELBOW_R
+    solve_arm(pose, side, at @ Vector(wrist), turn @ Vector(elbow), hand_dir=(turn @ Vector(way)).normalized(),
+              hand_up=turn @ Vector(up))
+    return pose
