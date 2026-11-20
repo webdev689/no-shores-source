@@ -183,7 +183,10 @@ export class WreckFight implements Beat {
     const { story } = this;
     const { stage, walker, firstPerson } = story;
     this.clock += tick.seconds;
-    stage.stepWeather(tick.seconds);
+    // No storm's strikes on the wreck; its one is the strike behind Thule as he cries out.
+    const [wakeX, wakeY] = this.layout.wake.at;
+    const strike = story.lightning.step(tick.seconds, [wakeX, wakeY]);
+    stage.stepWeather(tick.seconds, strike.flash, strike.bolt);
     if (this.coming) {
       this.coming.since += tick.seconds;
       this.coming.cues.step(this.coming.since);
