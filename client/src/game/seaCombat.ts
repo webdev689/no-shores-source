@@ -17,6 +17,7 @@ import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { factionSide } from '../ships/dress.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
+import type { MarkView } from '../ships/markView.ts';
 import { barOver, type ShipBar } from '../ships/shipBars.ts';
 import type { Lying } from '../ships/deck.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
@@ -72,6 +73,7 @@ function roomSource(room: SeaRoom, first: FightView): FightSource {
 
 export class SeaCombat {
   private readonly naval: Naval;
+  private readonly marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight'>>;
   /** The hull a ship is drawn as: her own once her model has come. */
   private readonly shown: (hull: number) => number;
   private readonly fought = new Fought();
@@ -100,11 +102,12 @@ export class SeaCombat {
   constructor(
     room: SeaRoom,
     first: FightView,
-    marks: MarkDrawer,
+    marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight'>>,
     now: number,
     shown: (hull: number) => number = (hull) => hull,
   ) {
     this.shown = shown;
+    this.marks = marks;
     this.naval = new Naval(marks, shown);
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     this.naval.join(Fighting.joined(roomSource(room, first), 'sea', first, now));
@@ -335,6 +338,16 @@ export class SeaCombat {
       shadow,
     });
     playCues(worldOutput(), this.naval.takeCues(), eye, this.orbit.yaw);
+  }
+
+  /** The fight's see-through puffs over the finished picture `target`, after the water, hidden where the scene's
+   *  `depth` stands nearer; and their light on what stands round them. */
+  overWater(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture): void {
+    this.marks.drawOver?.(encoder, target, depth);
+  }
+
+  lightInto(pass: GPURenderPassEncoder): void {
+    this.marks.drawLight?.(pass);
   }
 
   /** Each captain's bar over her hull's masthead, in world metres, her drawn `scale` times her size, while she

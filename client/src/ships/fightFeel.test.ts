@@ -48,8 +48,8 @@ test('a hull hit, by its point in the world or in her frame, splinters her paint
   const scars = ships.get(1)?.rig?.harm.scars ?? [];
   assert.equal(scars.length, 2);
   assert.ok(Math.abs((scars[0]?.at[0] ?? 0) - 5) < 1e-9 && Math.abs((scars[0]?.at[1] ?? 0) - 4) < 1e-9);
-  const pirateHull = feel.marks(0.15).filter((mark) => mark.colour[0] < 0.2 && mark.radius < 0.2);
-  assert.ok(pirateHull.length > 20, 'her black paint flies');
+  const pirateHull = feel.marks(0.15).filter((mark) => mark.colour[0] < 0.2 && !mark.blend);
+  assert.ok(pirateHull.length >= 8, "her black paint flies, DFO's ten splinters a ball");
   const ship = ships.get(1) as FeelShip;
   const blots = feel.scars([{ ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0 } }]);
   assert.equal(blots.length, 8, 'each hole a ragged few blots');
