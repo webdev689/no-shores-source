@@ -5,7 +5,10 @@ import {
   chartedWaters,
   difficultyColour,
   HOLDER_COLOURS,
-  WASH_STRENGTH,
+  HATCHES,
+  MAP_PARCHMENT,
+  washedOver,
+  type WaterHolder,
   labelPoints,
   levelColour,
   type MapWaters,
@@ -44,7 +47,7 @@ const rgba = (hex: string, alpha: number) => [
   alpha,
 ];
 
-test('each holder washes its water in its own colour, the seam as contested and hatched', () => {
+test('each holder washes its water in its own colour; the seam is contested, the contested and the Tithe hatched', () => {
   const block = (cell: number) => Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => cell));
   for (const [cell, holder] of [
     [0, 'home'],
@@ -56,7 +59,11 @@ test('each holder washes its water in its own colour, the seam as contested and 
     const grid = gridOf(block(cell));
     const wash = washOf(grid, new Uint8Array(9).fill(1));
     assert.deepEqual([...wash.colour.subarray(16, 20)], rgba(HOLDER_COLOURS[holder], 255), holder);
-    assert.equal(wash.hatch[4], holder === 'contested' ? 255 : 0, `${holder} hatched only if contested`);
+    assert.deepEqual(
+      [wash.hatch[8], wash.hatch[9]],
+      [holder === 'contested' ? 255 : 0, holder === 'grey-tithe' ? 255 : 0],
+      `${holder}'s hatching`,
+    );
   }
 });
 
@@ -156,22 +163,27 @@ function labOf(rgb: readonly number[]): [number, number, number] {
   return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
 }
 
-test('the holders’ washes are told apart at a glance on the parchment, and none darkens it much', () => {
-  // The map's parchment (the forge's sheet's middle colour) under the charted sea's faint ink.
-  const parchment = [208, 171, 118].map((channel, index) => channel * 0.92 + [58, 40, 22][index]! * 0.08);
-  const washed = Object.values(HOLDER_COLOURS).map((hex) =>
-    labOf(
-      rgba(hex, 0)
-        .slice(0, 3)
-        .map((channel, index) => parchment[index]! * (1 - WASH_STRENGTH) + channel * WASH_STRENGTH),
-    ),
-  );
-  const bare = labOf(parchment);
-  for (const [index, one] of washed.entries()) {
-    assert.ok(bare[0] - one[0] < 6, `the wash darkens the parchment by ${bare[0] - one[0]}`);
-    for (const other of washed.slice(index + 1)) {
-      const apart = Math.hypot(one[0] - other[0], one[1] - other[1], one[2] - other[2]);
-      assert.ok(apart >= 10, `two holders' washes ${apart.toFixed(1)} apart`);
+test('the holders’ washes are told apart on the parchment, by colour or by their hatching, and none darkens it much', () => {
+  const washed = Object.fromEntries(
+    (Object.keys(HOLDER_COLOURS) as WaterHolder[]).map((holder) => [
+      holder,
+      labOf(rgba(washedOver(holder), 0).slice(0, 3)),
+    ]),
+  ) as Record<WaterHolder, [number, number, number]>;
+  const bare = labOf(MAP_PARCHMENT.map((channel, index) => channel * 0.92 + [58, 40, 22][index]! * 0.08));
+  const holders = Object.keys(washed) as WaterHolder[];
+  for (const [index, one] of holders.entries()) {
+    assert.ok(bare[0] - washed[one][0] < 6, `${one}'s wash darkens the parchment by ${bare[0] - washed[one][0]}`);
+    for (const other of holders.slice(index + 1)) {
+      const [a, b] = [washed[one], washed[other]];
+      const apart = Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+      const hatchedApart = one in HATCHES !== other in HATCHES || (one in HATCHES && other in HATCHES);
+      assert.ok(apart >= 10 || hatchedApart, `${one} and ${other}: ${apart.toFixed(1)} apart, and hatched alike`);
     }
   }
+});
+
+test('a holder’s wash as the map shows it is her colour at the wash’s strength over the parchment', () => {
+  // Home's teal over the parchment reads as the map's olive green, 161, 152, 110 (worked out apart from the code).
+  assert.equal(washedOver('home'), '#a1986e');
 });

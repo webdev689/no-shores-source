@@ -3,7 +3,7 @@
 // hand (mapLayout.ts says what it yields to when no corner is clear).
 import { type CoastField, NO_ISLAND } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
-import { HOLDER_COLOURS, HOLDER_WORDS, levelColour } from './watersWash.ts';
+import { HATCHES, HOLDER_WORDS, levelColour, washedOver, type WaterHolder } from './watersWash.ts';
 
 /** The face the key is lettered in, as the map's smaller words, and its inks: iron-gall, and the parchment's own
  *  colour, which fills the panel. Its lengths are units, pixels at a scale of 1. */
@@ -137,7 +137,43 @@ type KeyPainter = Measure & {
   fillRect(x: number, y: number, width: number, height: number): void;
   strokeRect(x: number, y: number, width: number, height: number): void;
   fillText(text: string, x: number, y: number): void;
+  beginPath(): void;
+  rect(x: number, y: number, width: number, height: number): void;
+  clip(): void;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  stroke(): void;
 };
+
+/** A holder's swatch with its top-left at `x`, `y`: her wash as the map shows it over its parchment, and over the
+ *  contested's and the Grey Tithe's their hatching, diagonal and level, its lines as far apart as on the map. */
+function paintSwatch(painter: KeyPainter, holder: WaterHolder, x: number, y: number): void {
+  const [width, height] = KEY.swatch;
+  painter.fillStyle = washedOver(holder);
+  painter.fillRect(x, y, width, height);
+  const hatch = holder === 'contested' || holder === 'grey-tithe' ? HATCHES[holder] : null;
+  if (!hatch) return;
+  painter.save();
+  painter.beginPath();
+  painter.rect(x, y, width, height);
+  painter.clip();
+  painter.strokeStyle = `rgba(${hatch.colour.join(', ')}, ${hatch.strength})`;
+  painter.lineWidth = 1.2;
+  painter.beginPath();
+  const gap = hatch.spacingPx;
+  if (holder === 'grey-tithe')
+    for (let down = gap / 2; down < height; down += gap) {
+      painter.moveTo(x, y + down);
+      painter.lineTo(x + width, y + down);
+    }
+  else
+    for (let across = 0; across < width + height; across += gap) {
+      painter.moveTo(x + across, y);
+      painter.lineTo(x + across - height, y + height);
+    }
+  painter.stroke();
+  painter.restore();
+}
 
 /** The key's panel at `place`, `scale` times its units: framed by a double rule, the holders' title over their
  *  swatches and words in two columns, then the levels' title and the ramp, "1" to "30". */
@@ -156,9 +192,8 @@ export function paintKey(painter: KeyPainter, place: KeyPlace, scale: number): v
   painter.strokeRect(2.5, 2.5, width - 5, height - 5);
   painter.textAlign = 'left';
   const measure = (text: string) => painter.measureText(text).width;
-  const item = (words: string, holder: keyof typeof HOLDER_COLOURS, x: number, y: number) => {
-    painter.fillStyle = HOLDER_COLOURS[holder];
-    painter.fillRect(x, y - KEY.swatch[1] / 2, KEY.swatch[0], KEY.swatch[1]);
+  const item = (words: string, holder: WaterHolder, x: number, y: number) => {
+    paintSwatch(painter, holder, x, y - KEY.swatch[1] / 2);
     painter.fillStyle = INK;
     painter.fillText(words, x + KEY.swatch[0] + KEY.gap, y);
   };

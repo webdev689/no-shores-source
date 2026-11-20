@@ -29,17 +29,36 @@ export interface MapWaters {
 }
 
 /** Each holder's colour on the map, and the word its key names it by. Washed over the parchment at `WASH_STRENGTH`,
- *  each pair differs by at least 10 in CIEDE2000, and none darkens the parchment by more than 6 in lightness. */
+ *  none darkens it by more than 6 in lightness; two washes that are not told apart by at least 10 in CIEDE2000 are by
+ *  their hatching (`HATCHES`). The Grey Tithe is the slate its ships are. */
 export const HOLDER_COLOURS: Readonly<Record<WaterHolder, string>> = {
   home: '#3f7f6f',
-  'grey-tithe': '#8596cc',
+  'grey-tithe': '#6b7785',
   pirates: '#d95c5c',
   contested: '#b8862f',
 };
-/** How strongly the holders' colours are washed over the charted sea, and the contested waters' hatching laid over
- *  theirs: its lines' colour, a dark amber, their strength and their spacing, device pixels. */
+/** How strongly the holders' colours are washed over the charted sea; and the hatching laid over two holders' wash:
+ *  the contested's diagonal lines in a dark amber, the Grey Tithe's level lines in a dark slate, each line's colour,
+ *  strength and spacing, device pixels. */
 export const WASH_STRENGTH = 0.26;
-export const HATCH = { colour: [107, 74, 18], strength: 0.3, spacingPx: 7 } as const;
+export const HATCHES = {
+  contested: { colour: [107, 74, 18], strength: 0.3, spacingPx: 7 },
+  'grey-tithe': { colour: [74, 85, 99], strength: 0.3, spacingPx: 7 },
+} as const;
+/** The map's parchment where its ink is laid, the forge's sheet's middle colour, under the charted sea's faint ink. */
+export const MAP_PARCHMENT: readonly [number, number, number] = [208, 171, 118];
+const CHARTED_INK = { colour: [58, 40, 22], strength: 0.08 } as const;
+
+/** A holder's wash as the map shows it on the charted sea: her colour at `WASH_STRENGTH` over the parchment and the
+ *  charted sea's faint ink, `#rrggbb`. */
+export function washedOver(holder: WaterHolder): string {
+  const own = rgbOf(HOLDER_COLOURS[holder]);
+  return `#${MAP_PARCHMENT.map((channel, index) => {
+    const charted = channel * (1 - CHARTED_INK.strength) + CHARTED_INK.colour[index]! * CHARTED_INK.strength;
+    const washed = charted * (1 - WASH_STRENGTH) + own[index]! * WASH_STRENGTH;
+    return Math.round(washed).toString(16).padStart(2, '0');
+  }).join('')}`;
+}
 export const HOLDER_WORDS: readonly (readonly [WaterHolder, string])[] = [
   ['home', 'Home'],
   ['grey-tithe', 'Grey Tithe'],
@@ -77,18 +96,20 @@ export function difficultyColour(levels: readonly [number, number] | null): stri
 }
 
 /** The wash a cell at a time: `colour` RGBA, its colour the holders' of the sea round it blended over the cells either
- *  side, its alpha the share of them that is charted sea, the colour multiplied by it; `hatch` the share of them that
- *  is contested. */
+ *  side, its alpha the share of them that is charted sea, the colour multiplied by it; `hatch` two bytes a cell, the
+ *  share of them that is contested and the share that is the Grey Tithe's. */
 export interface WatersWash {
   readonly colour: Uint8Array;
   readonly hatch: Uint8Array;
 }
 
-const rgbOf = (hex: string): readonly [number, number, number] => [
-  Number.parseInt(hex.slice(1, 3), 16),
-  Number.parseInt(hex.slice(3, 5), 16),
-  Number.parseInt(hex.slice(5, 7), 16),
-];
+function rgbOf(hex: string): readonly [number, number, number] {
+  return [
+    Number.parseInt(hex.slice(1, 3), 16),
+    Number.parseInt(hex.slice(3, 5), 16),
+    Number.parseInt(hex.slice(5, 7), 16),
+  ];
+}
 
 /** A cell's holder: contested on the seam, else its water's; null on land. */
 export function holderOf(waters: MapWaters, index: number): WaterHolder | null {
@@ -107,10 +128,10 @@ export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
     Object.entries(HOLDER_COLOURS).map(([holder, hex]) => [holder, rgbOf(hex)]),
   ) as Record<WaterHolder, readonly [number, number, number]>;
   const colour = new Uint8Array(cells.length * 4);
-  const hatch = new Uint8Array(cells.length);
+  const hatch = new Uint8Array(cells.length * 2);
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
-      let [red, green, blue, sea, contested] = [0, 0, 0, 0, 0];
+      let [red, green, blue, sea, contested, tithe] = [0, 0, 0, 0, 0, 0];
       for (let down = -1; down <= 1; down++)
         for (let across = -1; across <= 1; across++) {
           const [x, y] = [column + across, row + down];
@@ -121,6 +142,7 @@ export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
           const [cellRed, cellGreen, cellBlue] = colours[holder];
           [red, green, blue, sea] = [red + cellRed, green + cellGreen, blue + cellBlue, sea + 1];
           if (holder === 'contested') contested++;
+          if (holder === 'grey-tithe') tithe++;
         }
       const index = row * columns + column;
       if (sea === 0) continue;
@@ -130,7 +152,7 @@ export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
         [(red / sea) * share, (green / sea) * share, (blue / sea) * share, share * 255].map(Math.round),
         index * 4,
       );
-      hatch[index] = Math.round((contested / sea) * 255);
+      hatch.set([Math.round((contested / sea) * 255), Math.round((tithe / sea) * 255)], index * 2);
     }
   return { colour, hatch };
 }

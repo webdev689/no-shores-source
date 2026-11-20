@@ -6,7 +6,7 @@ import { FirstPersonView } from '../firstperson/firstPersonView.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { CoastField } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
-import { HATCH, WASH_STRENGTH, type WatersWash } from './watersWash.ts';
+import { HATCHES, WASH_STRENGTH, type WatersWash } from './watersWash.ts';
 
 /** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
 export const ROUTE_POINTS = 128;
@@ -33,7 +33,7 @@ struct Ink {
 // Each of the route's points: where it lies, metres, and how far along the route.
 @group(0) @binding(5) var<storage, read> route: array<vec4f>;
 // The waters' wash over the charted sea, its holders' colours blended and its alpha how much is charted sea; and how
-// much of it is contested, which is hatched (watersWash.ts).
+// much of it is contested and how much the Grey Tithe's, each hatched (watersWash.ts).
 @group(0) @binding(6) var wash: texture_2d<f32>;
 @group(0) @binding(7) var hatch: texture_2d<f32>;
 // The parchment's words, marks and key, painted at its own pixels, premultiplied (mapLetters.ts).
@@ -43,11 +43,16 @@ struct Ink {
 const INK_RGB = vec3f(58.0, 40.0, 22.0) / 255.0;
 const ROUTE_RGB = vec3f(120.0, 28.0, 20.0) / 255.0;
 const NO_ISLAND = 255u;
-// How strong the waters' wash and their hatching are, the hatching's colour and its lines' spacing, screen pixels.
+// How strong the waters' wash is; the contested's diagonal hatching and the Grey Tithe's level hatching, each its
+// strength, colour and lines' spacing, device pixels (watersWash.ts).
 const WASH_ALPHA = ${WASH_STRENGTH.toFixed(3)};
-const HATCH_ALPHA = ${HATCH.strength.toFixed(3)};
-const HATCH_RGB = vec3f(${HATCH.colour.map((channel) => channel.toFixed(1)).join(', ')}) / 255.0;
-const HATCH_PX = ${HATCH.spacingPx.toFixed(1)};
+${Object.entries({ CONTESTED: HATCHES.contested, TITHE: HATCHES['grey-tithe'] })
+  .map(
+    ([name, hatch]) => `const ${name}_ALPHA = ${hatch.strength.toFixed(3)};
+const ${name}_RGB = vec3f(${hatch.colour.map((channel) => channel.toFixed(1)).join(', ')}) / 255.0;
+const ${name}_PX = ${hatch.spacingPx.toFixed(1)};`,
+  )
+  .join('\n')}
 
 @vertex fn ink_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   let corners = array(vec2f(0, 0), vec2f(1, 0), vec2f(0, 1), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
@@ -119,12 +124,16 @@ fn route_at(world: vec2f) -> f32 {
   // The waters under the ink: their wash, and over the contested fine diagonal lines in a dark amber.
   let sea = select(0.0, 1.0, metres > 0.0 && inside);
   let tint = textureSampleLevel(wash, soft, world / size, 0.0);
-  let contested = textureSampleLevel(hatch, soft, world / size, 0.0).r;
-  let stripe = 1.0 - smoothstep(0.5, 1.1, abs(fract((at.x + at.y) / HATCH_PX) - 0.5) * HATCH_PX);
-  let hatched = HATCH_ALPHA * contested * tint.a * sea * stripe;
+  let shares = textureSampleLevel(hatch, soft, world / size, 0.0).rg;
+  let line = (1.0 - smoothstep(0.5, 1.1, abs(fract((at.x + at.y) / CONTESTED_PX) - 0.5) * CONTESTED_PX));
+  let level = (1.0 - smoothstep(0.5, 1.1, abs(fract(at.y / TITHE_PX) - 0.5) * TITHE_PX));
+  let diagonal = CONTESTED_ALPHA * shares.r * tint.a * sea * line;
+  let flat = TITHE_ALPHA * shares.g * tint.a * sea * level;
+  let hatched = diagonal + flat * (1.0 - diagonal);
+  let hatchedRgb = CONTESTED_RGB * diagonal + TITHE_RGB * flat * (1.0 - diagonal);
   let tinted = WASH_ALPHA * tint.a * sea;
   let under = hatched + tinted * (1.0 - hatched);
-  let underRgb = HATCH_RGB * hatched + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
+  let underRgb = hatchedRgb + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
   let course = select(0.0, route_at(world), onMap);
   let over = max(alpha, 0.9 * course);
   let colour = mix(INK_RGB, ROUTE_RGB, step(alpha, course));
@@ -233,7 +242,7 @@ export class HeldMapView {
     this.charted = texture('r8unorm');
     this.chartedBytes = new Uint8Array(columns * rows);
     this.wash = texture('rgba8unorm');
-    this.hatch = texture('r8unorm');
+    this.hatch = texture('rg8unorm');
     this.inkGroup = device.createBindGroup({
       layout: inkLayout,
       entries: [
@@ -288,10 +297,10 @@ export class HeldMapView {
   /** Lays the waters' wash on the map, on the coast field's own cells (`washOf`). */
   setWash(wash: WatersWash): void {
     const { columns, rows } = this.field;
-    if (wash.hatch.length !== columns * rows) throw new Error('the waters’ wash is not on the coast field’s cells');
+    if (wash.hatch.length !== columns * rows * 2) throw new Error('the waters’ wash is not on the coast field’s cells');
     const queue = this.gpu.device.queue;
     queue.writeTexture({ texture: this.wash }, wash.colour, { bytesPerRow: columns * 4 }, [columns, rows]);
-    queue.writeTexture({ texture: this.hatch }, wash.hatch, { bytesPerRow: columns }, [columns, rows]);
+    queue.writeTexture({ texture: this.hatch }, wash.hatch, { bytesPerRow: columns * 2 }, [columns, rows]);
   }
 
   /** The parchment's picture copied to the device, its texture made again only when its size changes. */

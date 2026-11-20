@@ -39,6 +39,8 @@ export type Painter = Pick<
   | 'restore'
   | 'translate'
   | 'scale'
+  | 'rect'
+  | 'clip'
 > & {
   font: string;
   fillStyle: string | CanvasGradient | CanvasPattern;

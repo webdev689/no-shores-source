@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { CoastField } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
-import { keyPlace, keySize, landUnder } from './mapKey.ts';
+import { keyPlace, keySize, landUnder, paintKey } from './mapKey.ts';
+import { HOLDER_COLOURS, MAP_PARCHMENT, WASH_STRENGTH, type WaterHolder } from './watersWash.ts';
 
 const INK = { width: 400, height: 300 } as const;
 const SIZE = { width: 100, height: 80 } as const;
@@ -49,4 +50,36 @@ test('land under a box is a discovered island’s, asked across the whole box', 
   assert.equal(landUnder(field, 1, view, { x: 0, y: 0, width: 90, height: 90 }), false);
   assert.equal(landUnder(field, 1, view, { x: 0, y: 0, width: 110, height: 110 }), true, 'its corner reaches the land');
   assert.equal(landUnder(field, 0, view, { x: 0, y: 0, width: 200, height: 200 }), false, 'an undiscovered island');
+});
+
+test('each holder’s swatch is painted as the map shows her: her wash over its parchment, the contested and Tithe hatched', () => {
+  const calls: { name: string; args: unknown[]; fillStyle: unknown }[] = [];
+  const state = { font: '', fillStyle: '' as unknown, strokeStyle: '' as unknown, lineWidth: 1, textAlign: 'left' };
+  const painter = new Proxy(state, {
+    get(target, key) {
+      if (key in target) return target[key as keyof typeof target];
+      if (key === 'measureText') return (text: string) => ({ width: text.length * 7 });
+      return (...args: unknown[]) => calls.push({ name: String(key), args, fillStyle: state.fillStyle });
+    },
+    set(target, key, value) {
+      (target as Record<string, unknown>)[key as string] = value;
+      return true;
+    },
+  }) as unknown as Parameters<typeof paintKey>[0];
+  paintKey(painter, { corner: 'lower-left', box: { x: 0, y: 0, width: 190, height: 84 } }, 1);
+  // The map's blend, worked out here as its shader lays it: the parchment, the charted sea's faint ink at 0.08, then
+  // the holder's colour at the wash's strength.
+  const blend = (holder: WaterHolder) => {
+    const own = [1, 3, 5].map((offset) => Number.parseInt(HOLDER_COLOURS[holder].slice(offset, offset + 2), 16));
+    const channels = MAP_PARCHMENT.map((channel, index) => {
+      const charted = channel * 0.92 + [58, 40, 22][index]! * 0.08;
+      return Math.round(charted * (1 - WASH_STRENGTH) + own[index]! * WASH_STRENGTH);
+    });
+    return `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+  };
+  const swatches = calls
+    .filter((call) => call.name === 'fillRect' && call.args[2] === 14)
+    .map((call) => call.fillStyle);
+  assert.deepEqual(swatches, (['home', 'grey-tithe', 'pirates', 'contested'] as const).map(blend));
+  assert.equal(calls.filter((call) => call.name === 'clip').length, 2, 'the Tithe’s and the contested’s hatching');
 });
