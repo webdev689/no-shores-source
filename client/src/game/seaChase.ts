@@ -87,6 +87,8 @@ export class Chase {
     this.since += seconds;
     if (this.since < CHASE_EVERY_S) return null;
     this.since = 0;
+    // Told again with each plan, so a room joined again after its link was lost learns it too.
+    this.tell(id);
     return meetingPoint(ship, pirate);
   }
 

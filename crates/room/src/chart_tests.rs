@@ -97,11 +97,11 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
     let player =
         Voyager { player: 1, at: [edge[0] - 2_000.0, edge[1]], heading: 0.0, pace: 0, fighting: false, clock: 1.0 };
     let elite = naval::ranks::Commission { faction: naval::ranks::PIRATES, rank: naval::ranks::Rank::Elite };
-    let start = [edge[0] + 1_500.0, edge[1]];
+    let start = [edge[0] + 1_100.0, edge[1]];
     let mut pirates = Pirates::new(1);
     pirates.sailing.push(Pirate::standing(1, 1, elite, start, 1.5 * std::f64::consts::PI, true));
     let (mut headings, mut sailed, mut last) = (Vec::new(), 0.0, start);
-    for _ in 0..120 {
+    for _ in 0..600 {
         pirates.tick(1.0, &[player], &chart);
         let Some(ship) = pirates.sailing.iter().find(|ship| ship.id == 1) else { break };
         assert_ne!(holder([ship.x, ship.y]), Some(Holder::Home), "never into home waters");
@@ -116,5 +116,5 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
         turned.abs() > std::f64::consts::FRAC_PI_2
     });
     assert_eq!(flips.count(), 0, "no swinging back and forth: {headings:?}");
-    assert!(sailed > 0.8 * crate::sighting::way_of(elite.rank) * 120.0, "she kept sailing along the edge: {sailed} m");
+    assert!(sailed > 0.8 * crate::sighting::way_of(elite.rank) * 600.0, "she kept sailing along the edge: {sailed} m");
 }

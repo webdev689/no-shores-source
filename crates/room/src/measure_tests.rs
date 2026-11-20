@@ -110,12 +110,17 @@ fn measure(way: Way) {
     let mut in_sight: BTreeMap<u32, (usize, &str)> = BTreeMap::new();
     let mut chasing = std::collections::BTreeSet::new();
     let mut come_for = std::collections::BTreeSet::new();
+    // Each player's stretch held under x60 now, and her longest, in ticks.
+    let mut held: BTreeMap<PlayerId, (usize, usize)> = BTreeMap::new();
     for tick in 0..MINUTES * 60 * TICKS_A_SECOND {
         sea.tick();
         let ships: Vec<_> = sea.ships().collect();
         for (player, kind, course) in &players {
             let Some(&(_, ship)) = ships.iter().find(|(each, _)| each == player) else { continue };
             let at = [ship.x, ship.y];
+            let stretch = held.entry(*player).or_default();
+            stretch.0 = if ship.pace == 60 && ship.rate < 60 { stretch.0 + 1 } else { 0 };
+            stretch.1 = stretch.1.max(stretch.0);
             let quarry = sea.pirates().into_iter().filter(|pirate| pirate.sees(at)).min_by(|one, other| {
                 let off = |pirate: &crate::pirates::Pirate| (pirate.x - at[0]).abs() + (pirate.y - at[1]).abs();
                 off(one).total_cmp(&off(other))
@@ -179,10 +184,14 @@ fn measure(way: Way) {
         let stays: Vec<f64> = in_sight.values().filter(|each| each.1 == kind).map(|each| seconds(each.0)).collect();
         let long = stays.iter().filter(|&&stay| stay >= 30.0).count() as f64 / stays.len().max(1) as f64;
         let mean = stays.iter().sum::<f64>() / stays.len().max(1) as f64;
+        let mut longest: Vec<f64> =
+            of_kind.iter().map(|player| seconds(held.get(player).map_or(0, |each| each.1))).collect();
+        longest.sort_by(f64::total_cmp);
+        let (held_median, held_most) = (longest[longest.len() / 2], longest.last().copied().unwrap_or(0.0));
         eprintln!(
             "{kind}: {} players; first sighting for {}/{} (median {median:?} s); {} ships sighted, in sight {mean:.0} s on \
              average, {:.0}% 30 s and over; a fight by 5 min {:.0}%, by 10 min {:.0}%; come for {}, of them {} never \
-             fought",
+             fought; held under x60 at most {held_most:.0} s (median of each voyage's longest {held_median:.0} s)",
             of_kind.len(),
             firsts.len(),
             of_kind.len(),

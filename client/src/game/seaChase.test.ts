@@ -50,3 +50,13 @@ test('the room is told whom the ship chases, and told none when another course i
   chase.step(CHASE_EVERY_S, [{ ...pirate, y: -500 }], [0, 0]);
   assert.deepEqual(told, [4, null, 4, null, 4], 'met: the room meets her, untold');
 });
+
+test('each plan tells the room whom she chases again, so a room joined again learns it', () => {
+  const told: (number | null)[] = [];
+  const chase = new Chase((ship) => told.push(ship));
+  const pirate: SeenPirate = { id: 6, x: 0, y: -8_000, heading: 0, faction: 1, rank: 2, sight: 25_920, way: 2.4 };
+  chase.begin('hostile-6', [pirate], [0, 0]);
+  chase.step(CHASE_EVERY_S, [pirate], [0, 0]);
+  chase.step(CHASE_EVERY_S, [pirate], [0, 0]);
+  assert.deepEqual(told, [6, 6, 6]);
+});
