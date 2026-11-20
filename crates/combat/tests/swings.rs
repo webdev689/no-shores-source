@@ -119,7 +119,7 @@ fn a_blow_strikes_every_foe_its_arc_and_reach_hold_the_locks_target_first_then_t
     assert!(
         struck(1, &striker, &attack(Stroke::Down), &fighters, &[]).iter().all(|id| *id != 5 && *id != 6 && *id != 7)
     );
-    let wall = [Block { min_x: -2.0, min_y: -1.2, max_x: 2.0, max_y: -1.0, top: 3.0 }];
+    let wall = [Block { min_x: -2.0, min_y: -1.2, max_x: 2.0, max_y: -1.0, top: 3.0, bottom: 0.0 }];
     assert!(struck(1, &striker, &attack(Stroke::Left), &fighters, &wall).is_empty(), "nothing through a wall");
     let mut locked = striker;
     locked.target = Some(3);

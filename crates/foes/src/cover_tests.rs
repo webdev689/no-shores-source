@@ -9,7 +9,7 @@ const SPOT: [f64; 3] = [0.0, 0.0, 0.0];
 
 /// A block between the spot and the target, `width` wide across the line and `top` high, a metre before the spot.
 fn before_the_spot(width: f64, top: f64) -> Block {
-    Block { min_x: -width / 2.0, min_y: 1.0, max_x: width / 2.0, max_y: 1.4, top }
+    Block { min_x: -width / 2.0, min_y: 1.0, max_x: width / 2.0, max_y: 1.4, top, bottom: 0.0 }
 }
 
 /// How far a spot's stances stand apart, if it has them.
@@ -34,4 +34,12 @@ fn cover_lower_than_the_eye_hides_no_one() {
     let low = [before_the_spot(1.0, 1.35)];
     assert!(!clear_line(&low, chest(SPOT), TARGET), "it hides the chest");
     assert_eq!(stances(&low, SPOT, TARGET), None, "but not the eye, so no post");
+}
+
+#[test]
+fn a_step_aside_under_a_floor_overhead_is_free_and_one_into_a_wall_is_not() {
+    let slab = Block { min_x: -3.0, min_y: -3.0, max_x: 3.0, max_y: 3.0, top: 3.2, bottom: 2.8 };
+    assert!(free(&[slab], SPOT, [1.0, 0.0, 0.0]), "a body walks under the slab");
+    let wall = Block { bottom: 0.0, ..slab };
+    assert!(!free(&[wall], SPOT, [1.0, 0.0, 0.0]), "but not into a block from the ground up");
 }

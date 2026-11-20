@@ -1,6 +1,17 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { AIM, CAMERA, FIRST_PERSON, aimEased, cameraOrbit, eased, rayHit, scrolled, toggled } from './playerCamera.ts';
+import {
+  AIM,
+  askedView,
+  CAMERA,
+  FIRST_PERSON,
+  aimEased,
+  cameraOrbit,
+  eased,
+  rayHit,
+  scrolled,
+  toggled,
+} from './playerCamera.ts';
 
 test('the wheel pulls back into third person, steps a notch at a time, and comes back into first person', () => {
   let view = scrolled(FIRST_PERSON, 1);
@@ -31,7 +42,7 @@ test('third person sits behind the head and up; a wall between pulls it in', () 
   assert.ok(
     Math.abs((eye[0] ?? 0) - 0) < 1e-9 && Math.abs((eye[1] ?? 0) - 2) < 1e-9 && Math.abs((eye[2] ?? 0) - 2.2) < 1e-9,
   );
-  const wall = { minX: -5, maxX: 5, minY: 1, maxY: 1.5, top: 5 };
+  const wall = { minX: -5, maxX: 5, minY: 1, maxY: 1.5, top: 5, bottom: 0 };
   assert.ok(Math.abs(rayHit([0, 0, 1.7], [0, 2, 2.2], [wall]) - 0.5) < 1e-9);
   const pulled = cameraOrbit([0, 0, 1.7], 0, 0, view, [wall]);
   assert.ok(pulled.targetY + 1 < 1, `${pulled.targetY + 1} is short of the wall`);
@@ -55,4 +66,13 @@ test('aiming in third person stands the camera over the right shoulder and zooms
     [-0.4, 3, 0.6, 2],
     'a place of its own: left of the head, farther back, higher, zoomed more',
   );
+});
+
+test('an address asks for first person, or third at a distance', () => {
+  assert.equal(askedView('?at=saltgrass-downs&view=first'), FIRST_PERSON);
+  assert.deepEqual(askedView('?view=third'), { firstPerson: false, distance: CAMERA.back, shown: CAMERA.back });
+  assert.equal(askedView('?view=third,6')?.distance, 6);
+  assert.equal(askedView('?view=third,99')?.distance, CAMERA.farthest);
+  assert.equal(askedView('?at=saltgrass-downs'), null);
+  assert.equal(askedView('?view=sideways'), null);
 });

@@ -18,6 +18,7 @@ fn course() -> Vec<Block> {
         max_x: number(value, "maxX"),
         max_y: number(value, "maxY"),
         top: number(value, "top"),
+        bottom: number(value, "bottom"),
     };
     blocks.iter().map(block).collect()
 }
@@ -148,7 +149,7 @@ fn stepping_down_off_a_stair_beside_a_taller_ones_corner_the_body_is_held_clear_
 
 #[test]
 fn edging_slowly_off_a_ledge_almost_along_it_the_body_is_pushed_clear_as_it_falls_and_walks_away() {
-    let platform = Block { min_x: 15.0, min_y: -8.0, max_x: 21.0, max_y: -3.0, top: 1.6 };
+    let platform = Block { min_x: 15.0, min_y: -8.0, max_x: 21.0, max_y: -3.0, top: 1.6, bottom: 0.0 };
     let start = Body { z: 1.6, ..standing(20.95, -6.0) };
     // Sideways, a little east of north, too slowly to be clear of the ledge before the feet sink past its top.
     let creeping = Controls { sideways: 0.3, yaw: 0.15 - PI / 2.0, ..Controls::default() };
@@ -161,7 +162,7 @@ fn edging_slowly_off_a_ledge_almost_along_it_the_body_is_pushed_clear_as_it_fall
 
 #[test]
 fn a_vault_met_slantwise_lands_past_the_wall_not_in_it() {
-    let thin = Block { min_x: -2.0, min_y: -1.3, max_x: 2.0, max_y: -1.0, top: 1.0 };
+    let thin = Block { min_x: -2.0, min_y: -1.3, max_x: 2.0, max_y: -1.0, top: 1.0, bottom: 0.0 };
     let forward = Controls { forward: 1.0, yaw: 0.7, ..Controls::default() };
     let near = ticks(standing(-0.5, 0.0), forward, &[thin], 30)[30];
     let over = ticks(near, Controls { jump: true, ..forward }, &[thin], 40);
@@ -172,7 +173,7 @@ fn a_vault_met_slantwise_lands_past_the_wall_not_in_it() {
 
 #[test]
 fn a_body_set_down_overlapping_a_block_is_pushed_out_the_shortest_way_and_walks_on() {
-    let stair = Block { min_x: 16.0, min_y: -2.0, max_x: 18.0, max_y: -1.0, top: 0.8 };
+    let stair = Block { min_x: 16.0, min_y: -2.0, max_x: 18.0, max_y: -1.0, top: 0.8, bottom: 0.0 };
     let set_down = standing(18.04, -0.87);
     assert!(inside(&[stair], &set_down).is_some());
     let pushed = ticks(set_down, Controls::default(), &[stair], 1)[1];
@@ -198,9 +199,9 @@ fn blocks_that_tile_a_deck_hold_every_point_of_it_their_seams_and_outer_edges_to
     // on a seam exactly; and a step between two heights, where the higher holds the seam.
     let (east, south) = (23817.0, -4120.0);
     let deck = [
-        Block { min_x: east, min_y: south, max_x: east + 0.5, max_y: south + 0.5, top: 2.2 },
-        Block { min_x: east + 0.5, min_y: south, max_x: east + 1.0, max_y: south + 0.5, top: 2.2 },
-        Block { min_x: east + 1.0, min_y: south, max_x: east + 1.5, max_y: south + 0.5, top: 2.4 },
+        Block { min_x: east, min_y: south, max_x: east + 0.5, max_y: south + 0.5, top: 2.2, bottom: 0.0 },
+        Block { min_x: east + 0.5, min_y: south, max_x: east + 1.0, max_y: south + 0.5, top: 2.2, bottom: 0.0 },
+        Block { min_x: east + 1.0, min_y: south, max_x: east + 1.5, max_y: south + 0.5, top: 2.4, bottom: 0.0 },
     ];
     for x in [east, east + 0.5, east + 0.25, east + 1.0, east + 1.5] {
         for y in [south, south + 0.25, south + 0.5] {

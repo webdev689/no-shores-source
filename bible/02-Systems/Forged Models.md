@@ -22,7 +22,8 @@ code:
 The town buildings, props and room kit that Overlook's towns are built from, each made in code from a measured
 table under its classic model id. They are DFO's Building Forge, Prop Forge and Room Kit, brought over whole with the
 Daggerfall measures and texture archives their plans are built on ([[Every Island Is Seen Whole and Reached by Nodes]],
-an exception to [[Own Work]]). Each builds DFO's shape to the bit.
+an exception to [[Own Work]]). Each builds DFO's shape to the bit, but one: the well house (props 43202 and
+43204), whose posts run up to carry its ridge where DFO's stop at the eaves ([[The Well House's Roof Is Fixed]]).
 
 ## The tables
 
@@ -79,7 +80,9 @@ A piece's faces are cut clear of each door's passage: the space up to 4 m before
 over its sill. A face 2 m or more out that looks back at the door, and a floor near the sill, are kept. The door's
 picture is laid once over its face, and a frame of jambs, a lintel and a sill runs back into the piece and forward
 through the cut, left out where it would leave the box. The room kit's doors stand in its faces already: they are
-framed only.
+framed only. A building walked into has no door pictures: its doorways are cut through the wall they stand in, from
+half a metre before each door's face to half a metre past it (a measured door can be set back in its wall, and its
+normal points in or out), so a doorway is open from outside as well as from inside.
 
 ## Limits
 

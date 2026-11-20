@@ -131,10 +131,10 @@ test('the boss bar and the target’s plate stand in the compass’s column, and
 });
 
 test('a plate’s line is blocked by a block between the eye and the head, never by one beside it or at the head', () => {
-  const wall = { minX: -2, minY: 4.8, maxX: 2, maxY: 5.2, top: 4 };
+  const wall = { minX: -2, minY: 4.8, maxX: 2, maxY: 5.2, top: 4, bottom: 0 };
   assert.equal(blockedBy([wall], [0, 0, 1.7], [0, 10, 1.8]), true);
   assert.equal(blockedBy([wall], [0, 0, 1.7], [6, 10, 1.8]), false, 'a foe beside the wall keeps its plate');
-  const lintel = { minX: -2, minY: 9.85, maxX: 2, maxY: 10.5, top: 4 };
+  const lintel = { minX: -2, minY: 9.85, maxX: 2, maxY: 10.5, top: 4, bottom: 0 };
   assert.equal(blockedBy([lintel], [0, 0, 1.7], [0, 10, 1.8]), false, 'a block at the head blinds nothing');
   assert.equal(blockedBy([], [0, 0, 1.7], [0, 10, 1.8]), false);
 });

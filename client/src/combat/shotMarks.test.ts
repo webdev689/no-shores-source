@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ShotMarks, overSea, surfaceAt } from './shotMarks.ts';
 
-const block = { minX: 4, maxX: 6, minY: -1, maxY: 1, top: 2 };
+const block = { minX: 4, maxX: 6, minY: -1, maxY: 1, top: 2, bottom: 0 };
 
 test('what a shot stopped at struck: a body, a block, the ground, the sea, or nothing', () => {
   const feet = [10, 0, 0] as const;
@@ -19,6 +19,9 @@ test('what a shot stopped at struck: a body, a block, the ground, the sea, or no
     { surface: 'water' },
   );
   assert.equal(surfaceAt([0, 0, 1.5], [block], [feet]), null);
+  const deck = { ...block, top: 3, bottom: 2.5 };
+  assert.equal(surfaceAt([5, 0, 1], [deck], []), null, 'under a deck is not in it');
+  assert.deepEqual(surfaceAt([5, 0, 2.5], [deck], []), { surface: 'stone' }, "the deck's underside");
 });
 
 test('a line under the sea ends at its surface; over land, or staying above it, it is left as it is', () => {

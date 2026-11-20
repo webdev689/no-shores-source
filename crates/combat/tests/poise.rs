@@ -84,7 +84,7 @@ fn at_no_health_a_fighter_dies_and_lies_where_it_fell() {
 #[test]
 fn a_fighter_killed_on_a_wall_lets_go_of_it_and_falls() {
     // Climbing the south face of a wall 3.5 m tall, a metre and a half up it.
-    let wall = [movement::Block { min_x: -3.0, min_y: -14.0, max_x: 3.0, max_y: -9.0, top: 3.5 }];
+    let wall = [movement::Block { min_x: -3.0, min_y: -14.0, max_x: 3.0, max_y: -9.0, top: 3.5, bottom: 0.0 }];
     for mode in [movement::Mode::Climb, movement::Mode::Hang] {
         let mut climbing = player_at(0.0, -9.0 + movement::TUNING.radius + 0.01);
         climbing.body = movement::Body { mode, z: 1.5, lip: 3.5, ..climbing.body };

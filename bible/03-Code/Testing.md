@@ -30,6 +30,16 @@ fast enough to run before every push.
 - Made-up inputs a reader can follow, built in the test.
 - One behaviour per test; the assertion says what was expected.
 - Checks results through public functions, not private state.
+- Covers every place the behaviour runs: when a feature is switched on in more places, its tests widen to all of them
+  in the same change.
+
+## Measuring
+
+- A test bounded by wall-clock time measures the machine too. Run `cargo xtask check` on an idle machine, with no
+  picture driver, profiler or bake beside it, and rerun a timing failure idle before reading it as a regression.
+- To compare an older commit's speed with the current one, build it in a worktree. Two trees sharing a target folder
+  write their binaries to one path, so copy each out under its own name right after its build, and check with `cmp`
+  that they differ. An instruction count from callgrind does not move with the machine's load.
 
 ## What we do not do
 

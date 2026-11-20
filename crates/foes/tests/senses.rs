@@ -46,7 +46,7 @@ fn a_foe_sees_a_player_across_open_ground_within_its_range_and_fights_once_alert
 #[test]
 fn a_foe_does_not_see_through_a_block() {
     let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -10.0, PI);
-    room.blocks.push(Block { min_x: -3.0, min_y: -5.5, max_x: 3.0, max_y: -4.5, top: 3.0 });
+    room.blocks.push(Block { min_x: -3.0, min_y: -5.5, max_x: 3.0, max_y: -4.5, top: 3.0, bottom: 0.0 });
     room.run(60, &mut still(0.0));
     assert_eq!((room.brain(10).target(), room.brain(10).alertness()), (None, Idle));
     assert!(room.fighter(10).body.y < -9.9, "and stays where it stands");
@@ -149,7 +149,7 @@ fn a_gunshot_carries_farther_than_a_bow() {
 #[test]
 fn lost_from_sight_a_foe_hunts_then_searches_the_last_place_it_saw_and_lets_go() {
     let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -10.0, PI);
-    room.blocks.push(Block { min_x: 10.0, min_y: -15.0, max_x: 12.0, max_y: 5.0, top: 4.0 });
+    room.blocks.push(Block { min_x: 10.0, min_y: -15.0, max_x: 12.0, max_y: 5.0, top: 4.0, bottom: 0.0 });
     room.run(60, &mut still(0.0));
     assert_eq!(room.brain(10).target(), Some(PLAYER));
     room.set(PLAYER, |player| player.body.x = 20.0);
@@ -191,7 +191,7 @@ fn a_blow_alerts_a_foe_at_once_to_its_striker_and_it_shouts() {
 fn stirred_through(distance: f64, walled: bool) -> foes::Alertness {
     let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -distance, 0.0);
     if walled {
-        room.blocks = vec![Block { min_x: -5.0, min_y: -3.5, max_x: 5.0, max_y: -3.0, top: 2.5 }];
+        room.blocks = vec![Block { min_x: -5.0, min_y: -3.5, max_x: 5.0, max_y: -3.0, top: 2.5, bottom: 0.0 }];
     }
     room.hear(shot(&room.fighter(PLAYER), Ranged::Pistolet));
     room.step(&mut still(0.0));

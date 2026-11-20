@@ -49,7 +49,7 @@ fn stirred(seed: u64) -> (Vec<u64>, Vec<(u64, u32)>) {
         .foe(10, SWORDSMAN, Major, 0.0, -6.0, 0.0)
         .foe(11, SKIRMISHER, Major, 4.0, -9.0, 0.0)
         .foe(12, ARCHER, Major, -4.0, 9.0, PI);
-    room.blocks.push(Block { min_x: 14.0, min_y: -20.0, max_x: 15.0, max_y: 20.0, top: 3.0 });
+    room.blocks.push(Block { min_x: 14.0, min_y: -20.0, max_x: 15.0, max_y: 20.0, top: 3.0, bottom: 0.0 });
     let mut running_past = |room: &Room, _: u32| {
         let forward = if room.tick < 240 { 1.0 } else { 0.0 };
         let controls = Controls { forward, yaw: FRAC_PI_2, run: true, ..Controls::default() };

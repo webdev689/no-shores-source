@@ -1,0 +1,2864 @@
+{
+ "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
+ "layer": 1024,
+ "mips": 6,
+ "frames": {
+  "azimuths": 8,
+  "elevations": [
+   0,
+   25,
+   50,
+   75
+  ],
+  "cell": 0.125
+ },
+ "biomes": {
+  "temperate-coast": {
+   "layers": [
+    {
+     "albedo": "flora/af1748e98c2892a3dcb708edc22e81dc74383fd94bf08f83827e212cb6f5cac5.png",
+     "normal": "flora/9e72dbba87bbf766d3891aa70c9196aa419dfe5273e21544270eadddc63a6174.png"
+    },
+    {
+     "albedo": "flora/73d9a7a8e0e6e7b03b6056e257b8fc82c44fb0db05be9b1c34c25681a35ebe38.png",
+     "normal": "flora/841abf7dc0a41edc20a7e29e966ccc57bea0e29d5a8b899de355e04da21f4c39.png"
+    },
+    {
+     "albedo": "flora/76a066eb7bf96d55067b416f9180566482e77c0e33703a00602f5c63b0750c3a.png",
+     "normal": "flora/6a8a0317e3777281fdb533182a3daffade27acff33f43b5deebf1383303c921b.png"
+    },
+    {
+     "albedo": "flora/de9782533e40efe8ef36a90f8509370782b7f11f8a6a511c09456936062fc0da.png",
+     "normal": "flora/aec4a13dd3c1b05c9e5be038312afeecc203df41bee42d2edab82ba4a842b65f.png"
+    },
+    {
+     "albedo": "flora/d77df995f95d9c15b989bb658c952a2c0ad29452b0f1f81ecd8136985cf96c78.png",
+     "normal": "flora/c3f705392ae55bbb534b32640c649be323cdb77f20165b0e4a9329c3b00288af.png"
+    }
+   ],
+   "kinds": {
+    "oak": [
+     {
+      "mesh": "flora/c3741273525ee8d1e8665d2f20d11a8e64d995cb382dd60a68c8d22ca93881af.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 9.778,
+      "spread": 4.074,
+      "shade": [
+       4.403,
+       7.193
+      ],
+      "leafy": true,
+      "crown": 8.744,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        0.198,
+        -0.006,
+        4.941
+       ],
+       "radius": 5.675,
+       "box": [
+        0.0859,
+        0.0,
+        0.9141,
+        0.9922
+       ]
+      },
+      "canopy": [
+       0.1931,
+       0.321,
+       0.1208
+      ]
+     },
+     {
+      "mesh": "flora/e58e307ff711ec83d19aee902249e0593bf21ba3f6f942419b43602fc62f73ba.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 9.912,
+      "spread": 3.939,
+      "shade": [
+       4.221,
+       7.047
+      ],
+      "leafy": true,
+      "crown": 8.551,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        0.165,
+        -0.215,
+        4.901
+       ],
+       "radius": 6.015,
+       "box": [
+        0.0859,
+        0.0,
+        0.9141,
+        0.9609
+       ]
+      },
+      "canopy": [
+       0.1924,
+       0.3196,
+       0.1205
+      ]
+     }
+    ],
+    "pine": [
+     {
+      "mesh": "flora/12e415c1b4cc67f35d2425239abf6f24842ee8dbb34ae0482af9066fe4867bac.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 15.225,
+      "spread": 5.8,
+      "shade": [
+       5.426,
+       13.004
+      ],
+      "leafy": true,
+      "crown": 11.443,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        -0.059,
+        -0.099,
+        7.481
+       ],
+       "radius": 8.934,
+       "box": [
+        0.1641,
+        0.0,
+        0.8359,
+        0.9609
+       ]
+      },
+      "canopy": [
+       0.115,
+       0.2183,
+       0.1389
+      ]
+     },
+     {
+      "mesh": "flora/fc47e6fb6c64b77bba7c87c49f84bc8c00ba54a9a71945f0a3628bc6eddb8219.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 15.217,
+      "spread": 6.116,
+      "shade": [
+       5.546,
+       13.051
+      ],
+      "leafy": true,
+      "crown": 11.746,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        -0.143,
+        0.125,
+        7.384
+       ],
+       "radius": 9.032,
+       "box": [
+        0.1484,
+        0.0,
+        0.8516,
+        0.9531
+       ]
+      },
+      "canopy": [
+       0.1137,
+       0.2172,
+       0.1384
+      ]
+     }
+    ],
+    "boulder": [
+     {
+      "mesh": "flora/26ff8293b6adf328fa402eaa252cdb2cd501b67c2e0d7dc4b8671d7be38de181.mesh",
+      "triangles": 266,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 1.563,
+      "spread": 1.623,
+      "shade": [
+       1.461,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.0,
+       "centre": [
+        -0.042,
+        -0.025,
+        0.683
+       ],
+       "radius": 1.889,
+       "box": [
+        0.0,
+        0.0391,
+        0.9922,
+        1.0
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/d7fb359611fe21e59913e8a501ae81395f649957fbdb675b2146f32624bd1fb3.mesh",
+      "triangles": 266,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 2.219,
+      "spread": 2.844,
+      "shade": [
+       2.56,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.5,
+       "centre": [
+        0.242,
+        -0.077,
+        0.983
+       ],
+       "radius": 2.868,
+       "box": [
+        0.0078,
+        0.0312,
+        0.9922,
+        1.0
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "gorse": [
+     {
+      "mesh": "flora/2cb1bfa0797d78bac94ced09a59bfb4d5474fbd0c16ed9b6aeb6581ec93a8ab9.mesh",
+      "triangles": 238,
+      "layer": 4,
+      "bark": [
+       0.25,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 1.438,
+      "spread": 1.202,
+      "shade": [
+       1.298,
+       0.731
+      ],
+      "leafy": true,
+      "crown": 1.938,
+      "impostor": {
+       "layer": 3,
+       "top": 0.0,
+       "centre": [
+        -0.05,
+        -0.12,
+        0.605
+       ],
+       "radius": 1.363,
+       "box": [
+        0.0078,
+        0.0,
+        1.0,
+        0.9766
+       ]
+      },
+      "canopy": [
+       0.2665,
+       0.3354,
+       0.1186
+      ]
+     }
+    ],
+    "grass": [
+     {
+      "mesh": "flora/39e0ed81e9d2caca927447a402dce2b08a4d574370c179e4810091be5c543101.mesh",
+      "triangles": 12,
+      "layer": 4,
+      "bark": [
+       0.25,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 0.732,
+      "spread": 0.366,
+      "shade": [
+       0.329,
+       0.191
+      ],
+      "leafy": true,
+      "crown": 0.612
+     }
+    ]
+   }
+  },
+  "highland": {
+   "layers": [
+    {
+     "albedo": "flora/4125c7829e458a2f546195e41d65cc4678ffae01d698a0a62d7641cf0dc54e9b.png",
+     "normal": "flora/d94469d1bf9452f2e51482acd682cd7defed3020d3245fd89a68cf30e5d71453.png"
+    },
+    {
+     "albedo": "flora/fca4b901770a5dc591f1cf78c433f8681decd275484a792729c22da3303491f0.png",
+     "normal": "flora/6326efec78f0d9af2cca32988c7511e61e26dcbaf814b89f979e0f1c66b6a757.png"
+    },
+    {
+     "albedo": "flora/25c673f8c4a79f752e86a10b41a173adf008450ade3dbc6f2e0acab26a0dd4ac.png",
+     "normal": "flora/b1836f99b4a9b937078ac1924703e5902e668911c63b4e5f97c20d5cf36211c9.png"
+    },
+    {
+     "albedo": "flora/16aeeb237b90df5af731a8a0d0bd30df3453e695401e649d2743a328f970e725.png",
+     "normal": "flora/2a09e6b75ee59a5c7c7964c4d6d1bbbd0b9c71e9368c24a9d7bf580f69eef28a.png"
+    },
+    {
+     "albedo": "flora/45a26efacf839780e44b7a21f9b5d0aacfaa80701e23511f49b1ffce193b1d08.png",
+     "normal": "flora/47ce160629661c197570ed0bd790fa438851195d6e3797057bb63f889c10b45b.png"
+    }
+   ],
+   "kinds": {
+    "fir": [
+     {
+      "mesh": "flora/a9606978afe8055a428c94389765508656269475be2781dcde80c616645c396b.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 18.0,
+      "spread": 3.789,
+      "shade": [
+       3.783,
+       6.368
+      ],
+      "leafy": true,
+      "crown": 7.07,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        0.061,
+        0.063,
+        8.889
+       ],
+       "radius": 9.603,
+       "box": [
+        0.2656,
+        0.0,
+        0.7266,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.0896,
+       0.1828,
+       0.1399
+      ]
+     },
+     {
+      "mesh": "flora/85b6b19146215919a5f1d35c2c2973266798c60f9b4d79518e4dc9a8e8701c69.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 18.0,
+      "spread": 3.851,
+      "shade": [
+       3.848,
+       6.492
+      ],
+      "leafy": true,
+      "crown": 7.908,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        0.069,
+        -0.162,
+        8.844
+       ],
+       "radius": 9.586,
+       "box": [
+        0.2734,
+        0.0,
+        0.7188,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.0899,
+       0.1829,
+       0.1399
+      ]
+     }
+    ],
+    "birch": [
+     {
+      "mesh": "flora/362632c9c5a805000015f74056ed7eb47c695e81b6db53e0a55c3243c5b7c3be.mesh",
+      "triangles": 598,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 10.903,
+      "spread": 2.799,
+      "shade": [
+       2.711,
+       8.0
+      ],
+      "leafy": true,
+      "crown": 4.967,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        -0.28,
+        -0.297,
+        5.391
+       ],
+       "radius": 6.0,
+       "box": [
+        0.2344,
+        0.0,
+        0.7656,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.4062,
+       0.5177,
+       0.2116
+      ]
+     },
+     {
+      "mesh": "flora/f69d58728fa7469800bca2130aa49ba544443e8f93e2ccbe58756802fe87ed31.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 11.036,
+      "spread": 2.55,
+      "shade": [
+       2.614,
+       7.965
+      ],
+      "leafy": true,
+      "crown": 4.856,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        -0.199,
+        -0.341,
+        5.456
+       ],
+       "radius": 6.01,
+       "box": [
+        0.25,
+        0.0,
+        0.75,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.4068,
+       0.518,
+       0.2128
+      ]
+     }
+    ],
+    "granite": [
+     {
+      "mesh": "flora/56f9d7bbe9683de1a75aa85fd5d7e5e6606f1196b905e8c5d376e2b3ca0d9921.mesh",
+      "triangles": 271,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 1.418,
+      "spread": 1.758,
+      "shade": [
+       1.582,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.0,
+       "centre": [
+        0.033,
+        -0.003,
+        0.615
+       ],
+       "radius": 1.943,
+       "box": [
+        0.0,
+        0.0391,
+        1.0,
+        1.0
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/0d9623db2add9384478366715e78febabc2f6aa2b79c7e9a2edbbf303e477d53.mesh",
+      "triangles": 262,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 1.878,
+      "spread": 2.853,
+      "shade": [
+       2.567,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.5,
+       "centre": [
+        0.037,
+        0.014,
+        0.844
+       ],
+       "radius": 3.173,
+       "box": [
+        0.0234,
+        0.0547,
+        0.9766,
+        1.0
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "heather": [
+     {
+      "mesh": "flora/3aa2cad2a44ceb4ad2d230c97ad5b88592ad0bb88a6f4a576145efc725aaecf0.mesh",
+      "triangles": 240,
+      "layer": 4,
+      "bark": [
+       0.25,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 0.644,
+      "spread": 0.642,
+      "shade": [
+       0.749,
+       0.312
+      ],
+      "leafy": true,
+      "crown": 1.215,
+      "impostor": {
+       "layer": 3,
+       "top": 0.0,
+       "centre": [
+        -0.055,
+        -0.012,
+        0.185
+       ],
+       "radius": 0.828,
+       "box": [
+        0.0156,
+        0.0,
+        0.9844,
+        0.9609
+       ]
+      },
+      "canopy": [
+       0.3019,
+       0.2268,
+       0.2568
+      ]
+     }
+    ],
+    "upland grass": [
+     {
+      "mesh": "flora/4df79fcb54cb3da7c2e516eb86de8ed169e4d0809abd90ecedcc98d484a41e78.mesh",
+      "triangles": 12,
+      "layer": 4,
+      "bark": [
+       0.25,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 0.634,
+      "spread": 0.317,
+      "shade": [
+       0.285,
+       0.168
+      ],
+      "leafy": true,
+      "crown": 0.581
+     }
+    ]
+   }
+  },
+  "woodland": {
+   "layers": [
+    {
+     "albedo": "flora/58657ad5d943588de2184dfe32be5484ae9b2613792ea532542417a7f8455f30.png",
+     "normal": "flora/d57690f69c3745a7ac92df5957a7c72fb83460633d57085729a383041c8fe064.png"
+    },
+    {
+     "albedo": "flora/4fb95b4fd5817db047921502c1e3aa18ec81dc82540928d8be8c9c71370867be.png",
+     "normal": "flora/68845d5d9ea1dea36b21af1a2726311077c9a2a4a3adf573bbe427ec7941467c.png"
+    },
+    {
+     "albedo": "flora/9af6ab752ddbda920d1c5a7c081acc444af00c2b4ad1a42c0fc8d31cadded088.png",
+     "normal": "flora/35097e864fafda064ad22687c5b3506f6123e70a79181cf289ecd8ff38eae8c2.png"
+    },
+    {
+     "albedo": "flora/efce3b21195072ef39677bc884d8ef7f248cbbbc3404a3f55317844d9aac88ea.png",
+     "normal": "flora/46bde8f46f53bde930051539b436f734d37a625e3d54a73a959426143133692c.png"
+    },
+    {
+     "albedo": "flora/298e374b1bd43b209ae665fc91143273469be85a4ba20714f647012a90fe0fe3.png",
+     "normal": "flora/958d9e224156e01fadb884acc35c59a2cabc0f0c00c00aaef7660a87dae5c8e8.png"
+    },
+    {
+     "albedo": "flora/0b91497d2f18fc28320a81d585cf96ff0b30bef5512e60a3d6151e3f2815c446.png",
+     "normal": "flora/a3b5ee33fe1d907648860c2df53d21b7485e5dccd320403d9a7ab8577d3e6a71.png"
+    }
+   ],
+   "kinds": {
+    "oak": [
+     {
+      "mesh": "flora/e508f67370e9f87f5654d751bc2ac16a2782e1600af0567fc1cd5ff4a9dad2c7.mesh",
+      "triangles": 600,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 11.398,
+      "spread": 5.044,
+      "shade": [
+       4.819,
+       8.263
+      ],
+      "leafy": true,
+      "crown": 9.987,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        0.154,
+        0.084,
+        5.78
+       ],
+       "radius": 6.517,
+       "box": [
+        0.0703,
+        0.0,
+        0.9297,
+        0.9922
+       ]
+      },
+      "canopy": [
+       0.1597,
+       0.2943,
+       0.0964
+      ]
+     },
+     {
+      "mesh": "flora/cac60d84a7f62216de6eb13a889a77d04edccb6bf77510eab1e7e3934a330dde.mesh",
+      "triangles": 600,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 11.421,
+      "spread": 4.484,
+      "shade": [
+       4.73,
+       8.413
+      ],
+      "leafy": true,
+      "crown": 9.395,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        0.03,
+        -0.043,
+        5.72
+       ],
+       "radius": 6.554,
+       "box": [
+        0.0859,
+        0.0,
+        0.9141,
+        0.9844
+       ]
+      },
+      "canopy": [
+       0.1603,
+       0.2946,
+       0.096
+      ]
+     }
+    ],
+    "beech": [
+     {
+      "mesh": "flora/8ed561981aa16efdaa7d99662f3d6310be081672a622a93d8c4f36f4af79ec07.mesh",
+      "triangles": 600,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 16.756,
+      "spread": 4.409,
+      "shade": [
+       4.63,
+       12.401
+      ],
+      "leafy": true,
+      "crown": 8.719,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        0.25,
+        -0.075,
+        8.644
+       ],
+       "radius": 9.263,
+       "box": [
+        0.1953,
+        0.0,
+        0.7969,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.2225,
+       0.364,
+       0.1199
+      ]
+     },
+     {
+      "mesh": "flora/691f071faaaf305823fd23290b719717c4c038e46d419d24da26cdbbf30f806c.mesh",
+      "triangles": 598,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 16.666,
+      "spread": 4.451,
+      "shade": [
+       4.682,
+       12.315
+      ],
+      "leafy": true,
+      "crown": 9.517,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        0.222,
+        -0.169,
+        8.285
+       ],
+       "radius": 8.9,
+       "box": [
+        0.2031,
+        0.0,
+        0.7969,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.2237,
+       0.366,
+       0.12
+      ]
+     }
+    ],
+    "fir": [
+     {
+      "mesh": "flora/f18677b5b87bba2f330dc54c281b893ac2cef8cf792c52fa02df59e520dafd40.mesh",
+      "triangles": 600,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 18.0,
+      "spread": 3.653,
+      "shade": [
+       3.658,
+       6.172
+      ],
+      "leafy": true,
+      "crown": 7.171,
+      "impostor": {
+       "layer": 2,
+       "top": 0.0,
+       "centre": [
+        -0.151,
+        -0.12,
+        8.857
+       ],
+       "radius": 9.782,
+       "box": [
+        0.2891,
+        0.0078,
+        0.7109,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.0879,
+       0.1797,
+       0.1372
+      ]
+     },
+     {
+      "mesh": "flora/a743c40b664c94d116c2effa5ad9b897fa1f3414a0077dc0c1bfbdd29f1688a7.mesh",
+      "triangles": 600,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 18.0,
+      "spread": 3.674,
+      "shade": [
+       3.697,
+       6.143
+      ],
+      "leafy": true,
+      "crown": 7.426,
+      "impostor": {
+       "layer": 2,
+       "top": 0.5,
+       "centre": [
+        -0.177,
+        0.158,
+        8.86
+       ],
+       "radius": 9.679,
+       "box": [
+        0.2734,
+        0.0078,
+        0.7188,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.088,
+       0.1795,
+       0.1373
+      ]
+     }
+    ],
+    "mossy boulder": [
+     {
+      "mesh": "flora/014827fa43a75940f88cd223baace2f11aab5dfe555b12fabb55489860a8120c.mesh",
+      "triangles": 266,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 1.401,
+      "spread": 1.723,
+      "shade": [
+       1.55,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 3,
+       "top": 0.0,
+       "centre": [
+        -0.071,
+        0.074,
+        0.614
+       ],
+       "radius": 1.908,
+       "box": [
+        0.0312,
+        0.0547,
+        0.9688,
+        1.0
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/818ea3aeb54ed9f256f99449faee84ec140d9314384d866e90331527ee5c433d.mesh",
+      "triangles": 261,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 2.072,
+      "spread": 2.77,
+      "shade": [
+       2.493,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 3,
+       "top": 0.5,
+       "centre": [
+        -0.063,
+        -0.006,
+        0.907
+       ],
+       "radius": 2.946,
+       "box": [
+        0.0078,
+        0.0391,
+        0.9922,
+        0.9922
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "fern": [
+     {
+      "mesh": "flora/5e40a7eb85112acdfc8a69ed9d6339ab393e8bf6021d1fa6a76c2a9bd7806e54.mesh",
+      "triangles": 62,
+      "layer": 5,
+      "bark": [
+       0.25,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 0.299,
+      "spread": 1.052,
+      "shade": [
+       0.913,
+       0.145
+      ],
+      "leafy": true,
+      "crown": 1.695
+     }
+    ],
+    "hazel": [
+     {
+      "mesh": "flora/1104e3ec97eb947b7eb3fa55e9990f4daf90fe0e15a4009fdf8f485f6ed46cf0.mesh",
+      "triangles": 240,
+      "layer": 5,
+      "bark": [
+       0.75,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 2.169,
+      "spread": 1.537,
+      "shade": [
+       1.78,
+       1.11
+      ],
+      "leafy": true,
+      "crown": 3.151,
+      "impostor": {
+       "layer": 4,
+       "top": 0.0,
+       "centre": [
+        -0.243,
+        -0.096,
+        1.016
+       ],
+       "radius": 1.948,
+       "box": [
+        0.0,
+        0.0078,
+        1.0,
+        0.9844
+       ]
+      },
+      "canopy": [
+       0.1814,
+       0.3283,
+       0.1142
+      ]
+     }
+    ]
+   }
+  },
+  "steppe": {
+   "layers": [
+    {
+     "albedo": "flora/0ba7e860eb2ca3cafd13ccdd7fea313bc740389747b5d972c802c06d8ba240a5.png",
+     "normal": "flora/9f708cc86ff56d234df1d1f60b7f39269fe9fe2b728132a546bff9936c04d294.png"
+    },
+    {
+     "albedo": "flora/0245cf9b4b5e9d3c29697632082d43ce36fea67dd304c849adda85cc773e5c2b.png",
+     "normal": "flora/a384680cd741458582bcae9a251b4e7d21874ea603a1dd2a0b7027f2404cff91.png"
+    },
+    {
+     "albedo": "flora/19414cf0bd0d7c52677e5168b5d4d729b2d1dd3db174865307f3bcb4fdf39a48.png",
+     "normal": "flora/83c255cbbcd15b4c35f27b52ccc59290db3f44b0b144361d192cdc925a02d21e.png"
+    },
+    {
+     "albedo": "flora/12288e769c097d3249d7d06a8ba19bb9aedda3b4318359a92f4512ae2b3ccc02.png",
+     "normal": "flora/8eaf6718373fb9ce45f82e6f02e9b08f1488d8e35a203fbc64a36274bc7493ce.png"
+    }
+   ],
+   "kinds": {
+    "birch": [
+     {
+      "mesh": "flora/2131ef67146b3f96926eb28f36ce88b5be18ca01f05180c29c8496b60d015ec6.mesh",
+      "triangles": 598,
+      "layer": 2,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 10.136,
+      "spread": 2.385,
+      "shade": [
+       2.525,
+       7.509
+      ],
+      "leafy": true,
+      "crown": 5.21,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        -0.055,
+        -0.112,
+        5.039
+       ],
+       "radius": 5.577,
+       "box": [
+        0.2422,
+        0.0,
+        0.7578,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.4397,
+       0.5198,
+       0.2277
+      ]
+     },
+     {
+      "mesh": "flora/defe39b68cda95b02a96817090b9163c5e1780cf0f7f24eb6abd89ce9183c0ac.mesh",
+      "triangles": 600,
+      "layer": 2,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 10.396,
+      "spread": 2.342,
+      "shade": [
+       2.458,
+       7.168
+      ],
+      "leafy": true,
+      "crown": 5.045,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        0.112,
+        -0.295,
+        5.164
+       ],
+       "radius": 5.724,
+       "box": [
+        0.25,
+        0.0,
+        0.75,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.4366,
+       0.5178,
+       0.2227
+      ]
+     }
+    ],
+    "rock": [
+     {
+      "mesh": "flora/d97d75152a1285548b4a927bbe9a44a6ada3caed4d7c26aad213054dbefdd4a4.mesh",
+      "triangles": 270,
+      "layer": 2,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 1.508,
+      "spread": 1.898,
+      "shade": [
+       1.708,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        -0.101,
+        -0.009,
+        0.665
+       ],
+       "radius": 2.033,
+       "box": [
+        0.0312,
+        0.0312,
+        0.9688,
+        1.0
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/2559b4badd35efa9984192b46e0cf539a9978bd7781d3c5b2be505108502ee2b.mesh",
+      "triangles": 267,
+      "layer": 2,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 2.1,
+      "spread": 2.845,
+      "shade": [
+       2.561,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        -0.137,
+        -0.244,
+        0.961
+       ],
+       "radius": 3.115,
+       "box": [
+        0.0312,
+        0.0547,
+        0.9688,
+        0.9844
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "sagebrush": [
+     {
+      "mesh": "flora/ae75a2b7d0262558c43a00c5a3f434a9fdb61de47ed1cf04965451db8a47330d.mesh",
+      "triangles": 172,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 1.148,
+      "spread": 0.857,
+      "shade": [
+       1.018,
+       0.75
+      ],
+      "leafy": true,
+      "crown": 2.113,
+      "impostor": {
+       "layer": 2,
+       "top": 0.0,
+       "centre": [
+        0.054,
+        -0.008,
+        0.677
+       ],
+       "radius": 1.254,
+       "box": [
+        0.0312,
+        0.0156,
+        0.9688,
+        0.9297
+       ]
+      },
+      "canopy": [
+       0.5239,
+       0.5575,
+       0.4351
+      ]
+     }
+    ],
+    "dry grass": [
+     {
+      "mesh": "flora/7c5d1d6d30176ef2a85b08657d38f8da3bdcb8d6d92d17fe20a4a16c1c317286.mesh",
+      "triangles": 12,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 0.725,
+      "spread": 0.362,
+      "shade": [
+       0.326,
+       0.193
+      ],
+      "leafy": true,
+      "crown": 0.564
+     }
+    ]
+   }
+  },
+  "tundra": {
+   "layers": [
+    {
+     "albedo": "flora/091b229d8f11422f66da5cb0132457f07a09108e4a7b0c9a801d171db13a4695.png",
+     "normal": "flora/c34f2d4588dc3b589383a05087d2013c27a94dffd7c8c4cb797da36ad0132679.png"
+    },
+    {
+     "albedo": "flora/9b95ad0cbf0f28fa0d9d7f9536dd7b5c387fce41fcbcf4558718497e9eb6f2f5.png",
+     "normal": "flora/53317f8229624930cd505a3672937f6e0ff47c8cbd5b75a312345f81c214bf01.png"
+    },
+    {
+     "albedo": "flora/1f441be9a1f3f1b53e0cf78ef2177ccd46b1238574432528bedd661fcce5dc51.png",
+     "normal": "flora/5a92329cfa210961df713ea630fbf5e79680a8e884b061b57ec0107b36a0182c.png"
+    },
+    {
+     "albedo": "flora/dabaf67ee2872a9abe844ad52a70d46837710364e610b8a50ab9bf1a4cec70e3.png",
+     "normal": "flora/8e6fd558660b2a206932eb45a6febba316fa2ba7c622dc8fee7ca045c9a6bdcb.png"
+    },
+    {
+     "albedo": "flora/6697b68f154e5244b66d7f47383455dbcef2de1405bd13d466e59a2f4c207a5f.png",
+     "normal": "flora/8dbd06aa02dc69687ef2eb9353b45d30a4a07a6fcd78cda69351f1f0f11e5e4f.png"
+    }
+   ],
+   "kinds": {
+    "spruce": [
+     {
+      "mesh": "flora/cfb30d7bed9c617d3640fbf7b9c1236fbddb9f68cbe91ccc7897aec08524704a.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 5.0,
+      "spread": 1.527,
+      "shade": [
+       1.599,
+       1.66
+      ],
+      "leafy": true,
+      "crown": 3.387,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        0.022,
+        -0.031,
+        2.155
+       ],
+       "radius": 3.258,
+       "box": [
+        0.2266,
+        0.0312,
+        0.7734,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.0945,
+       0.1641,
+       0.1275
+      ]
+     },
+     {
+      "mesh": "flora/102f7cc5d962038604e9d873bddbb4ba3512271aadbccf25717819c25e30d8e0.mesh",
+      "triangles": 600,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 5.0,
+      "spread": 1.434,
+      "shade": [
+       1.591,
+       1.677
+      ],
+      "leafy": true,
+      "crown": 3.454,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        -0.002,
+        -0.075,
+        2.182
+       ],
+       "radius": 3.278,
+       "box": [
+        0.2188,
+        0.0391,
+        0.7812,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.0943,
+       0.1643,
+       0.1274
+      ]
+     }
+    ],
+    "dead tree": [
+     {
+      "mesh": "flora/cb940d4f761c4f6ed1dc3d691a988d0cc3602035bd777dece9017c67a393104c.mesh",
+      "triangles": 252,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 5.224,
+      "spread": 1.649,
+      "shade": [
+       1.484,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        0.002,
+        -0.191,
+        2.416
+       ],
+       "radius": 3.145,
+       "box": [
+        0.2188,
+        0.0,
+        0.7812,
+        0.9688
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/a3de503cc2267038daecf27fce0beb0f06b46ec236d1a0fd0f1a160aecd2e6a4.mesh",
+      "triangles": 338,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 5.786,
+      "spread": 1.668,
+      "shade": [
+       1.501,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        -0.036,
+        -0.015,
+        2.697
+       ],
+       "radius": 3.173,
+       "box": [
+        0.2266,
+        0.0,
+        0.7734,
+        1.0
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "snowy rock": [
+     {
+      "mesh": "flora/10df6f923e9096fbc9ec0d6e68e3df43e0d548300f59637b4c4b97fdab45a295.mesh",
+      "triangles": 262,
+      "layer": 3,
+      "bark": [
+       0.25,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 1.377,
+      "spread": 1.755,
+      "shade": [
+       1.58,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.0,
+       "centre": [
+        0.02,
+        0.017,
+        0.619
+       ],
+       "radius": 2.005,
+       "box": [
+        0.0391,
+        0.0703,
+        0.9609,
+        1.0
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/2dddb7f0a4f161361c7a33a8162a2ec99f3f93612f6c38be43513c0496cbdc6e.mesh",
+      "triangles": 269,
+      "layer": 3,
+      "bark": [
+       0.25,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 2.149,
+      "spread": 2.806,
+      "shade": [
+       2.525,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.5,
+       "centre": [
+        0.086,
+        -0.045,
+        0.973
+       ],
+       "radius": 3.086,
+       "box": [
+        0.0156,
+        0.0312,
+        0.9844,
+        0.9844
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "dwarf shrub": [
+     {
+      "mesh": "flora/5a9affb1106b0d525fbb899230f41a0cf74b1ff8966d90e0c53e852d2eeb390e.mesh",
+      "triangles": 190,
+      "layer": 4,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 0.359,
+      "spread": 0.613,
+      "shade": [
+       0.682,
+       0.17
+      ],
+      "leafy": true,
+      "crown": 1.204,
+      "impostor": {
+       "layer": 3,
+       "top": 0.0,
+       "centre": [
+        -0.14,
+        -0.028,
+        0.02
+       ],
+       "radius": 0.652,
+       "box": [
+        0.0234,
+        0.0,
+        0.9766,
+        0.9297
+       ]
+      },
+      "canopy": [
+       0.3654,
+       0.2416,
+       0.1641
+      ]
+     }
+    ]
+   }
+  },
+  "desert": {
+   "layers": [
+    {
+     "albedo": "flora/aeb3c8194719de7d761283f9c7b8f565cbf33362f9f367323197c10d36ae2321.png",
+     "normal": "flora/9cf6f2be00e4e88939880b9afc9242c7fb9ee5b6e8162fb1681b1477caaeab1f.png"
+    },
+    {
+     "albedo": "flora/53014bb55f2b4031bfbb0723f429bdedafdbb42380f944e66bb0284427d782f0.png",
+     "normal": "flora/dd955037953adceced2e110c9c3b0bffb74f147e88b8df173cae7cc6e2a855c4.png"
+    },
+    {
+     "albedo": "flora/290724bf7b851f04af8908a924745f05eda945619f622c6575ce7aaba06d5bc1.png",
+     "normal": "flora/7eca38fe099962bf21422a837995eb3e2b59019728f05ba224cf4ab23abd0af9.png"
+    },
+    {
+     "albedo": "flora/23ff884d20e87e38d075c86875391bb88efb42678809c410b1a0067e0b80aae0.png",
+     "normal": "flora/1abb04f48f6cc0e62410b1eb42fb22a91f15d4fb1b0ccafd38cc14bcd1477c12.png"
+    }
+   ],
+   "kinds": {
+    "cactus": [
+     {
+      "mesh": "flora/1a142adf4699e1599dd53f009d0e4b2a6bb8eb830b6795678044042eaa4839c7.mesh",
+      "triangles": 264,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 6.756,
+      "spread": 1.473,
+      "shade": [
+       1.326,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        -0.334,
+        -0.41,
+        3.181
+       ],
+       "radius": 3.771,
+       "box": [
+        0.3516,
+        0.0078,
+        0.6484,
+        1.0
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/94b60bca900c0c3816ace1e4f4da9e7f15f38baafb1858097b5efc01472de7bf.mesh",
+      "triangles": 360,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 6.756,
+      "spread": 1.46,
+      "shade": [
+       1.314,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        -0.095,
+        0.014,
+        3.181
+       ],
+       "radius": 3.686,
+       "box": [
+        0.2969,
+        0.0,
+        0.7031,
+        1.0
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "date palm": [
+     {
+      "mesh": "flora/ae0d327d7c0798fd61bc1b05468e35b1e60d4f4bf149bf0888578481182cedf4.mesh",
+      "triangles": 136,
+      "layer": 3,
+      "bark": [
+       0.25,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 12.613,
+      "spread": 5.771,
+      "shade": [
+       5.125,
+       11.834
+      ],
+      "leafy": true,
+      "crown": 8.02,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        -0.51,
+        -1.212,
+        6.134
+       ],
+       "radius": 7.063,
+       "box": [
+        0.1641,
+        0.0,
+        0.8281,
+        0.9844
+       ]
+      },
+      "canopy": [
+       0.3091,
+       0.4381,
+       0.1866
+      ]
+     },
+     {
+      "mesh": "flora/b787ec0261c372f3e5c6c51574234f39743604ddcb1e2b5fc8ff62344d648b54.mesh",
+      "triangles": 136,
+      "layer": 3,
+      "bark": [
+       0.25,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 12.612,
+      "spread": 5.746,
+      "shade": [
+       5.12,
+       11.759
+      ],
+      "leafy": true,
+      "crown": 7.93,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        0.694,
+        1.041,
+        6.128
+       ],
+       "radius": 7.181,
+       "box": [
+        0.1797,
+        0.0,
+        0.8203,
+        0.9766
+       ]
+      },
+      "canopy": [
+       0.3059,
+       0.4342,
+       0.1857
+      ]
+     }
+    ],
+    "red rock": [
+     {
+      "mesh": "flora/29657786f8455ed5b0cc7e1221a96f703ac551576f58ad7c32c23eac34e0aa29.mesh",
+      "triangles": 267,
+      "layer": 3,
+      "bark": [
+       0.75,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 1.7,
+      "spread": 1.812,
+      "shade": [
+       1.631,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.0,
+       "centre": [
+        0.044,
+        -0.009,
+        0.74
+       ],
+       "radius": 2.005,
+       "box": [
+        0.0156,
+        0.0312,
+        0.9844,
+        1.0
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/38500520c174dd497d71f02a4f359548b2e50726c7a4d0d79136158e889d1e4b.mesh",
+      "triangles": 269,
+      "layer": 3,
+      "bark": [
+       0.75,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 2.059,
+      "spread": 3.032,
+      "shade": [
+       2.729,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.5,
+       "centre": [
+        -0.158,
+        -0.103,
+        0.922
+       ],
+       "radius": 3.026,
+       "box": [
+        0.0078,
+        0.0078,
+        0.9922,
+        1.0
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "dry shrub": [
+     {
+      "mesh": "flora/d5120378fb8172a28bc8a75d02eba894e26ca952a17b983c6f7243689e0f72e9.mesh",
+      "triangles": 172,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 1.079,
+      "spread": 0.833,
+      "shade": [
+       0.935,
+       0.728
+      ],
+      "leafy": true,
+      "crown": 1.724,
+      "impostor": {
+       "layer": 3,
+       "top": 0.0,
+       "centre": [
+        0.026,
+        -0.084,
+        0.626
+       ],
+       "radius": 1.108,
+       "box": [
+        0.0078,
+        0.0,
+        0.9922,
+        0.9766
+       ]
+      },
+      "canopy": [
+       0.3605,
+       0.402,
+       0.2232
+      ]
+     }
+    ]
+   }
+  },
+  "savanna": {
+   "layers": [
+    {
+     "albedo": "flora/3e242c7fe6fd74f3ee4e6a7448837d21e9bb542fa64afcc35b31843c92cb5df9.png",
+     "normal": "flora/ee205bc758257ffa8ff6c7ddf3c5dabe91a876281cd15ee434f589c20da052cf.png"
+    },
+    {
+     "albedo": "flora/3d0dde4cb17e9dc5e317f0c2a9aea71c0cb69a86241a2f4e33b79577ae13b127.png",
+     "normal": "flora/e96b084b0ff011410eae872a9c81a9f6f014c083342c1cb3ff49cadf1ec50945.png"
+    },
+    {
+     "albedo": "flora/e7ca50eb4db6d7a102893b4f65141e7e0ceb8dd11d8dc5b951b43b66ba077a94.png",
+     "normal": "flora/8998babd7ebae19a4de5e765b23883bfc7904af3c17dabba29b191b1e7f8f8ad.png"
+    },
+    {
+     "albedo": "flora/c99c5096748ab43702fda956ababad6dcfe339ed896ae5a1a02cbf53573ac3d8.png",
+     "normal": "flora/5d198a15a5bf567fde2f8312e36745a32046a22c35eb28145f1d9574b0593d44.png"
+    }
+   ],
+   "kinds": {
+    "acacia": [
+     {
+      "mesh": "flora/212344d2c398c98a54faaf4ace9027b94c171deaa4351b288cfc518f3e201651.mesh",
+      "triangles": 598,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 8.07,
+      "spread": 5.565,
+      "shade": [
+       5.815,
+       6.883
+      ],
+      "leafy": true,
+      "crown": 12.234,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        0.04,
+        -0.047,
+        3.961
+       ],
+       "radius": 7.153,
+       "box": [
+        0.0547,
+        0.0078,
+        0.9453,
+        0.875
+       ]
+      },
+      "canopy": [
+       0.2804,
+       0.3237,
+       0.1349
+      ]
+     },
+     {
+      "mesh": "flora/b69edb37b80ec7e47eb38cdfbf3904cb2b7c35172118ee8ad5616f69e40a77f6.mesh",
+      "triangles": 598,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 8.408,
+      "spread": 5.873,
+      "shade": [
+       5.891,
+       6.9
+      ],
+      "leafy": true,
+      "crown": 12.338,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        0.029,
+        0.054,
+        4.132
+       ],
+       "radius": 7.257,
+       "box": [
+        0.0469,
+        0.0156,
+        0.9531,
+        0.8906
+       ]
+      },
+      "canopy": [
+       0.2809,
+       0.3242,
+       0.1349
+      ]
+     }
+    ],
+    "baobab": [
+     {
+      "mesh": "flora/ba442ccb80d9f3e40d52b6c9cf2127393b153a30d5d202d2ca9d13595958de01.mesh",
+      "triangles": 482,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 12.215,
+      "spread": 4.568,
+      "shade": [
+       4.469,
+       10.838
+      ],
+      "leafy": true,
+      "crown": 8.384,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        0.248,
+        -0.077,
+        6.083
+       ],
+       "radius": 7.375,
+       "box": [
+        0.1406,
+        0.0,
+        0.8594,
+        0.9688
+       ]
+      },
+      "canopy": [
+       0.3656,
+       0.4106,
+       0.198
+      ]
+     }
+    ],
+    "boulder": [
+     {
+      "mesh": "flora/637491eb8cc220ab0771f0401f0cd067a0827037bb0d30c09f52616dcb35e3d1.mesh",
+      "triangles": 271,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 1.446,
+      "spread": 1.939,
+      "shade": [
+       1.745,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        -0.131,
+        0.067,
+        0.627
+       ],
+       "radius": 1.989,
+       "box": [
+        0.0234,
+        0.0469,
+        0.9766,
+        1.0
+       ]
+      },
+      "canopy": null
+     },
+     {
+      "mesh": "flora/d34e9380dedca18018d4223720641102b87499f67d4c13fbb7937fe25a73c8e8.mesh",
+      "triangles": 267,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 2.099,
+      "spread": 2.799,
+      "shade": [
+       2.519,
+       0.0
+      ],
+      "leafy": false,
+      "crown": 0.0,
+      "impostor": {
+       "layer": 2,
+       "top": 0.0,
+       "centre": [
+        -0.144,
+        -0.022,
+        0.907
+       ],
+       "radius": 3.098,
+       "box": [
+        0.0078,
+        0.0391,
+        0.9922,
+        1.0
+       ]
+      },
+      "canopy": null
+     }
+    ],
+    "tall grass": [
+     {
+      "mesh": "flora/0249e196e52a9c1dbe046b85b44231b8cc1f3e74509d2cd2de3eed2b68ad6065.mesh",
+      "triangles": 12,
+      "layer": 3,
+      "bark": [
+       0.25,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 1.791,
+      "spread": 0.895,
+      "shade": [
+       0.806,
+       0.444
+      ],
+      "leafy": true,
+      "crown": 1.472
+     }
+    ],
+    "thorn bush": [
+     {
+      "mesh": "flora/2119495f8e56633cdda1d24a1f02c16ad0176130f04e053d6b19dc03ba4fe093.mesh",
+      "triangles": 144,
+      "layer": 3,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 1.793,
+      "spread": 1.385,
+      "shade": [
+       1.435,
+       1.478
+      ],
+      "leafy": true,
+      "crown": 2.971,
+      "impostor": {
+       "layer": 2,
+       "top": 0.5,
+       "centre": [
+        -0.025,
+        -0.096,
+        1.054
+       ],
+       "radius": 1.701,
+       "box": [
+        0.0469,
+        0.0156,
+        0.9531,
+        0.9219
+       ]
+      },
+      "canopy": [
+       0.3233,
+       0.3922,
+       0.1626
+      ]
+     }
+    ]
+   }
+  },
+  "rainforest": {
+   "layers": [
+    {
+     "albedo": "flora/726b21bf80b27d744f5ae3ca37fdf333ee97bc770b3773a1c4c5585141f54de9.png",
+     "normal": "flora/21f7f4f2ab63004a0a1d0d55a92cdc6e09f5783cb47410c0e3dd98fe2eefafa8.png"
+    },
+    {
+     "albedo": "flora/c5adfcb3f998f9a3e21a370617467c05a438b1458f82fbfffb60c0010575af08.png",
+     "normal": "flora/44cfa8306975830c5ad93cc2c96a37e4a64db21b2548bd542c922f879f79b938.png"
+    },
+    {
+     "albedo": "flora/4134e78875fe8f62a16387437d4cf2ee5d9b0900ab3cc522c91166a899584732.png",
+     "normal": "flora/a721fcc6a372b6aafdebfb101e5af6d4421c194d82533be4b7e0ac2b6acd7363.png"
+    },
+    {
+     "albedo": "flora/b75557fce5a610eade7793422cc1ddf2cecd937f950c727a43ee5341db5d5875.png",
+     "normal": "flora/2d1d29eeb4fd311f0ec7152d1a0d4983843dbc7a15ae0bb923448025e4b6d74a.png"
+    },
+    {
+     "albedo": "flora/d916a34f6e924e891476f2b4b4c214daf06f55508dc0eb9403aab62373fd5930.png",
+     "normal": "flora/df86ec44f9434ec311c00a1d80501e2129a5411704746653f705b994a44895c9.png"
+    },
+    {
+     "albedo": "flora/9f5b5bf4ba73bc73d2b989a2f7012cd65f0106dd6b2bd71e88cec533fb44d7dc.png",
+     "normal": "flora/f180df2889018ff75e654dcb940ce05318955fef0d203bb42741f2c23d2dfbfa.png"
+    }
+   ],
+   "kinds": {
+    "giant": [
+     {
+      "mesh": "flora/31ca282f432a3d0a169d190382e838783fe13c7f03363c1b1d58a531858fabd5.mesh",
+      "triangles": 598,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 39.748,
+      "spread": 8.494,
+      "shade": [
+       8.395,
+       27.032
+      ],
+      "leafy": true,
+      "crown": 18.18,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        -0.051,
+        -0.089,
+        20.171
+       ],
+       "radius": 21.248,
+       "box": [
+        0.2656,
+        0.0,
+        0.7266,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.192,
+       0.3277,
+       0.1173
+      ]
+     },
+     {
+      "mesh": "flora/4bde773c0789de1092fa55d967487a9c56cfc48912b35cdf6ff6839bfad2ab34.mesh",
+      "triangles": 598,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 39.993,
+      "spread": 9.185,
+      "shade": [
+       8.719,
+       26.858
+      ],
+      "leafy": true,
+      "crown": 18.606,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        0.188,
+        0.03,
+        20.282
+       ],
+       "radius": 21.301,
+       "box": [
+        0.2656,
+        0.0,
+        0.7344,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.1918,
+       0.3279,
+       0.1169
+      ]
+     }
+    ],
+    "canopy tree": [
+     {
+      "mesh": "flora/bd188cb37bc003f61031ebd32db367aa953a6a0d3e3f2bcf2fa5e741bc3a4311.mesh",
+      "triangles": 600,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 22.018,
+      "spread": 7.61,
+      "shade": [
+       6.864,
+       13.189
+      ],
+      "leafy": true,
+      "crown": 14.264,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        0.304,
+        -0.343,
+        11.217
+       ],
+       "radius": 11.942,
+       "box": [
+        0.1719,
+        0.0,
+        0.8281,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.1446,
+       0.3014,
+       0.0943
+      ]
+     },
+     {
+      "mesh": "flora/529c59ea79c676a17508c98b4b27893587087ff37bbeccb117695bd5c45b87dc.mesh",
+      "triangles": 600,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 17.078,
+      "spread": 7.947,
+      "shade": [
+       7.572,
+       9.939
+      ],
+      "leafy": true,
+      "crown": 15.645,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        -0.581,
+        0.286,
+        8.77
+       ],
+       "radius": 10.168,
+       "box": [
+        0.0859,
+        0.0,
+        0.9219,
+        0.9688
+       ]
+      },
+      "canopy": [
+       0.1034,
+       0.2628,
+       0.085
+      ]
+     },
+     {
+      "mesh": "flora/829c3963d9e1555a4d62b642bb01c583432ab03ba4b25196aaa9b780286f2783.mesh",
+      "triangles": 600,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 13.878,
+      "spread": 6.712,
+      "shade": [
+       6.403,
+       7.969
+      ],
+      "leafy": true,
+      "crown": 13.347,
+      "impostor": {
+       "layer": 2,
+       "top": 0.0,
+       "centre": [
+        0.148,
+        0.119,
+        7.178
+       ],
+       "radius": 7.952,
+       "box": [
+        0.0391,
+        0.0,
+        0.9609,
+        0.9922
+       ]
+      },
+      "canopy": [
+       0.2244,
+       0.3531,
+       0.1092
+      ]
+     }
+    ],
+    "palm": [
+     {
+      "mesh": "flora/16bcaab11ba2932c6cf4dfe87b5126b9941b19d0f9354f09bf6f2a23a4d0df01.mesh",
+      "triangles": 130,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 15.931,
+      "spread": 7.025,
+      "shade": [
+       6.188,
+       14.662
+      ],
+      "leafy": true,
+      "crown": 9.355,
+      "impostor": {
+       "layer": 2,
+       "top": 0.5,
+       "centre": [
+        -1.979,
+        -0.073,
+        7.851
+       ],
+       "radius": 9.064,
+       "box": [
+        0.1875,
+        0.0,
+        0.8125,
+        0.9844
+       ]
+      },
+      "canopy": [
+       0.2285,
+       0.4372,
+       0.1356
+      ]
+     },
+     {
+      "mesh": "flora/aae2b18acea25e8323711cbadcd549cba59df1b307150f305e5c594d681049ea.mesh",
+      "triangles": 130,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 15.651,
+      "spread": 7.45,
+      "shade": [
+       6.641,
+       14.534
+      ],
+      "leafy": true,
+      "crown": 9.619,
+      "impostor": {
+       "layer": 3,
+       "top": 0.0,
+       "centre": [
+        2.351,
+        -0.653,
+        7.654
+       ],
+       "radius": 8.733,
+       "box": [
+        0.1797,
+        0.0,
+        0.8203,
+        1.0
+       ]
+      },
+      "canopy": [
+       0.2301,
+       0.4386,
+       0.1343
+      ]
+     }
+    ],
+    "tree fern": [
+     {
+      "mesh": "flora/4cd9326b9fa8a56483f5249d44457225a37359a9db353b8fe086b1cc189fad7e.mesh",
+      "triangles": 108,
+      "layer": 5,
+      "bark": [
+       0.5,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 3.953,
+      "spread": 4.065,
+      "shade": [
+       3.595,
+       3.282
+      ],
+      "leafy": true,
+      "crown": 7.433,
+      "impostor": {
+       "layer": 3,
+       "top": 0.5,
+       "centre": [
+        0.271,
+        -0.155,
+        1.804
+       ],
+       "radius": 4.214,
+       "box": [
+        0.0312,
+        0.0234,
+        0.9688,
+        0.9297
+       ]
+      },
+      "canopy": [
+       0.186,
+       0.4204,
+       0.1204
+      ]
+     },
+     {
+      "mesh": "flora/2d846e31c4649f581cc1496d1c76f3a94ccc4b215f2e8d6aee81df46b2688800.mesh",
+      "triangles": 112,
+      "layer": 5,
+      "bark": [
+       0.5,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 3.988,
+      "spread": 3.989,
+      "shade": [
+       3.529,
+       3.37
+      ],
+      "leafy": true,
+      "crown": 7.201,
+      "impostor": {
+       "layer": 4,
+       "top": 0.0,
+       "centre": [
+        -0.158,
+        0.147,
+        1.822
+       ],
+       "radius": 4.304,
+       "box": [
+        0.0156,
+        0.0078,
+        0.9844,
+        0.9453
+       ]
+      },
+      "canopy": [
+       0.1877,
+       0.4218,
+       0.1195
+      ]
+     }
+    ],
+    "understory": [
+     {
+      "mesh": "flora/b6f3a28cf360239b9d99faf294d69ff0decc5262ed61af5bb9ed703c7d24e1f7.mesh",
+      "triangles": 238,
+      "layer": 5,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 1.746,
+      "spread": 1.367,
+      "shade": [
+       1.528,
+       0.852
+      ],
+      "leafy": true,
+      "crown": 2.619,
+      "impostor": {
+       "layer": 4,
+       "top": 0.5,
+       "centre": [
+        -0.159,
+        -0.102,
+        0.767
+       ],
+       "radius": 1.805,
+       "box": [
+        0.0078,
+        0.0078,
+        0.9922,
+        0.9844
+       ]
+      },
+      "canopy": [
+       0.1315,
+       0.3262,
+       0.0974
+      ]
+     }
+    ]
+   }
+  },
+  "swamp": {
+   "layers": [
+    {
+     "albedo": "flora/a66a3db330766f10be076fc5394dad9773b11f27f5506ea4a5336f14a3729172.png",
+     "normal": "flora/931b31fabe0f74ac5fbbcd95c9c39ef1154770f9c793994c429d45d8f628bc89.png"
+    },
+    {
+     "albedo": "flora/63aa01df80ea95be1f8097a064eaccbf79dc2cd677c58546a4c50e5d760786ec.png",
+     "normal": "flora/8769623f57f8a4749566fd855db8d7d5a8458a9d33a3f22d7cc38e63234e978d.png"
+    },
+    {
+     "albedo": "flora/db34698c57cc5bc33a3ddabc7e07d5560a951ab35754657f161eed5307223adf.png",
+     "normal": "flora/16d93924cc38824537cfcc1877424cb853bd44ead3fded689902d71b1802a260.png"
+    }
+   ],
+   "kinds": {
+    "cypress": [
+     {
+      "mesh": "flora/8f48380eb772771beb65731bd4752c9e3c21d46c17d9ad0cdcf96fa9a6f8bb1a.mesh",
+      "triangles": 838,
+      "layer": 2,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 15.847,
+      "spread": 6.334,
+      "shade": [
+       6.191,
+       8.732
+      ],
+      "leafy": true,
+      "crown": 13.299,
+      "impostor": {
+       "layer": 0,
+       "top": 0.0,
+       "centre": [
+        -0.158,
+        0.041,
+        7.981
+       ],
+       "radius": 8.88,
+       "box": [
+        0.1094,
+        0.0,
+        0.8906,
+        0.9922
+       ]
+      },
+      "canopy": [
+       0.1998,
+       0.262,
+       0.125
+      ]
+     },
+     {
+      "mesh": "flora/da1477502fff0b5c81243419fe645a7f56421c54ccf82dc2bd6d1de350fab671.mesh",
+      "triangles": 840,
+      "layer": 2,
+      "bark": [
+       0.0,
+       0.0,
+       0.25,
+       0.25
+      ],
+      "top": 16.171,
+      "spread": 6.702,
+      "shade": [
+       6.426,
+       8.766
+      ],
+      "leafy": true,
+      "crown": 13.326,
+      "impostor": {
+       "layer": 0,
+       "top": 0.5,
+       "centre": [
+        0.143,
+        -0.135,
+        8.053
+       ],
+       "radius": 8.928,
+       "box": [
+        0.1016,
+        0.0,
+        0.8984,
+        0.9922
+       ]
+      },
+      "canopy": [
+       0.1992,
+       0.2613,
+       0.125
+      ]
+     }
+    ],
+    "mangrove": [
+     {
+      "mesh": "flora/7eb97055f2e81dd529a1843f8bb52f834dbac6e759b61fbcbd32598af4711dff.mesh",
+      "triangles": 600,
+      "layer": 2,
+      "bark": [
+       0.25,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 6.274,
+      "spread": 3.19,
+      "shade": [
+       3.35,
+       4.538
+      ],
+      "leafy": true,
+      "crown": 6.935,
+      "impostor": {
+       "layer": 1,
+       "top": 0.0,
+       "centre": [
+        0.218,
+        0.016,
+        3.091
+       ],
+       "radius": 4.34,
+       "box": [
+        0.0469,
+        0.0078,
+        0.9531,
+        0.9922
+       ]
+      },
+      "canopy": [
+       0.1293,
+       0.2624,
+       0.1043
+      ]
+     },
+     {
+      "mesh": "flora/ab080a36e8703b68420c8ca0ddd0b986dfeb0e68b6c8615a8af84389c253a38e.mesh",
+      "triangles": 598,
+      "layer": 2,
+      "bark": [
+       0.25,
+       0.25,
+       0.25,
+       0.25
+      ],
+      "top": 6.132,
+      "spread": 3.546,
+      "shade": [
+       3.58,
+       4.537
+      ],
+      "leafy": true,
+      "crown": 6.592,
+      "impostor": {
+       "layer": 1,
+       "top": 0.5,
+       "centre": [
+        0.143,
+        -0.086,
+        3.016
+       ],
+       "radius": 4.328,
+       "box": [
+        0.0156,
+        0.0,
+        0.9844,
+        0.9844
+       ]
+      },
+      "canopy": [
+       0.1296,
+       0.263,
+       0.1048
+      ]
+     }
+    ],
+    "reeds": [
+     {
+      "mesh": "flora/fb11e43c35933f20edda66651359c394c67f983065af3c94d85c1c11d8da38c5.mesh",
+      "triangles": 12,
+      "layer": 2,
+      "bark": [
+       0.25,
+       0.5,
+       0.25,
+       0.25
+      ],
+      "top": 2.947,
+      "spread": 1.473,
+      "shade": [
+       1.326,
+       0.689
+      ],
+      "leafy": true,
+      "crown": 2.692
+     }
+    ],
+    "marsh fern": [
+     {
+      "mesh": "flora/cbaa47bba89b36c550ddf047f5939761493f51405793eb145aad2a9c52d8f3bb.mesh",
+      "triangles": 56,
+      "layer": 2,
+      "bark": [
+       0.0,
+       0.75,
+       0.25,
+       0.25
+      ],
+      "top": 0.275,
+      "spread": 0.892,
+      "shade": [
+       0.769,
+       0.13
+      ],
+      "leafy": true,
+      "crown": 1.463
+     }
+    ]
+   }
+  }
+ }
+}

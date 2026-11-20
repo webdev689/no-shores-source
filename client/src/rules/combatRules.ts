@@ -88,7 +88,7 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
     sizes,
     setCourse: (blocks) => {
       const floats = new Float64Array(
-        blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
+        blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]),
       );
       lend(floatBytes(floats), (address) => exports.fighter_course(address, floats.byteLength));
     },

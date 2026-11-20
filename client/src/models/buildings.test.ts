@@ -254,3 +254,44 @@ test('a building built again without doors has none: its faces whole, no door pi
   assert.equal(withoutDoors({ ...modelOf(107) }), null, 'a model the forge did not build');
   assert.equal(buildingModel(buildingTable, 99999), null, 'an id the Building Forge does not stand');
 });
+
+test("an open building's doorways let a body's sight straight through, from either side, a hand clear of the frame", () => {
+  const table = buildingTable;
+  for (const id of idsOf(table).filter((each) => (table[each].doors ?? []).length)) {
+    const model = buildingModel(table, id, { open: true });
+    assert.ok(model, `${id} builds`);
+    for (const door of table[id].doors ?? []) {
+      const { centre, n } = doorAxes(door);
+      const sill = Math.min(door.a[1], door.b[1], door.c[1]);
+      for (const side of [1, -1]) {
+        const from = [0, 1, 2].map((axis) => centre[axis] + n[axis] * side * 0.5) as [number, number, number];
+        from[1] = sill + 1.2;
+        const through = n.map((value) => -value * side) as [number, number, number];
+        assert.equal(
+          rayHit(model, from, through, 1),
+          null,
+          `${id}: its door at ${centre.map((value) => value.toFixed(2))} is open`,
+        );
+      }
+    }
+  }
+});
+
+test("an open building's rooms show its windows: each is laid again on the lining's face, facing in", () => {
+  const table = buildingTable;
+  const glassFaces = (model: ForgedModel, glass: readonly number[]) =>
+    model.parts
+      .filter((part) => part.archive === glass[0] && part.record === glass[1])
+      .reduce((sum, part) => sum + part.count / 3, 0);
+  let checked = 0;
+  for (const id of idsOf(table).filter((each) => table[each].glass)) {
+    const glass = table[id].glass!;
+    const [closed, open] = [buildingModel(table, id), buildingModel(table, id, { open: true })];
+    if (!closed || !open || !glassFaces(closed, glass)) continue;
+    // A window beside a doorway can be trimmed by the doorway's cut, so nearly every window, not each.
+    const [outside, both] = [glassFaces(closed, glass), glassFaces(open, glass)];
+    assert.ok(both >= outside * 1.9, `${id}: a window inside for (nearly) each outside: ${both} of ${2 * outside}`);
+    checked++;
+  }
+  assert.ok(checked > 20, `buildings with windows checked: ${checked}`);
+});

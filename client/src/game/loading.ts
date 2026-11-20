@@ -1,5 +1,5 @@
-// What the game loads before anything is shown: the world's layout and edits, the RMB index's blocks, the movement
-// rules, the forge's figures with the first person's hands, and the Sloop's model, all at once.
+// What the game loads before anything is shown: the world's layout and edits, the land's texts (the RMB blocks, the
+// forged models' tables and the nodes' briefs), the movement rules, the forge's figures with the first person's hands, and the Sloop's model, all at once.
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import { loadForgedBirds } from '../combat/forgedBirds.ts';
@@ -7,6 +7,7 @@ import { openCards } from '../player/cards.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { loadShip, shipSails } from '../ships/shipMesh.ts';
 import { ShipView } from '../ships/shipView.ts';
+import { loadLandTexts } from '../terrain/landTexts.ts';
 import type { FigureView } from './figureView.ts';
 import { loadWorld } from './worldData.ts';
 
@@ -22,11 +23,9 @@ async function openForge(gpu: Gpu, figures: FigureView) {
 
 /** Everything the game needs loaded first, from the pages served under `base`. */
 export async function loadParts(gpu: Gpu, base: string, figureView: FigureView) {
-  const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
+  const [world, landTexts, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
-    fetch(`${base}world/rmb/index.json`)
-      .then((answer) => (answer.ok ? answer.text() : null))
-      .catch(() => null),
+    loadLandTexts(base),
     fetch(`${base}movement.wasm`)
       .then((answer) => {
         if (!answer.ok) throw new Error(`movement.wasm: ${answer.status}`);
@@ -36,5 +35,5 @@ export async function loadParts(gpu: Gpu, base: string, figureView: FigureView) 
     openForge(gpu, figureView),
     loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'), SEA_SHIPS)),
   ]);
-  return { world, rmbText, movement, forge, firstPerson, store, sloop };
+  return { world, landTexts, movement, forge, firstPerson, store, sloop };
 }

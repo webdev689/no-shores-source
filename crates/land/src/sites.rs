@@ -37,6 +37,16 @@ pub enum NodeKind {
     Boss,
 }
 
+/// The kinds of node locked until a pass is done on them: each opens once the open list names it.
+pub const LOCKABLE: [NodeKind; 2] = [NodeKind::Patrol, NodeKind::Mission];
+
+/// Whether no player may enter a node until a pass is done on it: a patrol area or mission that `open`, the ids in
+/// `content/world/open.json`, does not name.
+#[must_use]
+pub fn locked(kind: NodeKind, id: &str, open: &[String]) -> bool {
+    LOCKABLE.contains(&kind) && !open.iter().any(|named| named == id)
+}
+
 /// A node: its section of the land, a closed ring, and the spawns a player lands and respawns at.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
