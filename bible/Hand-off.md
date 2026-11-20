@@ -268,15 +268,16 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[Exposed, Charged and Haste Make No Sound]]). Claude's calls in the layer, the
   owner's to change: a gun's ball on a body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the
   [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
-- **#73, the music and the ambience, waits on the owner's yes to merge**, which deploys the page and the rooms
+- **#73, the music and the ambience, is on `main`**, merged and deployed with the owner's yes
   ([[Music and Ambience Come From DFO's Synthesiser]], [[Music]], [[Ambience]]). The owner kept every piece on the
   sound sheet, Landfall as made again after their "Less jolly" ([[Landfall Is Kept as Made Again]]), and picked the
   seven recordings. Claude's calls, the owner's to confirm: Thule plays the Boarding, Corvane the Reckoning, any other Boss
   the Wrath; the climates' families and each family's key, metre and tempo; Saltmere's theme as written; the sounds
   nearest "no glass" (wet's kalimba drips, cold's high tremolo, Landfall's soft bell, the fights' reverse-cymbal
   risers).
-- **#76, the weather and day and night, waits on the owner's yes to merge**, stacked on #73
-  ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]], [[Sky]], [[Weather]]).
+- **#76, the weather and day and night, and #79, every shader checked offline, are on `main`**, merged and deployed
+  with the owner's yes ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]],
+  [[Sky]], [[Weather]], [[Every Shader Is Checked Offline]]).
   Claude made the calls the owner left open ([[Weather and Day as Claude Shapes It]]), the owner's to change. The
   owner judged the weather's first sounds and picked the gutters and both thunders from Freesound
   ([[The Weather's Gutters and Thunder Come From Freesound]]); those picks are on R2.
@@ -292,27 +293,34 @@ Where the work stands now, for the next session. Each session rewrites this note
   found in #63's, #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted. Whether the
   Overworld's rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
 
+- **Three follow-ups wait on the owner's yes to merge**, each a draft with its own test notes. #87 splits the sea's
+  view and the held map out of `sea.ts` and `game.ts` (both a line under the 600-line limit) and lights the Sloop's
+  deck with a carried torch. #89 cuts the sky's and the water's haze's work per pixel, with the same colours. #90,
+  stacked on #89, fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
+  fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
+  fogged sea, a sandstorm's grey ground and a thin snowfall.
+- **The first review of the kit's observations waits on the owner's yes**: four changes to the instructions, and one
+  observation to close as already fixed, each in the session's report and in
+  `~/toolkit-data/task-observer/skill-observations/review-2026-11-20.md`, which a container loses at its end.
+
 ## Next
 
-- **The weather and day and night (#76)**, tested offline: the full check, the weather's statistics per climate and
-  its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under cloud, at sunset
-  and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to compile. Four
-  audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old wind, a fleet
-  sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun for moon in
-  daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording held under
-  its synthesised sound's peak. Not yet: lightning's bolts seen in a picture (no strike falls near Saltmere by day in
-  60 world days, and the page always arrives there), ships and marks under the lamps, snow, a carried light on the
-  Sloop's deck, a real GPU's frame time (the sky reads some ten noise lookups a pixel, twice while one cloud pattern
-  fades into the next), and a person playing through an hour's day.
-- **Every shader checked offline (#79)**, stacked on #76, waits on the owner's yes with it
-  ([[Every Shader Is Checked Offline]]): `cargo xtask check` writes out every shader the client compiles and naga
-  validates each.
-- **The music and the ambience (#73)**, tested offline: every piece rendered and measured, and the built game headless
-  in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the green score in
-  as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both running. Left
-  open: the prologue's `storyCue(name)` (branch `claude/loving-darwin-sw4eae`) routed to the director as a new cue kind,
-  by whichever reaches `main` second. #76 gives the night ambiences their time of day, plays the four sea songs while
-  sailing, and sets each recording at the loudness of the synthesised sound it replaces.
+- **The weather and day and night (#76, on `main`)**, tested offline: the full check, the weather's statistics per
+  climate and its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under
+  cloud, at sunset and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to
+  compile. Four audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old
+  wind, a fleet sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun
+  for moon in daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording
+  held under its synthesised sound's peak. Pictures across the islands (#90) have since shown bolts at Mistfall by day
+  and night, snow on the tundra and at Rimeholt, a sandstorm, dawn fog and clear nights; `?at=<node id>` lands the
+  page at any node, and the pictures' steps are made by freezing the page's clock at a moment. Not yet: ships and
+  marks under the lamps, a real GPU's frame time, and a person playing through an hour's day.
+- **The music and the ambience (#73, on `main`)**, tested offline: every piece rendered and measured, and the built
+  game headless in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the
+  green score in as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both
+  running. Left open: the prologue's `storyCue(name)` (branch `claude/loving-darwin-sw4eae`) routed to the director as
+  a new cue kind, by whichever reaches `main` second. #76 gives the night ambiences their time of day, plays the four
+  sea songs while sailing, and sets each recording at the loudness of the synthesised sound it replaces.
 - **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
   its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
