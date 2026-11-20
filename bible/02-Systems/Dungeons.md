@@ -248,8 +248,8 @@ dungeon").
   Where a look's style has a pack of pieces, its pillars, brackets and portal arch are the pack's; the jambs, the
   flames, the portal's face and the exit door stay the mesh's.
 - **Its packs** (`dungeonModules.ts`, [[Dungeon Modules]]): the packs of every style its looks wear are fetched behind the veil before it
-  is first drawn (`stylePacks`). A style whose pack is not published, or fails to come, is drawn as above, with one
-  warning.
+  is first drawn (`stylePacks`). A style whose pack is not published, or fails to come within 15 s, is drawn as
+  above, with one warning; a pack that failed is asked for again when the next dungeon is entered.
 - **Its kits** (`dungeonKits.ts`) are placed from the layout alone, as `content/dungeon/kits.json` says: a door in
   every doorway; a pillar's base, its shaft stretched to its capital; wall sets every `wallEvery` cells along a straight
   wall, the cap's top where the ceiling comes lowest over it, never on a cave's rock, and in the mines a timber set on

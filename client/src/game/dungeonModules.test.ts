@@ -342,21 +342,58 @@ test('every part wears a picture: the look for its stone, the timber, the iron, 
   assert.equal(book.layerOf(...partPicture(PARTS.indexOf('water'), look, 'temperate')), DUNGEON_LAYERS.water);
 });
 
-test('a pack that fails to come gives none, with one warning however often it is asked for', async (context) => {
+test('a pack that fails to come gives none with one warning, and is asked for again the next time', async (context) => {
   const asked: string[] = [];
+  let online = false;
   context.mock.method(globalThis, 'fetch', (url: string) => {
     asked.push(url);
-    return Promise.reject(new Error('offline'));
+    return online
+      ? Promise.resolve(new Response(packOf([DOOR], { style: 'halls' })))
+      : Promise.reject(new Error('off'));
   });
   const warn = context.mock.method(console, 'warn', () => undefined);
   const published = { base: 'https://packs.test/', styles: { halls: 'dungeon/gone.modules' } };
-  assert.equal(await loadStylePack('halls', published), null);
-  assert.equal(await loadStylePack('halls', published), null);
-  assert.deepEqual(asked, ['https://packs.test/dungeon/gone.modules']);
+  const [first, second] = await Promise.all([loadStylePack('halls', published), loadStylePack('halls', published)]);
+  assert.deepEqual([first, second], [null, null]);
+  assert.deepEqual(asked, ['https://packs.test/dungeon/gone.modules'], 'asked once while it was coming');
   assert.equal(warn.mock.callCount(), 1);
   assert.equal(await loadStylePack('crypt', published), null, 'a style with no pack published');
   assert.equal(asked.length, 1);
+  online = true;
+  const pack = await loadStylePack('halls', published);
+  assert.deepEqual([...(pack?.modules.keys() ?? [])], ['crypt.door.a']);
+  assert.equal(asked.length, 2, 'the failure was not kept');
+  assert.equal(await loadStylePack('halls', published), pack, 'the pack that came is kept');
+  assert.equal(asked.length, 2);
   assert.equal(warn.mock.callCount(), 1);
+});
+
+test('a pack that stalls is given up after 15 s, and asked for again the next time', async (context) => {
+  const timeouts: number[] = [];
+  const stops: AbortController[] = [];
+  context.mock.method(AbortSignal, 'timeout', (milliseconds: number) => {
+    timeouts.push(milliseconds);
+    stops.push(new AbortController());
+    return stops[stops.length - 1]?.signal;
+  });
+  const signals: (AbortSignal | null | undefined)[] = [];
+  context.mock.method(globalThis, 'fetch', (_url: string, init?: RequestInit) => {
+    signals.push(init?.signal);
+    return new Promise((_done, fail) => init?.signal?.addEventListener('abort', () => fail(init.signal?.reason)));
+  });
+  const warn = context.mock.method(console, 'warn', () => undefined);
+  const published = { base: 'https://packs.test/', styles: { sanctum: 'dungeon/slow.modules' } };
+  const loading = loadStylePack('sanctum', published);
+  assert.deepEqual(timeouts, [15000]);
+  assert.equal(signals[0], stops[0]?.signal, 'the fetch is given the timeout');
+  stops[0]?.abort(new DOMException('took too long', 'TimeoutError'));
+  assert.equal(await loading, null);
+  assert.equal(warn.mock.callCount(), 1);
+  const again = loadStylePack('sanctum', published);
+  assert.equal(signals.length, 2, 'asked for again');
+  stops[1]?.abort();
+  assert.equal(await again, null);
+  assert.equal(warn.mock.callCount(), 2);
 });
 
 test("a pack that comes is read and kept; one that holds another style's pieces is refused", async (context) => {

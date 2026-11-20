@@ -144,18 +144,21 @@ export function readModulePack(bytes: ArrayBuffer): ModulePack {
 type Manifest = { readonly base: string; readonly styles: Readonly<Partial<Record<StyleKey, string>>> };
 
 const packs = new Map<string, Promise<ModulePack | null>>();
+/** How long a pack may take to come before it is given up, so a stalled fetch never holds the veil up for good. */
+const PACK_TIMEOUT_MS = 15000;
 
 async function fetchPack(url: string, style: StyleKey): Promise<ModulePack> {
-  const answer = await fetch(url);
+  const answer = await fetch(url, { signal: AbortSignal.timeout(PACK_TIMEOUT_MS) });
   if (!answer.ok) throw new Error(`${url} answered ${answer.status}`);
   const pack = readModulePack(await answer.arrayBuffer());
   if (pack.style !== style) throw new Error(`${url} holds the ${pack.style} pieces`);
   return pack;
 }
 
-/** A style's pack, fetched once from where `published` says (the repository's manifest unless a test gives another):
- *  none while no pack is published for it, and none, with one warning, if it fails to come or to read, so its
- *  dungeons are drawn as they are without one. */
+/** A style's pack, fetched from where `published` says (the repository's manifest unless a test gives another) and
+ *  kept once it comes: none while no pack is published for it, and none, with one warning, if it fails to come in
+ *  time or to read, so its dungeons are drawn as they are without one. A failure is not kept: the next ask, the next
+ *  dungeon entered, tries again. */
 export function loadStylePack(style: StyleKey, published: Manifest = manifest): Promise<ModulePack | null> {
   const key = published.styles[style];
   if (!key) return Promise.resolve(null);
@@ -164,6 +167,7 @@ export function loadStylePack(style: StyleKey, published: Manifest = manifest): 
   if (known) return known;
   const pack = fetchPack(url, style).catch((error: unknown) => {
     console.warn(`the ${style} dungeon pieces could not be read, so its dungeons are drawn without them:`, error);
+    packs.delete(url);
     return null;
   });
   packs.set(url, pack);
