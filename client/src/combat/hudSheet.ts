@@ -8,6 +8,7 @@ import { wearKit } from '../plus/kit.ts';
 import { BAR_EDGE, BAR_TONES, barFrameImage, tipOf } from '../plus/barFrame.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
+import { OVERHEAD_SIZES } from './foePlate.ts';
 import { EDGE, VITAL_SIZES } from './hudLayout.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 import { statusCss } from './statusIcons.ts';
@@ -40,6 +41,12 @@ function platesCss(): string {
     const letters = place === 'overhead' ? Math.round(side / 2) : 22;
     return `.fight-hud .${place} .level { width: ${side}px; height: ${side}px; font-size: ${letters}px; }`;
   });
+  // Over a figure a plate's width and bar go with its foe's rank.
+  const tiers = Object.entries(OVERHEAD_SIZES).map(
+    ([tier, { width, bar, length }]) => `.fight-hud .overhead[data-tier='${tier}'] { width: ${width}px; }
+.fight-hud .overhead[data-tier='${tier}'] .body { width: ${width - overhead.height - 5}px; }
+.fight-hud .overhead[data-tier='${tier}'] .meter { height: ${bar}px; width: ${length * 100}%; }`,
+  );
   return `
 .fight-hud .plate { display: flex; gap: 5px; align-items: stretch; }
 .fight-hud .plate[data-band='red'] { --fill: ${FILLS.red}; }
@@ -107,11 +114,15 @@ ${wards}
   .fight-hud .poise-flash .poise-fill { animation: none; }
 }
 
-.fight-hud .overhead { width: ${overhead.width}px; height: ${overhead.height}px; translate: -50% -100%;
+.fight-hud .overhead { height: ${overhead.height}px; translate: -50% -100%;
   transform-origin: 50% 100%; margin-top: -4px; font-size: ${PLATE_SIZE.letters}px; }
-.fight-hud .overhead .body { width: ${overhead.width - overhead.height - 5}px; }
+${tiers.join('\n')}
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
-.fight-hud .overhead .meter { height: ${overhead.bar}px; }
+/* An Elite's and up's bar is cut in thirds, as Destiny's are, so how much is left reads at a glance. The boss bar marks
+   its phases instead. */
+.fight-hud .meter .third-mark { display: none; position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
+  background: ${TONES.outline}; }
+.fight-hud .plate[data-tier='elite']:not(.boss) .third-mark { display: block; }
 
 /* The boss bar and the target's plate stand in the compass's column, under it, the target under the boss bar while both
    show. */

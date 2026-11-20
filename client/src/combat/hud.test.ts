@@ -90,13 +90,26 @@ test('with reduced motion asked for, neither the low health nor the empty stamin
   assert.match(css, /\.vital\.stamina\.flash::after \{ opacity: 1;/);
 });
 
-test('the plates on foot are the sizes the sea draws its own at', () => {
+test('the plates on foot are the sizes the sea draws its own at, a Minor’s bar short and thin, an Elite’s long', () => {
   const css = fightSheetCss();
   const { overhead, boss } = PLATES;
-  assert.match(
-    rule(css, '.fight-hud .overhead'),
-    new RegExp(`width: ${overhead.width}px; height: ${overhead.height}px`),
-  );
+  assert.match(rule(css, '.fight-hud .overhead'), new RegExp(`height: ${overhead.height}px`));
+  // Each tier's plate width, its bar's height, and how much of the plate under the name its bar runs.
+  const tier = (name: string) => {
+    const bar = rule(css, `.fight-hud .overhead[data-tier='${name}'] .meter`);
+    return [
+      Number(/width: (\d+)px/.exec(rule(css, `.fight-hud .overhead[data-tier='${name}']`))?.[1]),
+      Number(/height: (\d+)px/.exec(bar)?.[1]),
+      Number(/width: (\d+)%/.exec(bar)?.[1]),
+    ];
+  };
+  assert.deepEqual(tier('major'), [overhead.width, overhead.bar, 100], 'a Major’s, a ship’s size');
+  const [[minorWidth, minorBar, minorRun], [eliteWidth, eliteBar]] = [tier('minor'), tier('elite')];
+  assert.equal(minorWidth, overhead.width, 'a Minor’s as wide, for its name');
+  assert.ok((minorRun ?? 100) < 100 && (minorBar ?? 0) < overhead.bar, 'a Minor’s bar short and thin');
+  assert.ok((eliteWidth ?? 0) > overhead.width && (eliteBar ?? 0) > overhead.bar, 'an Elite’s long');
+  assert.match(rule(css, ".fight-hud .plate[data-tier='elite']:not(.boss) .third-mark"), /display: block/);
+  assert.match(rule(css, '.fight-hud .meter .third-mark'), /display: none/, 'no other bar is cut in thirds');
   assert.match(rule(css, '.fight-hud .boss'), new RegExp(`width: min\\(${boss.width}px, ${boss.share * 100}%\\)`));
   // In a narrow view (the Test Ground's between its panels) the target's plate keeps to the boss bar's share of it.
   assert.match(rule(css, '.fight-hud .target'), new RegExp(`width: min\\(340px, ${boss.share * 100}%\\)`));

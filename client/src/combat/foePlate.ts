@@ -1,6 +1,8 @@
 // A foe's plate, one layout for every bar of a foe: its level in a square at the left and, to its right, its
 // name above a long thin bar of its health, the fill in its rank's colour over a dark trough with a hairline edge; its
-// debuffs' icons beside the bar.
+// debuffs' icons beside the bar. Over a figure its size goes with its rank, as Destiny's bars do: a Minor's short and
+// thin, so the crowd's fodder stays quiet, and an Elite's and up long and marked in thirds, so they stand out.
+import { PLATES } from '../plus/barLayout.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { FoeShield, FoeStatuses } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
@@ -26,6 +28,27 @@ export interface MarkedFoe {
   readonly shield?: FoeShield | null;
   readonly statuses?: FoeStatuses;
 }
+
+/** A plate's tier by its foe's rank: a Minor's, a Major's, or an Elite's and up. */
+export type PlateTier = 'minor' | 'major' | 'elite';
+export function plateTier(rank: number): PlateTier {
+  return rank <= 1 ? 'minor' : rank === 2 ? 'major' : 'elite';
+}
+
+/** A plate's width, its bar's height and the share of its width under the name the bar runs, over a figure, by its
+ *  tier, in CSS pixels, each as tall as its level's square (`PLATES.overhead.height`). A Major's is the size a ship's
+ *  plate is drawn at; a Minor's as wide, which "? Crossbowman", the longest name a Minor has, fills in the game's face,
+ *  so only its bar is short. */
+export const OVERHEAD_SIZES: Readonly<
+  Record<PlateTier, { readonly width: number; readonly bar: number; readonly length: number }>
+> = {
+  minor: { width: PLATES.overhead.width, bar: 5, length: 0.6 },
+  major: { width: PLATES.overhead.width, bar: PLATES.overhead.bar, length: 1 },
+  elite: { width: 176, bar: 10, length: 1 },
+};
+
+/** Where an Elite's and up's bar is marked, as shares of its whole health: its thirds. */
+export const THIRDS: readonly number[] = [1 / 3, 2 / 3];
 
 /** A shield's ward over a foe's health, as DFO's Enhanced HUD laid a boss's: from the bar's left end, as long as the
  *  share of the foe's whole health it holds still, in its element's colour (by the gear crate's number); none once
@@ -124,6 +147,7 @@ export class FoePlate {
     this.health = new Meter(body, 'health', { pieceLeast: parts.remembers ? PIECE_LEAST.foe : null });
     this.ward = element('i', 'ward', this.health.root);
     this.ward.hidden = true;
+    for (const share of THIRDS) element('i', 'third-mark', this.health.root).style.left = `${share * 100}%`;
     this.poise = parts.poise ? new PoiseTrack(body) : null;
     this.debuffs = new StatusRow(this.root, 'Debuffs');
     this.seen = parts.remembers ? new Map() : null;
@@ -139,6 +163,7 @@ export class FoePlate {
     }
     const { dataset } = this.root;
     if (dataset['band'] !== rankBand(foe.rank)) dataset['band'] = rankBand(foe.rank);
+    if (dataset['tier'] !== plateTier(foe.rank)) dataset['tier'] = plateTier(foe.rank);
     const level = foe.level ? String(foe.level) : '';
     if (this.level.textContent !== level) this.level.textContent = level;
     const mark = rankMark(foe.rank) ?? '';

@@ -2,9 +2,9 @@ import { BarLayout, PLATES } from '../plus/barLayout.ts';
 import { motionReduced } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
-import { FoePlate, type MarkedFoe } from './foePlate.ts';
+import { FoePlate, type MarkedFoe, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
 import { element, setStyle, showNode } from './meter.ts';
-import { coneStep, coneWant, offDegrees, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
+import { aimedFoe, coneStep, coneWant, offDegrees, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
 
 export type { MarkedFoe } from './foePlate.ts';
 
@@ -45,8 +45,8 @@ export function bossBarOf(foe: MarkedFoe): { title: string; faction: string; sha
 }
 
 /** How the plates over figures are seen this frame: the camera (its eye, the way it looks and its focal length; null
- *  when its matrix says none), whether the line between two points is blocked, and whether the player fought a foe in
- *  the last minute, whose plate shows wherever they look. */
+ *  when its matrix says none), whether the line between two points is blocked, how much the fight holds a foe's plate
+ *  wherever the player looks (1 down to 0, `FoeTarget.foughtShare`), and the foe the soft lock holds, if any. */
 export interface PlateViewing {
   readonly camera: {
     readonly eye: readonly [number, number, number];
@@ -54,14 +54,15 @@ export interface PlateViewing {
     readonly focal: number;
   } | null;
   readonly blocked: (from: readonly [number, number, number], to: readonly [number, number, number]) => boolean;
-  readonly fought: (id: number) => boolean;
+  readonly fought: (id: number) => number;
+  readonly locked: number | null;
 }
 
 /** How high a foe's head stands over its feet, in metres: where its plate's sight and angle are read. */
 const HEAD_M = 1.8;
 
-/** Over each living foe its plate, shown near the crosshair or while fought, laid so none covers another, and under
- *  the compass the boss bar of the Boss in the fight, who shows none over its head. */
+/** Over a living foe its plate, shown for the one nearest the crosshair, the one locked and those fought lately, laid
+ *  so none covers another, and under the compass the boss bar of the Boss in the fight, who shows none over its head. */
 export class FoeBars {
   readonly boss: FoePlate;
   private readonly hud: HTMLElement;
@@ -71,6 +72,8 @@ export class FoeBars {
   private readonly sight = new PlateSight();
   /** How much of each plate the cone shows, as last drawn. */
   private readonly cones = new Map<number, number>();
+  /** The foe the cone showed last frame. */
+  private aimed: number | null = null;
   /** Each foe's alert state as last seen, and the seconds since it last turned alert. */
   private readonly alerts = new Map<number, { alert: number; since: number }>();
 
@@ -92,10 +95,9 @@ export class FoeBars {
     viewing: PlateViewing,
     seconds: number,
   ): MarkedFoe | null {
-    const { width, height } = PLATES.overhead;
+    const { height } = PLATES.overhead;
     const { camera } = viewing;
-    const shown: { foe: MarkedFoe; x: number; y: number; depth: number; since: number; cone: number; scale: number }[] =
-      [];
+    const seen: { foe: MarkedFoe; spot: { x: number; y: number; depth: number }; since: number; off: number }[] = [];
     for (const foe of foes) {
       const was = this.alerts.get(foe.id);
       const turned = foe.alert === ALERT.alert && was?.alert !== ALERT.alert;
@@ -110,7 +112,14 @@ export class FoeBars {
         this.cones.delete(foe.id);
         continue;
       }
-      const want = coneWant(camera ? offDegrees(camera, head) : 0, viewing.fought(foe.id));
+      seen.push({ foe, spot, since, off: camera ? offDegrees(camera, head) : 0 });
+    }
+    this.aimed = aimedFoe(new Map(seen.map(({ foe, off }) => [foe.id, off])), this.aimed);
+    const shown: { foe: MarkedFoe; x: number; y: number; depth: number; since: number; cone: number; scale: number }[] =
+      [];
+    for (const { foe, spot, since, off } of seen) {
+      const held = Math.max(viewing.fought(foe.id), viewing.locked === foe.id ? 1 : 0);
+      const want = coneWant(foe.id === this.aimed ? off : null, held);
       const cone = coneStep(this.cones.get(foe.id) ?? null, want, seconds);
       this.cones.set(foe.id, cone);
       if (cone <= 0) continue;
@@ -122,7 +131,7 @@ export class FoeBars {
         x,
         y,
         depth,
-        width: width * scale,
+        width: OVERHEAD_SIZES[plateTier(foe.rank)].width * scale,
         height: height * scale,
       })),
       motionReduced() ? Infinity : seconds,

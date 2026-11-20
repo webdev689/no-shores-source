@@ -38,7 +38,8 @@ Who a player fights: enemy factions, each with its own types of foe on land and 
 how much it takes, how it defends and which telegraphed blows it throws. The owner decided the ranks and the factions
 ([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]]), and that a Miniboss
 throws more often than an Elite, a Boss's called foes fall with it and a garrison leashes to its posts
-([[Foes Leash to Their Posts and Fall With Their Boss]]); the roster and the numbers are Claude's
+([[Foes Leash to Their Posts and Fall With Their Boss]]), and that fewer plates show and their size goes with rank
+([[Fewer Plates Show, Sized by Rank, After Destiny]]); the roster and the numbers are Claude's
 ([[The Enemies as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
 
 ## Factions
@@ -193,9 +194,13 @@ WebAssembly, so names, factions and weapons are read in one place.
   above a long thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before
   the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]).
-- **Plates are never overbearing.** A foe's plate shows near the crosshair, fading in and out at the cone's edge, and
-  always for the foes fought in the last minute; never through a block, nor past 60 m; it shrinks with distance as
-  its figure does ([[Interface]]).
+- **A plate's size goes with its rank**, as Destiny's bars do ([[Fewer Plates Show, Sized by Rank, After Destiny]]): a
+  Minor's bar short and thin, a Major's as a ship's, an Elite's and a Miniboss's longer and cut in thirds
+  ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
+- **Plates are never overbearing.** Of the foes not fought, only the one nearest the crosshair shows its plate; the
+  foe the soft lock holds, and the foes fought in the last 6 s, show theirs wherever they are, fading as the target
+  plate does. None is seen through a block or the land, nor past 60 m; each shrinks with distance as its figure does
+  ([[Interface]]).
 - **Plates never overlap.** The nearest foe's stays over it, in front; a farther one that would cover it is lifted
   just clear, and the plates hold still from frame to frame ([[Interface]]).
 - **The boss bar**: for the nearest living Boss that is alert or struck, the same plate wide across the top of the

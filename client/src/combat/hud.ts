@@ -7,14 +7,13 @@ import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts
 import { AmmoCounter } from './ammoCounter.ts';
 import { edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
-import { FoePlate } from './foePlate.ts';
+import { FoePlate, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { wearFightSheet } from './hudSheet.ts';
 import { element, setStyle, showNode } from './meter.ts';
-import { cameraOf, plateScale, SIGHT_SKIN_M } from './plateSight.ts';
-import { PLATES } from '../plus/barLayout.ts';
+import { cameraOf, landBlocks, plateScale, SIGHT_SKIN_M } from './plateSight.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
@@ -50,6 +49,9 @@ export interface HudFrame {
   readonly parryOpen?: boolean;
   /** The blocks of the place, which no plate over a figure is seen through. */
   readonly blocks?: readonly Block[];
+  /** The land's height under a point (null where none is known), which no plate over a figure is seen through either;
+   *  none for a place with no land of its own. */
+  readonly groundAt?: (x: number, y: number) => number | null;
   /** The Art's abilities as the bar shows them (Fighting's abilities); none hides the bar. */
   readonly abilities?: AbilityState | null;
   /** Whether the player has just stepped onto an Ammo box they cannot take, their ammunition full (DropsShown's
@@ -251,11 +253,12 @@ export class Hud {
     };
     const lock = own?.target ?? null;
     const chosen = this.foeTarget.step({ player: frame.player, lock, foes: frame.foes, events: frame.events }, seconds);
-    const blocks = frame.blocks ?? [];
+    const { blocks = [], groundAt } = frame;
     const viewing: PlateViewing = {
       camera: cameraOf(frame.matrix),
-      blocked: (from, to) => blockedBy(blocks, from, to),
-      fought: (id) => this.foeTarget.foughtWith(id),
+      blocked: (from, to) => blockedBy(blocks, from, to) || (!!groundAt && landBlocks(groundAt, from, to)),
+      fought: (id) => this.foeTarget.foughtShare(id),
+      locked: lock,
     };
     if (viewing.camera) this.compass.update(headingOf(viewing.camera.forward));
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
@@ -432,7 +435,7 @@ function platesOf(frame: HudFrame): Box[] {
     const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
     const spot = project(frame.matrix, point, frame.width, frame.height);
     if (!spot) return [];
-    const half = (PLATES.overhead.width * plateScale(clipOf(frame.matrix, point)[2], focal)) / 2;
+    const half = (OVERHEAD_SIZES[plateTier(rank)].width * plateScale(clipOf(frame.matrix, point)[2], focal)) / 2;
     return [{ left: spot.x - half, right: spot.x + half, top: -Infinity, bottom: spot.y }];
   });
 }
