@@ -184,7 +184,9 @@ export class Passage {
       return;
     }
     const held = this.room?.ownShip?.pace ?? null;
-    const fix = shipAt(this.voyage, followed(this.voyage, this.travelled, seconds, this.sailed, settled, held));
+    // Her way is her pace's by the canvas she keeps, never under half, as the room sails her.
+    const way = Math.max(0.5, this.room?.kept?.sail ?? 1);
+    const fix = shipAt(this.voyage, followed(this.voyage, this.travelled, seconds, this.sailed, settled, held, way));
     this.lie = { x: fix.position[0], y: fix.position[1], heading: fix.heading ?? this.lie.heading };
     this.travelled = fix.travelledM;
     if (fix.arrived) {
