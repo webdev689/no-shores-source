@@ -163,14 +163,14 @@ fn walked(
         let out = [head[0] - root[0], head[1] - root[1]];
         let bearing = libm::atan2(out[0], -out[1]);
         for side in [-1.5, 1.5] {
-            let length = out[0].hypot(out[1]).max(1e-9);
+            let length = libm::hypot(out[0], out[1]).max(1e-9);
             let across = [-out[1] / length * side, out[0] / length * side];
             let at = [head[0] + across[0], head[1] + across[1]];
             posts.push(Post { task: Task::Idle, at, facing: bearing, keep: Keep::Visited, reached_from: end });
         }
         let at = ways.points[quay as usize].at;
         let back = [root[0] - at[0], root[1] - at[1]];
-        let length = back[0].hypot(back[1]).max(1e-9);
+        let length = libm::hypot(back[0], back[1]).max(1e-9);
         let side = [-back[1] / length * 3.0, back[0] / length * 3.0];
         posts.push(Post {
             task: Task::Drink,
@@ -208,7 +208,7 @@ fn walked(
 /// A ship either side of the pier, her bow toward the sea along it, the two staggered so both read from the quay.
 fn moorings(root: [f64; 2], head: [f64; 2]) -> Vec<[f64; 3]> {
     let out = [head[0] - root[0], head[1] - root[1]];
-    let length = out[0].hypot(out[1]).max(1e-9);
+    let length = libm::hypot(out[0], out[1]).max(1e-9);
     let (along, across) = ([out[0] / length, out[1] / length], [-out[1] / length, out[0] / length]);
     let bearing = libm::atan2(along[0], -along[1]);
     [(-1.0, MOORED_ALONG[0]), (1.0, MOORED_ALONG[1])]
@@ -222,7 +222,7 @@ fn moorings(root: [f64; 2], head: [f64; 2]) -> Vec<[f64; 3]> {
 }
 
 fn distance(one: [f64; 2], two: [f64; 2]) -> f64 {
-    (one[0] - two[0]).hypot(one[1] - two[1])
+    libm::hypot(one[0] - two[0], one[1] - two[1])
 }
 
 /// The pier rooted nearest `root`: the timber block of the works whose footprint holds it, or comes nearest.
@@ -246,7 +246,7 @@ fn pier_head(pier: &Solid, root: [f64; 2]) -> [f64; 2] {
 /// The Harbourmaster's office and the chandlery either side of the flight's head, facing each other across it, with
 /// crates and lamp posts by them.
 fn offices(top: [f64; 3], down: [f64; 2], laid: &mut Laid) {
-    let length = down[0].hypot(down[1]).max(1e-9);
+    let length = libm::hypot(down[0], down[1]).max(1e-9);
     let seaward = [down[0] / length, down[1] / length];
     let across = [-seaward[1], seaward[0]];
     let [beside, back] = BESIDE_FLIGHT_M;
@@ -275,7 +275,7 @@ fn low_walls(way: &Harboured<'_>) -> Vec<Solid> {
     for &(column, row) in way.avenue {
         let Some(level) = level_of(column, row) else { continue };
         let [west, north, east, south] = way.grid.bounds(column, row);
-        let sides: [((isize, isize), [f64; 2], [f64; 2]); 4] = [
+        let sides = [
             ((0, -1), [west, north], [east, north]),
             ((1, 0), [east, north], [east, south]),
             ((0, 1), [west, south], [east, south]),

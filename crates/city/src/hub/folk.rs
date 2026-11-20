@@ -366,7 +366,9 @@ fn customers(stations: &[Station], ways: &Ways) -> Vec<Post> {
                 .iter()
                 .enumerate()
                 .filter(|(_, point)| point.name == name)
-                .map(|(at, point)| (at, (point.at[0] - station.counter[0]).hypot(point.at[1] - station.counter[1])))
+                .map(|(at, point)| {
+                    (at, libm::hypot(point.at[0] - station.counter[0], point.at[1] - station.counter[1]))
+                })
                 .min_by(|one, two| one.1.total_cmp(&two.1))?;
             let out = [-libm::sin(station.facing), libm::cos(station.facing)];
             let at = [station.counter[0] + out[0] * 1.2, station.counter[1] + out[1] * 1.2];
