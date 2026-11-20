@@ -2,6 +2,7 @@ import { type GlowElement, type GlowLook, glowField } from '../elementGlow.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import { cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 import type { ForgeStore } from '../forge/store.ts';
+import type { ForgeLooks } from '../forge/looks.ts';
 import type { Gpu } from '../gpu.ts';
 import { type Climb, ClimbHands, type ClimbShown, GRIP, REACH_HEIGHT } from './climbHands.ts';
 import { climbFrame, climbPicture, climbPlace } from './climbing.ts';
@@ -102,6 +103,8 @@ export interface FirstPersonState {
   readonly zoom?: number;
   /** The fight's own timing of the swing it has begun, which a strike begun now keeps; none outside a fight. */
   readonly pace?: Pace | null;
+  /** The forge body the player wears, whose sets' light a covering colour is laid by, as the figure's is. */
+  readonly body?: string;
   /** What the hands would hold drawing the other loadout, whose pictures are asked for ahead of a swap. */
   readonly spare?: { readonly right: string | null; readonly left: string | null; readonly own?: Armed } | null;
 }
@@ -216,9 +219,13 @@ export class FirstPerson {
 
   /** Opens the first person on the forge's published pictures, with their placement and Daggerfall's colours. */
   static async open(gpu: Gpu, store: ForgeStore, strokes: () => number = Math.random): Promise<FirstPerson> {
-    const [frames, dyes] = await Promise.all([store.table<FramesTable>('frames'), store.table<DyeTable>('dyes')]);
+    const [frames, dyes, looks] = await Promise.all([
+      store.table<FramesTable>('frames'),
+      store.table<DyeTable>('dyes'),
+      store.table<ForgeLooks>('looks'),
+    ]);
     const painter = new FramePainter(dyes, new PaletteSnap(dyes.palette));
-    const source = { strip: (path: string) => store.strip(path), frames, dyes, painter };
+    const source = { strip: (path: string) => store.strip(path), frames, dyes, painter, looks };
     return new FirstPerson(new FirstPersonView(gpu), source, Math.random, strokes);
   }
 
@@ -280,16 +287,18 @@ export class FirstPerson {
     const shot = state.mounted ? this.ride.step(seconds, gaitOf(state), state.yaw ?? null) : null;
 
     this.horse = state.horse ?? this.horse;
-    // A new dye, or a faction's colour on the gauntlets or the boots, recolours every hand and foot: what was composed
-    // in the old is let go, but the horse. The weapons' colours are in their own pictures' keys, so a swap keeps them.
+    // A new dye, a faction's colour on the gauntlets or the boots, or a new body (whose sets' light a covering colour
+    // is laid by) recolours every hand and foot: what was composed in the old is let go, but the horse. The weapons'
+    // colours are in their own pictures' keys, so a swap keeps them.
     const { hands, feet, right, left } = state.own ?? {};
     this.armed = { right, left };
-    const dyed = [state.dye ?? '', hands, feet].join('|');
+    const dyed = [state.dye ?? '', hands, feet, state.body].join('|');
     if (dyed !== this.dye) {
       this.dye = dyed;
       const { palette } = this.source.dyes;
       const own = { hands: factionRamp(hands, palette), feet: factionRamp(feet, palette) };
-      this.source = { ...this.source, dye: cosmeticRamp(state.dye, palette), own };
+      const body = state.body ?? this.source.body;
+      this.source = { ...this.source, dye: cosmeticRamp(state.dye, palette), own, ...(body ? { body } : {}) };
       this.letGo((key) => key.startsWith(HORSE_KEY));
       [this.look, this.spareLook] = ['', ''];
     }
@@ -398,7 +407,7 @@ export class FirstPerson {
     const place = atOwnPlace(false, ducks(held) ? drop + lowerDrop(this.duck) : drop);
     if (held.kind === 'shield') {
       const key = `shield|${held.archive}|${held.metal}|${worn.hands}|${frame}|${armedKey(armed)}`;
-      const ask = () => shieldPicture(this.sourceFor(armed), held.archive, held.metal, worn.hands, frame);
+      const ask = () => shieldPicture(this.sourceFor(armed), held.archive, held.metal, worn.hands, frame, held.layer);
       return { key, ask, place };
     }
     const light = held.kind === 'light' ? held.light : 'torch';

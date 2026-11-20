@@ -46,8 +46,12 @@ let snap: PaletteSnap | null = null;
  *  which the frames composed ahead take in turn. */
 const strips = new StripCache(128 * 1024 * 1024);
 
+/** A strip by where the page said it lies; one the page said nothing of is not kept as missing, since it may be
+ *  drawn after all. */
 const stripOf = (path: string, where: StripWhere | null | undefined): Promise<Strip | null> =>
-  strips.get(path, () => (where ? stripAt(where) : Promise.resolve(null)));
+  where === undefined
+    ? Promise.resolve(null)
+    : strips.get(path, () => (where ? stripAt(where) : Promise.resolve(null)));
 
 // A turn is a message to itself, so messages that came meanwhile are read first; a timer's turns slow to 4 ms apart.
 const turns = new MessageChannel();

@@ -34,7 +34,7 @@ export async function climbPicture(
     return {
       width: arm.width,
       height: arm.height,
-      pixels: paintSet(source, arm, hands, 'Iron'),
+      pixels: await paintSet(source, arm, hands, 'Iron'),
       at: [0, 0],
     };
   const strips = await Promise.all(CLIMB_GARMENTS.map((garment) => source.strip(climbPath(garment, frame, series))));

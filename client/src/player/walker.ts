@@ -273,6 +273,7 @@ export class Walker {
       horse: { coat: outfit.coat ?? null, barding: outfit.barding ?? null },
       dye: outfit.dye ?? null,
       own: ownColours(outfit),
+      body: dress.body,
       yaw: player.yaw,
       pitch: player.pitch,
       fov: FIELD_OF_VIEW,
