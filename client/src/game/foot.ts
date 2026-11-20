@@ -367,7 +367,8 @@ export class Foot {
   get roomNote(): string {
     if (!(this.link instanceof RoomConnection)) return '';
     if (this.link.rejoining) return 'Reconnecting…';
-    return this.link.open ? `In the room as player ${this.link.player}` : 'The room was lost: playing on alone';
+    if (this.link.open) return `In the room as player ${this.link.player}`;
+    return `The room was lost: ${this.link.lost ?? 'playing on alone'}`;
   }
 
   /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, the fight's buttons only

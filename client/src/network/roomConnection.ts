@@ -47,6 +47,9 @@ export function rejoinWait(tries: number): number {
 const SENT_AWAY = [1008, 1009];
 /** The code a room whose gate shuts to the player's character closes with (worker.ts): rejoining would be shut again. */
 export const SHUT = 4003;
+/** The code a room closes with once the player's character is taken by another of their sockets, in this room or
+ *  another (worker.ts): joining again would take it back, and the two would send each other away for ever. */
+export const ELSEWHERE = 4001;
 
 /** What a socket's messages go to: its welcome, each snapshot, and the player's own gear. */
 interface Heard {
@@ -156,7 +159,7 @@ export class RoomConnection implements RoomLink {
   private watch(socket: WebSocket): void {
     socket.addEventListener('close', (event) => {
       if (socket !== this.socket || this.closed) return;
-      if (SENT_AWAY.includes(event.code) || event.code === SHUT) {
+      if (SENT_AWAY.includes(event.code) || event.code === SHUT || event.code === ELSEWHERE) {
         [this.rejoining, this.lost] = [false, event.reason || 'the room sent the player away'];
         if (event.code === SHUT) this.shut = this.lost;
         return;

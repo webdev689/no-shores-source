@@ -375,7 +375,10 @@ so every decision is Rust and the shell only carries bytes and time.
 every other figure drawn on from where the new room has it, though its clock starts again. The
   [[Test Ground]], the [[Game]]'s node rooms and sea, and a fleet each follow it so; at sea, and in a fleet, the ship
   puts to sea again where she lies. A room that sends the player away for not keeping to the messages (1008, 1009),
-  or whose gate shuts to their character (4003), is not joined again, and the page says why.
+  whose gate shuts to their character (4003), or whose character another of their sockets took, in that room or
+  another (4001), is not joined again, and the page says why: on foot, "The room was lost: your character joined
+  another room". A 4001 on a socket the page already let go of, a rejoin's old socket the room had not seen close,
+  changes nothing.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
   with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOnNode` cuts the
   rect the welcome names from the landmass open in the land's door and stands the movement rules on it, with the

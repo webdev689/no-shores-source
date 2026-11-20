@@ -93,14 +93,17 @@ they play in holds it while they are there.
   reach) and gives it to the player, trimming their fight by it. One account is one player in a room: a second
   socket of theirs signed in (a rejoin before the room saw the first close, or a second tab) sends the first away
   as played elsewhere before it is given the character, so a run keeps the first one's body for it, and the rules
-  refuse to note one account for two players (`Room::own`).
+  refuse to note one account for two players (`Room::own`). A rejoin's old socket is one the page let go of already,
+  so it plays on; a second tab's page stops there and joins no more, so two tabs never take the character back and
+  forth.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
   and let go; a release the accounts do not answer is asked again, then the last save is made on its own and the
   hold left to lapse.
 - **Moving between rooms.** A claim waits up to three seconds for the room the player left to let go, then takes the
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
-  another learns it from its next save and lets the player go, saying their character joined another room.
+  another learns it from its next save and lets the player go, saying their character joined another room (4001),
+  and that page joins no more ([[Server]], "Joining again").
 - **Gated.** Before giving a character, the room asks its gate ([[Activities]]). It judges the character with the
   story the player already holds in the room carried forward, since the page may tell the room the prologue is done
   before the accounts answer; the story only moves forward. One the gate shuts, or a new one where the prologue is
