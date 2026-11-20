@@ -91,6 +91,7 @@ pub fn seaward_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
     for along in [-110.0, -80.0, 80.0, 110.0] {
         laid.piece(stand_at("bench", "front", frame.at(51.0, along), frame.level, frame.seaward));
     }
+    laid.spots.push(frame.at(57.0, -95.0));
 }
 
 /// The Watch Court, the landing: the obelisk on its stepped plinth, braziers either side, a processional way from the

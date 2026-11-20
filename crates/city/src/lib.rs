@@ -130,7 +130,7 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
     let site = Site { level, ..first };
     let built =
         landmark(&city.motif, &site, ground).ok_or_else(|| format!("{}: no motif called {}", city.id, city.motif))?;
-    let social = plaza(&city.id, ground, centre, level, seaward, &built);
+    let mut social = plaza(&city.id, ground, centre, level, seaward, &built);
     // Only the cells under the landmark's base rise to the platform and are kept for it. The cells under the plaza keep
     // their own levels and are built on as any other: the plaza's pad stands over its own footprint, its parapet for a
     // wall, so what is built beneath it is hidden and the city runs right up to its foot, as round the Tower.
@@ -174,6 +174,7 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         }
         avenues.push(cells);
     }
+    let harbour_way = harbour_avenue.as_ref().map(|found| (found.avenue, found.roots.clone()));
     let laid = ramps::lay(&ramps::Avenues {
         grid: &grid,
         footings: &cell_footings,
@@ -194,6 +195,32 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         !overlaps([west, north, east, south], social.bounds)
     }));
     works.extend(laid.works);
+    if city.id == hub::HUB_CITY
+        && let Some((harbour_avenue, roots)) = &harbour_way
+    {
+        let (bounds, along_seaward) = social::plaza_bounds(centre, seaward, reach);
+        let frame = courtyard::Frame {
+            middle: [f64::midpoint(bounds[0], bounds[2]), f64::midpoint(bounds[1], bounds[3])],
+            seaward: along_seaward,
+            depth: social::PLAZA_M[1],
+            length: social::PLAZA_M[0],
+            level,
+        };
+        let way = hub::Harboured {
+            grid: &grid,
+            footings: &cell_footings,
+            uses: &uses,
+            avenue: &avenues[*harbour_avenue]
+                .iter()
+                .copied()
+                .filter(|&(column, row)| uses[index(column, row)] == Use::Avenue)
+                .collect::<Vec<_>>(),
+            ramps: &laid.ramps,
+            works: &works,
+            roots,
+        };
+        hub::harbour(&mut social, &frame, &way);
+    }
     let mut pads: Vec<Pad> = Vec::new();
     let mut cells = Vec::new();
     for row in 0..SIDE_CELLS {

@@ -1,6 +1,7 @@
 //! The walks round the courts on the Beacon's platform: the Beacon Walk between the courts and the Beacon's base, its
 //! portico before the Hall's great door, townsfolk's market stalls and braziers; the East and West Walks off the
-//! plaza's ends, the Tack's stable on the east one; and the sealed gates where the platform runs on round the base.
+//! plaza's ends; the Stair Yard on round the base's east side, where the Tack keeps a stable at the head of the
+//! Harbour Stair down to the harbour way; and the sealed gates where the platform runs on round the base.
 
 use super::courts::{HALF_LENGTH_M, PLATFORM_FROM_M, brazier};
 use super::{Laid, parapet, stand_against, stand_at};
@@ -18,6 +19,11 @@ pub(crate) const PLATFORM_EDGE_M: f64 = 154.0;
 /// corner towers out to the platform's edges, their thickness and height; a sealed gate in each.
 pub(crate) const SEALED_M: [f64; 4] = [-108.0, 76.0, 2.0, 10.0];
 const SEALED_GATE_ACROSS_M: f64 = 115.0;
+/// On the east, the wall closes the Stair Yard past the Harbour Stair's head, where the city's switchback meets the
+/// platform (`ramps`), metres seaward of the plaza's middle.
+pub(crate) const SEALED_EAST_M: f64 = -150.0;
+/// The Tack's stable against the base's east face, its middle metres seaward of the plaza's middle.
+const STABLE_TOWARD_M: f64 = -130.0;
 /// The portico before the Hall's door: its width, its podium's depth before the base and height, its columns' height.
 /// The podium runs on through the door, and steps lead up to it outside and down from it inside.
 const PORTICO_M: [f64; 4] = [52.0, 16.0, 0.9, 11.0];
@@ -41,7 +47,8 @@ pub fn beacon_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
             frame.seaward,
             frame.level,
         ));
-        let [toward, from, thick, high] = SEALED_M;
+        let [west_toward, from, thick, high] = SEALED_M;
+        let toward = if side > 0.0 { SEALED_EAST_M } else { west_toward };
         let length = PLATFORM_EDGE_M - from;
         let wall = frame.block(toward, side * (from + length / 2.0), 0.0, [length, thick, high], Material::Stone);
         laid.solids.push(wall);
@@ -56,8 +63,8 @@ pub fn beacon_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
     laid.piece(stand_against("market-stall-pots", "front", frame.at(SEALED_M[0] + 1.0, -136.0), frame.level, north));
     laid.piece(stand_at("crates-barrels", "front", frame.at(BASE_FACE_M + 4.0, -72.0), frame.level, north));
     let east = [across[0], across[1]];
-    let west = [-east[0], -east[1]];
-    let stable = stand_against("stall-tack", "counter", frame.at(-62.0, PLATFORM_EDGE_M - 0.6), frame.level, west);
+    let base_side = SEALED_M[1] - 0.5;
+    let stable = stand_against("stall-tack", "counter", frame.at(STABLE_TOWARD_M, base_side), frame.level, east);
     laid.stall(StationKind::Tack, stable);
     for side in [-1.0, 1.0] {
         laid.piece(stand_at("lamp-post", "front", frame.at(-80.0, side * 142.0), frame.level, north));

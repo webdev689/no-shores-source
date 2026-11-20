@@ -9,6 +9,7 @@
 
 mod courts;
 mod hall;
+mod harbour;
 mod placing;
 mod ring;
 mod walks;
@@ -18,8 +19,9 @@ use crate::landmarks::ahead;
 use crate::social::Social;
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::{Station, StationKind};
-use land::ground::Ground;
 pub use courts::BOARD_LANDING_M;
+pub use harbour::{Harboured, harbour};
+use land::ground::Ground;
 pub use placing::{Stood, stand_against, stand_at};
 
 /// The city whose social space is this hub.
