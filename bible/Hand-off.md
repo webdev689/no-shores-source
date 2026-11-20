@@ -179,7 +179,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
-- The first story mission, the [[Prologue]], on pull request #74, as the owner set it ([[The Game Opens With a Story
+- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought
+  #71's ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story
   Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
   asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
   it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
@@ -190,14 +191,16 @@ Where the work stands now, for the next session. Each session rewrites this note
   heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
   theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
   Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
-  the intro, each started on its own with `?prologue=<beat>`.
+  the intro, each started on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and
+  a click starts the intro over the cloud at first light.
 
 ## Waiting on the owner
 
-- **#74, the prologue**, now merges into `main` (it was stacked on #71, still open, so it carries #71's ships too),
-  and waits on the owner's yes, which deploys the page and the rooms. Every call inside the beats is in
-  [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
-  sound.
+- **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
+  day and night, its music and its sound.
+- **The lore on #77 and #75, once merged**: the intro shows the highland in mist and the green island in rain as
+  living towns with ships off them, and #75 makes those cities ruins. Nothing in the prologue names the Cube or a
+  crystal, and the voice in the deep is not named.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
   repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
   `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
