@@ -28,6 +28,10 @@ code:
   - client/src/editor/naval.ts#Naval
   - client/src/editor/fighting.ts#Fighting
   - client/src/editor/aim.ts#lookReach
+  - client/src/editor/aimCamera.ts#AimCamera
+  - client/src/editor/naval.ts#aimOf
+  - client/src/ships/aimView.ts#AimView
+  - client/src/game/seaSight.ts#aimLineOf
   - client/src/ships/effects.ts#Effects
   - client/src/ships/fightFeel.ts#FightFeel
   - client/src/rules/feelEvents.ts#feelOf
@@ -458,11 +462,43 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws her to her true size as on the sea's other views near her ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
-  let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
+  let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, and
+  C to brace; the sea's own wait for its end, and the sea bar is hidden.
   Every captain in it is drawn with her name over a bar of her hull, her plate as far over her highest sail as the
   Sloop's stands over hers (`plateOverM`). Then the view pans back up. Hostile ships at sea
   are drawn as the Overworld's ships are, each in her hull and her faction's colours with her footprint on the water, those fighting each other where
   the room has them. A ship that comes into view is drawn under the sails she sails by, already set (`seaShips.ts`).
+
+## The aim, as DFO's
+
+The owner: the sea fight looks and aims as DFO's does ([[The Sea Fight Looks and Aims as DFO's Does]]). Ported from
+DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZoom.js`:
+
+- **The eye** (`AimCamera`, in the game's fight) eases out to the aim eye over DFO's 0.22 s, smoothstepped, and home
+  again on the release; swinging the look across her bow carries it to the other battery's eye eased in her own frame,
+  so her way never drags it. On its way out from her ports it stops 1.2 m short of any ship afloat alongside (her
+  waterline's box, from her draught to a metre over her upper gun line). A crippled ship's guns are silent: her eye
+  never moves. The look's ray runs from the eye drawn, so the crosshair is where it lays.
+- **The reach**: while aiming the look may rise 0.15 rad over the horizon, past the guns' longest throw on the water
+  (DFO's look is free); out of the aim the orbit keeps its own clamp, 0.05 to 1.2 rad down.
+- **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, and under it DFO's aim line at 13 px in
+  the HUD's outline: the side and its shot, the range the guns are laid to (the mean of where each gun stops, out
+  along the fire from her ports), "(longest)" within a metre of their longest throw, " - on target" in red while the
+  side can fire, or dimmed " - reloading 4.2 s", " - braced" or " - guns silent".
+- **What the aim shows** (`aimOf`, drawn by `AimView`): each gun's unscattered flight to where the rules stop it, a
+  ribbon 0.003 of the view's height across at any distance, dashed every 6 m of flight (the second half 0.35 as
+  strong) and marching out at 9 m/s; each splash a ring flat on the sea, at least 1.6 m across its radius, and a post
+  of light 3.4 m tall over it; each strike a 2.2 m mark where the ball meets her. DFO's three tones: brass laid, red
+  on target, grey while the side cannot fire (loading, braced, her guns silent). The ring is blended over the sea; the
+  posts, strikes and arcs are light added onto the frame, unlit and unfogged; all are drawn over the finished
+  picture after the water, hidden where the world's depth stands nearer.
+- **The wheel**: while aiming a notch steps the load, but only after 0.18 s of quiet since the last, so a trackpad's
+  stream of small turns steps it once; out of the aim it zooms the fight's camera, a notch half again nearer or
+  farther, from 11.4 m (DFO's nearest) to the fight camera's own 75 m.
+- **The screen**: a captain's plate stands under the compass, never over it.
+
+The World Editor's own aim keeps its eye at once (`aimCameraOf`) and draws its lay as marks, as "In the World Editor"
+says; the game's fight draws it over the water.
 
 ## In a fleet room
 

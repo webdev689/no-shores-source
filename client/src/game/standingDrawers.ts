@@ -35,6 +35,7 @@ export function standingDrawers(
         parts.shipModels.draw(pass, ships, camera, shadow);
         parts.seaFight?.draw(pass, camera, time, shadow);
       },
+      overWater: (encoder, target, fromEye, depth) => parts.seaFight?.overWater(encoder, target, fromEye, depth),
     },
     {
       castInto: (pass, fromEye, shot, _time, shadow) =>

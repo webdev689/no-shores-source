@@ -38,7 +38,7 @@ const ORBIT = { distance: 75, pitch: 0.3, lookOverM: 6 } as const;
 /** How fast a drag turns the camera, radians a pixel, and how far up and down it may look. */
 const DRAG_TURN = 0.005;
 const PITCH = [0.05, 1.2] as const;
-/** The quiet the wheel keeps before it steps the load again, seconds (DFO's SHOT_WHEEL_S): a trackpad's stream of
+/** The quiet the wheel keeps before it steps the load again, seconds, as DFO's keeps: a trackpad's stream of
  *  small turns steps it once. */
 const SHOT_WHEEL_S = 0.18;
 /** Out of the aim the wheel zooms the fight's camera, DFO's helm zoom: a notch is this many times nearer or farther,
@@ -98,6 +98,8 @@ export class SeaCombat {
   private wheelAt = -Infinity;
   private distance: number = ORBIT.distance;
   private readonly aimCamera = new AimCamera();
+  /** Where the frame's ships were last drawn from, in the window, and when. */
+  private drawnFrom: { readonly eye: readonly [number, number, number]; readonly now: number } | null = null;
   /** How far down the view has come, 0 the sea's to 1 the fight's, and which way it goes. */
   private down = 0;
   private going: 1 | -1 = 1;
@@ -118,6 +120,7 @@ export class SeaCombat {
   ) {
     this.shown = shown;
     this.naval = new Naval(marks, shown);
+    this.naval.aimOverWater = true;
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     this.naval.join(Fighting.joined(roomSource(room, first), 'sea', first, now));
     this.last = first;
@@ -212,7 +215,8 @@ export class SeaCombat {
   /** The eye the fight is drawn from this frame, world metres: the orbit's, eased out to her battery on the side
    *  looked at while aiming (never for a crippled ship, her guns silent), short of every other ship afloat. */
   private eyeAt(orbit: Orbit, seconds: number): readonly [number, number, number] {
-    const [eastM, southM, upM] = cameraOf(orbit).eye;
+    // The orbit's own eye keeps the orbit's clamp, so a look raised over the horizon never takes it under the sea.
+    const [eastM, southM, upM] = cameraOf({ ...orbit, pitch: Math.max(PITCH[0], orbit.pitch) }).eye;
     const home = [eastM + this.window.leftM, southM + this.window.topM, upM] as const;
     const { ship, pose, state } = this.last.player;
     const [x = 0, y = 0, heading = 0] = ship;
@@ -371,11 +375,20 @@ export class SeaCombat {
           swellHeight(swell, x + this.window.leftM, y + this.window.topM, this.waterTime, Infinity)
       : undefined;
     const windowCamera = { fromEye: camera.fromEye, eye };
+    this.drawnFrom = { eye, now };
     this.naval.draw(pass, this.window, 1, windowCamera, now, this.scale, scarred, {
       water,
       shadow,
     });
     playCues(worldOutput(), this.naval.takeCues(), eye, this.orbit.yaw);
+  }
+
+  /** The lay's aim over the finished picture, after the water, from where the frame's ships were drawn
+   *  (`draw`), hidden where `depth` stands nearer. */
+  overWater(encoder: GPUCommandEncoder, target: GPUTextureView, fromEye: Float32Array, depth: GPUTexture): void {
+    if (!this.drawnFrom) return;
+    const camera = { fromEye, eye: this.drawnFrom.eye };
+    this.naval.drawAimOver(encoder, target, depth, this.window, 1, camera, this.drawnFrom.now);
   }
 
   /** Each captain's bar over her hull's masthead, in world metres, her drawn `scale` times her size, while she

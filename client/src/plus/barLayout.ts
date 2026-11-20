@@ -83,20 +83,27 @@ export class BarLayout {
       if (!spot) return;
       const slack = this.lifted.has(key) ? SLACK : 0;
       const halfWidth = spot.width / 2;
-      let bottom = spot.y;
-      // Each push sets the bar above one box for good, as it only ever rises, so this ends.
+      // Never over the compass at the top of the screen: a plate high in the view stands under its foot.
+      const floor = UNDER_COMPASS + spot.height;
+      const covers = (box: Box, foot: number) =>
+        Math.abs(spot.x - box.x) < halfWidth + box.halfWidth + GAP + slack &&
+        foot > box.top - GAP &&
+        foot - spot.height < box.bottom + GAP;
+      // Each push sets the bar above one box for good, as it only ever rises, so this ends; one that would rise over
+      // the compass goes under the boxes instead, each push only lowering it.
+      let bottom = Math.max(spot.y, floor);
       for (let pushed = true; pushed;) {
         pushed = false;
-        for (const box of placed) {
-          const across = Math.abs(spot.x - box.x) < halfWidth + box.halfWidth + GAP + slack;
-          const upright = bottom > box.top - GAP && bottom - spot.height < box.bottom + GAP;
-          if (!across || !upright) continue;
-          bottom = box.top - GAP;
-          pushed = true;
+        for (const box of placed.filter((each) => covers(each, bottom))) [bottom, pushed] = [box.top - GAP, true];
+      }
+      if (bottom < floor) {
+        bottom = floor;
+        for (let pushed = true; pushed;) {
+          pushed = false;
+          for (const box of placed.filter((each) => covers(each, bottom)))
+            [bottom, pushed] = [box.bottom + GAP + spot.height, true];
         }
       }
-      // Never over the compass at the top of the screen: a plate high in the view stands under its foot.
-      bottom = Math.max(bottom, UNDER_COMPASS + spot.height);
       const target = spot.y - bottom;
       if (target > 0) lifted.add(key);
       const shown = this.lifts.get(key);

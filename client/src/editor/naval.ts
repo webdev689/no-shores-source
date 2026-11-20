@@ -62,8 +62,10 @@ export class Naval {
   private own: FightingShip | null = null;
   private windBearing = 0;
   private readonly marks: MarkDrawer;
-  /** What draws the aim, where the marks' device can. */
+  /** What draws the aim over the water, where the marks' device can; until the page draws it there
+   *  (`drawAimOver`), the lay's arcs are drawn as marks. */
   private readonly aimView: AimView | null;
+  aimOverWater = false;
   /** The hull a ship is drawn as: her own once her model has come. */
   private readonly shown: (hull: number) => number;
   private farewell: { readonly lines: string[]; readonly until: number } | null = null;
@@ -301,14 +303,28 @@ export class Naval {
           radius: radius * BALL_DRAWN * scale,
           colour: BALL,
         });
+      if (!this.aimOverWater) marks.push(...arcsOf(answer.lay, view, shown));
     }
     // The balls and the lay first: past the most marks a frame draws, the effects' last puffs wait.
     const floated = this.feel.marks(now, scale, sea.water ?? null, camera.eye);
     marks.push(...floated.map((mark) => ({ ...mark, z: mark.z * shown })));
     this.marks.drawInto(pass, marks, camera, sea.shadow);
-    // The aim's light over what is drawn.
+  }
+
+  /** Draws the lay's aim (`aimOf`) over a finished picture, after the water, hidden where `depth` stands nearer;
+   *  heights as drawn. */
+  drawAimOver(
+    encoder: GPUCommandEncoder,
+    target: GPUTextureView,
+    depth: GPUTexture,
+    view: Window,
+    shown: number,
+    camera: ShipCamera,
+    now: number,
+  ): void {
+    const answer = this.fight?.view;
     const aim = answer && aimOf(answer.lay, answer.player, view, shown);
-    if (aim) this.aimView?.drawInto(pass, aim, camera, now);
+    if (aim) this.aimView?.drawOver(encoder, target, depth, aim, camera, now);
   }
 }
 

@@ -98,4 +98,5 @@ test('a plate over a figure high on the screen, or lifted over another, stands u
   const high = [bar(1, 400, 10, 40), bar(2, 410, 20, UNDER_COMPASS + 30)];
   const drawn = boxes(high, new BarLayout().lay(high, Infinity));
   for (const [, top] of drawn) assert.ok(top >= UNDER_COMPASS, `a plate's top at ${top} px`);
+  assertApart(high, new BarLayout().lay(high, Infinity));
 });

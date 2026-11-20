@@ -1,10 +1,10 @@
-// The aim as DFO draws it (src/render/navalRender.js): each gun's arc a ribbon of one width on the screen at any
-// distance, dashed by the metres flown and marching out; each landing a ring flat on the sea and a post of light over
-// it, so a fall reads at 150 m; a strike's mark where a ball meets a hull; in three tones (laid, hot on target, idle
-// while the side cannot fire). The ring is blended over the sea, the rest is light added onto the frame; both test the
-// depth the world wrote and write none. The quads are laid out here each frame, one program draws them all.
-import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
-import { SAMPLES } from '../water/waterView.ts';
+// The aim as DFO draws it: each gun's arc a ribbon of one width on the screen at any distance, dashed by the metres
+// flown and marching out; each landing a ring flat on the sea and a post of light over it, so a fall reads at 150 m; a
+// strike's mark where a ball meets a hull; in three tones (laid, hot on target, idle while the side cannot fire). It is
+// drawn over the finished picture, after the water (which would paint its sky and surface over it), tested by hand
+// against the scene's depth: the ring blended, the rest light added onto the frame. The quads are laid out here each
+// frame, one program draws them all.
+import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { ShipCamera } from './shipView.ts';
 
 type Point = readonly [number, number, number];
@@ -45,7 +45,7 @@ export const AIM_TONES = {
 export type AimToneName = keyof typeof AIM_TONES;
 
 /** An arc is this share of the view's height across at any distance; dashed every `dashM` of flight, its second half
- *  `dashDim` as strong, marching out at `dashSpeed` metres a second (DFO's ARC_*). */
+ *  `dashDim` as strong, marching out at `dashSpeed` metres a second, as DFO's arcs are. */
 export const ARC = { widthVh: 0.003, dashM: 6, dashDim: 0.35, dashSpeed: 9 } as const;
 /** A landing's post of light: half its width and half its height; a strike mark's half size; how far over the sea a
  *  ring lies, metres. */
@@ -174,6 +174,7 @@ struct Camera {
   eye: vec4f,
 };
 @group(0) @binding(0) var<uniform> camera: Camera;
+@group(0) @binding(1) var depths: texture_2d<f32>;
 
 struct Drawn {
   @builtin(position) clip: vec4f,
@@ -199,6 +200,8 @@ fn vertex_main(
 
 @fragment
 fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
+  // The depth is reversed: the scene stands nearer where its depth is greater.
+  if (drawn.clip.z < textureLoad(depths, vec2i(drawn.clip.xy), 0).r) { discard; }
   var strength = 0.0;
   if (drawn.picture == 0u) {
     // The line: solid across its middle, dashed along its flight, the dash's second half dimmer.
@@ -217,21 +220,30 @@ fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
 }
 `;
 
-/** Draws the aim into the land's pass, over what the world drew there. */
+/** Draws the aim over the finished picture. */
 export class AimView {
   private readonly device: GPUDevice;
+  private readonly layout: GPUBindGroupLayout;
   private readonly blended: GPURenderPipeline;
   private readonly added: GPURenderPipeline;
   private readonly corners: GPUBuffer;
   private readonly uniforms: GPUBuffer;
-  private readonly bindGroups: readonly [GPUBindGroup, GPUBindGroup];
+  private group: { readonly depth: GPUTexture; readonly group: GPUBindGroup } | null = null;
 
   constructor(gpu: Gpu) {
     this.device = gpu.device;
     const module = gpu.device.createShaderModule({ code: AIM_SHADER });
-    const pipeline = (source: GPUBlendFactor, destination: GPUBlendFactor) =>
-      gpu.device.createRenderPipeline({
-        layout: 'auto',
+    this.layout = gpu.device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} },
+        { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
+      ],
+    });
+    const layout = gpu.device.createPipelineLayout({ bindGroupLayouts: [this.layout] });
+    const pipeline = (source: GPUBlendFactor, destination: GPUBlendFactor) => {
+      const blend = { srcFactor: source, dstFactor: destination, operation: 'add' } as const;
+      return gpu.device.createRenderPipeline({
+        layout,
         vertex: {
           module,
           entryPoint: 'vertex_main',
@@ -250,20 +262,11 @@ export class AimView {
         fragment: {
           module,
           entryPoint: 'fragment_main',
-          targets: [
-            {
-              format: gpu.format,
-              blend: {
-                color: { srcFactor: source, dstFactor: destination, operation: 'add' },
-                alpha: { srcFactor: source, dstFactor: destination, operation: 'add' },
-              },
-            },
-          ],
+          targets: [{ format: gpu.format, blend: { color: blend, alpha: blend } }],
         },
         primitive: { topology: 'triangle-list' },
-        depthStencil: { format: 'depth32float', depthWriteEnabled: false, depthCompare: 'greater' },
-        multisample: { count: SAMPLES },
       });
+    };
     this.blended = pipeline('one', 'one-minus-src-alpha');
     this.added = pipeline('one', 'one');
     this.corners = gpu.device.createBuffer({
@@ -274,33 +277,46 @@ export class AimView {
       size: 20 * 4,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
     });
-    const group = (drawn: GPURenderPipeline) =>
-      gpu.device.createBindGroup({
-        layout: drawn.getBindGroupLayout(0),
-        entries: [{ binding: 0, resource: { buffer: this.uniforms } }],
-      });
-    this.bindGroups = [group(this.blended), group(this.added)];
   }
 
-  /** Draws `aim` at `time` seconds from `camera` (window metres) into a pass the land's pipelines draw into. */
-  drawInto(pass: GPURenderPassEncoder, aim: AimDrawn, camera: ShipCamera, time: number): void {
+  /** Draws `aim` at `time` seconds from `camera` (window metres) over a finished single-sampled picture `target`,
+   *  hidden where `depth` (the scene's depth, one float a pixel) stands nearer. */
+  drawOver(
+    encoder: GPUCommandEncoder,
+    target: GPUTextureView,
+    depth: GPUTexture,
+    aim: AimDrawn,
+    camera: ShipCamera,
+    time: number,
+  ): void {
     const { corners, blended, added } = aimCorners(aim, camera, time);
     if (blended + added === 0) return;
+    if (this.group?.depth !== depth) {
+      const group = this.device.createBindGroup({
+        layout: this.layout,
+        entries: [
+          { binding: 0, resource: { buffer: this.uniforms } },
+          { binding: 1, resource: depth.createView() },
+        ],
+      });
+      this.group = { depth, group };
+    }
     this.device.queue.writeBuffer(this.corners, 0, corners);
     const uniforms = new Float32Array(20);
     uniforms.set(camera.fromEye);
     uniforms.set([...camera.eye, 0], 16);
     this.device.queue.writeBuffer(this.uniforms, 0, uniforms);
+    const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
     pass.setVertexBuffer(0, this.corners);
+    pass.setBindGroup(0, this.group.group);
     if (blended > 0) {
       pass.setPipeline(this.blended);
-      pass.setBindGroup(0, this.bindGroups[0]);
       pass.draw(blended);
     }
     if (added > 0) {
       pass.setPipeline(this.added);
-      pass.setBindGroup(0, this.bindGroups[1]);
       pass.draw(added, 1, blended);
     }
+    pass.end();
   }
 }

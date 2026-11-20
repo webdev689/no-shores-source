@@ -1,4 +1,4 @@
-// The sight while the guns are laid, DFO's (src/ui/naval/navalHud.js, the aim): a crosshair at the view's middle,
+// The sight while the guns are laid, DFO's: a crosshair at the view's middle,
 // where the look lays, and under it the aim line: the side and its shot, the range the guns are laid to (and whether
 // that is their longest), on target in red, or why the side will not fire yet, dimmed.
 import type { FightLay, FightVessel, ShotName } from '../rules/fightRules.ts';
@@ -38,7 +38,7 @@ export function aimLineOf(lay: FightLay | null, player: FightVessel): Sight | nu
   const tail = {
     silent: ' - guns silent',
     braced: ' - braced',
-    reloading: ` - reloading ${left.toFixed(1)} s`,
+    reloading: ` - reloading ${left.toFixed(1)}\u00a0s`,
     ready: lay.on_target ? ' - on target' : '',
   }[state];
   const side = lay.side === 'port' ? 'Port' : 'Starboard';
@@ -51,7 +51,7 @@ export function aimLineOf(lay: FightLay | null, player: FightVessel): Sight | nu
   };
 }
 
-/** How far under the view's middle the aim line stands, CSS pixels (DFO's NAVAL_AIM_DOWN). */
+/** How far under the view's middle the aim line stands, CSS pixels, as DFO's stands. */
 const AIM_DOWN = 34;
 const OUTLINED = `-1px 0 0 ${TONES.outline}, 1px 0 0 ${TONES.outline}, 0 -1px 0 ${TONES.outline}, 0 1px 0 ${TONES.outline}, 2px 2px 0 rgba(0,0,0,0.7)`;
 const SIGHT_CSS = `

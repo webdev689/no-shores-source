@@ -57,7 +57,7 @@ test('laid to their longest it says so; on target it says so and burns red', () 
 test('while the side reloads, braces or her guns are silent, the line says why and dims', () => {
   const loading = { ...vessel, guns: { ...vessel.guns, left: [0, 4.24] as const } };
   const reloading = aimLineOf({ ...LAY, on_target: true }, loading);
-  assert.equal(reloading?.tail, ' - reloading 4.2 s');
+  assert.equal(reloading?.tail, ' - reloading 4.2\u00a0s');
   assert.deepEqual([reloading?.hot, reloading?.dim], [false, true]);
   const braced = { ...vessel, guns: { ...vessel.guns, braced: true } };
   assert.equal(aimLineOf(LAY, braced)?.tail, ' - braced');
