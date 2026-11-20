@@ -106,8 +106,11 @@ export function walkerRoutines(
   };
   // When a walker leaving one post at `leave` sets out along each link of the ways to the next, each link named the
   // way it is walked.
+  const routes = new Map<string, number[]>();
   const entries = (from: Post, to: Post, leave: number): [string, number][] => {
-    const route = graph.route(from.reached_from, to.reached_from);
+    const key = `${from.reached_from}>${to.reached_from}`;
+    const route = routes.get(key) ?? graph.route(from.reached_from, to.reached_from);
+    routes.set(key, route);
     let [walked, behind] = [0, from.at];
     return route.flatMap((index, nth) => {
       const point = graph.points[index] as readonly [number, number];

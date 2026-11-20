@@ -11,24 +11,23 @@ import { WayGraph } from './ways.ts';
 const roundOfPost = (post: Post): number | null => (typeof post.keep === 'object' ? post.keep.round : null);
 
 export class TownLife {
-  readonly graph: WayGraph;
   /** Each person's routine: the kept posts' first, in the posts' order, then each round's, then the walkers'. */
   readonly routines: readonly Routine[];
 
   constructor(ways: Ways, posts: readonly Post[], seed: number) {
     const random = seeded(seed);
-    this.graph = new WayGraph(ways);
+    const graph = new WayGraph(ways);
     const kept = posts.filter((post) => post.keep === 'kept').map(keptAt);
     const rounds = [...new Set(posts.map(roundOfPost).filter((round) => round !== null))].sort((a, b) => a - b);
     const walked = rounds.map((round) =>
       roundOf(
-        this.graph,
+        graph,
         posts.filter((post) => roundOfPost(post) === round),
         random,
       ),
     );
     const visited = posts.filter((post) => post.keep === 'visited');
-    const walkers = walkerRoutines(this.graph, visited, walkersFor(visited.length), random);
+    const walkers = walkerRoutines(graph, visited, walkersFor(visited.length), random);
     this.routines = [...kept, ...walked, ...walkers];
   }
 
