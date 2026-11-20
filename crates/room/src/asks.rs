@@ -68,6 +68,9 @@ pub enum Grant {
     Ammo(u16),
     /// This many Ammo crates more, up to the five carried.
     Crates(u16),
+    /// A First Mate and a Bosun of this level signed on and sent ashore, as far as the crew has room: to see
+    /// companions fight.
+    Officers(u8),
 }
 
 /// A resource node in a room: where it stands, and which island's resource it gives (its place in the catalogue's
@@ -310,6 +313,18 @@ impl Room {
             Grant::Crates(count) => {
                 for _ in 0..count.min(gear::ammo::CRATES_MOST) {
                     character.take_crate();
+                }
+            }
+            Grant::Officers(level) => {
+                use gear::crew::{ASHORE_MOST, Duty, Officer, Post};
+                for post in [Post::FirstMate, Post::Bosun] {
+                    let mut officer = Officer::new(0, post, gear::Rarity::Magic, level);
+                    (officer.given, officer.family) = (post as u8 * 5, post as u8 * 3);
+                    let ashore = character.crew.ashore().count() < ASHORE_MOST;
+                    let signed = character.sign_on(officer).and_then(|id| character.crew.officers.get_mut(&id));
+                    if let Some(signed) = signed.filter(|_| ashore) {
+                        signed.duty = Duty::Ashore;
+                    }
                 }
             }
             Grant::Status { .. } | Grant::ArtsReady => {}

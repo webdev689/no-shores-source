@@ -56,7 +56,7 @@ pub fn foes() -> Vec<FoeSeen> {
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
     brute = combat::give(&brute, combat::Status::Expose, 200, Some(9)).unwrap();
     brute.statuses.charge_immune = 90;
-    vec![FoeSeen {
+    let brute = FoeSeen {
         foe: 12,
         kind: 3,
         foe_type: 15,
@@ -67,7 +67,15 @@ pub fn foes() -> Vec<FoeSeen> {
         fighter: brute,
         level: 7,
         shield: Some(gear::element::Shield::whole(gear::Element::Cosmic, 80.0)),
-    }]
+        companion: None,
+    };
+    // An officer ashore beside player 9: a pirate swordsman's figure on the players' side.
+    let sword = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Shield };
+    let mate = fighter(Side::Players, standing(1.0, 1.8), sword, Weight::Medium, 100.0, 50.0);
+    let companion =
+        room::Companion { leader: 9, officer: 1, given: 2, family: 5, level: 4, brawler: false, out: false };
+    let ashore = FoeSeen { foe: 13, kind: 2, foe_type: 14, faction: 0, fighter: mate, level: 4, ..brute };
+    vec![brute, FoeSeen { shield: None, companion: Some(companion), ..ashore }]
 }
 
 pub const EVENTS: [Event; 2] = [
@@ -360,6 +368,9 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
     assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
     assert_eq!((foe.expose(), foe.charge(), foe.charge_immune()), (200, 0, 90), "its debuffs' ticks cross");
+    assert_eq!((foe.leader(), foe.given(), foe.family()), (0, 0, 0), "a foe is no one's companion");
+    let ashore = read.foes().unwrap().get(1);
+    assert_eq!((ashore.leader(), ashore.given(), ashore.family()), (9, 2, 5), "a companion's names");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);

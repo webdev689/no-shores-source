@@ -44,6 +44,9 @@ function platesCss(): string {
 .fight-hud .plate[data-band='red'] { --fill: ${FILLS.red}; }
 .fight-hud .plate[data-band='orange'] { --fill: ${FILLS.orange}; }
 .fight-hud .plate[data-band='yellow'] { --fill: ${FILLS.yellow}; }
+.fight-hud .plate[data-band='ally'] { --fill: ${FILLS.ally}; }
+.fight-hud .plate[data-band='ally'] .name { color: ${TONES.ally}; }
+.fight-hud .plate[data-band='ally'] .emblem { display: none; }
 .fight-hud .emblem { display: block; flex: none; box-sizing: border-box; border-width: 2px; border-style: solid;
   background-repeat: no-repeat; background-position: center; image-rendering: pixelated; }
 ${emblems.join('\n')}
@@ -108,6 +111,7 @@ ${wards}
 .fight-hud .overhead { width: ${overhead.width}px; height: ${overhead.height}px; translate: -50% -100%;
   transform-origin: 50% 100%; margin-top: -4px; font-size: ${PLATE_SIZE.letters}px; }
 .fight-hud .overhead .body { width: ${overhead.width - overhead.height - 5}px; }
+.fight-hud .overhead[data-band='ally'] .body { width: ${overhead.width}px; }
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
 .fight-hud .overhead .meter { height: ${overhead.bar}px; }
 

@@ -49,6 +49,8 @@ pub const GRANT_ARTS: u8 = 36;
 /// The Ranged loadout's ammunition set to `count` parts of `gear::ammo::AMMO_FULL`, and `count` Ammo crates more.
 pub const GRANT_AMMO: u8 = 37;
 pub const GRANT_CRATES: u8 = 38;
+/// A First Mate and a Bosun of `level` signed on and sent ashore.
+pub const GRANT_OFFICERS: u8 = 39;
 /// An Art worn, by its number in `column`; a fragment set in its Core, the Art in `column`, the slot (0 to 2) in
 /// `slot` and the fragment's place in its Art's list (0 to 5) in `node`.
 pub const WEAR_ART: u8 = 40;
@@ -126,6 +128,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SET_CORE => Asked::Art(ArtAsk::SetCore { art: column, slot: ask.slot(), fragment: node }),
         GRANT_AMMO => Asked::Grant(Grant::Ammo(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
         GRANT_CRATES => Asked::Grant(Grant::Crates(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
+        GRANT_OFFICERS => Asked::Grant(Grant::Officers(ask.level())),
         _ => return None,
     })
 }
@@ -209,6 +212,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         }
         Asked::Grant(Grant::Crates(count)) => {
             args = messages::AskArgs { kind: GRANT_CRATES, count: u32::from(*count), ..args };
+        }
+        Asked::Grant(Grant::Officers(level)) => {
+            args = messages::AskArgs { kind: GRANT_OFFICERS, level: *level, ..args };
         }
     }
     messages::Ask::create(builder, &args)

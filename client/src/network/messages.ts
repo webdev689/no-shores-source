@@ -104,6 +104,16 @@ export interface SeenFoe {
   readonly shield: FoeShield | null;
   /** Its debuffs; none for a foe made by hand. */
   readonly statuses?: FoeStatuses;
+  /** The companion it is, an officer ashore fighting beside their leader; none for a foe. */
+  readonly companion?: Companion | null;
+}
+
+/** A companion: their leader's player number, and their officer's given and family names' places in
+ *  `content/gear/crew.json`. */
+export interface Companion {
+  readonly leader: number;
+  readonly given: number;
+  readonly family: number;
 }
 
 /** A foe's debuffs as the room keeps them: the ticks left of its Expose and its Charge, and of the immunity a Charge
@@ -357,7 +367,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const named = { type: foe.type(), rank: foe.rank(), faction: foe.faction(), phase: foe.phase() };
       const statuses = { expose: foe.expose(), charge: foe.charge(), chargeImmune: foe.chargeImmune() };
       const read = { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
-      return { ...read, statuses };
+      const companion = foe.leader() > 0 ? { leader: foe.leader(), given: foe.given(), family: foe.family() } : null;
+      return { ...read, statuses, companion };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);

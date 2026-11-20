@@ -47,6 +47,10 @@ code:
   - client/src/player/gear.ts#gearHands
   - client/src/player/gearLooks.ts#gearOutfit
   - client/src/testground/gearPanel.ts#startGearPanel
+  - crates/room/src/companions.rs#keep_companions
+  - crates/room/src/companions.rs#companion_times
+  - crates/room/src/companions.rs#type_of
+  - client/src/combat/companions.ts#officerName
 ---
 # Gear
 
@@ -300,6 +304,30 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   drawn, in the rarity's metal.
 - Each rolled item keeps its own look by its name; a named item takes its rarity's first.
 
+## Companions
+
+Officers ashore fight beside their player, as DFO's crew companions did
+([[The Ship's Power, Crew and Islands as Claude Shapes Them]]).
+
+- **Who.** Each officer on duty ashore (two at most) stands as a fighter on the players' side beside a player in a
+  land room (a continent's node, a patrol, the Test Ground), thinking with a foe's own brain: the First Mate a pirate
+  swordsman, the Gunner and the Lookout pirate archers, the Bosun a pirate brute, the Carpenter a pirate skirmisher,
+  each at Major, in the pirates' clothes. A boarded deck has none yet.
+- **Following.** Their place is 1.8 m behind the leader, 1.1 m either side when two are ashore; their post moves there
+  each tick, and with no one to fight they walk back once 2.5 m from it (3.7 m for the second). One 40 m from the
+  leader, or 6 m below a leader on the ground, is put back at their place at once.
+- **Power.** They fight at the officer's level as a player matched to it would: a weapon of 15 Attack a level, armour
+  of 45 Defense a level and 15% more again, their health their type's. Weathered gives 15% more health, Brawler
+  10% more harm, Steady Nerve 20% more poise.
+- **Never killed.** No player harms them. A blow that would leave one at 1 health or less holds them at 1: they leave
+  the fight and rest eight minutes of room time, then come ashore again while still on duty ashore. One stationed
+  aboard or at their post, or whose player leaves, goes.
+- **Kills.** A kill a companion had a hand in their leader shares as though they had struck it. On land, every kill a
+  player shares pays its XP to each of their officers ashore too.
+- **Seen.** The snapshot carries them among the foes, with their leader and their names' places in
+  `content/gear/crew.json`; the browser draws them in their type's clothes and names them over their heads in the
+  players' blue. The Test Ground's grants sign on a First Mate and a Bosun and send them ashore.
+
 ## Limits
 
 - A loadout's traits work whichever of its hands strikes, and every trait worn counts once however many pieces give
@@ -313,3 +341,5 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   and a Normal head or arms piece shows nothing over the figure.
 - No Breach items exist yet; cloaks belong to no faction.
 - The traits' and items' words are English only.
+- The fight's heat counts what players deal, not what their companions deal. The Gunner and the Lookout ashore are
+  drawn alike, both as the pirates' archer.
