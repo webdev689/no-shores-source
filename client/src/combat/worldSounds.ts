@@ -226,7 +226,8 @@ export class WorldSounds {
         at: placeOf(foes.get(id), view),
         drawn: null,
         statuses: foe.statuses ?? {},
-        alert: foe.alert,
+        // An ally's alert is the boarders' business: its cue is a foe noticing the player.
+        alert: view.side === 'players' ? 0 : foe.alert,
       });
     }
     return seen;

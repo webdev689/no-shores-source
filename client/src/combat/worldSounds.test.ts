@@ -177,6 +177,15 @@ test('a menu holds the world quiet, and what happened meanwhile is not heard aft
   );
 });
 
+test("one fighting on the players' side turning alert is no foe noticing them", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const ally = (alert: number) => foeAt(5, { alert, view: view({ x: 5, side: 'players' }) });
+  sounds.frame(frameOf({ foe: ally(0) }));
+  sounds.frame(frameOf({ foe: ally(2) }));
+  assert.deepEqual(played, []);
+});
+
 test('nothing sounds before the page has sound, nor farther off than 40 m', () => {
   const { output, play, played } = fakeSound();
   new WorldSounds(() => null, play).frame(frameOf({ events: [hit()] }));
