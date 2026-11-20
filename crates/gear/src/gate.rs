@@ -1,5 +1,6 @@
-//! The gates: what a character may enter, judged by the rooms so no page can skip one. A social space is open to
-//! everyone; a patrol and its dungeons open after the prologue; and the seas open by level, Elite from 10 and Abyss
+//! The gates: what a character may enter, judged by the rooms, so no kept character passes a gate it has not opened.
+//! A player the accounts do not hand over plays unkept, as a new character, and keeps nothing. A social space is open
+//! to everyone; a patrol and its dungeons open after the prologue; and the seas open by level, Elite from 10 and Abyss
 //! from 20. Each shut says why, in a line the page shows the player.
 
 use crate::character::Character;
