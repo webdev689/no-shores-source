@@ -19,6 +19,7 @@ import { type AmbienceKey, ambienceOf, fadeGain, nearness, phasesAt, stepLevel, 
 import { type Lay, shoreOf } from './places.ts';
 import { type Heard, MOST_CALLS, ScapePlayer, jobsOf } from './player.ts';
 import { SCAPES } from './scapes.ts';
+import { type FightHeard, seaFightCue } from './seaFight.ts';
 import { jobName } from './sounds.ts';
 import { phasesOfSun, rainLevel, shelterOf, thunderOf, weatherOf } from './weatherLaw.ts';
 
@@ -90,6 +91,8 @@ export class Ambience {
   private hidden = false;
   /** The place whose sounds were last asked for. */
   private wanted: AmbienceKey | null = null;
+  /** The sea fight's events since the last frame, heard where each happens. */
+  private fought: FightHeard | null = null;
 
   constructor(
     continents: Parameters<typeof placeOf>[0],
@@ -131,10 +134,12 @@ export class Ambience {
       readonly pace: number;
       readonly deck: boolean;
       readonly feet?: { readonly x: number; readonly y: number; readonly mode: string };
+      readonly fightHeard?: FightHeard | null;
     },
     seconds = 1 / 60,
   ): void {
     this.walk(voyage.feet);
+    this.fought = voyage.fightHeard ?? null;
     const lay = this.layOf(land);
     const shore = shoreOf(ship, lay.outline);
     this.way += (wayOf(voyage.sailing, voyage.pace) - this.way) * Math.min(1, seconds / WAY_FOLLOW_S);
@@ -195,6 +200,13 @@ export class Ambience {
     if (heard) this.thunder(heard, live);
     if (heard && live && this.stepped && heard.key === 'sea') live.footstep(heard);
     this.stepped = false;
+    const fought = this.fought;
+    this.fought = null;
+    if (heard && live && fought)
+      for (const event of fought.events) {
+        const sound = seaFightCue(event, fought.view);
+        if (sound) live.fight(sound.cue, sound.at, heard);
+      }
     const gone = this.players.filter((player) => player.level === 0 && player.target === 0);
     if (gone.length === 0) return;
     for (const player of gone) player.stop();

@@ -42,6 +42,36 @@
       "page": "https://freesound.org/people/Podcapocalipsis/sounds/559600/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.sea.block.knock": {
+      "key": "sounds/3bceb61864fda922bcd0ccbe75dcd62ea7862fe8e41fd76dcca8fc015875822b.mp3",
+      "freesound": 414439,
+      "name": "Light, Pulley Switch, On, B.wav",
+      "author": "InspectorJ",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/InspectorJ/sounds/414439/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.bow.thump": {
+      "key": "sounds/d7ab147430b60e11b9aae8af2e24db724f6be953c0cbbdbd1c414087b23ba6f2.mp3",
+      "freesound": 61014,
+      "name": "wave4.wav",
+      "author": "Kayyy",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/Kayyy/sounds/61014/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.canvas.flap": {
+      "key": "sounds/f110bf5342d16fb1fe266cd790d0f388c76ab161c3f1e65770b5d750e8a5260b.mp3",
+      "freesound": 72853,
+      "name": "Parachute.wav",
+      "author": "Benboncan",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Benboncan/sounds/72853/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.sea.gull": {
       "key": "sounds/41cba0ce77966a8ad539908263d144c6980fa1df5ce706663e034b8fc1b2803c.mp3",
       "freesound": 166703,
@@ -51,6 +81,126 @@
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/Snapper4298/sounds/166703/",
       "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.hull.creak": {
+      "key": "sounds/ab46e420815a4beaeb1e10ed02830acfe1d458b5eae27c27ec6eeac55a6807b4.mp3",
+      "freesound": 113362,
+      "name": "shipcreaks2.wav",
+      "author": "deleted_user_1371021",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/deleted_user_1371021/sounds/113362/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.hull.slap": {
+      "key": "sounds/c0b37772689f0a7c214de1cd18cb24e67b71c6e560180fc0956b4b9133cbd659.mp3",
+      "freesound": 61013,
+      "name": "wave3.wav",
+      "author": "Kayyy",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/Kayyy/sounds/61013/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.rain": {
+      "key": "sounds/738b5d503d6fd73a7168f970dd497a9058dae3a8f1e7f0ec8f2a4e9b4f1e985a.mp3",
+      "freesound": 126580,
+      "name": "16_Rain_Light_Ocean_44_16.wav",
+      "author": "tomtenney",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/tomtenney/sounds/126580/",
+      "changes": "Cut to 60 s from 23 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
+    },
+    "amb.sea.rain.deck": {
+      "key": "sounds/7397293dc89b26cfb1854970495996c3243154827d9cfc1e8a214b37cadac052.mp3",
+      "freesound": 849790,
+      "name": "Rainfall on roof of sailboat at the dock",
+      "author": "douglasbruce@look.ca",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/douglasbruce@look.ca/sounds/849790/",
+      "changes": "Cut to 60 s from 20 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
+    },
+    "amb.sea.rigging": {
+      "key": "sounds/0d91c5975b08bd98ff546b559da5d75c08143b6b1e6fbcf8bf9578bbc68ae9c4.mp3",
+      "freesound": 179899,
+      "name": "shipyard2",
+      "author": "timsc",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/timsc/sounds/179899/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.rope.creak": {
+      "key": "sounds/461777a8d4c6e72178127713590e09c6290f14451113b7e452897e8fbcaf14c8.mp3",
+      "freesound": 234180,
+      "name": "Balloon_Creak_Long_Rub_6.wav",
+      "author": "Terhen",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Terhen/sounds/234180/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.swell": {
+      "key": "sounds/73db4ac0ab647f0c245f5f290c6c46d64d227b7ace6650e7c6cb8480b80d0b51.mp3",
+      "freesound": 475350,
+      "name": "Brean Sands Beach",
+      "author": "richwise",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/richwise/sounds/475350/",
+      "changes": "Cut to 60 s from 24 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
+    },
+    "amb.sea.timbers": {
+      "key": "sounds/2f64e0c94cf97b695578ec72010d12f5f1a6d4fafe3fe9f4029f7d2c6f3a516b.mp3",
+      "freesound": 397620,
+      "name": "Wood Creaking.wav",
+      "author": "laft2k",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/laft2k/sounds/397620/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.wash": {
+      "key": "sounds/55846a4faa1b30d9a616b3f24656136c31a0445a2506c9c09831096d4d0d11fc.mp3",
+      "freesound": 556052,
+      "name": "KS (\u041a\u0421) -102-022 boat wake",
+      "author": "Walking.With.Microphones",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Walking.With.Microphones/sounds/556052/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sea.wind": {
+      "key": "sounds/6d36cf9b1d4104eea1cf3b9673465c709781ec6be2d394aa62afb327b6acbdfa.mp3",
+      "freesound": 706471,
+      "name": "strong wind on coastal path.wav",
+      "author": "bruno.auzet",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/bruno.auzet/sounds/706471/",
+      "changes": "Cut to 60 s from 73 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
+    },
+    "amb.shore.lap": {
+      "key": "sounds/5367a9a54b45323161c72d757ffc73ec6752d2288a5da8aacabd935dee67b9b2.mp3",
+      "freesound": 634194,
+      "name": "220502_1838-2_FR_BeachAndHarbour.wav",
+      "author": "kevp888",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/kevp888/sounds/634194/",
+      "changes": "Cut to 60 s from 12 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
+    },
+    "amb.shore.surf": {
+      "key": "sounds/dd784868a132c0beb30322e505d6c2e2b9ef9e7c3bab2fb010cdcfcd8dc8cca0.mp3",
+      "freesound": 486594,
+      "name": "STYLIZED WAVE TRACK.wav",
+      "author": "klangfabrik",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/klangfabrik/sounds/486594/",
+      "changes": "Cut to 60 s from 59 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
     },
     "amb.social.crowd": {
       "key": "sounds/30bce71c3eddb9d0c3a0bade377327c43cda2d45885c2bb268d78850de4dff3d.mp3",
@@ -481,6 +631,46 @@
       "page": "https://freesound.org/people/DrMrSir/sounds/529563/",
       "changes": "Unchanged."
     },
+    "sea.ball.hull": {
+      "key": "sounds/d1cdf05524f088a981cf20d720951ef00adfca1085829221be8eb4c7f81ec072.mp3",
+      "freesound": 452596,
+      "name": "door wood impact hit kick open sudden explode.wav",
+      "author": "kyles",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/kyles/sounds/452596/",
+      "changes": "Unchanged."
+    },
+    "sea.ball.splash": {
+      "key": "sounds/b8227adae409996ceee3481c7057ceda717575fa7569cec5d9d0ee1b94a8fe33.mp3",
+      "freesound": 442773,
+      "name": "Big Water Splash",
+      "author": "qubodup",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/qubodup/sounds/442773/",
+      "changes": "Unchanged."
+    },
+    "sea.cannon.fire": {
+      "key": "sounds/e17face8dd614bff929e416e25ed0c202f0e3cd1b2eee79f6f4eb25279783717.mp3",
+      "freesound": 565794,
+      "name": "Distant Cannon Fire (simulated)",
+      "author": "stomachache",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/stomachache/sounds/565794/",
+      "changes": "Unchanged."
+    },
+    "sea.ship.break": {
+      "key": "sounds/e13fc91cfb33d32a4bb31d34f9b8c4525f22d8ff9b6bd78a2bf313c3e18e990c.mp3",
+      "freesound": 178658,
+      "name": "Breaking wood",
+      "author": "jorickhoofd",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/jorickhoofd/sounds/178658/",
+      "changes": "Unchanged."
+    },
     "shield.break": {
       "key": "sounds/40a88bc8770938186ba8ea1c305ab50eae5b73fea2ed75e60acd83f91b6f7bc3.mp3",
       "freesound": 443465,
@@ -705,6 +895,86 @@
       "name": "Wood footsteps",
       "licence": "CC0",
       "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
+    "story.crash": {
+      "key": "sounds/41a8f21db11fd3b189374116f4b076a9a457da27a9cadd6ed1b06ed693acd348.mp3",
+      "freesound": 257752,
+      "name": "Wooden Ship Break",
+      "author": "Kodack",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Kodack/sounds/257752/",
+      "changes": "Unchanged."
+    },
+    "story.creak": {
+      "key": "sounds/9bf39bcd3547f7e3610fb36c05a98a51351563035d2f056858142c723fe179a2.mp3",
+      "freesound": 483355,
+      "name": "R28-03-Large Wood Ship Creaking.wav",
+      "author": "craigsmith",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/craigsmith/sounds/483355/",
+      "changes": "Unchanged."
+    },
+    "story.deep": {
+      "key": "sounds/aa3f3fd878136e326498cd9a9fd40a4655a5bf2f9761af5f5559ee4eee1b7429.mp3",
+      "freesound": 504641,
+      "name": "Underwater Ambience",
+      "author": "Fission9",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Fission9/sounds/504641/",
+      "changes": "Unchanged."
+    },
+    "story.fire": {
+      "key": "sounds/5783f2072754bb2ce8a0114673efcda8caa14f849fe4593f67a631236f458790.mp3",
+      "freesound": 213345,
+      "name": "Stove door open, interior ambience, door close",
+      "author": "peridactyloptrix",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/peridactyloptrix/sounds/213345/",
+      "changes": "Unchanged."
+    },
+    "story.splash": {
+      "key": "sounds/e22f3614c46f2e10eaee3ccc9719f90ad6158b5beab7fe6b65f12d6e4b52b763.mp3",
+      "freesound": 61015,
+      "name": "Splash.wav",
+      "author": "Kayyy",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/Kayyy/sounds/61015/",
+      "changes": "Unchanged."
+    },
+    "story.waves": {
+      "key": "sounds/ac67c6d25b237c4c51996061f83b164dc0e3edd683c9eee36dcb8e833851a9d7.mp3",
+      "freesound": 867645,
+      "name": "Powerful Storm Waves \u2013 Rough Sea and Surf",
+      "author": "bassimat",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/bassimat/sounds/867645/",
+      "changes": "Cut to 60 s from 228 s in, made mono, its ends faded."
+    },
+    "story.whoosh": {
+      "key": "sounds/bdd4245b250d40d637529cc0788af7e5a3fc4a77611a648abcab5ab97dc3570c.mp3",
+      "freesound": 807446,
+      "name": "whoosh bass 1",
+      "author": "Logicogonist",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Logicogonist/sounds/807446/",
+      "changes": "Unchanged."
+    },
+    "story.wind": {
+      "key": "sounds/5a2af736fea88625fe6497a6125b3ab27f6c617314fe252395d6093570b41a2c.mp3",
+      "freesound": 612721,
+      "name": "room-tone wind 06 200216_0113 wind.wav",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/612721/",
       "changes": "Unchanged."
     },
     "swing.heavy": {

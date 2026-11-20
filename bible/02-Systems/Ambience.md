@@ -88,6 +88,15 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
   synthesiser's call; parrots, the heron and the lion have no synthesised call and are silent until picked.
   Saltmere's gutters and both thunders play the owner's picks too ([[The Weather's Gutters and Thunder Come From
   Freesound]]), the synthesiser's until they come.
+- **The sea's recordings.** Every sound of the open sea (its beds and its calls), the surf at every island's edge and
+  the lapping in Saltmere's harbour are cues on the sheet too ([[The Sea's Sounds Come From Freesound]]): each pick
+  plays in place of its synthesised sound, the synthesiser's until it comes. On the islands the rain stays the
+  synthesiser's.
+- **The sea fight.** A gun fired, a ball striking a ship, a ball falling in the sea and a ship breaking up as she goes
+  down are heard where each happens, through the open sea's room, from the fight's own events, in the game's fights
+  and the story's. Each plays only once picked; until then the fight is silent, as it always was.
+- **The story's recordings.** The story's wind, waves, timbers, fire and deep, and its crash, splashes and rush
+  through cloud, play their picks once they come, each as loud as the synthesiser's it replaces, measured offline.
 - **Recordings stand in at the synthesiser's level.** A recorded bed is as loud as the whole of the bed it replaces
   and heard from where that bed stands; each play fades into the next, and the first takes over from the synthesiser's
   bed, at equal power. A recorded thunder is as loud as its synthesised one over its loudest 0.4 s, its peaks never
