@@ -20,6 +20,7 @@ import { MarkView } from '../ships/markView.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
 import { openHull, ShipModels } from '../ships/shipModels.ts';
 import { FigureView } from './figureView.ts';
+import { standingDrawers } from './standingDrawers.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { foesAsked } from './foesAsked.ts';
@@ -426,30 +427,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     map: () => heldMap,
   });
 
-  /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides; on foot
-   *  the fight's blood under the figures and its marks over them. */
-  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) => {
-    const found: (Drawer | null | undefined)[] = [
-      drawers.city,
-      drawers.nature,
-      fight?.under,
-      {
-        drawInto: (pass, fromEye, shot, time) => {
-          const camera = { fromEye, eye: shot.eye };
-          shipModels.draw(pass, ships, camera);
-          sea?.fight?.draw(pass, camera, time);
-        },
-      },
-      {
-        castInto: (pass, fromEye, shot, _time, shadow) =>
-          figureView.castInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
-        drawInto: (pass, fromEye, shot, _time, shadow) =>
-          figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
-      },
-      fight?.over,
-    ];
-    return found.filter((drawer): drawer is Drawer => !!drawer);
-  };
+  /** The drawers that stand on the open landmass this frame (`standingDrawers`). */
+  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) =>
+    standingDrawers({ ...drawers, shipModels, figureView, seaFight: sea?.fight }, ships, figures, fight);
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
