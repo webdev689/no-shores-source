@@ -167,8 +167,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
-  (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
-  vendor their own; [[Interface]]); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
+  (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
+  ([[Interface]], "The social space's counters"); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
   menu is up or the player lies dead, past the edge or felled by a foe.
 
 ## The edge

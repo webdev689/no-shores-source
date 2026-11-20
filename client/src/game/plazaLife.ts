@@ -2,11 +2,13 @@
 // frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in. A
 // ruin's plaza keeps no station (the city crate's `ruins`), and no one lives there.
 
+import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
 import type { Opening } from './gearScreen.ts';
+import { HARBOURMASTER, KEEPERS, KEEPER_KINDS } from './keepers.ts';
 import type { StationInfo } from './nodes.ts';
-import { Townsfolk } from './townsfolk.ts';
+import { Townsfolk, awayFromCounters, plazaOf, shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a counter a player stands to be served, metres. */
@@ -18,25 +20,24 @@ export interface Offer {
   readonly opens: Opening;
 }
 
-/** What each station that deals with a player offers. */
+/** What each station that deals with a player offers: its keeper's screen, named by its keeper's title, and the
+ *  Harbourmaster's. Shape keeps no station; his prompt is the plaza's own. */
 const OFFERS: Readonly<Record<string, Offer>> = {
-  reader: { words: 'The Reader of Vestiges: open your Vestiges', opens: { view: 'inventory' } },
-  vault: { words: 'Your vault', opens: { view: 'vault' } },
-  quartermaster: { words: 'The Quartermaster: armour for Aurem', opens: { view: 'quartermaster' } },
-  armsmith: { words: 'The Armsmith: weapons for Aurem', opens: { view: 'armsmith' } },
-  tailor: { words: 'The Tailor: emblems for Aurem', opens: { view: 'tailor' } },
-  harbourmaster: {
-    words: "The Harbourmaster: the Shipwright's modules and the muster",
-    opens: { view: 'harbourmaster' },
-  },
+  ...Object.fromEntries(
+    KEEPER_KINDS.filter((kind) => kind !== 'shape').map((kind) => [
+      kind,
+      { words: KEEPERS[kind].title, opens: { view: kind } },
+    ]),
+  ),
+  harbourmaster: { words: HARBOURMASTER, opens: { view: 'harbourmaster' } },
 };
 
 /** The offer of the station whose counter a player stands at, if one deals with them. */
 export function offerAt(stations: readonly StationInfo[], x: number, y: number): Offer | null {
   for (const station of stations) {
     const offer = OFFERS[station.kind];
-    const near = Math.hypot(station.counter[0] - x, station.counter[1] - y) <= SERVED_M;
-    if (offer && near) return offer;
+    // A keeper away from their counter (the elder on her welcome) is called back to it as it is opened.
+    if (offer && Math.hypot(station.counter[0] - x, station.counter[1] - y) <= SERVED_M) return offer;
   }
   return null;
 }
@@ -52,27 +53,25 @@ export class PlazaLife {
   private readonly floored = new Map<number, readonly [number, number]>();
   private readonly others: Others;
   private readonly floor: (x: number, y: number) => number | null;
+  private readonly visitorSpots: readonly (readonly [number, number])[];
 
   constructor(node: NodeInfo, others: Others, floor: (x: number, y: number) => number | null) {
-    const eastings = node.ring.map((point) => point[0]);
-    const southings = node.ring.map((point) => point[1]);
-    const bounds = [
-      Math.min(...eastings),
-      Math.min(...southings),
-      Math.max(...eastings),
-      Math.max(...southings),
-    ] as const;
+    const plaza = plazaOf(node);
     // Seeded by the plaza, so its people walk the same each visit.
-    const seed = Math.round(bounds[0] * 31 + bounds[1]);
-    const stations = node.stations ?? [];
-    this.folk = stations.length ? new Townsfolk({ bounds, spawns: node.spawns, stations }, seed) : null;
+    // A ruin's plaza keeps no station, and no one lives there.
+    this.folk = node.stations?.length ? new Townsfolk(plaza, Math.round(plaza.bounds[0] * 31 + plaza.bounds[1])) : null;
+    this.visitorSpots = plaza.visitorSpots ?? [];
     this.others = others;
     this.floor = floor;
   }
 
-  /** Moves everyone on by `seconds` and places their figures. */
-  frame(seconds: number): void {
-    for (const person of this.folk?.step(seconds) ?? []) {
+  /** Moves everyone on by `seconds` and places their figures: Shape among them while the room's `gear` says he is
+   *  here, and a keeper away from their counter taken from it. */
+  frame(seconds: number, gear: GearState | null = null): void {
+    const shape = shapeSpot(gear?.shape, this.visitorSpots);
+    const here = new Set<number>();
+    for (const person of this.folk?.step(seconds, { away: awayFromCounters, shape }) ?? []) {
+      here.add(person.id);
       const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
       this.figures.set(person.id, placed);
       placed.x = person.x;
@@ -84,6 +83,12 @@ export class PlazaLife {
       }
       placed.facing = person.facing;
       placed.anim = person.walking ? 'walk' : 'idle';
+    }
+    for (const [id, placed] of this.figures) {
+      if (here.has(id)) continue;
+      this.others.remove(placed);
+      this.figures.delete(id);
+      this.floored.delete(id);
     }
   }
 

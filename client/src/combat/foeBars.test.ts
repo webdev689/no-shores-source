@@ -102,6 +102,8 @@ const LOOKING_NORTH: PlateViewing = {
   locked: null,
 };
 const nameOf = (plate: unknown) => findAll(plate as HTMLElement, 'name')[0]?.textContent;
+/** The plates shown: those out of the cone are kept, hidden, for their foe's next showing. */
+const showing = (root: HTMLElement) => findAll(root, 'overhead').filter((plate) => !plate.hidden);
 
 test('in a crowd, a plate shows for the foe nearest the crosshair, the locked and the fought; none behind a block or past 60 m', () =>
   onFakePage((root) => {
@@ -154,7 +156,7 @@ test('a foe fought shows wherever it is, fading as the fight lets it go', () =>
     assert.equal(plate?.style['opacity'], '0.50', 'as the fight holds it');
     held = 0;
     bars.update([behind], null, spotOf, viewing, 1);
-    assert.equal(findAll(root, 'overhead').length, 0, 'let go: gone');
+    assert.equal(showing(root).length, 0, 'let go: gone');
   }));
 
 test('over a figure a plate is laid at its rank’s width: an Elite’s longer than a Minor’s', () =>
@@ -183,9 +185,10 @@ test('the cone keeps its foe while another stands less than a degree nearer, and
   onFakePage((root) => {
     const bars = new FoeBars(root, root, root);
     const spotOf = (view: FighterView) => ({ x: 400 + view.x * 10, y: 300, depth: view.y });
+    // Far enough off that neither body stands across the crosshair.
     const shownAt = (first: number, second: number) => {
-      bars.update([placed(1, first, 10), placed(2, second, 10)], null, spotOf, LOOKING_NORTH, 1);
-      return findAll(root, 'overhead').map(nameOf);
+      bars.update([placed(1, first, 40), placed(2, second, 40)], null, spotOf, LOOKING_NORTH, 1);
+      return showing(root).map(nameOf);
     };
     assert.deepEqual(shownAt(2, 2.5), ['Foe 1'], 'the nearest');
     assert.deepEqual(shownAt(2.5, 2), ['Foe 1'], 'another half a degree nearer takes nothing');
@@ -275,6 +278,13 @@ test('a plate leaving the cone fades out over a quarter of a second, then is gon
     bars.update([aside], null, spotOf, viewing, 0.125);
     assert.equal(plate?.style['opacity'], '0.50', 'half way out');
     bars.update([aside], null, spotOf, viewing, 0.125);
+    assert.equal(showing(root).length, 0);
+    // Back in the cone, the same plate shows again, not one made anew.
+    bars.update([ahead], null, spotOf, viewing, 1);
+    assert.deepEqual([findAll(root, 'overhead').length, showing(root)[0]], [1, plate]);
+    // Fallen, its plate is let go.
+    const fallen = thule(1, 0, { rank: 2 }, { y: 10, action: { kind: 'dead', elapsed: 0 } });
+    bars.update([fallen], null, spotOf, viewing, 1 / 60);
     assert.equal(findAll(root, 'overhead').length, 0);
   }));
 
@@ -300,4 +310,24 @@ test("a companion's plate is drawn in the players' colour, by their own name", (
       ['Brute', 'orange'],
       ['Cass Brine', 'ally'],
     ]);
+  }));
+
+test('the crosshair on a near foe takes the plate from one behind it on the line, and the next lifts nothing', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const spotOf = (view: FighterView) => ({ x: 400 + view.x * 10, y: 300, depth: view.y });
+    // A near foe a quarter metre off the line, its body across the crosshair; a far one dead on the line behind it.
+    const near = thule(1, 0, { name: 'Near', rank: 2 }, { x: 0.25, y: 8 });
+    const far = thule(2, 0, { name: 'Far', rank: 2 }, { x: 0, y: 30 });
+    for (let frame = 0; frame < 30; frame++) bars.update([near, far], null, spotOf, LOOKING_NORTH, 1 / 60);
+    assert.deepEqual(showing(root).map(nameOf), ['Near'], 'the body the crosshair meets first');
+    // The view moves on to the far one alone: it takes the plate where it stands, lifted over nothing fading out.
+    const aside = thule(1, 0, { name: 'Near', rank: 2 }, { x: 3, y: 8 });
+    bars.update([aside, far], null, spotOf, LOOKING_NORTH, 1 / 60);
+    const farPlate = showing(root).find((plate) => nameOf(plate) === 'Far');
+    assert.match(
+      farPlate?.style['transform'] ?? '',
+      /^translate\(400\.0px, 300\.0px\)/,
+      'not lifted over the plate going',
+    );
   }));

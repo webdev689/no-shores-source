@@ -1,0 +1,12 @@
+{
+  "about": "The content whose entries cross the wire by their place in its lists: cosmetics, emblems, factions, items, island resources, rolled names and Arts. The protocol's version hashes them (tools/schema.mjs), and the rooms deploy when they change (server/roomsDeploy.test.ts holds them to the rooms' code).",
+  "paths": [
+    "content/gear/cosmetics.json",
+    "content/gear/emblems.json",
+    "content/gear/factions.json",
+    "content/gear/items.json",
+    "content/gear/resources.json",
+    "content/gear/rolled.json",
+    "content/arts/arts.json"
+  ]
+}

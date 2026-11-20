@@ -78,6 +78,12 @@ pub enum Grant {
     /// A First Mate and a Bosun of this level signed on and sent ashore, as far as the crew has room: to see
     /// companions fight.
     Officers(u8),
+    /// An Art, by its number, at this level (1 to `gear::arts::LEVEL_MOST`) with no XP toward the next, owning all
+    /// its fragments: to try its spells at every level.
+    ArtLevel {
+        art: u8,
+        level: u8,
+    },
 }
 
 /// A resource node in a room: where it stands, and which island's resource it gives (its place in the catalogue's
@@ -89,15 +95,19 @@ pub struct ResourceNode {
     pub resource: u8,
 }
 
-/// A social space's counter that serves a player's gear: the Reader's opens Vestiges, a vault's keeps gear, a
-/// vendor's sells its own wares, and the Tailor's sells emblems.
+/// A social space's counter that serves a player's gear: the Mage's identifies Vestiges, a vault's keeps gear, a
+/// smith's sells its own wares, the Tailor's emblems and dyes, the Tack's the horse's pieces, a faction's its pledge,
+/// cape, packages and Art, and Shape's, wherever he stands that week, his wares.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CounterKind {
-    Reader,
+    Mage,
     Vault,
     Vendor(Vendor),
-    /// The Tailor's, who sells emblems.
     Tailor,
+    Tack,
+    /// A faction's, by its number.
+    Faction(u8),
+    Shape,
 }
 
 /// A counter and its middle.
@@ -110,15 +120,28 @@ pub struct Counter {
 /// The counter that serves an ask, or none for one answered anywhere.
 #[must_use]
 pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
+    use gear::cosmetics::{Seller, cosmetics};
+    let art_faction = |art: u8| gear::factions::factions().of_art(art).map(|faction| CounterKind::Faction(faction.id));
     match ask {
-        Ask::Identify { .. } => Some(CounterKind::Reader),
+        Ask::Identify { .. } => Some(CounterKind::Mage),
         Ask::Store { .. } | Ask::Withdraw { .. } | Ask::StoreVestige { .. } | Ask::WithdrawVestige { .. } => {
             Some(CounterKind::Vault)
         }
         Ask::Vend { vendor, .. } => Some(CounterKind::Vendor(*vendor)),
-        Ask::BuyCrate => Some(CounterKind::Vendor(Vendor::Quartermaster)),
+        Ask::BuyCrate => Some(CounterKind::Vendor(Vendor::Weaponsmith)),
         Ask::BuyEmblem { .. } => Some(CounterKind::Tailor),
-        Ask::Recruit { .. } => Some(crate::crew::MUSTER),
+        Ask::BuyCosmetic { cosmetic } => {
+            cosmetics().get(usize::from(*cosmetic)).map(|found| match found.kind.seller() {
+                Seller::Tailor => CounterKind::Tailor,
+                Seller::Tack => CounterKind::Tack,
+            })
+        }
+        Ask::Pledge { faction }
+        | Ask::BuyFactionWare { faction, .. }
+        | Ask::CollectPackage { faction }
+        | Ask::Recruit { faction, .. } => Some(CounterKind::Faction(*faction)),
+        Ask::RiseArt { art, .. } | Ask::BuyFragment { art, .. } => art_faction(*art),
+        Ask::BuyFromShape { .. } => Some(CounterKind::Shape),
         _ => None,
     }
 }
@@ -137,18 +160,28 @@ impl Room {
     }
 
     /// Where a player stands as the gear crate judges an ask: where it is served if they stand at its counter in a
-    /// social space, or within reach of the Test Ground's stall, which serves every ask.
+    /// social space, or within reach of the Test Ground's stall, which serves every ask; with the day and the week.
     pub(crate) fn here(&self, player: PlayerId, ask: &Ask) -> Here {
         let near = |at: [f64; 2], reach: f64| {
             self.fighter(player)
                 .is_some_and(|fighter| libm::hypot(fighter.body.x - at[0], fighter.body.y - at[1]) <= reach)
         };
         let at_counter = counter_for(ask).is_some_and(|wanted| {
-            self.counters.iter().flatten().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
+            let shape = self.shape_at().map(|at| Counter { kind: CounterKind::Shape, at });
+            let counters = self.counters.iter().flatten().copied().chain(shape);
+            counters.into_iter().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
         let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
         let (pledge, rank) = self.player(player).map_or((0, 0), |found| crate::crew::pledge_of(&found.character));
-        Here { social, day: self.day, pledge, rank }
+        Here { social, day: self.day(), pledge, rank, week: gear::shape::week_of(self.minute) }
+    }
+
+    /// Where Shape stands, while he is in this social space: his place of the week among its spots.
+    #[must_use]
+    pub fn shape_at(&self) -> Option<[f64; 2]> {
+        let week = gear::shape::week_of(self.minute);
+        let present = self.counters.is_some() && gear::shape::present(self.minute);
+        present.then(|| self.shape_spots.get(gear::shape::place(week)).copied()).flatten()
     }
 
     /// Whether a player stands in a social space, or within reach of the stall: where the vendors' wares are shown.
@@ -156,12 +189,12 @@ impl Room {
     #[must_use]
     pub fn in_social_space(&self, player: PlayerId) -> bool {
         self.counters.as_ref().is_some_and(|counters| !counters.is_empty())
-            || self.here(player, &Ask::Vend { vendor: Vendor::Quartermaster, ware: 0 }).social
+            || self.here(player, &Ask::Vend { vendor: Vendor::Armorsmith, ware: 0, day: 0 }).social
     }
 
-    /// Whether a player stands where a Vestige opens: at the Reader's counter, or the stall.
+    /// Whether a player stands where a Vestige opens: at the Mage's counter, or the stall.
     #[must_use]
-    pub fn at_reader(&self, player: PlayerId) -> bool {
+    pub fn at_mage(&self, player: PlayerId) -> bool {
         self.here(player, &Ask::Identify { vestige: 0 }).social
     }
 
@@ -227,7 +260,7 @@ impl Room {
             }
             Asked::Gather { node } => self.gather(player, node),
             Asked::Scavenge { wreck } => self.scavenge(player, wreck),
-            Asked::Grant(grant) if self.section.is_none() => self.grant(player, grant),
+            Asked::Grant(grant) if self.is_test_ground() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),
         };
@@ -280,7 +313,7 @@ impl Room {
         match grant {
             Grant::Vestige { rarity, slot, level } => {
                 let id = character.take_id();
-                let vestige = Vestige { id, rarity, slot, level: level.clamp(1, gear::item::ITEM_LEVEL_MOST) };
+                let vestige = Vestige::new(id, rarity, slot, level.clamp(1, gear::item::ITEM_LEVEL_MOST));
                 if !character.pick_up(vestige) {
                     return answer_code(Err(Refusal::VestigesFull));
                 }
@@ -338,6 +371,18 @@ impl Room {
                     }
                 }
             }
+            Grant::ArtLevel { art, level } => {
+                use gear::arts::{FRAGMENTS, LEVEL_MOST, arts};
+                let Some(at) = arts().arts.iter().position(|found| found.id == art) else {
+                    return gear::arts::ArtRefusal::NoSuchArt as u8;
+                };
+                character.arts = std::mem::take(&mut character.arts).kept();
+                character.arts.levels[at] = level.clamp(1, LEVEL_MOST);
+                character.arts.xp[at] = 0;
+                if let Some(owned) = character.arts.owned.as_mut() {
+                    owned[at] = (1 << FRAGMENTS) - 1;
+                }
+            }
             Grant::Status { .. } | Grant::ArtsReady => {}
         }
         0
@@ -374,6 +419,10 @@ fn wear_kind(character: &mut gear::Character, kind: Kind, dice: &Dice) -> u8 {
     }
     answer_code(wear(character, id).map(|_| ()))
 }
+
+#[cfg(test)]
+#[path = "standing_tests.rs"]
+mod standing_tests;
 
 /// Carries a granted item, if its slot has room.
 fn carry(character: &mut gear::Character, item: Item) -> u8 {

@@ -14,6 +14,11 @@ export interface Outfit {
   readonly drawn: boolean;
   readonly grip?: 'hilt' | null;
   readonly hair: { readonly style: string; readonly colour: string } | null;
+  /** The cosmetics worn over it by id (forge/cosmetics.ts): the dye laid on the armour, the horse's coat and the
+   *  barding over the horse; none keeps the own colours and the bare horse. */
+  readonly dye?: string | null;
+  readonly coat?: string | null;
+  readonly barding?: string | null;
 }
 
 /** Garments whose skirt falls to the ankles: a cloak worn with one hangs clear of it, and greaves are hidden. */

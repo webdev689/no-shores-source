@@ -1257,8 +1257,7 @@ img.gear-glyph {
   color: var(--faint);
 }
 .gear-currency img.gear-glyph,
-.gear-purse img.gear-glyph,
-.gear-price img.gear-glyph {
+.gear-purse img.gear-glyph {
   width: 24px;
   height: 24px;
 }
@@ -1324,55 +1323,6 @@ img.gear-glyph {
   height: 36px;
   filter: grayscale(1) brightness(0.6);
   opacity: 0.35;
-}
-
-/* A vendor's wares: each ware a press held to buy it, its tile, name, kind and price. */
-.gear-vendor {
-  padding: 14px 18px;
-}
-.gear-wares {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 10px 14px;
-}
-#hud .gear-ware {
-  display: grid;
-  grid-template-columns: 84px 1fr;
-  align-items: center;
-  gap: 12px;
-  padding: 8px;
-  text-align: left;
-}
-.gear-ware-words {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-/* A ware's name wraps rather than being cut: at the names' size a stall's card holds about a dozen letters a line. */
-.gear-ware-words b {
-  font-size: var(--type-m);
-  font-weight: 500;
-}
-.gear-ware-power {
-  font-size: var(--type-s);
-  color: var(--word);
-}
-.gear-price {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  color: var(--brass-lit);
-}
-.gear-price b {
-  font-size: var(--type-m);
-  font-weight: 500;
-}
-.gear-price.gear-short {
-  color: var(--loss);
-}
-.gear-price.gear-short .gear-hint {
-  color: var(--loss);
 }
 
 /* The account. */
@@ -1473,11 +1423,6 @@ img.gear-glyph {
 #hud .gear-item-name:focus {
   outline: none;
 }
-/* A ware leads with its picture, as Destiny's kiosks do. */
-#hud .gear-ware .gear-cell {
-  width: 84px;
-  height: 84px;
-}
 /* A rule runs the width of what holds it: a bare hr's auto margins would shrink it to a dot in a column. */
 .gear-screen hr {
   align-self: stretch;
@@ -1551,10 +1496,7 @@ img.gear-glyph {
   .gear-item-page .gear-compare-row {
     grid-template-columns: 110px 1fr 96px;
   }
-  /* Three wares a row, so a name keeps to its line; a vault's twenty places in two whole rows of ten. */
-  .gear-wares {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  /* A vault's twenty places in two whole rows of ten. */
   .gear-vault .gear-grid {
     grid-template-columns: repeat(10, 64px);
   }

@@ -54,7 +54,7 @@ test('a player arrives at any node by its id, a social space by its city, and no
   assert.equal(arrivalAt(world, 'nowhere'), null);
 });
 
-test('a ruined city’s social space is arrived at as its ruins; a port city’s by its name', () => {
+test('a port city’s social space is arrived at by its name; a desolate city’s, never opened, not at all', () => {
   const world = {
     layoutText: '',
     continents: [],
@@ -65,9 +65,8 @@ test('a ruined city’s social space is arrived at as its ruins; a port city’s
     ],
   } as unknown as WorldData;
   const ports = ['overlook', 'sunspire', 'rimeholt'];
-  assert.equal(arrivalAt(world, 'mistfall-social', ports)?.name, 'Ruins of Mistfall');
   assert.equal(arrivalAt(world, 'overlook-social', ports)?.name, 'Overlook');
-  assert.equal(arrivalAt(world, 'mistfall-social')?.name, 'Mistfall', 'by its name alone with no ports known');
+  assert.equal(arrivalAt(world, 'mistfall-social', ports), null, 'only an open social space is gone to');
 });
 
 test('every patrol area and mission is locked but those the open list names; other kinds never are', () => {

@@ -1,4 +1,6 @@
-import { type Figure, type ForgeLooks, layerCellOf, layerPath, layersOf, lookCell } from './looks.ts';
+import { hideShade } from './cosmetics.ts';
+import { type CoverSteps, lightOf } from './coverLight.ts';
+import { type Figure, type ForgeLooks, HORSE_LAYER, layerCellOf, layerPath, layersOf, lookCell } from './looks.ts';
 import type { PaletteSnap, Rgb } from './dyes.ts';
 import { type HairColours, type RaceSkins, hairRamp, raceSkinOf, toneSkinOf } from './skins.ts';
 
@@ -47,6 +49,9 @@ export const PART = {
 } as const;
 const NO_HANG = new Set<number>([PART.armL, PART.armR, PART.footL, PART.footR, PART.weapon]);
 const FAR = 0x7fffffff;
+/** How far behind the horse's hide a barding texel may lie and still be drawn over it, in metres: the forge renders
+ *  a barding a little off the hide, while its far side and inside lie well behind the horse. */
+const BARDING_CLEAR_M = 0.15;
 
 /** Whether two layers' orders weigh where their texels meet: on one part (a shirt and the cuirass over it), or a
  *  drape over what it hangs over, never over an arm, a foot or a weapon, nor anything over a weapon. The horse is no
@@ -65,8 +70,10 @@ export function ordersMeet(first: number, second: number): boolean {
  * One frame of a figure, composed as the forge's game draws it: each layer's cell (a row a view, a column a frame)
  * laid on the figure's cell by its root; at each pixel the nearest texel, a layer drawn nearer by its order where it
  * meets another on one part, armour over the clothes under it by its cover, a worn weapon and a drape by `under`.
- * The skin takes the race or the human tone, the hair its colour's ramp, a dyed layer's grey its dye's ramp; the frame
- * is then snapped to the palette. The layers in `held` count as the weapon in its mask, whatever part they name.
+ * The skin takes the race or the human tone, the hair its colour's ramp, a dyed layer's grey its dye's ramp (every
+ * texel of a layer in `covers`, by its set's steps), the horse's hide its coat's (its ramp under
+ * HORSE_LAYER, `hideShade`); the frame is then snapped to the palette. The layers in `held` count as the weapon in
+ * its mask, whatever part they name.
  */
 export async function composeFrame(
   figure: Figure,
@@ -78,11 +85,13 @@ export async function composeFrame(
   ramps: Readonly<Record<string, readonly Rgb[]>>,
   strip: (path: string) => Promise<Strip | null>,
   held: ReadonlySet<string> = new Set(),
+  covers: ReadonlyMap<string, CoverSteps> = new Map(),
 ): Promise<Frame | null> {
   const box = lookCell(figure, anim, looks);
   if (!box) return null;
   const [width, height] = box.cell;
   const scale = looks.depth?.scale ?? 10000;
+  const bardingClear = Math.round(BARDING_CLEAR_M * scale);
   const weigh = (table: Readonly<Record<string, number>> | undefined, layer: string) =>
     Math.round((table?.[layer] ?? 0) * scale);
   const pixels = new Uint8Array(width * height * 4);
@@ -92,6 +101,7 @@ export async function composeFrame(
   const bestUnder = new Int32Array(width * height);
   const bestPart = new Uint8Array(width * height);
   const bestHeld = new Uint8Array(width * height);
+  const bestHorse = new Uint8Array(width * height);
   const worn = new Int32Array(width * height).fill(FAR);
   // From the side round to the back, a drape shows only its outside.
   const outside = view >= 2;
@@ -113,9 +123,13 @@ export async function composeFrame(
     const cover = weigh(looks.cover, layer);
     const under = weigh(looks.under, layer);
     const holding = held.has(layer) ? 1 : 0;
+    const horse = layer === HORSE_LAYER ? 1 : 0;
+    const barding = layer === figure.barding;
     const hair =
       figure.hair?.layer === layer ? hairRamp(colours.hair, figure.body, figure.race, figure.hair.colour) : null;
     const ramp = hair ?? (dyeable.has(layer) ? (ramps[layer] ?? null) : null);
+    const coat = layer === HORSE_LAYER ? (ramps[layer] ?? null) : null;
+    const steps = ramp ? (covers.get(layer) ?? null) : null;
     const skin =
       figure.tone === null
         ? raceSkinOf(colours.skins, layer, figure.body, figure.race, view)
@@ -144,8 +158,10 @@ export async function composeFrame(
             if (cover && (bestBias[spot] ?? 0) < bias) mine = cover;
             else if (bestCover[spot] && bias < (bestBias[spot] ?? 0)) theirs = bestCover[spot] ?? 0;
           }
+          // A barding lies on the horse's hide, rendered a little clear of it: over the horse it is drawn unless it
+          // lies further behind than that, as its far side and inside do.
           // A drape and a worn weapon: whether this texel is drawn, whatever the depths.
-          let wins: boolean | null = null;
+          let wins: boolean | null = barding && bestHorse[spot] ? lies - there <= bardingClear : null;
           const bare = worn[spot] === FAR;
           if (part === PART.drape && bestUnder[spot]) {
             if (bias <= (bestBias[spot] ?? 0)) {
@@ -167,12 +183,22 @@ export async function composeFrame(
         bestUnder[spot] = under;
         bestPart[spot] = part;
         bestHeld[spot] = holding;
+        bestHorse[spot] = horse;
         rgb[0] = colour.data[source] ?? 0;
         rgb[1] = colour.data[source + 1] ?? 0;
         rgb[2] = colour.data[source + 2] ?? 0;
         skin?.(rgb);
+        if (coat) hideShade(rgb, coat);
         const grey = rgb[0] === rgb[1] && rgb[1] === rgb[2];
-        const dyed = ramp && grey ? ramp[Math.max(0, Math.min(15, ((rgb[0] ?? 0) * 16) >> 8))] : null;
+        // A ramp lies on a layer's greys, as the forge draws them for it; one that covers the layer lies on every texel
+        // by its light, laid by its set's (`coverSteps`).
+        const dyed = !ramp
+          ? null
+          : steps
+            ? ramp[steps[lightOf(rgb)] ?? 0]
+            : grey
+              ? ramp[Math.max(0, Math.min(15, ((rgb[0] ?? 0) * 16) >> 8))]
+              : null;
         const out = spot * 4;
         pixels[out] = dyed?.[0] ?? rgb[0] ?? 0;
         pixels[out + 1] = dyed?.[1] ?? rgb[1] ?? 0;

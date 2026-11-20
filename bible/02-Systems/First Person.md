@@ -142,7 +142,9 @@ or the plain wooden shield, under the hand on its grip. The torch and the lanter
 
 The forge draws every metal grey. A grey texel goes to the nearest step of Daggerfall's metal band and takes that
 step of the metal's ramp; every other colour snaps to the nearest palette colour. Steel, leather, chain and the guilds'
-sets keep their own colours. Bare hands take iron's.
+sets keep their own colours, unless a dye or a faction's colour is worn: then the gauntlets and boots are covered whole
+by its light, as the figure's armour is, and a faction's bow, staff and shield in its colour, each laid by its set's
+span of light on the player's body ([[Gear]], "Cosmetics"). Bare hands take iron's.
 
 ### On the screen
 
@@ -206,7 +208,8 @@ On a horse the first person shows the Courser's head and neck from the saddle, i
 on the screen's foot. Each gait steps its frames on the rider's own figure's clock: a walk's 0.125 s, a gallop's
 0.0625 s. A gallop's frames sink half the rows their ears rise above its lowest. Turning the look faster than 0.7
 radians a second turns the head into the turn, held 0.25 s past it. Standing still, the horse flicks an ear every 3
-to 9 s.
+to 9 s. The head takes the coat worn on its hide, and the barding worn is its own strip over it ([[Gear]],
+"Cosmetics").
 
 Each free hand holds its rein, its fist over it in the gauntlets worn, the left drawn as the right turned back about
 the middle. The hands give on the stride's beat, the left a beat behind; in a turn the inside hand draws in and the
@@ -218,6 +221,7 @@ rein, not its fist up.
 - No weapon shows wear, and no gun's flash lights the room.
 - The swing's pace takes no account of the player's Speed and Strength or the weapon's weight, nor a pair's off hand
   feeling its weapon heavier. A Greatsword's swings are the sword's pictures in first person, at its own pace.
-- The horse is always the forge's bay. There is no cart, bench wagon, petting or feeding.
+- The Wraith Mist barding draws nothing from the saddle, and about a tenth of the hide keeps the bay's colour under a
+  coat ([[Gear]], "Limits"). There is no cart, bench wagon, petting or feeding.
 - A cast always shows both casting hands; no spell is held ready in a free hand beside a weapon.
 - The tools, the instruments and the held map are not drawn.

@@ -138,6 +138,8 @@ interface Word {
   readonly line: number;
   readonly side: number;
   readonly across: number;
+  /** How far it has been pushed down to clear the plates, which it never rises back from while it shows. */
+  drop: number;
   readonly key: string | null;
   readonly stamps: Set<string>;
   said: Said;
@@ -199,6 +201,7 @@ export class Words {
       said: full,
       life: 0,
       frames: 0,
+      drop: 0,
     };
     this.stamp(word);
     word.life = lifeOf(full);
@@ -242,7 +245,10 @@ export class Words {
       const want = { left: middle - half, right: middle + half, top, bottom: top + size };
       // A word whose place is off the screen's foot or side (a body right before the eyes) stands just inside it.
       const inside = word.at ? clampedTo(want, width, height) : want;
-      const box = word.at ? placeWord(inside, plates, placed) : want;
+      // Pushed down to clear a plate, it stays down, so a plate fading out never lets it jump back up.
+      const lowered = { ...inside, top: inside.top + word.drop, bottom: inside.bottom + word.drop };
+      const box = word.at ? placeWord(lowered, plates, placed) : want;
+      if (word.at) word.drop = box.top - inside.top;
       placed.push(box);
       const scaled = pose.scale === 1 ? '' : ` scale(${pose.scale})`;
       const across = (box.left + box.right) / 2;

@@ -101,7 +101,7 @@ fn a_kills_drops_are_thrown_out_in_a_fan_toward_the_player_and_taken_at_rest() {
         found.character.ammo = 0;
     }
     kill(&mut room, player, ::foes::Rank::Boss, -10.0);
-    let drops: Vec<Drop> = room.drops_for(player).copied().collect();
+    let drops: Vec<Drop> = room.drops_for(player).cloned().collect();
     assert_eq!(drops.len(), 3, "a Vestige, a box and a crate: {drops:?}");
     for drop in &drops {
         assert_eq!(drop.from, [0.0, -10.0, 0.0], "thrown from the body");

@@ -32,7 +32,7 @@ mod sea_door;
 mod waters_door;
 
 pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
-pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
+pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's, and why it takes no
 /// player when its node is locked; the sea; or a fleet.
@@ -79,6 +79,8 @@ struct NodeFile {
     boxes: Vec<[f64; BLOCK_FLOATS]>,
     #[serde(default)]
     counters: Vec<NodeCounter>,
+    #[serde(default)]
+    shape_spots: Vec<[f64; 2]>,
 }
 
 /// A social space's counter as the bake writes it: its station, and its middle.
@@ -88,16 +90,18 @@ struct NodeCounter {
     at: [f64; 2],
 }
 
-/// A counter that serves a player's gear, from its station's name.
+/// A counter that serves a player's gear, from its station's name: a faction's by the faction's key.
 fn counter_of(found: &NodeCounter) -> Option<Counter> {
+    let faction = || gear::factions::factions().factions.iter().find(|faction| faction.key == found.kind);
     let kind = match found.kind.as_str() {
-        "reader" => CounterKind::Reader,
+        "mage" => CounterKind::Mage,
         "vault" => CounterKind::Vault,
-        "quartermaster" => CounterKind::Vendor(Vendor::Quartermaster),
-        "armsmith" => CounterKind::Vendor(Vendor::Armsmith),
+        "armorsmith" => CounterKind::Vendor(Vendor::Armorsmith),
+        "weaponsmith" => CounterKind::Vendor(Vendor::Weaponsmith),
         "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
         "tailor" => CounterKind::Tailor,
-        _ => return None,
+        "tack" => CounterKind::Tack,
+        _ => CounterKind::Faction(faction()?.id),
     };
     Some(Counter { kind, at: found.at })
 }
@@ -155,6 +159,7 @@ pub fn open_node(text: &[u8]) -> bool {
     let floor = Floor::Land(Box::new(node.ground));
     let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
     room.counters = (node.kind == NodeKind::Social).then(|| node.counters.iter().filter_map(counter_of).collect());
+    room.shape_spots = node.shape_spots;
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource

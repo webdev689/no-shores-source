@@ -156,8 +156,8 @@ fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_its_experience()
     assert_eq!(wares.len(), vendor::WARES);
     assert!(wares.iter().all(|ware| ware.kind.module() && ware.level == 9));
     character.materials.aurem = 5_000;
-    let social = Here { social: true, day: 3, pledge: 0, rank: 0 };
-    character.ask(Ask::Vend { vendor: Vendor::Shipwright, ware: 0 }, social, &dice(0)).expect("sold");
+    let social = Here { social: true, day: 3, pledge: 0, rank: 0, week: 0 };
+    character.ask(Ask::Vend { vendor: Vendor::Shipwright, ware: 0, day: 3 }, social, &dice(0)).expect("sold");
     let before = character.ship_xp;
     let earned = character.reward_sinking(Foe::Brute, 10, Difficulty::Normal);
     assert_eq!(earned, 270);

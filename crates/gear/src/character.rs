@@ -33,12 +33,24 @@ pub enum At {
 }
 
 /// A sealed drop: the colour it shows, the slot it holds an item for, and the level of that item.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Vestige {
     pub id: u32,
     pub rarity: Rarity,
     pub slot: Slot,
     pub level: u8,
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
+    #[serde(flatten, default)]
+    pub unknown: UnknownKeys,
+}
+
+impl Vestige {
+    /// A Vestige of its own, with nothing a later room wrote on it.
+    #[must_use]
+    pub fn new(id: u32, rarity: Rarity, slot: Slot, level: u8) -> Self {
+        Vestige { id, rarity, slot, level, unknown: UnknownKeys::new() }
+    }
 }
 
 /// Every material a player holds: Aurem, each stock's fragments and Essence, Fruit of Dagon, and each island's
@@ -58,6 +70,13 @@ pub struct Materials {
     /// The ship's own materials (`ship::materials`).
     #[serde(default)]
     pub ship: crate::ship::materials::ShipStock,
+    /// Shapes, which only Shape takes (`shape.rs`).
+    #[serde(default)]
+    pub shapes: u16,
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
 }
 
 impl Materials {
@@ -121,6 +140,9 @@ pub enum Stuff {
     Resource(usize),
 }
 
+/// The keys of a kept object that this room's rules do not read.
+pub type UnknownKeys = serde_json::Map<String, serde_json::Value>;
+
 /// A player's gear and progress.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Character {
@@ -164,6 +186,16 @@ pub struct Character {
     /// `SCAVENGED_KEPT` islands kept, so an island's room opened again pays them nothing again.
     #[serde(default)]
     pub scavenged: Vec<(u64, Vec<u8>)>,
+    /// The faction pledged to, and the reputation earned with each (`factions.rs`).
+    #[serde(default)]
+    pub allegiance: crate::factions::Allegiance,
+    /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
+    #[serde(default)]
+    pub cosmetics: crate::cosmetics::Cosmetics,
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
 }
 
 /// How many islands' scavenged wrecks a character keeps: far more than stand round one ship before they fade.
@@ -219,6 +251,9 @@ impl Character {
             ship_fitted: false,
             crew: crate::crew::Crew::default(),
             scavenged: Vec::new(),
+            allegiance: crate::factions::Allegiance::default().kept(),
+            cosmetics: crate::cosmetics::Cosmetics::default(),
+            unknown: UnknownKeys::new(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),
@@ -256,6 +291,10 @@ impl Character {
     pub fn from_json(text: &str) -> Option<Self> {
         let mut kept: serde_json::Value = serde_json::from_str(text).ok()?;
         let shields = crate::old_hands::read(&mut kept);
+        // What others see is made again from the gear on each write (`to_json`), never kept as an unknown key.
+        if let Some(object) = kept.as_object_mut() {
+            object.remove("shown");
+        }
         let mut character: Self = serde_json::from_value(kept).ok()?;
         let resources = catalogue().resources.len();
         let materials = &mut character.materials;
@@ -297,6 +336,8 @@ impl Character {
         character.arts = std::mem::take(&mut character.arts).kept();
         character.crew = std::mem::take(&mut character.crew).kept();
         character.fit_first_modules();
+        character.allegiance = std::mem::take(&mut character.allegiance).kept();
+        character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         character.earn_due();
         Some(character)
     }

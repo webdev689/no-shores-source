@@ -56,11 +56,29 @@ pub const GRANT_WORN: u8 = 39;
 pub const WEAR_ART: u8 = 40;
 pub const SET_CORE: u8 = 41;
 /// A First Mate and a Bosun of `level` signed on and sent ashore.
-pub const GRANT_OFFICERS: u8 = 42;
+pub const GRANT_OFFICERS: u8 = 43;
 /// A sea island's wreck scavenged, by its place in the island's list in `node`.
 pub const SCAVENGE: u8 = 63;
+/// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
+pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
 pub const NO_FRAGMENT: u8 = 255;
+/// A faction's asks, the faction's number in `column`: to pledge to it, to buy one of its wares (its place among
+/// them in `node`), to collect a package.
+pub const PLEDGE: u8 = 50;
+pub const BUY_FACTION_WARE: u8 = 51;
+pub const COLLECT_PACKAGE: u8 = 52;
+/// An Art raised a level, or one of its fragments bought, at its faction's counter: the Art in `column`, the
+/// fragment's place in `node`.
+pub const RISE_ART: u8 = 53;
+pub const BUY_FRAGMENT: u8 = 54;
+/// A cosmetic worn, or bought from the Tailor or the Tack, by its number in `item`.
+pub const WEAR_COSMETIC: u8 = 55;
+pub const BUY_COSMETIC: u8 = 56;
+/// One of Shape's wares of the week bought, by its place in `node`.
+pub const BUY_FROM_SHAPE: u8 = 57;
+/// Shape's place on the gear message while he is away.
+pub const SHAPE_AWAY: u8 = 255;
 
 /// An officer's duty by its number on the wire.
 fn duty_of(number: u8) -> Option<gear::crew::Duty> {
@@ -97,7 +115,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         WITHDRAW => Asked::Gear(Ask::Withdraw { item }),
         STORE_VESTIGE => Asked::Gear(Ask::StoreVestige { vestige: item }),
         WITHDRAW_VESTIGE => Asked::Gear(Ask::WithdrawVestige { vestige: item }),
-        VEND => Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::from_number(column)?, ware: node }),
+        VEND => Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::from_number(column)?, ware: node, day: item }),
         WEAR_EMBLEM => Asked::Gear(Ask::WearEmblem { emblem: u16::try_from(item).ok()? }),
         BUY_EMBLEM => Asked::Gear(Ask::BuyEmblem { emblem: u16::try_from(item).ok()? }),
         USE_CRATE => Asked::Gear(Ask::UseCrate),
@@ -135,6 +153,15 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         GRANT_CRATES => Asked::Grant(Grant::Crates(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
         GRANT_OFFICERS => Asked::Grant(Grant::Officers(ask.level())),
         GRANT_WORN => Asked::Grant(Grant::Worn(Kind::from_number(ask.item_kind())?)),
+        GRANT_ART_LEVEL => Asked::Grant(Grant::ArtLevel { art: column, level: ask.level() }),
+        PLEDGE => Asked::Gear(Ask::Pledge { faction: column }),
+        BUY_FACTION_WARE => Asked::Gear(Ask::BuyFactionWare { faction: column, ware: node }),
+        COLLECT_PACKAGE => Asked::Gear(Ask::CollectPackage { faction: column }),
+        RISE_ART => Asked::Gear(Ask::RiseArt { art: column, fragment: node }),
+        BUY_FRAGMENT => Asked::Gear(Ask::BuyFragment { art: column, fragment: node }),
+        WEAR_COSMETIC => Asked::Gear(Ask::WearCosmetic { cosmetic: u16::try_from(item).ok()? }),
+        BUY_COSMETIC => Asked::Gear(Ask::BuyCosmetic { cosmetic: u16::try_from(item).ok()? }),
+        BUY_FROM_SHAPE => Asked::Gear(Ask::BuyFromShape { ware: node }),
         _ => return None,
     })
 }
@@ -157,8 +184,8 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::WithdrawVestige { vestige } => {
                 args = messages::AskArgs { kind: WITHDRAW_VESTIGE, item: vestige, ..args };
             }
-            Ask::Vend { vendor, ware } => {
-                args = messages::AskArgs { kind: VEND, column: vendor as u8, node: ware, ..args };
+            Ask::Vend { vendor, ware, day } => {
+                args = messages::AskArgs { kind: VEND, column: vendor as u8, node: ware, item: day, ..args };
             }
             Ask::WearEmblem { emblem } => {
                 args = messages::AskArgs { kind: WEAR_EMBLEM, item: u32::from(emblem), ..args };
@@ -180,6 +207,26 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::ChooseOfficer { officer, column, node } => {
                 args = messages::AskArgs { kind: CHOOSE_OFFICER, item: officer, column, node, ..args };
             }
+            Ask::Pledge { faction } => args = messages::AskArgs { kind: PLEDGE, column: faction, ..args },
+            Ask::BuyFactionWare { faction, ware } => {
+                args = messages::AskArgs { kind: BUY_FACTION_WARE, column: faction, node: ware, ..args };
+            }
+            Ask::CollectPackage { faction } => {
+                args = messages::AskArgs { kind: COLLECT_PACKAGE, column: faction, ..args };
+            }
+            Ask::RiseArt { art, fragment } => {
+                args = messages::AskArgs { kind: RISE_ART, column: art, node: fragment, ..args };
+            }
+            Ask::BuyFragment { art, fragment } => {
+                args = messages::AskArgs { kind: BUY_FRAGMENT, column: art, node: fragment, ..args };
+            }
+            Ask::WearCosmetic { cosmetic } => {
+                args = messages::AskArgs { kind: WEAR_COSMETIC, item: u32::from(cosmetic), ..args };
+            }
+            Ask::BuyCosmetic { cosmetic } => {
+                args = messages::AskArgs { kind: BUY_COSMETIC, item: u32::from(cosmetic), ..args };
+            }
+            Ask::BuyFromShape { ware } => args = messages::AskArgs { kind: BUY_FROM_SHAPE, node: ware, ..args },
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
@@ -226,6 +273,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Grant(Grant::Officers(level)) => {
             args = messages::AskArgs { kind: GRANT_OFFICERS, level: *level, ..args };
         }
+        Asked::Grant(Grant::ArtLevel { art, level }) => {
+            args = messages::AskArgs { kind: GRANT_ART_LEVEL, column: *art, level: *level, ..args };
+        }
     }
     messages::Ask::create(builder, &args)
 }
@@ -252,7 +302,7 @@ pub(crate) fn column_number(column: gear::grid::Column) -> u8 {
     }
 }
 
-fn item_offset<'built>(
+pub(crate) fn item_offset<'built>(
     builder: &mut FlatBufferBuilder<'built>,
     item: &Item,
     at: At,
@@ -317,13 +367,13 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     // In a social space, the day's wares, each numbered by its place among its vendor's.
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     // In a social space, the emblems the Tailor sells that day.
-    let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day) } else { Vec::new() };
+    let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day()) } else { Vec::new() };
     let wares: Vec<_> = if room.in_social_space(player) {
         gear::vendor::Vendor::ALL
             .into_iter()
             .flat_map(|vendor| {
                 let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::wares(vendor, room.day, level)
+                gear::vendor::wares(vendor, room.day(), level)
             })
             .enumerate()
             .map(|(place, mut ware)| {
@@ -352,12 +402,12 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         })
         .collect();
     let vestiges = Some(builder.create_vector(&vestiges));
-    let drops: Vec<Drop> = room.drops_for(player).copied().collect();
+    let drops: Vec<Drop> = room.drops_for(player).cloned().collect();
     let drops: Vec<_> = drops
         .iter()
         .map(|drop| {
             let (at, from) = (Some(builder.create_vector(&drop.at)), Some(builder.create_vector(&drop.from)));
-            let (kind, rarity, slot) = match drop.what {
+            let (kind, rarity, slot) = match &drop.what {
                 Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8),
                 Dropped::AmmoBox => (1, 0, 0),
                 Dropped::Crate => (2, 0, 0),
@@ -379,6 +429,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let cores: Vec<u8> = arts.flat_map(|art| character.core_of(art.id)).map(|set| set.unwrap_or(NO_FRAGMENT)).collect();
     let casting = found.casting;
     let ship = Some(crate::ship_wire::ship_offset(&mut builder, character, room.recruiting_at(player)));
+    let more = crate::standing_wire::standing_of(&mut builder, room, player, character);
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -391,7 +442,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         vestiges,
         drops,
         spent: Some(builder.create_vector(&found.spent)),
-        at_reader: room.at_reader(player),
+        at_mage: room.at_mage(player),
         answer: found.answer,
         identified: found.identified,
         answered: found.answered,
@@ -415,6 +466,22 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         crates: u8::try_from(held.crates).unwrap_or(u8::MAX),
         crate_price: if room.in_social_space(player) { gear::ammo::CRATE_PRICE } else { 0 },
         ship,
+        pledge: character.allegiance.pledge,
+        reputation: Some(more.reputation),
+        packages: Some(more.packages),
+        art_levels: Some(more.art_levels),
+        art_xp: Some(more.art_xp),
+        art_owned: Some(more.art_owned),
+        cosmetics: Some(more.cosmetics),
+        dye: crate::standing_wire::number_of_worn(&character.cosmetics.dye),
+        coat: crate::standing_wire::number_of_worn(&character.cosmetics.coat),
+        barding: crate::standing_wire::number_of_worn(&character.cosmetics.barding),
+        cosmetics_sold: Some(more.cosmetics_sold),
+        shapes: held.shapes,
+        shape_place: more.shape_place,
+        shape_wares: Some(more.shape_wares),
+        faction_wares: Some(more.faction_wares),
+        day: u32::try_from(room.day()).unwrap_or(u32::MAX),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

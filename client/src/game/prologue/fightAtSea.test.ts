@@ -148,7 +148,7 @@ test('the story fight begins on the land door with its captains, draws them, hea
   assert.equal(frame.left, 0);
   assert.equal(frame.over, true);
   assert.ok(frame.ships.slice(1).every((ship) => ship.sunk));
-  assert.deepEqual(winds[0], [14, 6], 'the first step sails in the storm drawn round her');
+  assert.deepEqual(winds[0], [14, 6], 'the first step sails in the storm drawn round it');
   assert.deepEqual(winds.at(-1), [3, 1], 'a later one in the wind the story eased to');
   assert.equal(frame.hulls.length, 1, 'only her footprint while the captains are gone');
 });

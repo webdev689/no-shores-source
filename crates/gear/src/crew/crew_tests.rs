@@ -9,7 +9,7 @@ use crate::power;
 use crate::rarity::Rarity;
 
 fn counter(pledge: u8, rank: u32) -> Here {
-    Here { social: true, day: 4, pledge, rank }
+    Here { social: true, day: 4, pledge, rank, week: 0 }
 }
 
 fn dice(tick: u64) -> Dice {

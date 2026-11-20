@@ -343,7 +343,7 @@ export class Foot {
     const { walker, movement, forge, groundAt } = this.context;
     const { fight, foes, effects } = this;
     this.dressInGear();
-    this.plaza?.frame(seconds);
+    this.plaza?.frame(seconds, this.gear?.gear ?? null);
     if (this.link.joins !== this.joined) {
       // A link that joined its room again brings every dress there with its welcome.
       this.joined = this.link.joins;
@@ -414,7 +414,7 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const dropped = this.dropMarks(clock, shot.eye, [
-      ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
+      ...groundRings(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z, clock),
       ...foes.overheads(shot.eye, clock),
     ]);
     const marks = effects.marks(fight, seconds, {
@@ -475,7 +475,7 @@ export class Foot {
     const { x, y } = walker.player.body;
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     this.using = able
-      ? (placeUse ?? useAt(x, y, this.node.stations ?? [], gear?.gear ?? null, (asked) => gear?.ask(asked)))
+      ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked)))
       : null;
     this.prompt?.show(this.using?.words ?? null);
     const ownView = fight.own;

@@ -459,14 +459,13 @@ table GearDrop {
   flying: ubyte;
 }
 
-// A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem, then
-// their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in the
-// catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent (on a
-// sea island, the wrecks they have scavenged); whether they stand where a Vestige opens (the Reader's counter, or the
-// stall); and the answer to their last ask (0 done, then the gear crate's refusals by number) with the item a Vestige
-// last opened to (0 none) and how many asks have been
+// A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
+// then their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in
+// the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent (on
+// a sea island, the wrecks they have scavenged); whether they stand where a Vestige opens (the Mage's counter, or the
+// stall); and the answer to their last ask (0 done, then the gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
 // answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
-// island's resource; and in a social space, the vendors' wares of the day, the Quartermaster's then the Armsmith's,
+// island's resource; and in a social space, the smiths' wares of the day, the Armorsmith's then the Weaponsmith's,
 // each numbered by its place among its vendor's and priced in Aurem.
 table Gear {
   xp: ulong;
@@ -480,7 +479,7 @@ table Gear {
   vestiges: [GearVestige];
   drops: [GearDrop];
   spent: [ubyte];
-  at_reader: bool;
+  at_mage: bool;
   answer: ubyte;
   identified: uint;
   answered: uint;
@@ -511,13 +510,40 @@ table Gear {
   tenets: [double];
   // The Ranged loadout's ammunition: the shots left in the one worn and its capacity (0 with none worn), and the share
   // of a full capacity kept, 0 to 1, which any Ranged weapon worn holds. Then the Ammo crates carried, and in a social
-  // space the Quartermaster's price for one (0 elsewhere).
+  // space the Weaponsmith's price for one (0 elsewhere).
   ammo: ushort;
   ammo_most: ushort;
   ammo_share: double;
   crates: ubyte;
   crate_price: uint;
   ship: GearShip;
+  // Where they stand with the factions: the one pledged to (0 none), and for each faction in content/gear/factions.json's
+  // order the reputation earned with it and the packages it holds for them.
+  pledge: ubyte;
+  reputation: [ulong];
+  packages: [uint];
+  // Each Art's level, its XP toward the next, and the fragments it owns, one bit each by place, in the Arts' order.
+  art_levels: [ubyte];
+  art_xp: [uint];
+  art_owned: [ubyte];
+  // The cosmetics they keep and the dye, coat and barding they wear, by their place in content/gear/cosmetics.json;
+  // and in a social space, those the Tailor and the Tack sell that day.
+  cosmetics: [ushort];
+  dye: ushort;
+  coat: ushort;
+  barding: ushort;
+  cosmetics_sold: [ushort];
+  // Their Shapes; and while Shape is in their social space, his place among its spots (255 while he is away) and
+  // his wares of the week, each numbered by its place among them and priced in Shapes.
+  shapes: ushort;
+  shape_place: ubyte = 255;
+  shape_wares: [GearItem];
+  // In a social space, every faction's wares in the factions' order, each numbered by its place among its faction's
+  // and priced in Aurem: its cape, its armour and its weapons, as the room makes them.
+  faction_wares: [GearItem];
+  // The day, counted from the epoch at UTC midnight, whose smiths' wares the message shows: a smith's ware is asked
+  // by it, so none sent as the day turns buys the next day's.
+  day: uint;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

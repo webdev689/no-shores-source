@@ -134,6 +134,8 @@ pub struct Room {
     pub(crate) seed: u64,
     pub(crate) foes_most: usize,
     pub(crate) garrison: Vec<garrison::Post>,
+    /// A mission's or a dungeon's garrison as one encounter, giving ground as it falls.
+    pub(crate) encounter: Option<garrison::Encounter>,
     pub(crate) world_seed: u64,
     /// How many rolls the room has made for players, so no two share one, even in one tick.
     pub(crate) rolls: u64,
@@ -150,9 +152,10 @@ pub struct Room {
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
     pub(crate) ashore: companions::Ashore,
-    /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
-    pub day: u64,
     pub(crate) isle: Option<island::Isle>,
+    /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
+    pub minute: u64,
+    pub shape_spots: Vec<[f64; 2]>,
 }
 
 impl Room {
@@ -194,6 +197,7 @@ impl Room {
             seed: SEED,
             foes_most: FOES_MOST,
             garrison: Vec::new(),
+            encounter: None,
             world_seed: SEED,
             rolls: 0,
             past: VecDeque::new(),
@@ -205,8 +209,9 @@ impl Room {
             difficulty: gear::Difficulty::Normal,
             patrol: None,
             ashore: companions::Ashore::default(),
-            day: 0,
             isle: None,
+            minute: 0,
+            shape_spots: Vec::new(),
         }
     }
 
@@ -244,7 +249,7 @@ impl Room {
         self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
         let fighter = player(self.stand(spawn), BARE_HANDS);
-        self.players.insert(id, Player::new(fighter, self.clock));
+        self.players.insert(id, Player::new(fighter, self.clock, self.is_test_ground()));
         Some(id)
     }
 
@@ -277,10 +282,9 @@ impl Room {
             found.acknowledged = found.acknowledged.wrapping_add(1);
         }
         found.received = input.sequence;
-        if let Some(dress) = input.dress.take()
-            && dress != found.dress
-        {
-            found.dress_next = Some(dress);
+        // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
+        if let Some(dress) = input.dress.take() {
+            found.dress_next = (dress != found.dress_sent).then_some(dress);
         }
         // A player never begins a telegraphed blow.
         input.intent.combat.telegraph = None;
@@ -323,7 +327,9 @@ impl Room {
         let past = std::mem::take(&mut self.past);
         let ids: Vec<PlayerId> = self.players.keys().copied().collect();
         for id in ids {
-            self.dress_in_turn(id);
+            if let Some(found) = self.players.get_mut(&id) {
+                found.dress_in_turn(self.clock);
+            }
             self.answer_due(id);
             let mut taken = 0;
             while taken < CATCH_UP {
@@ -371,65 +377,6 @@ impl Room {
             }
         }
         self.past = past;
-    }
-
-    /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim;
-    /// a body the section killed lies still, but the tick counts, so time spent dead is not banked to catch up on.
-    fn stand_stalled(&mut self, id: PlayerId) {
-        let clock = self.clock;
-        let Some(found) = self.players.get_mut(&id) else { return };
-        if found.stepped + VIEW_LAG >= clock - found.joined {
-            return;
-        }
-        if matches!(found.standing, Standing::Dead { .. }) {
-            found.stepped += 1;
-            return;
-        }
-        let standing = combat::Intent {
-            controls: movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() },
-            combat: combat::CombatInput::default(),
-        };
-        let view = self.fighters();
-        let Some(found) = self.players.get_mut(&id) else { return };
-        found.stepped += 1;
-        let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
-        found.fighter = next;
-        self.happened(id, &next, happening, &view);
-    }
-
-    /// A dress waiting its turn is taken at once the first time, then once DRESS_EVERY ticks have passed since the
-    /// last change.
-    fn dress_in_turn(&mut self, id: PlayerId) {
-        let clock = self.clock;
-        let Some(found) = self.players.get_mut(&id) else { return };
-        if found.dressed_at.is_some_and(|at| clock < at + players::DRESS_EVERY) {
-            return;
-        }
-        if let Some(dress) = found.dress_next.take() {
-            found.dress = dress;
-            found.dress_changed = true;
-            found.dressed_at = Some(clock);
-        }
-    }
-
-    /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never
-    /// behind the last nor more than SEEN_STEP past it, never further back than a view may lag).
-    fn next_input(&mut self, id: PlayerId) -> Option<(Input, u64)> {
-        let clock = self.clock;
-        let found = self.players.get_mut(&id)?;
-        if found.stepped >= clock - found.joined + SLACK_TICKS {
-            return None;
-        }
-        let input = found.waiting.pop_front()?;
-        found.stepped += 1;
-        found.acknowledged = found.acknowledged.wrapping_add(1);
-        let seen = input
-            .seen
-            .min(clock)
-            .min(found.seen + players::SEEN_STEP)
-            .max(found.seen)
-            .max(clock.saturating_sub(VIEW_LAG));
-        Some((input, seen))
     }
 
     /// What a fighter's tick set off, among `view`, everyone as it saw them: a blow landing on whoever it reaches, a

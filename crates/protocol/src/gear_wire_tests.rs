@@ -20,7 +20,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Withdraw { item: 9 }),
         Asked::Gear(Ask::StoreVestige { vestige: 10 }),
         Asked::Gear(Ask::WithdrawVestige { vestige: 11 }),
-        Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 3 }),
+        Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 3, day: 20_400 }),
         Asked::Gear(Ask::WearEmblem { emblem: 12 }),
         Asked::Gear(Ask::BuyEmblem { emblem: 13 }),
         Asked::Gear(Ask::UseCrate),
@@ -40,6 +40,15 @@ fn every_ask() -> Vec<Asked> {
         Asked::Grant(Grant::Ammo(360)),
         Asked::Grant(Grant::Crates(2)),
         Asked::Grant(Grant::Officers(7)),
+        Asked::Gear(Ask::Pledge { faction: 2 }),
+        Asked::Gear(Ask::BuyFactionWare { faction: 3, ware: 4 }),
+        Asked::Gear(Ask::CollectPackage { faction: 1 }),
+        Asked::Gear(Ask::RiseArt { art: 2, fragment: 4 }),
+        Asked::Gear(Ask::BuyFragment { art: 3, fragment: 5 }),
+        Asked::Gear(Ask::WearCosmetic { cosmetic: 17 }),
+        Asked::Gear(Ask::BuyCosmetic { cosmetic: 26 }),
+        Asked::Gear(Ask::BuyFromShape { ware: 5 }),
+        Asked::Grant(Grant::ArtLevel { art: 3, level: 4 }),
         Asked::Grant(Grant::Worn(Kind::Thunderlock)),
     ]
 }
@@ -125,7 +134,7 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
     let message = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message");
     let gear = message.gear().expect("the gear");
     assert!(message.snapshot().is_none() && message.joined().is_none());
-    assert_eq!((gear.level(), gear.answered(), gear.answer(), gear.at_reader()), (20, 7, 0, true));
+    assert_eq!((gear.level(), gear.answered(), gear.answer(), gear.at_mage()), (20, 7, 0, true));
     assert_eq!((gear.ammo(), gear.ammo_most(), gear.ammo_share()), (0, 0, 0.5), "no Ranged worn, half kept");
     assert_eq!((gear.crates(), gear.crate_price()), (2, gear::ammo::CRATE_PRICE), "sold at the stall");
     assert_eq!(gear.spent().map(|spent| spent.iter().collect::<Vec<_>>()), Some(vec![0]));
@@ -154,7 +163,7 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
 fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
-    let vestige = Vestige { id: 3, rarity: Rarity::Rare, slot: Slot::Torso, level: 7 };
+    let vestige = Vestige::new(3, Rarity::Rare, Slot::Torso, 7);
     room.lay_drop(player, Dropped::Vestige(vestige), [4.0, -6.0, 0.5]);
     room.lay_drop(player, Dropped::Crate, [1.0, 1.0, 0.0]);
     room.tick();
@@ -169,13 +178,113 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
 }
 
-/// The client's test reads these bytes, to check that the gear the server writes the browser reads to the bit.
+/// The client's test reads these bytes, to check that the gear the server writes the browser reads to the bit: the
+/// furnished player's away from a social space, and `standing`'s at the stall while Shape is here.
 #[test]
 fn the_gear_for_the_clients_test_is_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).expect("the folder");
     let (room, player) = furnished();
     std::fs::write(format!("{folder}/gear.bin"), gear_bytes(&room, player).expect("written")).expect("written");
+    let (room, player, _) = standing();
+    std::fs::write(format!("{folder}/gear_shape.bin"), gear_bytes(&room, player).expect("written")).expect("written");
+}
+
+/// Each faction piece, as the page is sent it, and the layers the room lets its colour stand on in a dress others see,
+/// for the page's test that every layer it dresses one in is among them (`client/src/player/dressLayers.test.ts`).
+#[test]
+fn the_layers_a_faction_piece_s_colour_may_stand_on_are_written() {
+    let pieces: Vec<String> = gear::catalogue::catalogue()
+        .items
+        .iter()
+        .filter(|named| named.faction.is_some())
+        .map(|named| {
+            let slot = named.kind.slot();
+            let on: Vec<String> =
+                gear::cosmetics::layers_of(slot, named.kind).iter().map(|on| format!("{on:?}")).collect();
+            let (id, kind, at) = (&named.id, named.kind as u8, at_number(gear::At::Worn(slot)));
+            let ranged = slot == gear::Slot::Ranged;
+            let factions = &gear::factions::factions().factions;
+            let faction =
+                factions.iter().find(|faction| Some(&faction.key) == named.faction.as_ref()).expect("its own");
+            // The colour the room lets it show: a cape's is its faction's dye, any other piece's its faction's own.
+            let colour = if slot == gear::Slot::Cloak { &faction.dye } else { &faction.key };
+            let on = on.join(",");
+            format!(r#"{{"named":{id:?},"kind":{kind},"at":{at},"ranged":{ranged},"colour":{colour:?},"on":[{on}]}}"#)
+        })
+        .collect();
+    assert_eq!(pieces.len(), 21, "seven pieces a faction");
+    let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
+    std::fs::create_dir_all(folder).expect("the folder");
+    std::fs::write(format!("{folder}/dress_layers.json"), format!("[{}]", pieces.join(","))).expect("written");
+}
+
+/// The furnished player pledged to the Lamplighters at rank 3, with Arts at levels 3, 1 and 5, the Ember Plate
+/// barding worn and 9 Shapes, at the stall on a Friday noon, UTC, while Shape is here; and that minute.
+fn standing() -> (Room, PlayerId, u64) {
+    let (mut room, player) = furnished();
+    let kept = room.kept_character(player).expect("a player of the room");
+    let mut character = gear::Character::from_json(&kept).expect("a character");
+    character.allegiance.pledge = 2;
+    character.allegiance.reputation = vec![5, 35_000, 0];
+    character.arts.levels = vec![3, 1, 5];
+    character.arts.xp = vec![700, 0, 0];
+    character.arts.owned = Some(vec![0b101, 0, 0b11_1111]);
+    character.keep_cosmetic("ember_plate");
+    character.cosmetics.barding = "ember_plate".to_owned();
+    character.add_shapes(9);
+    assert!(room.restore_character(player, &character.to_json()), "kept again");
+    room.counters = Some(Vec::new());
+    room.shape_spots = vec![[0.0, 0.0]; gear::shape::PLACES];
+    // Friday at noon, UTC, in the week of 1,793,491,200 s after 1970.
+    let friday = 1_793_491_200 / 60 + 19 * 1_440 + 12 * 60;
+    room.set_minute(friday);
+    (room, player, friday)
+}
+
+#[test]
+fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() {
+    let (mut room, player, friday) = standing();
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!(gear.pledge(), 2);
+    assert_eq!(gear.reputation().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![5, 35_000, 0]));
+    assert_eq!(gear.packages().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![0, 1, 0]), "rank 3");
+    assert_eq!(gear.art_levels().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![3, 1, 5]));
+    assert_eq!(gear.art_xp().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![700, 0, 0]));
+    assert_eq!(gear.art_owned().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![0b101, 0, 0b11_1111]));
+    let barding = gear::cosmetics::number_of("ember_plate").expect("a barding");
+    assert_eq!((gear.dye(), gear.barding()), (gear::cosmetics::number_of("own_colours").expect("the start"), barding));
+    assert!(gear.cosmetics().is_some_and(|kept| kept.iter().any(|number| number == barding)));
+    assert_eq!(
+        gear.cosmetics_sold().map(|sold| sold.len()),
+        Some(2 * gear::cosmetics::SOLD_A_DAY),
+        "the Tailor's, the Tack's"
+    );
+    assert_eq!(gear.shapes(), 9);
+    let week = gear::shape::week_of(friday);
+    assert_eq!(usize::from(gear.shape_place()), gear::shape::place(week));
+    let wares: Vec<_> = gear.shape_wares().expect("his wares").iter().collect();
+    assert_eq!(wares.len(), gear::shape::WARES);
+    assert_eq!((wares[0].price(), wares[5].price()), (7, 15), "Legendary, then Atheric, in Shapes");
+    let sold: Vec<_> = gear.faction_wares().expect("the factions' wares").iter().collect();
+    let each: usize =
+        gear::factions::factions().factions.iter().map(|faction| gear::factions::wares(faction.id).len()).sum();
+    assert_eq!(sold.len(), each, "every faction's");
+    let hood = sold.iter().find(|ware| ware.named() == Some("lamplighters_hood")).expect("the Lamplighters' hood");
+    let numbers = gear::factions::factions();
+    assert_eq!((hood.id(), hood.price(), hood.level(), hood.defense() > 0), (1, numbers.armour_aurem, 20, true));
+    let bow = sold.iter().find(|ware| ware.named() == Some("nightpin")).expect("the Veiled's bow");
+    assert_eq!((bow.id(), bow.price(), bow.attack() > 0), (6, numbers.weapon_aurem, true));
+    room.set_minute(friday - 2 * 1_440);
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!((gear.shape_place(), gear.shape_wares().map(|wares| wares.len())), (SHAPE_AWAY, Some(0)), "away");
+    room.counters = None;
+    assert!(room.put_player(player, 500.0, 500.0), "far from the stall");
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!(gear.faction_wares().map(|wares| wares.len()), Some(0), "none away from a social space");
 }
 
 #[test]
@@ -194,7 +303,7 @@ fn a_ruins_plaza_sells_nothing_and_a_port_citys_its_wares() {
             gear.crate_price(),
         )
     };
-    let port = vec![Counter { kind: CounterKind::Reader, at: [500.0, 500.0] }];
+    let port = vec![Counter { kind: CounterKind::Mage, at: [500.0, 500.0] }];
     let (wares, emblems, price) = sold(port);
     assert!(wares > 0 && emblems > 0 && price > 0, "a port city's plaza shows the day's wares anywhere on it");
     assert_eq!(sold(Vec::new()), (0, 0, 0), "a ruin's plaza, with no counters, shows none");

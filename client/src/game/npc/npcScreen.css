@@ -1,0 +1,337 @@
+/* A keeper's screen (npcScreen.ts), after Destiny 1's vendors: the keeper at the left over a ground lit in their
+   colour (--npc-glow), standing on a lit floor; the words, currencies, speech and wares at the right. The kit paints
+   each surface by its role; this sheet gives each its room, on the face's 11 px grid. */
+
+.npc-screen {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  height: 100%;
+  min-height: 0;
+}
+.npc-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 58%, color-mix(in srgb, var(--npc-glow) 34%, transparent), transparent 72%),
+    linear-gradient(180deg, #08090c, #0e1013 70%, #050608);
+}
+.npc-title {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  z-index: 1;
+}
+.npc-mark {
+  width: 42px;
+  height: 42px;
+  image-rendering: pixelated;
+}
+/* A faction's emblem stands in the diamond its keepers' marks are drawn in. */
+.npc-mark-emblem {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  outline: 2px solid var(--npc-glow);
+}
+.npc-name {
+  margin: 0;
+  font-size: var(--type-l);
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--word);
+}
+.npc-figure {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+.npc-figure-frame {
+  image-rendering: pixelated;
+}
+/* The lit floor the keeper stands on. */
+.npc-floor {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 11px;
+  height: 44px;
+  background: radial-gradient(
+    ellipse 50% 50% at 50% 50%,
+    color-mix(in srgb, var(--npc-glow) 45%, transparent),
+    transparent 70%
+  );
+}
+.npc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  min-height: 0;
+  padding: 11px 22px;
+}
+.npc-side > :not(.npc-rows) {
+  flex: none;
+}
+.npc-words {
+  margin: 0;
+  color: var(--faint);
+  max-width: 572px;
+}
+.npc-purses {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.npc-purse {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+.npc-coin-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.npc-coin-line b {
+  font-size: var(--type-l);
+  font-weight: 500;
+}
+.npc-coin-line img.gear-glyph,
+.npc-price img.gear-glyph {
+  width: 22px;
+  height: 22px;
+}
+.npc-rank {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 11px;
+  max-width: 572px;
+}
+#hud .npc-details {
+  border-width: 2px;
+  border-style: solid;
+  padding: 2px 11px;
+  font: inherit;
+}
+.npc-meter-line {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.npc-meter {
+  border-width: 1px;
+  border-style: solid;
+  position: relative;
+  flex: 0 0 110px;
+  height: 11px;
+}
+.npc-meter-fill {
+  height: 100%;
+  background-color: var(--npc-glow);
+}
+.npc-speech {
+  border-width: 2px;
+  border-style: solid;
+  padding: 4px 11px;
+  max-width: 572px;
+  min-height: 44px;
+}
+.npc-speech-name {
+  color: var(--npc-glow);
+  letter-spacing: 1px;
+}
+.npc-speech-words {
+  margin: 4px 0 0;
+  color: var(--word);
+}
+.npc-speech .speech-unseen {
+  visibility: hidden;
+}
+/* The line's copy and the currencies' names, for a screen reader, take no room on the screen. */
+.npc-speech-heard,
+.npc-unseen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* The rows scroll where a screen is too short for them all, the countdown standing beneath them. */
+.npc-rows {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 11px 22px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-color: var(--edge) transparent;
+  scrollbar-width: thin;
+}
+.npc-row {
+  flex: 1 1 100%;
+}
+.npc-row-short {
+  flex: 0 1 auto;
+}
+.npc-row .gear-heading {
+  margin: 0 0 8px;
+}
+.npc-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 11px;
+}
+.npc-ware {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 77px;
+}
+.npc-price {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  color: var(--brass-lit);
+  text-align: center;
+}
+.npc-price.gear-short {
+  color: var(--loss);
+}
+.npc-price-note {
+  color: var(--faint);
+  letter-spacing: 0;
+  /* A note that wraps keeps its words together, never a number alone on the last line. */
+  text-wrap: balance;
+}
+.npc-price.gear-short .npc-price-note {
+  color: var(--loss);
+}
+#hud .npc-tile.npc-dim > :not(.gear-count) {
+  filter: grayscale(1) brightness(0.6);
+  opacity: 0.45;
+}
+/* Pictures at a whole multiple of their pixels: the Arts' and emblems' 24 and 12, a barding's horse at its 48. */
+.npc-glyph,
+.npc-emblem,
+.npc-barding {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+.npc-price img.npc-coin,
+.npc-coin-line img.npc-coin {
+  width: 24px;
+  height: 22px;
+}
+.npc-swatch {
+  display: grid;
+  grid-template-columns: repeat(4, 11px);
+  height: 44px;
+  border: 1px solid var(--outline);
+}
+.npc-art-line {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 8px;
+}
+.npc-pips {
+  display: flex;
+  gap: 4px;
+}
+.npc-pip {
+  width: 11px;
+  height: 11px;
+  transform: rotate(45deg) scale(0.75);
+  border: 1px solid var(--edge);
+  background: var(--well);
+}
+.npc-pip-lit {
+  border-color: var(--npc-glow);
+  background: var(--npc-glow);
+}
+.npc-empty {
+  margin: 0;
+}
+.npc-foot {
+  border-width: 2px;
+  border-style: solid;
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  padding: 4px 11px;
+  max-width: 572px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.npc-foot-time {
+  font-weight: 500;
+  color: var(--word);
+}
+/* Where the menu is wide, the words stand at the names' size, as the rest of the menu's do. */
+@media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
+  (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
+  .npc-side,
+  .npc-side .gear-heading,
+  .npc-side .gear-hint {
+    font-size: var(--type-l);
+  }
+  .npc-name {
+    font-size: var(--type-xl);
+  }
+  .npc-words,
+  .npc-rank,
+  .npc-speech,
+  .npc-foot {
+    max-width: 880px;
+  }
+  .npc-mark {
+    width: 63px;
+    height: 63px;
+  }
+  .npc-ware {
+    width: 121px;
+  }
+  #hud .npc-tile {
+    width: 88px;
+    height: 88px;
+  }
+  .npc-glyph,
+  .npc-emblem {
+    width: 72px;
+    height: 72px;
+  }
+  .npc-swatch {
+    width: 66px;
+    height: 66px;
+  }
+  .npc-swatch {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .npc-meter {
+    flex-basis: 132px;
+  }
+}
+/* The vault keeper's two sides of the vault stand where a keeper's rows stand, across the column; each side lays its
+   shelves and Vestiges as many to a row as it holds, however wide the menu. */
+.npc-rows > .gear-vault {
+  flex: 1 1 100%;
+  padding: 0;
+}
+.npc-rows > .gear-vault .gear-vestige-grid,
+.npc-rows > .gear-vault .gear-grid {
+  grid-template-columns: repeat(auto-fill, 64px);
+}

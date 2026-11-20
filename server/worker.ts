@@ -17,8 +17,8 @@ interface Env {
   readonly ACCOUNTS: Service<CharacterKeeper>;
 }
 
-/** A day, milliseconds: the vendors' wares change with it. */
-const DAY_MS = 86_400_000;
+/** A minute, milliseconds: the room's clock for its vendors' days and Shape's weeks. */
+const MINUTE_MS = 60_000;
 
 /** How often the sea says again who is there: half of how long the accounts keep its word. */
 const PRESENT_EVERY_MS = 30_000;
@@ -179,7 +179,7 @@ export class RoomHost extends DurableObject<Env> {
     if (!named) return false;
     const file = await this.env.NODES.fetch(`https://nodes/${named.id}.json`);
     const opened = file.ok && this.room.openNode(await file.text()) && this.room.difficulty(named.seas);
-    return opened && this.room.reseed(seeds) && this.room.day(Math.floor(Date.now() / DAY_MS));
+    return opened && this.room.reseed(seeds) && this.room.minute(Math.floor(Date.now() / MINUTE_MS));
   }
 
   /** Opens an island's room on the word of the sea room its name's tier says: only an island that sea holds, with the
@@ -299,6 +299,8 @@ export class RoomHost extends DurableObject<Env> {
     const tickMs = this.room.tickSeconds * 1000;
     this.started = Date.now() - this.ticks * tickMs;
     this.guarded(() => this.room.epoch(this.started), undefined);
+    // Before the first tick, so a room just opened or woken from rest answers its first gear and asks by today.
+    this.guarded(() => this.room.minute(Math.floor(Date.now() / MINUTE_MS)), false);
     this.ticking = setInterval(() => {
       const due = Math.floor((Date.now() - this.started) / tickMs);
       if (this.ticks >= due) return;
@@ -345,7 +347,7 @@ export class RoomHost extends DurableObject<Env> {
       if (now - this.lastKept >= 1000) {
         this.lastKept = now;
         void this.keeper?.due(now);
-        this.guarded(() => this.room.day(Math.floor(now / DAY_MS)), false);
+        this.guarded(() => this.room.minute(Math.floor(now / MINUTE_MS)), false);
       }
     }, tickMs);
   }

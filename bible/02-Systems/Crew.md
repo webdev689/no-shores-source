@@ -13,7 +13,7 @@ code:
   - crates/gear/src/crew/duties.rs#station
   - crates/gear/src/ship/trim.rs#ship_trim
   - crates/room/src/crew.rs#pledge_of
-  - crates/room/src/crew.rs#MUSTER
+  - crates/room/src/crew.rs#recruiting_at
   - crates/room/src/ship_power.rs#officers_join
   - crates/room/src/boarding_hands.rs#boarding
   - crates/room/src/companions.rs#keep_companions
@@ -74,24 +74,24 @@ Each post changes how it plays in a fight, its officer's strength times (`ship::
 
 ## Signing on
 
-- **At the muster** (`room::crew::MUSTER`, the Harbourmaster's counter in a social space), the faction a player is
-  pledged to offers three officers a day, the same to everyone that day (`recruit::offers`): the first Able, the second
+- **At the muster**, the counter of the faction a player is pledged to in a social space ([[Factions]];
+  `room::crew::recruiting_at`), that faction offers three officers a day, the same to everyone that day (`recruit::offers`): the first Able, the second
   Seasoned from rank 2 with it, the third Veteran from rank 4, at the player's level (to 20). Wages are 1,500,
   4,000 and 9,000 Aurem. An officer already kept is not signed on twice.
-- **The pledge** is read in one place (`room::crew::pledge_of`), for the faction rules to decide; with no pledge no
-  officer is offered.
+- **The pledge** is read in one place (`room::crew::pledge_of`): the faction pledged to and the rank with it, as the
+  faction rules keep them (`Allegiance`, `Character::rank`); with no pledge no officer is offered, and another
+  faction's counter offers none.
 - **Taken**: a boarded deck won, each boarder rolls for its captain's officer to join them (`recruit::taken`): a
   Minor's 3%, a Major's 5%, an Elite's 10% (Seasoned), a Miniboss's 18% and a Boss's 30% (Veteran), at its level.
 
 ## In the browser
 
 - The gear message's ship part (`GearShip`) carries each officer and the officers offered at the muster, each with
-  their grid's columns as an item's are. The crew's asks are 58 to 62: sign on (`column` the faction, `node` the
+  their grid's columns as an item's are; the muster stands on the pledged faction's keeper's screen under its wares
+  (`musterAt`). The crew's asks are 58 to 62: sign on (`column` the faction, `node` the
   offer), station (`item` the officer, `slot` 0 aboard, 1 at their post, 2 ashore), pay off, buy and choose a node.
 
 ## Limits
 
-- Until the factions' pledges reach this branch, `pledge_of` answers none, so no counter offers an officer; officers
-  join from won decks.
 - A boarded deck refuses asks of the ship's modules, materials and crew (`room::crew::of_the_ship`): the sea keeps
   them while the player fights on foot, and gives them back as they were when the player comes aboard again.

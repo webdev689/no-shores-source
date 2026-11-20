@@ -13,11 +13,12 @@ use combat::arms::OffHand;
 use combat::sight::{apart, bearing, off, wrap};
 
 /// The ring a waiting foe stands on, the flank asked for on the way: a skirmisher before any other, and a foe with no
-/// shield before none; a shield-bearer holds the line. The flanker stands on the nearest ring; the rest stand by their
-/// place in the line, the nearest ring holding as many as fit along the line RING_ROOM apart, the next RANK_GAP
-/// farther out as many again, and so on, so the next to go in stand nearest.
+/// shield before none; a shield-bearer holds the line, and a leader its followers screen keeps behind them. The flanker
+/// stands on the nearest ring; the rest stand by their place in the line, the nearest ring holding as many as fit along
+/// the line RING_ROOM apart, the next RANK_GAP farther out as many again, and so on, so the next to go in stand nearest.
 pub fn ring_of(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight, ring: f64) -> f64 {
     let suits = match brain.role() {
+        _ if brain.orders.screened => None,
         Role::Skirmisher => Some(0),
         _ if here.fighter.arms.off_hand == OffHand::Shield => None,
         _ => Some(1),

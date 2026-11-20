@@ -6,7 +6,6 @@ code:
   - tools/claude-toolkit/hooks/kit-check.sh
   - tools/claude-toolkit/workers/run-worker.sh
   - tools/claude-toolkit/workers/brief-common-template.md
-  - tools/claude-toolkit/workers/fidelity-review.sh
   - tools/claude-toolkit/toolkit-data.sh
 ---
 # Toolkit
@@ -28,11 +27,14 @@ when to install it and what each session does at its start and end; this note sa
   skill by reading its `SKILL.md` (`find ~/.claude/plugins/cache -path '*skills/<name>/SKILL.md'`), and hand Serena
   and claude-mem work to a worker.
 - `SHARED_DIR` defaults to `~/toolkit-data`, which a cloud container loses at its end. The task-observer log carries
-  over on the repository's orphan branch `toolkit-data`: the install restores it (`toolkit-data.sh restore`), never over
-  a file this container already holds, and `toolkit-data.sh save` at a session's end commits it over the commit it was
-  restored from and lets git merge that onto the branch, so a parallel session's save is kept; a log never restored is
-  never saved over the branch. `toolkit-data-test.sh`, run by check-tools, holds that. The claude-mem store, an
-  archive the repository keeps out of git, carries over only where `SHARED_DIR` points at storage that survives.
+  over on the repository's orphan branch `toolkit-data`. The install restores it once a container
+  (`toolkit-data.sh restore`); with origin out of reach it restores nothing and says so, and the next restore tries
+  again. `toolkit-data.sh save`, last at a session's end, commits it over the commit it was restored from and rebases
+  that onto the branch's tip: a parallel session's save is kept, lines both appended to a log (`*.log`) are both kept,
+  where both changed one line this container's wins, and an observation number both took moves past the highest there.
+  A log never restored, or a save with origin out of reach, saves nothing. `toolkit-data-test.sh`, run by check-tools,
+  holds all of that. The claude-mem store, an archive the repository keeps out of git, carries over only where
+  `SHARED_DIR` points at storage that survives.
 - The SkillsMP and Context7 keys are network secrets the proxy adds to requests; their variables hold only the
   placeholder `proxy-injected`, which check-tools' key check passes without scanning. A real key is still looked for
   on disk.
@@ -83,14 +85,12 @@ Work that fans out goes to headless workers, each in its own git worktree.
   with tracked work left uncommitted, is resumed once with the finish steps; still unfinished, its log says
   `WORKER <name> UNFINISHED`.
 - A late change goes in the worker's inbox (`~/wt/reports/inbox-<name>.md`, under a `## <short heading>` line), not a
-  stop and `--resume`.
+  stop and `--resume`. A fresh run of a worker's name starts an empty inbox, keeping an earlier worker's aside. A worker
+  that ends with its edits uncommitted is resumed once, told to commit them.
 - Stop one with TaskStop or `bash tools/claude-toolkit/workers/stop-worker.sh <name>`, never `pkill -f <pattern>`.
 - A worker's first three actions: one claude-mem search; `graphify update .` and one `graphify explain` or `path`;
   Serena `get_symbols_overview` on each source file it will change.
 - Every worker ends with superpowers:verification-before-completion, one reviewer sub-agent, then
   ponytail:ponytail-review on its diff, even for a one-line change.
-- A change that builds or records an owner's decision: `bash tools/claude-toolkit/workers/fidelity-review.sh
-  <approval file> <base>..<head>` measures it against the owner's words with a fixed brief; its verdict goes in the
-  pull request's description under "## Fidelity review" ([[Recording a Decision]]).
 - Before merging a worker's branch: `python3 tools/claude-toolkit/workers/audit.py <worktree>` (its MISSING line must
-  say none) and a ponytail review of its diff.
+  say none, and it says UNCOMMITTED for edits left out of the worker's commits) and a ponytail review of its diff.

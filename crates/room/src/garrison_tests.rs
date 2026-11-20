@@ -8,7 +8,7 @@ use serde_json::json;
 const KINDS: [NodeKind; 4] = [NodeKind::Patrol, NodeKind::Mission, NodeKind::Dungeon, NodeKind::Boss];
 
 /// Land rising 300 m a kilometre east and south, over 4 km square round the origin.
-fn sloped() -> Floor {
+pub(super) fn sloped() -> Floor {
     let grid = |data: Vec<f64>| {
         json!({ "width": 4, "height": 4, "left_m": -2000.0, "top_m": -2000.0, "cell_m": 1000.0,
             "first_column": 0, "first_row": 0, "data": data })
