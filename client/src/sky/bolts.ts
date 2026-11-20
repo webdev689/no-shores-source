@@ -119,13 +119,28 @@ struct Drawn { @builtin(position) position: vec4f, @location(0) light: f32, @loc
 }
 `;
 
-/** The strikes a frame draws: every one followed, the world's time, the cloud's base (metres over the sea) and the
- *  ground's height at a point (null where no land is known). */
+/** The strikes a frame draws: every one followed, the world's time, the cloud's base (metres over the sea), the
+ *  ground's height at a point (null where no land is known), and the air they are seen through (throughAir). */
 export interface StrikesNow {
   readonly list: readonly Strike[];
   readonly worldS: number;
   readonly baseM: number;
   readonly groundAt: (x: number, y: number) => number | null;
+  readonly air: { readonly clearM: number; readonly fogDensity: number };
+}
+
+/**
+ * How much of a light at `fromEye` (metres from the eye, up) reaches an eye `eyeHighM` over the sea: the clear air's
+ * haze over `clearM`, and the weather's fog of `density` a metre, thickest low down (by e every 60 m up). The land and
+ * the sea are hazed by the same law (aerial in waterCommon.ts), so a bolt's foot fades as the sea under it does.
+ */
+export function throughAir(eyeHighM: number, fromEye: Point, clearM: number, density: number): number {
+  const distance = Math.hypot(fromEye[0], fromEye[1], fromEye[2]);
+  const from = Math.max(eyeHighM, 0);
+  const rise = Math.max(eyeHighM + fromEye[2], 0) - from;
+  const [lowFrom, lowTo] = [Math.exp(-from / 60), Math.exp(-(from + rise) / 60)];
+  const low = Math.abs(rise) < 1 ? lowFrom : (60 * (lowFrom - lowTo)) / rise;
+  return Math.exp(-distance / clearM - density * 1.5 * Math.min(1, Math.max(0, low)) * distance);
 }
 
 /**
@@ -143,7 +158,15 @@ export function boltsInto(into: Float32Array, eye: readonly [number, number, num
     for (const [from, to, brightness] of boltPath(strike, strikes.baseM, groundM)) {
       if (floats + 8 > into.length) return floats;
       const width = Math.max(1.5, (strike.toGround ? 4 : 3) * brightness * Math.min(1, 3000 / Math.max(distance, 1)));
-      into.set([from[0] - eye[0], from[1] - eye[1], from[2] - eye[2], light * brightness], floats);
+      const middle: Point = [
+        (from[0] + to[0]) / 2 - eye[0],
+        (from[1] + to[1]) / 2 - eye[1],
+        (from[2] + to[2]) / 2 - eye[2],
+      ];
+      // The channel is far brighter than the picture can show, so haze dims it only where it lets through under a
+      // fifth: in heavy rain the foot of a far bolt fades into the grey, and the rest of it still blazes.
+      const seen = Math.min(1, 5 * throughAir(eye[2], middle, strikes.air.clearM, strikes.air.fogDensity));
+      into.set([from[0] - eye[0], from[1] - eye[1], from[2] - eye[2], light * brightness * seen], floats);
       into.set([to[0] - eye[0], to[1] - eye[1], to[2] - eye[2], width], floats + 4);
       floats += 8;
     }

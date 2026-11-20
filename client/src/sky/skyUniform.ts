@@ -153,6 +153,21 @@ fn sky_puddle(from_eye: vec3f, slope: f32) -> f32 {
   let hollow = sky_noise((sky_state.puddle_place.xy + from_eye.xy) / ${PUDDLE_CELL_M.toFixed(1)});
   return soaked * (1.0 - smoothstep(0.02, 0.06, slope)) * smoothstep(0.62 - 0.1 * soaked, 0.68 - 0.1 * soaked, hollow);
 }
+
+// How much fresh snow lies on flat ground at 'height_m' over the sea, where 'slope' (rise a metre) lets it: the
+// weather's cover where it was read, on the ground under the eye (puddle_place.z), and higher; lower ground is warmer,
+// and its snow fades out 100 to 300 m down.
+fn sky_fresh_snow(height_m: f32, slope: f32) -> f32 {
+  let read_at = sky_state.puddle_place.z;
+  let cover = sky_state.ambient_ground.w * smoothstep(read_at - 300.0, read_at - 100.0, height_m);
+  return cover * (1.0 - smoothstep(0.15, 0.35, slope));
+}
+
+// A surface's colour under fresh snow, 'snow' 0 bare to 1 whole: snow as the land's snowfields lie, the ground just
+// showing through a whole cover.
+fn sky_snowed(colour: vec3f, snow: f32) -> vec3f {
+  return mix(colour, vec3f(0.94, 0.95, 0.97), 0.9 * snow);
+}
 `;
 
 /** The sky as the shaders read it: directions east, south and up, colours linear red, green and blue. */
@@ -244,9 +259,13 @@ const wrapped = (metres: number, period = WRAP_M): number => ((metres % period) 
 /** Where the puddles' noise repeats, metres. */
 export const PUDDLE_WRAP_M = NOISE_CELLS * PUDDLE_CELL_M;
 
-/** The sky's numbers in the order SKY_WGSL lays them out, with the eye's place (world metres east and south) where
- *  known, which the ground's patterns lie by. */
-export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], eye?: readonly [number, number]): Float32Array {
+/** The sky's numbers in the order SKY_WGSL lays them out, with the eye's place where known (world metres east and
+ *  south, which the ground's patterns lie by, and the height of the ground under it, where the weather was read). */
+export function skyNumbers(
+  look: SkyLook,
+  lamps: readonly Lamp[],
+  eye?: readonly [number, number, number],
+): Float32Array {
   const shown = lamps.slice(0, LAMPS_MOST);
   const numbers = new Float32Array(VEC4S * 4);
   const rows: readonly (readonly number[])[] = [
@@ -263,7 +282,7 @@ export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], eye?: readonly
     [look.sand, look.flash, look.stars, look.starTurn],
     [...look.drift, look.latitude, look.moonPhase],
     [...look.driftNext, look.driftFade, 0],
-    eye ? [wrapped(eye[0], PUDDLE_WRAP_M), wrapped(eye[1], PUDDLE_WRAP_M), 0, 0] : [0, 0, 0, 0],
+    eye ? [wrapped(eye[0], PUDDLE_WRAP_M), wrapped(eye[1], PUDDLE_WRAP_M), eye[2], 0] : [0, 0, 0, 0],
     eye ? [shown.length, wrapped(eye[0]), wrapped(eye[1]), 1] : [shown.length, 0, 0, 0],
     ...shown.flatMap((lamp) => [
       [...lamp.fromEye, lamp.reachM],
@@ -298,7 +317,7 @@ export class SkyUniform {
     this.write(AFTERNOON, []);
   }
 
-  write(look: SkyLook, lamps: readonly Lamp[], eye?: readonly [number, number]): void {
+  write(look: SkyLook, lamps: readonly Lamp[], eye?: readonly [number, number, number]): void {
     this.look = look;
     this.device.queue.writeBuffer(this.buffer, 0, skyNumbers(look, lamps, eye));
   }

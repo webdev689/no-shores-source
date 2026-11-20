@@ -6,7 +6,7 @@ import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
-import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
+import { loadShip, type ShipMesh, shipSails, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 
 /** Where a ship is drawn: her middle in window metres (her height as drawn), her heading (radians clockwise from
  *  north), her bow's rise and her heel to starboard (radians), and how many times her size (1 unless said). */
@@ -169,6 +169,24 @@ function picturesTexture(device: GPUDevice): GPUTexture {
   return texture;
 }
 
+/** The pictures each device holds, and how many ships draw with them: every ship shares one upload, let go once the
+ *  last of them is. */
+const SHARED_PICTURES = new WeakMap<GPUDevice, { readonly texture: GPUTexture; holders: number }>();
+
+export function holdPictures(device: GPUDevice): GPUTexture {
+  const held = SHARED_PICTURES.get(device) ?? { texture: picturesTexture(device), holders: 0 };
+  held.holders += 1;
+  SHARED_PICTURES.set(device, held);
+  return held.texture;
+}
+
+export function releasePictures(device: GPUDevice): void {
+  const held = SHARED_PICTURES.get(device);
+  if (!held || --held.holders > 0) return;
+  held.texture.destroy();
+  SHARED_PICTURES.delete(device);
+}
+
 /** How many ships of one model are drawn in a frame: every ship a fleet room holds, its sixteen players' and four
  *  captains'. */
 export const SHIP_SLOTS = 20;
@@ -190,6 +208,7 @@ export class ShipView {
   private readonly indexCount: number;
   private readonly canvasIndices: GPUBuffer | null;
   private readonly canvasIndexCount: number;
+  private pictures: GPUTexture | null;
   /** Her waterline, for her footprint on the water and her wake. */
   readonly waterline: Waterline;
   /** Her sails' corners, for each ship's rig. */
@@ -242,7 +261,8 @@ export class ShipView {
         })
       : null;
     if (this.canvasIndices) gpu.device.queue.writeBuffer(this.canvasIndices, 0, grid);
-    const pictures = picturesTexture(gpu.device).createView({ dimension: '2d-array' });
+    this.pictures = holdPictures(gpu.device);
+    const pictures = this.pictures.createView({ dimension: '2d-array' });
     const pictured = gpu.device.createSampler({
       addressModeU: 'repeat',
       addressModeV: 'repeat',
@@ -313,4 +333,21 @@ export class ShipView {
     pass.setIndexBuffer(this.canvasIndices, 'uint32');
     pass.drawIndexed(this.canvasIndexCount);
   }
+
+  /** Lets go of her buffers on the GPU, and of the pictures she shares; she is never drawn again. */
+  destroy(): void {
+    for (const buffer of [this.vertices, this.indices, this.canvasIndices]) buffer?.destroy();
+    for (const slot of this.slots) {
+      slot.uniforms.destroy();
+      slot.canvas?.destroy();
+    }
+    if (this.pictures) releasePictures(this.device);
+    this.pictures = null;
+  }
+}
+
+/** A published ship drawn by her name (the Sloop, the Brig): her mesh fetched as the manifest names it, her sails'
+ *  corners from it, up to `slots` of her a frame. */
+export async function shipViewNamed(gpu: Gpu, name: string, slots = SHIP_SLOTS): Promise<ShipView> {
+  return new ShipView(gpu, await loadShip(name), shipSails(name), slots);
 }

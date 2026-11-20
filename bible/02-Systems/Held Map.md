@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/heldmap/heldMap.ts#HeldMap
+  - client/src/game/helmMap.ts#HelmMap
   - client/src/heldmap/heldMapLaw.ts#stageOf
   - client/src/heldmap/heldMapLaw.ts#clampView
   - client/src/heldmap/heldMapView.ts#HeldMapView

@@ -50,7 +50,7 @@ class Fought {
 }
 
 /** A fight the sea room steps: each step sends the orders and answers the room's latest view, every event since. */
-function roomSource(room: SeaRoom, first: FightView): FightSource {
+export function roomSource(room: SeaRoom, first: FightView): FightSource {
   let latest = first;
   return {
     fightBegin: () => Promise.reject(new Error('the sea room begins its own fights')),
@@ -82,9 +82,18 @@ export class SeaCombat {
   private down = 0;
   private going: 1 | -1 = 1;
 
-  constructor(room: SeaRoom, first: FightView, marks: MarkDrawer, sails: readonly SailCorners[], now: number) {
+  /** The fight `source` steps (the sea room's, or the land worker's door), its first view `first`; `own` names her
+   *  ship's kind on the panel. */
+  constructor(
+    source: FightSource,
+    first: FightView,
+    marks: MarkDrawer,
+    sails: readonly SailCorners[],
+    now: number,
+    own?: string,
+  ) {
     this.naval = new Naval(marks);
-    this.naval.join(Fighting.joined(roomSource(room, first), 'sea', first, now));
+    this.naval.join(Fighting.joined(source, 'sea', first, now, own));
     this.last = first;
     const [x = 0, y = 0, heading = 0] = first.player.ship;
     this.window = { leftM: Math.round(x), topM: Math.round(y) };
@@ -279,6 +288,7 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
       const combat = fight();
       if (!combat) return;
       taken(event);
+      holdPointer(canvas, event.pointerId);
       if (event.button === 2) combat.aim(true);
       else if (combat.aimingNow) combat.holdFire();
       held = true;
@@ -306,6 +316,12 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     },
     { capture: true },
   );
+  // A pointer let go without its button coming up on the canvas lets the aim go unfired.
+  canvas.addEventListener('lostpointercapture', () => {
+    held = false;
+    const combat = fight();
+    if (combat?.aimingNow) combat.holdFire();
+  });
   canvas.addEventListener(
     'wheel',
     (event) => {
@@ -319,4 +335,14 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
   canvas.addEventListener('contextmenu', (event) => {
     if (fight()) event.preventDefault();
   });
+}
+
+/** Holds the pointer to the canvas, so its button let go off the canvas still comes up there. A locked pointer is
+ *  held already, and the browser refuses to capture it. */
+export function holdPointer(canvas: HTMLCanvasElement, pointerId: number): void {
+  try {
+    canvas.setPointerCapture(pointerId);
+  } catch {
+    // A locked pointer, or one the browser no longer has: nothing to hold.
+  }
 }

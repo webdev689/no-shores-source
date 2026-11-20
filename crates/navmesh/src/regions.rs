@@ -1,6 +1,7 @@
 //! Regions: a watershed over the distance field splits the walkable surface into well-shaped chunks (rooms, runs of
 //! corridor) whose outlines the contours trace. Slivers merge into their largest neighbour, and every part not joined
-//! to the largest one, by a walk or a link's climb or drop, is dropped from the walkable surface.
+//! to the largest one, by a walk or a link's climb or drop, is dropped from the walkable surface; over the open sea,
+//! where no ground joins the parts, only those too small to stand in are.
 
 use crate::compact::CompactField;
 
@@ -136,8 +137,9 @@ fn resolve(remap: &[usize], mut region: usize) -> usize {
 
 /// Partitions the walkable surface into regions, writing each span's region (1 up, 0 for none) and clearing
 /// `walkable` on every span dropped. The spans each of `joins` names, (column, index), are joined as a walk joins
-/// them, so a floor a link reaches is kept.
-pub(crate) fn partition(field: &mut CompactField, joins: &[[(usize, usize); 2]]) {
+/// them, so a floor a link reaches is kept. With `every_part` each part big enough to stand in is kept, not the
+/// largest alone.
+pub(crate) fn partition(field: &mut CompactField, joins: &[[(usize, usize); 2]], every_part: bool) {
     let cell = field.grid.cell;
     let merge_area = (2.0 / (cell * cell)).round() as i64;
     let min_component = (4.0 / (cell * cell)).round() as i64;
@@ -232,7 +234,8 @@ pub(crate) fn partition(field: &mut CompactField, joins: &[[(usize, usize); 2]])
     for first in 1..regions {
         let own = resolve(&remap, first);
         if count[own] > 0 {
-            let kept = component[own] == Some(largest) && component_area[largest] >= min_component;
+            let kept = component[own]
+                .is_some_and(|part| (every_part || part == largest) && component_area[part] >= min_component);
             culled[own] = !kept;
         }
     }

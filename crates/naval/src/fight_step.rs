@@ -219,7 +219,7 @@ impl Fight {
     }
 
     /// A captain who has sunk leaves the fight, as does one past every ship she may fight (each player's, and each
-    /// afloat captain's of another faction) and not fighting.
+    /// afloat captain's of another faction) and not fighting; an ambush's captains leave it only by sinking.
     fn see_off(&mut self, events: &mut Vec<Event>) {
         let foes: Vec<(Flag, [f64; 2])> = self
             .ships
@@ -236,7 +236,7 @@ impl Fight {
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
             let end = if sunk {
                 Some(End::Sunk)
-            } else if nearest > DESPAWN_BEYOND && command.her.mode != Mode::Engage {
+            } else if !self.ambush && nearest > DESPAWN_BEYOND && command.her.mode != Mode::Engage {
                 Some(End::Gone)
             } else {
                 None
