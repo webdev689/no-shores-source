@@ -38,6 +38,9 @@ pub const ASHORE_TICKS: u64 = 2 * 60 * 60;
 const MOST: usize = 96;
 /// How far past its shallows' ring a ship keeps off an island's coast, metres.
 const KEEP_OFF_M: f64 = 20.0;
+/// How near its anchorage a ship at rest lies to land its account on an island: the page anchors within 30 m, and
+/// 10 m more for its prediction.
+pub const LANDING_M: f64 = 40.0;
 
 /// An island at sea: its number, seed and kind, where its middle is, the continent whose water it lies in and that
 /// continent's climate, whose guards hold it, where a ship anchors off it, its coast as land, and the tick it was last
@@ -69,6 +72,9 @@ pub struct Islands {
     next_id: u32,
     found: BTreeMap<PlayerId, BTreeSet<u32>>,
     climates: Vec<String>,
+    /// Each account landed on an island, by its number: its ship lay at rest at that island's anchorage when last at
+    /// sea. Its island's room lets only those scavenge.
+    landed: BTreeMap<String, u32>,
 }
 
 fn apart(one: [f64; 2], other: [f64; 2]) -> f64 {
@@ -108,6 +114,7 @@ impl Islands {
             draws: Draws::of(u64::from(seed), 0x15_1a_4d),
             next_id: 1,
             found: BTreeMap::new(),
+            landed: BTreeMap::new(),
             climates,
         }
     }
@@ -159,6 +166,12 @@ impl Islands {
     /// The islands a player at `at` is told of: those in sight, and those they have found, wherever they lie.
     pub fn told(&self, player: PlayerId, at: [f64; 2]) -> impl Iterator<Item = &SeaIsland> {
         self.standing.iter().filter(move |island| apart(island.at, at) <= SIGHT_M || self.found(player, island.id))
+    }
+
+    /// Whether an account is landed on the standing island `id` of `seed`.
+    #[must_use]
+    pub fn landed(&self, id: u32, seed: u64, account: &str) -> bool {
+        self.landed.get(account) == Some(&id) && self.by_id(id).is_some_and(|island| island.seed == seed)
     }
 
     /// Whether a player has found an island.
@@ -308,6 +321,21 @@ impl Sea {
         let others: Vec<[f64; 2]> =
             if rolls { self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect() } else { Vec::new() };
         self.islands.tick(self.clock, &ships, &others, (&self.chart, &self.coasts));
+        // A ship at rest at an island's anchorage lands its account there; under way or elsewhere at sea, it is landed
+        // nowhere. An account gone ashore keeps its landing, until its island fades.
+        let islands = &mut self.islands;
+        for (player, berth) in &self.berths {
+            let Some(account) = self.harbour.accounts.get(player) else { continue };
+            let rest = berth.sailing.as_ref().filter(|sailing| sailing.course.is_empty());
+            let at = rest.map(|sailing| [sailing.ship.x, sailing.ship.y]);
+            let lies =
+                at.and_then(|at| islands.standing.iter().find(|island| apart(island.anchorage, at) <= LANDING_M));
+            match lies {
+                Some(island) => islands.landed.insert(account.clone(), island.id),
+                None => islands.landed.remove(account),
+            };
+        }
+        islands.landed.retain(|_, id| islands.standing.iter().any(|island| island.id == *id));
     }
 
     /// The nearest standing island the player has found to a point: its number and where a ship anchors off it.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -42,6 +42,32 @@ test('the rooms’ code is every crate the room’s WebAssembly and the bake are
     'Cargo.lock',
   ])
     assert.ok(roomsCode.includes(path), path);
+});
+
+/** The files a crate's own code builds in (`include_str!`, `include_bytes!`), from the repository's root: its tests'
+ *  (a file named `…tests.rs`) left out, as the rooms are not built from them. */
+function builtIn(crate: string): string[] {
+  const root = new URL('../', import.meta.url);
+  const source = new URL(`crates/${crate}/src/`, root);
+  const files = readdirSync(source, { recursive: true, encoding: 'utf8' }).filter(
+    (file) => file.endsWith('.rs') && !file.endsWith('tests.rs'),
+  );
+  return files.flatMap((file) => {
+    const text = readFileSync(new URL(file, source), 'utf8');
+    return [...text.matchAll(/include_(?:str|bytes)!\(\s*"([^"]+)"/g)].map(([, path]) =>
+      new URL(path ?? '', new URL(file, source)).pathname.slice(root.pathname.length),
+    );
+  });
+}
+
+test('the rooms’ code holds every file the rooms’ crates build in, so a change to one deploys them', () => {
+  const files = builtFrom(['room-wasm', 'bake']).flatMap(builtIn);
+  assert.ok(files.includes('content/islands/kits.json'), 'the crates are read');
+  for (const file of files)
+    assert.ok(
+      roomsCode.some((path) => file === path || file.startsWith(`${path}/`)),
+      `${file} is built into the rooms but not in ROOMS_CODE`,
+    );
 });
 
 /** What the `ready` step decides for a commit that changes `changed` over the one last deployed: with the token, from

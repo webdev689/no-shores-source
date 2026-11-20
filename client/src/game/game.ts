@@ -17,6 +17,7 @@ import { Foot, type FootContext } from './foot.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { Isles } from './isles.ts';
+import { islePlanWorker } from '../network/islePlans.ts';
 import { ISLE_MANIFEST, islePacksPrefix } from '../islands/isleManifest.ts';
 import { IslesView } from '../islands/isleView.ts';
 import type { DungeonDoor } from './isleLaw.ts';
@@ -111,7 +112,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const traffic = new FriendlyTraffic(waters, SEA_SHIPS);
   /** The sea's islands the room tells of, and a landing at one under way. */
   const isles = new Isles(
-    roomModule,
+    islePlanWorker(roomModule),
     continents.map((each) => each.climate),
   );
   const isleLanding = new IsleLanding();

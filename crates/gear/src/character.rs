@@ -160,7 +160,14 @@ pub struct Character {
     /// Its named officers (`crew.rs`).
     #[serde(default)]
     pub crew: crate::crew::Crew,
+    /// The sea islands' wrecks they have scavenged: each island by its seed with its wrecks' numbers, the latest
+    /// `SCAVENGED_KEPT` islands kept, so an island's room opened again pays them nothing again.
+    #[serde(default)]
+    pub scavenged: Vec<(u64, Vec<u8>)>,
 }
+
+/// How many islands' scavenged wrecks a character keeps: far more than stand round one ship before they fade.
+pub const SCAVENGED_KEPT: usize = 16;
 
 /// A ship's hull, canvas or men whole, in ten-thousandths.
 pub const SHIP_WHOLE: u16 = 10_000;
@@ -171,6 +178,27 @@ fn whole_ship() -> [u16; 3] {
 }
 
 impl Character {
+    /// The wrecks they have scavenged on the island of `seed`.
+    #[must_use]
+    pub fn scavenged_on(&self, seed: u64) -> &[u8] {
+        self.scavenged.iter().find(|(island, _)| *island == seed).map_or(&[], |(_, wrecks)| wrecks.as_slice())
+    }
+
+    /// Notes a wreck of the island of `seed` scavenged; that island becomes the latest kept.
+    pub fn scavenge(&mut self, seed: u64, wreck: u8) {
+        let mut wrecks = match self.scavenged.iter().position(|(island, _)| *island == seed) {
+            Some(at) => self.scavenged.remove(at).1,
+            None => Vec::new(),
+        };
+        if !wrecks.contains(&wreck) {
+            wrecks.push(wreck);
+        }
+        self.scavenged.push((seed, wrecks));
+        if self.scavenged.len() > SCAVENGED_KEPT {
+            self.scavenged.remove(0);
+        }
+    }
+
     /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword for Melee and level 1 Normal armour.
     #[must_use]
     pub fn starting() -> Self {
@@ -190,6 +218,7 @@ impl Character {
             ship_xp: 0,
             ship_fitted: false,
             crew: crate::crew::Crew::default(),
+            scavenged: Vec::new(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),

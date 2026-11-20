@@ -221,7 +221,9 @@ will take it, by the room's own tick.
   within 20 km of their ship and those they found, keeps every course and hostile ship off their coasts, and lets each
   fade ten minutes after nothing holds it ([[Islands]]). An island's room is `isle-<number>-<seed>`: the host opens it
   only on the `sea` room's word that the island stands with that seed (a call between the two Durable Objects), and
-  while players stand ashore it tells the sea each minute, so the island is held under them.
+  while players stand ashore it tells the sea each minute, so the island is held under them. As an account joins it,
+  the room asks the sea whether that account is landed on the island (its ship at rest at the island's anchorage) and
+  lets go of one that is not; only landed accounts scavenge.
 
 ## A fleet
 
@@ -314,7 +316,7 @@ that is not lowercase letters, digits and underscores or is over 40 bytes, and a
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; whether they stand where a Vestige opens (the Reader's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Quartermaster's price for one |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent (on a sea island, the wrecks they have scavenged); whether they stand where a Vestige opens (the Reader's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Quartermaster's price for one |
 
 ## The host
 
@@ -380,7 +382,8 @@ every other figure drawn on from where the new room has it, though its clock sta
   ([[The Rooms Deploy When Their Code Changes]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret,
   only while that commit is still `main`'s head, and only when what the rooms are built from differs from the commit
   they were last deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker, the content
-  they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`). A merge
+  they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`;
+  `server/roomsDeploy.test.ts` fails when it misses a crate, or a file those crates build in). A merge
   of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms` environment, which the next run
   compares with; with none found, it deploys. Without the secret it warns and deploys nothing. Run by hand from `main`,
   it deploys whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token

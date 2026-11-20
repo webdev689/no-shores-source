@@ -329,9 +329,8 @@ impl Room {
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
         let mut gathered =
             self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
-        let scavenged = self.isle.as_ref().and_then(|isle| isle.scavenged.get(owner));
-        gathered.extend(scavenged.into_iter().flatten().copied());
         let Some(found) = self.players.get_mut(&player) else { return false };
+        gathered.extend(self.isle.as_ref().map_or(&[][..], |isle| found.character.scavenged_on(isle.seed)));
         found.owner = Some(owner.to_owned());
         for node in gathered {
             if !found.spent.contains(&node) {

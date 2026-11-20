@@ -189,6 +189,55 @@ pub extern "C" fn room_hold_ashore(id: u32, low: u32, high: u32) -> u32 {
     u32::from(hold_ashore(id, seed_of(low, high)))
 }
 
+/// Whether the open sea has `account` landed on its standing island `id` of `seed`: its ship at rest at that island's
+/// anchorage when last at sea.
+#[must_use]
+pub fn sea_landed(id: u32, seed: u64, account: &str) -> bool {
+    let landed = with_open(|opened| matches!(opened, Opened::Sea(sea) if sea.islands().landed(id, seed, account)));
+    landed.unwrap_or(false)
+}
+
+/// Turns on the open island room's check of landings (`Room::check_landings`), or lands `account` on it once checked
+/// (`Room::land`): whether an island's room is open.
+#[must_use]
+pub fn isle_landing(account: Option<&str>) -> bool {
+    let open = with_open(|opened| match (opened, account) {
+        (Opened::Land { room, .. }, Some(account)) => room.land(account),
+        (Opened::Land { room, .. }, None) => room.check_landings(),
+        _ => false,
+    });
+    open.unwrap_or(false)
+}
+
+/// Whether the open sea has the account written at `address` landed on its island `id` of the seed whose halves are
+/// given (`sea_landed`); 1 if so, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_sea_landed(id: u32, low: u32, high: u32, address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let account = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(address, length) }).into_owned();
+    u32::from(sea_landed(id, seed_of(low, high), &account))
+}
+
+/// Turns on the open island room's check of landings (`isle_landing`); 1 if an island's room is open.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_isle_check_landings() -> u32 {
+    u32::from(isle_landing(None))
+}
+
+/// Lands the account written at `address` on the open island room (`isle_landing`); 1 if an island's room is open.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_isle_land(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let account = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(address, length) }).into_owned();
+    u32::from(isle_landing(Some(&account)))
+}
+
 #[cfg(test)]
 #[path = "isle_door_tests.rs"]
 mod isle_door_tests;

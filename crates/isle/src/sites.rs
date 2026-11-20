@@ -149,7 +149,8 @@ fn landmark(shape: &mut Shape, cliffs: f64, kind: Kind, draws: &mut Draws) -> Op
             let middle = [shape.peak[0] - x * off, shape.peak[1] - y * off];
             let radius = draws.between(22.0, 30.0);
             let depth = (shape.height * 0.5).clamp(8.0, 14.0);
-            shape.quarry = Some(Quarry { at: middle, radius, depth });
+            let rim = shape.natural(middle, cliffs);
+            shape.quarry = Some(Quarry { at: middle, radius, depth, rim });
             let rim = bearing_of([-middle[0], -middle[1]]) + draws.between(-1.0, 1.0);
             let [rim_x, rim_y] = way(rim);
             let crane = [middle[0] + rim_x * (radius + 6.0), middle[1] + rim_y * (radius + 6.0)];

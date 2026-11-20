@@ -42,7 +42,7 @@ jobs:
           ROOMS_CODE: >-
             crates/bake crates/city crates/combat crates/foes crates/gear crates/isle crates/land crates/movement crates/naval
             crates/navmesh crates/protocol crates/reach crates/room crates/room-wasm crates/sailing crates/world
-            server tools/schema.mjs content/world content/islands/kits.json content/testground content/gear
+            server tools/schema.mjs content/world content/islands/kits.json content/testground content/gear content/arts
             content/ships/ships.json Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json
             .github/workflows/rooms.yml
         run: |

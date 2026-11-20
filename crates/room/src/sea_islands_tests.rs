@@ -145,6 +145,33 @@ fn a_ship_left_within_an_islands_land_sails_out_of_it() {
 }
 
 #[test]
+fn an_account_whose_ship_lies_at_an_anchorage_is_landed_there_until_it_sails_on() {
+    let mut sea = sea_round("continent-4", "desert");
+    let (anchored, far) = (at_rest(&mut sea), at_rest(&mut sea));
+    assert!(sea.own(anchored, "anchored") && sea.own(far, "far-off"));
+    while sea.islands().standing.is_empty() {
+        sea.tick();
+    }
+    let (id, seed, anchorage) =
+        (sea.islands().standing[0].id, sea.islands().standing[0].seed, sea.islands().standing[0].anchorage);
+    lay_at(&mut sea, anchored, [anchorage[0].round(), anchorage[1].round() + 20.0]);
+    sea.tick();
+    let islands = sea.islands();
+    assert!(islands.landed(id, seed, "anchored"));
+    assert!(!islands.landed(id, seed, "far-off"), "a ship off the anchorage");
+    assert!(!islands.landed(id, seed ^ 1, "anchored"), "another island of its number");
+    // Gone ashore, it stays landed; back at sea and under way, it is landed nowhere.
+    sea.leave(anchored);
+    ticks(&mut sea, 60);
+    assert!(sea.islands().landed(id, seed, "anchored"), "ashore, its ship left at the anchorage");
+    let back = at_rest(&mut sea);
+    assert!(sea.own(back, "anchored"));
+    lay_at(&mut sea, back, [anchorage[0].round() + 400.0, anchorage[1].round()]);
+    sea.tick();
+    assert!(!sea.islands().landed(id, seed, "anchored"), "sailed off");
+}
+
+#[test]
 fn only_the_islands_a_player_is_told_of_hold_their_course() {
     let mut sea = sea_round("continent-4", "desert");
     let player = at_rest(&mut sea);

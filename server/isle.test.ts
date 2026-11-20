@@ -56,3 +56,11 @@ test("an island's room opens only on a word that makes an island", () => {
   assert.ok(door.join() > 0);
   assert.equal(startRoomDoor(compiled).openIsland('{"seed":"41"}'), false);
 });
+
+test("an island's room checks landings, which only a sea answers", () => {
+  const door = startRoomDoor(compiled);
+  assert.equal(door.openIsland('{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}'), true);
+  assert.equal(door.checkLandings(), true);
+  assert.equal(door.land('account-a'), true);
+  assert.equal(door.seaLanded(1, '41', 'account-a'), false, 'an island room is no sea');
+});
