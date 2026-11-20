@@ -34,7 +34,7 @@ def bush(kit, module, masses, part='leaf', bloom=0, bloom_part='leafAlt', seed=N
     return kit.join(made)
 
 
-def fern(kit, module, fronds=7, part='leaf', width=0.26, seed=None):
+def fern(kit, module, fronds=7, part='leaf', width=0.26):
     """A fern: fronds springing from its crown, arching up and over."""
     x, y, z = _size(module)
     # A frond rising 2.76 heights over its reach and drooping 2 by its tip peaks near the top of the size.
@@ -46,7 +46,7 @@ def fern(kit, module, fronds=7, part='leaf', width=0.26, seed=None):
     return kit.join(made)
 
 
-def broad_leaves(kit, module, leaves=6, part='leaf', seed=None):
+def broad_leaves(kit, module, leaves=6, part='leaf'):
     """A broad-leaf plant: wide leaves on short stems, held up and out from its crown."""
     x, y, z = _size(module)
     made = [kit.frond((0, 0, 0.0), 360 * k / leaves, x * 0.48, x * 0.5, z * 1.15, rise=z * 2.03 / (x * 0.48),
@@ -56,7 +56,7 @@ def broad_leaves(kit, module, leaves=6, part='leaf', seed=None):
     return kit.join(made)
 
 
-def cactus(kit, module, seed=None):
+def cactus(kit, module):
     """A cluster of small round-topped cacti, ribbed, the tallest in the middle."""
     x, y, z = _size(module)
     made = []
@@ -87,7 +87,7 @@ def grass(kit, module, blades, part='grass', tips=None, width=0.06, heads=0, see
     return kit.join(made)
 
 
-def log(kit, module, seed=None):
+def log(kit, module):
     """A bleached driftwood log along x, its root plate at the east end, two snapped branches."""
     x, y, z = _size(module)
     made = [limb(kit, (-x / 2 + 0.1, 0.05, z * 0.3), (x / 2 - 0.7, -0.05, z * 0.42), 0.26, 0.33, bow=(0, 0.1, 0.05),
@@ -100,7 +100,7 @@ def log(kit, module, seed=None):
     return kit.join(made)
 
 
-def root(kit, module, seed=None):
+def root(kit, module):
     """A sun-bleached root: a stump of knotted wood at the east, its roots writhing west along the ground."""
     x, y, z = _size(module)
     made = [mass(kit, x / 2 - 0.55, 0, -0.1, 1.0, 1.0, z + 0.1, f'{module}.stump', 'wood', detail=1)]
@@ -111,7 +111,7 @@ def root(kit, module, seed=None):
     return kit.join(made)
 
 
-def mangrove(kit, module, seed=None):
+def mangrove(kit, module):
     """Mangrove roots arching out of the water along x: hoops of root rising from the mud and plunging back."""
     x, y, z = _size(module)
     made = []
@@ -123,7 +123,7 @@ def mangrove(kit, module, seed=None):
     return kit.join(made)
 
 
-def floe(kit, module, seed=None):
+def floe(kit, module):
     """An ice floe run aground: a broad slab and a smaller one pushed up across it, both under snow."""
     x, y, z = _size(module)
     slab = kit.rock(0, 0, -0.3, (x, y * 0.95, z * 0.6 + 0.3), seed=f'{module}.slab', shape='cube', detail=1,

@@ -147,24 +147,6 @@ def copy(item):
     return twin
 
 
-def mirror(item, axis='x', at=0.0):
-    """A mirrored copy of an object, across the plane where `axis` equals `at`: join it with the first for a
-    symmetric piece."""
-    factors = {'x': (-1, 1, 1), 'y': (1, -1, 1), 'z': (1, 1, -1)}[axis]
-    about = tuple(at if name == axis else 0.0 for name in 'xyz')
-    return scale(copy(item), *factors, about=about)
-
-
-def array(item, count, step=(0.0, 0.0, 0.0), turn=0.0, about=(0.0, 0.0)):
-    """The object and count - 1 copies, the n-th turned by n × `turn` degrees about `about` (x, y), then moved by n ×
-    `step`: a row, or a ring round a point. Gives the list; join it for one piece."""
-    found = [item]
-    for number in range(1, count):
-        twin = rotate_z(copy(item), turn * number, about) if turn else copy(item)
-        found.append(translate(twin, *(value * number for value in step)))
-    return found
-
-
 def _flatten(items):
     for entry in items:
         if isinstance(entry, (list, tuple)):

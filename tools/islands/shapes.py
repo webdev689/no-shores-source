@@ -74,11 +74,6 @@ def facing(face, direction):
     return face if dot(normal_of(points), direction) >= 0 else face[::-1]
 
 
-def polygon(points):
-    """A one-sided flat face through 3 or more points, facing by the right-hand rule: a pool's water, a sheet."""
-    return [flat([tuple(point) for point in points])]
-
-
 def box(x0, y0, z0, x1, y1, z1):
     """A box between two corners, its faces flat."""
     (x0, x1), (y0, y1), (z0, z1) = sorted((x0, x1)), sorted((y0, y1)), sorted((z0, z1))

@@ -335,19 +335,3 @@ def sag_path(start, end, sag, steps=8):
     """Points from `start` to `end` hanging `sag` metres low in the middle: a chain's or rope's slack."""
     return [add(add(start, mul(sub(end, start), share)), (0.0, 0.0, -4 * sag * share * (1 - share)))
             for share in (step / steps for step in range(steps + 1))]
-
-
-def scatter(count, area, seed=None, gap=0.0, avoid=(), scales=(1.0, 1.0), tries=40):
-    """Up to `count` places in `area` (x0, y0, x1, y1), each (x, y, turn in degrees, scale), at least `gap` apart and
-    outside every rectangle in `avoid`, seeded: rubble, bones, candles, mushrooms."""
-    draw = seeded(seed, 'scatter', count, area, gap, avoid, scales)
-    found = []
-    for _ in range(count):
-        for _ in range(tries):
-            x, y = draw.uniform(area[0], area[2]), draw.uniform(area[1], area[3])
-            clear = all(not (x0 <= x <= x1 and y0 <= y <= y1) for x0, y0, x1, y1 in avoid)
-            if clear and all(math.hypot(x - px, y - py) >= gap for px, py, _, _ in found):
-                found.append((x, y, draw.uniform(0, 360), draw.uniform(*scales)))
-                break
-    return found
-

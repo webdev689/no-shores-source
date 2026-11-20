@@ -1,17 +1,17 @@
 """The kit a kit's `build(kit)` makes its pieces with: every shape of shapes.py, details.py and nature.py as a Blender
 object, taking the same numbers (the module's frame: x east, y south, z up, metres) and, by keyword, `part` (one of
 kits.json's parts; stones gives its own), `name` and `smooth` (shade's angle, 35 by default; None is flat); and
-core.py's tools to move, copy, mirror, array, join, bevel and jitter them. Each object's material is named by its
-part, and its UVs are in metres. The plain helpers (scatter, sag_path, bent, seeded) give points, not objects.
+core.py's tools to move, copy, fit, join, bevel and jitter them. Each object's material is named by its
+part, and its UVs are in metres. The plain helpers (sag_path, bent, seeded) give points, not objects.
 """
 import functools
 
 import details
 import nature
 import shapes
-from details import sag_path, scatter, seeded  # noqa: F401
-from kit.core import (PARTS, UV_LAYER, array, bevel, copy, jitter, join, mesh, mirror, rotate,  # noqa: F401
-                      rotate_z, scale, set_part, shade, start, translate, triangles, fit)
+from details import sag_path, seeded  # noqa: F401
+from kit.core import (PARTS, bevel, copy, fit, jitter, join, mesh, rotate, rotate_z, scale,  # noqa: F401
+                      set_part, shade, start, translate, triangles)
 from nature import bent  # noqa: F401
 
 
