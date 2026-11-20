@@ -298,6 +298,27 @@ test('a second tab that searches while its account’s run is being started join
   assert.equal((await seeking(finder, tokens['Ada'] ?? '')).closed.length, 0, 'once told, a search again is taken');
 });
 
+test('a socket that throws as its run is told leaves no account starting, and its group is told', async () => {
+  const names = ['Ada', 'Ben', 'Cal', 'Dee'];
+  const { tokens, finderOf } = await world(names);
+  const finder = finderOf('node-krakens-grotto');
+  const all = [];
+  for (const name of names) all.push(await seeking(finder, tokens[name] ?? ''));
+  const broken = all[0] ?? new FakeSocket();
+  broken.send = () => {
+    throw new Error('the socket closed');
+  };
+  await finder.tick();
+  const told = ['{"run":"node-krakens-grotto--run-k3j4h5g6"}'];
+  assert.deepEqual(
+    all.map((socket) => socket.sent),
+    [[], told, told, told],
+  );
+  assert.equal(finder.open, 0);
+  assert.deepEqual((await seeking(finder, tokens['Ada'] ?? '')).closed, [], 'searching again, in no run starting');
+  assert.equal(finder.waiting, 1);
+});
+
 test('of two searches of one account looked up at once, the newer socket is kept whichever answers first', async () => {
   const queue = new Queue();
   assert.equal(queue.join(seeker(2, 'ada', 5_000)), null, 'the second lookup answers first');

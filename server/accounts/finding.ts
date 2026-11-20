@@ -194,24 +194,19 @@ export class Finder {
     const due = this.queue.due(this.deps.now());
     for (const one of due.flat()) this.starting.add(one.account);
     for (const group of due) {
-      const run = `${this.base}--run-${this.deps.instance()}`;
-      const kept = await this.deps
-        .found(
-          run,
-          group.map((one) => one.account),
-        )
-        .catch(() => false);
-      for (const { socket } of group) {
-        const held = this.sockets.get(socket);
-        if (!held) continue;
-        if (!kept) {
-          this.letGo(socket, 1011, 'the run could not be kept');
-          continue;
-        }
-        held.socket.send(JSON.stringify({ run }));
-        this.letGo(socket, 1000, 'found');
+      try {
+        const run = `${this.base}--run-${this.deps.instance()}`;
+        const accounts = group.map((one) => one.account);
+        const kept = await this.deps.found(run, accounts).catch(() => false);
+        for (const { socket } of group)
+          if (kept) this.letGo(socket, 1000, 'found', JSON.stringify({ run }));
+          else this.letGo(socket, 1011, 'the run could not be kept');
+      } catch {
+        // A run that could not be named is one that could not be kept.
+        for (const { socket } of group) this.letGo(socket, 1011, 'the run could not be kept');
+      } finally {
+        for (const one of group) this.starting.delete(one.account);
       }
-      for (const one of group) this.starting.delete(one.account);
     }
   }
 
@@ -229,11 +224,16 @@ export class Finder {
     return heard >= FINDING_MOST || this.sockets.size >= FINDING_MOST * 2;
   }
 
-  /** Closes a socket, taking it out of the queue first. */
-  private letGo(socket: number, code: number, reason: string): void {
+  /** Closes a socket, taking it out of the queue first, once it is sent `last` if given. */
+  private letGo(socket: number, code: number, reason: string, last?: string): void {
     const held = this.sockets.get(socket);
     this.closed(socket);
-    held?.socket.close(code, reason);
+    try {
+      if (last !== undefined) held?.socket.send(last);
+      held?.socket.close(code, reason);
+    } catch {
+      // A socket that throws as it is spoken to has closed already: it is out of the queue all the same.
+    }
   }
 }
 
