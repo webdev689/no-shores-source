@@ -1,7 +1,6 @@
 import type { Gpu } from '../gpu.ts';
-import { coastField } from '../heldmap/coastField.ts';
-import { type Difficulty, HeldMap } from '../heldmap/heldMap.ts';
-import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
+import type { Difficulty } from '../heldmap/heldMap.ts';
+import type { Point2 } from '../overworld/ground.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { Input } from '../player/input.ts';
@@ -16,6 +15,7 @@ import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
 import { type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
+import { HelmMap } from './helmMap.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { Isles } from './isles.ts';
@@ -86,15 +86,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     flow: boot.flow,
     foot: null,
     sea: null,
-    // The held map, made when it is first asked for, since its coasts are worked out then.
-    heldMap: null,
+    helmMap: new HelmMap({
+      ...{ gpu, store, root: hudRoot, outlines: continents.map((each) => each.outline) },
+      sea: () => playing.sea,
+      sail: (to, seas) => sailFor(to, seas),
+      made: (map) => {
+        if (opened) map.setWaters(opened.map);
+      },
+    }),
     seaWord: null,
     landmass,
     drawers: drawersOn(landmass),
     ready: false,
     waited: 0,
-    // The map is wanted: it is raised once the view stands at the helm.
-    mapWanted: false,
     get shipScale() {
       return shipScale;
     },
@@ -108,7 +112,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   waters.then(
     (open) => {
       opened = open;
-      playing.heldMap?.setWaters(open.map);
+      playing.helmMap.held?.setWaters(open.map);
     },
     (error: unknown) => console.error('the waters could not be opened:', error),
   );
@@ -168,7 +172,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     canvas.classList.remove('dead');
   };
 
-  const goFoot = async (node: NodeInfo, facing: number, seas = playing.heldMap?.difficulty) => {
+  const goFoot = async (node: NodeInfo, facing: number, seas = playing.helmMap.difficulty) => {
     leaveHere();
     playing.foot?.leave();
     playing.foot = null;
@@ -208,8 +212,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     }
     playing.sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
-    mapOf();
-    await enterSea(playing.heldMap?.difficulty ?? 'normal');
+    void playing.helmMap.made;
+    await enterSea(playing.helmMap.difficulty ?? 'normal');
   };
 
   /** The sea room a voyage at `seas` sails in, joined: online the server's at that difficulty; playing alone, the same
@@ -234,7 +238,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   const landAt = (id: string) => {
     discovered.nodes([id]);
-    const landing = playing.sea?.landingOf(id);
+    const landing = playing.sea?.view.landingOf(id);
     const node = playing.landmass.nodes.find((each) => each.id === id);
     if (!landing || !node || !playing.sea) return;
     const from = playing.sea.position;
@@ -248,8 +252,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const free = () =>
     (playing.flow.mode === 'foot' || playing.flow.mode === 'sea') &&
     !playing.flow.menu &&
-    !playing.heldMap?.shown &&
-    !playing.mapWanted &&
+    !playing.helmMap.busy &&
     !playing.sea?.aboard.active &&
     !charting.busy;
 
@@ -302,7 +305,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     }
     if (!playing.sea.goAshore()) return;
     change({ kind: 'view-landings' });
-    discovered.nodes(playing.sea.landings);
+    discovered.nodes(playing.sea.view.landings);
   };
 
   /** The dungeon behind an island's door: the dungeons' trip takes its room and door from here. */
@@ -345,7 +348,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // An island new in sight bends the voyage ahead round it.
     if (isles.update(sea.sighted?.islands ?? [])) sea.bendRound();
     const found = isles.all().filter((each) => each.seen.found);
-    playing.heldMap?.setIsles(found.map(({ seen }) => ({ at: seen.at, kind: seen.kind, isle: seen.kind !== 'cove' })));
+    playing.helmMap.held?.setIsles(
+      found.map(({ seen }) => ({ at: seen.at, kind: seen.kind, isle: seen.kind !== 'cove' })),
+    );
     // Ashore only once nothing else is under way: the map put away, the deck left, the fight's view panned home.
     if (!free() || sea.fight) return;
     const washed = playing.seaWord?.washedIsle ?? null;
@@ -364,52 +369,28 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (anchored) goIsle(anchored, ashoreWords(anchored));
   };
 
-  /** The map is wanted: it is raised once the view stands at the helm. */
-  const mapOf = (): HeldMap => {
-    if (playing.heldMap) return playing.heldMap;
-    const field = coastField(
-      continents.map((each) => each.outline),
-      CHART_COLUMNS,
-      CHART_ROWS,
-      CHART_CELL_M,
-    );
-    const made = new HeldMap(
-      gpu,
-      field,
-      store,
-      (to) => playing.sea?.planTo(to) ?? { ok: false, why: 'No ship.' },
-      hudRoot,
-    );
-    // Lowered, the view goes back up; a destination set, the ship sets sail as it does.
-    // A voyage set at another difficulty sails in that difficulty's sea room.
-    made.onLowered((sail) => {
-      playing.sea?.fromHelm();
-      if (!sail) return;
-      const sea = playing.sea;
-      // Mid-fight the ship stays in the room it fights in; one switch at a time, each waiting for the last.
-      if (!sea || sea.fight || made.difficulty === seaSeas) sea?.sailTo(sail);
-      else {
-        const seas = made.difficulty;
-        seaSeas = seas;
-        switching = switching
-          .then(() => {
-            sea.leaveRoom();
-            return enterSea(seas);
-          })
-          .then(() => sea.sailTo(sail))
-          // A room that will not open leaves the ship sailing alone, as a link lost does.
-          .catch(() => sea.sailTo(sail));
-      }
-    });
-    if (opened) made.setWaters(opened.map);
-    playing.heldMap = made;
-    return made;
+  /** A destination set on the map: the ship sails for it. A voyage set at another difficulty sails in that
+   *  difficulty's sea room; mid-fight the ship stays in the room it fights in; one switch at a time, each waiting for
+   *  the last. */
+  const sailFor = (sail: Point2, seas: Difficulty) => {
+    const sea = playing.sea;
+    if (!sea || sea.fight || seas === seaSeas) sea?.sailTo(sail);
+    else {
+      seaSeas = seas;
+      switching = switching
+        .then(() => {
+          sea.leaveRoom();
+          return enterSea(seas);
+        })
+        .then(() => sea.sailTo(sail))
+        // A room that will not open leaves the ship sailing alone, as a link lost does.
+        .catch(() => sea.sailTo(sail));
+    }
   };
 
   /** Takes the view down to the ship's helm, where the map is raised. */
   const openMap = () => {
-    if (playing.flow.mode !== 'sea' || playing.flow.menu || !playing.sea || playing.heldMap?.shown) return;
-    playing.mapWanted = playing.sea.toHelm();
+    if (playing.flow.mode === 'sea' && !playing.flow.menu && playing.sea) playing.helmMap.open(playing.sea);
   };
 
   /** Opens Manage over its deck, or closes it. */
@@ -438,9 +419,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (playing.flow.mode === 'sea' && !playing.flow.menu) playing.sea?.sailToMark(id);
     if (playing.flow.mode !== 'landing' || !playing.sea) return;
     if (playing.flow.chosen === id) landAt(id);
-    else if (playing.sea.landingOf(id)) {
+    else if (playing.sea.view.landingOf(id)) {
       change({ kind: 'choose', node: id });
-      playing.sea.chosen = id;
+      playing.sea.view.chosen = id;
     }
   };
 
@@ -467,23 +448,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
-    if (event.repeat) return;
-    if (playing.heldMap?.shown) {
-      if (key === 'escape') playing.heldMap.escape();
-      else if (key === 'enter') playing.heldMap.setSail();
-      return;
-    }
-    // On the way down to the helm, Escape turns back before the map is raised.
-    if (key === 'escape' && playing.mapWanted && playing.sea?.helmView) {
-      playing.mapWanted = false;
-      playing.sea.fromHelm();
-      return;
-    }
+    if (event.repeat || playing.helmMap.key(key)) return;
     if (deckKey(key, playing.flow.mode === 'sea' && !playing.flow.menu ? playing.sea : null, respawn)) return;
     if (key === 'enter' && retry) retry();
     else if (key === 'm') change({ kind: 'menu' });
     else if (key === 'escape' && playing.flow.mode === 'landing') {
-      playing.sea?.backToSea();
+      playing.sea?.view.backToSea();
       change({ kind: 'back' });
     } else if (key === 'escape') change({ kind: 'back' });
     else if (key === 'enter' && playing.flow.mode === 'sea' && !playing.flow.menu && playing.sea?.chaseChosen()) return;
@@ -517,13 +487,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // On a struck ship's deck the pointer and the wheel are the fight's on foot.
     atSea: () => playing.flow.mode === 'sea' && !playing.flow.menu && !playing.sea?.boarding.onDeck,
     sea: () => playing.sea,
-    map: () => playing.heldMap,
+    map: () => playing.helmMap.held,
   });
   startFrames(
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
-      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, mapOf, isleFrame, groundAt },
+      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt },
       isles: islesView,
       ...{ world, music, ambience: new Ambience(world) },
     },

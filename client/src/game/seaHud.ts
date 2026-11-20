@@ -73,7 +73,7 @@ function showSight(here: Sea, onDeck: boolean): void {
  *  what the ship is doing over the water it is in (its name and holder, as the helm says it; the region where it has
  *  none), or the island it lies off. */
 export function seaPlace(
-  here: Pick<Sea, 'boarding' | 'helmView' | 'aboard' | 'waterWords'>,
+  here: Pick<Sea, 'boarding' | 'aboard' | 'waterWords'> & { readonly view: Pick<Sea['view'], 'helmView'> },
   shown: Pick<SeaFrame, 'landfall'>,
   state: Pick<SeaHudState, 'landing' | 'island' | 'region'>,
 ): [string, string] {
@@ -82,7 +82,7 @@ export function seaPlace(
   const water = here.waterWords ?? region;
   if (deck) return [deck.place, deck.line];
   if (state.landing) return ['Landings', island ? `The side of ${island} in view` : 'The coast in view'];
-  if (here.helmView) return ['At the helm', water];
+  if (here.view.helmView) return ['At the helm', water];
   if (here.aboard.walking) return ['Aboard the Sloop', 'Off the helm'];
   if (here.aboard.managing) return ['Managing the Sloop', water];
   return ['At sea', shown.landfall && island ? `Off ${island}` : water];
@@ -91,7 +91,7 @@ export function seaPlace(
 /** Shows one frame at sea, `shown`, on the display. */
 export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudState): void {
   const { onSea } = state;
-  const atHelm = here.helmView;
+  const atHelm = here.view.helmView;
   const { aboard } = here;
   // On a struck ship's deck, the display says where its fight stands and lists the keys on foot.
   const deck = here.boarding.words;

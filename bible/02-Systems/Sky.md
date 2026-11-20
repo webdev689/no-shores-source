@@ -71,9 +71,9 @@ what show the ground there.
   a fire's warm light from the solid's middle, reaching some ten metres from a lantern and up to sixty from a great
   fire. They flicker gently, each on its own beat, and are lit only as the daylight fades, coming up through the dusk.
   The glowing surfaces themselves burn brighter at night than by day.
-- **A carried light.** A torch or a lantern in the player's left hand lights round them on foot at night, a lamp at
-  their hand, in first person and third alike: a torch's reaches some eleven metres and flickers, a lantern's
-  thirteen and is steadier.
+- **A carried light.** A torch or a lantern in the player's left hand lights round them at night, on foot and walking
+  the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and
+  flickers, a lantern's thirteen and is steadier.
 - **The nearest sixteen.** Each frame the carried light and the lamps nearest the eye (counting their reach) go to the
   sky's uniform, at most sixteen, so the cost stays bounded. The last of them fade as the next lamp nears, so none
   switches on or off as the eye moves. Every lit surface (the land, the plants, the city, the ships, the marks and the
@@ -92,5 +92,5 @@ what show the ground there.
 - The World Editor and the Test Ground keep a clear afternoon sky; the World Editor's ships still sail, and their
   sails fill, in the weather's wind.
 - Lamps cast no shadows, and windows are never lit: the city's plan gives windows no places.
-- A carried torch or lantern lights round the player ashore; walking the Sloop's deck it does not yet.
+- Standing at the Sloop's helm, the player's torch or lantern lights nothing; only walking its deck does it.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.

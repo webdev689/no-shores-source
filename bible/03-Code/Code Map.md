@@ -53,7 +53,8 @@ decision, made in the same change as its entry here.
 | `client/src/game/friendlyShips.ts` | The friendly ships round the eye at sea and on foot: asked at world time, eased between answers at the waters' pace, at anchor at a route's end, only as many of each hull as the ships layer can draw, drawn and marked on the compass ([[Game]]) |
 | `client/src/game/pageWaters.ts` | The waters opened once a page, off the first frame: the rules, the table and the held map's grid, and what the sea reads of them (the water named, the port cities) ([[Game]], [[Held Map]]) |
 | `client/src/game/gameBoot.ts`, `client/src/game/game.ts`, `client/src/game/gameFrame.ts` | The game's three jobs: booting the rooms, modules, scene, world and the place arrived at; the travel between places and the player's actions; and each frame on foot or at sea ([[Game]]) |
-| `client/src/game/seaShots.ts` | The sea's camera and its shots: turned, dragged and zoomed over the ship, brought in close, flown up over an island's side and back, and down to its helm ([[Game]], "At sea") |
+| `client/src/game/seaView.ts` | The view over the ship at sea: its camera turned, dragged and zoomed, brought in close, flown up over an island's side and back with the landings marked there, and down to its helm ([[Game]], "At sea") |
+| `client/src/game/helmMap.ts` | The held map at the helm: made when first asked for, raised once the view stands at the helm, its keys, and what it draws over the picture ([[Held Map]]) |
 | `client/src/ruinedName.ts` | A ruined city's name as the city crate names it, for the held map and arriving ([[Cities]], "Ruins") |
 | `client/src/rules/feelEvents.ts` | What a sea room tells of its fights beside the World Editor's events, and the one mapping that hands each to the fight's feel ([[Naval Combat]]) |
 | `server/seaPorts.ts` | The ports the sea room is opened with, each continent's city read from its land file as the page reads it ([[Server]]) |

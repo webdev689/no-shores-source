@@ -8,7 +8,6 @@ code:
   - client/src/game/gameBoot.ts#bootGame
   - client/src/game/gameFrame.ts#startFrames
   - client/src/game/pageWaters.ts#watersOnce
-  - client/src/game/seaShots.ts#SeaShots
   - client/src/game/flow.ts#next
   - client/src/game/foot.ts#Foot
   - client/src/game/footView.ts#FootView
@@ -21,6 +20,7 @@ code:
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/sea.ts#Sea
+  - client/src/game/seaView.ts#SeaView
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene

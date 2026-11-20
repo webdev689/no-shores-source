@@ -3,13 +3,13 @@
 // pieces and keeps the travel; this draws what they hold, as `Playing` has it this frame.
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
-import type { HeldMap } from '../heldmap/heldMap.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { Action, Input, InputFrame } from '../player/input.ts';
 import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
 import type { Ambience } from './audio/ambience/ambience.ts';
+import type { HelmMap } from './helmMap.ts';
 import type { MusicDirector } from './audio/music/director.ts';
 import type { Charting } from './charting.ts';
 import type { Discovered } from './discovered.ts';
@@ -45,13 +45,13 @@ export interface Playing {
   flow: Flow;
   foot: Foot | null;
   sea: Sea | null;
-  heldMap: HeldMap | null;
+  /** The held map at the helm, made when it is first asked for. */
+  readonly helmMap: HelmMap;
   seaWord: SeaWord | null;
   landmass: Landmass;
   drawers: LandDrawers;
   ready: boolean;
   waited: number;
-  mapWanted: boolean;
   shipScale: number;
 }
 
@@ -79,7 +79,6 @@ export interface FrameParts {
   readonly syncMenu: () => void;
   readonly travel: (happening: Happening, work: () => Promise<void>) => void;
   readonly goFoot: (node: NodeInfo, facing: number) => Promise<void>;
-  readonly mapOf: () => HeldMap;
   /** The sea's islands kept, shown and walked ashore on, each frame; their drawer; and the ground the camera keeps
    *  over, the islands' with the land's. */
   readonly isleFrame: () => void;
@@ -149,14 +148,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   };
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
-    const { flow, heldMap } = playing;
+    const { flow, helmMap } = playing;
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
-    if (!paused && !heldMap?.shown)
+    if (!paused && !helmMap.shown)
       here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
     const shown = here.frame({
       seconds,
@@ -172,7 +171,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);
-    const voyage = { ...shown, deck: here.helmView || here.aboard.active, feet: walker.player.body };
+    const voyage = { ...shown, deck: here.view.helmView || here.aboard.active, feet: walker.player.body };
     parts.ambience.atSea(playing.landmass, here.position, shown.shot, voyage, seconds);
     // Back at the helm, or called to it, the pointer is the player's again.
     const afoot = here.aboard.walking || here.boarding.onDeck;
@@ -180,31 +179,21 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     wasWalking = afoot;
     // What a lookout sees is discovered as the ship sails.
     if (flow.mode === 'sea') discovered.lookout(here.position);
-    if (playing.mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
-      playing.mapWanted = false;
-      const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
-      parts.mapOf().open(viewport, here.position, hands, discovered.discovery.charted);
-    }
-    // The map's scene is gathered only while the map is up.
-    const map = playing.heldMap;
-    const mapFrame = map?.shown
-      ? map.frame(seconds, viewport, canvas.width / Math.max(1, canvas.clientWidth), {
-          ship: here.position,
-          heading: here.heading,
-          places: discovered.places,
-          knownIslands: discovered.knownIslands,
-          course: here.course,
-        })
-      : null;
+    const free = flow.mode === 'sea' && !flow.menu;
+    const dpr = canvas.width / Math.max(1, canvas.clientWidth);
+    const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
+    const mapDraw = helmMap.frame(here, seconds, { free, viewport, dpr, hands }, discovered);
     // The map at the helm, or the player's own hands walking its deck in first person, over the finished picture.
-    const after = mapFrame
-      ? (encoder: GPUCommandEncoder, view: GPUTextureView) => map?.draw(encoder, view, mapFrame)
-      : shown.firstPerson
+    const after =
+      mapDraw ??
+      (shown.firstPerson
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
-        : undefined;
+        : undefined);
     parts.seaView.reachM = Math.max(0, shown.shot.eye[2]) * 6;
     const fleet = traffic.atSea(shown, parts.waterHere(), seconds, clock);
-    const more = { hulls: fleet.hulls, after, focus: shown.focus, atSea: true, ...(swell ? { swell } : {}) };
+    // Walking its deck, what the player carries lights round them as it does ashore.
+    const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
+    const more = { hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, ...(swell ? { swell } : {}) };
     const drawers = standing([...shown.ships, ...fleet.ships], shown.figures, herDeck);
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
     showStanding(here.boarding.standing ?? { kind: 'inside' });
