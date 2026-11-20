@@ -107,15 +107,8 @@ test('her colours come down her mast when she strikes, and are gone once down', 
   assert.equal(flagAt(masthead, harm, [{ footZ: 2, topZ: 12 }], STRIKE_S).shows, false);
 });
 
-test('sinking, she is drawn in the pose the rules send: no list, trim or drop of her own', () => {
+test('her going down keeps its time: the rules send her pose, which she is drawn in as it comes', () => {
   const harm = new ShipHarm(SLOOP);
-  harm.scar([6, 2, 1]);
-  harm.scar([4, -2, 0.5]);
   harm.sink(0);
-  const degree = Math.PI / 180;
-  for (const roll of [32 * degree, -32 * degree]) {
-    const wire = { x: 3, y: 4, z: -5, heading: 1, pitch: 20 * degree, roll };
-    for (const now of [SINK_S / 4, SINK_S * 0.9]) assert.deepEqual(harm.settle(wire, now, 12), wire);
-  }
-  assert.ok(harm.sunkShare(SINK_S / 2) > 0 && harm.sunkShare(SINK_S * 2) === 1, 'her going down still keeps its time');
+  assert.ok(harm.sunkShare(SINK_S / 2) > 0 && harm.sunkShare(SINK_S * 2) === 1);
 });

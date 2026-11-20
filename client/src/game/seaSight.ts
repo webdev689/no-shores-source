@@ -24,7 +24,7 @@ const SHOT_LINE: Readonly<Record<ShotName, string>> = {
 export function aimLineOf(lay: FightLay | null, player: FightVessel): Sight | null {
   if (!lay) return null;
   const mean = (values: readonly number[]) => values.reduce((sum, value) => sum + value, 0) / (values.length || 1);
-  const [x, y, east, south] = [0, 1, 3, 4].map((at) => mean(lay.launches.map((launch) => launch[at] ?? 0)));
+  const [x, y, east, south] = [0, 1, 3, 4].map((field) => mean(lay.launches.map((launch) => launch[field] ?? 0)));
   const way = Math.hypot(east ?? 0, south ?? 0) || 1;
   const ends = lay.ends.filter((end) => end !== null);
   const out = ends.length

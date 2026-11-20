@@ -57,12 +57,12 @@ test("an arc is a ribbon as wide on the screen beside the eye as at 140 m, DFO's
 });
 
 test("an arc's dashes are laid by the metres flown and march out along it as time goes", () => {
-  const at = (time: number) => aimCorners(AIM, camera(), time);
-  const start = at(0).blended + 6;
-  const u = (time: number, corner: number) => at(time).corners[(start + corner) * AIM_FLOATS + 3] ?? NaN;
+  const cornersAt = (time: number) => aimCorners(AIM, camera(), time);
+  const start = cornersAt(0).blended + 6;
+  const picX = (time: number, corner: number) => cornersAt(time).corners[(start + corner) * AIM_FLOATS + 3] ?? NaN;
   // The third segment starts 1 m + 130 m out: its far end 132 m flown.
-  assert.ok(Math.abs(u(0, 12 + 2) - 132 / ARC.dashM) < 1e-4);
-  assert.ok(Math.abs(u(1, 12 + 2) - (132 - ARC.dashSpeed) / ARC.dashM) < 1e-4, 'a second on it has marched 9 m out');
+  assert.ok(Math.abs(picX(0, 12 + 2) - 132 / ARC.dashM) < 1e-4);
+  assert.ok(Math.abs(picX(1, 12 + 2) - (132 - ARC.dashSpeed) / ARC.dashM) < 1e-4, 'a second on it has marched 9 m out');
 });
 
 test('each landing is a ring flat on the sea, blended, and a post of light over it, added; a strike a mark', () => {

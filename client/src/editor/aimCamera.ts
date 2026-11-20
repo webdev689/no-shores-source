@@ -116,10 +116,10 @@ export class AimCamera {
       ship.y + starboard[1] * out,
       ship.heave + hullPaint(SLOOP_HULL).atM,
     ];
-    let at = aimEye(ship, this.side) as Point;
-    const clear = Math.min(1, ...alongside.map((hull) => segmentBoxEntry(ports, at, hull, AIM_CAM_CLEAR) ?? 1));
-    if (clear < 1) at = toward(ports, at, clear);
-    const local = toLocal(ship, at);
+    let eye = aimEye(ship, this.side) as Point;
+    const clear = Math.min(1, ...alongside.map((hull) => segmentBoxEntry(ports, eye, hull, AIM_CAM_CLEAR) ?? 1));
+    if (clear < 1) eye = toward(ports, eye, clear);
+    const local = toLocal(ship, eye);
     this.local = this.local ? toward(this.local, local, step) : local;
     const k = this.share * this.share * (3 - 2 * this.share);
     return toward(home, toWorld(ship, this.local), k);

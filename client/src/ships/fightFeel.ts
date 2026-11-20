@@ -6,7 +6,7 @@ import type { FightEvent, FightVessel, Point } from '../rules/fightRules.ts';
 import { DRESSES, type ShipSide } from './dress.ts';
 import { Effects, type Mark, type Splash } from './effects.ts';
 import { Flotsam } from './flotsam.ts';
-import { hullPaint, hullWaterline, plateOverM, SLOOP_HULL } from './hulls.ts';
+import { hullPaint, hullWaterline, SLOOP_HULL } from './hulls.ts';
 import { type SailRig, windOff } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
 
@@ -251,16 +251,6 @@ export class FightFeel {
     const out: [number, number] = [(axes[1][0] ?? 0) * outboard, (axes[1][1] ?? 0) * outboard];
     this.effects.splinter(toWindow(middle), offOf(axes, spot), out, DRESSES[ship.side].hull, now);
     if (scars) ship.rig?.harm.scar(spot);
-  }
-
-  /** Her place as she goes down (`ShipHarm.settle`), her masthead's height for how deep. */
-  settled<Place extends { readonly z: number; readonly pitch: number; readonly roll: number }>(
-    ship: FeelShip,
-    place: Place,
-    now: number,
-    scale = 1,
-  ): Place {
-    return ship.rig ? ship.rig.harm.settle(place, now, plateOverM(ship.hull) * scale) : place;
   }
 
   /** Whether she is still drawn: not yet gone under. */

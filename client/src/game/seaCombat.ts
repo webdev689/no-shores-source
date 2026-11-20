@@ -320,7 +320,7 @@ export class SeaCombat {
       const [x = 0, y = 0, heading = 0] = ship.vessel.ship;
       const [heave = 0, pitch = 0, roll = 0] = ship.vessel.pose;
       const place = { x, y, z: heave, heading, pitch, roll, scale };
-      return [{ ship, place: this.naval.settled(ship, place, time, scale) }];
+      return [{ ship, place }];
     });
   }
 

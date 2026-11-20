@@ -78,7 +78,7 @@ function frameOf(fromEye: Float32Array) {
 }
 
 const minus = (one: Point, other: Point): Point => [one[0] - other[0], one[1] - other[1], one[2] - other[2]];
-const scaled = (vector: Point, by: number): Point => [vector[0] * by, vector[1] * by, vector[2] * by];
+const scaled = (vector: Point, factor: number): Point => [vector[0] * factor, vector[1] * factor, vector[2] * factor];
 const cross = (one: Point, other: Point): Point => [
   one[1] * other[2] - one[2] * other[1],
   one[2] * other[0] - one[0] * other[2],
@@ -96,16 +96,16 @@ export function aimCorners(
   const frame = frameOf(camera.fromEye);
   const fromEye = (point: Point) => minus(point, camera.eye);
   const corners: number[] = [];
-  const corner = (point: Point, u: number, v: number, colour: Colour, picture: number) =>
-    corners.push(...point, u, v, ...colour, picture);
+  const corner = (point: Point, picX: number, picY: number, colour: Colour, picture: number) =>
+    corners.push(...point, picX, picY, ...colour, picture);
   /** A quad round `middle` spanning `across` and `along` either way. */
   const quad = (middle: Point, across: Point, along: Point, colour: Colour, picture: number) => {
-    const at = (u: number, v: number): Point => [
-      middle[0] + across[0] * u + along[0] * v,
-      middle[1] + across[1] * u + along[1] * v,
-      middle[2] + across[2] * u + along[2] * v,
+    const spot = (picX: number, picY: number): Point => [
+      middle[0] + across[0] * picX + along[0] * picY,
+      middle[1] + across[1] * picX + along[1] * picY,
+      middle[2] + across[2] * picX + along[2] * picY,
     ];
-    for (const [u, v] of [
+    for (const [picX, picY] of [
       [-1, -1],
       [1, -1],
       [1, 1],
@@ -113,7 +113,7 @@ export function aimCorners(
       [1, 1],
       [-1, 1],
     ] as const)
-      corner(at(u, v), u, v, colour, picture);
+      corner(spot(picX, picY), picX, picY, colour, picture);
   };
   const quads = () => corners.length / AIM_FLOATS / 6;
   for (const point of aim.zone) {
@@ -158,8 +158,8 @@ export function aimCorners(
         [minus(to, farHalf), endU, -1],
       ] as const;
       for (const pick of [0, 1, 2, 0, 2, 3]) {
-        const [point, u, v] = ends[pick] ?? ends[0];
-        corner(point, u, v, tone.arc, PICTURE.line);
+        const [point, picX, picY] = ends[pick] ?? ends[0];
+        corner(point, picX, picY, tone.arc, PICTURE.line);
       }
       flown += length;
     }
