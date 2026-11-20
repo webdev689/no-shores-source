@@ -139,7 +139,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let foot: Foot | null = null;
   let sea: Sea | null = null;
   const outlines = continents.map((each) => each.outline);
-  const helmMap = new HelmMap({ gpu, outlines, store, root: hudRoot, sea: () => sea });
+  const helmMap = new HelmMap({ gpu, outlines, store, root: hudRoot, sea: () => sea, shut: () => screens.seasShut() });
   let [ready, waited] = [false, 0];
   let wasDead = false;
   let wasWalking = false;

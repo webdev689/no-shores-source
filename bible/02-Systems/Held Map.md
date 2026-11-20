@@ -54,7 +54,10 @@ war, and a click on it sets the ship's destination.
   the player sets sail with it; letting the destination go lets it go too. The node landed at is joined at the
   voyage's difficulty ([[Server]], "The host"). Elite here is the voyage's tier, never a foe's rank; the Roster says
   "Elite difficulty" where a player is, and reads a place kept under the tiers' old names (`--rough`, `--storm`) as
-  Elite and Abyss.
+  Elite and Abyss. The presses stand after a "Seas" label. A difficulty the player's level shuts rests, titled with
+  its gate's reason, and the first reason stands in a line under the row ("Elite seas open at level 10."), read from
+  the rules by the last word of the character a room sent ([[Activities]]); before any word none is shut. A pick the
+  level shuts, kept from an earlier voyage or another character, falls to the hardest difficulty open below it.
 - **Turning back.** Escape on the way down to the helm turns the view back before the map is raised.
 - **Lowering.** Over 0.36 s, from wherever the painting is; then the view flies back up to the sea's, and a
   destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation

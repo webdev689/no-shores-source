@@ -33,6 +33,9 @@ export interface ActivityScreens {
   week(): ThisWeek | null;
   /** E at entrance `number`, its dungeon named `name`: its card, or straight in while the room module is unread. */
   card(number: number, name: string): void;
+  /** Why each tier's seas are shut to the player by their level, by tier (null where open); none before a room's
+   *  word. */
+  seasShut(): readonly (string | null)[];
 }
 
 /** How often the screens look again, in milliseconds. */
@@ -101,6 +104,7 @@ export function startActivityScreens(
       built = { minute, gear: kept, board };
       return board;
     },
+    seasShut: () => (compiled && kept ? gatesAt(compiled, kept.level, kept.prologueDone ?? true).seas : []),
     card: (number, name) => {
       const here = foot();
       if (!here || here.dungeon || here.fallen) return;

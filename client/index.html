@@ -434,6 +434,7 @@
       }
       .held-card {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 14px;
         padding: 8px 14px;
@@ -445,6 +446,15 @@
       }
       .held-card button {
         pointer-events: auto;
+      }
+      /* A difficulty the player's level shuts rests on the card, the first reason under its row. */
+      .held-card-label {
+        margin-right: 8px;
+        color: var(--ink);
+      }
+      .held-card-why {
+        flex-basis: 100%;
+        color: var(--ink);
       }
       .mark {
         --size: 28px;

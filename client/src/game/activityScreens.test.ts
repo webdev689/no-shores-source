@@ -118,3 +118,16 @@ test('the card goes when its player falls or leaves the place, and gives the key
   look();
   assert.equal(gearScreenOpen(), false, 'gone from the place');
 });
+
+test('the seas a player’s level shuts are read from the rules by the last word of the character, and none before', async () => {
+  let look = () => undefined as void;
+  let here: ScreensFoot | null = null;
+  const clock = { now: still.now, every: (run: () => void) => void (look = run) };
+  const screens = startActivityScreens(fakePage().root as never, module, [vale], () => here, nowhere, clock);
+  await module;
+  assert.deepEqual(screens.seasShut(), [], 'no word yet');
+  here = standing(gearAt(9, nothing));
+  look();
+  here = null;
+  assert.deepEqual(screens.seasShut(), [null, 'Elite seas open at level 10.', 'Abyss seas open at level 20.']);
+});

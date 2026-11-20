@@ -17,6 +17,7 @@ import {
   raised,
   type Rect,
   routeOf,
+  seasChoices,
   stageOf,
   toInk,
   toWorld,
@@ -93,6 +94,8 @@ export class HeldMap {
   difficulty: Difficulty = 'normal';
   /** The difficulty chosen on the card, kept only once the player sets sail with it. */
   private picked: Difficulty = 'normal';
+  /** Why each difficulty is shut to the player by their level (null where open), as the map was last raised. */
+  private shut: readonly (string | null)[] = [];
   private placed: { readonly place: MapPlace; readonly x: number; readonly y: number }[] = [];
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
@@ -118,14 +121,17 @@ export class HeldMap {
   }
 
   /** Raises the map in the player's gauntlets (`null` bare hands), centred on the ship, the sea charted so far laid on
-   *  it. */
+   *  it, the difficulties `shut` says why are shut (by tier, null where open) shut on its card. */
   open(
     viewport: { readonly width: number; readonly height: number },
     ship: Point2,
     gauntlets: string | null,
     charted: Uint8Array,
+    shut: readonly (string | null)[],
   ): void {
     if (this.phase.kind !== 'closed') return;
+    this.shut = shut;
+    this.picked = seasChoices(this.picked, shut).picked;
     if (gauntlets !== this.gauntlets) this.load(gauntlets);
     this.view.setCharted(charted);
     this.ink = stageOf(viewport).ink;
@@ -329,7 +335,10 @@ export class HeldMap {
     this.card.hidden = !choice;
     if (!choice) return;
     const words = choice.course.ok ? `Set a course for ${choice.name}` : choice.course.why;
-    const shape = `${words} ${this.picked}`;
+    // A pick kept from an earlier voyage, or another character's, falls to the hardest tier open to this one.
+    const { picked, why } = seasChoices(this.picked, this.shut);
+    this.picked = picked;
+    const shape = JSON.stringify([words, picked, this.shut]);
     if (this.card.dataset['words'] !== shape) {
       this.card.dataset['words'] = shape;
       const sail = button('Set sail  Enter', () => this.setSail());
@@ -337,13 +346,18 @@ export class HeldMap {
       sail.hidden = !choice.course.ok;
       const seas = make('div', '', 'held-card-seas');
       seas.hidden = !choice.course.ok;
-      for (const [difficulty, label, said] of DIFFICULTY_WORDS) {
+      seas.append(make('span', 'Seas', 'held-card-label'));
+      for (const [index, [difficulty, label, said]] of DIFFICULTY_WORDS.entries()) {
+        const reason = this.shut[index] ?? null;
         const pick = button(label, () => (this.picked = difficulty));
         pick.classList.add(ROLES[difficulty === this.picked ? 'primary' : 'button']);
-        pick.title = said;
+        pick.title = reason ?? said;
+        pick.disabled = reason !== null;
         seas.append(pick);
       }
-      this.card.replaceChildren(make('div', words, 'held-card-words'), seas, sail);
+      const shutLine = make('div', why ?? '', 'held-card-why');
+      shutLine.hidden = why === null || !choice.course.ok;
+      this.card.replaceChildren(make('div', words, 'held-card-words'), seas, sail, shutLine);
     }
     this.card.style.transform = `translate(${this.ink.x + this.ink.width / 2}px, ${this.ink.y + drop - 12}px) translate(-50%, -100%)`;
   }

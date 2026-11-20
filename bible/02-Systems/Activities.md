@@ -25,8 +25,8 @@ Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign'
 [[The Story Is Nine Missions, With Side Quests Between Them]], [[Where You Go and the Seas You Choose Set the
 Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
-([[The Activities Are Built in Full, Before the Story's Missions]]). Its core and its dungeons are built (steps 1 and
-2); the screen, companies of four and the quests are not.
+([[The Activities Are Built in Full, Before the Story's Missions]]). Its core, its dungeons and its screens are built
+(steps 1 to 3); companies of four, Find a Company and the quests are not.
 
 ## What it is for
 
@@ -191,9 +191,9 @@ One engine counts both, since the owner's side quests and the board's bounties a
   else. A room asks it before it gives a player their kept character, with the story they already hold in the room
   carried forward (`Story::merged`, which never goes back), and a new one is judged as it starts. The reasons read
   "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "Elite seas open at level 10."
-  and "Abyss seas open at level 20.". A sea island's dungeon is gated by its seas alone. The screen shows what is
-  shut and what opens it. The page reads every gate's reason for a level from the rules (`room_gates`), so it never
-  judges a gate itself.
+  and "Abyss seas open at level 20.". A sea island's dungeon is gated by its seas alone. The screens show what is
+  shut and why: This Week, an entrance's card and the voyage's card. The page reads every gate's reason for a level
+  from the rules (`room_gates`), so it never judges a gate itself.
 
 ## The screen
 
