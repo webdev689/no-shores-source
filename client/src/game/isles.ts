@@ -4,54 +4,16 @@
 import { type IsleBuilt, islePlanner } from '../network/islePlans.ts';
 import type { SeenIsle } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
+import { type IslePlan, type IsleShown, readIslePlan } from '../islands/islePlan.ts';
 import type { IsleAt } from './isleLaw.ts';
 
-/** The parts of an island's plan the page reads beside the view (crates/room-wasm/src/isle_door.rs `plan_json`). */
-interface PlanRead {
-  readonly reach: number;
-  readonly landing: number;
-  readonly anchorage: Point2;
-  readonly spawns: readonly Point2[];
-  readonly facing: number;
-  readonly ring: readonly Point2[];
-  readonly door: { readonly at: Point2; readonly facing: number; readonly style: string };
-  readonly wrecks: readonly (readonly [number, number, number])[];
-  readonly blocks: readonly (readonly [number, number, number, number, number])[];
-}
-
-/** An island built: the room's word on it, its climate, its plan's JSON and what the page reads of it, and its
- *  ground's numbers in the world's metres. */
+/** An island built: the room's word on it, its climate, its plan, and its ground's numbers in the world's metres (what
+ *  the page predicts the player on). */
 export interface IsleHeld {
   readonly seen: SeenIsle;
   readonly climate: string;
-  readonly json: string;
-  readonly plan: PlanRead;
+  readonly plan: IslePlan;
   readonly heights: Float64Array;
-}
-
-const isPoint = (value: unknown): value is Point2 =>
-  Array.isArray(value) && value.length === 2 && value.every((number) => Number.isFinite(number));
-
-/** The plan's JSON read, or null where it is not one: an island the page cannot stand on is not shown at all. */
-export function planRead(json: string): PlanRead | null {
-  const plan = JSON.parse(json) as Partial<PlanRead>;
-  const numbers = (list: unknown, count: number) =>
-    Array.isArray(list) &&
-    list.every((row) => Array.isArray(row) && row.length === count && row.every((n) => Number.isFinite(n)));
-  const fine =
-    Number.isFinite(plan.reach) &&
-    Number.isFinite(plan.landing) &&
-    isPoint(plan.anchorage) &&
-    Array.isArray(plan.spawns) &&
-    plan.spawns.length > 0 &&
-    plan.spawns.every(isPoint) &&
-    Array.isArray(plan.ring) &&
-    plan.ring.length >= 3 &&
-    plan.ring.every(isPoint) &&
-    isPoint(plan.door?.at) &&
-    numbers(plan.wrecks, 3) &&
-    numbers(plan.blocks, 5);
-  return fine ? (plan as PlanRead) : null;
 }
 
 /** The islands the room told the page of, each built once it is first seen, at most one a frame. */
@@ -77,8 +39,14 @@ export class Isles {
     if (!planner || !next) return;
     const climate = this.climates[next.continent] ?? null;
     const built = climate ? planner(next.seed, climate, next.at) : null;
-    const plan = built ? planRead(built.json) : null;
-    this.held.set(next.id, built && plan && climate ? { seen: next, climate, ...built, plan } : null);
+    // A plan the page cannot read is an island it cannot stand on: it is not shown at all.
+    let plan: IslePlan | null = null;
+    try {
+      plan = built ? readIslePlan(built.json) : null;
+    } catch (error) {
+      console.warn(`island ${next.id} does not read:`, error);
+    }
+    this.held.set(next.id, built && plan && climate ? { seen: next, climate, plan, heights: built.heights } : null);
   }
 
   /** Every island the room tells of now, built or not yet. */
@@ -97,6 +65,19 @@ export class Isles {
     return this.seen.flatMap((seen) => {
       const held = this.held.get(seen.id);
       return held ? [held] : [];
+    });
+  }
+
+  /** Every island built that the room tells of now, and the one the player stands on, as the islands' view draws
+   *  them: its ground moved back into its own frame. */
+  shown(ashore: IsleHeld | null): IsleShown[] {
+    const held = this.built();
+    if (ashore && !held.some((each) => each.seen.id === ashore.seen.id)) held.push(ashore);
+    return held.map(({ seen, climate, plan, heights }) => {
+      const own = Float64Array.from(heights);
+      own[0] = (own[0] ?? 0) - seen.at[0];
+      own[1] = (own[1] ?? 0) - seen.at[1];
+      return { id: seen.id, at: seen.at, climate, plan, heights: own };
     });
   }
 

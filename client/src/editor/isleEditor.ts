@@ -143,7 +143,7 @@ export async function startIsleEditor(canvas: HTMLCanvasElement, panel: HTMLElem
         at: [0, 0],
         climate: climateInput.value,
         plan,
-        heights: door.isleHeights(seed, climateInput.value),
+        heights: door.isleHeights(seed, climateInput.value, [0, 0]),
       };
       isles.show([shown]);
     } catch (error) {

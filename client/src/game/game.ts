@@ -17,6 +17,8 @@ import { Foot, type FootContext } from './foot.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { Isles } from './isles.ts';
+import { ISLE_MANIFEST, islePacksPrefix } from '../islands/isleManifest.ts';
+import { IslesView } from '../islands/isleView.ts';
 import type { DungeonDoor } from './isleLaw.ts';
 import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
 import type { IsleHeld } from './isles.ts';
@@ -55,6 +57,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
   const arrivalView = { firstPerson: false, distance: 4.5, shown: 4.5 };
   const walker = new Walker({ ...newPlayer(movement, 0, 0), view: arrivalView }, you, firstPerson, forge);
+  /** The ground the camera keeps over: an island's where one stands higher than the land's. */
+  const groundAt = (x: number, y: number): number | null => {
+    const [isle, land] = [islesView.groundAt(x, y), scene.groundAt(x, y)];
+    return isle === null ? land : land === null ? isle : Math.max(isle, land);
+  };
   const footContext: FootContext = {
     movement,
     land,
@@ -62,7 +69,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     forge,
     rooms,
     roomModule,
-    groundAt: (x, y) => scene.groundAt(x, y),
+    groundAt: (x, y) => groundAt(x, y),
     // Under `npm run dev` only, `?spawn=` asks a room in the page for foes to fight.
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
@@ -108,6 +115,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     continents.map((each) => each.climate),
   );
   const isleLanding = new IsleLanding();
+  const islesView = new IslesView(gpu, ISLE_MANIFEST, islePacksPrefix(location.search));
+  /** The island the player stands on, drawn though the sea no longer tells of it. */
+  let ashore: IsleHeld | null = null;
   const waterHere = () => waterOf(scene.land?.swell, playing.landmass.heightAt);
   const charting = new Charting(
     continents,
@@ -297,6 +307,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       playing.foot?.leave();
       playing.foot = null;
       playing.sea?.leaveRoom();
+      ashore = held;
       playing.foot = await ashoreOn(footContext, held, { word, continent, seas: seaSeas }, enterDungeon);
     });
   };
@@ -304,9 +315,14 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   /** Each frame at sea: the islands the room tells of kept and built, and a landing walked ashore once she anchors or
    *  a beaten player washed up on a found island's beach. */
   const isleFrame = () => {
+    // Off the island's beach, at sea or in a node, the island is the sea's again.
+    if (playing.flow.mode !== 'foot' || !playing.foot?.node.id.startsWith('isle-')) ashore = null;
+    islesView.show(isles.shown(ashore));
     const sea = playing.sea;
     if (!sea || playing.flow.mode !== 'sea') return;
     isles.update(sea.sighted?.islands ?? []);
+    const found = isles.all().filter((each) => each.seen.found);
+    playing.heldMap?.setIsles(found.map(({ seen }) => ({ at: seen.at, kind: seen.kind, isle: seen.kind !== 'cove' })));
     const anchored = isleLanding.arrived(sea, isles);
     if (anchored) return goIsle(anchored, ashoreWords(anchored));
     const washed = playing.seaWord?.takeWashedIsle();
@@ -473,7 +489,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
-      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, mapOf, isleFrame },
+      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, mapOf, isleFrame, groundAt },
+      isles: islesView,
     },
     playing,
   );

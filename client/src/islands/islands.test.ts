@@ -266,7 +266,7 @@ test("the room module's own plans and ground read, every module named", { skip: 
     const plan = readIslePlan(door.islePlan(seed, climate));
     assert.ok(plan.placements.length > 0);
     assert.ok(plan.placements.every(([module]) => MODULE_NAMES[module] !== undefined));
-    const grid = gridOf(door.isleHeights(seed, climate));
+    const grid = gridOf(door.isleHeights(seed, climate, [0, 0]));
     assert.equal(grid.cell, 2);
     assert.ok(groundMesh(grid).indices.length > 0);
   }

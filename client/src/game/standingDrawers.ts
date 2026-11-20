@@ -14,6 +14,8 @@ export interface StandingParts {
   readonly shipModels: ShipModels;
   readonly figureView: FigureView;
   readonly seaFight: SeaCombat | null | undefined;
+  /** The sea's islands in sight, and the one the player stands on. */
+  readonly isles?: Drawer | null;
 }
 
 /** The frame's standing drawers: `ships` and `figures` where they are this frame, and a fight on foot's two layers. */
@@ -26,6 +28,7 @@ export function standingDrawers(
   const found: (Drawer | null | undefined)[] = [
     parts.city,
     parts.nature,
+    parts.isles,
     fight?.under,
     {
       castInto: (pass, fromEye, shot, _time, shadow) =>
