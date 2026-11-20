@@ -18,6 +18,7 @@ const patrol = { id: 'saltgrass-downs', name: 'The Saltgrass Downs', kind: 'patr
  *  playing in `places`; a run's instance and minute pinned. */
 function recorded(here: { foot: object | null }, places: readonly (string | null)[] = []) {
   const [happenings, ways, travels] = [[] as Happening[], [] as unknown[][], [] as Promise<void>[]];
+  const shown: unknown[] = [];
   const game: TripGame = {
     foot: () => here.foot as TripFoot | null,
     travel: (happening, work) => {
@@ -36,7 +37,7 @@ function recorded(here: { foot: object | null }, places: readonly (string | null
       ways.push(['sea', back]);
     },
     companyPlaces: async () => places,
-    drawers: { props: null, show: () => undefined },
+    drawers: { props: null, show: (_layout, _outside, entrance) => void shown.push(entrance) },
   };
   const settled = async () => {
     await module;
@@ -44,7 +45,7 @@ function recorded(here: { foot: object | null }, places: readonly (string | null
     await Promise.all(travels);
   };
   const trips = dungeonTrips(game, { instance: () => 'k3j4h5g6', minute: () => 29_919_420 });
-  return { trips, happenings, ways, settled };
+  return { trips, happenings, ways, shown, settled };
 }
 
 const elite = (id: string, name: string) => ({ id, name, kind: 'dungeon' }) as NodeInfo;
@@ -232,4 +233,15 @@ test('a company that falls is taken out by the way it came in, the veil saying i
   await sea.settled();
   assert.deepEqual(sea.happenings[1], { kind: 'surface', name: 'The Caverns of the Sea', fell: true });
   assert.deepEqual(sea.ways[1], ['sea', back]);
+});
+
+test('a dungeon is shown with the entrance gone in by, so its exit door wears that door', async () => {
+  const entrance = { x: 10, y: 20, ground: 3, yaw: 0.5, model: 4 };
+  for (const node of [patrol, elite('krakens-grotto', 'Kraken’s Grotto')]) {
+    const foot = { ...standing(node, 'normal'), held: { entrances: { entrances: [entrance, entrance] } } };
+    const { trips, shown, settled } = recorded({ foot });
+    trips.enter(1, node.name);
+    await settled();
+    assert.deepEqual(shown, [entrance], node.id);
+  }
 });

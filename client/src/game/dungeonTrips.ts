@@ -117,7 +117,8 @@ export function dungeonTrips(
       const away = toNode(node, seas, number, entrance);
       if (node.kind !== 'dungeon') {
         const ask = { patrol: node.id, name: node.name, number };
-        const work = into(outside, { number, ask }, seas, roomOf(dungeonRoom(node, seas, number), seas, false), away);
+        const room = roomOf(dungeonRoom(node, seas, number), seas, false);
+        const work = into(outside, { number, ask }, seas, room, away, entrance);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon-${number}`, name }, work);
         return;
       }
