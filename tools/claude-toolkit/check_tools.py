@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Tool check: is every tool installed AND working, and do the tools clash?
-usage: bash check-tools.sh [--worker] [--quiet]
+usage: bash check-tools.sh [--worker] [--quiet] [--only <check>]
   default   : every tool answers a real call (MCP servers over stdio/HTTP, hooks fed sample input, CLIs on tiny files),
               plus the conflict checks (hooks, MCP names/scopes, exact output, Caveman scope, Headroom path,
               Context7 key on disk, Serena pin, worker kit wiring). About 1-2 minutes.
@@ -22,6 +22,7 @@ SET = HOME + '/.claude/settings.json'
 CLAUDE_JSON = HOME + '/.claude.json'
 PLUG = HOME + '/.claude/plugins/cache'
 QUIET = '--quiet' in sys.argv
+ONLY = sys.argv[sys.argv.index('--only') + 1] if '--only' in sys.argv[:-1] else None   # one check, by its name
 results = []
 
 
@@ -52,6 +53,8 @@ def jload(p, default=None):
 def check(tool):
     """decorator: run a check, turn an exception into a FAIL line"""
     def wrap(f):
+        if ONLY and tool != ONLY:
+            return f
         try:
             f()
         except Exception as e:  # noqa: BLE001 - a crash in one check must not hide the others
@@ -705,7 +708,7 @@ def _():
         'run-worker.sh (all 5 MCP servers, plain Bash, empty stdin, worker role, inbox, pid file) + stop helper + brief template rules + install-all.sh cwd guard')
 
 
-for f in sorted(glob.glob(KIT + '/checks.d/*.sh')):
+for f in [] if ONLY else sorted(glob.glob(KIT + '/checks.d/*.sh')):
     rc, o = sh(['bash', f], timeout=300)
     for line in o.strip().splitlines():
         m = re.match(r'(PASS|WARN|FAIL)\s+([^:]+):\s*(.*)', line)
@@ -794,6 +797,8 @@ if '--worker' in sys.argv:
             'caveman in sub-agent, task-observer worker role, inbox read, rtk kept $d, $A and grep exact')
         sh(['git', 'worktree', 'remove', '--force', wt], cwd=REPO)
 
+if ONLY and not results:
+    sys.exit(f'check-tools: no check named {ONLY}')
 fails = [r for r in results if r[0] == 'FAIL']
 warns = [r for r in results if r[0] == 'WARN']
 print(f'== check-tools: {len(results) - len(fails) - len(warns)} PASS, {len(warns)} WARN, {len(fails)} FAIL ==')

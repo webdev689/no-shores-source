@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Is every tool installed and working, and do any of them clash? One line per check.
-# usage: bash check-tools.sh [--worker] [--quiet]
+# usage: bash check-tools.sh [--worker] [--quiet] [--only <check>]
+#   --only runs the one check of that name (as its lines print it, e.g. claude-mem).
 #   --worker adds one combined headless worker that uses every tool in one session (5-8 min; after kit changes).
 # install-all.sh runs it (without --worker) at the end and exits with its result.
 KIT_DIR=${KIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}; SHARED_DIR=${SHARED_DIR:-$HOME/toolkit-data}; export KIT_DIR SHARED_DIR

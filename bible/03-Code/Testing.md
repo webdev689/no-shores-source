@@ -27,6 +27,8 @@ fast enough to run before every push.
 - Made-up inputs a reader can follow, built in the test.
 - One behaviour per test; the assertion says what was expected.
 - Checks results through public functions, not private state.
+- A speed target: the game's crates ban the clock (`clippy.toml`), so a test pins the work done (cells searched,
+  calls made); a time is measured by an `#[ignore]` measurement run by hand in release, its figures in the PR.
 
 ## What we do not do
 

@@ -27,10 +27,20 @@ Tools (all are expected to be used; your final reply must say how):
 - Context7: look up a library's current docs before guessing an API.
 - SkillsMP: search_skills when the item is a kind of job no installed skill covers.
 - superpowers: test-driven-development (failing test first), systematic-debugging, verification-before-completion.
-- A PostToolUse hook syntax-checks every .py/.js you Edit/Write; a "syntax check failed" message means fix it now.
+- A PostToolUse hook syntax-checks every .py/.js you Edit/Write and rustfmt-checks every .rs; a "syntax check failed"
+  or "rustfmt would change" message means fix it now (`cargo fmt` for the second).
   The repo's pre-commit hook refuses archives and C2PA-stamped PNGs: never bypass it with --no-verify.
   It also refuses graphify-out/ changes (`git checkout -- graphify-out` first) and a file whose line endings flipped:
   scripted rewrites keep them with open(f, newline='') for both the read and the write; check `git diff --stat`.
+- Checks while working: after changing imports run `cargo xtask repo` (the layer check), after changing a test
+  `npm run -s types` (it types the tests too), and Rust tests in debug, not `--release` (debug catches overflow).
+  Run the full check and any preview server in the background, logged, and watch the log: a foreground call ends at
+  10 minutes.
+- Pictures take 5 to 30 minutes each, and a run ends at 2 hours: one screen size a round, the others in the last; a
+  built page served by `npx vite preview --port <free port> --strictPort`, given to webgpu-shot.cjs as `servedAt`;
+  staging scripts outside `client/`, given as `initScript`; a staged clock moved forward rather than frames waited for;
+  no source edits while pictures run. Commit at least every half hour.
+- A file within 30 lines of the 600-line cap (the page's wiring hubs): put new wiring in a new module it calls.
 - Test results: read failures from the raw log (`grep -n -E 'FAIL|ERROR|Error|Traceback' <log>`), never from a
   summary. If an output ever looks condensed, rerun it as `rtk bypass <command>`.
 - rtk compacts git status/log and ls only; reads, greps, diffs and tests stay exact, inside ( ) subshells too, and

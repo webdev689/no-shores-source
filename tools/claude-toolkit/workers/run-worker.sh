@@ -16,6 +16,13 @@ cd "$WT"
 # Refuse a brief copied from brief-common-template.md whose <...> lines were never filled in (check-tools expects this).
 left=$(grep -oE '<(the hand-off doc|project rules:|the session.s attribution lines)[^>]*>' "$BRIEF" | head -3 | tr '\n' ' ')
 [ -z "$left" ] || { echo "run-worker.sh: brief $BRIEF still has: $left(fill in the template's <...> lines first)" >&2; exit 2; }
+# Merged worktrees keep 3-4 GB of build each; a worker that fills the disk dies mid-build. Remove merged ones first.
+use=$(df --output=pcent "$WT" | tail -1 | tr -dc 0-9)
+[ "${use:-0}" -lt 90 ] || { echo "run-worker.sh: the disk is ${use}% full: remove merged worktrees first (git worktree remove --force)" >&2; exit 3; }
+# A run stopped at its time limit or a restart writes no EXIT line: say so, so the next round is sized to fit.
+LOG="$OUT/$NAME.log"; last=$(grep -E "^WORKER $NAME (START|EXIT) " "$LOG" 2>/dev/null | tail -1)
+case $last in "WORKER $NAME START "*) echo "WORKER $NAME previous run, started $(( ($(date +%s) - ${last##* }) / 60 )) min ago, ended with no EXIT line (a time limit or a restart): size this round to fit 2 h" | tee -a "$LOG" >&2;; esac
+START=$(date +%s); echo "WORKER $NAME START $START" >> "$LOG"
 INBOX="$OUT/inbox-$NAME.md"; [ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
 echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT
 pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped worker can leave a stale lock
@@ -39,6 +46,12 @@ p.kill(); sys.exit(0 if ok else 1)
 PY
 }
 serena_up || serena_up || echo "run-worker.sh: Serena did not answer twice; the worker starts without a warm Serena" >&2
+# claude-mem's worker can stop answering under load, and the brief's first action is its search: test it as check-tools
+# does (retried once), so a search that fails reads as the tool down, not as a step skipped.
+MEM_NOTE=""
+bash "$KIT_DIR/check-tools.sh" --only claude-mem --quiet >/dev/null 2>&1 || bash "$KIT_DIR/check-tools.sh" --only claude-mem --quiet >/dev/null 2>&1 ||
+  { MEM_NOTE=" claude-mem did not answer at your start: still try its search, and say on your claude-mem line if it fails.";
+    echo "WORKER $NAME claude-mem down at start" >> "$LOG"; }
 export MCP_TIMEOUT=120000
 python3 - "$WT" "$MEM" "$CFG" <<'PY'
 import json,sys
@@ -54,7 +67,7 @@ json.dump({"mcpServers":s},open(cfg,"w"),indent=1)
 PY
 CAVE=$(python3 -c "import re,os;print(re.sub(r'\A---.*?---\s*','',open(os.path.expanduser('~/.claude/caveman/SKILL.md')).read(),flags=re.S))" 2>/dev/null)
 NOTE="CAVEMAN MODE ACTIVE (worker only): your final reply goes to the controller Claude, never to a person. Keep code, comments, commits, docs, ledger and report files in normal prose.
-Your inbox is $INBOX: re-read it before each commit and before your final report, and act on anything new in it (the controller appends late owner changes there)."
+Your inbox is $INBOX: re-read it before each commit and before your final report, and act on anything new in it (the controller appends late owner changes there).$MEM_NOTE"
 export TASK_OBSERVER_ROLE=worker WORKER_INBOX=$INBOX
 TOOLS="Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*"
 REPLY="$OUT/$NAME.reply"
@@ -80,4 +93,4 @@ if [ $rc -eq 0 ] && ! finished; then
   rc=$?
   finished || echo "WORKER $NAME UNFINISHED" >> "$OUT/$NAME.log"
 fi
-echo "WORKER $NAME EXIT $rc" >> "$OUT/$NAME.log"
+echo "WORKER $NAME EXIT $rc after $(( ($(date +%s) - START) / 60 )) min" >> "$LOG"

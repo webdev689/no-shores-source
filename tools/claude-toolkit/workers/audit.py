@@ -6,14 +6,18 @@ for wt in sys.argv[1:]:
     d = os.path.expanduser('~/.claude/projects/' + re.sub(r'[^A-Za-z0-9]', '-', os.path.abspath(wt)))
     fs = sorted(glob.glob(d + '/*.jsonl'), key=os.path.getmtime)
     if not fs: print(wt, 'no transcript'); continue
-    c = collections.Counter(); first3_ok = None
+    c = collections.Counter(); first3_ok = None; mem_calls = set()
     for l in open(fs[-1]):
         try: m = json.loads(l).get('message') or {}
         except ValueError: continue
         for b in m.get('content') if isinstance(m.get('content'), list) else ():
+            if b.get('type') == 'tool_result' and b.get('tool_use_id') in mem_calls:
+                t = json.dumps(b.get('content'))
+                if b.get('is_error') or 'could not complete' in t: c['claude-mem failed'] += 1
             if b.get('type') != 'tool_use': continue
             n = b['name']; cmd = b['input'].get('command', '') if n == 'Bash' else ''
             if n.startswith('mcp__'): c[n.split('__')[1]] += 1
+            if n.startswith('mcp__claude-mem__'): mem_calls.add(b.get('id'))
             elif n == 'Skill': c['skill:' + str(b['input'].get('skill') or b['input'].get('command'))] += 1
             elif n in ('Agent', 'Task'): c['sub-agent'] += 1
             for t in ('graphify query', 'graphify explain', 'graphify path', 'graphify update', 'rtk bypass'):
@@ -35,6 +39,7 @@ for wt in sys.argv[1:]:
     missing = [k for k, v in need.items() if not v]
     optional = [k for k in ('headroom', 'context7', 'skillsmp') if not c[k]]
     print('  MISSING (defect):', ', '.join(missing) or 'none', '| unused, needs a "not needed, because" line:', ', '.join(optional) or 'none')
+    if c['claude-mem failed']: print(f"  claude-mem: {c['claude-mem failed']} of {c['claude-mem']} calls failed (the tool down, not a step skipped)")
     print('  FIRST3 before first edit:', 'ok' if first3_ok or first3_ok is None and all(list(need.values())[:4]) else 'NO (claude-mem, graphify update+ask and serena must come before any Edit/Write)')
     # task-observer: workers report OBSERVATIONS: lines, only the controller logs them.
     last_text = ''
