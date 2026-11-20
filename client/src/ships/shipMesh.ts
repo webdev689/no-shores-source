@@ -69,7 +69,7 @@ export function shipSails(name: string): SailCorners[] {
   return [...(entry?.sails ?? [])];
 }
 
-/** A published ship's waterline as her export measured it, known before her mesh comes. */
+/** A published ship's waterline as its export measured it, known before its mesh comes. */
 export function shipWaterline(name: string): Waterline {
   type Measured = {
     readonly waterline?: { readonly length_m: number; readonly beam_m: number; readonly draught_m: number };

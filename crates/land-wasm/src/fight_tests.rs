@@ -355,12 +355,12 @@ fn a_captain_going_down_shows_how_far_she_has_settled_and_her_trim_and_list() {
 }
 
 #[test]
-fn a_captain_going_down_shows_how_she_will_lie_once_sunk_and_how_soon() {
+fn a_captain_going_down_shows_how_it_will_lie_once_sunk_and_how_soon() {
     let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
     let mut fight =
         Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
-    assert!(view(&fight, &[], None, &Deep, 0.0)["captain"].get("sunk_founder").is_none(), "afloat, she is not going");
+    assert!(view(&fight, &[], None, &Deep, 0.0)["captain"].get("sunk_founder").is_none(), "afloat, it is not going");
     let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain")).damage;
     (damage.state, damage.sink_t) = (State::Sinking, 5.0);
     let shown = view(&fight, &[], None, &Deep, 0.0);
@@ -370,12 +370,12 @@ fn a_captain_going_down_shows_how_she_will_lie_once_sunk_and_how_soon() {
     let (now, sunk) = (triple("founder"), triple("sunk_founder"));
     assert_eq!(sunk.len(), 3, "{shown}");
     assert!(sunk[0] > now[0] && sunk[1].abs() > now[1].abs(), "deeper and trimmed further: {now:?} {sunk:?}");
-    assert_eq!(sunk[2].signum(), now[2].signum(), "listing the side she lists to now");
+    assert_eq!(sunk[2].signum(), now[2].signum(), "listing the side it lists to now");
     assert_eq!(shown["captain"]["sinks_in"], SINK_SECONDS - 5.0);
 }
 
 #[test]
-fn a_captain_given_her_way_comes_on_under_sail_and_one_without_lies_at_rest() {
+fn a_captain_given_its_way_comes_on_under_sail_and_one_without_lies_at_rest() {
     opened();
     let begun = answer(&fight_begin_json(
         br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
@@ -393,7 +393,7 @@ fn a_captain_given_her_way_comes_on_under_sail_and_one_without_lies_at_rest() {
     assert!(refused["error"].as_str().is_some(), "{refused}");
 }
 
-/// How far her ship sails in 10 s, sails set from the start, told `wind` (none for the world's) at the world's `world`.
+/// How far the ship sails in 10 s, sails set from the start, told `wind` (none for the world's) at the world's `world`.
 fn sailed(wind: &str, world: f64) -> f64 {
     opened();
     let begun =
@@ -419,9 +419,9 @@ fn a_told_wind_is_the_wind_sailed_whatever_the_worlds() {
     let gale = sailed("[14, 6]", 0.0);
     assert!((sailed("[14, 6]", 5_000.0) - gale).abs() < 1e-9, "the world's wind plays no part");
     let air = sailed("[1, 0]", 0.0);
-    assert!(gale > air * 2.0, "a gale drives her harder than a breath of air: {gale} against {air}");
+    assert!(gale > air * 2.0, "a gale drives it harder than a breath of air: {gale} against {air}");
     let worlds = [sailed("null", 0.0), sailed("null", 5_000.0)];
-    assert!((worlds[0] - worlds[1]).abs() > 1e-6, "untold, she sails in the world's wind, which changes: {worlds:?}");
+    assert!((worlds[0] - worlds[1]).abs() > 1e-6, "untold, it sails in the world's wind, which changes: {worlds:?}");
 }
 
 #[test]

@@ -149,7 +149,7 @@ test('rain, snow and sand: how hard each comes, the rain brighter the harder, sn
   }
   assert.ok(
     SCAPES.sea.beds.some((layer) => layer.bed === 'rain.deck'),
-    'rain on her canvas and planks',
+    'rain on its canvas and planks',
   );
   assert.ok(
     SCAPES.social.beds.some((layer) => layer.bed === 'rain.gutters'),

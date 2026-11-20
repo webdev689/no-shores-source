@@ -143,7 +143,7 @@ test('a wave stood this frame is not yet fallen, nor one with foes still waiting
   assert.deepEqual(crowded.frame(standing(0, { alive: [0, ALIVE_MOST] }), 0.016).open, [], 'its foes still wait');
 });
 
-test("a player anywhere aft of the arena's heap, on her deck or up on her rails, is never brought back", () => {
+test("a player anywhere aft of the arena's heap, on its deck or up on its rails, is never brought back", () => {
   const progress = atTheBoss();
   const course = courseOf(layout);
   const { gate } = layout.arena;
@@ -156,14 +156,14 @@ test("a player anywhere aft of the arena's heap, on her deck or up on her rails,
       if (z > topAt(course, 0, 34) + 0.5) rails += 1;
       assert.equal(progress.frame({ ...inArena(), x, y, z }, 0.016).bringBack, null, `at ${x.toFixed(2)}, ${y}`);
     }
-  assert.ok(rails > 100, `her rails are sampled: ${rails}`);
+  assert.ok(rails > 100, `its rails are sampled: ${rails}`);
 });
 
-test("once the boss fight begins, a player back over the arena's heap is brought back in; over her rail is the sea", () => {
+test("once the boss fight begins, a player back over the arena's heap is brought back in; over its rail is the sea", () => {
   const course = courseOf(layout);
   const { gate } = layout.arena;
   const checkpoint = layout.zones[layout.arena.zone]?.checkpoint;
   const over = { ...inArena(), y: gate.minY - 0.5, z: topAt(course, 0, gate.minY - 0.5) };
   assert.deepEqual(atTheBoss().frame(over, 0.016).bringBack, checkpoint, 'over the heap');
-  for (const x of [-5.6, 5.6]) assert.equal(topAt(course, x, 34), 0, `outboard of her rail at ${x}, the sea`);
+  for (const x of [-5.6, 5.6]) assert.equal(topAt(course, x, 34), 0, `outboard of its rail at ${x}, the sea`);
 });

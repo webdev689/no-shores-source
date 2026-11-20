@@ -1,6 +1,6 @@
 // The owner's fifth beat, played: the ships that came out of the dark are fought with the sea's own fight (its
-// camera, its aim and its guns), the Brig drawn as hers with her crew at work, the crew crying out as she is struck,
-// as her balls strike home and as each ship goes down; it ends once every one is beaten, sunk or struck.
+// camera, its aim and its guns), the Brig drawn as the player's with its crew at work, the crew crying out as it is
+// struck, as its balls strike home and as each ship goes down; it ends once every one is beaten, sunk or struck.
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
 import { shipSails } from '../../ships/shipMesh.ts';
 import { onScreen, type Shot } from '../camera.ts';
@@ -27,14 +27,14 @@ const CRY_SCENES: Readonly<Record<Cry, string>> = {
   sinking: 'sinking',
 };
 const CRY_GAP_S: Readonly<Record<Cry, number>> = { 'hit-taken': 7, 'hit-given': 9, sinking: 3 };
-/** How long a cry waits for its speaker to come on the view (the player aiming out over her side) before it is let go:
+/** How long a cry waits for its speaker to come on the view (the player aiming out over its side) before it is let go:
  *  later, it would answer nothing still in the picture. */
 const CRY_HELD_S = 2.5;
 const FAR_M = 30_000;
-/** A beaten captain's Sloop is drawn as dark as the fight drew her. */
+/** A beaten captain's Sloop is drawn as dark as the fight drew it. */
 const WRECK_SHADE = 0.55;
 
-/** The ships the sighted beat showed, as the fight takes them up: each one's bearing off her bow and distance. */
+/** The ships the sighted beat showed, as the fight takes them up: each one's bearing off the bow and distance. */
 export function ambushersFrom(story: Story, inbound: readonly Sailed[]): Ambusher[] {
   const { brig } = story;
   return inbound.map((ship) => {
@@ -57,13 +57,13 @@ export function shipsLeft(left: number, total: number): string {
   return `Ships left: ${left} of ${total}.`;
 }
 
-/** A beaten Sloop as the fight left her: where she lies, her founder, and how she goes on under if she is going. */
+/** A beaten Sloop as the fight left it: where it lies, its founder, and how it goes on under if it is going. */
 export interface Wreck {
   readonly ship: Sailed;
   readonly going: Going | null;
 }
 
-/** A beaten Sloop lying where she is, struck, as a story begun after the fight lays her. */
+/** A beaten Sloop lying where it is, struck, as a story begun after the fight lays it. */
 export function asWreck(
   ship: { readonly x: number; readonly y: number; readonly heading: number },
   index: number,
@@ -83,8 +83,8 @@ export function wrecksOf(frame: StoryFightFrame | null): Wreck[] {
   });
 }
 
-/** `wreck` `seconds` on: one going down settles, trims and lists on from where she was toward how she will lie once
- *  sunk, deeper ever faster, as the rules sink her; she is gone (null) once under. A struck one lies as she was. */
+/** `wreck` `seconds` on: one going down settles, trims and lists on from where it was toward how it will lie once
+ *  sunk, deeper ever faster, as the rules sink it; it is gone (null) once under. A struck one lies as it was. */
 export function settledOn(wreck: Wreck, seconds: number): Wreck | null {
   const { going } = wreck;
   if (!going) return wreck;
@@ -92,7 +92,7 @@ export function settledOn(wreck: Wreck, seconds: number): Wreck | null {
   const [settled, trim, list] = wreck.ship.founder ?? [0, 0, 0];
   const [under, sunkTrim, sunkList] = going.sunk;
   const along = seconds / going.inS;
-  // The rules settle her by the square of her share of the way down: the share now, then as far again on.
+  // The rules settle it by the square of its share of the way down: the share now, then as far again on.
   const from = under > 0 ? Math.min(1, Math.sqrt(Math.max(0, settled) / under)) : 1;
   const share = from + (1 - from) * along;
   const deeper = from < 1 ? (share * share - from * from) / (1 - from * from) : along;
@@ -115,7 +115,7 @@ export class Battle implements Beat {
   private readonly story: Story;
   private readonly inbound: readonly Sailed[];
   private readonly ambushers: readonly Ambusher[];
-  /** Her way as the fight takes her up, m/s. */
+  /** Its way as the fight takes it up, m/s. */
   private readonly way: number;
   private fight: StoryFight | null = null;
   private begun = false;
@@ -141,7 +141,7 @@ export class Battle implements Beat {
   }
 
   /** The fight begun on the story's clock, so its first words ("... sighted") are on the panel a while, every ship
-   *  under the sail and way she was last drawn with. */
+   *  under the sail and way it was last drawn with. */
   private begin(now: number): void {
     this.begun = true;
     const { brig, land, marks, stage, sailing } = this.story;
@@ -269,7 +269,7 @@ export class Battle implements Beat {
     hud.hints([]);
     hud.seaFight(null);
     hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: [0, 1, 0] }, 1));
-    // The calm draws her sails, and each wreck's, on from where the fight left them.
+    // The calm draws its sails, and each wreck's, on from where the fight left them.
     const { sailing } = this.story;
     this.last?.ships.forEach((ship, index) => sailing.keep(index === 0 ? 'brig' : `wreck-${index}`, ship.rig));
     void this.fight?.end();

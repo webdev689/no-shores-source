@@ -23,11 +23,11 @@ import { type FightHeard, seaFightCue } from './seaFight.ts';
 import { jobName } from './sounds.ts';
 import { phasesOfSun, rainLevel, shelterOf, thunderOf, weatherOf } from './weatherLaw.ts';
 
-/** The ear's height over her deck at sea, metres. */
+/** The ear's height over its deck at sea, metres. */
 const DECK_EAR_M = 3;
-/** How the deck is heard from the raised view over her: a little way off. */
+/** How the deck is heard from the raised view over it: a little way off. */
 const DECK_FROM_ABOVE = 0.55;
-/** How fast her way and the deck's nearness are followed, seconds. */
+/** How fast its way and the deck's nearness are followed, seconds. */
 const WAY_FOLLOW_S = 2;
 const DECK_FOLLOW_S = 1.5;
 /** The sea's nearness: whole within the first distance, none past the second; at sea, then on foot, metres. */
@@ -74,7 +74,7 @@ export class Ambience {
   private readonly hour: number | null;
   /** The strikes whose thunder is set playing or let go. */
   private thundered = new Set<string>();
-  /** The player's feet aboard, in her deck's frame, and the metres walked there. */
+  /** The player's feet aboard, in its deck's frame, and the metres walked there. */
   private feet: { x: number; y: number; walked: number } | null = null;
   private stepped = false;
   private readonly lays = new WeakMap<Landmass, Lay>();
@@ -121,9 +121,9 @@ export class Ambience {
     });
   }
 
-  /** The player's ship at sea at `ship` off `land`, the camera looking along `ear`'s yaw; under way at her pace or
-   *  not, the view on her deck or over her, and the player's feet in her deck's frame, which step on her planks as
-   *  they walk her deck. */
+  /** The player's ship at sea at `ship` off `land`, the camera looking along `ear`'s yaw; under way at its pace or
+   *  not, the view on its deck or over it, and the player's feet in its deck's frame, which step on its planks as
+   *  they walk its deck. */
   atSea(
     land: Landmass,
     ship: readonly [number, number],
@@ -278,7 +278,7 @@ export class Ambience {
     };
   }
 
-  /** The player's feet aboard: each stride walked on her planks is a step, once the ambience is heard at sea. */
+  /** The player's feet aboard: each stride walked on its planks is a step, once the ambience is heard at sea. */
   private walk(feet: { readonly x: number; readonly y: number; readonly mode: string } | undefined): void {
     const kept = this.feet;
     if (!feet) {

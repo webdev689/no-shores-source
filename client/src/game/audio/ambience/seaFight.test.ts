@@ -4,7 +4,7 @@ import listed from '../../../../../content/audio/freesound.json' with { type: 'j
 import type { FightEvent, FightView } from '../../../rules/fightRules.ts';
 import { seaFightCue } from './seaFight.ts';
 
-/** A fight of her Sloop and two captains, as far as its sounds read it. */
+/** A fight of the player's Sloop and two captains, as far as its sounds read it. */
 const VIEW = {
   player: { ship: [100, 200, 0] },
   captain: { ship: [400, 200, 0] },

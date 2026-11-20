@@ -93,7 +93,7 @@ test('the throw overboard begins black, as the fight faded out, and only then fa
   assert.ok(shown.drawers?.includes(scenery.drawer), 'the wreck is drawn');
 });
 
-test('the deep shows the wreck above and the Brig her own hands, and speaks on its own clock', () => {
+test('the deep shows the wreck above and the Brig its own hands, and speaks on its own clock', () => {
   const { story, calls } = recorded();
   const beat = new Deep(story, layout, scenery);
   assert.ok(
@@ -220,7 +220,7 @@ test('the player felled by Thule is never told they will rise: the boss fight en
   assert.ok(!calls.some((call) => call.includes('Fallen')), 'no death words over the fade');
 });
 
-test('the crew celebrating the throw overboard stand clear of what stands on her deck', () => {
+test('the crew celebrating the throw overboard stand clear of what stands on its deck', () => {
   const { story } = recorded();
   const course = courseOf(layout);
   const heads = new Overboard(story, layout, scenery).frame(tick(0.05)).heads ?? new Map();

@@ -130,7 +130,7 @@ pub struct Damage {
     pub list_deg: f64,
     /// The share of its hull it strikes at.
     pub struck_at: f64,
-    /// The least hull a ball or a fire leaves her: none, but one for a ship the fight must never wreck.
+    /// The least hull a ball or a fire leaves it: none, but one for a ship the fight must never wreck.
     pub least_hull: f64,
     player: bool,
     /// The parts of a hull point, a canvas point and a man that balls taking a share of their blow left it owing.

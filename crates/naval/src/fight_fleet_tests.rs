@@ -205,8 +205,8 @@ fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_
         assert_eq!(command.mind.temper, Temper::Bold, "{id} comes to fight whatever its temper");
     }
     let apart = |fight: &Fight, id: ShipId| {
-        let (her, player) = (&fight.ships[&id].ship, &fight.ships[&PLAYER].ship);
-        libm::hypot(her.x - player.x, her.y - player.y)
+        let (captain, player) = (&fight.ships[&id].ship, &fight.ships[&PLAYER].ship);
+        libm::hypot(captain.x - player.x, captain.y - player.y)
     };
     let first: Vec<f64> = ids.iter().map(|id| apart(&fight, *id)).collect();
     let mut fired = BTreeMap::new();
@@ -223,6 +223,6 @@ fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_
     }
     for (at, id) in ids.iter().enumerate() {
         assert!(nearest[at] < first[at] - 50.0, "{id} closed from {} only to {}", first[at], nearest[at]);
-        assert!(fired.get(id).copied().unwrap_or(0) >= 1, "{id} fired on her: {fired:?}");
+        assert!(fired.get(id).copied().unwrap_or(0) >= 1, "{id} fired on it: {fired:?}");
     }
 }

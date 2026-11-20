@@ -474,7 +474,7 @@ impl Fight {
         last
     }
 
-    /// Whether an ambush is won: it had captains and every one is beaten, sunk, going down or struck (her crew have
+    /// Whether an ambush is won: it had captains and every one is beaten, sunk, going down or struck (its crew have
     /// given up the fight). Any other fight is never beaten: it is over only once its captains have left it.
     #[must_use]
     pub fn beaten(&self) -> bool {

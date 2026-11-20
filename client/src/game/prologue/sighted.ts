@@ -1,6 +1,6 @@
 // The owner's fourth and fifth beats begin: the crew cry out through the storm, ships inbound, each with a mark over
 // their head; the camera pulls out to show the ships coming out of the dark, then comes back to the Brig, where the
-// fight's own camera will take her up.
+// fight's own camera will take it up.
 import type { AmbienceLevels } from '../../cinema/ambience.ts';
 import { Cues } from '../../cinema/cues.ts';
 import { type Point3, type RailKey, railShot } from '../../cinema/rail.ts';
@@ -17,33 +17,33 @@ import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
 const LENS = { fov: 0.9, near: 0.3, far: 30_000 } as const;
-/** The ships coming for her: bearing off her bow (radians, to starboard), how far off they first show, and their way. */
+/** The ships coming for it: bearing off its bow (radians, to starboard), how far off they first show, and their way. */
 export const INBOUND: readonly { readonly bearing: number; readonly distanceM: number }[] = [
   { bearing: -0.32, distanceM: 760 },
   { bearing: 0.05, distanceM: 820 },
   { bearing: 0.38, distanceM: 720 },
 ];
 export const INBOUND_WAY_M_S = 5;
-/** When the crew first cry out, the camera turned to look down her deck at them; when it is back where the fight's
+/** When the crew first cry out, the camera turned to look down its deck at them; when it is back where the fight's
  *  own camera stands; and the beat's length. */
 export const CRY_S = 2;
 const BACK_S = 11.5;
 const SIGHTED_S = 13;
-/** The storm as it sounds on her deck. */
+/** The storm as it sounds on its deck. */
 export const STORM_SOUND: Partial<AmbienceLevels> = { wind: 1, rain: 1, waves: 1, creak: 0.5 };
-/** The fight's camera as it first stands: behind her, this far, this far down, looking this high over her. */
+/** The fight's camera as it first stands: behind it, this far, this far down, looking this high over it. */
 export const FIGHT_VIEW = { distance: 75, pitch: 0.3, lookOverM: 6 } as const;
 
 /** How far ahead of a shot's eye the point it looks at is taken, when a rail takes the shot up: as far as the creation
  *  camera stands from the player, about. */
 const LOOK_M = 5;
 
-/** A shot drawn in the world as a rail's key in the frame of her deck placed at `place` (metres to her bow, to her
- *  starboard, up from her waterline): its eye, a point it looks at, and its lens. */
+/** A shot drawn in the world as a rail's key in the frame of its deck placed at `place` (metres to its bow, to its
+ *  starboard, up from its waterline): its eye, a point it looks at, and its lens. */
 export function shotOnDeck(shot: Shot, place: ShipPlace): { eye: Point3; look: Point3; fov: number } {
   const scale = place.scale ?? 1;
   const [sinHeading, cosHeading] = [Math.sin(place.heading), Math.cos(place.heading)];
-  // onDeck turned back: east and south to forward and starboard, then her pitch and roll taken off the height.
+  // onDeck turned back: east and south to forward and starboard, then its pitch and roll taken off the height.
   const toDeck = ([east, south, up]: readonly [number, number, number]): Point3 => {
     const [eastOff, southOff] = [east - place.x, south - place.y];
     const along = sinHeading * eastOff - cosHeading * southOff;
@@ -61,8 +61,8 @@ export function shotOnDeck(shot: Shot, place: ShipPlace): { eye: Point3; look: P
 }
 
 /** The camera's way, in the Brig's frame: from `start` (where the creation left it, turned round the player as it
- *  was, for the screen it was framed for) round behind them at the helm to look down her deck at the crew as they cry
- *  out, up and out over her stern to look ahead at the ships with the crew still in the picture, and down to where
+ *  was, for the screen it was framed for) round behind them at the helm to look down its deck at the crew as they cry
+ *  out, up and out over its stern to look ahead at the ships with the crew still in the picture, and down to where
  *  the fight's camera stands, through its lens. */
 export function sightedKeys(start: { readonly eye: Point3; readonly look: Point3; readonly fov: number }): RailKey[] {
   const behind = -FIGHT_VIEW.distance * Math.cos(FIGHT_VIEW.pitch);
@@ -81,7 +81,7 @@ export function sightedKeys(start: { readonly eye: Point3; readonly look: Point3
   ];
 }
 
-/** The ships coming for her, as first seen round the Brig where she lies now. */
+/** The ships coming for it, as first seen round the Brig where it lies now. */
 export function inboundAt(brig: { readonly x: number; readonly y: number; readonly heading: number }): Sailed[] {
   return INBOUND.map((ship, index) => {
     const bearing = brig.heading + ship.bearing;

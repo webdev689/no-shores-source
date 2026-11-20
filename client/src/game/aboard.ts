@@ -116,7 +116,7 @@ export class Aboard {
     return this.walking && (this.view?.at ?? 0) >= 1 && this.context.walker.inFirstPerson;
   }
 
-  /** Where the player's feet are on her deck as she `lying` lies, world metres, while they walk it; else none. */
+  /** Where the player's feet are on its deck as it `lying` lies, world metres, while they walk it; else none. */
   feetOn(lying: Lying): readonly [number, number, number] | null {
     if (this.view?.kind !== 'deck') return null;
     const { body } = this.context.walker.player;

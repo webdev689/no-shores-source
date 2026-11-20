@@ -1,5 +1,5 @@
 // The player at the Brig's helm, and the camera that shows them whole while they make themselves: in front of them on
-// her quarterdeck, the figure standing in the part of the picture the creation's windows leave clear (the left on a
+// its quarterdeck, the figure standing in the part of the picture the creation's windows leave clear (the left on a
 // wide screen, the top on a tall one), turned round them a step at a time.
 import type { Point3 } from '../../cinema/rail.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
@@ -29,7 +29,7 @@ const CLEAR = {
   tall: { left: -1, right: 1, bottom: -0.02, top: 1 },
 } as const;
 
-/** The helm in the Brig's frame as the rails read it: metres to her bow, to her starboard, up from her waterline. */
+/** The helm in the Brig's frame as the rails read it: metres to its bow, to its starboard, up from its waterline. */
 export function helmInShip(): Point3 {
   const [x, y, z] = helmSpot();
   return [-y, x, z];
@@ -66,7 +66,7 @@ export function creationEye(turn: number, aspect = WIDE): { readonly eye: Point3
   return { eye, look };
 }
 
-/** The Brig's deck as the helm's camera rides it: all of her rise and fall but a quarter of her pitch and roll, so the
+/** The Brig's deck as the helm's camera rides it: all of its rise and fall but a quarter of its pitch and roll, so the
  *  figure holds still in the picture. The storm's run ends on this same frame, so the helm takes its shot up whole. */
 export function helmDeck(place: ShipPlace): ShipPlace {
   return { ...place, pitch: place.pitch * 0.25, roll: place.roll * 0.25 };
@@ -85,7 +85,7 @@ export function creationShot(place: ShipPlace, turn: number, aspect: number): Sh
   };
 }
 
-/** The player at her helm, facing her bow, in their story dress and `anim`. */
+/** The player at its helm, facing its bow, in their story dress and `anim`. */
 export function youAtHelm(story: Story, place: ShipPlace, anim: string, since = 0): Actor {
   const [x, y, z] = helmSpot();
   const [worldX, worldY, worldZ] = deckPoint(place, x, y, z);
