@@ -353,7 +353,7 @@ def statue_sentinel(module):
     shapes.cutout(module, [(0.0, 0.0), (0.09, 0.18), (0.0, 0.55), (-0.09, 0.18)], 0.03, 'iron',
                   (x + 0.55, y - 0.15, top + 3.6))
     shapes.rod(module, (x + 0.35, y, shoulder - 0.05), (x + 0.55, y - 0.15, shoulder + 0.2), 0.1, 'stone', sides=6)
-    fittings.kite_shield(module, (x - 0.1, y - 0.62, top + 1.2), high=1.5, face='stone', charge='gold',
+    fittings.kite_shield(module, (x - 0.1, y - 0.85, top + 1.6), high=1.3, face='stone', charge='gold',
                          device='chevron')
     module.socket('front', (0.0, -0.85, 0.0), (0, -1))
 
