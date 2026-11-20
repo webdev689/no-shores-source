@@ -297,6 +297,7 @@ export function startGearWindow(
     letGo();
     const step = new Event(STEP_BACK, { cancelable: true });
     if (body.firstElementChild?.dispatchEvent(step) !== false) back();
+    else play('back');
     render();
   };
   const stepBack = pressOf('Back', stepOnce, 'button', 'Esc');

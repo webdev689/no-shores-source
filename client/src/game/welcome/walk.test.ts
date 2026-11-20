@@ -230,3 +230,18 @@ test('ended, she stops where she is; a plaza without her counter has no welcome'
   const without = STATIONS.filter((station) => station.kind !== 'lamplighters');
   assert.equal(WelcomeWalk.round(without, FRAME, SPAWNS[0] as Point), null);
 });
+
+test('coming to a player who strolls along off the lanes, her Follow prompt shows once and stays', () => {
+  const at = (across: number) => plazaPoint(FRAME, -50, across);
+  const walk = WelcomeWalk.round(STATIONS, FRAME, at(4)) as WelcomeWalk;
+  const shown: boolean[] = [];
+  // The player stands under the portico, 12 m off the landward lane, until she waits on it, then strolls across.
+  let across = 4;
+  for (let tick = 0; tick < 3000 && walk.phase === 'coming'; tick++) {
+    shown.push(walk.step(0.1, at(across)).lagging);
+    if (shown.includes(true) && across < 28) across += 0.08;
+  }
+  const shows = shown.filter((lagging, tick) => lagging && !shown[tick - 1]).length;
+  assert.equal(shows, 1, 'shown once she waits on the lanes, kept while she follows along them, cleared as they meet');
+  assert.equal(walk.phase, 'speaking', 'she greets them');
+});

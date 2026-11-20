@@ -139,13 +139,12 @@ three ports standing and ruins no one agrees about (the owner's three port citie
 memory (three people name four builders of the beacon). It is due from the story's end until its last scene is said: the
 browser keeps the scenes said (`overlook.welcome.said`), so a reload or a leaving takes it up from there on the next
 arrival in Overlook's social space, without the greeting; leaving before the stranger has gone forgoes it. A browser
-that has played the story and holds no mark of the welcome is welcomed on its next arrival there. Opening the
-Lamplighters' counter while she walks ends the welcome there, and a player more than 40 m from her for a minute ends the
-walk: she goes home, and it stays due. While the menu or a keeper's screen is open she stands idle and no stop begins
-and the Follow prompt is hidden; opening her counter while she walks ends the welcome there and opens the Lamplighters'
-whole screen; at her own counter she is the one speaking, and no mark stands over its place. When it ends she is her
-counter's keeper again, never two of her at once. Under `npm run dev`, and on a built page served on `localhost`,
-`?welcome=1` plays it at once in the social space.
+that has played the story and holds no mark of the welcome is welcomed on its next arrival there. A player more than 40
+m from her for a minute ends the walk: she goes home, and it stays due. While the menu or a keeper's screen is open she
+stands idle and no stop begins and the Follow prompt is hidden; opening her counter while she walks ends the welcome
+there and opens the Lamplighters' whole screen; at her own counter she is the one speaking, and no mark stands over its
+place. When it ends she is her counter's keeper again, never two of her at once. Under `npm run dev`, and on a built
+page served on `localhost`, `?welcome=1` plays it at once in the social space.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the
 swell. The sea is sounded every 150 m across the 3 km round it, where every ship of the story sails, and the place is

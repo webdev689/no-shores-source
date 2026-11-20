@@ -202,7 +202,13 @@ fn the_layers_a_faction_piece_s_colour_may_stand_on_are_written() {
                 gear::cosmetics::layers_of(slot, named.kind).iter().map(|on| format!("{on:?}")).collect();
             let (id, kind, at) = (&named.id, named.kind as u8, at_number(gear::At::Worn(slot)));
             let ranged = slot == gear::Slot::Ranged;
-            format!(r#"{{"named":{id:?},"kind":{kind},"at":{at},"ranged":{ranged},"on":[{}]}}"#, on.join(","))
+            let factions = &gear::factions::factions().factions;
+            let faction =
+                factions.iter().find(|faction| Some(&faction.key) == named.faction.as_ref()).expect("its own");
+            // The colour the room lets it show: a cape's is its faction's dye, any other piece's its faction's own.
+            let colour = if slot == gear::Slot::Cloak { &faction.dye } else { &faction.key };
+            let on = on.join(",");
+            format!(r#"{{"named":{id:?},"kind":{kind},"at":{at},"ranged":{ranged},"colour":{colour:?},"on":[{on}]}}"#)
         })
         .collect();
     assert_eq!(pieces.len(), 21, "seven pieces a faction");

@@ -15,6 +15,7 @@ interface Piece {
   readonly kind: number;
   readonly at: number;
   readonly ranged: boolean;
+  readonly colour: string;
   readonly on: readonly string[];
 }
 
@@ -47,7 +48,7 @@ const plain: Outfit = {
 /** Every colour that is a faction's: its own, by its key, and its dye, by its id. */
 const factionColours = new Set(factions.factions.flatMap((faction) => [faction.key, faction.dye]));
 
-test("every layer the page dresses a faction piece's colour on is one the room lets it stand on for others", async () => {
+test("every layer the page dresses a faction piece's colour on, and that colour, is one the room keeps for others", async () => {
   const all = await pieces();
   assert.equal(all.length, 21, 'seven pieces a faction');
   for (const piece of all) {
@@ -59,10 +60,12 @@ test("every layer the page dresses a faction piece's colour on is one the room l
     );
     const coloured = Object.entries(dressed.dyes).filter(([, colour]) => factionColours.has(colour));
     assert.ok(coloured.length > 0, `${piece.named} is dressed in its faction's colour`);
-    for (const [layer] of coloured)
+    for (const [layer, colour] of coloured) {
       assert.ok(
         piece.on.some((start) => layer.startsWith(start)),
         `${piece.named}: the room strips ${layer}, so others never see it`,
       );
+      assert.equal(colour, piece.colour, `${piece.named}: the room keeps only ${piece.colour} on ${layer}`);
+    }
   }
 });

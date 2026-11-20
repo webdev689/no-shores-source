@@ -61,9 +61,9 @@ export function rampOf(look: readonly string[]): readonly Rgb[] {
 /** A look's ramp snapped to the palette, as every composed frame is, so that the figure, the first person, the
  *  Appearance screen and a keeper's swatch draw the same sixteen colours. The snap reads a colour to six bits a
  *  channel, so a few palette colours snap to a neighbour: snapping again until nothing moves leaves a ramp the
- *  composer's own snap keeps as it is. A step the snap would leave darker than the one before it takes the nearest kept
- *  colour no darker, so a ramp's light rises step by step, as its shading does. */
-function snappedRampOf(look: readonly string[], snap: PaletteSnap): readonly Rgb[] {
+ *  composer's own snap keeps as it is. When `rising`, a step the snap would leave darker than the one before it takes
+ *  the nearest kept colour no darker, so a ramp's light rises step by step, as its shading does. */
+function snappedRampOf(look: readonly string[], snap: PaletteSnap, rising: boolean): readonly Rgb[] {
   const ramp = rampOf(look);
   const pixels = Uint8Array.from(ramp.flatMap((colour) => [...colour, 255]));
   for (let round = 0, before = ''; round < 8 && before !== pixels.join(); round++) {
@@ -71,7 +71,9 @@ function snappedRampOf(look: readonly string[], snap: PaletteSnap): readonly Rgb
     snap.snap(pixels);
   }
   const snapped: Rgb[] = [];
-  for (let step = 0; step < 16; step++) {
+  if (!rising)
+    for (let step = 0; step < 16; step++) snapped.push([...pixels.slice(step * 4, step * 4 + 3)] as unknown as Rgb);
+  for (let step = snapped.length; step < 16; step++) {
     const own = [...pixels.slice(step * 4, step * 4 + 3)] as unknown as Rgb;
     const before = snapped[step - 1];
     const least = before ? oklab(...before)[0] : 0;
@@ -97,7 +99,8 @@ function rampsOn(palette: readonly Rgb[]): Ramps {
   if (found) return found;
   // A table with no palette (a test's) snaps nothing.
   const snap = palette.length > 0 ? new PaletteSnap(palette) : null;
-  const ramp = (look: readonly string[]) => (snap ? snappedRampOf(look, snap) : rampOf(look));
+  // A faction's colour is snapped as the owner chose it, its steps as they fall; a dye's and a coat's rise.
+  const ramp = (look: readonly string[], rising = true) => (snap ? snappedRampOf(look, snap, rising) : rampOf(look));
   const made: Ramps = {
     cosmetics: new Map(
       COSMETICS.filter((each) => each.kind !== 'barding' && each.look.length === 4).map((each) => [
@@ -105,7 +108,7 @@ function rampsOn(palette: readonly Rgb[]): Ramps {
         ramp(each.look),
       ]),
     ),
-    factions: new Map(factions.factions.map((faction) => [faction.key, ramp(faction.gear.look)])),
+    factions: new Map(factions.factions.map((faction) => [faction.key, ramp(faction.gear.look, false)])),
   };
   RAMPS.set(palette, made);
   return made;

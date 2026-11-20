@@ -50,11 +50,11 @@ test('each dye and faction colour stays its own on the palette: ten steps at lea
   }
 });
 
-test("each dye's, coat's and faction colour's light rises step by step, and a white ends at the palette's lightest", () => {
-  const coats = COSMETICS.filter((each) => each.kind === 'coat' && each.look.length).map(
+test("each dye's and coat's light rises step by step, and a white ends at the palette's lightest", () => {
+  const sold = COSMETICS.filter((each) => (each.kind === 'coat' || each.kind === 'dye') && each.look.length).map(
     (each) => [each.id, cosmeticRamp(each.id, GAME_PALETTE) ?? []] as const,
   );
-  for (const [name, ramp] of [...COLOURS, ...coats]) {
+  for (const [name, ramp] of sold) {
     assert.equal(ramp.length, 16, name);
     const lights = ramp.map((colour) => oklab(...colour)[0]);
     lights.forEach((light, step) =>
@@ -71,4 +71,17 @@ test("each dye's, coat's and faction colour's light rises step by step, and a wh
     assert.deepEqual(ramp[15], lightest, `${white} ends at the lightest neutral`);
     assert.ok(new Set(ramp.slice(10).map((colour) => colour.join())).size >= 3, `${white}'s lit third is shaded`);
   }
+});
+
+test("a faction's colour keeps the steps the owner chose it with, each snapped as it falls", () => {
+  const hex = (colour: Rgb | undefined) => (colour ?? []).map((value) => value.toString(16).padStart(2, '0')).join('');
+  const [lampglass, squall] = [factionRamp('lamplighters', GAME_PALETTE), factionRamp('stormcallers', GAME_PALETTE)];
+  assert.deepEqual(
+    [7, 8, 9, 12].map((step) => hex(lampglass?.[step])),
+    ['baae93', 'baae93', 'c5c5c5', 'caddc4'],
+  );
+  assert.deepEqual(
+    [7, 8, 14].map((step) => hex(squall?.[step])),
+    ['334d66', '2d527a', 'bcbcc7'],
+  );
 });

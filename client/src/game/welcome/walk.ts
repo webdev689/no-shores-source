@@ -84,6 +84,8 @@ export class WelcomeWalk {
   /** The point of the lanes nearest the player her path to them was found for. */
   private aim: Point | null = null;
   private lagged = false;
+  /** Whether, coming to the player, she has stood on the lanes nearest them: from then the prompt goes by distance. */
+  private reached = false;
   /** How long the player has been left far behind her, seconds. */
   private behindS = 0;
 
@@ -145,7 +147,7 @@ export class WelcomeWalk {
       this.behindS = far > LEFT_BEHIND_M ? this.behindS + seconds : 0;
       if (this.behindS >= LEFT_BEHIND_S) this.goHome();
     }
-    const following = this.phase === 'leading' || this.phase === 'waiting';
+    const following = this.phase === 'leading' || this.phase === 'waiting' || (this.phase === 'coming' && this.reached);
     this.lagged = following && far > (this.lagged ? CAUGHT_UP_M : FOLLOW_M);
     const lagging = this.lagged;
     if (this.phase === 'coming') {
@@ -154,6 +156,7 @@ export class WelcomeWalk {
       // On the lanes nearest the player: she greets them from there once they are in reach, as at a stop.
       maren.facing = bearingTo(this.where, player);
       if (far <= FOLLOW_M) return this.met(player);
+      [this.reached, this.lagged] = [true, true];
       return { say: null, lagging: true };
     } else if (this.phase === 'leading' || this.phase === 'returning') {
       this.walk(seconds);

@@ -86,6 +86,9 @@ look. The owner said yes to gear of each faction's own, "with its own unique col
 The Harbourmaster keeps her alcove, and a chandler's stall stands last on the factions' side, for life; no other stall
 stands in the arcades.
 
+A smith's ware is asked by its place and the day it was shown, so one asked as the day turns is refused ("It is not
+sold here today"), as a cosmetic of another day is, and none buys the next day's ware at that place.
+
 ## Shape and Shapes
 
 | Call | Choice |
@@ -95,6 +98,7 @@ stands in the arcades.
 | Wares | Drawn evenly from every named piece of each rarity that a Vestige may open to, none twice in a week |
 | Weeks | Counted from Monday 00:00 UTC |
 | Shapes | At most 200 held. A kill at Elite (Rough) seas gives one 3 times in 100, at Abyss (Storm) 6 in 100; a Boss or Miniboss 2 and 4. None at Normal (Calm) |
+| His level | His named pieces are made at level 20 and sold from level 20, as a faction's are; below it his screen dims them "From level 20", so no keeper sells a piece the buyer could not wear yet |
 
 ## Cosmetics
 
@@ -103,6 +107,7 @@ stands in the arcades.
 | One catalogue | Dyes, coats and bardings in `content/gear/cosmetics.json`, kept and worn as emblems are, one of each kind worn |
 | Starts | Dye "Own Colours" (each piece in its own metal and cloth), coat "Bay" (the horse as the forge draws it), barding "Bare" |
 | Dyes | Twelve sold (five Magic at 1,000, five Rare at 2,500 from level 5 or 10, two Legendary at 5,000 from level 20) and three faction dyes at rank 2. A dye is four colours laid as a 16-step ramp, as the forge's metals and cloth are, and snapped once to the game's palette, so each view draws the same sixteen; each keeps ten steps at least and stands apart from every other. The palette has no violet, so the Veiled's dye is a dusky mauve and the second Legendary dye Heather, a dusky pink |
+| Ramps | A dye's and a coat's snapped ramp never steps darker (a step the snap would darken takes the nearest kept colour no darker); Brine White and the White coat end at the palette's lightest neutral with a shaded top third. A faction's colour keeps its steps as snapped, as the owner chose it |
 | Coats | Six sold: Chestnut, Dun and Grey at 1,500; Black and White at 3,000 from level 5; Palomino at 3,000 from level 10 |
 | Bardings | The four the forge already draws over its horse (DFO's shop looks): Ember Plate, Wraith Mist, Dawnfire and Clockwork, 9,000 each from level 15 or 20 |
 
@@ -139,6 +144,7 @@ it (`content/world/social.json`, which the page reads too). Shape visits Overloo
 | Countdown | "Stock refresh" for the smiths, the Tailor and the Tack (to midnight, UTC); "Leaves in" for Shape; none for the Mage and the factions |
 | A short ware | Stays held to buy, red with "Not enough"; the room refuses it and the keeper answers |
 | Shape away | "Shape is away. He comes on Fridays." |
+| Back | The menu's Back press steps back as Escape does on every page: a page with a step of its own (a choice, a panel) takes it first |
 
 ## Elder Maren Hale's welcome
 
@@ -172,4 +178,5 @@ it (`content/world/social.json`, which the page reads too). Shape visits Overloo
 |---|---|
 | Words | "You do not have that." and "You already have that." for a piece not kept or kept already, whatever it is; a fragment out of range is its own refusal, "There is no such fragment." |
 | Others' view | The room is the word on the cosmetics others see: it relays each dress with the dye, coat and barding the character wears, none for a start piece; a change reaches others on the dress's own turn |
+| Others' colours | Of the colours a dress lays by layer, the room keeps a faction's only on the layers of that faction's pieces worn (the pieces' sets as the page names them), a faction's dye only on its cape worn, and a dye the player keeps on any layer |
 

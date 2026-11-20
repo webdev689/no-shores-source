@@ -431,6 +431,25 @@ fn relayed_cosmetics(dress: &str) -> [Option<String>; 3] {
 }
 
 #[test]
+fn a_dress_sent_back_within_its_turn_is_the_one_others_see() {
+    let (mut room, player) = room_with_player();
+    let dress = |right: &str| format!(r#"{{"body":"m","race":"human","tone":1,"outfit":{{"right":"{right}"}}}}"#);
+    let send = |room: &mut Room, sequence: u32, right: &str| {
+        let input = Input { sequence, dress: Some(dress(right)), ..Input::default() };
+        room.input(player, input).expect("taken");
+    };
+    send(&mut room, 1, "sword_iron");
+    room.tick();
+    send(&mut room, 2, "bow_long_iron");
+    send(&mut room, 3, "sword_iron");
+    for _ in 0..200 {
+        room.tick();
+    }
+    let shown = &room.players.get(&player).expect("in").dress;
+    assert!(shown.contains("sword_iron") && !shown.contains("bow_long_iron"), "the sword drawn back is shown: {shown}");
+}
+
+#[test]
 fn others_see_only_the_cosmetics_a_player_keeps_and_wears() {
     let (mut room, player) = room_with_player();
     let sent = r#"{"body":"m","race":"human","tone":1,"outfit":{"dye":"veiled_dusk","barding":"ember_plate"}}"#;

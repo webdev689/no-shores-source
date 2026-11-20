@@ -91,7 +91,10 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
 
 /** What the `ready` step decides for a commit that changes `changed` over the one last deployed: with the token, from
  *  a merge (or by hand), while the commit is main's head (or after main moved on), and with that deploy found. */
-function decided(changed: string, options: { byHand?: boolean; moved?: boolean; found?: boolean } = {}): string {
+function decided(
+  changed: string,
+  options: { byHand?: boolean; moved?: boolean; found?: boolean; token?: boolean } = {},
+): string {
   const root = mkdtempSync(join(tmpdir(), 'rooms-deploy-'));
   const git = (...args: string[]) =>
     execFileSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@test', ...args], { cwd: root })
@@ -131,7 +134,7 @@ function decided(changed: string, options: { byHand?: boolean; moved?: boolean; 
     write('output', '');
     const env = {
       PATH: `${join(root, 'bin')}:${process.env['PATH'] ?? ''}`,
-      HAS_TOKEN: 'true',
+      HAS_TOKEN: options.token === false ? 'false' : 'true',
       BY_HAND: options.byHand ? 'true' : 'false',
       ROOMS_CODE: roomsCode.join(' '),
       GITHUB_OUTPUT: join(root, 'output'),
@@ -156,4 +159,15 @@ test('by hand the rooms deploy whatever changed; with no deploy found they deplo
   assert.equal(decided('bible/Hand-off.md', { byHand: true }), 'deploy=yes');
   assert.equal(decided('bible/Hand-off.md', { found: false }), 'deploy=yes');
   assert.equal(decided('server/worker.ts', { moved: true }), 'deploy=no');
+  assert.equal(decided('server/worker.ts', { token: false }), 'deploy=blocked', 'the rooms to deploy, with no token');
+  assert.equal(decided('bible/Hand-off.md', { token: false }), 'deploy=no', 'nothing to deploy, token or not');
+});
+
+test('on main, the page is published only once the rooms have deployed or had nothing to deploy', () => {
+  const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const pages = /\n  pages:\n((?: {4}.*\n|\s*\n)*)/.exec(ci)?.[1] ?? '';
+  assert.match(pages, /needs: \[check, rooms\]/, 'the page waits for the rooms');
+  const when = /if: >-\n((?: {6}.*\n)*)/.exec(pages)?.[1]?.replace(/\s+/g, ' ') ?? '';
+  assert.ok(when.includes("needs.rooms.outputs.deploy == 'no' || needs.rooms.outputs.deployed == 'yes'"), when);
+  assert.ok(!when.includes('blocked'), 'a blocked deploy publishes no page');
 });

@@ -269,10 +269,9 @@ impl Room {
             found.acknowledged = found.acknowledged.wrapping_add(1);
         }
         found.received = input.sequence;
-        if let Some(dress) = input.dress.take()
-            && dress != found.dress_sent
-        {
-            found.dress_next = Some(dress);
+        // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
+        if let Some(dress) = input.dress.take() {
+            found.dress_next = (dress != found.dress_sent).then_some(dress);
         }
         // A player never begins a telegraphed blow.
         input.intent.combat.telegraph = None;
