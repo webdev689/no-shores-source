@@ -44,7 +44,8 @@ export interface SkyLaw {
   /** The reading at (x, y) on the map, `altitudeM` above the sea, at world time `worldS`, in a climate's air (the
    *  sea's for any key the law does not know). */
   at(x: number, y: number, altitudeM: number, worldS: number, climate: string): SkyReading;
-  /** The strikes within `reachM` of (x, y) from `fromS` up to `toS`, earliest first. */
+  /** The strikes within `reachM` of (x, y) from `fromS` up to `toS`, earliest first. A window over 60 s or a reach
+   *  over 80 km is refused, and answers none: ask a long span a minute at a time. */
   strikes(x: number, y: number, reachM: number, fromS: number, toS: number, climate: string): Strike[];
   /** The wind a ship's sails feel at (x, y) at `worldS`, m/s east and south: the rules' own, held a world minute. */
   seaWind(x: number, y: number, worldS: number): readonly [number, number];

@@ -47,9 +47,14 @@ fn fog_light(direction: vec3f) -> vec3f {
   return sky_state.fog.rgb + twilight_glow() * pow(toward, 4.0) * 0.45 + sky_state.key_light.rgb * ahead * 0.15;
 }
 
-// The dome's own colour along 'direction', without cloud, stars or bodies: the gradient the weather has set, the glow
-// low toward the sun's bearing, the pink band and the earth's shadow opposite it, and the fog's veil.
-fn sky_haze(direction: vec3f) -> vec3f {
+// How much of the weather's fog lies along a view rising 'up': closing in overhead as well, wholly near the horizon.
+fn sky_veil(up: f32) -> f32 {
+  return 1.0 - exp(-sky_state.fog.w * 150.0 / max(up, 0.05));
+}
+
+// The dome's own colour along 'direction', without fog, cloud, stars or bodies: the gradient the weather has set, the
+// glow low toward the sun's bearing, and the pink band and the earth's shadow opposite it.
+fn sky_dome(direction: vec3f) -> vec3f {
   let up = direction.z;
   let lifted = clamp(up, 0.0, 1.0);
   var colour = mix(sky_state.horizon.rgb, sky_state.zenith.rgb, pow(lifted, 0.45));
@@ -72,11 +77,15 @@ fn sky_haze(direction: vec3f) -> vec3f {
     colour = mix(colour, colour * vec3f(0.7, 0.78, 0.95), opposite * (1.0 - smoothstep(0.0, 0.08, lifted)) * 0.6);
   }
   // Under the horizon (seen only in a reflection) the air darkens.
-  colour = mix(colour, sky_state.horizon.rgb * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
-  // The weather's fog closes in overhead as well, wholly near the horizon.
-  let veil = 1.0 - exp(-sky_state.fog.w * 150.0 / max(up, 0.05));
-  if (veil <= 0.0) { return colour; }
-  return mix(colour, fog_light(direction), veil);
+  return mix(colour, sky_state.horizon.rgb * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
+}
+
+// The dome's colour along 'direction' seen through the weather's fog.
+fn sky_haze(direction: vec3f) -> vec3f {
+  let veil = sky_veil(direction.z);
+  if (veil <= 0.0) { return sky_dome(direction); }
+  if (veil >= 1.0) { return fog_light(direction); }
+  return mix(sky_dome(direction), fog_light(direction), veil);
 }
 
 // The stars along a direction: turned back about the pole (as high as the place's latitude, due north) by the
@@ -243,17 +252,17 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
 // The sky along 'direction'. 'blur' is how far apart, in radians, the rays a pixel gathers are: a reflection off
 // waves too small to draw gathers a cone of them, so detail finer than that averages out.
 fn sky(direction: vec3f, blur: f32) -> vec3f {
-  let clear = exp(-sky_state.fog.w * 150.0 / max(direction.z, 0.05));
+  let veil = sky_veil(direction.z);
   let clouds = cloud_light(direction, blur);
   let toward = max(dot(direction, sky_state.sun.xyz), 0.0);
   let sun_colour = sky_state.key_light.rgb * step(0.999, dot(sky_state.key.xyz, sky_state.sun.xyz));
   var colour = vec3f(0.0);
-  // A whole deck in clear air hides the dome, the stars, the moon and the sun's disc behind it.
-  if (clouds.a * clear < 1.0) {
-    colour = sky_haze(direction);
-    colour += star_light(direction, blur) * clear;
+  // Back to front: the dome, the stars, the moon and the sun's disc, hidden by a whole deck or a whole fog; the clouds
+  // over them; and the fog, which lies between the eye and the clouds, over all.
+  if (clouds.a < 1.0 && veil < 1.0) {
+    colour = sky_dome(direction) + star_light(direction, blur);
     let moon = moon_light(direction);
-    colour = mix(colour + moon.rgb * clear, moon.rgb, moon.a * clear);
+    colour = mix(colour + moon.rgb, moon.rgb, moon.a);
     let disc = smoothstep(cos(SUN_RADIUS * 1.15), cos(SUN_RADIUS), toward) * (1.0 - smoothstep(0.0, 0.02, blur));
     if (disc > 0.0 && luma(sun_colour) >= 1e-4) {
       // The disc keeps its own hue at full brightness, so a low orange sun still stands out of its glow.
@@ -261,14 +270,15 @@ fn sky(direction: vec3f, blur: f32) -> vec3f {
       let off_middle = clamp((1.0 - toward) / (1.0 - cos(SUN_RADIUS)), 0.0, 1.0);
       let limb = 0.62 + 0.38 * sqrt(1.0 - off_middle);
       let disc_colour = sun_colour / max(max(sun_colour.r, sun_colour.g), max(sun_colour.b, 1e-3)) * 1.8 * limb;
-      colour = mix(colour, disc_colour, disc * clear);
+      colour = mix(colour, disc_colour, disc);
     }
   }
-  colour = mix(colour, clouds.rgb, clouds.a * clear);
+  colour = mix(colour, clouds.rgb, clouds.a);
+  if (veil > 0.0) { colour = mix(colour, fog_light(direction), veil); }
   if (toward > 0.0 && luma(sun_colour) > 0.0) {
     let low = 1.0 - smoothstep(0.0, 0.4, sky_state.sun.z);
     let halo = pow(toward, 400.0) * 0.4 + pow(toward, 24.0) * (0.1 + 0.1 * low) + pow(toward, 5.0) * 0.05 * low;
-    colour += sun_colour * halo * (1.0 - 0.6 * clouds.a) * (0.3 + 0.7 * clear);
+    colour += sun_colour * halo * (1.0 - 0.6 * clouds.a) * (1.0 - 0.7 * veil);
   }
   return colour;
 }
