@@ -217,7 +217,7 @@ export class SeaCombat {
     if (!this.naval.fighting) this.going = -1;
     this.down = Math.min(1, Math.max(0, this.down + (this.going * seconds) / PAN_S));
     const camera = cameraOf(this.aiming ? this.naval.aimCamera(orbit, this.fought, this.window, 1) : orbit);
-    const jar = this.shake.at(time);
+    const jar = this.shake.jarAt(time);
     return {
       eye: [
         camera.eye[0] + this.window.leftM + jar.east,
@@ -286,7 +286,7 @@ export class SeaCombat {
       const [x = 0, y = 0, heading = 0] = ship.vessel.ship;
       const [heave = 0, pitch = 0, roll = 0] = ship.vessel.pose;
       const place = { x, y, z: heave, heading, pitch, roll, scale };
-      return [{ ship, place: this.naval.settled(ship, place, time, scale) }];
+      return [{ ship, place }];
     });
   }
 

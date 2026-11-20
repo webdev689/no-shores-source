@@ -168,16 +168,6 @@ export class Naval {
     return splashes;
   }
 
-  /** A ship's place as she goes down (`FightFeel.settled`). */
-  settled<Place extends { readonly z: number; readonly pitch: number; readonly roll: number }>(
-    ship: FeelShip,
-    place: Place,
-    now: number,
-    scale: number,
-  ): Place {
-    return this.feel.settled(ship, place, now, scale);
-  }
-
   /** The sounds the fight has called for since last taken. */
   takeCues(): Cue[] {
     return this.feel.takeCues();
@@ -253,7 +243,7 @@ export class Naval {
     const [, , heading = 0, ahead = 0] = ship.vessel.ship;
     const set = ship.vessel.ship[SHIP_RUNG] === SAILS_RUNG;
     ship.rig.step(wind.seconds, { offDeg: windOff(heading, wind.bearing), set, way: ahead }, now);
-    const place = this.feel.settled(ship, captainPlace(ship, view, shown), now, shown);
+    const place = captainPlace(ship, view, shown);
     return [{ hull: ship.hull, place, rig: ship.rig, look: { side: ship.side } }];
   }
 
@@ -281,7 +271,7 @@ export class Naval {
           scarred ?? [
             own && this.own ? { ship: own, place: this.own.place(view, shown) } : null,
             captain && FightFeel.afloat(captain, now)
-              ? { ship: captain, place: this.feel.settled(captain, captainPlace(captain, view, shown), now, shown) }
+              ? { ship: captain, place: captainPlace(captain, view, shown) }
               : null,
           ],
         ),

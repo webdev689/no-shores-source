@@ -9,7 +9,7 @@ import type { FightEvent, FightVessel, Point } from '../rules/fightRules.ts';
 import { DRESSES, type ShipSide } from './dress.ts';
 import { BURN_LIGHT, Effects, type Mark, type Splash } from './effects.ts';
 import { Flotsam } from './flotsam.ts';
-import { hullPaint, hullWaterline, plateOverM, SLOOP_HULL } from './hulls.ts';
+import { hullPaint, hullWaterline, SLOOP_HULL } from './hulls.ts';
 import { type SailRig, windOff } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
 import { KICKS } from './shake.ts';
@@ -362,26 +362,26 @@ export class FightFeel {
 
   /** A sound at `at` (window metres). A page that never takes them (the World Editor's, which has no sound) keeps only
    *  the latest. */
-  private call(cue: string, at: readonly [number, number, number], gain?: number): void {
-    this.cues = [...this.cues.slice(-31), { cue, at, ...(gain === undefined ? {} : { gain }) }];
+  private call(cue: string, spot: readonly [number, number, number], gain?: number): void {
+    this.cues = [...this.cues.slice(-31), { cue, at: spot, ...(gain === undefined ? {} : { gain }) }];
   }
 
   /** A jar of the eye on her own ship. */
-  private kick(kick: number, at: readonly [number, number, number]): void {
-    this.cues = [...this.cues.slice(-31), { cue: 'kick', at, kick }];
+  private kick(kick: number, spot: readonly [number, number, number]): void {
+    this.cues = [...this.cues.slice(-31), { cue: 'kick', at: spot, kick }];
   }
 
   /** A ball's fall at (x, y) (world metres) within `NEAR_SPLASH_M` of her hull throws its water over her rail and
    *  rocks her, the more the nearer. */
   private drench(
-    at: readonly [number, number],
+    fell: readonly [number, number],
     spot: Point,
     ship: FeelShip | undefined,
     now: number,
     toWindow: Window,
   ) {
     if (!ship) return;
-    const gap = hullGap(ship, [at[0], at[1], 0]);
+    const gap = hullGap(ship, [fell[0], fell[1], 0]);
     if (gap > NEAR_SPLASH_M) return;
     const near = 1 - gap / NEAR_SPLASH_M;
     const { middle } = lying(ship.vessel);
@@ -427,8 +427,8 @@ export class FightFeel {
    *  out are heard, her ports glint while she stands run out, and her battered hull smokes. */
   private moments(ships: ReadonlyMap<number, FeelShip>, now: number, seconds: number, toWindow: Window): void {
     const own = ships.get(0);
-    for (const [number, at] of this.magazines) {
-      if (now < at) continue;
+    for (const [number, due] of this.magazines) {
+      if (now < due) continue;
       this.magazines.delete(number);
       const ship = ships.get(number);
       if (!ship) continue;
@@ -504,16 +504,6 @@ export class FightFeel {
   /** When her side (0 port, 1 starboard) last came ready, seconds, or null. */
   readyAt(side: 0 | 1): number | null {
     return this.ready[side];
-  }
-
-  /** Her place as she goes down (`ShipHarm.settle`), her masthead's height for how deep. */
-  settled<Place extends { readonly z: number; readonly pitch: number; readonly roll: number }>(
-    ship: FeelShip,
-    place: Place,
-    now: number,
-    scale = 1,
-  ): Place {
-    return ship.rig ? ship.rig.harm.settle(place, now, plateOverM(ship.hull) * scale) : place;
   }
 
   /** Whether she is still drawn: not yet gone under. */

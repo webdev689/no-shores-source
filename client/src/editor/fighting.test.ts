@@ -121,9 +121,9 @@ test('her run-out battery warns the player to brace', async () => {
   assert.ok(fighting.lines(1).includes('Broadside from the Pirate Sloop: C to brace.'));
 });
 
-const brig = (number: number, at: readonly [number, number], more: Partial<FightCaptain> = {}): FightCaptain => ({
+const brig = (number: number, lies: readonly [number, number], more: Partial<FightCaptain> = {}): FightCaptain => ({
   ...captain,
-  ship: [at[0], at[1], 0, 0, 0, 0, 0, 2],
+  ship: [lies[0], lies[1], 0, 0, 0, 0, 0, 2],
   name: 'Pirate Brig',
   number,
   ...more,

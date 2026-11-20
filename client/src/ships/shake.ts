@@ -42,7 +42,7 @@ export class Shake {
   }
 
   /** How the eye is shaken at `now`: every jar still going, added together; the spent let go. */
-  at(now: number): Jar {
+  jarAt(now: number): Jar {
     this.jars = this.jars.filter((jar) => now - jar.born < SHAKE.inS + SHAKE.outS);
     if (this.jars.length === 0) return STILL;
     const sum = [0, 0, 0, 0, 0];

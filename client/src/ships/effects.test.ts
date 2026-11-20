@@ -15,27 +15,27 @@ import {
 } from './effects.ts';
 
 const highest = (marks: readonly { z: number }[]) => Math.max(...marks.map((mark) => mark.z));
-const of = (marks: readonly Mark[], blend: Mark['blend']) => marks.filter((mark) => mark.blend === blend);
+const blended = (marks: readonly Mark[], blend: Mark['blend']) => marks.filter((mark) => mark.blend === blend);
 const mean = (values: readonly number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
 
 test("a gun's flash is light added unlit for a tenth of a second, its light reaching DFO's 26 m", () => {
   const effects = new Effects(1);
   effects.fire([0, 0, 0], [0, 5, 1.5], [0, 400, 3], 0);
-  const glows = of(effects.marks(0.02), 'glow');
+  const glows = blended(effects.marks(0.02), 'glow');
   assert.equal(glows.length, 2, 'the bloom and its tongue along the shot');
   assert.ok(glows.every((mark) => (mark.alpha ?? 0) > 0.4));
   // Read in time's order: a puff once spent is let go.
-  const lights = of(effects.marks(0.05), 'light');
+  const lights = blended(effects.marks(0.05), 'light');
   assert.equal(lights.length, 1);
   assert.equal(lights[0]?.radius, MUZZLE_LIGHT.reachM);
-  assert.equal(of(effects.marks(FLASH_S + 0.005), 'glow').length, 0);
-  assert.equal(of(effects.marks(MUZZLE_LIGHT.seconds + 0.01), 'light').length, 0);
+  assert.equal(blended(effects.marks(FLASH_S + 0.005), 'glow').length, 0);
+  assert.equal(blended(effects.marks(MUZZLE_LIGHT.seconds + 0.01), 'light').length, 0);
 });
 
 test("a broadside's smoke is blended, swells as it thins, and hangs DFO's nine to fourteen seconds", () => {
   const effects = new Effects(2);
   effects.fire([0, 0, 0], [0, 4, 2], [0, 300, 3], 0);
-  const smoke = (now: number) => of(effects.marks(now), 'smoke');
+  const smoke = (now: number) => blended(effects.marks(now), 'smoke');
   assert.equal(smoke(0.5).length, 8, 'five puffs and three a unit of gun');
   const [early, late] = [smoke(1), smoke(8)];
   assert.ok(mean(late.map((mark) => mark.radius)) > mean(early.map((mark) => mark.radius)) * 1.5, 'it swells');
@@ -49,7 +49,7 @@ test('powder smoke comes to ride the wind', () => {
   const effects = new Effects(3);
   effects.blow(Math.PI / 2);
   effects.fire([0, 0, 0], [0, 0, 1], [0, 1, 0], 0);
-  const smoke = of(effects.marks(6), 'smoke');
+  const smoke = blended(effects.marks(6), 'smoke');
   assert.ok(smoke.length > 0);
   assert.ok(
     smoke.every((mark) => mark.x > 15),
@@ -91,8 +91,8 @@ test('a hull hit throws splinters of her paint that fall to the water, a puff of
   const chips = effects.marks(0.05).filter((mark) => mark.blend === undefined);
   assert.equal(chips.length, SPLINTERS);
   assert.ok(chips.filter((mark) => mark.colour === paint).length > SPLINTERS / 3, "many are her paint's");
-  assert.ok(of(effects.marks(0.05), 'smoke').length >= 3);
-  assert.equal(of(effects.marks(0.05), 'glow').length, 1);
+  assert.ok(blended(effects.marks(0.05), 'smoke').length >= 3);
+  assert.equal(blended(effects.marks(0.05), 'glow').length, 1);
   assert.ok(
     effects.marks(2).every((mark) => mark.z >= 0),
     'none falls through the water',
@@ -103,8 +103,8 @@ test('a ship afire burns in unlit flames and embers under dark blended smoke', (
   const effects = new Effects(7);
   for (let frame = 0; frame < 60; frame++) effects.burn([0, 0, 0], [0, 0, 2.4], 1, 1.5, frame / 30, 1 / 30);
   const marks = effects.marks(2);
-  assert.ok(of(marks, 'glow').length > 10);
-  assert.ok(of(marks, 'smoke').some((mark) => (mark.colour[0] ?? 1) < 0.3));
+  assert.ok(blended(marks, 'glow').length > 10);
+  assert.ok(blended(marks, 'smoke').some((mark) => (mark.colour[0] ?? 1) < 0.3));
   assert.ok(marks.every((mark) => mark.z >= 2.4));
   const quiet = new Effects(8);
   quiet.burn([0, 0, 0], [0, 0, 2.4], 0, 1.5, 0, 1);
@@ -115,7 +115,7 @@ test('past the budget, the spray and foam go first and the smoke last', () => {
   const effects = new Effects(9);
   for (let gun = 0; gun < 40; gun++) effects.fire([0, 0, 0], [gun, 0, 1], [0, 300, 0], 0);
   // Powder smoke is the grey of the blended puffs; spray and foam are white.
-  const powder = (now: number) => of(effects.marks(now), 'smoke').filter((mark) => (mark.colour[2] ?? 1) < 0.85);
+  const powder = (now: number) => blended(effects.marks(now), 'smoke').filter((mark) => (mark.colour[2] ?? 1) < 0.85);
   const smoke = powder(0.01).length;
   for (let fall = 0; fall < 60; fall++) effects.splash([fall, 50, 0], 0.01);
   assert.equal(effects.count, PUFF_BUDGET);
@@ -143,13 +143,13 @@ test('a magazine blows in a fireball, a column of smoke, splinters and a big spl
   const effects = new Effects(11);
   effects.blast([0, 0, 0], 0);
   const marks = effects.marks(0.2);
-  assert.ok(of(marks, 'glow').length >= 10);
-  assert.ok(of(marks, 'smoke').length >= 12);
+  assert.ok(blended(marks, 'glow').length >= 10);
+  assert.ok(blended(marks, 'smoke').length >= 12);
   assert.ok(
     marks.some((mark) => mark.blend === undefined),
     'splinters',
   );
-  assert.ok(of(marks, 'light').length === 1);
+  assert.ok(blended(marks, 'light').length === 1);
 });
 
 test('a battered hull smokes along her deck, more the more she is hurt', () => {
@@ -171,7 +171,7 @@ test('a battery running out glints at her ports, brighter as the guns come out',
     [3, 2.5, 1.5],
   ] as const;
   for (let frame = 0; frame < 30; frame++) effects.glint([0, 0, 0], ports, 1, frame / 30, 1 / 30);
-  const glints = of(effects.marks(29 / 30), 'glow');
+  const glints = blended(effects.marks(29 / 30), 'glow');
   assert.ok(glints.length > 0 && glints.every((mark) => (mark.alpha ?? 0) > 0));
 });
 

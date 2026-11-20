@@ -211,7 +211,7 @@ export class Effects {
       .sort((one, other) => one.rank - other.rank || other.share - one.share)
       .slice(0, count);
     const dropped = new Set(order.map(({ index }) => index));
-    this.puffs = this.puffs.filter((_, index) => !dropped.has(index));
+    this.puffs = this.puffs.filter((_puff, index) => !dropped.has(index));
   }
 
   /** How many puffs are alive. */
@@ -597,9 +597,9 @@ export class Effects {
       this.owedFoam -= 1;
       if (this.draw() < 10 / BOIL_RATE)
         this.ring(spot, [this.spread(radiusM), this.spread(radiusM), 0], [1.2, 4], 2.4, 0.6, now);
-      const at: Point = [this.spread(radiusM * 0.7), this.spread(radiusM * 0.7), 0.05];
+      const drop: Point = [this.spread(radiusM * 0.7), this.spread(radiusM * 0.7), 0.05];
       this.add('spray', 3, spot, now, () => ({
-        from: [at[0] + this.spread(0.2), at[1] + this.spread(0.2), 0.05],
+        from: [drop[0] + this.spread(0.2), drop[1] + this.spread(0.2), 0.05],
         velocity: [this.spread(0.5), this.spread(0.5), 1.8 + this.draw() * 1.6],
         drag: 0.4,
         gravity: GRAVITY,
@@ -609,7 +609,7 @@ export class Effects {
         size: [0.25, 0.5],
         life: 0.45 + this.draw() * 0.3,
       }));
-      this.ring(spot, at, [0.3, 1.4], 1, 0.65, now);
+      this.ring(spot, drop, [0.3, 1.4], 1, 0.65, now);
     }
   }
 

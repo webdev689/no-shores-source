@@ -56,9 +56,9 @@ export function playCues(
   }
   let played = 0;
   let rolled = false;
-  const sound = (cue: string, at: Cue['at'], gain: number) => {
+  const sound = (cue: string, spot: Cue['at'], gain: number) => {
     const reach = SEA_SOUNDS[cue] ?? OTHER;
-    if (gain <= 0 || Math.hypot(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]) > reach.mostM) return;
+    if (gain <= 0 || Math.hypot(spot[0] - eye[0], spot[1] - eye[1], spot[2] - eye[2]) > reach.mostM) return;
     const panner = audio.createPanner();
     Object.assign(panner, {
       panningModel: 'equalpower',
@@ -66,7 +66,7 @@ export function playCues(
       refDistance: reach.nearM,
       maxDistance: reach.mostM,
     });
-    [panner.positionX.value, panner.positionY.value, panner.positionZ.value] = [at[0], at[2], at[1]];
+    [panner.positionX.value, panner.positionY.value, panner.positionZ.value] = [spot[0], spot[2], spot[1]];
     const level = audio.createGain();
     level.gain.value = gain;
     level.connect(panner);
