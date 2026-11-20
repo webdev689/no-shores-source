@@ -7,7 +7,7 @@ use crate::grid::{CELL_M, Grid, index};
 use crate::landmarks::turn_toward;
 use crate::solids::{Material, Shape, Solid};
 use crate::terraces::Footing;
-use crate::walls::{Cut, QUAY_TOP_M};
+use crate::walls::{Cut, PIER_M, QUAY_TOP_M};
 use crate::{Pad, Use};
 use land::pads::Fall;
 use serde::Serialize;
@@ -32,8 +32,6 @@ const SINK_M: f64 = 2.0;
 /// A switchback's legs: the most one rises, the widest it is, metres.
 pub const LEG_RISE_M: f64 = 12.0;
 pub const LEG_M: f64 = 10.0;
-/// The flight down to the quay: a pier's width, metres.
-pub const PIER_M: f64 = 10.0;
 /// How far from the platform's wall a switchback's legs reach across its head cell, metres: short of the road's
 /// flank (32 m), so a walk from the foot's landing meets the road.
 pub const STAIR_BAND_M: f64 = 30.0;
