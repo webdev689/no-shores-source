@@ -245,10 +245,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates. Not yet seen on a real GPU
   or with blows traded. Found in passing: the compass writes its marks' place and visibility every frame, changed or
   not (`client/src/plus/compass.ts`).
-- **#96, the kit's first review**, merged with the owner's yes: a fidelity review (`workers/fidelity-review.sh`, a fixed
-  brief) with a CI check that fails a pull request changing a decision without its verdict; workers' worktrees made
-  ready to test; the observation log kept on the branch `toolkit-data`; `cargo xtask check` naming the commit it
-  checked; Toolkit rows for web research and for measuring text before sizing a box.
+- **#96, the kit's first review**, merged with the owner's yes: workers' worktrees made ready to test; the observation
+  log kept on the branch `toolkit-data`; `cargo xtask check` naming the commit it checked; Toolkit rows for web
+  research and for measuring text before sizing a box. Its fidelity reviewer is taken out, at the owner's word (#105).
 
 ## Waiting on the owner
 - **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
@@ -259,8 +258,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   onto the layouts' places, and will coordinate before it touches the layout code.
 - **#95's and #96's open points**, both merged: the target's own plate over its head is to be looked at again once the
   owner has played with which plates show, and #95's calls (in its description) are the owner's to change; for #96,
-  where the claude-mem store lives (an archive, kept out of git), whether CI should require the fidelity verdict to name
-  the pull request's head, and making that check required on GitHub.
+  where the claude-mem store lives (an archive, kept out of git).
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
 - **The sea's sounds** ([[The Sea's Sounds Come From Freesound]]): none yet heard in the game, nor their level judged
