@@ -139,3 +139,23 @@ export function landDrawers(
     },
   };
 }
+
+/** The drawers that stand on the open landmass, its city and its nature, and the ships and figures besides; on foot
+ *  the fight's blood under the figures and its marks over them. `ships` draws the ships (and a sea fight's marks)
+ *  into the pass; `figures` casts and draws the figures. */
+export function standingDrawers(
+  land: LandDrawers,
+  ships: (pass: GPURenderPassEncoder, camera: { fromEye: Float32Array; eye: Shot['eye'] }, time: number) => void,
+  figures: Pick<Drawer, 'castInto' | 'drawInto'>,
+  fight?: { readonly under: Drawer; readonly over: Drawer },
+): Drawer[] {
+  const found: (Drawer | null | undefined)[] = [
+    land.city,
+    land.nature,
+    fight?.under,
+    { drawInto: (pass, fromEye, shot, time) => ships(pass, { fromEye, eye: shot.eye }, time) },
+    figures,
+    fight?.over,
+  ];
+  return found.filter((drawer): drawer is Drawer => !!drawer);
+}

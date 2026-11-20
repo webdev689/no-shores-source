@@ -26,9 +26,9 @@ import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { FootView } from './footView.ts';
 import { keptDiscovered } from './discovered.ts';
 import { Hud } from './hud.ts';
-import { KIND_WORDS, type Standing } from './hudLaw.ts';
+import { ISLANDS, placeWords, REGION, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
-import { landDrawers, loadCityAssets } from './landDrawers.ts';
+import { landDrawers, loadCityAssets, standingDrawers } from './landDrawers.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
@@ -46,10 +46,6 @@ import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 const FIRST_NODE = 'overlook-social';
 /** The most ships of one hull drawn at sea in a frame: the player's and those near her. */
 const SEA_SHIPS = 16;
-/** The islands' names the owner has given, by continent. */
-const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
-/** The region every island lies in. */
-const REGION = 'The Pale Expanse';
 /** The veil stays down until the exact ground round the player has come, or this long. */
 const GROUND_WAIT_S = 20;
 /** How often the sea looks for another continent's coast nearby, seconds. */
@@ -59,12 +55,6 @@ const CHART_EVERY_S = 1;
 async function openForge(gpu: Gpu, figures: FigureView) {
   const { forge, store } = await openCards(figures);
   return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
-}
-
-/** The words under a place's name: its kind, and its island's name where it has one. */
-function placeWords(node: NodeInfo): string {
-  const island = ISLANDS[node.continent];
-  return island ? `${KIND_WORDS[node.kind]} · ${island}` : KIND_WORDS[node.kind];
 }
 
 /**
@@ -419,19 +409,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     map: () => heldMap,
   });
 
-  /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides; on foot
-   *  the fight's blood under the figures and its marks over them. */
-  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) => {
-    const found: (Drawer | null | undefined)[] = [
-      drawers.city,
-      drawers.nature,
-      fight?.under,
-      {
-        drawInto: (pass, fromEye, shot, time) => {
-          const camera = { fromEye, eye: shot.eye };
-          shipModels.draw(pass, ships, camera);
-          sea?.fight?.draw(pass, camera, time);
-        },
+  /** The drawers standing on the open landmass, the ships and the figures (`standingDrawers`). */
+  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) =>
+    standingDrawers(
+      drawers,
+      (pass, camera, time) => {
+        shipModels.draw(pass, ships, camera);
+        sea?.fight?.draw(pass, camera, time);
       },
       {
         castInto: (pass, fromEye, shot, _time, shadow) =>
@@ -439,10 +423,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         drawInto: (pass, fromEye, shot, _time, shadow) =>
           figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
       },
-      fight?.over,
-    ];
-    return found.filter((drawer): drawer is Drawer => !!drawer);
-  };
+      fight,
+    );
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
