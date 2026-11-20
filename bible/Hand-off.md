@@ -194,8 +194,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]], [[Dungeon Modules]], Claude's calls in
   [[Dungeons as Claude Builds Them]], "The modules"). The rules place the landmarks; the page places the kits and
   draws both from packs the `dungeon-modules` workflow publishes to R2. Tested offline: `cargo xtask check`, the
-  packs built twice to the same bytes here and by the workflow, three code reviews and two rounds of headless
-  pictures of twelve dungeons that hold every style and landmark, every finding fixed with a test. Not tested live.
+  packs built twice to the same bytes here and by the workflow, four code reviews and five rounds of headless
+  pictures of over a dozen dungeons that hold every style and landmark, every finding fixed at its cause with a test.
+  The last two fixes (rock hiding a flame from still water, the mines' drifts strewing rock) are not yet pictured.
+  Not tested live.
 
 - #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
   then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
