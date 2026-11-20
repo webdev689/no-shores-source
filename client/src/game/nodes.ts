@@ -1,3 +1,4 @@
+import social from '../../../content/world/social.json' with { type: 'json' };
 import { type NodeInfo, ringMiddle } from './worldData.ts';
 
 type Point = readonly [number, number];
@@ -24,6 +25,7 @@ export interface CityPlan {
     readonly ring: readonly Point[];
     readonly spawns: readonly Point[];
     readonly stations?: readonly StationInfo[];
+    readonly visitor_spots?: readonly Point[];
   };
   readonly pads: readonly Pad[];
 }
@@ -54,7 +56,7 @@ export function windowRect(ring: readonly Point[]): Rect {
 
 /** A city's social space as a node: `<city id>-social`, named for its city, its plaza's section and spawns. */
 export function socialNode(plan: CityPlan, continent: string): NodeInfo {
-  const { ring, spawns, stations = [] } = plan.social;
+  const { ring, spawns, stations = [], visitor_spots: visitorSpots = [] } = plan.social;
   return {
     id: `${plan.id}-social`,
     kind: 'social',
@@ -64,7 +66,27 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
     spawns,
     centre: ringMiddle(ring),
     stations,
+    visitorSpots,
   };
+}
+
+/** The cities whose social spaces open, by id (`content/world/social.json`, which the city crate reads too): Overlook's
+ *  alone. The other two ports' wait, locked, for later: shown so, and never gone to. The desolate cities' are never
+ *  gone to, and shown not at all. */
+export const OPEN_SOCIAL_SPACES: readonly string[] = social.open;
+const LATER_SOCIAL_SPACES: readonly string[] = social.later;
+/** What a social space that opens later says where it is offered. */
+export const LOCKED_WORDS = 'Opens later';
+const SOCIAL_SUFFIX = '-social';
+
+/** Whether the node `id` is a city's social space still locked. */
+export function socialLocked(id: string): boolean {
+  return id.endsWith(SOCIAL_SUFFIX) && !OPEN_SOCIAL_SPACES.includes(id.slice(0, -SOCIAL_SUFFIX.length));
+}
+
+/** Whether the node `id` is a locked social space that opens later, one of the other two ports'. */
+export function socialLater(id: string): boolean {
+  return socialLocked(id) && LATER_SOCIAL_SPACES.includes(id.slice(0, -SOCIAL_SUFFIX.length));
 }
 
 /** The compass bearing from one point to another: 0 north (-y), a quarter turn east (+x). */

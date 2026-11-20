@@ -20,7 +20,7 @@ export const ASKS = {
   vend: 12,
   wearEmblem: 13,
   buyEmblem: 14,
-  /** An Ammo crate used, filling the Ranged loadout's ammunition; one bought at the Quartermaster's counter. */
+  /** An Ammo crate used, filling the Ranged loadout's ammunition; one bought at the Weaponsmith's counter. */
   useCrate: 15,
   buyCrate: 16,
   gather: 20,
@@ -42,7 +42,26 @@ export const ASKS = {
    *  the fragment's place in its Art's list (0 to 5) in `node`. */
   wearArt: 40,
   setCore: 41,
+  /** An Art, its number in `column`, set at `level` (1 to 5) owning all its fragments: the Test Ground's grant. */
+  grantArtLevel: 42,
+  /** A faction's asks, its number in `column`: pledging, one of its wares (its place among them in `node`),
+   *  collecting a package. */
+  pledge: 50,
+  buyFactionWare: 51,
+  collectPackage: 52,
+  /** An Art raised a level, or one of its fragments bought, at its faction's counter: the Art in `column`, the
+   *  fragment's place in `node`. */
+  riseArt: 53,
+  buyFragment: 54,
+  /** A dye, coat or barding worn, or bought from the Tailor or the Tack, by its number in `item`. */
+  wearCosmetic: 55,
+  buyCosmetic: 56,
+  /** One of Shape's wares of the week, by its place in `node`. */
+  buyFromShape: 57,
 } as const;
+
+/** Shape's place while he is away. */
+export const SHAPE_AWAY = 255;
 
 /** An ask of a player's gear: what, and what it names: an item or Vestige by the player's number for it, a slot, a
  *  node's column and place, and for the Test Ground's grants a rarity, a level, a count, a kind and a named item. */
@@ -146,13 +165,13 @@ export interface GearState {
   readonly vestiges: readonly GearVestige[];
   readonly drops: readonly GearDrop[];
   readonly spent: readonly number[];
-  /** Whether they stand where a Vestige opens: the Reader's counter, or the Test Ground's stall. */
-  readonly atReader: boolean;
+  /** Whether they stand where a Vestige opens: the Mage's counter, or the Test Ground's stall. */
+  readonly atMage: boolean;
   readonly answer: number;
   readonly identified: number;
   readonly answered: number;
   readonly nodes: readonly GearNode[];
-  /** In a social space, the vendors' wares of the day: the Quartermaster's, then the Armsmith's, each numbered by
+  /** In a social space, the smiths' wares of the day: the Armorsmith's, then the Weaponsmith's, each numbered by
    *  its place among its vendor's. */
   readonly wares: readonly GearItem[];
   /** What the player's worn gear trims of the fight's numbers, which their browser predicts them by. */
@@ -172,12 +191,41 @@ export interface GearState {
   /** Their Arts: the Art worn, each Art's Core, and the Anima's and Tenets' charge. */
   readonly arts?: ArtState;
   /** The shots left in the Ranged loadout worn and its capacity (0 with none worn), the share of a full capacity kept
-   *  (0 to 1), the Ammo crates carried, and in a social space the Quartermaster's price for one (0 elsewhere). */
+   *  (0 to 1), the Ammo crates carried, and in a social space the Weaponsmith's price for one (0 elsewhere). */
   readonly ammo?: number;
   readonly ammoMost?: number;
   readonly ammoShare?: number;
   readonly crates?: number;
   readonly cratePrice?: number;
+  /** Where they stand with the factions (content/gear/factions.json's order). */
+  readonly standing?: GearStanding;
+  /** The cosmetics they keep and the dye, coat and barding they wear, by their place in content/gear/cosmetics.json;
+   *  and in a social space, those the Tailor and the Tack sell today. */
+  readonly cosmetics?: readonly number[];
+  readonly worn?: { readonly dye: number; readonly coat: number; readonly barding: number };
+  readonly cosmeticsSold?: readonly number[];
+  /** Their Shapes; and while Shape is in their social space, his place among its spots and his wares of the
+   *  week priced in Shapes. */
+  readonly shapes?: number;
+  readonly shape?: { readonly place: number; readonly wares: readonly GearItem[] } | null;
+  /** In a social space, every faction's wares, each numbered by its place among its faction's and priced in Aurem. */
+  readonly factionWares?: readonly GearItem[];
+  /** The day, counted from the epoch, whose smiths' wares these are: a smith's ware is asked by it, so the room
+   *  refuses one shown before the day turned. */
+  readonly day?: number;
+}
+
+/** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
+ *  content/gear/factions.json's order, the reputation earned and the packages it holds; for each Art in
+ *  content/arts/arts.json's order, its level (1 to 5), its XP toward the next and the fragments it owns, one bit each
+ *  by place. */
+export interface GearStanding {
+  readonly pledge: number;
+  readonly reputation: readonly number[];
+  readonly packages: readonly number[];
+  readonly artLevels: readonly number[];
+  readonly artXp: readonly number[];
+  readonly artOwned: readonly number[];
 }
 
 /** No node chosen in a column, and no resource. */
@@ -272,7 +320,7 @@ export function gearOf(gear: Gear): GearState {
     vestiges,
     drops,
     spent: Array.from(gear.spentArray() ?? []),
-    atReader: gear.atReader(),
+    atMage: gear.atMage(),
     answer: gear.answer(),
     identified: gear.identified(),
     answered: gear.answered(),
@@ -292,6 +340,29 @@ export function gearOf(gear: Gear): GearState {
     ammoShare: gear.ammoShare(),
     crates: gear.crates(),
     cratePrice: gear.cratePrice(),
+    standing: {
+      pledge: gear.pledge(),
+      reputation: Array.from({ length: gear.reputationLength() }, (unused, index) =>
+        Number(gear.reputation(index) ?? 0n),
+      ),
+      packages: Array.from(gear.packagesArray() ?? []),
+      artLevels: Array.from(gear.artLevelsArray() ?? []),
+      artXp: Array.from(gear.artXpArray() ?? []),
+      artOwned: Array.from(gear.artOwnedArray() ?? []),
+    },
+    cosmetics: Array.from(gear.cosmeticsArray() ?? []),
+    worn: { dye: gear.dye(), coat: gear.coat(), barding: gear.barding() },
+    cosmeticsSold: Array.from(gear.cosmeticsSoldArray() ?? []),
+    shapes: gear.shapes(),
+    shape:
+      gear.shapePlace() === SHAPE_AWAY
+        ? null
+        : {
+            place: gear.shapePlace(),
+            wares: listed(gear.shapeWaresLength(), (index) => gear.shapeWares(index), 'Shape ware'),
+          },
+    factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
+    day: gear.day(),
   };
 }
 

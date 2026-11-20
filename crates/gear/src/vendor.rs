@@ -1,6 +1,6 @@
-//! The social space's vendors: the Quartermaster sells armour and the Armsmith loadouts, two Melee to each Ranged, each
+//! The social space's smiths: the Armorsmith sells armour and the Weaponsmith loadouts, two Melee to each Ranged, each
 //! six pieces a day, three Rare and three Magic at the buyer's level, the same for everyone that day. Their wares are
-//! paid in Aurem; Legendary and Atheric gear is never sold, only earned.
+//! paid in Aurem; Legendary and Atheric gear is never sold for Aurem, only earned, or had from Shape (`shape.rs`).
 
 use crate::dice::Dice;
 use crate::item::{Item, NAMED_LEVEL};
@@ -11,14 +11,14 @@ use crate::vestige;
 /// A vendor.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Vendor {
-    Quartermaster,
-    Armsmith,
+    Armorsmith,
+    Weaponsmith,
 }
 
 impl Vendor {
-    pub const ALL: [Vendor; 2] = [Vendor::Quartermaster, Vendor::Armsmith];
+    pub const ALL: [Vendor; 2] = [Vendor::Armorsmith, Vendor::Weaponsmith];
 
-    /// A vendor by its number on the wire: 0 the Quartermaster, 1 the Armsmith.
+    /// A vendor by its number on the wire: 0 the Armorsmith, 1 the Weaponsmith.
     #[must_use]
     pub fn from_number(number: u8) -> Option<Self> {
         Self::ALL.get(usize::from(number)).copied()
@@ -27,8 +27,8 @@ impl Vendor {
     /// The slots its wares are for.
     fn slots(self) -> &'static [Slot] {
         match self {
-            Vendor::Quartermaster => &[Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs],
-            Vendor::Armsmith => &[Slot::Melee, Slot::Melee, Slot::Ranged],
+            Vendor::Armorsmith => &[Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs],
+            Vendor::Weaponsmith => &[Slot::Melee, Slot::Melee, Slot::Ranged],
         }
     }
 }

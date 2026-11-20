@@ -7,8 +7,7 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 ## Musts
 
 - **The owner sets the vision.** Never invent game design. Record a decision only once the owner makes it, in the
-  owner's words (`bible/04-Procedures/Recording a Decision.md`). When a choice is the owner's, ask. A change that
-  builds or records a decision gets a fidelity review before its pull request; CI holds a decision's pull request to it.
+  owner's words (`bible/04-Procedures/Recording a Decision.md`). When a choice is the owner's, ask.
 - **More organisation, less bloat.** Whatever comes from DFO Online comes over better organised and smaller.
 - **Done means `cargo xtask check` passes.** Run it before every push (after `npm ci` once). CI runs the same.
 - **Ask before merging or deploying.** A pull request for each change; merge into `main`, deploy or release only

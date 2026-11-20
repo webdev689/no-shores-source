@@ -28,6 +28,12 @@ pub enum Purpose {
     Emblem = 10,
     /// Whether a kill leaves an Ammo box.
     AmmoBox = 11,
+    /// Which cosmetics a seller shows on a day (the place in the list added to the purpose's number).
+    Cosmetic = 12,
+    /// A faction's package: whether its Vestige is Legendary, and its slot.
+    Package = 40,
+    /// Where Shape stands in a week, the slots of his wares, and the Shapes a kill gives.
+    Shape = 44,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
     Patrol = 64,
 }
