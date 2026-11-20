@@ -165,7 +165,6 @@ test("the ship's part of the gear message reads back: its power, materials, hand
     officers,
     offers,
     GearShip.createTrimVector(builder, [1, 2]),
-    2,
   );
   Gear.startGear(builder);
   Gear.addShip(builder, ship);
@@ -177,8 +176,8 @@ test("the ship's part of the gear message reads back: its power, materials, hand
     [9_000n, 6, 12, 80, 140, 0.25, 1_200],
   );
   assert.deepEqual(
-    [read.stocks, read.hands, read.handsMost, read.trim, read.pledge],
-    [[10, 20, 30, 4], 18, 24, [1, 2], 2],
+    [read.stocks, read.hands, read.handsMost, read.trim],
+    [[10, 20, 30, 4], 18, 24, [1, 2]],
   );
   const [kept] = read.officers;
   assert.deepEqual(
