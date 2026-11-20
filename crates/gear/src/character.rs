@@ -5,7 +5,7 @@
 
 use crate::catalogue::catalogue;
 use crate::item::Item;
-use crate::kinds::{Kind, Slot, Stock};
+use crate::kinds::{Group, Kind, Slot, Stock};
 use crate::power;
 use crate::rarity::Rarity;
 use serde::{Deserialize, Serialize};
@@ -55,6 +55,9 @@ pub struct Materials {
     /// Ammo crates carried (`ammo.rs`).
     #[serde(default)]
     pub crates: u16,
+    /// The ship's own materials (`ship::materials`).
+    #[serde(default)]
+    pub ship: crate::ship::materials::ShipStock,
 }
 
 impl Materials {
@@ -63,6 +66,7 @@ impl Materials {
         match stock {
             Stock::Weapon => self.weapon_fragments,
             Stock::Armor => self.armor_fragments,
+            Stock::Ship => 0,
         }
     }
 
@@ -71,6 +75,7 @@ impl Materials {
         match stock {
             Stock::Weapon => self.weapon_essence,
             Stock::Armor => self.armor_essence,
+            Stock::Ship => 0,
         }
     }
 
@@ -91,6 +96,8 @@ impl Materials {
             Stuff::Fragments(Stock::Armor) => &mut self.armor_fragments,
             Stuff::Essence(Stock::Weapon) => &mut self.weapon_essence,
             Stuff::Essence(Stock::Armor) => &mut self.armor_essence,
+            // A ship's materials are her own stock's.
+            Stuff::Fragments(Stock::Ship) | Stuff::Essence(Stock::Ship) => return 0,
             Stuff::Fruit => &mut self.fruit,
             Stuff::Resource(index) => {
                 if self.resources.len() <= index {
@@ -144,6 +151,12 @@ pub struct Character {
     /// Where the sea last kept their ship, to the whole metre; none before she first put to sea.
     #[serde(default)]
     pub ship_at: Option<[i64; 2]>,
+    /// The experience the ship has earned in sea fights, which raises her to level 20 (`ship.rs`).
+    #[serde(default)]
+    pub ship_xp: u64,
+    /// Whether the ship has been fitted with her first modules; a ship never fitted is, as she is read.
+    #[serde(default)]
+    pub ship_fitted: bool,
 }
 
 /// A ship's hull, canvas or men whole, in ten-thousandths.
@@ -171,6 +184,8 @@ impl Character {
             ammo: crate::ammo::AMMO_FULL,
             ship: whole_ship(),
             ship_at: None,
+            ship_xp: 0,
+            ship_fitted: false,
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),
@@ -182,6 +197,7 @@ impl Character {
             let id = character.take_id();
             character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }
+        character.fit_first_modules();
         character.earn_due();
         character
     }
@@ -225,6 +241,7 @@ impl Character {
             *stock = (*stock).min(STOCK_MOST);
         }
         materials.crates = materials.crates.min(crate::ammo::CRATES_MOST);
+        materials.ship = materials.ship.kept();
         character.ammo = character.ammo.min(crate::ammo::AMMO_FULL);
         character.ship = character.ship.map(|share| share.min(SHIP_WHOLE));
         let mut worn = Vec::new();
@@ -244,6 +261,7 @@ impl Character {
         let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         character.arts = std::mem::take(&mut character.arts).kept();
+        character.fit_first_modules();
         character.earn_due();
         Some(character)
     }
@@ -304,7 +322,7 @@ impl Character {
     /// The Prestige of the armour worn.
     #[must_use]
     pub fn prestige(&self) -> u32 {
-        self.all_worn().map(|(_, item)| item.prestige()).sum()
+        self.all_worn().filter(|(slot, _)| !slot.ship()).map(|(_, item)| item.prestige()).sum()
     }
 
     /// The player's level, 1 to 30.
@@ -337,7 +355,7 @@ impl Character {
     /// The Defense of everything worn: the four armour pieces.
     #[must_use]
     pub fn defense(&self) -> u32 {
-        self.all_worn().filter_map(|(_, item)| item.defense()).sum()
+        self.all_worn().filter(|(slot, _)| !slot.ship()).filter_map(|(_, item)| item.defense()).sum()
     }
 
     /// The Attack of the loadout worn in a slot, if one is.
@@ -366,12 +384,15 @@ impl Character {
     /// Whether the armour worn gives a trait, whichever loadout is drawn.
     #[must_use]
     pub fn has_trait(&self, id: &str) -> bool {
-        self.all_worn().any(|(slot, item)| !slot.loadout() && item.active_traits().any(|active| active == id))
+        self.all_worn()
+            .any(|(slot, item)| slot.group() == Group::Armour && item.active_traits().any(|active| active == id))
     }
 
-    /// Everything worn that gives its traits while a loadout is drawn: all but the other loadout.
+    /// Everything worn that gives its traits while a loadout is drawn: the armour and that loadout; never the ship's
+    /// modules, whose traits are hers (`ship_traits`).
     fn drawing(&self, drawn: Slot) -> impl Iterator<Item = &Item> {
-        self.all_worn().filter(move |(slot, _)| !slot.loadout() || *slot == drawn).map(|(_, item)| item)
+        let gives = move |slot: &Slot| slot.group() == Group::Armour || *slot == drawn;
+        self.all_worn().filter(move |(slot, _)| gives(slot)).map(|(_, item)| item)
     }
 
     /// Adds XP to the player and to the items that earn it, a tenth more with Scholar worn. Past level 20 every

@@ -1,5 +1,6 @@
-//! The social space's vendors: the Quartermaster sells armour and the Armsmith loadouts, two Melee to each Ranged, each
-//! six pieces a day, three Rare and three Magic at the buyer's level, the same for everyone that day. Their wares are
+//! The social space's vendors: the Quartermaster sells armour, the Armsmith loadouts, two Melee to each Ranged, and the
+//! Shipwright a ship's modules, each six pieces a day, three Rare and three Magic at the buyer's level (the
+//! Shipwright's at their ship's), the same for everyone that day. Their wares are
 //! paid in Aurem; Legendary and Atheric gear is never sold, only earned.
 
 use crate::dice::Dice;
@@ -13,12 +14,13 @@ use crate::vestige;
 pub enum Vendor {
     Quartermaster,
     Armsmith,
+    Shipwright,
 }
 
 impl Vendor {
-    pub const ALL: [Vendor; 2] = [Vendor::Quartermaster, Vendor::Armsmith];
+    pub const ALL: [Vendor; 3] = [Vendor::Quartermaster, Vendor::Armsmith, Vendor::Shipwright];
 
-    /// A vendor by its number on the wire: 0 the Quartermaster, 1 the Armsmith.
+    /// A vendor by its number on the wire: 0 the Quartermaster, 1 the Armsmith, 2 the Shipwright.
     #[must_use]
     pub fn from_number(number: u8) -> Option<Self> {
         Self::ALL.get(usize::from(number)).copied()
@@ -29,7 +31,14 @@ impl Vendor {
         match self {
             Vendor::Quartermaster => &[Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs],
             Vendor::Armsmith => &[Slot::Melee, Slot::Melee, Slot::Ranged],
+            Vendor::Shipwright => &Slot::SHIP,
         }
+    }
+
+    /// Whether its wares are made at the buyer's ship's level rather than their own.
+    #[must_use]
+    pub fn for_ship(self) -> bool {
+        self == Vendor::Shipwright
     }
 }
 

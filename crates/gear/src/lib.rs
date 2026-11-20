@@ -19,6 +19,7 @@ mod old_hands;
 pub mod power;
 pub mod rarity;
 pub mod rewards;
+pub mod ship;
 pub mod shown;
 pub mod vendor;
 pub mod vestige;

@@ -21,6 +21,10 @@
     "head": { "normal": ["Padded Cap"], "magic": ["Boiled Leather Cap", "Sailor's Helm", "Sound Helm"], "rare": ["Crow's Nest", "Lookout's Helm", "Spray Visor"] },
     "torso": { "normal": ["Quilted Coat"], "magic": ["Boiled Leather Coat", "Sailor's Hauberk", "Sound Hauberk"], "rare": ["Deckplate", "Boarder's Coat", "Squallguard"] },
     "arms": { "normal": ["Work Gloves"], "magic": ["Leather Bracers", "Sailor's Gauntlets", "Sound Gauntlets"], "rare": ["Ropewrights", "Grapple Gauntlets", "Tarred Hands"] },
-    "legs": { "normal": ["Sailcloth Trousers"], "magic": ["Leather Greaves", "Sailor's Greaves", "Sound Greaves"], "rare": ["Deckwalkers", "Seabooted Greaves", "Tidewaders"] }
+    "legs": { "normal": ["Sailcloth Trousers"], "magic": ["Leather Greaves", "Sailor's Greaves", "Sound Greaves"], "rare": ["Deckwalkers", "Seabooted Greaves", "Tidewaders"] },
+    "guns": { "normal": ["Guns"], "magic": ["Tempered Guns", "Sound Guns", "Brass Guns"], "rare": ["Harbour Battery", "Salt-Cast Guns", "Gullroar Battery"] },
+    "hull": { "normal": ["Hull"], "magic": ["Tarred Hull", "Sound Hull", "Caulked Hull"], "rare": ["Breakwater Hull", "Reefwalker Hull", "Saltoak Hull"] },
+    "sails": { "normal": ["Sails"], "magic": ["Patched Sails", "Sound Sails", "Tanned Sails"], "rare": ["Gullwing Sails", "Spray Sails", "Dawnwind Sails"] },
+    "rigging": { "normal": ["Rigging"], "magic": ["Tarred Rigging", "Sound Rigging", "Hempen Rigging"], "rare": ["Ropewalk Rigging", "Seagrass Rigging", "Brineline Rigging"] }
   }
 }

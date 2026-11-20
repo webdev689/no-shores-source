@@ -20,8 +20,9 @@ pub enum TraitColumn {
 }
 
 /// A trait a node may hold: its id, name and words, the column it is offered in, and what it fits: `melee`,
-/// `ranged`, `weapon` (either loadout), `armour`, `shield` (a loadout with a shield, for a shield's block perks), or
-/// for a signature the one named item that carries it.
+/// `ranged`, `weapon` (either loadout), `armour`, `shield` (a loadout with a shield, for a shield's block perks), `ship`
+/// (any of a ship's modules) or one module's own (`guns`, `hull`, `sails`, `rigging`), or for a signature the one
+/// named item that carries it.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct TraitDef {
     pub id: String,
@@ -206,10 +207,10 @@ impl Catalogue {
                 problems.push(format!("no Legendary {kind:?}"));
             }
         }
-        for slot in Slot::VESTIGE {
+        for slot in Slot::VESTIGE.into_iter().chain(Slot::SHIP) {
             for rarity in [Rarity::Legendary, Rarity::Atheric] {
                 if self.vestige_pool(rarity, slot).next().is_none() {
-                    problems.push(format!("no {rarity:?} item a Vestige could open to in {slot:?}"));
+                    problems.push(format!("no {rarity:?} item found for {slot:?}"));
                 }
             }
         }
@@ -230,11 +231,15 @@ impl Catalogue {
         if item.breach && !(item.kind.armour() && item.rarity == Rarity::Legendary) {
             problems.push(format!("{id}: only a Legendary's armour comes from a Breach"));
         }
-        if item.resource.as_deref().and_then(|resource| self.resource_index(resource)).is_none() {
+        // A module's nodes ask for ship materials, never an island's resource.
+        let resource = item.resource.as_deref().map(|resource| self.resource_index(resource).is_some());
+        if item.kind.module() && resource.is_some() {
+            problems.push(format!("{id}: a module asks for ship materials, not a resource"));
+        } else if !item.kind.module() && resource != Some(true) {
             problems.push(format!("{id}: its resource is none the catalogue holds"));
         }
         let wanted: Vec<Column> =
-            columns(item.rarity, item.kind.weapon()).iter().copied().filter(|column| column.traits()).collect();
+            columns(item.rarity, item.kind.weapon_grid()).iter().copied().filter(|column| column.traits()).collect();
         if wanted.len() != item.layout.len() {
             problems.push(format!("{id}: {} trait columns, its rarity has {}", item.layout.len(), wanted.len()));
             return;
@@ -264,7 +269,7 @@ impl Catalogue {
             }
             // A rolled item never offers one trait twice, so each pool must hold its rarity's trait nodes.
             let mut needed: BTreeMap<TraitColumn, usize> = BTreeMap::new();
-            for column in columns(rarity, kind.weapon()) {
+            for column in columns(rarity, kind.weapon_grid()) {
                 if let Some(found) = column_kind(*column) {
                     *needed.entry(found).or_default() += usize::from(column.nodes());
                 }
@@ -297,6 +302,11 @@ fn fits(found: &TraitDef, kind: Kind, named: Option<&str>) -> bool {
         "weapon" => kind.weapon(),
         "armour" => kind.armour(),
         "shield" => kind.shielded(),
+        "ship" => kind.module(),
+        "guns" => kind == Kind::Guns,
+        "hull" => kind == Kind::Hull,
+        "sails" => kind == Kind::Sails,
+        "rigging" => kind == Kind::Rigging,
         item => named == Some(item),
     }
 }

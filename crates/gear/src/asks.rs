@@ -173,7 +173,8 @@ impl Character {
         if !item.kind.fits(slot) {
             return Err(Refusal::DoesNotFit);
         }
-        if item.level > self.level() {
+        let level = if slot.ship() { self.ship_level() } else { self.level() };
+        if item.level > level {
             return Err(Refusal::TooLow);
         }
         if item.rarity == Rarity::Atheric
@@ -181,7 +182,7 @@ impl Character {
                 worn.rarity == Rarity::Atheric
                     && worn.id != id
                     && worn_slot != slot
-                    && worn_slot.loadout() == slot.loadout()
+                    && worn_slot.group() == slot.group()
             })
         {
             return Err(Refusal::OneAtheric);
@@ -199,7 +200,8 @@ impl Character {
         if !here.social {
             return Err(Refusal::NotHere);
         }
-        let wares = vendor::wares(vendor, here.day, self.level());
+        let level = if vendor.for_ship() { self.ship_level() } else { self.level() };
+        let wares = vendor::wares(vendor, here.day, level);
         let mut item = wares.into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
         let cost = vendor::price(item.rarity);
         if self.materials.aurem < cost {
@@ -255,6 +257,15 @@ impl Character {
         }
         let cost = item.cost_of(column);
         let stock = item.kind.stock();
+        if stock == Stock::Ship {
+            let price = crate::ship::materials::price_of(item.kind, cost);
+            if self.materials.aurem < cost.aurem || !self.materials.ship.affords(&price) {
+                return Err(Refusal::Short);
+            }
+            self.materials.aurem -= cost.aurem;
+            self.materials.ship.pay(&price);
+            return self.bought(id, column, node, bit);
+        }
         let resource = usize::from(item.resource.unwrap_or_default());
         let held = &self.materials;
         if held.aurem < cost.aurem
@@ -275,10 +286,16 @@ impl Character {
                 materials.armor_fragments -= cost.fragments;
                 materials.armor_essence -= cost.essence;
             }
+            Stock::Ship => {}
         }
         if cost.resource > 0 {
             materials.resources[resource] -= cost.resource;
         }
+        self.bought(id, column, node, bit)
+    }
+
+    /// Lights a node paid for, choosing it if its column had none.
+    fn bought(&mut self, id: u32, column: usize, node: u8, bit: u32) -> Result<Option<Done>, Refusal> {
         let item = self.held_mut(id)?;
         item.bought |= bit;
         if let Some(chosen) = item.chosen.get_mut(column).filter(|chosen| **chosen == NONE_CHOSEN) {
@@ -324,6 +341,12 @@ impl Character {
             Rarity::Atheric => (300, 5, 2 + back),
         };
         self.materials.add_aurem(aurem);
+        if stock == Stock::Ship {
+            let [first, _] = crate::ship::materials::made_of(item.kind);
+            self.materials.ship.add(first, fragments * 2);
+            self.materials.ship.add(crate::ship::materials::ShipMaterial::Heartwood, essence);
+            return;
+        }
         self.materials.add(Stuff::Fragments(stock), fragments);
         self.materials.add(Stuff::Essence(stock), essence);
     }
@@ -359,6 +382,9 @@ impl Character {
             return Err(Refusal::NoFruit);
         }
         let item = self.held_mut(id)?;
+        if item.kind.module() {
+            return Err(Refusal::DoesNotFit);
+        }
         if item.xp >= item.xp_most() {
             return Err(Refusal::FullOfXp);
         }
