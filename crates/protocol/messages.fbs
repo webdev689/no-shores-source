@@ -56,7 +56,8 @@ table Input {
 // turned to `facing` when it holds one heading (radians clockwise from north).
 // In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the
 // helm, a step of the player's walk on her deck instead: its controls in the movement crate's order and its number,
-// 1, 2, 3 and so on from the helm left. Or the helm left (1), or taken again at the wheel (2).
+// 1, 2, 3 and so on from the helm left. Or the helm left (1), or taken again at the wheel (2). Or an ask: her repair
+// by a port city (1), or to board a captain who struck (2).
 table Course {
   points: [double];
   pace: ushort;
@@ -65,6 +66,35 @@ table Course {
   walk_sequence: uint;
   helm: ubyte;
   facing: [double];
+  ask: ubyte;
+}
+
+// A piece of what floats at sea, kept for one player: theirs, its number, where it floats (x, y in metres) and what it
+// looks like (0 a crate, 1 a barrel, 2 a chest).
+table Flotsam {
+  player: uint;
+  id: uint;
+  x: double;
+  y: double;
+  kind: ubyte;
+}
+
+// A player's ship's hurts as the sea keeps them: the shares of her hull, canvas and men she has, and the seconds her
+// repair has left (0 with none under way).
+table Kept {
+  player: uint;
+  hull: double;
+  sail: double;
+  crew: double;
+  repair_left: double;
+}
+
+// What the sea tells one player this tick beside their fight's view: one event in the naval crate's numbers
+// (crates/naval/src/wire.rs: what floats laid, gathered, a boarding), or the sea's own (crates/room/src/harbour.rs:
+// washed up, what a piece held).
+table Told {
+  player: uint;
+  numbers: [double];
 }
 
 // A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: her helm (the rudder from -1, to port,
@@ -295,7 +325,8 @@ table Spell {
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
 // pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on her deck in
 // her own frame (x to her starboard, y to her stern, z over her waterline); in a fleet room, every ship, the balls
-// aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land.
+// aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land;
+// and at sea what floats for each player, each player's ship's kept hurts, and what each player is told this tick.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -311,6 +342,9 @@ table Snapshot {
   naval: [Naval];
   fight_clock: double;
   spells: [Spell];
+  flotsam: [Flotsam];
+  kept: [Kept];
+  told: [Told];
 }
 
 // One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the

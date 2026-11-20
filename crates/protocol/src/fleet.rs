@@ -181,6 +181,8 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
         Event::Load { ship, shot } => (LOAD, ship, 0, load_code(Some(shot)), 0, none, none, 0.0),
         Event::Gone { ship, end } => (GONE, ship, 0, u8::from(end == End::Gone), 0, none, none, 0.0),
         Event::Ram { ship, by, point, dealt } => (RAM, ship, by, 0, 0, point, none, dealt),
+        // The sea's own events (its splashes, hits, torn rig, colours, flotsam and boarding) cross only at sea.
+        _ => return None,
     })
 }
 

@@ -113,6 +113,8 @@ fn event_json(event: &Event) -> Option<Value> {
         Event::Ram { ship, by, point, dealt } => {
             json!({ "kind": "ram", "ship": ship, "by": by, "point": point, "dealt": dealt })
         }
+        // The sea's own events (its splashes, hits, torn rig, colours, flotsam and boarding) cross only at sea.
+        _ => return None,
     })
 }
 

@@ -1,0 +1,121 @@
+//! What happens in a fight's tick, for the browser to show (each names the ship it happened to), and how a captain
+//! left it.
+
+use crate::arms::Side;
+use crate::damage::State;
+use crate::guns::Shot;
+use crate::shots::{ShipId, ShotEvent};
+
+/// Why a player's guns did not fire.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Refusal {
+    NoGuns,
+    Silent,
+    Braced,
+    Reloading { side: Side, left: f64 },
+}
+
+/// What happened in a tick, for the browser to show; each names the ship it happened to.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Event {
+    Shot(ShotEvent),
+    RunOut {
+        ship: ShipId,
+        side: Side,
+    },
+    State {
+        ship: ShipId,
+        state: State,
+    },
+    Refused {
+        ship: ShipId,
+        refusal: Refusal,
+    },
+    /// A player's sails would not set: her rigging is shot away, or she is a wreck.
+    NoSail {
+        ship: ShipId,
+        wrecked: bool,
+    },
+    Load {
+        ship: ShipId,
+        shot: Shot,
+    },
+    /// A captain left the fight.
+    Gone {
+        ship: ShipId,
+        end: End,
+    },
+    /// A player's stem rammed a ship (`ship`, rammed `by`): where it struck, and the hull it took from her.
+    Ram {
+        ship: ShipId,
+        by: ShipId,
+        point: [f64; 3],
+        dealt: f64,
+    },
+    /// A ball fell in the water there.
+    Splash {
+        at: [f64; 2],
+    },
+    /// A ball struck her: where, in her own frame, and on which part.
+    Hit {
+        ship: ShipId,
+        at: [f64; 3],
+        part: Part,
+    },
+    /// A sail of hers (her sail index, as her manifest lists them) tore away.
+    SailLost {
+        ship: ShipId,
+        sail: usize,
+    },
+    /// A mast of hers (0 fore to aft) fell, with every sail on it.
+    MastFell {
+        ship: ShipId,
+        mast: usize,
+    },
+    /// Her colours came down.
+    Struck {
+        ship: ShipId,
+    },
+    /// She began to go down.
+    Sinking {
+        ship: ShipId,
+    },
+    /// A piece of what floats was laid there (the sea room's, by its number).
+    Flotsam {
+        id: u32,
+        at: [f64; 2],
+        kind: Piece,
+    },
+    /// A player (by their number) gathered a piece of what floats.
+    Gathered {
+        id: u32,
+        by: u32,
+    },
+    /// Players went aboard her.
+    Boarding {
+        ship: ShipId,
+    },
+}
+
+/// The part of her a ball struck: her hull, a sail still set, or her rig where its sail is gone.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Part {
+    Hull,
+    Sail,
+    Rig,
+}
+
+/// A piece of what floats: a crate or a barrel of what she carried, or a chest.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Piece {
+    Crate,
+    Barrel,
+    Chest,
+}
+
+/// How a captain left the fight.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum End {
+    Sunk,
+    Gone,
+}

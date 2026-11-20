@@ -137,16 +137,16 @@ fn a_player_who_leaves_is_forgotten_and_her_rival_fought() {
 }
 
 #[test]
-fn a_wreck_mends_unless_a_captain_who_would_take_her_lies_near_her() {
+fn a_hurt_ship_mends_unless_a_captain_who_would_take_her_lies_near_her() {
     let mut fight = fleet(300.0, 5000.0, Temper::Bold);
     for id in [PLAYER, SECOND] {
         let player = fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}"));
-        player.damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+        player.damage.apply(Hurt { hull: 200.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     }
     run(&mut fight, &idle_both(), 60 * 20);
     let hull = |id: ShipId| fight.vessel(id).map_or(-1.0, |vessel| vessel.damage.hull);
-    assert_eq!(hull(PLAYER), 0.0, "she lies within 700 m of a bold pirate");
-    assert!(hull(SECOND) > 0.0, "far off, her hands mend her");
+    assert_eq!(hull(PLAYER), 40.0, "she lies within 700 m of a bold pirate");
+    assert!(hull(SECOND) > 40.0, "far off, her hands mend her");
 }
 
 #[test]

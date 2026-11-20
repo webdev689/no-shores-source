@@ -260,6 +260,15 @@ pub fn posed(ship: &Ship, pose: &Pose, point: [f64; 3]) -> [f64; 3] {
     [ship.x + moved(0), ship.y + moved(1), pose.heave + moved(2)]
 }
 
+/// A point in the world in her own frame, through her pose: `posed` undone (her axes are square, so turned back by
+/// their transpose).
+#[must_use]
+pub fn unposed(ship: &Ship, pose: &Pose, point: [f64; 3]) -> [f64; 3] {
+    let turned = axes(ship, pose);
+    let off = [point[0] - ship.x, point[1] - ship.y, point[2] - pose.heave];
+    turned.map(|axis| off[0] * axis[0] + off[1] * axis[1] + off[2] * axis[2])
+}
+
 fn block(ship: &Ship, pose: &Pose, bounds: &Bounds) -> Block {
     let [low, high] = bounds;
     let centre = [0, 1, 2].map(|axis| (low[axis] + high[axis]) / 2.0);

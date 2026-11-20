@@ -107,6 +107,7 @@ pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
         flight: 1.0,
         gun: SWIVEL,
         shot: Shot::Round,
+        sail: None,
     };
     let events = vec![
         (7, Event::Shot(ShotEvent::Muzzle { shooter: 3, point: [1.0, 2.0, 3.0], launch: [50.0, 2.0, 4.0] })),

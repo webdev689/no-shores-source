@@ -49,6 +49,8 @@ pub struct Target {
     pub flag: Flag,
     pub hull: Block,
     pub rig: Vec<Block>,
+    /// Each of her sails' boxes a ball may still strike, by her sail index: its mast stands.
+    pub up: Vec<bool>,
     pub alive: bool,
 }
 
@@ -56,11 +58,33 @@ pub struct Target {
 /// reckoning. Ships are named by their numbers.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ShotEvent {
-    Muzzle { shooter: ShipId, point: [f64; 3], launch: [f64; 3] },
-    Hit { shooter: ShipId, target: ShipId, zone: Zone, point: [f64; 3], flight: f64, gun: Gun, shot: Shot },
-    Splash { shooter: ShipId, point: [f64; 3] },
-    Land { shooter: ShipId, point: [f64; 3] },
-    Gone { shooter: ShipId },
+    Muzzle {
+        shooter: ShipId,
+        point: [f64; 3],
+        launch: [f64; 3],
+    },
+    /// A ball struck her; on her canvas, `sail` is the sail whose box it entered.
+    Hit {
+        shooter: ShipId,
+        target: ShipId,
+        zone: Zone,
+        point: [f64; 3],
+        flight: f64,
+        gun: Gun,
+        shot: Shot,
+        sail: Option<usize>,
+    },
+    Splash {
+        shooter: ShipId,
+        point: [f64; 3],
+    },
+    Land {
+        shooter: ShipId,
+        point: [f64; 3],
+    },
+    Gone {
+        shooter: ShipId,
+    },
 }
 
 /// What stops a ball at a point: the water's surface, or the ground where there is none; and whether it is water.
@@ -120,15 +144,22 @@ fn fly_piece(
     let under = under_along(start, end, waters, time);
     let first = ship.map_or(f64::INFINITY, |(share, _)| share).min(under.map_or(f64::INFINITY, |(share, _)| share));
     let flight_at = |share: f64| ball.flown + (to - ball.flown) * share;
-    let mut torn: Vec<(f64, usize)> = (0..targets.len())
+    let mut torn: Vec<(f64, usize, usize)> = (0..targets.len())
         .filter(|at| in_play(*at) && !ball.rigged.contains(&targets[*at].id))
         .filter_map(|at| {
-            let entries = targets[at].rig.iter().filter_map(|sail| segment_entry(start, end, sail, radius));
-            entries.filter(|share| *share <= first).min_by(f64::total_cmp).map(|share| (share, at))
+            let target = &targets[at];
+            let standing =
+                target.rig.iter().enumerate().filter(|(sail, _)| target.up.get(*sail).copied().unwrap_or(true));
+            let entries = standing
+                .filter_map(|(sail, block)| segment_entry(start, end, block, radius).map(|share| (share, sail)));
+            entries
+                .filter(|(share, _)| *share <= first)
+                .min_by(|one, other| one.0.total_cmp(&other.0))
+                .map(|(share, sail)| (share, at, sail))
         })
         .collect();
     torn.sort_by(|one, other| one.0.total_cmp(&other.0));
-    for (share, at) in torn {
+    for (share, at, sail) in torn {
         ball.rigged.push(targets[at].id);
         let point = between(start, end, share);
         let (shooter, gun, shot) = (ball.shooter, ball.gun, ball.shot);
@@ -140,6 +171,7 @@ fn fly_piece(
             flight: flight_at(share),
             gun,
             shot,
+            sail: Some(sail),
         });
     }
     if first == f64::INFINITY {
@@ -152,7 +184,16 @@ fn fly_piece(
             let point = between(start, end, share);
             let zone = zone_at(point[2] - floor_at(waters, point, time).0);
             let (gun, shot) = (ball.gun, ball.shot);
-            events.push(ShotEvent::Hit { shooter, target, zone, point, flight: flight_at(share), gun, shot });
+            events.push(ShotEvent::Hit {
+                shooter,
+                target,
+                zone,
+                point,
+                flight: flight_at(share),
+                gun,
+                shot,
+                sail: None,
+            });
         }
         (_, Some((share, true))) => {
             let mut point = between(start, end, share);

@@ -3,15 +3,16 @@
 //! captains who leave.
 
 use super::{
-    DESPAWN_BEYOND, End, Event, Fight, HOSTILE_NEAR_M, Hurts, Orders, STRUCK_GRACE_S, Sailor, carry_of, floats, her_of,
-    sail_hurt, sighting_of,
+    DESPAWN_BEYOND, End, Event, Fight, HOSTILE_NEAR_M, Hurts, Orders, Part, STRUCK_GRACE_S, STRUCK_HOLD_S, Sailor,
+    carry_of, floats, her_of, sail_hurt, sighting_of, sink_depth,
 };
-use crate::arms::LARGE_BOAT;
+use crate::arms::{LARGE_BOAT, arms_of, unposed};
 use crate::captain::Mode;
 use crate::captain::course::distance;
 use crate::damage::{PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, State, Zone, founder, shot_harm};
 use crate::gunnery::{Lay, volley};
 use crate::guns::{fire_chance, rig_fire, shot_reach};
+use crate::rigging::Torn;
 use crate::shots::{Flag, ShipId, ShotEvent, step_balls};
 use sailing::TICK_SECONDS;
 use sailing::pose::{Pose, pose_of};
@@ -58,8 +59,30 @@ impl Fight {
             }
         }
         self.mend(wind, &mut events);
+        self.scuttle_unboarded(&mut events);
         self.see_off(&mut events);
+        told(&mut events);
         events
+    }
+
+    /// Each captain who struck `STRUCK_HOLD_S` ago with no one aboard her is scuttled.
+    fn scuttle_unboarded(&mut self, events: &mut Vec<Event>) {
+        let clock = self.clock;
+        let due: Vec<ShipId> = self
+            .ships
+            .iter()
+            .filter(|(_, vessel)| vessel.damage.state == State::Struck)
+            .filter(|(_, vessel)| {
+                vessel.command().is_some_and(|command| {
+                    !command.boarded && command.struck_at.is_some_and(|at| clock - at >= STRUCK_HOLD_S - 1e-9)
+                })
+            })
+            .map(|(id, _)| *id)
+            .collect();
+        for id in due {
+            // Its state and its going down are told with the tick's others.
+            events.extend(self.scuttle(id).into_iter().filter(|event| matches!(event, Event::State { .. })));
+        }
     }
 
     /// Each player's orders in turn: her brace and load, her sails refused a wreck or bare yards, and her step held
@@ -73,7 +96,10 @@ impl Fight {
         events: &mut Vec<Event>,
     ) {
         for (id, order) in orders {
-            let Some(player) = self.ships.get_mut(id).filter(|vessel| vessel.command().is_none()) else { continue };
+            let afloat = |vessel: &&mut super::Vessel| !matches!(vessel.damage.state, State::Sinking | State::Sunk);
+            let Some(player) = self.ships.get_mut(id).filter(|vessel| vessel.command().is_none()).filter(afloat) else {
+                continue;
+            };
             player.guns.braced = order.brace;
             if let Some(shot) = order.load
                 && player.guns.set_load(shot, 1.0, false)
@@ -89,8 +115,20 @@ impl Fight {
             player.pose = pose_of(&player.ship, player.hull.hull(), waters, time);
         }
         let ordered = |id: &ShipId| orders.iter().any(|(given, _)| given == id);
-        for (_, player) in self.ships.iter_mut().filter(|(id, vessel)| vessel.command().is_none() && !ordered(id)) {
-            player.pose = pose_of(&player.ship, player.hull.hull(), waters, time);
+        for (id, player) in self.ships.iter_mut().filter(|(_, vessel)| vessel.command().is_none()) {
+            let afloat = pose_of(&player.ship, player.hull.hull(), waters, time);
+            if matches!(player.damage.state, State::Sinking | State::Sunk) {
+                // She founders as a captain does, to the side and end a seed of none says.
+                let (drop, pitch, roll) = founder(&player.damage, 0, sink_depth(0, arms_of(player.hull)));
+                player.pose = Pose {
+                    heave: afloat.heave - drop,
+                    pitch: afloat.pitch + pitch,
+                    roll: afloat.roll + roll,
+                    ..afloat
+                };
+            } else if !ordered(id) {
+                player.pose = afloat;
+            }
         }
     }
 
@@ -154,7 +192,10 @@ impl Fight {
     /// A ball's strike: its harm by zone (grape's men by its flight), rolled; the struck grace for the rest of the
     /// volley that made a captain strike; and a captain struck by a ship in the fight is provoked by her.
     pub(super) fn strike(&mut self, hit: &ShotEvent, events: &mut Vec<Event>) {
-        let ShotEvent::Hit { shooter, target, zone, flight, gun, shot, .. } = *hit else {
+        let ShotEvent::Hit { shooter, target, zone, point, flight, gun, shot, sail } = *hit else {
+            if let ShotEvent::Splash { point, .. } = *hit {
+                events.push(Event::Splash { at: [point[0], point[1]] });
+            }
             return;
         };
         let gun = crate::guns::Gun { crew: gun.crew * shot_reach(shot, flight), ..gun };
@@ -176,6 +217,23 @@ impl Fight {
         hurt.fire = burns && self.draws.draw() < fire_chance(shot) * gun.share;
         let hurt = vessel.damage.shared(hurt, gun.share);
         let state = vessel.damage.apply(hurt, clock, floor);
+        let rig = sail.filter(|_| zone == Zone::Rig);
+        let part = match rig {
+            None => Part::Hull,
+            Some(sail) if vessel.rigging.lost(sail) => Part::Rig,
+            Some(_) => Part::Sail,
+        };
+        events.push(Event::Hit { ship: target, at: unposed(&vessel.ship, &vessel.pose, point), part });
+        match rig.and_then(|sail| vessel.rigging.struck(sail, hurt.sail, vessel.damage.max_sail)) {
+            Some(Torn::Sail(sail)) => {
+                // Her drive loses the torn sail's share: her canvas holds no more than her standing sails give.
+                vessel.damage.sail =
+                    vessel.damage.sail.min((vessel.damage.max_sail * vessel.rigging.standing()).floor());
+                events.push(Event::SailLost { ship: target, sail });
+            }
+            Some(Torn::Mast(mast)) => events.push(Event::MastFell { ship: target, mast }),
+            None => {}
+        }
         if let Sailor::Captain(command) = &mut vessel.sailor {
             if state == Some(State::Struck) {
                 command.struck_at = Some(clock);
@@ -205,6 +263,7 @@ impl Fight {
             let Some(player) = self.ships.get_mut(&id) else { continue };
             let wrecked = player.damage.state == State::Wrecked;
             player.damage.mend(TICK_SECONDS, clock, hostile_near, false);
+            player.damage.sail = player.damage.sail.min((player.damage.max_sail * player.rigging.standing()).floor());
             if wrecked && player.damage.state == State::Afloat {
                 events.push(Event::State { ship: id, state: State::Afloat });
             }
@@ -217,7 +276,7 @@ impl Fight {
         let foes: Vec<(Flag, [f64; 2])> = self
             .ships
             .values()
-            .filter(|vessel| vessel.command().is_none_or(|_| vessel.in_fight() && vessel.damage.fighting()))
+            .filter(|vessel| vessel.in_fight() && vessel.damage.fighting())
             .map(|vessel| (vessel.flag(), [vessel.ship.x, vessel.ship.y]))
             .collect();
         for id in self.ids(true) {
@@ -225,11 +284,12 @@ impl Fight {
             let (at, own) = ([vessel.ship.x, vessel.ship.y], vessel.flag());
             let apart = foes.iter().filter(|(flag, _)| *flag != own).map(|(_, foe)| distance(at, *foe));
             let nearest = apart.fold(f64::INFINITY, f64::min);
-            let sunk = vessel.damage.state == State::Sunk;
+            let (sunk, struck) = (vessel.damage.state == State::Sunk, vessel.damage.state == State::Struck);
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
             let end = if sunk {
                 Some(End::Sunk)
-            } else if nearest > DESPAWN_BEYOND && command.her.mode != Mode::Engage {
+            } else if nearest > DESPAWN_BEYOND && command.her.mode != Mode::Engage && !struck {
+                // One who struck lies hove to for boarders until she is scuttled.
                 Some(End::Gone)
             } else {
                 None
@@ -240,4 +300,17 @@ impl Fight {
             }
         }
     }
+}
+
+/// Each colours struck and each going down of the tick told again as its own event, after the rest.
+fn told(events: &mut Vec<Event>) {
+    let again: Vec<Event> = events
+        .iter()
+        .filter_map(|event| match *event {
+            Event::State { ship, state: State::Struck } => Some(Event::Struck { ship }),
+            Event::State { ship, state: State::Sinking } => Some(Event::Sinking { ship }),
+            _ => None,
+        })
+        .collect();
+    events.extend(again);
 }

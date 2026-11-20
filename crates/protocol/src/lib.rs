@@ -155,6 +155,10 @@ pub enum SeaInput {
     Walk(u32, Controls),
     LeaveHelm,
     TakeHelm,
+    /// Her repair by a port city.
+    Repair,
+    /// To board a captain who struck.
+    Board,
 }
 
 /// What a message to the sea room asks, or why it does not read: the helm when it asks for it, a step when it carries
@@ -162,6 +166,12 @@ pub enum SeaInput {
 /// them first.
 pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
     let course = flatbuffers::root::<messages::Course>(bytes).map_err(|error| error.to_string())?;
+    match course.ask() {
+        0 => {}
+        1 => return Ok(SeaInput::Repair),
+        2 => return Ok(SeaInput::Board),
+        other => return Err(format!("an ask is a repair (1) or a boarding (2), not {other}")),
+    }
     match course.helm() {
         0 => {}
         1 => return Ok(SeaInput::LeaveHelm),
@@ -218,6 +228,16 @@ pub fn helm_bytes(leave: bool) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let args = messages::CourseArgs { helm: if leave { 1 } else { 2 }, ..messages::CourseArgs::default() };
     let course = messages::Course::create(&mut builder, &args);
+    builder.finish(course, None);
+    builder.finished_data().to_vec()
+}
+
+/// An ask at sea as its bytes (1 a repair, 2 a boarding), written from Rust for tests.
+#[must_use]
+pub fn ask_bytes(ask: u8) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let course =
+        messages::Course::create(&mut builder, &messages::CourseArgs { ask, ..messages::CourseArgs::default() });
     builder.finish(course, None);
     builder.finished_data().to_vec()
 }
@@ -460,6 +480,7 @@ pub fn sea_snapshot_bytes(
     pirates: &[Pirate],
     fights: &[(PlayerId, Vec<f64>, Commission)],
     aboard: &[(PlayerId, u32, Body)],
+    harbour: &SeaHarbour,
 ) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let each: Vec<_> = aboard
@@ -506,8 +527,53 @@ pub fn sea_snapshot_bytes(
         })
         .collect();
     let fights = Some(builder.create_vector(&each));
-    let args = messages::SnapshotArgs { tick, players, ships, pirates, fights, ..messages::SnapshotArgs::default() };
+    let each: Vec<_> = harbour
+        .flotsam
+        .iter()
+        .map(|&(player, id, [x, y], kind)| {
+            messages::Flotsam::create(&mut builder, &messages::FlotsamArgs { player, id, x, y, kind })
+        })
+        .collect();
+    let flotsam = Some(builder.create_vector(&each));
+    let each: Vec<_> = harbour
+        .kept
+        .iter()
+        .map(|&(player, [hull, sail, crew], repair_left)| {
+            messages::Kept::create(&mut builder, &messages::KeptArgs { player, hull, sail, crew, repair_left })
+        })
+        .collect();
+    let kept = Some(builder.create_vector(&each));
+    let each: Vec<_> = harbour
+        .told
+        .iter()
+        .map(|(player, numbers)| {
+            let numbers = Some(builder.create_vector(numbers));
+            messages::Told::create(&mut builder, &messages::ToldArgs { player: *player, numbers })
+        })
+        .collect();
+    let told = Some(builder.create_vector(&each));
+    let args = messages::SnapshotArgs {
+        tick,
+        players,
+        ships,
+        pirates,
+        fights,
+        flotsam,
+        kept,
+        told,
+        ..messages::SnapshotArgs::default()
+    };
     finish_snapshot(builder, &args)
+}
+
+/// What the sea's snapshot carries beside its ships and fights: each piece of what floats (its player, its number,
+/// where it floats and its kind, 0 a crate, 1 a barrel, 2 a chest), each player's ship's kept hurts with the seconds
+/// her repair has left, and what each player is told this tick.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SeaHarbour {
+    pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
+    pub kept: Vec<(PlayerId, [f64; 3], f64)>,
+    pub told: Vec<(PlayerId, Vec<f64>)>,
 }
 
 fn finish_snapshot<'builder>(

@@ -182,7 +182,7 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
     let view = |captains: &[(sailing::ship::Ship, Commission, u32)]| {
         let mut fight = naval::fight::Fight::among(captains, &Open, 0.0);
         fight.put_to_sea(player, at(0.0, 0.0, 0.0), &Open, 0.0);
-        naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0)
+        naval::wire::view_numbers(&fight, naval::fight::PLAYER, &events, Some(&aim), &Open, 0.0)
     };
     vec![(2, view(&captains), TITHE_MINIBOSS), (5, view(&captains[..1]), TITHE_MINIBOSS)]
 }
@@ -382,7 +382,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(told, (Some(vec![1.0, -26.0, 1.1]), 30, 96, 3.0));
     assert!(spells[1].heads().is_none(), "a bolt seeks; it heads nowhere");
 
-    let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
+    let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     let ships: Vec<(PlayerId, Ship)> = sea
         .ships()
@@ -477,6 +477,6 @@ fn the_bytes_for_the_clients_test_are_written() {
     std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE))).unwrap();
     let snapshot = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
-    let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
+    let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }

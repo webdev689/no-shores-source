@@ -37,6 +37,12 @@ impl Clash {
         Clash { fight: Fight::among(&captains, waters, time), crews }
     }
 
+    /// Each of its ships by her number in the fight, as she sailed at sea.
+    #[must_use]
+    pub fn crews(&self) -> &[(ShipId, Pirate)] {
+        &self.crews
+    }
+
     /// Each of its ships still in the fight as a ship at sea, where the fight has her.
     pub fn ships(&self) -> impl Iterator<Item = Pirate> + '_ {
         self.crews.iter().filter_map(|(id, pirate)| {

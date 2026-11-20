@@ -8,6 +8,7 @@ use crate::damage::State;
 use crate::fight::{Aim, Fight, Refusal, Vessel, carry_of};
 use crate::gunnery::{Lay, RIPPLE_S, aimed, lay, lay_on, zone_radius};
 use crate::guns::Shot;
+use crate::rigging::masts_of;
 use crate::shots::{Flag, ShipId, Stop, Target, stop_of};
 
 use sailing::pose::Pose;
@@ -27,13 +28,16 @@ pub struct Sighted {
     pub ship: Ship,
     pub pose: Pose,
     pub afloat: bool,
+    /// The masts fallen, one bit a mast fore to aft: a ball passes where their sails stood.
+    pub fallen: u8,
 }
 
 impl Sighted {
     #[must_use]
     pub fn of(id: ShipId, vessel: &Vessel) -> Self {
         let afloat = vessel.damage.state != State::Sunk;
-        Self { id, flag: vessel.flag(), hull: vessel.hull, ship: vessel.ship, pose: vessel.pose, afloat }
+        let fallen = vessel.rigging.fallen_bits();
+        Self { id, flag: vessel.flag(), hull: vessel.hull, ship: vessel.ship, pose: vessel.pose, afloat, fallen }
     }
 
     /// Her as a ball meets her.
@@ -44,6 +48,7 @@ impl Sighted {
             flag: self.flag,
             hull: hull_block(&self.ship, &self.pose, arms_of(self.hull)),
             rig: sail_blocks(&self.ship, &self.pose, arms_of(self.hull)),
+            up: masts_of(self.hull).iter().map(|mast| self.fallen & (1 << mast) == 0).collect(),
             alive: self.afloat,
         }
     }
@@ -214,7 +219,7 @@ impl Fight {
     pub(crate) fn fire_order(&self, shooter: ShipId, aim: Option<&Aim>) -> Result<Lay, Refusal> {
         let lay = aim.and_then(|aim| self.laid(shooter, aim)).ok_or(Refusal::NoGuns)?;
         let player = self.vessel(shooter).ok_or(Refusal::NoGuns)?;
-        if player.damage.state == State::Wrecked {
+        if matches!(player.damage.state, State::Wrecked | State::Sinking | State::Sunk) {
             return Err(Refusal::Silent);
         }
         if player.guns.braced {

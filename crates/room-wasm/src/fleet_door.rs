@@ -78,7 +78,8 @@ fn sighted_of(numbers: &[f64]) -> Option<Sighted> {
     let flag = Flag::numbered(flag);
     let hull = (hull == hull.trunc() && (0.0..=f64::from(u8::MAX)).contains(&hull)).then_some(hull as u8)?;
     let hull = HullKind::numbered(hull)?;
-    Some(Sighted { id, flag, hull, ship, pose, afloat })
+    // shortcut: the page is not sent her fallen masts, so its lay may meet rig a ball now passes; send them if it shows.
+    Some(Sighted { id, flag, hull, ship, pose, afloat, fallen: 0 })
 }
 
 /// Her look's lay as the fleet room would lay it: from her own ship as `sighted_of` reads one, her load (1 round to

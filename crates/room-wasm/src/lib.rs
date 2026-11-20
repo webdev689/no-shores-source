@@ -202,6 +202,8 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                         Err(WalkRefused::NotAboard) => REFUSED,
                     };
                 }
+                Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
+                Ok(SeaInput::Board) => return if sea.board(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =
                         if helm == SeaInput::LeaveHelm { sea.leave_helm(player) } else { sea.take_helm(player) };
@@ -261,15 +263,21 @@ pub fn snapshot() -> Vec<u8> {
             protocol::snapshot_bytes(&snapshot)
         }
         Opened::Sea(sea) => {
-            let fights: Vec<_> = sea.fight_views().collect();
+            let fights = sea.fight_views();
             let aboard: Vec<(u32, u32, movement::Body)> =
                 sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
+            let kind = |piece: naval::fight::Piece| piece as u8;
+            let flotsam = sea.flotsam().iter().map(|piece| (piece.player, piece.id, piece.at, kind(piece.kind)));
+            let kept = sea.ships().filter_map(|(player, _)| sea.kept(player).map(|(kept, left)| (player, kept, left)));
+            let told = sea.told().to_vec();
+            let harbour = protocol::SeaHarbour { flotsam: flotsam.collect(), kept: kept.collect(), told };
             protocol::sea_snapshot_bytes(
                 sea.clock(),
                 &sea.ships().collect::<Vec<_>>(),
                 &sea.pirates(),
                 &fights,
                 &aboard,
+                &harbour,
             )
         }
         Opened::Fleet(fleet) => {

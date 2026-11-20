@@ -137,6 +137,18 @@ pub struct Character {
     /// The Ranged loadout's ammunition, as a share of its capacity in `ammo::AMMO_FULL` parts.
     #[serde(default = "crate::ammo::full")]
     pub ammo: u16,
+    /// Their ship's hull, canvas and men, each in ten-thousandths of whole, kept until she is repaired (the sea
+    /// room's).
+    #[serde(default = "whole_ship")]
+    pub ship: [u16; 3],
+}
+
+/// A ship's hull, canvas or men whole, in ten-thousandths.
+pub const SHIP_WHOLE: u16 = 10_000;
+
+/// A ship as sound as she was built.
+fn whole_ship() -> [u16; 3] {
+    [SHIP_WHOLE; 3]
 }
 
 impl Character {
@@ -154,6 +166,7 @@ impl Character {
             emblem: crate::emblems::starting(),
             arts: crate::arts::WornArts::default(),
             ammo: crate::ammo::AMMO_FULL,
+            ship: whole_ship(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),
@@ -209,6 +222,7 @@ impl Character {
         }
         materials.crates = materials.crates.min(crate::ammo::CRATES_MOST);
         character.ammo = character.ammo.min(crate::ammo::AMMO_FULL);
+        character.ship = character.ship.map(|share| share.min(SHIP_WHOLE));
         let mut worn = Vec::new();
         for (id, (item, at)) in std::mem::take(&mut character.items) {
             let item = crate::old_hands::unfit(&mut character, item.kept(id, resources));

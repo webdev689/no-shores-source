@@ -14,5 +14,6 @@ pub mod laying;
 pub mod ram;
 pub mod random;
 pub mod ranks;
+pub mod rigging;
 pub mod shots;
 pub mod wire;

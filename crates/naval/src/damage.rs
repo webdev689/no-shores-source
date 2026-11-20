@@ -1,5 +1,5 @@
 //! A ship's hurts, as DFO's: her hull, canvas and men, the harm one ball does by where it strikes, fire, striking,
-//! sinking (the player's boat is wrecked, never sunk), her way falling with her canvas, and her hands mending her in
+//! sinking (a captain's and a player's alike), her way falling with her canvas, and her hands mending her in
 //! quiet waters.
 
 use crate::arms::Build;
@@ -8,7 +8,7 @@ use crate::guns::Gun;
 /// A captain strikes at this share of her hull left, a Major's and a Minor's (her rank's otherwise).
 pub const STRUCK_AT: f64 = 0.25;
 /// Seconds from going down to gone.
-pub const SINK_SECONDS: f64 = 22.0;
+pub const SINK_SECONDS: f64 = 20.0;
 /// Going down she lists and trims this far (degrees), and her highest spar ends this far under the water (metres).
 pub const SINK_LIST_DEG: f64 = 32.0;
 pub const SINK_PITCH_DEG: f64 = 20.0;
@@ -258,18 +258,24 @@ impl Damage {
         self.settle()
     }
 
+    /// She is scuttled: she goes down from where she lies, her fires burning on.
+    pub fn scuttle(&mut self) {
+        if matches!(self.state, State::Afloat | State::Struck) {
+            self.state = State::Sinking;
+            self.sink_t = 0.0;
+        }
+    }
+
     /// The state her numbers call for, if it changed.
     fn settle(&mut self) -> Option<State> {
         let was = self.state;
-        if self.player {
-            if self.hull <= 0.0 {
-                self.state = State::Wrecked;
-            }
-        } else if matches!(self.state, State::Afloat | State::Struck) {
+        if matches!(self.state, State::Afloat | State::Struck | State::Wrecked) {
             if self.hull <= 0.0 {
                 // Her fires burn on as she goes down.
                 self.state = State::Sinking;
                 self.sink_t = 0.0;
+            } else if self.player {
+                // A player's ship never strikes: she fights on until she goes down.
             } else if self.state == State::Afloat && self.hull <= self.max_hull * self.struck_at {
                 self.state = State::Struck;
                 self.douse();
@@ -326,7 +332,8 @@ impl Damage {
     /// Her hands mend her hull and canvas at `now` if nothing has hurt her for a while and no hostile ship is near: up
     /// to half of each, a wreck afloat again past a share of her hull. Answers whether they mended anything.
     pub fn mend(&mut self, seconds: f64, now: f64, hostile_near: bool, crewed: bool) -> bool {
-        if now - self.last_hit_at < FIELD_QUIET_S || hostile_near {
+        if now - self.last_hit_at < FIELD_QUIET_S || hostile_near || matches!(self.state, State::Sinking | State::Sunk)
+        {
             return false;
         }
         let rate = FIELD_MEND_PER_S * if crewed { self.crew_share().clamp(0.0, 1.0) } else { FIELD_MEND_ALONE };
