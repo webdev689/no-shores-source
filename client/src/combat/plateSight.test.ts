@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   AIM_SWAP_DEGREES,
+  AIM_SWAP_SHARE,
   aimedFoe,
+  bodyDegrees,
   cameraOf,
   CONE,
+  coneShare,
   coneStep,
   coneWant,
   LAND_STEP_M,
@@ -39,7 +42,24 @@ test('the cone shows one foe: the nearest the crosshair inside its edge, kept wh
   assert.equal(aimedFoe(offs([1, 6.5], [2, 5.5]), 1), 2, 'last frame’s past the edge gives way');
   assert.equal(aimedFoe(offs([2, 3]), 1), 2, 'last frame’s gone gives way');
   assert.equal(aimedFoe(offs([1, Number.NaN], [2, 3]), null), 2, 'an angle not known is never the nearest');
-  assert.equal(AIM_SWAP_DEGREES, 1);
+  assert.equal(aimedFoe(offs([1, 4.6], [2, 4.55]), 1), 1, 'a view wobbling between two at the edge trades nothing');
+  assert.equal(aimedFoe(offs([1, 6.1]), 1), null, 'last frame’s past the edge, with none in it: none');
+  assert.deepEqual([AIM_SWAP_DEGREES, AIM_SWAP_SHARE], [1, 0.25]);
+  assert.deepEqual([0, 4, 5, 6, Number.NaN].map(coneShare), [1, 1, 0.5, 0, 0], 'the cone’s share by its angle');
+});
+
+test('a foe is at the crosshair wherever on its body the crosshair rests, not only at its head', () => {
+  const level = { eye: [0, 0, 1.7] as const, forward: [0, 1, 0] as const };
+  assert.equal(bodyDegrees(level, [0, 10, 0], 1.8), 0, 'the eye’s height crosses its body');
+  assert.ok(
+    Math.abs(bodyDegrees(level, [0, 10, 5], 1.8) - (Math.atan(3.3 / 10) * 180) / Math.PI) < 1e-9,
+    'its feet, on a ledge over the eye',
+  );
+  const length = Math.hypot(6, 0.6);
+  const down = { eye: [0, 0, 1.7] as const, forward: [0, 6 / length, -0.6 / length] as const };
+  assert.ok(bodyDegrees(down, [0, 6, 0], 1.8) < 1e-9, 'looked at in the chest from 6 m');
+  assert.ok(offDegrees(down, [0, 6, 1.8]) > 6, 'where its head stands past the cone’s edge');
+  assert.equal(Math.round(bodyDegrees(level, [10, 0, 0], 1.8)), 90, 'beside the eye: its middle');
 });
 
 test('a plate fades by the cone over a quarter of a second, never past its want; a new one starts where it stands', () => {

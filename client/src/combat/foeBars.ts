@@ -5,7 +5,16 @@ import { BOSS_RANK } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
 import type { Box } from './hitWords.ts';
 import { element, setStyle, showNode } from './meter.ts';
-import { aimedFoe, coneStep, coneWant, offDegrees, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
+import {
+  aimedFoe,
+  bodyDegrees,
+  CONE,
+  coneStep,
+  coneWant,
+  PLATE_RANGE_M,
+  PlateSight,
+  plateScale,
+} from './plateSight.ts';
 
 export type { MarkedFoe } from './foePlate.ts';
 
@@ -101,29 +110,50 @@ export class FoeBars {
   ): MarkedFoe | null {
     const { height } = PLATES.overhead;
     const { camera } = viewing;
-    const seen: { foe: MarkedFoe; spot: { x: number; y: number; depth: number }; since: number; off: number }[] = [];
+    const edge = CONE.degrees + CONE.band / 2;
+    const seen: {
+      foe: MarkedFoe;
+      spot: { x: number; y: number; depth: number };
+      since: number;
+      off: number;
+      held: number;
+    }[] = [];
+    // Only a foe that can show a plate or take the cone has its line tried against the blocks and the land, so a crowd
+    // off the crosshair costs nothing.
+    const tried = new Set<number>();
     for (const foe of foes) {
       const was = this.alerts.get(foe.id);
       const turned = foe.alert === ALERT.alert && was?.alert !== ALERT.alert;
       const since = turned ? 0 : (was?.since ?? 0) + seconds;
       this.alerts.set(foe.id, { alert: foe.alert, since });
       const spot = spotOf(foe.view);
-      const head = [foe.view.x, foe.view.y, foe.view.z + HEAD_M] as const;
+      const feet = [foe.view.x, foe.view.y, foe.view.z] as const;
+      const head = [feet[0], feet[1], feet[2] + HEAD_M] as const;
       const far = !!camera && Math.hypot(head[0] - camera.eye[0], head[1] - camera.eye[1]) > PLATE_RANGE_M;
-      const drawn = foe.rank !== BOSS_RANK && foe.view.action.kind !== 'dead' && !!spot && !far;
-      const hidden = drawn && !!camera && this.sight.hidden(foe.id, viewing.blocked(camera.eye, head), seconds);
-      if (!drawn || !spot || hidden) {
+      if (foe.view.action.kind === 'dead' || !spot || far) {
         this.cones.delete(foe.id);
         continue;
       }
       // With no camera no angle is known, so the cone shows none.
-      seen.push({ foe, spot, since, off: camera ? offDegrees(camera, head) : Number.NaN });
+      const off = camera ? bodyDegrees(camera, feet, HEAD_M) : Number.NaN;
+      const held = foe.rank === BOSS_RANK ? 0 : Math.max(viewing.fought(foe.id), viewing.locked === foe.id ? 1 : 0);
+      if (!(off < edge) && held <= 0 && !(this.cones.get(foe.id) ?? 0)) {
+        this.cones.set(foe.id, 0);
+        continue;
+      }
+      tried.add(foe.id);
+      if (camera && this.sight.hidden(foe.id, viewing.blocked(camera.eye, head), seconds)) {
+        this.cones.delete(foe.id);
+        continue;
+      }
+      seen.push({ foe, spot, since, off, held });
     }
+    // A Boss nearest the crosshair takes the cone too, though its bar stands under the compass, not over its head.
     this.aimed = aimedFoe(new Map(seen.map(({ foe, off }) => [foe.id, off])), this.aimed);
     const shown: { foe: MarkedFoe; x: number; y: number; depth: number; since: number; cone: number; scale: number }[] =
       [];
-    for (const { foe, spot, since, off } of seen) {
-      const held = Math.max(viewing.fought(foe.id), viewing.locked === foe.id ? 1 : 0);
+    for (const { foe, spot, since, off, held } of seen) {
+      if (foe.rank === BOSS_RANK) continue;
       const want = coneWant(foe.id === this.aimed ? off : null, held);
       const cone = coneStep(this.cones.get(foe.id) ?? null, want, seconds);
       this.cones.set(foe.id, cone);
@@ -164,7 +194,7 @@ export class FoeBars {
     const present = new Set(foes.map((foe) => foe.id));
     for (const id of this.alerts.keys()) if (!present.has(id)) this.alerts.delete(id);
     for (const id of this.cones.keys()) if (!present.has(id)) this.cones.delete(id);
-    this.sight.keep(present);
+    this.sight.keep(tried);
     this.boss.keep(present);
     const boss = bossInFight(foes, own);
     this.showBoss(boss, seconds);

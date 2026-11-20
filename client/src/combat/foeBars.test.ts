@@ -179,6 +179,72 @@ test('over a figure a plate is laid at its rank’s width: an Elite’s longer t
     assert.match(lifted?.[1] ?? '', /^translate\(560\.0px, 27\d\.\dpx\)$/, 'two Elites: the farther lifted clear');
   }));
 
+test('the cone keeps its foe while another stands less than a degree nearer, and gives it up once one does', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const spotOf = (view: FighterView) => ({ x: 400 + view.x * 10, y: 300, depth: view.y });
+    const shownAt = (first: number, second: number) => {
+      bars.update([placed(1, first, 10), placed(2, second, 10)], null, spotOf, LOOKING_NORTH, 1);
+      return findAll(root, 'overhead').map(nameOf);
+    };
+    assert.deepEqual(shownAt(2, 2.5), ['Foe 1'], 'the nearest');
+    assert.deepEqual(shownAt(2.5, 2), ['Foe 1'], 'another half a degree nearer takes nothing');
+    assert.deepEqual(shownAt(3, 1.5), ['Foe 2'], 'another a degree and a half nearer takes it');
+  }));
+
+test('with no camera the cone shows no foe, and a foe fought still shows', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const viewing: PlateViewing = { ...LOOKING_NORTH, camera: null, fought: (id) => (id === 2 ? 1 : 0) };
+    bars.update([placed(1, 0, 10), placed(2, 40, 10)], null, () => ({ x: 400, y: 300, depth: 10 }), viewing, 1);
+    assert.deepEqual(findAll(root, 'overhead').map(nameOf), ['Foe 2']);
+  }));
+
+test('a Boss nearest the crosshair takes the cone, though its bar stands under the compass and none over its head', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const spotOf = (view: FighterView) => ({ x: 400 + view.x * 10, y: 300, depth: view.y });
+    const boss = placed(1, 0, 10, 5);
+    bars.update([boss, placed(2, 3, 10, 1)], null, spotOf, LOOKING_NORTH, 1);
+    assert.deepEqual(findAll(root, 'overhead').map(nameOf), [], 'no plate by the cone: the Boss is nearest');
+    assert.equal(bars.boss.root.hidden, false, 'its bar under the compass');
+    bars.update([placed(2, 3, 10, 1)], null, spotOf, LOOKING_NORTH, 1);
+    assert.deepEqual(findAll(root, 'overhead').map(nameOf), ['Foe 2'], 'with the Boss gone, the Minor is nearest');
+  }));
+
+test('the crosshair on a near foe’s chest gives it the plate, over a far one whose head stands nearer the crosshair', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    // The eye 1.7 m up, looking down at the chest of a foe 6 m off; another stands 36 m off right behind it.
+    const length = Math.hypot(6, 0.6);
+    const viewing: PlateViewing = {
+      ...LOOKING_NORTH,
+      camera: { eye: [0, 0, 1.7], forward: [0, 6 / length, -0.6 / length], focal: 1 / Math.tan(Math.PI / 6) },
+    };
+    const spotOf = (view: FighterView) => ({ x: 400, y: 300 - view.y, depth: view.y });
+    bars.update([placed(1, 0, 6), placed(2, 0, 36)], null, spotOf, viewing, 1);
+    assert.deepEqual(findAll(root, 'overhead').map(nameOf), ['Foe 1']);
+  }));
+
+test('only a foe that can show a plate, or take the cone, has its line tried against the blocks and the land', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const tried: number[] = [];
+    const viewing: PlateViewing = {
+      ...LOOKING_NORTH,
+      blocked: (_from, to) => {
+        tried.push(Math.round(to[0]));
+        return false;
+      },
+      fought: (id) => (id === 3 ? 1 : 0),
+    };
+    // One at the crosshair, one fought off to the side, and twenty off to the side and never fought.
+    const crowd = Array.from({ length: 20 }, (_unused, index) => placed(10 + index, 30 + index, 20));
+    const spotOf = () => ({ x: 400, y: 300, depth: 20 });
+    bars.update([placed(1, 0, 20), placed(3, -40, 20), ...crowd], null, spotOf, viewing, 1);
+    assert.equal(tried.length, 2, 'two lines tried, not twenty-two');
+  }));
+
 test('a plate leaving the cone fades out over a quarter of a second, then is gone', () =>
   onFakePage((root) => {
     const bars = new FoeBars(root, root, root);

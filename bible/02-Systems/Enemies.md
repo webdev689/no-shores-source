@@ -194,12 +194,12 @@ WebAssembly, so names, factions and weapons are read in one place.
   above a long thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before
   the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]).
-- **A plate's size goes with its rank**, as Destiny's bars do ([[Fewer Plates Show, Sized by Rank, After Destiny]]): a
-  Minor's bar short and thin, a Major's as a ship's, an Elite's and a Miniboss's longer and, over a figure, cut in
-  thirds ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
-- **Plates are never overbearing.** The cone round the crosshair shows one plate, the foe in sight nearest it; the
-  foe the soft lock holds, and the foes fought in the last 6 s, show theirs wherever they are, fading as the target
-  plate does. None is seen through a block or the land, nor past 60 m; each shrinks with distance as its figure does
+- **Over a figure, a plate's size goes with its rank**, as Destiny's bars do
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]): a Minor's bar short and thin, a Major's as a ship's, an
+  Elite's and a Miniboss's longer and cut in thirds ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
+- **Plates are never overbearing.** The cone round the crosshair shows one plate, the foe in sight nearest it, within
+  6 degrees of its body (a Boss there takes the cone and shows none over its head); the foe the soft lock holds, and the
+  foes fought in the last 6 s, show theirs wherever they are, fading as the target plate does. None is seen through a block or the land, nor past 60 m; each shrinks with distance as its figure does
   ([[Interface]]).
 - **Plates never overlap.** The nearest foe's stays over it, in front; a farther one that would cover it is lifted
   just clear, and the plates hold still from frame to frame ([[Interface]]).

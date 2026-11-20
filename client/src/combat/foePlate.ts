@@ -35,16 +35,17 @@ export function plateTier(rank: number): PlateTier {
   return rank <= 1 ? 'minor' : rank === 2 ? 'major' : 'elite';
 }
 
-/** A plate's width, its bar's height and the share of its width under the name the bar runs, over a figure, by its
- *  tier, in CSS pixels, each as tall as its level's square (`PLATES.overhead.height`). A Major's is the size a ship's
+/** A plate's width and its bar's height over a figure, by its tier, in CSS pixels, each as tall as its level's square
+ *  (`PLATES.overhead.height`), and the share of the room under the name its bar runs. A Major's is the size a ship's
  *  plate is drawn at; a Minor's as wide, which "? Crossbowman", the longest name a Minor has, fills in the game's face,
- *  so only its bar is short. */
+ *  so only its bar is short. A Minor's bar is 6 px: drawn far off at three quarters, it still holds a row of its red
+ *  and of a shield's colour. */
 export const OVERHEAD_SIZES: Readonly<
-  Record<PlateTier, { readonly width: number; readonly bar: number; readonly length: number }>
+  Record<PlateTier, { readonly width: number; readonly bar: number; readonly barShare: number }>
 > = {
-  minor: { width: PLATES.overhead.width, bar: 5, length: 0.6 },
-  major: { width: PLATES.overhead.width, bar: PLATES.overhead.bar, length: 1 },
-  elite: { width: 176, bar: 10, length: 1 },
+  minor: { width: PLATES.overhead.width, bar: 6, barShare: 0.6 },
+  major: { width: PLATES.overhead.width, bar: PLATES.overhead.bar, barShare: 1 },
+  elite: { width: 176, bar: 10, barShare: 1 },
 };
 
 /** Where an Elite's and up's bar over a figure is marked, as shares of its whole health: its thirds. */

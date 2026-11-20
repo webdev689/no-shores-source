@@ -78,6 +78,7 @@ test('a foe winding up at the player takes the target unless they struck another
   const orc = foe(5, { action: windUp, target: PLAYER });
   const rat = foe(6);
   assert.equal(target.step(frameOf([orc, rat]), 0)?.id, 5, 'nothing struck: the threat takes it');
+  assert.equal(target.foughtShare(5), 0, 'the target, but no blow traded: no plate held by the fight');
   target.step(frameOf([foe(5), rat], [struck(PLAYER, 6)]), 0);
   assert.equal(target.step(frameOf([orc, rat]), 0)?.id, 6, 'the rat struck this instant keeps it');
   target.step(frameOf([foe(5), rat]), 1.9);

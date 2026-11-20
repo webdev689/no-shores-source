@@ -49,8 +49,8 @@ export interface HudFrame {
   /** The blocks of the place, which no plate over a figure is seen through. */
   readonly blocks?: readonly Block[];
   /** The land's height under a point (null where none is known), which no plate over a figure is seen through either;
-   *  none for a place with no land of its own. */
-  readonly groundAt?: (x: number, y: number) => number | null;
+   *  null for a place with no land of its own. */
+  readonly groundAt: ((x: number, y: number) => number | null) | null;
   /** The Art's abilities as the bar shows them (Fighting's abilities); none hides the bar. */
   readonly abilities?: AbilityState | null;
   /** Whether the player has just stepped onto an Ammo box they cannot take, their ammunition full (DropsShown's

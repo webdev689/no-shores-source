@@ -95,12 +95,11 @@ export class FoeTarget {
   }
 
   /** How much the fight holds `id`'s plate, 1 down to 0: as the target plate would stand from the last blow it traded
-   *  with the player, struck or struck by; or as the target plate stands, for the target. */
+   *  with the player, struck or struck by. Being the target alone holds none: a foe winding up at the player, or one
+   *  the soft lock let go, shows by the cone like any other. */
   foughtShare(id: number): number {
     const since = this.fought.get(id);
-    const fought = since === undefined ? 0 : (TARGET_SECONDS - since) / TARGET_FADE_SECONDS;
-    const target = this.shown === id ? this.left / TARGET_FADE_SECONDS : 0;
-    return Math.max(0, Math.min(1, Math.max(fought, target)));
+    return since === undefined ? 0 : Math.max(0, Math.min(1, (TARGET_SECONDS - since) / TARGET_FADE_SECONDS));
   }
 
   private take(id: number): void {

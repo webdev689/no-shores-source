@@ -9,9 +9,11 @@ type Point = readonly [number, number, number];
 /** The cone round the crosshair: whole within `degrees - band / 2`, none past `degrees + band / 2`; and how long a
  *  plate takes to fade all the way in or out, in seconds. */
 export const CONE = { degrees: 5, band: 2, fadeSeconds: 0.25 } as const;
-/** How much nearer the crosshair another foe must stand before the cone's plate moves to it, in degrees, so two foes
- *  side by side do not trade it back and forth. */
+/** Another foe takes the cone's plate only once it stands this much nearer the crosshair, in degrees, or the cone would
+ *  show this much more of it, so two foes side by side, or a view wobbling between them, do not trade it back and forth;
+ *  and a fading one never keeps it from a clearer one. */
 export const AIM_SWAP_DEGREES = 1;
+export const AIM_SWAP_SHARE = 0.25;
 /** Plates farther than this from the eye, across the ground, are not drawn, in metres. */
 export const PLATE_RANGE_M = 60;
 /** How long the line to a foe's head must stay blocked before its plate goes, in seconds (it comes back at once), and
@@ -23,17 +25,22 @@ export const SIGHT_SKIN_M = 0.2;
  *  never drawn under `fewestLetters` pixels. */
 export const PLATE_SIZE = { reference: 18, least: 0.55, most: 1.5, lens: Math.PI / 3, letters: 12, fewestLetters: 9 };
 
+/** How much of a plate the cone shows at `off` degrees from the crosshair: whole within `degrees - band / 2`, none past
+ *  `degrees + band / 2`, and none at an angle not known. */
+export function coneShare(off: number): number {
+  const inner = CONE.degrees - CONE.band / 2;
+  return Number.isNaN(off) ? 0 : Math.max(0, Math.min(1, 1 - (off - inner) / CONE.band));
+}
+
 /** How much of a plate shows: as much as the cone shows at `off` degrees from the crosshair (null for a foe that is
  *  not the one aimed at, which the cone shows none of), or as much as the fight `held` it (0 to 1), whichever is more. */
 export function coneWant(off: number | null, held: number): number {
-  const inner = CONE.degrees - CONE.band / 2;
-  const cone = off === null || Number.isNaN(off) ? 0 : Math.max(0, Math.min(1, 1 - (off - inner) / CONE.band));
-  return Math.max(cone, Math.max(0, Math.min(1, held)));
+  return Math.max(off === null ? 0 : coneShare(off), Math.max(0, Math.min(1, held)));
 }
 
 /** The one foe the cone shows, of `offs` (each foe's degrees from the crosshair): the nearest inside the cone's edge,
- *  or last frame's (`was`) while the cone shows it whole and no other stands `AIM_SWAP_DEGREES` nearer, so a fading
- *  one never keeps it from a clearer one; null for none. */
+ *  or last frame's (`was`) while it stays inside and none takes it by `AIM_SWAP_DEGREES` or `AIM_SWAP_SHARE`; null for
+ *  none. */
 export function aimedFoe(offs: ReadonlyMap<number, number>, was: number | null): number | null {
   const edge = CONE.degrees + CONE.band / 2;
   let nearest: number | null = null;
@@ -43,8 +50,28 @@ export function aimedFoe(offs: ReadonlyMap<number, number>, was: number | null):
     [nearest, least] = [id, off];
   }
   const kept = was === null ? undefined : offs.get(was);
-  const whole = CONE.degrees - CONE.band / 2;
-  return kept !== undefined && kept <= whole && kept - least < AIM_SWAP_DEGREES ? was : nearest;
+  const holds =
+    kept !== undefined &&
+    kept < edge &&
+    kept - least < AIM_SWAP_DEGREES &&
+    coneShare(least) - coneShare(kept) < AIM_SWAP_SHARE;
+  return holds ? was : nearest;
+}
+
+/** Degrees between the way a camera looks and the nearest point of an upright body, its feet at `feet` and `height`
+ *  metres tall, seen from its eye: a foe is at the crosshair wherever on its body the crosshair rests. */
+export function bodyDegrees(
+  camera: { readonly eye: Point; readonly forward: Point },
+  feet: Point,
+  height: number,
+): number {
+  const [east, south] = [feet[0] - camera.eye[0], feet[1] - camera.eye[1]];
+  const ahead = east * camera.forward[0] + south * camera.forward[1];
+  // How high over the eye the view's ray passes the body's upright line nearest, as an angle; its middle off to the side.
+  const over =
+    ahead > 0 ? ((east * east + south * south) * camera.forward[2]) / ahead : feet[2] + height / 2 - camera.eye[2];
+  const crossed = Math.min(feet[2] + height, Math.max(feet[2], camera.eye[2] + over));
+  return offDegrees(camera, [feet[0], feet[1], crossed]);
 }
 
 /** How far apart, in metres, the line to a foe's head is tried against the land: the ground round the eye is a smooth

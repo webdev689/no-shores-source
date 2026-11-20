@@ -92,7 +92,7 @@ const fightRules = new WeakMap<WebAssembly.Module, { combat: CombatRules; roster
 
 /** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
  *  tells of that). */
-export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost'>;
+export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs

@@ -179,7 +179,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
-- The first story mission, the [[Prologue]], on pull request #74, as the owner set it ([[The Game Opens With a Story
+- The first story mission, the [[Prologue]], on `main` (#74), as the owner set it ([[The Game Opens With a Story
   Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
   asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
   it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
@@ -338,13 +338,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
   fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
   fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
-- **The first review of the kit's observations waits on the owner's yes**: four changes to the instructions, and one
-  observation to close as already fixed, each in that session's report. Its file in `~/toolkit-data` went with its
-  container: the next session started with an empty log. That session logged three more, in its own `~/toolkit-data`,
-  lost at its end too: WebFetch reads Bungie's pages as empty shells, which headless Chromium reads whole; a box meant
-  to fit a text was sized from a guessed glyph width before it was measured in the game's face; and building an
-  approved design drifted past it (thirds put on the target plate too, and its rule paraphrased into another), both
-  caught by review before the push.
+- **The kit's observation log** is in `~/toolkit-data/task-observer`, which a container loses at its end, so its open
+  observations are kept here too. The first review's four changes to the instructions, and one observation to close
+  as already fixed, are in that session's report only, waiting on the owner's yes. Open in the log, none reviewed yet:
+  WebFetch reads JavaScript pages such as Bungie's as empty shells, which headless Chromium reads whole; a box meant to
+  fit a text was sized from a guessed glyph width before it was measured in the game's face; building an approved
+  design drifted past it (thirds put on the target plate, and its rule paraphrased into another), caught by review; a
+  worktree's tests need the ignored `generated/`, `target/` and `client/public/` linked in; and a claim of "tested"
+  must rest on runs made after the last change it covers.
 
 ## Next
 
