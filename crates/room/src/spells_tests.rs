@@ -2,6 +2,7 @@
 //! numbers as the Arts' file has them, its element against a foe's shield, and the entities every player is sent.
 
 use crate::arts::arts_tests::{cast, room_with_player, stand_foe, wearing};
+use crate::asks::{Asked, Grant};
 use crate::{BOLT, FighterId, PlayerId, Room, SpellSeen};
 use combat::Status;
 use combat::status::charge_ticks;
@@ -104,7 +105,16 @@ fn arc_lash_strikes_and_charges_each_foe_in_its_cone_longer_with_conduction_and_
     let foe = stand_foe(&mut room, 0.0, -4.0, 1000.0);
     cast(&mut room, player, ARC_LASH, None, 0);
     assert_eq!(has(&room, foe, Status::Charge), charge_ticks(2) * 3 / 2, "Conduction: half as long again");
-    assert!(has(&room, foe, Status::Expose) > 0, "Overload Exposes what the player Charges");
+    assert_eq!(has(&room, foe, Status::Expose), Status::Expose.ticks(), "Overload Exposes what the player Charges");
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 1, &[1, 4]);
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 1, level: 1 }));
+    wearing(&mut room, player, 1, &[1, 4]);
+    let foe = stand_foe(&mut room, 0.0, -4.0, 1000.0);
+    cast(&mut room, player, ARC_LASH, None, 0);
+    let lasting = gear::arts::arts().levels.lasting[0];
+    let expose = combat::ticks(f64::from(Status::Expose.ticks()) / 60.0 * lasting);
+    assert_eq!(has(&room, foe, Status::Expose), expose, "at level 1, Overload's Expose lasts as the level does");
 }
 
 #[test]

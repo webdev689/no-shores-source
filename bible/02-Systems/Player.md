@@ -5,6 +5,7 @@ code:
   - client/src/player/walker.ts#Walker
   - client/src/player/player.ts#updatePlayer
   - client/src/player/playerCamera.ts#cameraOrbit
+  - client/src/player/boom.ts#boomReach
   - client/src/player/playerMoves.ts#shownMove
   - client/src/player/input.ts#BINDINGS
   - client/src/player/cards.ts#Cards
@@ -36,8 +37,12 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   fighter ([[Combat]]), or a ship's deck. In a fight the walker steps and shows the frame in two halves, the fight's
   buttons pressed before the step and what the fight holds the player to shown after it (`PlayerFight`), on the Test
   Ground and in the game's nodes alike. A page may set the walker's player: a move played from a panel.
-- **The camera** sits in the head, or behind it and up in third person, short of any block between
-  (`cameraOrbit`). The page draws from it.
+- **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Where a block
+  or the ground stands between the head and the boom's end, the boom comes in to stand 0.25 m short of it, eased in
+  fast and let out slowly so it never snaps (`boomFollowed`, `boom.ts`); however it eases it stands no nearer a block
+  or the ground than 0.12 m, so the near plane never cuts through a wall, and indoors it shows the room from inside.
+  A block the head stands in, as a room's volume, does not hold it. The page draws from it. An address asks for a
+  camera to arrive with, as for a spawn: `&view=first` or `&view=third,<metres>`.
 - **The figure** is composed from the [[Sprite Forge]]'s strips and kept as cards (`Cards`). Whatever draws the
   scene makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass.
   Each figure's likeliest moves are queued once for each dress it wears (`Cards.warm`, asked each frame but working

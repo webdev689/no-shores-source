@@ -37,13 +37,13 @@ export class Objective {
     root.append(this.card);
   }
 
-  /** Shows the prompt, for `seconds` or until cleared. */
+  /** Shows the prompt, for `seconds` or until cleared; for `Infinity`, until cleared. */
   show(word: string, line: string, seconds = 6): void {
     this.word.textContent = word;
     this.line.textContent = line;
     this.card.classList.add('shown');
     window.clearTimeout(this.timer);
-    this.timer = window.setTimeout(() => this.clear(), seconds * 1000);
+    if (Number.isFinite(seconds)) this.timer = window.setTimeout(() => this.clear(), seconds * 1000);
   }
 
   clear(): void {

@@ -14,7 +14,9 @@ import type { Mark } from '../overworld/overworldMarks.ts';
 import type { Lying } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
 import { CloseZoom } from './seaClose.ts';
+import { landingChoice } from './seaMarks.ts';
 import { HELM, helmEye } from './seaLaw.ts';
+import { landable } from './seaMarks.ts';
 
 /** The view the ship first comes to: lower than DFO's, so the island it lies off stands in it. */
 const FIRST_TILT = (30 * Math.PI) / 180;
@@ -55,6 +57,8 @@ export class SeaView {
   private side: readonly Mark[] = [];
   private sideRig: Rig | null = null;
   chosen: string | null = null;
+  /** What the view over an island's side says of the mark last clicked: that its node is locked. */
+  said = '';
 
   constructor(start: Point2, heading: number) {
     this.camera = { ...initialCamera([start[0], start[1], 0], heading), tilt: FIRST_TILT };
@@ -101,9 +105,9 @@ export class SeaView {
     return this.side;
   }
 
-  /** The id and name of a landing on the side in view, or null. */
+  /** The id and name of a landing on the side in view, or null; a social space still locked is none. */
   landingOf(id: string): { readonly id: string; readonly name: string } | null {
-    const mark = this.side.find((each) => each.id === id);
+    const mark = landable(this.side, id);
     return mark ? { id: mark.id, name: mark.name } : null;
   }
 
@@ -126,9 +130,18 @@ export class SeaView {
 
   /** Flies the view up from over the ship to `rig`, over an island's side, its landings `side` marked. */
   flyToSide(side: readonly Mark[], rig: Rig): void {
-    [this.side, this.sideRig, this.chosen] = [side, rig, null];
+    [this.side, this.sideRig, this.chosen, this.said] = [side, rig, null, ''];
     this.close.release();
     this.where = { kind: 'fly', from: this.seaRig, to: rig, t: 0, seconds: SIDE.flySeconds, then: 'landing' };
+  }
+
+  /** A click on a mark over the side in view, `chosen` the landing chosen before (`landingChoice`): its landing is
+   *  chosen, or landed at once it was; a locked node is neither, and the view says so. */
+  choose(id: string, chosen: string | null): 'choose' | 'land' | null {
+    const choice = landingChoice(this.side, chosen, id);
+    this.said = choice?.kind === 'locked' ? choice.words : '';
+    if (choice?.kind === 'choose') this.chosen = id;
+    return choice?.kind === 'locked' ? null : (choice?.kind ?? null);
   }
 
   /** Flies the view back down to the ship. */

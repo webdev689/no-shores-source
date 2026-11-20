@@ -117,9 +117,9 @@ export function ceilingAt(layout: DungeonLayout, x: number, y: number): number |
   return openAt(layout, column, row) ? (layout.ceilings[row * layout.columns + column] ?? null) : null;
 }
 
-/** The doorways' jambs and the pillars, as blocks. */
+/** The doorways' jambs and the pillars, as blocks, each standing on the dungeon's one floor at 0 m. */
 export function courseOf(layout: DungeonLayout): Block[] {
-  return layout.boxes.map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top }));
+  return layout.boxes.map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top, bottom: 0 }));
 }
 
 /** The course and every cell of rock beside an open one, standing over the ceilings: what the camera keeps short of
@@ -132,7 +132,7 @@ export function seenBlocks(layout: DungeonLayout): Block[] {
       const besideOpen = SIDE_STEPS.some(([east, south]) => openAt(layout, column + east, row + south));
       if (!besideOpen) continue;
       const [minX, minY] = [column * layout.cell, row * layout.cell];
-      blocks.push({ minX, minY, maxX: minX + layout.cell, maxY: minY + layout.cell, top: ROCK_TOP_M });
+      blocks.push({ minX, minY, maxX: minX + layout.cell, maxY: minY + layout.cell, top: ROCK_TOP_M, bottom: 0 });
     }
   return blocks;
 }

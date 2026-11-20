@@ -60,6 +60,7 @@ export function surfaceAt(
     x <= block.maxX + TOUCH_M &&
     y >= block.minY - TOUCH_M &&
     y <= block.maxY + TOUCH_M &&
+    z >= block.bottom - TOUCH_M &&
     z <= block.top + TOUCH_M;
   return blocks.some(touches) ? { surface: 'stone' } : null;
 }

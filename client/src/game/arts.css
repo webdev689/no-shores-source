@@ -67,6 +67,81 @@
   letter-spacing: round(up, calc(5em / 22), 1px);
   text-transform: uppercase;
 }
+/* The name with its level beside it: five small diamonds, lit in the element up to the level. */
+.arts-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.arts-pips {
+  display: inline-flex;
+  gap: 5px;
+  padding: 2px;
+}
+.arts-pip {
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  border: 1px solid rgba(var(--rar-rgb), 0.6);
+  background: #0b0d12;
+  box-shadow: 0 0 0 1px var(--outline);
+}
+.arts-pip-lit {
+  border-color: var(--rar-hi);
+  background: var(--rar);
+}
+.arts-pips-small {
+  gap: 3px;
+}
+.arts-pips-small .arts-pip {
+  width: 5px;
+  height: 5px;
+}
+/* The bar to the next level, its words and the faction's sign under it, and the spells' share at this level. */
+.arts-level {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 264px;
+}
+.arts-bar {
+  height: 6px;
+  border: 1px solid rgba(var(--rar-rgb), 0.55);
+  box-shadow: 0 0 0 1px var(--outline);
+  background: #0b0d12;
+}
+.arts-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--rar);
+}
+.arts-bar.arts-ready .arts-bar-fill,
+.arts-bar.arts-most .arts-bar-fill {
+  background: var(--brass-lit);
+}
+.arts-level-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-xs);
+  color: var(--word);
+}
+.arts-bar-words {
+  flex: 1;
+}
+/* The spells' share at this level follows the element on its line. */
+.arts-share::before {
+  content: '·';
+  margin-right: 5px;
+}
+.arts-faction {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 1px var(--outline);
+}
 .arts-kind {
   display: flex;
   align-items: center;
@@ -130,8 +205,12 @@
 #hud .arts-pick:hover {
   filter: none;
 }
+/* The outlines go round the diamond alone, never the level's pips under it. */
 #hud .arts-pick.arts-worn {
   cursor: default;
+  filter: none;
+}
+#hud .arts-pick.arts-worn .arts-pick-img {
   filter: drop-shadow(2px 0 0 var(--brass-lit)) drop-shadow(-2px 0 0 var(--brass-lit))
     drop-shadow(0 2px 0 var(--brass-lit)) drop-shadow(0 -2px 0 var(--brass-lit)) drop-shadow(1px 0 0 #050608)
     drop-shadow(-1px 0 0 #050608) drop-shadow(0 1px 0 #050608) drop-shadow(0 -1px 0 #050608);
@@ -139,6 +218,9 @@
 #hud .gear-screen .arts-pick:focus-visible,
 #hud .gear-screen .arts-diamond:focus-visible {
   outline: none;
+}
+#hud .gear-screen .arts-pick:focus-visible .arts-pick-img,
+#hud .gear-screen .arts-diamond:focus-visible {
   filter: drop-shadow(2px 0 0 #f2efe6) drop-shadow(-2px 0 0 #f2efe6) drop-shadow(0 2px 0 #f2efe6)
     drop-shadow(0 -2px 0 #f2efe6) drop-shadow(1px 0 0 #050608) drop-shadow(-1px 0 0 #050608)
     drop-shadow(0 1px 0 #050608) drop-shadow(0 -1px 0 #050608);
@@ -251,6 +333,40 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+/* A fragment not owned stands dim under a padlock; its card says how it is had. */
+#hud .arts-page .arts-locked {
+  cursor: not-allowed;
+}
+#hud .arts-page .arts-locked .arts-glyph {
+  opacity: 0.35;
+  filter: grayscale(0.7);
+}
+.arts-lock {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 20px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+.arts-refusal {
+  margin: 5px 0 0;
+  min-height: 1lh;
+  font-size: var(--type-xs);
+  color: var(--word);
+}
+/* Below the highest level, what a spell holds there. */
+.arts-card-most {
+  margin: 5px 0 0;
+  font-size: var(--type-xs);
+  color: var(--faint);
+}
+#hud .arts-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
 .arts-card-icon {
   width: 72px;
   height: 72px;
@@ -308,12 +424,46 @@
     width: 72px;
     height: 72px;
   }
+  .arts-level {
+    width: 352px;
+  }
+  .arts-level-line {
+    font-size: var(--type-l);
+  }
+  .arts-faction {
+    width: 48px;
+    height: 48px;
+  }
+  .arts-pips {
+    gap: 8px;
+  }
+  .arts-pip {
+    width: 11px;
+    height: 11px;
+  }
+  .arts-pips-small {
+    gap: 5px;
+  }
+  .arts-pips-small .arts-pip {
+    width: 7px;
+    height: 7px;
+  }
   .arts-page {
     grid-template-columns: minmax(352px, auto) minmax(0, 1fr);
     padding: 88px 88px 33px;
   }
   .arts-page .arts-group {
     min-width: 330px;
+  }
+}
+
+/* Short, the side gives the level's bar its room: its emblem a step smaller again and its gaps closer. */
+@media (max-height: 800px) {
+  .arts-emblem {
+    --cell: 6px;
+  }
+  .arts-side {
+    gap: 8px;
   }
 }
 

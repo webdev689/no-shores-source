@@ -3,7 +3,7 @@
 import { askDungeon, type DungeonLayout } from './dungeonLayout.ts';
 import { beforeDoor, type Entrance } from './entrances.ts';
 import type { AtEntrance } from './footPlace.ts';
-import type { InDungeon } from './footTrips.ts';
+import type { InDungeon, Trips } from './footTrips.ts';
 import type { Happening } from './flow.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -38,12 +38,11 @@ export interface TripGame {
   };
 }
 
-/** The ways into a patrol's dungeon and out again, and into a company member's dungeon from wherever the player is. */
-export function dungeonTrips(game: TripGame): {
-  enter(number: number, name: string): void;
-  leave(): void;
-  join(patrol: NodeInfo, number: number, seas: Difficulty): void;
-} {
+/** The ways into a patrol's dungeon and out again, with the props' table their entrances stand by, and into a
+ *  company member's dungeon from wherever the player is. */
+export function dungeonTrips(
+  game: TripGame,
+): Trips & { join(patrol: NodeInfo, number: number, seas: Difficulty): void } {
   /** The entrance the player last went in by; none after a join, which came by no entrance. */
   let wentIn: Entrance | undefined;
   const into = (patrol: NodeInfo, text: string, number: number, seas: Difficulty, entrance?: Entrance) => async () => {
@@ -53,6 +52,7 @@ export function dungeonTrips(game: TripGame): {
     wentIn = entrance;
   };
   return {
+    props: () => game.drawers.props,
     enter: (number, name) => {
       const from = game.foot();
       if (!from || from.dungeon) return;

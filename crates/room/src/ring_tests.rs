@@ -41,7 +41,7 @@ type Case = (Vec<Block>, (f64, f64), (f64, f64), &'static [u8], u32, u32);
 
 /// A block 4 m tall, too tall for any foe to grab from the ground.
 fn wall(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> Block {
-    Block { min_x, min_y, max_x, max_y, top: 4.0 }
+    Block { min_x, min_y, max_x, max_y, top: 4.0, bottom: 0.0 }
 }
 
 /// Whether a body in this mode has hold of a block: hangs from it, climbs it, or goes over it.
@@ -120,7 +120,7 @@ fn foes_waiting_round_a_player_by_a_block_never_take_hold_of_it_nor_press_into_i
     let long = wall(-20.0, -1.0, 20.0, 1.0);
     let gap = vec![wall(-12.0, -1.0, -1.2, 1.0), wall(1.2, -1.0, 12.0, 1.0)];
     let corner = vec![wall(-10.0, -1.0, 10.0, 1.0), wall(-1.0, 1.0, 1.0, 12.0)];
-    let crate_block = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 1.1 };
+    let crate_block = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 1.1, bottom: 0.0 };
     let cases: [Case; 8] = [
         (vec![long], (0.0, 1.6), (PI, PI), &MIXED, 12, 0),
         (vec![long], (0.0, 1.6), (PI, PI), &MELEE, 6, 2),

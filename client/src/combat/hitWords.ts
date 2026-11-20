@@ -3,7 +3,7 @@
 // crit's and a kill's larger and in gold, stamped CRIT or SLAIN beside it. What the same blow did besides (it
 // staggered, or a wind-up held through it) rides on its number. Blows on one foe in quick succession add into one
 // rising total. A number stands where the blow met the body, thrown to the side the stroke travelled, kept clear of
-// every foe's plate and of the other words, so a crowd of numbers never piles into one.
+// every plate drawn and of the other words, so a crowd of numbers never piles into one.
 import { motionReduced } from '../plus/kit.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { EVENT, type Tone, wordOf } from './cues.ts';

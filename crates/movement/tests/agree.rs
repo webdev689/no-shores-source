@@ -11,10 +11,10 @@ pub const RUN_HASH: &str = "2267bd9bb6ecb0ec";
 
 /// A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step.
 const COURSE: [Block; 4] = [
-    Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3 },
-    Block { min_x: -12.0, min_y: 6.0, max_x: -6.0, max_y: 6.3, top: 1.0 },
-    Block { min_x: 8.0, min_y: 2.0, max_x: 9.0, max_y: 9.0, top: 4.0 },
-    Block { min_x: -2.0, min_y: 3.0, max_x: 2.0, max_y: 5.0, top: 0.4 },
+    Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3, bottom: 0.0 },
+    Block { min_x: -12.0, min_y: 6.0, max_x: -6.0, max_y: 6.3, top: 1.0, bottom: 0.0 },
+    Block { min_x: 8.0, min_y: 2.0, max_x: 9.0, max_y: 9.0, top: 4.0, bottom: 0.0 },
+    Block { min_x: -2.0, min_y: 3.0, max_x: 2.0, max_y: 5.0, top: 0.4, bottom: 0.0 },
 ];
 
 /// Ticks, then forward, sideways, yaw, run, jump and crouch (on the first tick only) and mounted.

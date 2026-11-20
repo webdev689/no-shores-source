@@ -53,8 +53,7 @@ interface Ear {
 function layOf(land: Landmass): Lay {
   const plan = land.plan;
   const stations = plan?.social.stations ?? [];
-  const keeper = (stations.find(({ kind }) => kind === 'smith') ?? stations.find(({ kind }) => kind === 'armsmith'))
-    ?.keeper;
+  const keeper = stations.find(({ kind }) => kind === 'weaponsmith')?.keeper;
   return {
     heightAt: land.heightAt,
     outline: land.outline,

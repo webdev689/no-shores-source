@@ -1,3 +1,4 @@
+import type { CityPainter } from '../city/painter.ts';
 import { Atmosphere, drawsNothing } from '../cinema/atmosphere.ts';
 import { CLEAR, swellGained, type Weather } from '../cinema/weather.ts';
 import { LightLayer } from '../combat/lightLayer.ts';
@@ -15,12 +16,14 @@ import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, R
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import type { CloseGround } from '../terrain/landClient.ts';
+import type { GroundPaint } from '../terrain/groundColour.ts';
 import { type TerrainData, TerrainView } from '../terrain/terrainView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { waterUnder } from '../water/shore.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
 import { frameOf, fromEyeMatrix, type Shot } from './camera.ts';
 import { DepthCopy } from './depthCopy.ts';
+import { groundTiles } from './groundTiles.ts';
 
 /** Anything else drawn with the land, into the same pass: a city, its nature, the figures. Its points are measured
  *  from the eye, which it is handed in world metres. One that casts shadows draws them first, into the sun's map
@@ -29,6 +32,9 @@ import { DepthCopy } from './depthCopy.ts';
 export interface Drawer {
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
   castInto?(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
+  /** Called once a frame before anything is recorded, for work that replaces what the frame draws with (a texture,
+   *  a bind group): done mid-frame it would swap them under passes already recorded. */
+  prepare?(shot: Shot): void;
   /** Draws over the finished picture `target`, after the water, tested against the scene's `depth` (one float a pixel,
    *  reversed) by hand: what is seen through and must not be covered by the water laid over the land. */
   overWater?(encoder: GPUCommandEncoder, target: GPUTextureView, fromEye: Float32Array, depth: GPUTexture): void;
@@ -45,6 +51,12 @@ interface CloseUp {
   readonly water: PatchWater;
   readonly centre: readonly [number, number];
 }
+
+/** The middle ground's samples a side and their spacing, 8 km square every 16 m, and how far the eye moves before
+ *  it is sampled again, metres: enough to show the patrol areas' canyons as far as their pieces are drawn. */
+const MIDDLE_SAMPLES = 513;
+const MIDDLE_STEP_M = 16;
+const MIDDLE_REFRESH_M = 1500;
 
 /**
  * One landmass drawn for the game: its 1 km land in rings round the eye, the exact ground round the player, the
@@ -85,8 +97,10 @@ export class GameScene {
   lamps: readonly LampPlace[] = [];
   private readonly fall: FallView;
   private readonly bolts: BoltView;
-  private terrain: { view: LandView; drawn: TerrainView } | null = null;
+  private terrain: { view: LandView; drawn: TerrainView; tiles: CityPainter } | null = null;
   private close: CloseUp | null = null;
+  /** Where the middle ground was last sampled round, and whether a sampling is on its way. */
+  private middle: { readonly centre: readonly [number, number]; pending: boolean } | null = null;
   private shownClose: CloseUp | null = null;
   private pending = false;
   private targets: { colour: GPUTexture; depth: GPUTexture; multisampled: GPUTexture; multidepth: GPUTexture } | null =
@@ -107,12 +121,21 @@ export class GameScene {
     this.copy = new DepthCopy(gpu);
   }
 
-  /** Draws this landmass from now on. */
-  setLand(view: LandView, data: TerrainData): void {
+  /** Draws this landmass from now on, wearing its biome's ground tiles. */
+  setLand(view: LandView, data: TerrainData, biome: string | null): void {
     this.terrain?.drawn.destroy();
-    this.terrain = { view, drawn: new TerrainView(this.gpu, data) };
+    this.terrain?.tiles.destroy();
+    const [drawn, tiles] = [new TerrainView(this.gpu, data), groundTiles(this.gpu, biome)];
+    drawn.wearTiles(tiles.view);
+    this.terrain = { view, drawn, tiles };
+    this.middle = null;
     dropPatchWater(this.close?.water ?? null);
     [this.close, this.shownClose] = [null, null];
+  }
+
+  /** Draws what the layouts lay on the land, as painted, or nothing painted. */
+  paintGround(paint: GroundPaint | null): void {
+    this.terrain?.drawn.paintGround(paint);
   }
 
   get land(): LandView | null {
@@ -158,15 +181,39 @@ export class GameScene {
       });
   }
 
+  /** Keeps the middle ground round a world point (the terrain's showMiddle), sampled again once it moves 1.5 km. */
+  keepMiddle(focus: readonly [number, number], source: CloseSource): void {
+    const terrain = this.terrain;
+    if (!terrain || this.middle?.pending) return;
+    const centre = this.middle?.centre;
+    if (centre && Math.hypot(focus[0] - centre[0], focus[1] - centre[1]) < MIDDLE_REFRESH_M) return;
+    const asked = { centre: [focus[0], focus[1]] as const, pending: true };
+    this.middle = asked;
+    const half = ((MIDDLE_SAMPLES - 1) * MIDDLE_STEP_M) / 2;
+    const [left, top] = [Math.round(focus[0] - half), Math.round(focus[1] - half)];
+    source(left, top, MIDDLE_STEP_M, MIDDLE_SAMPLES)
+      .then(({ patch }) => {
+        asked.pending = false;
+        if (this.terrain !== terrain) return;
+        const corner = [left - terrain.view.leftM, top - terrain.view.topM] as const;
+        terrain.drawn.showMiddle({ corner, step: MIDDLE_STEP_M, size: MIDDLE_SAMPLES, heights: patch.heights });
+      })
+      .catch(() => {
+        // Asked again on the next frame.
+        this.middle = null;
+      });
+  }
+
   /** The exact ground round the player as last sampled, or null before any. */
   closePatch(): GroundPatch | null {
     return this.close?.ground.patch ?? null;
   }
 
-  /** Whether the exact ground round a world point has come. */
+  /** Whether the exact ground round a world point has come, and the middle ground round it. */
   closeReady(x: number, y: number): boolean {
     const centre = this.close?.centre;
-    return !!centre && Math.hypot(x - centre[0], y - centre[1]) < REFRESH_M;
+    const middle = this.middle && !this.middle.pending;
+    return !!centre && !!middle && Math.hypot(x - centre[0], y - centre[1]) < REFRESH_M;
   }
 
   /** The water at a world point now, on the swell as drawn: its surface over the sea or a lake or river, or null on
@@ -210,6 +257,7 @@ export class GameScene {
     const terrain = this.terrain;
     if (!terrain) return;
     const { view, drawn } = terrain;
+    for (const drawer of drawers) drawer.prepare?.(shot);
     const origin = [view.leftM, view.topM] as const;
     const local: Shot = { ...shot, eye: [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] };
     const fromEye = fromEyeMatrix(shot, size.width / size.height);

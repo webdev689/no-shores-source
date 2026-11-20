@@ -3,14 +3,7 @@ import { test } from 'node:test';
 import type { FightEvent } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import { EVENT } from './cues.ts';
-import {
-  FOUGHT_SECONDS,
-  FoeTarget,
-  TARGET_FADE_SECONDS,
-  TARGET_SECONDS,
-  type TargetFoe,
-  THREAT_YIELD_SECONDS,
-} from './foeTarget.ts';
+import { FoeTarget, TARGET_FADE_SECONDS, TARGET_SECONDS, type TargetFoe, THREAT_YIELD_SECONDS } from './foeTarget.ts';
 
 const PLAYER = 1;
 const view: FighterView = {
@@ -85,6 +78,7 @@ test('a foe winding up at the player takes the target unless they struck another
   const orc = foe(5, { action: windUp, target: PLAYER });
   const rat = foe(6);
   assert.equal(target.step(frameOf([orc, rat]), 0)?.id, 5, 'nothing struck: the threat takes it');
+  assert.equal(target.foughtShare(5), 0, 'the target, but no blow traded: no plate held by the fight');
   target.step(frameOf([foe(5), rat], [struck(PLAYER, 6)]), 0);
   assert.equal(target.step(frameOf([orc, rat]), 0)?.id, 6, 'the rat struck this instant keeps it');
   target.step(frameOf([foe(5), rat]), 1.9);
@@ -112,8 +106,8 @@ test('a stroke striking several keeps the target on the lock’s foe among them,
   const sweep = [struck(PLAYER, 4), struck(PLAYER, 3), struck(PLAYER, 5)];
   assert.equal(locked.step(frameOf(foes, sweep, 3), 0)?.id, 3, 'the lock’s, wherever it stands among them');
   assert.deepEqual(
-    [3, 4, 5].map((id) => locked.foughtWith(id)),
-    [true, true, true],
+    [3, 4, 5].map((id) => locked.foughtShare(id)),
+    [1, 1, 1],
     'all of them fought',
   );
   const free = new FoeTarget();
@@ -124,19 +118,28 @@ test('a stroke striking several keeps the target on the lock’s foe among them,
   assert.equal(after.step(frameOf(slain, killing), 0)?.id, 5, 'the first slain, the next struck alive');
 });
 
-test('the foes fought in the last minute, struck or struck by, are known; a minute on they are not', () => {
+test('a foe fought, struck or struck by, holds its plate as long as the target plate stands, fading as it fades', () => {
   const target = new FoeTarget();
   const foes = [foe(2), foe(3), foe(4)];
   target.step(frameOf(foes, [struck(PLAYER, 2, EVENT.blocked), struck(3, PLAYER), struck(4, 2)]), 0);
-  target.step(frameOf(foes), TARGET_SECONDS + 1);
   assert.deepEqual(
-    [2, 3, 4].map((id) => target.foughtWith(id)),
-    [true, true, false],
+    [2, 3, 4].map((id) => target.foughtShare(id)),
+    [1, 1, 0],
+    'a blow between two foes is no fight of the player’s',
   );
-  target.step(frameOf(foes), FOUGHT_SECONDS - TARGET_SECONDS - 2);
-  assert.equal(target.foughtWith(3), true);
-  target.step(frameOf(foes), 1);
-  assert.equal(target.foughtWith(3), false, 'a minute on, no longer fought');
+  target.step(frameOf(foes), TARGET_SECONDS - TARGET_FADE_SECONDS);
+  assert.equal(target.foughtShare(3), 1, 'whole until the fade');
+  target.step(frameOf(foes), TARGET_FADE_SECONDS / 2);
+  assert.equal(target.foughtShare(3), 0.5, 'half way through the fade');
+  assert.equal(target.foughtShare(2), 0.5, 'the target fades alike');
+  target.step(frameOf(foes, [struck(3, PLAYER)]), TARGET_FADE_SECONDS / 4);
+  assert.equal(target.foughtShare(3), 1, 'another blow holds it whole again');
+  target.step(frameOf(foes), TARGET_SECONDS);
+  assert.deepEqual(
+    [2, 3].map((id) => target.foughtShare(id)),
+    [0, 0],
+    'the fight moved on',
+  );
 });
 
 test('a foe the player asked for, standing up, is neither struck nor fought; nor one feinting at them', () => {
@@ -144,5 +147,5 @@ test('a foe the player asked for, standing up, is neither struck nor fought; nor
   const SPAWNED = 11;
   const asked = target.step(frameOf([foe(4)], [struck(PLAYER, 4, SPAWNED), struck(4, PLAYER, EVENT.feinted)]), 0);
   assert.equal(asked, null);
-  assert.equal(target.foughtWith(4), false);
+  assert.equal(target.foughtShare(4), 0);
 });

@@ -53,7 +53,10 @@ pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavM
         // On the cells' heights alone, the jambs and pillars its colliders: a solid read as ground would make the
         // floor beside it too steep to walk, and narrow every doorway past a body's width.
         Floor::Dungeon(ground) => {
-            let solids: Vec<Block> = ground.solids().iter().map(Block::from_floats).collect();
+            // Each stands on the dungeon's one floor, at 0 m.
+            let standing =
+                |&[min_x, min_y, max_x, max_y, top]: &[f64; 5]| Block { min_x, min_y, max_x, max_y, top, bottom: 0.0 };
+            let solids: Vec<Block> = ground.solids().iter().map(standing).collect();
             NavMesh::bake_anchored(&solids, ground.grid(), bounds, &agent, anchor)
         }
         Floor::Flat | Floor::Sea | Floor::Land(_) => NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor),
@@ -212,7 +215,7 @@ impl Room {
         let dice = self.dice(player);
         let Some((rarity, slot, level)) = gear::vestige::dropped(1.0, boss, level, &dice) else { return };
         let Some(found) = self.players.get_mut(&player) else { return };
-        let vestige = gear::Vestige { id: found.character.take_id(), rarity, slot, level };
+        let vestige = gear::Vestige::new(found.character.take_id(), rarity, slot, level);
         found.gear_changed = true;
         let (east, south) = (libm::sin(cache.facing), -libm::cos(cache.facing));
         let at = [cache.at[0] + east * VESTIGE_BEFORE_M, cache.at[1] + south * VESTIGE_BEFORE_M, cache.at[2]];

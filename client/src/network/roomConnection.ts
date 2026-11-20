@@ -41,8 +41,8 @@ export function rejoinWait(tries: number): number {
 }
 
 /** The codes a room closes a socket with when it sends its player away for not keeping to the messages (too many,
- *  too large, or not one, worker.ts): rejoining would only be sent away again. */
-const SENT_AWAY = [1008, 1009];
+ *  too large, or not one), or because its node is locked (worker.ts): rejoining would only be sent away again. */
+const SENT_AWAY = [1008, 1009, 4003];
 
 /** What a socket's messages go to: its welcome, each snapshot, and the player's own gear. */
 interface Heard {

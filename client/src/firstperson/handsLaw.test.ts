@@ -22,8 +22,18 @@ test('a layer is read as what the hand holds: a gun, a crossbow, a shield, a lig
     kind: 'shooter',
     shooter: { kind: 'crossbow', metal: 'Elven', gilded: false },
   });
-  assert.deepEqual(holdingOf('shield_kite_daedric'), { kind: 'shield', archive: 112362, metal: 'Daedric' });
-  assert.deepEqual(holdingOf('shield_buckler_plain'), { kind: 'shield', archive: 112360, metal: null });
+  assert.deepEqual(holdingOf('shield_kite_daedric'), {
+    kind: 'shield',
+    archive: 112362,
+    metal: 'Daedric',
+    layer: 'shield_kite_daedric',
+  });
+  assert.deepEqual(holdingOf('shield_buckler_plain'), {
+    kind: 'shield',
+    archive: 112360,
+    metal: null,
+    layer: 'shield_buckler_plain',
+  });
   assert.deepEqual(holdingOf('torch_l'), { kind: 'light', light: 'torch' });
   assert.deepEqual(holdingOf('lantern'), { kind: 'light', light: 'lantern' });
   assert.equal(holdingOf('sword_iron_l')?.kind, 'weapon');

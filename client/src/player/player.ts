@@ -7,6 +7,7 @@ import {
   AIM,
   type AimPlace,
   aimEased,
+  boomFollowed,
   cameraOrbit,
   eased,
   FIRST_PERSON,
@@ -157,15 +158,36 @@ export function shownBody(player: Player): Body {
   };
 }
 
-/** The camera the scene draws the player's frame from, its aiming view at `place`, under the ceiling `roof` gives. */
+/** Where the player's eyes are, as drawn. */
+function headOf(player: Player, movement: MovementRules): readonly [number, number, number] {
+  const body = shownBody(player);
+  return [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)];
+}
+
+/** The camera the scene draws the player's frame from, its aiming view at `place`, kept off `blocks` and, given its
+ *  height, the ground, and under the ceiling `roof` gives. */
 export function playerCamera(
   player: Player,
   movement: MovementRules,
   blocks: readonly Block[],
   place: AimPlace = AIM,
+  groundAt: ((x: number, y: number) => number | null) | null = null,
   roof: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
-  const body = shownBody(player);
-  const head = [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)] as const;
-  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place, roof);
+  const head = headOf(player, movement);
+  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place, groundAt, roof);
+}
+
+/** The player with the third-person camera's boom eased over `seconds` clear of `blocks` and the ground: called
+ *  once a frame before `playerCamera`, so the camera comes in and goes out smoothly. */
+export function cameraFollowed(
+  player: Player,
+  movement: MovementRules,
+  blocks: readonly Block[],
+  groundAt: ((x: number, y: number) => number | null) | null,
+  seconds: number,
+): Player {
+  const head = headOf(player, movement);
+  const { yaw, pitch, view, aim } = player;
+  return { ...player, view: boomFollowed(head, yaw, pitch, view, blocks, aim, AIM, groundAt, seconds) };
 }

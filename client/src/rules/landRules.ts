@@ -144,7 +144,14 @@ export interface LandRules {
   /** Generates one continent of a layout with its edits file's text on it (null for none). Kept, it stays open for
    *  strokes, its city settled on it with the blocks of the RMB index's text (none for null); not kept, it is a
    *  preview and the open one stays open. */
-  open(layoutText: string, id: string, editsText: string | null, keep?: boolean, rmbText?: string | null): LandView;
+  open(
+    layoutText: string,
+    id: string,
+    editsText: string | null,
+    keep?: boolean,
+    rmbText?: string | null,
+    buildersText?: string | null,
+  ): LandView;
   /** One dab on the open landmass; `starts` begins a new stroke. */
   dab(brush: Brush, point: readonly [number, number], starts: boolean): LandPatch;
   /** The open landmass with its water run again. */
@@ -164,6 +171,8 @@ export interface LandRules {
   boxes(west: number, north: number, east: number, south: number): Block[];
   /** The open landmass's city's plan, as JSON, for the drawing; null with no city. */
   cityPlan(): string | null;
+  /** The open landmass's nodes' layouts, as a JSON list. */
+  layouts(): string;
   /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
   /** Her ship sailed `ticks` from the swell's `time`, in the weather's wind at world time `world` (seconds). */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
@@ -197,6 +206,7 @@ interface LandExports {
   land_window(address: number, length: number): bigint;
   land_boxes(address: number, length: number): bigint;
   land_city_plan(): bigint;
+  land_layouts(): bigint;
   land_sail(address: number, length: number): bigint;
   land_fight_begin(address: number, length: number): bigint;
   land_fight_step(address: number, length: number): bigint;
@@ -311,9 +321,10 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     }
   };
   return {
-    open: (layoutText, id, editsText, keep = true, rmbText = null) => {
+    open: (layoutText, id, editsText, keep = true, rmbText = null, buildersText = null) => {
       const named = `{"id":${JSON.stringify(id)},"keep":${keep},"edits":${editsText ?? 'null'}`;
-      const request = `${named},"rmb":${rmbText ?? 'null'},"layout":${layoutText}}`;
+      const builders = buildersText ? `,${buildersText}` : '';
+      const request = `${named},"rmb":${rmbText ?? 'null'}${builders},"layout":${layoutText}}`;
       return takeView(exports, send(exports.land_open, request));
     },
     dab: (brush, point, starts) =>
@@ -392,10 +403,18 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     boxes: (west, north, east, south) => {
       const answer = JSON.parse(
         takeText(exports, send(exports.land_boxes, JSON.stringify({ west, north, east, south }))),
-      ) as { boxes?: [number, number, number, number, number][]; error?: string };
+      ) as { boxes?: [number, number, number, number, number, number][]; error?: string };
       if (answer.error !== undefined) throw new Error(answer.error);
-      return (answer.boxes ?? []).map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top }));
+      return (answer.boxes ?? []).map(([minX, minY, maxX, maxY, top, bottom]) => ({
+        minX,
+        minY,
+        maxX,
+        maxY,
+        top,
+        bottom,
+      }));
     },
+    layouts: () => takeText(exports, exports.land_layouts()),
     cityPlan: () => {
       const text = takeText(exports, exports.land_city_plan());
       return text === 'null' ? null : text;
