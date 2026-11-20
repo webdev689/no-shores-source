@@ -88,6 +88,7 @@ test("a zone's crew stand once, as its first boarder does, as the crew's types a
     assert.deepEqual([rank, x, y, facing, level], [1, ...(spots[index]?.at ?? []), spots[index]?.facing, 2]);
   });
   assert.deepEqual(dressed, [100, 101, 102].slice(0, spots.length), 'each dressed as a hand of the Brig');
+  assert.ok(dressed.every((id) => crew.has(id)) && !crew.has(99), 'known for one of the crew');
   crew.stand(rest, run);
   assert.equal(stood.length, spots.length, 'never twice');
 });

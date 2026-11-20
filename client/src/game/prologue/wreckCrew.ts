@@ -95,6 +95,11 @@ export class WreckCrew {
     return living;
   }
 
+  /** Whether the room's foe `id` is one of the crew. */
+  has(id: number): boolean {
+    return this.stood.has(id);
+  }
+
   /** Stands the crew of each zone whose boarders begin to stand in `standing`, as many as leave the boarders room. */
   stand(standing: readonly Standing[], run: CrewRun): void {
     const { layout, room, figures } = run;
