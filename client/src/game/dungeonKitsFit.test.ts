@@ -7,10 +7,17 @@ import { propModel } from '../models/props.ts';
 import { propTable } from '../models/fixtures.test.ts';
 import { isCave } from './dungeonCeilings.ts';
 import { cellAt, type Rect } from './dungeonCells.ts';
-import { type KitPlacement, kitPlacements } from './dungeonKits.ts';
+import { HEAD_M, type KitPlacement, kitPlacements } from './dungeonKits.ts';
 import { askDungeon, type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { dungeonMesh, lookAt } from './dungeonMesh.ts';
-import { type ModulePack, readModulePack, turnAbout } from './dungeonModules.ts';
+import {
+  layModule,
+  type ModuleMesh,
+  type ModulePack,
+  type Place,
+  readModulePack,
+  turnAbout,
+} from './dungeonModules.ts';
 import { FULL_PACKS } from './dungeonPacks.test.ts';
 import { layModel } from './entrances.ts';
 
@@ -238,4 +245,37 @@ test('the portal and the exit door stand on flat rock in a cave: no bulge over t
     }
   }
   assert.ok(walls > 10, `${walls} openings in caves`);
+});
+
+test('no door rises past its frame, the lower of its two ceilings, and the way through it is as it was built', () => {
+  let [doors, squeezed] = [0, 0];
+  const laid = (module: ModuleMesh, place: Place) => {
+    const mesh = meshBuilder();
+    layModule(mesh, module, place, () => [1, 0]);
+    return mesh.model().positions;
+  };
+  for (const layout of LAYOUTS) {
+    const placed = (PLACED.get(layout) ?? []).filter(({ module: name }) => /\.door\./.test(name));
+    assert.equal(placed.length, layout.frames.length);
+    layout.frames.forEach(([cell, , frame], index) => {
+      const door = placed[index];
+      const module = PACKS.get(door?.module.split('.')[0] as StyleKey)?.modules.get(door?.module ?? '');
+      assert.ok(door && door.cell === cell && module);
+      const fitted = laid(module, door.place);
+      const built = laid(module, { origin: door.place.origin, turns: door.place.turns });
+      const tall = module.bounds[5] > frame;
+      for (let vertex = 0; vertex < built.length; vertex += 3) {
+        assert.ok((fitted[vertex + 2] ?? 0) <= frame + FLOAT_M, `${door.module} through its frame in ${layout.name}`);
+        // Under the clear way's head it stands as built, its way through among it; and none is stretched up.
+        if ((built[vertex + 2] ?? 0) <= HEAD_M || !tall)
+          for (const axis of [0, 1, 2])
+            assert.ok(Math.abs((fitted[vertex + axis] ?? 0) - (built[vertex + axis] ?? 0)) < FLOAT_M, 'as built');
+      }
+      const top = Math.max(...fitted.filter((_value, place) => place % 3 === 2));
+      if (tall) assert.ok(Math.abs(top - frame) < FLOAT_M, 'its top at the frame');
+      squeezed += tall ? 1 : 0;
+      doors++;
+    });
+  }
+  assert.ok(doors > 500 && squeezed > 100, `${squeezed} of ${doors} doors squeezed`);
 });

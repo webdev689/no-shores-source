@@ -255,7 +255,8 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   is first drawn (`stylePacks`). A style whose pack is not published, or fails to come within 15 s, is drawn as
   above, with one warning; a pack that failed is asked for again when the next dungeon is entered.
 - **Its kits** (`dungeonKits.ts`) are placed from the layout alone, as `content/dungeon/kits.json` says: a door in
-  every doorway; a pillar's base, its shaft stretched to its capital, whose top is where the ceiling of the cells
+  every doorway, one taller than its frame (the lower of its two ceilings) squeezed above 2.4 m so its top meets the
+  frame, what stands under 2.4 m as built and none stretched up; a pillar's base, its shaft stretched to its capital, whose top is where the ceiling of the cells
   round the pillar's corner comes lowest over it, so under a dome or a vault it holds the curve up; wall sets every
   `wallEvery` cells along a straight
   wall where `wallIn` says, the cap's top where the ceiling comes lowest over it, and in the mines a timber set on

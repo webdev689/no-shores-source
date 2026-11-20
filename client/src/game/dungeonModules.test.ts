@@ -263,6 +263,40 @@ test("the caverns' pillar shaft, stretched from 0.45 m to 4.95 m, keeps one UV a
   assert.ok(shared > 100);
 });
 
+test('a fit squeezes only what stands over its height, its UVs keeping their scale and its normals following', () => {
+  // A door 3.4 m high fitted to 3.2 m over its clear way's head at 2.4 m: what stands over it is squeezed by 0.8.
+  const fit = { above: 2.4, scale: 0.8 };
+  const wall = triangle([
+    [0, 0, 1],
+    [1, 0, 2.3],
+    [0, 0, 3.4],
+  ]);
+  const { points, uvs } = laid(wall, { origin: [0, 0, 0], turns: 0, fit });
+  near(points.flat(), [0, 0, 1, 1, 0, 2.3, 0, 0, 3.2]);
+  near(uvs[2] ?? [], [0, -3.2 / 3.2], 'its picture kept to its scale up the wall');
+  const middle = triangle([
+    [0, 0, 2.4],
+    [1, 0, 2.9],
+    [0, 0, 2.9],
+  ]);
+  near(laid(middle, { origin: [0, 0, 0], turns: 0, fit }).points.flat(), [0, 0, 2.4, 1, 0, 2.8, 0, 0, 2.8]);
+  // A slope over the head, rising a metre for each metre east, fitted rises 0.8.
+  const slope = triangle(
+    [
+      [0, 0, 2.4],
+      [0, 1, 2.4],
+      [1, 0, 3.4],
+    ],
+    [-Math.SQRT1_2, 0, Math.SQRT1_2],
+  );
+  const fitted = laid(slope, { origin: [0, 0, 0], turns: 0, fit });
+  const [first, second, third] = fitted.points;
+  for (const normal of fitted.normals) {
+    near(normal, [-0.8 / Math.sqrt(1.64), 0, 1 / Math.sqrt(1.64)]);
+    near([dot(normal, minus(second, first)), dot(normal, minus(third, first))], [0, 0], 'square to the fitted slope');
+  }
+});
+
 test("a stretched corner's normal is corrected for the stretch, and one past either end is only turned", () => {
   // A slope rising one metre for each metre east, facing up and west; laid twice as tall it rises two.
   const slope = triangle(

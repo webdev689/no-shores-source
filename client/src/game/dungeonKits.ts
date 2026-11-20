@@ -479,9 +479,13 @@ function floors(site: Site): void {
 function fittings(site: Site): void {
   const { layout } = site;
   const size = layout.cell;
-  for (const [cell, side] of layout.frames) {
+  for (const [cell, side, frame] of layout.frames) {
     const door = `door.${variant(site, cell, `door.${side}`, 2)}`;
-    put(site, cell, [[door, { origin: [...wallPoint(layout, cell, side), 0], turns: ((side + 3) % 4) as Turns }]]);
+    const place: Place = { origin: [...wallPoint(layout, cell, side), 0], turns: ((side + 3) % 4) as Turns };
+    // A door taller than its frame, the lower of its two ceilings, is squeezed over the clear way's head to meet it.
+    const top = pieceOf(site, cell, door)?.bounds[5] ?? 0;
+    const fit = { above: HEAD_M, scale: (frame - HEAD_M) / (top - HEAD_M) };
+    put(site, cell, [[door, top > frame + EPS && frame > HEAD_M ? { ...place, fit } : place]]);
   }
   layout.pillars.forEach(([x, y], index) => {
     const cell = cellAt(layout, x, y);

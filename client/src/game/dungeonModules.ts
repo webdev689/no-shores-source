@@ -45,12 +45,14 @@ export type ModulePack = { readonly style: StyleKey; readonly modules: ReadonlyM
 
 /** Where a piece is laid. A landmark gives its footprint, W × D metres, and is turned within it, `origin` the turned
  *  footprint's north-west corner; a kit piece is turned about its own origin. `stretch` lays the piece's z 0 to 1
- *  from `from` to `to`, and a point past either end as far past it. */
+ *  from `from` to `to`, and a point past either end as far past it. `fit` squeezes what stands over `above` toward
+ *  it by `scale`, so a piece too tall for where it stands comes down to it and what stands under keeps its shape. */
 export type Place = {
   readonly origin: Point;
   readonly turns: Turns;
   readonly footprint?: readonly [number, number];
   readonly stretch?: { readonly from: number; readonly to: number };
+  readonly fit?: { readonly above: number; readonly scale: number };
 };
 
 /** The set and the wall record a cell wears, as `lookOf` gives them. */
@@ -207,6 +209,13 @@ function stretched(z: number, stretch: Place['stretch']): number {
   return stretch.from + z * (stretch.to - stretch.from);
 }
 
+/** A height as a place lays it: stretched, then fitted. */
+function laidHeight(z: number, place: Place): number {
+  const tall = stretched(z, place.stretch);
+  const { fit } = place;
+  return fit && tall > fit.above ? fit.above + (tall - fit.above) * fit.scale : tall;
+}
+
 /** How far a triangle's UV (metres) runs for each metre up it, in its own plane: a stretch that lifts a corner moves
  *  its UV that far along the picture, so a stretched piece keeps its picture's scale whichever way it was unwrapped
  *  (grain up a post along u, stones up a shaft along v). A flat face gains nothing. */
@@ -253,8 +262,8 @@ function perZOf(module: ModuleMesh): Float64Array {
 
 /** Lays a piece into `mesh` where `place` says, each triangle in the picture `pictureOf` gives its part, facing the
  *  way the piece's own normals face it, each corner keeping its own normal and its UV in pictures (v runs down a
- *  picture). A stretched corner's UV moves with its height along its triangles' mean `uvPerZ`, and its normal is
- *  turned as the stretch turns its surface. */
+ *  picture). A stretched or fitted corner's UV moves with its height along its triangles' mean `uvPerZ`, and its
+ *  normal is turned as the stretch or the fit turns its surface. */
 export function layModule(
   mesh: MeshBuilder,
   module: ModuleMesh,
@@ -263,28 +272,30 @@ export function layModule(
 ): void {
   const [shiftX, shiftY] = place.footprint ? footprintShift(place.footprint, place.turns) : [0, 0];
   const { positions, normals, uvs } = module;
-  const perZ = place.stretch ? perZOf(module) : null;
+  const perZ = place.stretch || place.fit ? perZOf(module) : null;
   const scale = place.stretch ? place.stretch.to - place.stretch.from : 1;
   const corner = (vertex: number): Point => {
     const local: Point = [
       positions[vertex * 3],
       positions[vertex * 3 + 1],
-      stretched(positions[vertex * 3 + 2], place.stretch),
+      laidHeight(positions[vertex * 3 + 2], place),
     ];
     const [x, y, z] = turnAbout(local, place.turns);
     return [x + shiftX + place.origin[0], y + shiftY + place.origin[1], z + place.origin[2]];
   };
   const mapping = (vertex: number): readonly [number, number] => {
-    const rise = stretched(positions[vertex * 3 + 2], place.stretch) - positions[vertex * 3 + 2];
+    const rise = laidHeight(positions[vertex * 3 + 2], place) - positions[vertex * 3 + 2];
     const tile = PART_TILE_M[module.parts[vertex]] ?? TILE_M;
     const [alongU, alongV] = perZ ? [perZ[vertex * 2], perZ[vertex * 2 + 1]] : [0, 0];
     return [(uvs[vertex * 2] + rise * alongU) / tile, -(uvs[vertex * 2 + 1] + rise * alongV) / tile];
   };
   // A height scaled by `scale` scales a normal by its inverse transpose: its z over `scale`. Past either end of the
-  // unit the piece is only moved.
+  // unit the piece is only moved; under a fit's height it is left as it is.
   const squashOf = (vertex: number) => {
     const z = positions[vertex * 3 + 2];
-    return place.stretch && scale > 0 && z >= 0 && z <= 1 ? 1 / scale : 1;
+    const stretch = place.stretch && scale > 0 && z >= 0 && z <= 1 ? 1 / scale : 1;
+    const { fit } = place;
+    return stretch * (fit && fit.scale > 0 && stretched(z, place.stretch) >= fit.above ? 1 / fit.scale : 1);
   };
   for (let first = 0; first + 2 < module.indices.length; first += 3) {
     const vertices = [module.indices[first], module.indices[first + 1], module.indices[first + 2]];
