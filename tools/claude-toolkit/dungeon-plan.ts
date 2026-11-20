@@ -15,6 +15,7 @@ import { kitPlacements } from '../../client/src/game/dungeonKits.ts';
 import { placedLandmarks } from '../../client/src/game/dungeonLandmarks.ts';
 import { askDungeon, CORRIDOR, styleAt, type StyleKey } from '../../client/src/game/dungeonLayout.ts';
 import { type ModulePack, readModulePack, turnAbout } from '../../client/src/game/dungeonModules.ts';
+import { propPlansOf } from '../../client/src/game/dungeonPacks.test.ts';
 
 const [wasm, patrol, numberText = '0', out, mostText = '99'] = process.argv.slice(2);
 if (!wasm || !patrol || !out) throw new Error('name the room-qa.wasm, the patrol, its dungeon number and a folder');
@@ -262,7 +263,7 @@ async function closeViews() {
     if (answer?.ok) packs.set(style, readModulePack(await answer.arrayBuffer()));
     else console.warn(`no ${style} pack, so no close views of its kit pieces`);
   }
-  const placed = kitPlacements(layout, packs);
+  const placed = kitPlacements(layout, packs, propPlansOf(layout));
   for (const style of styles) {
     const ofStyle = (cell: number) => styleAt(layout, cell) === style;
     const frames = layout.frames.filter(([cell]) => ofStyle(cell));
