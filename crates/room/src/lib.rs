@@ -24,6 +24,7 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+mod run;
 pub mod sea;
 mod spells;
 mod statuses;
@@ -139,6 +140,8 @@ pub struct Room {
     pub(crate) patrol: Option<patrol::Patrol>,
     /// What the gates know it as (`gear::gate`): none for a course, which no gate shuts.
     pub(crate) place: Option<gear::gate::Place>,
+    /// A dungeon's run (`run.rs`): what its clear pays, its modifiers and its revives; none in any other room.
+    pub(crate) run: Option<run::Run>,
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
@@ -206,6 +209,7 @@ impl Room {
             difficulty: gear::Difficulty::Normal,
             patrol: None,
             place: None,
+            run: None,
             facing: core::f64::consts::PI,
             cache: None,
             minute: 0,

@@ -8,6 +8,7 @@ code:
   - crates/gear/src/gate.rs#shut
   - crates/gear/src/activities.rs#week_dungeons
   - crates/gear/src/clears.rs#clear_of_the_day
+  - crates/room/src/run.rs#modded_blow
 ---
 # Activities
 
@@ -101,10 +102,16 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
   when none are, the fallen stay down.
 - **A wipe ends the run:** when every player is down at once, all are sent to the entrance, the dungeon starts over
   and its five revives with it.
-- **Modifiers** are drawn from a set, each one hook in the rules: Burn (one Art's spells deal and take twice),
-  Brawler (melee deals more), Marksman (ranged deals more), Lightswitch (foes' melee deals far more), Ironclad (more
-  foes carry shields), Trickle (Arts recharge slower), Juggler (no ammunition drops) and Exposure (health returns
-  slower).
+- **Modifiers** are drawn from a set, each one hook in the rules (`room::run`), read only in a room whose run
+  carries it:
+  - Burn: one Art's spells deal twice, and a player wearing it takes twice from foes.
+  - Brawler: a player's swing deals 1.5 times; Marksman: a player's shot deals 1.5 times.
+  - Lightswitch: a foe's swing or telegraphed blow deals a player twice.
+  - Ironclad: half of all foes stand with a shield, against one in five; every foe shielded without it keeps its
+    shield and element, since the same roll is read at a higher bar.
+  - Trickle: an Art's recharge takes 1.5 times as long.
+  - Juggler: no Ammo box and no crate drop.
+  - Exposure: a heal on a player gives half; foes heal as before.
 
 ## What it pays, once
 

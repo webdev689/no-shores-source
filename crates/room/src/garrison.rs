@@ -64,15 +64,16 @@ pub(crate) struct Post {
 }
 
 /// A garrison foe's level, drawn evenly from its island's band (0 with none), and its shield's element if it stands
-/// with one, as `gear::element::Shield::rolled` draws for any foe: one in five, of an element drawn evenly. Each is the
-/// `nth` foe's draw from the node's seed, apart from every other draw of the garrison.
-fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>) -> (u8, Option<gear::Element>) {
+/// with one, as `gear::element::Shield::rolled` draws for any foe: at `shield_chance` (one in five but under Ironclad),
+/// of an element drawn evenly. Each is the `nth` foe's draw from the node's seed, apart from every other draw of the
+/// garrison.
+fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>, shield_chance: f64) -> (u8, Option<gear::Element>) {
     let dice = Dice { seed, tick: 0, player: nth };
     let level = levels.map_or(0, |(low, high)| {
         let band = usize::from(high.saturating_sub(low)) + 1;
         low.saturating_add(u8::try_from(dice.pick(Purpose::Patrol, 0, band)).unwrap_or(0))
     });
-    (level, gear::element::Shield::rolled(&dice, 0, 1.0).map(|shield| shield.element))
+    (level, gear::element::Shield::rolled(&dice, 0, 1.0, shield_chance).map(|shield| shield.element))
 }
 
 const PATROL: [(u8, Rank); 6] = [
@@ -277,10 +278,10 @@ impl Room {
     /// Draws each posted foe's level from its island's band and its shield, in the order the posts were laid, and
     /// stands every post.
     pub(crate) fn gird_and_stand(&mut self, levels: Option<(u8, u8)>) {
-        let (seed, mut nth) = (self.world_seed, 0_u32);
+        let (seed, mut nth, shield_chance) = (self.world_seed, 0_u32, self.shield_chance());
         for post in &mut self.garrison {
             for &(_, rank, _, _) in &post.members {
-                let (level, shield) = gird_of(seed, nth, levels);
+                let (level, shield) = gird_of(seed, nth, levels, shield_chance);
                 // A Boss or a Miniboss never stands shielded, at the owner's word; the draw is still made, so every
                 // other foe's stays as it was.
                 post.girds.push((level, shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss))));

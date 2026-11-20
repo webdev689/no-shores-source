@@ -43,13 +43,15 @@ impl Room {
         if !self.clock.is_multiple_of(HEAL_EVERY) {
             return;
         }
-        let heal = |fighter: &mut Fighter| {
+        let heal = |fighter: &mut Fighter, amount: f64| {
             if fighter.statuses.has(Status::Linked) && !fighter.dead() {
-                fighter.health = (fighter.health + LINKED_HEAL).min(fighter.health_max);
+                fighter.health = (fighter.health + amount).min(fighter.health_max);
             }
         };
-        self.players.values_mut().for_each(|found| heal(&mut found.fighter));
-        self.foes.values_mut().for_each(|foe| heal(&mut foe.fighter));
+        // Exposure slows what returns to the players alone; a foe heals as it always has.
+        let players = LINKED_HEAL * self.heal_times();
+        self.players.values_mut().for_each(|found| heal(&mut found.fighter, players));
+        self.foes.values_mut().for_each(|foe| heal(&mut foe.fighter, LINKED_HEAL));
     }
 
     /// A verdict's damage as statuses weigh it: a crit, its striker's Linked (as the striker stands now) and its

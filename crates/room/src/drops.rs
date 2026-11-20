@@ -5,6 +5,7 @@
 
 use crate::{PlayerId, Room};
 use gear::Vestige;
+use gear::activities::Modifier;
 use gear::dice::{Dice, Purpose};
 use movement::TUNING;
 use movement::blocks::ground_at;
@@ -53,12 +54,14 @@ impl Room {
         from: [f64; 3],
         dice: &Dice,
     ) {
+        // Juggler leaves no ammunition: no box, and no crate, kept or thrown.
+        let juggling = self.modded(Modifier::Juggler);
         let Some(found) = self.players.get_mut(&player) else { return };
         let mut spoils: Vec<Dropped> = vestige.map(Dropped::Vestige).into_iter().collect();
-        if dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) {
+        if !juggling && dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) {
             spoils.push(Dropped::AmmoBox);
         }
-        if gear::ammo::drops_crate(rank) && !found.character.take_crate() {
+        if !juggling && gear::ammo::drops_crate(rank) && !found.character.take_crate() {
             spoils.push(Dropped::Crate);
         }
         let body = found.fighter.body;

@@ -210,7 +210,8 @@ impl Room {
         measured.filter(|(_, far)| *far <= reach).min_by(|first, second| first.1.total_cmp(&second.1)).map(|(id, _)| id)
     }
 
-    fn heal(&mut self, player: PlayerId, amount: f64) {
+    pub(crate) fn heal(&mut self, player: PlayerId, amount: f64) {
+        let amount = amount * self.heal_times();
         if let Some(found) = self.players.get_mut(&player).filter(|found| !found.fighter.dead()) {
             let fighter = &mut found.fighter;
             fighter.health = (fighter.health + amount).min(fighter.health_max);
@@ -229,7 +230,7 @@ impl Room {
             striker: spell.caster,
             kind: BlowKind::Spell(spell.kind),
             from: [from[0], from[1]],
-            damage,
+            damage: damage * self.spell_times(spell.art),
             poise: 0.0,
             guard: 0.0,
             parryable: false,

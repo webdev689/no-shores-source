@@ -147,7 +147,7 @@ impl Room {
             },
         };
         let element = held.and_then(|held| held.element).map_or(0, |element| element as u8);
-        let blow = Blow { damage: blow.damage * times, element, ..blow };
+        let blow = Blow { damage: blow.damage * times * self.modded_blow(&blow, defender), element, ..blow };
         match held {
             Some(held) => self.sharpened(blow, defender, &held.trim),
             None => blow,

@@ -127,12 +127,13 @@ impl Room {
     /// nothing), the veil Hunt watches ending lets it go, and every spell steps.
     pub(crate) fn step_arts(&mut self) {
         let mut due = Vec::new();
+        let slower = self.recharge_times();
         for (id, found) in &mut self.players {
             let art = found.character.art();
             let casting = &mut found.casting;
-            casting.anima = filled(casting.anima, tick_of(art.anima.recharge_s));
+            casting.anima = filled(casting.anima, tick_of(art.anima.recharge_s * slower));
             for (share, tenet) in casting.tenets.iter_mut().zip(&art.tenets) {
-                *share = filled(*share, tick_of(tenet.recharge_s));
+                *share = filled(*share, tick_of(tenet.recharge_s * slower));
             }
             casting.hunting &= found.fighter.statuses.has(Status::Veiled);
             casting.releasing = match casting.releasing {
@@ -248,7 +249,7 @@ impl Room {
 
 #[cfg(test)]
 #[path = "arts_tests.rs"]
-mod arts_tests;
+pub(crate) mod arts_tests;
 #[cfg(test)]
 #[path = "spells_tests.rs"]
 mod spells_tests;
