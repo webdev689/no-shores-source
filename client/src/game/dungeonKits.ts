@@ -141,7 +141,8 @@ const free = (site: Site, cell: number) =>
 /** A base, a shaft and a cap on a cell's wall: the base on the floor, the shaft stretched up to the cap. Under a
  *  vault or a dome the cap's top is where the ceiling comes lowest over it, so none shows through. On a cave's rock
  *  the set stands back as `setBack` says, and the cap's top is where the rock comes highest over it, so it meets the
- *  rock all over, what stands above hidden in it. None where a prop stands against the wall or the wall is too low. */
+ *  rock all over, what stands above hidden in it. None within `CLEAR_M` of a prop as it is drawn, a picture hung on
+ *  the wall among them, or where the wall is too low. */
 function wallSet(site: Site, [cell, side]: Wall): Piece[] | null {
   const pieces = ['wall.base', 'wall.shaft', 'wall.cap'];
   const [base, shaft, cap] = pieces.map((piece) => pieceOf(site, cell, piece));
