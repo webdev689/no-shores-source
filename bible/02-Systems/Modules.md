@@ -12,6 +12,8 @@ code:
   - crates/city/src/modules.rs#pads
   - crates/layout/src/modules.rs#seat
   - crates/layout/src/modules.rs#hub
+  - crates/layout/src/ledges.rs#cut
+  - tools/modules/stairs.py#builder
   - client/src/city/modules.ts#loadModules
 ---
 # Modules
@@ -54,6 +56,10 @@ are written with paving last, since the first group carries the parts and paving
   its upper ward 3.6 m, up a broad flight between them. The donjon, windowed on three storeys, stands on the ward.
   Flights inside the east and west walls climb to the wall-walk behind its parapet. A pad levels the ground inside
   its walls under the bailey, so land up to its height lies hidden.
+- **The cliff stairs** (`cliff-stair-4` to `cliff-stair-24`, a ledge's): a stairway cut into the rock, one for each
+  2 m of rise. Steps of 0.25 m by 0.42 m climb to a landing at the top, with a landing and a brazier every 6 m of rise
+  between, and rough rock cheeks either side stand a metre over the steps. An arched gateway set into the cheeks
+  stands at the foot.
 
 ## Baking and publishing
 
@@ -73,7 +79,9 @@ does not make the committed manifest, and publishes with the repository's Cloudf
 ## In the game
 
 - **The rules** read the manifest (city crate's `modules`): a module stands as one solid per surface group, all at
-  its place and turn (`Shape::Module`). The first group's solid carries its parts, so movement, collision, the
+  its place and turn (`Shape::Module`). A solid taller or shorter than its module stands stretched up to its height,
+  its parts, pads and surfaces alike, so a cliff stair fits its climb to the centimetre. The first group's solid
+  carries its parts, so movement, collision, the
   [[Navmesh]] and the bake meet it box by box as they meet natural rock's parts. Its pads are laid with the layout's
   own.
 - **Where a module stands** ([[Layouts]]): only where the brief asks for heights, in place of the RMB blocks, set
@@ -82,13 +90,15 @@ does not make the committed manifest, and publishes with the repository's Cloudf
   square to the world, its first socket toward the zone's middle. Every cavern stands the chamber under its roof,
   its entry turned to the tunnel. The area's basin takes no platform of its own, since the module brings its
   platforms, and its ways arrive 2 m past its first socket: the citadel's ramp, the Old Stones' north flight.
+  Every ledge ([[Layouts]], "Ledges") stands the cliff stair of the baked rise nearest its climb, stretched to it.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
   (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
   rock is.
 
 The Gullwing Vale stands the Old Stones, the citadel at Valeguard and the chamber in the Hollow Coven's cavern, each
 walked by `crates/room/tests/modules_walked.rs`: up the Old Stones' flights to the upper tier; up the citadel's ramp,
-through its gate and up to its ward and its wall-walk; in from the tunnel and up the chamber's steps onto its shelf.
+through its gate and up to its ward and its wall-walk; in from the tunnel and up the chamber's steps onto its shelf;
+up every ledge's stair from the low floor onto the high one.
 
 ## Limits
 

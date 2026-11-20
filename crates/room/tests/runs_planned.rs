@@ -1,6 +1,7 @@
 //! Saltmere's runs as the bake plans them: each zone's three runs are carved into its land, held in its section and
 //! walked as its ways, and no other node's layout or land changes for them.
 
+use city::solids::Shape as SolidShape;
 use land::sculpts::Sculpts;
 use layout::brief::Briefs;
 use layout::field::ring_holds;
@@ -753,6 +754,36 @@ fn shot_list() {
             let back = [mouth[0] + (middle[0] - mouth[0]) * 0.05, mouth[1] + (middle[1] - mouth[1]) * 0.05];
             views.push(view(back, compass(back, middle), "first", &format!("cavern{number}_in")));
             views.push(view(inside, compass(inside, mouth), "first", &format!("cavern{number}_out")));
+        }
+        // Up each ledge's stair from the low floor before its slot, and back down over it from the high floor.
+        let stairs = laid.map.connections.iter().filter(|joined| joined.joined == layout::spaces::Joined::Stair);
+        for (number, stair) in stairs.enumerate() {
+            let (start, edge) = (stair.points[0], stair.points[1]);
+            let long = libm::hypot(edge[0] - start[0], edge[1] - start[1]).max(1e-9);
+            let way = [(edge[0] - start[0]) / long, (edge[1] - start[1]) / long];
+            let below = [start[0] - way[0] * 3.0, start[1] - way[1] * 3.0];
+            let above = [edge[0] + way[0] * 9.0, edge[1] + way[1] * 9.0];
+            views.push(view(below, compass(below, edge), "first", &format!("stair{number}_up")));
+            views.push(view(above, compass(above, start), "third,25,35", &format!("stair{number}_down")));
+        }
+        // Before each module's first socket, looking at its middle from a little way up.
+        for solid in
+            laid.seating.solids.iter().filter(|solid| matches!(solid.shape, SolidShape::Module { group: 0, .. }))
+        {
+            let SolidShape::Module { module, .. } = solid.shape else { continue };
+            let found = &city::modules::all()[module as usize];
+            let Some(socket) = found.sockets.first().filter(|_| !found.name.starts_with("cliff-stair")) else {
+                continue;
+            };
+            let out =
+                solid.place([socket.at[0] + socket.facing[0] * 14.0, socket.at[1] + socket.facing[1] * 14.0, 0.0]);
+            let stand = [out[0], out[1]];
+            views.push(view(
+                stand,
+                compass(stand, [solid.at[0], solid.at[1]]),
+                "third,45,25",
+                &format!("module_{}", found.name),
+            ));
         }
         // From where a way enters an area, looking across the zone to its areas' middle.
         let count = laid.areas.len();

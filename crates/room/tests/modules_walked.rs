@@ -1,7 +1,9 @@
 //! The Gullwing Vale's handcrafted modules (tools/modules) as the bake lays them, walked by the movement rules: up the
-//! Old Stones' flights onto their upper tier, and in from the cavern's tunnel and up the chamber's steps onto its shelf.
+//! Old Stones' flights onto their upper tier, in from the cavern's tunnel and up the chamber's steps onto its shelf,
+//! through the citadel's gate to its ward and its wall-walk, and up every ledge's cliff stair to the high place.
 
 use city::solids::{Shape, Solid};
+use movement::terrain::Terrain;
 use movement::{Block, Blocks, Controls, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
@@ -13,6 +15,7 @@ struct Vale {
     floor: Floor,
     blocks: Blocks,
     solids: Vec<Solid>,
+    map: layout::spaces::Map,
 }
 
 fn vale() -> Vale {
@@ -34,6 +37,7 @@ fn vale() -> Vale {
         floor: Floor::Land(Box::new(node.ground.clone())),
         blocks: Blocks::new(node.boxes.iter().map(Block::from_floats).collect()),
         solids: laid.seating.solids,
+        map: laid.map,
     }
 }
 
@@ -141,4 +145,29 @@ fn a_body_walks_up_the_citadels_ramp_through_its_gate_and_up_to_its_ward_and_its
         body.y - citadel.at[1],
         body.z - citadel.at[2]
     );
+}
+
+#[test]
+fn a_body_climbs_every_ledges_stair_from_the_low_place_onto_the_high_one() {
+    let vale = vale();
+    let stairs: Vec<&layout::spaces::Connection> =
+        vale.map.connections.iter().filter(|joined| joined.joined == layout::spaces::Joined::Stair).collect();
+    assert!(!stairs.is_empty(), "the Vale cuts a ledge");
+    for stair in stairs {
+        let [start, edge] = [stair.points[0], stair.points[1]];
+        let long = layout::field::distance(start, edge);
+        let way = [(edge[0] - start[0]) / long, (edge[1] - start[1]) / long];
+        let ahead = |from: [f64; 2], out: f64| [from[0] + way[0] * out, from[1] + way[1] * out];
+        let (from, onto) = (ahead(start, -3.0), ahead(edge, layout::ledges::OVER_M + 3.0));
+        let (body, passed) = walked(&vale, from, &[ahead(start, 1.0), onto], 60.0);
+        let high = vale.floor.height_at(onto[0], onto[1]);
+        assert!(
+            passed == 2 && (body.z - high).abs() < 0.5,
+            "up the stair from {} to {} the body stops {:.1} m short at {:.2} m under the high floor",
+            stair.from,
+            stair.to,
+            layout::field::distance([body.x, body.y], onto),
+            high - body.z
+        );
+    }
 }

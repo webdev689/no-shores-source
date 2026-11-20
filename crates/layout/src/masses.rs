@@ -2,7 +2,8 @@
 //! the claim's edge, where the bounds are. A mass wider than a fighting space there is dead ground in the middle of the
 //! zone, so each is given a climb to a lookout on its top with a ruin beside it, or a valley floor across it.
 
-use crate::carve::{climb_along, lookouts};
+use crate::carve::lookouts;
+use crate::climbs::climb_along;
 use crate::field::{CELL_M, Field, chamfer, distance};
 use crate::paths::{off_line, segments_apart};
 use crate::pieces::Kit;

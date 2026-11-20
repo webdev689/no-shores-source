@@ -42,7 +42,13 @@ pub fn seat(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
 
 /// Stands a module by name, its foot's middle at `at`, turned a whole quarter at a time (so its parts stay square to
 /// the world) to the quarter that best faces its socket named `socket` toward `toward`.
-pub fn stand(kit: &mut Kit, name: &str, at: [f64; 3], (socket, toward): (&str, [f64; 2])) {
+pub fn stand(kit: &mut Kit, name: &str, at: [f64; 3], toward: (&str, [f64; 2])) {
+    let Some(number) = city::modules::number_of(name) else { return };
+    stand_stretched(kit, name, at, toward, city::modules::all()[number as usize].size[2]);
+}
+
+/// Stands a module as `stand` does, stretched up to `high` metres from its own height (`modules::stretched`).
+pub fn stand_stretched(kit: &mut Kit, name: &str, at: [f64; 3], (socket, toward): (&str, [f64; 2]), high: f64) {
     let Some(number) = city::modules::number_of(name) else { return };
     let facing = city::modules::all()[number as usize]
         .sockets
@@ -61,7 +67,7 @@ pub fn stand(kit: &mut Kit, name: &str, at: [f64; 3], (socket, toward): (&str, [
             toward_of(first).total_cmp(&toward_of(second))
         })
         .unwrap_or(0.0);
-    for solid in city::modules::solids(number, at, turn) {
+    for solid in city::modules::stretched(number, at, turn, high) {
         kit.solid(solid);
     }
 }

@@ -355,6 +355,21 @@ farm, its mill, meadows and coven by the river.
 With heights a shrine, a keep and every cavern stand handcrafted [[Modules]] in place of their blocks, set pieces
 and dressing.
 
+### Ledges
+
+With heights a layout cuts cliff stairs between its heights (`ledges`), last of what is carved, so they yield to its
+runs and climbs. Out from the edges of its raised floors (its places and ways standing over the land's own level),
+square to the world so the stair's parts stay square, a ledge runs through the rock to the first floor met that
+stands lower. The rock between must hold the stair, lie at least 30 m inside the claim on dry land, and pass no other
+floor's edge more closely than its slot's half and 2 m, 10 m from its ends.
+
+Its slot, a raised floor 6.8 m wide at the low floor's level, runs from there to the high floor's edge. Where the
+rock runs on past the stair, the slot is a cleft leading to its foot. The cliff stair ([[Modules]]) stands in it, its
+top landing 3 m onto the high floor, past where the slot and the floor blend. The shortest are tried first, twelve at
+most, each measured on the land with its slot cut: one is kept only where its stair climbs 3 to 25 m there. Up to
+three are cut, 60 m apart. The map joins each ledge's two nearest places by a `Stair`. In the Vale they climb from the
+ways below Gullwing, Valeguard and the Old Stones straight up onto their floors.
+
 With heights a gate stands in a cleft of the rock, a floor of 14 m reach where its way arrives and its gorge leaves,
 and once the land is carved its palisade runs on from its last stakes, a stake every 1.1 m, until each side meets the
 rock. A coven or a cave at the land's own level opens into a cavern (`caverns`): from the first bearing of sixteen
@@ -372,9 +387,9 @@ in their order; then the lookout at each climb's top; then each run's beats. Eac
 floor's level as a share of the massif's height (0 the land's own level, 1 the massif's top), and whether it is
 roofed: five of its middle and eight points half its reach out under a solid at least 1.8 m over the floor, so a
 tower on an open area's middle does not roof it. A gate's space names the node it leads to. The connections are its
-ways (each joining the two areas it was laid between), its climbs (from the nearest area to the lookout) and its runs'
-passages (from the area nearest the mouth into the first beat, then beat to beat), each with its walked width and its
-line. On continent 1 every space is reached from the first (`crates/room/tests/map_planned.rs`).
+ways (each joining the two areas it was laid between), its climbs (from the nearest area to the lookout), its ledges'
+stairs (between the places nearest their two ends), its caverns' tunnels and its runs' passages (from the area nearest
+the mouth into the first beat, then beat to beat), each with its walked width and its line. On continent 1 every space is reached from the first (`crates/room/tests/map_planned.rs`).
 
 ## Gates
 

@@ -79,18 +79,32 @@ pub fn pads(solid: &Solid) -> Vec<land::pads::Pad> {
         .iter()
         .map(|&[x0, y0, x1, y1, level]| {
             let [west, north, east, south, ..] = solid.bounds_of([x0, y0, 0.0, x1, y1, 0.0]);
-            land::pads::Pad { bounds: [west, north, east, south], level: solid.at[2] + level }
+            let stretch = solid.size[2] / found.size[2].max(1e-9);
+            land::pads::Pad { bounds: [west, north, east, south], level: solid.at[2] + level * stretch }
         })
         .collect()
 }
 
-/// A module's parts, for its first group's solid; none for its others.
+/// A module's parts, for its first group's solid, stretched up to the solid's height (`high`): a stair fitted to the
+/// rise it climbs. None for its other groups.
 #[must_use]
-pub fn parts(module: u32, group: u32) -> Vec<[f64; 6]> {
+pub fn parts(module: u32, group: u32, high: f64) -> Vec<[f64; 6]> {
     match all().get(module as usize) {
-        Some(found) if group == 0 => found.parts.clone(),
+        Some(found) if group == 0 => {
+            let stretch = high / found.size[2].max(1e-9);
+            found.parts.iter().map(|&[x0, y0, z0, x1, y1, z1]| [x0, y0, z0 * stretch, x1, y1, z1 * stretch]).collect()
+        }
         _ => Vec::new(),
     }
+}
+
+/// The solids a module stands as, stretched up to `high` metres from its own height: one a surface group.
+#[must_use]
+pub fn stretched(module: u32, at: [f64; 3], turn: f64, high: f64) -> Vec<Solid> {
+    solids(module, at, turn)
+        .into_iter()
+        .map(|solid| Solid { size: [solid.size[0], solid.size[1], high], ..solid })
+        .collect()
 }
 
 #[cfg(test)]
@@ -120,7 +134,11 @@ mod tests {
         let number = number_of("old-stones").expect("the Old Stones are a module");
         let standing = solids(number, [10.0, 20.0, 3.0], 0.0);
         assert_eq!(standing.len(), all()[number as usize].groups.len());
-        assert!(!parts(number, 0).is_empty() && parts(number, 1).is_empty());
+        let high = all()[number as usize].size[2];
+        assert!(!parts(number, 0, high).is_empty() && parts(number, 1, high).is_empty());
+        assert_eq!(parts(number, 0, high), all()[number as usize].parts, "unstretched, the parts are the manifest's");
+        let stretched = parts(number, 0, high * 2.0);
+        assert!(stretched.iter().zip(&all()[number as usize].parts).all(|(long, own)| long[5] == own[5] * 2.0));
         assert!(standing.iter().all(|solid| solid.at == [10.0, 20.0, 3.0]));
     }
 }

@@ -1,5 +1,5 @@
 //! A layout's map: the spaces a body stands in (its areas, the lookouts its climbs reach, its runs' beats, its
-//! caverns) and the connections between them (its ways, its climbs, its runs' passages, its tunnels). Each space's level and roof are read off the
+//! caverns) and the connections between them (its ways, its climbs, its ledges' stairs, its runs' passages, its tunnels). Each space's level and roof are read off the
 //! land and the solids as laid, so the map says what a body finds there. Missions, events and raids place their
 //! fights, checkpoints and bosses on it.
 
@@ -51,6 +51,8 @@ pub enum Joined {
     Way,
     /// A climb up the massif's face to a lookout.
     Climb,
+    /// A ledge's cliff stair, cut through the rock from a low place up to a high one (`ledges`).
+    Stair,
     /// A run's passage into its first beat or on to the next.
     Run,
     /// A roofed tunnel through the rock, into a cavern.
@@ -96,6 +98,7 @@ pub struct Drawn<'a> {
     pub climbs: &'a [&'a [[f64; 7]]],
     pub runs: &'a [Run],
     pub caverns: &'a [crate::caverns::Cavern],
+    pub ledges: &'a [crate::ledges::Ledge],
     pub solids: &'a [Solid],
 }
 
@@ -144,6 +147,11 @@ pub fn map(drawn: &Drawn, land: &Land) -> Map {
         let to = map.spaces.len() - 1;
         let points = vec![[x1, y1], [x2, y2]];
         map.connections.push(Connection { from, to, joined: Joined::Climb, width: 2.0 * half, points });
+    }
+    // A ledge's stair joins its low place to its high one up the rock between them.
+    for ledge in drawn.ledges {
+        let points = vec![ledge.start, ledge.edge];
+        map.connections.push(Connection { from: ledge.from, to: ledge.to, joined: Joined::Stair, width: 4.0, points });
     }
     for run in drawn.runs {
         let width = 2.0 * half_of(run.kind);

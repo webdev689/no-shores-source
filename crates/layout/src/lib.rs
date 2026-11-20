@@ -11,6 +11,7 @@ pub mod brief;
 pub mod carve;
 pub mod caverns;
 mod clearing;
+mod climbs;
 pub mod collide;
 pub mod compose;
 pub mod dressing;
@@ -18,6 +19,7 @@ pub mod field;
 pub mod halls;
 pub mod heights;
 pub mod interiors;
+pub mod ledges;
 pub mod marks;
 pub mod masses;
 pub mod modules;
@@ -259,6 +261,8 @@ pub fn plan(
             wide.claim_more(wing);
         }
     }
+    // Cliff stairs between heights, cut last into the rock the runs and climbs leave.
+    let ledges = if brief.heights { ledges::cut(&field, (&areas, ground), &mut sculpt) } else { Vec::new() };
     let reach = wide.as_ref().unwrap_or(&field);
     let carved = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
     let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
@@ -269,6 +273,9 @@ pub fn plan(
     works::build(&mut kit, &areas, (&paths, &kept), &sculpt.outcrops, &carved);
     for cavern in &caverns {
         caverns::build(&mut kit, cavern, &carved);
+    }
+    for ledge in &ledges {
+        ledges::build(&mut kit, ledge, &carved);
     }
     if brief.heights {
         for area in areas.iter().filter(|area| area.kind == AreaKind::Gate) {
@@ -359,6 +366,7 @@ pub fn plan(
         climbs: &climbs,
         runs: &runs,
         caverns: &caverns,
+        ledges: &ledges,
         solids: &seating.solids,
     };
     let map = spaces::map(&drawn, &land);

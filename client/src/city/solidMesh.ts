@@ -2,7 +2,7 @@
 // in its own frame (x across, y along, z up from the middle of its base), rolled about its own y, leaned toward its
 // own +y, turned clockwise from north, and stood at its place. Every face is wound out of the solid.
 import { addPolygon, cross, dot, type MeshData, minus, normalised, type Vector } from './mesh.ts';
-import { moduleMesh } from './modules.ts';
+import { moduleHeight, moduleMesh } from './modules.ts';
 import type { Solid } from './plan.ts';
 import { rockMesh } from '../rules/rockMesh.ts';
 
@@ -468,20 +468,20 @@ export function solidFaces(solid: Solid, surface: Surface): Face[] {
     case 'tunnelmouth':
       return rock(solid, surface);
     case 'module':
-      return moduled(solid.module, solid.group, surface);
+      return moduled(solid.module, solid.group, height / moduleHeight(solid.module), surface);
   }
 }
 
-/** A module's surface group as Blender made it, smooth where it was smooth, its picture laid from the axis each
- *  triangle faces most, as rock's is; none until its mesh has come. */
-function moduled(module: number, group: number, surface: Surface): Face[] {
+/** A module's surface group as Blender made it, smooth where it was smooth, stretched up by `stretch` (a stair fitted
+ *  to its rise), its picture laid from the axis each triangle faces most, as rock's is; none until its mesh has come. */
+function moduled(module: number, group: number, stretch: number, surface: Surface): Face[] {
   const mesh = moduleMesh(module, group);
   if (!mesh) return [];
   const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / surface.width, SOLID_TEXELS_PER_METRE / surface.height];
   const point = (index: number): Vector => [
     mesh.positions[index * 3],
     mesh.positions[index * 3 + 1],
-    mesh.positions[index * 3 + 2],
+    mesh.positions[index * 3 + 2] * stretch,
   ];
   const normal = (index: number): Vector => [
     mesh.normals[index * 3] / 127,

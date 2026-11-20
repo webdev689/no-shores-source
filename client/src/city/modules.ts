@@ -10,10 +10,20 @@ export type ModuleMesh = {
   readonly triangles: Uint32Array;
 };
 
-type Listed = { readonly modules: readonly { readonly groups: readonly { readonly mesh: string }[] }[] };
+type Listed = {
+  readonly modules: readonly {
+    readonly size: readonly number[];
+    readonly groups: readonly { readonly mesh: string }[];
+  }[];
+};
 
 const meshes = new Map<string, ModuleMesh>();
 let loading: Promise<void> | null = null;
+
+/** A module's own height, metres: a solid of it stands stretched up to its own size's. */
+export function moduleHeight(module: number): number {
+  return (manifest as Listed).modules[module]?.size[2] ?? 1;
+}
 
 /** A group's mesh, once loaded. */
 export function moduleMesh(module: number, group: number): ModuleMesh | undefined {

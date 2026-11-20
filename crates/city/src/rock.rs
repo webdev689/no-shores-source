@@ -56,7 +56,7 @@ pub fn parts(shape: Shape, [width, depth, height]: [f64; 3]) -> Vec<[f64; 6]> {
             mouth.push([0.8 * west, north, 0.72 * height, 0.8 * east, north + 0.4 * depth, height]);
             mouth
         }
-        Shape::Module { module, group } => crate::modules::parts(module, group),
+        Shape::Module { module, group } => crate::modules::parts(module, group, height),
         _ => Vec::new(),
     }
 }
