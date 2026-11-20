@@ -111,7 +111,10 @@ mod tests {
         let boxes = into_boxes(&quay);
         assert!(boxes.len() > 10, "{}", boxes.len());
         // Every box's middle lies within the quay's half width (and a slice's lean) of its middle line.
-        let way = [libm::sin(1.16), libm::cos(-1.16)];
+        let way = {
+            let [east, south, _] = quay.place([0.0, 1.0, 0.0]);
+            [east, south]
+        };
         for [west, north, east, south, top, bottom] in boxes {
             let (x, y) = ((west + east) / 2.0, (north + south) / 2.0);
             let off = (x * way[1] - y * way[0]).abs();

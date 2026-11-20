@@ -24,6 +24,8 @@ const PARAPET_M: f64 = 1.0;
 pub const QUAY_TOP_M: f64 = 3.0;
 const QUAY_FOOT_M: f64 = -4.0;
 const PIER_FOOT_M: f64 = -5.0;
+/// A pier's width, metres.
+pub const PIER_M: f64 = 10.0;
 
 fn ray_end(footprint: &Footprint, ray: usize) -> [f64; 2] {
     let at = footprint.rays[ray % RAYS];
@@ -140,7 +142,7 @@ pub fn harbour_works(footprint: &Footprint) -> Vec<Solid> {
         let middle_share = 1.0 - (place as f64 / shore.len().max(1) as f64 - 0.5).abs() * 2.0;
         let length = 120.0 + 140.0 * middle_share;
         let middle = ahead(ray_end(footprint, ray), direction, length / 2.0);
-        let size = [10.0, length, QUAY_TOP_M - PIER_FOOT_M];
+        let size = [PIER_M, length, QUAY_TOP_M - PIER_FOOT_M];
         let pier = Solid::upright(Shape::Block, [middle[0], middle[1], PIER_FOOT_M], size, Material::Timber);
         solids.push(pier.turned(turn_toward(direction)));
     }

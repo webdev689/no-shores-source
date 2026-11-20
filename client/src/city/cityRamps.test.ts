@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rampWall } from './cityBuild.ts';
+import { rampWall, retaining } from './cityBuild.ts';
 import { groundPlates, plateSkirts } from './cityGround.ts';
 import { emptyMesh } from './mesh.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Ramp, type Solid } from './plan.ts';
@@ -118,4 +118,18 @@ test("a ramp's walls wear the terrace's picture, its paving and what stands off 
   assert.ok(onRamp(block([-15, -19.8], 'stone', [30, 1.2, 25])), 'an embankment wall');
   assert.ok(!onRamp(block([0, 0], 'paving', [60, 40.8, 0.4])), 'its paving');
   assert.ok(!onRamp(block([0, 45], 'stone', [60, 1.2, 1.1])), 'a wall off the ramp');
+});
+
+test("a length of a terrace's wall a ramp cuts keeps the terrace's picture; a step square to the grid does not", () => {
+  const block = (size: [number, number, number]): Solid => ({
+    shape: 'block',
+    at: [0, 0, 0],
+    size,
+    turn: -0,
+    lean: 0,
+    roll: 0,
+    material: 'stone',
+  });
+  assert.ok(retaining(block([30.8, 1.2, 10.25])), 'a length beside a ramp');
+  assert.ok(!retaining(block([52, 1, 0.4])), "a portico's step");
 });
