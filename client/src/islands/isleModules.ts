@@ -130,7 +130,7 @@ const packs = new Map<string, Promise<KitPack | null>>();
 const warned = new Set<string>();
 const PACK_TIMEOUT_MS = 15000;
 
-/** A kit's pack from `url`, kept once it comes; none, with one warning, if it fails to come or to read. A failure is
+/** A kit's pack fetched at `url`, kept once it comes; none, with one warning, if it fails to come or to read. A failure is
  *  not kept: the next ask tries again, and warns no more. */
 export function loadKitPack(kit: string, url: string, fetcher: typeof fetch = fetch): Promise<KitPack | null> {
   const known = packs.get(url);

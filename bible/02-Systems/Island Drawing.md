@@ -12,6 +12,8 @@ code:
   - client/src/islands/isleGround.ts#groundHeight
   - client/src/islands/isleView.ts#IslesView
   - client/src/islands/isleView.ts#placedPoint
+  - client/src/islands/isleShader.ts#pipelinesOf
+  - client/src/islands/isleShader.ts#partColours
   - client/src/editor/isleEditor.ts#startIsleEditor
   - client/src/heldmap/mapLetters.ts#paintIsle
 ---
@@ -19,7 +21,7 @@ code:
 
 How the page draws the sea's procedural islands: the `islands` layer (`client/src/islands/`), which draws what the
 room module builds from an island's seed and climate. The island crate and its rules are [[Overworld]]'s and the
-modules [[Island Modules]]'s; this note is only the drawing.
+modules are made in Blender (`tools/islands`); this note is only the drawing.
 
 ## The drawing
 
@@ -46,7 +48,7 @@ modules [[Island Modules]]'s; this note is only the drawing.
   have the game scene's drawer's shape. Each island is drawn at its world place, its offset from the eye worked out
   in doubles. The modules are instanced: a kit's pack is one vertex buffer read as the pack holds it, an island's
   placements one instance buffer sorted by module, one draw a module the island wears, each part in the climate's
-  colour (the biome kit's own stone and growth, `partColours`). Within 1.5 km of its coast an island draws its fine
+  colour (the biome kit's own stone and growth, `partColours` in `isleShader.ts`, which holds the shaders). Within 1.5 km of its coast an island draws its fine
   ground and every module, and casts shadows; to 6 km its coarse ground with its trees, cliffs and stacks; to 20 km
   its coarse ground alone. `groundAt(x, y)` is the nearest shown island's height there, null off every island.
 - **The World Editor's Islands mode** builds one island at a time through `room.wasm`'s door and draws it with the
