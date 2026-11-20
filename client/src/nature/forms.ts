@@ -1,104 +1,97 @@
-import { LOD_BAND, THIN_FROM_M } from './field.ts';
+import { LOD_BAND, THIN_FROM_M, THIN_TO_M } from './field.ts';
+import { FLORA, type FloraForm, type LoadedFlora, MESH_VERTEX_BYTES } from './flora.ts';
 import type { Cast } from './kinds.ts';
-import { type Mesh, VERTEX_FLOATS } from './shapes.ts';
 
-/** A vertex on the GPU: its position (three floats), normal and leaf (four signed bytes), colour and sway (four
- *  bytes). */
-export const VERTEX_BYTES = 20;
 /** Each form's detail has its own block of drawing terms, read at a dynamic offset this far apart. */
 export const FORM_BLOCK_BYTES = 256;
+/** The floats of a block the shader reads (natureShader.ts Form). */
+export const FORM_FLOATS = 28;
 /** A near mesh with no far one is drawn to its reach: its range is past anything drawn. */
 const NO_FAR_M = 1e9;
+/** A far plant is one quad, two triangles. */
+export const QUAD_VERTICES = 6;
 
-/** Where one mesh lies in the vertex buffer, whether it is drawn two-sided, and its block of terms. */
+/** Where one detail lies in the vertex buffer (none for a far quad, made in the shader), its block of terms, and
+ *  whether a contact shade is drawn under each instance. */
 export interface Part {
   readonly firstVertex: number;
   readonly vertexCount: number;
-  readonly twoSided: boolean;
+  readonly far: boolean;
   readonly block: number;
-  /** A contact shade is drawn under each instance. */
   readonly shaded: boolean;
 }
 
-/** A cast's meshes for the GPU: every form's near and far mesh in one vertex buffer, each part's place in it (by
- *  form, near then far), and the blocks of terms the shader reads for each. */
+/** A biome's forms for the GPU: every near mesh in one vertex buffer, each form's near and far part (by form), and
+ *  the blocks of terms the shader reads for each. */
 export interface FormBuffers {
   readonly vertices: ArrayBuffer;
   readonly parts: readonly (readonly [Part, Part | null])[];
   readonly blocks: Float32Array;
 }
 
-function packMesh(mesh: Mesh, bytes: DataView, firstVertex: number): void {
-  const { vertices } = mesh;
-  const count = vertices.length / VERTEX_FLOATS;
-  for (let vertex = 0; vertex < count; vertex++) {
-    const [from, to] = [vertex * VERTEX_FLOATS, (firstVertex + vertex) * VERTEX_BYTES];
-    for (let axis = 0; axis < 3; axis++) bytes.setFloat32(to + axis * 4, vertices[from + axis] ?? 0, true);
-    const signed = (value: number) => Math.max(-127, Math.min(127, Math.round(value * 127)));
-    const unsigned = (value: number) => Math.max(0, Math.min(255, Math.round(value * 255)));
-    for (let axis = 0; axis < 3; axis++) bytes.setInt8(to + 12 + axis, signed(vertices[from + 3 + axis] ?? 0));
-    bytes.setInt8(to + 15, signed(vertices[from + 9] ?? 0));
-    for (let channel = 0; channel < 3; channel++)
-      bytes.setUint8(to + 16 + channel, unsigned(vertices[from + 6 + channel] ?? 0));
-    bytes.setUint8(to + 19, unsigned(vertices[from + 10] ?? 0));
-  }
-}
-
-/** A plant's contact shade, from its near mesh: the radius its crown (or, with no leaves, its body) spreads to, how
- *  high its leaves hang on average, metres at size 1, and how dark the shade's middle is. */
-export function contactShade(mesh: Mesh, tall: boolean): [number, number, number] {
-  let [spread, leafy, heights, leaves] = [0, false, 0, 0];
-  for (let offset = 0; offset < mesh.vertices.length; offset += VERTEX_FLOATS) {
-    if ((mesh.vertices[offset + 9] ?? 0) > 0.5)
-      [leafy, heights, leaves] = [true, heights + (mesh.vertices[offset + 2] ?? 0), leaves + 1];
-  }
-  for (let offset = 0; offset < mesh.vertices.length; offset += VERTEX_FLOATS) {
-    if (leafy && (mesh.vertices[offset + 9] ?? 0) <= 0.5) continue;
-    spread = Math.max(spread, Math.hypot(mesh.vertices[offset] ?? 0, mesh.vertices[offset + 1] ?? 0));
-  }
-  const darkness = !leafy ? 0.26 : tall ? 0.34 : 0.24;
-  return [spread * 0.9, leaves > 0 ? heights / leaves : 0, darkness];
-}
-
-/** Packs a cast's meshes and the terms each is drawn by: its ranges, crossfade band and detail, its thinning, its
- *  sway and its contact shade. Only plants with a far mesh cast a shade; grass, ferns and reeds are too low. */
-export function formBuffers(cast: Cast): FormBuffers {
-  const meshes = cast.kinds.flatMap((kind) => kind.plants.map((plant) => ({ kind, plant })));
-  const total = meshes.reduce(
-    (sum, { plant }) => sum + (plant.near.vertices.length + (plant.far?.vertices.length ?? 0)) / VERTEX_FLOATS,
+/** A form's terms for one detail: its ranges, crossfade band and detail; its thinning and sway; its contact shade;
+ *  its pictures' layer and bark; its sprites' sheet, bounding sphere and the box of the frame they fill. */
+function blockOf(
+  form: FloraForm,
+  kind: Cast['kinds'][number],
+  keepAtReach: number,
+  far: boolean,
+  tall: boolean,
+): number[] {
+  const thins = kind.reachM > THIN_FROM_M;
+  const nearM = form.impostor ? kind.nearM : NO_FAR_M;
+  const darkness = !form.leafy ? 0.26 : tall ? 0.34 : 0.24;
+  // A far block keeps the crown's height (a widened far tree sinks by it) but draws no contact shade of its own.
+  const shade = form.impostor ? [...form.shade, far ? 0 : darkness] : [0, 0, 0];
+  const sprites = form.impostor;
+  return [
+    nearM,
+    kind.reachM,
+    nearM * LOD_BAND,
+    far ? 1 : 0,
+    thins ? THIN_FROM_M : kind.reachM - 1,
+    thins ? keepAtReach : 1,
+    kind.swayM,
+    thins ? Math.min(kind.reachM, THIN_TO_M) : kind.reachM,
+    ...shade,
     0,
-  );
-  const vertices = new ArrayBuffer(total * VERTEX_BYTES);
-  const bytes = new DataView(vertices);
+    form.layer,
+    ...form.bark.slice(0, 3),
+    sprites?.layer ?? 0,
+    sprites?.top ?? 0,
+    sprites?.radius ?? 0,
+    FLORA.frames.cell,
+    ...(sprites?.centre ?? [0, 0, 0]),
+    0,
+    ...(sprites?.box ?? [0, 0, 1, 1]),
+  ];
+}
+
+/** Packs a biome's loaded meshes and the terms each detail is drawn by. Only plants drawn far cast a contact shade;
+ *  grass, ferns and reeds are too low. */
+export function formBuffers(cast: Cast, loaded: LoadedFlora): FormBuffers {
+  const kinds = cast.kinds.flatMap((kind) => Array.from({ length: kind.forms }, () => kind));
+  const total = loaded.meshes.reduce((sum, mesh) => sum + mesh.count, 0);
+  const bytes = new Uint8Array(total * MESH_VERTEX_BYTES);
   const floatsPerBlock = FORM_BLOCK_BYTES / 4;
-  const blocks = new Float32Array(meshes.length * 2 * floatsPerBlock);
+  const blocks = new Float32Array(loaded.forms.length * 2 * floatsPerBlock);
   let next = 0;
-  const parts = meshes.map(({ kind, plant }, form) => {
-    const place = (mesh: Mesh, far: boolean): Part => {
-      const vertexCount = mesh.vertices.length / VERTEX_FLOATS;
-      packMesh(mesh, bytes, next);
-      const block = form * 2 + (far ? 1 : 0);
-      const thins = kind.reachM > THIN_FROM_M;
-      const nearM = plant.far ? kind.nearM : NO_FAR_M;
-      blocks.set(
-        [
-          nearM,
-          kind.reachM,
-          nearM * LOD_BAND,
-          far ? 1 : 0,
-          thins ? THIN_FROM_M : kind.reachM - 1,
-          thins ? cast.keepAtReach : 1,
-          kind.swayM,
-          0,
-          ...(plant.far && !far ? contactShade(plant.near, kind.layer === 'tall') : [0, 0, 0]),
-        ],
-        block * floatsPerBlock,
-      );
-      const part = { firstVertex: next, vertexCount, twoSided: !mesh.closed, block, shaded: !!plant.far && !far };
-      next += vertexCount;
-      return part;
+  const parts = loaded.forms.map((form, index) => {
+    const kind = kinds[index];
+    const mesh = loaded.meshes[index];
+    if (!kind || !mesh) throw new Error(`flora form ${index} has no kind or mesh`);
+    bytes.set(new Uint8Array(mesh.vertices), next * MESH_VERTEX_BYTES);
+    const place = (far: boolean): Part => {
+      const block = index * 2 + (far ? 1 : 0);
+      blocks.set(blockOf(form, kind, cast.keepAtReach, far, kind.layer === 'tall'), block * floatsPerBlock);
+      const shaded = !!form.impostor && !far;
+      return far
+        ? { firstVertex: 0, vertexCount: QUAD_VERTICES, far, block, shaded }
+        : { firstVertex: next, vertexCount: mesh.count, far, block, shaded };
     };
-    return [place(plant.near, false), plant.far ? place(plant.far, true) : null] as const;
+    const near = place(false);
+    next += mesh.count;
+    return [near, form.impostor ? place(true) : null] as const;
   });
-  return { vertices, parts, blocks };
+  return { vertices: bytes.buffer, parts, blocks };
 }

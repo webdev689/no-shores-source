@@ -35,7 +35,7 @@ test('a mantle’s or vault’s progress, from the time since it began and the h
     [2.3, 3],
   ] as const;
   for (const [top, depth] of walls) {
-    rules.setCourse([{ minX: -5, minY: -1 - depth, maxX: 5, maxY: -1, top }]);
+    rules.setCourse([{ minX: -5, minY: -1 - depth, maxX: 5, maxY: -1, top, bottom: 0 }]);
     let body = rules.standing(0, -0.64);
     let began: { tick: number; z: number } | null = null;
     let highest = 0;
@@ -57,7 +57,7 @@ test('a mantle’s or vault’s progress, from the time since it began and the h
 
 test('the player’s figure sliding along a wall steps as slowly as it goes, never jumping a frame', () => {
   // A wall too tall to step onto and too low to climb, so pressing into it off square slides along it.
-  rules.setCourse([{ minX: -50, minY: -5, maxX: 50, maxY: -1, top: 1.5 }]);
+  rules.setCourse([{ minX: -50, minY: -5, maxX: 50, maxY: -1, top: 1.5, bottom: 0 }]);
   const hands = { swing: null, muzzle: null, cancel: () => undefined, update: () => undefined };
   const forge = {
     frames: () => 4,

@@ -4,7 +4,7 @@
 //! (`board`); from it the city below and the harbour are seen whole and never reached.
 
 use crate::board::{Board, board};
-use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard};
+use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, visitor_spots};
 use crate::landmarks::{Landmark, ahead};
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::{Station, stations};
@@ -33,6 +33,8 @@ pub struct Social {
     pub stations: Vec<Station>,
     /// Overlook's bounty board (`board`); none in any other city's plaza.
     pub board: Option<Board>,
+    /// Where a visitor of no counter may stand, one a week (`visitor_spots`): Shape's places.
+    pub visitor_spots: Vec<[f64; 2]>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -112,5 +114,6 @@ pub fn plaza(
         solids.extend(pieces);
         board
     });
-    Social { bounds, level, ring, spawns, solids, stations, board }
+    let visitor_spots = visitor_spots(&frame);
+    Social { bounds, level, ring, spawns, solids, stations, board, visitor_spots }
 }

@@ -39,5 +39,8 @@ After the third audit the owner was asked ten questions. Their answers to nine o
 | The counters | The room serves each ask only at its own counter: a Vestige at the Reader's, the vault at a vault's, a ware at its vendor's | The server is the sole authority; a page could otherwise buy or open from anywhere in the plaza |
 | The drawn glyphs | Drawn in code and made into a font in the page; nothing generated is kept in git | [[Generated Files Stay Out of Git]] holds as it is, and no new check is needed |
 
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: the Reader is the Mage, so a Vestige opens at the
+Mage's counter.
+
 Links: [[Pixelify Sans Is Overlook's Font]], [[Text Is Plain]], [[Interface]], [[Gear]],
 [[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]].

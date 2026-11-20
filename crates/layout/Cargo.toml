@@ -1,0 +1,18 @@
+[package]
+name = "layout"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "Each patrol area's and instance's layout from its claim on the land: its areas, paths, villages of RMB blocks, set pieces, sites, section and colliders."
+
+[dependencies]
+city = { path = "../city" }
+land = { path = "../land" }
+world = { path = "../world" }
+serde.workspace = true
+serde_json.workspace = true
+libm.workspace = true
+
+[lints]
+workspace = true

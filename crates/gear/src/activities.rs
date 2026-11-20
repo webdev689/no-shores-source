@@ -3,7 +3,7 @@
 //! every room and every page sees the same.
 
 use crate::arts::arts;
-use crate::dice::{Dice, Purpose};
+use crate::dice::Dice;
 use crate::world::Difficulty;
 
 /// An Elite Dungeon: its node's id, the Forge's style key it is laid in (`dungeon::style_of`), and its Boss's type
@@ -267,9 +267,14 @@ const WEEK_MODIFIERS: u64 = 3;
 /// The board's bounties.
 pub(crate) const BOUNTY_DRAWS: u64 = 4;
 
+/// The number the draws roll by, their place among a kind's added: any would do, as their own seed keeps them apart
+/// from every room's dice.
+const DRAW: u32 = 12;
+
 /// One of `count`, drawn for a day or a week by the kind of draw and its place among that kind's draws.
 pub(crate) fn drawn(period: u64, kind: u64, nth: u32, count: usize) -> usize {
-    Dice { seed: DRAWS ^ period, tick: kind, player: 0 }.pick(Purpose::Draw, nth, count)
+    let roll = Dice { seed: DRAWS ^ period, tick: kind, player: 0 }.roll_numbered(DRAW + nth);
+    ((roll * count as f64) as usize).min(count.saturating_sub(1))
 }
 
 /// The Art a Burn drawn at `nth` names.

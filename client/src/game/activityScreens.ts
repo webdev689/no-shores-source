@@ -14,12 +14,14 @@ import {
 import { type FinderSocket, type Finding, findCompany, findingWords } from './companyFinder.ts';
 import { weekBountiesOf } from './bountyBoard.ts';
 import { askDungeon } from './dungeonLayout.ts';
+import { type TripFoot, type TripGame, dungeonTrips } from './dungeonTrips.ts';
 import { EntranceCardView } from './entranceCard.ts';
+import { type Trips, takeWipe } from './footTrips.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
 import type { AccountLink } from '../network/accounts.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import { sharedRun } from './rooms.ts';
+import { companyPlaces, sharedRun } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What the screens read of the player on foot: the place and seas they stand in, the dungeon they are in, whether
@@ -182,6 +184,35 @@ export function startActivityScreens(
       if (!compiled) return trips.enter(number, name);
       kept = here.gear?.gear ?? kept;
       showCard(compiled, { node: here.node, seas: here.seas, number, name });
+    },
+  };
+}
+
+/** The activities as the game wires them: the ways into the dungeons and out, asking the account where the company
+ *  plays (`dungeonTrips`); their screens; the trips the player on foot takes, where E at an entrance opens its card;
+ *  and what a frame on foot heeds first: a room whose gate shuts sends the player back to their ship (`shut`), and
+ *  nothing more of it is drawn (true), and a company fallen goes out by the way in. */
+export function startActivities(
+  root: HTMLElement,
+  nodes: readonly NodeInfo[],
+  link: AccountLink | null,
+  game: Omit<TripGame, 'foot' | 'companyPlaces'> & { readonly foot: () => (TripFoot & ScreensFoot) | null },
+): {
+  readonly trips: ReturnType<typeof dungeonTrips>;
+  readonly screens: ActivityScreens;
+  readonly onFoot: Trips;
+  heed(here: { readonly shut: string | null; readonly held: { wiped: boolean } }, shut: (why: string) => void): boolean;
+} {
+  const trips = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
+  const screens = startActivityScreens(root, game.module, nodes, game.foot, trips, link);
+  return {
+    trips,
+    screens,
+    onFoot: { ...trips, enter: (number, name) => screens.card(number, name) },
+    heed: (here, shut) => {
+      if (here.shut) return (shut(here.shut), true);
+      if (takeWipe(here.held)) trips.fell();
+      return false;
     },
   };
 }

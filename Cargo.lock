@@ -20,6 +20,7 @@ version = "0.0.0"
 dependencies = [
  "city",
  "land",
+ "layout",
  "serde",
  "serde_json",
  "world",
@@ -64,6 +65,7 @@ version = "0.0.0"
 dependencies = [
  "land",
  "libm",
+ "movement",
  "serde",
  "serde_json",
  "world",
@@ -192,10 +194,23 @@ version = "0.0.0"
 dependencies = [
  "city",
  "land",
+ "layout",
  "naval",
  "sailing",
  "serde_json",
  "sky",
+ "world",
+]
+
+[[package]]
+name = "layout"
+version = "0.0.0"
+dependencies = [
+ "city",
+ "land",
+ "libm",
+ "serde",
+ "serde_json",
  "world",
 ]
 
@@ -355,6 +370,7 @@ dependencies = [
  "foes",
  "gear",
  "land",
+ "layout",
  "libm",
  "movement",
  "naval",

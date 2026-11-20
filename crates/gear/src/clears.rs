@@ -50,7 +50,7 @@ impl Character {
         self.earn_xp(xp, None);
         self.materials.add_aurem(aurem);
         let (rarity, slot, level) = of_colours(FROM_BOSSES, level, dice);
-        Some(Reward { xp, aurem, vestige: Some(Vestige { id: self.take_id(), rarity, slot, level }) })
+        Some(Reward { xp, aurem, vestige: Some(Vestige::new(self.take_id(), rarity, slot, level)) })
     }
 
     /// The week's Elite or Abyss Dungeon's first clear this week: a Legendary Vestige (the Abyss's Atheric one in
@@ -75,7 +75,7 @@ impl Character {
             self.materials.add(Stuff::Essence(stock), weekly.essence());
         }
         let (rarity, slot, level) = of_colours(weekly.colours(), weekly.foes_at(), dice);
-        Some(Vestige { id: self.take_id(), rarity, slot, level })
+        Some(Vestige::new(self.take_id(), rarity, slot, level))
     }
 
     /// A quarter more of a kill's XP while the Abyss boon is held this week, to the player and to `weapon` as the

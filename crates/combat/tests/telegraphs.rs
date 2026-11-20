@@ -121,14 +121,14 @@ fn a_quick_charge_runs_its_lane_and_no_further() {
 fn a_shapes_blow_stops_at_a_wall_and_does_not_reach_a_body_high_above() {
     let ring = Telegraph::begin(&order(Shape::Ring, 40, 0.0, 0.0), [0.0, 0.0, 0.0]);
     assert!(ring.strikes([0.0, -3.0, 0.0], &[], &Flat));
-    let wall = [movement::Block { min_x: -1.0, min_y: -2.2, max_x: 1.0, max_y: -2.0, top: 3.0 }];
+    let wall = [movement::Block { min_x: -1.0, min_y: -2.2, max_x: 1.0, max_y: -2.0, top: 3.0, bottom: 0.0 }];
     assert!(!ring.strikes([0.0, -3.0, 0.0], &wall, &Flat), "behind a wall");
     assert!(!ring.strikes([0.0, -3.0, 3.0], &[], &Flat), "up on a block three metres high");
 }
 
 #[test]
 fn a_charge_or_a_leap_off_a_drop_never_sets_its_foe_down_inside_the_block_it_left() {
-    let platform = movement::Block { min_x: -8.0, min_y: -3.0, max_x: 2.0, max_y: 3.0, top: 1.6 };
+    let platform = movement::Block { min_x: -8.0, min_y: -3.0, max_x: 2.0, max_y: 3.0, top: 1.6, bottom: 0.0 };
     let radius = movement::TUNING.radius;
     for (shape, ahead) in [(Shape::Charge, 0.0), (Shape::Leap, 6.0)] {
         for start in 0..10 {

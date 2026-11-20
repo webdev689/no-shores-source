@@ -1,10 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  AIM_SWAP_DEGREES,
+  AIM_SWAP_SHARE,
+  aimedFoe,
+  bodyDegrees,
   cameraOf,
   CONE,
+  coneShare,
   coneStep,
   coneWant,
+  LAND_STEP_M,
+  landBlocks,
   offDegrees,
   PLATE_SIZE,
   PlateSight,
@@ -12,14 +19,47 @@ import {
   SIGHT_HOLD_SECONDS,
 } from './plateSight.ts';
 
-test('the cone: whole within 17 degrees of the crosshair, half at 20, none past 23; a foe fought shows wherever it is', () => {
-  assert.deepEqual(CONE, { degrees: 20, band: 6, fadeSeconds: 0.25 });
-  assert.equal(coneWant(0, false), 1);
-  assert.equal(coneWant(17, false), 1);
-  assert.equal(coneWant(20, false), 0.5);
-  assert.equal(coneWant(23, false), 0);
-  assert.equal(coneWant(90, false), 0);
-  assert.equal(coneWant(90, true), 1, 'fought in the last minute');
+test('the cone: whole within 4 degrees of the crosshair, half at 5, none past 6; a foe held shows wherever it is', () => {
+  assert.deepEqual(CONE, { degrees: 5, band: 2, fadeSeconds: 0.25 });
+  assert.equal(coneWant(0, 0), 1);
+  assert.equal(coneWant(4, 0), 1);
+  assert.equal(coneWant(5, 0), 0.5);
+  assert.equal(coneWant(6, 0), 0);
+  assert.equal(coneWant(90, 0), 0);
+  assert.equal(coneWant(null, 0), 0, 'not the foe aimed at: the cone shows none of it');
+  assert.equal(coneWant(null, 1), 1, 'fought or locked: whole wherever it is');
+  assert.equal(coneWant(90, 0.4), 0.4, 'a fight fading');
+  assert.equal(coneWant(4.5, 0.4), 0.75, 'the more of the two');
+});
+
+test('the cone shows one foe: the nearest the crosshair inside its edge, kept while whole until another is clearly nearer', () => {
+  const offs = (...pairs: (readonly [number, number])[]) => new Map(pairs);
+  assert.equal(aimedFoe(offs([1, 3], [2, 1.5], [3, 20]), null), 2, 'the nearest');
+  assert.equal(aimedFoe(offs([1, 7], [2, 30]), null), null, 'none inside the edge');
+  assert.equal(aimedFoe(offs([1, 2], [2, 1.5]), 1), 1, 'last frame’s, while none is a degree nearer');
+  assert.equal(aimedFoe(offs([1, 2.6], [2, 1.5]), 1), 2, 'another a degree nearer takes it');
+  assert.equal(aimedFoe(offs([1, 5.9], [2, 4.95]), 1), 2, 'last frame’s fading gives way to a clearer one');
+  assert.equal(aimedFoe(offs([1, 6.5], [2, 5.5]), 1), 2, 'last frame’s past the edge gives way');
+  assert.equal(aimedFoe(offs([2, 3]), 1), 2, 'last frame’s gone gives way');
+  assert.equal(aimedFoe(offs([1, Number.NaN], [2, 3]), null), 2, 'an angle not known is never the nearest');
+  assert.equal(aimedFoe(offs([1, 4.6], [2, 4.55]), 1), 1, 'a view wobbling between two at the edge trades nothing');
+  assert.equal(aimedFoe(offs([1, 6.1]), 1), null, 'last frame’s past the edge, with none in it: none');
+  assert.deepEqual([AIM_SWAP_DEGREES, AIM_SWAP_SHARE], [1, 0.25]);
+  assert.deepEqual([0, 4, 5, 6, Number.NaN].map(coneShare), [1, 1, 0.5, 0, 0], 'the cone’s share by its angle');
+});
+
+test('a foe is at the crosshair wherever on its body the crosshair rests, not only at its head', () => {
+  const level = { eye: [0, 0, 1.7] as const, forward: [0, 1, 0] as const };
+  assert.equal(bodyDegrees(level, [0, 10, 0], 1.8), 0, 'the eye’s height crosses its body');
+  assert.ok(
+    Math.abs(bodyDegrees(level, [0, 10, 5], 1.8) - (Math.atan(3.3 / 10) * 180) / Math.PI) < 1e-9,
+    'its feet, on a ledge over the eye',
+  );
+  const length = Math.hypot(6, 0.6);
+  const down = { eye: [0, 0, 1.7] as const, forward: [0, 6 / length, -0.6 / length] as const };
+  assert.ok(bodyDegrees(down, [0, 6, 0], 1.8) < 1e-9, 'looked at in the chest from 6 m');
+  assert.ok(offDegrees(down, [0, 6, 1.8]) > 6, 'where its head stands past the cone’s edge');
+  assert.equal(Math.round(bodyDegrees(level, [10, 0, 0], 1.8)), 90, 'beside the eye: its middle');
 });
 
 test('a plate fades by the cone over a quarter of a second, never past its want; a new one starts where it stands', () => {
@@ -88,4 +128,21 @@ test('a plate goes only once its line has stayed blocked for the hold, and comes
   for (let frame = 0; frame < 2; frame++) sight.hidden(2, true, 1 / 60);
   assert.equal(sight.hidden(2, true, 1 / 60), true, 'blocked past the hold: gone');
   assert.equal(sight.hidden(2, false, 1 / 60), false, 'seen: back at once');
+});
+
+test('the land hides a plate as a block does: a rise between the eye and the head, never the ground under or past it', () => {
+  // A ridge 4 m high across y = 20 to 22, else flat ground at 0; off the window (past y = 90) no ground is known.
+  const ridge = (_east: number, y: number) => (y > 90 ? null : y >= 20 && y <= 22 ? 4 : 0);
+  assert.equal(LAND_STEP_M, 2);
+  assert.equal(landBlocks(ridge, [0, 0, 1.7], [0, 40, 1.8]), true, 'the ridge stands across the line');
+  assert.equal(landBlocks(ridge, [0, 0, 9], [0, 40, 1.8]), false, 'looked down on from over it');
+  assert.equal(landBlocks(ridge, [0, 0, 1.7], [0, 15, 1.8]), false, 'a foe before the ridge');
+  assert.equal(landBlocks(ridge, [0, 0, 1.7], [0, 21, 5.8]), false, 'a foe standing on the ridge');
+  assert.equal(
+    landBlocks(() => null, [0, 0, 1.7], [0, 40, 1.8]),
+    false,
+    'no ground known, nothing hidden',
+  );
+  const bowl = (x: number, y: number) => Math.hypot(x, y) / 10;
+  assert.equal(landBlocks(bowl, [0, 0, 1.7], [30, 0, 4.8]), false, 'across a bowl the line stays over the ground');
 });

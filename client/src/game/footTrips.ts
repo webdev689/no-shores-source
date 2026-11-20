@@ -81,7 +81,8 @@ export function takeWipe(held: { wiped: boolean }): boolean {
 }
 
 /** A dungeon's room in the page, played alone: a patrol's shared dungeon from the patrol's node file, any other room
- *  (a run, a sea island's dungeon) from its name, as the servers open them (`runAsk`). */
+ *  (a run, a sea island's dungeon) from its name, a patrol's run with the patrol's file too, as the servers open them
+ *  (`runAsk`). */
 export function openAlone(
   module: WebAssembly.Module,
   outsideText: string,
@@ -91,7 +92,7 @@ export function openAlone(
   const ask = runAsk(into.room, Math.floor(Date.now() / 60_000));
   return ask === null
     ? LocalRoom.openDungeon(module, outsideText, into.number, heard.snapshot, heard.gear)
-    : LocalRoom.openRun(module, ask, heard.snapshot, heard.gear);
+    : LocalRoom.openRun(module, ask, outsideText, heard.snapshot, heard.gear);
 }
 
 /** Stands the fight's rules on the dungeon an ask names as its room stands its bodies, on the dungeon's own ground;

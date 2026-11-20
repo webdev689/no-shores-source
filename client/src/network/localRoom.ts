@@ -16,6 +16,8 @@ export class LocalRoom implements RoomLink {
   private readonly snapshot: (snapshot: Snapshot) => void;
   private readonly gear: (gear: GearMessage) => void;
   private carry = 0;
+  /** The world's minute the room was last told, which turns the day's wares and brings Shape and takes him away. */
+  private minute = -1;
   readonly player: number;
   readonly dressed = [];
   /** A room in the page is joined once and never lost. */
@@ -38,9 +40,18 @@ export class LocalRoom implements RoomLink {
     this.door = door;
     this.snapshot = snapshot;
     this.gear = gear;
+    this.keepMinute();
     this.player = player;
     const welcome = readFromRoom(door.joined(this.player));
     this.epoch = welcome?.kind === 'joined' ? welcome.epoch : 0;
+  }
+
+  /** Tells the room the world's minute whenever it has turned, as the servers' rooms are told it. */
+  private keepMinute(): void {
+    const minute = Math.floor(Date.now() / 60_000);
+    if (minute === this.minute) return;
+    this.minute = minute;
+    this.door.minute(minute);
   }
 
   /** Opens a room on a course from the compiled `room-wasm` module, its player standing at `spawn`, with its stall and
@@ -57,7 +68,6 @@ export class LocalRoom implements RoomLink {
     if (!door.open(spawn, blocks)) throw new Error('the course is not one a room can stand on');
     door.epoch(Date.now());
     door.furnish(furnishing.stall, furnishing.nodes);
-    door.minute(Math.floor(Date.now() / 60_000));
     return new LocalRoom(door, snapshot, gear);
   }
 
@@ -72,7 +82,6 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.open(spawn, blocks, true)) throw new Error('the course is not one a room can stand on');
-    door.minute(Math.floor(Date.now() / 60_000));
     return new LocalRoom(door, snapshot, gear);
   }
 
@@ -109,17 +118,18 @@ export class LocalRoom implements RoomLink {
     return new LocalRoom(door, snapshot, gear);
   }
 
-  /** Opens a dungeon's run from its ask (as `RoomDoor.openRun` reads it) from the compiled `room-wasm` module, its
-   *  player joined at its way in; the player's own gear goes to `gear`. */
+  /** Opens a dungeon's run from its ask and a patrol's dungeon's from its patrol's node file's text too (as
+   *  `RoomDoor.openRun` reads them) from the compiled `room-wasm` module, its player joined at its way in; the player's
+   *  own gear goes to `gear`. */
   static openRun(
     module: WebAssembly.Module,
     ask: string,
+    patrolText: string,
     snapshot: (snapshot: Snapshot) => void,
     gear: (gear: GearMessage) => void = () => undefined,
   ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!door.openRun(ask)) throw new Error('the run is not one a room can stand in');
-    door.minute(Math.floor(Date.now() / 60_000));
+    if (!door.openRun(ask, patrolText)) throw new Error('the run is not one a room can stand in');
     return new LocalRoom(door, snapshot, gear);
   }
 
@@ -173,6 +183,7 @@ export class LocalRoom implements RoomLink {
 
   /** Ticks the room as many whole ticks as `seconds` and what was carried make, handing on each tick's snapshot. */
   pump(seconds: number): void {
+    this.keepMinute();
     this.carry += seconds;
     while (this.carry >= this.door.tickSeconds) {
       this.carry -= this.door.tickSeconds;

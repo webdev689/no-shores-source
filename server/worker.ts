@@ -28,7 +28,8 @@ const PRESENT_EVERY_MS = 30_000;
 
 /** The close code for a player whose character joined another room. */
 const ELSEWHERE = 4001;
-/** The close code for a player whose character the room's gate shuts: the reason is the gate's. */
+/** The close code for a player the room turns away and tells why: its gate shuts to their character, or its node is
+ *  locked. */
 const SHUT = 4003;
 /** The close code for a player a run cannot keep for now, the accounts not answering: the page joins again. */
 const AGAIN = 1013;
@@ -96,9 +97,10 @@ export class RoomHost extends DurableObject<Env> {
     const entrance = entranceOf(request);
     const player = this.guarded(() => (entrance === null ? 0 : this.room.joinAt(entrance)) || this.room.join(), 0);
     if (player === 0) {
-      // A full room still takes the socket, to say why it closes.
+      // A full room, or a locked node's, still takes the socket, to say why it closes.
+      const locked = this.guarded(() => this.room.refusal(), null);
       server.accept();
-      server.close(1013, 'the room is full');
+      server.close(locked === null ? 1013 : SHUT, locked ?? 'the room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
     server.binaryType = 'arraybuffer';
@@ -154,8 +156,12 @@ export class RoomHost extends DurableObject<Env> {
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
     const seeds = [lootLow, lootHigh, worldLow, worldHigh] as const;
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
-    if (ask !== null || name.startsWith('sea-dungeon-'))
-      return ask !== null && this.room.openRun(ask) && this.room.reseed(seeds);
+    if (ask !== null || name.startsWith('sea-dungeon-')) {
+      // A patrol's dungeon's run reads its patrol's file, as its shared dungeon does, and keeps its lock.
+      const patrol = node === undefined ? null : nodeRoom(node);
+      const text = patrol && patrol.dungeon !== null ? await this.nodeText(patrol.id) : '';
+      return ask !== null && text !== null && this.room.openRun(ask, text) && this.room.reseed(seeds);
+    }
     if (node === undefined)
       return (
         this.room.open(course.start, course.blocks) &&
@@ -164,12 +170,17 @@ export class RoomHost extends DurableObject<Env> {
       );
     const named = nodeRoom(node);
     if (!named) return false;
-    const file = await this.env.NODES.fetch(`https://nodes/${named.id}.json`);
-    const text = file.ok ? await file.text() : null;
+    const text = await this.nodeText(named.id);
     const ready =
       text !== null && (named.dungeon === null ? this.room.openNode(text) : this.room.openDungeon(text, named.dungeon));
     const opened = ready && this.room.difficulty(named.seas);
     return opened && this.room.reseed(seeds) && this.room.minute(Math.floor(Date.now() / MINUTE_MS));
+  }
+
+  /** A node's baked file's text, or null when there is none. */
+  private async nodeText(id: string): Promise<string | null> {
+    const file = await this.env.NODES.fetch(`https://nodes/${id}.json`);
+    return file.ok ? await file.text() : null;
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {

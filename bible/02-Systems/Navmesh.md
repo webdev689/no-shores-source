@@ -34,9 +34,9 @@ Where a foe can walk, and the way there. A room bakes its course into a navmesh 
 it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same
 steps and numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its
 course and 30 m of ground about it (a course laid over open sea, its blocks' tops alone); a node's room over a 70 m
-square of its own land by its first spawn, where its garrison stands ([[Enemies]]); a dungeon's room over the whole
-dungeon ([[Dungeons]]). Its [[Foes]] find their way and their firing spots by it, and climb and drop where its links
-say.
+square of its own land by its first spawn, where its garrison stands ([[Enemies]]), among the boxes of its layout
+inside that square, which its node file holds; a dungeon's room over the whole dungeon ([[Dungeons]]). Its [[Foes]]
+find their way and their firing spots by it, and climb and drop where its links say.
 
 ## How it works
 
@@ -45,11 +45,15 @@ say.
 1. **Voxels.** The ground across the room's bounds, and every block (or ramp) standing on it, is cut into columns of
    0.25 m cells. The ground is the room's own terrain, read at each cell's centre (open ground stands at 0 m); the
    voxels start one below its lowest point, which may be a seabed under 0, and reach over its highest. Each column
-   holds its solid spans, in voxels of 0.25 m up, the ground's reaching up to its height there. A block or ramp
-   stands solid from the ground beneath it; a top below the ground is buried. Each marks every cell its footprint
-   touches, so a thin wall never leaks.
+   holds its solid spans, in voxels of 0.25 m up, the ground's reaching up to its height there. A block is solid
+   from its underside to its top, on open ground as on a terrain, or from the ground where its underside is lower; a
+   ramp stands solid from the ground beneath it; a top below the ground is buried. An underside over the ground rounds
+   up to its voxel, so a body fits under one at its own height (1.8 m), as it moves under it ([[Movement]]). So the
+   space under a roof, a deck, a lintel or a bridge stays open. Each marks every cell its footprint touches, so a thin
+   wall never leaks.
 2. **Walkable floor.** The top of each solid span is floor where a body has 1.8 m of headroom and the slope (on the
-   ground, measured from the cells either side) is 0.7 or less. Floor links to the floor beside it within a step
+   ground, measured from the cells either side) is 0.7 or less: the ground under a roof and a deck's top over it
+   alike, so floors stand over each other, joined by stairs and ramps. Floor links to the floor beside it within a step
    (0.5 m, two voxels). The floor is then eroded by the body's radius (0.35 m), so a path's centre keeps clear of
    every wall and drop.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
@@ -65,8 +69,8 @@ say.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
    no poly is larger than 12 m², and merged, the longest shared edge first, into convex polys of up to six corners.
    Polys that share an edge are neighbours, across regions too.
-6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground, blended
-   between cell centres.
+6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground where no block
+   stands on it, blended between cell centres.
 
 **Links** join two floors that no step joins, where the [[Movement]] rules carry a body between them. Along every side
 of every block, a metre apart and no nearer its ends than 0.5 m, the bake stands a body by the side and steps it by the
@@ -83,7 +87,8 @@ it joins (step 3). Ramps are not blocks the rules know: no link is tried over on
 0.5 m), runs A* across the polys' neighbours and the links leaving them, each link at its cost, and pulls the line taut
 through the shared edges (the funnel), on either side of each link. A walker standing on a shared edge is already
 through it: the funnel opens past it, never back to the edge's far end. Its waypoints run from the start to the goal,
-both included, each on the surface walked there; a link's start and end stand in it, one after the other. There is no
+both included, each on the surface walked there, on the poly nearest the level of the waypoint before it, so a path
+that runs under a bridge and climbs onto it ends on its deck; a link's start and end stand in it, one after the other. There is no
 path when an end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk or a link joins, so
 a goal on another island has no path without a search. A path's length, as a foe weighs a walk, counts each link at its
 cost rather than its leg across. The search keeps its buffers from one path to the next, so a path costs the polys it
@@ -115,7 +120,8 @@ refused.
 
 **Firing spots** are baked with the mesh, for shooters to fight from ([[Foes]]). On a lattice of 1.6 m over the
 walkable surface, each point is probed along 16 bearings (each a sixteenth of a turn, clockwise from north) at an eye
-1.6 m over the surface: covered from a bearing where something taller than the eye stands within 2.4 m, an open lane
+1.6 m over the surface: covered from a bearing where something taller than the eye, its underside below it, stands
+within 2.4 m, an open lane
 down it where it is clear for 14 m inside the bounds (their edge shuts a lane and gives no cover). What stands in the
 way is a block, a ramp, or the ground's own rise, read every 0.125 m along the line. A spot with neither is dropped.
 The room answers the spots within a radius of a point, in the bake's order: rows from the north, each from the west,
@@ -133,15 +139,22 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 ## Limits
 
 - A node's room bakes a 70 m square of its [[Land]], its first spawn 15 m inside the square's edge toward the middle
-  of its section, without the city's blocks; a larger square would hold more of a node, at a bake's cost.
+  of its section, and only the boxes that reach into it; a larger square would hold more of a node, at a bake's cost.
+- An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
+  stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room, so a bake's time and memory grow with its area. Tested
   offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course, its 115 links among it, bakes in about
   90 and 100 ms, its links some 6 ms of that natively; a node's 70 m square in 85 to 95 ms natively, and 115 ms in
   WebAssembly; an open field 200 m across in about 0.9 and 1.2 s, needing some 170 MB while it bakes.
-- A node's room bakes none of its city's blocks, so its foes neither climb nor drop there. Mistfall's square baked
-  with its seven boxes lays 475 links, and they take some 45 ms more natively.
+- A node's room bakes none of its city's blocks, so its foes neither climb nor drop there; its layout's boxes inside
+  its square it does, links and all. Its links' tries step bodies through the movement rules' grid of blocks. On the
+  Saltgrass Downs, its square moved to where its boxes stand thickest (406 of them), the room opens natively in about
+  130 ms bare and 205 ms among its boxes (`cargo test --release -p room --test near_blocks -- --ignored --nocapture`,
+  tested offline on an idle machine).
+- A link is tried only from the highest floor beside a block's side, and off a block's top only where nothing stands
+  over its edge. So a floor under a deck or a roof gets no link onto a block beside it, and its foes go round.
 - A link crosses one side. A wall too thin to stand on is crossed only where it is vaulted (1.2 m high and 0.8 m
   deep at most); a taller thin wall is gone round. A ledge too narrow for the erosion to leave floor is not climbed.
 - The regions keep the floors a link joins either way, so a floor reached only by a drop is kept though no walk

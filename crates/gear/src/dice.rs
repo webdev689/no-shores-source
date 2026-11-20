@@ -28,8 +28,12 @@ pub enum Purpose {
     Emblem = 10,
     /// Whether a kill leaves an Ammo box.
     AmmoBox = 11,
-    /// The draws of what is on (`activities`).
-    Draw = 12,
+    /// Which cosmetics a seller shows on a day (the place in the list added to the purpose's number).
+    Cosmetic = 12,
+    /// A faction's package: whether its Vestige is Legendary, and its slot.
+    Package = 40,
+    /// Where Shape stands in a week, the slots of his wares, and the Shapes a kill gives.
+    Shape = 44,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
     Patrol = 64,
 }
@@ -54,7 +58,13 @@ impl Dice {
     /// A number in [0, 1) for this purpose, and for the `nth` of several rolls with the same purpose.
     #[must_use]
     pub fn roll(&self, purpose: Purpose, nth: u32) -> f64 {
-        let asked = u64::from(self.player) << 32 | u64::from(purpose as u32 + nth) << 8;
+        self.roll_numbered(purpose as u32 + nth)
+    }
+
+    /// A number in [0, 1) for a roll numbered outside the purposes, for dice of a seed no room's dice share.
+    #[must_use]
+    pub fn roll_numbered(&self, number: u32) -> f64 {
+        let asked = u64::from(self.player) << 32 | u64::from(number) << 8;
         let hashed = mix(mix(mix(self.seed) ^ self.tick) ^ asked);
         (hashed >> 11) as f64 / (1_u64 << 53) as f64
     }

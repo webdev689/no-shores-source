@@ -13,6 +13,9 @@ import { randomFromSeed } from './random.ts';
 const PARAPET_M = [0.35, 0.2];
 /** A window: its side, a storey's height, its sill over the storey's floor and the clearance at a run's ends (m). */
 const WINDOW_M = [1.6, 3.2, 0.9, 0.5];
+/** How far inside a wall's outer face a walked-into room's lining shows its face (m): the layout crate's
+ *  interiors.rs INSET_M + LINING_M, and a hand more so the picture lies over the lining. */
+const LINING_FACE_M = 0.243;
 /** A chimney: the shortest roof that carries one (m), the share of those that do, its stack's side (m), and the most
  *  a building stands. */
 const CHIMNEY_M = [6, 0.6, 0.6, 2];
@@ -132,6 +135,7 @@ function windows(
   run: Run,
   base: number,
   doors: readonly MeasuredDoor[],
+  inside = false,
 ): void {
   const [side, storey, sill, clear] = WINDOW_M;
   const length = run.to - run.from;
@@ -149,6 +153,29 @@ function windows(
       if (doors.some((door) => near(door, corners))) continue;
       // Upright and unmirrored as one faces the wall: its left is the run's start on a wall facing -x or +z.
       const flip = run.normal[2] < 0 || run.normal[0] > 0;
+      if (inside) {
+        // The same window seen from the room: on the lining's face, facing in, mirrored so it reads as from outside.
+        const back = run.fixed - (run.normal[0] + run.normal[2]) * LINING_FACE_M;
+        const within = (along: number, y: number): number[] => (run.normal[0] ? [back, y, along] : [along, y, back]);
+        add.quadUv(
+          glass,
+          [within(right, level), within(left, level), within(left, level + side), within(right, level + side)],
+          run.normal.map((value) => -value),
+          flip
+            ? [
+                [0, 1],
+                [1, 1],
+                [1, 0],
+                [0, 0],
+              ]
+            : [
+                [1, 1],
+                [0, 1],
+                [0, 0],
+                [1, 0],
+              ],
+        );
+      }
       add.quadUv(
         glass,
         corners,
@@ -270,7 +297,7 @@ const built = new WeakMap<ForgedModel, { table: BuildingTable; id: number }>();
 export function buildingModel(
   table: BuildingTable,
   id: number,
-  { doors = true }: { doors?: boolean } = {},
+  { doors = true, open = false }: { doors?: boolean; open?: boolean } = {},
 ): ForgedModel | null {
   const measure: BuildingMeasure | undefined = table[id];
   if (!measure) return null;
@@ -289,7 +316,7 @@ export function buildingModel(
     const pitched = roofOf(block, plan, fit, measure.doors ?? []);
     const runs = sides(parts, block.top - block.base < 1.2 ? trim : wall, block, plan);
     if (measure.glass && !wing.steps && !wing.platform && wing.low === undefined && block.top - block.base >= 2.6)
-      for (const run of runs) windows(parts, measure.glass, run, block.base, measure.doors ?? []);
+      for (const run of runs) windows(parts, measure.glass, run, block.base, measure.doors ?? [], open);
     if (wing.low !== undefined)
       parts.box(
         trim,
@@ -354,7 +381,8 @@ export function buildingModel(
         );
   }
   if (!doors) return { ...parts.model(), doors: [] };
-  const model = withDoors(parts.model(), measure, fit, trim);
+  // An open building's doorways are cut and framed with no door in them: a body walks straight in.
+  const model = withDoors(parts.model(), measure, fit, trim, { picture: !open });
   built.set(model, { table, id });
   return model;
 }

@@ -34,8 +34,12 @@ code:
   - client/src/combat/foeTarget.ts#FoeTarget
   - client/src/combat/foePlate.ts#poiseTrackOf
   - client/src/combat/plateSight.ts#coneWant
+  - client/src/combat/plateSight.ts#aimedFoe
+  - client/src/combat/plateSight.ts#bodyDegrees
+  - client/src/combat/plateSight.ts#landBlocks
   - client/src/combat/plateSight.ts#plateScale
   - client/src/combat/plateSight.ts#PlateSight
+  - client/src/combat/foePlate.ts#OVERHEAD_SIZES
   - client/src/combat/hitWords.ts#wordsOf
   - client/src/combat/foePlate.ts#wardOf
   - client/src/plus/kit.ts#motionReduced
@@ -69,10 +73,14 @@ code:
   - client/src/game/rosterRows.ts#actionsFor
   - client/src/game/playerDetails.ts#detailsPage
   - client/src/game/emblemArt.ts#emblemPixels
-  - client/src/game/emblemSlot.ts#emblemSlot
+  - client/src/game/appearanceButton.ts#appearanceButton
+  - client/src/game/appearance/appearancePage.ts#appearancePage
+  - client/src/forge/cosmetics.ts#rampOf
   - client/src/game/companyHud.ts#startCompanyHud
   - client/src/game/stationPages.ts#vaultPage
-  - client/src/game/stationPages.ts#vendorPage
+  - client/src/game/npc/npcScreen.ts#npcPage
+  - client/src/game/npc/factionRows.ts#factionRows
+  - content/story/keepers.json
   - client/src/game/bountyBoard.ts#boardPage
   - client/src/game/gearDom.ts#itemMarks
   - client/src/game/gearDom.ts#nodeRing
@@ -121,7 +129,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   at the top right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
   and in a sea fight under a Boss ship's plate. On foot the company stands under the vitals, and the prompt for E
   and the hints stand over the Arts and weapons; at sea the hints rise above the offer to dock or go ashore. The
-  line of keys wraps short of the Acquired feed. The edge's warning stands under the compass's column.
+  line of keys wraps short of the Acquired feed, and gives way while someone speaks in the dialogue box. The edge's
+  warning stands under the compass's column.
 - **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. It stands the compass at
   the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does; the vitals at the
   top left; and the Arts and weapons at the bottom left
@@ -198,18 +207,27 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   of the foe's whole health it holds still, lit along its top and dark along its foot in its element's colours, Blaze
   orange, Volt blue, Cosmic violet (`wardOf`). It is gone once broken. What it takes from the player's own blows is
   said in its element's colour; a blow it holds whole fills no poise, so the poise track says nothing of it.
-- **Plates over figures are never overbearing.** A foe's shows only within 20 degrees of the crosshair, whole within
-  17 and none past 23, easing in and out over 0.25 s; a plate new on the screen starts where the cone puts it, so
-  none pops in. The foes the player traded a blow with in the last minute show wherever they are. A plate shows
-  for no foe farther than 60 m across the ground, nor one whose head the place's blocks have hidden for 0.15 s; seen
-  again it comes back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does
-  farther off, never growing, its name never under 9 px.
+- **Plates over figures are never overbearing**, and few show at once, after Destiny's
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]). The cone round the crosshair shows one plate, the foe in
+  sight nearest it (`aimedFoe`), measured to the nearest point of its body, feet to head (`bodyDegrees`), so a foe is
+  at the crosshair wherever on its body the crosshair rests: whole within 4 degrees and none past 6, easing in and out
+  over 0.25 s. Another foe takes the cone only once it stands a degree nearer, or the cone would show a quarter more of
+  it, so two side by side, or a view wobbling between them, do not trade it. When the foe at the crosshair is already
+  fought or locked, the cone shows no other foe's plate; a Boss there takes the cone too, and shows none over its head.
+  The foe the soft lock holds shows wherever it is, and so does a foe the player traded a blow with, for as long as
+  the target plate would stand from that blow, fading as it fades (`foughtShare`); being the target alone, a foe
+  winding up at the player or one the lock let go, holds no plate. A plate new on the screen starts where the cone puts
+  it, so none pops in. The words of blows keep clear of the plates drawn, never of a foe with none. A plate shows for
+  no foe farther than 60 m across the ground, nor one whose head the place's blocks or its land have hidden for 0.15 s
+  (`landBlocks`, the line tried every 2 m, only for a foe that could show a plate or take the cone); seen again it
+  comes back at once. It is whole as near as 12 m through a
+  60 degree lens and shrinks as its figure does farther off, never growing, its name never under 9 px.
 - **A blow's words** stand where the blow met the body, in the face at 22 px with no box and a hard 2 px outline,
   thrown the way the stroke's blade went, its near edge 28 px from the blow (a crit's and a kill's 56; a number with
   no stroke one side and the other in turn), and kept on the screen. Each pops
   1.4 times for 2 frames and 1.15 for 2, rises 4 px every 4 frames and blinks out over its last 6, standing 0.95 s; a
   crit's and a kill's stand 1.2 s at 33 px in gold, stamped Crit or Slain beside the number. A number pushes itself
-  down to stand 24 px clear of any foe's plate and clear of the words already shown. Blows by one striker on one
+  down to stand 24 px clear of any plate drawn and clear of the words already shown. Blows by one striker on one
   foe within 0.6 s add into one number, which pops again. A number dealt in an element is in its light. What a blow
   did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
   not break it says "Holds". Stepping onto an Ammo box the room leaves lying, the ammunition full, says "Ammo full" on
@@ -227,10 +245,14 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   [[Game]]'s place name and hints, laid straight on the world too, carry the same outline.
 - **A foe's plate**, after the owner's reference: its level in a chip square at the left, the number half the square
   high (over a figure; on the soft lock's and the boss bar's, 22 px on the face's grid), the square empty for a foe of
-  no level; to its right its name above a long thin track, the meter in its rank's
+  no level; to its right its name above a thin track, the meter in its rank's
   colour. Over each foe, the soft lock's (with its poise under the health) and the boss bar's are this one plate at
-  three sizes. Ships' plates are drawn alike on an SVG, at the same sizes (`PLATES`): 140 by 26 px over a figure,
-  and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
+  three sizes. Over a figure its width and bar go with its foe's rank (`OVERHEAD_SIZES`), all 26 px tall: a Major's
+  140 px with an 8 px bar under the whole name; a Minor's as wide, since "? Crossbowman" fills it in the face, but its
+  bar 6 px and only three fifths as long, still a row of its red and of a shield's colour when drawn at three quarters
+  far off; an Elite's and up 176 px with a 10 px bar, cut in thirds by dark marks edged light, so they read over the
+  fill and the empty trough alike. Ships' plates are drawn alike on an SVG, at the sizes in `PLATES`: a Major's 140 by
+  26 px over a figure, and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
   wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
   foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
@@ -295,15 +317,28 @@ never while a press is held. Each press is an ask the room answers.
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the Melee
   and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
-  emblem stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
+  Appearance button stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
   names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's across from
   it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the loss colour,
   at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A
   slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its flyout of the nine
   it may carry, toward the figure, upward from each side's two lowest slots; a click there wears one, and F held over
   one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the gap between them
-  keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot. The emblem's
-  flyout holds every emblem, five a row: those kept to wear with a click, the rest dim, each card saying how it is had.
+  keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot.
+- **Appearance** ([[The Character Page Opens Appearance From an Icon Button]]). Among the slots stands the
+  Appearance button: a wardrobe mark (a coat on a brass hanger) with the worn emblem's sign in its corner. It opens the
+  Appearance screen in the page's place, as the Art's diamond opens the Art's screen, the focus on the worn emblem. At
+  its left the display: the player's figure turning a view every 1.2 s through the forge's five views and their
+  mirrors (still with less motion asked for), in the dye worn, and under it their horse from the side in its coat and
+  barding. At its right, under engraved headings counting what is kept, EMBLEM (five a row) and DYE, COAT and BARDING
+  (eight a row), every one of the catalogues: kept pieces lit and worn with a click or Enter, the rest dim, each card
+  saying how it is had ("Sold by the Tailor.", "Reach the Lamplighters' second rank."); the worn one of each kind in
+  brass with a brass corner. A dye's tile is its ramp over a cuirass, a coat's a swatch, a barding's the horse's head
+  and chest wearing it, cut from 4 to 16 texels over the bare horse's ears so a crest shows and the head stays in;
+  the Tack's barding tiles are drawn the same way. Hovering or focusing a dye, coat or barding shows it on the display before it is worn; after the pointer leaves,
+  a piece keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or
+  barding and the horse's without the dyes, 96 at most, letting go of the least lately shown. Escape
+  goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
   with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words
@@ -317,8 +352,8 @@ never while a press is held. Each press is an ask the room answers.
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
-- **Inventory.** Aurem, the one currency, along the top; under it the Vestiges carried, "Vestiges 3/10" over ten places
-  in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Reader;
+- **Inventory.** Aurem and the Shapes held along the top, each named under its count; under it the Vestiges carried, "Vestiges 3/10" over ten places
+  in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Mage;
   then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
   first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
   shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
@@ -331,7 +366,8 @@ never while a press is held. Each press is an ask the room answers.
   piece last pointed at or focused; with Ctrl, Cmd or Alt it is the browser's key. Moving the pointer off the piece,
   or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
-  shows a pickup: a row each, its picture in a well of its rarity, its name and how many. Rows slide in, stay four
+  shows a pickup: a row each, its picture in a well of its rarity, its name and how many; Shapes gained and every
+  dye, coat or barding newly kept among them. Rows slide in, stay four
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
@@ -444,20 +480,53 @@ gone into, and the card says "The week turned. Try again.".
 
 ## The social space's counters
 
-The vault, the vendors and the Tailor keep counters in the social space, as Destiny's keep theirs in the Tower; E at
-one opens its screen in the menu's window, its name where the tabs stand. The Reader of Vestiges opens the inventory,
-its Vestiges at the top. The room serves each ask only at its own counter ([[Gear]], "In the rooms").
+Every keeper in the social space who deals with a player, and Shape, keeps a screen, as Destiny's keep theirs in the Tower
+([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]); E at one opens it in the menu's
+window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
+serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
-- **The vault**, after Destiny 1's: what it keeps on the left and what the player carries on the right, each in
-  weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
-  right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row,
-  an empty place a dark Vestige, as the inventory's.
-- **A vendor's stall**: the Quartermaster's armour or the Armsmith's loadouts of the day ([[Gear]], "Vendors"). Each
-  ware is a press held to buy it: its picture, name, kind, level and power, and its price, in red with the words when
-  the player cannot pay it; its card shows what it changes over the piece worn. After the Quartermaster's armour, an
-  Ammo crate every day, with how many of the five are carried; it cannot be held with five.
-- **The Tailor's stall**: the six emblems sold that day ([[Gear]], "Emblems"), each its nameplate, name and price, held
-  to buy; one kept, too dear or for a higher level says so.
+- **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and thanks
+  in lines of his own: what it keeps on the left and what the player carries on the right, each in weapons, armour and
+  Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a right-click shows its
+  page. Each side lays its shelves and Vestiges as many to a row as it holds (six across at 1920x1080, five at
+  1500x900), an empty place a dark Vestige, as the inventory's; the arrows move among its cells as among a keeper's
+  tiles.
+- **A keeper's screen** (`npcPage`), one for every counter, after the owner's Destiny 1 references: the keeper large at
+  the left, from the forge in their own dress (`keepers.ts`), idle and facing the viewer, grown by whole pixels and
+  breathing between the idle's two frames (still with less motion asked for), over a ground lit in their colour (a
+  faction's in its Art's element, the rest brass), with their mark and their title in capitals above them. At the right
+  their words, the currencies they deal in (Aurem; Shapes at Shape's; at a faction's its rank, its meter to the next and
+  the materials an Art's rise takes), the band they speak in, then their wares in rows under engraved headings, each a
+  gear tile held to buy, its price under it, red with "Not enough" when short, a card on hover or focus; a ware that
+  cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
+  room would sell. At the foot "Stock refresh" and the time to the next midnight, UTC (0:00:00 at midnight), for the
+  smiths, the Tailor and the Tack, or "Leaves in" and the time left for Shape, by the world's clock to Sunday 21:00 UTC.
+  The footer: Hold (Buy; Open at the Mage's), I (Open Character), Esc (Dismiss); while a fragment is chosen it says Esc
+  (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter presses, Escape steps
+  back, and the focus goes back where it came from.
+- **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
+  The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
+  many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
+  six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
+- **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen scrolls
+  to its armour: REPUTATION (the rank, the meter, what the next ranks keep, and each package waiting held to collect),
+  PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a Legendary cloak worn at any
+  level, sold only to the pledged and not while nine cloaks are carried; kept says so), ART (the faction's Art: its
+  level as five pips, its bar, and when the bar is full a Rise press with the rise's price that opens a choice of the
+  fragments not owned, each said as it works at the level the rise makes; with all six owned it rises at once, "No
+  fragment left to choose"), FRAGMENTS (the Art's six, owned lit, the rest with their price, dim only before the first
+  rank, from which they are sold), then ARMOUR and WEAPONS (the faction's four armour pieces and two weapons as the room
+  makes them, each card naming the colour it is drawn in; dim with "From rank 2" or "From rank 3" until the rank, then
+  "From level 20" below the level they are made at, "Its slot carries nine" while its slot is full). The rows scroll
+  under a thin bar of the menu's.
+- **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape is away. He comes on
+  Fridays."
+- **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
+  the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
+  refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is
+  a scene of `content/story/keepers.json`, said in turn, held to [[Dialogue]]. Once typed whole, the line is read to a
+  screen reader from a polite live copy, as every line of the dialogue box is; the currencies are read with their
+  names.
 - **The bounty board** in Overlook's plaza, which no keeper keeps ([[Activities]], "Quests and bounties"), laid as This
   Week is: "Today's bounties" and what each pays the player now, then a line a bounty, its words with its count or
   "Turned in" under them, and Take on one not held or Turn in on one done at its end, each asked with the day of the
@@ -471,8 +540,8 @@ as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is d
 and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
 multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
 it; the menu's banner carries its pattern the whole way, as Destiny 2's heads its character screen. It shows on the
-Roster's rows, the menu's banner, another player's details, the company on the heads-up display, the Emblem slot and
-the Tailor's stall.
+Roster's rows, the menu's banner, another player's details, the company on the heads-up display, the Appearance
+button's corner and screen, and the Tailor's wares.
 
 ## Limits
 

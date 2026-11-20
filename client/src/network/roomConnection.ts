@@ -45,7 +45,8 @@ export function rejoinWait(tries: number): number {
 /** The codes a room closes a socket with when it sends its player away for not keeping to the messages (too many,
  *  too large, or not one, worker.ts): rejoining would only be sent away again. */
 const SENT_AWAY = [1008, 1009];
-/** The code a room whose gate shuts to the player's character closes with (worker.ts): rejoining would be shut again. */
+/** The code a room closes with when it turns the player away and says why, its gate shut to their character or its
+ *  node locked (worker.ts): rejoining would be turned away again. */
 export const SHUT = 4003;
 /** The code a room closes with once the player's character is taken by another of their sockets, in this room or
  *  another (worker.ts): joining again would take it back, and the two would send each other away for ever. */

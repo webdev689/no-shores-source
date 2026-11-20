@@ -76,12 +76,12 @@ fn a_drop_stays_where_it_was_thrown_from_behind_a_thin_wall_off_a_drop_or_past_t
     use movement::Block;
     let from = [0.0, 0.0, 0.0];
     let north = 0.0;
-    let wall = Block { min_x: -5.0, min_y: -1.1, max_x: 5.0, max_y: -0.9, top: 3.0 };
+    let wall = Block { min_x: -5.0, min_y: -1.1, max_x: 5.0, max_y: -0.9, top: 3.0, bottom: 0.0 };
     let room = Room::new(vec![wall], (0.0, 0.0));
     assert_eq!(room.rest_at(from, north), from, "not through a thin wall");
     let south = room.rest_at(from, core::f64::consts::PI);
     assert!((south[1] - THROW_M).abs() < 1e-9, "the open side is open: {south:?}");
-    let ledge = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 3.0 };
+    let ledge = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 3.0, bottom: 0.0 };
     let room = Room::new(vec![ledge], (0.0, 0.0));
     assert_eq!(room.rest_at([0.0, 0.0, 3.0], north), [0.0, 0.0, 3.0], "not off a ledge");
     let step = Block { top: 0.2, ..ledge };
@@ -160,7 +160,7 @@ fn a_reeve_felled_beside_a_wall_leaves_his_drops_on_the_floor_where_his_slayer_t
     room.mark_struck(player, reeve, Slot::Melee);
     room.pay_kill(reeve);
     room.foes.remove(&reeve);
-    let drops: Vec<Drop> = room.drops_for(player).filter(|drop| drop.from == fallen).copied().collect();
+    let drops: Vec<Drop> = room.drops_for(player).filter(|drop| drop.from == fallen).cloned().collect();
     assert!(drops.iter().any(|drop| matches!(drop.what, Dropped::Vestige(_))), "his sure Vestige: {drops:?}");
     assert!(drops.len() > 1, "and his Ammo box");
     for drop in &drops {
@@ -183,7 +183,7 @@ fn a_kills_drops_are_thrown_out_in_a_fan_toward_the_player_and_taken_at_rest() {
         found.character.ammo = 0;
     }
     kill(&mut room, player, ::foes::Rank::Boss, -10.0);
-    let drops: Vec<Drop> = room.drops_for(player).copied().collect();
+    let drops: Vec<Drop> = room.drops_for(player).cloned().collect();
     assert_eq!(drops.len(), 3, "a Vestige, a box and a crate: {drops:?}");
     for drop in &drops {
         assert_eq!(drop.from, [0.0, -10.0, 0.0], "thrown from the body");

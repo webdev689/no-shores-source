@@ -18,7 +18,7 @@ const PISTOLEER: u8 = 9;
 
 /// A wall 4 m long and higher than a head, 13 m north of the player and west of the line to the foe.
 fn wall() -> Block {
-    Block { min_x: -6.0, min_y: -13.5, max_x: -2.0, max_y: -13.0, top: 2.5 }
+    Block { min_x: -6.0, min_y: -13.5, max_x: -2.0, max_y: -13.0, top: 2.5, bottom: 0.0 }
 }
 
 /// Whether nothing stands between two fighters' chests.
@@ -101,7 +101,7 @@ fn it_draws_behind_its_cover_and_steps_out_to_shoot_then_falls_back_to_reload() 
 
 /// A pillar that hides the player at 6 m east of the start from the crossbowman's first post.
 fn pillar() -> Block {
-    Block { min_x: 2.5, min_y: -5.5, max_x: 4.5, max_y: -4.5, top: 2.5 }
+    Block { min_x: 2.5, min_y: -5.5, max_x: 4.5, max_y: -4.5, top: 2.5, bottom: 0.0 }
 }
 
 #[test]
@@ -140,7 +140,7 @@ fn it_picks_again_when_its_target_moves_behind_a_block() {
 
 #[test]
 fn shooters_of_a_room_pick_their_posts_one_a_tick() {
-    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5 };
+    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5, bottom: 0.0 };
     let mut room = Room::new(7)
         .course(vec![long])
         .player(PLAYER, 0.0, 0.0, 0.0)
@@ -160,7 +160,7 @@ fn shooters_of_a_room_pick_their_posts_one_a_tick() {
 #[test]
 fn two_shooters_never_share_a_post() {
     // A wall 8 m long squarely before the player: either end hides a post, the east end nearer both shooters.
-    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5 };
+    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5, bottom: 0.0 };
     let mut room = Room::new(7)
         .course(vec![long])
         .player(PLAYER, 0.0, 0.0, 0.0)
@@ -187,7 +187,14 @@ fn two_shooters_never_share_a_post() {
 fn walls_north() -> Vec<Block> {
     [(-6.0, 9.0), (2.0, 15.0), (-6.0, 22.0)]
         .into_iter()
-        .map(|(west, north)| Block { min_x: west, min_y: -north - 0.5, max_x: west + 4.0, max_y: -north, top: 2.5 })
+        .map(|(west, north)| Block {
+            min_x: west,
+            min_y: -north - 0.5,
+            max_x: west + 4.0,
+            max_y: -north,
+            top: 2.5,
+            bottom: 0.0,
+        })
         .collect()
 }
 

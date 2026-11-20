@@ -31,7 +31,7 @@ pub struct Today {
     pub turned_in: BTreeSet<u8>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
-    pub unknown: serde_json::Map<String, serde_json::Value>,
+    pub unknown: crate::character::UnknownKeys,
 }
 
 /// The week's record: whether the Elite and the Abyss Dungeon of the week were cleared, and whether the Abyss boon is

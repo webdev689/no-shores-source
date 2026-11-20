@@ -160,3 +160,19 @@ test('a rejoin sending its own old socket away carries on', async (context: Test
     [2, 8, false, null, true],
   );
 });
+
+test('a locked node’s room turns the player away saying why: a join fails with its words, and no rejoin is tried', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const socket = new FakeSocket();
+  const connect = () => socket as unknown as WebSocket;
+  const opening = RoomConnection.open('ws://test/room/node-burned-mill', () => undefined, undefined, null, connect);
+  socket.closed(4003, 'The Burned Mill is locked');
+  await assert.rejects(opening, /closed: The Burned Mill is locked$/);
+  const kept = await joined(3);
+  kept.sockets[0]?.closed(1001);
+  context.mock.timers.tick(waitMs(0));
+  kept.sockets[1]?.closed(4003, 'The Burned Mill is locked');
+  context.mock.timers.tick(waitMs(9));
+  const { rejoining, lost } = kept.connection;
+  assert.deepEqual([kept.sockets.length, rejoining, lost], [2, false, 'The Burned Mill is locked']);
+});

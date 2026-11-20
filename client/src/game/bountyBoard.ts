@@ -9,6 +9,8 @@ import type { PageContext } from './characterPage.ts';
 import { pressOf } from './gearDom.ts';
 
 const SHUT = 'The bounty board opens after the prologue.';
+/** The board's screen's name, as the menu's header shows it: no keeper keeps it. */
+export const BOARD_TITLE = 'The Bounty Board';
 
 export interface BountyRow {
   readonly place: number;

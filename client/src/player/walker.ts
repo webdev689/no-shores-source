@@ -1,5 +1,5 @@
 import type { GlowLook } from '../elementGlow.ts';
-import type { Contact, FirstPerson } from '../firstperson/firstPerson.ts';
+import type { Contact, FirstPerson, FirstPersonState } from '../firstperson/firstPerson.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Climb } from '../firstperson/climbHands.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
@@ -67,6 +67,20 @@ const NO_GLOW = [0, 0] as const;
 /** The dress the figure shows: on a wall or a ledge the hands hold on, so the weapon is worn, not held. */
 export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
+}
+
+/** The faction, by its key, whose own colour each part of the first person wears: the gauntlets, the boots and each
+ *  hand's weapon, as the outfit names it for the layer it is drawn with (gearLooks.ts). */
+export function ownColours(outfit: Outfit): NonNullable<FirstPersonState['own']> {
+  const named = (layer: string | null | undefined) => (layer ? outfit.dyes[layer] : undefined);
+  const { gauntlets, boots } = outfit.armour;
+  const own = {
+    hands: named(gauntlets && `gauntlets_${gauntlets}`),
+    feet: named(boots && `boots_${boots}`),
+    right: named(outfit.right),
+    left: named(outfit.left),
+  };
+  return Object.fromEntries(Object.entries(own).filter(([, key]) => key !== undefined));
 }
 
 /** The climb a body is on, as the first person's hands follow it; null off a wall. */
@@ -256,6 +270,10 @@ export class Walker {
       climbing: holding ? 0 : 1,
       climb: climbOf(body),
       mounted: player.mounted,
+      horse: { coat: outfit.coat ?? null, barding: outfit.barding ?? null },
+      dye: outfit.dye ?? null,
+      own: ownColours(outfit),
+      body: dress.body,
       yaw: player.yaw,
       pitch: player.pitch,
       fov: FIELD_OF_VIEW,
@@ -263,7 +281,14 @@ export class Walker {
       pose: own ? guardPose(own.action) : null,
       zoom,
       pace: own ? paceOf(own.action, this.tickSeconds) : null,
-      spare: this.spare && { right: this.spare.right, left: this.spare.left },
+      spare: this.spare && {
+        right: this.spare.right,
+        left: this.spare.left,
+        // The other loadout's factions' colours, where its weapons wear any, so they are composed ahead in them.
+        ...(this.spare.dyes[this.spare.right ?? ''] || this.spare.dyes[this.spare.left ?? '']
+          ? { own: ownColours(this.spare) }
+          : {}),
+      },
     });
     const swing = firstPerson.swing;
     this.strokes = strokesAfter(this.strokes, this.swingWas, swing?.progress ?? null);

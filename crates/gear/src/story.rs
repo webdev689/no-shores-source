@@ -20,7 +20,7 @@ pub struct Story {
     pub finished: BTreeSet<String>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
-    pub unknown: serde_json::Map<String, serde_json::Value>,
+    pub unknown: crate::character::UnknownKeys,
 }
 
 impl Story {

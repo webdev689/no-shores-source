@@ -6,7 +6,7 @@ import { activitiesAt, eliteRun } from './activities.ts';
 import { askLayout, type DungeonAsk, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { BEFORE_DOOR_M, beforeDoor, type Entrance } from './entrances.ts';
 import type { AtEntrance } from './footPlace.ts';
-import { type InDungeon, seaPlace } from './footTrips.ts';
+import { type InDungeon, type Trips, seaPlace } from './footTrips.ts';
 import type { Happening } from './flow.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -59,15 +59,15 @@ const CHANCE = { instance: () => runInstance(), minute: () => Math.floor(Date.no
 /** A sea island's dungeon's name, its tier after it at Elite or Abyss. */
 const SEA_TIER = /^(.*?)(?:--(elite|abyss))?$/;
 
-/** The ways into a dungeon and out again, and into a company member's dungeon from wherever the player is. */
+/** The ways into a dungeon and out again, with the props' table their entrances stand by, and into a company member's
+ *  dungeon from wherever the player is. */
 export function dungeonTrips(
   game: TripGame,
   chance: { readonly instance: () => string; readonly minute: () => number } = CHANCE,
-): {
+): Omit<Trips, 'enter'> & {
   /** In by entrance `number`, its dungeon named `name`; into `found`, a run Find a Company found, only where it is
    *  one of this entrance's, else nowhere. */
   enter(number: number, name: string, found?: string): void;
-  leave(): void;
   /** Out by the way in, the veil saying the company fell: before the entrance, or back to the sea. */
   fell(): void;
   join(node: NodeInfo, place: string): void;
@@ -110,6 +110,7 @@ export function dungeonTrips(
       out = (fell) => away(layout, fell);
     };
   return {
+    props: () => game.drawers.props,
     enter: (number, name, found) => {
       const from = game.foot();
       if (!from || from.dungeon) return;

@@ -86,14 +86,16 @@ pub extern "C" fn room_put_player(player: u32, x: f64, y: f64) -> u32 {
     u32::from(put_player(player, x, y))
 }
 
-/// Stands a block (`stand_block`) from its west, north, east and south edges and its top; 1 if stood, 0 if not.
+/// Stands a block (`stand_block`) from its west, north, east and south edges, its top and its underside; 1 if stood,
+/// 0 if not.
 #[unsafe(no_mangle)]
-pub extern "C" fn room_stand_block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> u32 {
-    u32::from(stand_block(Block { min_x, min_y, max_x, max_y, top }))
+pub extern "C" fn room_stand_block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64, bottom: f64) -> u32 {
+    u32::from(stand_block(Block { min_x, min_y, max_x, max_y, top, bottom }))
 }
 
-/// Takes a block (`take_block`) by its west, north, east and south edges and its top; 1 if taken, 0 if not.
+/// Takes a block (`take_block`) by its west, north, east and south edges, its top and its underside; 1 if taken, 0
+/// if not.
 #[unsafe(no_mangle)]
-pub extern "C" fn room_take_block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> u32 {
-    u32::from(take_block(Block { min_x, min_y, max_x, max_y, top }))
+pub extern "C" fn room_take_block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64, bottom: f64) -> u32 {
+    u32::from(take_block(Block { min_x, min_y, max_x, max_y, top, bottom }))
 }

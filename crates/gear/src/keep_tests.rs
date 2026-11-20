@@ -116,3 +116,40 @@ fn a_kept_activity_holds_only_the_boards_bounties() {
     let mut read = Character::from_json(&character.to_json()).expect("a character");
     assert_eq!(read.activity.today(20_778).bounties, std::collections::BTreeMap::from([(0, 1), (5, 2)]));
 }
+
+#[test]
+fn keys_a_room_does_not_know_are_kept_through_a_read_and_a_write() {
+    let mut character = Character::starting();
+    let id = character.take_id();
+    character.vestiges.insert(id, (crate::character::Vestige::new(id, Rarity::Rare, Slot::Head, 4), false));
+    let mut kept: serde_json::Value = serde_json::from_str(&character.to_json()).expect("a character");
+    let later = serde_json::json!({ "from": "a later room" });
+    kept["later"] = later.clone();
+    for nested in ["materials", "arts", "allegiance", "cosmetics"] {
+        kept[nested]["later"] = later.clone();
+    }
+    let items = kept["items"].as_object_mut().expect("the items");
+    let first = items.values_mut().next().expect("an item");
+    first[0]["later"] = later.clone();
+    let vestiges = kept["vestiges"].as_object_mut().expect("the Vestiges");
+    vestiges.values_mut().next().expect("a Vestige")[0]["later"] = later.clone();
+    let read = Character::from_json(&kept.to_string()).expect("a newer save reads");
+    let written: serde_json::Value = serde_json::from_str(&read.to_json()).expect("written");
+    assert_eq!(written["later"], later, "top level");
+    for nested in ["materials", "arts", "allegiance", "cosmetics"] {
+        assert_eq!(written[nested]["later"], later, "{nested}");
+    }
+    let items = written["items"].as_object().expect("the items");
+    assert_eq!(items.values().next().map(|item| &item[0]["later"]), Some(&later), "an item");
+    let vestiges = written["vestiges"].as_object().expect("the Vestiges");
+    assert_eq!(vestiges.values().next().map(|vestige| &vestige[0]["later"]), Some(&later), "a Vestige");
+    assert_eq!(Character::from_json(&read.to_json()), Some(read), "and read again, the same");
+}
+
+#[test]
+fn a_save_holding_more_shapes_than_a_stock_keeps_reads_with_a_full_stock() {
+    let mut character = Character::starting();
+    character.materials.shapes = 999;
+    let back = Character::from_json(&character.to_json()).expect("a character");
+    assert_eq!(back.materials.shapes, crate::character::STOCK_MOST);
+}

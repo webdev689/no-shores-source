@@ -1,7 +1,7 @@
 //! A dungeon's run for its host, and what is on for a page. A run's room opens from a JSON ask naming its dungeon (a
 //! patrol's by its number, an Elite Dungeon by its place, or a sea island's by its seed, style and continent), its
-//! tier and the minute it opens (`room::RunOf`, `Room::dungeon_run`). What is on is `gear::activities`' draws at a
-//! minute, as JSON.
+//! tier and the minute it opens (`room::RunOf`, `Room::dungeon_run`); a patrol's dungeon's run also reads its patrol's
+//! node file, whose lock it keeps. What is on is `gear::activities`' draws at a minute, as JSON.
 
 use crate::{Opened, hand_over, keep};
 use gear::Difficulty;
@@ -9,7 +9,7 @@ use gear::activities::{Modifier, Weekly, dungeon_of_the_day, modifier_of_the_day
 use gear::clock::{day_of, minutes_to_next_day, minutes_to_next_week, week_of};
 use gear::gate::{Place, shut_at};
 use gear::world::ISLANDS;
-use room::{REVIVES, Room, RunOf};
+use room::{NodeKind, REVIVES, Room, RunOf};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -30,28 +30,53 @@ struct RunAsked {
     minute: u64,
 }
 
-/// Opens a run's room from its ask; answers whether the ask read and a rule lays its dungeon at its tier.
-pub fn open_run(text: &[u8]) -> bool {
+/// What a patrol's dungeon's run reads of its patrol's node file: whose it is, and whether it is locked.
+#[derive(Deserialize)]
+struct PatrolFile {
+    id: String,
+    kind: NodeKind,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    locked: bool,
+}
+
+/// Opens a run's room from its ask; answers whether the ask read and a rule lays its dungeon at its tier. A patrol's
+/// dungeon's run opens only with that patrol's node file's text, `patrol`, and takes no player while the patrol is
+/// locked, as its shared dungeon does (`open_dungeon`); any other run reads none.
+pub fn open_run(text: &[u8], patrol: &[u8]) -> bool {
     let Ok(asked) = serde_json::from_slice::<RunAsked>(text) else { return false };
     let Some(&tier) = Difficulty::ALL.get(asked.tier) else { return false };
-    let of = match asked.dungeon {
-        DungeonAsked::Patrol { patrol, number } => RunOf::Patrol { patrol, number },
-        DungeonAsked::Place { place } => RunOf::Elite { place },
-        DungeonAsked::Seed { seed, style, continent } => RunOf::Sea { seed, style, continent },
+    let (of, refusal) = match asked.dungeon {
+        DungeonAsked::Patrol { patrol: id, number } => {
+            let file = serde_json::from_slice::<PatrolFile>(patrol).ok();
+            let Some(file) = file.filter(|file| file.kind == NodeKind::Patrol && file.id == id) else { return false };
+            (RunOf::Patrol { patrol: id, number }, crate::lock_words(file.locked, &file.name))
+        }
+        DungeonAsked::Place { place } => (RunOf::Elite { place }, None),
+        DungeonAsked::Seed { seed, style, continent } => (RunOf::Sea { seed, style, continent }, None),
     };
     let Some(room) = Room::dungeon_run(&of, tier, asked.minute) else { return false };
-    keep(Opened::Land { room: Box::new(room), node: None });
+    keep(Opened::Land { room: Box::new(room), node: None, refusal });
     true
 }
 
-/// Opens a run's room from its ask written at `address`, `length` bytes long; 1 if it opened, 0 if not.
+/// Opens a run's room from its ask written at `address`, `length` bytes long, and for a patrol's dungeon its patrol's
+/// node file's text at `patrol`, `patrol_length` bytes long; 1 if it opened, 0 if not.
 ///
 /// # Safety
-/// `address` must point at `length` readable bytes, as `reserve` gives.
+/// `address` and `patrol` must each point at as many readable bytes as their lengths say, as `reserve` gives.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn room_open_run(address: *const u8, length: usize) -> u32 {
-    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    u32::from(open_run(unsafe { std::slice::from_raw_parts(address, length) }))
+pub unsafe extern "C" fn room_open_run(
+    address: *const u8,
+    length: usize,
+    patrol: *const u8,
+    patrol_length: usize,
+) -> u32 {
+    // SAFETY: the caller wrote each text's bytes where it says, in memory `reserve` handed out.
+    let (text, patrol) =
+        unsafe { (std::slice::from_raw_parts(address, length), std::slice::from_raw_parts(patrol, patrol_length)) };
+    u32::from(open_run(text, patrol))
 }
 
 /// The week's Elite or Abyss Dungeon, its modifiers' keys, the level its foes stand at and the level that opens it.
@@ -151,19 +176,39 @@ mod tests {
             .revives()
     }
 
+    /// Gullwing Vale's node file as a run reads it, locked or not.
+    fn gullwing_vale(locked: bool) -> String {
+        json!({ "id": "gullwing-vale", "kind": "patrol", "name": "Gullwing Vale", "locked": locked }).to_string()
+    }
+
     #[test]
     fn a_run_opens_from_its_ask_at_its_tier_with_its_revives_and_refuses_what_no_rule_lays() {
-        assert!(open_run(ask(json!({ "place": "saltworm-warrens" }), 2).as_bytes()));
+        let open = |dungeon: Value, tier: u8| open_run(ask(dungeon, tier).as_bytes(), b"");
+        assert!(open(json!({ "place": "saltworm-warrens" }), 2));
         assert_ne!(crate::room_join(), 0);
         assert_eq!(revives(), 5);
-        assert!(open_run(ask(json!({ "patrol": "gullwing-vale", "number": 0 }), 1).as_bytes()));
+        let patrol = ask(json!({ "patrol": "gullwing-vale", "number": 0 }), 1);
+        assert!(open_run(patrol.as_bytes(), gullwing_vale(false).as_bytes()));
         assert_eq!(revives(), -1, "an Elite run counts none");
-        assert!(open_run(ask(json!({ "seed": 4_242, "style": "caverns", "continent": "continent-4" }), 0).as_bytes()));
-        assert!(!open_run(ask(json!({ "place": "krakens-grotto" }), 2).as_bytes()), "not this week's Abyss");
-        let no_band = json!({ "seed": 4_242, "style": "caverns", "continent": "continent-0" });
-        assert!(!open_run(ask(no_band, 0).as_bytes()));
-        assert!(!open_run(ask(json!({ "place": "krakens-grotto" }), 3).as_bytes()), "no fourth tier");
-        assert!(!open_run(b"not an ask"));
+        assert!(open(json!({ "seed": 4_242, "style": "caverns", "continent": "continent-4" }), 0));
+        assert!(!open(json!({ "place": "krakens-grotto" }), 2), "not this week's Abyss");
+        assert!(!open(json!({ "seed": 4_242, "style": "caverns", "continent": "continent-0" }), 0));
+        assert!(!open(json!({ "place": "krakens-grotto" }), 3), "no fourth tier");
+        assert!(!open_run(b"not an ask", b""));
+    }
+
+    #[test]
+    fn a_patrols_dungeons_run_opens_only_with_its_patrols_file_and_takes_no_player_while_the_patrol_is_locked() {
+        let run = ask(json!({ "patrol": "gullwing-vale", "number": 0 }), 1);
+        assert!(open_run(run.as_bytes(), gullwing_vale(true).as_bytes()));
+        assert_eq!(crate::room_join(), 0, "a locked patrol's run takes no player");
+        assert_eq!(crate::refusal().as_deref(), Some("Gullwing Vale is locked"));
+        assert!(open_run(run.as_bytes(), gullwing_vale(false).as_bytes()));
+        assert_ne!(crate::room_join(), 0, "an open patrol's run takes them");
+        assert_eq!(crate::refusal(), None);
+        assert!(!open_run(run.as_bytes(), b""), "no patrol's file");
+        let other = json!({ "id": "saltgrass-downs", "kind": "patrol", "name": "Saltgrass Downs" }).to_string();
+        assert!(!open_run(run.as_bytes(), other.as_bytes()), "another patrol's file");
     }
 
     #[test]

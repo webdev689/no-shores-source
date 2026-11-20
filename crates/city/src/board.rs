@@ -1,5 +1,5 @@
 //! The bounty board in Overlook's plaza: a timber board under a little roof, its notices and its lamp facing the sea,
-//! standing free on the Reader's side, seaward of the obelisk's braziers. It is built of the courtyard's own solids,
+//! standing free on the Mage's side, seaward of the obelisk's braziers. It is built of the courtyard's own solids,
 //! so the plaza draws, collides and lights it as the rest. It is no station and no keeper stands at it: a player reads
 //! it from before its face, where the room serves its asks.
 

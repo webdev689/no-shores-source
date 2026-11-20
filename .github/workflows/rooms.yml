@@ -3,11 +3,19 @@ name: rooms
 # Deploys the accounts and then the rooms to Cloudflare with the repository's Cloudflare token: the accounts' Worker
 # over its D1 database (made if it is not there, its migrations applied first, the Discord app's keys handed over when
 # the repository has them), then the rooms (built first without the token, then deployed with it alone), whose
-# service binding reaches the accounts. ci.yml calls it from main once the same commit has passed the check, as it
+# service binding reaches the accounts. ci.yml calls it from main once the same commit has passed the check, before it
 # publishes the page, and it deploys only when what the rooms are built from has changed since their last deploy; it
-# also runs by hand from main, deploying whether anything changed or not.
+# also runs by hand from main, deploying whether anything changed or not. It tells ci.yml whether the rooms had nothing
+# to deploy, deployed, or could not, so the page is published only in the first two cases.
 on:
   workflow_call:
+    outputs:
+      deploy:
+        description: 'yes when the rooms were to deploy, no when they had nothing to, blocked when they could not'
+        value: ${{ jobs.ready.outputs.deploy }}
+      deployed:
+        description: 'yes once the rooms deployed'
+        value: ${{ jobs.deploy.outputs.deployed }}
   workflow_dispatch:
 
 permissions:
@@ -37,13 +45,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           HAS_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN != '' }}
           BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
-          # What the rooms are built from: the crates of `room-wasm` and of the bake, the Workers, the schema's maker,
-          # the content they read, the toolchain, the locks and the scripts that deploy, and this workflow.
+          # What the rooms are built from: the crates of `room-wasm` and of the bake, the Workers, the schema's maker
+          # and its list (tools/numbered.json), the content they read, the toolchain, the locks and the scripts that
+          # deploy, and this workflow.
           ROOMS_CODE: >-
-            crates/bake crates/city crates/combat crates/dungeon crates/foes crates/gear crates/land crates/movement
-            crates/naval crates/navmesh crates/protocol crates/reach crates/room crates/room-wasm crates/sailing
-            crates/sky crates/world
-            server tools/schema.mjs content/world content/testground content/gear content/ships/ships.json
+            crates/bake crates/city crates/combat crates/dungeon crates/foes crates/gear crates/land crates/layout
+            crates/movement crates/naval crates/navmesh crates/protocol crates/reach crates/room crates/room-wasm
+            crates/sailing crates/sky crates/world server tools/schema.mjs tools/numbered.json content/world
+            content/testground content/gear content/arts content/modules
+            content/ships/ships.json
             Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json .github/workflows/rooms.yml
         run: |
           repo="${{ github.repository }}"
@@ -58,16 +68,17 @@ jobs:
             state=$(gh api "repos/$repo/deployments/$id/statuses" --jq '.[0].state') || state=""
             if [ "$state" = success ]; then deployed=$sha; break; fi
           done <<< "$list"
-          if [ "$HAS_TOKEN" != "true" ]; then
-            echo "::warning::the repository has no CLOUDFLARE_TOKEN secret, so the rooms were not deployed"
-            echo "deploy=no" >> "$GITHUB_OUTPUT"
-          elif [ "$head" != "${{ github.sha }}" ]; then
+          if [ "$head" != "${{ github.sha }}" ]; then
             echo "main has moved past this commit; its own run deploys the rooms"
             echo "deploy=no" >> "$GITHUB_OUTPUT"
           elif [ "$BY_HAND" != "true" ] && [ -n "$deployed" ] &&
             git diff --quiet --no-renames "$deployed" HEAD -- $ROOMS_CODE; then
             echo "the rooms' code is as deployed from $deployed: nothing to deploy"
             echo "deploy=no" >> "$GITHUB_OUTPUT"
+          elif [ "$HAS_TOKEN" != "true" ]; then
+            # The rooms cannot deploy, so the page waits too: none is published on a protocol no room speaks.
+            echo "::warning::the repository has no CLOUDFLARE_TOKEN secret, so the rooms and the page were not deployed"
+            echo "deploy=blocked" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=yes" >> "$GITHUB_OUTPUT"
           fi
@@ -156,6 +167,8 @@ jobs:
     environment: rooms
     env:
       CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
+    outputs:
+      deployed: ${{ steps.deployed.outputs.deployed }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install the pinned toolchain
@@ -174,3 +187,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: npx wrangler deploy --config server/wrangler.jsonc
+      - id: deployed
+        run: echo "deployed=yes" >> "$GITHUB_OUTPUT"

@@ -11,7 +11,8 @@ export const COLOUR_LAYERS = { gold: 252, iron: 253, bone: 254, glow: 255 } as c
 /** Every picture is resampled to this square, so one array holds them all. */
 export const LAYER_SIZE = 128;
 
-type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS>;
+/** The materials with a picture of their climate's own; rubble wears RUBBLE in every climate, and chalk's CHALK. */
+type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS | 'rubble' | 'chalk'>;
 type Tint = readonly [number, number, number];
 type Choice = readonly [archive: number, record: number, use: PictureUse, tint?: Tint];
 
@@ -65,6 +66,19 @@ const TERRACES: Readonly<Record<Climate, Choice>> = {
   mountain: [112, 1, 'wall', [1.25, 1.25, 1.2]],
   swamp: [409, 1, 'wall', [1.2, 1.2, 1.15]],
 };
+
+/** Natural rock (boulders, scree, drystone): each climate's ground stone, brought to the colour the terrain draws
+ *  its cliffs in (groundColour.ts stone_tint: the stone's hue at bare rock's light), so the rock fallen from a cliff
+ *  matches it; the gains are each stone tile's mean against that colour. */
+const RUBBLE: Readonly<Record<Climate, Choice>> = {
+  temperate: [302, 3, 'floor', [1.48, 1.47, 1.42]],
+  desert: [2, 3, 'floor', [1.02, 1.16, 1.39]],
+  mountain: [102, 3, 'floor', [1.81, 1.78, 1.8]],
+  swamp: [402, 3, 'floor', [2.37, 2.05, 2.48]],
+};
+
+/** The rubble of a chalk zone's cliffs: the temperate stone tile brought to chalk's white (groundColour.ts CHALK). */
+const CHALK: Choice = [302, 3, 'floor', [2.7, 2.65, 2.55]];
 
 const CLIMATE_OF_BASE: readonly [number, Climate][] = [
   [400, 'swamp'],
@@ -141,13 +155,14 @@ export type PictureWant = {
 /**
  * The city's pictures, in one array of at most PICTURE_LAYERS layers. `wants` are the models' pictures as their
  * tables file them, with how much the city wears each; `usesOf` says what a turned picture is named for. The ground
- * and the solids' pictures come first, then the rest by how much the city wears them.
+ * and the solids' pictures come first (chalk's only where `chalky`: the plan holds chalk solids), then the rest by how much the city wears them.
  */
 export function pictureBook(
   climate: CityClimate,
   wants: Iterable<PictureWant>,
   groundRecords: Iterable<number>,
   usesOf: (archive: number, record: number) => readonly PictureUse[],
+  chalky = false,
 ): PictureBook {
   const terrain = terrainArchive(climate);
   const turned = new Map<string, PictureWant>();
@@ -176,6 +191,8 @@ export function pictureBook(
   for (const [material, choice] of Object.entries(MATERIALS[climate.climate]) as [Pictured, Choice][])
     materialKeys.set(material, chosen(choice));
   const terraceKey = chosen(TERRACES[climate.climate]);
+  const rubbleKey = chosen(RUBBLE[climate.climate]);
+  const chalkKey = chalky ? chosen(CHALK) : rubbleKey;
   const turnOf = (archive: number, record: number): string =>
     `${climateArchive(archive, record, climate.climate, climate.season)}.${record}`;
   for (const each of wants) {
@@ -207,6 +224,8 @@ export function pictureBook(
   const layerAt = (key: string | undefined): number => (key === undefined ? 0 : (layers.get(key) ?? 0));
   const materials = { ...COLOUR_LAYERS } as Record<SolidMaterial, number>;
   for (const [material, key] of materialKeys) materials[material] = layerAt(key);
+  materials.rubble = layerAt(rubbleKey);
+  materials.chalk = layerAt(chalkKey);
   return {
     pictures,
     layerOf: (archive, record) => layerAt(turnOf(archive, record)),

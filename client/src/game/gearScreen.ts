@@ -3,6 +3,7 @@
 // vendors' wares. The page draws these in the Enhanced Plus kit.
 
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
+import type { KeeperKind } from './keepers.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import {
@@ -22,8 +23,8 @@ import {
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
-/** The screens a social space's counters open: the vault, each vendor's stall, and the bounty board. */
-export type Station = 'vault' | 'quartermaster' | 'armsmith' | 'tailor' | 'board';
+/** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), and the bounty board. */
+export type Station = KeeperKind | 'board';
 /** What the menu shows: a tab, or a station's screen. */
 export type View = Tab | Station;
 /** What a counter or a key opens: a view, and the inventory's shelf to open it at. */
@@ -206,9 +207,9 @@ export interface Ware {
   readonly press: Press;
 }
 
-/** The vendors' stalls: the Quartermaster's and the Armsmith's wares of the day, each bought for its price in Aurem. */
+/** The smiths' stalls: the Armorsmith's and the Weaponsmith's wares of the day, each bought for its price in Aurem. */
 export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
-  const names = ['The Quartermaster', 'The Armsmith'];
+  const names = ['The Armorsmith', 'The Weaponsmith'];
   const half = state.wares.length / 2;
   return names.map((name, vendor) => ({
     name,
@@ -220,7 +221,7 @@ export function vendorsOf(state: GearState): readonly { readonly name: string; r
       affordable: state.aurem >= item.price,
       press: {
         label: `Hold to buy · ${item.price.toLocaleString()}`,
-        ask: { kind: ASKS.vend, column: vendor, node: item.id },
+        ask: { kind: ASKS.vend, column: vendor, node: item.id, ...(state.day !== undefined && { item: state.day }) },
         role: 'button',
         held: true,
       },

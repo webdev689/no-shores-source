@@ -175,8 +175,8 @@ pub extern "C" fn room_difficulty(number: u32) -> u32 {
     u32::from(set_difficulty(number))
 }
 
-/// Sets the minute, counted from the epoch, whose day sets the wares a room's vendors show; false with no room on
-/// land.
+/// Sets the minute, counted from the epoch, whose day sets the wares a room's vendors show and whose week sets when
+/// Shape comes and where he stands; false with no room on land.
 pub fn set_minute(minute: u32) -> bool {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => {

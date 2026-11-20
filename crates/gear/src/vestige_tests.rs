@@ -47,7 +47,9 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
         {"id": "light_grip", "name": "Light Grip", "column": "handling", "fits": "melee", "words": "w"},
         {"id": "own", "name": "Own", "column": "signature", "fits": "someone_else", "words": "w"}]}"#;
     let items = r#"{"items": [{"id": "odd", "name": "Odd", "kind": "sword", "rarity": "legendary",
-        "resource": "nowhere", "words": "w", "layout": [["light_grip", "light_grip", "own"], ["missing"]]}]}"#;
+        "resource": "nowhere", "words": "w", "layout": [["light_grip", "light_grip", "own"], ["missing"]]},
+        {"id": "guild_blade", "name": "Guild Blade", "kind": "greatsword", "rarity": "legendary", "faction": "nobody",
+        "resource": "nowhere", "words": "w", "layout": []}]}"#;
     let resources = r#"{"resources": []}"#;
     let rolled = r#"{"names": {}}"#;
     let problems = Catalogue::parse(traits, items, resources, rolled).expect("well formed").problems();
@@ -56,6 +58,8 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
         "odd: 2 trait columns, its rarity has 4",
         "signature own must be carried by someone_else alone",
         "no names for a Normal Sword",
+        "guild_blade: its faction is none the factions' file holds",
+        "no Legendary Greatsword",
     ] {
         assert!(problems.iter().any(|problem| problem == expected), "{expected} in {problems:#?}");
     }
@@ -160,9 +164,9 @@ fn a_kill_pays_every_player_who_struck_by_the_foes_kind_and_level() {
 fn a_player_carries_ten_vestiges_and_gathers_three_of_a_resource() {
     let mut character = Character::starting();
     for id in 0..VESTIGES_MOST as u32 {
-        assert!(character.pick_up(Vestige { id, rarity: Rarity::Normal, slot: Slot::Legs, level: 1 }));
+        assert!(character.pick_up(Vestige::new(id, Rarity::Normal, Slot::Legs, 1)));
     }
-    assert!(!character.pick_up(Vestige { id: 99, rarity: Rarity::Rare, slot: Slot::Legs, level: 1 }));
+    assert!(!character.pick_up(Vestige::new(99, Rarity::Rare, Slot::Legs, 1)));
     assert_eq!(character.gather(0), 3);
     assert_eq!(character.materials.resource(0), 3);
 }

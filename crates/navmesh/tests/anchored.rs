@@ -45,7 +45,7 @@ fn an_anchor_on_the_largest_part_bakes_as_an_ordinary_bake() {
 #[test]
 fn an_anchored_bake_lays_no_links_where_an_ordinary_one_climbs_a_block() {
     // A table-high block on open ground: the movement rules vault it, but a dungeon's are walls no body climbs.
-    let block = movement::Block { min_x: 2.0, min_y: -1.0, max_x: 4.0, max_y: 1.0, top: 1.0 };
+    let block = movement::Block { min_x: 2.0, min_y: -1.0, max_x: 4.0, max_y: 1.0, top: 1.0, bottom: 0.0 };
     let ordinary = NavMesh::bake_on(&[block], &movement::Flat, FIELD, &AGENT);
     assert!(ordinary.links().count() > 0, "an ordinary bake links the block's top");
     let anchored = NavMesh::bake_anchored(&[block], &movement::Flat, FIELD, &AGENT, [-10.0, 0.0, 0.0]);

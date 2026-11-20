@@ -28,7 +28,7 @@ fn course_bytes() -> Vec<u8> {
     let number = |value: &Value, key: &str| value[key].as_f64().unwrap();
     let mut floats = vec![number(&course["start"], "x"), number(&course["start"], "y")];
     for block in course["blocks"].as_array().unwrap() {
-        floats.extend(["minX", "minY", "maxX", "maxY", "top"].map(|key| number(block, key)));
+        floats.extend(["minX", "minY", "maxX", "maxY", "top", "bottom"].map(|key| number(block, key)));
     }
     floats.iter().flat_map(|value| value.to_le_bytes()).collect()
 }

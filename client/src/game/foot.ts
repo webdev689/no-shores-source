@@ -23,7 +23,8 @@ import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
-import { playerCamera, shownBody } from '../player/player.ts';
+import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
+import { AIM } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
 import { OtherPlayers, type Others } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
@@ -79,7 +80,7 @@ let nextOtherId = 100;
 
 /** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
  *  tells of that). */
-export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost'>;
+export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
@@ -385,7 +386,7 @@ export class Foot {
     const { fight, foes, effects } = this;
     this.dressInGear();
     this.tellPrologue();
-    this.plaza?.frame(seconds);
+    this.plaza?.frame(seconds, this.gear?.gear ?? null);
     if (this.link.joins !== this.joined) {
       // A link that joined its room again brings every dress there with its welcome.
       this.joined = this.link.joins;
@@ -394,7 +395,7 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
-    const aimed = () => playerCamera(walker.player, movement, this.boxes, undefined, this.roof);
+    const aimed = () => playerCamera(walker.player, movement, this.boxes, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
@@ -403,6 +404,7 @@ export class Foot {
       zoomOf: () => camera().zoom ?? 1,
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
+    walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
     const ownWeapon = effects.flashes.ownOf(fight.own);
