@@ -24,6 +24,8 @@ export interface CityPlan {
     readonly ring: readonly Point[];
     readonly spawns: readonly Point[];
     readonly stations?: readonly StationInfo[];
+    /** Overlook's bounty board: its middle, the way its face looks, and where a player stands to read it. */
+    readonly board?: { readonly at: Point; readonly facing: number; readonly front: Point } | null;
   };
   readonly pads: readonly Pad[];
 }
@@ -64,6 +66,7 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
     spawns,
     centre: ringMiddle(ring),
     stations,
+    board: plan.social.board?.front ?? null,
   };
 }
 

@@ -12,6 +12,7 @@ import {
   thisWeekOf,
 } from './activityWords.ts';
 import { type FinderSocket, type Finding, findCompany, findingWords } from './companyFinder.ts';
+import { weekBountiesOf } from './bountyBoard.ts';
 import { askDungeon } from './dungeonLayout.ts';
 import { EntranceCardView } from './entranceCard.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
@@ -159,7 +160,13 @@ export function startActivityScreens(
       };
       // A save with no story counts as past the prologue, as the rules read it.
       const gates = kept ? gatesAt(laying, kept.level, kept.prologueDone ?? true) : null;
-      const board = thisWeekOf(activitiesAt(laying, minute), gates, kept?.activity ?? null, named);
+      const board = thisWeekOf(
+        activitiesAt(laying, minute),
+        gates,
+        kept?.activity ?? null,
+        named,
+        weekBountiesOf(kept),
+      );
       built = { minute, gear: kept, board };
       return board;
     },

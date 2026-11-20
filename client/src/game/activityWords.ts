@@ -47,6 +47,12 @@ export interface WeekDungeon extends WeekRow {
   readonly pays: string;
 }
 
+/** This Week's Bounties: each of the day's six as a line, or the board's shut line alone. */
+export interface WeekBounties {
+  readonly rows: readonly WeekRow[];
+  readonly shut: string | null;
+}
+
 export interface ThisWeek {
   readonly today: {
     readonly resets: string;
@@ -56,6 +62,8 @@ export interface ThisWeek {
     readonly dungeons: readonly WeekRow[];
   };
   readonly week: { readonly resets: string; readonly dungeons: readonly WeekDungeon[]; readonly boon: string | null };
+  /** The day's bounties as the player's gear last carried them; null before a room sent a board. */
+  readonly bounties: WeekBounties | null;
 }
 
 /** The names the page knows places by: a patrol's dungeon's, and a node's. */
@@ -89,12 +97,14 @@ function stateOf(shut: string | null, record: ActivityRecord | null, taken: bool
 /** An island's band at a tier, as its foes are raised; none for a continent with no island. */
 const bandAt = (drawn: Activities, continent: string, tier: number) => drawn.bands[continent]?.[tier] ?? null;
 
-/** What This Week says: the day's dungeons, its modifier and each tier taken or not, then the week's two. */
+/** What This Week says: the day's dungeons, its modifier and each tier taken or not, then the week's two, and the
+ *  day's bounties as `bounties` words them. */
 export function thisWeekOf(
   drawn: Activities,
   gates: Gates | null,
   record: ActivityRecord | null,
   named: Named,
+  bounties: WeekBounties | null = null,
 ): ThisWeek {
   const tiers = SEAS.map((name, tier) => {
     const shut = gates?.day[tier] ?? null;
@@ -128,6 +138,7 @@ export function thisWeekOf(
       dungeons,
     },
     week: { resets: resetWords(drawn.untilWeek), dungeons: [weekly('elite'), weekly('abyss')], boon },
+    bounties,
   };
 }
 

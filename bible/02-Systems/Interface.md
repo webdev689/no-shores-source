@@ -73,6 +73,7 @@ code:
   - client/src/game/companyHud.ts#startCompanyHud
   - client/src/game/stationPages.ts#vaultPage
   - client/src/game/stationPages.ts#vendorPage
+  - client/src/game/bountyBoard.ts#boardPage
   - client/src/game/gearDom.ts#itemMarks
   - client/src/game/gearDom.ts#nodeRing
   - client/src/game/elementGlyphs.ts#elementSvg
@@ -456,6 +457,11 @@ its Vestiges at the top. The room serves each ask only at its own counter ([[Gea
   Ammo crate every day, with how many of the five are carried; it cannot be held with five.
 - **The Tailor's stall**: the six emblems sold that day ([[Gear]], "Emblems"), each its nameplate, name and price, held
   to buy; one kept, too dear or for a higher level says so.
+- **The bounty board** in Overlook's plaza, which no keeper keeps ([[Activities]], "Quests and bounties"), laid as This
+  Week is: "Today's bounties" and what each pays the player now, then a line a bounty, its words with its count or
+  "Turned in" under them, and Take on one not held or Turn in on one done at its end, each asked with the day of the
+  board shown. At its foot, "The board's bounties end at the daily reset." Before the prologue it holds only "The
+  bounty board opens after the prologue."
 
 ## Emblems
 

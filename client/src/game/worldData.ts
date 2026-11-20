@@ -16,6 +16,8 @@ export interface NodeInfo {
   readonly centre: Point;
   /** A social space's stations (`nodes.ts`). */
   readonly stations?: readonly StationInfo[];
+  /** A social space's bounty board, where a player stands to read it (the city crate's `board`). */
+  readonly board?: Point | null;
 }
 
 /** A continent's port city, as its edits file names it. */

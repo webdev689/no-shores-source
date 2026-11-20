@@ -234,7 +234,11 @@ One engine counts both, since the owner's side quests and the board's bounties a
   then the week's two with their levels, rules, modifiers and pay, taken or not, and the Abyss boon while held, each
   under the time to its reset. A shut line says why in its gate's words. "Taken" is the character's record as their
   gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken today.
-  Bounties and Quests stand under it marked Later.
+  Then the Bounties under the day's reset: each of the day's six as the gear last carried it, "Not taken", its count,
+  "Done. Turn it in at the bounty board." or "Turned in", with no press, or before the prologue the board's shut line
+  alone. Quests stand under it marked Later.
+- **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), where each
+  bounty is taken and turned in.
 - **At a dungeon's entrance**, E opens a card ([[Interface]], "At a dungeon's entrance"): the run's tier and level,
   its rules and modifiers, what it pays or that it is taken, and why it is shut if it is, with Enter. A patrol's
   dungeon carries the day's modifier at Elite and Abyss seas while it is its island's dungeon of the day. An Elite

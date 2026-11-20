@@ -4,6 +4,7 @@ import { MARK_FLOATS } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { NODE_REACH_M, STORY_BEHIND_ON_FOOT, groundRings, tellsPrologue, useAt } from './footGear.ts';
 import type { StationInfo } from './nodes.ts';
+import { countersOf } from './plazaLife.ts';
 
 const ARMSMITH: StationInfo = { kind: 'armsmith', keeper: [0, -2], counter: [0, 0] };
 const CHANDLER: StationInfo = { kind: 'chandler', keeper: [20, -2], counter: [20, 0] };
@@ -50,4 +51,13 @@ test('on foot the room is always told, so no character is kept out by a prologue
   // could not start or go on.
   const unkept = { prologueDone: false } as unknown as GearState;
   assert.equal(tellsPrologue(unkept, STORY_BEHIND_ON_FOOT, null), true);
+});
+
+test('the bounty board is used and ringed where a player stands before it, though no keeper stands there', () => {
+  const ask = () => undefined;
+  const counters = countersOf({ stations: [ARMSMITH], board: [5, 0] });
+  assert.equal(useAt(5.5, 0, counters, null, ask)?.words, 'The Bounty Board: bounties for XP and Aurem');
+  assert.equal(useAt(9, 0, counters, null, ask), null, 'past its reach');
+  assert.equal(groundRings(null, counters, () => 0, 0).length, 2 * groundRings(null, [ARMSMITH], () => 0, 0).length);
+  assert.deepEqual(countersOf({ stations: [ARMSMITH] }), [ARMSMITH], 'no board in any other plaza');
 });

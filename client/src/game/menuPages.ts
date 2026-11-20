@@ -1,4 +1,4 @@
-// The menu's pages that need no gear: Journal, This Week now and its quests still to come; Guild, still to come and
+// The menu's pages that need no gear: Journal, This Week now with the day's bounties and its quests still to come; Guild, still to come and
 // saying so; the Ship, the Sloop's details as Manage shows them; and Settings, which keeps the account and the volumes
 // of the interface and the world.
 
@@ -98,11 +98,17 @@ export function thisWeekPage(board: ThisWeek | null): HTMLElement {
   const thisWeek = make('section', '', 'gear-week-part');
   thisWeek.append(headed('The week', week.resets), ...week.dungeons.map(weekDungeon));
   if (week.boon) thisWeek.append(make('p', week.boon, 'gear-week-boon'));
+  // Before a room sent a board, where the bounties come from; before the prologue, why the board is shut.
+  const said = board.bounties ? board.bounties.shut : 'Six a day, from the board in Overlook’s plaza.';
+  const rows = make('div', '', 'gear-week-rows');
+  rows.append(...(board.bounties?.rows ?? []).map(weekRow));
+  const bounties = make('section', '', 'gear-week-part');
+  bounties.append(headed('Bounties', today.resets), ...(said ? [make('p', said, 'gear-hint')] : []), rows);
   page.append(
     day,
     thisWeek,
     laterPart('Breaches', null),
-    laterPart('Bounties', 'Six a day, from the board in Overlook’s plaza.'),
+    bounties,
     laterPart('Quests', 'Your quests will be kept here.'),
   );
   return page;

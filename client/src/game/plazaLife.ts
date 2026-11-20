@@ -1,5 +1,6 @@
 // A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, moved each
-// frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in.
+// frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in, the
+// bounty board's among them.
 
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
@@ -24,7 +25,15 @@ const OFFERS: Readonly<Record<string, Offer>> = {
   quartermaster: { words: 'The Quartermaster: armour for Aurem', opens: { view: 'quartermaster' } },
   armsmith: { words: 'The Armsmith: weapons for Aurem', opens: { view: 'armsmith' } },
   tailor: { words: 'The Tailor: emblems for Aurem', opens: { view: 'tailor' } },
+  board: { words: 'The Bounty Board: bounties for XP and Aurem', opens: { view: 'board' } },
 };
+
+/** Where a social space serves a player: each station's counter, and the bounty board where it stands, which no
+ *  keeper keeps. */
+export function countersOf(node: Pick<NodeInfo, 'stations' | 'board'>): readonly StationInfo[] {
+  const board = node.board ? [{ kind: 'board', keeper: node.board, counter: node.board }] : [];
+  return [...(node.stations ?? []), ...board];
+}
 
 /** The offer of the station whose counter a player stands at, if one deals with them. */
 export function offerAt(stations: readonly StationInfo[], x: number, y: number): Offer | null {

@@ -22,8 +22,8 @@ import {
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
-/** The screens a social space's counters open: the vault, and each vendor's stall. */
-export type Station = 'vault' | 'quartermaster' | 'armsmith' | 'tailor';
+/** The screens a social space's counters open: the vault, each vendor's stall, and the bounty board. */
+export type Station = 'vault' | 'quartermaster' | 'armsmith' | 'tailor' | 'board';
 /** What the menu shows: a tab, or a station's screen. */
 export type View = Tab | Station;
 /** What a counter or a key opens: a view, and the inventory's shelf to open it at. */

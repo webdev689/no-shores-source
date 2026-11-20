@@ -35,6 +35,7 @@ import type { ThisWeek } from './activityWords.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
 import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
+import { boardPage } from './bountyBoard.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
@@ -57,6 +58,7 @@ const STATIONS: Readonly<Record<Station, string>> = {
   quartermaster: 'The Quartermaster',
   armsmith: 'The Armsmith',
   tailor: 'The Tailor',
+  board: 'The Bounty Board',
 };
 /** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
 const BANNER_SCALE = 3;
@@ -81,6 +83,7 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   quartermaster: [['Hold', 'Buy']],
   armsmith: [['Hold', 'Buy']],
   tailor: [['Hold', 'Buy']],
+  board: [['Click', 'Take or turn in']],
   item: [
     ['Hold', 'Buy a node'],
     ['Click', 'Choose one bought'],
@@ -502,11 +505,13 @@ export function startGearWindow(
         ? characterPage(context, slot, (chosen) => ((slot = chosen), render()))
         : view === 'inventory'
           ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
-          : view === 'vault'
-            ? vaultPage(context)
-            : view === 'tailor'
-              ? tailorPage(context)
-              : vendorPage(context, view === 'quartermaster' ? 0 : 1);
+          : view === 'board'
+            ? boardPage(context)
+            : view === 'vault'
+              ? vaultPage(context)
+              : view === 'tailor'
+                ? tailorPage(context)
+                : vendorPage(context, view === 'quartermaster' ? 0 : 1);
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;

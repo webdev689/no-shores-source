@@ -37,7 +37,7 @@ import type { GearHere } from './gearScreen.ts';
 import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
-import { PlazaLife } from './plazaLife.ts';
+import { PlazaLife, countersOf } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
 import {
   dungeonPlace,
@@ -444,7 +444,7 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const dropped = this.dropMarks(clock, shot.eye, [
-      ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
+      ...groundRings(this.gear?.gear ?? null, countersOf(this.node), (x, y) => movement.standing(x, y).z, clock),
       ...foes.overheads(shot.eye, clock),
     ]);
     const marks = effects.marks(fight, seconds, {
@@ -511,7 +511,7 @@ export class Foot {
       module: this.module,
     };
     this.using = able
-      ? (useAt(x, y, this.node.stations ?? [], gear?.gear ?? null, (asked) => gear?.ask(asked)) ??
+      ? (useAt(x, y, countersOf(this.node), gear?.gear ?? null, (asked) => gear?.ask(asked)) ??
         tripAt(x, y, here, this.context.trips))
       : null;
     this.prompt?.show(this.using?.words ?? null);

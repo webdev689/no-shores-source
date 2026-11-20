@@ -145,12 +145,13 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   the pace they stroll. The floor under each is found again only once they have walked a step. The fight never takes
   them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
-  player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
+  player, the bounty board's before its face among them (`countersOf`); and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
   patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
-  vendor their own; [[Interface]]); within 2.5 m of a node it asks the room to gather it; on a patrol within 2.5 m of
+  vendor their own, the bounty board its bounties, offered as "The Bounty Board: bounties for XP and Aurem";
+  [[Interface]]); within 2.5 m of a node it asks the room to gather it; on a patrol within 2.5 m of
   an entrance's door it goes into its dungeon, and in a dungeon within 2.5 m of its exit door it goes out
   ([[#A dungeon]]). None is offered while a menu is up or the player lies dead, past the edge or felled by a foe.
 
