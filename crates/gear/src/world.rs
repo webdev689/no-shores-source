@@ -76,6 +76,16 @@ impl Difficulty {
         }
     }
 
+    /// The level a character needs to set out at it (`crate::gate`).
+    #[must_use]
+    pub fn opens_at(self) -> u8 {
+        match self {
+            Difficulty::Normal => 1,
+            Difficulty::Elite => 10,
+            Difficulty::Abyss => 20,
+        }
+    }
+
     /// A foe level at this difficulty: the level it would have, raised, and never past the highest.
     #[must_use]
     pub fn raise(self, level: u8) -> u8 {

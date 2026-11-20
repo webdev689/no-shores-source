@@ -24,6 +24,8 @@ const PRESENT_EVERY_MS = 30_000;
 
 /** The close code for a player whose character joined another room. */
 const ELSEWHERE = 4001;
+/** The close code for a player whose character the room's gate shuts: the reason is the gate's. */
+const SHUT = 4003;
 
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
@@ -113,6 +115,7 @@ export class RoomHost extends DurableObject<Env> {
       restoreCharacter: (player: number, kept: string) =>
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
       own: (player: number, account: string) => this.guarded(() => this.room.own(player, account), false),
+      shut: (kept: string | null) => this.guarded(() => this.room.shut(kept), ''),
     };
     const characters = {
       claim: (token: string, holder: string) => accounts.claim(token, holder),
@@ -120,9 +123,10 @@ export class RoomHost extends DurableObject<Env> {
       release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
     };
     // Only the game's nodes keep characters: the Test Ground grants gear to try it, and at sea no one holds any.
-    this.keeper = new Keeper(name.startsWith('node-') ? characters : null, room, name, (player) => {
+    this.keeper = new Keeper(name.startsWith('node-') ? characters : null, room, name, (player, why) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
-      if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
+      if (socket)
+        this.dismiss(socket, why === undefined ? ELSEWHERE : SHUT, why ?? 'your character joined another room');
     });
     if (name === 'sea')
       return this.room.openSea(JSON.stringify(layout), crypto.getRandomValues(new Uint32Array(1))[0] ?? 0);

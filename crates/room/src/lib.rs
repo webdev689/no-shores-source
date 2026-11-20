@@ -137,6 +137,8 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
+    /// What the gates know it as (`gear::gate`): none for a course, which no gate shuts.
+    pub(crate) place: Option<gear::gate::Place>,
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
@@ -203,6 +205,7 @@ impl Room {
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Normal,
             patrol: None,
+            place: None,
             facing: core::f64::consts::PI,
             cache: None,
             minute: 0,
@@ -559,6 +562,8 @@ mod fair_tests;
 mod fight_tests;
 #[cfg(test)]
 mod foe_tests;
+#[cfg(test)]
+mod gate_tests;
 #[cfg(test)]
 mod gear_tests;
 #[cfg(test)]

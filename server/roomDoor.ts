@@ -80,8 +80,11 @@ export interface RoomDoor {
   reseed(seeds: readonly [number, number, number, number]): boolean;
   /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
   character(player: number): string | null;
-  /** Gives a player the character kept for them; false if the text is not one or they are not in. */
+  /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
   restoreCharacter(player: number, kept: string): boolean;
+  /** Why the open room's gate shuts to a kept character (JSON), or to a new one (null), in its words; empty when it
+   *  may enter, at sea, or for text that is no character. */
+  shut(kept: string | null): string;
   /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
   own(player: number, account: string): boolean;
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
@@ -134,6 +137,7 @@ interface RoomExports {
   room_snapshot(): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
+  room_shut(address: number, length: number): bigint;
   room_difficulty(seas: number): number;
   room_minute(minute: number): number;
   room_epoch(unixMs: number): void;
@@ -225,6 +229,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
+    shut: (kept) => {
+      const bytes = new TextEncoder().encode(kept ?? '');
+      return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_shut(address, bytes.length))));
+    },
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
     dungeon: (patrol, name, number) => {

@@ -14,6 +14,7 @@ pub mod clock;
 pub mod dice;
 pub mod element;
 pub mod emblems;
+pub mod gate;
 pub mod grid;
 pub mod item;
 pub mod kinds;
@@ -47,6 +48,8 @@ mod asks_tests;
 mod clock_tests;
 #[cfg(test)]
 mod emblems_tests;
+#[cfg(test)]
+mod gate_tests;
 #[cfg(test)]
 mod item_tests;
 #[cfg(test)]

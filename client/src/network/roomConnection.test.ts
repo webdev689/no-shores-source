@@ -3,7 +3,7 @@ import { type TestContext, test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { FromRoom, Joined, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
-import { RoomConnection, type Snapshot as RoomSnapshot, rejoinWait } from './roomConnection.ts';
+import { RoomConnection, SHUT, type Snapshot as RoomSnapshot, rejoinWait } from './roomConnection.ts';
 
 /** A room's message as its bytes: a welcome for `player`, or a snapshot at `tick`. */
 function fromRoom(message: { readonly player: number } | { readonly tick: bigint }): ArrayBuffer {
@@ -122,4 +122,15 @@ test('a room that sends the player away, or a page that leaves, is never joined 
   left.connection.close();
   context.mock.timers.tick(waitMs(9));
   assert.deepEqual([left.sockets.length, left.connection.lost], [1, null], 'the wait was let go');
+});
+
+test('a room whose gate shuts is never joined again, and says why', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const shut = await joined(5);
+  shut.sockets[0]?.closed(SHUT, 'Abyss seas open at level 20.');
+  context.mock.timers.tick(waitMs(9));
+  assert.deepEqual(
+    [shut.sockets.length, shut.connection.rejoining, shut.connection.shut, shut.connection.lost],
+    [1, false, 'Abyss seas open at level 20.', 'Abyss seas open at level 20.'],
+  );
 });

@@ -29,6 +29,8 @@ export interface RoomLink {
   readonly arms?: readonly number[] | null;
   /** The player's Arts, from the room's last word on their gear; none until it sends it. */
   readonly arts?: ArtState | null;
+  /** Why the room's gate shut to the player, in its words; null while it is open, and always for a room alone. */
+  readonly shut?: string | null;
 }
 
 /** Opens a WebSocket to a room's address: the browser's own, or a test's stand-in. */
@@ -43,6 +45,8 @@ export function rejoinWait(tries: number): number {
 /** The codes a room closes a socket with when it sends its player away for not keeping to the messages (too many,
  *  too large, or not one, worker.ts): rejoining would only be sent away again. */
 const SENT_AWAY = [1008, 1009];
+/** The code a room whose gate shuts to the player's character closes with (worker.ts): rejoining would be shut again. */
+export const SHUT = 4003;
 
 /** What a socket's messages go to: its welcome, each snapshot, and the player's own gear. */
 interface Heard {
@@ -86,6 +90,8 @@ export class RoomConnection implements RoomLink {
   epoch: number;
   /** Why the room sent the player away, in its words where it gave them; null while the link holds or rejoins. */
   lost: string | null = null;
+  /** Why the room's gate shut to the player, in its words; null while it is open. */
+  shut: string | null = null;
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
@@ -150,8 +156,9 @@ export class RoomConnection implements RoomLink {
   private watch(socket: WebSocket): void {
     socket.addEventListener('close', (event) => {
       if (socket !== this.socket || this.closed) return;
-      if (SENT_AWAY.includes(event.code)) {
+      if (SENT_AWAY.includes(event.code) || event.code === SHUT) {
         [this.rejoining, this.lost] = [false, event.reason || 'the room sent the player away'];
+        if (event.code === SHUT) this.shut = this.lost;
         return;
       }
       this.rejoining = true;

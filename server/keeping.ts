@@ -17,6 +17,8 @@ export interface KeptRoom {
   restoreCharacter(player: number, kept: string): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
+  /** Why the room's gate shuts to a kept character, or to a new one (null); empty when it may enter. */
+  shut(kept: string | null): string;
 }
 
 /** How soon a change is saved, and how often a character is saved unchanged, to keep the room's hold. */
@@ -48,8 +50,8 @@ export class Keeper {
   private readonly characters: Characters | null;
   private readonly room: KeptRoom;
   private readonly name: string;
-  /** Called for a player whose character another room took. */
-  private readonly lost: (player: number) => void;
+  /** Called for a player whose character another room took, or, with why, one the room's gate shuts to. */
+  private readonly lost: (player: number, why?: string) => void;
   private readonly held = new Map<number, Held>();
   private readonly wait: (millis: number) => Promise<void>;
 
@@ -57,7 +59,7 @@ export class Keeper {
     characters: Characters | null,
     room: KeptRoom,
     name: string,
-    lost: (player: number) => void,
+    lost: (player: number, why?: string) => void,
     wait: (millis: number) => Promise<void> = sleep,
   ) {
     this.characters = characters;
@@ -80,6 +82,13 @@ export class Keeper {
       claimed = await characters.claim(token, holder).catch(() => undefined);
     }
     if (!claimed) return false;
+    const shut = this.room.shut(claimed.body);
+    if (shut !== '') {
+      // Left as kept: the gate shuts here, so nothing of this room may be saved over it.
+      await characters.release(claimed.account, holder, null).catch(() => false);
+      if (here()) this.lost(player, shut);
+      return false;
+    }
     const given = claimed.body === null || this.room.restoreCharacter(player, claimed.body);
     if (!here() || !given || this.held.has(player)) {
       // Gone already, or kept as nothing this room can read: let it go untouched rather than save over it.

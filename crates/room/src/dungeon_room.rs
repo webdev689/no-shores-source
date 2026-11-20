@@ -104,7 +104,9 @@ impl Room {
             return None;
         }
         let (seed, style) = dungeon::of_patrol(patrol, number);
-        Self::dungeon_of(&format!("{patrol}--dungeon-{number}"), seed, style, levels)
+        let mut room = Self::dungeon_of(&format!("{patrol}--dungeon-{number}"), seed, style, levels)?;
+        room.place = Some(gear::gate::Place::PatrolDungeon);
+        Some(room)
     }
 
     /// The room of a dungeon laid by a seed and a style, where no patrol lays it (a sea island's): `name` seeds its
@@ -120,6 +122,8 @@ impl Room {
         // Its jambs and pillars are its ground's own walls, not blocks a body could climb.
         let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]] });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
+        // Shut by its seas alone, as a node with no patrol is; a patrol's own dungeon is gated as its patrol.
+        room.place = Some(gear::gate::Place::Node);
         room.world_seed = node_seed(name);
         room.foes_most = NODE_FOES_MOST;
         room.stand_dungeon_garrison(&dungeon, levels);

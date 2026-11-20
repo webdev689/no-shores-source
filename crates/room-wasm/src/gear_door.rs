@@ -69,6 +69,35 @@ pub fn restore_character(player: PlayerId, bytes: &[u8]) -> bool {
     .unwrap_or(false)
 }
 
+/// Why the open room's gate shuts to the character kept as JSON's bytes, in its words (`gear::gate`); empty bytes are
+/// a new character's. Empty when it may enter, at sea, or when the bytes are no character, which the restore refuses.
+#[must_use]
+pub fn shut(bytes: &[u8]) -> String {
+    let character = if bytes.is_empty() {
+        Some(gear::Character::starting())
+    } else {
+        std::str::from_utf8(bytes).ok().and_then(gear::Character::from_json)
+    };
+    let Some(character) = character else { return String::new() };
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.shut(&character).map(gear::gate::Shut::reason),
+        Opened::Sea(_) | Opened::Fleet(_) => None,
+    })
+    .flatten()
+    .unwrap_or_default()
+}
+
+/// Why the gate shuts to the character written at `address` (`shut`), as its words' bytes, packed as `hand_over`
+/// packs.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_shut(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    hand_over(shut(unsafe { std::slice::from_raw_parts(address, length) }).into_bytes())
+}
+
 /// Notes the account, written in `bytes`, that keeps a player's character (`Room::own`); false if it is not text or
 /// they are not in.
 pub fn own(player: PlayerId, bytes: &[u8]) -> bool {

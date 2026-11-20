@@ -373,3 +373,18 @@ fn a_patrols_room_is_joined_before_an_entrance_and_sends_its_entrances() {
     assert!(open_node(mission.to_string().as_bytes()));
     assert_eq!(dungeon_door::room_join_at(0), 0, "a mission has no entrances");
 }
+
+#[test]
+fn a_node_says_why_its_gate_shuts_to_a_kept_character_or_a_new_one() {
+    assert!(open_node(node_file().to_string().as_bytes()));
+    assert!(set_difficulty(1));
+    assert_eq!(shut(b""), "This place opens after the prologue.");
+    let mut past = gear::Character::starting();
+    past.story.prologue = true;
+    assert_eq!(shut(past.to_json().as_bytes()), "Elite seas open at level 10.");
+    assert_eq!(shut(b"not a character"), "", "left for the restore to refuse");
+    let mut social = node_file();
+    social["kind"] = json!("social");
+    assert!(open_node(social.to_string().as_bytes()));
+    assert_eq!(shut(b""), "");
+}

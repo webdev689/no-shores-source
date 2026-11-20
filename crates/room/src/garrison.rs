@@ -220,6 +220,15 @@ fn open_points(section: &Section, middle: (f64, f64)) -> Vec<(f64, f64)> {
     open
 }
 
+/// What the gates know a node of a kind as: a mission, a boss or a named dungeon by its seas alone.
+fn place_of(kind: NodeKind) -> gear::gate::Place {
+    match kind {
+        NodeKind::Social => gear::gate::Place::Social,
+        NodeKind::Patrol => gear::gate::Place::Patrol,
+        NodeKind::Mission | NodeKind::Dungeon | NodeKind::Boss => gear::gate::Place::Node,
+    }
+}
+
 impl Room {
     /// A node's room of its kind, its chances drawn from its id: as it opens, the garrison its kind holds stands in it,
     /// at its island's band of `levels` (none for a node of no island, whose foes fight by combat's own numbers).
@@ -234,6 +243,7 @@ impl Room {
         let mut room = Self::node(floor, blocks, section);
         room.world_seed = node_seed(id);
         room.foes_most = NODE_FOES_MOST;
+        room.place = Some(place_of(kind));
         room.stand_garrison(kind, levels);
         room
     }

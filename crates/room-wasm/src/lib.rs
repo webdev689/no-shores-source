@@ -29,7 +29,7 @@ mod roster_door;
 
 pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
-pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute};
+pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute, shut};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]

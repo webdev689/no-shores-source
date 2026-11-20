@@ -309,9 +309,10 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - A browser's one text message is its session's token. In a node's room the player's character is claimed with it
-  from the [[Accounts]], saved as it changes and let go when they leave. At sea, where no character is kept, the room
-  tells the accounts the player is there, again every 30 seconds, and that they left, for the Roster. A second text
-  message, or any other, closes the socket.
+  from the [[Accounts]], saved as it changes and let go when they leave. A character the node's gate shuts
+  ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's reason. At sea, where no
+  character is kept, the room tells the accounts the player is there, again every 30 seconds, and that they left, for
+  the Roster. A second text message, or any other, closes the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
@@ -333,8 +334,8 @@ so every decision is Rust and the shell only carries bytes and time.
   1 again, the player standing where the room puts them, their dress sent again and what their hands hold kept, and
 every other figure drawn on from where the new room has it, though its clock starts again. The
   [[Test Ground]], the [[Game]]'s node rooms and sea, and a fleet each follow it so; at sea, and in a fleet, the ship
-  puts to sea again where she lies. A room that sends the player away for not keeping to the messages (1008, 1009)
-  is not joined again, and the page says why.
+  puts to sea again where she lies. A room that sends the player away for not keeping to the messages (1008, 1009),
+  or whose gate shuts to their character (4003), is not joined again, and the page says why.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
   with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOnNode` cuts the
   rect the welcome names from the landmass open in the land's door and stands the movement rules on it, with the

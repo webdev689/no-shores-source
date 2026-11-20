@@ -5,6 +5,7 @@ code:
   - crates/gear/src/clock.rs#day_of
   - crates/gear/src/activity.rs#Activity
   - crates/gear/src/story.rs#Story
+  - crates/gear/src/gate.rs#shut
 ---
 # Activities
 
@@ -137,7 +138,11 @@ One engine counts both, since the owner's side quests and the board's bounties a
   the campaign's end, so the week's dungeons open too, each by its level.
 - **Characters saved before the story was kept** count as past the prologue: a save with no `story` reads as past
   it.
-- **The rooms refuse a join a gate shuts**, and say why. The screen shows what is shut and what opens it.
+- **The rooms refuse a join a gate shuts**, and say why. The gate is `gear::gate::shut`: a social space never shuts;
+  a patrol and its dungeons need the prologue; then Elite seas need level 10 and Abyss seas level 20, anywhere else.
+  A room asks it before it gives a player their kept character, and a new one is judged as it starts. The reasons
+  read "This place opens after the prologue.", "Elite seas open at level 10." and "Abyss seas open at level 20.".
+  A sea island's dungeon is gated by its seas alone. The screen shows what is shut and what opens it.
 
 ## The screen
 
