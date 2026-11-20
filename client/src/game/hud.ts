@@ -3,6 +3,7 @@ import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
+import { NoticeStack } from '../plus/notices.ts';
 import { SeaFightReadout, type SeaFightModel, wearSeaFight } from '../plus/seaFight.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { HostileLook } from './seaHostiles.ts';
@@ -127,6 +128,8 @@ export class Hud {
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
   /** The sea fight's readout: her plate and rose, the card and the tally, made in the root. */
   private readonly fight: SeaFightReadout;
+  /** What happened, as DFO's toasts say it, at the top right. */
+  private readonly noticeStack: NoticeStack;
   /** The shape Manage's panel was last built to, and the place each of its values is written. */
   private panelShape = '';
   private panelValues: HTMLElement[] = [];
@@ -200,6 +203,9 @@ export class Hud {
     this.fight = new SeaFightReadout(root);
     root.insertBefore(this.fight.root, this.menuNode);
     this.fight.update(null);
+    this.noticeStack = new NoticeStack(root);
+    root.insertBefore(this.noticeStack.root, this.menuNode);
+    this.noticeStack.show([]);
     this.reach({ kind: 'inside' });
     this.menu(null);
     this.seaBar(null);
@@ -265,6 +271,11 @@ export class Hud {
     this.fight.update(model);
     // The ships' plates keep under the card, as under the compass.
     this.shipPlates.top = this.fight.under;
+  }
+
+  /** The notices standing now (DFO's toasts), the newest last; none for no notice. */
+  notices(lines: readonly string[]): void {
+    this.noticeStack.show(lines);
   }
 
   /** Covers the view with words while a place loads, or lifts the cover. */

@@ -37,6 +37,7 @@ test("the rose's chip says its load, and the seconds a side still loads", () => 
     ship: { ...ship, port: side({ ready: false, fill: 0.4, left: 3.2 }) },
     card: null,
     tally: null,
+    warn: null,
   });
   assert.equal(words.port, 'Round 4s');
   assert.equal(words.starboard, 'Round');
@@ -44,7 +45,7 @@ test("the rose's chip says its load, and the seconds a side still loads", () => 
 
 test("the card says DFO's states: hostile, colours struck with the key that boards her, going down", () => {
   const state = (more: Partial<SeaFightModel['card'] & object>) =>
-    seaFightWords({ ship: null, card: { ...card, ...more }, tally: null }).state;
+    seaFightWords({ ship: null, card: { ...card, ...more }, tally: null, warn: null }).state;
   assert.equal(state({}), 'Hostile');
   assert.equal(state({ state: 'struck' }), 'Colors struck');
   assert.equal(state({ state: 'struck', boardKey: 'E' }), 'Colors struck - E: board');
@@ -53,7 +54,7 @@ test("the card says DFO's states: hostile, colours struck with the key that boar
 
 test("the tally counts her last volley's balls struck, below her waterline and through her rigging", () => {
   const tally = (balls: number, hits: number, holed: number, rig: number) =>
-    seaFightWords({ ship: null, card: null, tally: { balls, hits, holed, rig } }).tally;
+    seaFightWords({ ship: null, card: null, tally: { balls, hits, holed, rig }, warn: null }).tally;
   assert.equal(tally(6, 3, 1, 2), '3 of 6 balls struck - 1 below the waterline - 2 in the rigging');
   assert.equal(tally(1, 0, 0, 0), '0 of 1 ball struck');
 });

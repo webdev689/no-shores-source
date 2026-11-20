@@ -3,7 +3,8 @@
 // stern, port and starboard either side, each side filling as it reloads, glowing gold where the look lays it, brass-edged
 // once loaded, flashing as it comes ready, and the side a blow came from flashed); the TARGET CARD under the compass
 // (her name, class and distance, her hull and sail bars, her state and the key that boards her); and the TALLY of her
-// last volley. A readout, never a window: made once, updated each frame, pressed never.
+// last volley; and the WARNING over the sight while a battery is run out at the player's ship. A readout, never a window: made once,
+// updated each frame, pressed never.
 import { UNDER_COMPASS } from './compass.ts';
 import { HALO, TONES } from './tones.ts';
 
@@ -46,6 +47,8 @@ export interface SeaFightModel {
     readonly holed: number;
     readonly rig: number;
   } | null;
+  /** DFO's warning over the sight while a captain's battery is run out at the player's ship, its words; none else. */
+  readonly warn: string | null;
 }
 
 /** The gap between the card and a ship's plate under it, CSS pixels. */
@@ -115,6 +118,7 @@ export class SeaFightReadout {
   private readonly cardBars: { hull: HTMLElement; sail: HTMLElement };
   private readonly cardState: HTMLElement;
   private readonly tally: HTMLElement;
+  private readonly warn: HTMLElement;
 
   constructor(parent: HTMLElement) {
     this.root = made('div', 'seafight', parent);
@@ -143,6 +147,7 @@ export class SeaFightReadout {
     this.cardBars = { hull: bar(this.card, 'hull', 'Hull'), sail: bar(this.card, 'sail', 'Sails') };
     this.cardState = made('div', 'seafight-state', this.card);
     this.tally = made('div', 'seafight-tally', this.root);
+    this.warn = made('div', 'seafight-warn', this.root);
   }
 
   /** How far down the ships' plates may stand, CSS pixels: under the card while it shows, else under the compass. */
@@ -190,6 +195,8 @@ export class SeaFightReadout {
     this.tally.hidden = words.tally === '';
     this.tally.textContent = words.tally;
     this.tally.classList.toggle('miss', model.tally?.hits === 0);
+    this.warn.hidden = model.warn === null;
+    if (this.warn.textContent !== (model.warn ?? '')) this.warn.textContent = model.warn ?? '';
   }
 }
 
@@ -234,6 +241,13 @@ export function seaFightCss(): string {
 .seafight-tally { position: absolute; top: calc(50% + 64px); left: 50%; translate: -50% 0; font-size: 12px;
   letter-spacing: 0.1em; text-transform: uppercase; color: ${TONES.brassHi}; }
 .seafight-tally.miss { color: #b3a684; }
+/* DFO's warning over the sight (navalHud.js .dfnaval-warn): blood-edged, its words pulsing in steps. */
+.seafight-warn { position: absolute; top: calc(50% - 62px); left: 50%; translate: -50% 0; white-space: nowrap;
+  padding: 3px 12px 4px; font-size: 15px; letter-spacing: 0.16em; text-transform: uppercase; color: #ffd9cf;
+  background: rgba(60, 12, 8, 0.72); border: 2px solid; border-color: #e0584a #5a130f #3d0d0a #b83a2e;
+  box-shadow: 0 0 0 1px ${TONES.outline}; animation: seafight-warn 0.5s steps(1) infinite; }
+@keyframes seafight-warn { 50% { color: #ff9c8a; border-color: #ff8a76 #7a1a12 #52110c #e0584a; } }
+@media (prefers-reduced-motion: reduce) { .seafight-warn { animation: none; } }
 /* In a sea fight the sea's status line stands in the top right corner, off the sky the aim looks at. */
 #hud:has(> .seafight:not([hidden])) > .status { left: auto; right: 28px; top: 22px; transform: none; }
 `;

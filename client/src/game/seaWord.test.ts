@@ -22,7 +22,7 @@ test('the sea’s word becomes the player’s lines: washing up, a piece gathere
     { kinds, ports: ['Overlook', 'Sunspire', 'Rimeholt'], nameOf: (ship) => names.get(ship) ?? null },
   );
   assert.deepEqual(lines, [
-    'The Tithe Brig’s colours are down: come alongside and press E to board her.',
+    'The Tithe Brig’s colours are down: come alongside and press E to board it.',
     'Boarders away: the Tithe Brig’s crew stands to meet them.',
     'Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.',
     'Gathered a chest: a Rare Vestige, an Ammo box.',
@@ -38,8 +38,8 @@ test('the best find reads as English: an Atheric Vestige', () => {
 
 test('her repair reads its time left, whole, or how to have it, by the rules’ reach', () => {
   const word = new SeaWord([], FACTS);
-  assert.equal(word.repairWords({ whole: false, left: 12.2 }), 'Repairing her: 13 s left');
-  assert.equal(word.repairWords({ whole: true, left: 0 }), 'She is whole');
+  assert.equal(word.repairWords({ whole: false, left: 12.2 }), 'Repairing it: 13 s left');
+  assert.equal(word.repairWords({ whole: true, left: 0 }), 'The ship is whole');
   assert.equal(word.repairWords({ whole: false, left: 0 }), 'Repair: free, lying at rest within 3 km of a port city');
   assert.equal(word.repairWords(null), 'Repairs are made at sea, by a port city');
   assert.match(new SeaWord([], { ...FACTS, repairReachM: 1_500 }).repairWords({ whole: false, left: 0 }), /1\.5 km/);

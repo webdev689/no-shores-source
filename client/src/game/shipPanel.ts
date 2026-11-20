@@ -128,7 +128,7 @@ export function shipPanelOf(
             },
           ]
         : []),
-      ...(kept ? [{ heading: 'Repair', rows: [['Repair its  R', kept.repair]] as const }] : []),
+      ...(kept ? [{ heading: 'Repair', rows: [['Repair the ship  R', kept.repair]] as const }] : []),
     ],
   };
 }

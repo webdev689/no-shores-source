@@ -41,7 +41,7 @@ function seaRoom() {
   return { sea, asked };
 }
 
-/** The frame on foot the fight on her deck shows: the eye behind the boarder, a figure of her crew, the keys. */
+/** The frame on foot the fight on its deck shows: the eye behind the boarder, a figure of its crew, the keys. */
 const FRAME = {
   shot: { eye: [0, 3, 2], yaw: 0, pitch: 0.2, fov: 1, near: 0.1, far: 900 },
   figures: [{ card: {}, x: 0, y: -2, z: 0.9, flip: false }],
@@ -102,7 +102,7 @@ test('a struck captain alongside is boarded with E: the boarder stands on her de
   assert.deepEqual([shown.figures[0]?.x, shown.figures[0]?.y], deckToWorld(her, 0, -2, 0.9).slice(0, 2));
   assert.deepEqual(
     [boarding.words?.place, boarding.words?.line],
-    ['Pirate Sloop', 'Aboard her: her crew stands to meet you'],
+    ['Pirate Sloop', 'Aboard: its crew stands to meet you'],
   );
   assert.equal(fightAsk(atSea), null, 'E asks nothing while her crew fights');
 });
@@ -127,7 +127,8 @@ test('her deck won holds the boarder a minute, its time left and her hold’s ta
   );
   boarding.frame(sea, view, INPUT);
   assert.equal(boarding.won, true);
-  assert.equal(boarding.words?.line, 'Her hold: 2 crates, a chest');
+  assert.equal(boarding.words?.place, 'Its deck is yours');
+  assert.equal(boarding.words?.line, 'Its hold: 2 crates, a chest');
   assert.equal(boarding.words?.hints[0], 'E back aboard your ship · 60 s left');
   assert.equal(fightAsk({ boarding, sighted: sea }), 'leave-deck');
   assert.deepEqual(asked, ['leave-deck']);
@@ -225,5 +226,5 @@ test('a hold won while her deck stands up is still told apart from what floated 
   sea.flotsam.push({ player: 1, id: 2, at: [20, 0], kind: 'chest' });
   await settle();
   boarding.frame(sea, fight('struck'), INPUT);
-  assert.match(boarding.words?.line ?? '', /^Her hold: a chest$/);
+  assert.match(boarding.words?.line ?? '', /^Its hold: a chest$/);
 });

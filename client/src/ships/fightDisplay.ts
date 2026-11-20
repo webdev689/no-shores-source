@@ -1,6 +1,6 @@
 // The sea fight's readout as the Plus kit shows it (plus/seaFight.ts), from the fight's view and its feel: her plate
-// and rose, the card on the captain the look is on (the nearest while her guns are not laid), and her last volley's
-// tally.
+// and rose, the card on the captain the look is on (the nearest while her guns are not laid), her last volley's
+// tally, and the broadside warning over the sight; and of the fight's panel lines, the ones that are notices.
 import type { SeaFightModel } from '../plus/seaFight.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import type { FightFeel } from './fightFeel.ts';
@@ -46,6 +46,10 @@ export function fightDisplay(
   const near = [view.captain, ...(view.others ?? [])]
     .filter((captain) => captain.state !== 'sunk')
     .sort((one, other) => looked(one) - looked(other))[0];
+  // DFO's warning over the sight (navalHud.js `warn`): the nearest captain afloat with a battery run out.
+  const warning = [view.captain, ...(view.others ?? [])]
+    .filter((captain) => captain.run_out.length > 0 && captain.state === 'afloat')
+    .sort((one, other) => apart(one) - apart(other))[0];
   const state = near?.state === 'struck' ? 'struck' : near?.state === 'sinking' ? 'sinking' : 'afloat';
   return {
     ship: {
@@ -71,5 +75,21 @@ export function fightDisplay(
         }
       : null,
     tally: feel.tally(now),
+    warn: warning ? `Broadside from the ${warning.name} - C: brace` : null,
   };
+}
+
+/** The panel's lines (the fight's `lines`) that DFO shows as notices (enhancedNotice.js's toasts): its messages. Each
+ *  captain's hurts are its plate and the card, the lay is the sight's aim line and the broadside the warning over the
+ *  sight, so none of them repeats as text. */
+export function fightNotices(lines: readonly string[], view: Pick<FightView, 'captain' | 'others'>): string[] {
+  // shortcut: the fight's lines are told apart by the words editor/fighting.ts writes them in (pinned by its tests);
+  // when Fighting gives its messages on their own, take those instead.
+  const captains = [view.captain, ...(view.others ?? [])].map((captain) => `${captain.name}, `);
+  return lines.filter(
+    (line) =>
+      !line.startsWith('Laying the ') &&
+      !line.startsWith('Broadside from the ') &&
+      !captains.some((named) => line.startsWith(named)),
+  );
 }
