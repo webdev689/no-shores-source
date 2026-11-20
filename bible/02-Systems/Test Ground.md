@@ -358,9 +358,16 @@ The figure is dressed as DFO's game dresses it ([[DFO's Sprite Forge Comes Over 
 ## How it draws
 
 The page reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
-its pack by its byte range and decoded once; one that fails to arrive is asked for again 5 s later, not every frame.
+its pack by its byte range; a body shorter than its range is fetched once more past the cache, never decoded. One that
+fails to arrive is asked for again 5 s later, not every frame. Decoded strips are kept while there is room: 128 MB in
+the worker that composes the figures, 96 MB on the page, the least lately asked for let go and fetched again if asked.
 
-A frame is composed in the browser as DFO's game composes it (`composeFrame`):
+A frame is composed in the browser as DFO's game composes it (`composeFrame`), in a worker off the page's thread (on
+the page where no worker starts), so the page only uploads it. A move shown before it is composed asks for the rest of
+its frames in that view with it. The worker composes the frames whose strips have come in the order they are wanted:
+those shown now, then the rest of a move just shown, then those composed ahead (`ComposeQueue`). A frame still
+waiting for its strips holds up none of the others, and one under way that is now shown goes ahead. A frame that
+fails is asked for again 5 s later, not every tick. Each frame is composed so:
 
 - Each layer's cell is laid on the figure's cell by its root.
 - At each pixel the nearest texel shows. Where two layers meet on one part of the body, the one with the higher order
@@ -388,13 +395,14 @@ picture.
   figure asks for go past it, and then the least lately asked for are let go down to 3,000 and composed again as
   needed. A frame composed ahead and let go before it was asked for has its dress composed ahead again, into the room
   let go.
-- Each figure's likeliest moves are composed ahead, two frames a tick in all, from one queue in which a figure's new
-  dress replaces only its own frames still queued, passing over frames kept already: every view as drawn and as
-  mirrored, its rest, walk and attack, its strokes, each blow, shot and reload on the move, its guard or a shield's
-  block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's too, so a swap shows it at
-  once. A move not composed yet shows the last frame until it is: its strips take most of a second to come the first
-  time. A crowd of many dresses (the player, the other loadout and five or six foes' dresses) holds more than 4,000
-  frames, so the last dresses are composed ahead only as room comes.
+- Each figure's likeliest moves are composed ahead, four frames a tick in all (two when composing on the page), from
+  one queue in which a figure's new dress replaces only its own frames still queued, passing over frames kept already:
+  every view as drawn and as mirrored, its rest, walk and attack, its strokes, each blow, shot and reload on the move,
+  its guard or a shield's block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's
+  too, so a swap shows it at once. A move not composed yet shows the last frame until it is: its strips take most of a
+  second to come the first time, then its frames follow in the order they play. A crowd of many dresses (the player,
+  the other loadout and five or six foes' dresses) holds more than 4,000 frames, so the last dresses are composed
+  ahead only as room comes.
 
 ## First person
 
