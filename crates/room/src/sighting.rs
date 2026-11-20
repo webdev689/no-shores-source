@@ -1,6 +1,6 @@
-//! Who a roll at sea sends, and where she is seen. The water at the player's ship names her faction, none in home
-//! waters; its island's level band sets her rank and her level. She is sighted farther the faster the player sails,
-//! so one met head-on stays in sight half a minute, and she comes out near that distance ahead of them: a pirate by a
+//! Who a roll at sea sends, and where it is seen. The water at the player's ship names its faction, none in home
+//! waters; its island's level band sets its rank and its level. It is sighted farther the faster the player sails,
+//! so one met head-on stays in sight half a minute, and it comes out near that distance ahead of them: a pirate by a
 //! coast, a Tithe ship on a lane. The sea's map is a `Chart`, so the law can be tried on any sea.
 
 use crate::pirates::PIRATE_WAY_M_S;
@@ -12,12 +12,12 @@ use world::waters::Holder;
 /// The nearest a hostile ship is sighted from, metres, and the seconds a ship met head-on stays in sight at any pace.
 pub const SIGHT_LEAST_M: f64 = 5_000.0;
 pub const SIGHT_HOLD_S: f64 = 30.0;
-/// A ship goes once no player is within this many times her sight.
+/// A ship goes once no player is within this many times its sight.
 pub const KEEP_SHARE: f64 = 1.1;
-/// She comes out between these shares of her sight from the player, within this of their heading under way.
+/// It comes out between these shares of its sight from the player, within this of their heading under way.
 pub const COME_OUT: [f64; 2] = [0.9, 1.0];
 pub const AHEAD_ARC_RAD: f64 = PI / 3.0;
-/// A Tithe ship keeps to a lane within this of where she comes (metres).
+/// A Tithe ship keeps to a lane within this of where it comes (metres).
 pub const LANE_REACH_M: f64 = 50_000.0;
 /// The ranks a roll sends, and their shares by the lowest level of the water's band, a row for each island's band:
 /// each row holds from its level up to the next row's.
@@ -112,7 +112,7 @@ pub fn level_in(levels: Option<(u8, u8)>, roll: f64) -> u8 {
     })
 }
 
-/// A ship's way at sea by her rank, metres a second: the Sloop's, a Minor slower and the higher ranks faster.
+/// A ship's way at sea by its rank, metres a second: the Sloop's, a Minor slower and the higher ranks faster.
 #[must_use]
 pub fn way_of(rank: Rank) -> f64 {
     PIRATE_WAY_M_S
@@ -136,24 +136,24 @@ pub fn along_lane([east, south]: [f64; 2], slant: f64) -> f64 {
 /// The paces at which a voyage is sighted from the least sight, 5 km, and a bold ship comes anywhere ahead as a wary
 /// one does: the helm's own.
 pub const SLOW_PACE: u16 = 10;
-/// The share of her meeting cone a bold ship comes within, so she meets a voyage that holds its course.
+/// The share of its meeting cone a bold ship comes within, so it meets a voyage that holds its course.
 pub const MEETING_MARGIN: f64 = 0.8;
 
 /// The half-angle off a voyage's course, radians, within which a bold ship of `rank` can meet it at all: on the
-/// voyage's clock she sails at her way and the ship at 12 m/s, so only from where sin(angle) <= her way / his. Shrunk
+/// voyage's clock it sails at its way and the ship at 12 m/s, so only from where sin(angle) <= its way / his. Shrunk
 /// by `MEETING_MARGIN`, so a ship placed within it meets him if he holds his course.
 #[must_use]
 pub fn meeting_arc(rank: Rank) -> f64 {
     libm::asin(way_of(rank) / SHIP_SPEED_M_S) * MEETING_MARGIN
 }
 
-/// A ship's helm turns her at most this fast, radians a second of her clock: the Sloop's helm (the page's
+/// A ship's helm turns it at most this fast, radians a second of its clock: the Sloop's helm (the page's
 /// `HELM_TURN`), so a captain coming for a player turns as a player can.
 pub const HELM_TURN_RAD_S: f64 = 10.0 * PI / 180.0;
 
 /// The heading (radians clockwise from north) from `from`, sailing at `speed`, to where a ship at `at` sailing at
-/// `velocity` (east and south, metres a second) will be when she can be reached: lead pursuit. Straight at her where
-/// she cannot be reached, as when she is the faster sailing away.
+/// `velocity` (east and south, metres a second) will be when it can be reached: lead pursuit. Straight at it where
+/// it cannot be reached, as when it is the faster sailing away.
 #[must_use]
 pub fn intercept_heading(from: [f64; 2], speed: f64, at: [f64; 2], velocity: [f64; 2]) -> f64 {
     let gap = [at[0] - from[0], at[1] - from[1]];

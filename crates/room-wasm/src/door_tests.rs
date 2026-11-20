@@ -134,7 +134,7 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     let off_the_steps = protocol::course_bytes(&[[50_000.0, 150_000.0]], 3);
     assert_eq!(input(second, &off_the_steps), TOO_SOON, "one course each half second, dropped as a flood");
     assert_eq!(input(second, b"no course"), NOT_AN_INPUT);
-    assert_eq!(input(second, &protocol::chase_bytes(3)), TAKEN, "a chase is taken, whoever she is");
+    assert_eq!(input(second, &protocol::chase_bytes(3)), TAKEN, "a chase is taken, whoever it is");
     assert_eq!(input(second, &protocol::chase_bytes(0)), TAKEN, "and let go");
     for _ in 0..room::sea::COURSE_EVERY_TICKS {
         room_tick();
@@ -225,7 +225,7 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     let course = [Block::from_floats(&[-5.0, -4.0, 5.0, -1.0, 2.3])];
     let (expected, _) = combat::player_tick(1, &fighter.holding(sword), &intent, &[], &course, &Flat);
     let next = floats_of(&predict(&bytes_of(&numbers)));
-    assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected, "at rest, she takes up the sword");
+    assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected, "at rest, they take up the sword");
     let guarding = Fighter { action: combat::Action::Guard { elapsed: 3, window: 0 }, ..fighter };
     let mut asked: Vec<f64> = guarding.to_floats().to_vec();
     asked.extend(intent.to_floats());
@@ -233,7 +233,7 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     let (kept, _) = combat::player_tick(1, &guarding, &intent, &[], &course, &Flat);
     let next = floats_of(&predict(&bytes_of(&asked)));
     let next = Fighter::from_floats(next.as_slice().try_into().unwrap());
-    assert_eq!((next, next.arms.code()), (kept, combat::arms::BARE_HANDS.code()), "on guard, her arms stay");
+    assert_eq!((next, next.arms.code()), (kept, combat::arms::BARE_HANDS.code()), "on guard, their arms stay");
     assert!(predict(&bytes_of(&[1.0, 2.0])).is_empty());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\ndrawn"), sword.code());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\nworn"), combat::arms::BARE_HANDS.code());
@@ -376,11 +376,11 @@ fn what_the_sea_tells_a_player_goes_to_them_alone() {
         let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
         snapshot.told().map_or(0, |told| told.len())
     };
-    assert_eq!((told(first), told(second)), (1, 0), "her ship moored where it was kept is her word alone");
+    assert_eq!((told(first), told(second)), (1, 0), "their ship moored where it was kept is their word alone");
 }
 
 #[test]
-fn the_sea_takes_a_boarding_and_the_boarder_fights_on_her_deck() {
+fn the_sea_takes_a_boarding_and_the_boarder_fights_on_its_deck() {
     let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     assert!(open_sea(layout.as_bytes(), 66));
     let player = room_join();
@@ -394,10 +394,10 @@ fn the_sea_takes_a_boarding_and_the_boarder_fights_on_her_deck() {
         }
     });
     room_tick();
-    // Her colours come down alongside, and she lies still.
+    // Its colours come down alongside, and it lies still.
     with_open(|opened| {
         let Opened::Sea(sea) = opened else { panic!("a sea is open") };
-        let fought = sea.fight_mut(player).expect("the pirate met her");
+        let fought = sea.fight_mut(player).expect("the pirate met their ship");
         let clock = fought.fight.clock;
         let vessel = fought.fight.ships.get_mut(&naval::fight::CAPTAIN).unwrap();
         let hurt = naval::damage::Hurt { hull: vessel.damage.max_hull * 0.8, sail: 0.0, crew: 0.0, fire: false };
@@ -408,7 +408,7 @@ fn the_sea_takes_a_boarding_and_the_boarder_fights_on_her_deck() {
         }
     });
     assert_eq!(input(player, &protocol::ask_bytes(2)), TAKEN, "boarded");
-    // A land input now goes to her deck room, as the page's deck fight sends it.
+    // A land input now goes to its deck room, as the page's deck fight sends it.
     let controls = Controls { forward: 1.0, ..Controls::default() };
     let intent = combat::Intent { controls, ..combat::Intent::default() };
     let walk = protocol::input_bytes(&room::Input { sequence: 1, intent, ..room::Input::default() });
@@ -417,13 +417,13 @@ fn the_sea_takes_a_boarding_and_the_boarder_fights_on_her_deck() {
     snapshot_door::prepare();
     let bytes = snapshot_door::snapshot_for(player);
     let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
-    let deck = snapshot.decks().expect("her deck is sent").get(0);
+    let deck = snapshot.decks().expect("its deck is sent").get(0);
     assert_eq!(deck.players().unwrap().iter().collect::<Vec<_>>(), vec![player]);
-    assert_eq!(deck.hold_left(), -1, "her crew still fights");
+    assert_eq!(deck.hold_left(), -1, "its crew still fights");
     let boarder = deck.boarders().unwrap().get(0);
     let room = messages::root_as_from_room(deck.snapshot().unwrap().bytes()).unwrap().snapshot().unwrap();
     let seen = room.players().unwrap().iter().find(|seen| seen.player() == boarder).expect("the boarder stands there");
-    assert_eq!(seen.acknowledged(), 1, "her deck room took the boarder's step");
+    assert_eq!(seen.acknowledged(), 1, "its deck room took the boarder's step");
     assert_eq!(room.foes().map_or(0, |foes| foes.len()), 3, "a Minor's three hands stand to meet them");
 }
 
@@ -468,7 +468,7 @@ fn at_sea_a_players_gear_is_sent_from_the_character_the_sea_keeps_once_it_change
     character.materials.add_aurem(777);
     assert!(gear_door::restore_character(player, character.to_json().as_bytes()));
     let bytes = gear_door::gear(player);
-    let gear = messages::root_as_from_room(&bytes).unwrap().gear().expect("her gear");
+    let gear = messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear");
     assert_eq!(gear.aurem(), character.materials.aurem, "the character given back");
     assert!(gear_door::gear(player).is_empty(), "sent once until it changes again");
 }
@@ -481,8 +481,8 @@ fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_t
         assert_eq!(input(player, &protocol::course_bytes(&[at], 10)), TAKEN);
     }
     let commission = naval::ranks::Commission { faction: 2, rank: naval::ranks::Rank::Minor };
-    // Wary Minors that leave a sound Sloop be, each kept at sea by the player within 1.1 times her 5 km sight of her:
-    // the first player, and the near one.
+    // Wary Minors that leave a sound Sloop be, each kept at sea by the player within 1.1 times the Minor's 5 km sight
+    // of it: the first player, and the near one.
     for (id, at) in [(1, [50_000.0, 44_600.0]), (2, [50_000.0, 95_400.0])] {
         let pirate = room::pirates::Pirate::standing(id, 7, commission, at, 0.0, false);
         with_open(|opened| {
@@ -495,5 +495,5 @@ fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_t
     snapshot_door::prepare();
     assert_eq!(seen_at_sea(one), (vec![one, near], vec![1]));
     assert_eq!(seen_at_sea(near), (vec![one, near], vec![2]), "40 km off, within the page's farthest view");
-    assert_eq!(seen_at_sea(far), (vec![far], vec![]), "250 km off, she sees no one");
+    assert_eq!(seen_at_sea(far), (vec![far], vec![]), "250 km off, they see no one");
 }

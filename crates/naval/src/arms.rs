@@ -1,6 +1,6 @@
-//! A ship's arms and her build: where her guns' mouths are and what a ball can strike on her, in her own frame (x to
-//! her bow, y to starboard, z up, from her waterline's middle), as the ship export measured them off her model; and
-//! the points, men and skill DFO gives her class.
+//! A ship's arms and its build: where its guns' mouths are and what a ball can strike on it, in its own frame (x to
+//! its bow, y to starboard, z up, from its waterline's middle), as the ship export measured them off its model; and
+//! the points, men and skill DFO gives its class.
 
 use crate::ballistics::Block;
 use sailing::HullKind;
@@ -43,10 +43,10 @@ impl Side {
     }
 }
 
-/// A box in her own frame: its low and high corners.
+/// A box in its own frame: its low and high corners.
 pub type Bounds = [[f64; 3]; 2];
 
-/// Her guns' mouths on each side, fore to aft, her hull's box and each sail's.
+/// Its guns' mouths on each side, fore to aft, its hull's box and each sail's.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Arms {
     pub port: &'static [[f64; 3]],
@@ -65,7 +65,7 @@ impl Arms {
         }
     }
 
-    /// The share of the Sloop's broadside each of her guns on `side` throws: a side weighs the same whatever her hull,
+    /// The share of the Sloop's broadside each of its guns on `side` throws: a side weighs the same whatever its hull,
     /// spread evenly over its guns.
     #[must_use]
     pub fn gun_share(&self, side: Side) -> f64 {
@@ -73,10 +73,10 @@ impl Arms {
     }
 }
 
-/// The guns a side the Sloop carries: every hull's broadside weighs hers.
+/// The guns a side the Sloop carries: every hull's broadside weighs the Sloop's.
 pub const SLOOP_GUNS_A_SIDE: f64 = 3.0;
 
-/// The owner's Sloop, as `content/ships/ships.json` has her (a test holds each hull's arms to it).
+/// The owner's Sloop, as `content/ships/ships.json` has it (a test holds each hull's arms to it).
 pub const SLOOP_ARMS: Arms = Arms {
     port: &[[4.7229, -3.2218, 2.3844], [1.5322, -3.2218, 2.3595], [-1.7742, -3.1824, 2.3565]],
     starboard: &[[4.7023, 3.3269, 2.3586], [1.4848, 3.3269, 2.3456], [-1.797, 3.3663, 2.3471]],
@@ -145,7 +145,7 @@ pub const BRIG_ARMS: Arms = Arms {
     ],
 };
 
-/// The Frigate, ten guns a side across her two gun decks, numbered from her bow to her stern.
+/// The Frigate, ten guns a side across its two gun decks, numbered from its bow to its stern.
 pub const FRIGATE_ARMS: Arms = Arms {
     port: &[
         [11.4504, -4.0949, 3.3801],
@@ -198,8 +198,8 @@ pub fn arms_of(kind: HullKind) -> &'static Arms {
     }
 }
 
-/// What DFO's class gives a ship: hull and canvas points (its build's, toughened), men, her gunners' skill, the range
-/// she likes to fight at (metres), and whether a crew works her guns.
+/// What DFO's class gives a ship: hull and canvas points (its build's, toughened), men, its gunners' skill, the range
+/// it likes to fight at (metres), and whether a crew works its guns.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Build {
     pub name: &'static str,
@@ -223,11 +223,11 @@ pub const PIRATE_SLOOP: Build =
 /// The Grey Tithe's Sloop: the pirates' class under the Tithe's colours, until it has hulls of its own.
 pub const TITHE_SLOOP: Build = Build { name: "Tithe Sloop", ..PIRATE_SLOOP };
 
-/// No battery bears within this of her bow or her stern, degrees: the Sloop has guns only along her sides.
+/// No battery bears within this of its bow or its stern, degrees: the Sloop has guns only along its sides.
 pub const BOW_ARC_DEG: f64 = 35.0;
 pub const STERN_ARC_DEG: f64 = 40.0;
 
-/// The side a look this many degrees off her bow (to starboard positive) lays, if any.
+/// The side a look this many degrees off its bow (to starboard positive) lays, if any.
 #[must_use]
 pub fn side_for_bearing(bearing_deg: f64) -> Option<Side> {
     let off = bearing_deg.abs();
@@ -237,8 +237,8 @@ pub fn side_for_bearing(bearing_deg: f64) -> Option<Side> {
     Some(if bearing_deg > 0.0 { Side::Starboard } else { Side::Port })
 }
 
-/// Her own axes in the world (east, south, up) through her heading, rise and heel: her bow's, her starboard's and her
-/// up's, as the ship view turns her.
+/// Its own axes in the world (east, south, up) through its heading, rise and heel: its bow's, its starboard's and its
+/// up's, as the ship view turns it.
 fn axes(ship: &Ship, pose: &Pose) -> [[f64; 3]; 3] {
     let (forward, starboard) = frame(ship.heading);
     let (sin_pitch, cos_pitch) = (libm::sin(pose.pitch), libm::cos(pose.pitch));
@@ -253,7 +253,7 @@ fn axes(ship: &Ship, pose: &Pose) -> [[f64; 3]; 3] {
     ]
 }
 
-/// A point of her own frame in the world, through her pose.
+/// A point of its own frame in the world, through its pose.
 #[must_use]
 pub fn posed(ship: &Ship, pose: &Pose, point: [f64; 3]) -> [f64; 3] {
     let turned = axes(ship, pose);
@@ -261,7 +261,7 @@ pub fn posed(ship: &Ship, pose: &Pose, point: [f64; 3]) -> [f64; 3] {
     [ship.x + moved(0), ship.y + moved(1), pose.heave + moved(2)]
 }
 
-/// A point in the world in her own frame, through her pose: `posed` undone (her axes are square, so turned back by
+/// A point in the world in its own frame, through its pose: `posed` undone (its axes are square, so turned back by
 /// their transpose).
 #[must_use]
 pub fn unposed(ship: &Ship, pose: &Pose, point: [f64; 3]) -> [f64; 3] {
@@ -280,7 +280,7 @@ fn block(ship: &Ship, pose: &Pose, bounds: &Bounds) -> Block {
     }
 }
 
-/// Her hull's box in the world.
+/// Its hull's box in the world.
 #[must_use]
 pub fn hull_block(ship: &Ship, pose: &Pose, arms: &Arms) -> Block {
     block(ship, pose, &arms.hull)

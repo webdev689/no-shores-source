@@ -19,8 +19,8 @@ fn ship_of(sea: &Sea, player: PlayerId) -> Ship {
 }
 
 #[test]
-fn a_fight_that_carries_her_past_any_edge_of_the_world_leaves_her_within_it_and_free_to_sail() {
-    // By each edge: where she fights, where the fight carries her past it, and a point back in to sail to.
+fn a_fight_that_carries_a_ship_past_any_edge_of_the_world_leaves_it_within_the_world_and_free_to_sail() {
+    // By each edge: where the ship fights, where the fight carries it past the edge, and a point back in to sail to.
     let edges = [
         ([300.0, 50_000.0], [-150.0, 50_000.0], [500.0, 50_000.0]),
         ([50_000.0, 300.0], [50_000.0, -150.0], [50_000.0, 500.0]),
@@ -40,7 +40,7 @@ fn a_fight_that_carries_her_past_any_edge_of_the_world_leaves_her_within_it_and_
         (ship.x, ship.y) = (carried[0], carried[1]);
         sea.tick();
         let ship = ship_of(&sea, player);
-        assert!(inside([ship.x, ship.y]), "while the fight has her past it: {ship:?}");
+        assert!(inside([ship.x, ship.y]), "while the fight has it past the edge: {ship:?}");
         if let Sailor::Captain(command) = &mut vessel_mut(&mut sea, player, CAPTAIN).sailor {
             command.gone = Some(naval::fight::End::Gone);
         }
@@ -70,7 +70,7 @@ fn a_ship_that_washes_up_with_no_port_known_or_sets_a_course_from_past_the_edge_
         sea.wash_up(player, out, true);
         let ship = ship_of(&sea, player);
         assert!(inside([ship.x, ship.y]), "washed up from {out:?}: {ship:?}");
-        // One that lay past the edge however she came there sets her course from the edge.
+        // One that lay past the edge however it came there sets its course from the edge.
         if let Some(sailing) = sea.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut()) {
             (sailing.ship.x, sailing.ship.y) = (out[0], out[1]);
         }

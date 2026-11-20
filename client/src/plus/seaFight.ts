@@ -1,14 +1,17 @@
-// The sea fight's readout in the Plus kit, after DFO's helm readout (navalHud.js): her SHIP PLATE at the bottom
-// right (her name, her hull, sails and crew as banded bars, a fire and a brace chip, and the BATTERY ROSE: bow over
-// stern, port and starboard either side, each side filling as it reloads, glowing gold where the look lays it, brass-edged
-// once loaded, flashing as it comes ready, and the side a blow came from flashed); the TARGET CARD under the compass
-// (her name, class and distance, her hull and sail bars, her state and the key that boards her); and the TALLY of her
-// last volley; and the WARNING over the sight while a battery is run out at the player's ship. A readout, never a window: made once,
-// updated each frame, pressed never.
+// The sea fight's readout in the Plus kit, after DFO's helm readout (navalHud.js), built as the on-foot HUD is: the
+// player's SHIP PLATE at the bottom right is the vitals' window (Hull, Sails and Crew bars, each with its percent
+// inside, the hull flashing low as health does; a fire and a brace chip; and the BATTERY ROSE of its sides' reloads);
+// the TARGET CARD under the compass is the target's plate (the faction's emblem, its name, one hull bar in its rank's
+// colour, its class, distance and state as small words); the TALLY of the last volley; and the WARNING under the
+// card while a battery is run out at the player's ship. A readout, never a window: made once, updated each frame.
+import { barSheetCss } from './barSheet.ts';
+import { PIECE_LEAST } from './barLoss.ts';
 import { UNDER_COMPASS } from './compass.ts';
-import { HALO, TONES } from './tones.ts';
+import { ROLES } from './kit.ts';
+import { element as made, lowShare, Meter } from './meter.ts';
+import { FILLS, HALO, TONES } from './tones.ts';
 
-/** A side of her guns as the rose shows it: its share loaded, whether ready, just come ready, laid by the look, its
+/** A side of the player's guns as the rose shows it: its share loaded, whether ready, just come ready, laid by the look, its
  *  load and the seconds it still loads. */
 export interface RoseSide {
   readonly fill: number;
@@ -19,7 +22,7 @@ export interface RoseSide {
   readonly left: number;
 }
 
-/** What the readout shows: her ship, the ship the card is on, and her last volley's count; any of them none. */
+/** What the readout shows: the player's ship, the ship the card is on, and its last volley's count; any of them none. */
 export interface SeaFightModel {
   readonly ship: {
     readonly name: string;
@@ -40,6 +43,10 @@ export interface SeaFightModel {
     readonly state: 'afloat' | 'struck' | 'sinking';
     readonly hostile: boolean;
     readonly boardKey: string | null;
+    /** The captain's faction (1 the Grey Tithe, 2 pirates), whose emblem the card frames. */
+    readonly faction: number;
+    /** The colour its bar is in, as a foe's plate's: its rank's band, or an ally's. */
+    readonly band: string;
   } | null;
   readonly tally: {
     readonly balls: number;
@@ -47,15 +54,12 @@ export interface SeaFightModel {
     readonly holed: number;
     readonly rig: number;
   } | null;
-  /** DFO's warning over the sight while a captain's battery is run out at the player's ship, its words; none else. */
+  /** DFO's warning, under the card, while a captain's battery is run out at the player's ship, its words; none else. */
   readonly warn: string | null;
 }
 
 /** The gap between the card and a ship's plate under it, CSS pixels. */
 const CARD_GAP = 8;
-
-/** The bars' bands: each bar is cut in this many, as the vitals' are. */
-export const BANDS = 10;
 
 /** A share as a whole percent, held in 0 to 100. */
 const percent = (share: number) => Math.round(Math.min(1, Math.max(0, share)) * 100);
@@ -88,87 +92,90 @@ export function seaFightWords(model: SeaFightModel) {
   };
 }
 
-function made(tag: string, className: string, parent: HTMLElement, text = ''): HTMLElement {
-  const node = document.createElement(tag);
-  node.className = className;
-  node.textContent = text;
-  parent.append(node);
-  return node;
-}
-
-/** A banded bar: its track and its fill. */
-function bar(parent: HTMLElement, kind: string, label: string): HTMLElement {
-  const row = made('div', `seafight-row`, parent);
-  made('span', 'seafight-label', row, label);
-  const track = made('div', `seafight-bar plus-track ${kind}`, row);
-  return made('i', 'plus-meter', track);
+/** A bar of the vitals' build: its meter, naming itself and saying its percent inside it. */
+function vital(panel: HTMLElement, kind: string, label: string) {
+  const meter = new Meter(panel, `vital ${kind}`, { pieceLeast: PIECE_LEAST.vital });
+  made('span', 'label', meter.root, label);
+  return { meter, number: made('span', 'number', meter.root) };
 }
 
 /** The readout: the plate with its rose, the card and the tally, made once and updated. */
 export class SeaFightReadout {
   readonly root: HTMLElement;
   private readonly plate: HTMLElement;
-  private readonly name: HTMLElement;
-  private readonly bars: { hull: HTMLElement; sail: HTMLElement; crew: HTMLElement };
+  private readonly bars: Record<'hull' | 'sail' | 'crew', ReturnType<typeof vital>>;
   private readonly chips: { fire: HTMLElement; brace: HTMLElement };
   private readonly rose: Record<'bow' | 'stern' | 'port' | 'starboard', HTMLElement>;
   private readonly card: HTMLElement;
+  private readonly emblem: HTMLElement;
   private readonly cardName: HTMLElement;
   private readonly cardSub: HTMLElement;
-  private readonly cardBars: { hull: HTMLElement; sail: HTMLElement };
   private readonly cardState: HTMLElement;
+  private readonly cardHull: Meter;
   private readonly tally: HTMLElement;
   private readonly warn: HTMLElement;
+  /** When the readout was last shown, seconds, so its bars' losses drain in time. */
+  private shownAt: number | null = null;
+  /** The card's ship last shown, so its bar forgets another's losses. */
+  private carded: string | null = null;
 
   constructor(parent: HTMLElement) {
     this.root = made('div', 'seafight', parent);
-    this.plate = made('div', 'seafight-plate plus-panel', this.root);
-    this.name = made('div', 'seafight-name', this.plate);
+    // The vitals' window, as on foot.
+    this.plate = made('div', `vitals seafight-plate ${ROLES.window}`, this.root);
     this.bars = {
-      hull: bar(this.plate, 'hull', 'Hull'),
-      sail: bar(this.plate, 'sail', 'Sails'),
-      crew: bar(this.plate, 'crew', 'Crew'),
+      hull: vital(this.plate, 'hull', 'Hull'),
+      sail: vital(this.plate, 'sails', 'Sails'),
+      crew: vital(this.plate, 'crew', 'Crew'),
     };
     const chips = made('div', 'seafight-chips', this.plate);
     this.chips = {
-      fire: made('span', 'seafight-chip plus-chip fire', chips, 'On fire'),
-      brace: made('span', 'seafight-chip plus-chip brace', chips, 'Braced'),
+      fire: made('span', `seafight-chip ${ROLES.chip} fire`, chips, 'On fire'),
+      brace: made('span', `seafight-chip ${ROLES.chip} brace`, chips, 'Braced'),
     };
     const rose = made('div', 'seafight-rose', this.plate);
     this.rose = {
       bow: made('span', 'seafight-side bow', rose, 'Bow'),
-      port: made('span', 'seafight-side port plus-chip', rose),
-      starboard: made('span', 'seafight-side starboard plus-chip', rose),
+      port: made('span', `seafight-side port ${ROLES.chip}`, rose),
+      starboard: made('span', `seafight-side starboard ${ROLES.chip}`, rose),
       stern: made('span', 'seafight-side stern', rose, 'Stern'),
     };
-    this.card = made('div', 'seafight-card plus-panel', this.root);
-    this.cardName = made('div', 'seafight-name', this.card);
-    this.cardSub = made('div', 'seafight-sub', this.card);
-    this.cardBars = { hull: bar(this.card, 'hull', 'Hull'), sail: bar(this.card, 'sail', 'Sails') };
-    this.cardState = made('div', 'seafight-state', this.card);
+    // The target's plate, as on foot: the emblem framed, the title, one bar.
+    this.card = made('div', 'plate target seafight-card', this.root);
+    this.emblem = made('i', `emblem ${ROLES.chip}`, this.card);
+    const body = made('div', 'body', this.card);
+    const title = made('div', 'title', body);
+    this.cardName = made('span', 'name', title);
+    this.cardSub = made('span', 'sub', title);
+    this.cardState = made('span', 'state', title);
+    this.cardHull = new Meter(body, 'health', { pieceLeast: PIECE_LEAST.foe });
     this.tally = made('div', 'seafight-tally', this.root);
     this.warn = made('div', 'seafight-warn', this.root);
   }
 
-  /** How far down the ships' plates may stand, CSS pixels: under the card while it shows, else under the compass. */
-  get under(): number {
-    return this.root.hidden || this.card.hidden
-      ? UNDER_COMPASS
-      : this.card.offsetTop + this.card.offsetHeight + CARD_GAP;
-  }
+  /** How far down the ships' plates may stand, CSS pixels: under the card and the warning while they show, else under
+   *  the compass; measured once a frame, as the readout is shown. */
+  under = UNDER_COMPASS;
 
   /** Shows `model`, or hides the readout for none. */
   update(model: SeaFightModel | null): void {
     this.root.hidden = model === null;
+    this.under = UNDER_COMPASS;
+    const clock = performance.now() / 1000;
+    const seconds = this.shownAt === null ? 0 : Math.min(0.1, Math.max(0, clock - this.shownAt));
+    this.shownAt = model ? clock : null;
     if (!model) return;
     const words = seaFightWords(model);
     const { ship, card } = model;
     this.plate.hidden = ship === null;
     if (ship) {
-      this.name.textContent = ship.name;
-      this.bars.hull.style.width = `${percent(ship.hull)}%`;
-      this.bars.sail.style.width = `${percent(ship.sail)}%`;
-      this.bars.crew.style.width = `${percent(ship.crew)}%`;
+      for (const kind of ['hull', 'sail', 'crew'] as const) {
+        const { meter, number } = this.bars[kind];
+        meter.set(ship[kind], seconds);
+        const said = `${percent(ship[kind])}%`;
+        if (number.textContent !== said) number.textContent = said;
+      }
+      this.bars.hull.meter.root.classList.toggle('low', lowShare(ship.hull));
       this.chips.fire.hidden = !ship.fire;
       this.chips.brace.hidden = !ship.braced;
       for (const side of ['port', 'starboard'] as const) {
@@ -185,45 +192,51 @@ export class SeaFightReadout {
     }
     this.card.hidden = card === null;
     if (card) {
+      if (this.carded !== card.name) this.cardHull.forget();
+      this.carded = card.name;
+      const { dataset } = this.card;
+      if (dataset['band'] !== card.band) dataset['band'] = card.band;
+      const faction = String(card.faction);
+      if (this.emblem.dataset['faction'] !== faction) this.emblem.dataset['faction'] = faction;
       this.cardName.textContent = card.name;
       this.cardSub.textContent = card.sub;
-      this.cardBars.hull.style.width = `${percent(card.hull)}%`;
-      this.cardBars.sail.style.width = `${percent(card.sail)}%`;
+      this.cardHull.set(card.hull, seconds);
       this.cardState.textContent = words.state;
-      this.cardState.className = `seafight-state ${card.state}${card.boardKey ? ' board' : ''}`;
+      this.cardState.className = `state ${card.state}${card.boardKey ? ' board' : ''}`;
     }
     this.tally.hidden = words.tally === '';
     this.tally.textContent = words.tally;
     this.tally.classList.toggle('miss', model.tally?.hits === 0);
     this.warn.hidden = model.warn === null;
     if (this.warn.textContent !== (model.warn ?? '')) this.warn.textContent = model.warn ?? '';
+    // The warning under the card, or the compass while none shows: clear of the sight and the ship aimed at; the
+    // ships' plates under both.
+    if (card) this.under = this.card.offsetTop + this.card.offsetHeight + CARD_GAP;
+    if (model.warn !== null) {
+      this.warn.style.top = `${this.under}px`;
+      this.under += this.warn.offsetHeight + CARD_GAP;
+    }
   }
 }
 
 /** The readout's sheet: the plate at the bottom right, the card centred under the compass, the tally under the
  *  middle; the bars banded, the rose's sides filling from their foot, gold where laid, flashing when fresh. */
 export function seaFightCss(): string {
-  return `
+  return `${barSheetCss('.seafight')}
 .seafight { position: absolute; inset: 0; pointer-events: none; color: ${TONES.word}; text-shadow: ${HALO}; }
 .seafight [hidden] { display: none !important; }
-.seafight-plate { position: absolute; right: 18px; bottom: 18px; width: 272px; padding: 8px 10px; display: grid; gap: 4px; }
-.seafight-card { position: absolute; top: ${UNDER_COMPASS}px; left: 50%; translate: -50% 0; width: min(400px, 86vw);
-  padding: 6px 10px; display: grid; gap: 3px; }
-.seafight-name { font-size: 14px; letter-spacing: 0.08em; }
-.seafight-sub, .seafight-state, .seafight-label { font-size: 11px; color: ${TONES.wordDim}; }
-.seafight-state.struck, .seafight-state.board { color: ${TONES.brassHi}; }
-.seafight-state.sinking { color: #ee5745; }
-.seafight-row { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 6px; }
-.seafight-bar { position: relative; height: 9px; border: 1px solid ${TONES.outline}; background: ${TONES.groundTrack}; }
-.seafight-bar > i { position: absolute; inset: 0 auto 0 0; display: block; }
-.seafight-bar.hull > i { background: #b8312c; }
-.seafight-bar.sail > i { background: #e2d6b4; }
-.seafight-bar.crew > i { background: #5f9a45; }
-/* The bands: a dark notch every tenth, as the vitals' bars are cut. */
-.seafight-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(90deg, transparent 0 calc(${100 / BANDS}% - 1px), rgba(0,0,0,0.55) calc(${100 / BANDS}% - 1px) ${100 / BANDS}%); }
+.seafight .vitals { left: auto; right: 24px; }
+.seafight .vital.hull { --fill: ${FILLS.health}; }
+.seafight .vital.sails { --fill: ${FILLS.sails}; }
+.seafight .vital.crew { --fill: ${FILLS.stamina}; }
+.seafight .target { position: absolute; top: ${UNDER_COMPASS}px; left: 50%; translate: -50% 0; }
+.seafight .target .sub, .seafight .target .state { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: ${TONES.wordDim}; }
+.seafight .target .state:empty { display: none; }
+.seafight .target .state.struck, .seafight .target .state.board { color: ${TONES.brassHi}; }
+.seafight .target .state.sinking { color: #ee5745; }
 .seafight-chips { display: flex; gap: 6px; }
-.seafight-chip { font-size: 10px; padding: 1px 6px; }
+.seafight-chip { font-size: 10px; padding: 1px 6px; border-width: 1px; border-style: solid; }
 .seafight-chip.fire { color: #ffb066; }
 .seafight-rose { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: 'bow bow' 'port starboard' 'stern stern';
   gap: 3px; text-align: center; font-size: 11px; }
@@ -241,8 +254,8 @@ export function seaFightCss(): string {
 .seafight-tally { position: absolute; top: calc(50% + 64px); left: 50%; translate: -50% 0; font-size: 12px;
   letter-spacing: 0.1em; text-transform: uppercase; color: ${TONES.brassHi}; }
 .seafight-tally.miss { color: #b3a684; }
-/* DFO's warning over the sight (navalHud.js .dfnaval-warn): blood-edged, its words pulsing in steps. */
-.seafight-warn { position: absolute; top: calc(50% - 62px); left: 50%; translate: -50% 0; white-space: nowrap;
+/* DFO's warning (navalHud.js .dfnaval-warn), under the target card, never over the sight: blood-edged, pulsing in steps. */
+.seafight-warn { position: absolute; top: ${UNDER_COMPASS}px; left: 50%; translate: -50% 0; white-space: nowrap;
   padding: 3px 12px 4px; font-size: 15px; letter-spacing: 0.16em; text-transform: uppercase; color: #ffd9cf;
   background: rgba(60, 12, 8, 0.72); border: 2px solid; border-color: #e0584a #5a130f #3d0d0a #b83a2e;
   box-shadow: 0 0 0 1px ${TONES.outline}; animation: seafight-warn 0.5s steps(1) infinite; }

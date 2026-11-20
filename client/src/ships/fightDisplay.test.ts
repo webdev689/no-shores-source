@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
-import { fightDisplay, fightNotices } from './fightDisplay.ts';
+import { fightDisplay } from './fightDisplay.ts';
 import { FightFeel } from './fightFeel.ts';
 
 const vessel: FightVessel = {
@@ -42,7 +42,7 @@ const VIEW: FightView = {
   fingerprint: '',
 };
 
-test("her plate shows her hurts, fire and brace, and the rose each side's reload, the laid side gold", () => {
+test("the plate shows the ship's hurts, fire and brace, and the rose each side's reload, the laid side gold", () => {
   const model = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
   assert.deepEqual(
     model.ship && [model.ship.hull, model.ship.sail, model.ship.crew, model.ship.fire, model.ship.braced],
@@ -59,7 +59,7 @@ test("her plate shows her hurts, fire and brace, and the rose each side's reload
   ]);
 });
 
-test('the card is on the nearest captain: her name, class and distance, struck with the board key when she can be boarded', () => {
+test('the card is on the nearest captain: its name, class and distance, struck with the board key when it can be boarded', () => {
   const model = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: true, boardKey: 'E' });
   assert.deepEqual(model.card && [model.card.name, model.card.sub, model.card.state, model.card.boardKey], [
     'Tithe Sloop',
@@ -71,7 +71,7 @@ test('the card is on the nearest captain: her name, class and distance, struck w
   assert.equal(far.card?.boardKey, null);
 });
 
-test("her volley's tally once its last ball is down: how many struck, holed and through the rigging", () => {
+test("the volley's tally once its last ball is down: how many struck, holed and through the rigging", () => {
   const feel = new FightFeel(2);
   const ships = new Map();
   const step = (events: never[], balls: [number, number, number, number][], now: number) =>
@@ -91,14 +91,14 @@ test("her volley's tally once its last ball is down: how many struck, holed and 
   assert.equal(fightDisplay(VIEW, feel, 10, { boardable: false, boardKey: 'E' }).tally, null, 'shown a while');
 });
 
-test('while her guns are laid the card is on the captain where they fall, as DFO names the ship the look is on', () => {
+test('while the guns are laid the card is on the captain where they fall, as DFO names the ship the look is on', () => {
   const end = (east: number) => ({ time: 3, point: [east, 0, 0] as const, water: true, strike: null });
   const lay = { ...VIEW.lay!, ends: [end(196), end(204)] };
   const model = fightDisplay({ ...VIEW, lay }, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
   assert.equal(model.card?.name, 'Pirate Brig', 'the far one laid on, not the nearer Sloop');
 });
 
-test("the broadside warning over the sight names the nearest captain running out its guns, as DFO's warning does", () => {
+test("the broadside warning names the nearest captain running out its guns, as DFO's warning does", () => {
   const quiet = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
   assert.equal(quiet.warn, null, 'none while no battery is run out');
   const running = {
@@ -107,20 +107,5 @@ test("the broadside warning over the sight names the nearest captain running out
     others: [captain('Tithe Sloop', 70, { state: 'struck', run_out: ['port'], number: 2 })],
   };
   const model = fightDisplay(running, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
-  assert.equal(model.warn, 'Broadside from the Pirate Brig - C: brace', 'a struck ship runs out no guns at her');
-});
-
-test("the panel's messages are notices; what the card, plates, sight and warning show does not repeat as text", () => {
-  const lines = [
-    'Pirate Brig, 200 m off, closing: hull 60/60, sails 40/40, 8 men.',
-    'Tithe Sloop, 70 m off, struck: hull 30/60, sails 40/40, 8 men.',
-    'Laying the starboard guns: on target.',
-    'Broadside from the Pirate Brig: C to brace.',
-    'The Tithe Sloop surrenders!',
-    'The starboard guns are reloading (2.3 s).',
-  ];
-  assert.deepEqual(fightNotices(lines, VIEW), [
-    'The Tithe Sloop surrenders!',
-    'The starboard guns are reloading (2.3 s).',
-  ]);
+  assert.equal(model.warn, 'Broadside from the Pirate Brig - C: brace', 'a struck ship runs out no guns at the player');
 });

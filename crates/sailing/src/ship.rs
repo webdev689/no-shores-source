@@ -1,6 +1,6 @@
-//! A ship's step, as Come Sail Away's UpdateSailing under DFO's responsive helm: her helm's ladder, her turn and way
-//! eased toward what her oars or sails ask, her move in her own frame and then her swing, and the ground refusing a
-//! move that would put her keel on it.
+//! A ship's step, as Come Sail Away's UpdateSailing under DFO's responsive helm: its helm's ladder, its turn and way
+//! eased toward what its oars or sails ask, its move in its own frame and then its swing, and the ground refusing a
+//! move that would put its keel on it.
 
 use crate::Hull;
 use crate::helm::{
@@ -10,9 +10,9 @@ use crate::pose::{frame, keel_spots, shallower};
 use crate::waters::Waters;
 use std::f64::consts::TAU;
 
-/// A ship: her middle (metres east and south), her heading (radians clockwise from north, in [0, 2π)), her way ahead
-/// and to starboard (m/s, her own frame), her swing (degrees a second, to starboard), the share of her way her canvas
-/// made (m/s), and her helm's rung: -1 oars astern, 0 at rest, 1 oars ahead, 2 sails set.
+/// A ship: its middle (metres east and south), its heading (radians clockwise from north, in [0, 2π)), its way ahead
+/// and to starboard (m/s, its own frame), its swing (degrees a second, to starboard), the share of its way its canvas
+/// made (m/s), and its helm's rung: -1 oars astern, 0 at rest, 1 oars ahead, 2 sails set.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Ship {
     pub x: f64,
@@ -25,7 +25,7 @@ pub struct Ship {
     pub rung: i8,
 }
 
-/// What the helm asks for a tick: the rudder (-1 to port, 1 to starboard), whether the oars pull her sideways
+/// What the helm asks for a tick: the rudder (-1 to port, 1 to starboard), whether the oars pull it sideways
 /// (Shift), and a rung up or down the ladder (a W or S press, for one tick).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Helm {
@@ -34,10 +34,10 @@ pub struct Helm {
     pub climb: i8,
 }
 
-/// The rung her sails are set at.
+/// The rung its sails are set at.
 pub const SAILS_SET: i8 = 2;
 
-/// The shares of the way her sails and her oars may ask that her hurts leave her (naval combat's: canvas shot away,
+/// The shares of the way its sails and its oars may ask that its hurts leave it (naval combat's: canvas shot away,
 /// a wreck's oars), and of the turn its helm asks that its trim gives it; whole for a sound ship.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pull {
@@ -71,7 +71,7 @@ fn toward_vector(current: [f64; 2], target: [f64; 2], most: f64) -> [f64; 2] {
     [current[0] + east / distance * most, current[1] + south / distance * most]
 }
 
-/// Degrees between her forward and where the wind blows to: 0 running before it, 180 in its eye.
+/// Degrees between its forward and where the wind blows to: 0 running before it, 180 in its eye.
 #[must_use]
 pub fn off_run_deg(forward: [f64; 2], wind: [f64; 2]) -> f64 {
     let cross = forward[0] * wind[1] - forward[1] * wind[0];
@@ -79,15 +79,15 @@ pub fn off_run_deg(forward: [f64; 2], wind: [f64; 2]) -> f64 {
     libm::atan2(cross.abs(), dot).to_degrees()
 }
 
-/// How fast she loses a way her oars or sails no longer hold (coastAccel): faster, up to her gain, for the share of
-/// it her canvas made.
+/// How fast it loses a way its oars or sails no longer hold (coastAccel): faster, up to its gain, for the share of
+/// it its canvas made.
 fn coast_accel(way: f64, sail_way: f64, hull: &Hull) -> f64 {
     let coast = HANDLING.move_accel_sail * COAST;
     let share = if way > 0.0 { (sail_way / way).min(1.0) } else { 0.0 };
     if share <= 0.0 { coast } else { coast * (1.0 + (hull.gain - 1.0) * share) }
 }
 
-/// What her helm asks: her swing (degrees a second), her way ahead and abeam (m/s), and the rates she reaches them.
+/// What its helm asks: its swing (degrees a second), its way ahead and abeam (m/s), and the rates it reaches them.
 struct Asked {
     turn: f64,
     way: [f64; 2],
@@ -109,7 +109,7 @@ fn under_sail(helm: &Helm, hull: &Hull, way: f64, forward: [f64; 2], wind: [f64;
 fn under_oars(helm: &Helm, hull: &Hull, rung: i8, way: f64, sail_way: f64) -> Asked {
     let steering = helm.steer != 0.0;
     let aside = if helm.crab { 0.5 * helm.steer } else { 0.0 };
-    // Backing water, the helm answers the other way; pulling her sideways, it does not swing her.
+    // Backing water, the helm answers the other way; pulling the ship sideways, it does not swing it.
     let swing = if helm.crab {
         0.0
     } else if rung < 0 {
@@ -144,9 +144,9 @@ pub fn step_ship(
     step_pulled(ship, helm, hull, wind, waters, time, seconds, WHOLE)
 }
 
-/// One step of a ship her hurts hold back: the way her sails or her oars ask is `pull`'s share of a sound ship's.
+/// One step of a ship its hurts hold back: the way its sails or its oars ask is `pull`'s share of a sound ship's.
 #[must_use]
-#[allow(clippy::too_many_arguments, reason = "a sound ship's step and the pull her hurts leave")]
+#[allow(clippy::too_many_arguments, reason = "a sound ship's step and the pull its hurts leave")]
 pub fn step_pulled(
     ship: &Ship,
     helm: &Helm,
@@ -178,7 +178,7 @@ pub fn step_pulled(
     } else {
         sail_way
     };
-    // The mod's order: she moves in her own frame, then swings.
+    // The mod's order: it moves in its own frame, then swings.
     let heading = (ship.heading + turn.to_radians() * seconds).rem_euclid(TAU);
     let moved = Ship {
         x: ship.x + (forward[0] * ahead + starboard[0] * abeam) * seconds,
@@ -201,8 +201,8 @@ pub fn step_pulled(
     if !grounds(&moved) {
         return moved;
     }
-    // She runs on unswung where only her swing would ground her, or swings clear where only her way would: the mod
-    // refused only the part that ran into what she touched. Both grounding, she is held and loses her way.
+    // It runs on unswung where only its swing would ground it, or swings clear where only its way would: the mod
+    // refused only the part that ran into what it touched. Both grounding, it is held and loses its way.
     let unswung = Ship { heading: ship.heading, turn: 0.0, ..moved };
     if !grounds(&unswung) {
         return unswung;

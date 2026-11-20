@@ -162,9 +162,9 @@ pub const NO_SAIL: u8 = 8;
 pub const LOAD: u8 = 9;
 pub const GONE: u8 = 10;
 pub const RAM: u8 = 11;
-/// The sea's own events, for the fight's feel: where on her a ball struck (her frame's point, the part as detail), a
-/// sail torn away and a mast fallen (its number as detail), her colours struck, her going down, what floats laid (its
-/// number as the ship, its kind as detail, where as the point) and gathered (by whom), and players gone aboard her.
+/// The sea's own events, for the fight's feel: where on it a ball struck (its frame's point, the part as detail), a
+/// sail torn away and a mast fallen (its number as detail), its colours struck, its going down, what floats laid (its
+/// number as the ship, its kind as detail, where as the point) and gathered (by whom), and players gone aboard it.
 pub const STRUCK_AT: u8 = 12;
 pub const SAIL_LOST: u8 = 13;
 pub const MAST_FELL: u8 = 14;
@@ -219,7 +219,7 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
     })
 }
 
-/// Every ship in a fleet room after its tick `tick`, each player's ship with the number of her last orders taken
+/// Every ship in a fleet room after its tick `tick`, each player's ship with the number of their last orders taken
 /// (`acknowledged`), the balls aloft, what happened in the fight since the last snapshot, the fight's clock, and the
 /// world time the room's clock started at (`world_start`), which sets its weather.
 #[must_use]
@@ -250,7 +250,7 @@ pub fn fleet_snapshot_bytes(
             let run_out = command.map_or(0, |command| {
                 Side::BOTH
                     .iter()
-                    .filter(|side| command.her.run.out(**side).is_some())
+                    .filter(|side| command.mind.run.out(**side).is_some())
                     .fold(0, |sides, side| sides | (1 << side.index()))
             });
             let args = messages::VesselArgs {
@@ -264,12 +264,12 @@ pub fn fleet_snapshot_bytes(
                 guns: guns_numbers,
                 load: load_code(Some(guns.load)),
                 braced: guns.braced,
-                mode: command.map_or(0, |command| mode_code(command.her.mode)),
-                target: command.and_then(|command| command.her.target()).unwrap_or(0),
+                mode: command.map_or(0, |command| mode_code(command.mind.mode)),
+                target: command.and_then(|command| command.mind.target()).unwrap_or(0),
                 run_out,
                 acknowledged: acknowledged(id).unwrap_or(0),
                 faction: vessel.flag().number(),
-                rank: command.map_or(0, |command| command.her.commission.rank.number()),
+                rank: command.map_or(0, |command| command.mind.commission.rank.number()),
                 hull: vessel.hull.number(),
             };
             messages::Vessel::create(&mut builder, &args)

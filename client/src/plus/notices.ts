@@ -54,7 +54,7 @@ export class NoticeStack {
  *  toast's yellow, sliding in from the right in steps (none with less motion asked for). */
 export function noticesCss(): string {
   return `
-.plus-notices { position: absolute; right: 0; top: 64px; display: flex; flex-direction: column; align-items: flex-end;
+.plus-notices { position: absolute; right: 28px; top: 64px; display: flex; flex-direction: column; align-items: flex-end;
   gap: 6px; pointer-events: none; }
 .plus-notice { max-width: min(420px, 60vw); padding: 6px 18px 6px 12px; border-style: solid; border-width: 2px 0 2px 4px;
   border-left-color: rgba(243,239,44,0.55); font-size: 14px; color: rgb(243,239,44); text-shadow: ${HALO};

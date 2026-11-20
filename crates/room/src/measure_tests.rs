@@ -50,7 +50,7 @@ fn measure_the_sea_by_its_waters() {
     }
 }
 
-/// What the measured players do on sighting a ship: sail on, chase her, or turn away from one coming for them.
+/// What the measured players do on sighting a ship: sail on, chase it, or turn away from one coming for them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Way {
     SailOn,
@@ -58,8 +58,8 @@ enum Way {
     Evade,
 }
 
-/// The sea measured, its players chasing every hostile ship they sight or not: each chaser sets her course for the
-/// nearest each half second, and back to her own once none is in sight.
+/// The sea measured, its players chasing every hostile ship they sight or not: each chaser sets their course for the
+/// nearest each half second, and back to their own once none is in sight.
 fn measure(way: Way) {
     let chase = way == Way::Chase;
     let (layout, ports) = world();
@@ -110,7 +110,7 @@ fn measure(way: Way) {
     let mut in_sight: BTreeMap<u32, (usize, &str)> = BTreeMap::new();
     let mut chasing = std::collections::BTreeSet::new();
     let mut come_for = std::collections::BTreeSet::new();
-    // Each player's stretch held under x60 now, and her longest, in ticks.
+    // Each player's stretch held under x60 now, and their longest, in ticks.
     let mut held: BTreeMap<PlayerId, (usize, usize)> = BTreeMap::new();
     for tick in 0..MINUTES * 60 * TICKS_A_SECOND {
         sea.tick();
@@ -204,7 +204,7 @@ fn measure(way: Way) {
             of_kind.iter().filter(|player| come_for.contains(player) && !fought.contains_key(player)).count()
         );
     }
-    // A player is counted by the water she sets out in: from home waters her voyage reaches the waters beside them, so
-    // a fight of hers is checked to be out of home waters where it begins (above).
+    // A player is counted by the water they set out in: from home waters their voyage reaches the waters beside them,
+    // so a fight of theirs is checked to be out of home waters where it begins (above).
     assert!(!players.is_empty());
 }

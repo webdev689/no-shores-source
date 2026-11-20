@@ -2,9 +2,9 @@
 //! steps, and no course crosses a continent's coast. It moves ships by + - * / and square root, finds a heading with
 //! the pure-Rust arctangent, and judges a course against the coasts in whole metres, so every machine agrees. Pirates
 //! sail among the ships (`pirates`); a bold one that meets a player fights them, at true scale, by the naval crate's
-//! law, on waters made from the coasts, until she sinks or is gone, while the player's orders steer and fire. One that
-//! meets a rival fights her there with no player (`clash`), and a player who comes near that fight joins it. A player
-//! may leave the helm and walk their ship's deck (`deck`), her helmsman keeping her course, and take it again at the
+//! law, on waters made from the coasts, until it sinks or is gone, while the player's orders steer and fire. One that
+//! meets a rival fights it there with no player (`clash`), and a player who comes near that fight joins it. A player
+//! may leave the helm and walk their ship's deck (`deck`), its helmsman keeping its course, and take it again at the
 //! wheel.
 
 use crate::PlayerId;
@@ -29,8 +29,8 @@ use world::traffic::Port;
 pub const SHIP_SPEED_M_S: f64 = 12.0;
 /// The paces a player may set a ship to, as multiples of its speed: DFO's steps.
 pub const PACES: [u16; 7] = [5, 10, 20, 30, 40, 60, 100];
-/// The world's own time, a pace of 1: the page sails its ship at it while the view is close on her, so she is seen
-/// at her true speed.
+/// The world's own time, a pace of 1: the page sails its ship at it while the view is close on it, so it is seen
+/// at its true speed.
 pub const WORLD_PACE: u16 = 1;
 /// The most points one course may hold.
 pub const COURSE_LIMIT: usize = 64;
@@ -59,7 +59,7 @@ pub enum CourseRefused {
     /// A course, or orders, out of turn: a ship in a fight takes orders and no course, and one out of a fight the
     /// reverse.
     Fighting,
-    /// A course while the player is off the helm: her helmsman keeps the one she has.
+    /// A course while the player is off the helm: the ship's helmsman keeps the one it has.
     OffTheHelm,
 }
 
@@ -125,7 +125,7 @@ struct Sailing {
 }
 
 /// A player's place at sea: their ship once it has put to sea, the tick of their last course, and the shares of hull,
-/// canvas and men her hurts leave her.
+/// canvas and men its hurts leave it.
 #[derive(Debug)]
 struct Berth {
     sailing: Option<Sailing>,
@@ -216,13 +216,14 @@ impl Sea {
         self.aboard.remove(&player);
     }
 
-    /// The player chases the hostile ship numbered `ship`, or none: within 750 m of her she is met, whatever her temper.
+    /// The player chases the hostile ship numbered `ship`, or none: within 750 m of it the ship is met, whatever its
+    /// temper.
     pub fn chase(&mut self, player: PlayerId, ship: Option<u32>) {
         self.pirates.chase(player, ship);
     }
 
-    /// The player leaves the helm and stands behind the wheel on their ship's deck. Her helmsman keeps her course: under
-    /// way she sails on, at rest she stays.
+    /// The player leaves the helm and stands behind the wheel on their ship's deck. Its helmsman keeps its course:
+    /// under way it sails on, at rest it stays.
     pub fn leave_helm(&mut self, player: PlayerId) -> Result<(), HelmRefused> {
         let berth = self.berths.get(&player).ok_or(HelmRefused::NoSuchPlayer)?;
         if berth.sailing.is_none() {
@@ -265,7 +266,7 @@ impl Sea {
     /// ship not yet at sea puts to sea at the first point; one at sea starts it from where it is, to the nearest
     /// metre, so the legs it sails are the legs judged. An empty course brings a ship at sea to rest. A course is
     /// refused whole when any point lies on a continent or any leg meets a coast. A player sets one course a tick. Off
-    /// the helm, only one that keeps her way is taken: her helmsman sails on, at the pace the page eases her to. One
+    /// the helm, only one that keeps its way is taken: its helmsman sails on, at the pace the page eases it to. One
     /// asked before the keeper answered for the player's character waits for it (`hold_course`).
     pub fn course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), CourseRefused> {
         let clock = self.clock;
@@ -275,7 +276,7 @@ impl Sea {
         if self.fights.fighting(player) || self.on_deck(player) {
             return Err(CourseRefused::Fighting);
         }
-        if self.aboard.contains_key(&player) && !self.keeps_her_way(player, points) {
+        if self.aboard.contains_key(&player) && !self.keeps_its_way(player, points) {
             return Err(CourseRefused::OffTheHelm);
         }
         let berth = self.berths.get_mut(&player).ok_or(CourseRefused::NoSuchPlayer)?;
@@ -315,7 +316,7 @@ impl Sea {
         Ok(())
     }
 
-    /// Brings a player's ship to rest turned to `heading`, radians clockwise from north: the helm turned while she lies
+    /// Brings a player's ship to rest turned to `heading`, radians clockwise from north: the helm turned while it lies
     /// still. It takes a course's turn, so it is asked no more often than one.
     pub fn face(&mut self, player: PlayerId, heading: f64) -> Result<(), CourseRefused> {
         if !heading.is_finite() {
@@ -330,10 +331,10 @@ impl Sea {
         Ok(())
     }
 
-    /// Whether a course keeps the player's ship on her way while she is under way: the course she sails, its points to
-    /// the whole metre, or one point straight on along her heading. Its pace may differ from hers: the page eases it to
-    /// the world's own time while the player walks her deck in view, and back.
-    fn keeps_her_way(&self, player: PlayerId, points: &[[f64; 2]]) -> bool {
+    /// Whether a course keeps the player's ship on its way while it is under way: the course it sails, its points to
+    /// the whole metre, or one point straight on along its heading. The course's pace may differ from the ship's: the
+    /// page eases it to the world's own time while the player walks the deck in view, and back.
+    fn keeps_its_way(&self, player: PlayerId, points: &[[f64; 2]]) -> bool {
         let Some(sailing) = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref()) else {
             return false;
         };
@@ -355,16 +356,16 @@ impl Sea {
         ((bearing - ship.heading + PI).rem_euclid(TAU) - PI).abs() <= HOLD_RAD
     }
 
-    /// A fighting player's orders for the ticks to come: her helm, her lay, the fire, the brace and a load. The climb,
-    /// the fire and the load act on the next tick alone.
+    /// A fighting player's orders for the ticks to come: their helm, their lay, the fire, the brace and a load. The
+    /// climb, the fire and the load act on the next tick alone.
     pub fn orders(&mut self, player: PlayerId, orders: Orders) -> Result<(), CourseRefused> {
-        // On a deck her own ship takes no orders: the boarder fights on foot.
+        // On a deck the boarder's own ship takes no orders: they fight on foot.
         if !self.on_deck(player) && self.fights.orders(player, orders) { Ok(()) } else { Err(CourseRefused::Fighting) }
     }
 
     /// One tick: each ship out of a fight sails on along its course by its pace's distance, turning onto each leg as
     /// it comes to it, and comes to rest at its course's end; each player off the helm takes the steps due; each fight
-    /// steps, its player's ship where the fight has her, and each clash; the pirates sail, come and go, a bold one that
+    /// steps, its player's ship where the fight has it, and each clash; the pirates sail, come and go, a bold one that
     /// meets a player begins their fight, calling them to the helm, one that meets a rival begins a clash, and a player
     /// who comes within sight of a clash joins it. A fight that ended is shown for one tick, then gone, its player at
     /// rest where it left them.
@@ -380,14 +381,14 @@ impl Sea {
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
-            // A ship in a clash is joined by a player who comes in sight of it, so she holds as a bold one does.
+            // A ship in a clash is joined by a player who comes in sight of it, so it holds as a bold one does.
             let (chased, hull) = (self.pirates.chased(*player), berth.kept[0]);
             let pirates: Vec<([f64; 2], bool)> = (pirates.iter().enumerate())
                 .map(|(at, hostile)| {
                     ([hostile.x, hostile.y], at >= sailing_count || holds(hostile, [ship.x, ship.y], chased, hull))
                 })
                 .collect();
-            // Judged along every leg her pace would take her through this tick, so no turn of her course slips by.
+            // Judged along every leg its pace would take it through this tick, so no turn of its course slips by.
             let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS;
             let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, pirates.iter().copied());
             sailing.ship.rate = if self.fights.fighting(*player) {
@@ -395,7 +396,7 @@ impl Sea {
             } else {
                 ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
             };
-            // Her way is her pace's by the canvas she keeps, never under half.
+            // Its way is its pace's by the canvas it keeps, never under half.
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * berth.kept[1].max(0.5));
         }
         self.tick_harbour();
@@ -447,7 +448,7 @@ impl Sea {
         self.clock
     }
 
-    /// The hostile ships at sea: each sailing, then each in a clash, where its fight has her. None in a player's fight.
+    /// The hostile ships at sea: each sailing, then each in a clash, where its fight has it. None in a player's fight.
     #[must_use]
     pub fn pirates(&self) -> Vec<Pirate> {
         let clashing = self.clashes.iter().flat_map(Clash::ships);
@@ -476,8 +477,8 @@ impl Sea {
     }
 }
 
-/// Brings a player's ship to rest for a fight, calling them to the helm: the player, her Sloop hove to where she lies,
-/// and the hurts she keeps.
+/// Brings a player's ship to rest for a fight, calling them to the helm: the player, their Sloop hove to where it lies,
+/// and the hurts it keeps.
 fn heave_to(
     (berths, aboard, harbour): (
         &mut BTreeMap<PlayerId, Berth>,
@@ -487,7 +488,7 @@ fn heave_to(
     player: PlayerId,
 ) -> Option<(PlayerId, sailing::ship::Ship, [f64; 3])> {
     let berth = berths.get_mut(&player)?;
-    // A repair stops as she heaves to for a fight, keeping what it mended: the fight starts from that.
+    // A repair stops as the ship heaves to for a fight, keeping what it mended: the fight starts from that.
     if let Some(mended) = harbour.repairs.stop(player) {
         ports::keep(berth, &mut harbour.characters, player, mended);
     }
@@ -535,7 +536,7 @@ fn leg_enters_box(coast: &Coast, from: Point, to: Point) -> bool {
     inside(from) || inside(to) || edges(&corners).any(|side| segments_meet((from, to), side))
 }
 
-/// The bearing of each leg a ship sails through within `reach` metres along her course, from where she is.
+/// The bearing of each leg a ship sails through within `reach` metres along its course, from where it is.
 fn ways_ahead(sailing: &Sailing, reach: f64) -> Vec<f64> {
     let (mut at, mut left, mut ways) = ([sailing.ship.x, sailing.ship.y], reach, Vec::new());
     for &[to_x, to_y] in &sailing.course {

@@ -14,8 +14,8 @@ use sailing::pose::{Pose, frame, pose_of};
 use sailing::waters::Waters;
 use std::collections::{BTreeMap, VecDeque};
 
-/// A player's stem as the ram's law keeps it: her way over the last moments (the fight's clock, then her velocity),
-/// and when she last rammed each ship.
+/// A player's stem as the ram's law keeps it: its way over the last moments (the fight's clock, then its velocity),
+/// and when it last rammed each ship.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Stem {
     ways: VecDeque<(f64, [f64; 2])>,
@@ -34,7 +34,7 @@ impl Stem {
     }
 }
 
-/// A hull on the flat: her hull's box, its middle set forward of hers as the box is.
+/// A hull on the flat: its hull's box, its middle set forward of the hull's as the box is.
 fn flat_of(vessel: &Vessel) -> Flat {
     let [low, high] = vessel.arms().hull;
     let (forward, starboard) = frame(vessel.ship.heading);
@@ -48,19 +48,19 @@ fn flat_of(vessel: &Vessel) -> Flat {
     }
 }
 
-/// Her pose on the water at `time`, a captain's as she founders.
+/// Its pose on the water at `time`, a captain's as it founders.
 fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
     let afloat = pose_of(&vessel.ship, vessel.hull.hull(), waters, time);
     vessel.pose = match &vessel.sailor {
         Sailor::Captain(command) => {
-            let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
+            let (drop, pitch, roll) = founder(&vessel.damage, command.mind.seed, command.under);
             Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat }
         }
         Sailor::Player => afloat,
     };
 }
 
-/// Moves her by `push` and cuts her way by how squarely she drove into it.
+/// Moves it by `push` and cuts its way by how squarely it drove into it.
 fn shove(vessel: &mut Vessel, push: [f64; 2]) {
     let (forward, _) = frame(vessel.ship.heading);
     let kept = 1.0 - driven_into(forward, push);
@@ -71,7 +71,7 @@ fn shove(vessel: &mut Vessel, push: [f64; 2]) {
 
 impl Fight {
     /// Hulls that overlap pushed apart, each pair in the order of their numbers: each out of the other by half the
-    /// overlap, her way cut by how squarely she drove into it. A ship gone down is no longer in the way.
+    /// overlap, its way cut by how squarely it drove into it. A ship gone down is no longer in the way.
     pub(super) fn keep_apart(&mut self, waters: &impl Waters, time: f64) {
         let ids: Vec<ShipId> = self
             .ships
@@ -94,7 +94,7 @@ impl Fight {
         }
     }
 
-    /// Each player's stem, after every ship has moved: her way kept for `RAM_MEMORY_S`, and, with way on along her
+    /// Each player's stem, after every ship has moved: its way kept for `RAM_MEMORY_S`, and, with way on along it
     /// keel and afloat, a ram on the first ship of another flag it meets, one a tick.
     pub(super) fn rams(&mut self, events: &mut Vec<Event>) {
         let clock = self.clock;
@@ -117,23 +117,23 @@ impl Fight {
         }
     }
 
-    /// Her stem on the first ship of another flag it meets, if its way drives a blow home she can pay for.
+    /// Its stem on the first ship of another flag it meets, if its way drives a blow home it can pay for.
     fn ram_from(&mut self, id: ShipId, events: &mut Vec<Event>) {
         let (Some(vessel), Some(stem)) = (self.ships.get(&id), self.stems.get(&id)) else { return };
-        // Her stem: the fore end of her own hull's box.
+        // Its stem: the fore end of its own hull's box.
         let [_, high] = vessel.arms().hull;
         let point = posed(&vessel.ship, &vessel.pose, [high[0], 0.0, 1.0]);
         let share = RECOIL_SHARE * if vessel.guns.braced { BRACE_TAKEN } else { 1.0 };
         let ways: Vec<[f64; 2]> = stem.ways.iter().map(|(_, way)| *way).collect();
         let mine = &vessel.damage;
-        let struck = self.ships.iter().find_map(|(target, her)| {
-            let fair = her.flag() != vessel.flag() && her.in_fight() && her.damage.state == State::Afloat;
+        let struck = self.ships.iter().find_map(|(target, other)| {
+            let fair = other.flag() != vessel.flag() && other.in_fight() && other.damage.state == State::Afloat;
             if !fair || stem.rammed.contains_key(target) {
                 return None;
             }
-            let contact = ram_contact(&hull_block(&her.ship, &her.pose, her.arms()), point, RAM_REACH)?;
-            let closing = ram_closing(&ways, velocity_of(&her.ship), contact.normal);
-            let blow = ram_blow(closing, contact.side, mine.max_hull, her.damage.max_hull);
+            let contact = ram_contact(&hull_block(&other.ship, &other.pose, other.arms()), point, RAM_REACH)?;
+            let closing = ram_closing(&ways, velocity_of(&other.ship), contact.normal);
+            let blow = ram_blow(closing, contact.side, mine.max_hull, other.damage.max_hull);
             let blow = self.fitted_ram(id, *target, blow);
             let blow = ram_paid(blow, recoil_room(mine), share);
             (blow >= 1.0).then_some((*target, blow))
@@ -146,16 +146,16 @@ impl Fight {
         }
         let roll = self.draws.draw();
         let clock = self.clock;
-        let Some(her) = self.ships.get_mut(&target) else { return };
-        let dealt = blow.min(ram_room(&her.damage));
+        let Some(other) = self.ships.get_mut(&target) else { return };
+        let dealt = blow.min(ram_room(&other.damage));
         let crew = ram_men(dealt, roll, SHIP_TOUGHNESS);
-        let floor = ram_line(&her.damage);
-        let change = her.damage.apply(Hurt { hull: blow, sail: 0.0, crew, fire: false }, clock, floor);
-        if let Sailor::Captain(command) = &mut her.sailor {
+        let floor = ram_line(&other.damage);
+        let change = other.damage.apply(Hurt { hull: blow, sail: 0.0, crew, fire: false }, clock, floor);
+        if let Sailor::Captain(command) = &mut other.sailor {
             if change == Some(State::Struck) {
                 command.struck_at = Some(clock);
             }
-            command.her.provoke(id);
+            command.mind.provoke(id);
         }
         events.push(Event::Ram { ship: target, by: id, point, dealt });
         if let Some(state) = change {

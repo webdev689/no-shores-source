@@ -25,7 +25,7 @@ import { arrivalFacing } from './nodes.ts';
 import type { Drawer, GameScene } from './scene.ts';
 import type { Sea } from './sea.ts';
 import type { SeaWord } from './seaWord.ts';
-import { showSeaHud } from './seaHud.ts';
+import { hideSeaHud, showSeaHud } from './seaHud.ts';
 import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
@@ -134,8 +134,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.hints);
     hud.marks([]);
-    hud.seaBar(null);
-    hud.seaFight(null);
+    hideSeaHud(hud);
     hud.note(here.roomNote);
     return scene.closeReady(body.x, body.y);
   };
@@ -185,7 +184,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
           course: here.course,
         })
       : null;
-    // The map at the helm, or the player's own hands walking her deck in first person, over the finished picture.
+    // The map at the helm, or the player's own hands walking its deck in first person, over the finished picture.
     const after = mapFrame
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => map?.draw(encoder, view, mapFrame)
       : shown.firstPerson
@@ -198,22 +197,22 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
     showStanding(here.boarding.standing ?? { kind: 'inside' });
     const { landmass, seaWord } = playing;
-    showSeaHud(
-      hud,
-      here,
-      { ...shown, note: seaWord?.note(shown.note, here.sighted, clock) ?? shown.note },
-      {
-        landing: flow.mode === 'landing',
-        onSea: flow.mode === 'sea' && !flow.menu,
-        island: ISLANDS[landmass.id],
-        region: REGION,
-        clock,
-        build: parts.builtSloop,
-        waterline: parts.waterline,
-        charting: charting.busy,
-        friendly: fleet.marks,
-      },
-    );
+    // The status chip keeps the state alone; the watch's and the sea's word are DFO's toasts. In a fight the fight's
+    // own messages say who is sighted, so the watch's last line gives way.
+    const watched = here.watchWords && !here.fight ? [here.watchWords] : [];
+    const notices = [...watched, ...(seaWord?.notices(here.sighted, clock) ?? [])];
+    showSeaHud(hud, here, shown, {
+      landing: flow.mode === 'landing',
+      onSea: flow.mode === 'sea' && !flow.menu,
+      island: ISLANDS[landmass.id],
+      region: REGION,
+      clock,
+      build: parts.builtSloop,
+      waterline: parts.waterline,
+      charting: charting.busy,
+      friendly: fleet.marks,
+      notices,
+    });
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
     parts.isleFrame();

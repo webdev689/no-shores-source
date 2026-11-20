@@ -44,7 +44,7 @@ pub fn set_ground(text: &[u8]) -> bool {
 }
 
 /// Keeps a ship's deck for predicting a fighter without a room, from its grid's numbers (`Heights::from_floats`), in
-/// place of any ground: her deck room's own floor, to the bit. Numbers that are not a grid keep open ground; answers
+/// place of any ground: its deck room's own floor, to the bit. Numbers that are not a grid keep open ground; answers
 /// whether they were one.
 pub fn set_heights(bytes: &[u8]) -> bool {
     let deck = movement::Heights::from_floats(&floats_of(bytes));

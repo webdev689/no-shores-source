@@ -201,7 +201,7 @@ fn ships_near_finds_exactly_the_live_ships_in_the_radius() {
 }
 
 #[test]
-fn a_ship_sails_five_metres_a_second_lies_at_her_destination_and_is_then_gone() {
+fn a_ship_sails_five_metres_a_second_lies_at_its_destination_and_is_then_gone() {
     let (_, _, traffic) = world();
     let route = &traffic.routes[1];
     let departure = 1_500_000_u64;
@@ -225,10 +225,10 @@ fn a_ship_sails_five_metres_a_second_lies_at_her_destination_and_is_then_gone() 
         let end = traffic.roadsteads[end_port];
         for lying in [arrives, arrives + DWELL_S / 2.0, arrives + DWELL_S - 1.0] {
             let there = traffic.ship(id, lying).unwrap();
-            assert_eq!(there.position, [end.x as f64, end.y as f64], "she lies at her destination's roadstead");
+            assert_eq!(there.position, [end.x as f64, end.y as f64], "it lies at its destination's roadstead");
             assert_eq!(there.progress_m, route.length_m);
         }
-        assert_eq!(traffic.ship(id, arrives + DWELL_S), None, "gone once she has lain her while");
+        assert_eq!(traffic.ship(id, arrives + DWELL_S), None, "gone once it has lain its while");
         let length = (start.direction[0] * start.direction[0] + start.direction[1] * start.direction[1]).sqrt();
         assert!((length - 1.0).abs() < 1e-12);
     }
