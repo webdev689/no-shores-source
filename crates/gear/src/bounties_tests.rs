@@ -56,3 +56,17 @@ fn the_board_turns_at_the_daily_reset_and_a_page_or_room_behind_takes_and_pays_n
     assert_eq!(character.ask(next, at_board(20_779), &DICE), Err(Refusal::BountyNotDone));
     assert_eq!(character.activity.today, Today { day: 20_779, ..Today::default() }, "ended at the reset");
 }
+
+#[test]
+fn every_bounty_has_a_short_plain_name_of_its_own_and_counts_in_its_pool() {
+    use crate::bounties::{BOUNTY_NAME_MOST, DUNGEONS, LAND, SEA, board};
+    let names: Vec<&str> = LAND.iter().chain(&SEA).chain(&DUNGEONS).map(|template| template.3).collect();
+    let unique: std::collections::BTreeSet<&str> = names.iter().copied().collect();
+    assert_eq!(unique.len(), names.len(), "each bounty its own name");
+    for name in names {
+        let plain = !name.is_empty() && name.chars().count() <= BOUNTY_NAME_MOST && !name.contains('\u{2014}');
+        assert!(plain, "{name:?} is short and plain");
+    }
+    let pools: Vec<u8> = board(20_778).iter().map(|bounty| bounty.pool).collect();
+    assert_eq!(pools, [0, 0, 1, 1, 2, 2], "two on land, two at sea, two in dungeons");
+}

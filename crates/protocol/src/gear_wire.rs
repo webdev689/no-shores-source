@@ -403,6 +403,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .collect();
     let cleared = Some(builder.create_vector(&cleared));
     let bounties = bounties_offset(&mut builder, character, room.day());
+    let quests = quests_offset(&mut builder, character);
     let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level());
     let args = messages::GearArgs {
         xp: character.xp,
@@ -466,6 +467,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         bounties: Some(bounties),
         bounty_xp,
         bounty_aurem,
+        quests: Some(quests),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =
@@ -492,6 +494,8 @@ fn bounties_offset<'built>(
                 count: count.unwrap_or(0),
                 held: count.is_some(),
                 paid: current && today.turned_in.contains(&place),
+                pool: bounty.pool,
+                name: Some(builder.create_string(bounty.name)),
             };
             messages::GearBounty::create(builder, &args)
         })
@@ -502,3 +506,23 @@ fn bounties_offset<'built>(
 #[cfg(test)]
 #[path = "gear_wire_tests.rs"]
 mod gear_wire_tests;
+
+/// The quests a character holds that the content still has, each at the step its count stands at.
+fn quests_offset<'built>(
+    builder: &mut FlatBufferBuilder<'built>,
+    character: &gear::Character,
+) -> WIPOffset<flatbuffers::Vector<'built, flatbuffers::ForwardsUOffset<messages::GearQuest<'built>>>> {
+    let rows: Vec<_> = character
+        .quests_held(&gear::quests::quests().quests)
+        .into_iter()
+        .map(|held| {
+            let args = messages::GearQuestArgs {
+                id: Some(builder.create_string(held.id)),
+                step: u8::try_from(held.step).unwrap_or(u8::MAX),
+                done: held.done,
+            };
+            messages::GearQuest::create(builder, &args)
+        })
+        .collect();
+    builder.create_vector(&rows)
+}

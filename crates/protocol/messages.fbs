@@ -385,6 +385,18 @@ table GearBounty {
   count: uint;
   held: bool;
   paid: bool;
+  // Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons.
+  pool: ubyte;
+  // Its short name, as its card heads it.
+  name: string;
+}
+
+// A quest a player holds, story mission or side quest: its id in content/gear/quests.json, the step its count stands
+// at (from 0), and whether every step is done, waiting to be finished.
+table GearQuest {
+  id: string;
+  step: ubyte;
+  done: bool;
 }
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
@@ -492,6 +504,8 @@ table Gear {
   bounties: [GearBounty];
   bounty_xp: uint;
   bounty_aurem: uint;
+  // The quests they hold that the content still has, in the order written, each at the step it stands at.
+  quests: [GearQuest];
 }
 
 // What a room sends: exactly one of these is present.

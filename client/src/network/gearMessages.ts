@@ -230,6 +230,8 @@ export interface GearState {
   readonly bounties?: readonly GearBounty[];
   readonly bountyXp?: number;
   readonly bountyAurem?: number;
+  /** The quests they hold that the content still has, in the order written, each at the step it stands at. */
+  readonly quests?: readonly GearQuest[];
 }
 
 /** A bounty of the day's board as it stands for the player (protocol's `GearBounty`). */
@@ -239,6 +241,17 @@ export interface GearBounty {
   readonly count: number;
   readonly held: boolean;
   readonly paid: boolean;
+  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons. */
+  readonly pool: number;
+  /** Its short name, as its card heads it. */
+  readonly name: string;
+}
+
+/** A quest the player holds (protocol's `GearQuest`): its id, the step it stands at from 0, and whether all are done. */
+export interface GearQuest {
+  readonly id: string;
+  readonly step: number;
+  readonly done: boolean;
 }
 
 /** Their day's and week's record, as kept with their character (`Gear`'s comment says each field): the day it is for
@@ -415,10 +428,15 @@ export function gearOf(gear: Gear): GearState {
       const bounty = gear.bounties(place);
       const words = bounty?.words() ?? '';
       const [target, count] = [bounty?.target() ?? 0, bounty?.count() ?? 0];
-      return { words, target, count, held: bounty?.held() ?? false, paid: bounty?.paid() ?? false };
+      const [held, paid] = [bounty?.held() ?? false, bounty?.paid() ?? false];
+      return { words, target, count, held, paid, pool: bounty?.pool() ?? 0, name: bounty?.name() ?? '' };
     }),
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),
+    quests: Array.from({ length: gear.questsLength() }, (unusedQuest, place) => {
+      const quest = gear.quests(place);
+      return { id: quest?.id() ?? '', step: quest?.step() ?? 0, done: quest?.done() ?? false };
+    }),
   };
 }
 

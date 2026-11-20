@@ -9,20 +9,27 @@ use crate::character::Character;
 use crate::objectives::{ELITE_RANK, GREY_TITHE, MINIBOSS_RANK, Objective};
 use crate::rewards::at_level;
 
-/// A bounty on the board: what it counts, how many, and its words.
+/// A bounty on the board: what it counts, how many, its words, its name and where it counts.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Bounty {
     pub objective: Objective,
     pub target: u32,
     pub words: &'static str,
+    /// Its short name, as its card heads it: content, never kept or matched.
+    pub name: &'static str,
+    /// Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons.
+    pub pool: u8,
 }
 
 /// What a bounty pays at level 5, raised as a kill is by (5 + the character's level) ÷ 10 when turned in.
 pub const BOUNTY_XP: u32 = 1_000;
 pub const BOUNTY_AUREM: u32 = 60;
 
-/// A bounty of a pool: its objective, target and words.
-type Template = (fn() -> Objective, u32, &'static str);
+/// The most characters a bounty's name holds, as its card heads it.
+pub const BOUNTY_NAME_MOST: usize = 16;
+
+/// A bounty of a pool: its objective, target, words and name.
+pub(crate) type Template = (fn() -> Objective, u32, &'static str, &'static str);
 
 const fn felled(faction: Option<u8>, rank: Option<u8>) -> Objective {
     Objective::Fell { faction, rank, island: None }
@@ -38,19 +45,22 @@ const fn cleared() -> Objective {
 
 /// The bounties the board draws from, on land, at sea and in dungeons. None names an island or a water: the board is
 /// the same for every level, and the islands' bands run from 1 to 30.
-static LAND: [Template; 4] = [
-    (|| felled(Some(GREY_TITHE), None), 30, "Defeat 30 Grey Tithe foes."),
-    (|| felled(None, Some(ELITE_RANK)), 6, "Defeat 6 foes of Elite rank or higher."),
-    (|| Objective::Gather { resource: None }, 6, "Gather 6 resource nodes."),
-    (|| felled(None, Some(MINIBOSS_RANK)), 2, "Defeat 2 foes of Miniboss rank or higher."),
+pub(crate) static LAND: [Template; 4] = [
+    (|| felled(Some(GREY_TITHE), None), 30, "Defeat 30 Grey Tithe foes.", "Tithe Collector"),
+    (|| felled(None, Some(ELITE_RANK)), 6, "Defeat 6 foes of Elite rank or higher.", "A Cut Above"),
+    (|| Objective::Gather { resource: None }, 6, "Gather 6 resource nodes.", "Honest Work"),
+    (|| felled(None, Some(MINIBOSS_RANK)), 2, "Defeat 2 foes of Miniboss rank or higher.", "Big Game"),
 ];
-static SEA: [Template; 3] = [
-    (|| sunk(None), 3, "Sink or take 3 ships."),
-    (|| sunk(Some(ELITE_RANK)), 1, "Sink or take a ship of Elite rank or higher."),
-    (|| sunk(None), 6, "Sink or take 6 ships."),
+pub(crate) static SEA: [Template; 3] = [
+    (|| sunk(None), 3, "Sink or take 3 ships.", "Broadside"),
+    (|| sunk(Some(ELITE_RANK)), 1, "Sink or take a ship of Elite rank or higher.", "Bigger Fish"),
+    (|| sunk(None), 6, "Sink or take 6 ships.", "Sea Wolf"),
 ];
-static DUNGEONS: [Template; 3] =
-    [(cleared, 1, "Clear a dungeon."), (cleared, 2, "Clear 2 dungeons."), (cleared, 3, "Clear 3 dungeons.")];
+pub(crate) static DUNGEONS: [Template; 3] = [
+    (cleared, 1, "Clear a dungeon.", "Into the Dark"),
+    (cleared, 2, "Clear 2 dungeons.", "Deeper Still"),
+    (cleared, 3, "Clear 3 dungeons.", "Deep Delver"),
+];
 
 /// The day's six: places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two of its pool.
 #[must_use]
@@ -66,8 +76,8 @@ pub fn board(day: u64) -> [Bounty; 6] {
             let other = drawn(day, BOUNTY_DRAWS, pair + 1, pool.len() - 1);
             if other >= first { other + 1 } else { other }
         };
-        let (objective, target, words) = pool[index];
-        Bounty { objective: objective(), target, words }
+        let (objective, target, words, name) = pool[index];
+        Bounty { objective: objective(), target, words, name, pool: u8::try_from(place / 2).unwrap_or(u8::MAX) }
     };
     std::array::from_fn(pick)
 }

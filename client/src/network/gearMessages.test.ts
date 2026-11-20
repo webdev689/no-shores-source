@@ -29,6 +29,9 @@ test('a players own gear the server wrote reads back whole, every column spelled
     false,
     'a new character holds none',
   );
+  assert.deepEqual(gear.bounties?.map((bounty) => bounty.pool), [0, 0, 1, 1, 2, 2], 'where each counts');
+  assert.ok(gear.bounties?.every((bounty) => bounty.name !== ''), 'each its name');
+  assert.deepEqual(gear.quests, [], 'a new character holds no quest');
   assert.equal(gear.bountyXp, 2_500, 'at level 20');
   assert.equal(typeof gear.day, 'number');
   assert.deepEqual([gear.level, gear.answered, gear.answer, gear.atMage, gear.spent], [20, 7, 0, true, [0]]);

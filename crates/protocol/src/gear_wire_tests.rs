@@ -415,3 +415,22 @@ fn every_daily_list_a_player_is_sent_turns_at_nine_utc_and_not_at_midnight() {
     assert_ne!(sold(20_777).2, sold(20_778).2, "the Tailor's emblems turn");
     assert_ne!(sold(20_777).3, sold(20_778).3, "and the dyes, coats and bardings");
 }
+
+#[test]
+fn a_players_gear_carries_each_bountys_pool_and_name_and_only_the_quests_still_written() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.set_minute(29_919_420);
+    let player = room.join().expect("a room with space");
+    let mut character = room.player(player).expect("in the room").character.clone();
+    character.story.quests.insert("no-longer-written".into(), 1);
+    assert!(room.restore_character(player, &character.to_json()));
+    let bytes = gear_bytes(&room, player).expect("written");
+    let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+    let bounties = gear.bounties().expect("the board");
+    let pools: Vec<u8> = bounties.iter().map(|bounty| bounty.pool()).collect();
+    assert_eq!(pools, [0, 0, 1, 1, 2, 2], "two on land, two at sea, two in dungeons");
+    let names: Vec<&str> = gear::bounties::board(20_778).iter().map(|bounty| bounty.name).collect();
+    assert_eq!(bounties.iter().map(|bounty| bounty.name().unwrap_or_default()).collect::<Vec<_>>(), names);
+    assert_eq!(gear.quests().map(|quests| quests.len()), Some(0), "a quest the content no longer has is not sent");
+}
+
