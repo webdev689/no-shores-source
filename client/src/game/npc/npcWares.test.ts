@@ -70,7 +70,7 @@ test('the Tack sells the day’s coats and bardings', () => {
 
 test('Shape sells his week’s wares for Shapes while here, and is gone while away', () => {
   const wares = [item({ id: 0, rarity: 3, price: 7 }), item({ id: 1, rarity: 4, price: 15 })];
-  const here = state({ shapes: 10, shape: { place: 2, minutesLeft: 90, wares } });
+  const here = state({ shapes: 10, shape: { place: 2, wares } });
   const [row] = rowsOf('shape', here);
   assert.equal(row?.heading, 'Wares');
   assert.deepEqual(row?.wares[0]?.ask, { kind: ASKS.buyFromShape, node: 0 });

@@ -139,11 +139,11 @@ pub enum Refusal {
     NoFruit,
     FullOfXp,
     NoSuchEmblem,
-    /// The player does not keep that emblem.
+    /// The player does not keep that emblem or cosmetic.
     NotKept,
-    /// The player keeps that emblem already.
+    /// The player keeps that emblem, cosmetic or cape already.
     Kept,
-    /// The Tailor does not sell it that day.
+    /// The Tailor or the Tack does not sell it that day.
     NotSold,
     NoCrate,
     /// The Ranged loadout's ammunition is full already.
@@ -166,6 +166,8 @@ pub enum Refusal {
     /// The player owns the fragment already.
     Owned,
     NoSuchCosmetic,
+    /// An Art has no fragment at that place.
+    NoSuchFragment,
     /// No Ranged weapon is worn for an Ammo crate to fill: answered as 120, one past its number as every refusal is.
     NoRanged = 119,
 }
@@ -212,7 +214,7 @@ impl Character {
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
             Ask::Pledge { faction } => self.pledge(faction, here),
-            Ask::BuyFactionWare { faction, ware } => self.buy_faction_ware(faction, ware, here),
+            Ask::BuyFactionWare { faction, ware } => self.buy_faction_ware(faction, ware, here, dice),
             Ask::CollectPackage { faction } => self.collect_package(faction, here, dice),
             Ask::RiseArt { art, fragment } => self.rise_art(art, fragment, here),
             Ask::BuyFragment { art, fragment } => self.buy_fragment(art, fragment, here),

@@ -59,6 +59,8 @@ mod old_hands_tests;
 #[cfg(test)]
 mod power_tests;
 #[cfg(test)]
+mod refusals_tests;
+#[cfg(test)]
 mod shape_tests;
 #[cfg(test)]
 mod vestige_tests;

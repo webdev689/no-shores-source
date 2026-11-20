@@ -17,7 +17,6 @@ pub(crate) struct Standing<'built> {
     pub cosmetics: WIPOffset<Vector<'built, u16>>,
     pub cosmetics_sold: WIPOffset<Vector<'built, u16>>,
     pub shape_place: u8,
-    pub shape_minutes: u32,
     pub shape_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
     pub faction_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
 }
@@ -60,7 +59,6 @@ pub(crate) fn standing_of<'built>(
     let shape_place = shape.map_or(crate::gear_wire::SHAPE_AWAY, |_| {
         u8::try_from(gear::shape::place(week)).unwrap_or(crate::gear_wire::SHAPE_AWAY)
     });
-    let shape_minutes = shape.map_or(0, |_| u32::try_from(gear::shape::minutes_left(room.minute)).unwrap_or(0));
     let wares: Vec<_> = if shape.is_some() {
         gear::shape::wares(week)
             .into_iter()
@@ -91,7 +89,6 @@ pub(crate) fn standing_of<'built>(
         cosmetics: builder.create_vector(&cosmetics),
         cosmetics_sold: builder.create_vector(&sold),
         shape_place,
-        shape_minutes,
         shape_wares: builder.create_vector(&wares),
         faction_wares: builder.create_vector(&faction_wares),
     }

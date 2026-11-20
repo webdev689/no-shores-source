@@ -7,6 +7,12 @@ import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'no
 import { join } from 'node:path';
 
 const SCHEMA = 'crates/protocol/messages.fbs';
+// The content whose entries cross the wire by their place in its lists: cosmetics, emblems, factions, items, island
+// resources, rolled names and Arts.
+const NUMBERED = ['cosmetics', 'emblems', 'factions', 'items', 'resources', 'rolled'].map(
+  (name) => `content/gear/${name}.json`,
+);
+NUMBERED.push('content/arts/arts.json');
 const OUT = 'generated/messages';
 const pinned = /^VERSION=(\S+)$/m.exec(readFileSync('tools/install-flatc.sh', 'utf8'))?.[1] ?? '';
 const flatc = join('target', 'flatc', pinned, 'flatc');
@@ -27,8 +33,11 @@ for (const name of readdirSync(join(OUT, 'ts'), { recursive: true, encoding: 'ut
   writeFileSync(path, readFileSync(path, 'utf8').replace(/(from '\.{1,2}\/[^']*)\.js'/g, "$1.ts'"));
 }
 
-// The protocol's version is the schema's own hash, never a number bumped by hand: a page and a room built from
-// different schemas know it from the room's welcome.
-const version = createHash('sha256').update(readFileSync(SCHEMA)).digest().readUInt32BE(0);
+// The protocol's version is the hash of the schema and of the content numbered on the wire, never a number bumped by
+// hand: a page and a room built from different schemas, or from lists in a different order, know it from the room's
+// welcome.
+const hash = createHash('sha256');
+for (const path of [SCHEMA, ...NUMBERED]) hash.update(readFileSync(path));
+const version = hash.digest().readUInt32BE(0);
 writeFileSync(join(OUT, 'rust', 'version.rs'), `${version}\n`);
 writeFileSync(join(OUT, 'ts', 'version.ts'), `export const PROTOCOL = ${version};\n`);

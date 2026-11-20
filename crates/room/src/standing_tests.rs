@@ -110,19 +110,28 @@ fn shape_stands_on_the_plaza_from_friday_to_sunday_and_sells_there() {
     assert_eq!(room.shape_at(), None, "he keeps to a social space");
 }
 
+/// The Shapes a foe of a rank gives its one striker when slain at a sea's difficulty.
+fn shapes_for(rank: ::foes::Rank, difficulty: gear::Difficulty) -> u16 {
+    let (mut room, player) = room_with_player();
+    room.difficulty = difficulty;
+    let foe = stand_foe(&mut room, 0.0, -2.0, 10.0);
+    room.foes.get_mut(&foe).expect("stood").brain.rank = rank;
+    room.mark_struck(player, foe, Slot::Melee);
+    room.pay_kill(foe);
+    room.player(player).expect("in").character.materials.shapes
+}
+
 #[test]
-fn a_boss_slain_at_the_abyss_seas_gives_shapes_and_at_normal_none() {
-    for (difficulty, shapes) in
-        [(gear::Difficulty::Calm, 0), (gear::Difficulty::Rough, 2), (gear::Difficulty::Storm, 4)]
-    {
-        let (mut room, player) = room_with_player();
-        room.difficulty = difficulty;
-        let boss = stand_foe(&mut room, 0.0, -2.0, 10.0);
-        room.foes.get_mut(&boss).expect("stood").brain.rank = ::foes::Rank::Boss;
-        room.mark_struck(player, boss, Slot::Melee);
-        room.pay_kill(boss);
-        assert_eq!(room.player(player).expect("in").character.materials.shapes, shapes, "{difficulty:?}");
+fn a_boss_or_miniboss_slain_at_the_abyss_seas_gives_shapes_and_at_normal_none() {
+    for rank in [::foes::Rank::Boss, ::foes::Rank::Miniboss] {
+        for (difficulty, shapes) in
+            [(gear::Difficulty::Calm, 0), (gear::Difficulty::Rough, 2), (gear::Difficulty::Storm, 4)]
+        {
+            assert_eq!(shapes_for(rank, difficulty), shapes, "{rank:?} at {difficulty:?}");
+        }
     }
+    let elite = shapes_for(::foes::Rank::Elite, gear::Difficulty::Storm);
+    assert!(elite <= 1, "an Elite gives a chance of one, never a great foe's {elite}");
 }
 
 /// The health a hurt player standing in a Sunwell gains over three seconds, cast at a Divine level.
@@ -375,4 +384,34 @@ fn what_an_art_does_at_its_first_level_is_written_for_the_clients_test() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).expect("the folder");
     std::fs::write(format!("{folder}/art_levels.json"), numbers.to_string()).expect("written");
+}
+
+/// The dye, coat and barding of a dress the room relays, each none when it names none.
+fn relayed_cosmetics(dress: &str) -> [Option<String>; 3] {
+    let dress: serde_json::Value = serde_json::from_str(dress).expect("a dress");
+    ["dye", "coat", "barding"].map(|kind| dress["outfit"][kind].as_str().map(str::to_owned))
+}
+
+#[test]
+fn others_see_only_the_cosmetics_a_player_keeps_and_wears() {
+    let (mut room, player) = room_with_player();
+    let sent = r#"{"body":"m","race":"human","tone":1,"outfit":{"dye":"veiled_dusk","barding":"ember_plate"}}"#;
+    room.input(player, Input { sequence: 1, dress: Some(sent.to_owned()), ..Input::default() }).unwrap();
+    room.tick();
+    let changes = room.take_dress_changes();
+    let [(_, relayed)] = changes.as_slice() else { panic!("one dress relayed: {changes:?}") };
+    assert_eq!(relayed_cosmetics(relayed), [None, None, None], "start pieces, whatever the page wrote");
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    character.cosmetics.kept.push("harbour_blue".to_owned());
+    character.cosmetics.dye = "harbour_blue".to_owned();
+    room.tick();
+    assert_eq!(room.take_dress_changes(), [], "a change of dress waits its turn, as one the page sends does");
+    for _ in 0..crate::players::DRESS_EVERY {
+        room.tick();
+    }
+    let changes = room.take_dress_changes();
+    let [(_, relayed)] = changes.as_slice() else { panic!("the dress relayed again: {changes:?}") };
+    assert_eq!(relayed_cosmetics(relayed), [Some("harbour_blue".to_owned()), None, None], "the dye worn, unasked");
+    let joining: Vec<_> = room.dresses().map(|(_, dress)| relayed_cosmetics(dress)).collect();
+    assert_eq!(joining, [[Some("harbour_blue".to_owned()), None, None]], "and so to one who joins");
 }

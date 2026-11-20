@@ -418,7 +418,6 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         cosmetics_sold: Some(more.cosmetics_sold),
         shapes: held.shapes,
         shape_place: more.shape_place,
-        shape_minutes: more.shape_minutes,
         shape_wares: Some(more.shape_wares),
         faction_wares: Some(more.faction_wares),
     };

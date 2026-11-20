@@ -7,6 +7,7 @@ use crate::cosmetics::{CosmeticKind, cosmetics};
 use crate::dice::Dice;
 use crate::emblems::{Source, emblems};
 use crate::factions::{factions, wares};
+use crate::item::Item;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::rewards::Foe;
@@ -21,6 +22,13 @@ const CAPE: u8 = 0;
 fn rich() -> Character {
     let mut character = Character::starting();
     character.materials.aurem = 20_000;
+    character
+}
+
+/// A rich character at level 20, the level a faction's armour and weapons are made at.
+fn seasoned() -> Character {
+    let mut character = rich();
+    character.xp = crate::power::xp_for_level(20);
     character
 }
 
@@ -74,7 +82,7 @@ fn no_vestige_and_no_shape_opens_to_a_factions_piece() {
 #[test]
 fn armour_sells_from_the_second_rank_and_weapons_from_the_third_pledged_or_not() {
     let numbers = factions();
-    let mut character = rich();
+    let mut character = seasoned();
     character.materials.aurem = 100_000;
     let [helm, weapon] = [1, 5];
     assert_eq!(
@@ -110,7 +118,7 @@ fn armour_sells_from_the_second_rank_and_weapons_from_the_third_pledged_or_not()
 
 #[test]
 fn a_factions_piece_is_refused_with_its_slot_full() {
-    let mut character = rich();
+    let mut character = seasoned();
     character.allegiance = std::mem::take(&mut character.allegiance).kept();
     character.allegiance.reputation[0] = 3 * factions().reputation_per_rank;
     character.materials.aurem = 1_000_000;
@@ -215,7 +223,7 @@ fn a_save_from_before_the_factions_reads_pledged_to_none() {
 
 #[test]
 fn a_dismantled_factions_weapon_gives_back_as_a_normal_piece_so_faction_gear_makes_no_essence() {
-    let mut character = rich();
+    let mut character = seasoned();
     character.allegiance = std::mem::take(&mut character.allegiance).kept();
     character.allegiance.reputation[2] = 3 * factions().reputation_per_rank;
     assert!(character.ask(Ask::BuyFactionWare { faction: 3, ware: 6 }, AT_COUNTER, &DICE).is_ok());
@@ -236,4 +244,59 @@ fn a_dismantled_cape_gives_back_as_a_normal_piece_so_capes_make_no_essence() {
     assert!(character.ask(Ask::Dismantle { item: cape }, AFIELD, &DICE).is_ok());
     assert_eq!((character.materials.armor_essence, character.materials.armor_fragments), (0, 0));
     assert_eq!(character.materials.aurem, before.aurem + 20);
+}
+
+#[test]
+fn a_factions_armour_and_weapons_wait_on_level_20_and_the_cape_does_not() {
+    let mut character = rich();
+    character.allegiance = std::mem::take(&mut character.allegiance).kept();
+    character.allegiance.reputation[0] = 3 * factions().reputation_per_rank;
+    character.xp = crate::power::xp_for_level(19);
+    let before = character.clone();
+    for ware in [1, 5] {
+        let ask = Ask::BuyFactionWare { faction: 1, ware };
+        assert_eq!(character.ask(ask, AT_COUNTER, &DICE), Err(Refusal::TooLow), "ware {ware}");
+    }
+    assert_eq!(character, before, "a refusal changes nothing");
+    assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
+    character.xp = 0;
+    assert!(character.ask(Ask::BuyFactionWare { faction: 1, ware: CAPE }, AT_COUNTER, &DICE).is_ok(), "the cape");
+}
+
+#[test]
+fn a_factions_weapon_may_roll_an_element_as_every_weapon_made_does() {
+    let mut character = seasoned();
+    character.allegiance = std::mem::take(&mut character.allegiance).kept();
+    character.allegiance.reputation[0] = 3 * factions().reputation_per_rank;
+    let mut rolled = 0;
+    for tick in 0..40 {
+        let dice = Dice { seed: 9, tick, player: 1 };
+        character.materials.aurem = 20_000;
+        for ware in [1, 5] {
+            assert!(character.ask(Ask::BuyFactionWare { faction: 1, ware }, AT_COUNTER, &dice).is_ok());
+        }
+        let bought: Vec<Item> = character.items.values().map(|(item, _)| item.clone()).collect();
+        assert!(bought.iter().filter(|item| item.kind.armour()).all(|item| item.element.is_none()), "armour, never");
+        rolled += bought.iter().filter(|item| item.kind.weapon() && item.element.is_some()).count();
+        character.items.retain(|_, (item, _)| item.named.is_none());
+    }
+    assert!((8..32).contains(&rolled), "{rolled} of 40 Squallbreaks with an element, about one in two");
+}
+
+#[test]
+fn a_dismantled_factions_piece_gives_back_a_third_of_the_essence_spent_on_it() {
+    let mut character = seasoned();
+    character.allegiance = std::mem::take(&mut character.allegiance).kept();
+    character.allegiance.reputation[0] = 2 * factions().reputation_per_rank;
+    assert!(character.ask(Ask::BuyFactionWare { faction: 1, ware: 1 }, AT_COUNTER, &DICE).is_ok());
+    let (id, helm) = character.items.iter_mut().find(|(_, (item, _))| item.named.is_some()).expect("the helm");
+    let id = *id;
+    helm.0.bought = u32::MAX;
+    let spent = helm.0.essence_spent();
+    assert!(spent >= 3, "its upgrades cost Essence: {spent}");
+    let before = character.materials.clone();
+    assert!(character.ask(Ask::Dismantle { item: id }, AFIELD, &DICE).is_ok());
+    let back = u32::from(character.materials.armor_essence - before.armor_essence);
+    assert_eq!((back, character.materials.armor_fragments), (spent / 3, before.armor_fragments));
+    assert_eq!(character.materials.aurem, before.aurem + 20, "as a Normal piece");
 }

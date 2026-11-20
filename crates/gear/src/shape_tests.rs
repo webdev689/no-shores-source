@@ -6,7 +6,7 @@ use crate::character::Character;
 use crate::dice::Dice;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
-use crate::shape::{PLACES, WARES, found, minutes_left, place, present, price, wares, week_of};
+use crate::shape::{PLACES, WARES, found, place, present, price, wares, week_of};
 use crate::world::Difficulty;
 
 const DICE: Dice = Dice { seed: 5, tick: 9, player: 1 };
@@ -24,8 +24,6 @@ fn shape_comes_friday_morning_and_goes_sunday_evening() {
     assert!(present(in_month(22, 20, 59)), "Sunday evening");
     assert!(!present(in_month(22, 21, 0)), "gone at nine on Sunday");
     assert!(!present(in_month(24, 12, 0)), "Tuesday");
-    assert_eq!(minutes_left(in_month(22, 20, 0)), 60);
-    assert_eq!(minutes_left(in_month(20, 8, 0)), 60);
     assert_eq!(week_of(in_month(16, 0, 0)), week_of(in_month(22, 23, 59)), "one week from Monday");
     assert_ne!(week_of(in_month(22, 23, 59)), week_of(in_month(23, 0, 0)));
 }
@@ -46,6 +44,14 @@ fn each_week_has_its_place_and_its_six_pieces() {
         assert!(piece.named.is_some() && piece.bucket != Slot::Cloak);
     }
     assert_eq!(wares(week), pieces);
+}
+
+#[test]
+fn no_week_sells_one_piece_twice() {
+    for week in 2_900..3_420 {
+        let named: std::collections::BTreeSet<_> = wares(week).into_iter().filter_map(|piece| piece.named).collect();
+        assert_eq!(named.len(), WARES, "week {week}");
+    }
 }
 
 #[test]

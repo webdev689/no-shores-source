@@ -63,11 +63,11 @@ pub struct Shown {
 }
 
 /// One input from a player: its number; one tick's intent (movement and the fight's buttons); what their figure
-/// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
-/// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand before them,
-/// or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it fights by
-/// combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear; and a spell
-/// they cast.
+/// shows; their dress when it changed (as the browser writes it; the room puts in the cosmetics worn); what their
+/// hands hold (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand
+/// before them, or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it
+/// fights by combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear;
+/// and a spell they cast.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -124,8 +124,12 @@ pub struct Player {
     /// Where the player stands with the room's section: always inside a room with none.
     pub standing: Standing,
     pub shown: Shown,
+    /// The dress as others are shown it (`dressed`), and whether it changed since it was last passed on.
     pub dress: String,
     pub dress_changed: bool,
+    /// The dress as their browser last wrote it, and the dye, coat and barding the room last put in it.
+    pub dress_sent: String,
+    pub(crate) dressed_with: Option<[String; 3]>,
     /// The room's clock when the player joined, and how many of their inputs have stepped their fighter since.
     pub joined: u64,
     pub stepped: u64,
@@ -188,6 +192,8 @@ impl Player {
             shown: Shown::default(),
             dress: String::new(),
             dress_changed: false,
+            dress_sent: String::new(),
+            dressed_with: None,
             joined,
             stepped: 0,
             received: 0,
@@ -245,6 +251,41 @@ impl Player {
     #[must_use]
     pub fn as_it_saw(&self, tick: u64) -> Option<&Fighter> {
         self.history.iter().find(|(seen, _)| *seen >= tick).map(|(_, fighter)| fighter)
+    }
+
+    /// The dress shown to others changes at once the first time, then once DRESS_EVERY ticks have passed since the
+    /// last change: to a dress waiting its turn, or to the cosmetics worn (`dress_again`).
+    pub(crate) fn dress_in_turn(&mut self, clock: u64) {
+        if self.dressed_at.is_some_and(|at| clock < at + DRESS_EVERY) {
+            return;
+        }
+        if let Some(dress) = self.dress_next.take() {
+            self.dress_sent = dress;
+            self.dressed_with = None;
+        }
+        if self.dress_again() {
+            self.dressed_at = Some(clock);
+        }
+    }
+
+    /// Makes the dress others are shown again (`gear::cosmetics::dressed`) when the browser's dress or the cosmetics
+    /// worn changed since it was last made, so no page shows a piece its player does not keep; whether it changed.
+    pub(crate) fn dress_again(&mut self) -> bool {
+        use gear::cosmetics::CosmeticKind;
+        let worn = [CosmeticKind::Dye, CosmeticKind::Coat, CosmeticKind::Barding]
+            .map(|kind| self.character.cosmetics.worn(kind));
+        let same = self.dressed_with.as_ref().is_some_and(|with| with.iter().map(String::as_str).eq(worn));
+        if self.dress_sent.is_empty() || same {
+            return false;
+        }
+        let dress = gear::cosmetics::dressed(&self.dress_sent, &self.character.cosmetics);
+        self.dressed_with = Some(worn.map(str::to_owned));
+        let changed = dress != self.dress;
+        if changed {
+            self.dress = dress;
+            self.dress_changed = true;
+        }
+        changed
     }
 }
 

@@ -48,7 +48,7 @@ fn an_art_rises_at_its_faction_for_a_price_and_a_fragment_chosen() {
     let before = character.clone();
     let afield = Here { social: false, ..AT_COUNTER };
     assert_eq!(character.ask(Ask::RiseArt { art: 1, fragment: 0 }, afield, &DICE), Err(Refusal::NotHere));
-    assert_eq!(character.ask(Ask::RiseArt { art: 1, fragment: 6 }, AT_COUNTER, &DICE), Err(Refusal::NoSuchNode));
+    assert_eq!(character.ask(Ask::RiseArt { art: 1, fragment: 6 }, AT_COUNTER, &DICE), Err(Refusal::NoSuchFragment));
     assert_eq!(character, before, "a refusal changes nothing");
     assert!(character.ask(Ask::RiseArt { art: 1, fragment: 2 }, AT_COUNTER, &DICE).is_ok());
     assert_eq!((character.art_level(1), character.art_xp(1)), (2, 0), "the bar starts again");

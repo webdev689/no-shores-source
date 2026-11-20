@@ -47,7 +47,9 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
         {"id": "light_grip", "name": "Light Grip", "column": "handling", "fits": "melee", "words": "w"},
         {"id": "own", "name": "Own", "column": "signature", "fits": "someone_else", "words": "w"}]}"#;
     let items = r#"{"items": [{"id": "odd", "name": "Odd", "kind": "sword", "rarity": "legendary",
-        "resource": "nowhere", "words": "w", "layout": [["light_grip", "light_grip", "own"], ["missing"]]}]}"#;
+        "resource": "nowhere", "words": "w", "layout": [["light_grip", "light_grip", "own"], ["missing"]]},
+        {"id": "guild_blade", "name": "Guild Blade", "kind": "greatsword", "rarity": "legendary", "faction": "nobody",
+        "resource": "nowhere", "words": "w", "layout": []}]}"#;
     let resources = r#"{"resources": []}"#;
     let rolled = r#"{"names": {}}"#;
     let problems = Catalogue::parse(traits, items, resources, rolled).expect("well formed").problems();
@@ -56,6 +58,8 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
         "odd: 2 trait columns, its rarity has 4",
         "signature own must be carried by someone_else alone",
         "no names for a Normal Sword",
+        "guild_blade: its faction is none the factions' file holds",
+        "no Legendary Greatsword",
     ] {
         assert!(problems.iter().any(|problem| problem == expected), "{expected} in {problems:#?}");
     }

@@ -176,17 +176,21 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
 }
 
-/// The client's test reads these bytes, to check that the gear the server writes the browser reads to the bit.
+/// The client's test reads these bytes, to check that the gear the server writes the browser reads to the bit: the
+/// furnished player's away from a social space, and `standing`'s at the stall while Shape is here.
 #[test]
 fn the_gear_for_the_clients_test_is_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).expect("the folder");
     let (room, player) = furnished();
     std::fs::write(format!("{folder}/gear.bin"), gear_bytes(&room, player).expect("written")).expect("written");
+    let (room, player, _) = standing();
+    std::fs::write(format!("{folder}/gear_shape.bin"), gear_bytes(&room, player).expect("written")).expect("written");
 }
 
-#[test]
-fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() {
+/// The furnished player pledged to the Lamplighters at rank 3, with Arts at levels 3, 1 and 5, the Ember Plate
+/// barding worn and 9 Shapes, at the stall on a Friday noon, UTC, while Shape is here; and that minute.
+fn standing() -> (Room, PlayerId, u64) {
     let (mut room, player) = furnished();
     let kept = room.kept_character(player).expect("a player of the room");
     let mut character = gear::Character::from_json(&kept).expect("a character");
@@ -204,6 +208,12 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     // Friday at noon, UTC, in the week of 1,793,491,200 s after 1970.
     let friday = 1_793_491_200 / 60 + 19 * 1_440 + 12 * 60;
     room.set_minute(friday);
+    (room, player, friday)
+}
+
+#[test]
+fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() {
+    let (mut room, player, friday) = standing();
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     assert_eq!(gear.pledge(), 2);
@@ -223,7 +233,6 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     assert_eq!(gear.shapes(), 9);
     let week = gear::shape::week_of(friday);
     assert_eq!(usize::from(gear.shape_place()), gear::shape::place(week));
-    assert_eq!(gear.shape_minutes(), u32::try_from(gear::shape::minutes_left(friday)).expect("minutes"));
     let wares: Vec<_> = gear.shape_wares().expect("his wares").iter().collect();
     assert_eq!(wares.len(), gear::shape::WARES);
     assert_eq!((wares[0].price(), wares[5].price()), (7, 15), "Legendary, then Atheric, in Shapes");

@@ -58,6 +58,9 @@ pub struct Materials {
     /// Shapes, which only Shape takes (`shape.rs`).
     #[serde(default)]
     pub shapes: u16,
+    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
 }
 
 impl Materials {
@@ -117,6 +120,9 @@ pub enum Stuff {
     Resource(usize),
 }
 
+/// The keys of a kept object that this room's rules do not read.
+pub type UnknownKeys = serde_json::Map<String, serde_json::Value>;
+
 /// A player's gear and progress.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Character {
@@ -146,6 +152,9 @@ pub struct Character {
     /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
     #[serde(default)]
     pub cosmetics: crate::cosmetics::Cosmetics,
+    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
 }
 
 impl Character {
@@ -165,6 +174,7 @@ impl Character {
             ammo: crate::ammo::AMMO_FULL,
             allegiance: crate::factions::Allegiance::default().kept(),
             cosmetics: crate::cosmetics::Cosmetics::default(),
+            unknown: UnknownKeys::new(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),
@@ -201,6 +211,10 @@ impl Character {
     pub fn from_json(text: &str) -> Option<Self> {
         let mut kept: serde_json::Value = serde_json::from_str(text).ok()?;
         let shields = crate::old_hands::read(&mut kept);
+        // What others see is made again from the gear on each write (`to_json`), never kept as an unknown key.
+        if let Some(object) = kept.as_object_mut() {
+            object.remove("shown");
+        }
         let mut character: Self = serde_json::from_value(kept).ok()?;
         let resources = catalogue().resources.len();
         let materials = &mut character.materials;

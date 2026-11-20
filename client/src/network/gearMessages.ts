@@ -204,10 +204,10 @@ export interface GearState {
   readonly cosmetics?: readonly number[];
   readonly worn?: { readonly dye: number; readonly coat: number; readonly barding: number };
   readonly cosmeticsSold?: readonly number[];
-  /** Their Shapes; and while Shape is in their social space, his place among its spots, the minutes until he goes,
-   *  and his wares of the week priced in Shapes. */
+  /** Their Shapes; and while Shape is in their social space, his place among its spots and his wares of the
+   *  week priced in Shapes. */
   readonly shapes?: number;
-  readonly shape?: { readonly place: number; readonly minutesLeft: number; readonly wares: readonly GearItem[] } | null;
+  readonly shape?: { readonly place: number; readonly wares: readonly GearItem[] } | null;
   /** In a social space, every faction's wares, each numbered by its place among its faction's and priced in Aurem. */
   readonly factionWares?: readonly GearItem[];
 }
@@ -356,7 +356,6 @@ export function gearOf(gear: Gear): GearState {
         ? null
         : {
             place: gear.shapePlace(),
-            minutesLeft: gear.shapeMinutes(),
             wares: listed(gear.shapeWaresLength(), (index) => gear.shapeWares(index), 'Shape ware'),
           },
     factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),

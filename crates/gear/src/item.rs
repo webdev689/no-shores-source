@@ -41,6 +41,9 @@ pub struct Item {
     /// A weapon's element, if it was made with one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub element: Option<Element>,
+    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
 }
 
 impl Item {
@@ -62,6 +65,7 @@ impl Item {
             chosen: Vec::new(),
             bucket,
             element: None,
+            unknown: crate::character::UnknownKeys::new(),
         };
         item.chosen = vec![NONE_CHOSEN; item.columns().len()];
         item

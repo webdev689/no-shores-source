@@ -103,6 +103,24 @@ pub fn sold_on(seller: Seller, day: u64) -> Vec<u16> {
     sold
 }
 
+/// A dress as a browser wrote it, with the dye, coat and barding worn put in its outfit, and none of a start piece:
+/// the room's word on what others see, not the browser's. A dress that is not an object with an outfit is given back
+/// as sent, for other pages to refuse.
+#[must_use]
+pub fn dressed(sent: &str, worn: &Cosmetics) -> String {
+    let Ok(serde_json::Value::Object(mut dress)) = serde_json::from_str(sent) else { return sent.to_owned() };
+    let Some(serde_json::Value::Object(outfit)) = dress.get_mut("outfit") else { return sent.to_owned() };
+    for (key, kind) in [("dye", CosmeticKind::Dye), ("coat", CosmeticKind::Coat), ("barding", CosmeticKind::Barding)] {
+        let piece = worn.worn(kind);
+        if piece == starting(kind) {
+            outfit.remove(key);
+        } else {
+            outfit.insert(key.to_owned(), serde_json::Value::String(piece.to_owned()));
+        }
+    }
+    serde_json::Value::Object(dress).to_string()
+}
+
 /// The cosmetics a player keeps, by id, and the one of each kind they wear.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default)]
@@ -111,6 +129,9 @@ pub struct Cosmetics {
     pub dye: String,
     pub coat: String,
     pub barding: String,
+    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
 }
 
 impl Default for Cosmetics {
@@ -120,6 +141,7 @@ impl Default for Cosmetics {
             dye: starting(CosmeticKind::Dye),
             coat: starting(CosmeticKind::Coat),
             barding: starting(CosmeticKind::Barding),
+            unknown: crate::character::UnknownKeys::new(),
         }
     }
 }

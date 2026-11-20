@@ -3,9 +3,11 @@
 //! Elite and Abyss seas. When he comes, where he stands and what he sells are the same for everyone, from the clock.
 
 use crate::asks::{Done, Here, Refusal};
+use crate::catalogue::{NamedDef, catalogue};
 use crate::character::{CARRIED_MOST, Character, STOCK_MOST};
 use crate::dice::{Dice, Purpose};
-use crate::item::{Item, NAMED_LEVEL};
+use crate::element;
+use crate::item::Item;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::vestige;
@@ -18,8 +20,8 @@ const EPOCH_PAST_MONDAY: u64 = 3 * DAY_MINUTES;
 /// When in the week (from Monday 00:00 UTC) he comes and goes: Friday 09:00, Xur's Friday, to Sunday 21:00.
 pub const COMES_AT: u64 = 4 * DAY_MINUTES + 9 * 60;
 pub const GOES_AT: u64 = 6 * DAY_MINUTES + 21 * 60;
-/// How many places on the plaza he may stand at (the city's `wander_spots`), and how many pieces he sells a week, the
-/// first `LEGENDARIES` of them Legendary and the rest Atheric.
+/// How many places on the plaza he may stand at (the city's `visitor_spots`, which reach the room as its
+/// `shape_spots`), and how many pieces he sells a week, the first `LEGENDARIES` of them Legendary and the rest Atheric.
 pub const PLACES: usize = 8;
 pub const WARES: usize = 6;
 const LEGENDARIES: usize = 4;
@@ -37,19 +39,6 @@ pub fn present(unix_minutes: u64) -> bool {
     (COMES_AT..GOES_AT).contains(&into)
 }
 
-/// Minutes until he goes, while he is here; until he comes, while he is away.
-#[must_use]
-pub fn minutes_left(unix_minutes: u64) -> u64 {
-    let into = (unix_minutes + EPOCH_PAST_MONDAY) % WEEK_MINUTES;
-    if into < COMES_AT {
-        COMES_AT - into
-    } else if into < GOES_AT {
-        GOES_AT - into
-    } else {
-        WEEK_MINUTES - into + COMES_AT
-    }
-}
-
 /// Where he stands in a week: one of the plaza's `PLACES`, by the week's dice.
 #[must_use]
 pub fn place(week: u64) -> usize {
@@ -62,18 +51,37 @@ pub fn price(rarity: Rarity) -> u16 {
     if rarity == Rarity::Atheric { 15 } else { 7 }
 }
 
-/// What he sells in a week: Legendary then Atheric pieces at level 20, each for a slot of the week's dice. Their
+/// What he sells in a week: Legendary then Atheric pieces at level 20, no piece twice, by the week's dice. Their
 /// numbers are none until bought.
 #[must_use]
 pub fn wares(week: u64) -> Vec<Item> {
-    (0..WARES)
-        .filter_map(|ware| {
-            let dice = Dice { seed: week, tick: 1 + ware as u64, player: 0 };
-            let rarity = if ware < LEGENDARIES { Rarity::Legendary } else { Rarity::Atheric };
-            let slot = Slot::VESTIGE[dice.pick(Purpose::Shape, 1, Slot::VESTIGE.len())];
-            vestige::make(0, rarity, slot, NAMED_LEVEL, &dice)
+    let mut wares = drawn(week, Rarity::Legendary, LEGENDARIES);
+    wares.extend(drawn(week, Rarity::Atheric, WARES - LEGENDARIES));
+    wares
+        .into_iter()
+        .enumerate()
+        .map(|(ware, (named, slot))| {
+            let mut item = vestige::named_item(0, named, slot);
+            item.element =
+                element::rolled(item.kind, item.rarity, &Dice { seed: week, tick: 1 + ware as u64, player: 0 });
+            item
         })
         .collect()
+}
+
+/// `count` named pieces of a rarity from every Vestige slot's pool, each at most once, shuffled by the week's dice as
+/// `cosmetics::sold_on` shuffles a day's cosmetics.
+fn drawn(week: u64, rarity: Rarity, count: usize) -> Vec<(&'static NamedDef, Slot)> {
+    let mut pool: Vec<(&NamedDef, Slot)> = Slot::VESTIGE
+        .into_iter()
+        .flat_map(|slot| catalogue().vestige_pool(rarity, slot).map(move |named| (named, slot)))
+        .collect();
+    let dice = Dice { seed: week, tick: 1 + rarity as u64, player: 0 };
+    for at in (1..pool.len()).rev() {
+        pool.swap(at, dice.pick(Purpose::Shape, 1 + u32::try_from(at).unwrap_or_default(), at + 1));
+    }
+    pool.truncate(count);
+    pool
 }
 
 /// The Shapes a kill gives at the seas it was made at: none at Normal; at Elite and Abyss a few in a hundred kills
