@@ -1,7 +1,7 @@
-// The bars over captains' ships, in the fight display's layout: her faction's emblem in a square at the left and, to
-// its right, her name above a long thin bar of her hull, coloured by her rank, over a dark trough with a hairline edge;
+// The bars over captains' ships, in the fight display's layout: its faction's emblem in a square at the left and, to
+// its right, its name above a long thin bar of its hull, coloured by its rank, over a dark trough with a hairline edge;
 // a Boss's the same, wide across the top of the screen. Drawn on an SVG laid over the picture, in the kit's palette.
-// Her hull's losses read as a foe's do on foot: a pale strip where the bar stood, a real bite breaking off and falling,
+// Its hull's losses read as a foe's do on foot: a pale strip where the bar stood, a real bite breaking off and falling,
 // and the bar's edge flashing with it.
 
 import { BarLayout, PLATES } from '../plus/barLayout.ts';
@@ -11,7 +11,7 @@ import { motionReduced } from '../plus/kit.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
 
-/** The factions whose captains sail, by their numbers (crates/naval/src/ranks.rs), each with her Sloop's name. */
+/** The factions whose captains sail, by their numbers (crates/naval/src/ranks.rs), each with its Sloop's name. */
 export const SHIP_FACTIONS = [
   { faction: 1, name: 'The Grey Tithe', ship: 'Tithe Sloop' },
   { faction: 2, name: 'Pirates', ship: 'Pirate Sloop' },
@@ -19,18 +19,18 @@ export const SHIP_FACTIONS = [
 /** The ranks by their numbers, 1 to 5. */
 export const RANKS = ['Minor', 'Major', 'Elite', 'Miniboss', 'Boss'] as const;
 const BOSS = 5;
-/** A ship's plate over her and a Boss's across the top: a foe's over its head and the boss bar, size for size. */
+/** A ship's plate over it and a Boss's across the top: a foe's over its head and the boss bar, size for size. */
 const { overhead: PLATE, boss: BOSS_PLATE } = PLATES;
-/** How far over her waterline the Sloop's bar stands, metres: over her masthead. */
+/** How far over its waterline the Sloop's bar stands, metres: over its masthead. */
 export const BAR_OVER_M = 16;
 
 /** The hulls by their numbers (crates/sailing/src/hull.rs HullKind), as a captain's name says them. */
 const HULL_NAMES = ['Sloop', 'Schooner', 'Brig', 'Frigate'] as const;
 
-/** Her ship's name, by the faction she sails for and her hull (the Sloop unless named): the Tithe's or the pirates'
- *  Sloop, Schooner, Brig or Frigate, as crates/naval/src/ranks.rs names her. */
+/** Its ship's name, by the faction it sails for and its hull (the Sloop unless named): the Tithe's or the pirates'
+ *  Sloop, Schooner, Brig or Frigate, as crates/naval/src/ranks.rs names it. */
 export function shipName(faction: number, hull = 0): string {
-  // Any faction but the Tithe's sails as the pirates do, as the rules name her.
+  // Any faction but the Tithe's sails as the pirates do, as the rules name it.
   const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Pirate Sloop';
   return sloop.replace(/Sloop$/, HULL_NAMES[hull] ?? 'Sloop');
 }
@@ -51,8 +51,8 @@ export function rankColour(rank: number): string {
   return FILLS[rankBand(rank)];
 }
 
-/** A captain's ship as her bar shows her: her key among the scene's ships, her name, faction and rank, the share of
- *  her hull left, and the point over her in the frame the picture is projected from. */
+/** A captain's ship as its bar shows it: its key among the scene's ships, its name, faction and rank, the share of
+ *  its hull left, and the point over it in the frame the picture is projected from. */
 export interface ShipBar {
   readonly key: number;
   readonly name: string;
@@ -62,7 +62,7 @@ export interface ShipBar {
   readonly over: readonly [number, number, number];
 }
 
-/** A captain's Sloop as a bar reads her: her number in the room (none for the one captain of a fight), name, faction,
+/** A captain's Sloop as a bar reads it: its number in the room (none for the one captain of a fight), name, faction,
  *  rank, hull and whole hull, state, helm's numbers and pose. */
 export interface Barred {
   readonly id?: number;
@@ -76,7 +76,7 @@ export interface Barred {
   readonly pose: ArrayLike<number>;
 }
 
-/** Her bar over her masthead, `overM` over her waterline (the Sloop's unless said), in a picture drawn from `view`'s
+/** Its bar over its masthead, `overM` over its waterline (the Sloop's unless said), in a picture drawn from `view`'s
  *  corner with heights `shown` times; none once sunk. */
 export function barOver(
   captain: Barred,
@@ -91,8 +91,8 @@ export function barOver(
   return { key: captain.id ?? 0, name: captain.name, faction: captain.faction, rank: captain.rank, share, over };
 }
 
-/** A plate as laid on the screen: her key, its box's left and top, its size and its bar's height (CSS pixels), what it
- *  shows, and the words after its name (a Boss's faction), as the boss bar on foot writes them; and her hull's losses
+/** A plate as laid on the screen: its key, its box's left and top, its size and its bar's height (CSS pixels), what it
+ *  shows, and the words after its name (a Boss's faction), as the boss bar on foot writes them; and its hull's losses
  *  as they read: the strip's share, the pieces falling (their span as shares of the bar, and how long each has fallen)
  *  and how much of a bite's flash is left on the bar's edge, 1 down to 0. */
 export interface PlacedBar {
@@ -130,7 +130,7 @@ function toward(colour: string, share: number): string {
   return `#${mixed.map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** Each ship's plate where `project` puts the point over her (none off the picture), laid by `layout` so none covers
+/** Each ship's plate where `project` puts the point over it (none off the picture), laid by `layout` so none covers
  *  another, `seconds` on; a Boss's across the top of a picture `width` CSS pixels wide instead, one under another. */
 export function placeShipBars(
   bars: readonly ShipBar[],
@@ -274,7 +274,7 @@ export function drawShipBars(svg: SVGSVGElement, bars: readonly PlacedBar[]): vo
   }
 }
 
-/** A ship's hull as her bar last read it: the strip, the two pieces her bites fall as in turn, how many bites, and how
+/** A ship's hull as its bar last read it: the strip, the two pieces its bites fall as in turn, how many bites, and how
  *  long since the last. */
 interface Hull {
   loss: Loss;
@@ -283,12 +283,12 @@ interface Hull {
   sinceBite: number;
 }
 
-/** Each ship's hull losses, read from frame to frame by her key. */
+/** Each ship's hull losses, read from frame to frame by its key. */
 export class HullLosses {
   private readonly hulls = new Map<number, Hull>();
 
   /** One frame of `bar`'s hull losses, `seconds` on, with nothing falling or flashing when `still`: a ship first seen
-   *  starts whole at her bar, so only a loss seen happen reads as one. */
+   *  starts whole at its bar, so only a loss seen happen reads as one. */
   read(bar: PlacedBar, seconds: number, still: boolean): PlacedBar {
     const hull = this.hulls.get(bar.key) ?? {
       loss: stepLoss(null, bar.share, 0),
@@ -319,7 +319,7 @@ export class HullLosses {
   }
 }
 
-/** The plates of one picture's ships, laid from frame to frame so none covers another, each reading her hull's
+/** The plates of one picture's ships, laid from frame to frame so none covers another, each reading its hull's
  *  losses. */
 export class ShipPlates {
   private readonly layout = new BarLayout();
@@ -331,7 +331,7 @@ export class ShipPlates {
   }
   private drawnAt: number | null = null;
 
-  /** Draws `bars` onto `svg` at `now` (seconds), each where `project` puts the point over her, the picture `width`
+  /** Draws `bars` onto `svg` at `now` (seconds), each where `project` puts the point over it, the picture `width`
    *  CSS pixels wide. */
   draw(
     svg: SVGSVGElement,

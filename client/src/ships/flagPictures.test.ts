@@ -8,7 +8,7 @@ const texel = (rgba: Uint8Array, x: number, y: number) => [
   ...rgba.slice((y * SHIP_PICTURE_TEXELS + x) * 4, (y * SHIP_PICTURE_TEXELS + x) * 4 + 3),
 ];
 
-test("each side's flag is her ground, a faction's bearing its emblem in the middle", () => {
+test("each side's flag is its ground, a faction's bearing its emblem in the middle", () => {
   const flags = flagPictures();
   assert.equal(flags.length, SHIP_SIDES.length);
   flags.forEach((flag, index) => {
@@ -46,6 +46,6 @@ test("at fight range the Grey Tithe's flag reads apart from the pirates', and ea
     const flag = flags[SHIP_SIDES.indexOf(side)]?.rgba ?? new Uint8Array();
     const across = [...Array(SHIP_PICTURE_TEXELS).keys()].map((x) => texel(flag, x, SHIP_PICTURE_TEXELS / 2));
     const best = Math.max(...across.map((one) => contrast(one, groundOf(side))));
-    assert.ok(best >= 3, `${side}'s emblem at ${best.toFixed(2)} : 1 on her ground`);
+    assert.ok(best >= 3, `${side}'s emblem at ${best.toFixed(2)} : 1 on its ground`);
   }
 });

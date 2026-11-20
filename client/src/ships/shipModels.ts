@@ -1,6 +1,6 @@
 // Every hull's model on the GPU, fetched from R2 the first time a ship of that hull is drawn and kept, and a frame's
 import type { ShadowMap } from '../shadow.ts';
-// ships drawn by them: each in her own hull, her side's colours and her rig, a slot of her model each. A hull still
+// ships drawn by them: each in its own hull, its side's colours and its rig, a slot of its model each. A hull still
 // coming is drawn as the Sloop, so a ship is never a footprint with nothing over it.
 import type { Gpu } from '../gpu.ts';
 import type { ShipLook } from './dress.ts';
@@ -9,7 +9,7 @@ import type { SailRig } from './sails.ts';
 import { loadShip } from './shipMesh.ts';
 import { type ShipCamera, type ShipPlace, SHIP_SLOTS, ShipView } from './shipView.ts';
 
-/** A ship as a frame draws her: her hull's number, her place, her rig (none for no canvas or flag) and her look. */
+/** A ship as a frame draws it: its hull's number, its place, its rig (none for no canvas or flag) and its look. */
 export interface DrawnShip {
   readonly hull: number;
   readonly place: ShipPlace;
@@ -17,10 +17,10 @@ export interface DrawnShip {
   readonly look: ShipLook;
 }
 
-/** Opens a hull's model by her number. */
+/** Opens a hull's model by its number. */
 export type OpenHull = (hull: number) => Promise<ShipView>;
 
-/** A hull's model from R2 by her manifest entry, on the device, `slots` ships of her a frame. */
+/** A hull's model from R2 by its manifest entry, on the device, `slots` ships of it a frame. */
 export function openHull(gpu: Gpu, slots = SHIP_SLOTS): OpenHull {
   return async (hull) => ShipView.open(gpu, await loadShip(hullName(hull)), hullSails(hull), hullPaint(hull), slots);
 }
@@ -63,7 +63,7 @@ export class ShipModels {
     return null;
   }
 
-  /** The hull a ship is drawn as: her own once it has come, the Sloop while it is coming. */
+  /** The hull a ship is drawn as: its own once it has come, the Sloop while it is coming. */
   shown(hull: number): number {
     return this.model(hull) ? hull : SLOOP_HULL;
   }
@@ -108,7 +108,7 @@ export class ShipModels {
     return fetching;
   }
 
-  /** Draws a frame's ships, each by her hull's model once it has come, the ships of one hull in its slots in turn, in
+  /** Draws a frame's ships, each by its hull's model once it has come, the ships of one hull in its slots in turn, in
    *  the sun's shadows when a map is given. */
   draw(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera, shadow?: ShadowMap): void {
     this.each(ships, (model, ship, slot) =>
@@ -116,7 +116,7 @@ export class ShipModels {
     );
   }
 
-  /** Draws a frame's ships' shadows into the cascade of the sun's map being drawn, each in the slot `draw` gives her. */
+  /** Draws a frame's ships' shadows into the cascade of the sun's map being drawn, each in the slot `draw` gives it. */
   castInto(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera, shadow: ShadowMap): void {
     this.each(ships, (model, ship, slot) => model.castInto(pass, ship.place, camera, slot, ship.rig, shadow));
   }

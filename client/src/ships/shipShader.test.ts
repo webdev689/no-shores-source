@@ -18,13 +18,13 @@ function countingGpu() {
   return { gpu: { device, format: 'bgra8unorm' } as unknown as Gpu, made };
 }
 
-test("every hull on a device shares one pipeline, her shadow's, one set of pictures and one sampler", async () => {
+test("every hull on a device shares one pipeline, its shadow's, one set of pictures and one sampler", async () => {
   const { gpu, made } = countingGpu();
   const [one, other] = await Promise.all([shipKit(gpu), shipKit(gpu)]);
   await shipKit(gpu);
   assert.equal(one, other);
   assert.deepEqual([made.pipelines, made.textures, made.samplers], [2, 1, 1]);
-  // She is lit through the sun's shadow maps, and casts into them from a shader of her shadow's own.
+  // It is lit through the sun's shadow maps, and casts into them from a shader of its shadow's own.
   assert.match(made.shaders[0] ?? '', /sunlit\(drawn\.from_eye, normal\)/);
   assert.match(made.shaders[1] ?? '', /fn cast_vertex/);
   // Its parts are numbered as the pictures are: the hull first, the canvas fourth.

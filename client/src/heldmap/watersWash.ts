@@ -49,7 +49,7 @@ export const HATCHES = {
 export const MAP_PARCHMENT: readonly [number, number, number] = [208, 171, 118];
 const CHARTED_INK = { colour: [58, 40, 22], strength: 0.08 } as const;
 
-/** A holder's wash as the map shows it on the charted sea: her colour at `WASH_STRENGTH` over the parchment and the
+/** A holder's wash as the map shows it on the charted sea: its colour at `WASH_STRENGTH` over the parchment and the
  *  charted sea's faint ink, `#rrggbb`. */
 export function washedOver(holder: WaterHolder): string {
   const own = rgbOf(HOLDER_COLOURS[holder]);

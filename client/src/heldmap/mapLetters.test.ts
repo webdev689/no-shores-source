@@ -104,7 +104,7 @@ test('a name stands beside its mark on its side, its middle on the mark’s', ()
   assert.equal(left?.textAlign, 'right', 'a name on the left ends beside its mark, clear of it');
 });
 
-test('a water’s name and the ring round it are inked in her difficulty’s colour, the ring filled with parchment', () => {
+test('a water’s name and the ring round it are inked in its difficulty’s colour, the ring filled with parchment', () => {
   const { painter, calls } = recorder();
   const water = LETTERING.letters[3]!;
   paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, {

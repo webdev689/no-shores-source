@@ -3,32 +3,32 @@ import { HULL_FIT, type HullMask } from './hullMask.ts';
 import { smoothstep } from './shore.ts';
 
 /**
- * What a ship under way does to the water round her: the Kelvin wake's two arms from her quarters, 19.5 degrees
- * either side of her track, laid as foam and a small wave and fading over a minute; the bow wave's arms from her
- * stem, short and steep; the churned wash in her track; and the spray her bow throws. Everything widens and
- * lengthens with her drawn size, so a ship drawn four times her size from the raised view leaves a wake to match her;
+ * What a ship under way does to the water round it: the Kelvin wake's two arms from its quarters, 19.5 degrees
+ * either side of its track, laid as foam and a small wave and fading over a minute; the bow wave's arms from its
+ * stem, short and steep; the churned wash in its track; and the spray its bow throws. Everything widens and
+ * lengthens with its drawn size, so a ship drawn four times its size from the raised view leaves a wake to match it;
  * close in it is true size. The TypeScript mirrors WAKE_WGSL so tests can hold the shapes.
  */
 export const WAKE = {
   /** The Kelvin wake's half angle, degrees, and its tangent. */
   armDeg: 19.5,
   armTan: Math.tan((19.5 * Math.PI) / 180),
-  /** A wake fades out over this long, seconds: its length is her way times this. */
+  /** A wake fades out over this long, seconds: its length is its way times this. */
   fadeS: 60,
-  /** An arm's foam band at her stern and how much it widens a metre aft, metres at her true size. */
+  /** An arm's foam band at its stern and how much it widens a metre aft, metres at its true size. */
   armWidthM: 0.7,
   armSpread: 0.03,
-  /** The arms' wave crest at her full way, metres at her true size, and the way that is, m/s. */
+  /** The arms' wave crest at its full way, metres at its true size, and the way that is, m/s. */
   crestM: 0.18,
   fullWay: 4,
-  /** The bow wave reaches this many of her lengths aft of her stem. */
+  /** The bow wave reaches this many of its lengths aft of its stem. */
   bowReach: 1.2,
-  /** Her track's wash: as wide as her beam, spreading a share a metre aft, and gone in this long, seconds. */
+  /** Its track's wash: as wide as its beam, spreading a share a metre aft, and gone in this long, seconds. */
   washSpread: 0.015,
   washS: 20,
 } as const;
 
-/** Her wake at a point: its foam (0 to 1) and the height it raises the water, metres. Mirrors WGSL wake_at. */
+/** Its wake at a point: its foam (0 to 1) and the height it raises the water, metres. Mirrors WGSL wake_at. */
 export function wakeAt(mask: HullMask, point: readonly [number, number]): { foam: number; height: number } {
   const scale = mask.scale ?? 1;
   const way = Math.min(1.5, mask.way / WAKE.fullWay);
@@ -41,8 +41,8 @@ export function wakeAt(mask: HullMask, point: readonly [number, number]): { foam
   return wakeTerms(along, across, length, beam, way, mask.way * scale, scale, mask.spray ?? 0);
 }
 
-/** The wake's terms for a point `along` her and `across` (unsigned) from her track, her fitted half length and beam,
- *  her way's share of a full way, her drawn way (m/s times her drawn size), her drawn size and her spray. */
+/** The wake's terms for a point `along` it and `across` (unsigned) from its track, its fitted half length and beam,
+ *  its way's share of a full way, its drawn way (m/s times its drawn size), its drawn size and its spray. */
 function wakeTerms(
   along: number,
   across: number,
@@ -125,7 +125,7 @@ fn wake_at(offset: vec2f) -> Wake {
     let drawn = frame.hulls[index * HULL_VECTORS + 2u];
     let from_middle = offset - place.xy;
     let along = dot(from_middle, vec2f(place.z, -place.w));
-    // The wake reaches a minute of her drawn way aft, and as wide as its arms have spread.
+    // The wake reaches a minute of its drawn way aft, and as wide as its arms have spread.
     let reach = size.z * drawn.x * ${WAKE.fadeS}.0 + size.x * 2.0;
     if (along < -size.x - reach || along > size.x * 1.5 || length(from_middle) > reach + size.x * 2.0) { continue; }
     let across = abs(dot(from_middle, place.wz));

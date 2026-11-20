@@ -1,16 +1,16 @@
 // The view brought in close over the player's Sloop: past the Overworld's lowest zoom the wheel keeps coming in, the
-// eye coming down along the camera's look to where it stands off her at her true scale, as the World Editor shows her
-// afloat. She is drawn as large as `shownScale` holds her on the way, so at the closest she is seen whole at her size.
+// eye coming down along the camera's look to stand off the Sloop at its true scale, as the World Editor shows it
+// afloat. It is drawn as large as `shownScale` holds it on the way, so at the closest it is seen whole at its size.
 import { smooth01 } from '../overworld/overworldCamera.ts';
 import type { Lying } from '../ships/deck.ts';
 import { panShot, type Shot, shotOfOrbit } from './camera.ts';
 
 /** A wheel notch brings the view this share of the way in, and the share eases toward the wheel's at `rate` a second.
- *  At the closest the eye stands `distanceM` from the point `lookAtM` over her waterline the World Editor looks at, its near
+ *  At the closest the eye stands `distanceM` from the point `lookAtM` over its waterline the World Editor looks at, its near
  *  plane `nearM` off, metres. */
 export const CLOSE = { perNotch: 0.2, rate: 6, distanceM: 25, lookAtM: 4.5, nearM: 0.3 } as const;
 
-/** How far the view has come in past the Overworld's lowest zoom: 0 not at all, 1 at her true size. */
+/** How far the view has come in past the Overworld's lowest zoom: 0 not at all, 1 at its true size. */
 export class CloseZoom {
   private target = 0;
   private share = 0;
@@ -37,12 +37,12 @@ export class CloseZoom {
     if (Math.abs(this.target - this.share) < 1e-4) this.share = this.target;
   }
 
-  /** How far in the view has come, eased: 0 the Overworld's, 1 at her true size. */
+  /** How far in the view has come, eased: 0 the Overworld's, 1 at its true size. */
   get eased(): number {
     return smooth01(this.share);
   }
 
-  /** The shot from the sea's `sea`, brought in as far as the wheel asks over the Sloop as she `lying` lies, looking
+  /** The shot from the sea's `sea`, brought in as far as the wheel asks over the Sloop as it `lying` lies, looking
    *  along `yaw` and `tilt` radians down, the Overworld camera's own. */
   shot(sea: Shot, lying: Lying, yaw: number, tilt: number): Shot {
     const eased = this.eased;

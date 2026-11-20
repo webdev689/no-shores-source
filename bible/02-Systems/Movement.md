@@ -52,13 +52,13 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   climbed as steeply as the path rises. The rise is the terrain's own, so a block sunk into a slope is walked onto
   and off again. Climbing down a wall stops at the terrain.
 - **A grid of heights.** One terrain is a grid of square cells, each with its height or none (`Heights`), as a
-  ship's deck is ([[Sailing]], "Her deck"). In a cell with a height, the ground blends the four cell centres round
+  ship's deck is ([[Sailing]], "Its deck"). In a cell with a height, the ground blends the four cell centres round
   the point by nearness, leaving out any that hold none; a cell with none, or past the grid's end, stands 10 m over
   the highest cell, a wall at that cell's edge that no step or slope takes and no climb starts on, a climb holding
   to blocks alone. A wall is judged along the whole of a move, each cell it passes through in turn and both cells
   beside a corner it crosses, so a run's tick, longer than a cell, never carries a body through a wall one cell thick,
   nor between two walls that meet at a corner. So a passage one cell wide is walked to its end. A body standing on it
-  faces north (her bow). The browser hands it to its door as numbers (the grid's shape, then each height, NaN for
+  faces north (its bow). The browser hands it to its door as numbers (the grid's shape, then each height, NaN for
   none), the same numbers the sea room stands its walkers on.
 - **Crossing into a browser.** A body is 22 numbers and its controls 7, little-endian 64-bit floats in one fixed
   order, so no number is rounded on the way. The door keeps the course, and steps the body in memory it reserved once;

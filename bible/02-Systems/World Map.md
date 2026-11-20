@@ -143,14 +143,14 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
   it stays off the land. Today: Overlook to Sunspire 1,402 km, Overlook to Rimeholt 1,601 km, Sunspire to Rimeholt
   2,950 km across the open sea. Opening the waters and planning them takes about 0.5 s in WebAssembly.
 - **Schedule.** On each route a ship leaves each end every 1,200 s of world time, departure n at n × 1,200 s, and sails
-  at 5 m/s to the other end. There she lies at the roadstead 600 s (`DWELL_S`), heading as she came in, and is then
+  at 5 m/s to the other end. There it lies at the roadstead 600 s (`DWELL_S`), heading as it came in, and is then
   gone: with a ship arriving at each end of a route every 1,200 s, about one lies at each port city's roadstead at any
   moment. World time is seconds since the Unix epoch, passed in, so every machine computes the same ships for the same
   time. The waters' table the door returns carries the pace (`friendly_speed_m_s`), so the page reckons ships on
   between answers at the rules' own pace.
-- **A ship.** Her id is `n << 8 | route << 1 | direction` (direction 0 from the route's first port). Her hull comes
-  from a fixed hash of her id: a sloop 4 times in 10, a schooner 3, a brig 2, a frigate 1. She carries her position,
-  the unit way she sails along her leg, the metres sailed and her route's length.
+- **A ship.** Its id is `n << 8 | route << 1 | direction` (direction 0 from the route's first port). Its hull comes
+  from a fixed hash of its id: a sloop 4 times in 10, a schooner 3, a brig 2, a frigate 1. It carries its position,
+  the unit way it sails along its leg, the metres sailed and its route's length.
 - `ships_near(centre, radius_m, time_s)` works in closed form: per route, the stretches of its path within the radius
   give the distances sailed that put a ship there, and those give the departures; each is then placed exactly.
   `ship(id, time_s)` places one ship. A time or radius that is not a finite number, or a negative radius, finds none.
@@ -168,7 +168,7 @@ source of each.
 | `waters_at` | `waterAt(point)` | The water at a point as one grid byte; null on land |
 | `waters_grid` | `grid(cellM)` | Columns and rows as u32s, then a byte a cell; cells finer than 1,000 m, or not a finite number, are refused |
 | `waters_ships` | `shipsNear(centre, radiusM, timeS)` | The ships near a point, 11 f64s each: id, route, from port, to port, hull, x, y, way x, way y, metres sailed, route length |
-| `waters_ship` | `ship(id, timeS)` | One ship by id, packed the same; nothing when she is not sailing |
+| `waters_ship` | `ship(id, timeS)` | One ship by id, packed the same; nothing when it is not sailing |
 
 ## Weather and travel
 

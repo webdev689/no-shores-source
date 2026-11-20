@@ -1,5 +1,5 @@
-// The fight's display over the World Editor's picture, as the game shows it at sea: each captain's plate over her
-// masthead, and in a captain's fight the readout (her plate and battery rose, the card and the tally) beside them.
+// The fight's display over the World Editor's picture, as the game shows it at sea: each captain's plate over its
+// masthead, and in a captain's fight the readout (its plate and battery rose, the card and the tally) beside them.
 import { wearKit } from '../plus/kit.ts';
 import { SeaFightReadout, type SeaFightModel, wearSeaFight } from '../plus/seaFight.ts';
 import { type ShipBar, ShipPlates } from './shipBars.ts';

@@ -192,7 +192,7 @@ the Frigate. Her rank scales her, a Major at the numbers of the rest of this not
 | Miniboss | ×3 | ×1.2 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
 | Boss | ×5 | ×1.3 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
 
-Her level raises her as a foe's raises it on land ([[A Ship's Level Raises Her Strength, and the Tiers Reach the
+Her level raises her as a foe's raises it on land ([[A Ship's Level Raises Its Strength, and the Tiers Reach the
 Sea]], [[Foes]]): her hull, her men and her guns' harm are the table's times the land's `foe_health_times` at her level,
 1.07 a level (×1.31 at level 4, ×6.2 at level 27, `Pirate::strength`, `Captain::raised`); a ship of level 0, as the
 editor stands one, is the table's. A wary ship sizes a Sloop up at her raised strength. Her way, reload, aim and when

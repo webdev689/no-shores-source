@@ -4,7 +4,7 @@ import type { ShipMesh } from '../ships/shipMesh.ts';
 import { VERTEX_BYTES } from '../ships/shipMesh.ts';
 import { brokenMesh, settledDepth } from './wrecks.ts';
 
-test("a wreck keeps every face under her masts' stumps, and settles to her deck", () => {
+test("a wreck keeps every face under its masts' stumps, and settles to its deck", () => {
   const heights = [0, 1, 2, 9, 12];
   const vertices = new ArrayBuffer(heights.length * VERTEX_BYTES);
   heights.forEach((height, k) => new DataView(vertices).setFloat32(k * VERTEX_BYTES + 8, height, true));

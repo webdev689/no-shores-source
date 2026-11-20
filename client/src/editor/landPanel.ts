@@ -170,17 +170,17 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   );
   const sailHint = make(
     'p',
-    'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows her sideways, B to stop.',
+    'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows it sideways, B to stop.',
     'hint',
   );
   const fightHint = make(
     'p',
-    'F calls a pirate, or sends her off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
+    'F calls a pirate, or sends it off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
       ' A left click holds fire, the wheel changes shot, and C braces. In a fleet (?room= in the address), F calls' +
       ' a captain and X sends them all off.',
     'hint',
   );
-  // The captain F calls in a fleet: her faction and rank.
+  // The captain F calls in a fleet: its faction and rank.
   const calling = make('label', 'In a fleet, F calls ', 'brush');
   const pick = (options: readonly (readonly [number, string])[], value: number) => {
     const select = make('select');

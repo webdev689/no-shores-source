@@ -1,13 +1,13 @@
-// The sea fight's eye shaken, after DFO's (navalHost.js and navalFeel.js through its camera shaker): each gun of hers
-// kicks it as it goes, a ball striking her jars it, a fall alongside rocks it, a magazine going up near her throws
-// it. Each jar swells over a moment and dies away over another, moving the eye a little and turning it a little, the
-// jars at once added together. Overlook's own noise: a few slow waves at each jar's own phases.
+// The sea fight's eye shaken, after DFO's (navalHost.js and navalFeel.js through its camera shaker): each of its guns
+// kicks it as it goes, a ball striking the ship jars it, a fall alongside rocks it, a magazine going up near the ship
+// throws it. Each jar swells over a moment and dies away over another, moving the eye a little and turning it a little,
+// the jars at once added together. Overlook's own noise: a few slow waves at each jar's own phases.
 
 /** DFO's shaker: the most a jar may be, how rough it is (waves a second, about), how long it swells and dies away
  *  (seconds), and how far a jar of one moves the eye (metres) and turns it (degrees) at most either way. */
 export const SHAKE = { most: 10, roughness: 10, inS: 0.3, outS: 0.5, metres: 0.15, degrees: 1 } as const;
-/** DFO's jars: a long gun of hers firing, a ball striking her or holing her, a fall alongside at its nearest, and a
- *  magazine going up at her side, less to none at its reach (metres). */
+/** DFO's jars: a long gun of its own firing, a ball striking it or holing it, a fall alongside at its nearest, and a
+ *  magazine going up at its side, less to none at its reach (metres). */
 export const KICKS = { gun: 1.1, hit: 1.6, holed: 2.5, near: 0.7, magazine: 2.4, magazineReachM: 160 } as const;
 
 /** Where the eye is moved (metres east, south and up) and turned (radians of yaw and pitch). */

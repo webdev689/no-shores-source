@@ -15,15 +15,15 @@ code:
 ---
 # Hulls
 
-The ships Overlook sails beyond the Sloop, chosen in her style for each rank of ship, the player's own hulls and the
+The ships Overlook sails beyond the Sloop, chosen in the Sloop's style for each rank of ship, the player's own hulls and the
 merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
 [[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]).
-The Sloop, the Schooner, the Brig and the Frigate are built and sail ([[Sailing]]): each captain sails her rank's
+The Sloop, the Schooner, the Brig and the Frigate are built and sail ([[Sailing]]): each captain sails its rank's
 ([[Naval Combat]], "Ranks and factions").
 
 ## The Sloop's style
 
-Every hull keeps what the Sloop's model holds, at her detail:
+Every hull keeps what the Sloop's model holds, at its detail:
 
 - **Chunky, flat-shaded forms**: one hull mesh of broad faceted panels, no smoothing, and about 28,000 faces in all.
 - **Five painted parts**: hull, deck, spar, sail and iron. The game's painter lays planks, canvas and iron over them;
@@ -34,7 +34,7 @@ Every hull keeps what the Sloop's model holds, at her detail:
 - **One deck to walk**, with a raised quarterdeck holding the wheel, a hatch and steps down.
 - **A companionway into the cabin**, the one every ship shares, entered by interacting at its doors, the Sloop's too
   ([[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]).
-- **Made small and scaled up**, as the Sloop stands three times her model ([[The Sloop Is About 18 m Long]]).
+- **Made small and scaled up**, as the Sloop stands three times its model ([[The Sloop Is About 18 m Long]]).
 
 ## The hulls
 
@@ -53,18 +53,18 @@ The Sloop, built and the smallest, sails as Minor and Major ships and is the pla
 
 ## How one is made
 
-1. `tools/ships/build_ship.py` makes the hull from her numbers in `HULLS`, in the Sloop's style: her faceted shell,
-   lined gunports and capped rail, her quarterdeck and any forecastle with rails and steps at their edges, her rig
-   and sails, her fittings, the Sloop's own cannon at each port, and her companionway, whose doors an empty named
-   `Cabin.Entrance` marks as her way into the cabin. `ship_rig.py` rigs a mast either way: a gaff mast with its boom,
+1. `tools/ships/build_ship.py` makes the hull from its numbers in `HULLS`, in the Sloop's style: its faceted shell,
+   lined gunports and capped rail, its quarterdeck and any forecastle with rails and steps at their edges, its rig
+   and sails, its fittings, the Sloop's own cannon at each port, and its companionway, whose doors an empty named
+   `Cabin.Entrance` marks as its way into the cabin. `ship_rig.py` rigs a mast either way: a gaff mast with its boom,
    gaff and sail; or a square mast with a top, topmast and topgallant, a yard and sail for each (its lowest yards bare
-   where its numbers say), and a gaff spanker abaft it; her headsails are bent to stays to her bowsprit and any
-   jibboom. A lower gun deck's ports are framed on her side, dark within, its guns' muzzles out through them; a side's
-   guns are numbered from her bow to her stern across both decks.
+   where its numbers say), and a gaff spanker abaft it; its headsails are bent to stays to its bowsprit and any
+   jibboom. A lower gun deck's ports are framed on its side, dark within, its guns' muzzles out through them; a side's
+   guns are numbered from its bow to its stern across both decks.
    `ship_details.py` adds what the Sloop does not carry: wales, gunport lids, channels with deadeyes and chainplates,
    shrouds with ratlines, stays, a bobstay and dolphin striker, mast hoops, a rudder, catheads with anchors, hawse
    holes, a stern lantern, a windlass, a bell, a binnacle, a skylight, boom gallows, a ship's boat, pin rails, stores
-   and coils of rope. Each gun is placed by its own muzzle, measured from its mesh: its wheels on her deck and its
+   and coils of rope. Each gun is placed by its own muzzle, measured from its mesh: its wheels on its deck and its
    barrel through the middle of a port cut round it. A mast's channel moves forward until its chainplates clear every
    port. No face shares a plane with another facing the same way where either shows: Cycles renders such a spot black.
    No sail is cut by a spar, a rope or a fitting: each stay leaves its mast between the sails above and below it.
@@ -88,19 +88,19 @@ where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, w
 Done for the Schooner, the Brig and the Frigate:
 
 - **Its numbers**: `SCHOONER`, `BRIG` and `FRIGATE` beside `SLOOP`, from their exports, each with DFO's gain for the
-  matching rig and her sails; `HullKind` names each by her manifest key. Her arms (`arms_of`): each side's mouths
-  fore to aft, her hull's box and each sail's.
-- **Square sails** in the rules: a square-rigged hull sails, tacks and turns as the Sloop does. Her way is the Sloop's
-  times her rank's, and her gain shapes her handling (how her way comes and goes, and her steerage).
-- **A ship's hull, everywhere** in the rules: every ship in a fight carries her hull and sails, fights, is struck and
-  rams as it; a captain's rank picks it (`Rank::hull`) and names her (the Pirate Brig, the Tithe Frigate); the
+  matching rig and its sails; `HullKind` names each by its manifest key. Its arms (`arms_of`): each side's mouths
+  fore to aft, its hull's box and each sail's.
+- **Square sails** in the rules: a square-rigged hull sails, tacks and turns as the Sloop does. Its way is the Sloop's
+  times its rank's, and its gain shapes its handling (how its way comes and goes, and its steerage).
+- **A ship's hull, everywhere** in the rules: every ship in a fight carries its hull and sails, fights, is struck and
+  rams as it; a captain's rank picks it (`Rank::hull`) and names the ship (the Pirate Brig, the Tithe Frigate); the
   snapshots, a fight's view and the doors carry it.
-- **Never her strength**: her canvas drives her no harder than the Sloop's, and her side's broadside takes as much
+- **Never its strength**: its canvas drives it no harder than the Sloop's, and its side's broadside takes as much
   from a ship as the Sloop's, however many guns share it ([[Naval Combat]], "Ranks and factions").
 
-- **Drawing them**: every ship is drawn as her own hull in her side's colours, her square sails bellied and their
+- **Drawing them**: every ship is drawn as its own hull in its side's colours, its square sails bellied and their
   yards braced round ([[Sailing]], "Square sails"); a hull with no model yet is drawn as the Sloop.
-- **Her drawn size**: every hull grows by one law as the view comes in, never under her true size ([[Game]], "Her
+- **Its drawn size**: every hull grows by one law as the view comes in, never under its true size ([[Game]], "Its
   size coming in").
 
 Left:

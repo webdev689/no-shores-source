@@ -324,8 +324,8 @@ struct Frame {
   sea_grid: vec4f,
   waves: array<vec4f, ${MOST_WAVES * 2}>,
   chop: array<vec4f, ${CHOP_WAVES}>,
-  // Each ship (hullValues): her middle from the eye and her heading's sine and cosine; her fitted half length and
-  // half beam, her way and 1 (0 is none); her drawn size and her bow's spray; then her line.
+  // Each ship (hullValues): its middle from the eye and its heading's sine and cosine; its fitted half length and
+  // half beam, its way and 1 (0 is none); its drawn size and its bow's spray; then its line.
   hulls: array<vec4f, ${HULLS * HULL_VECTORS}>,
 };
 

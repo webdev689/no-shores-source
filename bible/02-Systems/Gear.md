@@ -200,7 +200,7 @@ DFO's spoils ([[Pick - Loot Drops]]).
   (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
   Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
 - **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: each
-  piece a kill's drop for a foe of her rank and level, kept for its player, gathered by their ship within 25 m, what
+  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, what
   they have no room for lost with it (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step

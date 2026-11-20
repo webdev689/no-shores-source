@@ -5,14 +5,14 @@ import type { SailCorners } from './sails.ts';
  *  uint8, the first its place in `SHIP_PARTS`). */
 export const VERTEX_BYTES = 28;
 
-/** Her waterline as the export measured it: its length and beam, and her draught below it, metres. */
+/** Its waterline as the export measured it: its length and beam, and its draught below it, metres. */
 export interface Waterline {
   readonly lengthM: number;
   readonly beamM: number;
   readonly draughtM: number;
 }
 
-/** A ship's mesh in her own frame (x to her bow, y to starboard, z up, the origin amidships on her waterline). */
+/** A ship's mesh in its own frame (x to its bow, y to starboard, z up, the origin amidships on its waterline). */
 export interface ShipMesh {
   readonly name: string;
   readonly vertexCount: number;
@@ -40,9 +40,9 @@ export function readShipMesh(bytes: ArrayBuffer): ShipMesh {
     throw new Error('a ship mesh counts its vertices and corners in whole numbers');
   }
   const waterline = header.waterline;
-  // Her footprint on the water divides by her waterline's size: a mesh without one would spoil every water pixel.
+  // Its footprint on the water divides by its waterline's size: a mesh without one would spoil every water pixel.
   if (!waterline || !(waterline.length_m > 0) || !(waterline.beam_m > 0) || !(waterline.draught_m >= 0)) {
-    throw new Error("a ship mesh's header needs her waterline: its length, beam and draught");
+    throw new Error("a ship mesh's header needs its waterline: its length, beam and draught");
   }
   const start = 4 + headerLength;
   const end = start + vertexCount * VERTEX_BYTES;
@@ -62,7 +62,7 @@ export function readShipMesh(bytes: ArrayBuffer): ShipMesh {
   };
 }
 
-/** A published ship's sails' corners, as her export measured them; none for a ship without sails. */
+/** A published ship's sails' corners, as its export measured them; none for a ship without sails. */
 export function shipSails(name: string): SailCorners[] {
   // The manifest is the export's own, in the repository: its sails are as `SailCorners` says.
   const entry = (ships.ships as unknown as Readonly<Record<string, { readonly sails?: readonly SailCorners[] }>>)[name];

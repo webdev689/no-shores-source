@@ -3,11 +3,11 @@ import { Orders } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { Snapshot } from '../../../generated/messages/ts/overlook/wire/snapshot.ts';
 import type { FleetLook } from '../rules/fleetRules.ts';
 
-/** A captain asked for: none, one called round her ship, or every one sent off. */
+/** A captain asked for: none, one called round the player's ship, or every one sent off. */
 export type FleetCall = 'none' | 'captain' | 'send off';
 
-/** One tick's orders at sea in a fleet room (crates/room/src/fleet.rs Input): her helm, her look, the fire, the
- *  brace, a load (0 none, 1 round, 2 grape, 3 chain, 4 heated), where she puts to sea (heeded once), and a call,
+/** One tick's orders at sea in a fleet room (crates/room/src/fleet.rs Input): its helm, its look, the fire, the
+ *  brace, a load (0 none, 1 round, 2 grape, 3 chain, 4 heated), where it puts to sea (heeded once), and a call,
  *  with the faction and rank of a captain called (a Major of the pirates when none is named). */
 export interface FleetOrders {
   readonly steer: number;
@@ -53,8 +53,8 @@ function finite(numbers: readonly number[], what: string): number[] {
   return [...numbers];
 }
 
-/** One tick's orders as their bytes, as the schema defines them: her rudder, rung and look held within what the room
- *  takes, and her number, load and call refused outside what their fields hold. */
+/** One tick's orders as their bytes, as the schema defines them: its rudder, rung and look held within what the room
+ *  takes, and its number, load and call refused outside what their fields hold. */
 export function ordersBytes(sequence: number, orders: FleetOrders): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const { look: laid, captain } = orders;
@@ -66,7 +66,7 @@ export function ordersBytes(sequence: number, orders: FleetOrders): Uint8Array<A
       ]
     : [];
   const aim = Orders.createAimVector(builder, look);
-  const put = orders.putToSea ? finite(orders.putToSea, 'where she puts to sea') : [];
+  const put = orders.putToSea ? finite(orders.putToSea, 'where it puts to sea') : [];
   const putToSea = Orders.createPutToSeaVector(builder, put);
   const called = orders.call === 'captain';
   const message = Orders.createOrders(
@@ -94,10 +94,10 @@ export type VesselState = (typeof STATES)[number];
 export const MODES = ['cruise', 'engage', 'flee', 'struck', 'sinking'] as const;
 export type CaptainMode = (typeof MODES)[number];
 
-/** One ship in a fleet room as it last stepped her: her number; whether a captain sails her; her helm's numbers and
- *  pose (crates/sailing/src/floats.rs); hull, sail and men with their wholes; her state and fires; her guns' seconds
- *  left to load and progress (port, starboard); her load and brace; a captain's mode, target (0 none) and sides run
- *  out (1 port, 2 starboard); the number of her player's last orders taken; and the faction she sails for (0 a
+/** One ship in a fleet room as it last stepped it: its number; whether a captain sails it; its helm's numbers and
+ *  pose (crates/sailing/src/floats.rs); hull, sail and men with their wholes; its state and fires; its guns' seconds
+ *  left to load and progress (port, starboard); its load and brace; a captain's mode, target (0 none) and sides run
+ *  out (1 port, 2 starboard); the number of its player's last orders taken; and the faction it sails for (0 a
  *  player's) and a captain's rank (1 Minor to 5 Boss, 0 none). */
 export interface SeenVessel {
   readonly id: number;
@@ -116,7 +116,7 @@ export interface SeenVessel {
   readonly acknowledged: number;
   readonly faction: number;
   readonly rank: number;
-  /** Her hull: 0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate. */
+  /** Its hull: 0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate. */
   readonly hull?: number;
 }
 
@@ -155,7 +155,7 @@ export const NAVAL_KINDS = [
 export type NavalKind = (typeof NAVAL_KINDS)[number];
 
 /** Something that happened in a fleet room's fight (messages.fbs Naval): what, the ship it happened to, who struck
- *  her with a ball or a stem, a number saying more, the side still loading, a point, a ball's launch, and the seconds
+ *  it with a ball or a stem, a number saying more, the side still loading, a point, a ball's launch, and the seconds
  *  that side has left (or the hull a ram took). */
 export interface NavalEvent {
   readonly tick: bigint;

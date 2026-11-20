@@ -1,6 +1,6 @@
-// The hostile ships the sea's view tells of, and the water the ship is in: a mark for each hostile ship within her own
-// sight of the player's ship, by her faction's emblem, her rank's colour, her name as her plate gives it, her level and
-// her distance; the words on the voyage's line when one is first sighted or the ship sails into other waters; and
+// The hostile ships the sea's view tells of, and the water the ship is in: a mark for each hostile ship within its own
+// sight of the player's ship, by its faction's emblem, its rank's colour, its name as its plate gives it, its level and
+// its distance; the words on the voyage's line when one is first sighted or the ship sails into other waters; and
 // the water's name, band and holder for the sea's status line.
 import type { SeenPirate } from '../network/messages.ts';
 import type { Point2 } from '../overworld/ground.ts';
@@ -15,9 +15,9 @@ import { distanceText } from './hudLaw.ts';
 /** The least distance a hostile ship is sighted from, metres (crates/room/src/sighting.rs), read for a room that sends
  *  none. */
 export const SIGHT_LEAST_M = 5_000;
-/** A hostile ship's mark stands this far over the water, metres: over her masthead. */
+/** A hostile ship's mark stands this far over the water, metres: over its masthead. */
 const HOSTILE_RISE_M = 20;
-/** Her mark's id: `hostile-` and her number in the room. */
+/** Its mark's id: `hostile-` and its number in the room. */
 export const HOSTILE_PREFIX = 'hostile-';
 
 /** The distance a ship is sighted from. */
@@ -32,12 +32,12 @@ export function sightedHostiles(pirates: readonly SeenPirate[], ship: Point2): S
   return pirates.filter((pirate) => apart(pirate, ship) <= sightOf(pirate));
 }
 
-/** Her name as her plate gives it: her faction's, on her hull. */
+/** Its name as its plate gives it: its faction's, on its hull. */
 export function hostileName(pirate: SeenPirate): string {
   return shipName(pirate.faction, pirate.hull ?? 0);
 }
 
-/** How her mark looks: her faction's emblem, her rank's colour, and the plates' mark of a Miniboss. */
+/** How its mark looks: its faction's emblem, its rank's colour, and the plates' mark of a Miniboss. */
 export interface HostileLook {
   readonly emblem: string | null;
   readonly colour: string;
@@ -53,7 +53,7 @@ export function hostileLook(pirate: SeenPirate): HostileLook {
   };
 }
 
-/** Her mark's note: her level, where the room sends one, and her distance. */
+/** Its mark's note: its level, where the room sends one, and its distance. */
 export function hostileNote(pirate: SeenPirate, metres: number): string {
   const level = pirate.level ?? 0;
   return level > 0 ? `Level ${level} · ${distanceText(metres)}` : distanceText(metres);
@@ -103,7 +103,7 @@ export function waterWords(water: WaterNamed): string {
 export const SAID_S = 6;
 
 /** What the voyage's line says as the ship goes on: each hostile ship when first sighted, the nearest first, and the
- *  water when she enters another, each held `SAID_S`. */
+ *  water when it enters another, each held `SAID_S`. */
 export class SeaWatch {
   private readonly seen = new Set<number>();
   private water: string | null = null;

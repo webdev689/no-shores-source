@@ -39,7 +39,7 @@ export type LandRequest =
   | { readonly kind: 'fight-step'; readonly orders: FightOrders; readonly time: number; readonly ticks: number }
   | { readonly kind: 'fight-end' };
 
-/** A ship after her ticks, and how she lies. */
+/** A ship after its ticks, and how it lies. */
 export interface Sailed {
   readonly ship: ShipFloats;
   readonly pose: Pose;

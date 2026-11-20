@@ -243,8 +243,8 @@ export class Foot {
     return new Foot(context, node, boxes, { link, fight, ...rules }, { otherPlayers: players, gear, folk: [] });
   }
 
-  /** The player on a grid of heights with no ground of the land: boarding a struck ship, on `node` her deck in her own
-   *  frame (`deckFloats`) at the spot her deck room stands a boarder, facing her bow; or landed on a sea island, its
+  /** The player on a grid of heights with no ground of the land: boarding a struck ship, on `node` its deck in its own
+   *  frame (`deckFloats`) at the spot its deck room stands a boarder, facing its bow; or landed on a sea island, its
    *  ground and its modules' boxes in the world's metres, facing inland, E using what lies near (`place`). The room
    *  is reached through the link `open` makes, which hands on each of its snapshots. */
   static async onDeck(

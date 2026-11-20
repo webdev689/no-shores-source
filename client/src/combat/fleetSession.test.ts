@@ -86,7 +86,7 @@ const sailing = (steer: number, climb?: number): SessionInput => ({
   climbs: climb === undefined ? [] : [climb],
 });
 
-test('two players put to sea in a fleet, see each other, and each predicts her own ship as the room sails it', () => {
+test('two players put to sea in a fleet, see each other, and each predicts their own ship as the room sails it', () => {
   const fleet = new Fleet(5);
   const first = fleet.join([200_000, 300_000, 0.25]);
   const second = fleet.join([200_080, 300_000, 0]);
@@ -95,15 +95,15 @@ test('two players put to sea in a fleet, see each other, and each predicts her o
   for (let tick = 0; tick < 240; tick++) fleet.tick((play) => (play === first ? sailing(1) : sailing(-1)));
   const seen = second.others().map((vessel) => vessel.id);
   assert.deepEqual(seen, [first.id], 'the second sees the first');
-  // Five ticks of her orders are still on their way: her prediction stands that far ahead of the room's last word.
+  // Five ticks of their orders are still on their way: their prediction stands that far ahead of the room's last word.
   const room = fleet.shipOf(first);
   for (let tick = 0; tick < 10; tick++) fleet.tick();
   assert.deepEqual(
     Array.from(first.shipFloats()),
     fleet.shipOf(first),
-    'once the room has taken all, her ship is its own',
+    'once the room has taken all, their ship is its own',
   );
-  assert.notDeepEqual(room.slice(0, 2), [200_000, 300_000], 'under sail she has moved');
+  assert.notDeepEqual(room.slice(0, 2), [200_000, 300_000], 'under sail it has moved');
   assert.equal(first.shipFloats()[7], 2, 'sails set by two climbs');
 });
 
@@ -126,12 +126,12 @@ test('a captain called by one player is seen by both, of the faction and rank ca
   const lay = first.lay({ bearing: 90, range: 80 }, 1);
   assert.equal(lay?.side, 'starboard');
   assert.equal(lay?.launches.length, 3);
-  assert.ok(first.own(), 'the room shows her own ship');
+  assert.ok(first.own(), 'the room shows their own ship');
   fleet.tick((play) => (play === second ? { ...NOTHING, call: 'send off' } : NOTHING));
   for (let tick = 0; tick < 4; tick++) fleet.tick();
   assert.equal(first.others().filter((vessel) => vessel.captain).length, 0, 'sent off');
   const gone = first.takeEvents().filter((event) => event.kind === 'gone');
-  assert.deepEqual(gone, [{ kind: 'gone', ship: 1, sunk: false }], 'gone from the room, she is still named a captain');
+  assert.deepEqual(gone, [{ kind: 'gone', ship: 1, sunk: false }], 'gone from the room, it is still named a captain');
 });
 
 test('two load presses before the room answers the first step the load twice', () => {
@@ -174,7 +174,7 @@ test("the room's clock holds still for a late snapshot rather than run back", ()
   assert.ok(play.roomTime(0.45) > before, 'and on again');
 });
 
-test('a session whose link joins a new fleet puts her to sea again where she lay, her orders numbered anew', () => {
+test('a session whose link joins a new fleet puts it to sea again where it lay, its orders numbered anew', () => {
   const [before, after] = [startRoomDoor(compiled), startRoomDoor(compiled)];
   for (const door of [before, after]) assert.equal(door.openFleet(), true);
   let door = before;
@@ -201,15 +201,15 @@ test('a session whose link joins a new fleet puts her to sea again where she lay
   tick(sailing(0, 1));
   for (let count = 0; count < 300; count++) tick(sailing(1));
   const [x = 0, y = 0] = play.shipFloats();
-  assert.ok(Math.hypot(x - 200_000, y - 300_000) > 5, `under sail she has moved: ${x}, ${y}`);
-  // A deploy: the fleet starts afresh, and her link joins it as its second player.
+  assert.ok(Math.hypot(x - 200_000, y - 300_000) > 5, `under sail it has moved: ${x}, ${y}`);
+  // A deploy: the fleet starts afresh, and its link joins it as its second player.
   door = after;
   after.join();
   Object.assign(link, { player: door.join(), joins: 2 });
   for (let count = 0; count < 30; count++) tick(NOTHING);
   assert.deepEqual([...answers], ['taken'], 'every order numbered anew, from 1');
   const [atX = 0, atY = 0] = play.own()?.ship ?? [];
-  assert.ok(Math.hypot(atX - x, atY - y) < 5, `the new fleet has her where she lay: ${atX}, ${atY}`);
+  assert.ok(Math.hypot(atX - x, atY - y) < 5, `the new fleet has it where it lay: ${atX}, ${atY}`);
 });
 
 test("a fleet room's events reach the feel by each ship's own number, the sea's kinds by the one mapping", () => {

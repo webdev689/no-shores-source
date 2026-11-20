@@ -138,10 +138,10 @@ The room named `sea` holds every player's ship at Normal; `sea--elite` and `sea-
 voyage's harder difficulty, each a room of its own whose ships come at the levels that difficulty raises them to
 (`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
-or 1, the world's own time, which the page sails her at while its view is close on her ([[Game]], "At sea").
+or 1, the world's own time, which the page sails it at while its view is close on it ([[Game]], "At sea").
 A ship not yet at sea puts to sea at the course's first point; one at sea starts the course from where it is, to the
 nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
-facing when it holds one: the helm turned while she lies still. A player sets one course, facings among them, each half
+facing when it holds one: the helm turned while it lies still. A player sets one course, facings among them, each half
 second, and one sooner is dropped: judging a course against the coasts takes up to a few
 milliseconds, which no player may ask for every tick. The browser keeps its latest course and sends it once the sea
 will take it, by the room's own tick.
@@ -153,16 +153,16 @@ will take it, by the room's own tick.
   arithmetic. A pace neither one of the steps nor 1, a point outside the world's frame, and a course of more than 64
   points are refused.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
-- Pirates and the Grey Tithe's ships sail among the players', each with her faction and rank, and a bold one that
+- Pirates and the Grey Tithe's ships sail among the players', each with its faction and rank, and a bold one that
   meets a player fights them in the room, by the player's orders ([[Naval Combat]], "At sea"). One that meets a ship of
-  another faction fights her with no player (`clash.rs`): the room steps that fight each tick, the snapshot shows its
+  another faction fights it with no player (`clash.rs`): the room steps that fight each tick, the snapshot shows its
   ships among the others at sea where the fight has them, and a player who comes within 750 m joins it. Each captain
-  sails her rank's hull ([[Hulls]]). Who comes, at which rank and level, how far out and where, is the water's at the
+  sails its rank's hull ([[Hulls]]). Who comes, at which rank and level, how far out and where, is the water's at the
   player's ship (`sighting.rs`, on the room's chart of its coasts, waters and lanes, `chart.rs`). The sea's snapshot
-  carries each hostile ship's faction, rank, hull, level and the distance she is sighted from, and each player's fight
+  carries each hostile ship's faction, rank, hull, level and the distance it is sighted from, and each player's fight
   its captain's faction, rank and hull; a fight's view carries every ship's hull. While a player fights,
-  the room takes their orders and no course, and their ship is where the fight has her, at rest on the room's word. A
-  ship sails at her pace held down as a pirate comes near, and the snapshot's pace for her is the one she sailed at. The
+  the room takes their orders and no course, and their ship is where the fight has it, at rest on the room's word. A
+  ship sails at its pace held down as a pirate comes near, and the snapshot's pace for it is the one it sailed at. The
   sea opens on a seed for its pirates, from the runtime's random numbers (`room_open_sea`'s third number), round a
   layout file's text, or `{ "layout", "ports" }` with the ports as the waters' door takes them, whose lanes between the
   port cities the Grey Tithe patrols; with a layout alone it has no lanes. The server opens it with the port cities
@@ -177,43 +177,43 @@ will take it, by the room's own tick.
   voyage, held up to 89 s.
 - **How its fights end** ([[Naval Combat]], "How a fight ends"): a fight holds any number of players (`battle.rs`),
   joined by a player not fighting or a hostile ship at sea within 750 m of it; a captain's ship that sinks lays what
-  floats for each player who fought her (`flotsam.rs`); a struck captain may be boarded, her deck a room on land the
+  floats for each player who fought it (`flotsam.rs`); a struck captain may be boarded, its deck a room on land the
   sea holds and steps (`deck_fight.rs`, `sea_decks.rs`), whose boarders' land inputs the sea passes to it; a player
-  whose ship sinks, or beaten aboard her, washes up at the nearest port city (`harbour.rs`, `sea_ports.rs`); each ship
-  keeps her hurts, with the player's character, which the sea claims and saves as a node does ([[Accounts]]), and is
+  whose ship sinks, or beaten aboard it, washes up at the nearest port city (`harbour.rs`, `sea_ports.rs`); each ship
+  keeps its hurts, with the player's character, which the sea claims and saves as a node does ([[Accounts]]), and is
   repaired by a port city. The sea keeps characters (`room_keep_characters`): a player's course asked before the
-  accounts answered for them waits, then sails from where the room last kept her once their character is given back
-  (a fight met from the page's spot meanwhile is over for her), or as asked once the host says none is kept
-  (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives her
-  back where she was kept). A new account's character is the one the room holds, given back to it. The account the
+  accounts answered for them waits, then sails from where the room last kept it once their character is given back
+  (a fight met from the page's spot meanwhile is over for it), or as asked once the host says none is kept
+  (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives it
+  back where it was kept). A new account's character is the one the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
   they join once more, and the ships they fought are kept as theirs (`ShipDown`'s accounts; no host takes those yet). Whatever
   changes a character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up, the character
   given back) is sent to the player as their gear (`room_gear`, written as a land room writes it), at most every 12
   ticks, which flags it for its save 2 s on. No ship is left outside the world's frame: a fight's waters run past it,
-  but where the fight has her, where she washes up and where her next course starts are held within it. A course's message asks for a repair (1), a boarding (2) or leaving her deck (3). The sea's
-  snapshot carries what floats for each player, each ship's kept hurts and her repair's seconds left, what each player
+  but where the fight has it, where it washes up and where its next course starts are held within it. A course's message asks for a repair (1), a boarding (2) or leaving its deck (3). The sea's
+  snapshot carries what floats for each player, each ship's kept hurts and its repair's seconds left, what each player
   is told beside their fight's view (the naval crate's numbers, or the sea's own: washed up, what a piece held, who
-  joined with her hull, moored; their codes one export on the page, `seaHarbour.ts` `TOLD`), whether each fighting
+  joined with its hull, moored; their codes one export on the page, `seaHarbour.ts` `TOLD`), whether each fighting
   player may board now (`may_board`), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot
   once a tick (`room_snapshot_prepare`) and sends each socket its own cut (`room_snapshot_for`): what floats, kept
   hurts, what is told and a deck's own snapshot reach only the players they are for, and each player is sent only the
-  ships near them: the hostile ships within 1.1 times the distance each is sighted from (the share that keeps her at
+  ships near them: the hostile ships within 1.1 times the distance each is sighted from (the share that keeps it at
   sea), the other players' within 60 km (the page's farthest view at sea), and every player in their fight. A boarding
-  is refused when her deck would hold no crew.
+  is refused when its deck would hold no crew.
 - **Measured** (`room-wasm/src/load_tests.rs`, by hand in release): the tick and every player's snapshot, players 60 km
   apart with three wary ships each: 432, 568 and 590 bytes a player a tick at 1, 8 and 16 players (tested offline).
-- **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
-  deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
+- **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind its wheel on its
+  deck, facing its bow, and walks it by the movement crate on the deck's grid, in its own frame ([[Sailing]], "Its
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
   out of order or with controls that are not numbers or ask past a whole pace; never more than the ticks since they
   left the helm and 6 of slack, and 3 a tick at most to catch up; past 30 waiting the oldest is let go as taken. One
   whose steps stop coming is stood out a tick at a time once a view's lag (24 ticks) behind, as on land.
-- **Her helmsman** keeps her course meanwhile: under way she sails on, at rest she stays. A course is refused but one
-  that keeps her way, at any pace the room takes: the course she sails, its points to the whole metre, or one point
-  straight on along her heading (within 0.01 radians of it), the page's course straight on, set again as she nears
-  its end. So she sails on, at the pace the page eases her to for the view.
-  They take the helm again within 0.8 m of the spot behind her wheel, standing, judged where their steps leave them
+- **Its helmsman** keeps its course meanwhile: under way it sails on, at rest it stays. A course is refused but one
+  that keeps its way, at any pace the room takes: the course it sails, its points to the whole metre, or one point
+  straight on along its heading (within 0.01 radians of it), the page's course straight on, set again as it nears
+  its end. So it sails on, at the pace the page eases it to for the view.
+  They take the helm again within 0.8 m of the spot behind its wheel, standing, judged where their steps leave them
   once the steps the clock allows by then are taken; a bold pirate that meets them calls them to it at once.
 - Playing alone, the [[Game]] runs this same room in the page (`LocalRoom.openSea`).
 
@@ -226,26 +226,26 @@ will take it, by the room's own tick.
 ## A fleet
 
 A room named `fleet-<name>` is a place at sea at true scale, on the open sea under the world's swell ([[Sailing]]),
-where each player sails her own Sloop by her helm and fights, and captains called into the room, of a faction and a
+where each player sails their own Sloop by its helm and fights, and captains called into the room, of a faction and a
 rank each, fight whom they choose, all in one fight ([[Naval Combat]]).
 
 - **Its weather.** The host opens it at the world's time (`room_world_start`); its sea takes the weather at its place
   then and keeps it, and its snapshot carries that time (`world_start`), so a browser predicting its ship sails in the
   same weather.
-- **Putting to sea.** A player joins with no ship at sea. The first of her orders that says where puts her Sloop to
-  sea there, at that heading, anywhere in the world's frame; after that only her helm moves her.
+- **Putting to sea.** A player joins with no ship at sea. The first of their orders that says where puts their Sloop to
+  sea there, at that heading, anywhere in the world's frame; after that only its helm moves it.
 - **Orders** are taken as a land room takes inputs: numbered 1, 2, 3 and so on, refused out of order or with a number
   that is not one (a rudder past its throw, a rung of more than one, a look past its half circle or the guns' 100 km);
-  one a tick, never more than the ticks since she joined and 6 of slack, 3 a tick at most to catch up, and none in a
-  tick after one that fires, since the fight judges a release by her brace and her ship after all her orders of the
-  tick; past 30 waiting, the oldest let go as though taken. Each order taken steps her ship once, so late ones catch
-  her up and a browser's prediction of her is her orders stepped in turn. A player whose orders stop lies as she was,
-  riding the swell, until she falls a view's lag (24 ticks) behind; then she stands, a tick at a time, from the moment
-  she joins (her helm too once she is at sea), so time spent before putting to sea is not banked to catch up on.
+  one a tick, never more than the ticks since they joined and 6 of slack, 3 a tick at most to catch up, and none in a
+  tick after one that fires, since the fight judges a release by their brace and ship after all their orders of the
+  tick; past 30 waiting, the oldest let go as though taken. Each order taken steps their ship once, so late ones catch
+  it up and a browser's prediction of it is their orders stepped in turn. A player whose orders stop lies as they were,
+  riding the swell, until they fall a view's lag (24 ticks) behind; then they stand, a tick at a time, from the moment
+  they join (their helm too once they are at sea), so time spent before putting to sea is not banked to catch up on.
 - **Captains.** An order may call a captain onto the ring round the player's ship, while the room holds fewer than
-  four, or send every captain off. A captain who sinks, or lies past every ship she may fight (each player's, and
+  four, or send every captain off. A captain who sinks, or lies past every ship it may fight (each player's, and
   each afloat captain's of another faction) and is not fighting, leaves the room.
-- **What it sees:** every ship (her hull, her helm's numbers and pose, hull, sail and men, state and fires, guns and
+- **What it sees:** every ship (its hull, its helm's numbers and pose, hull, sail and men, state and fires, guns and
   load, a captain's mode, target and sides run out, and a player's last order taken), the balls aloft, what happened in
   the fight since it was last asked, and the fight's clock.
 - A room holds 16 players. Its chances are drawn from one seed, so one room fights the same fight for the same orders.
@@ -279,23 +279,23 @@ an older reader skips them.
 | Message | From | Holds |
 |---|---|---|
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the pirates' type in that role, a Major), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go) |
-| Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading she faces at rest; in a fight, her orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
-| Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where she puts to sea (3 numbers, heeded once); and a captain called (with her faction and rank; 0 for both is the pirates' Major) or every one sent off |
+| Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
+| Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the pirates' Major) or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window, and the protocol's version: the schema's hash, so a page built from another schema loads again, once |
-| Snapshot | The room | The room's tick; every player: their number, their fighter without its gear's trim (its first 22 numbers their body, its statuses' ticks left after its action's numbers, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves; the fight's events since the last snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the last snapshot as its last segment with the point it left its gun; and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): her number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on her deck, in her frame, with the number of their last step taken; in a fleet every ship with her hull, a captain's with her faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
+| Snapshot | The room | The room's tick; every player: their number, their fighter without its gear's trim (its first 22 numbers their body, its statuses' ticks left after its action's numbers, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves; the fight's events since the last snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the last snapshot as its last segment with the point it left its gun; and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
-starboard), crab and climb; whether a look is laid, its bearing off her bow (degrees) and range (metres); whether it
-has a ray, and the ray's eye (east, south, up) and the way it looks, so a look on her lays on her; the fire, the
+starboard), crab and climb; whether a look is laid, its bearing off its bow (degrees) and range (metres); whether it
+has a ray, and the ray's eye (east, south, up) and the way it looks, so a look on the captain lays on it; the fire, the
 brace, and a load (0 none, else 1 and its place among round, grape, chain and heated). The view: the clock and its
-end (0 on, 1 sunk, 2 gone); each ship, the player's then the captain's, 27 numbers (her own 8, her pose's 4, hull,
-canvas and men with their most, her state, her fires, each side's seconds left and progress, her load and brace, and
-her hull: 0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate); the
-captain's mode, whether she is hostile and her sides run out; any other captains in the fight, a count and each one's
+end (0 on, 1 sunk, 2 gone); each ship, the player's then the captain's, 27 numbers (its own 8, its pose's 4, hull,
+canvas and men with their most, its state, its fires, each side's seconds left and progress, its load and brace, and
+its hull: 0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate); the
+captain's mode, whether it is hostile and its sides run out; any other captains in the fight, a count and each one's
 faction, rank, 27 numbers, mode, hostility and sides run out; the balls aloft, a count and four each; the lay, 0 or 1
 and its side, elevation, reach, landing zone's radius, whether on target, and a count of sixteen each: the gun's
 launch (six), then where its ball stops (whether it does, its time, point, whether in the water, and whether and
-where it strikes her); and the events, a count and each one's kind and numbers (a ram, the tenth kind: the ship
+where it strikes the ship); and the events, a count and each one's kind and numbers (a ram, the tenth kind: the ship
 struck, by whom, the point and the hull it took). The message carries the other captains in a field of their own
 (`naval::wire::parted`), out of the view, so a page that knows one captain reads the view whole; a page that knows them
 puts them back in their place, and reads a fight from a room that sends none as a fight without them.
@@ -359,7 +359,7 @@ so every decision is Rust and the shell only carries bytes and time.
   1 again, the player standing where the room puts them, their dress sent again and what their hands hold kept, and
 every other figure drawn on from where the new room has it, though its clock starts again. The
   [[Test Ground]], the [[Game]]'s node rooms and sea, and a fleet each follow it so; at sea, and in a fleet, the ship
-  puts to sea again where she lies. A room that sends the player away for not keeping to the messages (1008, 1009)
+  puts to sea again where it lies. A room that sends the player away for not keeping to the messages (1008, 1009)
   is not joined again, and the page says why.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
   with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOnNode` cuts the
@@ -368,9 +368,9 @@ every other figure drawn on from where the new room has it, though its clock sta
   knows better, the body moves to it. A body the room says is dead stays where the room saw it.
 - The [[Test Ground]] joins a room when its address carries `?room=`, and shows every other player where the room
   last saw them.
-- In a fleet, `FleetSession` sends each tick's orders, numbered, as the page's clock owes them, and keeps her ship as
-  the room last gave it with her orders it has not taken stepped on top through `room-wasm` (`fleet_predict`), and
-  her look's lay laid among the ships she sees (`fleet_lay`). The [[World Editor]] sails in a fleet when its address
+- In a fleet, `FleetSession` sends each tick's orders, numbered, as the page's clock owes them, and keeps its ship as
+  the room last gave it with its orders it has not taken stepped on top through `room-wasm` (`fleet_predict`), and
+  its look's lay laid among the ships it sees (`fleet_lay`). The [[World Editor]] sails in a fleet when its address
   carries `?room=`: a fleet's name on the deployed rooms, or a local server's address for its `fleet-editor`.
 
 ## Running it
@@ -437,6 +437,6 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
   and all, 0.22 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.
-- Where a ship first puts to sea, with no place kept in her character (a new one, or a page unkept), is the player's
+- Where a ship first puts to sea, with no place kept in its character (a new one, or a page unkept), is the player's
   word, any point of open sea; the sea room does not yet know which port they left from. A ship that leaves the sea room leaves the sea.
 - The sea judges a course against the continents' outlines only; isles are not placed yet.

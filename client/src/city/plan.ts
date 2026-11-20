@@ -42,8 +42,8 @@ export type PlanCell = {
 
 export type Pad = { readonly bounds: readonly [number, number, number, number]; readonly level: number };
 
-/** A wreck settled in a ruin's harbour (the city crate's `Wreck`): which ship, where she lies, her heading clockwise
- *  from north and her heel to starboard, radians. */
+/** A wreck settled in a ruin's harbour (the city crate's `Wreck`): which ship, where it lies, its heading clockwise
+ *  from north and its heel to starboard, radians. */
 export type Wreck = {
   readonly ship: 'sloop' | 'schooner';
   readonly at: readonly [number, number];

@@ -1,4 +1,4 @@
-// The flags the ships fly, a picture a side: her side's ground over a faint weave, and her faction's emblem, the one
+// The flags the ships fly, a picture a side: its side's ground over a faint weave, and its faction's emblem, the one
 // the plates show, in its middle at whole multiples of its pixels. A flag is half again as long as it is deep, and
 // its picture square, so the emblem is drawn two texels a pixel across and three down to stand square on it.
 import { emblemPixels } from '../plus/emblems.ts';

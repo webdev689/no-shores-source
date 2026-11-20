@@ -1,7 +1,7 @@
 // The fight on a struck ship's deck, boarded from the sea: the player on foot there exactly as on land (the same
-// controls, views, display and fight, `Foot`), her deck room reached through the sea's link, which hands it the land
-// inputs and her deck room's snapshots (crates/room/src/sea_decks.rs). Everything on her deck is in her own frame and
-// laid into the world as her ship lies on the swell, as walking the player's own deck is (aboard.ts).
+// controls, views, display and fight, `Foot`), its deck room reached through the sea's link, which hands it the land
+// inputs and its deck room's snapshots (crates/room/src/sea_decks.rs). Everything on its deck is in its own frame and
+// laid into the world as its ship lies on the swell, as walking the player's own deck is (aboard.ts).
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { SeenDeck, SeenFlotsam } from '../network/seaHarbour.ts';
 import type { CardAt } from '../player/cards.ts';
@@ -14,12 +14,12 @@ import type { Shot } from './camera.ts';
 import type { Foot, FootContext, FootFrame } from './foot.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** How the player is stood on foot on her deck: `Foot.onDeck`, handed in, since the land's scene on foot brings in
+/** How the player is stood on foot on its deck: `Foot.onDeck`, handed in, since the land's scene on foot brings in
  *  the page's styles, which tests run without. */
 export type StandOnDeck = (typeof Foot)['onDeck'];
 
-/** What the fight on her deck needs of the sea room: the deck the player stands on, their number at sea, the link's
- *  state and gear, where her deck room's snapshots go, and a way to send it the land's inputs. */
+/** What the fight on its deck needs of the sea room: the deck the player stands on, their number at sea, the link's
+ *  state and gear, where its deck room's snapshots go, and a way to send it the land's inputs. */
 export interface DeckSea {
   readonly deck: SeenDeck | null;
   readonly own: number;
@@ -31,7 +31,7 @@ export interface DeckSea {
   sendDeck(bytes: Uint8Array<ArrayBuffer>): void;
 }
 
-/** Her deck room as the boarder's fight reaches it, as `boarder` there: through the sea's link, which the sea pumps,
+/** Its deck room as the boarder's fight reaches it, as `boarder` there: through the sea's link, which the sea pumps,
  *  rejoins and loses; its gear is the sea's link's, which hears the deck room's word on it. */
 export function deckLink(sea: DeckSea, boarder: number): RoomLink {
   return {
@@ -58,8 +58,8 @@ export function deckLink(sea: DeckSea, boarder: number): RoomLink {
   };
 }
 
-/** Her deck as a place on foot: its ring her deck's bounds and its one spawn where her deck room stands a boarder
- *  come over her rail on `side`. */
+/** Its deck as a place on foot: its ring the deck's bounds and its one spawn where the deck room stands a boarder
+ *  come over its rail on `side`. */
 export function deckNode(deck: Deck, name: string, side: number): NodeInfo {
   const [west, north] = [deck.west, deck.north];
   const [east, south] = [west + deck.cell * deck.columns, north + deck.cell * deck.rows];
@@ -80,8 +80,8 @@ export function deckNode(deck: Deck, name: string, side: number): NodeInfo {
   };
 }
 
-/** The captain of a fight lying nearest `near`, the boarded one, and where she lies, drawn `scale` times her size. */
-export function herLying(
+/** The captain of a fight lying nearest `near`, the boarded one, and where it lies, drawn `scale` times its size. */
+export function boardedLying(
   view: FightView,
   near: readonly [number, number],
   scale: number,
@@ -96,19 +96,19 @@ export function herLying(
 }
 
 /** The side of the struck captain nearest the player's ship in the fight `view` (the one the room boards, as
- *  `Fights::board` chooses her) that their ship lies on, as her deck room reckons it (crates/room/src/sea_decks.rs
- *  `side_of`): 1 her starboard, -1 her port. */
+ *  `Fights::board` chooses it) that their ship lies on, as its deck room reckons it (crates/room/src/sea_decks.rs
+ *  `side_of`): 1 its starboard, -1 its port. */
 export function boardingSide(view: FightView): number {
   const [x = 0, y = 0] = view.player.ship;
   const struck = [view.captain, ...(view.others ?? [])].filter((captain) => captain.state === 'struck');
   const [first, ...others] = struck.length > 0 ? struck : [view.captain];
-  const { lying } = herLying({ ...view, captain: first ?? view.captain, others }, [x, y], 1);
+  const { lying } = boardedLying({ ...view, captain: first ?? view.captain, others }, [x, y], 1);
   const across = (x - lying.x) * Math.cos(lying.heading) + (y - lying.y) * Math.sin(lying.heading);
   return across < 0 ? -1 : 1;
 }
 
-/** The map from her deck's frame to the world's as she lies, column-major: a step along her deck (x to starboard, y
- *  to her stern, z up) to the world's step, at the size she is drawn. */
+/** The map from its deck's frame to the world's as it lies, column-major: a step along its deck (x to starboard, y
+ *  to its stern, z up) to the world's step, at the size it is drawn. */
 export function deckTurn(lying: Lying): Float32Array {
   const [bow, starboard, up] = shipAxes(lying.heading, lying.pitch, lying.roll);
   const axis = (along: readonly number[], sign: number) =>
@@ -128,9 +128,9 @@ export function times(first: Float32Array, then: Float32Array): Float32Array {
   return out;
 }
 
-/** A frame on her deck laid into the world as she lies: the shot from the eye there, level as the walk's on the
- *  player's own deck is, and every figure on her deck where she carries it. */
-export function laidOnHer(shown: FootFrame, lying: Lying): { readonly shot: Shot; readonly figures: CardAt[] } {
+/** A frame on its deck laid into the world as it lies: the shot from the eye there, level as the walk's on the
+ *  player's own deck is, and every figure on its deck where it carries it. */
+export function laidOnDeck(shown: FootFrame, lying: Lying): { readonly shot: Shot; readonly figures: CardAt[] } {
   const shot = { ...shown.shot, eye: deckToWorld(lying, ...shown.shot.eye), yaw: shown.shot.yaw + lying.heading };
   const figures = shown.figures.map((figure) => {
     const [x, y, z] = deckToWorld(lying, figure.x, figure.y, figure.z);
@@ -139,7 +139,7 @@ export function laidOnHer(shown: FootFrame, lying: Lying): { readonly shot: Shot
   return { shot, figures };
 }
 
-/** What floats from her hold for the player, in words: the pieces' kinds counted. */
+/** What floats from its hold for the player, in words: the pieces' kinds counted. */
 export function holdWords(pieces: readonly SeenFlotsam[]): string {
   const counted = (['crate', 'barrel', 'chest'] as const).flatMap((kind) => {
     const count = pieces.filter((piece) => piece.kind === kind).length;
@@ -149,18 +149,18 @@ export function holdWords(pieces: readonly SeenFlotsam[]): string {
   return counted.length > 0 ? counted.join(', ') : 'nothing';
 }
 
-/** The fight on one deck the player boarded, as `boarder` in her deck room. */
+/** The fight on one deck the player boarded, as `boarder` in its deck room. */
 export class DeckFight {
   readonly foot: Foot;
   readonly boarder: number;
-  /** Her deck, as her hull's manifest holds it. */
+  /** Its deck, as its hull's manifest holds it. */
   readonly deck: Deck;
   private readonly sea: DeckSea;
-  /** Where her ship lay last, to know her again among the fight's captains. */
+  /** Where its ship lay last, to know it again among the fight's captains. */
   private near: readonly [number, number];
-  /** The pieces of what floats the player had before her hold opened, and what it laid for them once it did. */
+  /** The pieces of what floats the player had before its hold opened, and what it laid for them once it did. */
   private before = new Set<number>();
-  /** Where this fight hears her deck room's snapshots, let go of only while it is the sea's. */
+  /** Where this fight hears its deck room's snapshots, let go of only while it is the sea's. */
   private heard: DeckSea['hearDeck'] = null;
   private taken: readonly SeenFlotsam[] | null = null;
   /** A tick of the sea's, seconds, as the rules' door gives it. */
@@ -170,7 +170,7 @@ export class DeckFight {
     [this.foot, this.boarder, this.deck, this.sea, this.near] = [foot, boarder, deck, sea, near];
   }
 
-  /** Stands the player on the deck the sea says they boarded, the ship nearest `near` hers, her deck room's
+  /** Stands the player on the deck the sea says they boarded, the ship nearest `near`, its deck room's
    *  snapshots heard from the sea's link from now on. */
   static async board(
     context: FootContext,
@@ -181,54 +181,54 @@ export class DeckFight {
     side: number,
   ): Promise<DeckFight> {
     const boarder = deck.aboard.find(([player]) => player === sea.own)?.[1] ?? 0;
-    const her = HULL_DECKS[deck.hull] ?? HULL_DECKS[0];
-    if (!her) throw new Error('no hull has a deck');
-    const groundAt = (x: number, y: number) => cellHeight(her, x, y);
-    const onHer = { ...context, groundAt, cameraBlocks: deckCameraBlocks(deck.hull) };
+    const hullDeck = HULL_DECKS[deck.hull] ?? HULL_DECKS[0];
+    if (!hullDeck) throw new Error('no hull has a deck');
+    const groundAt = (x: number, y: number) => cellHeight(hullDeck, x, y);
+    const onBoarded = { ...context, groundAt, cameraBlocks: deckCameraBlocks(deck.hull) };
     // What floats for the player as they board, so a hold won while the fight stands up is told apart from it.
     const before = new Set(sea.flotsam.map((piece) => piece.id));
     let heard: DeckSea['hearDeck'] = null;
-    const foot = await stand(onHer, deckNode(her, 'Her deck', side), deckFloats(her), (received) => {
+    const foot = await stand(onBoarded, deckNode(hullDeck, 'The deck', side), deckFloats(hullDeck), (received) => {
       [sea.hearDeck, heard] = [received, received];
       return deckLink(sea, boarder);
     });
-    const fight = new DeckFight(foot, boarder, her, sea, near);
+    const fight = new DeckFight(foot, boarder, hullDeck, sea, near);
     [fight.before, fight.heard, fight.tickSeconds] = [before, heard, context.movement.tickSeconds];
     return fight;
   }
 
-  /** Her ship in the fight `view`, the one boarded, and where she lies drawn `scale` times her size. */
-  her(view: FightView, scale: number): { readonly captain: FightCaptain; readonly lying: Lying } {
-    const found = herLying(view, this.near, scale);
+  /** Its ship in the fight `view`, the one boarded, and where it lies drawn `scale` times its size. */
+  boarded(view: FightView, scale: number): { readonly captain: FightCaptain; readonly lying: Lying } {
+    const found = boardedLying(view, this.near, scale);
     this.near = [found.lying.x, found.lying.y];
     return found;
   }
 
-  /** The seconds her won deck holds the player yet, whole; null while her crew still fights. */
+  /** The seconds its won deck holds the player yet, whole; null while its crew still fights. */
   get holdLeft(): number | null {
     const ticks = this.sea.deck?.holdLeft;
     return ticks === null || ticks === undefined ? null : Math.ceil(ticks * this.tickSeconds);
   }
 
-  /** What her hold laid for the player once her crew fell, as the room gave it; null before. */
+  /** What its hold laid for the player once its crew fell, as the room gave it; null before. */
   get take(): readonly SeenFlotsam[] | null {
     return this.taken;
   }
 
-  /** One frame on her deck, as one on foot is. */
+  /** One frame on its deck, as one on foot is. */
   frame(
     controls: InputFrame,
     seconds: number,
     clock: number,
     how: { paused: boolean; hands: boolean; aspect: number },
   ): FootFrame {
-    // Her hold lays its pieces the tick her crew falls: those new since then are its take.
+    // Its hold lays its pieces the tick its crew falls: those new since then are its take.
     if (this.holdLeft === null) this.before = new Set(this.sea.flotsam.map((piece) => piece.id));
     else this.taken ??= this.sea.flotsam.filter((piece) => !this.before.has(piece.id));
     return this.foot.frame(controls, seconds, clock, how);
   }
 
-  /** Leaves her deck: her deck room's snapshots are heard no more. */
+  /** Leaves its deck: its deck room's snapshots are heard no more. */
   leave(): void {
     this.foot.leave();
     if (this.sea.hearDeck === this.heard) this.sea.hearDeck = null;

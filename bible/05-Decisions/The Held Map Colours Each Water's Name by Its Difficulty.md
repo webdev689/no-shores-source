@@ -17,6 +17,6 @@ status: in force
 ## What it settles
 
 - The held map is detailed enough as it is ([[Held Map]]).
-- Each water keeps her holder's wash ([[The Waters Come From the Islands]]); her name and a ring round it are coloured
-  by her level band, from the easiest to the hardest, so a water's difficulty reads at a glance.
+- Each water keeps its holder's wash ([[The Waters Come From the Islands]]); its name and a ring round it are coloured
+  by its level band, from the easiest to the hardest, so a water's difficulty reads at a glance.
 - The key shows the difficulty's colours beside the holders'.

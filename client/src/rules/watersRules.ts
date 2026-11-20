@@ -57,8 +57,8 @@ export interface WatersTable {
 }
 
 /** The sea's rules the page reads beside its waters: the reach a hostile ship meets a player within and the furthest
- *  one may hold a voyage, metres; the reach of a port city's repairs, metres; and each ship's name by her faction's
- *  number and then her hull's (crates/naval/src/ranks.rs `ship_name`). */
+ *  one may hold a voyage, metres; the reach of a port city's repairs, metres; and each ship's name by its faction's
+ *  number and then its hull's (crates/naval/src/ranks.rs `ship_name`). */
 export interface SeaFacts {
   readonly engageM: number;
   readonly holdReachM: number;
@@ -82,7 +82,7 @@ export interface WatersGrid {
   readonly cells: Uint8Array;
 }
 
-/** A friendly ship at one moment. `hull` is 0 sloop, 1 schooner, 2 brig, 3 frigate; `direction` is the unit way she
+/** A friendly ship at one moment. `hull` is 0 sloop, 1 schooner, 2 brig, 3 frigate; `direction` is the unit way it
  *  sails; ports are indices into the table's `ports`. */
 export interface TrafficShip {
   readonly id: number;
@@ -122,7 +122,7 @@ export interface WatersRules {
   grid(cellM: number): WatersGrid;
   /** The friendly ships within `radiusM` of `centre` at `timeS`, seconds since the Unix epoch, by id. */
   shipsNear(centre: Point, radiusM: number, timeS: number): TrafficShip[];
-  /** One ship by her id at `timeS`; null when she is not sailing then. */
+  /** One ship by its id at `timeS`; null when it is not sailing then. */
   ship(id: number, timeS: number): TrafficShip | null;
   /** The swell under the weather at a world point at `timeS`, seconds since the Unix epoch (the open sea's weather
    *  before the waters are opened). */

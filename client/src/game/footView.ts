@@ -55,8 +55,8 @@ export class FootView {
    * One frame of the fight on foot: its blood run on by `seconds`, its marks taken, and its display shown over a canvas
    * `viewport` CSS pixels big, drawn `size` device pixels. Answers the drawers that lie under the figures (the blood)
    * and over them (the marks; the arcs and the see-through marks over the water; and the light of marks and arcs while
-   * the attack feel's light is on and there are any). On a struck ship's deck (`onHer`), the fight is in her own frame
-   * and drawn through the world's `shot` as her deck's `turn` lays it into the world.
+   * the attack feel's light is on and there are any). On a struck ship's deck (`onBoarded`), the fight is in its own frame
+   * and drawn through the world's `shot` as its deck's `turn` lays it into the world.
    */
   frame(
     foot: Foot,
@@ -66,20 +66,22 @@ export class FootView {
       size,
       viewport,
       groundAt,
-      onHer,
+      onBoarded,
     }: {
       size: { readonly width: number; readonly height: number };
       viewport: { readonly width: number; readonly height: number };
       groundAt: (x: number, y: number) => number | null;
-      onHer?: { readonly shot: Shot; readonly turn: Float32Array };
+      onBoarded?: { readonly shot: Shot; readonly turn: Float32Array };
     },
   ): { under: Drawer; over: Drawer } {
     this.root.hidden = false;
     const { shot, fight } = shown;
     const aspect = size.width / Math.max(1, size.height);
-    const fromEye = onHer ? times(fromEyeMatrix(onHer.shot, aspect), onHer.turn) : fromEyeMatrix(shot, aspect);
-    // The scene's matrices take the world's steps from its eye; her deck's steps are turned into the world's first.
-    const own = (eyeMatrix: Float32Array) => (onHer ? times(eyeMatrix, onHer.turn) : eyeMatrix);
+    const fromEye = onBoarded
+      ? times(fromEyeMatrix(onBoarded.shot, aspect), onBoarded.turn)
+      : fromEyeMatrix(shot, aspect);
+    // The scene's matrices take the world's steps from its eye; its deck's steps are turned into the world's first.
+    const own = (eyeMatrix: Float32Array) => (onBoarded ? times(eyeMatrix, onBoarded.turn) : eyeMatrix);
     const [eyeX, eyeY, eyeZ] = shot.eye;
     const blood = this.bloodOf(foot, groundAt);
     const [originX, originY, originZ] = blood.origin;

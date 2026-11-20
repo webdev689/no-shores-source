@@ -12,7 +12,7 @@ export const PORT_PX = 15;
 export const LINE = 16;
 export const NAME_GAP = 5;
 const SPACE = 2;
-/** How far a water's ring stands out from her name either side, and her words' half height within it. */
+/** How far a water's ring stands out from its name either side, and its words' half height within it. */
 export const RING = 6;
 /** Each mark's half width: a port's filled ring, a ruin's diamond, a node's ring, and the ship's arrow. */
 const MARK_HALF: Readonly<Record<string, number>> = { port: 4.5, ruin: 5, ship: 10 };
@@ -65,13 +65,13 @@ export interface MapLetter {
   /** How far a place's name stands from its mark's middle, units: past its mark, or past the ship's arrow where that
    *  stands on it. */
   readonly away?: number | undefined;
-  /** A water's colour on the difficulty ramp, which her name and its ring are inked in. */
+  /** A water's colour on the difficulty ramp, which its name and its ring are inked in. */
   readonly colour?: string | undefined;
-  /** A water's words lettered as two lines, her name over her level band (`waterLines`), where one would not fit. */
+  /** A water's words lettered as two lines, its name over its level band (`waterLines`), where one would not fit. */
   readonly lines?: 1 | 2 | undefined;
 }
 
-/** A water's words as the lines they are lettered in: "The Fen Deeps, 22-26" whole, or her name over "22-26". */
+/** A water's words as the lines they are lettered in: "The Fen Deeps, 22-26" whole, or its name over "22-26". */
 export function waterLines(text: string, lines: 1 | 2 | undefined): string[] {
   const comma = text.lastIndexOf(', ');
   return lines === 2 && comma > 0 ? [text.slice(0, comma), text.slice(comma + 2)] : [text];
@@ -103,7 +103,7 @@ export interface LayoutAsk {
   /** What the hands cover, ink pixels (`handsCover`). */
   readonly covers: readonly Rect[];
   readonly places: readonly { text: string; x: number; y: number; kind: string; chosen: boolean }[];
-  /** Each water in view: her name, her continent's index, her colour, and the spots her name may stand at, ink pixels,
+  /** Each water in view: its name, its continent's index, its colour, and the spots its name may stand at, ink pixels,
    *  the likeliest first (`HeldMapWaters.letters`). */
   readonly waters: readonly {
     text: string;
@@ -115,7 +115,7 @@ export interface LayoutAsk {
   /** A word's width in its kind's face, units. */
   readonly widthOf: (text: string, kind: string) => number;
   /** How a box, ink pixels, stands on the sea of the water whose continent's index is given: 2 wholly, 1 on no land
-   *  with its middle on hers, 0 not at all (`onOwnSea`). */
+   *  with its middle on it, 0 not at all (`onOwnSea`). */
   readonly sea: (box: Rect, continent: number) => 0 | 1 | 2;
   /** Whether discovered land lies under a box, ink pixels. */
   readonly land: (box: Rect) => boolean;
@@ -137,7 +137,7 @@ export function markBox(kind: string, x: number, y: number, scale: number): Rect
 }
 
 /** The box a name covers, ink pixels, its text `width` units wide: beside its mark on `side`, or a water's centred
- *  in her ring; each with the clear space a word keeps. */
+ *  in its ring; each with the clear space a word keeps. */
 export function nameBox(
   letter: Pick<MapLetter, 'x' | 'y' | 'kind' | 'away' | 'lines'>,
   side: 'right' | 'left' | 'centre',
@@ -182,7 +182,7 @@ function besideSpots<T extends { x: number; y: number; kind: string }>(
 }
 
 /** Lays the map's lettering out: the ship and every mark first, then each name in its priority, beside its mark
- *  (right, else left), or a water's at the first of her spots wholly on her own sea, else on no land; then the key by its
+ *  (right, else left), or a water's at the first of its spots wholly on its own sea, else on no land; then the key by its
  *  clear-corner rule (`keyPlace`). Every name stands inside the map and clear of the hands, of every mark and of every
  *  name laid before it. With no corner clear, the key takes the corner that costs least, and the names are laid again
  *  round it. */
@@ -325,7 +325,7 @@ function laidOut(ask: LayoutAsk, asked: readonly Asked[], blocked: readonly Rect
   for (const { letter, index } of order) {
     const width = ask.widthOf(letter.text, letter.kind);
     if (letter.kind === 'water') {
-      // On one line or two, wholly on her own sea at any spot that allows it, else on no land, her middle on her sea.
+      // On one line or two, wholly on its own sea at any spot that allows it, else on no land, its middle on its sea.
       let found: { spot: { x: number; y: number }; lines: 1 | 2; box: Rect } | null = null;
       for (const sea of [2, 1] as const)
         for (const lines of [1, 2] as const) {

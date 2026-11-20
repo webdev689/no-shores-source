@@ -71,10 +71,10 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
   sand shows turquoise in the shallows, and the sea deepens to blue. Lakes and rivers are greener and murkier.
 - **Light.** The sky and its clouds reflect, more at a glancing angle; the sun glints, its glitter blurring far off;
   a crest glows green where the sun shines through it. Caustics dance on the bed.
-- **Shadows.** The surface takes the sun's shadows: in a ship's, beside her waterline, it loses the sun's glints and a
+- **Shadows.** The surface takes the sun's shadows: in a ship's, beside its waterline, it loses the sun's glints and a
   third of the light it scatters and reflects. The seabed's shadows fade with the water over them, about a seventh left
-  three metres down, as the water scatters the light, so a ship's shadow lies on the surface by her and not on the
-  bed apart from her (the land's shader, `terrainView.ts`).
+  three metres down, as the water scatters the light, so a ship's shadow lies on the surface by the ship and not on the
+  bed apart from it (the land's shader, `terrainView.ts`).
 - **Blurred reflections.** Waves too small to draw fan each reflected pixel's rays about 0.2 radians at sea, less
   on calm fresh water. So the reflected clouds lose their fine detail and keep their mean cover. Looking down, their
   shapes still show; near the horizon they smear into a lighter sky.
@@ -102,28 +102,28 @@ of foam the fight throws up there ([[Naval Combat]],
 
 ## A ship on it
 
-A ship drawn with the land hides the water behind her and is seen through it below her waterline. She rides the swell
-through her inertia: each wave answered as a first-order lag answers it, her time constant 0.02 s a metre of her
-waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Her bow slams when, pitching
-down, the crest at her stem rises over it faster than 1 m/s, and throws spray.
+A ship drawn with the land hides the water behind it and is seen through it below its waterline. It rides the swell
+through its inertia: each wave answered as a first-order lag answers it, its time constant 0.02 s a metre of its
+waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sailing]]). Its bow slams when, pitching
+down, the crest at its stem rises over it faster than 1 m/s, and throws spray.
 
-Her footprint is her own hull line at her waterline, read from her mesh where its faces cross it (16 stations, stern
-to bow; a fair hull until her mesh comes), a hair inside it: it holds no water, so none shows in her open hull or over
-her gunwale. Under way:
+Its footprint is its own hull line at its waterline, read from its mesh where its faces cross it (16 stations, stern
+to bow; a fair hull until its mesh comes), a hair inside it: it holds no water, so none shows in its open hull or over
+its gunwale. Under way:
 
-- **Foam along her hull line**, 0.8 m wide at her true size, most at her bow, whole at 2 m/s.
-- **Her wake**: the Kelvin wake's two arms from her quarters, 19.5 degrees either side of her track, laid as foam and
-  a crest 0.18 m high at her full way, widening as they spread; inside the V the water is stirred, outside it still.
-  It runs a minute of her way aft and fades over it. Her track's wash churns white for 20 s.
-- **Her bow wave**: two short, steep arms from her stem, a crest and foam, reaching 1.2 of her lengths aft.
-- **Spray** round her bow: a little at way, more the rougher the sea, and a burst with each slam that fades in
+- **Foam along its hull line**, 0.8 m wide at its true size, most at its bow, whole at 2 m/s.
+- **Its wake**: the Kelvin wake's two arms from its quarters, 19.5 degrees either side of its track, laid as foam and
+  a crest 0.18 m high at its full way, widening as they spread; inside the V the water is stirred, outside it still.
+  It runs a minute of its way aft and fades over it. Its track's wash churns white for 20 s.
+- **Its bow wave**: two short, steep arms from its stem, a crest and foam, reaching 1.2 of its lengths aft.
+- **Spray** round its bow: a little at way, more the rougher the sea, and a burst with each slam that fades in
   0.8 s.
-- **Ripples**: above a wake's way (0.5 m/s) she stirs them at her bow and both quarters each half metre she runs, and
-  the field follows her.
+- **Ripples**: above a wake's way (0.5 m/s) it stirs them at its bow and both quarters each half metre it runs, and
+  the field follows it.
 
 Every ship the view draws has these, players', hostile and friendly, the nearest the eye first, up to 48: every ship
 of a full sea in view, while each water pixel's walk over them stays within the swell's own cost. All of it is drawn
-at her drawn size: from the raised Overworld view, which draws a ship four times her size, her wake is four times as
+at its drawn size: from the raised Overworld view, which draws a ship four times its size, its wake is four times as
 long and wide, so it matches the ship one sees; close in, everything is true size.
 
 ## Read from above
@@ -149,7 +149,7 @@ deep. A diver's camera comes in close rather than sink into the bed.
 - A fight takes the swell and the wind where it began, and keeps them, calm by a port city's roadstead as the sea
   is; a fight among captains alone keeps its start's weather too.
 - The World Editor's sea is a moderate sea's; only its wind is the weather's.
-- A wake runs straight back along her heading: a ship turning drags it round with her.
-- Spray is drawn on the water round her bow, not thrown into the air.
+- A wake runs straight back along the ship's heading: a ship turning drags it round with it.
+- Spray is drawn on the water round its bow, not thrown into the air.
 - The walker has no body yet: the ripples and splashes come from the point the camera follows.
 - A fight's ships, drawn by the fight, keep the Sloop's line until the fight says each one's hull.

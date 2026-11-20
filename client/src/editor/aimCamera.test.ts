@@ -36,7 +36,7 @@ test('letting go eases the eye home again, and once home the camera is its own',
   assert.deepEqual(eye, HOME);
 });
 
-test('swinging the look across her bow carries the eye round in her own frame, never across her deck in a frame', () => {
+test('swinging the look across its bow carries the eye round in its own frame, never across its deck in a frame', () => {
   const camera = new AimCamera();
   for (let frame = 0; frame < 120; frame++) camera.eye(HOME, 1, SHIP, [], 1 / 60);
   const before = camera.eye(HOME, 1, SHIP, [], 1 / 60);
@@ -47,7 +47,7 @@ test('swinging the look across her bow carries the eye round in her own frame, n
   assert.ok(gap(eye, aimEye(SHIP, -1)) < 0.01);
 });
 
-test('the eased eye rides with her as she sails and turns: it is eased in her frame, not the world', () => {
+test('the eased eye rides with it as it sails and turns: it is eased in its frame, not the world', () => {
   const camera = new AimCamera();
   for (let frame = 0; frame < 120; frame++) camera.eye(HOME, 1, SHIP, [], 1 / 60);
   const turned = { ...SHIP, x: SHIP.x + 3, heading: 0.3 };
@@ -55,8 +55,8 @@ test('the eased eye rides with her as she sails and turns: it is eased in her fr
   assert.ok(gap(eye, aimEye(turned, 1)) < 0.01);
 });
 
-test('a ship close alongside stops the eye short of her side, never inside her hull', () => {
-  // Heading north, starboard is east: a Brig lying 4 m off her starboard side, her rail higher than the eye.
+test('a ship close alongside stops the eye short of its side, never inside its hull', () => {
+  // Heading north, starboard is east: a Brig lying 4 m off its starboard side, its rail higher than the eye.
   const alongside: AimHull = {
     x: SHIP.x + 2.8 + 3.5 + 2,
     y: SHIP.y,
@@ -70,8 +70,8 @@ test('a ship close alongside stops the eye short of her side, never inside her h
   let eye = HOME as readonly number[];
   for (let frame = 0; frame < 240; frame++) eye = camera.eye(HOME, 1, SHIP, [alongside], 1 / 60);
   const side = alongside.x - alongside.halfBeam;
-  assert.ok((eye[0] ?? 0) <= side - AIM_CAM_CLEAR + 1e-6, `the eye stands at ${eye[0]}, her side at ${side}`);
-  assert.ok((eye[0] ?? 0) > SHIP.x, 'and still out on her own starboard side');
+  assert.ok((eye[0] ?? 0) <= side - AIM_CAM_CLEAR + 1e-6, `the eye stands at ${eye[0]}, its side at ${side}`);
+  assert.ok((eye[0] ?? 0) > SHIP.x, 'and still out on its own starboard side');
   // One far off leaves the eye where it was.
   const far = new AimCamera();
   for (let frame = 0; frame < 240; frame++) eye = far.eye(HOME, 1, SHIP, [{ ...alongside, x: SHIP.x + 60 }], 1 / 60);
@@ -83,5 +83,5 @@ test('a segment enters a box padded by the clearance where it first meets it, an
   const hit = segmentBoxEntry([0, 0, 2], [20, 0, 2], box, 1);
   assert.ok(hit !== null && near(hit, (10 - 2 - 1) / 20), `${hit}`);
   assert.equal(segmentBoxEntry([0, 20, 2], [20, 20, 2], box, 1), null);
-  assert.equal(segmentBoxEntry([0, 0, 2], [5, 0, 2], box, 1), null, 'it stops short of her');
+  assert.equal(segmentBoxEntry([0, 0, 2], [5, 0, 2], box, 1), null, 'it stops short of the ship');
 });

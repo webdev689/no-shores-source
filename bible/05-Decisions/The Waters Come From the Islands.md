@@ -28,8 +28,8 @@ status: in force
 > dynamically adjusted to be more visible and detailed compared to the current system"
 
 > Asked whether that means hostile ships sighted about 5 km out at the helm and farther with a voyage's pace, so each
-> stays in sight at least 30 s, staying until out of sight, their number and ranks set by the water, each flying her
-> faction's colours and flag on her rank's hull: "Yes, that's it"
+> stays in sight at least 30 s, staying until out of sight, their number and ranks set by the water, each flying its
+> faction's colours and flag on its rank's hull: "Yes, that's it"
 
 > Asked whether friendly ships sail routes between ports all the time, seen from shore and sea, on the same hulls in
 > friendly colours, as the merchantmen the escorts and events need, with port factions later: "Yes"
@@ -58,11 +58,11 @@ status: in force
 - Minor and Major ships are most common in low waters, and Elite ships grow more common as a water's level rises.
   Miniboss ships sail only in waters whose band starts at 13 or above. The Boss Frigate sails only at the Grey Tithe's
   sea strike. Pirates keep near coves and wrecks; the Grey Tithe patrols the lanes.
-- A ship's rank picks her hull: Minor and Major the Sloop, Elite the Schooner, Miniboss the Brig, Boss the Frigate
+- A ship's rank picks its hull: Minor and Major the Sloop, Elite the Schooner, Miniboss the Brig, Boss the Frigate
   ([[The Ships as Claude Shapes Them]], [[Hulls]]).
 - Hostile ships still come to the player, now sighted about 5 km out at the helm. On a voyage that distance grows with
-  its pace, so each ship stays in sight at least 30 s. She stays until she is out of sight. Her water sets how many come
-  and of which ranks. She flies her faction's colours and flag on her rank's hull.
+  its pace, so each ship stays in sight at least 30 s. It stays until it is out of sight. Its water sets how many come
+  and of which ranks. It flies its faction's colours and flag on its rank's hull.
 - Friendly ships sail routes between ports all the time, seen from land and sea, on the same hulls in friendly
   colours; the ports are three ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). They are the merchantmen that escorts and events need
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).

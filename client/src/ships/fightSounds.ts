@@ -14,7 +14,7 @@ export const SEA_SOUNDS: Readonly<Record<string, { readonly nearM: number; reado
   'ship.hit': { nearM: 16, mostM: 1000 },
   'ship.blast': { nearM: 26, mostM: 1800 },
   'ship.grapple': { nearM: 6, mostM: 240 },
-  // The run-out is the tell, carried across the fight; her own battery ready is a word for her helm alone.
+  // The run-out is the tell, carried across the fight; the ship's own battery ready is a word for its helm alone.
   'ship.runout': { nearM: 24, mostM: 900 },
   'ship.ready': { nearM: 10, mostM: 80 },
   'ship.sinking': { nearM: 18, mostM: 420 },

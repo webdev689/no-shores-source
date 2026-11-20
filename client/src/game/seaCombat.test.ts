@@ -48,7 +48,7 @@ const WATERLINE = { lengthM: 18.6775, beamM: 5.5684, draughtM: 1.8 };
 /** The Sloop drawn 75 m long on the sea's view. */
 const SEA_SCALE = 75 / WATERLINE.lengthM;
 
-test('a fight draws every ship, her footprint, everyone aboard and each bar at the size the view shows her', () => {
+test('a fight draws every ship, its footprint, everyone aboard and each bar at the size the view shows it', () => {
   const fight = new SeaCombat(ROOM, FIRST, MARKS, 0);
   const ships = fight.ships(0.1, 0, 0, 3);
   assert.deepEqual(
@@ -68,20 +68,25 @@ test('a fight draws every ship, her footprint, everyone aboard and each bar at t
       [0, 'player'],
       [0, 'pirate'],
     ],
-    "the player's Sloop as she is, the pirate's in the pirates' colours",
+    "the player's Sloop as it is, the pirate's in the pirates' colours",
   );
   assert.equal(fight.ownAt(3)?.scale, 3);
   assert.deepEqual(fight.bars(3)[0]?.over, [5400, 5500, (0.2 + BAR_OVER_M) * 3]);
 });
 
-test("a fight begun at the sea's view keeps the size she is drawn at, and eases to her true size as it comes down", () => {
+test("a fight begun at the sea's view keeps the size it is drawn at, and eases to its true size as it comes down", () => {
   const fight = new SeaCombat(ROOM, FIRST, MARKS, 0);
-  const her = [5000, 6000, 0] as const;
-  const { eye } = eyeFor(her, 2.6, (30 * Math.PI) / 180, HEIGHT.lowest);
+  const place = [5000, 6000, 0] as const;
+  const { eye } = eyeFor(place, 2.6, (30 * Math.PI) / 180, HEIGHT.lowest);
   const sea: Shot = { eye, yaw: 2.6, pitch: (30 * Math.PI) / 180, fov: FIELD_OF_VIEW, near: 2, far: 60_000 };
   const scaleAt = (near: Shot, share: number) => {
     const shown = panShot(sea, near, share);
-    const picture = { seaM: pictureAt(sea, her), shownM: pictureAt(shown, her), nearM: pictureAt(near, her), share };
+    const picture = {
+      seaM: pictureAt(sea, place),
+      shownM: pictureAt(shown, place),
+      nearM: pictureAt(near, place),
+      share,
+    };
     return shownScale(SEA_SCALE, picture);
   };
   const failed = (error: unknown) => {
@@ -89,19 +94,19 @@ test("a fight begun at the sea's view keeps the size she is drawn at, and eases 
   };
   let near = fight.frame(0, 0, sea.far, failed);
   assert.equal(fight.share, 0);
-  assert.equal(scaleAt(near, fight.share), SEA_SCALE, 'as the sea drew her the frame before');
+  assert.equal(scaleAt(near, fight.share), SEA_SCALE, 'as the sea drew it the frame before');
   let last = SEA_SCALE;
   for (let frame = 1; frame <= 20; frame++) {
     near = fight.frame(0.1, frame * 0.1, sea.far, failed);
     const scale = scaleAt(near, fight.share);
-    assert.ok(scale <= last && scale >= 1, `${scale} times her size, after ${last}`);
+    assert.ok(scale <= last && scale >= 1, `${scale} times its size, after ${last}`);
     last = scale;
   }
   assert.equal(fight.share, 1, 'down at the fight');
-  assert.equal(last, 1, 'her true size');
+  assert.equal(last, 1, 'its true size');
 });
 
-test("in a fight the player's footprint comes first, then the captains nearest her, and a sunk ship's goes", () => {
+test("in a fight the player's footprint comes first, then the captains nearest it, and a sunk ship's goes", () => {
   const far = { ...captain, ship: [9000, 6000, 0, 3, 0, 0, 0, 2] as typeof captain.ship };
   const near = { ...captain, ship: [5100, 6000, 0, 0, 0, 0, 0, 2] as typeof captain.ship };
   const sunk = { ...captain, ship: [5050, 6000, 0, 0, 0, 0, 0, 2] as typeof captain.ship, state: 'sunk' as const };
@@ -117,7 +122,7 @@ test("in a fight the player's footprint comes first, then the captains nearest h
   );
 });
 
-test('a captain keeps her own harm when another leaves the fight and the view moves her up its list', async () => {
+test('a captain keeps its own harm when another leaves the fight and the view moves it up its list', async () => {
   const [north, south] = [
     { ...captain, ship: [5100, 5800, 0, 0, 0, 0, 0, 2], number: 5 },
     { ...captain, ship: [5300, 6200, 0, 0, 0, 0, 0, 2], number: 7 },
@@ -140,7 +145,7 @@ test('a captain keeps her own harm when another leaves the fight and the view mo
     await new Promise((settled) => setImmediate(settled));
   }
   assert.equal(views.length, 0, 'both views were taken');
-  assert.equal(scarsOf(5300), 1, 'the one struck keeps her hole');
+  assert.equal(scarsOf(5300), 1, 'the one struck keeps its hole');
   assert.equal(scarsOf(5000), 0);
 });
 
@@ -164,7 +169,7 @@ function ordered(view: FightView = FIRST) {
 const away = (shot: Shot, from: readonly number[]) =>
   Math.hypot(...shot.eye.map((value, axis) => value - (from[axis] ?? 0)));
 
-test('pressing aim eases the eye out to her battery, not a cut from the orbit in one frame', async () => {
+test('pressing aim eases the eye out to its battery, not a cut from the orbit in one frame', async () => {
   const { fight, frames } = ordered();
   const [orbit] = await frames(1);
   fight.aim(true);
@@ -176,10 +181,10 @@ test('pressing aim eases the eye out to her battery, not a cut from the orbit in
   const shots = await frames(30);
   const last = shots.at(-1);
   const [x = 0, y = 0] = vessel.ship;
-  assert.ok(last && Math.hypot(last.eye[0] - x, last.eye[1] - y) < 8, 'a second on it stands by her side');
+  assert.ok(last && Math.hypot(last.eye[0] - x, last.eye[1] - y) < 8, "a second on it stands by the ship's side");
 });
 
-test("a crippled ship's guns are silent: aiming never moves her eye", async () => {
+test("a crippled ship's guns are silent: aiming never moves its eye", async () => {
   const { fight, frames } = ordered({ ...FIRST, player: { ...vessel, state: 'wrecked' } });
   const [orbit] = await frames(1);
   fight.aim(true);
@@ -190,7 +195,7 @@ test("a crippled ship's guns are silent: aiming never moves her eye", async () =
 test('while aiming the look may rise over the horizon to the longest throw; the orbit keeps its own clamp', async () => {
   const { fight, orders, frames } = ordered();
   fight.aim(true);
-  // Turned to look over her starboard side, and up past the horizon.
+  // Turned to look over its starboard side, and up past the horizon.
   fight.drag(Math.PI / 2 / 0.005, -1000);
   await frames(30);
   const range = orders.at(-1)?.aim?.range ?? 0;
@@ -219,20 +224,23 @@ test("out of the aim the wheel zooms the fight's camera by half again a notch, a
   const [nearer] = await frames(1);
   const [x = 0, y = 0] = vessel.ship;
   const [heave = 0] = vessel.pose;
-  const her = [x, y, heave + 6];
+  const deck = [x, y, heave + 6];
   assert.ok(far && nearer);
-  assert.ok(Math.abs(away(far, her) - 75) < 1e-6 && Math.abs(away(nearer, her) - 50) < 1e-6, `${away(nearer, her)} m`);
+  assert.ok(
+    Math.abs(away(far, deck) - 75) < 1e-6 && Math.abs(away(nearer, deck) - 50) < 1e-6,
+    `${away(nearer, deck)} m`,
+  );
   fight.wheel(100, 2);
   fight.wheel(100, 2.01);
   const [out] = await frames(1);
-  assert.ok(out && Math.abs(away(out, her) - 75) < 1e-6, 'no farther than the fight camera stands');
+  assert.ok(out && Math.abs(away(out, deck) - 75) < 1e-6, 'no farther than the fight camera stands');
   for (let notch = 0; notch < 20; notch++) fight.wheel(-100, 3 + notch);
   const [closest] = await frames(1);
-  assert.ok(closest && Math.abs(away(closest, her) - 11.4) < 1e-6, 'no nearer than DFO keeps');
+  assert.ok(closest && Math.abs(away(closest, deck) - 11.4) < 1e-6, 'no nearer than DFO keeps');
   assert.equal(orders.filter((sent) => sent.load).length, 0);
 });
 
-test("each captain's plate is keyed by her own fight number, so plates in a fight of three never share a lift", () => {
+test("each captain's plate is keyed by its own fight number, so plates in a fight of three never share a lift", () => {
   const second = { ...captain, ship: [5420, 5500, 2, 0, 0, 0, 0, 2], number: 5 };
   const third = { ...captain, ship: [5440, 5500, 2, 0, 0, 0, 0, 2] };
   const fight = new SeaCombat(ROOM, { ...FIRST, others: [second, third] }, MARKS, 0);
@@ -242,7 +250,7 @@ test("each captain's plate is keyed by her own fight number, so plates in a figh
   );
 });
 
-test("her own gun's kick shakes the fight's eye, and it stands still again within a second", async () => {
+test("its own gun's kick shakes the fight's eye, and it stands still again within a second", async () => {
   const fight = new SeaCombat(ROOM, FIRST, MARKS, 0);
   const still = fight.frame(0.1, 1, 1000, () => undefined);
   const muzzle = { kind: 'muzzle', ship: 0, point: [5000, 6002, 2], launch: [0, 300, 0] } as const;
@@ -258,7 +266,7 @@ test("her own gun's kick shakes the fight's eye, and it stands still again withi
   assert.ok(moved(kicked.frame(0.1, 2.5, 1000, () => undefined)) < 1e-9);
 });
 
-test("the fight's readout: her plate and rose, the card on the nearest captain, E to board one the room would take", () => {
+test("the fight's readout: its plate and rose, the card on the nearest captain, E to board one the room would take", () => {
   const display = (view: FightView, mayBoard = false) =>
     new SeaCombat({ ...ROOM, mayBoard } as SeaRoom, view, MARKS, 0).display(1);
   const model = display(FIRST);

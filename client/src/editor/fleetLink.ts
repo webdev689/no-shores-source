@@ -2,7 +2,7 @@ import type { FightEvent } from '../rules/fightRules.ts';
 import type { FleetLay, FleetLook } from '../rules/fleetRules.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 
-/** A captain asked for: none, one called round her ship, or every one sent off. */
+/** A captain asked for: none, one called round its ship, or every one sent off. */
 export type FleetCall = 'none' | 'captain' | 'send off';
 
 /** The faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of a captain called. */
@@ -11,8 +11,8 @@ export interface CaptainChoice {
   readonly rank: number;
 }
 
-/** What the player does in a frame at sea in a fleet: her rudder and crab from the keys held, each rung climbed or
- *  come down in turn (1 or -1), the look she lays while aiming, a release of the guns, the brace, steps of the load,
+/** What the player does in a frame at sea in a fleet: their rudder and crab from the keys held, each rung climbed or
+ *  come down in turn (1 or -1), the look they lay while aiming, a release of the guns, the brace, steps of the load,
  *  and a captain asked for, of the faction and rank chosen. */
 export interface FleetInput {
   readonly steer: number;
@@ -26,8 +26,8 @@ export interface FleetInput {
   readonly captain?: CaptainChoice;
 }
 
-/** Another ship as the fleet room last showed her: her number, whether a captain sails her, her helm's numbers and
- *  pose, her state, fires aboard, her hurts, a captain's mode, target and sides run out, and her faction and rank. */
+/** Another ship as the fleet room last showed it: its number, whether a captain sails it, its helm's numbers and
+ *  pose, its state, fires aboard, its hurts, a captain's mode, target and sides run out, and its faction and rank. */
 export interface FleetVessel {
   readonly id: number;
   readonly captain: boolean;
@@ -44,13 +44,13 @@ export interface FleetVessel {
   readonly runOut: number;
   readonly faction: number;
   readonly rank: number;
-  /** Her hull: 0 the Sloop to 3 the Frigate. */
+  /** Its hull: 0 the Sloop to 3 the Frigate. */
   readonly hull?: number;
 }
 
-/** The Sloop's session in a fleet room, as the editor sees it: her number, why the room was lost and whether it is
+/** The Sloop's session in a fleet room, as the editor sees it: its number, why the room was lost and whether it is
  *  being joined again, the room's clock,
- *  her orders owed and her ship predicted, the room's word on her and on every other ship, the balls aloft, her look's
+ *  its orders owed and its ship predicted, the room's word on it and on every other ship, the balls aloft, its look's
  *  lay, and what happened. */
 export interface FleetSession {
   readonly id: number;
@@ -65,12 +65,12 @@ export interface FleetSession {
   balls(now: number): (readonly [number, number, number, number])[];
   lay(look: FleetLook, now: number): FleetLay | null;
   takeEvents(): FightEvent[];
-  /** The fight's events for its feel, each ship by her own number. */
+  /** The fight's events for its feel, each ship by its own number. */
   takeFeel(): FightEvent[];
 }
 
 /** Where the editor finds a fleet room: it joins one with the Sloop put to sea at (x, y) heading `heading`, answering
- *  her session once the room has welcomed her, and lets her go. */
+ *  its session once the room has welcomed it, and lets it go. */
 export interface FleetHarbour {
   join(
     start: readonly [number, number, number],

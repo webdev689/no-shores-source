@@ -1,7 +1,7 @@
-// The ships at sea as drawn: each riding the swell the page draws through her inertia and heeling into her turns, as
-// the World Editor's Sloop does, her bow slamming into crests and throwing spray, her sails set while she is under way
-// and filled by the weather's wind, each in her own hull and her side's colours; and each one's footprint on the
-// water, which the sea leaves out along her own hull line and foams along, her wake and bow wave behind her.
+// The ships at sea as drawn: each riding the swell the page draws through its inertia and heeling into its turns, as
+// the World Editor's Sloop does, its bow slamming into crests and throwing spray, its sails set while it is under way
+// and filled by the weather's wind, each in its own hull and its side's colours; and each one's footprint on the
+// water, which the sea leaves out along its own hull line and foams along, its wake and bow wave behind it.
 import type { SeenPirate, SeenShip } from '../network/messages.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
 import type { Swell } from '../rules/landRules.ts';
@@ -18,18 +18,18 @@ import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
 import { HELM_TURN } from './seaHelm.ts';
 
-/** The way a ship under way shows the water, m/s: her bow wave foams whole. */
+/** The way a ship under way shows the water, m/s: its bow wave foams whole. */
 const UNDER_WAY = 4;
-/** How fast a ship's swing as drawn follows her heading's, a share a second; and the most it is taken to be, radians a
- *  second, so a voyage turning onto its next leg at once heels her as a hard turn of the helm would. */
+/** How fast a ship's swing as drawn follows its heading's, a share a second; and the most it is taken to be, radians a
+ *  second, so a voyage turning onto its next leg at once heels it as a hard turn of the helm would. */
 const SWING = { rate: 3, most: HELM_TURN } as const;
-/** Seconds a ship first seen is taken to have sailed as she is: past setting or furling her sails and trimming them. */
+/** Seconds a ship first seen is taken to have sailed as it is: past setting or furling its sails and trimming them. */
 const FIRST_SEEN_S = 5;
 
 /** The player's ship, the Sloop, and what draws a fight's balls, arcs and effects. */
 export interface SeaHull {
   readonly waterline: Waterline;
-  /** The hull a ship is drawn as: her own once her model has come, the Sloop until then. */
+  /** The hull a ship is drawn as: its own once its model has come, the Sloop until then. */
   readonly shown: (hull: number) => number;
   /** Makes every hull's model and its shell tags ready; awaited behind the sea's veil. */
   readonly warm?: () => Promise<unknown>;
@@ -46,10 +46,10 @@ export interface SeaWater {
 /** A moderate sea's state, for a swell that does not say its own. */
 const MODERATE_STATE = 0.35;
 
-/** A ship at sea as drawn: her hull, her place, larger than life but in a fight, her sails' rig, and her side. */
+/** A ship at sea as drawn: its hull, its place, larger than life but in a fight, its sails' rig, and its side. */
 export type SeaShip = DrawnShip;
 
-/** A ship as the sea has her: where she lies, her heading, and whether she is under way. */
+/** A ship as the sea has it: where it lies, its heading, and whether it is under way. */
 export interface Lies {
   readonly x: number;
   readonly y: number;
@@ -62,7 +62,7 @@ export function heelShare(hull: number): number {
   return hullWaterline(SLOOP_HULL).beamM / hullWaterline(hull).beamM;
 }
 
-/** A ship at sea and whose she is: her hull, her side and who sails her. */
+/** A ship at sea and whose it is: its hull, its side and who sails it. */
 interface Sailing {
   readonly who: string;
   readonly lies: Lies;
@@ -92,18 +92,18 @@ function round(
   ];
 }
 
-/** The ships at sea, each one's rig kept from frame to frame so her sails ease from set to furled, and her swing so she
+/** The ships at sea, each one's rig kept from frame to frame so its sails ease from set to furled, and its swing so it
  *  heels into a turn. */
 export class SeaShips {
-  /** The hull a ship is drawn as: her own once her model has come (`ShipModels.shown`). */
+  /** The hull a ship is drawn as: its own once its model has come (`ShipModels.shown`). */
   private readonly shown: (hull: number) => number;
   private readonly rigs = new Map<string, { readonly hull: number; readonly rig: SailRig }>();
   private readonly swings = new Map<string, { heading: number; swing: number }>();
-  /** Each ship's pitch and the sea over her stem as last drawn, how long since her bow last slammed (seconds; negative
-   *  before any) and her bow's spray now. */
+  /** Each ship's pitch and the sea over its stem as last drawn, how long since its bow last slammed (seconds; negative
+   *  before any) and its bow's spray now. */
   private readonly rides = new Map<string, { pitch: number; bowUnder: number; sinceSlamS: number; spray: number }>();
 
-  /** Each hull's own line at her waterline, read from her mesh. */
+  /** Each hull's own line at its waterline, read from its mesh. */
   private readonly lines: Pick<HullLines, 'line'>;
 
   constructor(shown: (hull: number) => number = (hull) => hull, lines: Pick<HullLines, 'line'> = new HullLines()) {
@@ -111,8 +111,8 @@ export class SeaShips {
     this.lines = lines;
   }
 
-  /** Where the ship `who` is drawn, `scale` times her size, `seconds` on at `time`: on the swell at her hull's
-   *  waterline, heeled into her swing at a ship's own way while under way. Asked once a frame for each ship, so her
+  /** Where the ship `who` is drawn, `scale` times its size, `seconds` on at `time`: on the swell at its hull's
+   *  waterline, heeled into its swing at a ship's own way while under way. Asked once a frame for each ship, so its
    *  swing is followed. */
   placeOf(
     who: string,
@@ -147,7 +147,7 @@ export class SeaShips {
     };
   }
 
-  /** Follows her bow over the swell: a slam when it pitches down into a crest, and the spray it throws. */
+  /** Follows its bow over the swell: a slam when it pitches down into a crest, and the spray it throws. */
   private ride(
     who: string,
     lies: Lies,
@@ -172,8 +172,8 @@ export class SeaShips {
     this.rides.set(who, { pitch: pose.pitch, bowUnder, sinceSlamS, spray });
   }
 
-  /** The player's ship as `own` places her, every other player's and every captain's, `seconds` on at `time`, drawn
-   *  `scale` times their size, each in her hull and her side's colours. */
+  /** The player's ship as `own` places it, every other player's and every captain's, `seconds` on at `time`, drawn
+   *  `scale` times their size, each in its hull and its side's colours. */
   ships(
     seconds: number,
     time: number,
@@ -189,7 +189,7 @@ export class SeaShips {
       let rigged = this.rigs.get(who);
       if (!rigged || rigged.hull !== hull) {
         rigged = { hull, rig: new SailRig(hullSails(hull)) };
-        // A ship coming into view sails under sails already set, or lies with them furled: none sets them as she comes.
+        // A ship coming into view sails under sails already set, or lies with them furled: none sets them as it comes.
         rigged.rig.step(FIRST_SEEN_S, wind, time);
         this.rigs.set(who, rigged);
       }
@@ -206,8 +206,8 @@ export class SeaShips {
     return [riding(player, own.place), ...ships.map((ship) => riding(ship, null))];
   }
 
-  /** Each ship's footprint on the water, drawn `scale` times her size, in her own hull's line, with her way for her
-   *  wake and her bow's spray: the player's first, then every other player's and every pirate's, nearest her first,
+  /** Each ship's footprint on the water, drawn `scale` times its size, in its own hull's line, with its way for its
+   *  wake and its bow's spray: the player's first, then every other player's and every pirate's, nearest its first,
    *  as many as the water holds (`HULLS`). */
   hulls(own: Lies, others: readonly SeenShip[], pirates: readonly SeenPirate[], scale: number): HullMask[] {
     const footprint = (who: string, lies: Lies, hull: number): HullMask => {

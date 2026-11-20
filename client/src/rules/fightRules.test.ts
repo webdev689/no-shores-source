@@ -76,7 +76,7 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   );
 });
 
-// Each hull's fight, as crates/land-wasm/src/fight_tests.rs HULL_FIGHTS pins it: her captain's rank, the hull she
+// Each hull's fight, as crates/land-wasm/src/fight_tests.rs HULL_FIGHTS pins it: its captain's rank, the hull it
 // sails, and the last leg's fingerprint.
 const HULL_FIGHTS = [
   [2, 0, 'b3e44646db9f037b'],

@@ -1,5 +1,5 @@
 // The marks the sea's view shows: a port's icon over its harbour once the ship is near, and a mark for each hostile
-// ship within her sight; or the landings over the island's side the view stands over. Laid on the picture, a crowd of
+// ship within its sight; or the landings over the island's side the view stands over. Laid on the picture, a crowd of
 // ports thinned to the nearest (a hostile ship's mark is never thinned away), and each named where its name fits.
 import type { SeenPirate } from '../network/messages.ts';
 import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';

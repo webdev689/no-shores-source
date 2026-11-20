@@ -1,5 +1,5 @@
-// The pictures a ship's parts wear, by the forged world's painter: her hull's strakes and her deck's boards as
-// Daggerfall's ship archive files them, a spar's grain, her canvas's weave and her guns' iron. Each repeats over her
+// The pictures a ship's parts wear, by the forged world's painter: its hull's strakes and its deck's boards as
+// Daggerfall's ship archive files them, a spar's grain, its canvas's weave and its guns' iron. Each repeats over it
 // at 40 texels a metre, as a forged model's pictures do.
 import { planks } from './boards.ts';
 import { finish } from './finish.ts';
@@ -9,7 +9,7 @@ import { kitMats } from './recipes/thingMats.ts';
 import { mottle } from './stone.ts';
 import { Surface } from './surface.ts';
 
-/** A ship's parts, in the order her mesh numbers them. */
+/** A ship's parts, in the order its mesh numbers them. */
 export const SHIP_PARTS = ['hull', 'deck', 'spar', 'sail', 'iron'] as const;
 export type ShipPart = (typeof SHIP_PARTS)[number];
 

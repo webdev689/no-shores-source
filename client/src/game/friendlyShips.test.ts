@@ -66,9 +66,9 @@ test('the ships are those the door places at the given world time, and run on at
   assert.deepEqual(seen.map((ship) => ship.id).sort(), door.map((ship) => ship.id).sort());
   for (const ship of seen) {
     const asked = door.find((each) => each.id === ship.id);
-    assert.deepEqual([ship.x, ship.y], asked?.position, 'first seen where the door places her');
+    assert.deepEqual([ship.x, ship.y], asked?.position, 'first seen where the door places it');
   }
-  // A ship that keeps her leg for the next 10 s is reckoned on along it, where the door has her then.
+  // A ship that keeps its leg for the next 10 s is reckoned on along it, where the door has it then.
   const onLeg = door.filter((ship) => {
     const later = rules.ship(ship.id, time + 10);
     return later && Math.abs(later.direction[0] - ship.direction[0]) < 1e-9;
@@ -81,8 +81,8 @@ test('the ships are those the door places at the given world time, and run on at
   }
 });
 
-test('between answers a ship moves on smoothly along her way, and eases onto a new leg', () => {
-  // As the door does: she sails east from the origin from time 100, then south from (10.5, 0) once answered so.
+test('between answers a ship moves on smoothly along its way, and eases onto a new leg', () => {
+  // As the door does: it sails east from the origin from time 100, then south from (10.5, 0) once answered so.
   let answer = (timeS: number) => [shipAt(7, [FRIENDLY_SPEED_M_S * (timeS - 100), 0], [1, 0])];
   let asked = 0;
   const fleet = new FriendlyShips((_centre, _radius, timeS) => {
@@ -92,22 +92,22 @@ test('between answers a ship moves on smoothly along her way, and eases onto a n
   fleet.near([0, 0], 10_000, 100, 0);
   let [last] = fleet.near([0, 0], 10_000, 100.1, 0.1);
   assert.equal(asked, 1, 'not asked again within a quarter second');
-  assert.ok(last && Math.abs(last.x - FRIENDLY_SPEED_M_S * 0.1) < 1e-9, 'reckoned on along her way between answers');
+  assert.ok(last && Math.abs(last.x - FRIENDLY_SPEED_M_S * 0.1) < 1e-9, 'reckoned on along its way between answers');
   for (let step = 1; step <= 40; step++) [last] = fleet.near([0, 0], 10_000, 100.1 + step * 0.05, 0.05);
   assert.ok(asked >= 8, `asked a few times a second: ${asked}`);
-  assert.ok(last && Math.abs(last.x - FRIENDLY_SPEED_M_S * 2.1) < 1, `she keeps her pace: ${last?.x}`);
+  assert.ok(last && Math.abs(last.x - FRIENDLY_SPEED_M_S * 2.1) < 1, `it keeps its pace: ${last?.x}`);
   assert.ok(Math.abs(last.heading - Math.PI / 2) < 1e-9, 'heading east');
-  // She turns onto a leg south: the drawn ship swings round over the next frames, not at once.
+  // It turns onto a leg south: the drawn ship swings round over the next frames, not at once.
   answer = (timeS) => [shipAt(7, [10.5, FRIENDLY_SPEED_M_S * (timeS - 102.1)], [0, 1])];
   const [turning] = fleet.near([0, 0], 10_000, 102.1 + ASK_EVERY_S, ASK_EVERY_S);
   assert.ok(turning && turning.heading > Math.PI / 2 + 0.1 && turning.heading < Math.PI - 0.1, `${turning?.heading}`);
-  assert.ok(turning && turning.y < FRIENDLY_SPEED_M_S * ASK_EVERY_S, 'and eases onto her new leg');
+  assert.ok(turning && turning.y < FRIENDLY_SPEED_M_S * ASK_EVERY_S, 'and eases onto its new leg');
   let settled = turning;
   for (let step = 1; step <= 40; step++) [settled] = fleet.near([0, 0], 10_000, 102.35 + step * 0.05, 0.05);
   assert.ok(settled && Math.abs(settled.heading - Math.PI) < 0.01 && Math.abs(settled.x - 10.5) < 0.1, 'then on it');
   answer = () => [];
   fleet.near([0, 0], 10_000, 103, 1);
-  assert.deepEqual(fleet.near([0, 0], 10_000, 103.1, 0.1), [], 'gone once the door no longer has her');
+  assert.deepEqual(fleet.near([0, 0], 10_000, 103.1, 0.1), [], 'gone once the door no longer has it');
 });
 
 test('at sea they are drawn as their hulls in friendly colours, sails set, at the size every ship is drawn', () => {
@@ -121,12 +121,12 @@ test('at sea they are drawn as their hulls in friendly colours, sails set, at th
       [1, 6, 'friendly'],
       [2, 6, 'friendly'],
     ],
-    'nearest first, each in her own hull',
+    'nearest first, each in its own hull',
   );
   for (const ship of frame.ships) assert.ok(ship.rig && ship.rig.sails.length > 0);
-  assert.deepEqual(frame.hulls[0], own, 'her own footprint stays first');
+  assert.deepEqual(frame.hulls[0], own, 'its own footprint stays first');
   assert.equal(frame.hulls.length, 3);
-  assert.ok((frame.hulls[1]?.halfLength ?? 0) > 6 * 5, 'a footprint as large as she is drawn');
+  assert.ok((frame.hulls[1]?.halfLength ?? 0) > 6 * 5, 'a footprint as large as it is drawn');
 });
 
 test('on foot they are drawn at their true size, posed on the swell', () => {
@@ -145,13 +145,13 @@ test('on foot they are drawn at their true size, posed on the swell', () => {
   const { lengthM, beamM } = hullWaterline(0);
   const lies = { x: 3_000, y: 0, heading: Math.PI / 2, underWay: true };
   const pose = poseOnSwell(swell, deep, lies, lengthM / 2, beamM / 2, 3);
-  assert.ok(Math.abs(pose.heave) + Math.abs(pose.pitch) + Math.abs(pose.roll) > 0, 'the swell moves her');
+  assert.ok(Math.abs(pose.heave) + Math.abs(pose.pitch) + Math.abs(pose.roll) > 0, 'the swell moves it');
   assert.deepEqual([place?.z, place?.pitch, place?.roll], [pose.heave, pose.pitch, pose.roll]);
   assert.equal(frame.hulls.length, 1);
 });
 
 test('only as many of each hull as the ships layer can still draw are stepped, posed and footprinted: the nearest', () => {
-  // Twenty Sloops (hull 0) and two Brigs (hull 2) round her; the room's own ships already take three Sloops' places.
+  // Twenty Sloops (hull 0) and two Brigs (hull 2) round it; the room's own ships already take three Sloops' places.
   const sloops = Array.from({ length: 20 }, (_unused, n) => shipAt(4 * n, [1_000 * (20 - n), 0], [1, 0]));
   const brigs = [shipAt(2, [500, 0], [1, 0]), shipAt(6, [30_000, 0], [1, 0])];
   const fleet = new FriendlyShips(() => [...sloops, ...brigs], 5);
@@ -167,7 +167,7 @@ test('only as many of each hull as the ships layer can still draw are stepped, p
   assert.equal(frame.marks.length, 22, 'the compass still hears of every one');
 });
 
-test('a ship arrived lies at anchor where she is: reckoned nowhere, no way on her', () => {
+test('a ship arrived lies at anchor where it is: reckoned nowhere, no way on it', () => {
   const arrived = { ...shipAt(0, [3_000, 0], [1, 0]), progressM: 1_000_000 };
   const fleet = new FriendlyShips(() => [arrived], 5);
   const view = { centre: [0, 0] as const, radiusM: 15_000, scale: 1 };
@@ -205,7 +205,7 @@ test('the compass marks friendly ships within 900 m in Overlook’s blue', () =>
   );
 });
 
-test('a ship at anchor at her roadstead lies with her sails furled; one under way has them set', () => {
+test('a ship at anchor at its roadstead lies with its sails furled; one under way has them set', () => {
   const arrived = { ...shipAt(0, [3_000, 0], [1, 0]), progressM: 1_000_000 };
   const sailing = shipAt(1, [-3_000, 0], [1, 0]);
   const fleet = new FriendlyShips(() => [arrived, sailing], 5);

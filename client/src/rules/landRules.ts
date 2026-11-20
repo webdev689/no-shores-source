@@ -56,15 +56,15 @@ export interface Swell {
 }
 
 /** What the helm asks for a tick (crates/sailing/src/ship.rs Helm): the rudder from -1 (port) to 1 (starboard), the
- *  oars pulling her sideways, and a rung up or down the ladder for the first tick. */
+ *  oars pulling it sideways, and a rung up or down the ladder for the first tick. */
 export interface Helm {
   readonly steer: number;
   readonly crab: boolean;
   readonly climb: -1 | 0 | 1;
 }
 
-/** How a ship lies: her waterline's height (metres), her bow's rise and her heel to starboard (radians), and whether
- *  her keel touches the ground. */
+/** How a ship lies: its waterline's height (metres), its bow's rise and its heel to starboard (radians), and whether
+ *  its keel touches the ground. */
 export interface Pose {
   readonly heave: number;
   readonly pitch: number;
@@ -155,9 +155,9 @@ export interface LandRules {
   boxes(west: number, north: number, east: number, south: number): Block[];
   /** The open landmass's city's plan, as JSON, for the drawing; null with no city. */
   cityPlan(): string | null;
-  /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
+  /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and its pose after. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea in her rank's hull (a Major's unless `rank` names one),
+  /** A fight begun round the ship: a pirate captain put to sea in its rank's hull (a Major's unless `rank` names one),
    *  every chance drawn from `seed`. */
   fightBegin(ship: ShipFloats, seed: number, time: number, rank?: number): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */

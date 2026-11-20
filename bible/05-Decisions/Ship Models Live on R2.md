@@ -5,10 +5,10 @@ status: in force
 ---
 # Ship Models Live on R2
 
-> Asked where the Sloop's `.blend` should live (on R2 beside her mesh, as git bans `.blend` files and it is over the
+> Asked where the Sloop's `.blend` should live (on R2 beside its mesh, as git bans `.blend` files and it is over the
 > 1 MB limit, though the rule keeps sources in git): "Your choice"
 
-> Asked whether to name her cannons "Cannon" in her `.blend`, so the export can find them for naval combat: "Your
+> Asked whether to name its cannons "Cannon" in its `.blend`, so the export can find them for naval combat: "Your
 > choice"
 
 ## What it settles

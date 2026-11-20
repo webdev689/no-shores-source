@@ -15,7 +15,7 @@ import { deckKey, fightAsk } from './seaWord.ts';
 const vessel = (x: number, state: FightVessel['state']): FightVessel =>
   ({ ship: [x, 0, 0.5, 0, 0, 0, 0, 0], pose: [0.2, 0.01, -0.03], state }) as unknown as FightVessel;
 
-/** The fight with her alongside, her colours struck or not. */
+/** The fight with it alongside, its colours struck or not. */
 const fight = (state: FightVessel['state']): FightView =>
   ({
     player: vessel(0, 'afloat'),
@@ -52,7 +52,7 @@ const FRAME = {
   hints: ['Mouse: swing'],
 } as unknown as FootFrame;
 
-/** The fight on foot stood on her deck, as the land's is, its frames counted and its leaving. */
+/** The fight on foot stood on its deck, as the land's is, its frames counted and its leaving. */
 function standOnFoot() {
   const kept = { frames: 0, left: 0, grid: 0, camera: 0, stand: null as unknown as StandOnDeck };
   kept.stand = (context, _node, grid, open) => {
@@ -78,36 +78,36 @@ const INPUT = {
 const CONTEXT = { walker: { inFirstPerson: false }, movement: { tickSeconds: 1 / 60 } } as unknown as FootContext;
 const settle = () => new Promise((done) => setTimeout(done, 0));
 
-test('a struck captain alongside is boarded with E: the boarder stands on her deck, which rides her ship', async () => {
+test('a struck captain alongside is boarded with E: the boarder stands on its deck, which rides its ship', async () => {
   const foot = standOnFoot();
   const { sea, asked } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
   const atSea = { boarding, sighted: sea };
-  assert.equal(fightAsk(atSea), null, 'her colours still fly');
+  assert.equal(fightAsk(atSea), null, 'its colours still fly');
   const struck = fight('struck');
-  // The sea says she may be boarded.
+  // The sea says it may be boarded.
   sea.mayBoard = true;
   assert.equal(fightAsk(atSea), 'board');
   assert.deepEqual(asked, ['board']);
-  assert.equal(boarding.frame(sea, struck, INPUT), null, 'the sea has not said she is boarded yet');
+  assert.equal(boarding.frame(sea, struck, INPUT), null, 'the sea has not said it is boarded yet');
   sea.deck = { aboard: [[1, 4]], hull: 0, snapshot: new Uint8Array(), holdLeft: null };
   boarding.frame(sea, struck, INPUT);
   await settle();
-  assert.ok(foot.grid > 5 && sea.hearDeck, 'her deck’s grid stood on, her deck room heard');
-  assert.equal(foot.camera, deckCameraBlocks(0).length, 'the camera kept clear of her masts and spars, and inboard');
+  assert.ok(foot.grid > 5 && sea.hearDeck, 'its deck’s grid stood on, its deck room heard');
+  assert.equal(foot.camera, deckCameraBlocks(0).length, 'the camera kept clear of its masts and spars, and inboard');
   const shown = boarding.frame(sea, struck, INPUT);
   assert.ok(shown && boarding.onDeck);
-  const her = { x: 20, y: 0, heading: 0.5, scale: 1, heave: 0.2, pitch: 0.01, roll: -0.03 };
-  assert.deepEqual(shown.shot.eye, deckToWorld(her, 0, 3, 2), 'the eye rides her ship');
-  assert.deepEqual([shown.figures[0]?.x, shown.figures[0]?.y], deckToWorld(her, 0, -2, 0.9).slice(0, 2));
+  const lying = { x: 20, y: 0, heading: 0.5, scale: 1, heave: 0.2, pitch: 0.01, roll: -0.03 };
+  assert.deepEqual(shown.shot.eye, deckToWorld(lying, 0, 3, 2), 'the eye rides the ship');
+  assert.deepEqual([shown.figures[0]?.x, shown.figures[0]?.y], deckToWorld(lying, 0, -2, 0.9).slice(0, 2));
   assert.deepEqual(
     [boarding.words?.place, boarding.words?.line],
     ['Pirate Sloop', 'Aboard: its crew stands to meet you'],
   );
-  assert.equal(fightAsk(atSea), null, 'E asks nothing while her crew fights');
+  assert.equal(fightAsk(atSea), null, 'E asks nothing while its crew fights');
 });
 
-test('her deck won holds the boarder a minute, its time left and her hold’s take shown; E or the minute’s end brings them back aboard their own ship', async () => {
+test('its deck won holds the boarder a minute, its time left and its hold’s take shown; E or the minute’s end brings them back aboard their own ship', async () => {
   const foot = standOnFoot();
   const { sea, asked } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
@@ -118,7 +118,7 @@ test('her deck won holds the boarder a minute, its time left and her hold’s ta
   await settle();
   boarding.frame(sea, view, INPUT);
   assert.equal(boarding.won, false);
-  // Her crew falls: the room lays her hold for the boarder and holds them 60 s.
+  // Its crew falls: the room lays its hold for the boarder and holds them 60 s.
   sea.deck = { ...sea.deck, holdLeft: 3_541 };
   sea.flotsam.push(
     { player: 1, id: 2, at: [20, 0], kind: 'crate' },
@@ -138,7 +138,7 @@ test('her deck won holds the boarder a minute, its time left and her hold’s ta
   assert.deepEqual([boarding.onDeck, foot.left, sea.hearDeck], [false, 1, null]);
 });
 
-test('beaten aboard her, the boarder is let go of her deck as they wash up, and nothing is asked of her again', async () => {
+test('beaten aboard it, the boarder is let go of its deck as they wash up, and nothing is asked of it again', async () => {
   const foot = standOnFoot();
   const { sea } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
@@ -147,14 +147,14 @@ test('beaten aboard her, the boarder is let go of her deck as they wash up, and 
   boarding.frame(sea, view, INPUT);
   await settle();
   assert.ok(boarding.frame(sea, view, INPUT));
-  // All boarders down: the room washes them up and she is scuttled; their fight is over for them.
+  // All boarders down: the room washes them up and it is scuttled; their fight is over for them.
   sea.deck = null;
   assert.equal(boarding.frame(sea, null, INPUT), null);
   assert.equal(foot.left, 1);
   assert.equal(fightAsk({ boarding, sighted: sea }), null);
 });
 
-test('two boarders of one deck each fight there as themselves: the page’s own number on her deck is the room’s', async () => {
+test('two boarders of one deck each fight there as themselves: the page’s own number on its deck is the room’s', async () => {
   const foot = standOnFoot();
   const { sea } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
@@ -171,12 +171,12 @@ test('two boarders of one deck each fight there as themselves: the page’s own 
   await settle();
   boarding.frame(sea, fight('struck'), INPUT);
   assert.ok(boarding.onDeck);
-  // Boarded again as another number (left and come back), her deck is stood on anew.
+  // Boarded again as another number (left and come back), its deck is stood on anew.
   sea.deck = { ...sea.deck, aboard: [[1, 6]] };
   assert.equal(boarding.frame(sea, fight('struck'), INPUT), null);
 });
 
-test('on her deck the sea’s own keys wait: E asks, Enter respawns, the menu’s keys are the game’s, every other the foot’s', async () => {
+test('on its deck the sea’s own keys wait: E asks, Enter respawns, the menu’s keys are the game’s, every other the foot’s', async () => {
   const foot = standOnFoot();
   const { sea, asked } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
@@ -185,7 +185,7 @@ test('on her deck the sea’s own keys wait: E asks, Enter respawns, the menu’
   assert.equal(
     deckKey(' ', atSea, () => undefined),
     false,
-    'off her deck the sea has its keys',
+    'off its deck the sea has its keys',
   );
   sea.deck = { aboard: [[1, 4]], hull: 0, snapshot: new Uint8Array(), holdLeft: null };
   boarding.frame(sea, fight('struck'), INPUT);
@@ -215,7 +215,7 @@ test('on her deck the sea’s own keys wait: E asks, Enter respawns, the menu’
   assert.deepEqual(asked, ['leave-deck']);
 });
 
-test('a hold won while her deck stands up is still told apart from what floated for the player before', async () => {
+test('a hold won while its deck stands up is still told apart from what floated for the player before', async () => {
   const foot = standOnFoot();
   const { sea } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
