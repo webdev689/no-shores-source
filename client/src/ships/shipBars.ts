@@ -27,7 +27,7 @@ export const BAR_OVER_M = 16;
 /** The hulls by their numbers (crates/sailing/src/hull.rs HullKind), as a captain's name says them. */
 const HULL_NAMES = ['Sloop', 'Schooner', 'Brig', 'Frigate'] as const;
 
-/** Its ship's name, by the faction it sails for and its hull (the Sloop unless named): the Tithe's or the pirates'
+/** Their ship's name, by the faction they sail for and its hull (the Sloop unless named): the Tithe's or the pirates'
  *  Sloop, Schooner, Brig or Frigate, as crates/naval/src/ranks.rs names it. */
 export function shipName(faction: number, hull = 0): string {
   // Any faction but the Tithe's sails as the pirates do, as the rules name it.

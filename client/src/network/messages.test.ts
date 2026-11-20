@@ -166,7 +166,7 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
   assert.ok((fight.lay?.radius ?? 0) > 0, 'the landing zone has a size');
   assert.ok(
     fight.lay?.ends.every((end) => end !== null && end.water && end.strike === null),
-    'laid 80 m out with its 700 m off, each ball splashes',
+    'laid 80 m out with it 700 m off, each ball splashes',
   );
   assert.deepEqual(fight.events, [
     { kind: 'run-out', side: 'port' },

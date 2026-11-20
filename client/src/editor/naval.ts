@@ -64,7 +64,7 @@ export class Naval {
   /** The hull a ship is drawn as: its own once its model has come. */
   private readonly shown: (hull: number) => number;
   private farewell: { readonly lines: string[]; readonly until: number } | null = null;
-  /** Its captain's rig, for the hull it sails. */
+  /** Its captain's rig, for the hull they sail. */
   private rig: { readonly hull: number; readonly rig: SailRig } | null = null;
 
   constructor(marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
@@ -178,7 +178,7 @@ export class Naval {
   }
 
   /** The fight's ships as its feel sees them, by number: by default the player's Sloop and their captain's in the hull
-   *  it sails; the sea's fight gives its own, every captain in it with its rig. */
+   *  they sail; the sea's fight gives its own, every captain in it with its rig. */
   shipsOf: ((answer: FightView) => Map<number, FeelShip>) | null = null;
 
   private feelShips(answer: FightView): Map<number, FeelShip> {

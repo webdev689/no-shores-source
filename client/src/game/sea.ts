@@ -494,7 +494,7 @@ export class Sea {
     if (this.combat) return `Fighting${room}`;
     if (this.shots.view.kind !== 'sail') return room.slice(3);
     // Off the helm, its helmsman has it while it sails on.
-    const helmsman = this.aboard.walking && this.passage.sailing ? ' · Its helmsman has the helm' : '';
+    const helmsman = this.aboard.walking && this.passage.sailing ? ' · Your helmsman has the helm' : '';
     return this.voyageNote + helmsman + room;
   }
 

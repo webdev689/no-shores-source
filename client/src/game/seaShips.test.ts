@@ -85,7 +85,7 @@ test("each ship's footprint is its own hull at its drawn size, and its bow slams
   const [own, theirs] = ships.hulls(OWN.lies, [], [pirate], 4);
   assert.deepEqual([own?.scale, theirs?.scale], [4, 4]);
   assert.equal(own?.line, lines[SLOOP_HULL], 'its own hull line');
-  assert.equal(theirs?.line, lines[hullOfCaptain(pirate)], "a captain's ship its own");
+  assert.equal(theirs?.line, lines[hullOfCaptain(pirate)], "a captain's ship theirs");
   // A steep, quick sea running at its bow: as its bow drops into the next crest it slams.
   const wave = {
     direction: [0, 1] as const,

@@ -120,7 +120,7 @@ test('the wheel brings the eye in without it ever shrinking on the screen, frame
       const closest = new CloseZoom().closest(sea, ship, yaw, tilt);
       const scaleOf = (shown: Shot, share: number) =>
         shownScale(75 / lengthM, { seaM: atShip(sea), shownM: atShip(shown), nearM: atShip(closest), share });
-      assert.equal(scaleOf(sea, 0), 75 / lengthM, "the sea's view draws its 75 m long");
+      assert.equal(scaleOf(sea, 0), 75 / lengthM, "the sea's view draws it 75 m long");
       const close = new CloseZoom();
       close.zoom(5, true);
       let lastPx = lengthPx(sea, { ...ship, scale: 75 / lengthM }, lengthM);

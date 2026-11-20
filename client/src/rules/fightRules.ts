@@ -17,7 +17,7 @@ export interface FightLook {
   readonly ray?: readonly number[];
 }
 
-/** What the player orders for a step (crates/naval/src/fight.rs Orders): its helm, the look it lays, a release,
+/** What the player orders for a step (crates/naval/src/fight.rs Orders): their helm, the look they lay, a release,
  *  the brace and a load; the climb, release and load act on the first tick alone. */
 export interface FightOrders {
   readonly helm: Helm;
