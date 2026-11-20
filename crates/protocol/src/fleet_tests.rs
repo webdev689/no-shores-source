@@ -128,9 +128,9 @@ pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
 #[test]
 fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
     let (fight, events) = fleet();
-    let bytes = fleet_snapshot_bytes(77, &fight, &|ship| (ship == 3).then_some(12), &events);
+    let bytes = fleet_snapshot_bytes((77, 1_790_000_000.0), &fight, &|ship| (ship == 3).then_some(12), &events);
     let read = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
-    assert_eq!((read.tick(), read.fight_clock()), (77, 0.0));
+    assert_eq!((read.tick(), read.fight_clock(), read.world_start()), (77, 0.0, 1_790_000_000.0));
     let vessels: Vec<_> = read.vessels().unwrap().iter().collect();
     assert_eq!(
         vessels.iter().map(|vessel| (vessel.id(), vessel.captain())).collect::<Vec<_>>(),
@@ -175,6 +175,6 @@ fn the_fleet_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
     let (fight, events) = fleet();
-    let bytes = fleet_snapshot_bytes(77, &fight, &|ship| (ship == 3).then_some(12), &events);
+    let bytes = fleet_snapshot_bytes((77, 1_790_000_000.0), &fight, &|ship| (ship == 3).then_some(12), &events);
     std::fs::write(format!("{folder}/fleet.bin"), bytes).unwrap();
 }

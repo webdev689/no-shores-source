@@ -146,6 +146,8 @@ export class FleetSession {
    *  happened kept for the effects and the panel. */
   receive(snapshot: Snapshot, now: number): void {
     this.follow();
+    // Its weather is the world's when the room opened: the predictions sail in the same.
+    if (snapshot.worldStart !== this.latest?.worldStart) this.rules.setWorldStart(snapshot.worldStart);
     this.latest = snapshot;
     this.receivedAt = now;
     for (const vessel of snapshot.vessels) if (vessel.captain) this.captains.add(vessel.id);

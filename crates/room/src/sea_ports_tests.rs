@@ -227,3 +227,13 @@ fn boarders_all_beaten_on_her_deck_wash_up_with_their_ships_hurts_and_she_is_scu
     let (hurts, _) = sea.kept(player).unwrap();
     assert!((hurts[0] - 0.5).abs() < 1e-9, "moored with her hurts: {hurts:?}");
 }
+
+#[test]
+fn a_fight_takes_the_weather_where_it_began_and_keeps_it() {
+    let (mut sea, player) = met(700.0, Rank::Major);
+    let (swell, wind) = sea.weather.at([50_000.0, 50_000.0], 1.0 / 60.0);
+    let fought = &sea.fights.of_mut(player).unwrap().0;
+    assert_eq!((fought.swell.bearing, fought.wind), (swell.bearing, wind));
+    ticks(&mut sea, 120);
+    assert_eq!(sea.fights.of_mut(player).unwrap().0.wind, wind, "kept while it lasts");
+}

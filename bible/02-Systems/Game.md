@@ -210,7 +210,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   the course to intercept her: where the ship meets her at their ways (her rank's way and a ship's 12 m/s, both on
   the voyage's clock), planned round the land as any route, again each half second. The voyage's line says "Chasing
   the Tithe Brig." until she is met, lost from sight, or another course is set (a click, the helm's keys, Stop or
-  Resume). Evading is sailing away: she sails at a fifth of the ship's way or less.
+  Resume, going ashore). Her way is the one the room sends with her (`Pirate.way`). The room is told whom she
+  chases: within 750 m of her the fight begins, whatever her temper. Evading is turning away from a bold ship, sighted
+  ahead on the ship's course where she can meet it: held, the course meets her; turned away, the ship outruns her.
 - **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the sea's own view, close in or not:
   - A and D turn her at the helm's 10 degrees a second. Under way she takes a course straight on along her new
     heading; at rest she turns where she lies, and the room turns her too ([[Server]], "The sea").
@@ -303,8 +305,8 @@ its landmark over the city, as on arriving. Escape flies back down.
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
-- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder seas
-  `node-<node id>--rough` or `--storm` (a social space is one room at any seas), and stands at the spawn the room's
+- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder difficulty
+  `node-<node id>--elite` or `--abyss` (a social space is one room at any difficulty), and stands at the spawn the room's
   first word puts them at, each joiner at the next of the node's spawns in turn (until it comes, at the first). The
   room judges the edge. Each tick's controls go to it with the fight's buttons and arms, the figure's look, the dress
   when it changed, the gear's asks and a respawn when asked; the player is predicted on the same ground and corrected

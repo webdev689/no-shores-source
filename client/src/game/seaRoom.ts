@@ -3,6 +3,7 @@
 // last showed, with its word on the player's body on deck.
 import {
   askBytes,
+  chaseBytes,
   courseBytes,
   faceBytes,
   helmBytes,
@@ -209,6 +210,11 @@ export class SeaRoom {
     if (this.waitingFacing) [this.waitingCourse, this.waitingFacing] = [null, false];
     this.leaveWaiting = this.waitingCourse !== null;
     if (!this.leaveWaiting) this.link.send(helmBytes(true));
+  }
+
+  /** Tells the room the hostile ship the player chases, by her number, or none. */
+  chase(ship: number | null): void {
+    this.link.send(chaseBytes(ship));
   }
 
   /** The player takes the helm again, at her wheel. */

@@ -187,10 +187,11 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
 }
 
 /// Every ship in a fleet room after its tick `tick`, each player's ship with the number of her last orders taken
-/// (`acknowledged`), the balls aloft, what happened in the fight since the last snapshot, and the fight's clock.
+/// (`acknowledged`), the balls aloft, what happened in the fight since the last snapshot, the fight's clock, and the
+/// world time the room's clock started at (`world_start`), which sets its weather.
 #[must_use]
 pub fn fleet_snapshot_bytes(
-    tick: u64,
+    (tick, world_start): (u64, f64),
     fight: &Fight,
     acknowledged: &impl Fn(ShipId) -> Option<u32>,
     happened: &[(u64, Event)],
@@ -270,6 +271,7 @@ pub fn fleet_snapshot_bytes(
         balls,
         naval,
         fight_clock: fight.clock,
+        world_start,
         ..messages::SnapshotArgs::default()
     };
     super::finish_snapshot(builder, &args)

@@ -46,7 +46,9 @@ pub fn sea_snapshot_bytes(
             let Pirate { id, x, y, heading, level, sight_m: sight, commission: Commission { faction, rank }, .. } =
                 *pirate;
             let hull = rank.hull().number();
-            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull, level, sight };
+            let way = room::sighting::way_of(rank);
+            let args =
+                messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull, level, sight, way };
             messages::Pirate::create(&mut builder, &args)
         })
         .collect();

@@ -407,6 +407,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
     assert_eq!(pirate.hull(), commission.hull().number(), "she sails her rank's hull");
     assert_eq!((pirate.level(), pirate.sight()), (23, 25_920.0), "her level and the distance she is sighted from");
+    assert!((pirate.way() - 2.64).abs() < 1e-12, "an Elite's way at sea: {}", pirate.way());
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
     assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
@@ -453,9 +454,11 @@ fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
     builder.finish(short, None);
     assert!(read_sea_input(builder.finished_data()).is_err(), "a step's controls are all its numbers");
     let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let odd = messages::Course::create(&mut builder, &messages::CourseArgs { helm: 3, ..Default::default() });
+    let odd = messages::Course::create(&mut builder, &messages::CourseArgs { helm: 4, ..Default::default() });
     builder.finish(odd, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "the helm is left or taken, nothing else");
+    assert!(read_sea_input(builder.finished_data()).is_err(), "the helm is left or taken, or a chase, nothing else");
+    assert_eq!(read_sea_input(&chase_bytes(7)), Ok(SeaInput::Chase(Some(7))), "a chase of ship 7");
+    assert_eq!(read_sea_input(&chase_bytes(0)), Ok(SeaInput::Chase(None)), "the chase let go");
 }
 
 #[test]

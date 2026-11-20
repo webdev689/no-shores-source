@@ -134,6 +134,8 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     let off_the_steps = protocol::course_bytes(&[[50_000.0, 150_000.0]], 3);
     assert_eq!(input(second, &off_the_steps), TOO_SOON, "one course each half second, dropped as a flood");
     assert_eq!(input(second, b"no course"), NOT_AN_INPUT);
+    assert_eq!(input(second, &protocol::chase_bytes(3)), TAKEN, "a chase is taken, whoever she is");
+    assert_eq!(input(second, &protocol::chase_bytes(0)), TAKEN, "and let go");
     for _ in 0..room::sea::COURSE_EVERY_TICKS {
         room_tick();
     }
@@ -176,7 +178,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "aff8f91eb761f14c";
+pub const SEA_CLASH_HASH: &str = "ae8a0d7e43e836e5";
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
 pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
@@ -286,7 +288,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     patrol["ring"] = json!([[-400.0, -400.0], [400.0, -400.0], [400.0, 400.0], [-400.0, 400.0]]);
     patrol["bounds"] = json!([-500.0, -500.0, 500.0, 500.0]);
     assert!(open_node(patrol.to_string().as_bytes()));
-    assert!(set_difficulty(2), "storm");
+    assert!(set_difficulty(2), "Abyss");
     assert!(!set_difficulty(3), "no such seas");
     let player = room_join();
     room_tick();
@@ -294,7 +296,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     let foes = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap().foes().unwrap();
     assert!(foes.len() >= 2, "its camps stand at once");
     for foe in foes {
-        assert!((4..=7).contains(&foe.level()), "the island's 1 to 4, three higher in a storm: {}", foe.level());
+        assert!((4..=7).contains(&foe.level()), "the island's 1 to 4, three higher at Abyss: {}", foe.level());
     }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();

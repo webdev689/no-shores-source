@@ -562,3 +562,70 @@ fn rivals_that_come_by_their_waters_still_meet() {
     sea.tick();
     assert_eq!(sea.clashes().len(), 1, "kept at sea by her sight, they meet as before");
 }
+
+/// A ship at sea at x60 from (50 km, 400 km) on `course`, and a bold ship of the pirates `out` metres off at `at`
+/// heading `heading`, sighted from as far as a voyage at that pace sights her.
+fn come_for_on(course: &[[f64; 2]], at: [f64; 2], heading: f64, bold: bool) -> (Sea, PlayerId) {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, course, 60).unwrap();
+    let sight = crate::sighting::sight_for(60.0);
+    let pirate = Pirate { sight_m: sight, ..Pirate::standing(1, 7, Commission::default(), at, heading, bold) };
+    sea.pirates.sailing.push(pirate);
+    (sea, player)
+}
+
+/// The ticks until the player's fight begins, within ten minutes.
+fn fight_within_ten_minutes(sea: &mut Sea) -> Option<usize> {
+    (0..10 * 60 * 60).find(|_| {
+        sea.tick();
+        sea.fights().next().is_some()
+    })
+}
+
+#[test]
+fn a_bold_ship_sighted_within_her_meeting_cone_meets_a_voyage_that_holds_its_course() {
+    // A Major 6 degrees off his course, 0.95 of his sight ahead, heading across it: he sails on north at x60.
+    let off = 6.0_f64.to_radians();
+    let out = 0.95 * crate::sighting::sight_for(60.0);
+    let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
+    let (mut sea, player) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
+    let mut least = 60;
+    let met = (0..10 * 60 * 60).find(|_| {
+        sea.tick();
+        least = least.min(ship(&sea, player).rate.max(1));
+        sea.fights().next().is_some()
+    });
+    assert!(met.is_some_and(|ticks| ticks < 60 * 60), "she met him within a minute: {met:?}");
+    assert!(least <= 5, "the hold eased him only as she came near along his way: x{least}");
+}
+
+#[test]
+fn a_bold_ship_off_her_meeting_cone_cannot_meet_a_voyage_that_holds_its_course() {
+    // A Major 30 degrees off his course, outside her cone: her way cannot meet his.
+    let off = 30.0_f64.to_radians();
+    let out = 0.95 * crate::sighting::sight_for(60.0);
+    let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
+    let (mut sea, _) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
+    assert!(fight_within_ten_minutes(&mut sea).is_none(), "she cannot reach him");
+}
+
+#[test]
+fn a_player_who_turns_away_from_a_bold_ship_outruns_her() {
+    // She is 10 km north of him; he sails south, away from her.
+    let course = [[50_000.0, 400_000.0], [50_000.0, 900_000.0]];
+    let (mut sea, player) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, true);
+    assert!(fight_within_ten_minutes(&mut sea).is_none(), "evaded");
+    assert!(ship(&sea, player).rate == 60, "away from her, never held: x{}", ship(&sea, player).rate);
+}
+
+#[test]
+fn a_player_who_chases_a_wary_ship_to_within_750_m_begins_the_fight_with_her() {
+    // She sails south toward him, wary; he sails north to her.
+    let course = [[50_000.0, 400_000.0], [50_000.0, 380_000.0]];
+    let (mut sea, player) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, false);
+    sea.chase(player, Some(1));
+    assert!(fight_within_ten_minutes(&mut sea).is_some(), "the player brought the fight");
+    let (mut unchased, _) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, false);
+    assert!(fight_within_ten_minutes(&mut unchased).is_none(), "a wary ship not chased sails by");
+}

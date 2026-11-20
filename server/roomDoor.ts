@@ -41,7 +41,7 @@ export interface RoomDoor {
    *  a layout. */
   openSea(layoutText: string, seed: number, worldStartS?: number): boolean;
   /** Opens a fleet room on the open sea. */
-  openFleet(): boolean;
+  openFleet(worldStartS?: number): boolean;
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
@@ -62,7 +62,7 @@ export interface RoomDoor {
   furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
   /** A player's own gear's bytes, to send them alone; empty when it has not changed since last asked. */
   gear(player: number): Uint8Array;
-  /** Sets a node's room's seas, as its voyage set out: 0 calm, 1 rough, 2 storm; false if it is no room on land. */
+  /** Sets a node's room's difficulty, as its voyage set out: 0 Normal, 1 Elite, 2 Abyss; false if it is no room on land. */
   difficulty(seas: number): boolean;
   /** Sets the day, counted from the epoch, whose wares its vendors show; false if it is no room on land. */
   day(day: number): boolean;
@@ -157,7 +157,11 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       exports.room_world_start(worldStartS);
       return opened;
     },
-    openFleet: () => exports.room_open_fleet() === 1,
+    openFleet: (worldStartS = 0) => {
+      const opened = exports.room_open_fleet() === 1;
+      exports.room_world_start(worldStartS);
+      return opened;
+    },
     takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),

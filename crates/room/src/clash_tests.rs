@@ -89,3 +89,19 @@ fn a_clash_no_player_is_near_leaves_the_sea_and_one_a_player_sights_is_theirs() 
     assert!(sighted(&mut clashes, [1_100.0, 0.0]).is_some_and(|clash| clash.fight.ships.len() == 2));
     assert!(clashes.is_empty(), "taken from the sea");
 }
+
+#[test]
+fn a_clash_keeps_the_weather_it_began_in() {
+    let minor = Commission { faction: PIRATES, rank: Rank::Minor };
+    let tithe = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    let (swell, _) = still();
+    let wind = [0.4, -2.0];
+    let mut clashes = vec![Clash::begin(
+        [at_sea(1, minor, 0.0, true), at_sea(2, tithe, 300.0, true)],
+        (swell.clone(), wind),
+        &[],
+        0.0,
+    )];
+    step_clashes(&mut clashes, &mut Pirates::default(), &[[150.0, 0.0]], (&[], 1.0 / 60.0));
+    assert_eq!((clashes[0].swell.bearing, clashes[0].wind), (swell.bearing, wind));
+}

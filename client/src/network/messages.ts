@@ -54,7 +54,8 @@ export interface SeenShip {
 
 /** A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
  *  from north, her faction (1 the Grey Tithe, 2 pirates), her rank (1 Minor to 5 Boss), her hull (0 the Sloop to 3
- *  the Frigate), her level (0 none) and the distance she is sighted from, metres (0 from a room that sends none). */
+ *  the Frigate), her level (0 none), the distance she is sighted from, metres (0 from a room that sends none), and her
+ *  way at sea, metres a second at the world's own time. */
 export interface SeenPirate {
   readonly id: number;
   readonly x: number;
@@ -65,6 +66,7 @@ export interface SeenPirate {
   readonly hull?: number;
   readonly level?: number;
   readonly sight?: number;
+  readonly way?: number;
 }
 
 /** A player's fight at sea as the room last stepped it: the naval crate's numbers (crates/naval/src/wire.rs), its other
@@ -248,7 +250,7 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
 export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -257,7 +259,7 @@ export function courseBytes(points: readonly (readonly [number, number])[], pace
 export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(64);
   const facing = Course.createFacingVector(builder, [heading]);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -267,14 +269,21 @@ export function walkBytes(sequence: number, controls: readonly number[]): Uint8A
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createWalkVector(builder, [...controls]);
   const numbered = wholeIn(sequence, 0, 0xffff_ffff, "the step's number");
-  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0, 0));
+  return builder.asUint8Array().slice();
+}
+
+/** A chase of the hostile ship numbered `ship` (null for none), as its bytes, in a course's message. */
+export function chaseBytes(ship: number | null): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(32);
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 3, 0, ship ?? 0, 0));
   return builder.asUint8Array().slice();
 }
 
 /** Leaving the helm (`leave`), or taking it again at the wheel, as its bytes, in a course's message. */
 export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -283,7 +292,7 @@ export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
 export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
   const number = { repair: 1, board: 2, 'leave-deck': 3 }[ask];
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, number));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, 0, number));
   return builder.asUint8Array().slice();
 }
 
@@ -291,7 +300,7 @@ export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<Arr
 export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createOrdersVector(builder, [...orders]);
-  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -384,7 +393,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const pirate = snapshot.pirates(index);
       if (!pirate) throw new Error(`snapshot pirate ${index} does not read`);
       const { faction, rank } = commissionOf(pirate.faction(), pirate.rank());
-      const [hull, level, sight] = [pirate.hull(), pirate.level(), pirate.sight()];
+      const [hull, level, sight, way] = [pirate.hull(), pirate.level(), pirate.sight(), pirate.way()];
       return {
         id: pirate.id(),
         x: pirate.x(),
@@ -395,6 +404,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         hull,
         level,
         sight,
+        way,
       };
     });
     const fights = Array.from({ length: snapshot.fightsLength() }, (unused, index) => {

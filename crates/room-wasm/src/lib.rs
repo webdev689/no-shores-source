@@ -208,6 +208,10 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
                 Ok(SeaInput::Face(heading)) => sea.face(player, heading),
                 Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
+                Ok(SeaInput::Chase(ship)) => {
+                    sea.chase(player, ship);
+                    return TAKEN;
+                }
                 Ok(SeaInput::Walk(sequence, controls)) => {
                     return match sea.walk(player, sequence, controls) {
                         Ok(()) => TAKEN,
@@ -284,7 +288,12 @@ pub fn snapshot() -> Vec<u8> {
         Opened::Fleet(fleet) => {
             let happened = fleet.take_events();
             let acknowledged = |ship| fleet.acknowledged(ship);
-            protocol::fleet::fleet_snapshot_bytes(fleet.clock(), fleet.fight(), &acknowledged, &happened)
+            protocol::fleet::fleet_snapshot_bytes(
+                (fleet.clock(), fleet.world_start()),
+                fleet.fight(),
+                &acknowledged,
+                &happened,
+            )
         }
     })
     .unwrap_or_default()

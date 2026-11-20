@@ -40,8 +40,8 @@ function roomName(request: Request): string | null {
 
 /**
  * One room on Cloudflare: a Durable Object, one for each room's name, that keeps the room in WebAssembly. Its name
- * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`node-<id>--rough` or
- * `--storm` at a voyage's harder seas), `fleet-<name>` a fleet's
+ * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`node-<id>--elite` or
+ * `--abyss` at a voyage's harder difficulty), `fleet-<name>` a fleet's
  * place on the open sea, and any other the Test Ground's course. Players join by WebSocket; each binary message is one
  * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
  * room in step with the clock and sends every player the snapshot after each tick. Its sockets live and die with it:
@@ -122,7 +122,7 @@ export class RoomHost extends DurableObject<Env> {
         crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
         Date.now() / 1000,
       );
-    if (name.startsWith('fleet-')) return this.room.openFleet();
+    if (name.startsWith('fleet-')) return this.room.openFleet(Date.now() / 1000);
     const node = /^node-(.+)$/.exec(name)?.[1];
     // Every room on land rolls its loot from a seed of its own that no player sees.
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
