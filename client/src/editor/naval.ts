@@ -1,9 +1,10 @@
 import type { FightLay, FightLook, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
-import { Effects, type Mark, type Splash } from '../ships/effects.ts';
+import type { Mark, Splash } from '../ships/effects.ts';
+import { type Cue, type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import type { MarkView } from '../ships/markView.ts';
 import { factionSide } from '../ships/dress.ts';
-import { hullOfCaptain, hullSails, hullWaterline, plateOverM } from '../ships/hulls.ts';
+import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { barOver, type ShipBar } from '../ships/shipBars.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
@@ -17,8 +18,6 @@ import { SAILS_RUNG, type Sailing } from './sailing.ts';
 
 /** Where a ship's numbers hold her rung (crates/sailing/src/floats.rs). */
 export const SHIP_RUNG = 7;
-/** A fire's flames rise from this far over her waterline (metres): just over her deck. */
-export const DECK_M = 2.4;
 /** A ball is drawn this many times its size, to be seen; the lay's arcs a dot every this many seconds of flight. */
 const BALL_DRAWN = 2;
 const ARC_STEP_S = 0.1;
@@ -51,7 +50,12 @@ export class Naval {
   /** Each call's own number: a captain answering a call since ended or made again is not taken up. */
   private call = 0;
   private adopted: FightView | null = null;
-  private readonly effects = new Effects(1);
+  private feel = new FightFeel(1);
+  /** Her own Sloop's rig, whose harm the fight draws on her: the scene's, once her model has come. */
+  ownRig: SailRig | null = null;
+  /** Where her own Sloop was drawn at the last step, and the wind's bearing the sails were last stepped in. */
+  private own: FightingShip | null = null;
+  private windBearing = 0;
   private readonly marks: MarkDrawer;
   /** The hull a ship is drawn as: her own once her model has come. */
   private readonly shown: (hull: number) => number;
@@ -117,6 +121,10 @@ export class Naval {
   end(): void {
     const fighting = this.fight;
     [this.fight, this.calling, this.adopted] = [null, false, null];
+    this.feel = new FightFeel(1);
+    // The fight's harm on her goes with it.
+    this.ownRig?.mend();
+    this.rig = null;
     this.call++;
     fighting?.end().catch(() => undefined);
   }
@@ -138,20 +146,54 @@ export class Naval {
       this.adopted = answer;
       sailing.adopt(fighting.player);
     }
+    this.own = sailing;
     const toWindow = (point: readonly [number, number, number]) =>
       [point[0] - view.leftM, point[1] - view.topM, point[2]] as const;
-    const splashes = this.effects.take(fighting.takeEvents(), time, toWindow);
-    for (const ship of [answer.player, answer.captain]) {
-      const [x = 0, y = 0] = ship.ship;
-      const [heave = 0] = ship.pose;
-      this.effects.burn(toWindow([x, y, heave + DECK_M]), ship.state === 'sinking' ? 0 : ship.fires, time, seconds);
-    }
+    const splashes = this.feel.frame({
+      events: fighting.takeEvents(),
+      ships: this.feelShips(answer),
+      balls: answer.balls.map(([x = 0, y = 0, z = 0]) => [x, y, z] as const),
+      now: time,
+      seconds,
+      windBearing: this.windBearing,
+      toWindow,
+    });
     if (answer.over) {
+      this.ownRig?.mend();
       this.farewell = { lines: fighting.lines(time), until: time + FAREWELL_S };
       [this.fight, this.adopted] = [null, null];
       fighting.end().catch(() => undefined);
     }
     return splashes;
+  }
+
+  /** A ship's place as she goes down (`FightFeel.settled`). */
+  settled<Place extends { readonly z: number; readonly pitch: number; readonly roll: number }>(
+    ship: FeelShip,
+    place: Place,
+    now: number,
+    scale: number,
+  ): Place {
+    return this.feel.settled(ship, place, now, scale);
+  }
+
+  /** The sounds the fight has called for since last taken. */
+  takeCues(): Cue[] {
+    return this.feel.takeCues();
+  }
+
+  /** The fight's ships as its feel sees them, by number: by default her own Sloop and her captain's in the hull she
+   *  sails; the sea's fight gives its own, every captain in it with her rig. */
+  shipsOf: ((answer: FightView) => Map<number, FeelShip>) | null = null;
+
+  private feelShips(answer: FightView): Map<number, FeelShip> {
+    if (this.shipsOf) return this.shipsOf(answer);
+    const hull = this.shown(hullOfCaptain(answer.captain));
+    if (this.rig?.hull !== hull) this.rig = { hull, rig: new SailRig(hullSails(hull)) };
+    return new Map([
+      [0, { vessel: answer.player, rig: this.ownRig, hull: SLOOP_HULL, side: 'player' as const }],
+      [1, { vessel: answer.captain, rig: this.rig.rig, hull, side: factionSide(answer.captain.faction) }],
+    ]);
   }
 
   /** The look the camera lays while aiming (`lookOf`). */
@@ -203,33 +245,56 @@ export class Naval {
     wind: { readonly bearing: number; readonly seconds: number },
     now: number,
   ): DrawnShip[] {
-    const captain = this.fight?.view.captain;
-    if (!captain || captain.state === 'sunk') return [];
-    const hull = this.shown(hullOfCaptain(captain));
-    if (this.rig?.hull !== hull) this.rig = { hull, rig: new SailRig(hullSails(hull)) };
-    const [x = 0, y = 0, heading = 0] = captain.ship;
-    const [heave = 0, pitch = 0, roll = 0] = captain.pose;
-    const set = captain.ship[SHIP_RUNG] === SAILS_RUNG;
-    this.rig.rig.step(wind.seconds, { offDeg: windOff(heading, wind.bearing), set }, now);
-    const place = { x: x - view.leftM, y: y - view.topM, z: heave * shown, heading, pitch, roll };
-    return [{ hull, place, rig: this.rig.rig, look: { side: factionSide(captain.faction) } }];
+    this.windBearing = wind.bearing;
+    const answer = this.fight?.view;
+    const ship = answer && this.feelShips(answer).get(1);
+    if (!ship?.rig || !FightFeel.afloat(ship, now)) return [];
+    const [, , heading = 0, ahead = 0] = ship.vessel.ship;
+    const set = ship.vessel.ship[SHIP_RUNG] === SAILS_RUNG;
+    ship.rig.step(wind.seconds, { offDeg: windOff(heading, wind.bearing), set, way: ahead }, now);
+    const place = this.feel.settled(ship, captainPlace(ship, view, shown), now, shown);
+    return [{ hull: ship.hull, place, rig: ship.rig, look: { side: ship.side } }];
   }
 
-  /** Draws the balls aloft, the lay's arcs and the effects, heights as drawn. */
-  draw(pass: GPURenderPassEncoder, view: Window, shown: number, camera: ShipCamera, now: number): void {
+  /** Draws the balls aloft, the lay's arcs and the effects, heights as drawn: each effect and ball `scale` times its
+   *  size, as the ships are drawn, and the holes in the hulls where `scarred` says each ship is drawn (by default her
+   *  own Sloop and her captain's). */
+  draw(
+    pass: GPURenderPassEncoder,
+    view: Window,
+    shown: number,
+    camera: ShipCamera,
+    now: number,
+    scale = 1,
+    scarred: Parameters<FightFeel['scars']>[0] | null = null,
+  ): void {
     const answer = this.fight?.view;
-    const marks: Mark[] = this.effects.marks(now).map((mark) => ({ ...mark, z: mark.z * shown }));
+    const marks: Mark[] = [];
     if (answer) {
+      const ships = this.feelShips(answer);
+      const [own, captain] = [ships.get(0), ships.get(1)];
+      marks.push(
+        ...this.feel.scars(
+          scarred ?? [
+            own && this.own ? { ship: own, place: this.own.place(view, shown) } : null,
+            captain && FightFeel.afloat(captain, now)
+              ? { ship: captain, place: this.feel.settled(captain, captainPlace(captain, view, shown), now, shown) }
+              : null,
+          ],
+        ),
+      );
       for (const [ballX, ballY, ballZ, radius] of answer.balls)
         marks.push({
           x: ballX - view.leftM,
           y: ballY - view.topM,
           z: ballZ * shown,
-          radius: radius * BALL_DRAWN,
+          radius: radius * BALL_DRAWN * scale,
           colour: BALL,
         });
       marks.push(...Naval.arcs(answer, view, shown));
     }
+    // The balls and the lay first: past the most marks a frame draws, the effects' last puffs wait.
+    marks.push(...this.feel.marks(now, scale).map((mark) => ({ ...mark, z: mark.z * shown })));
     this.marks.drawInto(pass, marks, camera);
   }
 
@@ -237,6 +302,13 @@ export class Naval {
   static arcs(answer: FightView, view: Window, shown: number): Mark[] {
     return arcsOf(answer.lay, view, shown);
   }
+}
+
+/** Where her captain's ship is drawn in the window, heights as drawn. */
+function captainPlace(ship: FeelShip, view: Window, shown: number) {
+  const [x = 0, y = 0, heading = 0] = ship.vessel.ship;
+  const [heave = 0, pitch = 0, roll = 0] = ship.vessel.pose;
+  return { x: x - view.leftM, y: y - view.topM, z: heave * shown, heading, pitch, roll };
 }
 
 /** Where a Sloop lies, for the aim. */

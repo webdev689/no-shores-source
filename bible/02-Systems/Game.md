@@ -166,7 +166,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 - **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures, flying Overlook's blue at her masthead.
   Like the World Editor's, she rides the swell the sea draws and heels into her turns ([[Sailing]], "Drawn at sea").
-  Her sails are set while she is under way and furled at rest, filled by the steady wind along the swell's bearing.
+  Her sails are set while she is under way and furled at rest, filled by the weather's wind ([[World Map]]).
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times her length), so one reads from the raised
   view, and every hull the same four times her own, so a Frigate reads larger than a Sloop. Every other player's ship
   is the Sloop too. A captain's ship is drawn as the hull the wire carries for her, in her side's colours, and as the
@@ -352,13 +352,14 @@ texels a side each, every square ahead of the camera and snapped to its own texe
 
 | Map | Its square | A texel | What casts into it |
 |---|---|---|---|
-| Near | 300 m across, centred 75 m ahead | 0.15 m | The city's solids and near models, the near plants and the figures |
-| Far | 2.4 km across, centred 900 m ahead | 1.2 m | The city's solids, and each building's masses, or its hull past where the masses are drawn |
+| Near | 300 m across, centred 75 m ahead | 0.15 m | The city's solids and near models, the near plants, the figures and the ships |
+| Far | 2.4 km across, centred 900 m ahead | 1.2 m | The city's solids, and each building's masses, or its hull past where the masses are drawn; the ships |
 
 What casts is found by whether, seen along the sun, its box overlaps a square, those behind the camera and far below
-the eye too, so the city under the plaza casts. The land, the city, the plants and the figures are then lit through
-both, softened over eight taps: the near map's sharp shadows hold inside its square and give way to the far map's
-toward its rim, and those fade out toward the far square's own, about 2 km ahead. So from the plaza the city below is
+the eye too, so the city under the plaza casts; the few ships in a frame all cast into both. The land, the city, the
+plants, the figures and the ships (the wrecks too) are then lit through both, softened over eight taps, a ship with the
+land's light thrown back onto her sides: the near map's sharp shadows hold inside its square and give way to the far
+map's toward its rim, and those fade out toward the far square's own, about 2 km ahead. So from the plaza the city below is
 shadowed as far as its masses stand. From more than 400 m over the ground, at sea or over an island's side, no
 shadows are drawn.
 

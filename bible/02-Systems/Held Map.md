@@ -11,6 +11,8 @@ code:
   - client/src/heldmap/watersWash.ts#labelPoints
   - client/src/heldmap/heldMapWaters.ts#HeldMapWaters
   - client/src/heldmap/heldMapWaters.ts#ruinedPlaces
+  - client/src/heldmap/mapLetters.ts#paintLettering
+  - client/src/heldmap/mapLetters.ts#keyPlace
   - client/src/game/discovered.ts#Discovered
   - client/src/overworld/discovery.ts#chartAround
   - client/src/overworld/discovery.ts#sightIslands
@@ -51,14 +53,26 @@ war, and a click on it sets the ship's destination.
   diagonal lines in the ink, 7 screen pixels apart. Fog of war is as it was: the wash is laid for the sea charted when
   the map is raised.
 - **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
-  point, the middle of its sea cell farthest from land, from other waters and from the frame's edge (`labelPoints`,
-  chamfer distances in cells), once any of its sea is charted; in the map's ink, italic, as a page element. A key in
-  the map's lower left corner names the four holders by their colours.
-- **Places.** Each discovered port is named at its city, and each discovered node at its middle, in the ink, as page
-  elements over the parchment. A city that is not a port (the waters' table names the three, [[Three Port Cities
-  Remain, and the Others Are Desolate and Destroyed]]) is drawn with a ruin's glyph, a dashed diamond, and named
-  "Ruins of <name>" (`ruinedPlaces`); until the waters are open every city is drawn as a port. The ship is a
-  red-brown arrow along its heading. The voyage under way is inked as a dashed red-brown line.
+  point, the name and a ring round it inked in the band's colour on the difficulty ramp
+  ([[The Held Map Colours Each Water's Name by Its Difficulty]]): green at level 1, gold at 8, orange at 15, red at 22
+  and deep purple at 30, blended between and read at the band's middle (`difficultyColour`), dark enough to read as
+  ink. Its label point is the middle of its sea cell farthest from land, from other waters and from the frame's edge
+  (`labelPoints`, chamfer distances in cells), once any of its sea is charted, held inside the map's edges.
+- **The key** names the four holders by their colours, and under them the difficulty ramp, "Levels 1" to "30". It stands
+  in a corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name and
+  no mark: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper
+  left, upper right. With every corner taken it is laid in one row, on a box of the parchment's colour, in the middle of
+  the parchment's margin under the map. So it moves only when it must, and never back and forth while the map stands
+  still (`keyPlace`).
+- **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
+  a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
+  is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
+  open every city is drawn as a port. The ship is a red-brown arrow along its heading. The voyage under way is inked
+  as a dashed red-brown line.
+- **Lettering.** Every name, glyph, the ship's arrow and the key is part of the parchment: painted, whenever they
+  change, in the page's face at 11 px, ringed in the parchment's colour, onto a picture of the parchment
+  (`paintLettering`), which the ink's pass lays down over the ink, before the gauntlets are drawn. So the hands cover
+  them as they cover the parchment. Only the card that offers Set sail stands over the picture as a page element.
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not
   fill. A press that moves more than 6 px is a pan, not a click.

@@ -49,7 +49,7 @@ fn one_up(rank: Rank) -> Rank {
 }
 
 /// A piece floating for one player: its number, what it looks like, where it floats, the rank and level it is rolled
-/// for, and the tick it is gone.
+/// for, the tick it is gone, and the wind of the fight it came from, which it drifts down.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Floating {
     pub player: PlayerId,
@@ -59,6 +59,7 @@ pub struct Floating {
     pub rank: Rank,
     pub level: u8,
     pub until: u64,
+    pub wind: [f64; 2],
 }
 
 /// What a piece held once gathered: a Vestige, an Ammo box and an Ammo crate, each if it held one and there was room.
@@ -110,31 +111,31 @@ impl Flotsam {
                 let id = self.next_id;
                 self.next_id = self.next_id.wrapping_add(1).max(1);
                 let until = clock + FLOAT_TICKS;
-                self.pieces.push(Floating { player, id, kind, at, rank: rolled, level, until });
+                self.pieces.push(Floating { player, id, kind, at, rank: rolled, level, until, wind: sank.wind });
                 laid.push(Event::Flotsam { id, at, kind });
             }
         }
         laid
     }
 
-    /// One tick at `clock`: every piece drifts downwind (`wind`, east and south) and those that have lain their time
+    /// One tick at `clock`: every piece drifts down its wind (east and south) and those that have lain their time
     /// are gone; then each player's ship at `ships` gathers each of their pieces within `GATHER_M`, its contents
     /// going to their character where they have one. Answers each piece gathered, and what it held.
     pub fn tick(
         &mut self,
         clock: u64,
-        wind: [f64; 2],
         ships: &[(PlayerId, [f64; 2])],
         characters: &mut std::collections::BTreeMap<PlayerId, Character>,
     ) -> Vec<(Event, PlayerId, Held)> {
-        let speed = libm::hypot(wind[0], wind[1]);
-        let drift =
-            if speed > 0.0 { wind.map(|along| along / speed * DRIFT_M_S * movement::TICK_SECONDS) } else { [0.0; 2] };
         self.pieces.retain(|piece| clock < piece.until);
         let mut gathered = Vec::new();
         let seed = self.seed;
         self.pieces.retain_mut(|piece| {
-            piece.at = [piece.at[0] + drift[0], piece.at[1] + drift[1]];
+            let speed = libm::hypot(piece.wind[0], piece.wind[1]);
+            if speed > 0.0 {
+                let drift = piece.wind.map(|along| along / speed * DRIFT_M_S * movement::TICK_SECONDS);
+                piece.at = [piece.at[0] + drift[0], piece.at[1] + drift[1]];
+            }
             let near = ships.iter().any(|(player, at)| {
                 *player == piece.player && libm::hypot(at[0] - piece.at[0], at[1] - piece.at[1]) <= GATHER_M
             });

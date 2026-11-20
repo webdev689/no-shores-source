@@ -13,6 +13,8 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   it is built ([[Overlook Is a Shared World After Destiny 1]]).
 - **Friendly ships' port factions.** Which port faction each friendly ship belongs to
   ([[The Waters Come From the Islands]]).
+- **Ship materials.** Which materials there are, what each upgrade costs, and the small islands' wreckage, all
+  planned and not built ([[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]).
 - **Crew as companions.** Which of DFO's companion systems the crew comes from: its naval `crewCompanions`, its
   fleet's `companionSlots`, or another.
 - **The Grey Tithe.** Whether the sea's pirates become the Grey Tithe. Its roster, its boss on land and where its

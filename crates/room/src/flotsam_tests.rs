@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 
 fn sank(rank: Rank, players: Vec<PlayerId>) -> Sank {
     let pirate = crate::pirates::Pirate { level: 12, ..at_sea(4, Commission { faction: PIRATES, rank }, 0.0, true) };
-    Sank { pirate, at: [1_000.0, 2_000.0], players }
+    Sank { pirate, at: [1_000.0, 2_000.0], players, wind: [3.0, 4.0] }
 }
 
 #[test]
@@ -43,11 +43,11 @@ fn pieces_drift_downwind_and_are_gone_after_three_minutes() {
     let before = flotsam.pieces[0].at;
     let mut characters = BTreeMap::new();
     for clock in 1..=60 {
-        flotsam.tick(clock, [3.0, 4.0], &[], &mut characters);
+        flotsam.tick(clock, &[], &mut characters);
     }
     let after = flotsam.pieces[0].at;
     assert!((after[0] - before[0] - 0.18).abs() < 1e-9 && (after[1] - before[1] - 0.24).abs() < 1e-9, "{after:?}");
-    flotsam.tick(FLOAT_TICKS, [3.0, 4.0], &[], &mut characters);
+    flotsam.tick(FLOAT_TICKS, &[], &mut characters);
     assert!(flotsam.pieces.is_empty());
 }
 
@@ -56,12 +56,12 @@ fn a_players_ship_gathers_their_own_pieces_within_twenty_five_metres_and_no_one_
     let mut flotsam = Flotsam::new(1);
     flotsam.lay(&sank(Rank::Miniboss, vec![1, 2]), 0, (1, 0));
     let mut characters = BTreeMap::from([(1, Character::starting())]);
-    let gathered = flotsam.tick(1, [0.0; 2], &[(1, [1_000.0, 2_000.0])], &mut characters);
+    let gathered = flotsam.tick(1, &[(1, [1_000.0, 2_000.0])], &mut characters);
     // Every one of a Miniboss's pieces lies within 30 m, so some lie past the ship's 25 m.
     assert!(!gathered.is_empty() && gathered.iter().all(|(_, by, _)| *by == 1));
     assert_eq!(flotsam.for_player(2).count(), 6, "the other player's pieces stay theirs");
     let crates = gathered.iter().filter(|(_, _, held)| held.ammo_crate).count();
     assert!(crates >= 1, "a Miniboss's piece holds an Ammo crate, kept while there is room");
-    let far = flotsam.tick(2, [0.0; 2], &[(1, [5_000.0, 2_000.0])], &mut characters);
+    let far = flotsam.tick(2, &[(1, [5_000.0, 2_000.0])], &mut characters);
     assert!(far.is_empty());
 }

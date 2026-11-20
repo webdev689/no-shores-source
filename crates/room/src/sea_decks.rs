@@ -13,11 +13,12 @@ use crate::{PlayerId, Refused, Room};
 use std::collections::BTreeMap;
 
 /// A boarded captain's deck: her ship as she sailed at sea, where she lies, her deck room, each boarder's number in it,
-/// and whether her crew has fallen.
+/// whether her crew has fallen, and her fight's wind.
 #[derive(Debug)]
 pub struct Boarded {
     pub pirate: Pirate,
     pub at: [f64; 2],
+    pub wind: [f64; 2],
     pub room: Room,
     pub aboard: BTreeMap<PlayerId, PlayerId>,
     pub won: bool,
@@ -51,7 +52,7 @@ impl Sea {
             return Err(crate::battle::BoardRefused::NotFighting);
         }
         let (ship, pirate) = self.fights.board(player)?;
-        let at = self.fights.position_of(pirate.id).unwrap_or([pirate.x, pirate.y]);
+        let (at, wind) = self.fights.position_of(pirate.id).unwrap_or(([pirate.x, pirate.y], [0.0; 2]));
         let index = match self.decks.boarded.iter().position(|deck| deck.pirate.id == pirate.id) {
             Some(index) => index,
             None => {
@@ -59,7 +60,7 @@ impl Sea {
                 let deck = self.decks.hulls.get(hull).unwrap_or(&self.deck);
                 let (faction, rank) = (pirate.commission.faction, foe_rank(pirate.commission.rank));
                 let room = Room::deck(deck, faction, rank, pirate.level.max(1));
-                self.decks.boarded.push(Boarded { pirate, at, room, aboard: BTreeMap::new(), won: false });
+                self.decks.boarded.push(Boarded { pirate, at, wind, room, aboard: BTreeMap::new(), won: false });
                 self.decks.boarded.len() - 1
             }
         };
@@ -127,7 +128,7 @@ impl Sea {
                 // Her hold is opened: she lays no more when she goes down.
                 self.fights.forget_hold(deck.pirate.id);
                 let players: Vec<PlayerId> = deck.aboard.keys().copied().collect();
-                let sank = Sank { pirate: deck.pirate, at: deck.at, players };
+                let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind };
                 self.lay_flotsam(&sank, (2, 1));
             }
             let deck = &self.decks.boarded[index];

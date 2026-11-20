@@ -4,11 +4,13 @@
 //! and the rest sail on. A player who comes within sight of one of its ships joins it, and it becomes their fight.
 
 use crate::pirates::{Pirate, Pirates};
+use crate::sea::Coast;
+use crate::sea_weather::CoastWaters;
+use land::sea::Swell;
 use naval::captain::{ENGAGE_RANGE, Mode};
 use naval::fight::{CAPTAIN, Fight, Vessel};
 use naval::shots::ShipId;
 use sailing::ship::{SAILS_SET, Ship};
-use sailing::waters::Waters;
 
 /// A ship at sea at a point, on a heading, at a rung of her ladder, lying still: her hull is her captain's or the
 /// player's Sloop.
@@ -17,24 +19,28 @@ pub fn ship_at(x: f64, y: f64, heading: f64, rung: i8) -> Ship {
     Ship { x, y, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung }
 }
 
-/// A fight among captains met at sea: the fight, and the ship each of them sailed as at sea, by her number in it.
+/// A fight among captains met at sea: the fight, the ship each of them sailed as at sea, by her number in it, and the
+/// swell and the wind where it began, kept while it lasts.
 #[derive(Debug)]
 pub struct Clash {
     pub fight: Fight,
     crews: Vec<(ShipId, Pirate)>,
+    pub swell: Swell,
+    pub wind: [f64; 2],
 }
 
 impl Clash {
-    /// The fight of two ships that met, each where she lay and under her sails, the bold one first: her seed draws
-    /// the fight's chances.
+    /// The fight of two ships that met, each where she lay and under her sails, the bold one first, under the swell and
+    /// the wind of `weather`: her seed draws the fight's chances.
     #[must_use]
-    pub fn begin(met: [Pirate; 2], waters: &impl Waters, time: f64) -> Clash {
+    pub(crate) fn begin(met: [Pirate; 2], (swell, wind): (Swell, [f64; 2]), coasts: &[Coast], time: f64) -> Clash {
+        let waters = CoastWaters { coasts, swell: &swell };
         let crews: Vec<(ShipId, Pirate)> = (CAPTAIN..).zip(met).collect();
         let captains: Vec<_> = crews
             .iter()
             .map(|(_, pirate)| (ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET), pirate.commission, pirate.seed))
             .collect();
-        Clash { fight: Fight::among(&captains, waters, time), crews }
+        Clash { fight: Fight::among(&captains, &waters, time), crews, swell, wind }
     }
 
     /// Each of its ships by her number in the fight, as she sailed at sea.
@@ -77,19 +83,21 @@ fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
     (east * east + south * south).sqrt()
 }
 
-/// One tick of the clashes at sea, each player's ship at `players`: each steps, with no orders; one with no ship a
+/// One tick of the clashes at sea, each player's ship at `players`: each steps, with no orders, under its own weather
+/// on the waters of `coasts`; one with no ship a
 /// player keeps at sea (within 1.1 times her sight) leaves the sea, as a ship at sea does; and one that is over sends
 /// the ships that sail on back to sea.
-pub fn step_clashes(
+pub(crate) fn step_clashes(
     clashes: &mut Vec<Clash>,
     pirates: &mut Pirates,
     players: &[[f64; 2]],
-    (waters, wind, time): (&impl Waters, [f64; 2], f64),
+    (coasts, time): (&[Coast], f64),
 ) {
     let near = |clash: &Clash| clash.ships().any(|ship| players.iter().any(|&at| ship.kept_by(at)));
     clashes.retain(near);
     for clash in clashes.iter_mut() {
-        clash.fight.step(&[], waters, wind, time);
+        let waters = CoastWaters { coasts, swell: &clash.swell };
+        clash.fight.step(&[], &waters, clash.wind, time);
     }
     for clash in clashes.iter().filter(|clash| clash.settled()) {
         pirates.back_from_clash(clash.sail_on());

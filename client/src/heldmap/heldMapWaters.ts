@@ -1,22 +1,17 @@
-// The waters on the held map as page elements over the parchment: each charted water's name and level band at its
-// label point, the key naming the four holders by their colours in the map's lower left corner, and the sheet both
-// are drawn by, with the ruins' glyph. Lettered in the map's own ink, as its places are.
-import { make } from '../editor/dom.ts';
+// The waters on the held map: each charted water's name and level band, lettered at its label point and held inside
+// the map, and the places it names, a city that is no port named as the ruins it is. What is lettered is painted with
+// the parchment's ink (mapLetters.ts).
 import type { MapPlace } from './heldMap.ts';
-import type { Rect } from './heldMapLaw.ts';
+import type { MapLetter } from './mapLetters.ts';
 import {
   chartedWaters,
-  HOLDER_COLOURS,
-  HOLDER_WORDS,
+  difficultyColour,
   labelPoints,
   type MapWaters,
   washOf,
   type WatersWash,
   waterWords,
 } from './watersWash.ts';
-
-/** The key's inset from the map's lower left corner, pixels. */
-const KEY_INSET_PX = 14;
 
 /** The places the map names, a city that is no port named and marked as the ruins it is; before the waters are open,
  *  as they come. */
@@ -34,29 +29,11 @@ export function ruinedPlaces(places: readonly MapPlace[], mainPorts: readonly st
 export class HeldMapWaters {
   readonly waters: MapWaters;
   private readonly points: Map<number, readonly [number, number]>;
-  private readonly key = make('div', '', 'held-key');
-  private readonly letters = new Map<number, HTMLElement>();
   private charted = new Set<number>();
-  /** Each name's width once measured, so the map is not laid out again every frame to read it. */
-  private readonly widths = new Map<HTMLElement, number>();
 
-  constructor(waters: MapWaters, layer: HTMLElement) {
+  constructor(waters: MapWaters) {
     this.waters = waters;
     this.points = labelPoints(waters);
-    for (const [holder, words] of HOLDER_WORDS) {
-      const row = make('div', '', 'held-key-row');
-      const swatch = make('i', '', 'held-key-swatch');
-      swatch.style.background = HOLDER_COLOURS[holder];
-      row.append(swatch, make('span', words));
-      this.key.append(row);
-    }
-    layer.append(this.key);
-    for (const water of waters.waters) {
-      const letters = make('div', waterWords(water), 'held-water');
-      letters.hidden = true;
-      this.letters.set(water.continent, letters);
-      layer.append(letters);
-    }
   }
 
   /** The wash for the sea charted now, and which waters are lettered from it. */
@@ -65,41 +42,22 @@ export class HeldMapWaters {
     return washOf(this.waters, charted);
   }
 
-  /** Lays the letters and the key on the map at `ink` (screen pixels, `drop` down its lowering); `toInk` gives a world
-   *  point's place on it. */
-  layout(ink: Rect, drop: number, toInk: (x: number, y: number) => readonly [number, number]): void {
-    for (const [continent, letters] of this.letters) {
-      const point = this.points.get(continent);
-      const [x, y] = point ? toInk(point[0], point[1]) : [-1, -1];
-      letters.hidden = !this.charted.has(continent) || x < 0 || y < 0 || x > ink.width || y > ink.height;
-      if (letters.hidden) continue;
-      // A name near the map's edge is held inside it, so none runs off the parchment.
-      const width = this.widths.get(letters) ?? letters.offsetWidth;
-      this.widths.set(letters, width);
-      const half = Math.min(width / 2, ink.width / 2);
-      const across = Math.min(Math.max(x, half), ink.width - half);
-      letters.style.transform = `translate(${ink.x + across}px, ${ink.y + y + drop}px) translate(-50%, -50%)`;
-    }
-    this.key.style.transform = `translate(${ink.x + KEY_INSET_PX}px, ${ink.y + ink.height + drop - KEY_INSET_PX}px) translate(0, -100%)`;
+  /** The charted waters' names on a map `ink` wide and high, `toInk` giving a world point's place on it, `widthOf` a
+   *  name's width: each at its label point while that is on the map, held inside the map's edges. */
+  letters(
+    ink: { readonly width: number; readonly height: number },
+    toInk: (x: number, y: number) => readonly [number, number],
+    widthOf: (text: string) => number,
+  ): MapLetter[] {
+    return this.waters.waters.flatMap((water): MapLetter[] => {
+      const point = this.points.get(water.continent);
+      if (!point || !this.charted.has(water.continent)) return [];
+      const [x, y] = toInk(point[0], point[1]);
+      if (x < 0 || y < 0 || x > ink.width || y > ink.height) return [];
+      const text = waterWords(water);
+      const half = Math.min(widthOf(text) / 2, ink.width / 2);
+      const colour = difficultyColour(water.levels) ?? undefined;
+      return [{ text, x: Math.min(Math.max(x, half), ink.width - half), y, kind: 'water', chosen: false, colour }];
+    });
   }
-}
-
-const SHEET_ID = 'held-map-waters';
-
-/** Lays the waters' and the ruins' sheet on `page`, once: in the map's ink (`--map-ink`, index.html's held map). */
-export function wearHeldMapWaters(page: Document): void {
-  if (page.getElementById(SHEET_ID)) return;
-  const sheet = page.createElement('style');
-  sheet.id = SHEET_ID;
-  sheet.textContent = `
-.held-water { font-size: 13px; font-style: italic; letter-spacing: 0.08em; color: var(--map-ink); white-space: nowrap;
-  opacity: 0.85; text-shadow: -1px 0 0 #eedebe, 1px 0 0 #eedebe, 0 -1px 0 #eedebe, 0 1px 0 #eedebe; }
-.held-key { display: flex; flex-direction: column; gap: 3px; padding: 6px 8px; font-size: 11px; color: var(--map-ink);
-  border: 1px solid color-mix(in srgb, var(--map-ink) 45%, transparent); background: rgba(238, 222, 190, 0.6); }
-.held-key-row { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.held-key-swatch { display: inline-block; width: 14px; height: 9px; opacity: 0.75;
-  border: 1px solid color-mix(in srgb, var(--map-ink) 60%, transparent); }
-.held-mark.ruin::before { border-radius: 0; border-style: dashed; transform: rotate(45deg); background: none; }
-`;
-  page.head.append(sheet);
 }

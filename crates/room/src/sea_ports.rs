@@ -108,7 +108,7 @@ impl Sea {
     }
 
     /// The harbour's tick, the sea's ships sailed: every repair runs on, and what floats drifts and is gathered.
-    pub(super) fn tick_harbour(&mut self, wind: [f64; 2]) {
+    pub(super) fn tick_harbour(&mut self) {
         for (player, kept) in self.harbour.repairs.tick(TICK_SECONDS) {
             if let Some(berth) = self.berths.get_mut(&player) {
                 keep(berth, &mut self.harbour.characters, player, kept);
@@ -122,7 +122,7 @@ impl Sea {
             .map(|(player, ship)| (player, [ship.x, ship.y]))
             .collect();
         let tick = self.clock as f64;
-        for (event, player, held) in self.harbour.flotsam.tick(self.clock, wind, &ships, &mut self.harbour.characters) {
+        for (event, player, held) in self.harbour.flotsam.tick(self.clock, &ships, &mut self.harbour.characters) {
             let Event::Gathered { id, .. } = event else { continue };
             self.harbour.told.extend(told_numbers(&event, tick).map(|numbers| (player, numbers)));
             let rarity = held.vestige.map_or(0.0, |vestige| f64::from(vestige.rarity as u8) + 1.0);

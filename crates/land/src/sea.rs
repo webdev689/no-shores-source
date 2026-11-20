@@ -1,11 +1,14 @@
 //! The sea's swell: the long waves rolling over the open sea, the same on the server and in a browser, so a ship or a
-//! swimmer rides the same wave everywhere. A sum of Gerstner waves about the prevailing wind, from a fixed seed and
-//! world time. The swell feels the bottom and fades as the sea shallows toward a coast, where the browser draws the
-//! breakers.
+//! swimmer rides the same wave everywhere. A sum of Gerstner waves about the weather's wind, from a fixed seed and
+//! world time, as high and as long as the weather and the open water make it (`world::weather`). The swell feels the
+//! bottom and fades as the sea shallows toward a coast, where the browser draws the breakers.
 
 use crate::exact::{fingerprint, rand01, seed_of, sin_cos, smooth};
 use crate::ground::{Ground, WaterAt};
 use std::f64::consts::TAU;
+use world::geometry::Point;
+use world::waters::Waters;
+use world::weather::{Air, HARBOUR_SHARE, air_at, shelter, through};
 
 /// Metres a second squared.
 pub const GRAVITY: f64 = 9.81;
@@ -20,8 +23,17 @@ pub const SHARPNESS: f64 = 0.8;
 /// The swell is whole where the sea is FULL_DEPTH_M deep and gone where it is GONE_DEPTH_M.
 pub const FULL_DEPTH_M: f64 = 15.0;
 pub const GONE_DEPTH_M: f64 = 1.0;
-/// The swell's seed: one sea for the whole world, until the weather drives it.
+/// The swell's seed: one sea for the whole world, its height and length the weather's.
 pub const SEED: u32 = 0x5EA5_EA5E;
+/// The swell's height as a share of a moderate sea's at the middle of each band of sea state: calm, moderate, rough
+/// and storm; between them it is blended, never stepped.
+pub const HEIGHT_BY_STATE: [(f64, f64); 4] = [(0.1, 0.35), (0.35, 1.0), (0.65, 1.8), (0.9, 3.0)];
+/// The swell's lengths as a share of a moderate sea's, from the lowest sea to the highest.
+pub const LENGTH_SHARE: [f64; 2] = [0.8, 1.4];
+/// The bearings the sets of waves run toward, evenly round the compass: the wind between two blends their sets.
+pub const BEARINGS: usize = 8;
+/// The most waves a swell under the weather sums: two bearings' sets at two lengths.
+pub const MOST_WAVES: usize = 4 * WAVES;
 
 /// One wave: the way it travels (a unit vector east and south), its wavenumber (radians a metre), its frequency
 /// (radians a second), its height and how far it carries water sideways (metres), and its phase.
@@ -35,11 +47,14 @@ pub struct Wave {
     pub phase: f64,
 }
 
-/// The swell: its waves, longest first, and the bearing they run toward (radians clockwise from north), the wind's.
+/// The swell: its waves, longest first in each set, the bearing they run toward (radians clockwise from north: a
+/// seed's own, or the nearest set's to the weather's wind), and the wind it runs with, metres a second east and south
+/// (none for a seed's own swell).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Swell {
     pub bearing: f64,
-    pub waves: [Wave; WAVES],
+    pub wind: [f64; 2],
+    pub waves: Vec<Wave>,
 }
 
 /// The share of the swell left in water `depth` metres deep.
@@ -55,38 +70,72 @@ impl Default for Swell {
 }
 
 impl Swell {
-    /// The swell a seed makes. Lengths step down evenly in ratio, each nudged; the shorter a wave, the further its
-    /// course strays from the wind's.
+    /// The swell a seed makes: one set of waves about a bearing drawn from the seed, a moderate sea's.
     #[must_use]
     pub fn new(seed: u32) -> Self {
         let seed = seed_of(seed, "swell");
         let bearing = TAU * rand01(seed, &[0]);
-        let waves = std::array::from_fn(|index| {
-            let draw = |salt: i64| rand01(seed, &[index as i64 + 1, salt]);
-            let place = index as f64 / (WAVES - 1) as f64;
-            let ratio = SHORTEST_M / LONGEST_M;
-            // LONGEST * ratio^place, from + - * / alone: the ratio's square roots, halving the step each time.
-            let length = LONGEST_M * power(ratio, place) * (0.9 + 0.2 * draw(1));
-            let number = TAU / length;
-            let stray = (0.35 + 0.85 * place) * (draw(2) - 0.5) * 2.0;
-            let (east, north) = sin_cos(bearing + stray);
-            let amplitude = STEEPNESS * (0.8 + 0.4 * draw(3)) / number;
-            Wave {
-                direction: [east, -north],
-                number,
-                frequency: (GRAVITY * number).sqrt(),
-                amplitude,
-                shift: (SHARPNESS / (number * WAVES as f64)).min(2.0 * amplitude),
-                phase: TAU * draw(4),
+        Self { bearing, wind: [0.0; 2], waves: set(seed, 0, bearing, 1.0).to_vec() }
+    }
+
+    /// The swell where the sea stands as `here` says: the sets about the two bearings nearest the wind's and the two
+    /// lengths round its own, each weighted by how near, the whole as high as `here` makes it. A set's waves keep their
+    /// phases wherever and whenever they are summed, so the sea never jumps as the weather moves; only their weights do,
+    /// and those change over kilometres and hours. The weights' squares sum to 1, so a blend of two sets is as high as
+    /// one; the sideways carry takes the squares, so the crests never fold.
+    #[must_use]
+    pub fn under(seed: u32, here: &SeaHere) -> Self {
+        let seed = seed_of(seed, "swell");
+        let strength = (here.wind[0] * here.wind[0] + here.wind[1] * here.wind[1]).sqrt();
+        let toward = if strength > 0.0 { [here.wind[0] / strength, here.wind[1] / strength] } else { [1.0, 0.0] };
+        let spacing_cosine = sin_cos(TAU / BEARINGS as f64).1;
+        // A bearing a hair's weight from none is none: the wind on a set's bearing blends that set alone.
+        let mut bearings: Vec<(usize, f64)> = (0..BEARINGS)
+            .map(|index| {
+                let (east, north) = sin_cos(TAU * index as f64 / BEARINGS as f64);
+                (index, ((toward[0] * east - toward[1] * north - spacing_cosine) / (1.0 - spacing_cosine)).max(0.0))
+            })
+            .filter(|&(_, weight)| weight > 1e-9)
+            .collect();
+        let total: f64 = bearings.iter().map(|&(_, weight)| weight * weight).sum::<f64>().sqrt();
+        bearings.iter_mut().for_each(|(_, weight)| *weight /= total);
+        let long = (here.length() - LENGTH_SHARE[0]) / (LENGTH_SHARE[1] - LENGTH_SHARE[0]);
+        let lengths_total = ((1.0 - long) * (1.0 - long) + long * long).sqrt();
+        let (height, carry) = (here.height(), here.height().min(1.0));
+        let mut waves = Vec::with_capacity(MOST_WAVES);
+        let mut strongest = (0.0, 0.0);
+        for &(index, bearing_weight) in &bearings {
+            for (length_index, length_weight) in [(0_usize, 1.0 - long), (1, long)] {
+                let weight = bearing_weight * length_weight / lengths_total;
+                if weight <= 0.0 {
+                    continue;
+                }
+                let bearing = TAU * index as f64 / BEARINGS as f64;
+                if weight > strongest.0 {
+                    strongest = (weight, bearing);
+                }
+                let salt = (index * 2 + length_index + 1) as i64;
+                waves.extend(set(seed, salt, bearing, LENGTH_SHARE[length_index]).map(|wave| Wave {
+                    amplitude: wave.amplitude * weight * height,
+                    shift: wave.shift * weight * weight * carry,
+                    ..wave
+                }));
             }
-        });
-        Self { bearing, waves }
+        }
+        Self { bearing: strongest.1, wind: here.wind, waves }
     }
 
     /// Where the water at rest at (x, y) is carried at `time`, seconds of world time, in the sea `depth` metres deep:
     /// its shift east and south and its height, metres.
     #[must_use]
     pub fn displacement(&self, x: f64, y: f64, time: f64, depth: f64) -> [f64; 3] {
+        self.lagged_displacement(x, y, time, depth, 0.0)
+    }
+
+    /// As `displacement`, the height as a hull of time constant `lag` seconds feels it: each wave answered as a first
+    /// order lag answers a sine, its height shrunk by 1 / √(1 + (frequency x lag)^2) and its crest come late, from
+    /// + - * / alone. A lag of 0 is the water itself, to the bit.
+    fn lagged_displacement(&self, x: f64, y: f64, time: f64, depth: f64, lag: f64) -> [f64; 3] {
         let share = reach(depth);
         let mut out = [0.0; 3];
         if share <= 0.0 {
@@ -97,7 +146,12 @@ impl Swell {
             let (sine, cosine) = sin_cos(wave.number * along - wave.frequency * time + wave.phase);
             out[0] += wave.shift * wave.direction[0] * cosine;
             out[1] += wave.shift * wave.direction[1] * cosine;
-            out[2] += wave.amplitude * sine;
+            if lag > 0.0 {
+                let slowness = wave.frequency * lag;
+                out[2] += wave.amplitude * (sine + slowness * cosine) / (1.0 + slowness * slowness);
+            } else {
+                out[2] += wave.amplitude * sine;
+            }
         }
         out.map(|value| value * share)
     }
@@ -106,12 +160,87 @@ impl Swell {
     /// finds the water at rest whose carried place is (x, y): four steps converge, the waves never folding.
     #[must_use]
     pub fn height_at(&self, x: f64, y: f64, time: f64, depth: f64) -> f64 {
+        self.lagged_height_at(x, y, time, depth, 0.0)
+    }
+
+    /// The sea's surface above (x, y) as a hull of time constant `lag` seconds rides it (`lagged_displacement`).
+    #[must_use]
+    pub fn lagged_height_at(&self, x: f64, y: f64, time: f64, depth: f64, lag: f64) -> f64 {
         let (mut rest_x, mut rest_y) = (x, y);
         for _ in 0..4 {
             let [east, south, _] = self.displacement(rest_x, rest_y, time, depth);
             (rest_x, rest_y) = (x - east, y - south);
         }
-        self.displacement(rest_x, rest_y, time, depth)[2]
+        self.lagged_displacement(rest_x, rest_y, time, depth, lag)[2]
+    }
+}
+
+/// One set of waves about `bearing`, `length_share` times the swell's lengths, its draws salted by `salt` (0 the
+/// seed's own swell). Lengths step down evenly in ratio, each nudged; the shorter a wave, the further its course strays
+/// from the wind's.
+fn set(seed: u32, salt: i64, bearing: f64, length_share: f64) -> [Wave; WAVES] {
+    std::array::from_fn(|index| {
+        let draw = |part: i64| rand01(seed, &[salt * 16 + index as i64 + 1, part]);
+        let place = index as f64 / (WAVES - 1) as f64;
+        let ratio = SHORTEST_M / LONGEST_M;
+        // LONGEST * ratio^place, from + - * / alone: the ratio's square roots, halving the step each time.
+        let length = LONGEST_M * power(ratio, place) * (0.9 + 0.2 * draw(1)) * length_share;
+        let number = TAU / length;
+        let stray = (0.35 + 0.85 * place) * (draw(2) - 0.5) * 2.0;
+        let (east, north) = sin_cos(bearing + stray);
+        let amplitude = STEEPNESS * (0.8 + 0.4 * draw(3)) / number / length_share;
+        Wave {
+            direction: [east, -north],
+            number,
+            frequency: (GRAVITY * number).sqrt(),
+            amplitude,
+            shift: (SHARPNESS / (number * WAVES as f64)).min(2.0 * amplitude),
+            phase: TAU * draw(4),
+        }
+    })
+}
+
+/// How the sea stands at a point: the weather's wind there (metres a second, east and south) and its sea state (0
+/// calm to 1 storm), the share of the open sea's swell its fetch leaves (`world::weather::shelter`), and how much of a
+/// roadstead's calm holds there.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SeaHere {
+    pub wind: [f64; 2],
+    pub state: f64,
+    pub open: f64,
+    pub harbour: f64,
+}
+
+impl SeaHere {
+    /// The open sea under the weather `air`: no land near, no port.
+    #[must_use]
+    pub fn open_sea(air: &Air) -> Self {
+        Self { wind: air.wind, state: air.state, open: 1.0, harbour: 0.0 }
+    }
+
+    /// The weather and the shelter at world point (x, y) at `time_s` seconds since the Unix epoch, amid `waters` and
+    /// `roadsteads`.
+    #[must_use]
+    pub fn at(waters: &Waters, roadsteads: &[Point], x: f64, y: f64, time_s: f64) -> Self {
+        let air = air_at(x, y, time_s);
+        let (open, harbour) = shelter(waters, roadsteads, [x, y], air.wind);
+        Self { open, harbour, ..Self::open_sea(&air) }
+    }
+
+    /// The swell's height here as a share of a moderate sea's: by its sea state (`HEIGHT_BY_STATE`), times the share
+    /// its fetch leaves, eased to a roadstead's calm.
+    #[must_use]
+    pub fn height(&self) -> f64 {
+        let open = through(&HEIGHT_BY_STATE, self.state) * self.open;
+        open + (HARBOUR_SHARE - open) * self.harbour
+    }
+
+    /// The swell's lengths here as a share of a moderate sea's: longer the higher its sea state raises it.
+    #[must_use]
+    pub fn length(&self) -> f64 {
+        let (lowest, highest) = (HEIGHT_BY_STATE[0].1, HEIGHT_BY_STATE[HEIGHT_BY_STATE.len() - 1].1);
+        let rise = (through(&HEIGHT_BY_STATE, self.state) - lowest) / (highest - lowest);
+        LENGTH_SHARE[0] + (LENGTH_SHARE[1] - LENGTH_SHARE[0]) * rise
     }
 }
 
@@ -127,6 +256,19 @@ pub fn sea_surface(ground: &Ground, swell: &Swell, x: f64, y: f64, time: f64) ->
 #[must_use]
 pub fn sea_hash(ground: &Ground, swell: &Swell, points: &[(f64, f64)], time: f64) -> u64 {
     fingerprint(points.iter().map(|&(x, y)| sea_surface(ground, swell, x, y, time).unwrap_or(0.0)))
+}
+
+/// How deep the open sea is under the weather's fingerprint, metres: past where the swell feels the bottom.
+pub const DEEP_M: f64 = 1_000.0;
+
+/// A fingerprint of the deep sea's surface under the weather at world points at `time_s` seconds since the Unix
+/// epoch, amid `waters` and `roadsteads`: each point's own weather and shelter, its own swell, its height. The server
+/// and a browser are held to the same bits.
+#[must_use]
+pub fn weather_sea_hash(waters: &Waters, roadsteads: &[Point], points: &[(f64, f64)], time_s: f64) -> u64 {
+    fingerprint(points.iter().map(|&(x, y)| {
+        Swell::under(SEED, &SeaHere::at(waters, roadsteads, x, y, time_s)).height_at(x, y, time_s, DEEP_M)
+    }))
 }
 
 /// `base` to the power `exponent` for an exponent in [0, 1], from square roots: each binary digit of the exponent
@@ -145,72 +287,5 @@ fn power(base: f64, exponent: f64) -> f64 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_swell_runs_from_the_longest_wave_to_the_shortest_about_one_wind() {
-        let swell = Swell::default();
-        assert_eq!(swell, Swell::new(SEED));
-        let lengths: Vec<f64> = swell.waves.iter().map(|wave| TAU / wave.number).collect();
-        assert!(lengths[0] > 120.0 && lengths[WAVES - 1] < 6.0, "{lengths:?}");
-        assert!(lengths.windows(2).all(|pair| pair[0] > pair[1]), "{lengths:?}");
-        let sharpness: f64 = swell.waves.iter().map(|wave| wave.number * wave.shift).sum();
-        assert!(sharpness <= SHARPNESS + 1e-12, "{sharpness}");
-        let (east, north) = sin_cos(swell.bearing);
-        let along = swell.waves[0].direction[0] * east - swell.waves[0].direction[1] * north;
-        assert!(along > 0.9, "the longest wave runs nearly with the wind: {along}");
-        assert_ne!(Swell::new(1), Swell::new(2));
-    }
-
-    #[test]
-    fn deep_water_rolls_about_still_water_two_metres_or_so_from_trough_to_crest() {
-        let swell = Swell::default();
-        let heights: Vec<f64> =
-            (0..4000).map(|step| swell.height_at(1_000.0 + 3.7 * f64::from(step), 2_000.0, 0.0, 200.0)).collect();
-        let mean = heights.iter().sum::<f64>() / heights.len() as f64;
-        let (low, high) = heights.iter().fold((f64::MAX, f64::MIN), |(low, high), &h| (low.min(h), high.max(h)));
-        assert!(mean.abs() < 0.15, "{mean}");
-        assert!(high - low > 1.5 && high - low < 5.0, "{low} {high}");
-    }
-
-    #[test]
-    fn the_swell_fades_as_the_sea_shallows_and_is_gone_at_the_shore() {
-        let swell = Swell::default();
-        let spread = |depth: f64| {
-            (0..400).map(|step| swell.height_at(37.0 * f64::from(step), 11.0, 5.0, depth).abs()).fold(0.0, f64::max)
-        };
-        assert!(spread(0.5).abs() < f64::EPSILON);
-        assert!(spread(5.0) < spread(10.0) && spread(10.0) < spread(40.0));
-        assert!((spread(40.0) - spread(400.0)).abs() < 1e-12, "deep water is all one");
-    }
-
-    #[test]
-    fn a_crest_travels_with_its_wave_at_its_speed() {
-        let swell = Swell::default();
-        let wave = swell.waves[0];
-        let speed = wave.frequency / wave.number;
-        assert!((speed - (GRAVITY / wave.number).sqrt()).abs() < 1e-9);
-        let lone = Swell { waves: [Wave { amplitude: 0.0, shift: 0.0, ..wave }; WAVES], ..swell };
-        let mut alone = lone.clone();
-        alone.waves[0] = wave;
-        let [x, y] = [100.0, 200.0];
-        let later =
-            alone.height_at(x + wave.direction[0] * speed * 3.0, y + wave.direction[1] * speed * 3.0, 3.0, 99.0);
-        assert!((later - alone.height_at(x, y, 0.0, 99.0)).abs() < 1e-9);
-    }
-
-    #[test]
-    fn the_height_at_a_point_is_where_the_carried_water_stands() {
-        let swell = Swell::default();
-        let [east, south, height] = swell.displacement(500.0, 700.0, 12.0, 80.0);
-        let found = swell.height_at(500.0 + east, 700.0 + south, 12.0, 80.0);
-        assert!((found - height).abs() < 1e-3, "{found} {height}");
-    }
-
-    #[test]
-    fn power_from_square_roots_matches_the_ratio_steps() {
-        assert!((power(0.25, 0.5) - 0.5).abs() < 1e-12);
-        assert!((power(2.0, 0.0) - 1.0).abs() < 1e-12 && (power(9.0, 1.0) - 9.0).abs() < 1e-9);
-    }
-}
+#[path = "sea_tests.rs"]
+mod tests;

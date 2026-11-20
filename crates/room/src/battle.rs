@@ -8,6 +8,9 @@
 use crate::PlayerId;
 use crate::clash::{Clash, ship_at, sighted};
 use crate::pirates::{Pirate, Pirates, Voyager};
+use crate::sea::Coast;
+use crate::sea_weather::{CoastWaters, SeaWeather};
+use land::sea::Swell;
 use naval::captain::ENGAGE_RANGE;
 use naval::damage::{Damage, State};
 use naval::fight::{End, Event, Fight, Orders, PLAYER, Vessel};
@@ -15,7 +18,6 @@ use naval::ranks::Commission;
 use naval::shots::ShipId;
 use naval::wire::view_numbers;
 use sailing::ship::{Helm, SAILS_SET, Ship};
-use sailing::waters::Waters;
 use std::collections::BTreeMap;
 
 /// Players who join a fight under way sail under numbers from this one on, past every captain's.
@@ -66,6 +68,9 @@ pub struct SeaFight {
     pub opened: Vec<ShipId>,
     /// What happened between its ticks (a boarding, a scuttling asked for), told with its next tick's.
     pub pending: Vec<Event>,
+    /// The swell and the wind where it began, kept while it lasts.
+    pub swell: Swell,
+    pub wind: [f64; 2],
 }
 
 /// What became of a player in a fight this tick: still in it, where their ship lies; out of it afloat, where it left
@@ -84,6 +89,8 @@ pub struct Sank {
     pub pirate: Pirate,
     pub at: [f64; 2],
     pub players: Vec<PlayerId>,
+    /// The wind of her fight, which what floats drifts down.
+    pub wind: [f64; 2],
 }
 
 /// The shares of hull, canvas and men a ship's hurts leave her.
@@ -99,8 +106,10 @@ fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
 }
 
 impl SeaFight {
-    fn new(fight: Fight, hostiles: BTreeMap<ShipId, Pirate>) -> Self {
+    fn new(fight: Fight, hostiles: BTreeMap<ShipId, Pirate>, (swell, wind): (Swell, [f64; 2])) -> Self {
         SeaFight {
+            swell,
+            wind,
             fight,
             crews: BTreeMap::new(),
             events: Vec::new(),
@@ -119,10 +128,11 @@ impl SeaFight {
     }
 
     /// A player's Sloop put into it hove to at `own`, with the hurts she keeps, under the next player's number.
-    fn put_in(&mut self, player: PlayerId, own: Ship, kept: [f64; 3], waters: &impl Waters, time: f64) {
+    fn put_in(&mut self, player: PlayerId, own: Ship, kept: [f64; 3], coasts: &[Coast], time: f64) {
+        let waters = CoastWaters { coasts, swell: &self.swell };
         let taken = self.crews.values().map(|crew| crew.ship);
         let ship = if self.crews.is_empty() { PLAYER } else { taken.max().unwrap_or(PLAYER).max(PLAYERS_FROM - 1) + 1 };
-        self.fight.put_to_sea_kept(ship, own, kept, waters, time);
+        self.fight.put_to_sea_kept(ship, own, kept, &waters, time);
         self.crews.insert(player, Crew { ship, orders: QUIET });
         if !self.fought.contains(&player) {
             self.fought.push(player);
@@ -197,10 +207,11 @@ impl Fights {
         })
     }
 
-    /// Where the captain who sailed at sea as `pirate` lies.
-    pub fn position_of(&mut self, pirate: u32) -> Option<[f64; 2]> {
+    /// Where the captain who sailed at sea as `pirate` lies, and her fight's wind.
+    pub fn position_of(&mut self, pirate: u32) -> Option<([f64; 2], [f64; 2])> {
         let (fought, id) = self.holding(pirate)?;
-        fought.fight.vessel(id).map(|vessel| [vessel.ship.x, vessel.ship.y])
+        let wind = fought.wind;
+        fought.fight.vessel(id).map(|vessel| ([vessel.ship.x, vessel.ship.y], wind))
     }
 
     /// The captain who sailed at sea as `pirate` is scuttled, and her fight told.
@@ -235,50 +246,58 @@ impl Fights {
         self.list.retain(|fought| !fought.crews.is_empty());
     }
 
-    /// A ship that met a player begins their fight: she where she lay, under sail; their Sloop hove to at `own`.
-    pub fn begin_met(
+    /// A ship that met a player begins their fight under `weather`: she where she lay, under sail; their Sloop hove
+    /// to at `own`.
+    pub(crate) fn begin_met(
         &mut self,
         (player, own, kept): (PlayerId, Ship, [f64; 3]),
         pirate: &Pirate,
-        waters: &impl Waters,
+        (weather, coasts): ((Swell, [f64; 2]), &[Coast]),
         time: f64,
     ) {
         let captain = ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
-        let fight = Fight::meet(own, captain, pirate.commission, pirate.seed, waters, time);
-        let mut fought = SeaFight::new(fight, BTreeMap::from([(naval::fight::CAPTAIN, *pirate)]));
-        fought.put_in(player, own, kept, waters, time);
+        let waters = CoastWaters { coasts, swell: &weather.0 };
+        let fight = Fight::meet(own, captain, pirate.commission, pirate.seed, &waters, time);
+        let mut fought = SeaFight::new(fight, BTreeMap::from([(naval::fight::CAPTAIN, *pirate)]), weather);
+        fought.put_in(player, own, kept, coasts, time);
         self.list.push(fought);
     }
 
-    /// A fight among captains a player came on becomes theirs, their Sloop hove to at `own`.
-    pub fn begin_from_clash(
+    /// A fight among captains a player came on becomes theirs, under its own weather, their Sloop hove to at `own`.
+    pub(crate) fn begin_from_clash(
         &mut self,
         clash: Clash,
         (player, own, kept): (PlayerId, Ship, [f64; 3]),
-        waters: &impl Waters,
+        coasts: &[Coast],
         time: f64,
     ) {
         let hostiles = clash.crews().iter().copied().collect();
-        let mut fought = SeaFight::new(clash.fight, hostiles);
-        fought.put_in(player, own, kept, waters, time);
+        let mut fought = SeaFight::new(clash.fight, hostiles, (clash.swell, clash.wind));
+        fought.put_in(player, own, kept, coasts, time);
         self.list.push(fought);
     }
 
     /// The first fight a player at `own` comes within `ENGAGE_RANGE` of; whether they joined one, their Sloop hove to.
-    pub fn join(&mut self, (player, own, kept): (PlayerId, Ship, [f64; 3]), waters: &impl Waters, time: f64) -> bool {
+    pub(crate) fn join(
+        &mut self,
+        (player, own, kept): (PlayerId, Ship, [f64; 3]),
+        coasts: &[Coast],
+        time: f64,
+    ) -> bool {
         let Some(fought) = self.list.iter_mut().find(|fought| fought.near([own.x, own.y])) else { return false };
-        fought.put_in(player, own, kept, waters, time);
+        fought.put_in(player, own, kept, coasts, time);
         true
     }
 
     /// The first fight a hostile ship at sea comes within `ENGAGE_RANGE` of; whether she joined it, on her own side,
     /// where she lay and under sail, her temper and her chances drawn from her seed.
-    pub fn join_hostile(&mut self, pirate: &Pirate, waters: &impl Waters, time: f64) -> bool {
+    pub(crate) fn join_hostile(&mut self, pirate: &Pirate, coasts: &[Coast], time: f64) -> bool {
         let Some(fought) = self.list.iter_mut().find(|fought| fought.near([pirate.x, pirate.y])) else { return false };
         let captains = fought.fight.ships.keys().copied().filter(|id| *id < PLAYERS_FROM);
         let id = captains.max().unwrap_or(PLAYER) + 1;
         let ship = ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
-        fought.fight.enlist(id, ship, pirate.commission, pirate.seed, waters, time);
+        let waters = CoastWaters { coasts, swell: &fought.swell };
+        fought.fight.enlist(id, ship, pirate.commission, pirate.seed, &waters, time);
         fought.hostiles.insert(id, *pirate);
         true
     }
@@ -288,21 +307,21 @@ impl Fights {
     /// clash takes it for their fight; and each hostile ship within `ENGAGE_RANGE` of a fight joins it. `heave` brings
     /// a player's ship to rest for it and answers her with the hurts she keeps. Answers who joined a fight under way
     /// (a player, or a hostile ship's commission) and the players already in it.
-    pub fn take_in(
+    pub(crate) fn take_in(
         &mut self,
         met: Vec<(PlayerId, Pirate)>,
         ships: &[Voyager],
         (clashes, pirates): (&mut Vec<Clash>, &mut Pirates),
         heave: &mut impl FnMut(PlayerId) -> Option<(PlayerId, Ship, [f64; 3])>,
-        (waters, time): (&impl Waters, f64),
+        (coasts, weather, time): (&[Coast], &SeaWeather, f64),
     ) -> Vec<(Joined, Vec<PlayerId>)> {
         let mut joined = Vec::new();
         for (player, pirate) in met {
             let Some(own) = heave(player) else { continue };
-            self.begin_met(own, &pirate, waters, time);
+            self.begin_met(own, &pirate, (weather.at([own.1.x, own.1.y], time), coasts), time);
         }
         for met in pirates.meet_rivals() {
-            clashes.push(Clash::begin(met, waters, time));
+            clashes.push(Clash::begin(met, weather.at([met[0].x, met[0].y], time), coasts, time));
         }
         for &Voyager { player, at, .. } in ships {
             if self.fighting(player) {
@@ -315,14 +334,14 @@ impl Fights {
             }
             let Some(own) = heave(player) else { continue };
             match clash {
-                Some(clash) => self.begin_from_clash(clash, own, waters, time),
+                Some(clash) => self.begin_from_clash(clash, own, coasts, time),
                 None => {
                     let before = self
                         .list
                         .iter()
                         .find(|fought| fought.near(at))
                         .map(|fought| fought.crews.keys().copied().collect());
-                    if self.join(own, waters, time) {
+                    if self.join(own, coasts, time) {
                         joined.push((Joined::Player(player), before.unwrap_or_default()));
                     }
                 }
@@ -338,7 +357,7 @@ impl Fights {
             let pirate = pirates.sailing.remove(at);
             let before = self.list.iter().find(|fought| fought.near([pirate.x, pirate.y]));
             let before = before.map(|fought| fought.crews.keys().copied().collect()).unwrap_or_default();
-            if self.join_hostile(&pirate, waters, time) {
+            if self.join_hostile(&pirate, coasts, time) {
                 joined.push((Joined::Hostile(pirate.commission), before));
             }
         }
@@ -348,7 +367,7 @@ impl Fights {
     /// One tick: each fight over last tick lets its players go; each other steps by its players' orders (the climb,
     /// the fire and the load acting once); a player whose ship went down leaves it; and a fight with no player left
     /// ends. Answers what became of each player, and each captain's ship that sank.
-    pub fn step(&mut self, waters: &impl Waters, wind: [f64; 2], time: f64) -> (Vec<Outcome>, Vec<Sank>) {
+    pub(crate) fn step(&mut self, coasts: &[Coast], time: f64) -> (Vec<Outcome>, Vec<Sank>) {
         let mut outcomes = Vec::new();
         for fought in self.list.iter().filter(|fought| fought.fight.over().is_some()) {
             for (player, crew) in &fought.crews {
@@ -366,7 +385,8 @@ impl Fights {
         let mut sank = Vec::new();
         for fought in &mut self.list {
             let orders: Vec<(ShipId, Orders)> = fought.crews.values().map(|crew| (crew.ship, crew.orders)).collect();
-            let stepped = fought.fight.step(&orders, waters, wind, time);
+            let waters = CoastWaters { coasts, swell: &fought.swell };
+            let stepped = fought.fight.step(&orders, &waters, fought.wind, time);
             fought.events = std::mem::take(&mut fought.pending);
             fought.events.extend(stepped);
             for crew in fought.crews.values_mut() {
@@ -383,7 +403,7 @@ impl Fights {
                     continue;
                 };
                 let (at, players) = ([vessel.ship.x, vessel.ship.y], fought.fought.clone());
-                sank.push(Sank { pirate: *pirate, at, players });
+                sank.push(Sank { pirate: *pirate, at, players, wind: fought.wind });
             }
             let mut gone = Vec::new();
             for (player, crew) in &fought.crews {
@@ -411,15 +431,16 @@ impl Fights {
 
     /// Each fighting player's view of their fight (the naval crate's numbers, their ship as its player's), its lay
     /// over the fight's waters now, and its first captain's commission.
-    pub fn views<'fights>(
+    pub(crate) fn views<'fights>(
         &'fights self,
-        waters: &'fights impl Waters,
+        coasts: &'fights [Coast],
         time: f64,
     ) -> impl Iterator<Item = (PlayerId, Vec<f64>, Commission)> + 'fights {
         self.list.iter().flat_map(move |fought| {
             fought.crews.iter().map(move |(player, crew)| {
                 let aim = crew.orders.aim;
-                let view = view_numbers(&fought.fight, crew.ship, &fought.events, aim.as_ref(), waters, time);
+                let waters = CoastWaters { coasts, swell: &fought.swell };
+                let view = view_numbers(&fought.fight, crew.ship, &fought.events, aim.as_ref(), &waters, time);
                 (*player, view, fought.first_captain())
             })
         })

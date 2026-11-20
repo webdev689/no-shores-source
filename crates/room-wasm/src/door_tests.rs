@@ -176,7 +176,9 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "a204eb035c8d8bd5";
+pub const SEA_CLASH_HASH: &str = "aff8f91eb761f14c";
+/// The world time the sea opens at, so the weather its fights sail in is the same every run.
+pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
 #[test]
 fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
@@ -184,6 +186,7 @@ fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fing
     // the player by tick 6099, and the player sails there.
     let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     assert!(open_sea(layout.as_bytes(), 66));
+    room_world_start(CLASH_START_S);
     let player = room_join();
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);

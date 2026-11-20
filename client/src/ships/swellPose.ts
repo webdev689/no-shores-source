@@ -1,8 +1,9 @@
 // How a ship is drawn riding the sea the page draws: her pose from the swell under her bow, stern, sides and middle,
-// her heel into a turn, and the stirrings of her wake. The editor's ship takes the same pose from the rules; the
-// Overworld's are drawn from the browser's swell, so this is for drawing, never for a rule.
-import { headingFrame, type Swell } from '../rules/landRules.ts';
-import { swellHeight } from '../water/swell.ts';
+// felt through her inertia, her heel into a turn, her bow slamming into a crest, and the stirrings of her wake. The
+// editor's ship takes the same pose from the rules; the Overworld's are drawn from the browser's swell, so this is for
+// drawing, never for a rule.
+import { headingFrame } from '../rules/landRules.ts';
+import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 
 /** Come Sail Away's handling under sail (crates/sailing/src/helm.rs `HANDLING`): her way, m/s, and her swing, degrees a
  *  second. */
@@ -10,6 +11,10 @@ const SAIL = { moveSpeed: 2, turnSpeedDeg: 10 } as const;
 /** A ship stirs the water's ripples once she makes this way, m/s, a quarter of her sailing speed (Come Sail Away's
  *  wake threshold). */
 export const WAKE_WAY = 0.5;
+/** How a hull rides the swell: her time constant, seconds a metre of her waterline's length (crates/sailing/src/pose.rs
+ *  `LAG_S_PER_M`, so a bigger hull answers slower); how fast her stem must close on a crest to slam as she pitches
+ *  down into it, metres a second; and how long a slam's spray lasts, seconds. */
+export const RIDE = { lagSPerM: 0.02, slamClosingMS: 1, slamSprayS: 0.8 } as const;
 
 /** Her waterline's middle over still water, metres; her bow's rise and her heel to starboard, radians. */
 export interface SwellPose {
@@ -35,9 +40,10 @@ export interface Stir {
 
 /** Her pose on the swell at `time`, her waterline `halfLength` and `halfBeam` as drawn, the sea `depthAt` a point deep
  *  (Infinity off the charts): the mean of the water under her bow, stern, sides and middle, and its slope along and
- *  across her (crates/sailing/src/pose.rs `pose_of`). Still water without a swell. */
+ *  across her, each felt through her inertia, her length's `lagOf` (crates/sailing/src/pose.rs `pose_of`). Still water
+ *  without a swell. */
 export function poseOnSwell(
-  swell: Swell | undefined,
+  swell: ShelteredSwell | undefined,
   depthAt: (x: number, y: number) => number,
   lies: Lies,
   halfLength: number,
@@ -45,11 +51,12 @@ export function poseOnSwell(
   time: number,
 ): SwellPose {
   if (!swell) return { heave: 0, pitch: 0, roll: 0 };
+  const lag = lagOf(2 * halfLength);
   const { forward, starboard } = headingFrame(lies.heading);
   const levelAt = (along: number, across: number) => {
     const x = lies.x + forward[0] * along + starboard[0] * across;
     const y = lies.y + forward[1] * along + starboard[1] * across;
-    return swellHeight(swell, x, y, time, depthAt(x, y));
+    return swellHeight(swell, x, y, time, depthAt(x, y), lag);
   };
   const [bow, stern, port, starboardSide] = [
     levelAt(halfLength, 0),
@@ -62,6 +69,26 @@ export function poseOnSwell(
     pitch: Math.atan2(bow - stern, 2 * halfLength),
     roll: Math.atan2(port - starboardSide, 2 * halfBeam),
   };
+}
+
+/** A hull's time constant on the swell, seconds, by her waterline's length as drawn (metres). */
+export function lagOf(lengthM: number): number {
+  return RIDE.lagSPerM * lengthM;
+}
+
+/** Whether her bow slams: pitching down (`pitchRate`, radians a second, bow up positive) as the crest at her stem
+ *  rises over it (`bowUnder`, metres: the sea's height there less her stem's) faster than a slam's closing speed
+ *  (`closingMS`, how fast `bowUnder` grows). */
+export function slams(pitchRate: number, bowUnder: number, closingMS: number): boolean {
+  return pitchRate < 0 && bowUnder > 0 && closingMS > RIDE.slamClosingMS;
+}
+
+/** Her bow's spray, 0 to 1: a little at way, more the rougher the sea, and a burst `sinceSlamS` after a slam that
+ *  fades over `RIDE.slamSprayS`, as hard as her way and the sea state make it. `way` is her share of a full way. */
+export function sprayOf(way: number, state: number, sinceSlamS: number): number {
+  const going = Math.min(1, Math.max(0, way));
+  const burst = sinceSlamS >= 0 ? Math.exp(-sinceSlamS / RIDE.slamSprayS) * (0.4 + 0.6 * state) : 0;
+  return Math.min(1, going * (0.1 + 0.4 * state) + going * burst);
 }
 
 /** Come Sail Away's heel in a turn, radians to starboard: into it, by her swing (radians a second, to starboard) and her

@@ -3,6 +3,7 @@
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import type { CityPlan, Wreck } from '../city/plan.ts';
 import type { Gpu } from '../gpu.ts';
+import type { ShadowMap } from '../shadow.ts';
 import { loadShip, type ShipMesh, VERTEX_BYTES } from '../ships/shipMesh.ts';
 import type { ShipLook } from '../ships/dress.ts';
 import { HULL_NAMES, hullPaint } from '../ships/hulls.ts';
@@ -73,22 +74,31 @@ export class Wrecks {
         });
   }
 
-  /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world, `scale` times her size. */
-  drawInto(pass: GPURenderPassEncoder, camera: ShipCamera, scale: number): void {
-    for (const { wreck, view } of this.drawn) {
-      if (!view) continue;
-      const place = {
-        x: wreck.at[0],
-        y: wreck.at[1],
-        z: -settledDepth(wreck.ship) * scale,
-        heading: wreck.heading,
-        pitch: 0,
-        roll: wreck.heel,
-        scale,
-      };
-      view.drawInto(pass, place, camera, 0, WRECK_LOOK);
-    }
+  /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world, `scale` times her size, in
+   *  the sun's shadows. */
+  drawInto(pass: GPURenderPassEncoder, camera: ShipCamera, scale: number, shadow: ShadowMap): void {
+    for (const { wreck, view } of this.drawn)
+      if (view) view.drawInto(pass, placeOf(wreck, scale), camera, 0, WRECK_LOOK, null, shadow);
   }
+
+  /** Draws every wreck's shadow, `scale` times her size, into the cascade of the sun's map being drawn. */
+  castInto(pass: GPURenderPassEncoder, camera: ShipCamera, scale: number, shadow: ShadowMap): void {
+    for (const { wreck, view } of this.drawn)
+      if (view) view.castInto(pass, placeOf(wreck, scale), camera, 0, null, shadow);
+  }
+}
+
+/** Where a wreck lies, drawn `scale` times her size: settled to her deck, heeled over. */
+function placeOf(wreck: Wreck, scale: number) {
+  return {
+    x: wreck.at[0],
+    y: wreck.at[1],
+    z: -settledDepth(wreck.ship) * scale,
+    heading: wreck.heading,
+    pitch: 0,
+    roll: wreck.heel,
+    scale,
+  };
 }
 
 /** A city's drawer with its wrecks drawn after it, in the same pass, at the size ships are drawn at now (`shipScale`,
@@ -97,10 +107,13 @@ export function withWrecks(gpu: Gpu, city: Drawer, plan: CityPlan, shipScale: ()
   if (!plan.wrecks?.length) return city;
   const wrecks = new Wrecks(gpu, plan.wrecks);
   return {
-    castInto: city.castInto?.bind(city),
+    castInto: (pass, fromEye, shot, time, shadow) => {
+      city.castInto?.(pass, fromEye, shot, time, shadow);
+      wrecks.castInto(pass, { fromEye, eye: shot.eye }, shipScale(), shadow);
+    },
     drawInto: (pass, fromEye, shot, time, shadow) => {
       city.drawInto(pass, fromEye, shot, time, shadow);
-      wrecks.drawInto(pass, { fromEye, eye: shot.eye }, shipScale());
+      wrecks.drawInto(pass, { fromEye, eye: shot.eye }, shipScale(), shadow);
     },
   };
 }

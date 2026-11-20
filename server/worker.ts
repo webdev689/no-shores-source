@@ -120,6 +120,7 @@ export class RoomHost extends DurableObject<Env> {
       return this.room.openSea(
         JSON.stringify({ layout, ports: SEA_PORTS }),
         crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
+        Date.now() / 1000,
       );
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];

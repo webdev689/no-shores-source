@@ -1,17 +1,7 @@
 use super::*;
-use crate::clash::tests::at_sea;
+use crate::clash::tests::{at_sea, still};
 use naval::fight::CAPTAIN;
 use naval::ranks::{GREY_TITHE, PIRATES, Rank};
-use sailing::waters::{Spot, steady_wind};
-
-/// Deep, still water everywhere.
-struct Open;
-
-impl Waters for Open {
-    fn at(&self, _x: f64, _y: f64, _time: f64) -> Spot {
-        Spot { bed: -50.0, surface: Some(0.0) }
-    }
-}
 
 const MAJOR: Commission = Commission { faction: PIRATES, rank: Rank::Major };
 
@@ -22,20 +12,16 @@ fn sloop(x: f64, y: f64) -> Ship {
 /// A fight begun between player 1 at the origin and a bold Major 600 m north.
 fn begun() -> Fights {
     let mut fights = Fights::default();
-    fights.begin_met((1, sloop(0.0, 0.0), [1.0; 3]), &at_sea(9, MAJOR, 0.0, true), &Open, 0.0);
+    fights.begin_met((1, sloop(0.0, 0.0), [1.0; 3]), &at_sea(9, MAJOR, 0.0, true), (still(), &[]), 0.0);
     fights.list[0].fight.ships.get_mut(&CAPTAIN).unwrap().ship.y = -600.0;
     fights
-}
-
-fn wind() -> [f64; 2] {
-    steady_wind(&land::sea::Swell::default())
 }
 
 #[test]
 fn a_player_not_fighting_who_comes_within_sight_of_a_fight_joins_it_with_a_number_of_their_own() {
     let mut fights = begun();
-    assert!(!fights.join((2, sloop(0.0, 900.0), [1.0; 3]), &Open, 0.0), "800 m and more from every ship of it");
-    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &Open, 0.0));
+    assert!(!fights.join((2, sloop(0.0, 900.0), [1.0; 3]), &[], 0.0), "800 m and more from every ship of it");
+    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0));
     let crews: Vec<(PlayerId, ShipId)> =
         fights.list[0].crews.iter().map(|(player, crew)| (*player, crew.ship)).collect();
     assert_eq!(crews, vec![(1, PLAYER), (2, PLAYERS_FROM)]);
@@ -46,8 +32,8 @@ fn a_player_not_fighting_who_comes_within_sight_of_a_fight_joins_it_with_a_numbe
 #[test]
 fn each_player_sees_the_fight_from_their_own_ship() {
     let mut fights = begun();
-    fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &Open, 0.0);
-    let views: Vec<(PlayerId, Vec<f64>)> = fights.views(&Open, 0.0).map(|(player, view, _)| (player, view)).collect();
+    fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0);
+    let views: Vec<(PlayerId, Vec<f64>)> = fights.views(&[], 0.0).map(|(player, view, _)| (player, view)).collect();
     // A view's player's ship comes after its clock and its end: her x and y first.
     let (first, second) = (&views[0].1, &views[1].1);
     assert_eq!((views[0].0, first[2], first[3]), (1, 0.0, 0.0));
@@ -58,13 +44,13 @@ fn each_player_sees_the_fight_from_their_own_ship() {
 fn a_hostile_ship_within_sight_of_a_fight_joins_it_on_her_own_side() {
     let mut fights = begun();
     let tithe = at_sea(12, Commission { faction: GREY_TITHE, rank: Rank::Minor }, 500.0, false);
-    assert!(fights.join_hostile(&tithe, &Open, 0.0));
+    assert!(fights.join_hostile(&tithe, &[], 0.0));
     let fought = &fights.list[0];
     let joined = fought.fight.vessel(CAPTAIN + 1).and_then(Vessel::command).expect("a captain under the next number");
     assert_eq!(joined.her.commission.faction, GREY_TITHE);
     assert_eq!(fought.hostiles.get(&(CAPTAIN + 1)).map(|pirate| pirate.id), Some(12));
     let far = Pirate { x: 5_000.0, ..tithe };
-    assert!(!fights.join_hostile(&far, &Open, 0.0));
+    assert!(!fights.join_hostile(&far, &[], 0.0));
 }
 
 #[test]
@@ -77,7 +63,7 @@ fn a_player_whose_ship_goes_down_leaves_the_fight_and_the_fight_with_no_player_l
     assert_eq!(vessel.damage.state, State::Sinking);
     let mut sunk = None;
     for _ in 0..(naval::damage::SINK_SECONDS * 60.0) as u32 + 2 {
-        let (outcomes, _) = fights.step(&Open, wind(), 0.0);
+        let (outcomes, _) = fights.step(&[], 0.0);
         sunk = sunk.or(outcomes.into_iter().find(|outcome| matches!(outcome, Outcome::Sunk { .. })));
     }
     assert!(matches!(sunk, Some(Outcome::Sunk { player: 1, .. })), "{sunk:?}");
@@ -93,7 +79,7 @@ fn a_fight_whose_captains_have_all_left_lets_its_players_go_with_the_hurts_they_
     {
         command.gone = Some(End::Gone);
     }
-    let (outcomes, _) = fights.step(&Open, wind(), 0.0);
+    let (outcomes, _) = fights.step(&[], 0.0);
     let max = naval::damage::Damage::new(&naval::arms::LARGE_BOAT, true).max_hull;
     match outcomes.as_slice() {
         [Outcome::Released { player: 1, kept: [hull, 1.0, 1.0], .. }] => assert!((hull - 60.0 / max).abs() < 1e-9),
@@ -105,7 +91,7 @@ fn a_fight_whose_captains_have_all_left_lets_its_players_go_with_the_hurts_they_
 #[test]
 fn a_sloop_put_into_a_fight_starts_it_with_the_hurts_she_keeps() {
     let mut fights = Fights::default();
-    fights.begin_met((1, sloop(0.0, 0.0), [0.1, 0.25, 0.5]), &at_sea(9, MAJOR, 0.0, true), &Open, 0.0);
+    fights.begin_met((1, sloop(0.0, 0.0), [0.1, 0.25, 0.5]), &at_sea(9, MAJOR, 0.0, true), (still(), &[]), 0.0);
     let damage = &fights.list[0].fight.vessel(PLAYER).unwrap().damage;
     assert_eq!(damage.hull, (damage.max_hull * 0.1).round());
     assert_eq!(damage.sail, (damage.max_sail * 0.25).round());

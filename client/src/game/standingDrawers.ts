@@ -28,9 +28,11 @@ export function standingDrawers(
     parts.nature,
     fight?.under,
     {
-      drawInto: (pass, fromEye, shot, time) => {
+      castInto: (pass, fromEye, shot, _time, shadow) =>
+        parts.shipModels.castInto(pass, ships, { fromEye, eye: shot.eye }, shadow),
+      drawInto: (pass, fromEye, shot, time, shadow) => {
         const camera = { fromEye, eye: shot.eye };
-        parts.shipModels.draw(pass, ships, camera);
+        parts.shipModels.draw(pass, ships, camera, shadow);
         parts.seaFight?.draw(pass, camera, time);
       },
     },

@@ -15,12 +15,14 @@ use naval::guns::Shot;
 use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
-use sailing::waters::{LandWaters, Waters, steady_wind};
+use sailing::waters::{LandWaters, Waters, weather_wind};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 
 thread_local! {
     static FIGHT: RefCell<Option<Fight>> = const { RefCell::new(None) };
+    /// The fight's wind: the weather's where and when it began, kept while it lasts.
+    static WIND: RefCell<[f64; 2]> = const { RefCell::new([0.0; 2]) };
 }
 
 /// The farthest a look may lay, metres: past every gun's reach.
@@ -213,6 +215,7 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         let fight = Fight::begin(ship, commission, seed, &waters, time)?;
         let answer = view(&fight, &[], None, &waters, time);
         FIGHT.with(|slot| *slot.borrow_mut() = Some(fight));
+        WIND.with(|wind| *wind.borrow_mut() = weather_wind(world::weather::air_at(ship.x, ship.y, time).wind));
         Ok(answer)
     })
 }
@@ -264,7 +267,7 @@ fn step(request: &[u8]) -> Result<Value, String> {
         let landmass = open.as_ref().ok_or("no landmass is open")?;
         let swell = Swell::default();
         let waters = LandWaters { ground: &landmass.surface, swell: &swell };
-        let wind = steady_wind(&swell);
+        let wind = WIND.with(|wind| *wind.borrow());
         FIGHT.with(|slot| {
             let mut slot = slot.borrow_mut();
             let fight = slot.as_mut().ok_or("no fight is on")?;
