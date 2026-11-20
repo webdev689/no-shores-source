@@ -1,4 +1,5 @@
 use super::*;
+use crate::power::PLAYER_HARM;
 use combat::shapes::{Shape, Telegraph, TelegraphOrder};
 use combat::{Blow, BlowKind, CombatInput, Intent, Stroke, Verdict};
 use core::f64::consts::{FRAC_PI_2, PI};
@@ -500,6 +501,9 @@ fn a_shooter_caught_by_a_target_that_follows_it_fights_close_a_while_rather_than
         room.input(player, asking(&room, 1, major(CROSSBOWMAN), Controls::default())).unwrap();
         room.tick();
         let foe = room.foes_seen().next().unwrap().foe;
+        // As sturdy again as a player strikes hard, so the chase lasts the ten seconds watched.
+        let sturdy = &mut room.foes.get_mut(&foe).unwrap().fighter;
+        (sturdy.health, sturdy.health_max) = (sturdy.health * PLAYER_HARM, sturdy.health_max * PLAYER_HARM);
         let mut aims = Vec::new();
         // The player walks after it, looking at it, and swings at it within reach, till it falls.
         for sequence in 2..=1500 {

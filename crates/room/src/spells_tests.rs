@@ -2,6 +2,7 @@
 //! numbers as the Arts' file has them, its element against a foe's shield, and the entities every player is sent.
 
 use crate::arts::arts_tests::{cast, room_with_player, stand_foe, wearing};
+use crate::power::PLAYER_HARM;
 use crate::{BOLT, FighterId, PlayerId, Room, SpellSeen};
 use combat::Status;
 use combat::status::charge_ticks;
@@ -56,7 +57,7 @@ fn tempest_sends_six_orbs_over_a_second_eight_with_pursuit_each_seeking_a_foe_fo
         room.tick();
     }
     let lost = 1000.0 - health(&room, foe);
-    assert!((lost - 6.0 * def.damage).abs() < 1e-6, "all six struck: {lost}");
+    assert!((lost - 6.0 * def.damage * PLAYER_HARM).abs() < 1e-6, "all six struck: {lost}");
     let (mut room, player) = room_with_player();
     wearing(&mut room, player, 1, &[0]);
     cast(&mut room, player, TEMPEST, None, 60);
@@ -92,7 +93,7 @@ fn arc_lash_strikes_and_charges_each_foe_in_its_cone_longer_with_conduction_and_
     );
     cast(&mut room, player, ARC_LASH, None, 0);
     let def = &arts().art(1).expect("Storm").tenets[1];
-    assert!((1000.0 - health(&room, ahead) - def.damage).abs() < 1e-6, "16 ahead");
+    assert!((1000.0 - health(&room, ahead) - def.damage * PLAYER_HARM).abs() < 1e-6, "16 ahead, a player's");
     assert_eq!(has(&room, ahead, Status::Charge), charge_ticks(2), "a Major's Charge");
     assert_eq!(health(&room, behind), 1000.0);
     assert_eq!(health(&room, aside), 1000.0, "outside the 70 degree cone");
@@ -117,7 +118,7 @@ fn a_spell_strikes_in_its_art_s_element_three_times_on_a_matching_shield_half_on
         let whole = room.foes[&foe].shield.expect("a shield").left;
         cast(&mut room, player, ARC_LASH, None, 0);
         let took = whole - room.foes[&foe].shield.expect("a shield").left;
-        assert!((took - 16.0 * times).abs() < 1e-6, "{element:?}: {took}");
+        assert!((took - 16.0 * PLAYER_HARM * times).abs() < 1e-6, "{element:?}: {took}");
     }
 }
 
@@ -170,14 +171,14 @@ fn the_dawnflare_flies_its_line_burning_each_foe_near_it_once_and_back_with_wing
     for _ in 0..120 {
         room.tick();
     }
-    assert!((1000.0 - health(&room, near) - 14.0).abs() < 1e-6, "burnt once");
+    assert!((1000.0 - health(&room, near) - 14.0 * PLAYER_HARM).abs() < 1e-6, "burnt once");
     assert_eq!(health(&room, off_path), 1000.0, "past 3 m of its path");
     assert!(seen(&room, DAWNFLARE).is_empty(), "flown in 1.6 s");
     let (mut room, player) = room_with_player();
     wearing(&mut room, player, 2, &[2, 4]);
     let foe = stand_foe(&mut room, 2.0, -10.0, 1000.0);
     cast(&mut room, player, DAWNFLARE, None, 200);
-    let twice = 14.0 + 14.0 * combat::status::EXPOSE_TIMES;
+    let twice = (14.0 + 14.0 * combat::status::EXPOSE_TIMES) * PLAYER_HARM;
     assert!((1000.0 - health(&room, foe) - twice).abs() < 1e-6, "Wings: burnt again on the way back, Exposed");
     assert!(has(&room, foe, Status::Expose) > 0, "Searing");
 }
@@ -196,9 +197,9 @@ fn the_duskraven_bolts_the_nearest_foe_exposing_it_and_healing_its_caster_half_a
         for _ in 0..40 {
             room.tick();
         }
-        assert!((1000.0 - health(&room, near) - 7.0).abs() < 1e-6, "7 damage");
+        assert!((1000.0 - health(&room, near) - 7.0 * PLAYER_HARM).abs() < 1e-6, "7 damage, a player's");
         assert!(has(&room, near, Status::Expose) > 0);
-        assert!((health(&room, player) - (50.0 + 7.0 * share)).abs() < 1e-6, "healed {share} of it");
+        assert!((health(&room, player) - (50.0 + 7.0 * PLAYER_HARM * share)).abs() < 1e-6, "healed {share} of it");
         assert_eq!(health(&room, far), 1000.0);
         assert_eq!(seen(&room, DUSKRAVEN).first().map(|raven| raven.life), Some(720));
     }
@@ -230,7 +231,7 @@ fn dusk_daggers_whirl_where_aimed_within_sixteen_metres_striking_and_exposing_ev
     cast(&mut room, player, DUSK_DAGGERS, Some([0.0, -10.0, 0.0]), 0);
     let ring = seen(&room, DUSK_DAGGERS);
     assert_eq!(ring.first().map(|ring| (ring.at, ring.life, ring.radius)), Some(([0.0, -10.0, 0.0], 300, 4.0)));
-    let first = 3.0 * combat::tuning::STAGGER_TAKEN;
+    let first = 3.0 * PLAYER_HARM * combat::tuning::STAGGER_TAKEN;
     assert!((1000.0 - health(&room, inside) - first).abs() < 1e-6, "3 at once, on a foe held staggered");
     assert!(has(&room, inside, Status::Expose) > 0);
     room.take_events();
