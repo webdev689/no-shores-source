@@ -19,6 +19,11 @@ test("the sea shows the ship's two buttons, and her deck how to take the helm ag
   assert.ok(words(HINTS.deck).includes('E Take the helm at her wheel'));
 });
 
+test('sailing shows the zoom on the wheel, and landing a second click on a mark', () => {
+  assert.ok(words(HINTS.sea).includes('Wheel Zoom'));
+  assert.ok(words(HINTS.landing).includes('Click Choose a mark, again to land'));
+});
+
 test('on foot the keys shown take in the fight: the weapon, the swing, the guard, the dodge and the Arts', () => {
   const shown = words(HINTS.foot);
   for (const key of ['Z Weapon', 'Right button Swing or aim', 'Left button / F Guard or fire', 'V Dodge'])

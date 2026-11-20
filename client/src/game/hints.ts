@@ -33,6 +33,7 @@ export const HINTS = {
     ['A / D', 'Steer'],
     ['S', 'Heave to'],
     ['Drag', 'Look'],
+    ['Wheel', 'Zoom'],
     ['N', 'Map'],
     ['[ / ]', 'Pace'],
     ['Space', 'Stop or resume'],
@@ -71,7 +72,7 @@ export const HINTS = {
     ['Esc', 'Put the map away'],
   ],
   landing: [
-    ['Click', 'Choose a mark'],
+    ['Click', 'Choose a mark, again to land'],
     ['Enter', 'Land'],
     ['Esc', 'Back to sea'],
   ],
