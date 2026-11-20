@@ -49,12 +49,14 @@ pub fn prepare() {
             let flotsam = sea.flotsam().iter().map(|piece| (piece.player, piece.id, piece.at, kind(piece.kind)));
             let kept = sea.ships().filter_map(|(player, _)| sea.kept(player).map(|(kept, left)| (player, kept, left)));
             let (flotsam, kept, told) = (flotsam.collect(), kept.collect(), sea.take_told());
+            let holds: Vec<Option<u64>> = sea.decks().iter().map(|deck| sea.hold_left(deck)).collect();
             let decks = sea
                 .decks_mut()
                 .iter_mut()
-                .map(|deck| {
+                .zip(holds)
+                .map(|(deck, hold)| {
                     let aboard = deck.aboard.iter().map(|(player, boarder)| (*player, *boarder)).collect();
-                    (aboard, deck.pirate.commission.hull().number(), land_snapshot(&mut deck.room))
+                    (aboard, deck.pirate.commission.hull().number(), land_snapshot(&mut deck.room), hold)
                 })
                 .collect();
             Prepared::Sea(Box::new(SeaParts {

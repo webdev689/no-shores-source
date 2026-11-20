@@ -40,7 +40,11 @@ pub fn gear(player: PlayerId) -> Vec<u8> {
                 None
             }
         }
-        Opened::Sea(_) | Opened::Fleet(_) => None,
+        // A boarder's gear is their deck room's, which holds their character while they fight on her deck.
+        Opened::Sea(sea) => {
+            sea.deck_gear_change(player).and_then(|(room, boarder)| protocol::gear_wire::gear_bytes(room, boarder))
+        }
+        Opened::Fleet(_) => None,
     })
     .flatten()
     .unwrap_or_default()

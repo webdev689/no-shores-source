@@ -22,12 +22,14 @@ export interface SeenKept {
   readonly repairLeft: number;
 }
 
-/** A deck boarded: each boarder's number at sea with theirs on her deck, her hull, and her deck room's snapshot's
- *  bytes (a room on land's, in her own frame). */
+/** A deck boarded: each boarder's number at sea with theirs on her deck, her hull, her deck room's snapshot's bytes (a
+ *  room on land's, in her own frame), and the sea's ticks her won deck holds her boarders yet (null while her crew
+ *  still fights). */
 export interface SeenDeck {
   readonly aboard: readonly (readonly [number, number])[];
   readonly hull: number;
   readonly snapshot: Uint8Array;
+  readonly holdLeft: number | null;
 }
 
 export interface HarbourPart {
@@ -63,7 +65,8 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
     if (!deck) throw new Error(`snapshot deck ${index} does not read`);
     const [players, boarders] = [Array.from(deck.playersArray() ?? []), Array.from(deck.boardersArray() ?? [])];
     const aboard = players.map((player, index) => [player, boarders[index] ?? 0] as const);
-    return { aboard, hull: deck.hull(), snapshot: deck.snapshotArray() ?? new Uint8Array() };
+    const holdLeft = deck.holdLeft() < 0 ? null : deck.holdLeft();
+    return { aboard, hull: deck.hull(), snapshot: deck.snapshotArray() ?? new Uint8Array(), holdLeft };
   });
   return { flotsam, kept, told, decks };
 }

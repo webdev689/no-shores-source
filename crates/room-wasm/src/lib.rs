@@ -28,7 +28,7 @@ mod roster_door;
 mod sea_door;
 mod waters_door;
 
-pub use fighter_door::{arms_code, predict, set_course, set_ground};
+pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
@@ -223,8 +223,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                     };
                 }
                 Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
-                // shortcut: no boarding is taken until the page can fight on her deck; take it (`sea.board`) once it can.
-                Ok(SeaInput::Board) => return REFUSED,
+                Ok(SeaInput::Board) => return if sea.board(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(SeaInput::LeaveDeck) => return if sea.leave_deck(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =

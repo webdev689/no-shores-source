@@ -253,6 +253,14 @@ impl Room {
             .map(|(&player, found)| (player, found.dress.as_str()))
     }
 
+    /// Every player's dress is sent to everyone once more with the next changes, for one who joined with no welcome
+    /// to carry them (a boarder come over her side).
+    pub fn announce_dresses(&mut self) {
+        for found in self.players.values_mut().filter(|found| !found.dress.is_empty()) {
+            found.dress_changed = true;
+        }
+    }
+
     /// The dresses that changed since this was last asked, to send to everyone once.
     pub fn take_dress_changes(&mut self) -> Vec<(PlayerId, String)> {
         let changed = self.players.iter_mut().filter(|(_, found)| found.dress_changed);

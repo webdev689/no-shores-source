@@ -121,6 +121,40 @@ async function standOn(
   return { boxes, ground };
 }
 
+/** The fight's rules and roster on the context's room module, made once for it. */
+async function rulesOf(context: FootContext): Promise<{ combat: CombatRules; roster: readonly FoeType[] }> {
+  const module = await context.roomModule;
+  const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
+  fightRules.set(module, rules);
+  return rules;
+}
+
+/** Every other player's figure in a room, and what each of its snapshots shows of them and of the player's fight
+ *  once `heard.fight` stands: before it there is no own number to tell the player from the others. */
+function hearing(forge: Cards) {
+  const players = new OtherPlayers({
+    place: (dress, x, y, facing) => ({
+      id: nextOtherId++,
+      x,
+      y,
+      z: 0,
+      facing,
+      dress,
+      anim: 'idle',
+      frame: null,
+      spin: false,
+    }),
+    remove: () => undefined,
+  });
+  const heard: { fight: Fighting | null } = { fight: null };
+  const received = (snapshot: Snapshot) => {
+    players.takeDresses(snapshot.dressed);
+    heard.fight?.receive(snapshot);
+    if (heard.fight) players.seen(snapshot.players, heard.fight.player, forge);
+  };
+  return { players, heard, received };
+}
+
 /** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
  *  cut there, and its boxes. */
 function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[]): string {
@@ -203,37 +237,15 @@ export class Foot {
    *  room: online the server's at the voyage's `seas`, signed in with the session's token; alone one in the page that
    *  may stand the foes the context asks for. */
   static async enter(context: FootContext, node: NodeInfo, facing: number, seas: Difficulty = 'normal'): Promise<Foot> {
-    const { movement, walker, rooms, forge } = context;
-    const module = await context.roomModule;
-    const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
-    fightRules.set(module, rules);
+    const { movement, walker, rooms } = context;
+    const rules = await rulesOf(context);
     const { combat } = rules;
     let rect = windowRect(node.ring);
     let { boxes, ground } = await standOn(context, combat, rect);
     const [x, y] = node.spawns[0] ?? node.centre;
     const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
     walker.player = node.kind === 'social' ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
-    const players = new OtherPlayers({
-      place: (dress, x, y, facing) => ({
-        id: nextOtherId++,
-        x,
-        y,
-        z: 0,
-        facing,
-        dress,
-        anim: 'idle',
-        frame: null,
-        spin: false,
-      }),
-      remove: () => undefined,
-    });
-    let fight: Fighting | null = null;
-    const received = (snapshot: Snapshot) => {
-      players.takeDresses(snapshot.dressed);
-      fight?.receive(snapshot);
-      // Before the fight stands there is no own number to tell the player from the others.
-      if (fight) players.seen(snapshot.players, fight.player, forge);
-    };
+    const { players, heard, received } = hearing(context.forge);
     const asked = rooms ? [] : context.foesAsked;
     const gear: { gear: GearState | null } = { gear: null };
     const session = await context.session;
@@ -251,14 +263,47 @@ export class Foot {
       connection?.close();
       throw error;
     }
+    const module = await context.roomModule;
     const link =
       connection ?? LocalRoom.openNode(module, nodeText(node, rect, ground, boxes), received, asked.length > 0);
-    fight = new Fighting(combat, link);
+    const fight = new Fighting(combat, link);
+    heard.fight = fight;
     for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
     // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
     players.takeDresses(link.dressed);
     return new Foot(context, node, boxes, { link, fight, ...rules }, { otherPlayers: players, gear, folk: [] });
+  }
+
+  /** The player boarding a struck ship: on `node`, her deck, standing on its grid of heights (`deckFloats`) in her
+   *  own frame at the spot her deck room stands a boarder, with no box or ground of the land; her deck room reached
+   *  through the link `open` makes, which hands on each of its snapshots. */
+  static async onDeck(
+    context: FootContext,
+    node: NodeInfo,
+    grid: readonly number[],
+    open: (received: (snapshot: Snapshot) => void) => RoomLink,
+  ): Promise<Foot> {
+    const { movement, walker } = context;
+    const rules = await rulesOf(context);
+    movement.setCourse([]);
+    rules.combat.setCourse([]);
+    if (!movement.setHeights(grid) || !rules.combat.setHeights(grid)) throw new Error('her deck did not load');
+    const [x, y] = node.spawns[0] ?? node.centre;
+    // Facing her bow, toward her crew.
+    walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: 0, facing: 0 };
+    const { players, heard, received } = hearing(context.forge);
+    const link = open(received);
+    const fight = new Fighting(rules.combat, link);
+    heard.fight = fight;
+    players.takeDresses(link.dressed);
+    return new Foot(
+      context,
+      node,
+      [],
+      { link, fight, ...rules },
+      { otherPlayers: players, gear: { gear: null }, folk: [] },
+    );
   }
 
   /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either

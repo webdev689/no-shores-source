@@ -75,6 +75,8 @@ impl Sea {
             boarded.room.restore_character(boarder, &text);
         }
         boarded.aboard.insert(player, boarder);
+        // The boarders already aboard are drawn in their dress by the one just come, who had no welcome to carry it.
+        boarded.room.announce_dresses();
         let told = naval::wire::told_numbers(&naval::fight::Event::Boarding { ship }, self.clock as f64);
         self.harbour.told.push((player, told.unwrap_or_default()));
         Ok(())
@@ -185,6 +187,30 @@ impl Sea {
         if let Some(index) = self.decks.boarded.iter().position(|deck| deck.aboard.contains_key(&player)) {
             self.step_off(index, player);
         }
+    }
+
+    /// The ticks a won deck holds her boarders yet, by the sea's clock; none while her crew still fights.
+    #[must_use]
+    pub fn hold_left(&self, deck: &Boarded) -> Option<u64> {
+        deck.won_at.map(|at| (at + HOLD_TICKS).saturating_sub(self.clock))
+    }
+
+    /// A boarder's gear as their deck room keeps it, when it changed since it was last sent (`Room::take_gear_change`):
+    /// the room that holds their character while they fight on her deck.
+    pub fn deck_gear_change(&mut self, player: PlayerId) -> Option<(&Room, PlayerId)> {
+        let deck = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player))?;
+        let boarder = deck.aboard[&player];
+        deck.room.take_gear_change(boarder).then_some((&deck.room, boarder))
+    }
+
+    /// Puts a captain to sea where she stands, as a test of the room's door meets one.
+    pub fn put_to_sea(&mut self, pirate: Pirate) {
+        self.pirates.sailing.push(pirate);
+    }
+
+    /// The fight a player fights, as a test of the room's door sets a captain's colours down in it.
+    pub fn fight_mut(&mut self, player: PlayerId) -> Option<&mut crate::battle::SeaFight> {
+        self.fights.of_mut(player).map(|(fought, _)| fought)
     }
 
     /// Each deck boarded, for its boarders' views.

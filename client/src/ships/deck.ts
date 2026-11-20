@@ -47,6 +47,18 @@ export function deckOf(entry: DeckEntry): Deck {
 /** The Sloop's deck. */
 export const SLOOP_DECK: Deck = deckOf(ships.ships.sloop.deck);
 
+/** Every hull's deck by her hull's number, as the sea room boards them (crates/room-wasm/src/deck_door.rs
+ *  `hull_decks`): the Sloop's, the Schooner's, the Brig's and the Frigate's. */
+export const HULL_DECKS: readonly Deck[] = (['sloop', 'schooner', 'brig', 'frigate'] as const).map((name) =>
+  deckOf(ships.ships[name].deck),
+);
+
+/** Where a boarder comes over her side, as her deck room stands them (crates/room/src/deck_fight.rs): amidships, or
+ *  at her helm where no plank lies there. */
+export function deckSpawn(deck: Deck): readonly [number, number] {
+  return cellHeight(deck, 0, 0) === null ? deck.helm : [0, 0];
+}
+
 /** The deck as the movement crate's grid numbers it (`Heights::from_floats`): its shape, then each height, NaN for
  *  none. */
 export function deckFloats(deck: Deck): number[] {
