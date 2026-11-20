@@ -106,7 +106,9 @@ export class Keeper {
       return false;
     }
     // Asked before the checks, so nothing waits between judging the company and keeping the character.
-    const companions = this.company ? await this.tried(() => characters.companions(claimed.account), here) : null;
+    const companions = this.company
+      ? await this.tried(() => characters.companions(claimed.account, this.name), here)
+      : null;
     if (companions === undefined) {
       // The company cannot be judged: refused for now, with nothing of this room saved over the character.
       await characters.release(claimed.account, holder, null).catch(() => false);

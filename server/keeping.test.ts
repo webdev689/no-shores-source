@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { handle } from './accounts/accounts.ts';
 import { accounts } from './accounts/accountsForTests.ts';
 import { characters } from './accounts/characters.ts';
+import { foundRun } from './accounts/finding.ts';
 import { sqliteForTests } from './accounts/sqliteForTests.ts';
 import {
   ACCOUNTS_TROUBLE,
@@ -407,8 +408,8 @@ test('a run asks again for a player’s company the accounts did not give, then 
   let failures = 2;
   const shaky = {
     ...kept,
-    companions: (account: string) =>
-      failures-- > 0 ? Promise.reject(new Error('the accounts are down')) : kept.companions(account),
+    companions: (account: string, room: string) =>
+      failures-- > 0 ? Promise.reject(new Error('the accounts are down')) : kept.companions(account, room),
   };
   const keeper = new Keeper(shaky, room, run, told, () => Promise.resolve()).forCompany();
   assert.equal(await keeper.signIn(1, token, now, here), true, 'answered on the third ask');
@@ -417,4 +418,47 @@ test('a run asks again for a player’s company the accounts did not give, then 
   const cut = new Keeper(down, room, run, told, () => Promise.resolve()).forCompany();
   assert.equal(await cut.signIn(2, token, now, here), false);
   assert.deepEqual(sent, [[2, 'Something went wrong. Try again.', true]], 'not another company’s: joining again');
+});
+
+test('a run found for strangers lets in each one found for it, and none of them into another run', async () => {
+  const made = accounts();
+  const tokens: Record<string, string> = {};
+  for (const name of ['Ada', 'Ben', 'Cal']) {
+    tokens[name] = (await made.ask('POST', '/v1/guest')).body['token'] as string;
+    await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, tokens[name]);
+  }
+  const kept = characters(
+    made.deps.database,
+    () => made.clock.now,
+    () => Promise.resolve(),
+  );
+  const idOf = async (name: string) => {
+    const claimed = await kept.claim(tokens[name] ?? '', `probe:${name}`);
+    await kept.release(claimed?.account ?? '', `probe:${name}`, null);
+    return claimed?.account ?? '';
+  };
+  const [ada, ben] = [await idOf('Ada'), await idOf('Ben')];
+  assert.equal(
+    await foundRun(made.deps.database, 'node-krakens-grotto--run-k3j4h5g6', [ada, ben], made.clock.now),
+    true,
+  );
+  const sent: [number, string | undefined][] = [];
+  const [now, here] = [() => made.clock.now, () => true];
+  const room = roomOf();
+  for (const player of [1, 2, 3]) room.held.set(player, '{"starting":true}');
+  const told = (player: number, why?: string) => void sent.push([player, why]);
+  const run = new Keeper(kept, room, 'node-krakens-grotto--run-k3j4h5g6', told).forCompany();
+  assert.equal(await run.signIn(1, tokens['Ada'] ?? '', now, here), true);
+  assert.equal(await run.signIn(2, tokens['Ben'] ?? '', now, here), true, 'found with Ada');
+  assert.equal(await run.signIn(3, tokens['Cal'] ?? '', now, here), false);
+  await run.leave(2);
+  const elsewhere = roomOf();
+  for (const player of [4, 5]) elsewhere.held.set(player, '{"starting":true}');
+  const other = new Keeper(kept, elsewhere, 'node-krakens-grotto--run-a1b2c3d4', told).forCompany();
+  assert.equal(await other.signIn(4, tokens['Cal'] ?? '', now, here), true, 'none let in yet: whoever has the name');
+  assert.equal(await other.signIn(5, tokens['Ben'] ?? '', now, here), false, 'found with Ada for another run');
+  assert.deepEqual(sent, [
+    [3, "This run is another company's."],
+    [5, "This run is another company's."],
+  ]);
 });

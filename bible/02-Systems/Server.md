@@ -323,9 +323,9 @@ so every decision is Rust and the shell only carries bytes and time.
   dungeon open from their name alone, with no node file: `runAsk` makes the ask the room module's `open_run` takes,
   at the minute the first player joins. One no rule lays answers 404.
 - **A run keeps to its company** (`Keeper.forCompany`): a character is given to the first to come, then only to one
-  it let in before or one in the company of someone it let in (`companions`, [[Accounts]]), for as long as the run
-  lives, so a member back after every other dropped finds it theirs still; any other is let go untouched, and the
-  socket closed with 4003 and "This run is another company's.". It keeps no one unkept: a token that is no session,
+  it let in before, one in the company of someone it let in, or one it was found for with them by Find a Company
+  (`companions(account, room)`, [[Accounts]]), for as long as the run lives, so a member back after every other
+  dropped finds it theirs still; any other is let go untouched, and the socket closed with 4003 and "This run is another company's.". It keeps no one unkept: a token that is no session,
   or no token five seconds after the join (a claim's own waits), closes with 4003 and "Sign in to enter this run.",
   and a claim or a company the accounts never gave, each asked again after a claim's waits, closes with 1013 and
   "Something went wrong. Try again.", which the page joins again on. A run holds four (`RUN_MOST`, a company's

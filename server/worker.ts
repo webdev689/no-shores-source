@@ -142,7 +142,7 @@ export class RoomHost extends DurableObject<Env> {
       claim: (token: string, holder: string) => accounts.claim(token, holder),
       save: (account: string, holder: string, body: string) => accounts.save(account, holder, body),
       release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
-      companions: (account: string) => accounts.companions(account),
+      companions: (account: string, room: string) => accounts.companions(account, room),
     };
     // Only the game's nodes and dungeons keep characters: the Test Ground grants gear to try it, and at sea no one
     // holds any.

@@ -36,9 +36,18 @@ export async function companyOf(
   return { ...company, members: results.map((row) => row.account_id) };
 }
 
-/** A player's companions: their company's members, longest there first, or the player alone. */
-export async function companionsOf(database: Db, account: string): Promise<string[]> {
-  return (await companyOf(database, account))?.members ?? [account];
+/** Those a player may share `room` with: their company's members, longest there first (or the player alone), then
+ *  those `room` was found for with them (`finding.ts`). */
+export async function companionsOf(database: Db, account: string, room: string): Promise<string[]> {
+  const company = (await companyOf(database, account))?.members ?? [account];
+  const { results } = await database
+    .prepare(
+      `SELECT found.account_id FROM found_runs AS mine JOIN found_runs AS found ON found.room = mine.room
+       WHERE mine.room = ?1 AND mine.account_id = ?2 ORDER BY found.found_at, found.account_id`,
+    )
+    .bind(room, account)
+    .all<{ account_id: string }>();
+  return [...new Set([...company, ...results.map((row) => row.account_id)])];
 }
 
 /** Takes a player out of their company: a company left with one ends, and a leader who leaves hands the lead to the

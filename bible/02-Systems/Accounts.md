@@ -99,9 +99,12 @@ they play in holds it while they are there.
   story the player already holds in the room carried forward, since the page may tell the room the prologue is done
   before the accounts answer; the story only moves forward. One the gate shuts, or a new one where the prologue is
   needed, is let go untouched, and the player is sent away with the reason.
-- **A run keeps to its company.** A run's room ([[Activities]]) gives a character only while no one is kept in it,
-  or to a companion of someone kept there: one of their company's members (`companions`, longest there first, or the
-  player alone). Any other is let go untouched, and the player sent away saying "This run is another company's.".
+- **A run keeps to its company.** A run's room ([[Activities]]) gives a character to the first to come, then only
+  to one it let in before or a companion of someone it let in, for as long as it lives: one of their company's
+  members (`companions(account, room)`, longest there first, or the player alone), or one the run was found for with
+  them by Find a Company (`found_runs`, kept a day). A group found is no company, and lets its members in together
+  to that one run alone. Any other is let go untouched, and the player sent away saying "This run is another
+  company's.".
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
   that is not kept. The Test Ground's room grants gear to try it, and the sea holds none, so neither keeps
   characters; nor does a page with no session, playing alone, or on a local room server with no `?accounts=`.

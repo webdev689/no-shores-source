@@ -30,7 +30,7 @@ export interface Characters {
   save(account: string, holder: string, body: string): Promise<boolean>;
   release(account: string, holder: string, body: string | null): Promise<boolean>;
   present(token: string, room: string | null): Promise<boolean>;
-  companions(account: string): Promise<string[]>;
+  companions(account: string, room: string): Promise<string[]>;
 }
 
 /** The characters on a database, with a clock and a way to wait. */
@@ -60,9 +60,9 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     return session?.account_id ?? null;
   };
   return {
-    /** A player's companions, their company's members longest there first, or the player alone: whom a run lets in
-     *  beside them. */
-    companions: (account) => companionsOf(database, account),
+    /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
+     *  first, or the player alone, then those it was found for with them. */
+    companions: (account, room) => companionsOf(database, account, room),
     /** Notes that a session's player is in a room that keeps no character, or with none that they left it; false
      *  when the token is no live session. */
     async present(token, room) {

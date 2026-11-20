@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { accounts, slowly } from './accountsForTests.ts';
 import { characters } from './characters.ts';
 import { INVITE_MS } from './companies.ts';
+import { foundRun } from './finding.ts';
 import type { Details, Roster } from './roster.ts';
 
 /** A world of named players, each one's token, and a way to ask as them. */
@@ -387,6 +388,19 @@ test('a player’s companions are their company’s members, longest there first
   await player('Ben').ask('company/accept', { name: 'Ada' });
   const account = async (name: string) => (await kept.claim(tokens[name] ?? '', `room:${name}`))?.account ?? '';
   const [ada, ben, cal] = [await account('Ada'), await account('Ben'), await account('Cal')];
-  assert.deepEqual(await kept.companions(ben), [ada, ben]);
-  assert.deepEqual(await kept.companions(cal), [cal]);
+  assert.deepEqual(await kept.companions(ben, 'node-x--run-a1b2c3d4'), [ada, ben]);
+  assert.deepEqual(await kept.companions(cal, 'node-x--run-a1b2c3d4'), [cal]);
+});
+
+test('a player’s companions in a run are their company, and those found for that run with them alone', async () => {
+  const { player, kept, tokens, deps } = await world('Ada', 'Ben', 'Cal', 'Dee');
+  await player('Ada').ask('company/invite', { name: 'Ben' });
+  await player('Ben').ask('company/accept', { name: 'Ada' });
+  const account = async (name: string) => (await kept.claim(tokens[name] ?? '', `room:${name}`))?.account ?? '';
+  const [ada, ben, cal, dee] = [await account('Ada'), await account('Ben'), await account('Cal'), await account('Dee')];
+  await foundRun(deps.database, 'node-krakens-grotto--run-k3j4h5g6', [cal, dee], 0);
+  assert.deepEqual(await kept.companions(ben, 'node-x--run-a1b2c3d4'), [ada, ben]);
+  assert.deepEqual((await kept.companions(cal, 'node-krakens-grotto--run-k3j4h5g6')).sort(), [cal, dee].sort());
+  assert.deepEqual(await kept.companions(cal, 'node-krakens-grotto--run-a1b2c3d4'), [cal], 'for one run alone');
+  assert.deepEqual(await kept.companions(ada, 'node-krakens-grotto--run-k3j4h5g6'), [ada, ben], 'not found for it');
 });
