@@ -1,6 +1,6 @@
 //! A room's players: what each sends (a tick's intent, the look of its own figure, its dress, what it holds, the tick
-//! of the room it was seeing, and a foe to stand before it), the checks an input must pass, and what the room keeps of
-//! each to judge blows on it as it saw them.
+//! of the room it was seeing, and a foe to stand before it), the checks an input must pass, the turn each input and
+//! dress is taken in, and what the room keeps of each to judge blows on it as it saw them.
 
 use crate::Room;
 use crate::asks::Asked;
@@ -430,5 +430,45 @@ impl Room {
     #[must_use]
     pub fn player(&self, player: PlayerId) -> Option<&Player> {
         self.players.get(&player)
+    }
+
+    /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim;
+    /// a body the section killed lies still, but the tick counts, so time spent dead is not banked to catch up on.
+    pub(crate) fn stand_stalled(&mut self, id: PlayerId) {
+        let clock = self.clock;
+        let Some(found) = self.players.get_mut(&id) else { return };
+        if found.stepped + VIEW_LAG >= clock - found.joined {
+            return;
+        }
+        if matches!(found.standing, Standing::Dead { .. }) {
+            found.stepped += 1;
+            return;
+        }
+        let standing = combat::Intent {
+            controls: movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() },
+            combat: combat::CombatInput::default(),
+        };
+        let view = self.fighters();
+        let Some(found) = self.players.get_mut(&id) else { return };
+        found.stepped += 1;
+        let (next, happening) = combat::player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
+        found.fighter = next;
+        self.happened(id, &next, happening, &view);
+    }
+
+    /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never
+    /// behind the last nor more than SEEN_STEP past it, never further back than a view may lag).
+    pub(crate) fn next_input(&mut self, id: PlayerId) -> Option<(Input, u64)> {
+        let clock = self.clock;
+        let found = self.players.get_mut(&id)?;
+        if found.stepped >= clock - found.joined + SLACK_TICKS {
+            return None;
+        }
+        let input = found.waiting.pop_front()?;
+        found.stepped += 1;
+        found.acknowledged = found.acknowledged.wrapping_add(1);
+        let seen =
+            input.seen.min(clock).min(found.seen + SEEN_STEP).max(found.seen).max(clock.saturating_sub(VIEW_LAG));
+        Some((input, seen))
     }
 }

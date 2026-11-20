@@ -106,6 +106,35 @@ fn when_every_player_is_down_at_once_the_run_starts_over_and_its_five_revives_wi
     assert!(wiped(&cleared.take_events()).is_empty(), "a cleared run is won: no wipe");
 }
 
+#[test]
+fn a_run_started_over_stands_each_group_unbroken_with_its_leader_and_holding_its_post_again() {
+    let mut room = abyss_run();
+    let players = [room.join().expect("in"), room.join().expect("in")];
+    let post = room.garrison.iter().position(|post| post.standing.len() >= 2).expect("a band of two or more");
+    let leader = room.garrison[post].leader.expect("a leader");
+    let found = room.foes.get_mut(&leader).expect("standing");
+    (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    let stood = room.garrison[post].standing.len();
+    for id in room.garrison[post].standing.clone().into_iter().filter(|id| *id != leader).take(stood.div_ceil(2) - 1) {
+        let found = room.foes.get_mut(&id).expect("standing");
+        (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    }
+    room.tick();
+    let found = &room.garrison[post];
+    assert!(found.broken && found.defending && found.anchor.is_some(), "its leader fallen, and half of it");
+    for player in players {
+        fallen(&mut room, player);
+    }
+    room.tick();
+    assert_eq!(wiped(&room.take_events()), players);
+    for found in &room.garrison {
+        assert!(!found.broken && !found.defending && found.anchor.is_none(), "whole again, at its post");
+        let leader = found.leader.expect("led again");
+        assert!(found.standing.contains(&leader) && !room.foes[&leader].fighter.dead(), "by one standing now");
+        assert_eq!(found.leader, crate::garrison::leader_of(&room, &found.standing), "its highest rank");
+    }
+}
+
 /// A kept player who left the run and came back, as the host joins them and notes their account.
 fn back(room: &mut Room, owner: &str) -> PlayerId {
     let again = room.join().expect("in");

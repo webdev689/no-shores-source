@@ -183,6 +183,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]]
 - [[The Story Is Nine Missions, With Side Quests Between Them]]
 - [[The Activities Are Built in Full, Before the Story's Missions]]
+- [[Plates as Claude Shows Them]]
+- [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]
+- [[Foe Groups as Claude Builds Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

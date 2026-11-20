@@ -170,6 +170,12 @@ impl Room {
             standing: Vec::new(),
             cleared_at: None,
             beat: None,
+            leader: None,
+            broken: false,
+            defending: false,
+            fallback: reeve,
+            anchor: None,
+            arrival: false,
         });
         let mut draws = draws_of(self.world_seed);
         for room in band_rooms(dungeon, self.foes_most) {
@@ -194,6 +200,12 @@ impl Room {
                 standing: Vec::new(),
                 cleared_at: None,
                 beat: None,
+                leader: None,
+                broken: false,
+                defending: false,
+                fallback: at,
+                anchor: None,
+                arrival: false,
             });
         }
         self.gird_and_stand(levels);

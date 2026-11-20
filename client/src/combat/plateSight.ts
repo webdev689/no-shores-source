@@ -4,6 +4,8 @@
 // under it does, and never grows; it is never seen through a block or the land, nor past the reach names had. So a
 // crowd puts one plate over the world until the fight begins, and the fight's own plates go a few seconds after it.
 
+import { BODY_RADIUS } from '../player/crosshair.ts';
+
 type Point = readonly [number, number, number];
 
 /** The cone round the crosshair: whole within `degrees - band / 2`, none past `degrees + band / 2`; and how long a
@@ -38,10 +40,21 @@ export function coneWant(off: number | null, held: number): number {
   return Math.max(off === null ? 0 : coneShare(off), Math.max(0, Math.min(1, held)));
 }
 
-/** The one foe the cone shows, of `offs` (each foe's degrees from the crosshair): the nearest inside the cone's edge,
- *  or last frame's (`was`) while it stays inside and none takes it by `AIM_SWAP_DEGREES` or `AIM_SWAP_SHARE`; null for
- *  none. */
-export function aimedFoe(offs: ReadonlyMap<number, number>, was: number | null): number | null {
+/** The one foe the cone shows, of `offs` (each foe's degrees from the crosshair, 0 for one the crosshair is on): of
+ *  those the crosshair is on, the nearest the eye by `depths`, as the body it meets first; else the nearest inside the
+ *  cone's edge, or last frame's (`was`) while it stays inside and none takes it by `AIM_SWAP_DEGREES` or
+ *  `AIM_SWAP_SHARE`; null for none. */
+export function aimedFoe(
+  offs: ReadonlyMap<number, number>,
+  was: number | null,
+  depths: ReadonlyMap<number, number> = new Map(),
+): number | null {
+  let under: number | null = null;
+  for (const [id, off] of offs) {
+    const depth = depths.get(id) ?? Infinity;
+    if (off <= 0 && (under === null || depth < (depths.get(under) ?? Infinity))) under = id;
+  }
+  if (under !== null) return under;
   const edge = CONE.degrees + CONE.band / 2;
   let nearest: number | null = null;
   let least = edge;
@@ -58,8 +71,8 @@ export function aimedFoe(offs: ReadonlyMap<number, number>, was: number | null):
   return holds ? was : nearest;
 }
 
-/** Degrees between the way a camera looks and the nearest point of an upright body, its feet at `feet` and `height`
- *  metres tall, seen from its eye: a foe is at the crosshair wherever on its body the crosshair rests. */
+/** Degrees between the way a camera looks and the nearest point of an upright body, its feet at `feet`, `height`
+ *  metres tall and BODY_RADIUS round, seen from its eye: 0 wherever on its body the crosshair rests. */
 export function bodyDegrees(
   camera: { readonly eye: Point; readonly forward: Point },
   feet: Point,
@@ -71,7 +84,9 @@ export function bodyDegrees(
   const over =
     ahead > 0 ? ((east * east + south * south) * camera.forward[2]) / ahead : feet[2] + height / 2 - camera.eye[2];
   const crossed = Math.min(feet[2] + height, Math.max(feet[2], camera.eye[2] + over));
-  return offDegrees(camera, [feet[0], feet[1], crossed]);
+  const across = Math.hypot(east, south, crossed - camera.eye[2]);
+  const round = (Math.atan2(BODY_RADIUS, across) * 180) / Math.PI;
+  return Math.max(0, offDegrees(camera, [feet[0], feet[1], crossed]) - round);
 }
 
 /** How far apart, in metres, the line to a foe's head is tried against the land: the ground round the eye is a smooth
