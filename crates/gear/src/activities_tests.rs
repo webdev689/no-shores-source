@@ -97,3 +97,32 @@ fn the_weeks_two_stand_at_their_own_levels_and_open_two_below() {
     assert_eq!(Difficulty::ALL.map(Weekly::of), [None, Some(Weekly::Elite), Some(Weekly::Abyss)]);
     assert_eq!(Weekly::Abyss.name(), "Abyss Dungeon of the week");
 }
+
+#[test]
+fn each_modifier_says_what_it_does_in_a_short_plain_line() {
+    let kinds = [
+        Modifier::Burn(3),
+        Modifier::Brawler,
+        Modifier::Marksman,
+        Modifier::Lightswitch,
+        Modifier::Ironclad,
+        Modifier::Trickle,
+        Modifier::Juggler,
+        Modifier::Exposure,
+    ];
+    assert_eq!(
+        kinds.map(Modifier::words),
+        [
+            "Shadow spells deal double damage. Wearing Shadow, you take double.",
+            "Melee deals 50% more damage.",
+            "Ranged deals 50% more damage.",
+            "Foes' melee deals double damage.",
+            "Half of all foes carry shields.",
+            "Arts take 50% longer to recharge.",
+            "No ammunition drops.",
+            "Heals restore half as much.",
+        ]
+        .map(str::to_owned)
+    );
+    assert_eq!(Modifier::Burn(1).words(), "Storm spells deal double damage. Wearing Storm, you take double.");
+}

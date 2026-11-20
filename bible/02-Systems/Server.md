@@ -146,7 +146,9 @@ on Cloudflare.
   by its place, or a sea island's by its seed, style and continent), its tier and the Unix minute it opens, as
   `Room::dungeon_run` stands it ([[Dungeons]]); an ask no rule lays opens nothing. `room_activities` answers what is
   on at a minute as JSON ([[Activities]]): the day's and the week's numbers and the minutes to the next of each, each
-  island's dungeon of the day, the day's modifier, and the week's two with their modifiers' keys.
+  island's dungeon of the day, the day's modifier, the week's two with their modifiers' keys and levels, each island's
+  band at each tier, the revives, and each modifier's name and words. `room_gates` answers why each place is shut to
+  a level, past the prologue or not, in the gates' own words (`gear::gate::shut_at`).
 - **An Elite Dungeon's node** lays its one entrance as it opens (`lay_elite_entrance`), and is joined before it as a
   patrol's room is before its entrances.
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the

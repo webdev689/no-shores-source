@@ -118,15 +118,17 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
   revives left"). A run whose cache stands open is won and never wiped, so a cleared run keeps what it paid, and a room
   no one is in is never wiped.
 - **Modifiers** are drawn from a set, each one hook in the rules (`room::run`), read only in a room whose run
-  carries it:
-  - Burn: one Art's spells deal twice, and a player wearing it takes twice from foes.
-  - Brawler: a player's swing deals 1.5 times; Marksman: a player's shot deals 1.5 times.
-  - Lightswitch: a foe's swing or telegraphed blow deals a player twice.
+  carries it. Each says what it does in a line of its own (`Modifier::words`), which the screens show:
+  - Burn: one Art's spells deal twice, and a player wearing it takes twice from foes. "Shadow spells deal double
+    damage. Wearing Shadow, you take double."
+  - Brawler: a player's swing deals 1.5 times ("Melee deals 50% more damage."); Marksman: a player's shot deals 1.5
+    times ("Ranged deals 50% more damage.").
+  - Lightswitch: a foe's swing or telegraphed blow deals a player twice ("Foes' melee deals double damage.").
   - Ironclad: half of all foes stand with a shield, against one in five; every foe shielded without it keeps its
-    shield and element, since the same roll is read at a higher bar.
-  - Trickle: an Art's recharge takes 1.5 times as long.
-  - Juggler: no Ammo box and no crate drop.
-  - Exposure: a heal on a player gives half; foes heal as before.
+    shield and element, since the same roll is read at a higher bar ("Half of all foes carry shields.").
+  - Trickle: an Art's recharge takes 1.5 times as long ("Arts take 50% longer to recharge.").
+  - Juggler: no Ammo box and no crate drop ("No ammunition drops.").
+  - Exposure: a heal on a player gives half; foes heal as before ("Heals restore half as much.").
 
 ## What it pays, once
 
@@ -188,7 +190,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
   carried forward (`Story::merged`, which never goes back), and a new one is judged as it starts. The reasons read
   "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "Elite seas open at level 10."
   and "Abyss seas open at level 20.". A sea island's dungeon is gated by its seas alone. The screen shows what is
-  shut and what opens it.
+  shut and what opens it. The page reads every gate's reason for a level from the rules (`room_gates`), so it never
+  judges a gate itself.
 
 ## The screen
 

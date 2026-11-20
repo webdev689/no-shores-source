@@ -183,6 +183,25 @@ impl Modifier {
         };
         named.to_owned()
     }
+
+    /// What it does, in a short plain line for the player, each line saying its constant above.
+    #[must_use]
+    pub fn words(self) -> String {
+        let said = match self {
+            Modifier::Burn(art) => {
+                let named = arts().art(art).map_or("", |found| found.name.as_str());
+                return format!("{named} spells deal double damage. Wearing {named}, you take double.");
+            }
+            Modifier::Brawler => "Melee deals 50% more damage.",
+            Modifier::Marksman => "Ranged deals 50% more damage.",
+            Modifier::Lightswitch => "Foes' melee deals double damage.",
+            Modifier::Ironclad => "Half of all foes carry shields.",
+            Modifier::Trickle => "Arts take 50% longer to recharge.",
+            Modifier::Juggler => "No ammunition drops.",
+            Modifier::Exposure => "Heals restore half as much.",
+        };
+        said.to_owned()
+    }
 }
 
 /// One of the week's two dungeons.

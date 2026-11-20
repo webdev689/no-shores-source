@@ -44,8 +44,12 @@ export interface RoomDoor {
    *  crates/room-wasm/src/run_door.rs reads it); false for an ask that does not read or a dungeon no rule lays. */
   openRun(ask: string): boolean;
   /** What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each, each
-   *  island's dungeon of the day, the day's modifier, and the week's two with their modifiers. */
+   *  island's dungeon of the day, the day's modifier, the week's two with their modifiers and levels, each island's
+   *  band at each tier, the revives, and each modifier's name and words. */
   activities(minute: number): string;
+  /** Why each place is shut to a character of `level`, past the prologue or not, as JSON (each reason, or null where
+   *  it is open): the dungeon of the day and the seas at each tier, an Elite Dungeon, and the week's two. */
+  gates(level: number, prologue: boolean): string;
   /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; false if the
    *  text is not a layout. */
   openSea(layoutText: string, seed: number): boolean;
@@ -133,6 +137,7 @@ interface RoomExports {
   room_open_dungeon(address: number, length: number, dungeon: number): number;
   room_open_run(address: number, length: number): number;
   room_activities(minute: number): bigint;
+  room_gates(level: number, prologue: number): bigint;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
   room_take_foe_asks(): void;
@@ -205,6 +210,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       openWith((address, length) => exports.room_open_dungeon(address, length, dungeon >>> 0), nodeText),
     openRun: (ask) => openWith(exports.room_open_run, ask),
     activities: (minute) => new TextDecoder().decode(take(exports.room_activities(minute >>> 0))),
+    gates: (level, prologue) => new TextDecoder().decode(take(exports.room_gates(level >>> 0, prologue ? 1 : 0))),
     openSea: (layoutText, seed) =>
       openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
     openFleet: () => exports.room_open_fleet() === 1,

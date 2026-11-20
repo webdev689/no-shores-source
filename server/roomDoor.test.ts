@@ -425,6 +425,8 @@ test('a run’s room opens from its ask with its revives, and what is on reads a
   assert.deepEqual(drawn.weekAbyss, {
     place: 'saltworm-warrens',
     modifiers: ['lightswitch', 'burn-divine', 'juggler'],
+    level: 30,
+    opens: 28,
   });
   assert.equal(room.openRun(JSON.stringify({ dungeon: { place: 'saltworm-warrens' }, tier: 2, minute: friday })), true);
   room.join();
@@ -436,4 +438,11 @@ test('a run’s room opens from its ask with its revives, and what is on reads a
     style: string;
   };
   assert.deepEqual([laid.name, laid.style], ['Kraken’s Grotto', 'caverns']);
+});
+
+test('the gates read as the rules judge them for a level and a story', () => {
+  const room = startRoomDoor(compiled);
+  const gates = JSON.parse(room.gates(9, true)) as { day: unknown[]; weekElite: unknown };
+  assert.deepEqual(gates.day, [null, 'Elite seas open at level 10.', 'Abyss seas open at level 20.']);
+  assert.equal(gates.weekElite, 'This dungeon opens at level 24.');
 });
