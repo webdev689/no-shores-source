@@ -88,7 +88,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   way in's block and its first room; a middle, the blocks between; and an end, the last room of the last block, where
   the Reeve and the return portal stand. Its way runs from one to the next, room after room.
 - **Its size.** A dungeon is two to five blocks of 51.2 m, each count as likely, drawn on its own lane
-  (`size:<seed>`). The blocks stand in a chain: the way in's first, each next one beside the one before, drawn from
+  (`size:<seed>`). An Elite Dungeon is four or five (`ELITE_BLOCKS`), each as likely, drawn on the same lane
+  (`Dungeon::forge_within`), so a seed's other draws are as a patrol's dungeon's would be. The blocks stand in a chain: the way in's first, each next one beside the one before, drawn from
   the free squares round it. A block and the next share one doorway, a cell along their edge from the third to the
   fourteenth; two blocks side by side that are not next in the chain share none.
 - **The way down.** On a lane of its own (`deeper:<seed>`), one dungeon in two lays its last block in the style below

@@ -2,7 +2,8 @@ use crate::dungeon::{DOORWAY_HALF_M, JAMB_DEPTH_M};
 use crate::shapes::Ceiling;
 use crate::torches::TORCH_M;
 use crate::{
-    BLOCK_CELLS, BLOCKS, CELL_M, Cell, Dungeon, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WallDoor, name, of_patrol,
+    BLOCK_CELLS, BLOCKS, CELL_M, Cell, Dungeon, ELITE_BLOCKS, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WallDoor,
+    name, of_patrol,
 };
 
 #[test]
@@ -468,5 +469,16 @@ fn the_return_portal_stands_on_a_rock_wall_of_the_end_room() {
         let [middle_x, middle_y] = dungeon.centre(portal.cell);
         let [dx, dy] = portal.side.unit();
         assert!(((x - middle_x) * dx + (y - middle_y) * dy - CELL_M / 2.0).abs() < 0.05, "on its wall");
+    }
+}
+
+#[test]
+fn a_dungeon_forged_within_four_and_five_blocks_takes_one_of_them_and_the_forges_own_count_is_unchanged() {
+    let counts: std::collections::BTreeSet<usize> = (0..200_u32)
+        .map(|seed| Dungeon::forge_within(seed, STYLES[seed as usize % STYLES.len()], ELITE_BLOCKS).squares.len())
+        .collect();
+    assert_eq!(counts, std::collections::BTreeSet::from([4, 5]));
+    for seed in [0, 7, 4242] {
+        assert_eq!(Dungeon::forge(seed, STYLES[0]), Dungeon::forge_within(seed, STYLES[0], BLOCKS));
     }
 }
