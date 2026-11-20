@@ -134,8 +134,9 @@ number is one of [[Gear as Claude Shapes It]].
   sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
   touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
-  Vestige opened at the Reader's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
-  serves them all within reach of its stall. The Test Ground alone hands out gear.
+  Vestige opened at the Reader's, the vault at a vault's, a ware at its vendor's ([[Interface]]), and a bounty taken
+  or turned in at the bounty board's (`CounterKind::Board`, [[Activities]]); the [[Test Ground]] serves them all
+  within reach of its stall. The Test Ground alone hands out gear.
 
 ## Loadouts
 

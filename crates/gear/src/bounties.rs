@@ -1,7 +1,11 @@
 //! The bounty board: six bounties a day, the same for everyone, drawn by the clock's day (`crate::activities`), two on
-//! land, two at sea and two in dungeons, each paying XP and Aurem once at the character's level when turned in.
+//! land, two at sea and two in dungeons, each taken and turned in at the board by the day of the board shown, and
+//! paying XP and Aurem once at the character's level.
 
 use crate::activities::{BOUNTY_DRAWS, drawn};
+use crate::activity::BOUNTIES;
+use crate::asks::{Done, Here, Refusal};
+use crate::character::Character;
 use crate::objectives::{ELITE_RANK, GREY_TITHE, MINIBOSS_RANK, Objective};
 use crate::rewards::at_level;
 
@@ -72,4 +76,53 @@ pub fn board(day: u64) -> [Bounty; 6] {
 #[must_use]
 pub fn bounty_pay(level: u8) -> (u32, u32) {
     (at_level(BOUNTY_XP, level), at_level(BOUNTY_AUREM, level))
+}
+
+impl Character {
+    /// Takes a bounty of the board shown on `day`: at the board, after the prologue, at a count of 0.
+    pub(crate) fn take_bounty(&mut self, place: u8, day: u64, here: Here) -> Result<Option<Done>, Refusal> {
+        if !here.social {
+            return Err(Refusal::NotHere);
+        }
+        if !self.story.prologue {
+            return Err(Refusal::BoardShut);
+        }
+        self.on_the_board(place, day, here)?;
+        let today = self.activity.today(here.day);
+        if today.bounties.contains_key(&place) {
+            return Err(Refusal::BountyHeld);
+        }
+        today.bounties.insert(place, 0);
+        Ok(None)
+    }
+
+    /// Turns in a bounty of the board shown on `day` whose count reached its target, paying it once.
+    pub(crate) fn turn_in_bounty(&mut self, place: u8, day: u64, here: Here) -> Result<Option<Done>, Refusal> {
+        if !here.social {
+            return Err(Refusal::NotHere);
+        }
+        self.on_the_board(place, day, here)?;
+        let target = board(here.day)[usize::from(place)].target;
+        let today = self.activity.today(here.day);
+        if today.turned_in.contains(&place) {
+            return Err(Refusal::BountyPaid);
+        }
+        if today.bounties.get(&place).is_none_or(|count| *count < target) {
+            return Err(Refusal::BountyNotDone);
+        }
+        today.turned_in.insert(place);
+        let (xp, aurem) = bounty_pay(self.level());
+        self.earn_xp(xp, None);
+        self.materials.add_aurem(aurem);
+        Ok(None)
+    }
+
+    /// Whether a place stands on the room's board as the page showed it: a page showing another day's board, or a room
+    /// whose day is behind the record, would ask of a bounty that is not there.
+    fn on_the_board(&self, place: u8, day: u64, here: Here) -> Result<(), Refusal> {
+        if place >= BOUNTIES || day != here.day || here.day < self.activity.today.day {
+            return Err(Refusal::NoSuchBounty);
+        }
+        Ok(())
+    }
 }

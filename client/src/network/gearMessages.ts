@@ -25,6 +25,10 @@ export const ASKS = {
   buyCrate: 16,
   /** The prologue played, which the room keeps with the character. */
   finishPrologue: 17,
+  /** A bounty of the day's board taken, or one done turned in: its place on the board in `node` and the day of the
+   *  board shown in `item` (the gear's `day`): at the bounty board. */
+  takeBounty: 18,
+  turnInBounty: 19,
   gather: 20,
   grantVestige: 30,
   grantNamed: 31,

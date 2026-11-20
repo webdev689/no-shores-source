@@ -87,6 +87,9 @@ test('an item is named as the catalogue names it', () => {
   assert.equal(answerText(120), 'Wear a Ranged weapon first.', 'a crate used with no Ranged weapon worn');
   for (let code = 110; code <= 113; code++)
     assert.ok(!answerText(code).startsWith('Refused'), `the Arts' refusal ${code} has words`);
+  for (let code = 81; code <= 85; code++)
+    assert.ok(!answerText(code).startsWith('Refused'), `the board's refusal ${code} has words`);
+  assert.equal(answerText(82), 'That bounty is no longer on the board.');
 });
 
 test('the hands hold the drawn loadout, in its rarity’s metal where the forge draws it', () => {

@@ -186,6 +186,12 @@ One engine counts both, since the owner's side quests and the board's bounties a
   island or a water, since the islands' bands run from 1 to 30. A character takes any of them; each pays once when
   turned in, 1,000 XP and 60 Aurem at level 5, raised as a kill is by the character's level, and all end at the daily
   reset.
+- **Taking and turning in** happen at the board alone (`Ask::TakeBounty`, `Ask::TurnInBounty`), each by its place
+  and the day of the board the page showed. The room refuses a day not its own, and a room whose day is behind the
+  record refuses both, so a page or a room on either side of 09:00 cannot take or pay yesterday's bounty as today's.
+  The refusals read "The bounty board opens after the prologue.", "That bounty is no longer on the board.", "You
+  already hold that bounty.", "That bounty is not done yet." and "That bounty is turned in already."; they are
+  numbered 80 to 84, apart from the rest.
 - **Side quests** use the same objectives, kept until done, and are written with the story's missions as data
   (`content/gear/quests.json`, read by `gear::quests`, none written yet). A character keeps each held quest's count
   in `Character.story.quests` and each finished one in `story.finished`; finishing one pays its XP and Aurem once.

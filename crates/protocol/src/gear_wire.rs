@@ -27,6 +27,10 @@ pub const BUY_EMBLEM: u8 = 14;
 pub const USE_CRATE: u8 = 15;
 pub const BUY_CRATE: u8 = 16;
 pub const FINISH_PROLOGUE: u8 = 17;
+/// A bounty taken or turned in: its place on the board in `node`, the day of the board shown in `item`, as the gear's
+/// `day` sends it.
+pub const TAKE_BOUNTY: u8 = 18;
+pub const TURN_IN_BOUNTY: u8 = 19;
 pub const GATHER: u8 = 20;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
@@ -74,6 +78,8 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         USE_CRATE => Asked::Gear(Ask::UseCrate),
         BUY_CRATE => Asked::Gear(Ask::BuyCrate),
         FINISH_PROLOGUE => Asked::Gear(Ask::FinishPrologue),
+        TAKE_BOUNTY => Asked::Gear(Ask::TakeBounty { place: node, day: u64::from(item) }),
+        TURN_IN_BOUNTY => Asked::Gear(Ask::TurnInBounty { place: node, day: u64::from(item) }),
         GATHER => Asked::Gather { node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
@@ -131,6 +137,14 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::UseCrate => args = messages::AskArgs { kind: USE_CRATE, ..args },
             Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
             Ask::FinishPrologue => args = messages::AskArgs { kind: FINISH_PROLOGUE, ..args },
+            Ask::TakeBounty { place, day } => {
+                let item = u32::try_from(day).unwrap_or(u32::MAX);
+                args = messages::AskArgs { kind: TAKE_BOUNTY, item, node: place, ..args };
+            }
+            Ask::TurnInBounty { place, day } => {
+                let item = u32::try_from(day).unwrap_or(u32::MAX);
+                args = messages::AskArgs { kind: TURN_IN_BOUNTY, item, node: place, ..args };
+            }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {

@@ -83,7 +83,7 @@ pub struct ResourceNode {
 }
 
 /// A social space's counter that serves a player's gear: the Reader's opens Vestiges, a vault's keeps gear, a
-/// vendor's sells its own wares, and the Tailor's sells emblems.
+/// vendor's sells its own wares, the Tailor's sells emblems, and the bounty board takes and turns in bounties.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CounterKind {
     Reader,
@@ -91,6 +91,8 @@ pub enum CounterKind {
     Vendor(Vendor),
     /// The Tailor's, who sells emblems.
     Tailor,
+    /// The bounty board, which takes and turns in bounties: no keeper stands at it.
+    Board,
 }
 
 /// A counter and its middle.
@@ -111,6 +113,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         Ask::Vend { vendor, .. } => Some(CounterKind::Vendor(*vendor)),
         Ask::BuyCrate => Some(CounterKind::Vendor(Vendor::Quartermaster)),
         Ask::BuyEmblem { .. } => Some(CounterKind::Tailor),
+        Ask::TakeBounty { .. } | Ask::TurnInBounty { .. } => Some(CounterKind::Board),
         _ => None,
     }
 }

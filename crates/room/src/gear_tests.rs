@@ -219,6 +219,22 @@ fn a_social_space_serves_each_ask_at_its_own_counter() {
 }
 
 #[test]
+fn the_bounty_board_takes_bounties_at_its_own_counter_alone() {
+    use crate::asks::{Counter, CounterKind};
+    let mut room = room();
+    room.counters = Some(vec![Counter { kind: CounterKind::Board, at: [10.0, 0.0] }]);
+    room.set_minute(29_919_420);
+    let player = room.join().expect("a room with space");
+    room.players.get_mut(&player).expect("in").character.story.prologue = true;
+    let take = Asked::Gear(Ask::TakeBounty { place: 2, day: 20_778 });
+    assert_eq!(ask(&mut room, player, 1, take.clone()), answer_code(Err(Refusal::NotHere)), "mid-plaza");
+    move_to(&mut room, player, 8.0, 0.0);
+    assert_eq!(ask(&mut room, player, 2, take), 0, "at the board");
+    assert_eq!(room.player(player).expect("in").character.activity.today.bounties.get(&2), Some(&0));
+    assert_eq!(crate::asks::counter_for(&Ask::TurnInBounty { place: 2, day: 20_778 }), Some(CounterKind::Board));
+}
+
+#[test]
 fn walking_to_or_from_the_reader_sends_the_gear_again() {
     use crate::asks::{Counter, CounterKind};
     let mut room = room();

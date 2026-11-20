@@ -53,6 +53,8 @@ mod arts_tests;
 #[cfg(test)]
 mod asks_tests;
 #[cfg(test)]
+mod bounties_tests;
+#[cfg(test)]
 mod clock_tests;
 #[cfg(test)]
 mod emblems_tests;

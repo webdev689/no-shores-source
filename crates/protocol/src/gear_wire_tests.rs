@@ -26,6 +26,8 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::UseCrate),
         Asked::Gear(Ask::BuyCrate),
         Asked::Gear(Ask::FinishPrologue),
+        Asked::Gear(Ask::TakeBounty { place: 3, day: 20_778 }),
+        Asked::Gear(Ask::TurnInBounty { place: 5, day: 20_778 }),
         Asked::Gather { node: 2 },
         Asked::Grant(Grant::Vestige { rarity: Rarity::Legendary, slot: Slot::Arms, level: 18 }),
         Asked::Grant(Grant::Named("gullwing".to_owned())),
