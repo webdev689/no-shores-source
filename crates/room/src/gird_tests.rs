@@ -200,11 +200,12 @@ fn the_fights_heat_counts_a_blow_as_combat_is_tuned_for_at_any_level_and_what_a_
 
 #[test]
 fn a_boss_or_a_miniboss_never_stands_with_a_shield_while_the_foes_about_it_may() {
-    let (mut leaders, mut shielded_others) = (0, 0);
-    for nth in 0..60 {
+    let mut shielded_others = 0;
+    for nth in 0..10 {
         let id = format!("node-{nth}");
         for kind in [NodeKind::Boss, NodeKind::Dungeon] {
             let room = levelled(kind, &id, (7, 10));
+            let mut leaders = 0;
             for found in room.foes.values() {
                 if matches!(found.brain.rank, ::foes::Rank::Boss | ::foes::Rank::Miniboss) {
                     leaders += 1;
@@ -213,8 +214,8 @@ fn a_boss_or_a_miniboss_never_stands_with_a_shield_while_the_foes_about_it_may()
                     shielded_others += 1;
                 }
             }
+            assert!(leaders > 0, "every boss and dungeon node has its leader: {id} {kind:?}");
         }
     }
-    assert!(leaders >= 100, "every boss and dungeon node has its leader: {leaders}");
     assert!(shielded_others > 0, "the foes about them still may carry one");
 }

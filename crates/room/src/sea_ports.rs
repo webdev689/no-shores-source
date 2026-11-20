@@ -1,15 +1,18 @@
 //! The sea's side of what its fights leave (`harbour`): a ship's hurts kept with her and with the player's character,
 //! the player who washes up at the nearest port city, what floats where a captain's ship sank and who gathers it, and
-//! the repairs by the ports.
+//! the repairs by the ports, and the keeping of each player's character: what changed in it, and in a sea that keeps
+//! characters, no course sailed before the keeper has answered for the player.
 
 use super::{Berth, Sea, Ship};
 use crate::PlayerId;
 use crate::battle::{Outcome, Sank};
 use crate::harbour::{HELD, JOINED, MOORED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
+use crate::players::GEAR_EVERY_TICKS;
 use movement::TICK_SECONDS;
 use naval::fight::Event;
 use naval::wire::told_numbers;
 use std::collections::BTreeMap;
+use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 
 impl Sea {
     /// What its fights' tick made of each player and each captain's ship that sank: a player's ship where the fight
@@ -52,9 +55,12 @@ impl Sea {
         let Some(berth) = self.berths.get_mut(&player) else { return };
         if let Some(kept) = kept {
             keep(berth, &mut self.harbour.characters, player, kept);
+            self.harbour.changed.insert(player);
         }
+        // A fight's waters run past the world's edge; the sea's ways do not.
+        let [x, y] = in_frame([ship.x, ship.y]);
         if let Some(sailing) = berth.sailing.as_mut() {
-            sailing.ship = Ship { x: ship.x, y: ship.y, heading: ship.heading, pace: 0, rate: 0 };
+            sailing.ship = Ship { x, y, heading: ship.heading, pace: 0, rate: 0 };
             sailing.course.clear();
         }
     }
@@ -67,7 +73,8 @@ impl Sea {
         if sunk {
             keep(berth, &mut self.harbour.characters, player, SUNK_KEPT);
         }
-        let moored = port.map_or(at, |port| self.harbour.harbours.ports[port].1);
+        let moored = in_frame(port.map_or(at, |port| self.harbour.harbours.ports[port].1));
+        self.harbour.changed.insert(player);
         if let Some(sailing) = berth.sailing.as_mut() {
             sailing.ship = Ship { x: moored[0], y: moored[1], heading: sailing.ship.heading, pace: 0, rate: 0 };
             sailing.course.clear();
@@ -96,15 +103,14 @@ impl Sea {
     pub(super) fn keep_hurts(&mut self, player: PlayerId, kept: [f64; 3]) {
         if let Some(berth) = self.berths.get_mut(&player) {
             keep(berth, &mut self.harbour.characters, player, kept);
+            self.harbour.changed.insert(player);
         }
     }
 
     /// A player's repair stops where it stood, as they sail or leave.
     pub(super) fn stop_repair(&mut self, player: PlayerId) {
         let Some(kept) = self.harbour.repairs.stop(player) else { return };
-        if let Some(berth) = self.berths.get_mut(&player) {
-            keep(berth, &mut self.harbour.characters, player, kept);
-        }
+        self.keep_hurts(player, kept);
     }
 
     /// The harbour's tick, the sea's ships sailed: every repair runs on, and what floats drifts and is gathered.
@@ -112,6 +118,10 @@ impl Sea {
         for (player, kept) in self.harbour.repairs.tick(TICK_SECONDS) {
             if let Some(berth) = self.berths.get_mut(&player) {
                 keep(berth, &mut self.harbour.characters, player, kept);
+            }
+            // Flagged once it is done, not each tick it runs: the snapshot tells how it stands meanwhile.
+            if !self.harbour.repairs.under_way.contains_key(&player) {
+                self.harbour.changed.insert(player);
             }
         }
         // A boarder's ship gathers nothing while they stand on her enemy's deck, whose room holds their character.
@@ -124,6 +134,7 @@ impl Sea {
         let tick = self.clock as f64;
         for (event, player, held) in self.harbour.flotsam.tick(self.clock, &ships, &mut self.harbour.characters) {
             let Event::Gathered { id, .. } = event else { continue };
+            self.harbour.changed.insert(player);
             self.harbour.told.extend(told_numbers(&event, tick).map(|numbers| (player, numbers)));
             let rarity = held.vestige.map_or(0.0, |vestige| f64::from(vestige.rarity as u8) + 1.0);
             let parts = [f64::from(u8::from(held.ammo_box)), f64::from(u8::from(held.ammo_crate))];
@@ -181,9 +192,10 @@ impl Sea {
         // In a fight, she is kept as the fight has her, and lies at the port city she would wash up at, as one who
         // lost does: a player who leaves mid-fight comes back there.
         let (kept, at) = match self.fights.hurts_of(player) {
-            Some((kept, at)) => {
-                (kept, self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1))
-            }
+            Some((kept, at)) => (
+                kept,
+                in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
+            ),
             None => {
                 (berth.kept, berth.sailing.as_ref().map_or([f64::NAN; 2], |sailing| [sailing.ship.x, sailing.ship.y]))
             }
@@ -195,28 +207,90 @@ impl Sea {
         Some(character.to_json())
     }
 
-    /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea
-    /// or the text is not a character.
-    pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
-        let (Some(character), Some(berth)) = (gear::Character::from_json(text), self.berths.get_mut(&player)) else {
+    /// From now on the sea keeps characters: each player's courses wait for the keeper's word on theirs, the character
+    /// given back (`restore_character`) or none kept (`none_kept`), so a ship the room kept comes back where it kept
+    /// her, however late the page signs in.
+    pub fn keep_characters(&mut self) {
+        self.harbour.awaiting.get_or_insert_with(BTreeMap::new);
+    }
+
+    /// A player just joined waits for the keeper's word, in a sea that keeps characters.
+    pub(super) fn await_keeper(&mut self, player: PlayerId) {
+        if let Some(awaiting) = self.harbour.awaiting.as_mut() {
+            awaiting.insert(player, None);
+        }
+    }
+
+    /// Holds a course asked before the keeper answered for the player, the last one asked; whether it was held.
+    pub(super) fn hold_course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> bool {
+        let Some(held) = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.get_mut(&player)) else {
             return false;
         };
-        berth.kept = character.ship.map(|share| f64::from(share) / f64::from(gear::character::SHIP_WHOLE));
-        // Her ship lies where the room last kept her, wherever the page first put her to sea.
+        *held = Some((points.to_vec(), pace));
+        true
+    }
+
+    /// The keeper has no character to give the player (none kept, or the page plays unkept): the course held for them
+    /// is judged and sailed as any course is, a refused one leaving her not yet at sea.
+    pub fn none_kept(&mut self, player: PlayerId) {
+        let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
+        if let Some((points, pace)) = held {
+            let _ = self.course(player, &points, pace);
+        }
+    }
+
+    /// A player's character, when it changed since their gear was last sent them and is due again (at most every
+    /// `GEAR_EVERY_TICKS`, as a land room sends gear); none on a deck, whose room sends theirs.
+    pub fn take_character_change(&mut self, player: PlayerId) -> Option<&gear::Character> {
+        let clock = self.clock;
+        let waiting = self.harbour.gear_sent.get(&player).is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS);
+        let held = self.harbour.characters.contains_key(&player);
+        if waiting || !held || self.on_deck(player) || !self.harbour.changed.remove(&player) {
+            return None;
+        }
+        self.harbour.gear_sent.insert(player, clock);
+        self.harbour.characters.get(&player)
+    }
+
+    /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea
+    /// or the text is not a character. Her ship lies where the room last kept her, wherever the page first put her to
+    /// sea: a fight she met from the page's spawn is over for her. With nowhere kept, the course held for her sails.
+    pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
+        let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
+            return false;
+        };
+        let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
-        if let (Some([x, y]), false) = (at, self.fights.fighting(player)) {
+        if at.is_some() && self.fights.fighting(player) {
+            self.leave_decks(player);
+            self.fights.leave(player);
+        }
+        if let (Some([x, y]), Some(berth)) = (at, self.berths.get_mut(&player)) {
             let heading = berth.sailing.as_ref().map_or(0.0, |sailing| sailing.ship.heading);
             berth.sailing =
                 Some(super::Sailing { ship: Ship { x, y, heading, pace: 0, rate: 0 }, course: Default::default() });
             self.harbour.told.push((player, vec![MOORED, self.clock as f64, x, y, heading]));
+        } else if let Some((points, pace)) = held {
+            let _ = self.course(player, &points, pace);
+        }
+        if let Some(berth) = self.berths.get_mut(&player) {
+            berth.kept = character.ship.map(|share| f64::from(share) / f64::from(gear::character::SHIP_WHOLE));
         }
         // A deck boarded before the accounts answered fights on with the real character.
         if let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player)) {
             deck.room.restore_character(deck.aboard[&player], text);
         }
         self.harbour.characters.insert(player, character);
+        self.harbour.changed.insert(player);
         true
     }
+}
+
+/// A point held within the world's frame.
+pub(crate) fn in_frame([x, y]: [f64; 2]) -> [f64; 2] {
+    #[allow(clippy::cast_precision_loss)]
+    let (width, height) = (FRAME_WIDTH_M as f64, FRAME_HEIGHT_M as f64);
+    [x.clamp(0.0, width), y.clamp(0.0, height)]
 }
 
 /// Each wary ship at sea within `ENGAGE_RANGE` of a player not fighting whose Sloop she would take as her kept hull
@@ -267,3 +341,11 @@ mod tests;
 #[cfg(test)]
 #[path = "sea_keeping_tests.rs"]
 mod keeping_tests;
+
+#[cfg(test)]
+#[path = "sea_course_tests.rs"]
+mod course_tests;
+
+#[cfg(test)]
+#[path = "sea_boarding_tests.rs"]
+mod boarding_tests;

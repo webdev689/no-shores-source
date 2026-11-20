@@ -375,3 +375,33 @@ test('the Test Ground’s room lays out its stall and nodes, and sends each play
   assert.equal(sea.openFleet(), true);
   assert.equal(sea.furnish(course.stall, course.resources), false, 'a fleet keeps no gear');
 });
+
+test('a sea that keeps characters sails a course only once the keeper has answered, and sends gear at sea', () => {
+  const room = startRoomDoor(compiled);
+  const square = [
+    [100_000, 100_000],
+    [200_000, 100_000],
+    [200_000, 200_000],
+    [100_000, 200_000],
+  ];
+  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 7), true);
+  assert.equal(room.keepCharacters(), true);
+  const [kept, unkept] = [room.join(), room.join()];
+  for (const player of [kept, unkept]) assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
+  room.tick();
+  const ships = () => {
+    const snapshot = readFromRoom(room.snapshot());
+    return snapshot?.kind === 'snapshot' ? snapshot.ships.map((ship) => [ship.player, ship.x, ship.y]) : [];
+  };
+  assert.deepEqual(ships(), [], 'held for the keeper');
+  const character = JSON.parse(room.character(kept) ?? 'null') as { ship_at: [number, number] | null };
+  assert.equal(room.restoreCharacter(kept, JSON.stringify({ ...character, ship_at: [60_000, 40_000] })), true);
+  room.noneKept(unkept);
+  room.tick();
+  assert.deepEqual(ships(), [
+    [kept, 60_000, 40_000],
+    [unkept, 50_000, 50_000],
+  ]);
+  assert.ok(room.gear(kept).length > 0, 'her gear, from the character given back');
+  assert.equal(room.gear(unkept).length, 0, 'none for a character not kept');
+});
