@@ -106,7 +106,9 @@ impl Character {
         }
         for (id, count) in &mut self.story.quests {
             let Some(quest) = written.iter().find(|quest| quest.id == *id) else { continue };
-            if *count < quest.target && quest.objective.counts(feat) {
+            // A quest's steps count in turn: a feat counts only toward the step its count stands at.
+            let (place, done) = quest.step_at(*count);
+            if !done && quest.steps.get(place).is_some_and(|step| step.objective.counts(feat)) {
                 *count += 1;
                 moved = true;
             }
