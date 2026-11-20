@@ -8,7 +8,7 @@ def build(kit):
     return {
         **rocks.pieces(kit, 'granite', name),
         'shore.drift': growth.log(kit, f'{name}.shore.drift'),
-        'tree.a': trees.broadleaf(kit, f'{name}.tree.a', trunk_share=0.3, limbs=5, masses=8),
+        'tree.a': trees.oak(kit, f'{name}.tree.a'),
         'tree.b': trees.broadleaf(kit, f'{name}.tree.b', trunk_share=0.55, limbs=3, masses=6, part='leafAlt',
                                   bark='wood', slender=0.55),
         'tree.c': trees.scots_pine(kit, f'{name}.tree.c'),

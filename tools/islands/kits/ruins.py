@@ -81,20 +81,21 @@ def arch(kit, module):
 
 
 def stair(kit, module):
-    """A flight of steps rising toward the north (-y) between low cheek walls, its edges worn."""
+    """A flight of steps whose foot is its front (-y), climbed from the north and rising south, its edges worn, a
+    cheek wall on its west side and the east one fallen to a stub, so the risers and their run show."""
     x, y, z = _size(module)
     steps = 8
     made = []
     for number in range(steps):
         front = -y / 2 + (y - 0.4) * number / steps
-        top = z * (steps - number) / steps
+        top = z * (number + 1) / steps
         made.append(kit.bevelled_box(-x / 2 + 0.4, front, -0.2, x / 2 - 0.4, front + (y - 0.4) / steps + 0.02, top,
-                                     bevel=0.04, wear=0.02, seed=f'{module}.{number}', part='stone'))
-    for side in (-1, 1):
-        outline = [(-y / 2, z), (-y / 2, -0.2), (y / 2, -0.2), (y / 2, 0.3)]
-        cheek = kit.extrude_outline(outline, side * (x / 2 - 0.4), side * x / 2, 'yz',
-                                    part='stoneAlt', smooth=None)
-        made.append(cheek)
+                                     bevel=0.04, wear=0.02, seed=f'{module}.{number}',
+                                     part='stoneAlt' if number % 2 else 'stone'))
+    outline = [(-y / 2, 0.6), (-y / 2, -0.2), (y / 2, -0.2), (y / 2, z)]
+    made.append(kit.extrude_outline(outline, -x / 2, -x / 2 + 0.4, 'yz', part='stoneAlt', smooth=None))
+    made.append(kit.bevelled_box(x / 2 - 0.4, -y / 2, -0.2, x / 2, -y / 2 + 1.2, 0.55, bevel=0.04, wear=0.03,
+                                 seed=f'{module}.stub', part='stoneAlt'))
     return kit.join(made)
 
 

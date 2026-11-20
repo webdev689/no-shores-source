@@ -1,5 +1,5 @@
-"""The kit's built-up shapes as plain faces, without Blender, as shapes.py's are: arches, rocks, masonry, planks,
-ropes and hanging cloth, with the paths and placements they are laid along.
+"""The kit's built-up shapes as plain faces, without Blender, as shapes.py's are: arches, rocks, masonry, planks
+and ropes, with the paths and placements they are laid along.
 
 Randomness is seeded only: a helper's `seed` (a string), or the call's own numbers when there is none, so the same
 call always makes the same mesh.
@@ -297,38 +297,6 @@ def rope(points, radius=0.02, sides=9, strands=3, lay=None, step=None):
     faces.append(facing(flat(sections[0]), sub(middles[0], middles[1])))
     faces.append(facing(flat(sections[-1]), sub(middles[-1], middles[-2])))
     return faces
-
-
-def drape(x0, x1, top, bottom, y=0.0, folds=3, depth=0.06, thickness=0.01, ragged=0.0, rows=4, seed=None):
-    """Cloth hanging from x0..x1 at z `top` to `bottom` against the plane y, falling in `folds` up to `depth` deep
-    (deeper toward its hem), `thickness` thick, its hem torn by up to `ragged`: a banner, a shroud, a curtain. It
-    fills y..y + thickness + depth. u runs across it along its folds, v up it."""
-    draw = seeded(seed, 'drape', x0, x1, top, bottom, y, folds, depth)
-    columns = max(4, folds * 4)
-    swell = [draw.uniform(0.6, 1.0) for _ in range(folds)]
-    hem = [draw.uniform(0, ragged) for _ in range(columns + 1)]
-    sheets = {'front': [], 'back': []}
-    for row in range(rows + 1):
-        down = row / rows
-        for name, lift in (('front', thickness), ('back', 0.0)):
-            line = []
-            for column in range(columns + 1):
-                across = column / columns
-                fold = swell[min(int(across * folds), folds - 1)] * (0.5 - 0.5 * math.cos(TAU * folds * across))
-                height = top - (top - bottom) * down + (hem[column] if row == rows else 0.0)
-                line.append((x0 + (x1 - x0) * across, y + lift + depth * fold * (0.55 + 0.45 * down), height))
-            sheets[name].append(line)
-    faces = []
-    for name, outward in (('front', (0.0, 1.0, 0.0)), ('back', (0.0, -1.0, 0.0))):
-        for face in sweep(sheets[name], closed=False):
-            faces.append(facing([(point, (uv[1], -uv[0])) for point, uv in face], outward))
-    front, back = sheets['front'], sheets['back']
-    rims = [([front[0][k], front[0][k + 1], back[0][k + 1], back[0][k]], (0.0, 0.0, 1.0)) for k in range(columns)]
-    rims += [([front[-1][k], front[-1][k + 1], back[-1][k + 1], back[-1][k]], (0.0, 0.0, -1.0))
-             for k in range(columns)]
-    for edge, outward in ((0, (-1.0, 0.0, 0.0)), (-1, (1.0, 0.0, 0.0))):
-        rims += [([front[r][edge], front[r + 1][edge], back[r + 1][edge], back[r][edge]], outward) for r in range(rows)]
-    return faces + [facing(flat(ring), outward) for ring, outward in rims]
 
 
 def sag_path(start, end, sag, steps=8):
