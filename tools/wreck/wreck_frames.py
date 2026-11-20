@@ -33,3 +33,15 @@ class Frames:
         corners = [self.on(ship, x, y) for x in (x0, x1) for y in (y0, y1)]
         return (min(point.x for point in corners), min(point.y for point in corners),
                 max(point.x for point in corners), max(point.y for point in corners))
+
+
+def wreck_frames(ground=None):
+    """The frames of the wreck as tools/wreck/wreck_scene.py lays its ships, for laying things after it is built."""
+    import os
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'ships'))
+    from build_ship import HULLS
+    from ship_hull import Hull
+    from wreck_scene import BOW, FRIGATE, SLOOP, STERN
+    hulls = {'brig': Hull(HULLS['brig']), 'frigate': Hull(HULLS['frigate'])}
+    return Frames({'stern': STERN, 'bow': BOW, 'frigate': FRIGATE, 'sloop': SLOOP}, hulls, ground)

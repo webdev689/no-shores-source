@@ -14,7 +14,7 @@ WAKE = ((-14.8, 0.6), 84.0)
 PATH = (
     (-14.8, 0.6), (-12.2, 3.2), (-8.0, 3.3), (-4.4, 3.0), (0.0, 2.7), (3.9, 2.4), (6.6, 1.6), (8.4, 0.2),
     (12.3, -8.6), (12.3, -13.0), (3.6, -13.0), (0.6, -15.5), (0.1, -20.6), (0.1, -24.4), (0.1, -26.4), (0.1, -31.0),
-    (0.0, -35.4),
+    (0.0, -33.4),
 )
 
 # Each zone: its name; the box (west, south, east, north) that, entered, reaches it; its checkpoint; and its wave.
@@ -25,7 +25,7 @@ ZONES = (
      'wave': ((8, 2, (-8.6, 3.5), 270), (14, 1, (-7.2, 3.0), 90), (9, 1, (-6.0, 3.6), 270))},
     {'name': 'the torn deck over the gap', 'area': (-5.1, 0.4, 3.2, 5.4), 'checkpoint': (-3.0, 2.95),
      'wave': ((15, 1, (-0.6, 2.75), 270), (16, 1, (1.8, 2.5), 270))},
-    {'name': "the Brig's fore deck", 'area': (3.2, -2.6, 18.5, 6.5), 'checkpoint': (5.2, 2.4),
+    {'name': "the Brig's fore deck", 'area': (3.2, -2.6, 18.5, 6.5), 'checkpoint': (5.6, 1.3),
      'wave': ((7, 1, (8.2, 2.5), 0), (17, 1, (9.0, 0.5), 180), (10, 1, (11.6, 2.2), 270), (13, 1, (7.2, 0.6), 90))},
     {'name': "the Sloop on her beam ends", 'area': (9.6, -27.0, 15.6, -5.5), 'checkpoint': (12.3, -9.4),
      'wave': ((16, 1, (12.3, -15.0), 0), (14, 1, (12.3, -18.6), 0))},
@@ -34,13 +34,13 @@ ZONES = (
                                                                                                    0))},
     {'name': "the Frigate's gun deck", 'area': (-4.6, -30.6, 4.6, -21.0), 'checkpoint': (0.1, -25.2),
      'wave': ((10, 1, (-2.4, -26.8), 90), (12, 1, (2.0, -27.4), 270), (13, 1, (-2.2, -28.8), 90))},
-    {'name': "the Frigate's quarterdeck", 'area': (-5.6, -42.0, 5.6, -30.6), 'checkpoint': (0.1, -31.0),
+    {'name': "the Frigate's quarterdeck", 'area': (-5.6, -42.0, 5.6, -30.6), 'checkpoint': (1.6, -32.9),
      'wave': ()},
 )
 
-# The arena is the last zone; Thule stands at its middle, facing the way in.
+# The arena is the last zone; Thule stands before the wheel, facing the way in.
 ARENA_ZONE = len(ZONES) - 1
-THULE = (0.0, -35.4)
+THULE = (0.0, -33.6)
 
 
 def game(point):

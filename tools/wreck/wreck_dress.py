@@ -9,7 +9,8 @@ import bpy  # noqa: I001 - Blender's own modules load once bpy has
 from mathutils import Vector
 
 from ship_mesh import Piece
-from wreck_pieces import build, deck_section, heap, scatter, seeded, spar
+from wreck_level import PATH, ZONES
+from wreck_pieces import build, crate, deck_section, heap, scatter, seeded, spar
 from wreck_ships import SEA_Z
 
 # How high a heap is piled over the deck it stands on: past what a body climbs or jumps.
@@ -34,23 +35,29 @@ def lay_heap(piece, frames, ship, box, rng, height=HEAP_M):
 # The heaps that close the way on from each zone, by the zone they close: the ship's frame they stand in and their box
 # there. The last is the gate into the arena.
 GATES = (
-    ('brig', (-10.0, 0.5, -8.9, 4.3)),
+    ('brig', (-10.0, 0.5, -8.9, 4.9)),
     ('wreck', (-5.0, 0.2, -3.6, 6.6)),
-    ('wreck', (3.2, 0.2, 4.8, 7.0)),
+    ('wreck', (3.2, -2.6, 4.8, 7.0)),
     ('brig', (3.8, -4.6, 8.0, -3.0)),
     ('frigate', (4.4, -5.6, 8.2, -4.2)),
     ('frigate', (-2.8, -3.6, -1.7, 3.6)),
-    ('frigate', (-13.0, -2.6, -11.6, 2.6)),
+    ('frigate', (-13.0, -5.4, -10.8, 5.4)),
 )
 
 # Wreckage that closes for good the ways round a zone: the Frigate's gangways either side of her burnt-out gun deck,
-# whose only way aft is down through it.
+# whose only way aft is down through it, heaped over her rails too.
 BLOCKERS = (
-    ('frigate', (-2.8, 3.4, -1.8, 5.3)),
-    ('frigate', (-2.8, -5.3, -1.8, -3.4)),
-    ('frigate', (-10.7, 3.4, -9.5, 5.3)),
-    ('frigate', (-10.7, -5.3, -9.5, -3.4)),
+    ('frigate', (-2.8, 3.4, -1.8, 5.9)),
+    ('frigate', (-2.8, -5.9, -1.8, -3.4)),
+    ('frigate', (-10.7, 3.4, -9.5, 5.9)),
+    ('frigate', (-10.7, -5.9, -9.5, -3.4)),
 )
+
+
+def gate_boxes(frames):
+    """Each gate's box in the wreck's frame (west, south, east, north), by the zone it closes: the ground its heap
+    is piled over, which the game holds closed until the zone's wave falls."""
+    return [box if ship == 'wreck' else frames.area(ship, *box) for ship, box in GATES]
 
 
 def gates(frames, seed):
@@ -65,10 +72,25 @@ def gates(frames, seed):
         else:
             lay_heap(piece, frames, ship, box, rng)
         group = collection(f'Gate.{zone}')
-        item = build(piece, f'Gate.{zone}.Heap', group)
-        item['box'] = list(box) if ship == 'wreck' else list(frames.area(ship, *box))
+        build(piece, f'Gate.{zone}.Heap', group)
         made.append(group)
     return made
+
+
+def core(piece, frames, ship, box, rng):
+    """Crates stacked three high over all of `box` of `ship`'s frame, under a heap's loose wreckage, higher than her
+    rail: no gap through it a body could find between its planks, nor a way along her rail over it."""
+    x0, y0, x1, y1 = box
+    size = 0.75
+    across = max(1, round((x1 - x0) / size))
+    along = max(1, round((y1 - y0) / size))
+    for column in range(across):
+        for row in range(along):
+            x = x0 + (column + 0.5) * (x1 - x0) / across
+            y = y0 + (row + 0.5) * (y1 - y0) / along
+            base = frames.on(ship, x, y)
+            for level in range(3):
+                crate(piece, base + Vector((0, 0, level * size)), size, rng.uniform(-0.15, 0.15), rng)
 
 
 def blockers(frames, seed):
@@ -76,8 +98,11 @@ def blockers(frames, seed):
     group = collection('Blockers')
     piece = Piece()
     for index, (ship, box) in enumerate(BLOCKERS):
-        lay_heap(piece, frames, ship, box, seeded(seed + index), height=HEAP_M + 0.3)
-    build(piece, 'Blockers.Heaps', group)
+        rng = seeded(seed + index)
+        core(piece, frames, ship, box, rng)
+        lay_heap(piece, frames, ship, box, rng, height=HEAP_M + 0.3)
+    # No body stands on them, or climbs their planks over them.
+    build(piece, 'Blockers.Heaps', group, wall=True)
     return group
 
 
@@ -127,8 +152,25 @@ STREWN = (
 )
 
 
+# Strewn wreckage keeps this far off the way a body takes, its checkpoints and where its foes stand, metres.
+CLEAR_OF_WAY_M = 1.3
+
+
+def in_the_way(x, y):
+    """Whether (x, y) of the wreck's frame lies on the way through it, or by a checkpoint or a foe."""
+    spots = [zone['checkpoint'] for zone in ZONES] + [at for zone in ZONES for _, _, at, _ in zone['wave']]
+    if any(math.hypot(x - spot[0], y - spot[1]) < CLEAR_OF_WAY_M for spot in spots):
+        return True
+    for (ax, ay), (bx, by) in zip(PATH, PATH[1:]):
+        length = math.hypot(bx - ax, by - ay) or 1e-9
+        share = max(0.0, min(1.0, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / length ** 2))
+        if math.hypot(x - (ax + share * (bx - ax)), y - (ay + share * (by - ay))) < CLEAR_OF_WAY_M:
+            return True
+    return False
+
+
 def wreckage(frames, seed):
-    """Loose wreckage on the decks, and flotsam on the sea all round."""
+    """Loose wreckage on the decks, kept off the way through, and flotsam on the sea all round."""
     group = collection('Wreckage')
     piece = Piece()
     for index, (ship, box, count) in enumerate(STREWN):
@@ -137,6 +179,8 @@ def wreckage(frames, seed):
         for _ in range(count):
             x, y = rng.uniform(x0, x1), rng.uniform(y0, y1)
             at = frames.on(ship, x, y)
+            if in_the_way(at.x, at.y):
+                continue
             scatter(piece, (at.x - 0.1, at.y - 0.1, at.x + 0.1, at.y + 0.1), at.z, 1, rng)
     build(piece, 'Wreckage.Decks', group)
     afloat = Piece()

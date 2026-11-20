@@ -2,7 +2,8 @@
 movement stands a body on (server/roomDoor.ts CourseBlock), as tools/ships/deck.py measures a ship's deck.
 
 A face is ground where it looks up and is hull or deck, or belongs to an object marked `walk` (a fallen mast laid as a
-way across); a spar or gun in the room a body takes over the ground stands as a wall; sails and lines are neither.
+way across), and never on an object marked `wall` (a heap no body climbs); a spar or gun in the room a body takes over
+the ground stands as a wall; sails and lines are neither.
 """
 import math
 
@@ -23,39 +24,59 @@ LOWEST_M = 0.5
 # The room a body takes over its feet: what is solid in it, from just above the ground to over a head, is a wall.
 CLEAR_FROM_M = 0.25
 CLEAR_TO_M = 1.8
-# A wall stands this high over the ground under it: past what a jump reaches.
-WALL_M = 1.9
+# A wall stands this high over the ground under it: past what a jump reaches from it, from a quarterdeck beside it
+# (1.2 m higher), or from the cap of a rail beside it (1.8 m).
+WALL_M = 3.2
 # Heights are kept to this, metres, so gentle slopes make few blocks.
 HEIGHT_STEP = 0.05
 
 
-def faces_of(items):
-    """Every triangle of the objects, as world points, with whether it is ground and whether it is solid."""
+def faces_of(items, piece=None):
+    """Every triangle of the objects, as world points, with whether it is ground and whether it is solid. A face is
+    walked where its object is marked `walk` or its own `walk` attribute says so, and only solid where `wall` does;
+    with `piece`, only faces of that piece (their `piece` attribute) count."""
     points, triangles, ground, solid = [], [], [], []
     for item in items:
         mesh = item.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh()
         mesh.calc_loop_triangles()
-        walk = bool(item.get('walk'))
+        walk_all = bool(item.get('walk'))
+        wall_all = bool(item.get('wall'))
+        walks = attribute(mesh, 'walk')
+        walls = attribute(mesh, 'wall')
+        pieces = attribute(mesh, 'piece')
         names = [slot.material.name.split('.')[0] if slot.material else 'spar' for slot in item.material_slots]
         start = len(points)
         points.extend(item.matrix_world @ vertex.co for vertex in mesh.vertices)
         for triangle in mesh.loop_triangles:
+            if piece is not None and pieces is not None and pieces[triangle.polygon_index] != piece:
+                continue
             part = names[min(triangle.material_index, len(names) - 1)] if names else 'spar'
             corners = [points[start + index] for index in triangle.vertices]
             normal = (corners[1] - corners[0]).cross(corners[2] - corners[0])
             up = normal.normalized().z if normal.length > 1e-12 else 0.0
+            # A face's own mark, where the mesh has them, is the one that counts: a joined mesh keeps its parts'.
+            walk = walks[triangle.polygon_index] if walks is not None else walk_all
+            wall = walls[triangle.polygon_index] if walls is not None else wall_all
             triangles.append(tuple(start + index for index in triangle.vertices))
-            ground.append(up > UPWARD and (part in FLOOR or walk))
-            solid.append(part in SOLID or walk)
+            ground.append(up > UPWARD and (part in FLOOR or walk) and not wall)
+            solid.append(part in SOLID or walk or wall)
         item.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh_clear()
     return points, triangles, ground, solid
 
 
-def measure(items, sea_z, bounds):
+def attribute(mesh, name):
+    """A face attribute's values, or None where the mesh has none."""
+    found = mesh.attributes.get(name)
+    if found is None or found.domain != 'FACE':
+        return None
+    return [entry.value for entry in found.data]
+
+
+def measure(items, sea_z, bounds, piece=None):
     """The grid of heights over `bounds` (west, south, east, north in the model's frame, metres): for each cell, its
     ground's height over the sea, a wall's height where something solid stands in a body's room, or None. Rows run
-    from the north, as the game's grid does (its y is south)."""
-    points, triangles, ground, solid = faces_of(items)
+    from the north, as the game's grid does (its y is south). With `piece`, only that piece's faces count."""
+    points, triangles, ground, solid = faces_of(items, piece)
     tree = BVHTree.FromPolygons(points, triangles, all_triangles=True)
     west, south, east, north = bounds
     columns = math.ceil((east - west) / CELL_M)

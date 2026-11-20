@@ -209,7 +209,16 @@ def splinter_rim(collection, near, inward, seed, name):
     for ends in open_edges(collection, near):
         middle = (ends[0] + ends[1]) / 2
         splinters(piece, [ends], inward(middle) + Vector((0, 0, -0.6)), rng, 'deck')
-    return piece.build(name, collection) if piece.faces else None
+    return splintered(piece, name, collection)
+
+
+def splintered(piece, name, collection):
+    """The splinters as one object, solid that no body stands on: their points are no ledge along a break."""
+    if not piece.faces:
+        return None
+    item = piece.build(name, collection)
+    item['wall'] = True
+    return item
 
 
 def splinter_break(collection, point, normal, outward, seed, name):
@@ -223,6 +232,4 @@ def splinter_break(collection, point, normal, outward, seed, name):
             by_part.setdefault(part, []).append(ends)
     for part, edges in by_part.items():
         splinters(piece, edges, outward, rng, part)
-    if piece.faces:
-        return piece.build(name, collection)
-    return None
+    return splintered(piece, name, collection)

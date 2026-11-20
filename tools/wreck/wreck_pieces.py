@@ -172,11 +172,14 @@ def seeded(seed):
     return random.Random(seed)
 
 
-def build(piece, name, collection, walk=False):
-    """The piece as an object in `collection`; `walk` marks it ground a body walks on whatever its part."""
+def build(piece, name, collection, walk=False, wall=False):
+    """The piece as an object in `collection`; `walk` marks it ground a body walks on whatever its part, `wall`
+    solid that no body stands on, however its faces look."""
     if not piece.faces:
         return None
     item = piece.build(name, collection)
     if walk:
         item['walk'] = True
+    if wall:
+        item['wall'] = True
     return item
