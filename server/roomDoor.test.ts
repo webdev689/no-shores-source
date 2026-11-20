@@ -350,7 +350,7 @@ test('a room told to forbid Arts sends gear with no Art worn, so the page shows 
   room.tick();
   const gear = readFromRoom(room.gear(player));
   assert.ok(gear?.kind === 'gear');
-  assert.deepEqual([gear.arts.art, gear.arts.anima], [0, 0]);
+  assert.deepEqual([gear.arts?.art, gear.arts?.anima], [0, 0]);
 });
 
 test('the Test Ground’s room lays out its stall and nodes, and sends each player their own gear when it changes', () => {
