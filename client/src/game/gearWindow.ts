@@ -17,7 +17,6 @@ import {
   type GearHere,
   OPEN_AT,
   type Opening,
-  type Station,
   TABS,
   type Tab,
   STEP_BACK,
@@ -33,7 +32,9 @@ export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
-import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
+import { vaultPage } from './stationPages.ts';
+import { KEEPERS } from './keepers.ts';
+import { isKeeperView, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
@@ -49,13 +50,6 @@ const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: 
   social: { label: 'Social', key: '' },
   guild: { label: 'Guild', key: '', later: 'Your guild will gather here.' },
   settings: { label: 'Settings', key: '' },
-};
-/** Each station's screen's name. */
-const STATIONS: Readonly<Record<Station, string>> = {
-  vault: 'The Vault',
-  armorsmith: 'The Armorsmith',
-  weaponsmith: 'The Weaponsmith',
-  tailor: 'The Tailor',
 };
 /** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
 const BANNER_SCALE = 3;
@@ -77,9 +71,6 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
     ['Right-click / X', 'Details'],
     [DISMANTLE_KEY, 'Hold to dismantle'],
   ],
-  armorsmith: [['Hold', 'Buy']],
-  weaponsmith: [['Hold', 'Buy']],
-  tailor: [['Hold', 'Buy']],
   item: [
     ['Hold', 'Buy a node'],
     ['Click', 'Choose one bought'],
@@ -248,6 +239,7 @@ export function startGearWindow(
     [arts, artSlot] = [false, null];
     shelf = onShelf ?? FIRST_SHELF;
     if (opening) heard = here()?.gear?.answered ?? null;
+    npcOpened(wanted);
     play(opening ? 'open' : 'tab');
     screen.hidden = scrim.hidden = false;
     setGearScreenOpen(true);
@@ -357,7 +349,7 @@ export function startGearWindow(
 
   function render(): void {
     if (view === null) return;
-    const station = isTab(view) ? null : STATIONS[view];
+    const station = isTab(view) ? null : view === 'vault' ? 'The Vault' : KEEPERS[view].title;
     // The tabs, title and labels change only with the view, so the menu writes nothing while it stands open.
     if (view !== tabbed) {
       tabbed = view;
@@ -497,11 +489,9 @@ export function startGearWindow(
         ? characterPage(context, slot, (chosen) => ((slot = chosen), render()))
         : view === 'inventory'
           ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
-          : view === 'vault'
-            ? vaultPage(context)
-            : view === 'tailor'
-              ? tailorPage(context)
-              : vendorPage(context, view === 'armorsmith' ? 0 : 1);
+          : isKeeperView(view)
+            ? npcPage(context, view, now.forge, redraw)
+            : vaultPage(context);
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;
@@ -514,7 +504,13 @@ export function startGearWindow(
     const opens: readonly Hint[] =
       gear.atMage && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
     const shelfHints = [...opens, ...(SHELF_HINTS[shelf] ?? [])];
-    const hints = shown ? HINTS.item : worn ? ARTS_HINTS : view === 'inventory' ? shelfHints : HINTS[view];
+    const hints = shown
+      ? HINTS.item
+      : worn
+        ? ARTS_HINTS
+        : view === 'inventory'
+          ? shelfHints
+          : (HINTS[view] ?? npcHints(view));
     hinted(hints ?? []);
     actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || worn ? [stepBack] : [close]));
     // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it

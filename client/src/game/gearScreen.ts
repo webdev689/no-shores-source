@@ -3,6 +3,7 @@
 // vendors' wares. The page draws these in the Enhanced Plus kit.
 
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
+import type { KeeperKind } from './keepers.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import {
@@ -22,8 +23,8 @@ import {
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
-/** The screens a social space's counters open: the vault, and each vendor's stall. */
-export type Station = 'vault' | 'armorsmith' | 'weaponsmith' | 'tailor';
+/** The screens a social space's counters open: the vault, and each keeper's (npc/npcScreen.ts). */
+export type Station = KeeperKind;
 /** What the menu shows: a tab, or a station's screen. */
 export type View = Tab | Station;
 /** What a counter or a key opens: a view, and the inventory's shelf to open it at. */

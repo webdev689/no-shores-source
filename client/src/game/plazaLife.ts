@@ -4,6 +4,7 @@
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
 import type { Opening } from './gearScreen.ts';
+import { KEEPERS, KEEPER_KINDS } from './keepers.ts';
 import type { StationInfo } from './nodes.ts';
 import { Townsfolk } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -17,14 +18,14 @@ export interface Offer {
   readonly opens: Opening;
 }
 
-/** What each station that deals with a player offers. */
-const OFFERS: Readonly<Record<string, Offer>> = {
-  mage: { words: 'The Mage: identify your Vestiges', opens: { view: 'inventory' } },
-  vault: { words: 'Your vault', opens: { view: 'vault' } },
-  armorsmith: { words: 'The Armorsmith: armour for Aurem', opens: { view: 'armorsmith' } },
-  weaponsmith: { words: 'The Weaponsmith: weapons for Aurem', opens: { view: 'weaponsmith' } },
-  tailor: { words: 'The Tailor: emblems for Aurem', opens: { view: 'tailor' } },
-};
+/** What each station that deals with a player offers: its keeper's screen, named by its keeper's title. Shape keeps
+ *  no station; his prompt is the plaza's own. */
+const OFFERS: Readonly<Record<string, Offer>> = Object.fromEntries(
+  KEEPER_KINDS.filter((kind) => kind !== 'shape').map((kind) => [
+    kind,
+    { words: KEEPERS[kind].title, opens: { view: kind } },
+  ]),
+);
 
 /** The offer of the station whose counter a player stands at, if one deals with them. */
 export function offerAt(stations: readonly StationInfo[], x: number, y: number): Offer | null {
