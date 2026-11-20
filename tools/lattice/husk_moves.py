@@ -1,4 +1,4 @@
-"""The Husk's own moves for the Sprite Forge: its shambling walk and its lunge, each a pose a frame as the forge's own
+"""The Husk's own moves for the Sprite Forge: its shambling walk, its lunge and its Gore, each a pose a frame as the forge's own
 cast is (casting.py). Registered by `register()` before the forge's `layers.main()` runs. Angles are degrees about each
 joint's rest axes (rig.py `Pose`): an arm or thigh swings forward on -X, a knee bends on +X, an elbow on -X, the trunk
 leans forward on +X; x is the body's left, -y its front."""
@@ -69,7 +69,33 @@ def lunge(frame, view, yaw):
     return p, {'fist': {'L': False, 'R': False}}
 
 
-MOVES = {'husk_walk': (shamble, 8), 'husk_lunge': (lunge, 8)}
+# The Gore's eight frames, each how much further the spine, chest and neck bow, the head's pitch, the arms' trail back
+# and the legs: hunched; the head dropping; bowed until the great crystal points ahead, the arms swept back, held two
+# frames as its tell; the rush; driven through; overreached; recovering.
+GORE = [
+    ((0, 0, 0), (16, 20, 6), 0, {}),
+    ((12, 6, 18), (30, 10, 0), 8, CROUCH),
+    ((20, 12, 28), (40, 0, 0), 14, CROUCH),
+    ((20, 12, 28), (40, 0, 0), 14, CROUCH),
+    ((26, 14, 30), (42, 0, 0), 18, DRIVE),
+    ((30, 16, 30), (46, 0, 0), 20, LUNGE),
+    ((34, 18, 20), (30, 8, 4), -10, LUNGE),
+    ((10, 6, 8), (22, 14, 4), 4, DRIVE),
+]
+
+
+def gore_rush(frame, view, yaw):
+    (spine, chest, neck), head, sweep, legs = GORE[frame]
+    rot = {**HUNCH, **legs, 'head': head}
+    for joint, more in (('spine', spine), ('chest', chest), ('neck', neck)):
+        rot[joint] = (rot[joint][0] + more, *rot[joint][1:])
+    rot['uarm_L'] = (sweep, -10, 0)   # swept back as it bows: a bull's shoulders, not a fighter's
+    rot['uarm_R'] = (sweep, 10, 0)
+    rot['farm_L'] = rot['farm_R'] = (-15, 0, 0)
+    return poses.stance(rot, yaw), {'fist': {'L': False, 'R': False}}
+
+
+MOVES = {'husk_walk': (shamble, 8), 'husk_lunge': (lunge, 8), 'husk_gore': (gore_rush, 8)}
 
 
 def register():

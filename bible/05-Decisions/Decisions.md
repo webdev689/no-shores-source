@@ -125,6 +125,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Mystery Shows in Its Effects, Never Its Cause]]
 - [[The Lattice Are the Ruined Ports' People, Overtaken]]
 - [[The Husk Shambles, Strikes Its Own Way and Wears the Townsfolk's Clothes]]
+- [[The Lattice as Claude Shapes It]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

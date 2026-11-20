@@ -26,3 +26,5 @@ status: in force
 - **Its blows**: an attack of its own, and the lunge.
 - **It wears the townsfolk's clothes**, torn: the clothes of the ports' people it was.
 - **The Lattice's build goes on the same pull request** as the lore.
+
+Claude's calls within it, the Gore among them: [[The Lattice as Claude Shapes It]].
