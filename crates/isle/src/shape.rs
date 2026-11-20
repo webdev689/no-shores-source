@@ -138,6 +138,25 @@ impl Shape {
         self.radius * (1.0 + ripple.sum::<f64>()) * (1.0 - self.bay * self.bayness(bearing) + headland)
     }
 
+    /// Where a ship anchors off the beach: `ANCHORAGE_OFF_M` past the coast on the landing's bearing.
+    #[must_use]
+    pub fn anchorage(&self) -> [f64; 2] {
+        let [x, y] = way(self.landing);
+        let off = self.edge(self.landing) + crate::sites::ANCHORAGE_OFF_M;
+        [x * off, y * off]
+    }
+
+    /// The coast on `count` bearings, `off` metres out past it: the ring a ship keeps outside.
+    #[must_use]
+    pub fn ring(&self, count: u32, off: f64) -> Vec<[f64; 2]> {
+        let point = |nth: u32| {
+            let bearing = f64::from(nth) * TAU / f64::from(count);
+            let [x, y] = way(bearing);
+            [x * (self.edge(bearing) + off), y * (self.edge(bearing) + off)]
+        };
+        (0..count).map(point).collect()
+    }
+
     /// The farthest the coast reaches on any bearing, judged every half degree.
     #[must_use]
     pub fn reach(&self) -> f64 {

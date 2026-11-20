@@ -18,6 +18,7 @@ pub mod flotsam;
 mod foes;
 mod garrison;
 pub mod harbour;
+pub mod island;
 mod judging;
 pub mod patrol;
 mod perks;
@@ -136,6 +137,8 @@ pub struct Room {
     pub(crate) patrol: Option<patrol::Patrol>,
     /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
     pub day: u64,
+    /// A sea island's wrecks and door, in an island's room (`island.rs`).
+    pub(crate) isle: Option<island::Isle>,
 }
 
 impl Room {
@@ -197,6 +200,7 @@ impl Room {
             difficulty: gear::Difficulty::Normal,
             patrol: None,
             day: 0,
+            isle: None,
         }
     }
 

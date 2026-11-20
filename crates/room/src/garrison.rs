@@ -39,10 +39,10 @@ const SPREAD: f64 = 2.5;
 
 /// A group as the seed draws it: its foes by type and rank, the first standing in its middle when it leads, and
 /// whether its post is the one farthest from the spawns.
-struct Group {
-    members: Vec<(u8, Rank)>,
-    leads: bool,
-    farthest: bool,
+pub(crate) struct Group {
+    pub members: Vec<(u8, Rank)>,
+    pub leads: bool,
+    pub farthest: bool,
 }
 
 /// One of a garrison's groups at its post: where the post is, each foe's type, rank, place and facing, and its level
@@ -60,7 +60,7 @@ pub(crate) struct Post {
 /// A garrison foe's level, drawn evenly from its island's band (0 with none), and its shield's element if it stands
 /// with one, as `gear::element::Shield::rolled` draws for any foe: one in five, of an element drawn evenly. Each is the
 /// `nth` foe's draw from the node's seed, apart from every other draw of the garrison.
-fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>) -> (u8, Option<gear::Element>) {
+pub(crate) fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>) -> (u8, Option<gear::Element>) {
     let dice = Dice { seed, tick: 0, player: nth };
     let level = levels.map_or(0, |(low, high)| {
         let band = usize::from(high.saturating_sub(low)) + 1;
@@ -97,12 +97,12 @@ pub(crate) fn node_seed(id: &str) -> u64 {
 }
 
 /// The stream a garrison is drawn from: the room's seed folded to the stream's 32 bits.
-fn draws_of(seed: u64) -> Mulberry32 {
+pub(crate) fn draws_of(seed: u64) -> Mulberry32 {
     Mulberry32::new((seed ^ (seed >> 32)) as u32)
 }
 
 /// An index into `count` things, drawn.
-fn index(draws: &mut Mulberry32, count: usize) -> usize {
+pub(crate) fn index(draws: &mut Mulberry32, count: usize) -> usize {
     ((draws.draw() * count as f64) as usize).min(count.saturating_sub(1))
 }
 
@@ -282,7 +282,13 @@ impl Room {
     /// A group's post at a point, each foe placed on the navmesh: a leader in the middle facing the nearest spawn, the
     /// rest round it facing outward. None when the mesh does not reach the point, or a place falls outside the section
     /// or within SPAWN_CLEAR of a spawn.
-    fn post_at(&self, group: &Group, (x, y): (f64, f64), section: &Section, draws: &mut Mulberry32) -> Option<Post> {
+    pub(crate) fn post_at(
+        &self,
+        group: &Group,
+        (x, y): (f64, f64),
+        section: &Section,
+        draws: &mut Mulberry32,
+    ) -> Option<Post> {
         let at = self.nav.nearest_point([x, y, self.floor.height_at(x, y)])?;
         let round = &group.members[usize::from(group.leads)..];
         let start = draws.draw() * TAU;
@@ -312,7 +318,7 @@ impl Room {
 
     /// Stands every foe of a post's group at its place, idle, facing as it was posted, leashed to it, at its level
     /// raised by the seas and with its shield whole, if it has one.
-    fn stand_post(&mut self, post: usize) {
+    pub(crate) fn stand_post(&mut self, post: usize) {
         let (members, girds) = (self.garrison[post].members.clone(), self.garrison[post].girds.clone());
         let standing = members
             .iter()

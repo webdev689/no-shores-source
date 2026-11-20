@@ -91,7 +91,7 @@ fn a_player_whose_ship_goes_down_washes_up_at_the_nearest_port_city_her_hurts_a_
         sea.tick();
         washed = washed.or_else(|| told(&sea, player, WASHED_UP));
     }
-    assert_eq!(washed, Some(vec![WASHED_UP, washed.as_ref().unwrap()[1], 0.0, 1.0]), "at the first port, sunk");
+    assert_eq!(washed, Some(vec![WASHED_UP, washed.as_ref().unwrap()[1], 0.0, 1.0, 0.0]), "at the first port, sunk");
     let ship = sea.ships().find(|(each, _)| *each == player).unwrap().1;
     assert_eq!((ship.x, ship.y, ship.pace), (60_000.0, 50_000.0, 0), "moored at its roadstead");
     assert_eq!(sea.kept(player), Some((SUNK_KEPT, 0.0)));
@@ -221,7 +221,7 @@ fn boarders_all_beaten_on_her_deck_wash_up_with_their_ships_hurts_and_she_is_scu
     assert!(!sea.on_deck(player) && !sea.fights.fighting(player));
     assert_eq!(
         told(&sea, player, WASHED_UP).map(|numbers| numbers[2..].to_vec()),
-        Some(vec![0.0, 0.0]),
+        Some(vec![0.0, 0.0, 0.0]),
         "beaten, not sunk"
     );
     let (hurts, _) = sea.kept(player).unwrap();

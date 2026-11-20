@@ -32,6 +32,12 @@ impl Charted {
         Charted { waters, bands, lanes }
     }
 
+    /// How far a point of sea lies from the nearest coast, metres; 0 on land.
+    #[must_use]
+    pub fn clearance(&self, at: [f64; 2]) -> f64 {
+        self.waters.clearance(at)
+    }
+
     /// The water at a point of sea; none on land.
     #[must_use]
     pub fn water(&self, at: [f64; 2]) -> Option<(world::waters::Water, Option<(u8, u8)>)> {
@@ -40,10 +46,11 @@ impl Charted {
     }
 }
 
-/// The chart a tick reads: the coasts the sea judges courses by, and its waters and lanes.
+/// The chart a tick reads: the coasts the sea judges courses by, its waters and lanes, and its islands' coasts.
 pub(crate) struct SeaChart<'sea> {
     pub coasts: &'sea [Coast],
     pub charted: &'sea Charted,
+    pub islands: &'sea [&'sea Coast],
 }
 
 impl Chart for SeaChart<'_> {
@@ -52,7 +59,14 @@ impl Chart for SeaChart<'_> {
         let is_home = |at: [f64; 2]| self.water(at).is_some_and(|water| water.holder == Holder::Home);
         let home = is_home(to) && !is_home(from);
         match [whole(&from), whole(&to)] {
-            [Some(from), Some(to)] => !home && !on_land(self.coasts, to) && !leg_meets_land(self.coasts, from, to),
+            [Some(from), Some(to)] => {
+                let islands = self.islands.iter().copied();
+                !home
+                    && !on_land(self.coasts, to)
+                    && !leg_meets_land(self.coasts, from, to)
+                    && !on_land(islands.clone(), to)
+                    && !leg_meets_land(islands, from, to)
+            }
             _ => false,
         }
     }

@@ -33,6 +33,10 @@ pub enum Asked {
     Gather {
         node: u8,
     },
+    /// Scavenges a sea island's wreck by its place in the island's list.
+    Scavenge {
+        wreck: u8,
+    },
     Grant(Grant),
     /// Wears an Art, or sets a fragment in a slot of one's Core.
     Art(gear::arts::ArtAsk),
@@ -211,6 +215,7 @@ impl Room {
                 }
             }
             Asked::Gather { node } => self.gather(player, node),
+            Asked::Scavenge { wreck } => self.scavenge(player, wreck),
             Asked::Grant(grant) if self.section.is_none() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),

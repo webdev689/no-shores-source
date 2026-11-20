@@ -110,11 +110,17 @@ pub struct Plan {
     pub ring: Vec<[f64; 2]>,
 }
 
-/// How far the island's coast reaches from its middle at most, metres, from its seed alone: what the sea judges a
-/// ship against.
+/// An island's shape from its seed alone, its hill as high as any climate's: its coast, reach and anchorage, which
+/// no climate changes, for the sea to judge ships by.
+#[must_use]
+pub fn shape_of(seed: u64) -> Shape {
+    Shape::new(seed, Kind::of(seed), 1.0)
+}
+
+/// How far the island's coast reaches from its middle at most, metres.
 #[must_use]
 pub fn reach_of(seed: u64) -> f64 {
-    Shape::new(seed, Kind::of(seed), 1.0).reach()
+    shape_of(seed).reach()
 }
 
 /// How far each way of the island's middle its ground is laid, metres: a whole number of cells.

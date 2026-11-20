@@ -156,8 +156,9 @@ impl Harbour {
     }
 }
 
-/// A player told they washed up: the code, the sea's tick, the port by its number among the port cities, and whether
-/// their ship went down (1) or they were beaten aboard her enemy (0).
+/// A player told they washed up: the code, the sea's tick, the port by its number among the port cities (-1 at an
+/// island), whether their ship went down (1) or they were beaten aboard her enemy (0), and the island's number where
+/// they washed up at one they found (0 at a port).
 pub const WASHED_UP: f64 = 20.0;
 /// A player told that someone joined their fight: the code, the tick, the player's number (0 for a hostile ship),
 /// and a hostile ship's faction and rank (0 for a player).

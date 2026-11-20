@@ -65,15 +65,25 @@ impl Sea {
         }
     }
 
-    /// A player washes up at the port city nearest `at`: their ship moored at its roadstead at rest, a sunk one with
-    /// `SUNK_KEPT`, and they are told where and why. With no port city known, their ship lies where it went down.
+    /// A player washes up at the port city nearest `at`, or the nearest island they have found that still stands where
+    /// that is nearer: their ship at rest at its roadstead or its anchorage, a sunk one with `SUNK_KEPT` (only a port
+    /// city repairs), and they are told where and why. With neither known, their ship lies where it went down.
     pub(crate) fn wash_up(&mut self, player: PlayerId, at: [f64; 2], sunk: bool) {
-        let port = self.harbour.harbours.nearest(at);
+        let off = |point: [f64; 2]| libm::hypot(point[0] - at[0], point[1] - at[1]);
+        let mut port = self.harbour.harbours.nearest(at);
+        let roadstead = port.map(|port| self.harbour.harbours.ports[port].1);
+        let mut island = self.nearest_found(player, at);
+        match (roadstead, island) {
+            (Some(roadstead), Some((_, anchorage))) if off(anchorage) < off(roadstead) => port = None,
+            (Some(_), Some(_)) => island = None,
+            _ => {}
+        }
+        let shore = roadstead.filter(|_| port.is_some()).or(island.map(|(_, anchorage)| anchorage));
         let Some(berth) = self.berths.get_mut(&player) else { return };
         if sunk {
             keep(berth, &mut self.harbour.characters, player, SUNK_KEPT);
         }
-        let moored = in_frame(port.map_or(at, |port| self.harbour.harbours.ports[port].1));
+        let moored = in_frame(shore.unwrap_or(at));
         self.harbour.changed.insert(player);
         if let Some(sailing) = berth.sailing.as_mut() {
             sailing.ship = Ship { x: moored[0], y: moored[1], heading: sailing.ship.heading, pace: 0, rate: 0 };
@@ -81,7 +91,8 @@ impl Sea {
         }
         self.aboard.remove(&player);
         let port = port.map_or(-1.0, |port| port as f64);
-        self.harbour.told.push((player, vec![WASHED_UP, self.clock as f64, port, f64::from(u8::from(sunk))]));
+        let island = island.map_or(0.0, |(id, _)| f64::from(id));
+        self.harbour.told.push((player, vec![WASHED_UP, self.clock as f64, port, f64::from(u8::from(sunk)), island]));
     }
 
     /// The player asks for their ship's repair: at sea, out of a fight, lying at rest within reach of a port city's

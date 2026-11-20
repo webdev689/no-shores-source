@@ -30,6 +30,8 @@ pub enum Purpose {
     AmmoBox = 11,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
     Patrol = 64,
+    /// What a sea island's wreck gives the player who scavenges it (what is drawn added to the purpose's number).
+    Wreck = 96,
 }
 
 /// One player's dice for one tick of one room.

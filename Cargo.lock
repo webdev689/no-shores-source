@@ -200,6 +200,7 @@ dependencies = [
  "combat",
  "foes",
  "gear",
+ "isle",
  "land",
  "libm",
  "movement",

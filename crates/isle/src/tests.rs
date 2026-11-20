@@ -48,7 +48,7 @@ fn an_island_is_the_same_bits_on_every_machine() {
     assert_eq!(found, GOLDEN, "the islands' bits moved: {found:?}");
 }
 
-const GOLDEN: [u64; 3] = [8_616_181_142_366_350_806, 6_755_526_833_477_609_464, 7_718_992_339_083_215_559];
+const GOLDEN: [u64; 3] = [8_616_181_142_366_350_806, 17_147_699_156_600_943_984, 6_440_265_580_338_448_352];
 
 #[test]
 fn seeds_and_climates_make_different_islands() {
@@ -97,6 +97,7 @@ fn a_player_lands_on_the_beach_from_an_anchorage_in_open_water() {
             let off = (anchorage[0] * anchorage[0] + anchorage[1] * anchorage[1]).sqrt();
             assert!((off - shape.edge(shape.landing) - ANCHORAGE_OFF_M).abs() < 1e-6);
             assert!(shape.height(anchorage, 1.0) < -2.0, "{seed} {climate}: the anchorage is shallow");
+            assert_eq!(crate::shape_of(seed).anchorage(), anchorage, "the sea anchors where the island says");
             for spawn in &plan.sites.spawns {
                 let ground = plan.ground.height_at(spawn[0], spawn[1]);
                 assert!((0.5..3.0).contains(&ground), "{seed} {climate}: a spawn {ground} m up");

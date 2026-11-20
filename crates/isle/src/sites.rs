@@ -165,11 +165,13 @@ impl Sites {
         let door = door(shape, cliffs, kind, &mut draws, landmark.map(|(point, _)| point));
         let spawns = spawns(shape, cliffs);
         let facing = (shape.landing + PI).rem_euclid(TAU);
-        let anchorage = at(shape.landing, shape.edge(shape.landing) + ANCHORAGE_OFF_M);
-        let camp = (kind != Kind::Cove).then(|| {
-            let bearing = shape.landing + draws.between(-0.5, 0.5);
-            let point = inland_to(shape, cliffs, bearing, 4.0);
-            let point = [point[0] * 0.92, point[1] * 0.92];
+        let anchorage = shape.anchorage();
+        // The guards camp by what they guard, so the room's one baked square holds every post.
+        let camp = landmark.map(|(point, _)| {
+            let toward = bearing_of([-point[0], -point[1]])
+                + draws.between(1.0, 2.2) * if draws.unit() < 0.5 { -1.0 } else { 1.0 };
+            let [x, y] = way(toward);
+            let point = [point[0] + x * 28.0, point[1] + y * 28.0];
             let level = shape.height(point, cliffs);
             shape.pads.push(Pad { at: point, radius: 7.0, level, ease: 6.0 });
             point
@@ -217,9 +219,6 @@ impl Sites {
     /// The section's ring: the coast on 64 bearings, out into the shallows.
     #[must_use]
     pub fn ring(shape: &Shape) -> Vec<[f64; 2]> {
-        (0..64)
-            .map(|nth| f64::from(nth) * TAU / 64.0)
-            .map(|bearing| at(bearing, shape.edge(bearing) + SHALLOWS_M))
-            .collect()
+        shape.ring(64, SHALLOWS_M)
     }
 }
