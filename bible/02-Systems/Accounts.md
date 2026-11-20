@@ -111,7 +111,7 @@ they play in holds it while they are there.
 - **A run keeps to its company.** A run's room ([[Activities]]) gives a character to the first to come, then only
   to one it let in before or a companion of someone it let in, for as long as it lives: one of their company's
   members (`companions(account, room)`, longest there first, or the player alone), or one the run was found for with
-  them by Find a Company (`found_runs`, kept a day). A group found is no company, and lets its members in together
+  them by Find a Company (`found_runs`, which admits them for a day after it was found). A group found is no company, and lets its members in together
   to that one run alone. Any other is let go untouched, and the player sent away saying "This run is another
   company's.".
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
@@ -178,10 +178,11 @@ never the Abyss Dungeon of the week, whose company forms it.
 - **One search an account.** A second search, in another tab, replaces the first, which is closed with 4003 and
   "You are finding a company in another tab."; of two looked up at once, the newer socket stays. While an account's run is being started, a second search of theirs
   is closed with those words, so no account is in two groups. Closing the socket leaves the queue.
-- **A run found** is named `<base>--run-<instance>` and kept for those found (`found_runs`, kept a day), so its room
-  lets them in together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their
-  socket closed. The finder judges no gate and keeps no clock: the room is the authority, and the page offers Find a
-  Company only where the gate is open.
+- **A run found** is named `<base>--run-<instance>` and kept for those found (`found_runs`: it admits them for a day
+  after it was found, and rows older than that are cleared as later runs are found), so its room lets them in
+  together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their socket closed.
+  The finder judges no gate and keeps no clock: the room is the authority, and the page offers Find a Company only
+  where the gate is open.
 - **The page's side** (`findCompany`): it opens `AccountLink.finderAt(base)`, the accounts' own address by `ws://`
   or `wss://`, sends the session's token once open, and takes only a run of the base it asked for. Offline, or with
   no session, it offers none.

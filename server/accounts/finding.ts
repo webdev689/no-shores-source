@@ -8,6 +8,7 @@
 
 import { RUN_MOST } from '../roomNames.ts';
 import { liveAccount } from './characters.ts';
+import { FOUND_KEPT_MS } from './companies.ts';
 import type { Db } from './database.ts';
 import { TOKEN, TOKEN_WAIT_MS } from '../keeping.ts';
 
@@ -233,9 +234,6 @@ export class Finder {
     held?.socket.close(code, reason);
   }
 }
-
-/** How long the accounts keep whom a run was found for: a day, far past any run. */
-export const FOUND_KEPT_MS = 24 * 60 * 60_000;
 
 /** Keeps that `run` was found for `accounts`, so its room lets them in together, forgetting runs found more than
  *  FOUND_KEPT_MS ago; false if it could not be kept. */

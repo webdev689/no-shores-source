@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { runAsk, runInstance } from '../roomNames.ts';
 import { accounts } from './accountsForTests.ts';
 import { characters } from './characters.ts';
-import { companionsOf } from './companies.ts';
+import { FOUND_KEPT_MS, companionsOf } from './companies.ts';
 import {
   FINDING_MOST,
   Finder,
@@ -186,7 +186,7 @@ test('a seeker is their session’s account, the level their room last kept, and
 
 test('four seekers of a band are sent into one run, which their room lets them into together', async () => {
   const names = ['Ada', 'Ben', 'Cal', 'Dee'];
-  const { tokens, ids, finderOf, database } = await world(names);
+  const { made, tokens, ids, finderOf, database } = await world(names);
   const finder = finderOf('node-krakens-grotto');
   const all = [];
   for (const name of names) all.push(await seeking(finder, tokens[name] ?? ''));
@@ -195,7 +195,12 @@ test('four seekers of a band are sent into one run, which their room lets them i
     assert.deepEqual(socket.sent, ['{"run":"node-krakens-grotto--run-k3j4h5g6"}']);
     assert.deepEqual(socket.closed, [1000, 'found']);
   }
-  const companions = await companionsOf(database, ids['Ben'] ?? '', 'node-krakens-grotto--run-k3j4h5g6');
+  const companions = await companionsOf(
+    database,
+    ids['Ben'] ?? '',
+    'node-krakens-grotto--run-k3j4h5g6',
+    made.clock.now,
+  );
   assert.deepEqual(companions.sort(), Object.values(ids).sort());
   assert.deepEqual([finder.waiting, finder.open], [0, 0]);
 });
@@ -294,4 +299,13 @@ test('of two searches of one account looked up at once, the newer socket is kept
   await finder.heard(second, tokens['Ada'] ?? '');
   await asked;
   assert.deepEqual([older.closed, newer.closed], [[4003, 'You are finding a company in another tab.'], []]);
+});
+
+test('whom a run was found for admits them for a day after it was found, and no one after', async () => {
+  const { ids, database, made } = await world(['Ada', 'Ben']);
+  const [ada, ben] = [ids['Ada'] ?? '', ids['Ben'] ?? ''];
+  const run = 'node-krakens-grotto--run-k3j4h5g6';
+  assert.equal(await foundRun(database, run, [ada, ben], made.clock.now), true);
+  assert.deepEqual(await companionsOf(database, ada, run, made.clock.now + FOUND_KEPT_MS), [ada, ben]);
+  assert.deepEqual(await companionsOf(database, ada, run, made.clock.now + FOUND_KEPT_MS + 1), [ada], 'alone');
 });

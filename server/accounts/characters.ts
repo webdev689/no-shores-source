@@ -65,7 +65,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
   return {
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */
-    companions: (account, room) => companionsOf(database, account, room),
+    companions: (account, room) => companionsOf(database, account, room, now()),
     /** Notes that a session's player is in a room that keeps no character, or with none that they left it: their
      *  account, or null when the token is no live session. */
     async present(token, room) {

@@ -36,16 +36,20 @@ export async function companyOf(
   return { ...company, members: results.map((row) => row.account_id) };
 }
 
-/** Those a player may share `room` with: their company's members, longest there first (or the player alone), then
- *  those `room` was found for with them (`finding.ts`). */
-export async function companionsOf(database: Db, account: string, room: string): Promise<string[]> {
+/** How long whom a run was found for admits them (`finding.ts`): a day, far past any run. */
+export const FOUND_KEPT_MS = 24 * 60 * 60_000;
+
+/** Those a player may share `room` with at `now`: their company's members, longest there first (or the player alone),
+ *  then those `room` was found for with them within FOUND_KEPT_MS (`finding.ts`). */
+export async function companionsOf(database: Db, account: string, room: string, now: number): Promise<string[]> {
   const company = (await companyOf(database, account))?.members ?? [account];
   const { results } = await database
     .prepare(
       `SELECT found.account_id FROM found_runs AS mine JOIN found_runs AS found ON found.room = mine.room
-       WHERE mine.room = ?1 AND mine.account_id = ?2 ORDER BY found.found_at, found.account_id`,
+       WHERE mine.room = ?1 AND mine.account_id = ?2 AND mine.found_at >= ?3
+       ORDER BY found.found_at, found.account_id`,
     )
-    .bind(room, account)
+    .bind(room, account, now - FOUND_KEPT_MS)
     .all<{ account_id: string }>();
   return [...new Set([...company, ...results.map((row) => row.account_id)])];
 }
