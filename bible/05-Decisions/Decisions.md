@@ -118,6 +118,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[DFO's Own Sounds Join the Sound Sheet]]
 - [[The Duskraven Sounds With Fire Under Its Raven]]
 - [[Exposed, Charged and Haste Make No Sound]]
+- [[Music and Ambience Come From DFO's Synthesiser]]
+- [[Landfall Is Kept as Made Again]]
 - [[Foes Show Their Level, Patrol in Groups and Climb]]
 - [[Melee Swings a Quarter Faster, Strikes All in Reach, and the Lock Lets Go Past 70°]]
 - [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]

@@ -1,0 +1,421 @@
+// One ambience sounding: its beds looping under their breathing gains, wide or at their points, and its voices called
+// round the listener at their spots, each on its own wandering clock. Everything it plays passes through its own
+// gain, which the engine (ambience.ts) fades as the player comes and goes.
+
+import { playSample } from '../../../soundSamples.ts';
+import type { Bank } from './bank.ts';
+import { type Random, between } from './dsp.ts';
+import { type Emitter, callChain, emitterOf, release, roomOf, toAudio } from './graph.ts';
+import {
+  type AmbienceKey,
+  BREAKER_S,
+  boutTimes,
+  breakerAt,
+  breathOf,
+  byPhase,
+  gapAfter,
+  gustOf,
+  moodOf,
+  type Phase,
+  swellAt,
+} from './law.ts';
+import { type Lay, type Point3, cityPoint, placeCall, riverNear, shorePoints } from './places.ts';
+import { type BedLayer, type Drive, SCAPES, type Scape, type Voice } from './scapes.ts';
+import { type Job, type SoundKey, takesOf } from './sounds.ts';
+
+/** What the ambience hears this frame: where the ear is and faces, the frame's origin (the ship at sea, so all rides
+ *  with her), the land, the phases of the hour, the drives, and a social space's walking people. */
+export interface Heard {
+  readonly key: AmbienceKey;
+  readonly ear: Point3;
+  readonly yaw: number;
+  readonly origin: readonly [number, number];
+  readonly lay: Lay;
+  readonly phases: Readonly<Record<Phase, number>>;
+  readonly drives: Readonly<Record<Drive, number>>;
+  readonly folk: readonly {
+    readonly id: number;
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+    readonly anim: string;
+  }[];
+}
+
+/** The most calls sounding at once in the whole ambience: past it, a new one waits for its next turn. */
+export const MOST_CALLS = 20;
+/** How often the beds' gains and points are set, seconds. */
+const BEDS_EVERY_S = 0.1;
+/** How fast a bed's gain follows its law, seconds. */
+const BED_FOLLOW_S = 0.3;
+/** A step heard every this many metres a person walks, within this far. */
+const STRIDE_M = 0.75;
+const STEPS_HEARD_M = 24;
+/** A wave crashing this near is heard as its own crash over the surf. */
+const CRASH_HEARD_M = 140;
+/** The recorded bed's crossfade from one play of it into the next, seconds. */
+const RECORDED_FADE_S = 4;
+/** Every bed's share of the mix under the calls: a bed of gain 1 sits at -32 dBFS. */
+const BED_LEVEL = 0.25;
+/** A recording not yet come is asked for again after this long, seconds. */
+const RECORDING_AGAIN_S = 5;
+/** How near a standing bed is heard whole, metres: a shore, a city's crowd and a harbour are wide sources. */
+const NEAR_M: Readonly<Record<BedLayer['at'], number>> = { wide: 1, shore: 40, harbour: 60, city: 90, river: 20 };
+/** A gust opens a gusty bed's top from this corner, Hz, by up to this many octaves. */
+/** A gust's pitch on a gusty bed: from the first, up by the second. */
+const GUST_PITCH = [0.95, 0.12] as const;
+const GUST_CORNER = 2400;
+const GUST_OCTAVES = 2.2;
+
+interface BedPlaying {
+  readonly layer: BedLayer;
+  readonly seed: number;
+  emitters: Emitter[];
+  recorded: { readonly gain: GainNode; readonly endsAt: number } | null;
+}
+
+interface VoiceClock {
+  readonly voice: Voice;
+  readonly seed: number;
+  next: number;
+  density: number;
+  lastTake: Map<SoundKey, number>;
+}
+
+/** The page's own context, where recordings play; none in a render's. */
+const liveContext = (audio: BaseAudioContext): AudioContext | null =>
+  typeof AudioContext !== 'undefined' && audio instanceof AudioContext ? audio : null;
+
+/** Every job a scape needs: its beds first, then every take of every sound its voices sing. */
+export function jobsOf(scape: Scape): Job[] {
+  const beds = [...new Set(scape.beds.map((layer) => layer.bed))].map((key): Job => ({ kind: 'bed', key }));
+  const sounds = [...new Set(scape.voices.flatMap((voice) => voice.sounds)), 'surf.crash' as const, 'step' as const];
+  return [
+    ...beds,
+    ...sounds.flatMap((key) =>
+      Array.from({ length: takesOf(key) }, (unused, take): Job => ({ kind: 'sound', key, take })),
+    ),
+  ];
+}
+
+export class ScapePlayer {
+  readonly key: AmbienceKey;
+  readonly scape: Scape;
+  readonly gain: GainNode;
+  /** The fade's level, 0 to 1, and where it is going. */
+  level = 0;
+  target = 1;
+  private readonly audio: BaseAudioContext;
+  private readonly bank: Bank;
+  private readonly random: Random;
+  private readonly beds: BedPlaying[];
+  private readonly clocks: VoiceClock[];
+  private readonly walked = new Map<number, { x: number; y: number; since: number }>();
+  private bedsAt = -Infinity;
+  private calls: { count: number };
+  /** The room each call is sent a share of. */
+  private readonly send: GainNode;
+  /** When each recording not yet come may be asked for again. */
+  private readonly missing = new Map<string, number>();
+
+  constructor(
+    audio: BaseAudioContext,
+    out: AudioNode,
+    key: AmbienceKey,
+    bank: Bank,
+    random: Random,
+    calls: { count: number },
+  ) {
+    [this.audio, this.key, this.scape, this.bank, this.random, this.calls] = [
+      audio,
+      key,
+      SCAPES[key],
+      bank,
+      random,
+      calls,
+    ];
+    this.gain = audio.createGain();
+    this.gain.gain.value = 0;
+    this.gain.connect(out);
+    this.send = roomOf(audio, this.scape.room, random, this.gain);
+    this.beds = this.scape.beds.map((layer, nth) => ({ layer, seed: nth * 7.31 + 1.7, emitters: [], recorded: null }));
+    this.clocks = this.scape.voices.map((voice, nth) => ({
+      voice,
+      seed: nth * 3.77 + 0.9,
+      next: NaN,
+      density: 0,
+      lastTake: new Map(),
+    }));
+    for (const job of jobsOf(this.scape)) bank.want(job);
+  }
+
+  /** One frame: the beds' gains and points, and, while it is the place heard (`live`), its voices' calls and its
+   *  people's steps. `clock` is the ambience's own seconds. */
+  frame(clock: number, heard: Heard, live: boolean): void {
+    if (clock - this.bedsAt >= BEDS_EVERY_S) {
+      this.bedsAt = clock;
+      for (const playing of this.beds) this.bed(playing, clock, heard);
+    }
+    if (!live) return;
+    for (const each of this.clocks) this.voiceTurn(each, clock, heard);
+    if (heard.folk.length) this.steps(heard);
+  }
+
+  /** How many bed sources it plays. */
+  get sources(): number {
+    return this.beds.reduce(
+      (sum, playing) => sum + playing.emitters.reduce((inner, emitter) => inner + emitter.sources.length, 0),
+      0,
+    );
+  }
+
+  /** Stops everything it plays. */
+  stop(): void {
+    for (const playing of this.beds) for (const emitter of playing.emitters) release(this.audio, emitter);
+    this.gain.disconnect();
+  }
+
+  private drive(drive: Drive | undefined, heard: Heard): number {
+    return drive ? heard.drives[drive] : 1;
+  }
+
+  /** A bed's emitters made once its buffer has come, placed, and given their gains. */
+  private bed(playing: BedPlaying, clock: number, heard: Heard): void {
+    const { layer } = playing;
+    const job: Job = { kind: 'bed', key: layer.bed };
+    const buffer = this.bank.buffer(job);
+    if (!buffer) return;
+    const points = this.pointsOf(layer, heard);
+    const make = (standing: boolean) =>
+      emitterOf(
+        this.audio,
+        buffer,
+        { standing, gusty: !!layer.gust && !layer.bright, near: layer.near ?? NEAR_M[layer.at] },
+        this.random,
+        this.gain,
+        this.send,
+      );
+    if (points && playing.emitters.length !== points.length) {
+      for (const emitter of playing.emitters) release(this.audio, emitter, 1);
+      playing.emitters = points.map(() => make(true));
+    } else if (!points && playing.emitters.length === 0) playing.emitters = [make(false)];
+    const now = this.audio.currentTime;
+    let law = layer.gain * byPhase(layer.when, heard.phases) * breathOf(clock, playing.seed, layer.breath);
+    law *= this.drive(layer.drive, heard) * BED_LEVEL;
+    if (layer.swell) law *= 0.45 + 0.55 * swellAt(clock - (layer.drive === 'way' ? 1.7 : 0));
+    const gust = layer.gust ? gustOf(clock, playing.seed) : 0;
+    if (layer.gust) law *= 1 - layer.gust + layer.gust * gust;
+    if (layer.recorded) law *= this.recordedBed(playing, now, law);
+    playing.emitters.forEach((emitter, nth) => {
+      const point = points?.[nth] ?? null;
+      let gain = law;
+      if (point && emitter.panner) {
+        const [x, y, z] = toAudio(point, heard.origin);
+        const moved = !emitter.point;
+        emitter.point = point;
+        for (const [param, value] of [
+          [emitter.panner.positionX, x],
+          [emitter.panner.positionY, y],
+          [emitter.panner.positionZ, z],
+        ] as const)
+          if (moved) param.setValueAtTime(value, now);
+          else param.setTargetAtTime(value, now, 0.5);
+      }
+      if (layer.breakers) gain *= this.breaker(emitter, clock, heard);
+      emitter.gain.gain.setTargetAtTime(gain, now, BED_FOLLOW_S);
+      emitter.tone?.frequency.setTargetAtTime(GUST_CORNER * 2 ** (GUST_OCTAVES * gust), now, BED_FOLLOW_S);
+      // A gust raises the wind's voice a little, as a stronger wind whistles higher in the same edges.
+      if (layer.gust)
+        for (const source of emitter.sources)
+          source.playbackRate.setTargetAtTime(GUST_PITCH[0] + GUST_PITCH[1] * gust, now, BED_FOLLOW_S);
+    });
+  }
+
+  /** Where a bed stands: null for one wide about the ear, else its points (none where there is no such place near). */
+  private pointsOf(layer: BedLayer, heard: Heard): Point3[] | null {
+    const flat = [heard.ear[0], heard.ear[1]] as const;
+    switch (layer.at) {
+      case 'wide':
+        return null;
+      case 'shore':
+        return shorePoints(flat, heard.lay.outline).map(([x, y]) => [x, y, 0.5]);
+      case 'harbour':
+        return heard.lay.harbour ? [[heard.lay.harbour[0], heard.lay.harbour[1], 1]] : [];
+      case 'river': {
+        const river = riverNear(flat, heard.lay.rivers);
+        return river ? [[river[0], river[1], Math.max(0, heard.lay.heightAt(river[0], river[1])) + 0.5]] : [];
+      }
+      case 'city': {
+        const city = cityPoint(heard.lay);
+        return city ? [[city[0], city[1], Math.max(0, heard.lay.heightAt(city[0], city[1])) + 3]] : [];
+      }
+    }
+  }
+
+  /** A shore's breaker: its swell now, and its crash heard as a wave of its own when near. */
+  private breaker(emitter: Emitter, clock: number, heard: Heard): number {
+    const step = clock - (emitter.wave + emitter.period);
+    if (step >= 0) {
+      emitter.wave = clock;
+      emitter.period = between(this.random, BREAKER_S);
+      const point = emitter.point;
+      if (point && Math.hypot(point[0] - heard.ear[0], point[1] - heard.ear[1]) < CRASH_HEARD_M)
+        this.call('surf.crash', point, heard, {
+          gain: 0.9,
+          pitch: between(this.random, [0.94, 1.06]),
+          near: 12,
+          drift: 0,
+        });
+    }
+    return breakerAt(clock - emitter.wave, emitter.period);
+  }
+
+  /** A bed played from its Freesound recording once picked, each play crossfading into the next; answers the share
+   *  of the synthesiser's bed still heard (none once the recording plays). */
+  private recordedBed(playing: BedPlaying, now: number, law: number): number {
+    const cue = playing.layer.recorded;
+    if (!cue) return 1;
+    const playingNow = playing.recorded;
+    if (playingNow) playingNow.gain.gain.setTargetAtTime(law * 4, now, BED_FOLLOW_S);
+    if (playingNow && now < playingNow.endsAt - RECORDED_FADE_S) return 0;
+    const audio = liveContext(this.audio);
+    if (!audio) return playingNow ? 0 : 1;
+    const gain = audio.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(law * 4, now + RECORDED_FADE_S);
+    gain.connect(this.gain);
+    const source = playSample(audio, gain, cue, between(this.random, [0.98, 1.02]));
+    if (!source?.buffer) {
+      gain.disconnect();
+      return playingNow ? 0 : 1;
+    }
+    if (playingNow) {
+      playingNow.gain.gain.cancelScheduledValues(now);
+      playingNow.gain.gain.setTargetAtTime(0, now, RECORDED_FADE_S / 3);
+    }
+    source.addEventListener('ended', () => gain.disconnect());
+    playing.recorded = { gain, endsAt: now + source.buffer.duration / source.playbackRate.value };
+    return 0;
+  }
+
+  /** A voice's turn: once its time comes, a bout of its calls where it lives, then a gap by its density now. */
+  private voiceTurn(each: VoiceClock, clock: number, heard: Heard): void {
+    const { voice } = each;
+    const density = byPhase(voice.perMinute, heard.phases) * this.drive(voice.drive, heard) * moodOf(clock, each.seed);
+    if (Number.isNaN(each.next) || density > each.density * 2.5) {
+      each.next = clock + this.random() * Math.min(60, gapAfter(Math.max(density, 1e-6), this.random));
+      each.density = density;
+      return;
+    }
+    if (clock < each.next) return;
+    each.density = density;
+    each.next = clock + gapAfter(density, this.random);
+    if (density <= 0 || this.calls.count >= MOST_CALLS) return;
+    const point = placeCall(voice.at, heard.ear, heard.lay, voice, this.random);
+    if (!point) return;
+    const pitch = between(this.random, voice.pitch as [number, number]);
+    const times = boutTimes(voice.bout, voice.spacing, this.random);
+    each.next += times[times.length - 1] ?? 0;
+    times.forEach((after, nth) => {
+      const sound = voice.sounds[nth % Math.max(1, voice.sounds.length)];
+      const gain = between(this.random, voice.gain as [number, number]);
+      const shape = { gain, pitch, near: voice.near, drift: voice.drift };
+      if (voice.recorded && nth === 0 && this.recorded(voice.recorded, point, heard, shape)) return;
+      if (voice.recorded && nth > 0 && !sound) return;
+      if (sound) this.call(sound, point, heard, shape, after, each.lastTake);
+    });
+  }
+
+  /** A recorded call through its own chain, once its recording has come. */
+  private recorded(
+    cue: string,
+    point: Point3,
+    heard: Heard,
+    shape: { gain: number; pitch: number; near: number },
+  ): boolean {
+    const audio = liveContext(this.audio);
+    if (!audio || (this.missing.get(cue) ?? -Infinity) > audio.currentTime) return false;
+    const chain = this.chain(point, heard, { ...shape, drift: 0 }, audio.currentTime, 0);
+    const source = playSample(audio, chain.input, cue, shape.pitch);
+    if (!source) {
+      chain.done();
+      this.missing.set(cue, audio.currentTime + RECORDING_AGAIN_S);
+      return false;
+    }
+    this.calls.count++;
+    source.addEventListener('ended', () => {
+      this.calls.count--;
+      chain.done();
+    });
+    return true;
+  }
+
+  /** A call of a sound at a point, `after` seconds from now, its take any but the one played last. */
+  private call(
+    sound: SoundKey,
+    point: Point3,
+    heard: Heard,
+    shape: { gain: number; pitch: number; near: number; drift: number },
+    after = 0,
+    lastTake = new Map<SoundKey, number>(),
+  ): void {
+    const takes = takesOf(sound);
+    const last = lastTake.get(sound);
+    const take =
+      last === undefined
+        ? Math.floor(this.random() * takes)
+        : (last + 1 + Math.floor(this.random() * (takes - 1))) % takes;
+    lastTake.set(sound, take);
+    const buffer = this.bank.buffer({ kind: 'sound', key: sound, take });
+    if (!buffer) return;
+    const when = this.audio.currentTime + 0.03 + after;
+    const chain = this.chain(point, heard, shape, when, buffer.duration / shape.pitch);
+    const source = this.audio.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = shape.pitch;
+    source.connect(chain.input);
+    source.start(when);
+    this.calls.count++;
+    source.addEventListener('ended', () => {
+      this.calls.count--;
+      source.disconnect();
+      chain.done();
+    });
+  }
+
+  private chain(
+    point: Point3,
+    heard: Heard,
+    shape: { gain: number; near: number; drift: number },
+    when: number,
+    seconds: number,
+  ) {
+    const { ear, origin } = heard;
+    return callChain(this.audio, { point, ear, origin, ...shape, when, seconds }, this.random, this.gain, this.send);
+  }
+
+  /** The social space's people's steps, each where they walk, within earshot. */
+  private steps(heard: Heard): void {
+    for (const person of heard.folk) {
+      const kept = this.walked.get(person.id);
+      if (!kept || person.anim !== 'walk') {
+        this.walked.set(person.id, { x: person.x, y: person.y, since: 0 });
+        continue;
+      }
+      kept.since += Math.hypot(person.x - kept.x, person.y - kept.y);
+      [kept.x, kept.y] = [person.x, person.y];
+      if (kept.since < STRIDE_M) continue;
+      kept.since -= STRIDE_M;
+      const away = Math.hypot(person.x - heard.ear[0], person.y - heard.ear[1]);
+      if (away > STEPS_HEARD_M || this.calls.count >= MOST_CALLS) continue;
+      const point: Point3 = [person.x, person.y, person.z + 0.05];
+      const shape = {
+        gain: between(this.random, [0.18, 0.28]),
+        pitch: between(this.random, [0.92, 1.08]),
+        near: 3,
+        drift: 0,
+      };
+      if (!this.recorded('step.stone', point, heard, shape)) this.call('step', point, heard, shape);
+    }
+  }
+}

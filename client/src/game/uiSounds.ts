@@ -3,7 +3,7 @@
 // The owner picked each on the sound sheet: a recording from Freesound (soundSamples.ts), or one the browser's own
 // synthesiser makes here, which also stands in while a recording loads. One listener hears every press, as DFO's
 // click does, and plays the press only where no sound of its own already played. The volume is the player's, kept in
-// this browser, as is the world's, whose sounds (combat/worldSounds.ts) play through this engine's output.
+// this browser, as are the world's, the music's and the ambience's, each playing through a bus of this engine's.
 
 import { loadSamples, playSample } from '../soundSamples.ts';
 
@@ -15,6 +15,10 @@ const VOLUME_KEY = 'overlook.interfaceVolume';
 const VOLUME_FIRST = 0.6;
 const WORLD_KEY = 'overlook.worldVolume';
 const WORLD_FIRST = 0.8;
+const MUSIC_KEY = 'overlook.musicVolume';
+const MUSIC_FIRST = 0.7;
+const AMBIENCE_KEY = 'overlook.ambienceVolume';
+const AMBIENCE_FIRST = 0.8;
 /** How loud the whole interface stands at full volume, under the game's own sounds. */
 const LEVEL = 0.35;
 /** The least time between two ticks, so a sweep across a grid is a patter, not a buzz. */
@@ -38,6 +42,10 @@ const TICKED = `${PRESSABLE}, .gear-cell`;
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
 let world: GainNode | null = null;
+let music: GainNode | null = null;
+let ambience: GainNode | null = null;
+/** The ambience's duck, under its volume: the music lowers it as a fight swells, and lets it back after. */
+let duck: GainNode | null = null;
 let noise: AudioBuffer | null = null;
 /** Two seconds of pink noise, softer at the top than white, the stuff of a hold's air. */
 let air: AudioBuffer | null = null;
@@ -95,6 +103,43 @@ export function worldOutput(): { readonly audio: AudioContext; readonly out: Aud
   return { audio: context, out: world };
 }
 
+/** The music's volume, 0 to 1. */
+export const musicVolume = (): number => volumeOf(MUSIC_KEY, MUSIC_FIRST);
+
+export function setMusicVolume(volume: number): void {
+  const kept = keepVolume(MUSIC_KEY, volume);
+  if (music) music.gain.value = kept;
+}
+
+/** The ambience's volume, 0 to 1. */
+export const ambienceVolume = (): number => volumeOf(AMBIENCE_KEY, AMBIENCE_FIRST);
+
+export function setAmbienceVolume(volume: number): void {
+  const kept = keepVolume(AMBIENCE_KEY, volume);
+  if (ambience) ambience.gain.value = kept;
+}
+
+/** A bus of this engine's, through its volume; null before the first press or key wakes it, or with it silenced. */
+function bus(node: GainNode | null, volume: number): { readonly audio: AudioContext; readonly out: AudioNode } | null {
+  if (!context || !node || volume === 0) return null;
+  if (context.state === 'suspended') void context.resume();
+  return { audio: context, out: node };
+}
+
+/** Where the music plays. */
+export const musicOutput = () => bus(music, musicVolume());
+/** Where the ambience plays, under its duck. */
+export const ambienceOutput = () => bus(duck, ambienceVolume());
+
+/** Lowers the ambience to `level` of itself (1 is untouched) over `seconds`, as music swells over it. */
+export function duckAmbience(level: number, seconds: number): void {
+  if (!context || !duck) return;
+  const now = context.currentTime;
+  duck.gain.cancelScheduledValues(now);
+  duck.gain.setValueAtTime(duck.gain.value, now);
+  duck.gain.linearRampToValueAtTime(Math.min(1, Math.max(0, level)), now + Math.max(0.01, seconds));
+}
+
 /** The synthesiser, woken by the player's first press or key, as a browser lets sound start only then; woken again by
  *  a later one, should the browser have stopped it. Nothing else wakes it, so no sound waits to play all at once. */
 function wake(): void {
@@ -110,6 +155,14 @@ function wake(): void {
   world = context.createGain();
   world.gain.value = worldVolume();
   world.connect(context.destination);
+  music = context.createGain();
+  music.gain.value = musicVolume();
+  music.connect(context.destination);
+  ambience = context.createGain();
+  ambience.gain.value = ambienceVolume();
+  ambience.connect(context.destination);
+  duck = context.createGain();
+  duck.connect(ambience);
   loadSamples(context);
   // A second of white noise, the stuff of every crunch and swish.
   noise = context.createBuffer(1, context.sampleRate, context.sampleRate);
