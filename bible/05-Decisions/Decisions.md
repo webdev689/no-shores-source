@@ -154,6 +154,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Player's Melee Weapon Reaches a Tenth Further]]
 - [[Locked On, the Figure Faces Its Foe Unless It Sprints]]
 - [[First-Person Hands Climb, Shimmy and Reach When Looking Away]]
+- [[The Arts' Birds Are Forged in Blender]]
 - [[Every Shader Is Checked Offline]]
 
 - [[Overlook Is Our Own Game]]
