@@ -26,10 +26,12 @@ mod fighter_door;
 mod fleet_door;
 mod gear_door;
 mod roster_door;
+mod run_door;
 
 pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute, shut};
+pub use run_door::{activities_json, open_run};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]
@@ -140,7 +142,7 @@ pub fn open_node(text: &[u8]) -> bool {
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns };
     // Its garrison stands at its island's levels; a city's social space serves a player's gear at its counters; a
-    // patrol keeps its island's resource nodes.
+    // patrol keeps its island's resource nodes and lays its dungeons' entrances; an Elite Dungeon's node lays its one.
     let levels = gear::world::island_levels(&node.continent);
     let floor = Floor::Land(Box::new(node.ground));
     let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
@@ -150,6 +152,9 @@ pub fn open_node(text: &[u8]) -> bool {
         && let Some(resource) = resource
     {
         room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default());
+    }
+    if node.kind == NodeKind::Dungeon {
+        room.lay_elite_entrance(&node.id);
     }
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
     true
@@ -278,6 +283,7 @@ pub fn snapshot() -> Vec<u8> {
                 lines: &lines,
                 spells: &spells,
                 cache: cache.as_ref().map_or(&[], |cache| cache.as_slice()),
+                revives: room.revives(),
             };
             protocol::snapshot_bytes(&snapshot)
         }
@@ -464,8 +470,8 @@ pub extern "C" fn room_roster() -> u64 {
     hand_over(roster_door::roster_json().into_bytes())
 }
 
-/// A patrol's dungeon as JSON (`dungeon_door::dungeon_json`), asked for by the JSON written at `address`, `length`
-/// bytes long: its patrol's id and name and its number.
+/// A dungeon as JSON (`dungeon_door::dungeon_json`), asked for by the JSON written at `address`, `length` bytes long:
+/// its patrol's id and name and its number, an Elite Dungeon's place and name, or a seed, a style and a name.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.

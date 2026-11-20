@@ -185,16 +185,17 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **What a body stands on** (`heights`, `boxes`): one floor at 0 m, each open cell's height and none for rock, in
   cells of 3.2 m, and as boxes (min x, min y, max x, max y, top) the jambs, then the pillars, then the props' solids,
   then the fixtures', then the landmarks'.
-- **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
-  name and its number, as the page's `DungeonLayout` reads it: its name, first style and pictures; its looks (each a
-  style and its pictures) and each cell's look (-1 for rock); its cells (-2 rock, -1 corridor, or a room's number),
-  ceilings, rooms (each its rectangle, height, walk, role, name, ceiling form and look), end, way in, arrival, exit
-  door, portal, torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
+- **For a browser,** the `room-wasm` door's `room_dungeon` answers a dungeon as JSON, from its patrol's id and name and
+  its number, from an Elite Dungeon's place (laid by `elite_laid` in four or five blocks, and named as the ask names
+  it), or from a seed and a style's key, as the page's `DungeonLayout` reads it: its name, first style and pictures; its
+  looks (each a style and its pictures) and each cell's look (-1 for rock); its cells (-2 rock, -1 corridor, or a room's
+  number), ceilings, rooms (each its rectangle, height, walk, role, name, ceiling form and look), end, way in, arrival,
+  exit door, portal, torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
   lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw), boxes, landmarks (each its
   module, its turned footprint's north-west corner and its quarter turns clockwise) and glows (each x, y, z and its
-  kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number
-  past the patrol's three. The room door's `dungeon` asks it. Three dungeons' answers are pinned by their hash,
-  natively and through WebAssembly, so a dungeon is the same bytes on every machine.
+  kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number past the patrol's three or a
+  place that is no Elite Dungeon. The room door's `dungeon` and `layout` ask it. Three dungeons' answers are pinned by
+  their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine.
 
 ## In the rooms
 

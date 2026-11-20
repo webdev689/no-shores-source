@@ -411,3 +411,29 @@ test('a node’s room says why its gate shuts to a character, and to a new one',
   assert.equal(room.shut(player, JSON.stringify(kept)), 'Abyss seas open at level 20.');
   assert.equal(room.restoreCharacter(player, JSON.stringify(kept)), false, 'never given');
 });
+
+test('a run’s room opens from its ask with its revives, and what is on reads as the rules draw it', () => {
+  const room = startRoomDoor(compiled);
+  const friday = 29_919_420;
+  const drawn = JSON.parse(room.activities(friday)) as {
+    day: number;
+    week: number;
+    dayModifier: string;
+    weekAbyss: unknown;
+  };
+  assert.deepEqual([drawn.day, drawn.week, drawn.dayModifier], [20_778, 2_968, 'burn-shadow']);
+  assert.deepEqual(drawn.weekAbyss, {
+    place: 'saltworm-warrens',
+    modifiers: ['lightswitch', 'burn-divine', 'juggler'],
+  });
+  assert.equal(room.openRun(JSON.stringify({ dungeon: { place: 'saltworm-warrens' }, tier: 2, minute: friday })), true);
+  room.join();
+  room.tick();
+  assert.equal((readFromRoom(room.snapshot()) as { revives: number }).revives, 5);
+  assert.equal(room.openRun(JSON.stringify({ dungeon: { place: 'krakens-grotto' }, tier: 2, minute: friday })), false);
+  const laid = JSON.parse(room.layout(JSON.stringify({ place: 'krakens-grotto', name: 'Kraken’s Grotto' }))) as {
+    name: string;
+    style: string;
+  };
+  assert.deepEqual([laid.name, laid.style], ['Kraken’s Grotto', 'caverns']);
+});

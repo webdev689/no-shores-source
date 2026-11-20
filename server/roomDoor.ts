@@ -40,6 +40,12 @@ export interface RoomDoor {
   /** Opens the room of a patrol's dungeon by its number (0 to 2), from the patrol's node file's text; false if the
    *  text is not a patrol's or it has no such dungeon. */
   openDungeon(nodeText: string, dungeon: number): boolean;
+  /** Opens a dungeon's run from its ask (JSON: its dungeon, its tier 0 to 2 and the Unix minute it opens, as
+   *  crates/room-wasm/src/run_door.rs reads it); false for an ask that does not read or a dungeon no rule lays. */
+  openRun(ask: string): boolean;
+  /** What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each, each
+   *  island's dungeon of the day, the day's modifier, and the week's two with their modifiers. */
+  activities(minute: number): string;
   /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; false if the
    *  text is not a layout. */
   openSea(layoutText: string, seed: number): boolean;
@@ -100,6 +106,9 @@ export interface RoomDoor {
   /** A dungeon laid by a seed and a style's key where no patrol lays it (a sea island's), named for its place `name`,
    *  as `dungeon` answers it; "null" for a style that is none. */
   dungeonOf(seed: number, style: string, name: string): string;
+  /** A dungeon by any ask `room_dungeon` reads (a patrol's, an Elite Dungeon's place, or a seed and a style), as JSON;
+   *  "null" for one that does not read. */
+  layout(ask: string): string;
   /** A page playing a course alone, never a server: stands a foe of the roster (its `type`, `rank` and `level` as the
    *  roster numbers them) on the top of the block under (x, y), facing `facing` (radians clockwise from north), its
    *  post there; a Boss stood so calls no one. Its number, or 0 when none stood. */
@@ -125,6 +134,8 @@ interface RoomExports {
   room_open_over_sea(address: number, length: number): number;
   room_open_node(address: number, length: number): number;
   room_open_dungeon(address: number, length: number, dungeon: number): number;
+  room_open_run(address: number, length: number): number;
+  room_activities(minute: number): bigint;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
   room_take_foe_asks(): void;
@@ -195,6 +206,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
     openDungeon: (nodeText, dungeon) =>
       openWith((address, length) => exports.room_open_dungeon(address, length, dungeon >>> 0), nodeText),
+    openRun: (ask) => openWith(exports.room_open_run, ask),
+    activities: (minute) => new TextDecoder().decode(take(exports.room_activities(minute >>> 0))),
     openSea: (layoutText, seed) =>
       openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
     openFleet: () => exports.room_open_fleet() === 1,
@@ -241,6 +254,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     dungeonOf: (seed, style, name) => {
       const bytes = new TextEncoder().encode(JSON.stringify({ name, seed: seed >>> 0, style }));
+      return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_dungeon(address, bytes.length))));
+    },
+    layout: (ask) => {
+      const bytes = new TextEncoder().encode(ask);
       return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_dungeon(address, bytes.length))));
     },
     standFoe: (type, rank, x, y, facing, level) => exports.room_stand_foe(type, rank, x, y, facing, level),

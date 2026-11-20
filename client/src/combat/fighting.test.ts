@@ -334,6 +334,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     pirates: [],
     fights: [],
     cache: [],
+    revives: -1,
     vessels: [],
     balls: [],
     naval: [],

@@ -200,6 +200,7 @@ fn snapshot<'snapshot>(
         lines,
         spells: &SPELLS,
         cache: &[],
+        revives: None,
     }
 }
 
@@ -488,4 +489,16 @@ fn a_dungeons_cache_crosses_in_its_snapshot_and_no_other_room_sends_one() {
     };
     assert_eq!(read(&plain), None);
     assert_eq!(read(&Snapshot { cache: &cache, ..plain }), Some(cache.to_vec()));
+}
+
+#[test]
+fn an_abyss_runs_revives_cross_in_its_snapshot_and_every_other_room_sends_none() {
+    let plain = snapshot(&[], &[], &[], &[]);
+    let read = |snapshot: &Snapshot<'_>| {
+        let bytes = snapshot_bytes(snapshot);
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").snapshot().expect("a snapshot").revives()
+    };
+    assert_eq!(read(&plain), -1);
+    assert_eq!(read(&Snapshot { revives: Some(5), ..plain }), 5);
+    assert_eq!(read(&Snapshot { revives: Some(0), ..plain }), 0);
 }

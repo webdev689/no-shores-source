@@ -388,3 +388,28 @@ fn a_node_says_why_its_gate_shuts_to_a_kept_character_or_a_new_one() {
     assert!(open_node(social.to_string().as_bytes()));
     assert_eq!(shut(0, b""), "");
 }
+
+#[test]
+fn an_elite_dungeon_is_laid_for_a_browser_by_its_place_and_its_node_sends_its_one_entrance() {
+    let ask = br#"{"place":"krakens-grotto","name":"Kraken's Grotto"}"#;
+    let laid: Value = serde_json::from_str(&dungeon_door::dungeon_json(ask)).unwrap();
+    assert_eq!((laid["name"].as_str(), laid["style"].as_str()), (Some("Kraken's Grotto"), Some("caverns")));
+    let (seed, style) = room::elite_laid("krakens-grotto").unwrap();
+    let native = dungeon::Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+    assert_eq!(
+        (laid["columns"].as_u64(), laid["rows"].as_u64()),
+        (Some(native.columns as u64), Some(native.rows as u64))
+    );
+    assert_eq!(dungeon_door::dungeon_json(br#"{"place":"saltgrass-downs","name":"x"}"#), "null");
+    assert!(fighter_door::set_dungeon(ask));
+    let mut node = node_file();
+    node["id"] = json!("krakens-grotto");
+    node["kind"] = json!("dungeon");
+    node["continent"] = json!("continent-1");
+    node["ring"] = json!([[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]]);
+    node["bounds"] = json!([-900.0, -900.0, 900.0, 900.0]);
+    assert!(open_node(node.to_string().as_bytes()));
+    let player = dungeon_door::room_join_at(0);
+    assert_ne!(player, 0);
+    assert_eq!(dungeon_door::room_join_at(1), 0, "one entrance");
+}

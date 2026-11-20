@@ -11,6 +11,7 @@ code:
   - crates/room/src/run.rs#modded_blow
   - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/abyss.rs#start_over
+  - crates/room-wasm/src/run_door.rs#open_run
 ---
 # Activities
 

@@ -321,6 +321,8 @@ pub struct Snapshot<'snapshot> {
     pub spells: &'snapshot [SpellSeen],
     /// A dungeon's cache as `Room::cache` gives it; empty, and left out of the bytes, in any other room.
     pub cache: &'snapshot [f64],
+    /// In an Abyss run, the revives its company has left (`Room::revives`); none in any other room.
+    pub revives: Option<u8>,
 }
 
 /// Every player as the room saw them after its tick, the dresses that changed since the last snapshot, every foe,
@@ -411,6 +413,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let spells = (!snapshot.spells.is_empty()).then(|| spells_vector(&mut builder, snapshot.spells));
     let tick = snapshot.tick;
     let cache = (!snapshot.cache.is_empty()).then(|| builder.create_vector(snapshot.cache));
+    let revives = snapshot.revives.map_or(-1, |left| i8::try_from(left).unwrap_or(i8::MAX));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -420,6 +423,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         shots,
         spells,
         cache,
+        revives,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)
