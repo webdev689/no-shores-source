@@ -109,7 +109,7 @@ export class WelcomeWalk {
     maren.walking = false;
     if (this.phase === 'coming') {
       if (this.path.length > 0) this.walk(seconds);
-      else if (far > MEET_M + 1e-6) this.stride(player, WALK_M_S * seconds, MEET_M);
+      else if (far > MEET_M + 1e-6) this.comeTo(player, seconds);
       else return this.speak(player, MET_SCENE);
     } else if (this.phase === 'leading') {
       this.walk(seconds);
@@ -159,6 +159,14 @@ export class WelcomeWalk {
     }
   }
 
+  /** A stride toward the player by the way `routeTo` finds, found again each step as they move. */
+  private comeTo(player: Point, seconds: number): void {
+    const here: Point = [this.maren.x, this.maren.y];
+    const way = routeTo(this.frame, here, player).filter((point) => away(here, point) > 1e-6);
+    const next = way[0] ?? player;
+    this.stride(next, WALK_M_S * seconds, next === player ? MEET_M : 0);
+  }
+
   /** A stride of at most `metres` toward `to`, stopping `short` of it; the metres walked. */
   private stride(to: Point, metres: number, short: number): number {
     const maren = this.maren;
@@ -205,11 +213,11 @@ function roundCounter(station: StationInfo, frame: PlazaFrame): Point[] {
   return [point(0, 0), point(0, ROUND_SIDE_M), point(ROUND_OUT_M, ROUND_SIDE_M), before(station)];
 }
 
-/** The way from one point of the plaza to a stop before a counter: straight along the arcades' front on one side of
- *  the portico, else out to the landward lane, along it and in. */
+/** The way from one point of the plaza to another: straight, unless that would cross before the portico from one of
+ *  its sides to the other, when it goes out to the landward lane, along it and in. */
 function routeTo(frame: PlazaFrame, from: Point, to: Point): Point[] {
   const [one, two] = [inPlaza(frame, from), inPlaza(frame, to)];
   const atFront = (place: { toward: number }) => place.toward < LANDWARD_LANE;
-  if (atFront(one) && atFront(two) && Math.sign(one.across) === Math.sign(two.across)) return [to];
+  if (!(atFront(one) || atFront(two)) || Math.sign(one.across) === Math.sign(two.across)) return [to];
   return [plazaPoint(frame, LANDWARD_LANE, one.across), plazaPoint(frame, LANDWARD_LANE, two.across), to];
 }

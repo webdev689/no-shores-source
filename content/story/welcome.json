@@ -11,7 +11,7 @@
     ],
     "welcomeSmiths": [
       { "who": "maren", "say": "A ship that refuses them is taken whole. So we keep our smiths busy." },
-      { "who": "armorsmith", "say": "New pieces every morning. Come back before your next voyage." },
+      { "who": "armorsmith", "say": "Steel that fits. Come back before your next voyage." },
       { "who": "weaponsmith", "say": "And see me before you need to." }
     ],
     "welcomeTailorTack": [

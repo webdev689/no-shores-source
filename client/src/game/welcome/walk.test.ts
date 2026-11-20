@@ -102,3 +102,15 @@ test('ended, she stops where she is; a plaza without her counter has no welcome'
   const without = STATIONS.filter((station) => station.kind !== 'lamplighters');
   assert.equal(WelcomeWalk.round(without, FRAME), null);
 });
+
+test('coming to a player at the far side’s counters, she goes round by the landward lane, never over the portico', () => {
+  const walk = WelcomeWalk.round(STATIONS, FRAME) as WelcomeWalk;
+  const player = [station('weaponsmith').counter[0], 1951.5] as const;
+  let said = null;
+  for (let tick = 0; tick < 6000 && !said; tick++) {
+    said = walk.step(0.1, player).say;
+    const { toward, across } = inPlaza(FRAME, [walk.maren.x, walk.maren.y]);
+    assert.ok(!(toward < -42 && toward > -50 && Math.abs(across) < 26), `on the portico at ${across}, ${toward}`);
+  }
+  assert.equal(said, MET_SCENE);
+});
