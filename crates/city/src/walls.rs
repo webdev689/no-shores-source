@@ -1,5 +1,6 @@
 //! Stages F and G: the city's wall along its footprint where the land holds it, with towers and gatehouses; its
-//! harbour's quay and piers along the shore; and the retaining walls between its terraces and the ground round them.
+//! harbour's quay and piers along the shore; and the retaining walls between its terraces and the ground round them,
+//! cut where a ramp crosses.
 
 use crate::footprint::{Footprint, RAYS, Stop};
 use crate::grid::{CELL_M, Grid, SIDE_CELLS, index};
@@ -184,4 +185,57 @@ pub fn retaining_walls(ground: &Ground, grid: &Grid, footings: &[Footing]) -> Ve
         }
     }
     solids
+}
+
+/// A cut in a terrace's retaining wall where a ramp crosses it: the wall on the cell edge whose middle is `middle`
+/// (running north and south when `north_south`) is taken down over `span` (world metres along it, the lower first) to
+/// `top`, or wholly where `top` is None.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Cut {
+    pub middle: [f64; 2],
+    pub north_south: bool,
+    pub span: [f64; 2],
+    pub top: Option<f64>,
+}
+
+/// The walls with every cut made: a wall on a cut's edge is split round its span, the part within it lowered to the
+/// cut's top or left out. Walls off every cut's edge are kept as they are.
+#[must_use]
+pub fn cut(walls: Vec<Solid>, cuts: &[Cut]) -> Vec<Solid> {
+    let mut walls = walls;
+    for cut in cuts {
+        let (along, across) = if cut.north_south { (1, 0) } else { (0, 1) };
+        let mut kept = Vec::with_capacity(walls.len() + 2);
+        for wall in walls {
+            let on_edge = wall.turn == 0.0
+                && wall.lean == 0.0
+                && wall.size[across] < 2.0
+                && (wall.at[across] - cut.middle[across]).abs() < 1e-6
+                && (wall.at[along] - cut.middle[along]).abs() < CELL_M / 2.0;
+            let (from, to) = (wall.at[along] - wall.size[along] / 2.0, wall.at[along] + wall.size[along] / 2.0);
+            if !on_edge || to <= cut.span[0] || from >= cut.span[1] {
+                kept.push(wall);
+                continue;
+            }
+            let piece = |start: f64, end: f64, top: f64| {
+                let mut piece = wall;
+                piece.at[along] = (start + end) / 2.0;
+                piece.size[along] = end - start;
+                piece.size[2] = top - wall.at[2];
+                piece
+            };
+            let top = wall.at[2] + wall.size[2];
+            if from < cut.span[0] {
+                kept.push(piece(from, cut.span[0], top));
+            }
+            if let Some(lowered) = cut.top.filter(|&lowered| lowered > wall.at[2]) {
+                kept.push(piece(cut.span[0].max(from), cut.span[1].min(to), lowered.min(top)));
+            }
+            if to > cut.span[1] {
+                kept.push(piece(cut.span[1], to, top));
+            }
+        }
+        walls = kept;
+    }
+    walls
 }

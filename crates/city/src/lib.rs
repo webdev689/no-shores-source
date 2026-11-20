@@ -12,6 +12,7 @@ pub mod grid;
 pub mod landmarks;
 pub mod landmarks_inland;
 pub mod modules;
+pub mod ramps;
 pub mod rmb;
 pub mod rock;
 pub mod social;
@@ -81,6 +82,9 @@ pub struct Plan {
     /// The wall, its towers and gatehouses, the quay and piers, and the terraces' retaining walls.
     pub works: Vec<Solid>,
     pub social: Social,
+    /// The ramps and switchbacks joining each avenue's terraces to each other and to the platform, each avenue's from
+    /// its start to its head and up to the platform; their pads are among `pads` and their walls among `works`.
+    pub ramps: Vec<ramps::Ramp>,
     /// The levels the city sets the land to, in order: later pads stand over earlier ones.
     pub pads: Vec<Pad>,
 }
@@ -150,22 +154,36 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
             }
         }
     }
+    let mut avenues = Vec::new();
     for start in gates.iter().chain(harbour.iter()) {
         let Some(cell) = ways::built_cell_near(&grid, &cell_footings, *start) else { continue };
-        for (column, row) in ways::avenue(&cell_footings, cell).unwrap_or_default() {
+        let cells = ways::avenue(&cell_footings, cell).unwrap_or_default();
+        for &(column, row) in &cells {
             if uses[index(column, row)] == Use::Open {
                 uses[index(column, row)] = Use::Avenue;
             }
         }
+        avenues.push(cells);
     }
+    let laid = ramps::lay(&ramps::Avenues {
+        grid: &grid,
+        footings: &cell_footings,
+        uses: &uses,
+        avenues: &avenues,
+        platform: level,
+        plaza: social.bounds,
+        over: &[base],
+    });
     fill(&grid, &cell_footings, &mut uses, &footprint, blocks, seed);
     let mut works = walls::city_wall(ground, &footprint, &gate_rays);
     works.extend(walls::harbour_works(&footprint));
     // The plaza's pad stands over the cells under it: no terrace wall of theirs may cross it.
-    works.extend(walls::retaining_walls(ground, &grid, &cell_footings).into_iter().filter(|wall| {
+    let retaining = walls::cut(walls::retaining_walls(ground, &grid, &cell_footings), &laid.cuts);
+    works.extend(retaining.into_iter().filter(|wall| {
         let [west, north, east, south, _, _] = wall.bounds();
         !overlaps([west, north, east, south], social.bounds)
     }));
+    works.extend(laid.walls);
     let mut pads: Vec<Pad> = Vec::new();
     let mut cells = Vec::new();
     for row in 0..SIDE_CELLS {
@@ -179,9 +197,9 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
             }
         }
     }
+    pads.extend(laid.ramps.iter().map(|ramp| ramp.pad));
     pads.push(Pad::flat(social.bounds, level));
-    let reach = built.reach;
-    pads.push(Pad::flat([centre[0] - reach, centre[1] - reach, centre[0] + reach, centre[1] + reach], level));
+    pads.push(Pad::flat(base, level));
     Ok(Plan {
         id: city.id.clone(),
         name: city.name.clone(),
@@ -195,6 +213,7 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         landmark: built.solids,
         works,
         social,
+        ramps: laid.ramps,
         pads,
     })
 }
