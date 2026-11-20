@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { FAR_STRIDE, GROUND_FLOATS, groundHeight, groundMesh } from './isleGround.ts';
 import { MODULE_NAMES, packUrl, PARTS, readKitPack, roleOf, VERTEX_BYTES } from './isleModules.ts';
 import { gridOf, type IslePlacement, readIslePlan } from './islePlan.ts';
@@ -11,7 +12,7 @@ const PLAN = {
   dungeon: 'crypt',
   radius: 180,
   reach: 210,
-  landing: [10, 120],
+  landing: 0.1,
   anchorage: [0, 260],
   spawns: [
     [10, 118],
@@ -49,7 +50,7 @@ test('the plan reader refuses bad JSON', () => {
     '[]',
     bad({ kind: 'castle' }),
     bad({ radius: 'big' }),
-    bad({ landing: [1] }),
+    bad({ landing: [1, 2] }),
     bad({ door: { at: [0, 0], facing: 0 } }),
     bad({ placements: [[1, 2, 3]] }),
     bad({ placements: [[-1, 0, 0, 0, 0, 1, 1]] }),
@@ -239,4 +240,22 @@ test('instances sort by module, a run each, the trees and cliffs marked for the 
   );
   assert.equal(floats.length, 3 * 8);
   assert.ok(Math.abs((floats[5] ?? 0) + 1) < 1e-6);
+});
+
+const ROOM = 'client/public/room.wasm';
+
+test("the room module's own plans and ground read, every module named", { skip: !existsSync(ROOM) }, () => {
+  const door = startRoomDoor(new WebAssembly.Module(readFileSync(ROOM)));
+  for (const [seed, climate] of [
+    ['43', 'rainforest'],
+    ['2', 'desert'],
+    ['1', 'tundra'],
+  ] as const) {
+    const plan = readIslePlan(door.islePlan(seed, climate));
+    assert.ok(plan.placements.length > 0);
+    assert.ok(plan.placements.every(([module]) => MODULE_NAMES[module] !== undefined));
+    const grid = gridOf(door.isleHeights(seed, climate));
+    assert.equal(grid.cell, 2);
+    assert.ok(groundMesh(grid).indices.length > 0);
+  }
 });

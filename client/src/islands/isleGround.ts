@@ -94,7 +94,7 @@ export const GROUND_LOOKS: Readonly<Record<string, GroundLook>> = {
   steppe: { inland: [0.55, 0.53, 0.34], high: EARTH, snowM: 1e4 },
   rainforest: { inland: [0.2, 0.36, 0.14], high: [0.24, 0.32, 0.16], snowM: 1e4 },
   swamp: { inland: [0.3, 0.33, 0.2], high: [0.33, 0.3, 0.21], snowM: 1e4 },
-  tundra: { inland: [0.5, 0.5, 0.42], high: [0.62, 0.62, 0.6], snowM: 12 },
+  tundra: { inland: [0.4, 0.45, 0.33], high: [0.5, 0.5, 0.46], snowM: 12 },
 };
 
 /** A climate the contract does not name is drawn as woodland. */

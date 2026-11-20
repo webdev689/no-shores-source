@@ -132,7 +132,6 @@ const SAND = vec3f(0.84, 0.76, 0.56);
 const WET = 0.72;
 const SEABED = vec3f(0.5, 0.52, 0.4);
 const DEEP_BED = vec3f(0.24, 0.3, 0.3);
-const ROCK = vec3f(0.46, 0.45, 0.43);
 const SNOW = vec3f(0.93, 0.94, 0.96);
 // Where the tide reaches up the beach, and how high and gentle a beach runs, metres.
 const TIDE_M = 0.5;
@@ -146,17 +145,7 @@ struct Lit {
   @location(3) @interpolate(flat) part: u32,
 };
 
-fn hash(cell: vec2f) -> f32 {
-  return fract(sin(dot(cell, vec2f(127.1, 311.7))) * 43758.5453);
-}
-fn value_noise(point: vec2f) -> f32 {
-  let cell = floor(point);
-  let along = fract(point);
-  let eased = along * along * (3.0 - 2.0 * along);
-  let top = mix(hash(cell), hash(cell + vec2f(1.0, 0.0)), eased.x);
-  let bottom = mix(hash(cell + vec2f(0.0, 1.0)), hash(cell + vec2f(1.0, 1.0)), eased.x);
-  return mix(top, bottom, eased.y);
-}
+// value_noise is the shared WGSL's.
 
 @vertex
 fn ground_vertex(@location(0) position: vec3f, @location(1) normal: vec3f) -> Lit {
@@ -201,17 +190,19 @@ fn ground_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
   let normal = normalize(surface.normal);
   let z = surface.local.z;
   let slope = length(normal.xy) / max(normal.z, 0.05);
-  let grain = value_noise(surface.local.xy * 0.35) * 0.6 + value_noise(surface.local.xy * 0.07) * 0.4;
+  // The ground's rock is the kit's own stone; its grain a fine noise over patches some 30 m across.
+  let rock = isle.parts[${PARTS.indexOf('rock')}].rgb;
+  let grain = value_noise(surface.local.xy * 0.35) * 0.45 + value_noise(surface.local.xy * 0.033) * 0.55;
   let inland = mix(isle.inland.rgb, isle.high.rgb, smoothstep(8.0, 40.0, z + grain * 6.0));
-  let bare = mix(inland, ROCK * (0.85 + 0.3 * grain), smoothstep(0.55, 0.95, slope));
+  let bare = mix(inland, rock * (0.85 + 0.3 * grain), smoothstep(0.55, 0.95, slope));
   let snowy = mix(bare, SNOW, smoothstep(isle.high.w - 2.0, isle.high.w + 2.0, z + grain * 4.0) * (1.0 - smoothstep(0.9, 1.3, slope)));
   let beach = (1.0 - smoothstep(BEACH_M - 0.6, BEACH_M + 0.6 + grain, z)) * (1.0 - smoothstep(0.25, 0.45, slope));
   var dry = mix(snowy, SAND * (0.92 + 0.16 * grain), beach);
   dry = mix(dry, SAND * WET, 1.0 - smoothstep(TIDE_M - 0.2, TIDE_M + 0.2, z));
   let depth = max(-z, 0.0);
   let bed = mix(mix(SAND * WET, SEABED, smoothstep(0.5, 8.0, depth)), DEEP_BED, smoothstep(8.0, 40.0, depth));
-  let colour = mix(dry, mix(bed, ROCK * 0.8, smoothstep(0.6, 1.0, slope)), smoothstep(-0.05, 0.05, -z));
-  return vec4f(lit(colour * (0.94 + 0.12 * grain), normal, surface.from_eye), 1.0);
+  let colour = mix(dry, mix(bed, rock * 0.8, smoothstep(0.6, 1.0, slope)), smoothstep(-0.05, 0.05, -z));
+  return vec4f(lit(colour * (0.84 + 0.3 * grain), normal, surface.from_eye), 1.0);
 }
 
 @fragment
@@ -228,10 +219,6 @@ fn module_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
 const CAST_SHADER = /* wgsl */ `
 ${SHADOW_CAST_WGSL}
 ${COMMON}
-@vertex
-fn ground_vertex(@location(0) position: vec3f) -> @builtin(position) vec4f {
-  return shadow.from_eye * vec4f(position + isle.offset.xyz, 1.0);
-}
 @vertex
 fn module_vertex(@location(0) position: vec3f, @location(3) at: vec4f, @location(4) turn: vec4f) -> @builtin(position) vec4f {
   return shadow.from_eye * vec4f(placed(position, at, turn), 1.0);
@@ -272,7 +259,6 @@ interface Pipelines {
   readonly group: GPUBindGroupLayout;
   readonly ground: GPURenderPipeline;
   readonly modules: GPURenderPipeline;
-  readonly castGround: GPURenderPipeline;
   readonly castModules: GPURenderPipeline;
 }
 
@@ -316,7 +302,6 @@ function pipelinesOf(gpu: Gpu): Pipelines {
     group,
     ground: drawing('ground_vertex', 'ground_fragment', [GROUND_LAYOUT]),
     modules: drawing('module_vertex', 'module_fragment', MODULE_LAYOUTS),
-    castGround: casting('ground_vertex', [GROUND_LAYOUT]),
     castModules: casting('module_vertex', CAST_MODULE_LAYOUTS),
   };
   byFormat.set(gpu.format, pipelines);
@@ -447,17 +432,13 @@ export class IslesView {
 
   castInto(pass: GPURenderPassEncoder, _fromEye: Float32Array, shot: IsleShot, _time: number, shadow: ShadowMap): void {
     this.prepare(shot);
-    const { castGround, castModules } = this.pipelines;
+    const { castModules } = this.pipelines;
     for (const drawn of this.drawn) {
       if (this.distanceOf(drawn, shot) >= NEAR_M) continue;
       const { offset, reach } = this.placeOf(drawn, shot);
       const low = [offset[0] - reach, offset[1] - reach, offset[2] - 40] as const;
       const high = [offset[0] + reach, offset[1] + reach, offset[2] + 120] as const;
       if (!shadow.reaches(low, high)) continue;
-      pass.setPipeline(castGround);
-      pass.setBindGroup(0, drawn.group);
-      pass.setBindGroup(1, shadow.casterGroup(castGround));
-      this.drawGround(pass, drawn.near);
       pass.setPipeline(castModules);
       pass.setBindGroup(0, drawn.group);
       pass.setBindGroup(1, shadow.casterGroup(castModules));
@@ -526,15 +507,13 @@ export class IslesView {
     }
   }
 
-  private drawGround(pass: GPURenderPassEncoder, ground: Ground, frame?: IslesFrame): void {
+  private drawGround(pass: GPURenderPassEncoder, ground: Ground, frame: IslesFrame): void {
     if (ground.count === 0) return;
     pass.setVertexBuffer(0, ground.vertices);
     pass.setIndexBuffer(ground.indices, 'uint32');
     pass.drawIndexed(ground.count);
-    if (frame) {
-      frame.triangles += ground.count / 3;
-      frame.draws++;
-    }
+    frame.triangles += ground.count / 3;
+    frame.draws++;
   }
 
   private drawModules(pass: GPURenderPassEncoder, drawn: Drawn, middleOnly: boolean, frame: IslesFrame | null): void {

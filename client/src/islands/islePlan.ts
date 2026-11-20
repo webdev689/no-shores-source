@@ -27,14 +27,16 @@ export interface IslePlan {
   readonly dungeon: string;
   readonly radius: number;
   readonly reach: number;
-  readonly landing: Point2;
+  /** The bearing from its middle its landing beach faces, radians clockwise from north. */
+  readonly landing: number;
   readonly anchorage: Point2;
   readonly spawns: readonly Point2[];
   readonly facing: number;
   readonly door: { readonly at: Point2; readonly facing: number; readonly style: string };
   readonly landmark: readonly [Point2, number] | null;
   readonly guards: readonly Point2[];
-  readonly camp: Point2;
+  /** Its guards' camp, on an isle; null on a cove. */
+  readonly camp: Point2 | null;
   readonly wrecks: readonly (readonly [x: number, y: number, lies: number])[];
   readonly ring: readonly Point2[];
   readonly placements: readonly IslePlacement[];
@@ -101,7 +103,7 @@ export function readIslePlan(text: string): IslePlan {
     dungeon: plan.dungeon as string,
     radius: finite(plan.radius, 'radius'),
     reach: finite(plan.reach, 'reach'),
-    landing: point(plan.landing, 'a landing'),
+    landing: finite(plan.landing, 'landing'),
     anchorage: point(plan.anchorage, 'an anchorage'),
     spawns: list(plan.spawns, 'spawns', (each) => point(each, 'a spawn')),
     facing: finite(plan.facing, 'facing'),
@@ -113,7 +115,7 @@ export function readIslePlan(text: string): IslePlan {
     landmark:
       landmark === null ? null : [point(landmark[0], "a landmark's place"), finite(landmark[1], "landmark's facing")],
     guards: list(plan.guards, 'guards', (each) => point(each, "a guard's post")),
-    camp: point(plan.camp, 'a camp'),
+    camp: plan.camp === null ? null : point(plan.camp, 'a camp'),
     wrecks: list(
       plan.wrecks,
       'wrecks',

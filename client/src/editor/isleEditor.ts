@@ -71,6 +71,12 @@ function openSea(gpu: Gpu): { wide: GPUTexture; lakes: GPUTexture; cellM: number
 
 export async function startIsleEditor(canvas: HTMLCanvasElement, panel: HTMLElement): Promise<IsleEditor> {
   const gpu = await startGpu(canvas);
+  // A shader or pipeline the device refuses shows nothing: say why, once.
+  let told = false;
+  gpu.device.addEventListener('uncapturederror', (event) => {
+    if (!told) console.error('the Islands mode drew nothing:', (event as GPUUncapturedErrorEvent).error.message);
+    told = true;
+  });
   const base = import.meta.env.BASE_URL;
   const answer = await fetch(`${base}room.wasm`);
   if (!answer.ok) throw new Error(`room.wasm: ${answer.status}`);
@@ -267,7 +273,7 @@ export async function startIsleEditor(canvas: HTMLCanvasElement, panel: HTMLElem
     gpu.device.queue.submit([encoder.finish()]);
     about.textContent = status;
     const { triangles, draws } = isles.frame;
-    counts.textContent = `${Math.round(triangles).toLocaleString('en-US')} triangles in ${draws} draws; ${Math.round(orbit.distance)} m from the target, the eye ${Math.round(camera.eye[2])} m up.`;
+    counts.textContent = `${Math.round(triangles).toLocaleString('en-US')} triangles in ${draws} draws; ${Math.round(orbit.distance)} m from the target, the eye ${Math.round(above)} m over the ground.`;
     // The water moves: keep drawing while the mode is open.
     redraw();
   }
