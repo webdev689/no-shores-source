@@ -29,7 +29,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Naval, Living World, Professions and Synth Come Over Leaner]]
 - [[Ship Guns Keep Square Broadsides]]
 - [[Foes Show a Closing Parry Ring]]
-- [[Locked On, the Figure Faces Its Foe]]
 - [[Struck Figures Flash, and DFO's Blood Comes Over]]
 - [[Ranged Weapons Aim and Fire]]
 - [[Aiming Sits Behind the Shoulder and Zooms the View]]
@@ -131,6 +130,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Display as Claude Lays It Out]]
 - [[The Swing's Arc Never Covers Its Striker]]
 - [[A Player's Melee Weapon Reaches a Tenth Further]]
+- [[Locked On, the Figure Faces Its Foe Unless It Sprints]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -141,6 +141,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## Replaced
 
+- [[Locked On, the Figure Faces Its Foe]], by [[Locked On, the Figure Faces Its Foe Unless It Sprints]]
 - [[Rust for Everything]], by [[TypeScript and Rust]]
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]
 - [[PostgreSQL]], by [[Accounts Start as Guests, on Cloudflare D1]]

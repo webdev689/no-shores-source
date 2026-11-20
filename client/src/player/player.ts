@@ -127,9 +127,11 @@ export function updatePlayer(
     queued = { jump: false, crouch: false };
   }
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
-  // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back.
+  // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back; a sprint faces where
+  // it runs, and once it ends the figure faces its foe again.
   const acting = swinging || cast !== null;
-  const locked = toward !== null && !mounted && body.mode === 'ground';
+  const sprinting = input.held('run') && body.moving;
+  const locked = toward !== null && !mounted && body.mode === 'ground' && !sprinting;
   const walked = body.moving ? body.facing : player.facing;
   const facing = acting ? yaw : locked ? toward : body.mode !== 'ground' ? body.facing : walked;
   const blend = carry / movement.tickSeconds;
