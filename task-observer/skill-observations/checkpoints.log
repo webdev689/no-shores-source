@@ -8,3 +8,6 @@
 2026-11-20 13:56 [observation-log] session-start scan: files=5 parsed=5 principles=0
 2026-11-20 checkpoint after the review's apply tasks (10-13): no new observations
 2026-11-20 14:43 [overlook-source] session-start scan: files=5 parsed=5 principles=0
+2026-11-19 19:46 [overlook-source] session-start scan: files=0 parsed=0 principles=0
+2026-11-19 19:50 [dfo-online-source] session-start scan: files=1 parsed=1 principles=0
+2026-11-19 21:17 [dfo-online-source] session-start scan: files=3 parsed=3 principles=0
