@@ -161,12 +161,25 @@
 .journal-card-words {
   min-width: 0;
 }
-.journal-card-name,
-.journal-card-step {
+.journal-card-name {
   display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+/* The step's name is cut short where it must be; its number and Done always show. */
+.journal-card-step {
+  display: flex;
+  align-items: baseline;
+}
+.journal-card-step > :nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.journal-card-step > :not(:nth-child(2)) {
+  flex: none;
 }
 .journal-card-tale {
   margin: 4px 0;

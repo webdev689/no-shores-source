@@ -42,6 +42,8 @@ export interface TimersPanel {
   readonly node: HTMLElement;
   /** The press in its head that takes it up, where the focus goes as it drops. */
   readonly close: HTMLButtonElement;
+  /** The list that scrolls under its head. */
+  readonly list: HTMLElement;
   /** Brings it to `week` at `now`: its rows built again only for a new word, each countdown rewritten as it changes. */
   show(week: ThisWeek | null, now: number): void;
 }
@@ -168,6 +170,7 @@ export function timersPanel(close: () => void): TimersPanel {
   return {
     node,
     close: closer,
+    list,
     show(week, now) {
       const next = JSON.stringify(week);
       if (next !== word) build(week);

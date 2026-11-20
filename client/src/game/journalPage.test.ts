@@ -194,3 +194,18 @@ test('the timers stay down and the focus stays put as the minute, the day and th
   assert.equal((document.activeElement as unknown as FakeElement).dataset['key'], 'bounty-1');
   assert.ok(keyed(root, 'bounty-said')?.find('13 / 30'), 'rebuilt with its new count');
 });
+
+test('a focused tile gone as the day turns leaves the focus on the page, not lost; T with Ctrl is the browser’s', () => {
+  let week = weekEnding(FRIDAY_AT);
+  const { root, window, journal } = journalOf({ week: () => week, kept: () => geared([]), written: [] });
+  keyed(root, 'bounty-1')?.focus();
+  week = weekEnding(FRIDAY_AT + 86_400_000, 20_779);
+  journal.page();
+  assert.equal(document.activeElement, journal.hourglass, 'no tile left, so the hourglass');
+  const key = new FakeEvent('keydown', { key: 't' });
+  Object.assign(key, { ctrlKey: true });
+  key.target = root;
+  window.dispatchEvent(key);
+  assert.equal(keyed(root, 'timers')?.hidden, true);
+  assert.equal(key.defaultPrevented, false);
+});

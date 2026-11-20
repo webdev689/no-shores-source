@@ -1,5 +1,5 @@
-// What the Journal's timers and an entrance's card say, from what the rules say is on (`activitiesAt`), why the gates shut
-// (`gatesAt`) and the character's record as their gear last carried it. Nothing here judges a rule: it only words
+// What the Journal's timers and an entrance's card say, from what the rules say is on (`activitiesAt`), why the gates
+// shut (`gatesAt`) and the character's record as their gear last carried it. Nothing here judges a rule: it only words
 // what the rules gave, and reads "taken" against the drawn day and week.
 import { type Activities, type Gates, type ModifierShown, eliteRun } from './activities.ts';
 import type { ActivityRecord } from '../network/gearMessages.ts';

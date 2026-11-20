@@ -1,6 +1,6 @@
 // The activities' screens, wired by the game: what the menu's Journal reads for its timers, quests and bounties, and
-// the card E opens at a dungeon's entrance. It keeps the last word of the character any room sent, so the screens read the same at sea as ashore,
-// and builds their words from the rules (`activityWords.ts`), never judging a rule itself.
+// the card E opens at a dungeon's entrance. It keeps the last word of the character any room sent, so the screens read
+// the same at sea as ashore, and builds their words from the rules (`activityWords.ts`), never judging a rule itself.
 import './activityScreens.css';
 import { activitiesAt, gatesAt } from './activities.ts';
 import {
@@ -43,8 +43,8 @@ export interface ScreensClock {
 }
 
 export interface ActivityScreens {
-  /** The day and the week as the Journal's timers show them, built again only when the minute or the gear changes; null before the room
-   *  module is read. */
+  /** The day and the week as the Journal's timers show them, built again only when the minute or the gear changes;
+   *  null before the room module is read. */
   week(): ThisWeek | null;
   /** The last word of the character a room sent, kept at sea: the Journal's quests and bounties read it. */
   kept(): GearState | null;

@@ -77,7 +77,7 @@ export function startJournal(source: JournalSource | null, now: () => number = (
     hourglass.setAttribute('aria-expanded', String(down));
     quests.inert = bounties.inert = down;
     if (down) {
-      panel.node.scrollTop = 0;
+      panel.list.scrollTop = 0;
       panel.close.focus();
     } else if (inPanel) hourglass.focus();
   };
@@ -93,7 +93,8 @@ export function startJournal(source: JournalSource | null, now: () => number = (
     'keydown',
     (event) => {
       const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
-      if (event.key.toLowerCase() !== 't' || event.repeat || typing || !node.isConnected) return;
+      const held = event.ctrlKey || event.metaKey || event.altKey;
+      if (event.key.toLowerCase() !== 't' || event.repeat || held || typing || !node.isConnected) return;
       event.preventDefault();
       hourglass.click();
     },
@@ -184,7 +185,7 @@ export function startJournal(source: JournalSource | null, now: () => number = (
       const written = source?.written ?? QUESTS_WRITTEN;
       const cards = questCardsOf(gear?.quests ?? [], written);
       const day = week?.today.day ?? null;
-      const column = [gear?.bounties, gear?.prologueDone, gear?.bountyXp, gear?.bountyAurem, day];
+      const column = [gear?.bounties, gear?.day, gear?.prologueDone, gear?.bountyXp, gear?.bountyAurem, day];
       const word = JSON.stringify([cards, pageAt, written.length, column]);
       if (word !== built) {
         built = word;
@@ -194,7 +195,8 @@ export function startJournal(source: JournalSource | null, now: () => number = (
         keyed.clear();
         buildQuests(cards, written.length);
         buildBounties(gear, day);
-        if (focused) keyed.get(focused)?.focus();
+        // A control gone (a tile as the day turns, an arrow as the last quest goes) leaves the focus on the page's first.
+        if (focused) (keyed.get(focused) ?? [...keyed.values()][0] ?? hourglass).focus();
       }
       panel.show(week, now());
       return node;
