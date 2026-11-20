@@ -226,7 +226,7 @@ export function shipTab(
 /** The officers of the day, each held to sign on, on the screen of the keeper of `faction`'s counter: none but at the
  *  faction pledged to's. */
 export function musterAt(context: PageContext, faction: number | undefined): HTMLElement[] {
-  const pledge = context.gear.ship?.pledge ?? 0;
+  const pledge = context.gear.standing?.pledge ?? 0;
   if (pledge === 0 || faction !== pledge) return [];
   const muster = make('section', '', `ship-muster ${ROLES.panel}`);
   muster.append(heading('The muster'));

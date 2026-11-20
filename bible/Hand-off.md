@@ -276,8 +276,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
   change: a captain strikes from losing men at about 80% of its hull at every rank, and the foes' numbers are in
   [[Foes]].
-- **#99, ship power and crew**, is in #75 through the Ship & Seas session; #103 follows it there. Recruiting needs #92's pledge
-  (`room::crew::pledge_of`); every call beyond the design note is listed in #99's description, the owner's to change.
+- **#99, ship power and crew**, is in #75 through the Ship & Seas session, with #103, #104, #109 and #110 after it.
+  Draft #114 (`claude/ship-power` into the sea branch) waits on the owner's yes: the gear message carries the pledge
+  once, in its standing, and the ship's part no longer repeats it; its check passed at `fe2ecbc2`, tested offline.
+  Recruiting needs #92's pledge (`room::crew::pledge_of`); every call beyond the design note is listed in #99's
+  description, the owner's to change.
 - **#75, the sea, waits on the owner's yes to merge**, after #71, which deploys the page and the rooms. Left open
   there: the sky and the light do not follow the weather yet; off the helm the room now takes a change of pace (a
   rule of the server's); under a player's fire a Frigate lasts about 5% longer than a Sloop of its rank; one voyage in contested

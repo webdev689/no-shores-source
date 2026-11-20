@@ -570,7 +570,7 @@ table GearOfficer {
 
 // The ship's own power and crew: its experience, level, Prestige, Attack and Defense and how far to its next level;
 // Timber, Canvas, Iron and Heartwood; its hands and its complement; its officers, and at a pledged faction's counter
-// the officers of the day; its trim at sea (the gear crate's ShipTrim, in its order); and the pledge.
+// the officers of the day; and its trim at sea (the gear crate's ShipTrim, in its order).
 table GearShip {
   xp: ulong;
   level: ubyte;
@@ -585,8 +585,6 @@ table GearShip {
   officers: [GearOfficer];
   offers: [GearOfficer];
   trim: [double];
-  // The faction the player is pledged to (0 none), whose counter signs officers on.
-  pledge: ubyte;
 }
 
 // What a room sends: exactly one of these is present.
