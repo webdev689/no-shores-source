@@ -22,7 +22,9 @@ function classesWithBorders(): Set<string> {
   const pages = [join(CLIENT, 'index.html'), join(CLIENT, 'testground', 'index.html')];
   const framed = new Set<string>();
   for (const file of [...code, ...pages]) {
-    for (const [, selectors = '', body = ''] of readFileSync(file, 'utf8').matchAll(/([^{}]{1,400})\{([^{}]*)\}/g)) {
+    // A sheet written in code fills values in with `${...}`, whose braces would split its rule.
+    const sheet = readFileSync(file, 'utf8').replace(/\$\{[^{}]*\}/g, '0');
+    for (const [, selectors = '', body = ''] of sheet.matchAll(/([^{}]{1,400})\{([^{}]*)\}/g)) {
       if (!/border(-width)?\s*:\s*[^;]*\d+px/.test(body)) continue;
       for (const [, name = ''] of selectors.matchAll(/\.([a-z][a-z0-9-]*)/g)) framed.add(name);
     }
