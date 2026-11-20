@@ -93,8 +93,9 @@ fn bridges_of(laid: &layout::Layout) -> Vec<Bridge> {
 /// level to a tier's.
 fn spokes_of(laid: &layout::Layout) -> Vec<[f64; 7]> {
     let ruins = laid.areas.iter().zip(&laid.basins).filter(|(area, _)| area.kind == layout::brief::AreaKind::Ruin);
-    let lines: Vec<[[f64; 2]; 2]> =
-        ruins.flat_map(|(_, basin)| basin.floors.iter().skip(1).map(|f| [[f[0], f[1]], [f[2], f[3]]])).collect();
+    let lines: Vec<[[f64; 2]; 2]> = ruins
+        .flat_map(|(_, basin)| basin.floors.iter().skip(1).map(|floor| [[floor[0], floor[1]], [floor[2], floor[3]]]))
+        .collect();
     let on_line = |[x, y]: [f64; 2]| lines.iter().any(|&[from, to]| off_line([x, y], from, to) < 0.01);
     let ramps = laid.sculpt.levels.iter().filter(|level| level[5] != level[6]);
     ramps.filter(|level| on_line([level[0], level[1]]) && on_line([level[2], level[3]])).copied().collect()

@@ -124,7 +124,7 @@ fn the_whalebacks_ends_are_clad_with_fallen_rock() {
             (along < 0.0 || along > length) && off_line([x, y], first, last) < reach + 6.0
         };
         // Each whaleback its own: one counted for another's end does not clad this one.
-        if !boulders.iter().any(|at| at_an_end(at)) {
+        if !boulders.iter().any(at_an_end) {
             bare.push(outcrop.at);
         }
     }
@@ -763,7 +763,7 @@ fn a_timber_stacks_logs_lie_side_by_side() {
         for (number, &(middle, turn)) in logs.iter().enumerate() {
             stacks += 1;
             for &(other, other_turn) in &logs[number + 1..] {
-                let apart = ((middle[0] - other[0]).powi(2) + (middle[1] - other[1]).powi(2)).sqrt();
+                let apart = layout::field::distance([middle[0], middle[1]], [other[0], other[1]]);
                 let same_layer = (middle[2] - other[2]).abs() < 0.1 && (turn - other_turn).abs() < 1e-9;
                 assert!(
                     !same_layer || apart >= 0.5,

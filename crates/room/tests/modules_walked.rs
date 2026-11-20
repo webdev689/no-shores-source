@@ -144,7 +144,7 @@ fn a_body_walks_from_the_coven_through_the_tunnels_mouth_to_the_chamber() {
     let joined = layout::spaces::Joined::Tunnel;
     let tunnel = vale.map.connections.iter().find(|each| each.joined == joined).expect("the Vale has a tunnel");
     let [mouth, middle] = [tunnel.points[0], tunnel.points[1]];
-    let length = ((middle[0] - mouth[0]).powi(2) + (middle[1] - mouth[1]).powi(2)).sqrt();
+    let length = layout::field::distance(mouth, middle);
     let way = [(middle[0] - mouth[0]) / length, (middle[1] - mouth[1]) / length];
     let from = [mouth[0] - way[0] * 6.0, mouth[1] - way[1] * 6.0];
     // From the coven's floor in under the mouth, along the tunnel to 3 m before the chamber's entry.
@@ -158,7 +158,7 @@ fn a_body_walks_from_the_coven_through_the_tunnels_mouth_to_the_chamber() {
         "the body stops at {:.1},{:.1}, {:.1} m short of the chamber's entry, past {passed} waypoints",
         body.x,
         body.y,
-        ((out[0] - body.x).powi(2) + (out[1] - body.y).powi(2)).sqrt()
+        layout::field::distance(out, [body.x, body.y])
     );
 }
 
