@@ -8,9 +8,9 @@ use navmesh::{AGENT, Bounds, NavMesh};
 
 /// Two decks 2.2 m and 3.7 m over the sea, 4 m apart, the lower with a crate on it; the water 30 m about them.
 const DECKS: [Block; 3] = [
-    Block { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 6.0, top: 2.2 },
-    Block { min_x: 14.0, min_y: 0.0, max_x: 20.0, max_y: 5.0, top: 3.7 },
-    Block { min_x: 4.0, min_y: 2.0, max_x: 5.0, max_y: 3.0, top: 3.2 },
+    Block { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 6.0, top: 2.2, bottom: 0.0 },
+    Block { min_x: 14.0, min_y: 0.0, max_x: 20.0, max_y: 5.0, top: 3.7, bottom: 0.0 },
+    Block { min_x: 4.0, min_y: 2.0, max_x: 5.0, max_y: 3.0, top: 3.2, bottom: 0.0 },
 ];
 const WATER: Bounds = Bounds { min_x: -30.0, min_y: -30.0, max_x: 50.0, max_y: 35.0 };
 

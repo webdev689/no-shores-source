@@ -32,7 +32,8 @@ import { type WorldOutput, WorldSounds } from '../combat/worldSounds.ts';
 import { loadSamples } from '../soundSamples.ts';
 import { type CardAt, type Cards, openCards } from '../player/cards.ts';
 import { loadForgedBirds } from '../combat/forgedBirds.ts';
-import { COURSE, RESOURCE_NODES, STALL, START, WOODEN } from './course.ts';
+import { COURSE, RESOURCE_NODES, ROCKS_SHOWN, STALL, START, STOOD, WOODEN } from './course.ts';
+import { rockTriangles } from './rockRow.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
 import { PanelAsks } from './panelAsks.ts';
@@ -87,27 +88,28 @@ async function start(): Promise<void> {
   const canvas = element<HTMLCanvasElement>('#ground');
   const gpu = await startGpu(canvas);
   const scene = new SceneView(gpu);
-  scene.setBlocks(COURSE);
+  scene.setBlocks(COURSE, ROCKS_SHOWN ? rockTriangles() : []);
   const blood = new FightBlood(gpu, surfacesOf(COURSE), location.search);
   scene.underCards = (pass) => blood.draw(pass);
   // The body moves by the Rust movement rules, run in WebAssembly.
   const movement = await startMovementRules(
     await (await fetch(`${import.meta.env.BASE_URL}movement.wasm`)).arrayBuffer(),
   );
-  movement.setCourse(COURSE);
+  movement.setCourse(STOOD);
   // The fight's rules and a room in the page are the room crate itself, in WebAssembly.
   const roomModule = await WebAssembly.compile(
     await (await fetch(`${import.meta.env.BASE_URL}room.wasm`)).arrayBuffer(),
   );
   const combatRules = startCombatRules(roomModule);
-  combatRules.setCourse(COURSE);
+  combatRules.setCourse(STOOD);
   // Each foe's name and hands are the rules' roster's; its type's dress is made once.
   const roster = rosterOf(roomModule);
   const input = new Input(canvas);
   let status = 'Reading the forge…';
   let fps = 6;
   // The player before the forge has come; then the walker's.
-  const standing = newPlayer(movement, START.x, START.y);
+  const started = newPlayer(movement, START.x, START.y);
+  const standing = { ...started, yaw: START.yaw ?? started.yaw, pitch: START.pitch ?? started.pitch };
   let walker: Walker | null = null;
   const playerNow = (): Player => walker?.player ?? standing;
   let nextId = PLAYER_ID;
@@ -184,7 +186,7 @@ async function start(): Promise<void> {
   });
   // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
   const aimView = (shown: Player) =>
-    aboveGround(playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, COURSE, aimPlace));
+    aboveGround(playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, STOOD, aimPlace));
   const panelState = (looks: ForgeLooks, hair: HairColours, line: string) => ({
     looks,
     hair,
@@ -246,7 +248,7 @@ async function start(): Promise<void> {
   };
   const link = roomUrl
     ? await RoomConnection.open(roomUrl, received, gearReceived)
-    : LocalRoom.open(roomModule, START, COURSE, received, gearReceived, { stall: STALL, nodes: RESOURCE_NODES });
+    : LocalRoom.open(roomModule, START, STOOD, received, gearReceived, { stall: STALL, nodes: RESOURCE_NODES });
   const fighting = new Fighting(combatRules, link);
   fight = fighting;
   // The room in the page runs one tick at once, so the player's fighter and gear are known before they first play.
@@ -313,7 +315,7 @@ async function start(): Promise<void> {
     const shown = playerFight.frame(controls, steps, seconds, clock, {
       running,
       hands: controls.locked,
-      markOf: () => crosshairPoint(aimView(player.player), aspect, COURSE, bodies),
+      markOf: () => crosshairPoint(aimView(player.player), aspect, STOOD, bodies),
       zoomOf: () => aimView(player.player).zoom ?? 1,
       handsSeconds: feel.shownSeconds(fighting.player, seconds),
     });
@@ -390,7 +392,7 @@ async function start(): Promise<void> {
     const dropped = dropsShown.frame(gear?.drops ?? [], clock, cameraOf(camera).eye);
     const marks = effects.marks(fighting, running ? seconds : 0, {
       eye: cameraOf(camera).eye,
-      blocks: COURSE,
+      blocks: STOOD,
       bodies,
       muzzleOf: (shot) =>
         fpMuzzle
@@ -421,7 +423,7 @@ async function start(): Promise<void> {
       },
       others,
       foes: foes.placed,
-      ground: { blocks: COURSE, wooden: WOODEN },
+      ground: { blocks: STOOD, wooden: WOODEN },
       landed: dropped.landed,
       crates: gear?.crates ?? null,
     });
@@ -459,7 +461,9 @@ async function start(): Promise<void> {
         width: canvas.clientWidth,
         height: canvas.clientHeight,
         events,
-        blocks: COURSE,
+        blocks: STOOD,
+        // The course's flat ground hides nothing.
+        groundAt: null,
         player: fighting.player,
         firstPerson: inFirstPerson,
         pressed: shown.pressed,

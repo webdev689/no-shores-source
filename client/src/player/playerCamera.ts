@@ -1,17 +1,20 @@
 import type { Orbit } from '../editor/orbit.ts';
 import type { Block } from '../rules/movementRules.ts';
+import { BOOM, boomEased, boomReach } from './boom.ts';
 
-/** First or third person, how far behind the head the camera is meant to sit, and how far it sits now as it eases. */
+/** First or third person, how far behind the head the camera is meant to sit, and how far it sits now as it eases;
+ *  and how far out its boom stands as it eases clear of what is in the way (`boom.ts`), unset or infinite where
+ *  nothing is. */
 export interface ViewMode {
   readonly firstPerson: boolean;
   readonly distance: number;
   readonly shown: number;
+  readonly boom?: number;
 }
 
 /** DFO's third-person camera, as the owner chose its numbers: 2 m behind the head and 0.5 m up, 0.2 m a wheel notch,
- *  back to first person once nearer than 0.8 m, never farther than 10 m, easing in about a tenth of a second, and
- *  kept 0.25 m off a wall. */
-export const CAMERA = { back: 2, up: 0.5, notch: 0.2, nearest: 0.8, farthest: 10, ease: 10, clearance: 0.25 } as const;
+ *  back to first person once nearer than 0.8 m, never farther than 10 m, and easing in about a tenth of a second. */
+export const CAMERA = { back: 2, up: 0.5, notch: 0.2, nearest: 0.8, farthest: 10, ease: 10 } as const;
 
 export const FIRST_PERSON: ViewMode = { firstPerson: true, distance: CAMERA.back, shown: 0 };
 
@@ -49,6 +52,18 @@ export function scrolled(view: ViewMode, notches: number): ViewMode {
   return { ...view, distance: Math.max(CAMERA.nearest - CAMERA.notch, distance) };
 }
 
+/** The view an address asks to arrive with, as `&spawn=` asks where: `&view=first`, or `&view=third[,<metres>]`
+ *  behind the head (2 m unless said, within the wheel's reach); null when it asks none. A way to picture a place,
+ *  rooms from inside among them, without a wheel or a mouse button. */
+export function askedView(search: string): ViewMode | null {
+  const [kind, metres] = new URLSearchParams(search).get('view')?.split(',') ?? [];
+  if (kind === 'first') return FIRST_PERSON;
+  if (kind !== 'third') return null;
+  const asked = Number(metres || CAMERA.back);
+  const distance = Number.isFinite(asked) ? Math.min(CAMERA.farthest, Math.max(CAMERA.nearest, asked)) : CAMERA.back;
+  return { firstPerson: false, distance, shown: distance };
+}
+
 /** First person to third, or back. */
 export const toggled = (view: ViewMode): ViewMode => ({ ...view, firstPerson: !view.firstPerson });
 
@@ -64,7 +79,7 @@ type Point = readonly [number, number, number];
 export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number {
   let nearest = 1;
   for (const block of blocks) {
-    const low = [block.minX, block.minY, 0];
+    const low = [block.minX, block.minY, block.bottom];
     const high = [block.maxX, block.maxY, block.top];
     let enter = 0;
     let leave = 1;
@@ -84,9 +99,52 @@ export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number
   return nearest;
 }
 
-/** The camera as an orbit the scene draws from: at the head in first person; behind it and up in third, pulled in
- *  short of any block between; and `aim` (0 to 1) of the way into aiming's view, at `place` over the shoulder and
- *  zoomed. `pitch` is how far it looks down, negative looking up. */
+/** Where the camera's boom reaches from the head with nothing in the way: nowhere in first person; behind the head
+ *  and up in third, and `aim` (0 to 1) of the way to aiming's `place` over the shoulder. */
+function boomEnd(head: Point, yaw: number, pitch: number, view: ViewMode, aim: number, place: AimPlace): Point | null {
+  if (view.shown <= 0.01) return null;
+  const forward = forwardOf(yaw, pitch);
+  const up: Point = [Math.sin(pitch) * Math.sin(yaw), -Math.sin(pitch) * Math.cos(yaw), Math.cos(pitch)];
+  const right: Point = [Math.cos(yaw), Math.sin(yaw), 0];
+  const end = (axis: 0 | 1 | 2) => {
+    const behind =
+      head[axis] - forward[axis] * view.shown + up[axis] * CAMERA.up * Math.min(1, view.shown / CAMERA.back);
+    const shoulder = head[axis] + right[axis] * place.shoulder - forward[axis] * place.back + up[axis] * place.up;
+    return behind + (shoulder - behind) * aim;
+  };
+  return [end(0), end(1), end(2)];
+}
+
+const forwardOf = (yaw: number, pitch: number): Point => [
+  Math.cos(pitch) * Math.sin(yaw),
+  -Math.cos(pitch) * Math.cos(yaw),
+  -Math.sin(pitch),
+];
+
+const lengthOf = (from: Point, to: Point) => Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
+
+/** The view with its boom eased over `seconds` toward how far it stands clear of `blocks` and the ground now. */
+export function boomFollowed(
+  head: Point,
+  yaw: number,
+  pitch: number,
+  view: ViewMode,
+  blocks: readonly Block[],
+  aim: number,
+  place: AimPlace,
+  groundAt: ((x: number, y: number) => number | null) | null,
+  seconds: number,
+): ViewMode {
+  const end = boomEnd(head, yaw, pitch, view, aim, place);
+  if (!end) return view.boom === undefined ? view : { ...view, boom: Number.POSITIVE_INFINITY };
+  const clear = boomReach(head, end, blocks, groundAt, BOOM.clearance);
+  return { ...view, boom: boomEased(view.boom ?? Number.POSITIVE_INFINITY, clear, lengthOf(head, end), seconds) };
+}
+
+/** The camera as an orbit the scene draws from: at the head in first person; in third at the end of its boom as far
+ *  out as it has eased (`boomFollowed`), and never nearer a block or the ground than `BOOM.closest`, so a boom easing
+ *  in behind a sudden wall never shows through it; and `aim` (0 to 1) of the way into aiming's view, at `place` over
+ *  the shoulder and zoomed. `pitch` is how far it looks down, negative looking up. */
 export function cameraOrbit(
   head: Point,
   yaw: number,
@@ -95,25 +153,20 @@ export function cameraOrbit(
   blocks: readonly Block[],
   aim = 0,
   place: AimPlace = AIM,
+  groundAt: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
-  const forward: Point = [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)];
-  const up: Point = [Math.sin(pitch) * Math.sin(yaw), -Math.sin(pitch) * Math.cos(yaw), Math.cos(pitch)];
-  const right: Point = [Math.cos(yaw), Math.sin(yaw), 0];
+  const forward = forwardOf(yaw, pitch);
+  const end = boomEnd(head, yaw, pitch, view, aim, place);
   let eye: Point = head;
-  const third = view.shown > 0.01;
-  if (third) {
-    const behind = (axis: 0 | 1 | 2) =>
-      head[axis] - forward[axis] * view.shown + up[axis] * CAMERA.up * Math.min(1, view.shown / CAMERA.back);
-    const shoulder = (axis: 0 | 1 | 2) =>
-      head[axis] + right[axis] * place.shoulder - forward[axis] * place.back + up[axis] * place.up;
-    const want: Point = [0, 1, 2].map(
-      (axis) => behind(axis as 0 | 1 | 2) + (shoulder(axis as 0 | 1 | 2) - behind(axis as 0 | 1 | 2)) * aim,
-    ) as unknown as Point;
-    const length = Math.hypot(want[0] - head[0], want[1] - head[1], want[2] - head[2]);
-    const hit = rayHit(head, want, blocks);
-    // Short of a wall by the clearance; with none in the way, all the way out.
-    const share = hit >= 1 ? 1 : Math.max(0, hit - CAMERA.clearance / Math.max(length, 1e-6));
-    eye = [0, 1, 2].map((axis) => head[axis] + (want[axis] - head[axis]) * share) as unknown as Point;
+  if (end) {
+    const length = lengthOf(head, end);
+    // A view never followed (a caller that does not ease the boom) stands clear at once.
+    const shown =
+      view.boom === undefined
+        ? boomReach(head, end, blocks, groundAt, BOOM.clearance)
+        : Math.min(view.boom, boomReach(head, end, blocks, groundAt, BOOM.closest));
+    const share = length > 1e-6 ? Math.min(1, Math.max(0, shown) / length) : 0;
+    eye = [0, 1, 2].map((axis) => head[axis] + (end[axis] - head[axis]) * share) as unknown as Point;
   }
   const zoom = aimZoom(view.shown, aim, place);
   return {

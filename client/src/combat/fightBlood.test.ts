@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { surfacesOf } from './fightBlood.ts';
 
-const CRATE = { minX: 2, minY: -1, maxX: 3, maxY: 1, top: 1 };
+const CRATE = { minX: 2, minY: -1, maxX: 3, maxY: 1, top: 1, bottom: 0 };
 const surfaces = surfacesOf([CRATE]);
 
 test('blood falling on open ground meets it at height zero', () => {

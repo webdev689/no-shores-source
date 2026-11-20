@@ -22,7 +22,7 @@ fn node_file() -> Value {
         "ground": { "land": grid(10.0), "lake_level": vec![0.0; 16], "rivers": [], "roads": [], "towns": [],
             "coast": grid(5000.0), "across": grid(-50.0),
             "pads": [{ "bounds": [-10.0, -10.0, 10.0, 10.0], "level": 12.0 }], "seed": 7 },
-        "boxes": [[-5.0, -8.0, 5.0, -7.0, 13.0]] })
+        "boxes": [[-5.0, -8.0, 5.0, -7.0, 13.0, 12.0]] })
 }
 
 /// The players in a snapshot, read back through the protocol crate's generated code.
@@ -48,13 +48,13 @@ fn walk_input(sequence: u32, walk: &[f64; 7]) -> Vec<u8> {
 fn a_course_that_is_not_whole_blocks_does_not_open() {
     assert!(!open(&bytes_of(&[1.0])));
     assert!(!open(&bytes_of(&[0.0, 0.0, 1.0, 2.0])));
-    assert!(open(&bytes_of(&[0.0, 2.0, -5.0, -4.0, 5.0, -1.0, 2.3])));
+    assert!(open(&bytes_of(&[0.0, 2.0, -5.0, -4.0, 5.0, -1.0, 2.3, 0.0])));
 }
 
 #[test]
 fn players_join_send_inputs_and_are_seen_as_the_movement_rules_step_them() {
-    let ledge = [-5.0, -4.0, 5.0, -1.0, 2.3];
-    assert!(open(&bytes_of(&[0.0, 2.0, ledge[0], ledge[1], ledge[2], ledge[3], ledge[4]])));
+    let ledge = [-5.0, -4.0, 5.0, -1.0, 2.3, 0.0];
+    assert!(open(&bytes_of(&[0.0, 2.0, ledge[0], ledge[1], ledge[2], ledge[3], ledge[4], ledge[5]])));
     let (first, second) = (room_join(), room_join());
     let walk = [1.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0];
     assert_eq!(input(first, &walk_input(1, &walk)), TAKEN);
@@ -98,14 +98,16 @@ fn every_open_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
             "ring": [[260000, 360000], [261000, 360000], [261000, 361000], [260000, 361000]], "spawns": [[260500, 360500]] }] }"#;
     let layout = world::layout::parse(square).unwrap();
     let edits = land::edits::parse(edits).unwrap();
-    let nodes = bake::nodes_of(&layout.continents[0], edits, &city::rmb::Blocks::default()).unwrap();
+    let nodes = bake::nodes_of(&layout.continents[0], edits, &city::rmb::Blocks::default(), &bake::Builders::default())
+        .unwrap();
     assert_eq!(nodes.iter().map(|node| node.id.as_str()).collect::<Vec<_>>(), ["glade", "harbour-social"]);
     for mut node in nodes {
-        // A social space still locked opens no room; opened, it stands as any other.
+        // A social space still locked takes no player, as a locked patrol area does; opened, it stands as any other.
         let locked = node.id == "harbour-social";
-        assert_eq!(node.open, !locked, "{} is locked: only Overlook's social space is open", node.id);
-        assert_eq!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), !locked, "{}", node.id);
-        node.open = true;
+        assert_eq!(node.locked, locked, "{} is locked: only Overlook's social space is open", node.id);
+        assert!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), "{} opens", node.id);
+        assert_eq!(room_join() == 0, locked, "{} takes a player only once open", node.id);
+        node.locked = false;
         assert!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), "{} opens", node.id);
         // Every counter the bake writes is one the room serves: a name it does not know would drop its counter.
         let written: Vec<NodeCounter> = serde_json::from_value(serde_json::to_value(&node.counters).unwrap()).unwrap();
@@ -125,6 +127,18 @@ fn every_open_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
         let floor = Floor::Land(Box::new(node.ground));
         assert_eq!(players_in(&snapshot())[0].2, room::standing_on(&floor, &blocks, x, y), "{} stands", node.id);
     }
+}
+
+#[test]
+fn a_locked_nodes_room_takes_no_player_and_says_why_and_any_other_takes_them() {
+    let mut locked = node_file();
+    locked["locked"] = json!(true);
+    assert!(open_node(locked.to_string().as_bytes()));
+    assert_eq!(room_join(), 0, "no player joins a locked node");
+    assert_eq!(refusal().as_deref(), Some("The Glade is locked"));
+    assert!(open_node(node_file().to_string().as_bytes()));
+    assert_ne!(room_join(), 0);
+    assert_eq!(refusal(), None);
 }
 
 #[test]
@@ -199,7 +213,7 @@ fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fing
 
 #[test]
 fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms() {
-    assert!(set_course(&bytes_of(&[-5.0, -4.0, 5.0, -1.0, 2.3])));
+    assert!(set_course(&bytes_of(&[-5.0, -4.0, 5.0, -1.0, 2.3, 0.0])));
     let fighter = combat::fighter::player(standing(0.0, 2.0), combat::arms::BARE_HANDS);
     let controls = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
     let intent = combat::Intent { controls, ..combat::Intent::default() };
@@ -208,7 +222,7 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     numbers.push(1.0);
     let sword = combat::arms_of("sword_iron", "shield_kite_steel", true);
     numbers.push(f64::from(sword.code()));
-    let course = [Block::from_floats(&[-5.0, -4.0, 5.0, -1.0, 2.3])];
+    let course = [Block::from_floats(&[-5.0, -4.0, 5.0, -1.0, 2.3, 0.0])];
     let (expected, _) = combat::player_tick(1, &fighter.holding(sword), &intent, &[], &course, &Flat);
     let next = floats_of(&predict(&bytes_of(&numbers)));
     assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected, "at rest, she takes up the sword");
@@ -231,7 +245,7 @@ fn a_browser_predicts_a_fighter_on_a_node_s_ground_as_its_room_steps_it() {
     let ground = file["ground"].to_string();
     assert!(!set_ground(b"not ground"));
     assert!(set_ground(ground.as_bytes()));
-    assert!(set_course(&bytes_of(&[-5.0, -8.0, 5.0, -7.0, 13.0])));
+    assert!(set_course(&bytes_of(&[-5.0, -8.0, 5.0, -7.0, 13.0, 0.0])));
     let floor = Floor::Land(Box::new(serde_json::from_str(&ground).unwrap()));
     let fighter = combat::fighter::player(room::standing_on(&floor, &[], 30.0, -40.0), combat::arms::BARE_HANDS);
     let controls = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
@@ -239,7 +253,7 @@ fn a_browser_predicts_a_fighter_on_a_node_s_ground_as_its_room_steps_it() {
     let mut numbers: Vec<f64> = fighter.to_floats().to_vec();
     numbers.extend(intent.to_floats());
     numbers.extend([1.0, f64::from(combat::arms::BARE_HANDS.code())]);
-    let course = [Block::from_floats(&[-5.0, -8.0, 5.0, -7.0, 13.0])];
+    let course = [Block::from_floats(&[-5.0, -8.0, 5.0, -7.0, 13.0, 0.0])];
     let (expected, _) = combat::player_tick(1, &fighter, &intent, &[], &course, &floor);
     let next = Fighter::from_floats(floats_of(&predict(&bytes_of(&numbers))).as_slice().try_into().unwrap());
     assert_eq!(next, expected, "stepped on the land, 10 m up");

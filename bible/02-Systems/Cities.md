@@ -28,6 +28,9 @@ code:
   - client/src/city/tiers.ts#tierFades
   - client/src/city/cityMasses.ts#hullOf
   - client/src/city/solidMesh.ts#meshSolid
+  - crates/city/src/rock.rs#mesh
+  - crates/city/src/rock.rs#boxes
+  - client/src/rules/rockMesh.ts#rockMesh
   - client/src/city/cityGround.ts#groundPlates
   - client/src/city/cityGround.ts#clearedGround
   - client/src/city/pictures.ts#pictureBook
@@ -78,7 +81,8 @@ city stands on it:
 6. **The blocks.** Each district's cells are filled with Daggerfall's RMB blocks of its kinds, as its towns mix them
    (taverns among houses, shops round a market), never the same block beside itself ([[RMB Blocks]]).
 7. **The works.** The wall along the footprint where the land holds it, 16 m high, a round tower every sixth piece
-   and a gatehouse at each gate; a quay along the shore and piers out to sea; a retaining wall wherever a terrace
+   and a gatehouse at each gate, each piece footed on the lowest ground under it and as much taller, so none is
+   walked under on a slope; a quay along the shore and piers out to sea; a retaining wall wherever a terrace
    stands apart from the ground or terrace beyond it.
 8. **The landmark**, of the motif's solids, its great masses dressed as built stone (`articulation`): a stone block
    24 m or more a side gets pilasters a bay of about 9 m apart round its faces and a cornice of trim along its top.
@@ -120,16 +124,37 @@ is here, he stands at his week's place, facing the plaza's middle, ringed in bra
 
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the
-same to the bit wherever it is sampled, and a window cut round the social space keeps it ([[Land]]).
+same to the bit wherever it is sampled, and a window cut round the social space keeps it ([[Land]]). Past a pad's
+edge the land blends into its level within a metre, and where the pad on top changes each side blends to their
+middle, so a lip a body would step is a slope it walks; a terrace standing higher is still a step its wall stands on.
+A seam hidden under a later pad (the cells under the plaza) shows nothing (`Pads::seam_near`), and at a pad's
+corner, where one edge borders the land and the next an earlier pad, each edge blends on its own side. A window
+keeps every pad whose seam reaches into it.
 
 ## Solids and collision
 
 The landmark and the works are solids: blocks, columns, domes, pyramids, gables and arches, each with its place,
 size, turn, lean and roll, dressed in a material the browser pictures from the city's climate. `boxes_within` gives
 every solid reaching into a rectangle as a box square to the world, which is what a node's room stands bodies
-against ([[Server]]). A box stands from the ground up, so a solid whose underside is 2.5 m or more over the plaza's
-floor (a roof, a lintel, a hung lamp) is overhead and left out: a body walks under it. A leaning or rolled solid's box
-reaches round its base and as far as its top swings out.
+against ([[Server]]). A box keeps the solid's underside, so a roof, a lintel or a hung lamp over the floor is a box a
+body walks under ([[Movement]]). A leaning or rolled solid's box reaches round its base and as far as its top swings
+out.
+
+**Natural rock** (`rock`) is four more shapes for what the ground cannot hold, since the land has one height a point
+and never overhangs ([[Zones Rise and Fall, Above and Below Ground]]): a cave roof, a thick slab spanning a cavern
+that stands on its underside; an overhang, a mass set against a face at its own -y end with a lip jutting toward +y
+from 55 % of its height; a rock arch across its width, two legs with broad feet and a head from 62 % of its height;
+and a tunnel mouth, two jambs and a head from 60 % of its height set into the rock at its +y end, with a brow jutting
+over the opening at its -y end. Each is made from its size and a seed alone. It is a few boxes of its own frame
+(`rock::parts`), and each box is drawn as a lump inside it: the box's sides cut into cells about 0.75 m across, each
+corner pulled onto the round-cornered body inside the box and then in along its normal by the land's exact noise
+(broad bulges 5 m across and crags 1.6 m across), by up to a quarter of the box's half each way and 1.2 m on its
+sides, up to 56 % and 2.8 m underneath; a side set against the ground, a face or the rock stays flat and full. So `rock::boxes`, each part's
+box turned and stood at the rock's place, holds every vertex drawn, and a body walks under a roof, through an arch or
+a tunnel mouth, and up an overhang's face only until its head meets the lip (`crates/city/tests/rock_walks.rs`). The
+browser makes the same vertices to the bit (`rules/rockMesh.ts` writes the exact noise again; both pin the same
+fingerprints). A city's boxes (`boxes_within`) take a rock's parts' boxes. No city or layout places rock yet, and a
+layout's own boxes (`crates/layout/src/collide.rs`) do not yet read them.
 
 ## How it is drawn
 
@@ -158,7 +183,9 @@ tiers, and a 4 x 4 dither pattern gives each pixel to exactly one, so nothing po
 
 The landmark, the works and the plaza's solids are drawn at every distance, meshed from their specs, their
 pictures laid at 24 texels a metre, coarser than the forged models' 40, so their courses read as ashlar from the
-plaza and across the city. A block's model stands at its cell's corner plus its placement, at the cell's level,
+plaza and across the city. Natural rock is drawn as its lumps' triangles, each lit flat so it reads as faceted crags, its
+picture laid from the axis each triangle faces most; it wears its material's picture as any solid does, rubble for
+rock, which a layout's stone turns to its own (the Downs' chalk). A block's model stands at its cell's corner plus its placement, at the cell's level,
 turned by its yaw ([[RMB Blocks]]).
 
 **The ground.** Every levelled cell has a plate at its level at every distance, so the 1 km land's smoothing never

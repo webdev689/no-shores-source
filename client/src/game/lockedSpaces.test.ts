@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { poseOf } from '../overworld/overworldCamera.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
 import { LOCKED_WORDS, OPEN_SOCIAL_SPACES, socialLocked } from './nodes.ts';
-import { landable, seaMarks } from './seaMarks.ts';
+import { islandMarks, landable, landingChoice, seaMarks } from './seaMarks.ts';
 import { type WorldData, arrivalAt } from './worldData.ts';
 
 test('only the listed cities’ social spaces open: Overlook’s; the rest of every island is open', () => {
@@ -15,7 +15,7 @@ test('only the listed cities’ social spaces open: Overlook’s; the rest of ev
 
 test('a locked social space shows "Opens later" over the island’s side and cannot be landed at', () => {
   const side: Mark[] = [
-    { id: 'sunspire-social', kind: 'social', name: 'Sunspire', at: [0, -100, 5], edge: true },
+    { id: 'sunspire-social', kind: 'social', name: 'Sunspire', at: [0, -100, 5], edge: true, locked: true },
     { id: 'sunspire-patrol', kind: 'patrol', name: 'Dunes', at: [40, -100, 5], edge: true },
   ];
   const forward = [0, -100 / Math.hypot(100, 50), -50 / Math.hypot(100, 50)] as const;
@@ -46,8 +46,8 @@ test('a page asked to start in a locked social space starts in Overlook instead'
 
 test('of the locked social spaces only the two other ports’ say "Opens later"; a desolate city’s shows no mark', () => {
   const side: Mark[] = [
-    { id: 'rimeholt-social', kind: 'social', name: 'Rimeholt', at: [0, -100, 5], edge: true },
-    { id: 'cairnwatch-social', kind: 'social', name: 'Cairnwatch', at: [20, -100, 5], edge: true },
+    { id: 'rimeholt-social', kind: 'social', name: 'Rimeholt', at: [0, -100, 5], edge: true, locked: true },
+    { id: 'cairnwatch-social', kind: 'social', name: 'Cairnwatch', at: [20, -100, 5], edge: true, locked: true },
   ];
   const forward = [0, -100 / Math.hypot(100, 50), -50 / Math.hypot(100, 50)] as const;
   const pose = poseOf({ eye: [0, 0, 50], forward });
@@ -61,4 +61,19 @@ test('of the locked social spaces only the two other ports’ say "Opens later";
     ['rimeholt-social'],
   );
   assert.equal(landable(side, 'cairnwatch-social'), null);
+});
+
+test('a social space still locked is a locked mark, which says it opens later when chosen', () => {
+  const where = { continent: 'continent-4', ring: [], spawns: [], centre: [0, 0] as const };
+  const nodes = [
+    { id: 'sunspire-social', kind: 'social', name: 'Sunspire', ...where },
+    { id: 'sunspire-patrol', kind: 'patrol', name: 'Dunes', ...where },
+  ] as const;
+  const marks = islandMarks({ nodes, plan: null, heightAt: () => 0 });
+  assert.deepEqual(
+    marks.map((mark) => mark.locked),
+    [true, false],
+  );
+  assert.deepEqual(landingChoice(marks, null, 'sunspire-social'), { kind: 'locked', words: 'Sunspire opens later' });
+  assert.equal(landable(marks, 'sunspire-social'), null);
 });

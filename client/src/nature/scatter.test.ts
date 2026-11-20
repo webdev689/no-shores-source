@@ -181,3 +181,59 @@ test("a tile's plants run form by form, each form's in rank order, so the thinne
     if (form === before) assert.ok((tall[offset + 8] ?? 0) >= (tall[offset - PLANTED_FLOATS + 8] ?? 0));
   }
 });
+
+test('a far tile holds just the trees its thinning leaves, the very ones the whole tile grows', () => {
+  const cast = castOf('woodland');
+  const ground = groundOf(() => FLAT);
+  const kinds = formKinds(cast);
+  const far = { beyondM: 3000, keepBelow: 0.25 };
+  let [whole, kept] = [0, 0];
+  for (let tile = 0; tile < 20; tile++) {
+    const all = scatterTile(cast, 'tall', 61_000 + tile, 48_765, ground);
+    const sparse = scatterTile(cast, 'tall', 61_000 + tile, 48_765, ground, null, far);
+    const wanted: number[] = [];
+    for (let offset = 0; offset < all.length; offset += PLANTED_FLOATS) {
+      const kind = cast.kinds[kinds[all[offset] ?? 0] ?? 0];
+      if ((kind?.reachM ?? 0) > far.beyondM && (all[offset + 8] ?? 1) < far.keepBelow)
+        wanted.push(...all.subarray(offset, offset + PLANTED_FLOATS));
+    }
+    assert.deepEqual([...sparse], wanted.map(Math.fround));
+    [whole, kept] = [whole + all.length, kept + sparse.length];
+  }
+  assert.ok(kept > 0 && kept < whole / 3, `${kept} of ${whole} floats kept far off`);
+});
+
+test('a planted kind stands where it is planted, on cleared ground too, in its own layer', () => {
+  const cast = castOf('temperate-coast');
+  const [tileX, tileY] = [5000, 7000];
+  const corner = [tileX * TILE_M, tileY * TILE_M] as const;
+  const planted = (x: number, y: number) =>
+    x === tileX && y === tileY
+      ? [
+          { kind: 'oak', at: [corner[0] + 20.5, corner[1] + 33.25] as const },
+          { kind: 'gorse', at: [corner[0] + 40, corner[1] + 12] as const },
+          { kind: 'cactus', at: [corner[0] + 50, corner[1] + 50] as const },
+        ]
+      : [];
+  // Every scattered plant is cleared away: only what is planted stands.
+  const ground = {
+    ...groundOf(
+      () => FLAT,
+      () => true,
+    ),
+    planted,
+  };
+  const kinds = formKinds(cast);
+  const standing = (layer: Float32Array) =>
+    Array.from({ length: layer.length / PLANTED_FLOATS }, (_unused, index) => {
+      const offset = index * PLANTED_FLOATS;
+      const kind = cast.kinds[kinds[layer[offset] ?? 0] ?? 0];
+      const foot = FLAT.height - FLAT.slope * (kind?.footM ?? 0) * (layer[offset + 5] ?? 0) - 0.1;
+      assert.ok(Math.abs((layer[offset + 3] ?? 0) - foot) < 1e-4, `the ${kind?.name} stands on the ground`);
+      return [kind?.name, layer[offset + 1], layer[offset + 2]];
+    });
+  const tall = scatterTile(cast, 'tall', tileX, tileY, ground);
+  assert.deepEqual(standing(tall), [['oak', 20.5, 33.25]]);
+  assert.deepEqual(standing(scatterTile(cast, 'low', tileX, tileY, ground, tall)), [['gorse', 40, 12]]);
+  assert.deepEqual(scatterTile(cast, 'tall', tileX, tileY, ground), tall, 'the same every time');
+});
