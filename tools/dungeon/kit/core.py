@@ -1,0 +1,251 @@
+"""The kit's core: making an object from points in the dungeon's frame, its part, joining, copying and moving.
+
+Every number a helper takes is the dungeon's: x east, y south, z up, metres, the floor at z 0. Blender holds the same
+points with y negated, (x, -y, z); the exporter negates it back. Moves are baked into the mesh, so every object's own
+placement stays the identity, and a helper's result can be moved, copied or joined freely.
+"""
+import math
+
+import bmesh
+import bpy
+from mathutils import Matrix, Vector
+
+import catalog
+from details import seeded
+
+PARTS = catalog.PARTS
+CELL_M = catalog.CELL_M
+# Turning the dungeon's frame into Blender's and back: y negated.
+_FLIP = Matrix.Diagonal((1, -1, 1, 1))
+_AXES = {'x': 'X', 'y': 'Y', 'z': 'Z'}
+# Every helper's UVs go in a layer of this name, so joined objects keep one layer.
+UV_LAYER = 'UVMap'
+_target = {'collection': None}
+
+
+def start(name):
+    """Makes `name` the collection new objects go into (the build makes one a style), and gives it."""
+    collection = bpy.data.collections.get(name) or bpy.data.collections.new(name)
+    if collection.name not in bpy.context.scene.collection.children:
+        bpy.context.scene.collection.children.link(collection)
+    _target['collection'] = collection
+    return collection
+
+
+def _collection():
+    return _target['collection'] or bpy.context.scene.collection
+
+
+def set_part(item, part):
+    """Puts every face of an object in `part`, the material of that name (one of PARTS), and gives the object."""
+    if part not in PARTS:
+        raise ValueError(f'{part!r} is no part: one of {", ".join(PARTS)}')
+    material = bpy.data.materials.get(part) or bpy.data.materials.new(part)
+    item.data.materials.clear()
+    item.data.materials.append(material)
+    for polygon in item.data.polygons:
+        polygon.material_index = 0
+    return item
+
+
+def shade(item, smooth_degrees=None):
+    """Flat faces, or with `smooth_degrees` smooth ones, sharp where faces meet at more than that angle."""
+    if smooth_degrees:
+        item.data.shade_smooth()
+        item.data.set_sharp_from_angle(angle=math.radians(smooth_degrees))
+    else:
+        item.data.shade_flat()
+    return item
+
+
+def mesh(faces, part='stone', name='piece', smooth=35.0, closed=True):
+    """A new object from faces (shapes.py's: each a list of (point, uv) corners, the dungeon's frame, metres), its
+    points shared where they meet. A closed shape has its normals checked to face out; an open one (a sheet) faces as
+    its faces wind. `smooth` is shade's angle: smooth, sharp where faces meet at more than it (None: flat)."""
+    index_of, points, polygons, corners = {}, [], [], []
+    for face in faces:
+        ring, maps = [], []
+        for point, uv in face:
+            key = tuple(round(value, 6) for value in point)
+            if key not in index_of:
+                index_of[key] = len(points)
+                points.append(point)
+            if not ring or ring[-1] != index_of[key]:
+                ring.append(index_of[key])
+                maps.append(uv)
+        if len(ring) > 1 and ring[0] == ring[-1]:
+            ring.pop()
+            maps.pop()
+        if len(set(ring)) >= 3:
+            polygons.append(ring)
+            corners.append(maps)
+    data = bpy.data.meshes.new(name)
+    # The frame's mirror turns the faces inside out; reversing each turns them back.
+    data.from_pydata([(x, -y, z) for x, y, z in points], [], [ring[::-1] for ring in polygons])
+    layer = data.uv_layers.new(name=UV_LAYER)
+    for polygon, maps in zip(data.polygons, corners):
+        for loop_index, uv in zip(polygon.loop_indices, maps[::-1]):
+            layer.data[loop_index].uv = uv
+    data.validate()
+    if closed:
+        bm = bmesh.new()
+        bm.from_mesh(data)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        bm.to_mesh(data)
+        bm.free()
+    item = bpy.data.objects.new(name, data)
+    _collection().objects.link(item)
+    set_part(item, part)
+    return shade(item, smooth)
+
+
+def _apply(item, matrix):
+    """Moves an object's mesh by a matrix in the dungeon's numbers."""
+    blender = _FLIP @ matrix @ _FLIP
+    item.data.transform(blender)
+    if blender.determinant() < 0:
+        item.data.flip_normals()
+    item.data.update()
+    return item
+
+
+def _pivot(about):
+    point = Vector((*about, 0.0)[:3]) if len(about) == 2 else Vector(about)
+    return Matrix.Translation(point), Matrix.Translation(-point)
+
+
+def translate(item, x=0.0, y=0.0, z=0.0):
+    """Moves an object by (x, y, z) metres, and gives it."""
+    return _apply(item, Matrix.Translation((x, y, z)))
+
+
+def rotate(item, degrees, axis='z', about=(0.0, 0.0, 0.0)):
+    """Turns an object about an axis ('x', 'y' or 'z') through `about`, by the right-hand rule in the dungeon's numbers:
+    about z, east turns toward south, as a placement's quarter turn does; about x, south toward up; about y, up toward
+    east."""
+    there, back = _pivot(about)
+    return _apply(item, there @ Matrix.Rotation(math.radians(degrees), 4, _AXES[axis]) @ back)
+
+
+def rotate_z(item, degrees, about=(0.0, 0.0)):
+    """Turns an object about the upright through `about` (x, y): east toward south by `degrees`."""
+    return rotate(item, degrees, 'z', about)
+
+
+def scale(item, x, y=None, z=None, about=(0.0, 0.0, 0.0)):
+    """Scales an object about a point: by `x` on every axis, or by (x, y, z). A negative factor mirrors it. Its UVs
+    stretch with it, out of metres: size a shape as it is made where you can."""
+    there, back = _pivot(about)
+    factors = (x, x if y is None else y, x if z is None else z, 1.0)
+    return _apply(item, there @ Matrix.Diagonal(factors) @ back)
+
+
+def copy(item):
+    """A copy of an object, its own mesh, in the current collection."""
+    twin = item.copy()
+    twin.data = item.data.copy()
+    _collection().objects.link(twin)
+    return twin
+
+
+def mirror(item, axis='x', at=0.0):
+    """A mirrored copy of an object, across the plane where `axis` equals `at`: join it with the first for a
+    symmetric piece."""
+    factors = {'x': (-1, 1, 1), 'y': (1, -1, 1), 'z': (1, 1, -1)}[axis]
+    about = tuple(at if name == axis else 0.0 for name in 'xyz')
+    return scale(copy(item), *factors, about=about)
+
+
+def array(item, count, step=(0.0, 0.0, 0.0), turn=0.0, about=(0.0, 0.0)):
+    """The object and count - 1 copies, the n-th turned by n × `turn` degrees about `about` (x, y), then moved by n ×
+    `step`: a row, or a ring round a point. Gives the list; join it for one piece."""
+    found = [item]
+    for number in range(1, count):
+        twin = rotate_z(copy(item), turn * number, about) if turn else copy(item)
+        found.append(translate(twin, *(value * number for value in step)))
+    return found
+
+
+def _flatten(items):
+    for entry in items:
+        if isinstance(entry, (list, tuple)):
+            yield from _flatten(entry)
+        elif entry is not None:
+            yield entry
+
+
+def join(items, name='piece'):
+    """One object of many (lists may nest), their modifiers applied and their parts kept. The objects joined are
+    removed: use the one given back."""
+    items = list(_flatten(items))
+    if not items:
+        raise ValueError('nothing to join')
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    bm = bmesh.new()
+    parts = []
+    for item in items:
+        evaluated = item.evaluated_get(depsgraph)
+        data = evaluated.to_mesh()
+        data.transform(item.matrix_world)
+        if item.matrix_world.determinant() < 0:
+            data.flip_normals()
+        names = [slot.material.name if slot.material else None for slot in item.material_slots]
+        if not names or any(part not in PARTS for part in names):
+            raise ValueError(f'{item.name} has faces in {names}, not only parts: give it one with set_part')
+        first = len(bm.faces)
+        bm.from_mesh(data)
+        bm.faces.ensure_lookup_table()
+        for face in bm.faces[first:]:
+            part = names[min(face.material_index, len(names) - 1)]
+            if part not in parts:
+                parts.append(part)
+            face.material_index = parts.index(part)
+        evaluated.to_mesh_clear()
+    data = bpy.data.meshes.new(name)
+    bm.to_mesh(data)
+    bm.free()
+    for part in parts:
+        data.materials.append(bpy.data.materials[part])
+    joined = bpy.data.objects.new(name, data)
+    _collection().objects.link(joined)
+    for item in items:
+        old = item.data
+        bpy.data.objects.remove(item)
+        if old.users == 0:
+            bpy.data.meshes.remove(old)
+    return joined
+
+
+def triangles(item):
+    """How many triangles an object draws, modifiers and all: a kit piece may have 3,000, a landmark 12,000."""
+    evaluated = item.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    data = evaluated.to_mesh()
+    data.calc_loop_triangles()
+    count = len(data.loop_triangles)
+    evaluated.to_mesh_clear()
+    return count
+
+
+def bevel(item, width=0.02, segments=1, degrees=30.0):
+    """Chamfers (one segment) or rounds an object's edges where its faces meet at more than `degrees`, in place."""
+    bm = bmesh.new()
+    bm.from_mesh(item.data)
+    edges = [edge for edge in bm.edges if edge.is_manifold and math.degrees(edge.calc_face_angle(0.0)) > degrees]
+    if edges:
+        bmesh.ops.bevel(bm, geom=edges, offset=width, offset_type='OFFSET', segments=segments, profile=0.5,
+                        affect='EDGES', clamp_overlap=True)
+    bm.to_mesh(item.data)
+    bm.free()
+    item.data.update()
+    return item
+
+
+def jitter(item, amount, seed=None):
+    """Moves each point of an object by up to `amount` metres on each axis, seeded by `seed` or by the points
+    themselves: worn, uneven stone."""
+    points = [tuple(round(value, 5) for value in vertex.co) for vertex in item.data.vertices]
+    draw = seeded(seed, 'jitter', amount, points)
+    for vertex in item.data.vertices:
+        vertex.co += Vector([draw.uniform(-amount, amount) for _ in range(3)])
+    item.data.update()
+    return item
