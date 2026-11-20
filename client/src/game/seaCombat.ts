@@ -279,17 +279,22 @@ export class SeaCombat {
     return stirred;
   }
 
-  /** Each ship's footprint on the water, at her hull's waterline drawn `scale` times her size. */
+  /** Each ship's footprint on the water, at her hull's waterline drawn `scale` times her size, while she floats: the
+   *  player's first, then the captains nearest her, so the water's budget never leaves hers out. */
   hulls(scale: number): HullMask[] {
-    return this.vessels()
-      .filter(({ vessel }) => vessel.state !== 'sunk' && vessel.state !== 'sinking')
-      .map(({ vessel, hull }) => {
-        const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
-        const way = Math.hypot(ahead, abeam) > 0.5 ? UNDER_WAY : 0;
-        const waterline = hullWaterline(hull);
-        const [halfLength, halfBeam] = [(waterline.lengthM / 2) * scale, (waterline.beamM / 2) * scale];
-        return { x, y, heading, halfLength, halfBeam, way };
-      });
+    const [own, ...captains] = this.vessels().map(({ vessel, hull }) => {
+      const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
+      const way = Math.hypot(ahead, abeam) > 0.5 ? UNDER_WAY : 0;
+      const waterline = hullWaterline(hull);
+      const [halfLength, halfBeam] = [(waterline.lengthM / 2) * scale, (waterline.beamM / 2) * scale];
+      const afloat = vessel.state !== 'sunk' && vessel.state !== 'sinking';
+      return { mask: { x, y, heading, halfLength, halfBeam, way, scale }, afloat };
+    });
+    if (!own) return [];
+    const away = ({ mask }: { mask: HullMask }) => Math.hypot(mask.x - own.mask.x, mask.y - own.mask.y);
+    return [own, ...captains.sort((one, other) => away(one) - away(other))]
+      .filter(({ afloat }) => afloat)
+      .map(({ mask }) => mask);
   }
 
   /** The balls aloft, the lay's arcs and the effects, from a camera in world metres. */

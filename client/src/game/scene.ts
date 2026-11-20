@@ -2,7 +2,7 @@ import { LightLayer } from '../combat/lightLayer.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
-import type { GroundPatch, LandView } from '../rules/landRules.ts';
+import type { GroundPatch, LandView, Swell } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import type { CloseGround } from '../terrain/landClient.ts';
 import { type TerrainData, TerrainView } from '../terrain/terrainView.ts';
@@ -171,6 +171,8 @@ export class GameScene {
       readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
       readonly hulls?: readonly HullMask[];
       readonly focus?: readonly [number, number];
+      /** The swell to draw in place of the land's: the sea by weather. */
+      readonly swell?: Swell;
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -245,7 +247,7 @@ export class GameScene {
       exaggeration: 1,
       fogM: Math.max(25_000, above * 60),
       world: [...origin],
-      swell: view.swell,
+      swell: more.swell ?? view.swell,
       coarse: drawn.cells,
       patch: near?.water ?? null,
       eyeWater,

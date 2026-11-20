@@ -12,15 +12,15 @@ use crate::chart::{Charted, SeaChart};
 use crate::clash::{Clash, ship_at, sighted, step_clashes};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates, Voyager};
+use crate::sea_weather::{CoastWaters, SeaWeather};
 use crate::threat::held_pace;
 use core::f64::consts::{PI, TAU};
-use land::sea::{FULL_DEPTH_M, Swell};
+use land::sea::Swell;
 use movement::{Controls, TICK_SECONDS};
 use naval::fight::{CAPTAIN, Event, Fight, Orders, PLAYER, Vessel};
 use naval::ranks::Commission;
 use naval::wire::view_numbers;
 use sailing::ship::{Helm, SAILS_SET};
-use sailing::waters::{Spot, Waters, steady_wind};
 use std::collections::{BTreeMap, VecDeque};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::{Point, edges, ring_contains, segments_meet};
@@ -131,35 +131,15 @@ struct Berth {
     set_at: Option<u64>,
 }
 
-/// A player's fight: the fight, the orders it is stepped by, and what happened in its last tick.
+/// A player's fight: the fight, the orders it is stepped by, what happened in its last tick, and the swell and the
+/// wind where it began, kept while it lasts.
 #[derive(Debug)]
 pub struct SeaFight {
     pub fight: Fight,
     pub orders: Orders,
     pub events: Vec<Event>,
-}
-
-/// The bed under the open sea in a fight, metres below its level: the swell's full depth, and more.
-const SEA_BED_M: f64 = FULL_DEPTH_M * 2.0;
-/// The ground over the sea on a continent, metres: dry.
-const DRY_M: f64 = 5.0;
-
-/// The waters a fight is fought on, made from the continents' coasts alone: open sea off them with the swell on it,
-/// dry ground on them.
-struct CoastWaters<'sea> {
-    coasts: &'sea [Coast],
-    swell: &'sea Swell,
-}
-
-impl Waters for CoastWaters<'_> {
-    fn at(&self, x: f64, y: f64, time: f64) -> Spot {
-        let point = Point::new(x.round() as i64, y.round() as i64);
-        if on_land(self.coasts, point) {
-            Spot { bed: DRY_M, surface: None }
-        } else {
-            Spot { bed: -SEA_BED_M, surface: Some(self.swell.height_at(x, y, time, SEA_BED_M)) }
-        }
-    }
+    pub swell: Swell,
+    pub wind: [f64; 2],
 }
 
 /// The sea: the continents' coasts, its clock in ticks, each player's ship once it has put to sea, the pirates, each
@@ -171,7 +151,7 @@ pub struct Sea {
     chart: Charted,
     deck: Deck,
     aboard: BTreeMap<PlayerId, Aboard>,
-    swell: Swell,
+    weather: SeaWeather,
     clock: u64,
     next_player: PlayerId,
     berths: BTreeMap<PlayerId, Berth>,
@@ -196,7 +176,7 @@ impl Sea {
             chart: Charted::new(layout, ports),
             deck,
             aboard: BTreeMap::new(),
-            swell: Swell::default(),
+            weather: SeaWeather::new(layout),
             clock: 0,
             next_player: 1,
             berths: BTreeMap::new(),
@@ -385,10 +365,9 @@ impl Sea {
             };
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS);
         }
-        let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
-        let wind = steady_wind(&self.swell);
         for (player, fought) in &mut self.fights {
-            fought.events = fought.fight.step(&[(PLAYER, fought.orders)], &waters, wind, time);
+            let waters = CoastWaters { coasts: &self.coasts, swell: &fought.swell };
+            fought.events = fought.fight.step(&[(PLAYER, fought.orders)], &waters, fought.wind, time);
             // The climb, the fire and the load are presses: they act once.
             let helm = Helm { climb: 0, ..fought.orders.helm };
             fought.orders = Orders { helm, fire: false, load: None, ..fought.orders };
@@ -399,7 +378,22 @@ impl Sea {
             }
         }
         let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
-        step_clashes(&mut self.clashes, &mut self.pirates, &players, (&waters, wind, time));
+        // Each clash under the weather where it began.
+        for clash in std::mem::take(&mut self.clashes) {
+            let Some((swell, wind)) = self.weather.of_clash(clash.ships().map(|ship| ship.id)).cloned() else {
+                continue;
+            };
+            let mut alone = vec![clash];
+            step_clashes(
+                &mut alone,
+                &mut self.pirates,
+                &players,
+                (&CoastWaters { coasts: &self.coasts, swell: &swell }, wind, time),
+            );
+            self.clashes.append(&mut alone);
+        }
+        let captains: Vec<u32> = self.clashes.iter().flat_map(|clash| clash.ships().map(|ship| ship.id)).collect();
+        self.weather.keep_clashes(&captains);
         // Each player's waters run at the pace they sail, the world's own time at rest.
         let ships: Vec<Voyager> = self
             .ships()
@@ -418,11 +412,14 @@ impl Sea {
             let Some(own) = heave_to(&mut self.berths, &mut self.aboard, player) else { continue };
             // She has hove to: the player sets her sails; the pirate comes on under hers.
             let captain = ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
+            let (swell, wind) = self.weather.at([own.x, own.y], time);
+            let waters = CoastWaters { coasts: &self.coasts, swell: &swell };
             let fight = Fight::meet(own, captain, pirate.commission, pirate.seed, &waters, time);
-            self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new() });
+            self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new(), swell, wind });
         }
         for met in self.pirates.meet_rivals() {
-            self.clashes.push(Clash::begin(met, &waters, time));
+            let (swell, _) = self.weather.begin_clash(&[met[0].id, met[1].id], [met[0].x, met[0].y], time);
+            self.clashes.push(Clash::begin(met, &CoastWaters { coasts: &self.coasts, swell: &swell }, time));
         }
         for &Voyager { player, at, .. } in &ships {
             if self.fights.contains_key(&player) {
@@ -431,9 +428,16 @@ impl Sea {
             let Some(clash) = sighted(&mut self.clashes, at) else { continue };
             let Some(own) = heave_to(&mut self.berths, &mut self.aboard, player) else { continue };
             let mut fight = clash.fight;
-            fight.put_to_sea(PLAYER, own, &waters, time);
-            self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new() });
+            let (swell, wind) = self.weather.at(at, time);
+            fight.put_to_sea(PLAYER, own, &CoastWaters { coasts: &self.coasts, swell: &swell }, time);
+            self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new(), swell, wind });
         }
+    }
+
+    /// Sets the world time the room's clock started at, seconds since the Unix epoch: its fights' weather is the world's
+    /// then.
+    pub fn set_world_start(&mut self, seconds: f64) {
+        self.weather.world_start_s = seconds;
     }
 
     /// Every ship at sea, in the order of its player's number.
@@ -469,9 +473,9 @@ impl Sea {
     /// Each player's fight as their browser shows it (the naval crate's numbers), its lay over the fight's waters
     /// now, and her captain's commission, in the order of their number.
     pub fn fight_views(&self) -> impl Iterator<Item = (PlayerId, Vec<f64>, Commission)> + '_ {
-        let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
         let time = self.clock as f64 * TICK_SECONDS;
         self.fights.iter().map(move |(player, fought)| {
+            let waters = CoastWaters { coasts: &self.coasts, swell: &fought.swell };
             let view = view_numbers(&fought.fight, &fought.events, fought.orders.aim.as_ref(), &waters, time);
             let captain = fought.fight.vessel(CAPTAIN).and_then(Vessel::command);
             (*player, view, captain.map_or_else(Commission::default, |command| command.her.commission))

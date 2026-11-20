@@ -23,6 +23,7 @@ mod fighter_door;
 mod fleet_door;
 mod gear_door;
 mod roster_door;
+mod sea_door;
 mod waters_door;
 
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
@@ -355,6 +356,18 @@ pub unsafe extern "C" fn room_open_sea(address: *const u8, length: usize, seed: 
 pub extern "C" fn room_open_fleet() -> u32 {
     open_fleet();
     1
+}
+
+/// Sets the world time the open sea or fleet room's clock started at, seconds since the Unix epoch, so its weather
+/// is the world's then; a fleet room's predictions take it too. Its host calls it once it has opened the room.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_world_start(seconds: f64) {
+    with_open(|opened| match opened {
+        Opened::Sea(sea) => sea.set_world_start(seconds),
+        Opened::Fleet(fleet) => fleet.set_world_start(seconds),
+        Opened::Land { .. } => {}
+    });
+    fleet_door::set_world_start(seconds);
 }
 
 /// How long one of the room's ticks is, in seconds: its host ticks it that often.

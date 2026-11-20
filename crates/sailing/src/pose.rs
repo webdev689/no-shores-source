@@ -29,10 +29,19 @@ fn place(ship: &Ship, along: f64, across: f64) -> (f64, f64) {
     (ship.x + forward[0] * along + starboard[0] * across, ship.y + forward[1] * along + starboard[1] * across)
 }
 
-/// The water's height at a point, or the ground's where it is dry.
-fn level_at(waters: &impl Waters, (x, y): (f64, f64), time: f64) -> f64 {
-    let spot = waters.at(x, y, time);
+/// The water's height at a point as a hull of time constant `lag` seconds rides it, or the ground's where it is dry.
+fn level_at(waters: &impl Waters, (x, y): (f64, f64), time: f64, lag: f64) -> f64 {
+    let spot = waters.lagged(x, y, time, lag);
     spot.surface.unwrap_or(spot.bed)
+}
+
+/// A hull's time constant on the swell, seconds a metre of her waterline's length: a bigger hull answers slower.
+pub const LAG_S_PER_M: f64 = 0.02;
+
+/// Her time constant on the swell, seconds, by her waterline's length.
+#[must_use]
+pub fn lag_of(hull: &Hull) -> f64 {
+    LAG_S_PER_M * 2.0 * hull.half_length_m
 }
 
 /// How near her draught the water under her keel may come before she is said to touch the ground, metres.
@@ -63,11 +72,12 @@ fn turn_heel(ship: &Ship) -> f64 {
     (lean * 5.0).clamp(-30.0, 30.0).to_radians()
 }
 
-/// Her pose at `time`: the mean of the water under her bow, stern, sides and middle, its slope along and across her,
-/// and her heel in a turn.
+/// Her pose at `time`: the mean of the water under her bow, stern, sides and middle at her waterline, its slope along
+/// and across her, each felt through her inertia (`lag_of`), and her heel in a turn.
 #[must_use]
 pub fn pose_of(ship: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> Pose {
-    let at = |along: f64, across: f64| level_at(waters, place(ship, along, across), time);
+    let lag = lag_of(hull);
+    let at = |along: f64, across: f64| level_at(waters, place(ship, along, across), time, lag);
     let (half_length, half_beam) = (hull.half_length_m, hull.half_beam_m);
     let (bow, stern) = (at(half_length, 0.0), at(-half_length, 0.0));
     let (port, starboard) = (at(0.0, -half_beam), at(0.0, half_beam));

@@ -5,6 +5,8 @@
  * map, and the friendly ships near a point at a world time. A water's holder is one of `WaterHolder`.
  */
 
+import type { Swell } from './landRules.ts';
+
 type Point = readonly [number, number];
 
 export type WaterHolder = 'home' | 'contested' | 'grey-tithe' | 'pirates';
@@ -81,6 +83,18 @@ export interface TrafficShip {
   readonly lengthM: number;
 }
 
+/** The swell under the weather at a point (crates/room-wasm/src/sea_door.rs `swell_json`): its waves, as the land's
+ *  door gives them, and how the sea stands there: the wind (m/s east and south), the sea state (0 calm to 1 storm),
+ *  the share of the open sea's swell its fetch leaves, how much of a roadstead's calm holds, and the swell's height as
+ *  a share of a moderate sea's. */
+export interface WeatherSwell extends Swell {
+  readonly wind: Point;
+  readonly state: number;
+  readonly open: number;
+  readonly harbour: number;
+  readonly height: number;
+}
+
 export const LAND_CELL = 255;
 export const SEAM_BIT = 0x80;
 const NOT_OPEN = 256;
@@ -97,6 +111,14 @@ export interface WatersRules {
   shipsNear(centre: Point, radiusM: number, timeS: number): TrafficShip[];
   /** One ship by her id at `timeS`; null when she is not sailing then. */
   ship(id: number, timeS: number): TrafficShip | null;
+  /** The swell under the weather at a world point at `timeS`, seconds since the Unix epoch (the open sea's weather
+   *  before the waters are opened). */
+  seaSwell(point: Point, timeS: number): WeatherSwell;
+  /** The swell's height as a share of a moderate sea's at the middle of each cell of a grid `columns` by `rows`
+   *  cells (64 at most a side) `cellM` wide from its north-west `corner`, row by row. */
+  seaHeights(corner: Point, cellM: number, columns: number, rows: number, timeS: number): Float32Array;
+  /** The fingerprint of the deep sea's height under the weather at `points` at `timeS`, as hex. */
+  seaHash(points: readonly Point[], timeS: number): string;
 }
 
 interface WatersExports {
@@ -108,6 +130,21 @@ interface WatersExports {
   waters_grid(cellM: number): bigint;
   waters_ships(x: number, y: number, radiusM: number, timeS: number): bigint;
   waters_ship(id: bigint, timeS: number): bigint;
+  sea_swell(x: number, y: number, timeS: number): bigint;
+  sea_shelter(x: number, y: number, cellM: number, columns: number, rows: number, timeS: number): bigint;
+  sea_heights_hash(address: number, length: number, timeS: number): bigint;
+}
+
+interface SwellAnswer {
+  readonly waves: Swell['waves'];
+  readonly full_depth_m: number;
+  readonly gone_depth_m: number;
+  readonly bearing: number;
+  readonly wind: [number, number];
+  readonly state: number;
+  readonly open: number;
+  readonly harbour: number;
+  readonly height: number;
 }
 
 interface TableAnswer {
@@ -205,6 +242,39 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
     ship: (id, timeS) => {
       opened();
       return readShips(take(exports, exports.waters_ship(BigInt(id), timeS)))[0] ?? null;
+    },
+    seaSwell: ([x, y], timeS) => {
+      const answer = JSON.parse(new TextDecoder().decode(take(exports, exports.sea_swell(x, y, timeS)))) as SwellAnswer;
+      const { waves, wind, state, open, harbour, height } = answer;
+      // The wind's own bearing, not its nearest set's: the sails fill by it.
+      const bearing = Math.atan2(wind[0], -wind[1]);
+      return {
+        waves,
+        fullDepthM: answer.full_depth_m,
+        goneDepthM: answer.gone_depth_m,
+        bearing,
+        wind,
+        state,
+        open,
+        harbour,
+        height,
+      };
+    },
+    seaHeights: ([x, y], cellM, columns, rows, timeS) => {
+      const bytes = take(exports, exports.sea_shelter(x, y, cellM, columns, rows, timeS));
+      return new Float32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 4);
+    },
+    seaHash: (points, timeS) => {
+      const bytes = new Uint8Array(new Float64Array(points.flat()).buffer);
+      const address = exports.reserve(bytes.length);
+      new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
+      try {
+        return BigInt.asUintN(64, exports.sea_heights_hash(address, bytes.length, timeS))
+          .toString(16)
+          .padStart(16, '0');
+      } finally {
+        exports.release(address, bytes.length);
+      }
     },
   };
 }
