@@ -433,9 +433,14 @@ async function start(): Promise<void> {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fighting.player, view: own, ...handsOf(player.shownDress), looks: player.glowing },
+      { id: fighting.player, player: true, view: own, ...handsOf(player.shownDress), looks: player.glowing },
       ...[...fighting.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
-      ...[...otherViews].map(([number, view]) => ({ id: number, view, ...handsOf(others.get(number)?.dress) })),
+      ...[...otherViews].map(([number, view]) => ({
+        id: number,
+        player: true,
+        view,
+        ...handsOf(others.get(number)?.dress),
+      })),
     ];
     scene.setSwings(feel.arcsMesh(clock, strikers, figuresDrawn, cameraOf(camera).eye, inFirstPerson));
     blood.frame(seconds, events, fighting, bloodCamera(camera, aspect));

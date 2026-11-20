@@ -77,6 +77,15 @@ function say(node: HTMLElement, text: string): void {
   if (node.textContent !== text) node.textContent = text;
 }
 
+/** Shows `now` in `holder`, a toast each: those no longer said leave and the new are added after, so one kept is never
+ *  taken out and put back, which would play its rise again. */
+export function layToasts(holder: HTMLElement, now: readonly string[]): void {
+  const kept = new Map([...holder.children].map((shown) => [shown.textContent, shown]));
+  if (now.length === kept.size && now.every((text) => kept.has(text))) return;
+  for (const [text, shown] of kept) if (!now.includes(text ?? '')) shown.remove();
+  for (const text of now) if (!kept.has(text)) holder.append(make('div', text, `toast ${ROLES.chip}`));
+}
+
 /** The game's heads-up display: plain elements over the canvas, nothing drawn on the GPU. */
 export class Hud {
   private readonly placeTitle = make('div', '', 'title');
@@ -232,13 +241,9 @@ export class Hud {
   }
 
   /** The short messages over the middle of the view now, the newest few: the caller says each every frame it holds,
-   *  as long as its own clock keeps it, so a toast never outlives what it tells. One already shown keeps its node, so
-   *  only a new one rises in. */
+   *  as long as its own clock keeps it, so a toast never outlives what it tells. */
   toast(...texts: string[]): void {
-    const now = texts.slice(-MOST_TOASTS);
-    const kept = new Map([...this.toasts.children].map((shown) => [shown.textContent, shown]));
-    if (now.length === kept.size && now.every((text) => kept.has(text))) return;
-    this.toasts.replaceChildren(...now.map((text) => kept.get(text) ?? make('div', text, `toast ${ROLES.chip}`)));
+    layToasts(this.toasts, texts.slice(-MOST_TOASTS));
   }
 
   /** A line of what is happening (a voyage, a connection), or none. */
