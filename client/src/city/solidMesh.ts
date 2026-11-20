@@ -2,6 +2,7 @@
 // in its own frame (x across, y along, z up from the middle of its base), rolled about its own y, leaned toward its
 // own +y, turned clockwise from north, and stood at its place. Every face is wound out of the solid.
 import { addPolygon, cross, dot, type MeshData, minus, normalised, type Vector } from './mesh.ts';
+import { moduleMesh } from './modules.ts';
 import type { Solid } from './plan.ts';
 import { rockMesh } from '../rules/rockMesh.ts';
 
@@ -466,7 +467,40 @@ export function solidFaces(solid: Solid, surface: Surface): Face[] {
     case 'rockarch':
     case 'tunnelmouth':
       return rock(solid, surface);
+    case 'module':
+      return moduled(solid.module, solid.group, surface);
   }
+}
+
+/** A module's surface group as Blender made it, smooth where it was smooth, its picture laid from the axis each
+ *  triangle faces most, as rock's is; none until its mesh has come. */
+function moduled(module: number, group: number, surface: Surface): Face[] {
+  const mesh = moduleMesh(module, group);
+  if (!mesh) return [];
+  const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / surface.width, SOLID_TEXELS_PER_METRE / surface.height];
+  const point = (index: number): Vector => [
+    mesh.positions[index * 3],
+    mesh.positions[index * 3 + 1],
+    mesh.positions[index * 3 + 2],
+  ];
+  const normal = (index: number): Vector => [
+    mesh.normals[index * 3] / 127,
+    mesh.normals[index * 3 + 1] / 127,
+    mesh.normals[index * 3 + 2] / 127,
+  ];
+  const faces: Face[] = [];
+  for (let triangle = 0; triangle < mesh.triangles.length; triangle += 3) {
+    const indices = [mesh.triangles[triangle], mesh.triangles[triangle + 1], mesh.triangles[triangle + 2]];
+    const corners = indices.map(point);
+    const normals = indices.map(normal);
+    // Out is the way its corners' normals point: the file's winding is not relied on.
+    const facing = normalised(normals.reduce((sum, each) => [sum[0] + each[0], sum[1] + each[1], sum[2] + each[2]]));
+    const most = [0, 1, 2].reduce((best, axis) => (Math.abs(facing[axis]) > Math.abs(facing[best]) ? axis : best), 2);
+    const uvOf = ([x, y, z]: Vector): Uv =>
+      most === 2 ? [x * scaleU, y * scaleV] : most === 0 ? [y * scaleU, -z * scaleV] : [x * scaleU, -z * scaleV];
+    faces.push({ corners, normals, uvs: corners.map(uvOf), facing });
+  }
+  return faces;
 }
 
 /** Natural rock's triangles, each lit flat so the rock reads as faceted crags, its picture laid from the axis each

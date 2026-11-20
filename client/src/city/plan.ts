@@ -7,7 +7,8 @@ import type { Climate, Season } from '../textures/picture.ts';
 export const CELL_M = 102.4;
 
 /** A solid's shape and what it takes: a column's faces round and its top's share of its base, a dome's faces round,
- *  a frustum's top share, an arch's opening as a share of its height, a natural rock's seed (../rules/rockMesh.ts). */
+ *  a frustum's top share, an arch's opening as a share of its height, a natural rock's seed (../rules/rockMesh.ts),
+ *  a module's surface group (./modules.ts). */
 export type SolidShape =
   | { readonly shape: 'block' }
   | { readonly shape: 'column'; readonly sides: number; readonly top: number }
@@ -15,6 +16,7 @@ export type SolidShape =
   | { readonly shape: 'pyramid'; readonly top: number }
   | { readonly shape: 'gable' }
   | { readonly shape: 'arch'; readonly opening: number }
+  | { readonly shape: 'module'; readonly module: number; readonly group: number }
   | RockShape;
 
 export type SolidMaterial =

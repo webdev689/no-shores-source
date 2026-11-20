@@ -84,15 +84,16 @@ fn off_way(path: &Path, at: [f64; 2], at_least: f64) -> bool {
     path.points.windows(2).all(|pair| off_line(at, pair[0], pair[1]) >= at_least)
 }
 
-/// Dresses every way of a layout, and rings each shrine with its stones.
-pub fn dress(kit: &mut Kit, areas: &[Area], paths: &[Path]) {
+/// Dresses every way of a layout, and rings each shrine with its stones, where no module (`moduled`) stands in its
+/// place.
+pub fn dress(kit: &mut Kit, areas: &[Area], paths: &[Path], moduled: &[bool]) {
     for (number, path) in paths.iter().enumerate() {
         let others: Vec<&Path> =
             paths.iter().enumerate().filter(|(other, _)| *other != number).map(|(_, other)| other).collect();
         along(kit, areas, path, &others);
     }
     let all: Vec<&Path> = paths.iter().collect();
-    for area in areas {
+    for (area, _) in areas.iter().zip(moduled.iter().chain(std::iter::repeat(&false))).filter(|(_, module)| !**module) {
         match area.kind {
             AreaKind::Shrine => stone_ring(kit, area, &all),
             AreaKind::Farm => fold(kit, area, &all),

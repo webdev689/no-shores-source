@@ -70,6 +70,10 @@ pub struct Sculpt {
     /// Whether its massif's top stands in plateaus at several heights (`top_at`), not as one table.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub terraced: bool,
+    /// Floors with rock over them (a cavern's hollow and tunnel, `[x1, y1, x2, y2, half]`), round which a terraced
+    /// massif keeps its whole height, so the rock a roof rests on stands over its underside.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub roofed: Vec<[f64; 5]>,
 }
 
 /// The floors, the outcrops, the climbs, the runs and the raised floors near one bucket, by their places in a sculpt's
@@ -385,7 +389,8 @@ impl Sculpts {
     }
 
     /// A sculpt's massif's top at a point, metres: its rise, or on a terraced sculpt one of its plateaus, held up to
-    /// a wall's height over each floor, raised floor, climb and run near it (`near`, each its off and level).
+    /// a wall's height over each floor, raised floor, climb and run near it (`near`, each its off and level), and to
+    /// its whole height round a roofed floor.
     fn top_at(&self, number: usize, x: f64, y: f64, rise: f64, near: [(f64, f64); 3]) -> f64 {
         let sculpt = &self.sculpts[number];
         if !sculpt.terraced {
@@ -394,8 +399,14 @@ impl Sculpts {
         let noise = 0.5 + 0.5 * fbm(sculpt.seed ^ 0x7E7A, x / 170.0, y / 170.0, 2);
         let stepped = |at: usize| (TIERS[at + 1] - TIERS[at]) * smooth(-RISER, RISER, noise - TIER_STEPS[at]);
         let tier = TIERS[0] + stepped(0) + stepped(1);
+        let roofed = sculpt
+            .roofed
+            .iter()
+            .map(|&[x1, y1, x2, y2, half]| to_segment(x, y, [x1, y1], [x2, y2]) - half * (1.0 + WANDER))
+            .fold(f64::INFINITY, f64::min);
         let held = near
             .iter()
+            .chain(&[(roofed, 1.0)])
             .filter(|(off, _)| off.is_finite())
             .map(|&(off, share)| (share + WALL_SHARE).min(1.0) * (1.0 - smooth(HOLD_M, HOLD_M + HOLD_FALL_M, off)))
             .fold(tier, f64::max);

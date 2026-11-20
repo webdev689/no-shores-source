@@ -16,7 +16,7 @@ const FROM_EDGE_M: f64 = 120.0;
 /// The masses are sought on every other cell of the field each way: 16 m apart.
 const STRIDE: usize = 2;
 /// How many dead masses a layout answers at the most.
-const MOST_ANSWERS: usize = 5;
+const MOST_ANSWERS: usize = 7;
 /// A valley's half-width, metres: a footpath's canyon.
 const VALLEY_HALF_M: f64 = 11.0;
 /// How far a mass's valley or climb keeps from the climbs already cut where it runs through the rock, past both their
@@ -343,6 +343,7 @@ mod tests {
             wings: Vec::new(),
             levels: Vec::new(),
             terraced: false,
+            roofed: Vec::new(),
         };
         Sculpts::from(vec![sculpt])
     }

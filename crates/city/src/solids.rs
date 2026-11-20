@@ -3,7 +3,7 @@
 //! section reaches them.
 
 use land::exact::sin_cos;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// A solid's shape. Every shape stands on the middle of its base, its own x across, y along and z up.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
@@ -29,10 +29,12 @@ pub enum Shape {
     RockArch { seed: u32 },
     /// Natural rock: a frame round an opening along y into rising rock, a brow jutting over it at its -y side.
     TunnelMouth { seed: u32 },
+    /// One surface group of a handcrafted module (`modules`), drawn from its mesh; its first group carries its parts.
+    Module { module: u32, group: u32 },
 }
 
 /// What a solid is dressed in; the browser picks each one's picture from the city's climate.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Material {
     Stone,

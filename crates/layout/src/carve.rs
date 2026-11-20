@@ -145,6 +145,8 @@ pub struct Network<'layout> {
     pub meadows: &'layout [[f64; 5]],
     pub levels: &'layout [f64],
     pub joined: &'layout [[usize; 2]],
+    /// Which areas stand a module (`modules`), which brings its own platforms: their basins take none.
+    pub moduled: &'layout [bool],
 }
 
 /// How far apart two areas' reaches stand at most for the way between them to open out into one floor, metres.
@@ -202,7 +204,7 @@ pub fn carve(
     rise: f64,
     seed: u32,
 ) -> (Sculpt, Vec<Basin>, Vec<crate::caverns::Cavern>) {
-    let Network { areas, paths, exits, pockets, meadows, levels, joined } = network;
+    let Network { areas, paths, exits, pockets, meadows, levels, joined, moduled } = network;
     let mut drawn = 0_i64;
     let mut draw = || {
         drawn += 1;
@@ -222,6 +224,8 @@ pub fn carve(
             let water = (area.kind == AreaKind::Mill).then(|| along_water(field, area.at)).flatten();
             basin(area, seating, paths, water, &mut draw)
         })
+        .zip(moduled.iter().chain(std::iter::repeat(&false)))
+        .map(|(basin, &module)| if module { Basin { terraces: Vec::new(), ..basin } } else { basin })
         .collect();
     // A raised area's floor is a flat at its level, its terraces that much higher; one at the land's own level stays
     // floor, as does every way graded to it.
@@ -302,12 +306,14 @@ pub fn carve(
         wings: Vec::new(),
         levels: raised.clone(),
         terraced: heights,
+        roofed: Vec::new(),
     }]);
     let mut climbs = climbs(field, areas, &bare, rise, seed);
     climbs.extend(terraces);
     let outcrops = outcrops(areas, Ways { paths, climbs: &climbs }, seating, (shape, rise), seed);
     let (runs, wings, levels, terraced) = (Vec::new(), Vec::new(), raised, heights);
-    let sculpt = Sculpt { claim, floors, outcrops, rise, seed, climbs, runs, wings, levels, terraced };
+    let roofed = caverns.iter().flat_map(crate::caverns::Cavern::floors).collect();
+    let sculpt = Sculpt { claim, floors, outcrops, rise, seed, climbs, runs, wings, levels, terraced, roofed };
     (sculpt, basins, caverns)
 }
 

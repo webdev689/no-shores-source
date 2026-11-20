@@ -248,8 +248,8 @@ const ARCH_OPEN_M: f64 = 8.5;
 
 /// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet on the canyon's floor
 /// either side of the way and out into its cliffs, its crown a little over the massif's top, boulders fallen at its
-/// feet; the way runs under it.
-pub fn natural_arch(kit: &mut Kit, (middle, way, half): ([f64; 2], [f64; 2], f64), carved: &Sculpts) {
+/// feet, each off every way; the way runs under it.
+pub fn natural_arch(kit: &mut Kit, (middle, way, half): ([f64; 2], [f64; 2], f64), paths: &[Path], carved: &Sculpts) {
     // Between its feet a rock arch stands open over the middle 0.28 of its span (city's rock.rs): the way and 6 m
     // either side of it.
     let span = 2.0 * ARCH_OPEN_M / 0.28;
@@ -271,7 +271,15 @@ pub fn natural_arch(kit: &mut Kit, (middle, way, half): ([f64; 2], [f64; 2], f64
             let along = (kit.draw() - 0.5) * depth * 1.5;
             let at = [middle[0] + across[0] * out + way[0] * along, middle[1] + across[1] * out + way[1] * along];
             let size = [1.5 + kit.draw() * 2.5, 1.3 + kit.draw() * 2.0, 1.0 + kit.draw() * 2.0];
+            // Off every way's walked width, the arch's own and any other passing, as it lies turned and tipped.
+            let laid = kit.into.solids.len();
             crate::rocks::fallen(kit, carved, Shape::Dome { sides: 6 }, at, size, 0.3);
+            if let Some(stone) = kit.into.solids.get(laid) {
+                let [west, north, east, south, ..] = stone.bounds();
+                if !crate::paths::clear_of([west, north, east, south], paths) {
+                    kit.into.solids.truncate(laid);
+                }
+            }
         }
     }
 }

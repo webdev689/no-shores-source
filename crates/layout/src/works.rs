@@ -77,7 +77,8 @@ fn clear_of_outcrops(run: &Run, outcrops: &[Outcrop]) -> bool {
 
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
 /// longest path's and a natural arch over a third, each clear of the outcrops.
-pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: &[Outcrop], carved: &Sculpts) {
+/// `paths` are the ways the works are set on; `kept`, every way they keep off, the climbs' among them.
+pub fn build(kit: &mut Kit, areas: &[Area], (paths, kept): (&[Path], &[Path]), outcrops: &[Outcrop], carved: &Sculpts) {
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
         .filter_map(|path| longest_run(path, areas).map(|run| (path.tier, run)))
@@ -86,13 +87,13 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: &[Outcrop]
     runs.sort_by(|first, second| second.1.2.total_cmp(&first.1.2));
     let wall = runs.iter().find(|(tier, _)| *tier == Tier::Track).or(runs.first()).copied();
     if let Some((tier, (middle, way, _, half))) = wall {
-        great_wall(kit, (middle, way, half), tier, paths, carved);
+        great_wall(kit, (middle, way, half), tier, kept, carved);
     }
     // The viaduct stands well away from the wall, so each is a place of its own.
     let apart = |run: &&(Tier, Run)| wall.is_none_or(|(_, (middle, ..))| distance(middle, run.1.0) > WORKS_APART_M);
     let viaduct_at = runs.iter().find(apart).copied();
     if let Some((tier, (middle, way, _, half))) = viaduct_at {
-        viaduct(kit, (middle, way, half), tier, paths, carved);
+        viaduct(kit, (middle, way, half), tier, kept, carved);
     }
     // A natural arch over a third canyon, apart from both.
     let clear_of =
@@ -100,7 +101,7 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: &[Outcrop]
     if let Some((_, (middle, way, _, half))) =
         runs.iter().find(|(_, run)| clear_of(wall, run.0) && clear_of(viaduct_at, run.0))
     {
-        crate::skyline::natural_arch(kit, (*middle, *way, *half), carved);
+        crate::skyline::natural_arch(kit, (*middle, *way, *half), kept, carved);
     }
 }
 

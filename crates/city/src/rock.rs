@@ -26,7 +26,8 @@ const ROUGH_MOST_M: f64 = 2.0;
 const BULGE_M: f64 = 5.0;
 const CRAG_M: f64 = 1.6;
 
-/// The boxes of a rock's own frame (low x, y, z, then high x, y, z) it is made of; none for a built shape.
+/// The boxes of a rock's own frame (low x, y, z, then high x, y, z) it is made of, or a module's (`modules`);
+/// none for a built shape.
 #[must_use]
 pub fn parts(shape: Shape, [width, depth, height]: [f64; 3]) -> Vec<[f64; 6]> {
     let (west, north, east, south) = (-width / 2.0, -depth / 2.0, width / 2.0, depth / 2.0);
@@ -55,6 +56,7 @@ pub fn parts(shape: Shape, [width, depth, height]: [f64; 3]) -> Vec<[f64; 6]> {
             mouth.push([0.8 * west, north, 0.72 * height, 0.8 * east, north + 0.4 * depth, height]);
             mouth
         }
+        Shape::Module { module, group } => crate::modules::parts(module, group),
         _ => Vec::new(),
     }
 }
@@ -164,12 +166,17 @@ fn pulled_in(seed: u32, on_box: [f64; 3], middle: [f64; 3], half: [f64; 3]) -> [
     core::array::from_fn(|at| middle[at] + (on_box[at] - middle[at]) / reach - normal[at] / norm * depth)
 }
 
-/// Whether a shape is natural rock, met by its parts' boxes rather than its whole box.
+/// Whether a shape is met by its parts' boxes rather than its whole box: natural rock, and a module's surfaces (only
+/// its first group has parts).
 #[must_use]
 pub const fn is_rock(shape: Shape) -> bool {
     matches!(
         shape,
-        Shape::CaveRoof { .. } | Shape::Overhang { .. } | Shape::RockArch { .. } | Shape::TunnelMouth { .. }
+        Shape::CaveRoof { .. }
+            | Shape::Overhang { .. }
+            | Shape::RockArch { .. }
+            | Shape::TunnelMouth { .. }
+            | Shape::Module { .. }
     )
 }
 

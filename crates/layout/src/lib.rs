@@ -20,6 +20,7 @@ pub mod heights;
 pub mod interiors;
 pub mod marks;
 pub mod masses;
+pub mod modules;
 pub mod paths;
 pub mod pieces;
 pub mod pieces_coast;
@@ -138,7 +139,8 @@ pub fn plan(
     let field = Field::read(ground, &claim_of(node), MARGIN_M);
     let patrol = node.kind == NodeKind::Patrol;
     let (areas, wanted) = place_areas(node, &field, brief, links, seed);
-    let mut seating = compose::stand(&areas, &wanted, book, ground, &field, seed);
+    let moduled = modules::standing(&areas, brief.heights);
+    let mut seating = compose::stand(&areas, &wanted, &moduled, book, ground, &field, seed);
     let mut buildings = std::mem::take(&mut seating.buildings);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x400D, draws: 0, into: &mut seating };
     for building in &mut buildings {
@@ -151,15 +153,25 @@ pub fn plan(
     let mut kit = pieces::Kit { ground, book, seed, draws: 0, into: &mut seating };
     let heart = areas.iter().fold([0.0, 0.0], |sum, area| [sum[0] + area.at[0], sum[1] + area.at[1]]);
     let heart = [heart[0] / areas.len().max(1) as f64, heart[1] / areas.len().max(1) as f64];
-    for area in &areas {
+    for (area, &module) in areas.iter().zip(&moduled) {
         let linked = area.leads_to.as_ref().and_then(|id| links.iter().find(|link| &link.id == id));
         let toward = unit(linked.map_or(heart, |link| link.towards), area.at, field.seaward);
-        pieces::build(&mut kit, area, toward, field.seaward);
+        if module {
+            modules::seat(&mut kit, area, toward);
+        } else {
+            pieces::build(&mut kit, area, toward, field.seaward);
+        }
     }
+    // A module's area is reached at its first socket (a gate, a stair's foot), not through its walls to its middle.
     let hubs: Vec<[f64; 2]> = areas
         .iter()
         .zip(&wanted)
-        .map(|(area, &blocks)| if blocks > 0 { hub(&seating, area.at) } else { area.at })
+        .zip(&moduled)
+        .map(|((area, &blocks), &module)| match (module, blocks) {
+            (true, _) => modules::hub(&seating, area),
+            (false, 0) => area.at,
+            (false, _) => hub(&seating, area.at),
+        })
         .collect();
     let blocked = blocked_by(&field, &seating);
     let (mut paths, joined) = paths::lay(&field, &areas, &hubs, &blocked, patrol, seed);
@@ -175,7 +187,7 @@ pub fn plan(
             pieces_land::bridge(&mut kit, banks, path.tier.width());
         }
     }
-    dressing::dress(&mut kit, &areas, &paths);
+    dressing::dress(&mut kit, &areas, &paths, &moduled);
     let mut sites = sites::mark(&field, &areas, &paths, &seating, seed);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x51E5, draws: 0, into: &mut seating };
     marks::build(&mut kit, &sites);
@@ -211,6 +223,7 @@ pub fn plan(
         meadows,
         levels: &levels,
         joined: &joined,
+        moduled: &moduled,
     };
     let (mut sculpt, basins, caverns) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
     // What stands on a terrace or a raised floor (a place at a height, a way graded between places) was stood on the
@@ -222,6 +235,9 @@ pub fn plan(
         let raised = |[x, y]: [f64; 2]| lifting.raise(x, y, ground.coast.at(x, y));
         basins::seat_on_terraces(&mut seating, &raised_floors, &raised);
     }
+    // A module levels the ground under its floors, where it now stands.
+    let module_pads: Vec<land::pads::Pad> = seating.solids.iter().flat_map(city::modules::pads).collect();
+    seating.pads.extend(module_pads);
     // Rock in the middle of the claim that no floor or climb reaches is given a climb or a valley, before the runs are
     // found in what is left.
     let mass_climbs = masses::reach_masses(&field, &mut sculpt);
@@ -248,7 +264,9 @@ pub fn plan(
     let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
-    works::build(&mut kit, &areas, &paths, &sculpt.outcrops, &carved);
+    // The works keep off the climbs' ways as off every other, though those are walked only once the works stand.
+    let kept: Vec<paths::Path> = paths.iter().cloned().chain(climb_ways(&sculpt.climbs)).collect();
+    works::build(&mut kit, &areas, (&paths, &kept), &sculpt.outcrops, &carved);
     for cavern in &caverns {
         caverns::build(&mut kit, cavern, &carved);
     }
@@ -260,16 +278,9 @@ pub fn plan(
         }
     }
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
-    for pair in carve::lookouts(&sculpt.climbs) {
+    for (pair, walk) in carve::lookouts(&sculpt.climbs).zip(climb_ways(&sculpt.climbs)) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
-        let steps = (field::distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
-        let points = (0..=steps as usize)
-            .map(|step| {
-                let along = step as f64 / steps;
-                [x1 + (x2 - x1) * along, y1 + (y2 - y1) * along]
-            })
-            .collect();
-        paths.push(paths::Path { tier: paths::Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() });
+        paths.push(walk);
         skyline::lookout(&mut kit, end, [x2 - x1, y2 - y1], &carved);
         skyline::kerb(&mut kit, [x1, y1], [x2, y2], pair[0][4], &carved);
     }
@@ -304,11 +315,9 @@ pub fn plan(
     // What comes after keeps off the ways, a run's on past its end beat's middle to its door too.
     let ways = ways_of(&paths, &runs);
     works::retaining_walls(&mut kit, &areas, &ways, &sculpt.outcrops, &carved);
-    let built = kit.into.solids.len();
     for run in &runs {
         run_kits::build(&mut kit, run, &carved);
     }
-    let runs_stone = rocks::kept_clear(&kit.into.solids[built..], &runs);
     // Where a gorge out of the claim meets a river, a footbridge carries its way over.
     for &(from, way) in &exits {
         pieces_land::footbridges(&mut kit, reach, carve::gorge(&field, from, way, 0.0), &ring);
@@ -323,9 +332,13 @@ pub fn plan(
         })
         .collect();
     let fallen = kit.into.solids.len();
+    // Fallen rock lies in no stone built before it, a run's or any other, nor on a run's climb.
+    let built: Vec<city::solids::Solid> =
+        kit.into.solids.iter().filter(|solid| !rocks::loose(solid)).copied().collect();
+    let stone = rocks::kept_clear(&built, &runs);
     rocks::talus(&mut kit, &ring, (&ways, &gorges), &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &ways, &carved);
-    rocks::keep_off(kit.into, fallen, &runs_stone);
+    rocks::keep_off(kit.into, fallen, &stone);
     // Last of what stands, so a shelf's headstones keep out of all the rest.
     basins::graves(&mut kit, &terraces, &carved);
     // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off
@@ -498,6 +511,23 @@ fn spawns_round(field: &Field, at: [f64; 2]) -> Vec<[f64; 2]> {
         })
         .chain(std::iter::once(at))
         .take(3)
+        .collect()
+}
+
+/// Each climb to a lookout as the footpath it is walked as, a point every 8 m or less.
+fn climb_ways(climbs: &[[f64; 7]]) -> Vec<paths::Path> {
+    carve::lookouts(climbs)
+        .map(|pair| {
+            let [x1, y1, x2, y2, ..] = pair[0];
+            let steps = (field::distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
+            let points = (0..=steps as usize)
+                .map(|step| {
+                    let along = step as f64 / steps;
+                    [x1 + (x2 - x1) * along, y1 + (y2 - y1) * along]
+                })
+                .collect();
+            paths::Path { tier: paths::Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() }
+        })
         .collect()
 }
 

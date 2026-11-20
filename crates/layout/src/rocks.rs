@@ -23,8 +23,8 @@ const SCREE_TALLEST_M: f64 = 0.4;
 /// The carving raises the floor no more than this where a face meets it, metres: a face's foot.
 pub(crate) const FOOT_RISE_M: f64 = 0.3;
 
-/// What fallen rock keeps clear of in a zone's runs, as boxes (west, north, east, south, bottom, top): each solid a run
-/// built, and the ground its climb takes, whatever the height.
+/// What fallen rock keeps clear of, as boxes (west, north, east, south, bottom, top): each solid built before it (a
+/// run's, a wall's, a module's), and the ground a run's climb takes, whatever the height.
 #[must_use]
 pub(crate) fn kept_clear(built: &[Solid], runs: &[Run]) -> Vec<[f64; 6]> {
     let climbs = runs.iter().filter_map(climb).map(|climb| {

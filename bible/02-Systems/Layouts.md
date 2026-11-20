@@ -176,9 +176,10 @@ from the sea, fresh water and the claim's edge), then:
    and the stretch's banks as floor, water meadows 12 m either side (both wider by as far as the river strays from its
    course), so the section takes the river in. Where a gorge out of the claim meets a river inside the section, a
    footbridge carries it over, reaching out along the lower bank until both its ends meet the land.
-   Then the dead masses (`masses`): patches of the massif over 2,500 m2, sought on 16 m cells, raised over half its
-   height, more than 150 m from every floor, climb and run and 120 m inside the claim's edge (the bounds). Before the
-   runs are found, each layout answers its largest mass, seeks them again, and so on five times at most: a straight
+   Then the dead masses (`masses`): patches of the massif over 2,500 m2, sought on 16 m cells, raised over a quarter
+   of its height (a terraced massif's lowest plateau stands at about a third), more than 150 m from every floor, climb
+   and run and 120 m inside the claim's edge (the bounds). Before the
+   runs are found, each layout answers its largest mass, seeks them again, and so on seven times at most: a straight
    climb from a floor reached out of the mass's deepest point (sixteen headings tried) back up toward it, to a lookout
    as above with a broken tower standing on the top 24 m past it (ahead or to either side, where the top is level and
    clear of every outcrop as for the rim's ruins, else none), where that leaves under 2,500 m2 of the mass dead;
@@ -350,6 +351,9 @@ was stood on the land before the carving is lifted onto it. A retaining wall sta
 floor: past a raised floor's edge the land may fall away instead. In the Vale every way and climb is walked without a
 step a body cannot take (`crates/room/tests/map_planned.rs`), its keep highest, then its shrine, its hamlet and its
 farm, its mill, meadows and coven by the river.
+
+With heights a shrine, a keep and every cavern stand handcrafted [[Modules]] in place of their blocks, set pieces
+and dressing.
 
 With heights a gate stands in a cleft of the rock, a floor of 14 m reach where its way arrives and its gorge leaves,
 and once the land is carved its palisade runs on from its last stakes, a stake every 1.1 m, until each side meets the

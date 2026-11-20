@@ -76,12 +76,22 @@ fn offset(cell: [f64; 2], turns: u8) -> [f64; 2] {
 
 /// Stands every area's blocks, an area at a time in the order placed, into one seating.
 #[must_use]
-pub fn stand(areas: &[Area], blocks_wanted: &[u8], book: &Book, ground: &Ground, field: &Field, seed: u32) -> Seating {
+pub fn stand(
+    areas: &[Area],
+    blocks_wanted: &[u8],
+    moduled: &[bool],
+    book: &Book,
+    ground: &Ground,
+    field: &Field,
+    seed: u32,
+) -> Seating {
     let section: Vec<bool> =
         (0..field.columns * field.rows).map(|at| field.claimed[at] && field.inside[at] >= 12.0).collect();
     let mut seating = Seating::default();
     let mut used: BTreeSet<String> = BTreeSet::new();
-    for (number, area) in areas.iter().enumerate() {
+    // An area standing a module (`modules`) stands no blocks.
+    for (number, area) in areas.iter().enumerate().filter(|(number, _)| !moduled.get(*number).copied().unwrap_or(false))
+    {
         let lists = families(area.kind, blocks_wanted.get(number).copied().unwrap_or(1));
         let chosen: Vec<&RmbBlock> = lists
             .iter()

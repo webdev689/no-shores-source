@@ -11,6 +11,7 @@ pub mod footprint;
 pub mod grid;
 pub mod landmarks;
 pub mod landmarks_inland;
+pub mod modules;
 pub mod rmb;
 pub mod rock;
 pub mod social;

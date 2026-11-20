@@ -1,0 +1,99 @@
+---
+type: system
+status: live
+code:
+  - tools/modules/kit.py#organic
+  - tools/modules/kit.py#exported
+  - tools/modules/bake.py#baked
+  - tools/modules/publish.py#main
+  - tools/modules/catalogue.py#BUILDERS
+  - content/modules/modules.json
+  - crates/city/src/modules.rs#solids
+  - crates/city/src/modules.rs#pads
+  - crates/layout/src/modules.rs#seat
+  - crates/layout/src/modules.rs#hub
+  - client/src/city/modules.ts#loadModules
+---
+# Modules
+
+Handcrafted playspaces, each built in Blender by a script of its own and placed whole by a layout
+([[Handcrafted Playspaces Are Scripted in Blender]]). A module is three things: its surfaces, each in one of the
+game's materials and drawn in the climate's picture as the [[Cities]]' solids are; its parts, the boxes a body
+stands on and runs into; and its sockets, where a way or a floor meets it. Some also level the ground under their
+floors (pads). All of it is code in `tools/modules/`: no outside models or scans ([[Own Work]]).
+
+## The kit
+
+`kit.py` holds what every module is built from, in Blender's frame (x east, y north, z up) with its origin at the
+middle of its foot:
+
+- **Cut stone**: a block with bevelled edges and faces roughened by noise, so it reads as old and handled.
+- **Columns, stairs and battlements**: round columns, flights of steps (each step a part), and merlons along a wall's
+  edge.
+- **Organic rock** (`organic`): ellipsoids merged into one surface by a voxel remesh, cut into crags and bulges by
+  noise, cut flat where a body stands on it, then decimated to a triangle budget. Every natural form is made this
+  way: a cave's shelf, a column of dripstone, a boulder.
+- **Arches**: a round bar cut out of a wall.
+
+`exported` turns a module into the game's frame (x east, y south, z up: Blender's y turned round): its surfaces
+grouped by material, its parts, its sockets, its pads and its size, the box round its surfaces. The surface groups
+are written with paving last, since the first group carries the parts and paving is never run into.
+
+## The modules
+
+- **The Old Stones** (`old-stones`, a shrine's): a dais of two broken tiers of cut stone, 1.4 m each, a flight up
+  each side of the lower and up the east and west of the upper, a ring of eleven megaliths round the top, some fallen
+  and one leaning, an altar at its middle. Its paving is laid in rows of slabs of their own lengths over a bed of
+  rubble that shows where a slab is gone.
+- **The cavern chamber** (`cavern-chamber`, every cavern's): under the cave roof, 28 m square. A shelf of merged
+  boulders 2.2 m high runs along its back, climbed by worn steps at one end, with a dolmen, its stones and a cauldron
+  on it. Two waisted columns of dripstone stand floor to roof. Stalagmites crowd its sides, boulders give cover in its
+  middle and stalactites hang over it. A lane from its entry and a way to its steps are kept clear.
+- **The keep's citadel** (`keep-citadel`, a keep's): a curtain wall 60 m square, round towers at its corners and a
+  gatehouse with an arch and a raised portcullis, reached up a ramp. Its lower bailey stands 1.2 m over its foot and
+  its upper ward 3.6 m, up a broad flight between them. The donjon, windowed on three storeys, stands on the ward.
+  Flights inside the east and west walls climb to the wall-walk behind its parapet. A pad levels the ground inside
+  its walls under the bailey, so land up to its height lies hidden.
+
+## Baking and publishing
+
+bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as for the [[Flora]].
+
+| Command | What it does |
+|---|---|
+| `python -I tools/modules/bake.py <folder>` | Builds every module, writes each surface group's mesh to the folder under its hash and the manifest to `content/modules/modules.json`; a few seconds a module |
+| `python -I tools/modules/publish.py <folder>` | Uploads the meshes the manifest names to R2, unless R2 already serves them, and checks each answers |
+| `python -I tools/modules/render.py <module> <picture.png> [--parts]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked |
+
+A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats) and normal (3 signed
+bytes), then each triangle's three vertex numbers. A module has at most 32,000 triangles. The bake makes the same
+bytes from the same scripts. The `modules` workflow bakes on every change to the module tools, fails if the bake
+does not make the committed manifest, and publishes with the repository's Cloudflare token.
+
+## In the game
+
+- **The rules** read the manifest (city crate's `modules`): a module stands as one solid per surface group, all at
+  its place and turn (`Shape::Module`). The first group's solid carries its parts, so movement, collision, the
+  [[Navmesh]] and the bake meet it box by box as they meet natural rock's parts. Its pads are laid with the layout's
+  own.
+- **Where a module stands** ([[Layouts]]): only where the brief asks for heights, in place of the RMB blocks, set
+  piece and dressing its area would otherwise take. A shrine stands the Old Stones and a keep its citadel, at the
+  area's middle on the lowest ground under the module's foot, turned a whole quarter at a time so its parts stay
+  square to the world, its first socket toward the zone's middle. Every cavern stands the chamber under its roof,
+  its entry turned to the tunnel. The area's basin takes no platform of its own, since the module brings its
+  platforms, and its ways arrive 2 m past its first socket: the citadel's ramp, the Old Stones' north flight.
+- **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
+  (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
+  rock is.
+
+The Gullwing Vale stands the Old Stones, the citadel at Valeguard and the chamber in the Hollow Coven's cavern, each
+walked by `crates/room/tests/modules_walked.rs`: up the Old Stones' flights to the upper tier; up the citadel's ramp,
+through its gate and up to its ward and its wall-walk; in from the tunnel and up the chamber's steps onto its shelf.
+
+## Limits
+
+- A module's surfaces carry no ambient occlusion of their own, and their pictures are laid flat by axis, not
+  unwrapped.
+- A module stands square to the world, so a way may arrive at a side with no socket: the citadel's ways arrive at
+  its gate, which faces the zone's middle, not the way's own bearing.
+- Walking into a module's wall starts a climb ([[Movement]]), so the citadel's walls are climbed as any wall is.

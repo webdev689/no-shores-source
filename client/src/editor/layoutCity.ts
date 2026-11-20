@@ -5,6 +5,7 @@
 import type { Gpu } from '../gpu.ts';
 import type { CityTables } from '../city/cityBuild.ts';
 import { CityView } from '../city/cityView.ts';
+import { loadModules } from '../city/modules.ts';
 import { cityClimate } from '../city/plan.ts';
 import { layoutsNear, type NodeLayout } from '../layout/layouts.ts';
 import { planOfLayouts } from '../layout/layoutPlan.ts';
@@ -44,7 +45,7 @@ export function layoutsWanted(
   return same && ids.join(',') === gathered.names ? null : ids;
 }
 
-/** Reads the forged models' tables once, or null where the pages do not serve them. */
+/** Reads the forged models' tables once, and the modules' meshes, or null where the pages do not serve them. */
 async function loadTables(base: string): Promise<CityTables | null> {
   const read = async (name: string) => {
     const answer = await fetch(`${base}world/forged/${name}.json`);
@@ -52,7 +53,7 @@ async function loadTables(base: string): Promise<CityTables | null> {
     return answer.json() as Promise<unknown>;
   };
   try {
-    const [buildings, props] = await Promise.all([read('buildings'), read('props')]);
+    const [buildings, props] = await Promise.all([read('buildings'), read('props'), loadModules()]);
     return { buildings, props } as CityTables;
   } catch (error) {
     console.error("the layouts' buildings cannot be drawn:", error);

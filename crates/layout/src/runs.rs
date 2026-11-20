@@ -455,6 +455,7 @@ mod tests {
             wings: Vec::new(),
             levels: Vec::new(),
             terraced: false,
+            roofed: Vec::new(),
         };
         (claim, areas, Sculpts::from(vec![sculpt]))
     }

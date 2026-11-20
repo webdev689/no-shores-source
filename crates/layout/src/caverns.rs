@@ -74,6 +74,7 @@ pub fn find(field: &Field, areas: &[Area], levels: &[f64], laid: Laid, (rise, se
         wings: Vec::new(),
         levels: raised.to_vec(),
         terraced: false,
+        roofed: Vec::new(),
     }]);
     let mut found = Vec::new();
     for (number, area) in areas.iter().enumerate() {
@@ -109,8 +110,8 @@ pub fn find(field: &Field, areas: &[Area], levels: &[f64], laid: Laid, (rise, se
 }
 
 /// A cavern's rock, on the land as carved: a roof over its hollow and one over its tunnel, each resting on the rock
-/// round it with its top at the massif's highest round the hollow (its faces' tops), and a tunnel mouth where the
-/// tunnel opens onto the area's floor.
+/// round it with its top at the massif's highest round the hollow (its faces' tops), a tunnel mouth where the tunnel
+/// opens onto the area's floor, and the chamber module under the roof.
 pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts) {
     let turn = turn_along(cavern.way);
     let floor = carved_at(kit, carved, cavern.middle);
@@ -124,7 +125,8 @@ pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts) {
     let mut seed = || (kit.draw() * f64::from(u32::MAX)) as u32;
     let (hollow_seed, tunnel_seed, mouth_seed) = (seed(), seed(), seed());
     let top = rim.max(floor + HOLLOW_UP_M + 6.0);
-    let side = 2.0 * (cavern.reach + RESTS_M);
+    // Past the floor's edge wherever it wanders, onto the rock round it.
+    let side = 2.0 * (cavern.reach * (1.0 + land::sculpts::WANDER) + RESTS_M);
     let roof = [cavern.middle[0], cavern.middle[1], floor + HOLLOW_UP_M];
     kit.solid(
         Solid::upright(Shape::CaveRoof { seed: hollow_seed }, roof, [side, side, top - roof[2]], Material::Rubble)
@@ -133,11 +135,20 @@ pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts) {
     let middle = ahead(cavern.mouth, cavern.way, cavern.tunnel / 2.0 + 2.0);
     let tunnel_floor = carved_at(kit, carved, middle);
     let over = [middle[0], middle[1], tunnel_floor + TUNNEL_UP_M];
-    let size = [2.0 * (TUNNEL_HALF_M + RESTS_M), cavern.tunnel, top - over[2]];
+    let size = [2.0 * (TUNNEL_HALF_M * (1.0 + land::sculpts::WANDER) + RESTS_M), cavern.tunnel, top - over[2]];
     kit.solid(Solid::upright(Shape::CaveRoof { seed: tunnel_seed }, over, size, Material::Rubble).turned(turn));
     // The mouth's opening, the middle 0.4 of its span (city's rock.rs), as wide as the tunnel's walked middle.
     let mouth_floor = carved_at(kit, carved, cavern.mouth);
     let size = [2.0 * TUNNEL_HALF_M / 0.4 * 0.6, 6.0, TUNNEL_UP_M + 4.0];
     let at = [cavern.mouth[0], cavern.mouth[1], mouth_floor - 0.5];
     kit.solid(Solid::upright(Shape::TunnelMouth { seed: mouth_seed }, at, size, Material::Rubble).turned(turn));
+    // The chamber under the roof (a handcrafted module), on the lowest of its floor, its entry to the tunnel.
+    let low = (0..16)
+        .map(|step| {
+            let (sine, cosine) = land::exact::sin_cos(std::f64::consts::TAU * f64::from(step) / 16.0);
+            carved_at(kit, carved, [cavern.middle[0] + sine * 12.0, cavern.middle[1] + cosine * 12.0])
+        })
+        .fold(floor, f64::min);
+    let back = [-cavern.way[0], -cavern.way[1]];
+    crate::modules::stand(kit, "cavern-chamber", [cavern.middle[0], cavern.middle[1], low], ("entry", back));
 }

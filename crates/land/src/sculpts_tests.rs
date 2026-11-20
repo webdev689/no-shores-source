@@ -15,6 +15,7 @@ fn sculpt() -> Sculpts {
         wings: Vec::new(),
         levels: Vec::new(),
         terraced: false,
+        roofed: Vec::new(),
     }])
 }
 
@@ -31,6 +32,7 @@ fn a_run_climbing_round_a_bend_rises_without_a_step() {
         wings: Vec::new(),
         levels: Vec::new(),
         terraced: false,
+        roofed: Vec::new(),
     }]);
     // Along each passage 1.5 m either side of its line, where the step was, through the bend.
     for [x1, y1, x2, y2] in [[0.0_f64, 0.0, 0.0, 20.0], [0.0, 20.0, 14.0, 34.0]] {
@@ -62,6 +64,7 @@ fn a_wing_carries_the_massif_past_the_ring() {
         wings: vec![[50.0, 0.0, 350.0, 0.0, 40.0]],
         levels: Vec::new(),
         terraced: false,
+        roofed: Vec::new(),
     }]);
     let beyond = sculpts.raise(300.0, 30.0, 1000.0);
     assert!(beyond > 15.0, "the massif stands 250 m past the ring along the wing: {beyond}");
@@ -185,6 +188,7 @@ fn a_neighbours_massif_never_buries_a_floor_and_meets_it_without_a_step() {
             wings: Vec::new(),
             levels: Vec::new(),
             terraced: false,
+            roofed: Vec::new(),
         },
         Sculpt {
             claim: square(1100.0, 2000.0),
@@ -197,6 +201,7 @@ fn a_neighbours_massif_never_buries_a_floor_and_meets_it_without_a_step() {
             wings: Vec::new(),
             levels: Vec::new(),
             terraced: false,
+            roofed: Vec::new(),
         },
     ]);
     for x in [1000.0, 1050.0, 1150.0, 1250.0] {
@@ -220,6 +225,7 @@ fn the_massif_has_no_step_at_a_bucket_edge_or_beside_a_climbs_top() {
         wings: Vec::new(),
         levels: Vec::new(),
         terraced: false,
+        roofed: Vec::new(),
     }]);
     let worst = largest_step(&sculpts, (0..100).map(|row| -200.0 + f64::from(row) * 4.0), -200.0, 220.0);
     assert!(worst.0 < STRATA_STEP_M, "a step of {:.2} m at {:.2},{:.2}", worst.0, worst.1, worst.2);
@@ -255,6 +261,7 @@ fn standing(outcrop: Outcrop) -> Sculpts {
         wings: Vec::new(),
         levels: Vec::new(),
         terraced: false,
+        roofed: Vec::new(),
     }])
 }
 
@@ -439,6 +446,7 @@ fn terraced(terraced: bool) -> Sculpts {
         wings: Vec::new(),
         levels: vec![[-1200.0, 0.0, 1200.0, 0.0, 10.0, 0.5, 0.5]],
         terraced,
+        roofed: Vec::new(),
     }])
 }
 
@@ -468,6 +476,25 @@ fn a_terraced_massif_stands_in_plateaus_and_walls_every_floor() {
             let wall =
                 stepped.raise(x, side * (10.0 * 1.35 + CLIFF_RUN_M + 1.5), 1000.0) - stepped.raise(x, 0.0, 1000.0);
             assert!(wall >= 0.4 * 30.0 * 0.68 - 2.0, "a wall of {wall:.1} m over the way at {x},{side}");
+        }
+    }
+}
+
+#[test]
+fn a_terraced_massif_stands_whole_round_a_roofed_floor() {
+    let roofed = [0.0, 300.0, 400.0, 300.0, 6.0];
+    let base = terraced(true);
+    let mut sculpt: Vec<Sculpt> = base.clone().into();
+    sculpt[0].floors.push(roofed);
+    sculpt[0].roofed.push(roofed);
+    let held = Sculpts::from(sculpt);
+    // Past the floor's face and its wander, inside the 24 m it holds: the whole height, at the least its noise and
+    // roughness let it stand.
+    for step in 0..=40 {
+        let x = f64::from(step) * 10.0;
+        for out in [25.0, 28.0] {
+            let height = held.raise(x, 300.0 + out, 1000.0);
+            assert!(height >= 30.0 * 0.68 - 2.0, "{height:.1} m over the roofed floor's rock at {x},{out}");
         }
     }
 }

@@ -621,9 +621,19 @@ fn a_farms_hedgerows_line_its_drystone_walls() {
 
 #[test]
 fn every_shrine_stands_in_a_ring_of_standing_stones() {
-    let shrines = continent_one()
-        .iter()
-        .flat_map(|laid| laid.areas.iter().filter(|area| area.kind == AreaKind::Shrine).map(move |area| (laid, area)));
+    // A shrine standing a module stands in the module's own ring (modules_planned.rs).
+    let moduled = |laid: &layout::Layout, area: &layout::areas::Area| {
+        laid.seating.solids.iter().any(|solid| {
+            matches!(solid.shape, SolidShape::Module { .. })
+                && layout::field::distance([solid.at[0], solid.at[1]], area.at) < 1.0
+        })
+    };
+    let shrines = continent_one().iter().flat_map(|laid| {
+        laid.areas
+            .iter()
+            .filter(move |area| area.kind == AreaKind::Shrine && !moduled(laid, area))
+            .map(move |area| (laid, area))
+    });
     let mut seen = 0;
     for (laid, area) in shrines {
         seen += 1;

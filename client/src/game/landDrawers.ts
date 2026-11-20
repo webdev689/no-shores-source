@@ -2,6 +2,7 @@ import type { Gpu } from '../gpu.ts';
 import { blockFiles, parseBlockFile, type RmbBlock } from '../city/blocks.ts';
 import type { CityTables } from '../city/cityBuild.ts';
 import { CityView } from '../city/cityView.ts';
+import { loadModules } from '../city/modules.ts';
 import { cityClimate } from '../city/plan.ts';
 import { layoutFollower, type NodeLayout } from '../layout/layouts.ts';
 import { planOfLayouts, plantedOf } from '../layout/layoutPlan.ts';
@@ -76,7 +77,8 @@ function layoutDrawer(
   };
 }
 
-/** Reads the forged models' tables and the RMB index once, or null where the pages do not serve them. */
+/** Reads the forged models' tables and the RMB index once, and the modules' meshes, or null where the pages do not
+ *  serve them. */
 export async function loadCityAssets(base: string): Promise<CityAssets | null> {
   const read = async (path: string) => {
     const answer = await fetch(`${base}world/${path}`);
@@ -88,6 +90,7 @@ export async function loadCityAssets(base: string): Promise<CityAssets | null> {
       read('forged/buildings.json'),
       read('forged/props.json'),
       read('rmb/index.json'),
+      loadModules(),
     ]);
     return {
       tables: { buildings: JSON.parse(buildings), props: JSON.parse(props) } as CityTables,
