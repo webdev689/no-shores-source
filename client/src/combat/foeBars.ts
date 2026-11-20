@@ -3,6 +3,7 @@ import { motionReduced } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
+import type { Box } from './hitWords.ts';
 import { element, setStyle, showNode } from './meter.ts';
 import { aimedFoe, coneStep, coneWant, offDegrees, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
 
@@ -74,6 +75,9 @@ export class FoeBars {
   private readonly cones = new Map<number, number>();
   /** The foe the cone showed last frame. */
   private aimed: number | null = null;
+  /** The columns the plates over figures stand in this frame, each as wide as its plate from its foot up, which the
+   *  blows' words keep clear of. */
+  columns: readonly Box[] = [];
   /** Each foe's alert state as last seen, and the seconds since it last turned alert. */
   private readonly alerts = new Map<number, { alert: number; since: number }>();
 
@@ -112,7 +116,8 @@ export class FoeBars {
         this.cones.delete(foe.id);
         continue;
       }
-      seen.push({ foe, spot, since, off: camera ? offDegrees(camera, head) : 0 });
+      // With no camera no angle is known, so the cone shows none.
+      seen.push({ foe, spot, since, off: camera ? offDegrees(camera, head) : Number.NaN });
     }
     this.aimed = aimedFoe(new Map(seen.map(({ foe, off }) => [foe.id, off])), this.aimed);
     const shown: { foe: MarkedFoe; x: number; y: number; depth: number; since: number; cone: number; scale: number }[] =
@@ -125,17 +130,21 @@ export class FoeBars {
       if (cone <= 0) continue;
       shown.push({ foe, ...spot, since, cone, scale: plateScale(spot.depth, camera?.focal ?? NaN) });
     }
-    const laid = this.layout.lay(
-      shown.map(({ foe, x, y, depth, scale }) => ({
-        key: foe.id,
-        x,
-        y,
-        depth,
-        width: OVERHEAD_SIZES[plateTier(foe.rank)].width * scale,
-        height: height * scale,
-      })),
-      motionReduced() ? Infinity : seconds,
-    );
+    const spots = shown.map(({ foe, x, y, depth, scale }) => ({
+      key: foe.id,
+      x,
+      y,
+      depth,
+      width: OVERHEAD_SIZES[plateTier(foe.rank)].width * scale,
+      height: height * scale,
+    }));
+    const laid = this.layout.lay(spots, motionReduced() ? Infinity : seconds);
+    this.columns = spots.map(({ x, y, width }) => ({
+      left: x - width / 2,
+      right: x + width / 2,
+      top: -Infinity,
+      bottom: y,
+    }));
     for (const { foe, x, y, since, cone, scale } of shown) {
       const plate = this.overheads.get(foe.id) ?? new FoePlate(this.over, 'overhead');
       this.overheads.set(foe.id, plate);

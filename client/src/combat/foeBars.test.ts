@@ -132,6 +132,11 @@ test('in a crowd, a plate shows for the foe nearest the crosshair, the locked an
     );
     assert.equal(named('Foe 3')?.style['transform'], 'translate(329.3px, 300.0px)', 'the nearest whole, in place');
     assert.match(named('Foe 7')?.style['transform'] ?? '', /scale\(0\.800\)$/, 'smaller farther off');
+    assert.deepEqual(
+      bars.columns.map(({ left, right }) => Math.round(right - left)).sort((first, second) => first - second),
+      [112, 140, 140],
+      'the words keep clear of the plates drawn, each as wide as it is drawn, and of no other foe',
+    );
   }));
 
 test('a foe fought shows wherever it is, fading as the fight lets it go', () =>

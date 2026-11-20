@@ -195,9 +195,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before
   the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]).
 - **A plate's size goes with its rank**, as Destiny's bars do ([[Fewer Plates Show, Sized by Rank, After Destiny]]): a
-  Minor's bar short and thin, a Major's as a ship's, an Elite's and a Miniboss's longer and cut in thirds
-  ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
-- **Plates are never overbearing.** Of the foes not fought, only the one nearest the crosshair shows its plate; the
+  Minor's bar short and thin, a Major's as a ship's, an Elite's and a Miniboss's longer and, over a figure, cut in
+  thirds ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
+- **Plates are never overbearing.** The cone round the crosshair shows one plate, the foe in sight nearest it; the
   foe the soft lock holds, and the foes fought in the last 6 s, show theirs wherever they are, fading as the target
   plate does. None is seen through a block or the land, nor past 60 m; each shrinks with distance as its figure does
   ([[Interface]]).

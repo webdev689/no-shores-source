@@ -4,9 +4,11 @@ import { PLATES } from '../plus/barLayout.ts';
 import { Compass, compassCss, SHIP_MARK_COLOURS, UNDER_COMPASS } from '../plus/compass.ts';
 import { HALO, TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import { viewProjection } from '../editor/orbit.ts';
 import { blockedBy, clearOf, Hud, type HudFrame, veilOf } from './hud.ts';
 import { Words } from './hitWords.ts';
 import { fightSheetCss } from './hudSheet.ts';
+import { cameraOf } from './plateSight.ts';
 import { countWrites, findAll, onFakePage } from './page.test.ts';
 
 const standing: FighterView = {
@@ -108,8 +110,12 @@ test('the plates on foot are the sizes the sea draws its own at, a Minor’s bar
   assert.equal(minorWidth, overhead.width, 'a Minor’s as wide, for its name');
   assert.ok((minorRun ?? 100) < 100 && (minorBar ?? 0) < overhead.bar, 'a Minor’s bar short and thin');
   assert.ok((eliteWidth ?? 0) > overhead.width && (eliteBar ?? 0) > overhead.bar, 'an Elite’s long');
-  assert.match(rule(css, ".fight-hud .plate[data-tier='elite']:not(.boss) .third-mark"), /display: block/);
-  assert.match(rule(css, '.fight-hud .meter .third-mark'), /display: none/, 'no other bar is cut in thirds');
+  assert.match(rule(css, ".fight-hud .overhead[data-tier='elite'] .third-mark"), /display: block/);
+  assert.match(
+    rule(css, '.fight-hud .meter .third-mark'),
+    /display: none/,
+    'no other bar is cut in thirds, the target’s and the boss bar’s neither',
+  );
   assert.match(rule(css, '.fight-hud .boss'), new RegExp(`width: min\\(${boss.width}px, ${boss.share * 100}%\\)`));
   // In a narrow view (the Test Ground's between its panels) the target's plate keeps to the boss bar's share of it.
   assert.match(rule(css, '.fight-hud .target'), new RegExp(`width: min\\(340px, ${boss.share * 100}%\\)`));
@@ -130,6 +136,59 @@ test('a plate’s line is blocked by a block between the eye and the head, never
   const lintel = { minX: -2, minY: 9.85, maxX: 2, maxY: 10.5, top: 4 };
   assert.equal(blockedBy([lintel], [0, 0, 1.7], [0, 10, 1.8]), false, 'a block at the head blinds nothing');
   assert.equal(blockedBy([], [0, 0, 1.7], [0, 10, 1.8]), false);
+});
+
+test('the display holds the soft lock’s foe’s plate wherever it stands, and the land hides a plate as a block does', () => {
+  const matrix = viewProjection({ targetX: 0, targetY: 0, targetZ: 1.7, yaw: 0, pitch: 0, distance: 0.5 }, 16 / 9);
+  const camera = cameraOf(matrix);
+  assert.ok(camera);
+  const { eye, forward } = camera;
+  // A point `ahead` metres along the view and `aside` across it, on the ground.
+  const placeAt = (ahead: number, aside: number) => ({
+    x: eye[0] + forward[0] * ahead - forward[1] * aside,
+    y: eye[1] + forward[1] * ahead + forward[0] * aside,
+  });
+  const foeAt = (id: number, name: string, ahead: number, aside: number) => ({
+    id,
+    name,
+    view: { ...standing, ...placeAt(ahead, aside), side: 'foes' as const },
+    rank: 2,
+    faction: '',
+    phase: 0,
+    alert: 0,
+  });
+  // A foe 30 degrees aside, out of the cone, and one straight ahead; a ridge 5 m high across the line to the second.
+  const foes = [foeAt(2, 'Aside', 10, 10 * Math.tan(Math.PI / 6)), foeAt(3, 'Ahead', 20, 0)];
+  const ridge = (x: number, y: number) => {
+    const [east, south] = [x - eye[0], y - eye[1]];
+    const ahead = east * forward[0] + south * forward[1];
+    const aside = Math.abs(south * forward[0] - east * forward[1]);
+    return Math.abs(ahead - 10) < 1.5 && aside < 2 ? 5 : 0;
+  };
+  const platesFor = (lock: number | null, groundAt?: (x: number, y: number) => number | null) =>
+    onFakePage((root) => {
+      const hud = new Hud(root);
+      const frame: HudFrame = {
+        own: { ...standing, ...placeAt(0, 0), target: lock },
+        foes,
+        where: () => [0, 0, 0],
+        matrix,
+        width: 1280,
+        height: 720,
+        events: [],
+        player: 1,
+        firstPerson: false,
+        pressed: false,
+        lost: null,
+        ...(groundAt ? { groundAt } : {}),
+      };
+      // Past the target plate's 6 s, so only the lock holds the locked foe's plate.
+      for (let step = 0; step < 420; step++) hud.update(frame, 1 / 60);
+      return findAll(root, 'overhead').map((plate) => findAll(plate as unknown as HTMLElement, 'name')[0]?.textContent);
+    });
+  assert.deepEqual(platesFor(null), ['Ahead'], 'only the foe at the crosshair');
+  assert.deepEqual(platesFor(2).sort(), ['Ahead', 'Aside'], 'the locked foe too, long after the lock took it');
+  assert.deepEqual(platesFor(2, ridge), ['Aside'], 'the ridge hides the foe behind it');
 });
 
 test('what a vital lost is its own tone, faint; what a foe’s bar lost is pale', () => {

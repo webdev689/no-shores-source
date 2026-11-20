@@ -47,7 +47,7 @@ export const OVERHEAD_SIZES: Readonly<
   elite: { width: 176, bar: 10, length: 1 },
 };
 
-/** Where an Elite's and up's bar is marked, as shares of its whole health: its thirds. */
+/** Where an Elite's and up's bar over a figure is marked, as shares of its whole health: its thirds. */
 export const THIRDS: readonly number[] = [1 / 3, 2 / 3];
 
 /** A shield's ward over a foe's health, as DFO's Enhanced HUD laid a boss's: from the bar's left end, as long as the

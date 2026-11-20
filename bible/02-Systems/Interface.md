@@ -201,15 +201,16 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   orange, Volt blue, Cosmic violet (`wardOf`). It is gone once broken. What it takes from the player's own blows is
   said in its element's colour; a blow it holds whole fills no poise, so the poise track says nothing of it.
 - **Plates over figures are never overbearing**, and few show at once, after Destiny's
-  ([[Fewer Plates Show, Sized by Rank, After Destiny]]). Of the foes not fought, only the one nearest the crosshair
-  shows its plate (`aimedFoe`), whole within 4 degrees and none past 6, easing in and out over 0.25 s; another foe
-  takes it only once it stands a degree nearer, so two side by side do not trade it. The foe the soft lock holds shows
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]). The cone round the crosshair shows one plate, the foe in
+  sight nearest it (`aimedFoe`), whole within 4 degrees and none past 6, easing in and out over 0.25 s; while it shows
+  whole, another foe takes the cone only once it stands a degree nearer, so two side by side do not trade it. When the
+  foe at the crosshair is already fought or locked, its plate is the one there. The foe the soft lock holds shows
   wherever it is, and so does a foe the player traded a blow with, for as long as the target plate would stand from
   that blow, fading as it fades (`foughtShare`). A plate new on the screen starts where the cone puts it, so none pops
-  in. A plate shows for no foe farther than 60 m across the ground, nor one whose head the place's blocks or its land
-  have hidden for 0.15 s (`landBlocks`, the line tried every metre); seen again it comes back at once. It is whole as
-  near as 12 m through a 60 degree lens and shrinks as its figure does farther off, never growing, its name never
-  under 9 px.
+  in. The words of blows keep clear of the plates drawn, never of a foe with none. A plate shows for no foe farther
+  than 60 m across the ground, nor one whose head the place's blocks or its land have hidden for 0.15 s
+  (`landBlocks`, the line tried every 2 m); seen again it comes back at once. It is whole as near as 12 m through a
+  60 degree lens and shrinks as its figure does farther off, never growing, its name never under 9 px.
 - **A blow's words** stand where the blow met the body, in the face at 22 px with no box and a hard 2 px outline,
   thrown the way the stroke's blade went, its near edge 28 px from the blow (a crit's and a kill's 56; a number with
   no stroke one side and the other in turn), and kept on the screen. Each pops
@@ -237,10 +238,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   colour. Over each foe, the soft lock's (with its poise under the health) and the boss bar's are this one plate at
   three sizes. Over a figure its width and bar go with its foe's rank (`OVERHEAD_SIZES`), all 26 px tall: a Major's
   140 px with an 8 px bar under the whole name; a Minor's as wide, since "? Crossbowman" fills it in the face, but its
-  bar 5 px and only three fifths as long; an Elite's and up 176 px with a 10 px bar, cut in thirds by dark marks, on the
-  soft lock's plate too. Ships' plates are drawn alike on an SVG, at a Major's sizes (`PLATES`): 140 by 26 px over a
-  figure,
-  and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
+  bar 5 px and only three fifths as long; an Elite's and up 176 px with a 10 px bar, cut in thirds by dark marks.
+  Ships' plates are drawn alike on an SVG, at a Major's sizes (`PLATES`): 140 by 26 px over a figure, and the boss bar
+  640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
   wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
   foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first

@@ -1,8 +1,8 @@
-// Which plates over foes show, and how big, after Destiny's bars and DFO's law for the names over other players: of the
-// foes not fought, only the one nearest the crosshair shows its plate, fading in and out at the cone's edge; the foe the
-// soft lock holds and the foes fought lately show wherever they are. A plate shrinks with distance as the figure under
-// it does, and never grows; it is never seen through a block or the land, nor past the reach names had. So a crowd
-// puts one plate over the world until the fight begins, and the fight's own plates go a few seconds after it moves on.
+// Which plates over foes show, and how big, after Destiny's bars and DFO's law for the names over other players: the
+// cone round the crosshair shows one plate, the foe in sight nearest it, fading in and out at the cone's edge; the foe
+// the soft lock holds and the foes fought lately show wherever they are. A plate shrinks with distance as the figure
+// under it does, and never grows; it is never seen through a block or the land, nor past the reach names had. So a
+// crowd puts one plate over the world until the fight begins, and the fight's own plates go a few seconds after it.
 
 type Point = readonly [number, number, number];
 
@@ -32,21 +32,24 @@ export function coneWant(off: number | null, held: number): number {
 }
 
 /** The one foe the cone shows, of `offs` (each foe's degrees from the crosshair): the nearest inside the cone's edge,
- *  or last frame's (`was`) while it stays inside and no other stands `AIM_SWAP_DEGREES` nearer; null for none. */
+ *  or last frame's (`was`) while the cone shows it whole and no other stands `AIM_SWAP_DEGREES` nearer, so a fading
+ *  one never keeps it from a clearer one; null for none. */
 export function aimedFoe(offs: ReadonlyMap<number, number>, was: number | null): number | null {
   const edge = CONE.degrees + CONE.band / 2;
   let nearest: number | null = null;
   let least = edge;
   for (const [id, off] of offs) {
-    if (off >= least) continue;
+    if (!(off < least)) continue;
     [nearest, least] = [id, off];
   }
   const kept = was === null ? undefined : offs.get(was);
-  return kept !== undefined && kept < edge && kept - least < AIM_SWAP_DEGREES ? was : nearest;
+  const whole = CONE.degrees - CONE.band / 2;
+  return kept !== undefined && kept <= whole && kept - least < AIM_SWAP_DEGREES ? was : nearest;
 }
 
-/** How far apart, in metres, the line to a foe's head is tried against the land: the ground is known to the metre. */
-export const LAND_STEP_M = 1;
+/** How far apart, in metres, the line to a foe's head is tried against the land: the ground round the eye is a smooth
+ *  curve through heights 4 m apart, and the land past it coarser, so no rise is narrower than twice this. */
+export const LAND_STEP_M = 2;
 
 /** Whether the land (`groundAt`, its height under a point, null where none is known) rises over the line from `from`
  *  to `to` short of its last `SIGHT_SKIN_M`, as a block would. */

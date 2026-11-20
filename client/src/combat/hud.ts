@@ -7,14 +7,13 @@ import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts
 import { AmmoCounter } from './ammoCounter.ts';
 import { edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
-import { FoePlate, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
+import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { wearFightSheet } from './hudSheet.ts';
 import { element, setStyle, showNode } from './meter.ts';
-import { cameraOf, landBlocks, plateScale, SIGHT_SKIN_M } from './plateSight.ts';
-import { BOSS_RANK } from '../rules/roster.ts';
+import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 import { UNABLE } from './casting.ts';
@@ -403,7 +402,7 @@ export class Hud {
       const place = frame.firstPerson ? null : ([x, y, z + WORD_HIGH_M] as const);
       this.words.say({ text: AMMO_FULL, tone: 'plain', tags: [] }, place, 0, 0.5);
     }
-    this.words.update(projectWord, frame.width, frame.height, seconds, platesOf(frame));
+    this.words.update(projectWord, frame.width, frame.height, seconds, this.foeBars.columns);
   }
 
   /** The side of the screen a word is thrown to: the way its stroke's blade travelled as the eye sees it, else one
@@ -424,18 +423,4 @@ export class Hud {
     this.nextSide = -this.nextSide;
     return this.nextSide;
   }
-}
-
-/** Where each foe's plate may stand, as the bars lay it: a column as wide as the plate, above the point over its head
- *  (a plate lifted clear of another stands higher still). */
-function platesOf(frame: HudFrame): Box[] {
-  const focal = cameraOf(frame.matrix)?.focal ?? Number.NaN;
-  return frame.foes.flatMap(({ view, rank }) => {
-    if (rank === BOSS_RANK || view.action.kind === 'dead') return [];
-    const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
-    const spot = project(frame.matrix, point, frame.width, frame.height);
-    if (!spot) return [];
-    const half = (OVERHEAD_SIZES[plateTier(rank)].width * plateScale(clipOf(frame.matrix, point)[2], focal)) / 2;
-    return [{ left: spot.x - half, right: spot.x + half, top: -Infinity, bottom: spot.y }];
-  });
 }

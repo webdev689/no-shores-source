@@ -118,11 +118,10 @@ ${wards}
   transform-origin: 50% 100%; margin-top: -4px; font-size: ${PLATE_SIZE.letters}px; }
 ${tiers.join('\n')}
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
-/* An Elite's and up's bar is cut in thirds, as Destiny's are, so how much is left reads at a glance. The boss bar marks
-   its phases instead. */
+/* Over a figure an Elite's and up's bar is cut in thirds, as Destiny's are, so how much is left reads at a glance. */
 .fight-hud .meter .third-mark { display: none; position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
   background: ${TONES.outline}; }
-.fight-hud .plate[data-tier='elite']:not(.boss) .third-mark { display: block; }
+.fight-hud .overhead[data-tier='elite'] .third-mark { display: block; }
 
 /* The boss bar and the target's plate stand in the compass's column, under it, the target under the boss bar while both
    show. */

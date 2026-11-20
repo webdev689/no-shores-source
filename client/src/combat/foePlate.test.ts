@@ -153,7 +153,7 @@ test('the plate’s square shows its foe’s level, not its faction’s emblem; 
     assert.equal(square()?.textContent, '');
   }));
 
-test('a plate’s tier goes with its foe’s rank, and every bar holds its thirds’ marks, which only an Elite’s and up show', () =>
+test('a plate’s tier goes with its foe’s rank, and every bar holds its thirds’ marks, which only an Elite’s and up over a figure show', () =>
   onFakePage((root) => {
     assert.deepEqual([1, 2, 3, 4, 5].map(plateTier), ['minor', 'major', 'elite', 'elite', 'elite']);
     const plate = new FoePlate(root, 'overhead');

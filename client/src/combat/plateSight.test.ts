@@ -29,14 +29,16 @@ test('the cone: whole within 4 degrees of the crosshair, half at 5, none past 6;
   assert.equal(coneWant(4.5, 0.4), 0.75, 'the more of the two');
 });
 
-test('the cone shows one foe: the nearest the crosshair inside its edge, kept until another is clearly nearer', () => {
+test('the cone shows one foe: the nearest the crosshair inside its edge, kept while whole until another is clearly nearer', () => {
   const offs = (...pairs: (readonly [number, number])[]) => new Map(pairs);
   assert.equal(aimedFoe(offs([1, 3], [2, 1.5], [3, 20]), null), 2, 'the nearest');
   assert.equal(aimedFoe(offs([1, 7], [2, 30]), null), null, 'none inside the edge');
   assert.equal(aimedFoe(offs([1, 2], [2, 1.5]), 1), 1, 'last frame’s, while none is a degree nearer');
   assert.equal(aimedFoe(offs([1, 2.6], [2, 1.5]), 1), 2, 'another a degree nearer takes it');
+  assert.equal(aimedFoe(offs([1, 5.9], [2, 4.95]), 1), 2, 'last frame’s fading gives way to a clearer one');
   assert.equal(aimedFoe(offs([1, 6.5], [2, 5.5]), 1), 2, 'last frame’s past the edge gives way');
   assert.equal(aimedFoe(offs([2, 3]), 1), 2, 'last frame’s gone gives way');
+  assert.equal(aimedFoe(offs([1, Number.NaN], [2, 3]), null), 2, 'an angle not known is never the nearest');
   assert.equal(AIM_SWAP_DEGREES, 1);
 });
 
@@ -111,7 +113,7 @@ test('a plate goes only once its line has stayed blocked for the hold, and comes
 test('the land hides a plate as a block does: a rise between the eye and the head, never the ground under or past it', () => {
   // A ridge 4 m high across y = 20 to 22, else flat ground at 0; off the window (past y = 90) no ground is known.
   const ridge = (_east: number, y: number) => (y > 90 ? null : y >= 20 && y <= 22 ? 4 : 0);
-  assert.equal(LAND_STEP_M, 1);
+  assert.equal(LAND_STEP_M, 2);
   assert.equal(landBlocks(ridge, [0, 0, 1.7], [0, 40, 1.8]), true, 'the ridge stands across the line');
   assert.equal(landBlocks(ridge, [0, 0, 9], [0, 40, 1.8]), false, 'looked down on from over it');
   assert.equal(landBlocks(ridge, [0, 0, 1.7], [0, 15, 1.8]), false, 'a foe before the ridge');

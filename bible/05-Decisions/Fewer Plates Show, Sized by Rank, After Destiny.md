@@ -18,13 +18,11 @@ status: in force
 
 ## What it settles
 
-- Of the foes not fought, only the one nearest the crosshair, within about 5 degrees of it, shows its plate; the foe
-  the soft lock holds shows its plate wherever it is ([[Enemies]], [[Interface]]).
-- A foe fought shows its plate for 6 s after the last blow traded with it, fading as the target plate fades, where it
-  was a minute.
+- A foe not fought shows its plate only when it is the one nearest the crosshair, within about 5 degrees of it, or
+  the one the soft lock holds ([[Enemies]], [[Interface]]).
+- A foe fought shows its plate for 6 s after the last blow traded with it, fading as the target plate fades.
 - A plate over a figure goes with its foe's rank: a Minor's bar short and thin, an Elite's and up longer and cut in
   thirds, as Destiny's are ([[Enemies Come in Five Ranks, After Destiny]]).
 - The land hides a plate as a block does.
 - The level square stays on every plate.
 - The target's own plate over its head stays, to be looked at again once the rest has been played.
-- Plates stay light, as before ([[Plates Stay Light and Bars Do What Enhanced Plus Does]]).
