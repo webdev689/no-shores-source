@@ -30,6 +30,8 @@ struct SeaParts {
     harbour: protocol::SeaHarbour,
     /// Every standing island, each with the players who have found it.
     islands: Vec<(protocol::IsleSeen, Vec<PlayerId>)>,
+    /// How much farther each player's Lookout sights ships, 1 for none.
+    lookouts: Vec<(PlayerId, f64)>,
 }
 
 impl SeaParts {
@@ -55,7 +57,11 @@ impl SeaParts {
                 })
         };
         let ships = self.ships.iter().filter(seen).copied().collect();
-        let pirates = self.pirates.iter().filter(|pirate| own.is_some_and(|at| pirate.kept_by(at))).copied().collect();
+        // A Lookout sights each ship from farther off: her sight, as this player is sent it, is that much longer.
+        let lookout = self.lookouts.iter().find(|(each, _)| *each == player).map_or(1.0, |(_, times)| *times);
+        let sighted =
+            self.pirates.iter().map(|pirate| room::pirates::Pirate { sight_m: pirate.sight_m * lookout, ..*pirate });
+        let pirates = sighted.filter(|pirate| own.is_some_and(|at| pirate.kept_by(at))).collect();
         (ships, pirates)
     }
 
@@ -127,6 +133,7 @@ pub fn prepare() {
                 aboard,
                 harbour: protocol::SeaHarbour { flotsam, kept, told, decks, islands: Vec::new() },
                 islands,
+                lookouts: sea.ships().map(|(player, _)| (player, sea.lookout(player))).collect(),
             }))
         }
         Opened::Fleet(fleet) => {

@@ -40,6 +40,9 @@ for (Destiny 1, Star Trek Online, Black Desert, Deadfire, DFO's own crew), and t
 - **Officers** hold a post aboard (First Mate, Gunner, Bosun, Carpenter, Lookout), each changing how she plays, not a
   flat number. Two may come ashore as companions, fighting with the foes' own minds on the player's side. Each has
   experience from fights at sea and on land, a grid of nodes and perks of their own.
+- **Companions** follow DFO's own: each officer ashore fights as a pirate of their post's role at their own level, by
+  the power a player matched to it has; knocked out, never killed, they rest eight minutes; a kill they had a hand in
+  is their player's, and its XP pays the officers ashore ([[Gear]], "Companions").
 - **Recruited** at the player's faction's counter in a port city (Overlook's while only its social space is open);
   **taken** rarely when a boarded deck is won, her captain's officer joining the winner.
 

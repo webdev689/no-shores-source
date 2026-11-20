@@ -1,7 +1,6 @@
-use crate::island::{WRECK_REACH, haul};
+use crate::island::WRECK_REACH;
 use crate::{PlayerId, Room, asks};
 use ::foes::factions::{GREY_TITHE, PIRATES};
-use gear::dice::Dice;
 use isle::{Kind, Plan};
 use movement::Terrain;
 
@@ -78,8 +77,7 @@ fn a_wreck_is_scavenged_once_by_each_account_from_beside_its_heap() {
     assert_eq!(scavenged(&mut room, player, 0), 0);
     assert_eq!(room.scavenged(player), vec![0]);
     let hauls = room.take_hauls();
-    assert_eq!(hauls.len(), 1);
-    assert_eq!((hauls[0].0, hauls[0].1), (player, 0));
+    assert_eq!(hauls.iter().map(|haul| (haul.0, haul.1)).collect::<Vec<_>>(), vec![(player, 0)]);
     assert_eq!(scavenged(&mut room, player, 0), asks::OUT_OF_REACH, "spent for them");
     room.leave(player);
     let back = room.join().expect("a room with space");
@@ -94,11 +92,19 @@ fn a_wreck_is_scavenged_once_by_each_account_from_beside_its_heap() {
 }
 
 #[test]
-fn a_haul_holds_materials_and_now_and_then_a_module_more_often_on_an_isle() {
-    let modules = |kind| (0..4_000).filter(|&tick| haul(&Dice { seed: 3, tick, player: 1 }, kind).module).count();
-    let (cove, isle) = (modules(Kind::Cove), modules(Kind::Ruin));
-    assert!((250..420).contains(&cove), "{cove} modules in 4000 coves' wrecks");
-    assert!((550..800).contains(&isle), "{isle} modules in 4000 isles' wrecks");
-    let one = haul(&Dice { seed: 3, tick: 9, player: 1 }, Kind::Cove);
-    assert!(one.timber >= 2 && one.canvas >= 1 && one.iron >= 1);
+fn a_wrecks_salvage_is_paid_into_the_scavengers_ship_materials() {
+    let plan = plan(Kind::Cove);
+    let mut room = Room::island(&plan, AT, None, Some((5, 9)));
+    let wreck = isle::placed(plan.sites.wrecks[0].at, AT);
+    let player = room.join().expect("a room with space");
+    let before = room.player(player).expect("in").character.materials.ship;
+    stand_at(&mut room, player, [wreck[0] + 1.0, wreck[1]]);
+    assert_eq!(scavenged(&mut room, player, 0), 0);
+    let after = room.player(player).expect("in").character.materials.ship;
+    let (_, _, taken) = room.take_hauls()[0];
+    let gained: u16 =
+        gear::ship::materials::ShipMaterial::ALL.iter().map(|&each| after.of(each) - before.of(each)).sum();
+    let told: u16 = gear::ship::materials::ShipMaterial::ALL.iter().map(|&each| taken.materials.of(each)).sum();
+    assert!(gained >= 4, "a cove's wreck pays two materials of two or more: {gained}");
+    assert_eq!(gained, told, "what is told is what was paid in");
 }

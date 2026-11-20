@@ -12,8 +12,9 @@ import { emblemImage, emblemOf } from './emblemArt.ts';
 import { emblemCard } from './emblemSlot.ts';
 import { CRATES_MOST, type VaultShelf, cardOf, vaultOf } from './gearCards.ts';
 import { cardNode, glyphImage, heldPress, itemIcon, itemMarks, rarityOf } from './gearDom.ts';
-import { vendorsOf } from './gearScreen.ts';
+import { WARES, vendorsOf } from './gearScreen.ts';
 import { cellTile, vestigePlace } from './inventoryPage.ts';
+import { moduleGlyph } from './shipGear.ts';
 
 /** A ware's picture box, in pixels. */
 const WARE_PX = 64;
@@ -23,10 +24,9 @@ export function vendorPage(context: PageContext, vendor: number): HTMLElement {
   const page = make('div', '', 'gear-vendor');
   const stall = vendorsOf(context.gear)[vendor];
   if (!stall) return page;
-  const half = context.gear.wares.length / 2;
   const wares = make('div', '', 'gear-wares');
   stall.wares.forEach((ware, place) => {
-    const nth = vendor * half + place;
+    const nth = vendor * WARES + place;
     const item = context.gear.wares[nth];
     // One the player cannot pay for says so, and cannot be held.
     // The ware's picture charges as it is held, as a piece held to dismantle does.
@@ -36,7 +36,11 @@ export function vendorPage(context: PageContext, vendor: number): HTMLElement {
     if (!ware.affordable) block.setAttribute('aria-disabled', 'true');
     const cell = make('div', '', `gear-cell ${ROLES.tile}`);
     rarityOf(cell, item?.rarity ?? null);
-    cell.append(item ? itemIcon(context.picture(item), ware.tile.name, WARE_PX) : glyphImage('empty'));
+    // A module's glyph stands for its picture.
+    const glyph = item ? moduleGlyph(item.kind) : null;
+    const drawn = glyph ? glyphImage(glyph) : null;
+    drawn?.classList.add('ship-glyph');
+    cell.append(drawn ?? (item ? itemIcon(context.picture(item), ware.tile.name, WARE_PX) : glyphImage('empty')));
     if (item) itemMarks(cell, item);
     const words = make('div', '', 'gear-ware-words');
     const name = make('b', ware.tile.name);

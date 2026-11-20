@@ -44,6 +44,10 @@ pub fn leash(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Optio
 /// this tick, `was_alert`) walks home, and goes on walking while nothing turns it alert; any other looks about.
 pub fn unoccupied(brain: &mut Brain, here: &Here<'_, '_>, was_alert: bool) -> Ask {
     let Some(home) = brain.home else { return look(brain, here) };
+    if let Some(heel) = brain.heel {
+        let far = apart(here.at(), [home.at[0], home.at[1]]) > heel;
+        return if far { walk_home(brain, here, home) } else { look(brain, here) };
+    }
     if brain.returning == Some(Homeward::Searched) && !brain.awareness.alert {
         return walk_home(brain, here, home);
     }
@@ -81,17 +85,24 @@ fn start_home(brain: &mut Brain, why: Homeward) {
 }
 
 /// Its walk back to its place, healing a share of what it lacks each tick by the walk still left, so it is whole as it
-/// arrives; there, it turns to face as it was posted, and is home.
+/// arrives; there, it turns to face as it was posted, and is home. A companion runs to keep up with its leader, heals
+/// nothing, and is home once within its heel.
 fn walk_home(brain: &mut Brain, here: &Here<'_, '_>, home: Home) -> Ask {
     brain.awareness.heard.clear();
     let fighter = &here.fighter;
     let missing = fighter.health_max - fighter.health;
     let left = apart(here.at(), [home.at[0], home.at[1]]);
-    if left > HOME_REACHED
+    if left > brain.heel.unwrap_or(HOME_REACHED)
         && let Some(way) = way_to(here, home.at)
     {
-        brain.calls.heal = missing * (TUNING.walk * TICK_SECONDS / left).min(1.0);
-        return Ask::walking(way, 1.0, false);
+        if brain.heel.is_none() {
+            brain.calls.heal = missing * (TUNING.walk * TICK_SECONDS / left).min(1.0);
+        }
+        return Ask::walking(way, 1.0, brain.heel.is_some());
+    }
+    if brain.heel.is_some() {
+        brain.returning = None;
+        return Ask::facing(brain.heading);
     }
     brain.calls.heal = missing;
     let body = fighter.body.facing;

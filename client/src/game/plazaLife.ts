@@ -25,6 +25,10 @@ const OFFERS: Readonly<Record<string, Offer>> = {
   quartermaster: { words: 'The Quartermaster: armour for Aurem', opens: { view: 'quartermaster' } },
   armsmith: { words: 'The Armsmith: weapons for Aurem', opens: { view: 'armsmith' } },
   tailor: { words: 'The Tailor: emblems for Aurem', opens: { view: 'tailor' } },
+  harbourmaster: {
+    words: "The Harbourmaster: the Shipwright's modules and the muster",
+    opens: { view: 'harbourmaster' },
+  },
 };
 
 /** The offer of the station whose counter a player stands at, if one deals with them. */

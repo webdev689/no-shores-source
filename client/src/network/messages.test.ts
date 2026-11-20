@@ -72,6 +72,9 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
   // The brute Exposed for 200 ticks and immune to a Charge for 90; the second player Veiled for 150 and Hasted for 30.
   assert.deepEqual(foe?.statuses, { expose: 200, charge: 0, chargeImmune: 90 });
+  // A foe is no one's companion; the officer ashore beside player 9 is, named by their names' places.
+  assert.equal(foe?.companion, null);
+  assert.deepEqual(snapshot.foes[1]?.companion, { leader: 9, given: 2, family: 5 });
   const own = { crit: 0, expose: 0, charge: 0, haste: 30, linked: 0, veiled: 150, chargeImmune: 0 };
   assert.deepEqual(statusesOf(snapshot.players[1]?.fighter ?? []), own);
   assert.deepEqual(

@@ -22,6 +22,8 @@ export const TONES = {
   groove: 'rgba(163,152,128,0.26)',
   word: '#fbf8f0',
   wordDim: '#e2dccd',
+  /** The players' side: a companion's name over their head. */
+  ally: '#9fd4ff',
 } as const;
 
 /** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a soft
@@ -58,6 +60,7 @@ export const FILLS = {
   red: '#c8382f',
   orange: '#e07a2a',
   yellow: '#e8c23a',
+  ally: '#3f86c8',
   health: '#b53a2e',
   stamina: '#2f9152',
   poise: '#c08a3e',

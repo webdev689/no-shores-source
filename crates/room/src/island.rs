@@ -1,6 +1,7 @@
 //! A sea island's room: its fine ground (`isle`) as the floor, its modules' solids as blocks, its coast out into the
 //! shallows as the section, its beach's spawns, and its wrecks, each scavenged once by each player. An isle's guards
-//! of its water's holder stand at its landmark, its door and its camp, at its water's levels; a cove holds none.
+//! of its water's holder stand at its landmark, its door and its camp, at its water's levels; a cove holds none. A
+//! wreck's salvage is the ship's own law's (`gear::ship::found`), paid into the scavenger's ship materials.
 
 use crate::garrison::{Group, draws_of, gird_of, index};
 use crate::{Floor, PlayerId, Room, SEED, Section, Standing};
@@ -8,7 +9,7 @@ use ::foes::Rank;
 use ::foes::Rank::{Elite, Major, Minor};
 use ::foes::factions::PIRATES;
 use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, REEVE, RUNNER};
-use gear::dice::{Dice, Purpose};
+use gear::ship::found::{Source, Taken, salvage};
 use isle::{Kind, Plan};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -24,43 +25,17 @@ const BRUTE: u8 = 15;
 const ARCHER: u8 = 16;
 const CAPTAIN: u8 = 17;
 
-/// What a wreck gives the player who scavenges it: ship materials, and now and then a module of a ship's.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Haul {
-    pub timber: u16,
-    pub canvas: u16,
-    pub iron: u16,
-    pub rare: u16,
-    pub module: bool,
-}
-
-/// The island's own: its kind, its wrecks' heaps and its door, which wrecks each player has scavenged (by their
-/// account where they have one, so leaving and coming back finds them as left), and the hauls not yet told.
+/// The island's own: its kind, its water's levels, its wrecks' heaps and its door, which wrecks each player has
+/// scavenged (by their account where they have one, so leaving and coming back finds them as left), and what each
+/// scavenge paid in, not yet told.
 #[derive(Debug, Default)]
 pub struct Isle {
     pub kind: Option<Kind>,
+    pub levels: Option<(u8, u8)>,
     pub wrecks: Vec<[f64; 2]>,
     pub door: [f64; 2],
     scavenged: BTreeMap<String, BTreeSet<u8>>,
-    pub hauls: Vec<(PlayerId, u8, Haul)>,
-}
-
-/// A wreck's haul as the dice draw it: more of each on an isle's shore, and one wreck in twelve holds a module (one in
-/// six on an isle).
-#[must_use]
-pub fn haul(dice: &Dice, kind: Kind) -> Haul {
-    let isle = u16::from(kind.is_isle());
-    let some = |nth: u32, least: u16, more: u16| {
-        least + isle + u16::try_from(dice.pick(Purpose::Wreck, nth, usize::from(more) + 1)).unwrap_or(0)
-    };
-    let module = dice.pick(Purpose::Wreck, 4, if kind.is_isle() { 6 } else { 12 }) == 0;
-    Haul {
-        timber: some(0, 2, 4),
-        canvas: some(1, 1, 3),
-        iron: some(2, 1, 2),
-        rare: u16::from(dice.pick(Purpose::Wreck, 3, 10) == 0),
-        module,
-    }
+    pub hauls: Vec<(PlayerId, u8, Taken)>,
 }
 
 /// A group's foes by type and rank.
@@ -104,6 +79,7 @@ impl Room {
         room.foes_most = crate::NODE_FOES_MOST;
         room.isle = Some(Isle {
             kind: Some(plan.kind),
+            levels,
             wrecks: plan.sites.wrecks.iter().map(|wreck| isle::placed(wreck.at, at)).collect(),
             door: isle::placed(plan.sites.door.at, at),
             ..Isle::default()
@@ -152,7 +128,8 @@ impl Room {
     }
 
     /// A player scavenges a wreck by its place in the island's list: once each, alive and within reach of its heap.
-    /// Answers 0 and keeps the haul to tell them, or why not.
+    /// Its salvage, at the island's water's middle level raised by the room's seas, is paid into their character.
+    /// Answers 0 and keeps what was taken to tell them, or why not.
     pub(crate) fn scavenge(&mut self, player: PlayerId, wreck: u8) -> u8 {
         let Some(fighter) = self.fighter(player).copied() else { return crate::asks::OUT_OF_REACH };
         let dice = self.dice(player);
@@ -167,7 +144,18 @@ impl Room {
             return crate::asks::OUT_OF_REACH;
         }
         isle.scavenged.entry(holder).or_default().insert(wreck);
-        isle.hauls.push((player, wreck, haul(&dice, isle.kind.unwrap_or(Kind::Cove))));
+        let level = isle.levels.map_or(1, |(low, high)| low + (high.saturating_sub(low)) / 2);
+        let found = salvage(
+            Source::Wreckage { isle: isle.kind.is_some_and(Kind::is_isle) },
+            self.difficulty.raise(level),
+            &dice,
+        );
+        let Some(scavenger) = self.players.get_mut(&player) else { return crate::asks::OUT_OF_REACH };
+        let taken = scavenger.character.take_salvage(found);
+        scavenger.gear_changed = true;
+        if let Some(isle) = self.isle.as_mut() {
+            isle.hauls.push((player, wreck, taken));
+        }
         0
     }
 
@@ -182,8 +170,8 @@ impl Room {
             .unwrap_or_default()
     }
 
-    /// The hauls scavenged since last asked, each with its player and wreck.
-    pub fn take_hauls(&mut self) -> Vec<(PlayerId, u8, Haul)> {
+    /// What each scavenge paid in since last asked, each with its player and wreck.
+    pub fn take_hauls(&mut self) -> Vec<(PlayerId, u8, Taken)> {
         self.isle.as_mut().map(|isle| std::mem::take(&mut isle.hauls)).unwrap_or_default()
     }
 }

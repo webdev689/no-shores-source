@@ -218,8 +218,9 @@ impl Damage {
         Hurt { hull, sail, crew, fire: hurt.fire }
     }
 
+    /// A captain's ship with no one left aboard; a player's always has the player.
     fn unmanned(&self) -> bool {
-        self.max_crew > 0.0 && self.crew <= 0.0
+        !self.player && self.max_crew > 0.0 && self.crew <= 0.0
     }
 
     /// A fire set, three at most: past that it takes the place of the one with the least harm left, if it has more.

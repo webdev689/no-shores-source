@@ -69,7 +69,8 @@ impl Room {
 
     /// The Test Ground's grant of a status from the player, on themselves or on every foe, for `ticks` or its own time.
     pub(crate) fn grant_status(&mut self, player: PlayerId, status: Status, on_foes: bool, ticks: Option<u32>) {
-        let whom: Vec<FighterId> = if on_foes { self.foes.keys().copied().collect() } else { vec![player] };
+        let foes = self.foes.iter().filter(|(_, foe)| !foe.fighter.side.is_players()).map(|(id, _)| *id);
+        let whom: Vec<FighterId> = if on_foes { foes.collect() } else { vec![player] };
         for fighter in whom {
             self.give(fighter, status, ticks, Some(player));
         }

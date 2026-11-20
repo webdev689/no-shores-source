@@ -84,6 +84,7 @@ fn counter_of(found: &NodeCounter) -> Option<Counter> {
         "vault" => CounterKind::Vault,
         "quartermaster" => CounterKind::Vendor(Vendor::Quartermaster),
         "armsmith" => CounterKind::Vendor(Vendor::Armsmith),
+        "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
         "tailor" => CounterKind::Tailor,
         _ => return None,
     };

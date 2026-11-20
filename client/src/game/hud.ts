@@ -379,22 +379,18 @@ export class Hud {
     this.voyageWanted = toggle;
   }
 
-  /** Manage's panel over her deck: her name, and each part of it, those still to come marked Later; null hides it.
+  /** Manage's panel over her deck: her name, and each part of it; null hides it.
    *  It is built again only when its shape changes, its values written in place, so a press on it is never lost. */
   shipPanel(panel: ShipPanel | null): void {
     this.panel.hidden = panel === null;
     if (!panel) return;
-    const shape = JSON.stringify([
-      panel.title,
-      panel.parts.map((part) => [part.heading, part.later, part.rows.length]),
-    ]);
+    const shape = JSON.stringify([panel.title, panel.parts.map((part) => [part.heading, part.rows.length])]);
     if (shape !== this.panelShape) {
       this.panelShape = shape;
       this.panelValues = [];
       const parts = panel.parts.map((part) => {
         const node = make('div', '', 'ship-part');
         node.append(make('div', part.heading, `ship-part-heading ${ROLES.rule}`));
-        if (part.later) node.append(make('span', 'Later', `ship-later ${ROLES.chip}`));
         for (const [label] of part.rows) {
           const [row, value] = [make('div', '', 'ship-row'), make('span', '', 'ship-value')];
           row.append(make('span', label, 'ship-label'), value);

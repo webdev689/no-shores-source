@@ -90,9 +90,11 @@ The sea room holds its islands (`sea_islands.rs`):
   Captain at its Elite rank at the landmark, a band at the door and two to four at the camp, on a navmesh baked over
   their posts. A cove holds none.
 - **Wreckage.** A player within 4 m of a wreck's heap scavenges it once (once for their account, however often they
-  rejoin; every account has its own lot): two to six Timber, one to four Canvas, one to three Iron, one in ten a rare
-  material, and one wreck in twelve a ship's module (one in six on an isle), each a little more on an isle. Until the
-  ship's power is built the room keeps each haul to tell.
+  rejoin; every account has its own lot). Its salvage is the ship's own law ([[Ship Power]],
+  `gear::ship::found`): a cove's wreck two common ship materials (Timber, Canvas or Iron) of two to five each, Heartwood
+  8 times in a hundred and a module one time in ten; an isle's three of three to six, Heartwood one time in seven and a
+  module one time in five. It is rolled at the middle of the island's water's band raised by the room's seas, and paid
+  straight into the player's ship materials, a module carried as any item.
 - **The door** stands where the dungeon of its style is entered, seeded by the island's seed. Until the dungeons'
   rooms take it, E there says that dungeon is not open yet.
 

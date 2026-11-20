@@ -400,6 +400,7 @@ impl Sea {
         }
         self.tick_harbour();
         self.tick_islands();
+        self.fights.fit(&self.harbour.characters);
         let (outcomes, sank) = self.fights.step(&self.coasts, time);
         self.after_fights(outcomes, &sank);
         self.tick_decks();
@@ -593,4 +594,4 @@ mod sea_tests;
 
 #[cfg(test)]
 #[path = "fight_measure_tests.rs"]
-mod fight_measure_tests;
+pub(crate) mod fight_measure_tests;

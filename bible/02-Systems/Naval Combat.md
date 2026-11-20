@@ -96,8 +96,9 @@ is one pure function (`sail_hurt`), which a browser predicting her runs too.
   her heel; the lay stays her upright hull's.
 - **The guns** are DFO's swivel, three a side: 55 m/s, -10 to 14 degrees, 149 m at most from her deck. A broadside
   ripples 0.09 s a gun, each ball from where its port is by then, scattered by the volley's seed (more for a poorer
-  gunner). No battery bears within 35 degrees of her bow or 40 of her stern. Each side reloads on its own clock: 5.6 s
-  single-handed, 4 to 7.2 s with a crew.
+  gunner). No battery bears within 35 degrees of her bow or 40 of her stern. Each side reloads on its own clock: a
+  captain's 4 to 7.2 s by her crew left; the player's Sloop's ten hands load hers in 5.6 s whole, up to 10.1 s with
+  none left ([[Crew]], "Hands").
 - **The loads** are round, grape, chain and heated shot, with DFO's factors over round shot: grape is slower and wider
   and kills men (less as its flight lengthens), chain tears canvas, heated shot sets her alight. A loaded side drawn
   for a new load takes half its reload; one loading keeps its progress.
@@ -134,6 +135,10 @@ is one pure function (`sail_hurt`), which a browser predicting her runs too.
   or her rig where its sail is gone; a sail torn away; a mast fallen; colours struck; a ship going down; a piece of what
   floats laid, and gathered; and players gone aboard her.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
+- **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
+  her harm on each captain and each captain's on her by her level, Attack and Defense against the captain's level, and
+  her trim from her modules and posted officers, among them her Gunner firing the broadside she does not lay, her
+  Bosun keeping way her torn canvas costs her, and her Carpenter patching part of each ball's hull harm back.
 
 ## The captain
 

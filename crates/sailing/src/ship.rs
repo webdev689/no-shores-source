@@ -38,15 +38,16 @@ pub struct Helm {
 pub const SAILS_SET: i8 = 2;
 
 /// The shares of the way her sails and her oars may ask that her hurts leave her (naval combat's: canvas shot away,
-/// a wreck's oars); whole for a sound ship.
+/// a wreck's oars), and of the turn her helm asks that her trim gives her; whole for a sound ship.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pull {
     pub sail: f64,
     pub oars: f64,
+    pub turn: f64,
 }
 
 /// A sound ship's pull.
-pub const WHOLE: Pull = Pull { sail: 1.0, oars: 1.0 };
+pub const WHOLE: Pull = Pull { sail: 1.0, oars: 1.0, turn: 1.0 };
 
 /// A vector's length, from a square root alone.
 #[must_use]
@@ -167,7 +168,7 @@ pub fn step_pulled(
         (under_oars(helm, hull, rung, was, sail_way), pull.oars)
     };
     let asked = Asked { way: [asked.way[0] * share, asked.way[1] * share], ..asked };
-    let turn = toward(ship.turn, asked.turn, asked.turn_accel * seconds);
+    let turn = toward(ship.turn, asked.turn * pull.turn, asked.turn_accel * pull.turn * seconds);
     let [ahead, abeam] = toward_vector([ship.ahead, ship.abeam], asked.way, asked.accel * seconds);
     let way = length(ahead, abeam);
     let sail_way = if way < was {

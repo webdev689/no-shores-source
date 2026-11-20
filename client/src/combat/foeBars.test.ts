@@ -138,3 +138,25 @@ test('a plate leaving the cone fades out over a quarter of a second, then is gon
     bars.update([aside], null, spotOf, viewing, 0.125);
     assert.equal(findAll(root, 'overhead').length, 0);
   }));
+
+test("a companion's plate is drawn in the players' colour, by their own name", () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const viewing: PlateViewing = {
+      camera: { eye: [0, 0, 1.8], forward: [0, 1, 0], focal: 1 / Math.tan(Math.PI / 6) },
+      blocked: () => false,
+      fought: () => false,
+    };
+    const mate = thule(1, 0, { name: 'Cass Brine', rank: 2, ally: true }, { y: 5, side: 'players' });
+    const brute = thule(2, 0, { name: 'Brute', rank: 2 }, { y: 6 });
+    for (let frame = 0; frame < 12; frame++)
+      bars.update([mate, brute], null, () => ({ x: 400, y: 300, depth: 5 }), viewing, 1 / 60);
+    const bands = findAll(root, 'overhead').map((plate) => [
+      findAll(plate as unknown as HTMLElement, 'name')[0]?.textContent,
+      (plate as unknown as HTMLElement).dataset['band'],
+    ]);
+    assert.deepEqual(bands.sort(), [
+      ['Brute', 'orange'],
+      ['Cass Brine', 'ally'],
+    ]);
+  }));

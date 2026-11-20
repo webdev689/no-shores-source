@@ -134,6 +134,7 @@ impl Fight {
             let contact = ram_contact(&hull_block(&her.ship, &her.pose, her.arms()), point, RAM_REACH)?;
             let closing = ram_closing(&ways, velocity_of(&her.ship), contact.normal);
             let blow = ram_blow(closing, contact.side, mine.max_hull, her.damage.max_hull);
+            let blow = self.fitted_ram(id, *target, blow);
             let blow = ram_paid(blow, recoil_room(mine), share);
             (blow >= 1.0).then_some((*target, blow))
         });

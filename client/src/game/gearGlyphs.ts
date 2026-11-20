@@ -6,9 +6,11 @@
 import { AMMO_BOX, AMMO_CRATE, OUTLINE, VESTIGE_ROWS } from '../combat/dropPictures.ts';
 import { RARITIES } from '../player/gear.ts';
 import type { Glyph } from './gearCards.ts';
+import { SHIP_MAPS, SHIP_PALETTES } from './shipGlyphs.ts';
 
 /** Each glyph as rows of letters, each letter a colour of its palette and a dot none. 12 × 12. */
 const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource'>, readonly string[]>> = {
+  ...SHIP_MAPS,
   aurem: [
     '....aaaa....',
     '..aabbbbaa..',
@@ -114,6 +116,7 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource'>, readonly string
 
 /** Each glyph's colours, outline first; a Vestige's come from its rarity. */
 const PALETTES: Readonly<Record<string, readonly string[]>> = {
+  ...SHIP_PALETTES,
   aurem: [OUTLINE, '#c08a3e', '#f3cf86'],
   'weapon-fragments': [OUTLINE, '#9fb2c4', '#e2ecf4'],
   'armor-fragments': [OUTLINE, '#a3753e', '#e6c08a'],

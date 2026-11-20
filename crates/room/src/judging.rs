@@ -122,14 +122,16 @@ impl Room {
     /// and tells it. A player's blow that lands on a foe shares its kill, which pays everyone who shares it.
     pub(crate) fn settle(&mut self, blow: &Blow, how: How, defender: FighterId, verdict: Verdict, hand: Option<Slot>) {
         let Some(before) = self.fighter(defender).copied() else { return };
-        if before.dead() {
+        // No one harms their own side: a player never strikes a companion.
+        let ally = blow.striker != defender && self.fighter(blow.striker).is_some_and(|by| by.side == before.side);
+        if before.dead() || ally {
             return;
         }
         let harms = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
         let crit = harms && crits(blow, self.fighter(blow.striker), &before);
         let verdict = self.weighed(blow, &before, verdict);
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
-        let after = suffer(&before, blow, &verdict);
+        let after = self.held_up(defender, suffer(&before, blow, &verdict));
         self.set_fighter(defender, after);
         // The fight's heat follows what the players took and what they dealt and killed: what they dealt, a shield's
         // share with it, as the numbers combat is tuned for, whatever the foe's level.
@@ -144,12 +146,12 @@ impl Room {
                 self.director.killed();
             }
         }
-        // A blow too far below its foe's level to harm it shares nothing of its kill.
-        if let Some(hand) = hand
+        // A blow too far below its foe's level to harm it shares nothing of its kill; a companion's is their leader's.
+        if let Some((sharer, hand)) = self.credited(blow.striker, hand)
             && blow.damage > 0.0
             && matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. })
         {
-            self.mark_struck(blow.striker, defender, hand);
+            self.mark_struck(sharer, defender, hand);
         }
         // No weapon's perk touches a spell, its kill included.
         if !matches!(blow.kind, BlowKind::Spell(_)) {
@@ -361,7 +363,7 @@ impl Room {
     pub(crate) fn shoot_seen(&mut self, shot: &combat::Shot, view: &[(FighterId, Fighter)]) -> [f64; 3] {
         let bodies: Vec<(FighterId, [f64; 3])> = view
             .iter()
-            .filter(|(id, fighter)| self.foes.contains_key(id) && !fighter.dead())
+            .filter(|(id, fighter)| self.foes.contains_key(id) && !fighter.dead() && !fighter.side.is_players())
             .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
             .collect();
         let (stop, struck) = match fly(shot, &self.blocks, &self.floor, &bodies) {

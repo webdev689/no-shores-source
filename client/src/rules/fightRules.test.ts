@@ -71,18 +71,18 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   assert.equal(view.player.guns.load, 'grape');
   assert.equal(
     prints.join(' '),
-    '2ccc2fc797da7cbe eae574b66b61049b dd9bdf721f315bcf 078f737c5ae0dd3b e5f57d8b5b8ace5e 05539b67502dea89 ' +
-      '2147140665442c40 0e9a4dfe4da17d75 f9c5191fadbd711f',
+    'b4b2b472c1c548e2 47f35009e4c474b7 8ff59cbbbab5b793 5b2d1d8fe9f53cb7 078ad1af53744762 bc7cd318e0ad73dd ' +
+      'c4dcc79b6e20cda4 f639d699a4272179 b3e44646db9f037b',
   );
 });
 
 // Each hull's fight, as crates/land-wasm/src/fight_tests.rs HULL_FIGHTS pins it: her captain's rank, the hull she
 // sails, and the last leg's fingerprint.
 const HULL_FIGHTS = [
-  [2, 0, 'f9c5191fadbd711f'],
-  [3, 1, 'a6a3918566c1aee2'],
-  [4, 2, 'd728a4c9a6ebc25f'],
-  [5, 3, 'ead19c39dfa3345b'],
+  [2, 0, 'b3e44646db9f037b'],
+  [3, 1, '86e891e908116796'],
+  [4, 2, 'b5e7bff5475ac613'],
+  [5, 3, '5435058f01f34d6f'],
 ] as const;
 
 test('a fight against each hull through WebAssembly fights to the same fingerprint as the door natively', async () => {

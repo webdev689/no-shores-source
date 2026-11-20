@@ -9,6 +9,7 @@ const STATIONS = [
   { kind: 'reader', keeper: [960.8, 1946.6], counter: [960.8, 1948.4] },
   { kind: 'chandler', keeper: [1000, 1946.6], counter: [1000, 1948.4] },
   { kind: 'armsmith', keeper: [1039.2, 1946.6], counter: [1039.2, 1948.4] },
+  { kind: 'harbourmaster', keeper: [1078.4, 1946.6], counter: [1078.4, 1948.4] },
 ] as const;
 const PLAZA: NodeInfo = {
   id: 'overlook-social',
@@ -35,6 +36,7 @@ test('a counter that deals with the player opens its screen; a trader’s, and o
     opens: { view: 'inventory' },
   });
   assert.deepEqual(offerAt(STATIONS, 1039.2, 1949)?.opens, { view: 'armsmith' });
+  assert.deepEqual(offerAt(STATIONS, 1078.4, 1949)?.opens, { view: 'harbourmaster' }, 'the Shipwright and the muster');
   assert.equal(offerAt(STATIONS, 1000, 1949), null, 'the chandler sells nothing a player keeps');
   assert.equal(offerAt(STATIONS, 960.8, 1948.4 + SERVED_M + 0.1), null);
 });

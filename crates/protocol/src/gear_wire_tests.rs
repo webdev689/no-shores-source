@@ -39,6 +39,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Art(gear::arts::ArtAsk::SetCore { art: 2, slot: 1, fragment: 5 }),
         Asked::Grant(Grant::Ammo(360)),
         Asked::Grant(Grant::Crates(2)),
+        Asked::Grant(Grant::Officers(7)),
     ]
 }
 
@@ -102,7 +103,7 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
     assert_eq!(gear.spent().map(|spent| spent.iter().collect::<Vec<_>>()), Some(vec![0]));
     assert_eq!(gear.resources().map(|resources| resources.get(4)), Some(3), "three gathered");
     let items: Vec<_> = gear.items().expect("items").iter().collect();
-    assert_eq!(items.len(), 6, "the starting kit and the sword");
+    assert_eq!(items.len(), 10, "the starting kit, her four modules and the sword");
     let sword = items.iter().find(|item| item.named() == Some("harbourwarden")).expect("the Legendary");
     assert_eq!((sword.at(), sword.attack(), sword.xp_most()), (2, 248, 90_000), "worn in the main hand");
     let columns: Vec<_> = sword.columns().expect("its columns").iter().collect();

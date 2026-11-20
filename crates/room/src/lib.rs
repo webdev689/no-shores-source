@@ -7,8 +7,11 @@
 mod arts;
 pub mod asks;
 pub mod battle;
+pub mod boarding_hands;
 pub mod chart;
 pub mod clash;
+mod companions;
+pub mod crew;
 pub mod deck;
 mod deck_fight;
 mod drops;
@@ -27,6 +30,7 @@ mod players;
 mod power;
 pub mod sea;
 pub mod sea_weather;
+pub mod ship_power;
 pub mod sighting;
 mod spells;
 mod statuses;
@@ -34,6 +38,7 @@ pub mod threat;
 
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
+pub use companions::Companion;
 pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
@@ -135,9 +140,9 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
+    pub(crate) ashore: companions::Ashore,
     /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
     pub day: u64,
-    /// A sea island's wrecks and door, in an island's room (`island.rs`).
     pub(crate) isle: Option<island::Isle>,
 }
 
@@ -199,6 +204,7 @@ impl Room {
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Normal,
             patrol: None,
+            ashore: companions::Ashore::default(),
             day: 0,
             isle: None,
         }
@@ -290,6 +296,7 @@ impl Room {
         self.step_players();
         self.spawn_asked();
         self.keep_patrol();
+        self.keep_companions();
         self.step_foes();
         self.fly_shots();
         self.step_arts();
