@@ -41,6 +41,8 @@ code:
   - tools/wreck/wreck_level.py
   - client/src/game/prologue/wreckProgress.ts#WreckProgress
   - client/src/game/prologue/wreckRun.ts#WreckRun
+  - client/src/game/prologue/wreckCrew.ts#WreckCrew
+  - client/src/game/prologue/wreckCrew.ts#crewSpots
   - client/src/game/prologue/wreckScenery.ts#WreckScenery
 ---
 # Prologue
@@ -215,6 +217,14 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
   the Sloop, the Frigate's waist, gun deck and quarterdeck. Each is an area with a checkpoint; entered, its
   checkpoint is where the next respawn stands the player. Each but the arena holds a wave of Grey Tithe crew and
   pirates, Minor and Major, in pairs already fighting each other. At most 6 of the wreck's foes are alive at once.
+- **The Brig's crew** fight on in each zone with a wave, two or three of them ([[Allied Crew Fight on the Wreck and
+  Can Fall]]), stood with the zone's first boarder, so they are already fighting when the player comes. Each stands at
+  one of the zone's `crew` spots in the layout, facing the nearest boarder; for a zone that lays none, 1.6 m from one
+  of its first boarders on the same deck within the zone, toward its checkpoint where that stands. They are the
+  roster's crew, Minors at the boarders' level, a swordsman and a skirmisher in turn, dressed as the Brig's plain hands
+  in the storm with their weapons drawn, named "Crew" over a green bar. The boarders fight them and they fight back;
+  they can fall. The wreck's room holds 24 foes alive, as a node's; no more than 18 of the crew live at once, so the
+  boarders always have room. A zone is cleared once its boarders are down, whatever became of its crew.
 - **Heaps across the way.** Each zone but the arena has a heap of wreckage across the way on from it, piled 2.9 m over
   its deck and out over the bulwarks, standing from the start. It is cleared once its zone's wave has stood whole and
   fallen. The Frigate's gangways beside her gun deck are closed for good by heaps on cores of stacked crates, higher

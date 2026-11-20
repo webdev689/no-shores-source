@@ -25,6 +25,7 @@ import { type Shot, shotOfOrbit } from '../camera.ts';
 import { IDLE, type FootFight, type FootFrame } from '../foot.ts';
 import { footHints } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
+import { WreckCrew } from './wreckCrew.ts';
 import { courseOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
@@ -89,6 +90,7 @@ export class WreckRun {
   private readonly unseen = new Set<number>();
   /** Every foe the run has stood, by its number in the room: its wave's foe and zone. */
   private readonly stood = new Map<number, Standing>();
+  private readonly crew = new WreckCrew();
 
   private constructor(
     context: WreckContext,
@@ -241,6 +243,13 @@ export class WreckRun {
     for (const zone of asks.open) this.openGate(zone);
     if (asks.checkpoint) room.setSpawn(...asks.checkpoint);
     if (asks.bringBack) room.putPlayer(...asks.bringBack);
+    this.crew.stand(asks.stand, {
+      room,
+      figures: this.foes,
+      foes: this.fight.foes,
+      layout: this.layout,
+      level: this.level.value,
+    });
     for (const foe of asks.stand) {
       const id = room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level.value);
       if (id === 0) continue;

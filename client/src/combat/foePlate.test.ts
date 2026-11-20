@@ -152,3 +152,12 @@ test('the plate’s square shows its foe’s level, not its faction’s emblem; 
     plate.show({ ...rat(3), level: 0 }, 1 / 60);
     assert.equal(square()?.textContent, '');
   }));
+
+test('an ally on the players’ side shows a green health bar; a foe its rank’s band', () =>
+  onFakePage((root) => {
+    const plate = new FoePlate(root, 'overhead');
+    plate.show({ ...rat(1), rank: 1 }, 0);
+    assert.equal(plate.root.dataset['band'], 'red');
+    plate.show({ ...rat(2, { side: 'players' }), rank: 1 }, 1 / 60);
+    assert.equal(plate.root.dataset['band'], 'green');
+  }));

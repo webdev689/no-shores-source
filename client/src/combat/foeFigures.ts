@@ -43,6 +43,8 @@ const PACE_SECONDS = 0.1;
 export class FoeFigures {
   private readonly roster: readonly FoeType[];
   private readonly dresses: ReadonlyMap<number, Dress | null>;
+  /** The foes dressed in their own clothes, by the room's number. */
+  private readonly dressed = new Map<number, Dress>();
   private readonly figures = new Map<number, Placed>();
   private readonly glides = new Glides();
   private readonly loops = new Map<number, Loop>();
@@ -74,9 +76,21 @@ export class FoeFigures {
     this.dissolves.set(id, { look, start });
   }
 
-  /** The dress a foe's figure is drawn in, its type's; none for a type the roster does not know. */
+  /** The dress a foe's figure is drawn in: its own if it was dressed, else its type's; none for a type the roster
+   *  does not know. */
   dressOf(kept: KeptFoe): Dress | null {
-    return this.dresses.get(shownType(this.roster, kept)?.type ?? kept.type) ?? null;
+    return this.dressed.get(kept.id) ?? this.dresses.get(shownType(this.roster, kept)?.type ?? kept.type) ?? null;
+  }
+
+  /** Dresses the foe the room numbers `id`, of roster type `type`, in `look` with its type's weapons drawn, in place
+   *  of its type's dress: as the Brig's crew wear their own clothes. Room numbers are never used twice, and a page
+   *  dresses a few dozen at most, so a dress is kept past its foe. */
+  dressFoe(id: number, type: number, look: Dress): void {
+    const hands = this.roster.find((each) => each.type === type);
+    this.dressed.set(id, {
+      ...look,
+      outfit: { ...look.outfit, right: hands?.right ?? null, left: hands?.left ?? null, drawn: true },
+    });
   }
 
   /** Every foe's card as an eye at `eye` sees it: gliding toward where the room last saw it (`frameTicks` the frame's

@@ -4,7 +4,7 @@
 import { ROLES } from '../plus/kit.ts';
 import type { FoeShield, FoeStatuses } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { rankBand, rankMark } from '../rules/roster.ts';
+import { type RankBand, rankBand, rankMark } from '../rules/roster.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { element, Meter, setStyle, showNode } from './meter.ts';
 import { foeDebuffs, StatusRow } from './statusIcons.ts';
@@ -36,6 +36,12 @@ export function wardOf(
   const shield = foe.shield;
   if (!shield || shield.left <= 0) return null;
   return { share: Math.min(1, shield.left / Math.max(1, foe.view.healthMax)), element: shield.element };
+}
+
+/** The colour a plate's health is drawn in: green for an ally fighting on the players' side, as the Brig's crew do,
+ *  else its rank's band. */
+export function plateBand(foe: Pick<MarkedFoe, 'rank' | 'view'>): RankBand | 'green' {
+  return foe.view.side === 'players' ? 'green' : rankBand(foe.rank);
 }
 
 /** What the poise track under a foe's health says: nothing to say (not drawn), its poise filling toward a break, an
@@ -138,7 +144,8 @@ export class FoePlate {
       this.health.forget(this.seen?.get(foe.id) ?? this.firstSeen);
     }
     const { dataset } = this.root;
-    if (dataset['band'] !== rankBand(foe.rank)) dataset['band'] = rankBand(foe.rank);
+    const band = plateBand(foe);
+    if (dataset['band'] !== band) dataset['band'] = band;
     const level = foe.level ? String(foe.level) : '';
     if (this.level.textContent !== level) this.level.textContent = level;
     const mark = rankMark(foe.rank) ?? '';
