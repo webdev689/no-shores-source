@@ -2,6 +2,76 @@
   "about": "The owner's picks, kept on R2 by their hash: Freesound's, each with its credit, written by tools/freesound/publish.py, and DFO's own, by tools/freesound/own.py. The game plays each in place of its synthesised cue, or for its world cue.",
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
   "sounds": {
+    "amb.highland.raven": {
+      "key": "sounds/c197589f5ec06dc4b123a16385cf9ee89bde7475cfb9fa7ada69c6a1b35f41cf.mp3",
+      "freesound": 824995,
+      "name": "Raven pair on Yukon River bank",
+      "author": "SoundsLikeYukon",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/SoundsLikeYukon/sounds/824995/",
+      "changes": "Unchanged."
+    },
+    "amb.rainforest.parrot": {
+      "key": "sounds/c8ab7260beed5dbd81354ad68a9c94e377ef9a71946642d7dde6b5e8dda4020d.mp3",
+      "freesound": 875522,
+      "name": "Macaw Squawks",
+      "author": "loganzsound",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/loganzsound/sounds/875522/",
+      "changes": "Unchanged."
+    },
+    "amb.savanna.lion": {
+      "key": "sounds/fad87881bf36fa3efdfa10d24a7ecd617263e2e9fa59d77df01b0a50199c623c.mp3",
+      "freesound": 559600,
+      "name": "LION ROAR",
+      "author": "Podcapocalipsis",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Podcapocalipsis/sounds/559600/",
+      "changes": "Unchanged."
+    },
+    "amb.sea.gull": {
+      "key": "sounds/41cba0ce77966a8ad539908263d144c6980fa1df5ce706663e034b8fc1b2803c.mp3",
+      "freesound": 166703,
+      "name": "sea gulls.wav",
+      "author": "Snapper4298",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Snapper4298/sounds/166703/",
+      "changes": "Unchanged."
+    },
+    "amb.social.crowd": {
+      "key": "sounds/30bce71c3eddb9d0c3a0bade377327c43cda2d45885c2bb268d78850de4dff3d.mp3",
+      "freesound": 260727,
+      "name": "Crowd in a local market",
+      "author": "VlatkoBlazek",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/VlatkoBlazek/sounds/260727/",
+      "changes": "Cut to 60 s from 200 s in, made mono, its ends faded."
+    },
+    "amb.swamp.heron": {
+      "key": "sounds/3826152500f23d682e1724850b61ef045ffdc9b0be0b88f6a604aa3d956082e2.mp3",
+      "freesound": 65264,
+      "name": "20081221.grey.heron.wav",
+      "author": "dobroide",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/dobroide/sounds/65264/",
+      "changes": "Unchanged."
+    },
+    "amb.woodland.crow": {
+      "key": "sounds/e84d7700845531e3b57a460bd8d306b0b15f8a6da89805bfac363612749b3446.mp3",
+      "freesound": 70194,
+      "name": "Crows Medium Distant in Creek 2.wav",
+      "author": "JustinBW",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/JustinBW/sounds/70194/",
+      "changes": "Unchanged."
+    },
     "ammo.refill": {
       "key": "sounds/fb30d2e5ab1c8c2e78cffe261d3bbe15e2b6ae2f353df31f731602fc8b303660.mp3",
       "freesound": 653032,

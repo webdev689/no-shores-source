@@ -9,6 +9,8 @@ import type { Action, Input, InputFrame } from '../player/input.ts';
 import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
+import type { Ambience } from './audio/ambience/ambience.ts';
+import type { MusicDirector } from './audio/music/director.ts';
 import type { Charting } from './charting.ts';
 import type { Discovered } from './discovered.ts';
 import type { FigureView } from './figureView.ts';
@@ -83,6 +85,10 @@ export interface FrameParts {
   readonly isleFrame: () => void;
   readonly isles: Drawer;
   readonly groundAt: (x: number, y: number) => number | null;
+  /** The world the music hears a node of, the music and the ambience that play as the game goes. */
+  readonly world: Parameters<MusicDirector['onFoot']>[0];
+  readonly music: MusicDirector;
+  readonly ambience: Ambience;
 }
 
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
@@ -119,6 +125,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
+    parts.music.onFoot(parts.world, here.node, shown.fight, seconds);
+    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
     const hands = walker.inFirstPerson
@@ -162,6 +170,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.shipScale = shown.shipScale;
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
+    parts.music.atSea(here, seconds);
+    const voyage = { sailing: shown.sailing, pace: shown.pace, deck: here.helmView || here.aboard.active };
+    parts.ambience.atSea(playing.landmass, here.position, shown.shot, voyage, seconds);
     // Back at the helm, or called to it, the pointer is the player's again.
     const afoot = here.aboard.walking || here.boarding.onDeck;
     if (wasWalking && !afoot && input.locked) document.exitPointerLock();
@@ -238,6 +249,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.shipScale = 1;
     if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
+    parts.ambience.frame(seconds);
     if (playing.flow.mode === 'loading' && playing.ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
       playing.waited += elapsed;

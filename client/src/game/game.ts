@@ -11,6 +11,8 @@ import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { HULL_NAMES } from '../ships/hulls.ts';
+import { Ambience } from './audio/ambience/ambience.ts';
+import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
 import { type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -76,6 +78,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     session,
   };
   const footView = new FootView(gpu, hudRoot, forge, [hud.hintList]);
+  const music = new MusicDirector();
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
   const landmass = boot.landmass;
@@ -522,6 +525,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
       ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, mapOf, isleFrame, groundAt },
       isles: islesView,
+      ...{ world, music, ambience: new Ambience(world) },
     },
     playing,
   );

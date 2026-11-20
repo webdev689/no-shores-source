@@ -1,5 +1,5 @@
 {
-  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there. `offer` names Freesound numbers shown as candidates before the search's own, such as the recordings DFO plays. `dfo` marks a cue whose sound comes from DFO's own: the name of the one picked, or true while the owner chooses among them on the sheet; such a cue is searched no more.",
+  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there. `offer` names Freesound numbers shown as candidates before the search's own, such as the recordings DFO plays. `dfo` marks a cue whose sound comes from DFO's own: the name of the one picked, or true while the owner chooses among them on the sheet; such a cue is searched no more. `cut` names the stretch of a long pick the game plays, its start and its length in seconds, and `mono` makes it one channel; the credit says so.",
   "cues": [
     {
       "id": "ui.hover",
@@ -1124,6 +1124,93 @@
         1.5
       ],
       "dfo": true
+    },
+    {
+      "id": "amb.sea.gull",
+      "use": "Gulls calling over the sea near a coast, over a harbour and a shore",
+      "query": "seagulls calling",
+      "seconds": [
+        1.5,
+        12.0
+      ],
+      "skip": [
+        49437
+      ],
+      "picked": 166703
+    },
+    {
+      "id": "amb.social.crowd",
+      "use": "A port city's market crowd far below the plaza, no word clear, looped",
+      "query": "market crowd",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 260727,
+      "cut": [
+        200,
+        60
+      ],
+      "mono": true
+    },
+    {
+      "id": "amb.woodland.crow",
+      "use": "A crow cawing in a wood",
+      "query": "crow caw",
+      "seconds": [
+        0.8,
+        6.0
+      ],
+      "skip": [
+        813117
+      ],
+      "picked": 70194
+    },
+    {
+      "id": "amb.highland.raven",
+      "use": "A raven croaking as it flies over the fells, the steppe, a marsh or the tundra",
+      "query": "raven",
+      "seconds": [
+        0.4,
+        10.0
+      ],
+      "picked": 824995
+    },
+    {
+      "id": "amb.rainforest.parrot",
+      "use": "Parrots squawking in a rainforest's canopy",
+      "query": "macaw",
+      "seconds": [
+        0.5,
+        12.0
+      ],
+      "skip": [
+        384373
+      ],
+      "picked": 875522
+    },
+    {
+      "id": "amb.swamp.heron",
+      "use": "A heron croaking over a marsh",
+      "query": "heron",
+      "seconds": [
+        0.3,
+        10.0
+      ],
+      "skip": [
+        15025
+      ],
+      "picked": 65264
+    },
+    {
+      "id": "amb.savanna.lion",
+      "use": "A lion roaring far off in the grasslands at night",
+      "query": "lion roar",
+      "seconds": [
+        1.5,
+        30.0
+      ],
+      "picked": 559600
     }
   ]
 }

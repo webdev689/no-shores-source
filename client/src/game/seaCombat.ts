@@ -10,7 +10,7 @@ import { cameraOf, type Orbit } from '../editor/orbit.ts';
 import { SAILS_RUNG } from '../editor/sailing.ts';
 import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { SeaFightModel } from '../plus/seaFight.ts';
-import type { FightCaptain, FightView } from '../rules/fightRules.ts';
+import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
 import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import { playCues } from '../ships/fightSounds.ts';
 import { Shake } from '../ships/shake.ts';
@@ -289,6 +289,11 @@ export class SeaCombat {
     const [x = 0, y = 0, heading = 0] = vessel.ship;
     const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
     return { x, y, heading, scale, heave, pitch, roll };
+  }
+
+  /** The player's ship as the fight last showed it: its hurts and its state. */
+  get vessel(): FightVessel {
+    return this.last.player;
   }
 
   /** Every captain in the fight: the player's, then any other. */
