@@ -67,7 +67,7 @@ pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavM
                 .collect();
             NavMesh::bake_anchored(&solids, ground.grid(), bounds, &agent, anchor)
         }
-        Floor::Flat | Floor::Land(_) => NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor),
+        Floor::Flat | Floor::Sea | Floor::Land(_) => NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor),
     }
 }
 

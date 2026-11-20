@@ -70,3 +70,8 @@ test("in a dungeon's room the words under its name start with the room's", () =>
   assert.ok(placeWords(dungeon, 'the Ossuary').startsWith('The Ossuary · Dungeon'));
   assert.ok(placeWords(dungeon, null).startsWith('Dungeon'));
 });
+
+test("a place's words name its kind, and its island where the owner has named one", () => {
+  assert.equal(placeWords({ kind: 'social', continent: 'continent-1' }), 'Social space · Saltmere');
+  assert.equal(placeWords({ kind: 'patrol', continent: 'continent-9' }), 'Patrol');
+});

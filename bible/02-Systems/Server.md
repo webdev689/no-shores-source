@@ -34,6 +34,8 @@ code:
   - crates/room-wasm/src/dungeon_door.rs#open_dungeon
   - crates/room-wasm/src/dungeon_door.rs#room_join_at
   - server/roomNames.ts#nodeRoom
+  - crates/room/src/course.rs#stand_foe_at
+  - crates/room-wasm/src/course_door.rs#stand_foe
   - crates/room/src/garrison.rs#garrisoned
   - server/worker.ts#RoomHost
   - server/roomDoor.ts#startRoomDoor
@@ -60,9 +62,11 @@ on Cloudflare.
 - **Its ground:** a node's room stands its bodies on the node's window of the [[Land]], among the boxes of its city a
   body runs into ([[Movement]]). A dungeon's room stands them on the dungeon's own ground in its own frame, whose
   rock, doorways' jambs and pillars are walls no body passes or climbs, kept a body's half-width off ([[Dungeons]]).
-  Any other room stands them on its course of blocks on open ground at 0 m.
+  Any other room stands them on its course of blocks on open ground at 0 m, or, for a course laid over open sea
+  (`room_open_over_sea`, the [[Prologue]]'s wreck), on its blocks over the sea at 0 m.
 - **Joining:** a player gets a number no one else in the room has had. In a node's room they stand on the ground at
-  the node's spawns in turn, the first player at the first spawn, the next at the next; elsewhere at the room's spawn.
+  the node's spawns in turn, the first player at the first spawn, the next at the next; elsewhere at the room's spawn,
+  on the top of the block under it (or the ground where none stands), and a respawn stands them there too.
   A patrol's room may instead stand a player 1.5 m before one of its entrances' doors, facing away from it, as they
   come out of that entrance's dungeon. A room holds 16 players; past that, it turns the next away.
 - **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused, as is one with a
@@ -81,10 +85,11 @@ on Cloudflare.
   cleared; the room holds at most 24 ([[Enemies]]). A Boss's called foes come the same way, at its level. Each tick
   the fight's heat eases and every foe thinks over the room as it stands and steps by the same rules ([[Foes]]),
   routing, taking cover, and climbing and dropping where its links say, on a [[Navmesh]] the room bakes when it
-  opens: a course's over its blocks and 30 m round them; a node's over a 70 m square of its land, its first spawn
-  15 m inside the square's edge toward the middle of its section's ring, where its garrison stands; a dungeon's over
-  the whole dungeon, kept to the floor its way in stands on ([[Navmesh]]). The room tells each foe the noises made and
-  its allies' shouts, and keeps the fight's heat, fed where blows are settled.
+  opens: a course's over its blocks and 30 m round them (over open sea, its blocks' tops alone, every part a body
+  stands in kept); a node's over a 70 m square of its land, its first spawn 15 m inside the square's edge toward the
+  middle of its section's ring, where its garrison stands; a dungeon's over the whole dungeon, kept to the floor its
+  way in stands on ([[Navmesh]]). The room tells each foe the noises made and its allies' shouts, and keeps the
+  fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
 - **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at twelve
@@ -417,6 +422,15 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   patrol's land found room for its entrance. A patrol's room takes `?entrance=` at the joiner's word,
   so a player may come back at any of its three entrances, as `?at=` lands a player at any node. Movement has no ceilings; a
   dungeon's are never reached, as nothing in it can be climbed.
+- **A course a page plays alone** may be asked six things more, which no server ever asks and no message carries
+  (`course.rs`, through the door's `room_stand_foe`, `room_clear_foes`, `room_set_spawn`, `room_put_player`,
+  `room_stand_block` and `room_take_block`): a foe of the roster stood where the page puts it, on the top of the block
+  under it, at the level asked, posted there (a Boss stood so calls no one in its phases); every foe sent away at once,
+  and every blow a foe struck that has not landed with them; where the next respawn stands the player, a checkpoint;
+  the player stood somewhere at once, keeping their health, as when they fall into the sea and are brought back; a
+  block stood on the course after it opened, as a way closing; and a block it holds taken from it, as a way opening.
+  The door keeps its own course for prediction in step with both. The foes' navmesh is not baked again for either. The
+  [[Prologue]]'s wreck is played so.
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
   a foe that chases a player off it walks straight. A node's room opens in 0.10 to 0.23 s of WebAssembly, garrison
   and beats and all, 0.11 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).

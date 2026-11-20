@@ -192,3 +192,37 @@ fn two_captains_balls_pass_each_other_by() {
     });
     assert!(!struck_pirates, "a pirate's ball strikes no pirate");
 }
+
+#[test]
+fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_on_her() {
+    let pirate = |x: f64, y: f64| (Ship { heading: 1.0, ..sloop_at(x, y) }, Commission::default(), 0);
+    let captains = [pirate(380.0, 0.0), pirate(-300.0, 200.0), pirate(0.0, -400.0)];
+    let mut fight =
+        Fight::ambush(sloop_at(0.0, 0.0), &captains, 9, &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    let ids: Vec<ShipId> = (CAPTAIN..).take(3).collect();
+    for id in &ids {
+        let Some(Sailor::Captain(command)) = fight.vessel(*id).map(|vessel| &vessel.sailor) else { panic!("{id}") };
+        assert_eq!(command.her.temper, Temper::Bold, "{id} comes to fight whatever her temper");
+    }
+    let apart = |fight: &Fight, id: ShipId| {
+        let (her, player) = (&fight.ships[&id].ship, &fight.ships[&PLAYER].ship);
+        libm::hypot(her.x - player.x, her.y - player.y)
+    };
+    let first: Vec<f64> = ids.iter().map(|id| apart(&fight, *id)).collect();
+    let mut fired = BTreeMap::new();
+    let mut nearest = first.clone();
+    for tick in 0..(240 * 60) {
+        for event in fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS) {
+            if let Event::Shot(ShotEvent::Muzzle { shooter, .. }) = event {
+                *fired.entry(shooter).or_insert(0) += 1;
+            }
+        }
+        for (at, id) in ids.iter().enumerate() {
+            nearest[at] = nearest[at].min(apart(&fight, *id));
+        }
+    }
+    for (at, id) in ids.iter().enumerate() {
+        assert!(nearest[at] < first[at] - 50.0, "{id} closed from {} only to {}", first[at], nearest[at]);
+        assert!(fired.get(id).copied().unwrap_or(0) >= 1, "{id} fired on her: {fired:?}");
+    }
+}

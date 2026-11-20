@@ -1,15 +1,15 @@
 // The music director's law: what plays, from what the game hears each frame. Roaming is silent, ambience alone. A foe
-// near turning alert (at sea, a hostile ship closing) brings in the tension layers of the place's fight score,
-// quietly; the player fighting (striking, struck, or a foe engaging them) brings in the fight's layers; several foes,
-// an Elite or a Miniboss, or the player's health low bring in the peak; a Boss engaged plays its own score, its phase
-// by its health. Each mood holds a few seconds after its cause, so a fight falls back to silence only once no foe has
-// engaged for a while. A death, a boss's fall, a boss's waking and a fight won are moments of their own (stings). At
-// sea out of danger a sea song comes now and then, in fair skies, with minutes of silence after. Pure: the game's
-// state, the memory and a die in, the mood, the score and any sting out; the director plays them on bar lines.
+// near turning alert (at sea, a hostile ship closing) brings in the tension layers of the place's fight score; the
+// player fighting brings in the fight's layers; several foes, an Elite or a Miniboss, or low health the peak; a Boss
+// engaged plays its own score, its phase by its health. Each mood holds a few seconds after its cause. A death, a
+// boss's fall or waking and a fight won are stings. At sea out of danger a sea song comes now and then, in fair skies.
+// The story tells it what to play. Pure: the game's state, the memory and a die in, the mood, the score and any sting
+// out; the director plays them on bar lines.
 
 import type { Climate, Place } from '../place.ts';
 import type { Role } from './score.ts';
 import type { SeaSong } from './seaScore.ts';
+import type { StorySong } from './storyScore.ts';
 
 /** The islands' climates in four families, each with a fight score of its own. */
 export type Family = 'green' | 'dry' | 'wet' | 'cold';
@@ -37,13 +37,23 @@ export type BossPart = 1 | 2 | 3 | 'last';
 
 export type Mood = 'silent' | 'tension' | 'combat' | 'peak' | 'boss';
 
-/** What plays: nothing, the social space's theme, a family's fight score, a sea song, or a boss's part. */
+/** What plays: nothing, the social space's theme, a family's fight score, a sea song, a boss's part, or a song of
+ *  the story's own. */
 export type Cue =
   | { readonly kind: 'none' }
   | { readonly kind: 'social' }
   | { readonly kind: 'family'; readonly family: Family }
   | { readonly kind: 'sea'; readonly song: SeaSong }
-  | { readonly kind: 'boss'; readonly boss: Boss; readonly part: BossPart };
+  | { readonly kind: 'boss'; readonly boss: Boss; readonly part: BossPart }
+  | { readonly kind: 'story'; readonly song: StorySong };
+
+/** What the story asks of the music this frame: a song of its own in a mood's layers; silence, cut at once or let
+ *  ring out; or the fight it plays heard as the game hears any, a fight on foot at sea playing a boss's first part
+ *  (`score`), in no less than the mood `least`. */
+export type StoryHeard =
+  | { readonly kind: 'song'; readonly song: StorySong; readonly mood: Mood }
+  | { readonly kind: 'silence'; readonly cut: boolean }
+  | { readonly kind: 'fight'; readonly score: Boss | null; readonly least: Mood };
 
 /** A moment: a fight won, lost or simply over (its cadence), in the score that was playing; a boss waking or falling. */
 export type Sting =
@@ -97,6 +107,8 @@ export interface Hearing {
   readonly foes: readonly HeardFoe[];
   readonly sea: HeardSea | null;
   readonly sky: HeardSky | null;
+  /** What the story asks, while it plays; never outside it. */
+  readonly story?: StoryHeard;
 }
 
 /** The ranks: an Elite and a Miniboss bring the peak, a Boss its own score. */
@@ -207,7 +219,13 @@ export interface Verdict {
   readonly mood: Mood;
   readonly cue: Cue;
   readonly sting: Sting | null;
+  /** Everything stops at once: the story's cut (a crash, the black after it). */
+  readonly cut: boolean;
 }
+
+/** The moods from the least to the most. */
+const MOODS: readonly Mood[] = ['silent', 'tension', 'combat', 'peak', 'boss'];
+const atLeast = (mood: Mood, least: Mood): Mood => (MOODS.indexOf(mood) < MOODS.indexOf(least) ? least : mood);
 
 /** The layers each mood plays: the tension's bed and colour, the fight's pulse, body and tune, the peak's all. */
 export const MOOD_ROLES: Readonly<Record<Mood, ReadonlySet<Role>>> = {
@@ -245,7 +263,22 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   if (hearing.dead) {
     const sting: Sting | null = memory.dead ? null : { kind: 'defeat', cue: memory.cue };
     const rest = { restUntil: Math.max(memory.restUntil, clock + REST_S[0]) };
-    return { memory: { ...QUIET, ...rest, clock, dead: true }, mood: 'silent', cue: { kind: 'none' }, sting };
+    return {
+      memory: { ...QUIET, ...rest, clock, dead: true },
+      mood: 'silent',
+      cue: { kind: 'none' },
+      sting,
+      cut: false,
+    };
+  }
+  const story = hearing.story;
+  if (story && story.kind !== 'fight') {
+    // The story's own song, or its silence, is all that plays: no fight, boss or sea song is kept through it.
+    const cue: Cue = story.kind === 'song' ? { kind: 'story', song: story.song } : { kind: 'none' };
+    const mood: Mood = story.kind === 'song' ? story.mood : 'silent';
+    const rest = { restUntil: Math.max(memory.restUntil, clock + REST_S[0]) };
+    const cut = story.kind === 'silence' && story.cut;
+    return { memory: { ...QUIET, ...rest, clock, mood, cue }, mood, cue, sting: null, cut };
   }
   const { place, foes, sea } = hearing;
   let sting: Sting | null = null;
@@ -283,7 +316,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   const lastFight = fighting ? clock : quietened ? -Infinity : memory.lastFight;
   const lastPeak = peak ? clock : quietened ? -Infinity : memory.lastPeak;
   const lastDanger = danger || fighting ? clock : quietened ? -Infinity : memory.lastDanger;
-  const mood: Mood = boss
+  const heard: Mood = boss
     ? 'boss'
     : clock - lastFight < FIGHT_HOLD_S
       ? clock - lastPeak < PEAK_HOLD_S
@@ -292,6 +325,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
       : clock - lastDanger < TENSION_HOLD_S
         ? 'tension'
         : 'silent';
+  const mood = story ? atLeast(heard, story.least) : heard;
   const playing = mood !== 'silent';
   const seaSong = atSea && playing ? (memory.seaSong ?? seaSongFor(sea)) : null;
   const voyage = voyageOf(memory, clock, atSea && !playing && !boss, hearing, songs);
@@ -299,6 +333,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   if (boss) cue = { kind: 'boss', boss: boss.boss, part: bossPart(bossFoe?.health ?? 1) };
   else if (seaSong) cue = { kind: 'sea', song: seaSong };
   else if (voyage.voyage) cue = { kind: 'sea', song: voyage.voyage.song };
+  else if (playing && story?.score) cue = { kind: 'boss', boss: story.score, part: 1 };
   else if (playing && place.kind !== 'sea') cue = { kind: 'family', family: FAMILY_OF[place.climate] };
   else if (place.kind === 'social') cue = { kind: 'social' };
   // A boss part holds while the boss is out of sight a moment: its health is not heard then.
@@ -320,7 +355,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
     mood,
     cue,
   };
-  return { memory: next, mood, cue, sting };
+  return { memory: next, mood, cue, sting, cut: false };
 }
 
 /** Whether two cues name the same music. */

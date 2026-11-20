@@ -1,4 +1,11 @@
-import { beginRequest, type FightOrders, type FightView, readFight, stepRequest } from './fightRules.ts';
+import {
+  beginRequest,
+  type CaptainAt,
+  type FightOrders,
+  type FightView,
+  readFight,
+  stepRequest,
+} from './fightRules.ts';
 import type { Block } from './movementRules.ts';
 
 /** A river as the land generates it: its course through cell centres, source first, with the flow at each point. */
@@ -160,10 +167,18 @@ export interface LandRules {
   /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
   /** Her ship sailed `ticks` from the swell's `time`, in the weather's wind at world time `world` (seconds). */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea, every chance drawn from `seed`. */
-  fightBegin(ship: ShipFloats, seed: number, time: number): FightView;
+  /** A fight begun round the ship: a pirate captain put to sea, or `captains` set upon her where given, every chance
+   *  drawn from `seed`. */
+  fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
-  fightStep(orders: FightOrders, time: number, ticks: number, world: number): FightView;
+  /** A step of the fight in the world's wind at `world`, or in the weather's `wind` (m/s east and south) if told. */
+  fightStep(
+    orders: FightOrders,
+    time: number,
+    ticks: number,
+    world: number,
+    wind?: readonly [number, number],
+  ): FightView;
   /** The fight ended. */
   fightEnd(): void;
 }
@@ -329,10 +344,10 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         exports.release(address, length);
       }
     },
-    fightBegin: (ship, seed, time) =>
-      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time)))),
-    fightStep: (orders, time, ticks, world) =>
-      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world)))),
+    fightBegin: (ship, seed, time, captains) =>
+      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, captains)))),
+    fightStep: (orders, time, ticks, world, wind) =>
+      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world, wind)))),
     fightEnd: () => {
       exports.land_fight_end();
     },

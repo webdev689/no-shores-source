@@ -179,3 +179,184 @@ fn a_look_whose_ray_is_not_six_finite_numbers_is_refused() {
         assert!(with_ray(bad).get("error").is_some(), "{bad}");
     }
 }
+
+#[test]
+fn a_fight_begun_with_captains_sets_each_where_it_is_given_and_shows_the_rest_in_others() {
+    opened();
+    let begun = answer(&fight_begin_json(
+        br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 1 },
+            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 2, "rank": 3 },
+            { "x": 180000, "y": 359500, "heading": 3.1, "faction": 1, "rank": 2 } ] }"#,
+    ));
+    assert!(begun.get("error").is_none(), "{begun}");
+    assert_eq!(begun["captain"]["ship"][0], 180_400.0);
+    assert_eq!(begun["captain"]["rank"], 1);
+    let others = begun["others"].as_array().cloned().unwrap_or_default();
+    assert_eq!(others.len(), 2, "every captain after the first");
+    assert_eq!(others[0]["ship"][0], 179_600.0);
+    assert_eq!(others[0]["rank"], 3);
+    assert_eq!(others[1]["faction"], 1, "the Grey Tithe");
+    assert_eq!(others[1]["name"], "Tithe Sloop");
+}
+
+#[test]
+fn a_fight_begun_without_captains_has_no_others_and_bad_captains_are_refused() {
+    assert_eq!(begun(7)["others"], serde_json::json!([]));
+    let refused = |captains: &str| {
+        let request = format!(
+            r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": {captains} }}"#
+        );
+        answer(&fight_begin_json(request.as_bytes()))["error"].as_str().map(str::to_owned)
+    };
+    assert!(refused("[]").is_some(), "no captains in the list");
+    assert!(refused(r#"[{ "x": 1, "y": 1, "heading": 0, "faction": 2, "rank": 9 }]"#).is_some(), "no such rank");
+    assert!(refused(r#"[{ "x": 1, "y": 1, "heading": 0, "faction": 0, "rank": 1 }]"#).is_some(), "no such faction");
+    assert!(refused(r#"[{ "x": "a", "y": 1, "heading": 0, "faction": 2, "rank": 1 }]"#).is_some(), "not a number");
+}
+
+#[test]
+fn a_captain_set_aground_is_refused() {
+    opened();
+    let refused = answer(&fight_begin_json(
+        br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
+            { "x": 260000, "y": 360000, "heading": 0, "faction": 2, "rank": 1 } ] }"#,
+    ));
+    assert!(refused["error"].as_str().is_some_and(|error| error.contains("does not float")), "{refused}");
+}
+
+#[test]
+fn every_captain_shows_how_far_her_hurts_have_settled_her() {
+    opened();
+    let begun = answer(&fight_begin_json(
+        br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 2 },
+            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 2, "rank": 2 } ] }"#,
+    ));
+    for captain in [&begun["captain"], &begun["others"][0]] {
+        assert_eq!(captain["founder"], serde_json::json!([0.0, 0.0, 0.0]), "a sound ship is not settled: {captain}");
+    }
+}
+
+/// Deep, still water everywhere.
+struct Deep;
+
+impl Waters for Deep {
+    fn at(&self, _x: f64, _y: f64, _time: f64) -> sailing::waters::Spot {
+        sailing::waters::Spot { bed: -50.0, surface: Some(0.0) }
+    }
+}
+
+#[test]
+fn an_ambush_whose_captains_have_all_struck_or_sunk_is_over_beaten() {
+    let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let mut fight = Fight::ambush(at(0.0), &[(at(500.0), major, 1), (at(-500.0), major, 2)], 3, &Deep, 0.0)
+        .unwrap_or_else(|error| panic!("{error}"));
+    assert_eq!(over_name(&fight), None);
+    for (state, id) in [State::Struck, State::Sunk].into_iter().zip(CAPTAIN..) {
+        fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}")).damage.state = state;
+    }
+    assert_eq!(over_name(&fight), Some("beaten"));
+}
+
+#[test]
+fn a_captain_going_down_shows_how_far_she_has_settled_and_her_trim_and_list() {
+    let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let mut fight =
+        Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain")).damage;
+    (damage.state, damage.sink_t) = (State::Sinking, 20.0);
+    let shown = view(&fight, &[], None, &Deep, 0.0);
+    let founder: Vec<f64> = shown["captain"]["founder"]
+        .as_array()
+        .map(|all| all.iter().filter_map(Value::as_f64).collect())
+        .unwrap_or_default();
+    assert_eq!(founder.len(), 3, "{shown}");
+    assert!(founder[0] > 0.5, "settled under: {founder:?}");
+    assert!(founder[1].abs() > 0.01 && founder[2].abs() > 0.01, "trimmed and listing: {founder:?}");
+}
+
+#[test]
+fn a_captain_going_down_shows_how_she_will_lie_once_sunk_and_how_soon() {
+    let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let mut fight =
+        Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    assert!(view(&fight, &[], None, &Deep, 0.0)["captain"].get("sunk_founder").is_none(), "afloat, she is not going");
+    let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain")).damage;
+    (damage.state, damage.sink_t) = (State::Sinking, 5.0);
+    let shown = view(&fight, &[], None, &Deep, 0.0);
+    let triple = |name: &str| -> Vec<f64> {
+        shown["captain"][name].as_array().map(|all| all.iter().filter_map(Value::as_f64).collect()).unwrap_or_default()
+    };
+    let (now, sunk) = (triple("founder"), triple("sunk_founder"));
+    assert_eq!(sunk.len(), 3, "{shown}");
+    assert!(sunk[0] > now[0] && sunk[1].abs() > now[1].abs(), "deeper and trimmed further: {now:?} {sunk:?}");
+    assert_eq!(sunk[2].signum(), now[2].signum(), "listing the side she lists to now");
+    assert_eq!(shown["captain"]["sinks_in"], SINK_SECONDS - 5.0);
+}
+
+#[test]
+fn a_captain_given_her_way_comes_on_under_sail_and_one_without_lies_at_rest() {
+    opened();
+    let begun = answer(&fight_begin_json(
+        br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 2, "way": 5 },
+            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 2, "rank": 2 } ] }"#,
+    ));
+    assert!(begun.get("error").is_none(), "{begun}");
+    let (coming, resting) = (&begun["captain"]["ship"], &begun["others"][0]["ship"]);
+    assert_eq!((coming[3].as_f64(), coming[7].as_f64()), (Some(5.0), Some(f64::from(SAILS_SET))), "{coming}");
+    assert_eq!((resting[3].as_f64(), resting[7].as_f64()), (Some(0.0), Some(0.0)), "{resting}");
+    let refused = answer(&fight_begin_json(
+        br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 2, "way": 99 } ] }"#,
+    ));
+    assert!(refused["error"].as_str().is_some(), "{refused}");
+}
+
+/// How far her ship sails in 10 s, sails set from the start, told `wind` (none for the world's) at the world's `world`.
+fn sailed(wind: &str, world: f64) -> f64 {
+    opened();
+    let begun =
+        answer(&fight_begin_json(br#"{ "ship": [180000, 360000, 0, 3, 0, 0, 3, 2], "seed": 7, "time": 1000 }"#));
+    assert!(begun.get("error").is_none(), "{begun}");
+    let mut time = 1000.0;
+    let mut last = begun;
+    for _ in 0..10 {
+        let request = format!(
+            r#"{{ "time": {time}, "ticks": 60, "world": {world}, "wind": {wind}, "helm": {{ "steer": 0, "crab": false, "climb": 0 }}, "aim": null, "fire": false, "brace": false, "load": null }}"#
+        );
+        last = answer(&fight_step_json(request.as_bytes()));
+        assert!(last.get("error").is_none(), "{last}");
+        time += 1.0;
+    }
+    let ship = |at: usize| last["player"]["ship"][at].as_f64().unwrap_or(f64::NAN);
+    let (east, south) = (ship(0) - 180_000.0, ship(1) - 360_000.0);
+    (east * east + south * south).sqrt()
+}
+
+#[test]
+fn a_told_wind_is_the_wind_sailed_whatever_the_worlds() {
+    let gale = sailed("[14, 6]", 0.0);
+    assert!((sailed("[14, 6]", 5_000.0) - gale).abs() < 1e-9, "the world's wind plays no part");
+    let air = sailed("[1, 0]", 0.0);
+    assert!(gale > air * 2.0, "a gale drives her harder than a breath of air: {gale} against {air}");
+    let worlds = [sailed("null", 0.0), sailed("null", 5_000.0)];
+    assert!((worlds[0] - worlds[1]).abs() > 1e-6, "untold, she sails in the world's wind, which changes: {worlds:?}");
+}
+
+#[test]
+fn a_told_wind_past_a_hurricane_or_not_two_numbers_is_refused() {
+    for wind in ["[61, 0]", "[1]", r#"["east", 0]"#, "3"] {
+        opened();
+        let _ = begun(7);
+        let request = format!(
+            r#"{{ "time": 1000, "ticks": 1, "world": 0, "wind": {wind}, "helm": {{ "steer": 0, "crab": false, "climb": 0 }}, "aim": null, "fire": false, "brace": false, "load": null }}"#
+        );
+        let refused = answer(&fight_step_json(request.as_bytes()));
+        assert!(refused["error"].as_str().is_some_and(|error| error.contains("told wind")), "{wind}: {refused}");
+    }
+}

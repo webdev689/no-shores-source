@@ -277,7 +277,7 @@ export class Foot {
       },
       asks: asked.length > 0,
     };
-    const opened = await open(heard, await context.session);
+    const opened = await open(heard, await context.session());
     fight = new Fighting(rules.combat, opened.link);
     if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later

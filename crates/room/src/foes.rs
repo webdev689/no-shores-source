@@ -214,13 +214,7 @@ impl Room {
     pub(crate) fn spawn_asked(&mut self) {
         for (asker, ask, level) in std::mem::take(&mut self.spawns) {
             let SpawnAsk::Foe { foe_type: number, rank, shield } = ask else {
-                let gone: Vec<FighterId> = self.foes.keys().copied().collect();
-                for foe in gone {
-                    self.board.forget(foe);
-                }
-                self.foes.clear();
-                self.groups.clear();
-                self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
+                self.send_foes_away();
                 continue;
             };
             let (Some(foe_type), Some(player)) = (foe_type(number), self.fighter(asker).copied()) else {
@@ -238,6 +232,19 @@ impl Room {
             let id = self.stand_foe(foe_type, rank, spot, facing, Some(asker));
             self.gird(id, level, gear::Element::from_number(shield));
         }
+    }
+
+    /// Sends every foe away at once, and with them every blow a foe struck that has not landed: only players' blows
+    /// still wait.
+    pub(crate) fn send_foes_away(&mut self) {
+        let gone: Vec<FighterId> = self.foes.keys().copied().collect();
+        for foe in gone {
+            self.board.forget(foe);
+        }
+        self.foes.clear();
+        self.quiet.clear();
+        self.groups.clear();
+        self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
     }
 
     /// Raises a foe just stood to its level, its health its kind's at that level, and gives it a whole shield of
@@ -280,7 +287,10 @@ impl Room {
     /// The foes a caller's phase names, called to it while the room has room for them, each alert to where the
     /// caller's foe stands: in pairs, one either side of it, or behind it and either side, each pair farther out.
     pub(crate) fn call(&mut self, caller: FighterId, call: Call) {
-        // A caller killed in the same step calls no one.
+        // A caller killed in the same step calls no one, nor one a page stood itself.
+        if self.quiet.contains(&caller) {
+            return;
+        }
         let caller_alive = self.fighter(caller).copied().filter(|at| !at.dead());
         let (Some(at), Some(called_type)) = (caller_alive, foe_type(call.foe_type)) else { return };
         let foe = self.foes.get(&caller).and_then(|found| found.brain.target()).and_then(|foe| self.fighter(foe));

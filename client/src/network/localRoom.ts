@@ -61,6 +61,21 @@ export class LocalRoom implements RoomLink {
     return new LocalRoom(door, snapshot, gear);
   }
 
+  /** Opens a room on a course laid over the open sea, as a wreck's decks are (`LocalRoom.open`, with no stall or
+   *  nodes): its foes walk the blocks alone, as the sea under them is no ground. */
+  static openOverSea(
+    module: WebAssembly.Module,
+    spawn: { readonly x: number; readonly y: number },
+    blocks: readonly CourseBlock[],
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.open(spawn, blocks, true)) throw new Error('the course is not one a room can stand on');
+    door.day(Math.floor(Date.now() / 86_400_000));
+    return new LocalRoom(door, snapshot, gear);
+  }
+
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
    *  joined at its first spawn, or before entrance `entrance`'s door; the player's own gear goes to `gear`. With
    *  `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
@@ -110,6 +125,36 @@ export class LocalRoom implements RoomLink {
 
   send(bytes: Uint8Array<ArrayBuffer>): void {
     this.door.input(this.player, bytes);
+  }
+
+  /** Stands a foe of the roster on the top under (x, y), its post there (`RoomDoor.standFoe`); its number, or 0. */
+  standFoe(type: number, rank: number, x: number, y: number, facing: number, level: number): number {
+    return this.door.standFoe(type, rank, x, y, facing, level);
+  }
+
+  /** Sends every foe away at once, as a scene clears its stage. */
+  clearFoes(): void {
+    this.door.clearFoes();
+  }
+
+  /** Sets where the next respawn stands the player: a checkpoint. */
+  setSpawn(x: number, y: number): void {
+    this.door.setSpawn(x, y);
+  }
+
+  /** Stands the player at once on the top under (x, y), as when they fall into the sea and are brought back. */
+  putPlayer(x: number, y: number): void {
+    this.door.putPlayer(this.player, x, y);
+  }
+
+  /** Stands a block on the course at once, as a way closing behind the player. */
+  standBlock(block: CourseBlock): void {
+    this.door.standBlock(block);
+  }
+
+  /** Takes a block from the course at once, as a way opening once the foes holding it have fallen. */
+  takeBlock(block: CourseBlock): void {
+    this.door.takeBlock(block);
   }
 
   /** Ticks the room as many whole ticks as `seconds` and what was carried make, handing on each tick's snapshot. */

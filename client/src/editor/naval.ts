@@ -1,4 +1,4 @@
-import type { FightLay, FightLook, FightView } from '../rules/fightRules.ts';
+import type { FightEvent, FightLay, FightLook, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
 import type { MarkView } from '../ships/markView.ts';
@@ -50,6 +50,8 @@ export class Naval {
   /** Each call's own number: a captain answering a call since ended or made again is not taken up. */
   private call = 0;
   private adopted: FightView | null = null;
+  /** The fight's events the last step took, for whatever else hears them (the sea's sounds). */
+  heard: readonly FightEvent[] = [];
   private readonly effects = new Effects(1);
   private readonly marks: MarkDrawer;
   private farewell: { readonly lines: string[]; readonly until: number } | null = null;
@@ -134,7 +136,8 @@ export class Naval {
     }
     const toWindow = (point: readonly [number, number, number]) =>
       [point[0] - view.leftM, point[1] - view.topM, point[2]] as const;
-    const splashes = this.effects.take(fighting.takeEvents(), time, toWindow);
+    this.heard = fighting.takeEvents();
+    const splashes = this.effects.take(this.heard, time, toWindow);
     for (const ship of [answer.player, answer.captain]) {
       const [x = 0, y = 0] = ship.ship;
       const [heave = 0] = ship.pose;

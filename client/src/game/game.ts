@@ -2,7 +2,6 @@ import type { Gpu } from '../gpu.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import type { CardAt } from '../player/cards.ts';
-import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
@@ -12,7 +11,6 @@ import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { FigureView } from './figureView.ts';
-import { loadGameAssets } from './gameAssets.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
@@ -38,6 +36,12 @@ import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.t
 import { showSeaHud } from './seaHud.ts';
 import { continentToOpen, firstAnchorage } from './seaLaw.ts';
 import { arrivalAt, type NodeInfo } from './worldData.ts';
+import { loadParts } from './loading.ts';
+import { standingDrawers } from './standing.ts';
+import type { Epilogue } from './prologue/epilogue.ts';
+import { StoryHost } from './prologue/host.ts';
+import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
+import { installInterfaceSounds } from './uiSounds.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -54,8 +58,15 @@ const CHART_EVERY_S = 1;
  */
 export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement): Promise<void> {
   const hud = new Hud(hudRoot);
-  let flow: Flow = arriving(FIRST_NODE, 'Overlook');
-  if (flow.mode === 'loading') hud.veil(flow.words);
+  // The first tap or key wakes the sound, so the story's intro begins heard.
+  installInterfaceSounds(hudRoot);
+  const asked = new URLSearchParams(location.search).get('at');
+  // With `?at=` the page goes straight to a node; otherwise the story opens the game behind a tap to start.
+  let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
+  // The HUD starts veiled for loading; the story's tap to start stands in front of its loading instead.
+  hud.veil(flow.mode === 'loading' ? flow.words : null);
+  const story = flow.mode === 'story' ? new StoryHost(hudRoot, canvas) : null;
+  let epilogue: Epilogue | null = null;
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
@@ -71,14 +82,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
-  const { world, rmbText, movement, forge, firstPerson, store, sloop } = await loadGameAssets(gpu, base, figureView);
+  const { world, rmbText, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const { continents } = world;
   const ambience = new Ambience(world);
   const cityAssets = loadCityAssets(base);
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
   const drawersOn = (opened: Landmass) => landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets);
   const dungeons = new DungeonDrawers(gpu, figureView, cityAssets, biomeOf);
-  const asked = new URLSearchParams(location.search).get('at');
   const start = (asked === null ? null : arrivalAt(world, asked)) ?? arrivalAt(world, FIRST_NODE);
   if (!start) throw new Error('the world has no Overlook to arrive at');
   if (start.node !== FIRST_NODE) {
@@ -98,7 +108,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   scene.setLand(landmass.view, terrainFor(landmass));
 
   const input = new Input(canvas);
-  const dress = plainDress('human', 0.3);
+  const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
   // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
   const arrivalView = { firstPerson: false, distance: 4.5, shown: 4.5 };
@@ -165,10 +175,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     behindVeil(after.words, work);
   };
 
-  /** Leaves wherever the player was: death's grey goes with them. */
+  /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
   const leaveHere = () => {
     canvas.classList.remove('dead');
     wasDead = false;
+    epilogue?.leave();
   };
 
   /** Leaves wherever the player was for the place `entering` stands them in. */
@@ -216,15 +227,24 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // Online the server's sea room; playing alone, the same room in the page.
     await sea.enterRoom(
       rooms
-        ? async (snapshot) => RoomConnection.open(rooms('sea'), snapshot, undefined, await session)
+        ? async (snapshot) => RoomConnection.open(rooms('sea'), snapshot, undefined, await session())
         : async (snapshot) => LocalRoom.openSea(await roomModule, world.layoutText, snapshot),
     );
   };
 
   const firstNode = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
   if (!firstNode) throw new Error(`${start.name} has no place to arrive at`);
-  if (flow.mode === 'loading')
-    behindVeil(flow.words, () => goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)));
+  const arrive = () =>
+    behindVeil(flow.mode === 'loading' ? flow.words : '', () =>
+      goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)),
+    );
+  if (flow.mode === 'loading') arrive();
+  if (story) {
+    const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land };
+    const more = { movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop, music };
+    const lands = { home: { landmass, drawers }, closeSource, ambience };
+    story.begin({ ...game, ...more, ...lands }, () => ((flow = arriving(FIRST_NODE, 'Overlook')), arrive()));
+  }
 
   const landAt = (id: string) => {
     discovered.nodes([id]);
@@ -338,10 +358,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The Ship tab's papers: her voyage only while she is at sea.
   const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
   const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
-  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
+  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story');
+  addEventListener('keyup', (event) => void (flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)));
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
-    if (event.repeat || helmMap.key(key)) return;
+    if (event.repeat) return;
+    if (flow.mode === 'story') return void story?.key(key, true);
+    if (helmMap.key(key)) return;
     if (key === 'enter' && retry) retry();
     else if (key === 'm') change({ kind: 'menu' });
     else if (key === 'escape' && flow.mode === 'landing') {
@@ -360,6 +383,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
   });
   canvas.addEventListener('click', () => {
+    if (flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     if (flow.mode === 'foot' && !flow.menu && foot?.standing.kind !== 'dead' && !input.locked) input.lock();
     if (flow.mode === 'sea' && !flow.menu && sea?.aboard.walking && !input.locked) input.lock();
   });
@@ -372,27 +396,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides; on foot
    *  the fight's blood under the figures and its marks over them. */
   const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) => {
-    const found: (Drawer | null | undefined)[] = [
-      drawers.city,
-      drawers.nature,
-      foot && dungeons.entrancesOf(foot),
-      fight?.under,
-      {
-        drawInto: (pass, fromEye, shot, time) => {
-          const camera = { fromEye, eye: shot.eye };
-          ships.forEach((ship, slot) => sloop.drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig));
-          sea?.fight?.draw(pass, camera, time);
-        },
+    const entrances = foot && dungeons.entrancesOf(foot);
+    const drawn = standingDrawers(
+      drawers,
+      (pass, camera, time) => {
+        ships.forEach((ship, slot) => sloop.drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig));
+        sea?.fight?.draw(pass, camera, time);
       },
-      {
-        castInto: (pass, fromEye, shot, _time, shadow) =>
-          figureView.castInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
-        drawInto: (pass, fromEye, shot, _time, shadow) =>
-          figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
-      },
-      fight?.over,
-    ];
-    return found.filter((drawer): drawer is Drawer => !!drawer);
+      figureView,
+      figures,
+      fight,
+    );
+    // A patrol's dungeon entrances stand with the land, before the fight's blood and the figures.
+    return entrances ? [entrances, ...drawn] : drawn;
   };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
@@ -408,9 +424,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: here.groundAt });
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, till she walks off.
+    const met = epilogue?.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot') ?? [];
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     if (here.dungeon) dungeons.draw(here, shown, size, clock, fight, hands);
-    else scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands, carried });
+    else
+      scene.draw(shown.shot, size, clock, seconds, standing([], [...shown.figures, ...met], fight), {
+        after: hands,
+        carried,
+      });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node, here.roomName));
     hud.hints(shown.hints);
@@ -512,6 +534,21 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       });
   };
 
+  /** A frame of the story; once it ends, the player arrives at Overlook's social space in their own dress, the stranger
+   *  with them if they played it through. */
+  const storyFrame = (
+    host: StoryHost,
+    controls: InputFrame,
+    seconds: number,
+    size: { width: number; height: number },
+  ) => {
+    const left = host.frame(controls, seconds, size);
+    if (!left) return;
+    [epilogue, walker.you.dress] = [left.epilogue, left.dress];
+    flow = next(flow, { kind: 'story-ended', node: FIRST_NODE, name: 'Overlook' });
+    arrive();
+  };
+
   /** The GPU's work for the frame drawn last. */
   let inFlight = Promise.resolve();
   const frame = (now: number) => {
@@ -523,7 +560,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const size = { width: canvas.width, height: canvas.height };
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;
     let settled = true;
-    if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
+    if (shown?.mode === 'story' && story) storyFrame(story, controls, seconds, size);
+    else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     ambience.frame(seconds);
     if (flow.mode === 'loading' && ready) {

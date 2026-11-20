@@ -21,6 +21,7 @@ import {
 } from './law.ts';
 import { type Lay, type Point3, cityPoint, placeCall, riverNear, shorePoints } from './places.ts';
 import { type BedLayer, type Drive, SCAPES, type Scape, type Voice } from './scapes.ts';
+import { FIGHT_NEAR_M } from './seaFight.ts';
 import { type Job, type SoundKey, takesOf } from './sounds.ts';
 import {
   type HeardWeather,
@@ -266,6 +267,11 @@ export class ScapePlayer {
       drift: 0,
     };
     if (!this.recorded('step.wood', point, heard, shape)) this.call('step', point, heard, shape);
+  }
+
+  /** One of the sea fight's sounds where it happens (seaFight.ts): its recording once picked, else nothing. */
+  fight(cue: string, point: Point3, heard: Heard): void {
+    this.recorded(cue, point, heard, { gain: 1, pitch: between(this.random, [0.95, 1.05]), near: FIGHT_NEAR_M });
   }
 
   /** A bed's emitters made once its buffer has come, placed, and given their gains. */

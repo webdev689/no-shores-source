@@ -63,7 +63,7 @@ export class DungeonScene {
     for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
-        for (const drawer of drawers) drawer.lightInto?.(light, fromEye);
+        for (const drawer of drawers) drawer.lightInto?.(light, fromEye, targets.depth);
       });
     after?.(encoder, target);
     device.queue.submit([encoder.finish()]);

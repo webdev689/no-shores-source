@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Scores, MusicDirector, overlookScores, songOf, stingOf } from './director.ts';
 import type { HeardFoe, Hearing } from './directorLaw.ts';
+import { makeSong } from './score.ts';
 
 const scores = overlookScores();
 /** The scores with the green family's fight and Saltmere's theme unwritten. */
@@ -161,4 +162,36 @@ test('with nowhere to play (no sound woken, or the music silenced) the director 
   const director = new MusicDirector({ output: () => null, duck: () => assert.fail('nothing to lower'), timed: false });
   director.frame({ ...island, struck: true }, 0.1);
   director.pump(1);
+});
+
+test("a boss's wake holds the song it leads into, though that song played before it (the wreck's waves, then Thule)", () => {
+  const lead = { lead: { program: 0, volume: 100, pan: 64, role: 'bed' } } as const;
+  const kit = { volume: 100, role: 'combat', keys: {} } as const;
+  const beats = makeSong({ name: 'beats', bpm: 120, bars: 2, tracks: lead, kit }, (w) => {
+    for (let beat = 0; beat < 8; beat++) w.note('lead', Math.floor(beat / 4), beat % 4, 0.5, 'A4', 90);
+  });
+  const wake = makeSong({ name: 'wake', bpm: 120, bars: 2, tracks: lead, kit }, () => undefined);
+  const made = (): Scores => ({
+    ...scores,
+    bosses: { ...scores.bosses, boarding: { phases: [beats, beats, beats], wake } },
+  });
+  const { frames, starts, clock } = directed(made);
+  const wreck: Hearing = {
+    ...island,
+    place: { kind: 'sea' },
+    story: { kind: 'fight', score: 'boarding', least: 'tension' },
+  };
+  frames({ ...wreck, foes: [brute({ engaged: true })] }, 3);
+  const woke = clock();
+  frames({ ...wreck, foes: [brute({ id: 7, name: 'Captain Brannoc Thule', rank: 5, engaged: true })] }, 7);
+  // The wake begins on the next bar line, within 2 s, and lasts two bars (4 s); the song it cut fades over a beat.
+  assert.deepEqual(
+    starts.filter((when) => when > woke + 2.7 && when < woke + 4),
+    [],
+    'nothing under the wake',
+  );
+  assert.ok(
+    starts.some((when) => when >= woke + 4),
+    'the first phase once the wake has played',
+  );
 });
