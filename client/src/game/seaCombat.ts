@@ -17,6 +17,7 @@ import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { FightHeard } from './audio/ambience/seaFight.ts';
 import type { Shot } from './camera.ts';
+import { type FightReadout, readoutOf } from './seaPanel.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 
@@ -73,6 +74,8 @@ export class SeaCombat {
   /** The world point the fight is drawn from, where it began: marks lie near it, so float32 holds them exactly. */
   private readonly window: Window;
   private last: FightView;
+  /** Her ship's kind, as the HUD names her. */
+  private readonly own: string;
   private orbit: { yaw: number; pitch: number };
   private readonly held = new Set<string>();
   private readonly presses: string[] = [];
@@ -95,6 +98,7 @@ export class SeaCombat {
   ) {
     this.naval = new Naval(marks);
     this.naval.join(Fighting.joined(source, 'sea', first, now, own));
+    this.own = own ?? 'Sloop';
     this.last = first;
     const [x = 0, y = 0, heading = 0] = first.player.ship;
     this.window = { leftM: Math.round(x), topM: Math.round(y) };
@@ -265,9 +269,10 @@ export class SeaCombat {
     return this.captains.map(bar).filter((shown) => shown !== null);
   }
 
-  /** The panel's lines: both ships' hurts and her guns, the broadside warning, and DFO's messages. */
-  lines(now: number): string[] {
-    return this.naval.lines(now);
+  /** What the HUD shows of the fight at `now`: her ship as the fight last left her, DFO's messages, and how many
+   *  captains are still afloat. */
+  readout(now: number): FightReadout {
+    return readoutOf(this.last, this.own, this.naval.said(now));
   }
 }
 

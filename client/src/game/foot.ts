@@ -37,6 +37,7 @@ import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
+import type { Hint } from './gearDom.ts';
 import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
@@ -104,7 +105,7 @@ export interface FootFrame {
   readonly marks: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
-  readonly hints: readonly string[];
+  readonly hints: readonly Hint[];
 }
 
 /** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the

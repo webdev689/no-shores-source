@@ -208,8 +208,13 @@ export class Fighting {
     if (lay) lines.push(`Laying the ${lay.side} guns${lay.on_target ? ': on target.' : '.'}`);
     if (captains.some((each) => each.run_out.length > 0 && each.state === 'afloat'))
       lines.push('BROADSIDE! Brace (C).');
+    return [...lines, ...this.said(now)];
+  }
+
+  /** DFO's messages still standing at `now`, oldest first. */
+  said(now: number): string[] {
     this.messages = this.messages.filter((message) => message.until > now);
-    return [...lines, ...this.messages.map((message) => message.text)];
+    return this.messages.map((message) => message.text);
   }
 
   /** Ends the fight: the captain and her balls are gone. */

@@ -236,8 +236,10 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   sails on from where it left them.
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws her to her true size as on the sea's other views near her ([[Game]], "At sea"); the fight is
-  the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
+  the World Editor's (its look and lay and effects), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
+  Where the editor's panel lists its lines, the game's HUD shows her ship's panel, the fight's task and DFO's
+  messages as toasts ([[Interface]], "A sea fight's panel").
   Every captain in it is drawn with her name over a bar of her hull. Then the view pans back up. Hostile ships at sea
   are drawn as the Overworld's ships are, darker, each with her footprint on the water, those fighting each other where
   the room has them. A ship that comes into view is drawn under the sails she sails by, already set (`seaShips.ts`).
@@ -255,10 +257,10 @@ once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing th
 on under as the rules would. A fight begun with more than one captain is sighted on the panel by how many and the
 nearest ("3 ships are sighted, the nearest 820 m off."). The game's `SeaCombat` steps a fight
 on any `FightSource`, the sea room's or the land door's, so the story's fight (`StoryFight`) is the sea's own: its
-aim, lay, effects, panel and bars, the panel naming her ship (the Brig). The story places each captain by her
+aim, lay, effects, HUD and bars, her ship's panel naming her (the Brig). The story places each captain by her
 bearing off the player's bow and her distance, heading for her unless told, and puts every ship to sea under the
 sail and way she was sighted with, her rig drawn on from the one she was last drawn with; hears from each step a ball striking
-her, hers striking a captain, a captain going down and one sunk; and tells the player how many are left to beat.
+her, hers striking a captain, a captain going down and one sunk; and its task counts the ships left to beat.
 An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
 player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves her a point of hull); and it is over
 (`beaten`) once every captain has sunk, is going down, or has struck, her crew having given up the fight. It draws

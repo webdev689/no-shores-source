@@ -48,8 +48,6 @@ const THULE = { type: 12, rank: 5, over: 3 } as const;
 const OVER_THE_HEAD_M = 2.1;
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 const CAMERA_CLEARANCE_M = 0.3;
-/** The menu's key as foot's hints list it: the story has no menu, so its hints leave it out. */
-const MENU_HINT = ' · M menu';
 
 /**
  * The wreck played, as `Foot` plays a node: the player on both ships' decks in a room of the page's own on the
@@ -204,7 +202,7 @@ export class WreckRun {
     return kept ? { health: kept.view.health, healthMax: kept.view.healthMax } : null;
   }
 
-  /** World points over heads, for barks and emotes: Thule's as 'thule', each wave's foe's by its crew and number,
+  /** World points over heads, for barks: Thule's as 'thule', each wave's foe's by its crew and number,
    *  'tithe-<number>' or 'pirate-<number>'. */
   heads(): ReadonlyMap<string, readonly [number, number, number]> {
     const heads = new Map<string, readonly [number, number, number]>();
@@ -379,7 +377,8 @@ export class WreckRun {
     // The room raises a fallen player at the last checkpoint by itself: there is no edge to stray past, nothing
     // to press, and the story says what happens.
     const dead = ownView?.action.kind === 'dead';
-    const hints = dead ? [] : footHints(fight.arts?.art ?? 0).map((line) => line.replace(MENU_HINT, ''));
+    // The story has no menu, so its keys leave the menu's out.
+    const hints = dead ? [] : footHints(fight.arts?.art ?? 0).filter(([key]) => key !== 'M');
     return { shot, figures, standing: { kind: 'inside' }, marks, swings, fight: fought, hints };
   }
 

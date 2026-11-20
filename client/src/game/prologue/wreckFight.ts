@@ -5,6 +5,7 @@
 import { Cues } from '../../cinema/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
+import type { FootFight } from '../foot.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import type { Overlay } from '../scene.ts';
 import type { Beat, Tick } from './beat.ts';
@@ -12,6 +13,7 @@ import { ACTOR_IDS, type Actor } from './actors.ts';
 import type { HeardFoe, Hearing } from '../audio/music/directorLaw.ts';
 import { type FootHeard, hearFoot } from '../audio/music/hearing.ts';
 import { fought } from './music.ts';
+import { type Done, Lessons } from './lessons.ts';
 import type { Nameplate } from './nameplate.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -44,13 +46,14 @@ export class WreckFight implements Beat {
   private coming: { since: number; cues: Cues; from: Shot } | null = null;
   private fought = false;
   private barked = { struck: -Infinity, strikes: -Infinity };
+  /** The tasks on the wreck: the controls learned in its quiet first zone, then the fight's own. */
+  private readonly lessons = new Lessons();
   /** Whether the player has struck Thule since he last told them to kneel: he says it again only then. */
   private struckSinceKneel = true;
   private clock = 0;
   private lastHealth: { boss: number; you: number } | null = null;
-  /** Whether a Tithe hand has cried out at the player, and whether the player lay dead last frame. */
+  /** Whether a Tithe hand has cried out at the player. */
   private spotted = false;
-  private wasDead = false;
   /** Seconds since the fight ended, while the screen fades out on it. */
   private ending: number | null = null;
   /** The fight as the music last heard it. */
@@ -65,10 +68,7 @@ export class WreckFight implements Beat {
     setAblaze(story, layout);
     story.stage.parts.ambience.heartbeat(false);
     void run.then(
-      (opened) => {
-        this.run = opened;
-        story.stage.parts.objective.show('Fight', 'Fight your way through the wreck.', 7);
-      },
+      (opened) => (this.run = opened),
       (error: unknown) => (this.failure = error ?? new Error('the wreck did not open')),
     );
   }
@@ -214,6 +214,9 @@ export class WreckFight implements Beat {
       groundAt: (x, y) => scene.groundAt(x, y),
     });
     hud.hints(held ? [] : shown.hints);
+    // Read every frame, a cutscene's too, so a turn the camera makes for it is never taken for the player's look.
+    const tasks = this.lessons.frame(this.didNow(run, shown.fight));
+    hud.tasks.show(held ? null : tasks);
     hud.reach(shown.standing);
     const thule = coming ? this.thuleActor(tick.clock - coming.since) : null;
     const hands =
@@ -255,12 +258,18 @@ export class WreckFight implements Beat {
     }
   }
 
-  /** A death before the boss fight says what happens: the room raises the player at the last checkpoint. Felled in
-   *  the boss fight, the fight ends, though the run learns it a frame later. */
+  /** What the player did this frame, for the tasks: where they stand and look, what their fight does, the foes
+   *  alive, and whether the boss fight is on. */
+  private didNow(run: WreckRun, fight: FootFight): Done {
+    const { body, yaw } = this.story.walker.player;
+    const foes = fight.foes.filter((foe) => foe.view.health > 0).length;
+    return { x: body.x, y: body.y, yaw, action: fight.own?.action.kind, foes, boss: this.fought || run.arena };
+  }
+
+  /** A death before the boss fight says what happens, for as long as the player lies dead: the room raises them at
+   *  the last checkpoint. Felled in the boss fight, the fight ends, though the run learns it a frame later. */
   private fallen(dead: boolean): void {
-    if (dead && !this.wasDead && !this.fought)
-      this.story.stage.parts.objective.show('Fallen', 'You will rise at the last checkpoint.', 4);
-    this.wasDead = dead;
+    this.story.stage.parts.hud.toast(...(dead && !this.fought ? ['You will rise at the last checkpoint.'] : []));
   }
 
   /** Once the fight has ended, the screen fades out on it, and the beat is done when it is black. */
@@ -300,12 +309,13 @@ export class WreckFight implements Beat {
   /** Hands the game back as it was before the wreck: no nameplate, prompt, hints, death or fight's display, the
    *  letterbox's bars down, the pointer free, and the run's room let go. */
   leave(): void {
-    const { hud, footView, objective, screen } = this.story.stage.parts;
+    const { hud, footView, screen } = this.story.stage.parts;
     this.nameplate.hide();
     hud.hints([]);
     hud.reach({ kind: 'inside' });
     footView.hide();
-    objective.clear();
+    hud.tasks.show(null);
+    hud.toast();
     screen.bars(false);
     if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
     this.run?.leave();

@@ -1,55 +1,98 @@
-// The keys the heads-up display lists for each mode of the game, one line each.
+// The keys the heads-up display's key strip shows for each mode of the game: each a key (keys that do the same
+// parted by " / ", each on its own keycap) and what it does.
 
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
+import type { Hint } from './gearDom.ts';
 
-/** What the Arts' line adds for an Art whose first Tenet is aimed while its key is held, by the Tenet's key. */
-const AIMED: Readonly<Record<string, string>> = { duskDaggers: 'hold Q to aim Dusk Daggers' };
+/** What the Arts' keys add for an Art whose first Tenet is aimed while its key is held, by the Tenet's key. */
+const AIMED: Readonly<Record<string, Hint>> = { duskDaggers: ['Hold Q', 'Aim Dusk Daggers'] };
 
-/** The keys each mode lists, one line each. */
+/** The keys each mode shows. On foot the strip keeps to what the fight and the body do beyond walking and looking,
+ *  which the player learns first and needs no reminder of. */
 export const HINTS = {
   foot: [
-    'Click to look round · W A S D move · Shift run',
-    'Space jump · C crouch · Wheel: third person · M menu',
-    'Z weapon · 1 Melee · 2 Ranged · Right button swing or aim · Left button or F guard or fire · V dodge',
-    'R Anima · Q G Tenets',
+    ['Right button', 'Swing or aim'],
+    ['Left button / F', 'Guard or fire'],
+    ['V', 'Dodge'],
+    ['Shift', 'Run'],
+    ['Space', 'Jump'],
+    ['C', 'Crouch'],
+    ['Z', 'Weapon'],
+    ['1 / 2', 'Loadout'],
+    ['R', 'Anima'],
+    ['Q / G', 'Tenets'],
+    ['Wheel', 'Third person'],
+    ['M', 'Menu'],
   ],
-  dead: ['Enter or Respawn: back at the nearest spawn'],
+  dead: [['Enter', 'Respawn at the nearest spawn']],
   sea: [
-    'Click the sea to sail · W sail on · A D steer · S heave to',
-    'Drag to look · Wheel zoom · N map · [ ] pace · Space stop or resume',
-    'B manage · H leave the helm · M menu',
+    ['Click', 'Sail there'],
+    ['W', 'Sail on'],
+    ['A / D', 'Steer'],
+    ['S', 'Heave to'],
+    ['Drag', 'Look'],
+    ['N', 'Map'],
+    ['[ / ]', 'Pace'],
+    ['Space', 'Stop or resume'],
+    ['B', 'Manage'],
+    ['H', 'Leave the helm'],
+    ['M', 'Menu'],
   ],
-  manage: ['Drag to turn round her · Wheel to zoom', 'B back to the sea · M menu'],
-  deck: ['Click to look round · W A S D move · Shift run · Space jump', 'At her wheel, E: take the helm · M menu'],
+  manage: [
+    ['Drag', 'Turn round her'],
+    ['Wheel', 'Zoom'],
+    ['B', 'Back to the sea'],
+    ['M', 'Menu'],
+  ],
+  deck: [
+    ['W / A / S / D', 'Move'],
+    ['Shift', 'Run'],
+    ['Space', 'Jump'],
+    ['E', 'Take the helm at her wheel'],
+    ['M', 'Menu'],
+  ],
   fight: [
-    'A D steer · W S sails · Drag to look',
-    'Hold right button: aim, let go: fire · Click: hold fire · C brace · Wheel shot',
+    ['A / D', 'Steer'],
+    ['W / S', 'Sails'],
+    ['Drag', 'Look'],
+    ['Hold right button', 'Aim, let go to fire'],
+    ['Click', 'Hold fire'],
+    ['C', 'Brace'],
+    ['Wheel', 'Shot'],
   ],
-  map: ['Drag to pan · Wheel to zoom · Click a port or the sea', 'Enter set sail · Esc put the map away'],
-  landing: ['Click a mark to choose it', 'Click it again or Enter to land · Esc back to sea'],
-} as const;
+  map: [
+    ['Drag', 'Pan'],
+    ['Wheel', 'Zoom'],
+    ['Click', 'A port or the sea'],
+    ['Enter', 'Set sail'],
+    ['Esc', 'Put the map away'],
+  ],
+  landing: [
+    ['Click', 'Choose a mark'],
+    ['Enter', 'Land'],
+    ['Esc', 'Back to sea'],
+  ],
+} as const satisfies Record<string, readonly Hint[]>;
 
-/** The keys listed on foot with the Art worn (its id, 0 for none): the Arts' line names an aimed Tenet only while its
- *  Art is worn. */
-export function footHints(worn: number): readonly string[] {
+/** The keys shown on foot with the Art worn (its id, 0 for none): an aimed Tenet is named only while its Art is worn. */
+export function footHints(worn: number): readonly Hint[] {
   const aimed = AIMED[arts.arts.find((art) => art.id === worn)?.tenets[0]?.key ?? ''];
-  if (!aimed) return HINTS.foot;
-  return HINTS.foot.map((line, index) => (index === HINTS.foot.length - 1 ? `${line} · ${aimed}` : line));
+  return aimed ? [...HINTS.foot, aimed] : HINTS.foot;
 }
 
-/** What the player is doing at sea, for the keys listed: fighting (with the fight's own lines), choosing a landing, at
- *  the helm with the map, walking her deck, managing her, or sailing. */
+/** What the player is doing at sea, for the keys shown: fighting, choosing a landing, at the helm with the map,
+ *  walking her deck, managing her, or sailing. */
 export interface AtSea {
-  readonly fighting: readonly string[] | null;
+  readonly fighting: boolean;
   readonly landing: boolean;
   readonly atHelm: boolean;
   readonly walking: boolean;
   readonly managing: boolean;
 }
 
-/** The keys listed at sea for what the player is doing. */
-export function seaHints(state: AtSea): readonly string[] {
-  if (state.fighting) return [...state.fighting, ...HINTS.fight];
+/** The keys shown at sea for what the player is doing. */
+export function seaHints(state: AtSea): readonly Hint[] {
+  if (state.fighting) return HINTS.fight;
   if (state.landing) return HINTS.landing;
   if (state.atHelm) return HINTS.map;
   if (state.walking) return HINTS.deck;

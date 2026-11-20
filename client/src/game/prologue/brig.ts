@@ -111,7 +111,7 @@ export class Brig {
     return deckPoint(place, hand.at[0], hand.at[1], z + 2.1);
   }
 
-  /** Every speaking hand's head, for the barks and emotes. */
+  /** Every speaking hand's head, for the barks. */
   heads(place: ShipPlace): Map<string, readonly [number, number, number]> {
     const heads = new Map<string, readonly [number, number, number]>();
     for (const who of ['lookout', 'bosun', 'gunner', 'mate']) {

@@ -22,6 +22,7 @@ code:
   - client/src/game/prologue/ram.ts#Ram
   - client/src/game/prologue/wake.ts#Wake
   - client/src/game/prologue/wreckFight.ts#WreckFight
+  - client/src/game/prologue/lessons.ts#Lessons
   - client/src/game/prologue/nameplate.ts#Nameplate
   - client/src/game/prologue/overboard.ts#Overboard
   - client/src/game/prologue/deep.ts#Deep
@@ -75,7 +76,7 @@ makes it.
 
 A story that cannot begin at all (its cast or scenes refused, a ship's model not loaded, a part failing as it is made)
 gives back everything it took, the last first: the screen hands the page back its touches and the canvas its ease,
-the dialogue box, the marks, the objective and the nameplate leave the HUD, the GPU lets go of what was made, and the
+the dialogue box, the marks over heads and the nameplate leave the HUD, the GPU lets go of what was made, and the
 player wears the look the game gave them. The player then arrives at Overlook.
 
 | Beat | What happens | Played or shown |
@@ -84,7 +85,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along her side, over her working crew to her helm, where it ends in the helm's own shot, riding her deck as the helm's camera does (all her rise and fall, a quarter of her pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
 | `sighted` | From the shot the creation last drew (turned as it was, framed for the screen it was framed for), the camera turns from the player to look down her deck; the lookout and the bosun cry out with marks over their heads and the mate and the gunner speak; the camera pulls out over her stern as three pirate Sloops come out of the dark, and comes down behind her through the fight's own lens | shown |
-| `battle` | The sea's own fight against the three, every ship taken up under the sail and way she was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as hers, the crew crying out at hits and sinkings; "Engage", "Sink them, or make them strike.", and how many ships are left until every one is beaten, sunk or struck | played |
+| `battle` | The sea's own fight against the three, every ship taken up under the sail and way she was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as hers, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships left (afloat) and "No need to sink them", until every one is beaten, sunk or struck; her ship's panel, the fight's keys and DFO's messages as toasts | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to her deck; the beaten ships lie where and as the fight left them, each in her own settle, trim and list, and her sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them, then pushing in on her until she reads however far off she lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round her; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at her side at 6 m/s (about 12 knots), lightning striking past her at 2.3 s and 4.8 s so her masts and sails stand against it: Captain Brannoc Thule's Frigate at her own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of her stem first touches the Brig's side where her hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
 | `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights, a pair on the view crying out, and back over the player's shoulder, where play begins | shown |
@@ -225,7 +226,7 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
 - **The sea.** A body that falls off the decks (lower than 1.5 m over the sea) is brought back to its last checkpoint
   after 1.2 s, as it was, never killed.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
-  itself. The HUD shows no death panel and no Respawn; the prompt says "You will rise at the last checkpoint."
+  itself. The HUD shows no death panel and no Respawn; a toast says "You will rise at the last checkpoint."
 - **The arena** is the Frigate's quarterdeck, 9.8 m by 8.2 m between her rails' inner faces, aft of the heap
   across her quarterdeck's broken front, no wave in it. When the boss fight begins, its heap closes the way in behind
   the player, every other foe is sent away, and Captain Brannoc Thule stands before the wheel facing the player, three
@@ -235,7 +236,7 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
   his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.
-  Felled there, the player is never told they will rise: that prompt is for a death before the boss fight.
+  Felled there, the player is never told they will rise: that toast is for a death before the boss fight.
 - **The cries.** In the wake's flight the first staged pair the camera holds on the view for 2.4 s cries "For the
   Tithe!" and "Cut them down!"; in the fight the first Grey Tithe foe on the view cries "Survivor! Get that one!",
   once. Thule cries when the player's blows land on him and when his land on them, at most once in 9 s each, and only
@@ -245,9 +246,15 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
 - **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the page's own on the
   layout's blocks over open sea (`LocalRoom.openOverSea`: its foes' navmesh is the wreck's ground alone, so every wave
   fights and Thule strikes), the fight's marks drawn by the view on foot. It tells the story whether the arena is
-  entered, Thule's health, how the fight ended, the points over every head for barks and emotes (by crew), and the
+  entered, Thule's health, how the fight ended, the points over every head for barks (by crew), and the
   shot its camera takes of the player standing, where the wake's flight ends. A cutscene holds it still. Its room is
-  let go as the wreck's fight ends. The hints are foot's, without the menu: the story has none.
+  let go as the wreck's fight ends. The key strip is foot's, without the menu: the story has none.
+- **The tasks** (`Lessons`), in the tracker under the quest "Prologue". Waking, the task is "Learn the controls", four
+  steps each ticked off once the player does it, read from what their body and fight did: Move (W A S D, 2 m walked
+  from where they woke), Look round (Mouse, the view turned a radian in all), Attack (Right button, a swing begun)
+  and Block or dodge (F and V, a guard, a parry or a dodge). Once all four are met, or the first foes stand, the task
+  is "Fight your way through the wreck", counting the foes standing while any do, and it never goes back. The boss
+  fight's task is "Face Captain Brannoc Thule". The tracker hides while a cutscene holds the fight.
 - **Drawn** by `WreckScenery` with `WreckView`, shown by the wake, the fight, the throw overboard and, from below,
   the deep: the one mesh built in Blender, each face in its part's picture as a ship's. Its fires' light is baked into
   it there (`light_wreck.py`), with its shadows and what the timber throws back, flickering through space and time as
@@ -260,7 +267,7 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
   fallen crew lie in `fallen`, Thule's crew leap and cry out. It lets go of its GPU buffers once the deep ends.
 - **Each beat sets its world** at its start (the wreck's storm, fires and sounds, no lightning; the deep's water), so
   under `npm run dev`, `?prologue=wake`, `?prologue=wreck`, `?prologue=overboard` or `?prologue=deep` plays as the
-  story does. Leaving the fight hands the HUD back clean (no death, hints, prompt, nameplate or fight's display) and
+  story does. Leaving the fight hands the HUD back clean (no death, key strip, task, nameplate or fight's display) and
   frees the pointer.
 
 ## Limits

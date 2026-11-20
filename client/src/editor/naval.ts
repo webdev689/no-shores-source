@@ -54,7 +54,7 @@ export class Naval {
   heard: readonly FightEvent[] = [];
   private readonly effects = new Effects(1);
   private readonly marks: MarkDrawer;
-  private farewell: { readonly lines: string[]; readonly until: number } | null = null;
+  private farewell: { readonly lines: string[]; readonly said: string[]; readonly until: number } | null = null;
 
   constructor(marks: MarkDrawer) {
     this.marks = marks;
@@ -144,7 +144,7 @@ export class Naval {
       this.effects.burn(toWindow([x, y, heave + DECK_M]), ship.state === 'sinking' ? 0 : ship.fires, time, seconds);
     }
     if (answer.over) {
-      this.farewell = { lines: fighting.lines(time), until: time + FAREWELL_S };
+      this.farewell = { lines: fighting.lines(time), said: fighting.said(time), until: time + FAREWELL_S };
       [this.fight, this.adopted] = [null, null];
       fighting.end().catch(() => undefined);
     }
@@ -188,6 +188,12 @@ export class Naval {
     if (this.fight) return this.fight.lines(now);
     if (this.farewell && this.farewell.until > now) return this.farewell.lines;
     return this.calling ? ['Calling a captain…'] : [];
+  }
+
+  /** DFO's messages now: the fight's, or a fight's last for a while after it ends. */
+  said(now: number): string[] {
+    if (this.fight) return this.fight.said(now);
+    return this.farewell && this.farewell.until > now ? this.farewell.said : [];
   }
 
   /** Draws her Sloop, the balls aloft, the lay's arcs and the effects, heights as drawn. */
