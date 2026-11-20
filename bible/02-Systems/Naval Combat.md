@@ -255,7 +255,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   her sight and out of a fight, until she meets them (750 m) or loses them. A wary ship keeps her own course: the
   player may chase her, evade her or let her pass. While a ship coming for a player bears forward of 10 degrees
   abaft their beam, the voyage's hold keeps their pace to the near-enemy ×5 and she sails at their voyage's own pace,
-  so on the voyage's clock she is the faster and meets them. Turning away, she falls astern of the beam and the hold
+  so on the voyage's clock she is the faster and meets them. In shared waters, or while another player is nearer her,
+  she keeps their clock instead, and the hold does not keep her quarry under for her. Turning away, she falls astern of the beam and the hold
   lets go: at their own pace they outrun her until she loses them. That is evading.
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of
   her begins the fight with her whatever her temper, as a bold ship that meets a player does; a wary one runs as
