@@ -255,7 +255,9 @@ test('a story begun at the fight takes its ships without playing the sighting', 
   const { storyCueNow } = await import('./music.ts');
   Object.assign(globalThis, { localStorage: { getItem: () => null, setItem: () => undefined } });
   const { story, said, done } = storied();
-  const director = new Prologue(story, {} as never, {} as never, {} as never, 'battle');
+  // The wreck's mesh and light are fetched once the story is past its intro: here they never come.
+  const wreckContext = { drawn: () => new Promise(() => undefined) };
+  const director = new Prologue(story, {} as never, {} as never, wreckContext as never, 'battle');
   assert.equal(director.now.name, 'battle');
   assert.equal(storyCueNow(), 'battle');
   assert.deepEqual(said, []);

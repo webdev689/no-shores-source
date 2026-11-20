@@ -15,34 +15,34 @@ from wreck_ships import SEA_Z
 # Each fire: (frame, x, y, lift or None, z or None, size in metres, along or None).
 FIRES = (
     # The Brig's quarterdeck and the rim of her fallen waist; her flooded hold burning on the water in it.
-    ('brig', -15.8, -2.6, 0.0, None, 1.2, None),
+    ('brig', -14.4, -1.8, 0.0, None, 1.2, None),
     ('brig', -11.4, -3.0, 0.0, None, 1.5, None),
     ('wreck', -9.0, -1.8, None, SEA_Z + 0.08, 2.0, None),
     ('wreck', -5.2, -1.2, None, SEA_Z + 0.08, 1.5, None),
     # Her bow half: the foremast's course yard and the rags under it, her deck and her forecastle.
     ('brig', 6.85, -5.2, None, 13.9, 1.0, (6.85, 5.2)),
-    ('brig', 9.4, 3.1, 0.0, None, 1.4, None),
+    ('brig', 9.4, 1.6, 0.0, None, 1.4, None),
     ('brig', 13.6, 0.6, 0.0, None, 1.1, None),
     ('brig', 2.8, -2.8, 0.0, None, 1.0, None),
-    ('brig', 4.2, 3.4, 0.05, None, 0.8, (7.4, 3.7)),
+    ('brig', 4.4, 2.8, 0.05, None, 0.8, (7.2, 2.5)),
     # Burning wreckage afloat round the Sloop.
     ('wreck', 15.2, -16.0, None, SEA_Z + 0.05, 1.6, None),
     ('wreck', 9.4, -21.5, None, SEA_Z + 0.05, 1.2, None),
     # The Frigate: her forecastle, her course yards and the rags on them, her waist.
-    ('frigate', 14.8, 2.0, 0.0, None, 1.8, None),
-    ('frigate', 12.2, -3.0, 0.0, None, 1.2, None),
+    ('frigate', 14.8, 0.6, 0.0, None, 1.8, None),
+    ('frigate', 12.2, -1.6, 0.0, None, 1.2, None),
     ('frigate', 11.4, -6.8, None, 17.4, 1.0, (11.4, 6.8)),
     ('frigate', -0.55, -7.6, None, 18.4, 1.2, (-0.55, 7.6)),
     ('frigate', 4.0, 3.0, 0.0, None, 1.4, None),
     ('frigate', 1.2, -3.9, 0.0, None, 1.0, None),
     # The heaps closing her gangways for good, burning; her gun deck, burning between her guns.
-    ('frigate', -2.3, 4.4, 0.6, None, 1.2, None),
+    ('frigate', -2.0, 4.4, 0.6, None, 1.2, None),
     ('frigate', -10.1, -4.4, 0.6, None, 1.2, None),
     ('frigate', -4.6, 2.7, None, 2.32, 1.1, None),
     ('frigate', -9.4, -2.5, None, 2.32, 1.0, None),
     # Her quarterdeck, the arena: her stern rails ablaze behind Thule.
-    ('frigate', -19.2, 3.0, 0.0, None, 1.4, None),
-    ('frigate', -19.2, -3.1, 0.0, None, 1.4, None),
+    ('frigate', -18.4, 1.8, 0.0, None, 1.4, None),
+    ('frigate', -18.4, -1.8, 0.0, None, 1.4, None),
     ('frigate', -13.2, 4.6, 0.6, None, 0.7, (-17.6, 4.3)),
     ('frigate', -13.2, -4.6, 0.6, None, 0.7, (-17.6, -4.3)),
     # Patches of burning oil and wreckage on the sea round it all.

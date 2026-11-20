@@ -75,7 +75,7 @@ export class WreckFight implements Beat {
 
   private thuleAt(): Point3 {
     const [x, y] = this.layout.arena.thule;
-    return [x, y, topAt(this.layout.decks, x, y)];
+    return [x, y, topAt(this.layout.course, x, y)];
   }
 
   /** Thule at his post, crying out: drawn by the story until the fight stands him in the room. */

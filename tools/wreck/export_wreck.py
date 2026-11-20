@@ -11,6 +11,7 @@ keys are those the files would be published under.
 import argparse
 import hashlib
 import json
+import math
 import os
 import struct
 import sys
@@ -27,7 +28,7 @@ from wreck_course import CELL_M, SQUARE_CELLS, blocks, measure, squares  # noqa:
 from wreck_dress import GATES, gate_boxes  # noqa: E402
 from wreck_fire import fires  # noqa: E402
 from wreck_frames import wreck_frames  # noqa: E402
-from wreck_level import ARENA_ZONE, PATH, THULE, WAKE, ZONES, check, game, game_area  # noqa: E402
+from wreck_level import ARENA_ZONE, FLIGHT_BACK, MASTS, PATH, THULE, WAKE, ZONES, check, game, game_area  # noqa: E402
 from wreck_reach import CLIMB_M, Reach  # noqa: E402
 from wreck_ships import SEA_Z  # noqa: E402
 
@@ -106,7 +107,17 @@ def heaps(by_piece, frames):
     return found
 
 
-def level(gates, burning):
+def centred(point):
+    """A figure's place in the game's frame at the middle of its square of ground, never on the edge between two
+    blocks of the ground, where the room and the page could stand it at either one's height."""
+    size = CELL_M * SQUARE_CELLS
+    west, north_y = BOUNDS[0], -BOUNDS[3]
+    x, y = point
+    return [round(west + (math.floor((x - west) / size) + 0.5) * size, 3),
+            round(north_y + (math.floor((y - north_y) / size) + 0.5) * size, 3)]
+
+
+def level(gates, burning, frames):
     """The level as the game reads it: content/prologue/wreck.json without its keys."""
     zones = []
     for index, zone in enumerate(ZONES):
@@ -115,14 +126,17 @@ def level(gates, burning):
             'area': list(game_area(zone['area'])),
             'checkpoint': list(game(zone['checkpoint'])),
             'gate': gates[index] if index < len(gates) else None,
-            'wave': [{'type': kind, 'rank': rank, 'at': list(game(at)), 'facing': facing}
+            'wave': [{'type': kind, 'rank': rank, 'at': centred(game(at)), 'facing': facing}
                      for kind, rank, at, facing in zone['wave']],
         })
+    masts = [frames.on(ship, along, 0.0) for ship, along in MASTS]
     return {
         'wake': [*game(WAKE[0]), WAKE[1]],
         'path': [list(game(point)) for point in PATH],
         'zones': zones,
-        'arena': {'zone': ARENA_ZONE, 'thule': list(game(THULE))},
+        'arena': {'zone': ARENA_ZONE, 'thule': centred(game(THULE))},
+        'masts': [list(game((mast.x, mast.y))) for mast in masts],
+        'flightBack': [[*game((x, y)), height] for x, y, height in FLIGHT_BACK],
         'fires': [{'at': [round(fire['at'].x, 3), round(-fire['at'].y, 3), round(fire['at'].z - SEA_Z, 3)],
                    'size': fire['size'],
                    **({'along': [round(fire['along'].x, 3), round(-fire['along'].y, 3), round(fire['along'].z, 3)]}
@@ -157,7 +171,7 @@ def main():
     with open(os.path.abspath(given.light), 'rb') as file:
         light = file.read()
     laid = {'mesh': key_of(mesh, 'wreck', 'mesh'), 'light': key_of(light, 'wreck', 'png'),
-            'course': blocks(grid), **level(gates, fires(frames))}
+            'course': blocks(grid), **level(gates, fires(frames), frames)}
     if given.dry_run:
         with open('wreck.mesh', 'wb') as file:
             file.write(mesh)

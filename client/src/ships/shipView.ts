@@ -170,14 +170,14 @@ function picturesTexture(device: GPUDevice): GPUTexture {
  *  last of them is. */
 const SHARED_PICTURES = new WeakMap<GPUDevice, { readonly texture: GPUTexture; holders: number }>();
 
-function holdPictures(device: GPUDevice): GPUTexture {
+export function holdPictures(device: GPUDevice): GPUTexture {
   const held = SHARED_PICTURES.get(device) ?? { texture: picturesTexture(device), holders: 0 };
   held.holders += 1;
   SHARED_PICTURES.set(device, held);
   return held.texture;
 }
 
-function releasePictures(device: GPUDevice): void {
+export function releasePictures(device: GPUDevice): void {
   const held = SHARED_PICTURES.get(device);
   if (!held || --held.holders > 0) return;
   held.texture.destroy();

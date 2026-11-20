@@ -1,20 +1,8 @@
-import ships from '../../../../content/ships/ships.json' with { type: 'json' };
 import wreck from '../../../../content/prologue/wreck.json' with { type: 'json' };
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
-import { deckOf, type Lying } from '../../ships/deck.ts';
-import { deckBlocks } from './wreckDecks.ts';
 
 type Point = readonly [number, number];
 export type Area = readonly [number, number, number, number];
-
-/** What a block that shows is drawn as: a broken spar or mast, planks laid as a ramp or stair, a crate, or debris. */
-export type SceneryKind = 'spar' | 'planks' | 'crate' | 'debris';
-
-/** A block that shows, and what it is. */
-export interface Scenery {
-  readonly kind: SceneryKind;
-  readonly block: CourseBlock;
-}
 
 /** A foe of the roster in a wave: its type and rank as the roster numbers them, where it stands, and the way it
  *  faces (radians clockwise from north). */
@@ -26,7 +14,7 @@ export interface WaveFoe {
 }
 
 /** A stretch of the path: the area that, entered, reaches it, the checkpoint the player comes back to from it, the
- *  heap of debris that closes the way on from it until its wave has fallen (none for the arena), and the foes it
+ *  heap of wreckage that closes the way on from it until its wave has fallen (none for the arena), and the foes it
  *  holds. */
 export interface Zone {
   readonly name: string;
@@ -39,33 +27,31 @@ export interface Zone {
 /** Whether a deck crew's roster type fights for the Grey Tithe (7 to 12); the pirates' are 13 to 17. */
 export const titheCrew = (type: number): boolean => type >= 7 && type <= 12;
 
-/** A fire burning in the wreck: where, and how big across, metres. */
+/** A fire burning in the wreck: where its base burns, how big it is, metres, and, for one burning along a line (a
+ *  yard, a rail, a strip of canvas), the line from its base to its far end. */
 export interface Fire {
   readonly at: readonly [number, number, number];
   readonly size: number;
-}
-
-/** A ship drawn in the wreck: her published mesh's name and where she lies. */
-export interface ShipShown {
-  readonly ship: string;
-  readonly lying: Lying;
+  readonly along: readonly [number, number, number] | null;
 }
 
 /**
- * The wreck as the level plays it, in world metres (x east, y south, z up over the sea): the blocks of both ships'
- * decks, hidden under the ships as drawn; the blocks that show; where the player wakes and the way they face; the path
- * from there to the arena, as points; the zones along it; the arena's zone, the gate that closes its way in, and
- * where Thule stands; the fires; and the ships.
+ * The wreck as the level plays it, in world metres (x east, y south, z up over the sea): the ground a body stands on
+ * as blocks, measured from the wreck's model (tools/wreck/export_wreck.py); where the player wakes and the way they
+ * face; the path from there to the arena, as points; the zones along it; the arena's zone, the gate that closes its
+ * way in, and where Thule stands; the fires; where its masts still stand; the camera's way back to the player after
+ * its flight down the wreck (points and heights over the sea); and the keys on R2 of its mesh and its baked light.
  */
 export interface WreckLayout {
-  readonly decks: readonly CourseBlock[];
-  readonly scenery: readonly Scenery[];
+  readonly course: readonly CourseBlock[];
   readonly wake: { readonly at: Point; readonly facing: number };
   readonly path: readonly Point[];
   readonly zones: readonly Zone[];
   readonly arena: { readonly zone: number; readonly gate: CourseBlock; readonly thule: Point };
   readonly fires: readonly Fire[];
-  readonly ships: readonly ShipShown[];
+  readonly masts: readonly Point[];
+  readonly flightBack: readonly (readonly [number, number, number])[];
+  readonly drawn: { readonly mesh: string; readonly light: string };
 }
 
 const RADIANS = Math.PI / 180;
@@ -78,33 +64,12 @@ function blockOf([minX = 0, minY = 0, maxX = 0, maxY = 0, top = 0]: readonly num
 const pointOf = ([x = 0, y = 0]: readonly number[]): Point => [x, y];
 const areaOf = ([minX = 0, minY = 0, maxX = 0, maxY = 0]: readonly number[]): Area => [minX, minY, maxX, maxY];
 
-/** The file's layout, as `content/prologue/wreck.json` holds it: headings and facings in degrees. */
+/** The file's layout, as `content/prologue/wreck.json` holds it: facings in degrees. */
 type WreckFile = typeof wreck;
 
-const KINDS: readonly SceneryKind[] = ['spar', 'planks', 'crate', 'debris'];
-
-/** Reads a wreck's file into its layout at the world's origin; throws on a ship the manifest has no deck for, a
- *  block of no kind it draws, or an arena no gate closes. The arena's gate is the heap across the way into it. */
+/** Reads a wreck's file into its layout at the world's origin; throws on an arena no gate closes. The arena's gate is
+ *  the heap across the way into it, the zone before it's. */
 export function readWreck(file: WreckFile = wreck): WreckLayout {
-  const decks = ships.ships as Readonly<Record<string, { readonly deck: Parameters<typeof deckOf>[0] }>>;
-  // Each ship is laid after those that follow her in the file, whose hulls stand in her where they broke through.
-  const laid = file.ships.reduceRight<{ ship: string; lying: Lying; blocks: CourseBlock[] }[]>((after, entry) => {
-    const deck = decks[entry.ship]?.deck;
-    if (!deck) throw new Error(`the ships manifest has no deck for "${entry.ship}"`);
-    const [x, y] = pointOf(entry.at);
-    const lying = { x, y, heading: entry.heading * RADIANS, scale: entry.scale, heave: 0, pitch: 0, roll: 0 };
-    const blocks = deckBlocks(
-      deckOf(deck),
-      lying,
-      after.flatMap((ship) => ship.blocks),
-    );
-    return [{ ship: entry.ship, lying, blocks }, ...after];
-  }, []);
-  const scenery = file.blocks.map((entry) => {
-    const kind = KINDS.find((known) => known === entry.kind);
-    if (!kind) throw new Error(`a wreck's block is of no kind it draws: "${entry.kind}"`);
-    return { kind, block: blockOf(entry.box) };
-  });
   const [wakeX = 0, wakeY = 0, wakeFacing = 0] = file.wake;
   const zones = file.zones.map((zone) => ({
     name: zone.name,
@@ -116,17 +81,19 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
   const gate = zones[file.arena.zone - 1]?.gate;
   if (!gate) throw new Error("no gate closes the way into the wreck's arena");
   return {
-    decks: laid.flatMap((ship) => ship.blocks),
-    scenery,
+    course: file.course,
     wake: { at: [wakeX, wakeY], facing: wakeFacing * RADIANS },
     path: file.path.map(pointOf),
     zones,
     arena: { zone: file.arena.zone, gate, thule: pointOf(file.arena.thule) },
     fires: file.fires.map((fire) => {
       const [x = 0, y = 0, z = 0] = fire.at;
-      return { at: [x, y, z], size: fire.size };
+      const along = 'along' in fire ? fire.along : null;
+      return { at: [x, y, z], size: fire.size, along: along ? [along[0] ?? 0, along[1] ?? 0, along[2] ?? 0] : null };
     }),
-    ships: laid.map(({ ship, lying }) => ({ ship, lying })),
+    masts: file.masts.map(pointOf),
+    flightBack: file.flightBack.map(([x = 0, y = 0, z = 0]) => [x, y, z] as const),
+    drawn: { mesh: file.mesh, light: file.light },
   };
 }
 
@@ -142,8 +109,8 @@ export function layoutAt(layout: WreckLayout, [east, south]: Point): WreckLayout
   });
   const area = ([minX, minY, maxX, maxY]: Area): Area => [minX + east, minY + south, maxX + east, maxY + south];
   return {
-    decks: layout.decks.map(block),
-    scenery: layout.scenery.map((found) => ({ ...found, block: block(found.block) })),
+    ...layout,
+    course: layout.course.map(block),
     wake: { ...layout.wake, at: point(layout.wake.at) },
     path: layout.path.map(point),
     zones: layout.zones.map((zone) => ({
@@ -155,16 +122,14 @@ export function layoutAt(layout: WreckLayout, [east, south]: Point): WreckLayout
     })),
     arena: { ...layout.arena, gate: block(layout.arena.gate), thule: point(layout.arena.thule) },
     fires: layout.fires.map((fire) => ({ ...fire, at: [fire.at[0] + east, fire.at[1] + south, fire.at[2]] })),
-    ships: layout.ships.map((shown) => ({
-      ...shown,
-      lying: { ...shown.lying, x: shown.lying.x + east, y: shown.lying.y + south },
-    })),
+    masts: layout.masts.map(point),
+    flightBack: layout.flightBack.map(([x, y, z]) => [x + east, y + south, z] as const),
   };
 }
 
-/** Every block a body stands on in the wreck: both decks and what shows on them. */
-export function courseOf(layout: WreckLayout): CourseBlock[] {
-  return [...layout.decks, ...layout.scenery.map((found) => found.block)];
+/** Every block a body stands on in the wreck, its heaps aside. */
+export function courseOf(layout: WreckLayout): readonly CourseBlock[] {
+  return layout.course;
 }
 
 /** The top a body stands on at (x, y) among `blocks`, from as high as it may be: 0, the sea, where none stands. */

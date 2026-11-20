@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), 'ships'))
 from paint_ship import paint, picture_materials, read_pictures  # noqa: E402
 from wreck_dress import blockers, gates, ramps, wreckage  # noqa: E402
 from wreck_frames import Frames  # noqa: E402
-from wreck_scene import assemble, bridges  # noqa: E402
+from wreck_scene import assemble, bridges, clear_lane  # noqa: E402
 from wreck_ships import Ground, meshes  # noqa: E402
 
 
@@ -33,6 +33,13 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     groups, hulls, places = assemble(os.path.abspath(given.sloop), os.path.abspath(given.shaped))
     groups['Bridges'] = bridges(Ground(groups.values()), 101)
+    # The torn deck crosses the Brig's two broken ends, and her port gangway is the way along her fallen waist:
+    # nothing of hers stands in either.
+    clear_lane((groups['Brig.Stern'], groups['Brig.Bow']), (-4.4, 1.4, 5.4, 4.2), 2.4, 5.6)
+    clear_lane((groups['Brig.Stern'],), (-11.6, 2.2, -4.4, 4.6), 2.6, 4.9)
+    # The timber fallen from the Frigate's gun deck lands on her quarterdeck: what stood there was knocked down, her
+    # companionway with it.
+    clear_lane((groups['Frigate'],), (-1.7, -33.8, 1.7, -30.0), 4.4, 7.0)
     frames = Frames(places, hulls, Ground(groups.values()))
     groups['Ramps'] = ramps(frames, 201)
     frames = Frames(places, hulls, Ground(groups.values()))

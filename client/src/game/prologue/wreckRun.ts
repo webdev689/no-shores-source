@@ -21,18 +21,17 @@ import { type CombatRules, startCombatRules } from '../../rules/combatRules.ts';
 import type { FighterView } from '../../rules/fighters.ts';
 import type { Block, MovementRules } from '../../rules/movementRules.ts';
 import { rosterOf } from '../../rules/roster.ts';
-import type { ShipMesh } from '../../ships/shipMesh.ts';
 import { type Shot, shotOfOrbit } from '../camera.ts';
 import { IDLE, type FootFight, type FootFrame } from '../foot.ts';
 import { footHints } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
 import { courseOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
-import type { WreckScenery } from './wreckScenery.ts';
+import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
 
 /** What the wreck needs of the game: the movement rules, the walker, the forge's cards, the room's compiled module,
- *  the ground as the scene draws it, the GPU, and the meshes the story loaded by their names in the ships' manifest,
- *  to draw each ship the wreck lays with her own. */
+ *  the ground as the scene draws it, the GPU, and the wreck's mesh and baked light, fetched the first time they are
+ *  asked for. */
 export interface WreckContext {
   readonly movement: MovementRules;
   readonly walker: Walker;
@@ -40,7 +39,7 @@ export interface WreckContext {
   readonly roomModule: Promise<WebAssembly.Module>;
   readonly groundAt: (x: number, y: number) => number | null;
   readonly gpu: Gpu;
-  readonly hulls: Readonly<Record<string, ShipMesh>>;
+  readonly drawn: () => Promise<WreckDrawn>;
 }
 
 /** Thule's place in the roster, the rank he comes in, and how many levels over the player he fights. */
@@ -73,7 +72,7 @@ export class WreckRun {
   private readonly combat: CombatRules;
   private readonly player: PlayerFight;
   private readonly steps: MovementRules;
-  /** The blocks of both decks and what shows on them; the heaps standing are added to them. */
+  /** The wreck's ground; the heaps standing are added to it. */
   private readonly base: readonly Block[];
   private course: Block[];
   readonly boxes: readonly Block[];

@@ -23,9 +23,9 @@ const CELEBRANTS: readonly {
   readonly from: readonly [number, number];
 }[] = [
   { type: 12, anim: 'warcry', from: [0, 0] },
-  { type: 7, anim: 'jump', from: [-2.4, -1.6] },
-  { type: 8, anim: 'warcry', from: [-2.1, 1.8] },
-  { type: 10, anim: 'jump', from: [1.0, 1.8] },
+  { type: 7, anim: 'jump', from: [-2.6, 0.0] },
+  { type: 8, anim: 'warcry', from: [-1.4, 2.6] },
+  { type: 10, anim: 'jump', from: [1.2, 1.8] },
 ];
 /** The throw: when it starts, how long the body is in the air, how far it is thrown east over the rail and how high. */
 const THROW_AT_S = 1.6;
@@ -77,7 +77,7 @@ export class Overboard implements Beat {
 
   private thule(): Point3 {
     const [x, y] = this.layout.arena.thule;
-    return [x, y, topAt(this.layout.decks, x, y)];
+    return [x, y, topAt(this.layout.course, x, y)];
   }
 
   skip(): void {
@@ -95,7 +95,7 @@ export class Overboard implements Beat {
     const heads = new Map<string, readonly [number, number, number]>();
     CELEBRANTS.forEach((one, index) => {
       const [standX, standY] = [x + one.from[0], y + one.from[1]];
-      const stand = topAt(this.layout.decks, standX, standY);
+      const stand = topAt(this.layout.course, standX, standY);
       heads.set(index === 0 ? 'thule' : `celebrant-${index}`, [standX, standY, stand + 2.2]);
       const kind = stage.parts.roster.find((each) => each.type === one.type);
       const dress = kind && foeDress(kind);

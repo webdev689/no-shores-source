@@ -5,6 +5,7 @@
 // story through and sees only the intro never makes it.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import scenes from '../../../../content/story/prologue.json' with { type: 'json' };
+import ships from '../../../../content/ships/ships.json' with { type: 'json' };
 import { Ambience } from '../../cinema/ambience.ts';
 import { Birds } from '../../cinema/birds.ts';
 import { Flames } from '../../cinema/flames.ts';
@@ -45,6 +46,9 @@ import { stormPlaces } from './places.ts';
 import { Prologue } from './prologue.ts';
 import { Sailing } from './sailing.ts';
 import { Stage } from './stage.ts';
+import { readWreck } from './wreckLayout.ts';
+import type { WreckDrawn } from './wreckScenery.ts';
+import { loadWreck } from './wreckView.ts';
 import { takeOrGiveBack } from './takeOrGiveBack.ts';
 
 /** What the game hands the story. */
@@ -85,8 +89,15 @@ export interface Started {
   leave(): void;
 }
 
+/** The wreck's mesh and light, fetched once, the first time they are asked for. */
+function onceFetched(): () => Promise<WreckDrawn> {
+  let fetched: Promise<WreckDrawn> | null = null;
+  return () => (fetched ??= loadWreck(ships.base, readWreck().drawn));
+}
+
 export async function startStory(game: StoryGame, from: BeatName | null): Promise<Started> {
   const { gpu, scene, hudRoot } = game;
+  const wreckDrawn = onceFetched();
   // The story's own words are read, and refused if they do not hold, before it takes anything from the page.
   const readCast = castOf(cast);
   const readScenes = scenesOf(scenes, readCast);
@@ -187,7 +198,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
       roomModule: game.roomModule,
       groundAt: (x: number, y: number) => scene.groundAt(x, y),
       gpu,
-      hulls: { brig: brigMesh, frigate: frigateMesh },
+      drawn: wreckDrawn,
     };
     const prologue = new Prologue(story, islands, nameplate, wreckContext, from);
     const leave = () => {

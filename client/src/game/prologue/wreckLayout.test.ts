@@ -1,85 +1,37 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { CourseBlock } from '../../../../server/roomDoor.ts';
-import ships from '../../../../content/ships/ships.json' with { type: 'json' };
-import { type Deck, deckToWorld } from '../../ships/deck.ts';
-import { deckBlocks } from './wreckDecks.ts';
 import { courseOf, inArea, layoutAt, readWreck, topAt } from './wreckLayout.ts';
 
 const layout = readWreck();
 const course = courseOf(layout);
-/** Every deck, but nothing laid on them. */
-const decks = layout.decks;
 /** The movement rules' step and the reach of a jump over a lip, metres (crates/movement's TUNING). */
 const STEP_M = 0.5;
 const REACH_M = 1.8;
 /** A body's radius: the gate never stands on a player in the arena; and just inside it, where a wall stops a body. */
 const BODY_RADIUS_M = 0.35;
 const BODY_IN_M = BODY_RADIUS_M - 0.01;
-/** No deck lies lower than this over the sea. */
-const LOWEST_DECK_M = 2.0;
+/** No ground a body walks lies lower than this over the sea: the Frigate's gun deck, open to the sky, is the lowest. */
+const LOWEST_GROUND_M = 0.7;
 
 /** The point `walked` metres along the segment from `from` to `to`. */
 const along = (from: readonly number[], to: readonly number[], walked: number, length: number) =>
   [0, 1].map((axis) => (from[axis] ?? 0) + (((to[axis] ?? 0) - (from[axis] ?? 0)) * walked) / length);
 
-test('both ships lie as decks of blocks, the brig east to west and the frigate north to south at her own size', () => {
-  assert.equal(layout.ships.length, 2);
-  const [brig, rammer] = layout.ships;
-  assert.equal(brig?.ship, 'brig');
-  assert.equal(brig?.lying.heading, Math.PI / 2);
-  assert.equal(rammer?.ship, 'frigate');
-  assert.equal(rammer?.lying.heading, 0);
-  assert.equal(rammer?.lying.scale, 1);
-  assert.ok(decks.length > 50, `${decks.length} deck blocks`);
-  // The brig's main deck about 2.2 to 2.4 m up; the frigate's waist about 2.6 m and her quarterdeck about 3.7 m.
-  assert.ok(Math.abs(topAt(decks, -5, -3) - 2.2) < 0.15, `brig's waist ${topAt(decks, -5, -3)}`);
-  assert.ok(Math.abs(topAt(decks, 0, 22) - 2.6) < 0.1, `frigate's waist ${topAt(decks, 0, 22)}`);
-  assert.ok(Math.abs(topAt(decks, 0, 36) - 3.75) < 0.15, `frigate's quarterdeck ${topAt(decks, 0, 36)}`);
-  // Her bow is driven through the brig's starboard side (south) to about her middle: past it is the brig's deck.
-  assert.ok(topAt(decks, 0.6, 1) > 4 && topAt(decks, 0.6, -1) < 2.4, "her bow ends at the brig's middle");
-});
-
-test('her decks are only what lies inside her rails: no square of them is lower than her deck, as her channels are', () => {
-  for (const block of decks) assert.ok(block.top >= LOWEST_DECK_M, `a block at ${block.minX}, ${block.minY}`);
-});
-
-test('a row outboard of a rail loses its channel; one with no rail, its deck rising inward, keeps every square', () => {
-  // One row of 0.3 m squares, west to east, as heights: a channel, a rail, deck and the rail and channel again.
-  const row = (heights: readonly number[]): Deck => ({
-    west: 0,
-    north: 0,
-    cell: 0.1,
-    columns: heights.length * 3,
-    rows: 3,
-    heights: [0, 1, 2].flatMap(() => heights.flatMap((height) => [height, height, height])),
-    helm: [0, 0],
-  });
-  const lying = { x: 0, y: 0, heading: 0, scale: 1, heave: 0, pitch: 0, roll: 0 };
-  const railed = deckBlocks(row([1.8, 3.4, 2.4, 2.4, 2.4, 3.4, 1.8]), lying);
-  assert.equal(topAt(railed, 0.15, 0.15), 0, 'the channel is the sea');
-  assert.ok(Math.abs(topAt(railed, 0.45, 0.15) - 3.4) < 1e-9, 'the rail stands');
-  const rising = deckBlocks(row([2.4, 2.55, 2.7, 2.85, 2.7, 2.55, 2.4]), lying);
-  for (let square = 0; square < 7; square++)
-    assert.ok(topAt(rising, square * 0.3 + 0.15, 0.15) > 2, `square ${square} is deck`);
-});
-
-test('every block that shows lies on the ships: each over one of their decks, but planks, laid from deck to deck', () => {
-  const planks = layout.scenery.filter((found) => found.kind === 'planks').map((found) => found.block);
-  const touches = (block: CourseBlock, other: CourseBlock) =>
-    other !== block &&
-    other.minX <= block.maxX &&
-    other.maxX >= block.minX &&
-    other.minY <= block.maxY &&
-    other.maxY >= block.minY;
-  for (const { kind, block } of layout.scenery) {
-    const middle = [(block.minX + block.maxX) / 2, (block.minY + block.maxY) / 2] as const;
-    const lies =
-      kind === 'planks'
-        ? [...decks, ...planks].some((other) => touches(block, other) && other.top >= LOWEST_DECK_M)
-        : topAt(decks, middle[0], middle[1]) >= LOWEST_DECK_M;
-    assert.ok(lies, `a ${kind} at ${middle.join(', ')}`);
-  }
+test("the wreck's ground holds its pieces at their heights: the Brig's halves, the Sloop's side, the Frigate's decks", () => {
+  assert.ok(course.length > 500, `${course.length} blocks`);
+  const near = (x: number, y: number, height: number, name: string) =>
+    assert.ok(Math.abs(topAt(course, x, y) - height) < 0.5, `${name} ${topAt(course, x, y).toFixed(2)} m up`);
+  // In the game's frame: x east, y south.
+  near(-14.3, -1.9, 2.9, "the Brig's quarterdeck");
+  near(-8.0, -3.3, 1.8, "the Brig's waist along her port side");
+  near(0.0, -2.7, 1.8, 'the torn deck over the gap');
+  near(7.0, -1.2, 2.0, "the Brig's fore deck");
+  near(12.3, 13.0, 1.5, "the Sloop's side");
+  near(2.5, 15.0, 2.7, "the Frigate's waist");
+  near(-1.6, 27.0, 1.0, "the Frigate's gun deck");
+  near(2.0, 35.0, 3.3, "the Frigate's quarterdeck");
+  // The Brig's waist on the side the Frigate struck fell into her hold: the sea under it.
+  assert.equal(topAt(course, -7.0, 1.5), 0, "the Brig's fallen waist");
 });
 
 /** Each point along the path, every centimetre, and the top under it. */
@@ -103,12 +55,12 @@ test('the path, every gate open, runs from waking to the arena with no hole, nor
   let climbs = 0;
   // Ground is read under the body's centre, so a gap of a few centimetres drops it: the walk is sampled finer.
   for (const { x, y, top } of walked()) {
-    assert.ok(top >= LOWEST_DECK_M, `a hole at ${x.toFixed(1)}, ${y.toFixed(1)}`);
+    assert.ok(top >= LOWEST_GROUND_M, `a hole at ${x.toFixed(1)}, ${y.toFixed(1)}`);
     if (last !== null) assert.ok(top - last <= REACH_M, `a wall at ${x.toFixed(1)}, ${y.toFixed(1)}`);
     if (last !== null && top - last > STEP_M + 1e-9) climbs += 1;
     last = top;
   }
-  assert.ok(climbs <= 2, `the way is walked, with at most two lips to jump: ${climbs}`);
+  assert.ok(climbs <= 3, `the way is walked, with at most three lips to jump: ${climbs}`);
   const [endX = 0, endY = 0] = layout.path.at(-1) ?? [];
   assert.ok(inArea(layout.zones[layout.arena.zone]?.area ?? [0, 0, 0, 0], endX, endY), 'it ends in the arena');
 });
@@ -130,13 +82,13 @@ test('every lane of the path is a body wide: nothing stands in a body walking it
   });
 });
 
-test('the zones follow the path, each checkpoint on a deck in its own zone, each wave on a deck', () => {
+test('the zones follow the path, each checkpoint on the ground in its own zone, each wave on the ground', () => {
   layout.zones.forEach((zone, index) => {
     const [x, y] = zone.checkpoint;
     assert.ok(inArea(zone.area, x, y), `${zone.name}'s checkpoint is in it`);
-    assert.ok(topAt(course, x, y) >= LOWEST_DECK_M, `${zone.name}'s checkpoint is on a deck`);
+    assert.ok(topAt(course, x, y) >= LOWEST_GROUND_M, `${zone.name}'s checkpoint is on the ground`);
     for (const foe of zone.wave) {
-      assert.ok(topAt(course, foe.at[0], foe.at[1]) >= LOWEST_DECK_M, `a foe of ${zone.name} stands on a deck`);
+      assert.ok(topAt(course, foe.at[0], foe.at[1]) >= LOWEST_GROUND_M, `a foe of ${zone.name} stands on the ground`);
       assert.ok(foe.rank === 1 || foe.rank === 2, 'a first fight holds Minor and Major foes');
     }
     if (index > 0) assert.ok(zone.wave.length > 0 || index === layout.arena.zone, `${zone.name} holds a wave`);
@@ -152,21 +104,25 @@ test('the zones follow the path, each checkpoint on a deck in its own zone, each
   );
 });
 
-test('the arena is open, about 12 m by 9 m, Thule in it, and its gate across the way in', () => {
+test("the arena is the Frigate's quarterdeck, about 10 m by 8 m, Thule in it, and its gate across the way in", () => {
   const zone = layout.zones[layout.arena.zone];
   assert.ok(zone);
   const [minX, minY, maxX, maxY] = zone.area;
-  assert.ok(Math.abs(maxY - minY - 12) <= 1 && Math.abs(maxX - minX - 9) <= 1, 'about 12 m by 9 m');
+  assert.ok(Math.abs(maxX - minX - 10) <= 1 && Math.abs(maxY - minY - 8) <= 1, 'about 10 m by 8 m');
   assert.equal(zone.wave.length, 0, 'one on one');
   assert.ok(inArea(zone.area, ...layout.arena.thule));
   const { gate } = layout.arena;
   assert.ok(gate.minX <= minX && gate.maxX >= maxX, 'the gate spans the arena');
   assert.ok(
-    gate.maxY + BODY_RADIUS_M <= minY && gate.top - topAt(decks, 0, gate.maxY) > 2,
+    gate.maxY + BODY_RADIUS_M <= minY && gate.top - topAt(course, 0, gate.maxY + BODY_RADIUS_M) > 2,
     'across its way in, higher than a step',
   );
-  const [pathX = 0, pathY = 0] = layout.path.at(-2) ?? [];
-  assert.ok(pathY < gate.minY && !inArea(zone.area, pathX, pathY), 'the path comes in through it');
+  const entering = layout.path.findIndex(([x, y]) => inArea(zone.area, x, y));
+  assert.ok(entering > 0 && entering === layout.path.length - 1, 'the path ends in it');
+  assert.ok(
+    layout.path.slice(0, entering).some(([, y]) => y < gate.minY),
+    'the path comes to it from beyond its gate',
+  );
 });
 
 test('each zone before the arena has a heap across the way on from it, too high to step or jump, standing on no one', () => {
@@ -222,32 +178,35 @@ test('every figure stands clear of what stands on the deck: nothing a step over 
   }
 });
 
-test("the player wakes facing the way on, the Brig's wheel clear of the look from behind them down it", () => {
-  const brig = layout.ships.find((shown) => shown.ship === 'brig');
-  assert.ok(brig);
-  const [helmX = 0, helmY = 0] = ships.ships.brig.deck.helm;
-  // The wheel stands just forward of the spot its helmsman keeps.
-  const [wheelX, wheelY] = deckToWorld(brig.lying, helmX, helmY - 0.4, 0);
+test('the player wakes facing the way on, nothing standing in the look from behind them down it', () => {
   const [x, y] = layout.wake.at;
   const { facing } = layout.wake;
   const [aheadX, aheadY] = [Math.sin(facing), -Math.cos(facing)];
   const [first = [0, 0], second = [0, 0]] = layout.path;
   assert.ok(Math.abs(Math.atan2(second[0] - first[0], first[1] - second[1]) - facing) < 0.01, 'facing down the path');
-  for (let along = -6; along <= 10; along += 0.1) {
-    const [lookX, lookY] = [x + aheadX * along, y + aheadY * along];
-    assert.ok(Math.hypot(wheelX - lookX, wheelY - lookY) > 1.5, `the wheel stands in the look at ${along} m`);
+  const ground = topAt(course, x, y);
+  for (let along = 0; along <= 3; along += 0.1) {
+    const top = topAt(course, x + aheadX * along, y + aheadY * along);
+    assert.ok(top <= ground + STEP_M, `something stands in the look ${along.toFixed(1)} m ahead`);
   }
 });
 
-test('fires burn on the decks', () => {
-  assert.ok(layout.fires.length >= 6);
-  for (const fire of layout.fires) assert.ok(Math.abs(topAt(decks, fire.at[0], fire.at[1]) - fire.at[2]) < 0.6);
+test('fires burn on the decks, on the sea and along the yards and rails', () => {
+  assert.ok(layout.fires.length >= 20);
+  assert.ok(layout.fires.filter((fire) => fire.along).length >= 4, 'some burn along a yard, a rail or canvas');
+  assert.ok(layout.fires.filter((fire) => fire.at[2] < 0.2).length >= 4, 'some on the sea');
+  for (const fire of layout.fires) {
+    if (fire.along || fire.at[2] < 0.2) continue;
+    // On the ground, or on a heap that closes a way for good, which no body stands on.
+    const top = topAt(course, fire.at[0], fire.at[1]);
+    assert.ok(Math.abs(top - fire.at[2]) < 0.6 || top - fire.at[2] > 2, `a fire at ${fire.at.join(', ')}`);
+  }
 });
 
 test('the layout placed at an origin moves everything by it', () => {
   const placed = layoutAt(layout, [100, -50]);
   assert.deepEqual(placed.wake.at, [layout.wake.at[0] + 100, layout.wake.at[1] - 50]);
   assert.equal(topAt(courseOf(placed), 100, -53), topAt(course, 0, -3));
-  assert.equal(placed.ships[1]?.lying.y, (layout.ships[1]?.lying.y ?? 0) - 50);
+  assert.equal(placed.fires[0]?.at[1], (layout.fires[0]?.at[1] ?? 0) - 50);
   assert.equal(placed.arena.gate.minX, layout.arena.gate.minX + 100);
 });

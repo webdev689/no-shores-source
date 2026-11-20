@@ -23,6 +23,8 @@ const OPEN_S = 6.5;
 const STAND_S = 10.5;
 const LEAVE_S = 13;
 const CONTROL_S = 25;
+/** How far the flight's eye keeps from a mast still standing, metres. */
+const MAST_CLEAR_M = 2.5;
 /** The lids' shut share over the first seconds, a slow blinking awake: [seconds, shut]. */
 const BLINKS: readonly (readonly [number, number])[] = [
   [0, 1],
@@ -58,7 +60,7 @@ export function stagedFights(layout: WreckLayout, roster: readonly FoeType[]): P
       if (!pirate || !roster.some((each) => each.type === foe.type)) return;
       const [x, y] = [(foe.at[0] + pirate.at[0]) / 2, (foe.at[1] + pirate.at[1]) / 2];
       const facing = Math.atan2(pirate.at[0] - foe.at[0], foe.at[1] - pirate.at[1]);
-      pairs.push({ first: foe.type, second: pirate.type, at: [x, y, topAt(layout.decks, x, y)], facing });
+      pairs.push({ first: foe.type, second: pirate.type, at: [x, y, topAt(layout.course, x, y)], facing });
     });
   }
   return pairs;
@@ -133,7 +135,7 @@ export class Wake implements Beat {
   /** The player's eye on the deck where they woke: lying, sitting, standing. */
   private eyeAt(height: number): Point3 {
     const [x, y] = this.layout.wake.at;
-    return [x, y, topAt(this.layout.decks, x, y) + height];
+    return [x, y, topAt(this.layout.course, x, y) + height];
   }
 
   /** Out of the eyes and back over the player's shoulder, then the length of the wreck along its path to the arena's
@@ -158,31 +160,47 @@ export class Wake implements Beat {
     const path = this.layout.path.slice(0, -1);
     const along = path.map(([x, y], index): RailKey => {
       const next = path[Math.min(path.length - 1, index + 1)] ?? [x, y];
-      const deck = topAt(this.layout.decks, x, y);
-      // East of the path and behind it: the path keeps to the Frigate's starboard side, her masts on her middle.
+      const deck = topAt(this.layout.course, x, y);
+      const [east, south] = this.clearOfMasts(x, y);
       return {
         at: LEAVE_S + 2 + (index / Math.max(1, path.length - 1)) * 6,
-        eye: [x + 1.5, y - 1.5, deck + 5.5],
+        eye: [x + east, y + south, deck + 5.5],
         look: [next[0] + (next[0] - x) * 2, next[1] + (next[1] - y) * 2, deck + 1.5],
       };
     });
     const back = rest ? restingKey(rest) : { eye: behind, look: ahead(stand), fov: 0.9 };
-    // Back to the player out past the Frigate's starboard side and the Brig's bow, clear of both ships' masts.
-    const [fore = [0, 0], waist = [0, 0]] = [2, 1].map((zone) => this.layout.zones[zone]?.checkpoint);
-    const outside = (time: number, [x, y]: readonly [number, number], east: number, south: number): RailKey => ({
-      at: time,
-      eye: [x + east, y + south, stand[2] + 6],
-      look: stand,
-    });
+    // Back to the player out past the Frigate's side and the Brig's broken stern, clear of the masts still standing.
+    const [first, second] = this.layout.flightBack.map((eye): Omit<RailKey, 'at'> => ({ eye, look: stand }));
     return [
       { at: LEAVE_S, eye: stand, look: ahead(stand), fov: LENS.fov },
       { at: LEAVE_S + 1.4, eye: behind, look: ahead(stand), fov: 0.9 },
       ...along,
-      outside(CONTROL_S - 3.2, fore, 2.5, 7),
-      outside(CONTROL_S - 2.4, waist, 2, -4.5),
+      ...(first && second
+        ? [
+            { at: CONTROL_S - 3.2, ...first },
+            { at: CONTROL_S - 2.4, ...second },
+          ]
+        : []),
       { at: CONTROL_S - 1.6, ...back },
       { at: CONTROL_S, ...back },
     ];
+  }
+
+  /** Which way to stand off from a point of the path as the flight passes over it: behind it and to one side, the
+   *  side whose eye stands furthest from every mast still standing, as a metre and a half each way. */
+  private clearOfMasts(x: number, y: number): readonly [number, number] {
+    const sides = [
+      [1.5, -1.5],
+      [-1.5, -1.5],
+      [1.5, 1.5],
+      [-1.5, 1.5],
+    ] as const;
+    const nearest = ([east, south]: readonly [number, number]) =>
+      Math.min(...this.layout.masts.map(([mastX, mastY]) => Math.hypot(x + east - mastX, y + south - mastY)));
+    return (
+      sides.find((side) => nearest(side) >= MAST_CLEAR_M) ??
+      sides.reduce((best, side) => (nearest(side) > nearest(best) ? side : best))
+    );
   }
 
   skip(): void {
@@ -198,7 +216,8 @@ export class Wake implements Beat {
 
   frame(tick: Tick): StoryFrame {
     const { stage } = this.story;
-    this.since += tick.seconds;
+    // The eyes stay shut until the wreck they open on has come.
+    if (!(this.scenery.coming && this.since >= OPEN_S - 1)) this.since += tick.seconds;
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
     const { screen } = stage.parts;
@@ -217,7 +236,7 @@ export class Wake implements Beat {
   private you(): Actor {
     const [x, y] = this.layout.wake.at;
     const { facing } = this.layout.wake;
-    const z = topAt(this.layout.decks, x, y);
+    const z = topAt(this.layout.course, x, y);
     return { id: YOU_ID, dress: this.story.dress, anim: 'idle', x, y, z, facing };
   }
 

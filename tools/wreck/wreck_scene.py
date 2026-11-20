@@ -44,6 +44,11 @@ def brig(sloop, seed):
 
     carve(stern, waist, lambda point, part: deck(point.x) - 0.4 < point.z < deck(point.x) + 0.45
           and part in ('deck', 'hull') and point.y > -4.05, keep=('Cannon',))
+    # Her quarterdeck's breast rail was thrown down on her port side: the way off it, a drop to her waist.
+    front, rise = hull.numbers['quarterdeck_m']
+    thrown = (front - 0.4, 1.9, front + 0.4, 3.6)
+    carve(stern, thrown, lambda point, part: deck(front) + rise - 0.05 < point.z < deck(front) + rise + 1.2,
+          keep=('Cannon', 'Hull'))
     pieces_where(stern, lambda point: waist[0] < point.x < waist[2] and waist[1] < point.y < waist[3]
                  and deck(point.x) - 0.2 < point.z < deck(point.x) + 1.4 and abs(point.y) < 4.05)
     splinter_rim(stern, lambda point: waist[0] - 0.05 < point.x < waist[2] + 0.05 and waist[1] < point.y
@@ -162,6 +167,18 @@ def bridges(ground, seed):
     mast.prism(tuple(afloat), tuple(afloat + Vector((14.0, 3.2, 0.0))), 0.3, 'spar', sides=8, end_radius=0.22)
     mast.build('Bridge.Mainmast', way)
     return way
+
+
+def clear_lane(groups, box, low, high):
+    """Clears a way laid across a break (`box`, x0, y0, x1, y1 of the wreck's frame, between `low` and `high`): the
+    splinters, fittings, lines and the broken boat there would stand in a body crossing it. Her hull stays."""
+    x0, y0, x1, y1 = box
+    for group in groups:
+        for item in [item for item in meshes(group) if not item.get('walk') and 'Hull' not in item.name.split('.')]:
+            lane = bpy.data.collections.new('Lane')
+            lane.objects.link(item)
+            pieces_where(lane, lambda point: x0 < point.x < x1 and y0 < point.y < y1 and low < point.z < high)
+            bpy.data.collections.remove(lane)
 
 
 def assemble(sloop_source, sloop_shaped, seed=7):

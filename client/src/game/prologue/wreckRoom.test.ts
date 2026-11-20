@@ -150,7 +150,7 @@ test("each wave's two sides fight each other and the player standing by them, on
     const [first] = zone.wave;
     if (!first) return;
     const spot = short(first.at, zone.checkpoint, 1.2);
-    assert.ok(topAt(blocks, ...spot) >= 2, `${zone.name}: the player stands on her deck`);
+    assert.ok(topAt(blocks, ...spot) >= 0.7, `${zone.name}: the player stands on the wreck`);
     const fought = watched(placed, spot, (room) => {
       for (const other of placed.zones) if (other.gate && other !== zone) room.standBlock(other.gate);
       for (const foe of zone.wave) room.standFoe(foe.type, foe.rank, foe.at[0], foe.at[1], foe.facing, 1);

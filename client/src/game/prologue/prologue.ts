@@ -83,6 +83,8 @@ export class Prologue {
     const { story, carried } = this;
     const shot = () => carried.shot ?? seaShot(story);
     const wrecks = () => carried.wrecks ?? inboundAt(story.brig).map(asWreck);
+    // Past the intro the story goes to sea, and on to the wreck: its mesh and light come while the beats before play.
+    if (name !== 'intro') void this.wreckContext.drawn().catch(() => undefined);
     switch (name) {
       case 'intro':
         return new Intro(story.stage, this.islands, story.sailing);
@@ -125,8 +127,8 @@ export class Prologue {
 
   /** The wreck as drawn, made once for every beat that shows it, from the wake to the deep. */
   private scenery(): WreckScenery {
-    const { gpu, hulls } = this.wreckContext;
-    this.carried.scenery ??= new WreckScenery(gpu, hulls, this.wreck(), this.meeting());
+    const { gpu, drawn } = this.wreckContext;
+    this.carried.scenery ??= new WreckScenery(gpu, drawn(), this.wreck(), this.meeting());
     return this.carried.scenery;
   }
 

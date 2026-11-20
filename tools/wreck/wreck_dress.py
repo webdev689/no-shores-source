@@ -14,7 +14,7 @@ from wreck_pieces import build, crate, deck_section, heap, scatter, seeded, spar
 from wreck_ships import SEA_Z
 
 # How high a heap is piled over the deck it stands on: past what a body climbs or jumps.
-HEAP_M = 2.4
+HEAP_M = 2.9
 # The middle of the strip of the Sloop's side a body walks along, x in the wreck's frame (wreck_scene.SLOOP).
 SLOOP_STRIP_X = 12.3
 
@@ -84,13 +84,15 @@ def core(piece, frames, ship, box, rng):
     size = 0.75
     across = max(1, round((x1 - x0) / size))
     along = max(1, round((y1 - y0) / size))
+    # Each crate a little wider than the spacing, so they press into each other and leave no gap between them.
+    wide = max((x1 - x0) / across, (y1 - y0) / along) + 0.1
     for column in range(across):
         for row in range(along):
             x = x0 + (column + 0.5) * (x1 - x0) / across
             y = y0 + (row + 0.5) * (y1 - y0) / along
             base = frames.on(ship, x, y)
             for level in range(3):
-                crate(piece, base + Vector((0, 0, level * size)), size, rng.uniform(-0.15, 0.15), rng)
+                crate(piece, base + Vector((0, 0, level * size)), wide, rng.uniform(-0.15, 0.15), rng)
 
 
 def blockers(frames, seed):
@@ -131,10 +133,11 @@ def ramps(frames, seed):
         deck_section(piece, start, end, 2.2, rng)
         item = build(piece, f'Ramp.{index}', group, walk=True)
         item['ends'] = [list(start), list(end)]
-    # A broken yard lies along the Sloop's ramp, as if it fell there and the planks after it.
+    # A broken yard lies along the Sloop's ramp, as if it fell there and the planks after it: on its south side, away
+    # from the way along her that comes onto it.
     yard = Piece()
     first, last = ways[1]
-    side = (last - first).cross(Vector((0, 0, 1))).normalized()
+    side = -(last - first).cross(Vector((0, 0, 1))).normalized()
     spar(yard, first + side * 1.35 - Vector((0, 0, 0.1)), last + side * 1.35 + Vector((0, 0, 0.2)), 0.2, rng)
     build(yard, 'Ramp.Yard', group)
     return group
@@ -176,12 +179,11 @@ def wreckage(frames, seed):
     for index, (ship, box, count) in enumerate(STREWN):
         rng = seeded(seed + index)
         x0, y0, x1, y1 = box
-        for _ in range(count):
-            x, y = rng.uniform(x0, x1), rng.uniform(y0, y1)
+        # Each thing strewn draws its own place and its own seed first, so one kept off the way moves no other.
+        for x, y, own in [(rng.uniform(x0, x1), rng.uniform(y0, y1), rng.random()) for _ in range(count)]:
             at = frames.on(ship, x, y)
-            if in_the_way(at.x, at.y):
-                continue
-            scatter(piece, (at.x - 0.1, at.y - 0.1, at.x + 0.1, at.y + 0.1), at.z, 1, rng)
+            if not in_the_way(at.x, at.y):
+                scatter(piece, (at.x - 0.1, at.y - 0.1, at.x + 0.1, at.y + 0.1), at.z, 1, seeded(int(own * 1e9)))
     build(piece, 'Wreckage.Decks', group)
     afloat = Piece()
     rng = seeded(seed + 50)

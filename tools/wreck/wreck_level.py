@@ -7,40 +7,51 @@ crews 7 to 12, the pirates' 13 to 17): Tithe and pirates fight each other as wel
 clockwise from north.
 """
 
-# Where the player wakes, by the Brig's wheel, and the way they face (degrees clockwise from north): along her deck.
-WAKE = ((-14.8, 0.6), 84.0)
+# Where the player wakes, by the Brig's wheel, and the way they face (degrees clockwise from north): down the way on.
+WAKE = ((-14.3, 1.9), 35.2)
 
 # The way from where the player wakes to Thule, as points.
 PATH = (
-    (-14.8, 0.6), (-12.2, 3.2), (-8.0, 3.3), (-4.4, 3.0), (0.0, 2.7), (3.9, 2.4), (6.6, 1.6), (8.4, 0.2),
-    (12.3, -8.6), (12.3, -13.0), (3.6, -13.0), (0.6, -15.5), (0.1, -20.6), (0.1, -24.4), (0.1, -26.4), (0.1, -31.0),
-    (0.0, -33.4),
+    (-14.3, 1.9), (-13.1, 3.6), (-11.9, 3.9), (-10.4, 3.6), (-8.0, 3.3), (-4.4, 3.0), (0.0, 2.7), (3.9, 2.4),
+    (5.4, 1.3), (8.4, 0.2), (12.3, -8.6), (12.3, -13.0), (3.6, -13.0), (2.2, -15.5), (1.5, -18.6), (1.5, -20.9),
+    (0.4, -21.6), (0.1, -24.4),
+    (0.1, -26.4), (0.1, -29.6), (0.4, -31.0), (1.8, -32.2), (1.8, -34.0),
 )
 
-# Each zone: its name; the box (west, south, east, north) that, entered, reaches it; its checkpoint; and its wave.
+# Each zone: its name; the box (west, south, east, north) that, entered, reaches it; its checkpoint; and its wave, in
+# pairs of a Grey Tithe crewman and a pirate fighting each other, with any odd one out after them.
 ZONES = (
-    {'name': "the Brig's quarterdeck", 'area': (-19.5, -4.5, -11.4, 5.4), 'checkpoint': (-14.8, 0.6),
-     'wave': ((7, 1, (-13.5, 2.7), 135), (13, 1, (-13.0, 1.5), 315))},
+    {'name': "the Brig's quarterdeck", 'area': (-19.5, -4.5, -11.4, 5.4), 'checkpoint': (-14.3, 1.9),
+     'wave': ((7, 1, (-13.6, 2.8), 270), (13, 1, (-15.0, 3.0), 90))},
     {'name': "the Brig's broken waist", 'area': (-11.4, 0.4, -5.1, 5.6), 'checkpoint': (-10.4, 3.2),
-     'wave': ((8, 2, (-8.6, 3.5), 270), (14, 1, (-7.2, 3.0), 90), (9, 1, (-6.0, 3.6), 270))},
-    {'name': 'the torn deck over the gap', 'area': (-5.1, 0.4, 3.2, 5.4), 'checkpoint': (-3.0, 2.95),
-     'wave': ((15, 1, (-0.6, 2.75), 270), (16, 1, (1.8, 2.5), 270))},
+     'wave': ((8, 2, (-8.6, 3.6), 90), (14, 1, (-7.4, 3.4), 270), (9, 1, (-5.8, 3.3), 270))},
+    {'name': 'the torn deck over the gap', 'area': (-5.1, 0.4, 3.2, 5.4), 'checkpoint': (-3.0, 3.1),
+     'wave': ((11, 1, (-0.8, 2.8), 90), (15, 1, (0.8, 2.6), 270))},
     {'name': "the Brig's fore deck", 'area': (3.2, -2.6, 18.5, 6.5), 'checkpoint': (5.6, 1.3),
-     'wave': ((7, 1, (8.2, 2.5), 0), (17, 1, (9.0, 0.5), 180), (10, 1, (11.6, 2.2), 270), (13, 1, (7.2, 0.6), 90))},
+     'wave': ((7, 1, (8.0, 2.3), 180), (13, 1, (8.1, 0.8), 0), (10, 1, (11.6, 2.3), 180), (17, 1, (11.8, 0.9), 0))},
     {'name': "the Sloop on her beam ends", 'area': (9.6, -27.0, 15.6, -5.5), 'checkpoint': (12.3, -9.4),
-     'wave': ((16, 1, (12.3, -15.0), 0), (14, 1, (12.3, -18.6), 0))},
+     'wave': ((9, 1, (12.6, -14.8), 180), (16, 1, (12.6, -16.4), 0), (14, 1, (12.3, -19.2), 0))},
     {'name': "the Frigate's waist", 'area': (-5.6, -21.0, 6.0, -1.0), 'checkpoint': (3.0, -13.0),
-     'wave': ((11, 1, (-0.5, -9.5), 180), (8, 1, (-2.2, -13.2), 90), (17, 1, (1.4, -16.6), 0), (9, 2, (-1.2, -18.4),
-                                                                                                   0))},
-    {'name': "the Frigate's gun deck", 'area': (-4.6, -30.6, 4.6, -21.0), 'checkpoint': (0.1, -25.2),
-     'wave': ((10, 1, (-2.4, -26.8), 90), (12, 1, (2.0, -27.4), 270), (13, 1, (-2.2, -28.8), 90))},
-    {'name': "the Frigate's quarterdeck", 'area': (-5.6, -42.0, 5.6, -30.6), 'checkpoint': (1.6, -32.9),
+     'wave': ((11, 1, (-1.4, -9.4), 90), (17, 1, (0.2, -9.6), 270), (8, 1, (-2.6, -12.6), 90), (14, 1, (-1.2, -12.8),
+                                                                                                    270),
+              (9, 2, (2.6, -18.4), 0))},
+    {'name': "the Frigate's gun deck", 'area': (-4.6, -30.0, 4.6, -21.0), 'checkpoint': (0.1, -25.2),
+     'wave': ((10, 1, (-1.6, -26.4), 180), (13, 1, (-1.6, -28.2), 0), (12, 1, (2.1, -26.7), 270))},
+    {'name': "the Frigate's quarterdeck", 'area': (-4.9, -41.0, 4.9, -32.75), 'checkpoint': (1.6, -33.2),
      'wave': ()},
 )
 
+# The camera's way back from the arena's heap to the player after its flight down the wreck: out past the Frigate's
+# port side, clear of her masts, then past the Brig's broken stern half; points (x, y) and heights over the sea.
+FLIGHT_BACK = ((-9.5, -24.0, 9.5), (-10.5, -6.5, 8.5))
+
+# The masts still standing, by the ship's frame and where along her each stands: the Brig's fore, and the Frigate's
+# fore and main. A camera flying the wreck keeps clear of them.
+MASTS = (('brig', 6.85), ('frigate', 11.4), ('frigate', -0.55))
+
 # The arena is the last zone; Thule stands before the wheel, facing the way in.
 ARENA_ZONE = len(ZONES) - 1
-THULE = (0.0, -33.6)
+THULE = (1.8, -34.0)
 
 
 def game(point):
