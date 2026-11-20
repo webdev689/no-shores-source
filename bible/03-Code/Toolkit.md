@@ -6,7 +6,6 @@ code:
   - tools/claude-toolkit/hooks/kit-check.sh
   - tools/claude-toolkit/workers/run-worker.sh
   - tools/claude-toolkit/workers/brief-common-template.md
-  - tools/claude-toolkit/workers/fidelity-review.sh
   - tools/claude-toolkit/toolkit-data.sh
 ---
 # Toolkit
@@ -86,8 +85,5 @@ Work that fans out goes to headless workers, each in its own git worktree.
   Serena `get_symbols_overview` on each source file it will change.
 - Every worker ends with superpowers:verification-before-completion, one reviewer sub-agent, then
   ponytail:ponytail-review on its diff, even for a one-line change.
-- A change that builds or records an owner's decision: `bash tools/claude-toolkit/workers/fidelity-review.sh
-  <approval file> <base>..<head>` measures it against the owner's words with a fixed brief; its verdict goes in the
-  pull request's description under "## Fidelity review" ([[Recording a Decision]]).
 - Before merging a worker's branch: `python3 tools/claude-toolkit/workers/audit.py <worktree>` (its MISSING line must
   say none) and a ponytail review of its diff.
