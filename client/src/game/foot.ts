@@ -474,9 +474,7 @@ export class Foot {
     const gear = this.gear;
     const { x, y } = walker.player.body;
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
-    this.using = able
-      ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked)))
-      : null;
+    this.using = able ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked))) : null;
     this.prompt?.show(this.using?.words ?? null);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
