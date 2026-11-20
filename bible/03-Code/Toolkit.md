@@ -80,7 +80,8 @@ Work that fans out goes to headless workers, each in its own git worktree.
   `client/public/` from the main checkout instead.
 - Every brief starts from `tools/claude-toolkit/workers/brief-common-template.md`.
 - A late change goes in the worker's inbox (`~/wt/reports/inbox-<name>.md`, under a `## <short heading>` line), not a
-  stop and `--resume`.
+  stop and `--resume`. A fresh run of a worker's name starts an empty inbox, keeping an earlier worker's aside. A worker
+  that ends with its edits uncommitted is resumed once, told to commit them.
 - Stop one with TaskStop or `bash tools/claude-toolkit/workers/stop-worker.sh <name>`, never `pkill -f <pattern>`.
 - A worker's first three actions: one claude-mem search; `graphify update .` and one `graphify explain` or `path`;
   Serena `get_symbols_overview` on each source file it will change.
@@ -90,4 +91,4 @@ Work that fans out goes to headless workers, each in its own git worktree.
   <approval file> <base>..<head>` measures it against the owner's words with a fixed brief; its verdict goes in the
   pull request's description under "## Fidelity review" ([[Recording a Decision]]).
 - Before merging a worker's branch: `python3 tools/claude-toolkit/workers/audit.py <worktree>` (its MISSING line must
-  say none) and a ponytail review of its diff.
+  say none, and it says UNCOMMITTED for edits left out of the worker's commits) and a ponytail review of its diff.

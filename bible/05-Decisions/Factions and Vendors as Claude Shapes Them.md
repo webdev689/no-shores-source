@@ -69,6 +69,7 @@ look. The owner said yes to gear of each faction's own, "with its own unique col
 | A core each level | Each rise owns one of the Art's six fragments of the player's choice; four by level 5 |
 | Fragments owned | A Core slot holds only a fragment owned. The faction sells the others for 7,500 Aurem each, from its first rank (Destiny's rank-gated faction wares) |
 | Power and duration | Level 1 to 5: 0.6, 0.7, 0.8, 0.9 and 1.0 of every spell's harm and healing, and of how long the Sunwell, the Duskraven and Dusk Daggers last, the buffs they give (Quicken's Haste, Momentum's and Resolve's Crit, Vanish's veil), Arc Lash's Charge, every Expose a spell or Overload gives, the Sunwell's Linked linger and Dread's seconds. Recharges, reaches and counts are as written. Level 5 is the Arts as they were |
+| The Test Ground | Its player starts every Art at level 5 owning every fragment, and its panel sets any Art's level (a grant the Test Ground alone takes), so each spell can be tried at every level |
 | Old characters | The owner's: every Art at level 1, owning the fragments their Cores held ([[Characters Made Before the Arts' Levels Start Every Art at Level 1]]) |
 
 ## The keepers and their wares
@@ -128,8 +129,10 @@ sold here today"), as a cosmetic of another day is, and none buys the next day's
 
 ## Locked social spaces
 
-Only Overlook's social space opens: the bake marks every other city's social node closed and the room opens none on
-it (`content/world/social.json`, which the page reads too). Shape visits Overlook alone (its `shapeVisits`).
+Only Overlook's social space opens: the bake writes every other city's social node locked, and its room takes no
+player (`content/world/social.json`, which the page reads too). Sunspire's and Rimeholt's show over their island's side
+as locked marks that say "Opens later"; the six desolate cities' (the owner's "desolate and destroyed", on #75) show no
+mark and never open. Shape visits Overlook alone (its `shapeVisits`).
 
 ## The keepers' screen
 
@@ -162,6 +165,7 @@ it (`content/world/social.json`, which the page reads too). Shape visits Overloo
 
 | Call | Choice |
 |---|---|
+| Your mount | The owner's "your mount" read as the one horse every player rides: its coat and barding are what is equipped, with no choice of horses |
 | The button | A wardrobe mark (a coat on a brass hanger) with the worn emblem's sign in its corner, labelled "Appearance" |
 | The display | The figure turning a view every 1.2 s, the horse still from the side under it, without its rider |
 | Rows | Emblems five a row, dyes, coats and bardings eight a row, so all four show at 1280 by 720 |
@@ -171,6 +175,12 @@ it (`content/world/social.json`, which the page reads too). Shape visits Overloo
 | A barding | Over the horse's own texels where it lies no more than 0.15 m behind them, so its far side and its inside stay hidden; depth decides between it and the rider |
 | The Art's level | Five pips by its name; the bar under the three diamonds; brass when full or at the highest |
 | Before the room's word | Every Art shows level 1 with every fragment owned, so the screen locks nothing the room would allow |
+
+## Saves
+
+| Call | Choice |
+|---|---|
+| Keys a room does not know | A save keeps them, at its top and in its materials, Arts, allegiance, cosmetics, items and Vestiges, so a room rolled back to this round or later keeps what a later room saved; a room from before this round drops them ([[No Save-Keeping Lands on Main Before the Factions Round]]) |
 
 ## Refusals and cosmetics others see
 

@@ -29,7 +29,7 @@ status: in force
 - **A faction's gear has a colour of its own**, unique to it, neither glaring nor dark: the Stormcallers' storm grey
   and silver with accents of colour, the Lamplighters' white and gold, and the Veiled's black and silver, not too
   black.
-- **The colours stand, and each piece keeps its shading and detail under its colour.**
+- **The colours stand** ("the color is good"); the pieces needed more detail and their shading set right.
 - **The sets look as the top strip showed them**: the armour shaded as it was there, and each faction's cape in its
   faction's dye (blue, orange, purple), not its gear colour; the shield, bow and staff in the faction's colour, and each
   piece shaded the same whatever else is worn, in first person too.

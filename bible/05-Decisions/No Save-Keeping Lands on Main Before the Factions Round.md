@@ -12,6 +12,5 @@ status: in force
 ## What it settles
 
 - **No separate pull request keeps a save's unknown fields on `main` first.** A rollback of the rooms to before the
-  factions round loses what the round keeps (pledges, reputation, cosmetics, Shapes, the Arts' levels), so a fault
-  after it is fixed forward ([[Server]]).
+  factions round loses what the round keeps (pledges, reputation, cosmetics, Shapes, the Arts' levels) ([[Server]]).
 - The pull request says so, for the owner's yes to its merge.
