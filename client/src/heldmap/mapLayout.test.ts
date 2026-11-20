@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Rect } from './heldMapLaw.ts';
 import { stageOf } from './heldMapLaw.ts';
-import { type LayoutAsk, layOut, letterScale, nameBox, PORT_PX, WORD_PX } from './mapLayout.ts';
+import { type LayoutAsk, layOut, letterScale, markBox, nameBox, PORT_PX, WORD_PX } from './mapLayout.ts';
 
 /** A word's width in the map's face, units: Pixelify's letters are a little over half their size wide, taken wide. */
 const widthOf = (text: string, kind: string) => text.length * 0.62 * (kind === 'port' ? PORT_PX : WORD_PX);
@@ -44,11 +44,13 @@ const water = (text: string, ...spots: [number, number][]) => ({
 });
 
 test('a name with no clear place is dropped by priority: a port before a water, a water before a ruin and a node', () => {
+  // Three marks clear of each other, one over another, their names in each other's way; a hand left of the node.
   const lettering = layOut({
     ...ASK,
+    covers: [{ x: 100, y: 80, width: 95, height: 16 }],
     places: [
-      { text: 'Hollow Barrow', x: 200, y: 100, kind: 'patrol', chosen: false },
-      { text: 'Ruins of Elmhaven', x: 200, y: 100, kind: 'ruin', chosen: false },
+      { text: 'Hollow Barrow', x: 200, y: 88, kind: 'patrol', chosen: false },
+      { text: 'Ruins of Elmhaven', x: 200, y: 112, kind: 'ruin', chosen: false },
       { text: 'Overlook', x: 200, y: 100, kind: 'port', chosen: false },
     ],
     waters: [water('The Lantern Sea, 1-4', [200, 100], [200, 60])],
@@ -159,4 +161,26 @@ test('a water’s name takes a spot wholly on her own sea before an earlier one 
     waters: [water('The Elmwater, 7-10', [200, 100], [400, 100])],
   });
   assert.equal(lettering.letters[0]?.x, 400);
+});
+
+test("a node's mark over a ruin's moves out along the line between them, just clear, and its name with it", () => {
+  const lettering = layOut({
+    ...ASK,
+    places: [
+      { text: 'Saltpan Ruins', x: 303, y: 204, kind: 'patrol', chosen: false },
+      { text: 'Ruins of Windmere', x: 300, y: 200, kind: 'ruin', chosen: false },
+    ],
+  });
+  const [node, ruin] = ['Saltpan Ruins', 'Ruins of Windmere'].map((text) =>
+    lettering.letters.find((letter) => letter.text === text),
+  );
+  assert.ok(node && ruin);
+  assert.deepEqual(lettering.letters.slice(0, 2), [node, ruin], 'the places lettered first, in the order asked');
+  assert.deepEqual([ruin.x, ruin.y], [300, 200], 'the ruin stands where it lies');
+  const [away, down] = [node.x - 300, node.y - 200];
+  assert.ok(Math.abs(away * 4 - down * 3) < 1e-6, `along the line from the ruin (${away}, ${down})`);
+  const [ruinBox, nodeBox] = [markBox('ruin', ruin.x, ruin.y, 1), markBox('patrol', node.x, node.y, 1)];
+  assert.ok(!overlaps(ruinBox, nodeBox), 'clear of the ruin');
+  assert.ok(Math.max(Math.abs(away), Math.abs(down)) < 9 + 0.5, 'by no more than the overlap');
+  assert.ok(node.side && !overlaps(nameBox(node, node.side, widthOf(node.text, 'patrol'), 1), ruinBox), 'named beside');
 });

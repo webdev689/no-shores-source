@@ -7,6 +7,7 @@ import type { Swell } from '../rules/landRules.ts';
 import { startWatersRules, type TrafficShip } from '../rules/watersRules.ts';
 import { hullWaterline } from '../ships/hulls.ts';
 import { poseOnSwell } from '../ships/swellPose.ts';
+import type { DrawnShip } from '../ships/shipModels.ts';
 import { ASK_EVERY_S, friendlyFrame, FriendlyShips, friendlyMarks, reckoned } from './friendlyShips.ts';
 import { mapWatersOf } from './pageWaters.ts';
 import { seaShipMarks } from './seaHud.ts';
@@ -202,4 +203,23 @@ test('the compass marks friendly ships within 900 m in Overlook’s blue', () =>
     ['#2f5d9a'],
     'only the one within 900 m',
   );
+});
+
+test('a ship at anchor at her roadstead lies with her sails furled; one under way has them set', () => {
+  const arrived = { ...shipAt(0, [3_000, 0], [1, 0]), progressM: 1_000_000 };
+  const sailing = shipAt(1, [-3_000, 0], [1, 0]);
+  const fleet = new FriendlyShips(() => [arrived, sailing], 5);
+  fleet.near([0, 0], 15_000, 100, 0);
+  const near = fleet.near([0, 0], 15_000, 100.2, 0.2);
+  const drawn = fleet.drawn(near, 1, still, 0, 0.1, 3);
+  const furled = (ship: DrawnShip | undefined) =>
+    ship?.rig
+      .canvas()
+      .every((points, index) =>
+        points.every((point, at) => Math.abs(point - (ship.rig.sails[index]?.stowed[at] ?? 0)) < 1e-3),
+      );
+  const [lying, under] = [1, -1].map((side) => drawn.find((ship) => Math.sign(ship.place.x) === side));
+  assert.ok(lying && under, 'both drawn');
+  assert.equal(furled(lying), true, 'at anchor: furled');
+  assert.equal(furled(under), false, 'under way: set');
 });

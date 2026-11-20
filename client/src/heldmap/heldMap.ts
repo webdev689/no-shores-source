@@ -392,6 +392,11 @@ export class HeldMap {
       current: this.key,
     });
     this.key = lettering.key;
+    // A click picks a mark where it is drawn: a node's moved clear of a port or ruin it stood on.
+    this.placed = this.placed.map((each, index) => {
+      const letter = lettering.letters[index];
+      return letter ? { ...each, x: letter.x, y: letter.y } : each;
+    });
     return lettering;
   }
 

@@ -1,3 +1,4 @@
+import { SHADOW_WGSL } from '../shadow.ts';
 import { HULL_WGSL } from './hullMask.ts';
 import { SHELTER_WGSL } from './seaWeather.ts';
 import { SHARED_WGSL, WATER_WGSL } from './waterCommon.ts';
@@ -16,6 +17,7 @@ ${WATER_WGSL}
 ${HULL_WGSL}
 ${WAKE_WGSL}
 ${SHELTER_WGSL}
+${SHADOW_WGSL}
 
 fn eye_fresh() -> bool {
   return frame.coarse_area.y > 0.5;
@@ -251,17 +253,22 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let thick = clamp(crest * 0.9 + 0.35, 0.0, 1.0) * select(1.0, 0.25, fresh);
   colour += SEA_GLOW * thick * (0.06 + 0.35 * back_lit) * (0.6 + 0.4 * max(dot(normal, SUN), 0.0));
 
+  // In a shadow (a ship's, beside her waterline) the surface loses the sun's glints and part of the light it scatters
+  // and reflects, as water in shade does.
+  let sun = sunlit(surface.drawn, vec3f(0.0, 0.0, 1.0));
+  colour *= 1.0 - 0.35 * (1.0 - sun);
+
   let facing_eye = max(dot(normal, to_eye), 0.0);
   let shine = smoothstep(0.0, 0.35, through) * (0.02 + 0.98 * pow(1.0 - facing_eye, 5.0));
   let bounced = reflect(-to_eye, normal);
-  colour = mix(colour, sky(vec3f(bounced.xy, max(bounced.z, 0.03)), frame.eye.w, rough), shine);
+  colour = mix(colour, sky(vec3f(bounced.xy, max(bounced.z, 0.03)), frame.eye.w, rough) * (0.65 + 0.35 * sun), shine);
   let half_way = normalize(to_eye + SUN);
   // Far off, where a pixel spans many small waves, the glints blur into the sun's glitter path.
   let sharpness = mix(900.0, 120.0, smoothstep(0.05, 2.0, footprint));
   let glint = pow(max(dot(normal, half_way), 0.0), sharpness) * sharpness / 90.0 + pow(max(dot(normal, half_way), 0.0), 60.0) * 0.3;
-  colour += SUN_LIGHT * glint * (1.0 - foam) * smoothstep(0.0, 0.2, through);
+  colour += SUN_LIGHT * glint * sun * (1.0 - foam) * smoothstep(0.0, 0.2, through);
 
-  let foam_light = FOAM * (0.62 + 0.38 * max(dot(normal, SUN), 0.0)) + ZENITH * 0.06;
+  let foam_light = FOAM * (0.62 + 0.38 * max(dot(normal, SUN), 0.0) * sun) + ZENITH * 0.06;
   colour = mix(colour, foam_light, foam);
   // Past its edge the water gives way to what the backdrop drew there.
   let land = aerial(textureLoad(scene_colour, vec2i(pixel), 0).rgb, normalize(ray_through(pixel)), scene_distance(pixel));
