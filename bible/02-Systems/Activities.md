@@ -243,7 +243,9 @@ One engine counts both, since the owner's side quests and the board's bounties a
   gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken today.
   Then the Bounties under the day's reset: each of the day's six as the gear last carried it, "Not taken", its count,
   "Done. Turn it in at the bounty board." or "Turned in", with no press, or before the prologue the board's shut line
-  alone. Quests stand under it marked Later.
+  alone. Gear of another day than the page's (at sea, the last land's gear is kept through the reset) shows no board,
+  only "Six a day, from the board in Overlook’s plaza.", as before any room sent one. Quests stand under it marked
+  Later.
 - **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), where each
   bounty is taken and turned in.
 - **At a dungeon's entrance**, E opens a card ([[Interface]], "At a dungeon's entrance"): the run's tier and level,

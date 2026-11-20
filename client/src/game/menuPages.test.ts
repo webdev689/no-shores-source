@@ -59,11 +59,16 @@ test('This Week’s Bounties shows the board as the gear carried it, with no pre
     day: 20_778,
     bounties: [bounty('Sink or take 3 ships.', 3, true), bounty('Clear 3 dungeons.', 1, true)],
   } as unknown as Parameters<typeof weekBountiesOf>[0];
-  root.append(thisWeekPage(thisWeekOf(drawn, null, null, named, weekBountiesOf(gear))) as never);
+  root.append(thisWeekPage(thisWeekOf(drawn, null, null, named, weekBountiesOf(gear, drawn.day))) as never);
   for (const words of ['Sink or take 3 ships.', 'Done. Turn it in at the bounty board.', 'Clear 3 dungeons.', '1 / 3'])
     assert.ok(root.find(words), words);
   assert.ok(!root.find('Take') && !root.find('Turn in'), 'taken and turned in at the board alone');
-  const shut = weekBountiesOf({ ...gear, prologueDone: false } as typeof gear);
+  const shut = weekBountiesOf({ ...gear, prologueDone: false } as typeof gear, drawn.day);
   root.replaceChildren(thisWeekPage(thisWeekOf(drawn, null, null, named, shut)) as never);
   assert.ok(root.find('The bounty board opens after the prologue.'));
+  // At sea after the reset the gear is still the last land's, of yesterday's board.
+  const yesterday = weekBountiesOf({ ...gear, day: 20_777 } as typeof gear, drawn.day);
+  root.replaceChildren(thisWeekPage(thisWeekOf(drawn, null, null, named, yesterday)) as never);
+  assert.ok(root.find('Six a day, from the board in Overlook’s plaza.'), 'not yet known today');
+  assert.ok(!root.find('Sink or take 3 ships.') && !root.find('Done. Turn it in at the bounty board.'), 'no rows');
 });

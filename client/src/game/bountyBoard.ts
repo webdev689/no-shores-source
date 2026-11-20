@@ -44,11 +44,13 @@ export function payWords(gear: GearState): string {
   return `Each pays ${earned.toLocaleString()} XP and ${aurem.toLocaleString()} Aurem when turned in.`;
 }
 
-/** This Week's Bounties: the same rows without their presses, or the board's shut line alone before the prologue;
- *  null before a room sent a board. */
-export function weekBountiesOf(gear: GearState | null): WeekBounties | null {
+/** This Week's Bounties on the page's `day`: the same rows without their presses, or the board's shut line alone
+ *  before the prologue; null before a room sent a board, or while the gear is of another day's board (at sea, the
+ *  last land's gear is kept through the reset). */
+export function weekBountiesOf(gear: GearState | null, day: number): WeekBounties | null {
   if (!gear?.bounties) return null;
   if (gear.prologueDone === false) return { rows: [], shut: SHUT };
+  if (gear.day !== day) return null;
   const said = { open: 'Not taken', done: 'Done. Turn it in at the bounty board.', paid: 'Turned in' } as const;
   const rows = bountyRows(gear).map((row) => {
     const state = row.state === 'held' ? row.progress : said[row.state];

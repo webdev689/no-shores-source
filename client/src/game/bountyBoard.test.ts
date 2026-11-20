@@ -47,7 +47,7 @@ test('each of the day’s bounties is taken, counted, turned in once done, and t
 });
 
 test('This Week shows the same bounties without their presses, or the board shut until the prologue', () => {
-  const week = weekBountiesOf(gear);
+  const week = weekBountiesOf(gear, 20_778);
   assert.deepEqual(
     week?.rows.slice(0, 4).map((row) => [row.name, row.state]),
     [
@@ -58,10 +58,11 @@ test('This Week shows the same bounties without their presses, or the board shut
     ],
   );
   assert.equal(week?.shut, null);
-  assert.deepEqual(weekBountiesOf({ ...gear, prologueDone: false }), {
+  assert.deepEqual(weekBountiesOf({ ...gear, prologueDone: false }, 20_778), {
     rows: [],
     shut: 'The bounty board opens after the prologue.',
   });
-  assert.equal(weekBountiesOf({ ...gear, bounties: undefined }), null, 'no board sent yet');
-  assert.equal(weekBountiesOf(null), null);
+  assert.equal(weekBountiesOf({ ...gear, bounties: undefined }, 20_778), null, 'no board sent yet');
+  assert.equal(weekBountiesOf(null, 20_778), null);
+  assert.equal(weekBountiesOf({ ...gear, day: 20_777 }, 20_778), null, 'yesterday’s gear read today: not yet known');
 });
