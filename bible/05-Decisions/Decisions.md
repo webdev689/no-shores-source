@@ -126,6 +126,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]
 - [[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]
 - [[The Held Map Colours Each Water's Name by Its Difficulty]]
+- [[The Sea as Claude Shapes It]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

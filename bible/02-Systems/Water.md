@@ -23,7 +23,7 @@ code:
 
 The sea, the lakes and the rivers over the [[Land]], in stylised realism ([[The Water Is Stylised Realism]]). The
 World Editor's 3D view draws it, and its walker wades, swims and dives in it. DFO's water was a reference for ideas;
-none of its code came over.
+none of its code came over. The sea's weather, swell and wakes are tuned as Claude chose ([[The Sea as Claude Shapes It]]).
 
 ## The swell
 

@@ -85,7 +85,7 @@ distance, never reached. Each island has one major port city; Saltmere's is Over
 
 ## Waters
 
-The sea is split into nine waters, one an island ([[The Waters Come From the Islands]]). The `world` crate judges them
+The sea is split into nine waters, one an island ([[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]). The `world` crate judges them
 (`waters.rs`):
 
 - A point of sea belongs to the island whose coast (its continent's outline) is nearest, by straight-line distance in

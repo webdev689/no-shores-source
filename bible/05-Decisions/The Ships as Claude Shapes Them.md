@@ -34,7 +34,7 @@ Claude's choice of every ship type, for the sea the owner approved
   own colours, the Grey Tithe's grey and ash, the pirates' black and red, a merchant's bare wood and cream. No faction
   needs a model of its own.
 - **Rank picks the hull** for a hostile ship: Minor and Major the Sloop, Elite the Schooner, Miniboss the Brig, Boss
-  the Frigate, Thule the Tithe Ram. Today both factions sail the Sloop at every rank ([[Naval Combat]]).
+  the Frigate, Thule the Tithe Ram ([[Naval Combat]]).
 - **The player's hulls** are the Sloop, the Schooner, the Brig and the Frigate: gear, chosen for speed or weight, as
   the ship as gear has it.
 - **Every hull keeps the Sloop's style** ([[Hulls]], "The Sloop's style").
