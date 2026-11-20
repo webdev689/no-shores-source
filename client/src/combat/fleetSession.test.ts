@@ -214,8 +214,13 @@ test('a session whose link joins a new fleet puts her to sea again where she lay
 
 test("a fleet room's events reach the feel by each ship's own number, the sea's kinds by the one mapping", () => {
   const none = [0, 0, 0] as const;
-  const told = (kind: NavalEvent['kind'], ship: number, detail = 0, point: readonly number[] = none, striker = 0) =>
-    ({ tick: 3n, kind, ship, by: striker, detail, side: 0, point, launch: [40, 0, 2], left: 5 }) as NavalEvent;
+  const told = (
+    kind: NavalEvent['kind'],
+    ship: number,
+    detail = 0,
+    point: readonly [number, number, number] = none,
+    striker = 0,
+  ) => ({ tick: 3n, kind, ship, by: striker, detail, side: 0, point, launch: [40, 0, 2], left: 5 }) as NavalEvent;
   const felt = fleetFeel([
     told('muzzle', 12, 0, [1, 2, 3]),
     told('struck-at', 31, 1, [2, -3, 1.5]),
