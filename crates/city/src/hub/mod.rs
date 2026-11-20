@@ -29,12 +29,14 @@ const SPAWN_TOWARD_M: f64 = 56.0;
 /// The parapet's thickness, metres.
 const PARAPET_THICK_M: f64 = 0.8;
 
-/// Everything the hub stands, gathered as its parts are laid: solids, stations, Shape's places.
+/// Everything the hub stands, gathered as its parts are laid: solids, stations, Shape's places, and every stood
+/// module's sockets by its name, where the townsfolk's posts are laid (`folk`).
 #[derive(Debug, Default)]
 pub(crate) struct Laid {
     pub solids: Vec<Solid>,
     pub stations: Vec<Station>,
     pub spots: Vec<[f64; 2]>,
+    pub sockets: Vec<(String, String, [f64; 3], [f64; 2])>,
 }
 
 impl Laid {
@@ -42,6 +44,7 @@ impl Laid {
     /// facing out of its `counter`, which is where a player comes to it.
     pub fn stall(&mut self, kind: StationKind, stood: Option<Stood>) {
         let Some(stood) = stood else { return };
+        self.keep_sockets(&stood);
         if let (Some((keeper, _)), Some((counter, facing))) = (stood.socket("keeper"), stood.socket("counter")) {
             let facing = crate::landmarks::turn_toward(facing);
             self.stations.push(Station {
@@ -57,8 +60,24 @@ impl Laid {
     /// Takes a stood module's solids.
     pub fn piece(&mut self, stood: Option<Stood>) {
         if let Some(stood) = stood {
+            self.keep_sockets(&stood);
             self.solids.extend(stood.solids);
         }
+    }
+
+    fn keep_sockets(&mut self, stood: &Stood) {
+        for (socket, at, facing) in &stood.sockets {
+            self.sockets.push((stood.name.clone(), socket.clone(), *at, *facing));
+        }
+    }
+
+    /// Every socket of the stood modules called `module` named `socket`, in the order they were laid.
+    pub fn sockets_of(&self, module: &str, socket: &str) -> Vec<([f64; 3], [f64; 2])> {
+        self.sockets
+            .iter()
+            .filter(|(name, own, _, _)| name == module && own == socket)
+            .map(|(_, _, at, facing)| (*at, *facing))
+            .collect()
     }
 }
 

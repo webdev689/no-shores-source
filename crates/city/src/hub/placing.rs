@@ -5,9 +5,10 @@ use crate::landmarks::turn_toward;
 use crate::modules::{Module, all, number_of, solids};
 use crate::solids::{Shape, Solid};
 
-/// A module stood in the world: its solids, and each of its sockets' point and the way it faces out.
+/// A module stood in the world: its name, its solids, and each of its sockets' point and the way it faces out.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Stood {
+    pub name: String,
     pub solids: Vec<Solid>,
     pub sockets: Vec<(String, [f64; 3], [f64; 2])>,
 }
@@ -68,5 +69,5 @@ pub fn stand_at(name: &str, socket: &str, at: [f64; 2], level: f64, facing: [f64
             (each.name.clone(), [foot[0] + point[0], foot[1] + point[1], level + point[2]], [out[0], out[1]])
         })
         .collect();
-    Some(Stood { solids: solids(number, foot, turn), sockets })
+    Some(Stood { name: name.to_owned(), solids: solids(number, foot, turn), sockets })
 }
