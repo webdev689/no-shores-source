@@ -151,6 +151,9 @@ pub struct Network<'layout> {
 
 /// How far apart two areas' reaches stand at most for the way between them to open out into one floor, metres.
 const MERGE_GAP_M: f64 = 120.0;
+/// How far apart a way's points lie at most as it is graded, metres: well inside `heights::BESIDE_M`, so a way crossing
+/// another has a point near one of the other's.
+const GRADED_STEP_M: f64 = 5.0;
 /// A gate's cleft's reach where the brief asks for heights, metres: its arch and palisade's, with a little to spare.
 const GATE_CLEFT_M: f64 = 14.0;
 /// A pocket's half-width, metres: room round a resource and a way into it from the path.
@@ -238,18 +241,31 @@ pub fn carve(
     let (mut terraces, mut raised): (Vec<[f64; 7]>, Vec<[f64; 7]>) = (Vec::new(), Vec::new());
     // With heights, a ruin's spokes rise or fall from its middle to tiers of their own; a hamlet's blocks stand on
     // terraces of their own (its basin's), on its floor at its level.
-    let held = crate::heights::floors_of(&basins, areas, (levels, rise, heights), (&mut floors, &mut raised));
+    let held = crate::heights::floors_of(&basins, (areas, paths), (levels, rise, heights), (&mut floors, &mut raised));
 
+    // With heights each way is graded and carved on points no more than `GRADED_STEP_M` apart, so two ways that cross
+    // or run side by side always have points near enough to be graded as one (`heights::graded`).
+    let ways: Vec<Path> = paths
+        .iter()
+        .map(|path| {
+            if !heights {
+                return path.clone();
+            }
+            let line: Vec<(f64, f64)> = path.points.iter().map(|&[x, y]| (x, y)).collect();
+            let points = land::ground::densify(&line, GRADED_STEP_M).into_iter().map(|(x, y)| [x, y]).collect();
+            Path { points, heights: Vec::new(), ..path.clone() }
+        })
+        .collect();
     let grades = if levels.iter().any(|&level| level > 0.0) {
-        crate::heights::graded(paths, joined, &|at| crate::heights::on_capsules(&held, at), (levels, rise))
+        crate::heights::graded(&ways, joined, &|at| crate::heights::on_capsules(&held, at), (levels, rise))
     } else {
         Vec::new()
     };
     let graded = |number: usize, point: [f64; 2]| {
-        let found = paths[number].points.iter().position(|&each| each == point);
+        let found = ways[number].points.iter().position(|&each| each == point);
         found.and_then(|index| grades.get(number).map(|levels| levels[index])).unwrap_or(0.0)
     };
-    for (number, path) in paths.iter().enumerate() {
+    for (number, path) in ways.iter().enumerate() {
         // Its points kept wherever it bends on the ground or in height, so each capsule runs one stretch of its grade.
         let levels = grades.get(number);
         let metres: Option<Vec<f64>> = levels.map(|levels| levels.iter().map(|level| level * rise).collect());
@@ -273,14 +289,19 @@ pub fn carve(
         }
     }
     floors.extend_from_slice(meadows);
+    // The passages the outcrops keep off as they keep off the ways: a ruin's spokes, the gorges out, the pockets, the
+    // caverns.
+    let mut passages: Vec<[f64; 5]> = crate::heights::spokes(&basins, areas, heights);
     for &(from, way) in exits {
-        floors.push(gorge(field, from, way, FOOTPATH_HALF_M + 3.0));
+        let cut = gorge(field, from, way, FOOTPATH_HALF_M + 3.0);
+        floors.push(cut);
+        passages.push(cut);
     }
     // A pocket opens off its way at the way's level there.
     for &pocket in pockets {
         let mouth = nearest_on(paths, pocket).unwrap_or(pocket);
         let level = (0..paths.len())
-            .flat_map(|number| paths[number].points.iter().map(move |&point| (number, point)))
+            .flat_map(|number| ways[number].points.iter().map(move |&point| (number, point)))
             .min_by(|first, second| distance(first.1, mouth).total_cmp(&distance(second.1, mouth)))
             .map_or(0.0, |(number, point)| graded(number, point));
         if level > 0.0 {
@@ -288,6 +309,7 @@ pub fn carve(
         } else {
             floors.push([mouth[0], mouth[1], pocket[0], pocket[1], POCKET_HALF_M]);
         }
+        passages.push([mouth[0], mouth[1], pocket[0], pocket[1], POCKET_HALF_M]);
     }
     // Each terrace stands its area's level higher; a ramp's foot (a terrace's level 0 end) meets the land under it,
     // which may be a way graded to another level.
@@ -305,6 +327,7 @@ pub fn carve(
         crate::caverns::find(field, areas, levels, (&claim, &floors, &terraces, &raised), (rise, seed))
     };
     floors.extend(caverns.iter().flat_map(crate::caverns::Cavern::floors));
+    passages.extend(caverns.iter().flat_map(crate::caverns::Cavern::floors));
     let bare = Sculpts::from(vec![Sculpt {
         claim: claim.clone(),
         floors: floors.clone(),
@@ -320,7 +343,7 @@ pub fn carve(
     }]);
     let mut climbs = crate::climbs::climbs(field, areas, &bare, rise, seed);
     climbs.extend(terraces);
-    let outcrops = outcrops(areas, Ways { paths, climbs: &climbs }, seating, (shape, rise), seed);
+    let outcrops = outcrops(areas, Ways { paths, climbs: &climbs, passages: &passages }, seating, (shape, rise), seed);
     let (runs, wings, levels, terraced) = (Vec::new(), Vec::new(), raised, heights);
     let roofed = caverns.iter().flat_map(crate::caverns::Cavern::floors).collect();
     let sculpt = Sculpt { claim, floors, outcrops, rise, seed, climbs, runs, wings, levels, terraced, roofed };
@@ -350,6 +373,7 @@ const UNDER_RISE: f64 = 0.8;
 struct Ways<'layout> {
     paths: &'layout [Path],
     climbs: &'layout [[f64; 7]],
+    passages: &'layout [[f64; 5]],
 }
 
 /// The outcrops of a layout's open ground, of its shape and sized to it: three to five in each wilds and arena, a pair
@@ -357,7 +381,7 @@ struct Ways<'layout> {
 /// and a tor leans), its footprint never on a way, a building, a prop, a solid or another outcrop. Each later try is
 /// smaller, so an outcrop is as large as the room left round it lets it be.
 fn outcrops(areas: &[Area], ways: Ways, seating: &Seating, (shape, rise): (Shape, f64), seed: u32) -> Vec<Outcrop> {
-    let Ways { paths, climbs } = ways;
+    let Ways { paths, climbs, passages } = ways;
     let (least, most, low, high) = size_of(shape);
     let mut found: Vec<Outcrop> = Vec::new();
     let mut draw = 0_i64;
@@ -412,7 +436,10 @@ fn outcrops(areas: &[Area], ways: Ways, seating: &Seating, (shape, rise): (Shape
                 segments_apart([first, last], [other_first, other_last]) > (reach + other_reach) * 1.1 + 6.0
             });
             let clear_of_middle = off_line(area.at, first, last) > reach + 10.0;
-            let clear = clear_of_paths && clear_of_climbs && clear_of_buildings && clear_of_solids;
+            let clear_of_passages = passages.iter().all(|&[x1, y1, x2, y2, half]| {
+                segments_apart([first, last], [[x1, y1], [x2, y2]]) > half + reach + 3.0
+            });
+            let clear = clear_of_paths && clear_of_climbs && clear_of_passages && clear_of_buildings && clear_of_solids;
             if clear && clear_of_others && clear_of_middle {
                 found.push(outcrop);
                 placed += 1;

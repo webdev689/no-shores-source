@@ -12,6 +12,9 @@ use crate::paths::{Path, off_line};
 
 /// How near two points of different ways must lie to be held at one level, metres.
 const BESIDE_M: f64 = 10.0;
+/// How far from a river crossing's banks a way is held at the land's own level, metres: past where the river's banks
+/// blend into the land.
+const CROSSING_HELD_M: f64 = land::ground::BANK_M + 2.0;
 /// The steepest a way climbs to a place over it, a rise a metre: under a track's 0.18 where the massif's local height
 /// stands its highest, 1.15 times its own.
 pub const STEEPEST: f64 = 0.14;
@@ -82,7 +85,15 @@ pub fn graded(
         })
         .collect();
     let way_of = |point: usize| starts.iter().rposition(|&start| start <= point).unwrap_or(0);
-    let held: Vec<Option<f64>> = points.iter().map(|&at| held_at(at)).collect();
+    // A way crossing a river comes down to the land's own level at its bridge, where the river keeps its banks
+    // whatever the carving round it; elsewhere a point is held where `held_at` holds it.
+    let crossing = |at: [f64; 2]| {
+        paths
+            .iter()
+            .flat_map(|path| &path.crossings)
+            .any(|&[first, second]| off_line(at, first, second) <= CROSSING_HELD_M)
+    };
+    let held: Vec<Option<f64>> = points.iter().map(|&at| if crossing(at) { Some(0.0) } else { held_at(at) }).collect();
     let lower = |way: usize| joined.get(way).map_or(0.0, |&[from, to]| levels[from].min(levels[to]));
     let mut level: Vec<f64> =
         (0..points.len()).map(|point| held[point].unwrap_or_else(|| lower(way_of(point)))).collect();
@@ -174,11 +185,12 @@ pub(crate) fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -
 }
 
 /// Each basin's floors as carved, at its area's level: at the land's own level as `floors`, else as raised floors
-/// (`raised`); with heights a ruin's tiered. Returns them all, with their levels, as the ways' grading holds
+/// (`raised`); with heights a ruin's tiered, but for a spoke a way runs through past its plaza, which keeps the
+/// plaza's level so the way crosses no tier's edge. Returns them all, with their levels, as the ways' grading holds
 /// them.
 pub fn floors_of(
     basins: &[crate::basins::Basin],
-    areas: &[Area],
+    (areas, paths): (&[Area], &[Path]),
     (levels, rise, heights): (&[f64], f64, bool),
     (floors, raised): (&mut Vec<[f64; 5]>, &mut Vec<[f64; 7]>),
 ) -> Vec<[f64; 7]> {
@@ -198,12 +210,17 @@ pub fn floors_of(
                 let share = if length > 0.0 { along / length } else { 0.0 };
                 [near[0] + (far[0] - near[0]) * share, near[1] + (far[1] - near[1]) * share]
             };
-            let capsules = if tiered && number > 0 {
+            let flat = plaza.min(length * 0.4);
+            let walked = paths.iter().any(|path| {
+                path.points
+                    .windows(2)
+                    .any(|pair| crate::paths::segments_apart([pair[0], pair[1]], [at(flat), far]) <= half + TIER_ROOM_M)
+            });
+            let capsules = if tiered && number > 0 && !walked {
                 // Each spoke runs on at the plaza's level to its edge, then a ramp up or down, at the steepest a track
                 // takes, to a flat tier where its block stands, so no building is tilted across a slope; a spoke too
                 // short for its ramp takes a lower tier. The tier reaches past the spoke's own reach, so what stands on
                 // it keeps room before its doors before its edge blends down into the plaza or the spoke beside it.
-                let flat = plaza.min(length * 0.4);
                 let most = (length - flat) * 0.6 * STEEPEST / rise;
                 let step = TIERS[(number - 1) % TIERS.len()].clamp(-most, most);
                 let tier = (level + step).clamp(0.0, 0.95);
@@ -215,7 +232,7 @@ pub fn floors_of(
                     [top[0], top[1], far[0], far[1], half + TIER_ROOM_M, tier, tier],
                 ]
             } else {
-                let half = if tiered { plaza } else { half };
+                let half = if tiered && number == 0 { plaza } else { half };
                 vec![[near[0], near[1], far[0], far[1], half, level, level]]
             };
             for capsule in capsules {
@@ -229,6 +246,16 @@ pub fn floors_of(
         }
     }
     held
+}
+
+/// Each tiered ruin's spokes (with heights, a ruin's basin floors but its plaza), from its plaza to its tier's far end
+/// and as wide as the tier: walked from the plaza, so the outcrops keep off them as off a way.
+pub(crate) fn spokes(basins: &[crate::basins::Basin], areas: &[Area], heights: bool) -> Vec<[f64; 5]> {
+    let ruins = basins.iter().zip(areas).filter(|(_, area)| heights && area.kind == AreaKind::Ruin);
+    ruins
+        .flat_map(|(basin, _)| basin.floors.iter().skip(1))
+        .map(|&[x1, y1, x2, y2, half]| [x1, y1, x2, y2, half + TIER_ROOM_M])
+        .collect()
 }
 
 /// The level of the basin floor under a point, as a share of the massif's height: of the first of the capsules
@@ -315,6 +342,23 @@ mod tests {
         }
         assert!((levels[4] - 0.1).abs() < 1e-9, "away from the higher place the way keeps the lower's level");
         assert!(levels[17] > 0.45, "near the higher place it has ramped up: {}", levels[17]);
+    }
+
+    #[test]
+    fn a_way_between_two_places_up_high_comes_down_to_the_land_at_a_river_it_crosses() {
+        // 400 m between them, room for the ramp down from either (0.6 of 28 m at a track's steepest is 120 m).
+        let basins = [basin_at([0.0, 0.0]), basin_at([400.0, 0.0])];
+        let held = held_by(&basins, &[0.6, 0.6]);
+        let points: Vec<[f64; 2]> = (0..=40).map(|step| [f64::from(step) * 10.0, 0.0]).collect();
+        let crossing = Path { crossings: vec![[[196.0, 0.0], [204.0, 0.0]]], ..way(&points) };
+        let graded = graded(&[crossing], &[[0, 1]], &held, (&[0.6, 0.6], 28.0));
+        let levels = &graded[0];
+        assert!(levels[20].abs() < 1e-9, "at the bridge the way stands at the land's level: {}", levels[20]);
+        assert!((levels[0] - 0.6).abs() < 1e-9 && (levels[40] - 0.6).abs() < 1e-9, "each end at its place's level");
+        for pair in levels.windows(2) {
+            let grade = (pair[1] - pair[0]).abs() * 28.0 / 10.0;
+            assert!(grade <= STEEPEST + 1e-9, "it ramps down and up no steeper than a track: {grade}");
+        }
     }
 
     #[test]

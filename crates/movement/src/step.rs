@@ -305,10 +305,12 @@ fn on_ground<B: Near + ?Sized>(
             ..next
         };
     }
-    // Pressing into a wall too high to grab, the body takes hold of it and climbs.
+    // Pressing into a wall too high to grab, the body takes hold of it and climbs: standing to, so not where a crouched
+    // body has no room to stand.
     let wall = if controls.forward > 0.0 && !controls.mounted { wall_ahead(blocks, &next, controls.yaw) } else { None };
+    let can_stand = !next.crouched || room_to_stand(blocks, next.x, next.y, next.z);
     match wall {
-        Some(wall) if wall.block.top - next.z > TUNING.reach && !moving => {
+        Some(wall) if wall.block.top - next.z > TUNING.reach && !moving && can_stand => {
             Body { mode: Mode::Climb, facing: controls.yaw, lip: wall.block.top, crouched: false, ..next }
         }
         _ => next,

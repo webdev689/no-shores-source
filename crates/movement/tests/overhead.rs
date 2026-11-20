@@ -146,3 +146,17 @@ fn a_ceiling_never_holds_a_falling_body_up() {
     assert_eq!(under_ceiling(&[high], 0.0, 0.0, 1.0, 0.9, TUNING.height), 0.9);
     assert_eq!(under_ceiling(&[high], 0.0, 0.0, 0.0, 1.0, TUNING.height), high.bottom - TUNING.height);
 }
+
+#[test]
+fn a_crouched_body_under_a_low_slab_pressing_into_a_wall_neither_stands_nor_climbs() {
+    // A crawlspace 1.2 m high, ended by a wall too tall to reach.
+    let crawlspace = slab(-1.5, 2.0, 1.2, 1.5);
+    let wall = Block { min_x: -2.0, min_y: -2.5, max_x: 2.0, max_y: -1.5, top: 5.0, bottom: 0.0 };
+    let crouched = Body { crouched: true, crouch: 1.0, ..standing(0.0, 0.0) };
+    let bodies = run(crouched, NORTH, 120, &[crawlspace, wall]);
+    assert!(
+        bodies.iter().all(|body| body.crouched && body.mode == Mode::Ground),
+        "it stood up into the slab or climbed: {:?}",
+        bodies.iter().find(|body| !body.crouched || body.mode != Mode::Ground)
+    );
+}

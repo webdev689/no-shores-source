@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { cross, dot, emptyMesh, type MeshData, minus } from './mesh.ts';
 import type { Solid, SolidShape } from './plan.ts';
 import { rockMesh } from '../rules/rockMesh.ts';
-import { meshSolid, SOLID_TEXELS_PER_METRE, solidTurn } from './solidMesh.ts';
+import { meshSolid, SOLID_TEXELS_PER_METRE, solidTurn, stretchedNormal } from './solidMesh.ts';
 
 const SURFACE = { layer: 7, width: 64, height: 128 };
 
@@ -129,4 +129,14 @@ test('a rock is meshed as a solid, lit flat and wound out of it', () => {
   }
   assert.ok(volume > 0.2 * 10 * 7 * 6, `${volume}`);
   assert.ok(mesh.layers.every((layer) => layer === 3));
+});
+
+test('a stretched module keeps its normals square to its stretched surface', () => {
+  // A bevel at 45 degrees on a stair pressed down to three quarters of its height leans further from the vertical.
+  const [x, y, z] = stretchedNormal([Math.SQRT1_2, 0, Math.SQRT1_2], 0.75);
+  assert.ok(Math.abs(Math.hypot(x, y, z) - 1) < 1e-9, 'it stays a unit normal');
+  assert.ok(Math.abs(z / x - 1 / 0.75) < 1e-9, `its slope is scaled by the stretch's inverse: ${z / x}`);
+  // A surface facing straight up or straight out keeps its way.
+  assert.deepEqual(stretchedNormal([0, 0, 1], 0.75), [0, 0, 1]);
+  assert.deepEqual(stretchedNormal([1, 0, 0], 0.75), [1, 0, 0]);
 });

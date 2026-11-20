@@ -36,11 +36,16 @@ def course(module, half, base, high, keep=0.86):
                 kit.block(module, (spot[0], spot[1], base), worn, 'stone', bevel=0.07, wear=0.08, part=False,
                           turn=module.draw(-0.015, 0.015))
             else:
+                # Fallen off the rim onto the ground its tier stands on, at its tier's base.
                 out = {0: (0, -1), 1: (1, 0), 2: (0, 1), 3: (-1, 0)}[side]
-                fallen = (spot[0] + out[0] * 1.6, spot[1] + out[1] * 1.6, base - high)
+                fallen = (spot[0] + out[0] * 1.6, spot[1] + out[1] * 1.6, base)
                 kit.block(module, fallen, (size[0] * 0.8, size[1] * 0.9, high * 0.6), 'stone',
                           turn=module.draw(-0.5, 0.5), wear=0.08, part=False)
-                kit.rock(module, (spot[0], spot[1], base + high * 0.4), (0.9, 0.8, 0.5), module.draw(0, 99), part=False, detail=2)
+                # Its place filled with rubble nearly to the top, where the tier's part stands whole.
+                kit.block(module, (spot[0], spot[1], base), (size[0] - 0.1, size[1] - 0.1, high - 0.06), 'rubble',
+                          bevel=0.0, wear=0.0, part=False)
+                kit.rock(module, (spot[0], spot[1], base + high - 0.25), (0.9, 0.8, 0.3), module.draw(0, 99),
+                         part=False, detail=2)
 
 
 def slabs(module, half, top, inner):

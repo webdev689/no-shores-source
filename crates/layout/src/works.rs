@@ -27,6 +27,9 @@ const WORKS_APART_M: f64 = 250.0;
 /// Where the carving first raises the floor this much, metres, is a cliff's foot (rocks.rs FOOT_RISE_M).
 const FOOT: f64 = crate::rocks::FOOT_RISE_M;
 
+/// The widest a canyon is measured, metres, either side of its way.
+const MOST_HALF_M: f64 = 200.0;
+
 /// Where a work stands: a canyon's middle, its way and its half-width there.
 type Place = ([f64; 2], [f64; 2], f64);
 
@@ -80,16 +83,35 @@ fn clear_of_outcrops(run: &Run, outcrops: &[Outcrop]) -> bool {
 /// longest path's and a natural arch over a third, each clear of the outcrops.
 /// `paths` are the ways the works are set on; `kept`, every way they keep off, the climbs' among them.
 pub fn build(kit: &mut Kit, areas: &[Area], (paths, kept): (&[Path], &[Path]), outcrops: &[Outcrop], carved: &Sculpts) {
+    // Each run's canyon as carved: a way opened into one floor between near places, or a floor's wander, is as wide
+    // as the land makes it, not as wide as the way alone would cut it.
+    let carved_half = |(middle, way, length, half): Run| -> Run {
+        let across = [-way[1], way[0]];
+        let side = |sign: f64| {
+            let mut out = 0.0;
+            while out < MOST_HALF_M
+                && carved.floor_distance(middle[0] + across[0] * sign * out, middle[1] + across[1] * sign * out) <= 0.0
+            {
+                out += 0.5;
+            }
+            out
+        };
+        (middle, way, length, half.max(side(1.0)).max(side(-1.0)))
+    };
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
-        .filter_map(|path| longest_run(path, areas).map(|run| (path.tier, run)))
+        .filter_map(|path| longest_run(path, areas).map(|run| (path.tier, carved_half(run))))
         .filter(|(_, run)| run.2 > 50.0 && between_areas(areas, run.0) && clear_of_outcrops(run, outcrops))
         .collect();
     runs.sort_by(|first, second| second.1.2.total_cmp(&first.1.2));
-    let wall = runs.iter().find(|(tier, _)| *tier == Tier::Track).or(runs.first()).copied();
-    if let Some((tier, (middle, way, _, half))) = wall {
-        great_wall(kit, (middle, way, half), tier, kept, carved);
-    }
+    // The wall across the longest track's run where it crosses no other way but at its breach, else the next run's.
+    let tracks_first = runs
+        .iter()
+        .filter(|(tier, _)| *tier == Tier::Track)
+        .chain(runs.iter().filter(|(tier, _)| *tier != Tier::Track));
+    let wall = tracks_first
+        .copied()
+        .find(|&(tier, (middle, way, _, half))| great_wall(kit, (middle, way, half), tier, kept, carved));
     // The viaduct stands well away from the wall, so each is a place of its own.
     let apart = |run: &&(Tier, Run)| wall.is_none_or(|(_, (middle, ..))| distance(middle, run.1.0) > WORKS_APART_M);
     let viaduct_at = runs.iter().find(apart).copied();
@@ -118,8 +140,8 @@ pub fn retaining_walls(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: 
 /// The great wall: a dam of ashlar across the canyon square to its way, its ends sunk into the cliffs either side,
 /// buttressed on both faces, battlemented, and broken through where the track runs, the breach's sides stepped where
 /// its courses fell and their stones heaped below. The breach opens until no piece stands on a way, and no fallen
-/// stone lies on one.
-fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path], carved: &Sculpts) {
+/// stone lies on one; where no breach up to 12 m wider clears every way, no wall is built and it returns false.
+fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path], carved: &Sculpts) -> bool {
     let run = land::sculpts::CLIFF_RUN_M;
     let floor = carved_at(kit, carved, middle);
     let across = [-way[1], way[0]];
@@ -165,7 +187,7 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Pa
     let least = tier.width() / 2.0 + BREACH_SPARE_M;
     let breach =
         (0..12).map(|wider| least + f64::from(wider)).find(|&breach| clear_of_ways(&pieces(breach), paths, floor));
-    let breach = breach.unwrap_or(least + 12.0);
+    let Some(breach) = breach else { return false };
     for piece in pieces(breach) {
         kit.solid(piece);
     }
@@ -183,6 +205,7 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Pa
             kit.solid(stone);
         }
     }
+    true
 }
 
 /// A viaduct: a deck from cliff top to cliff top across the canyon, on piers standing at the canyon's sides with

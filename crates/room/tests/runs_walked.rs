@@ -1,6 +1,6 @@
 //! Continent 1's nodes as the bake lays them, walked by the movement rules: a body walks each of Saltmere's runs from
 //! its mouth along its line to its door, and pressing on past the door gets it nowhere; up every ramp, the instances'
-//! too, onto the terrace it serves; up every climb to its lookout on the massif's top; and over every bridge, a
+//! too, onto the terrace it serves; along every ruin's spoke from its plaza onto its tier; up every climb to its lookout on the massif's top; and over every bridge, a
 //! path's or a gorge's, both ways.
 
 use layout::field::distance;
@@ -21,6 +21,8 @@ struct Zone {
     blocks: Blocks,
     runs: Vec<Run>,
     terraces: Vec<[f64; 7]>,
+    /// The ramps up each tiered ruin's spokes from its plaza to a tier (`[x1, y1, x2, y2, half, from, to]`).
+    spokes: Vec<[f64; 7]>,
     climbs: Vec<[f64; 7]>,
     bridges: Vec<Bridge>,
 }
@@ -87,6 +89,17 @@ fn bridges_of(laid: &layout::Layout) -> Vec<Bridge> {
         .collect()
 }
 
+/// The raised floors that ramp along a ruin's spokes (each of its basin's floors but its plaza), from its plaza's
+/// level to a tier's.
+fn spokes_of(laid: &layout::Layout) -> Vec<[f64; 7]> {
+    let ruins = laid.areas.iter().zip(&laid.basins).filter(|(area, _)| area.kind == layout::brief::AreaKind::Ruin);
+    let lines: Vec<[[f64; 2]; 2]> =
+        ruins.flat_map(|(_, basin)| basin.floors.iter().skip(1).map(|f| [[f[0], f[1]], [f[2], f[3]]])).collect();
+    let on_line = |[x, y]: [f64; 2]| lines.iter().any(|&[from, to]| off_line([x, y], from, to) < 0.01);
+    let ramps = laid.sculpt.levels.iter().filter(|level| level[5] != level[6]);
+    ramps.filter(|level| on_line([level[0], level[1]]) && on_line([level[2], level[3]])).copied().collect()
+}
+
 fn zones() -> Vec<Zone> {
     zones_of("continent-1")
 }
@@ -113,6 +126,7 @@ fn zones_of(id: &str) -> Vec<Zone> {
                 blocks: Blocks::new(node.boxes.iter().map(Block::from_floats).collect()),
                 runs: laid.runs.clone(),
                 terraces: laid.basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect(),
+                spokes: spokes_of(laid),
                 climbs: laid.sculpt.climbs.clone(),
                 bridges: bridges_of(laid),
             }
@@ -139,6 +153,10 @@ fn walked_on(zone: &Zone, body: movement::Body, waypoints: &[[f64; 2]], ticks: u
         }
         let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
         body = step_body(&body, &controls, &zone.blocks, &zone.floor, TICK_SECONDS);
+        // A body that climbs a face, or hangs or mantles, has not walked there: it stops short.
+        if matches!(body.mode, movement::Mode::Climb | movement::Mode::Hang | movement::Mode::Mantle) {
+            break;
+        }
     }
     (body, next)
 }
@@ -335,6 +353,30 @@ fn every_terrace_is_walked_up_its_ramps() {
         }
     }
     assert!(ramps > 0, "continent 1 has terraces");
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
+#[test]
+fn every_ruins_spoke_is_walked_from_its_plaza_up_or_down_onto_its_tier() {
+    let zones = zones();
+    let (mut walked_up, mut failed) = (0, Vec::new());
+    for zone in &zones {
+        for &[foot_x, foot_y, top_x, top_y, ..] in &zone.spokes {
+            walked_up += 1;
+            // From the plaza's edge along the ramp and on 3 m onto the tier.
+            let length = distance([foot_x, foot_y], [top_x, top_y]);
+            let on = [top_x + (top_x - foot_x) / length * 3.0, top_y + (top_y - foot_y) / length * 3.0];
+            let moved = zone.floor.height_at(on[0], on[1]) - zone.floor.height_at(foot_x, foot_y);
+            let (body, _) = walked(zone, [foot_x, foot_y], &[[top_x, top_y], on], (60.0 / TICK_SECONDS) as usize);
+            if distance([body.x, body.y], on) > THERE_M || moved.abs() < 1.0 {
+                failed.push(format!(
+                    "{}: along the spoke from {foot_x:.0},{foot_y:.0} the body stops at {:.0},{:.0}, {moved:+.1} m",
+                    zone.id, body.x, body.y
+                ));
+            }
+        }
+    }
+    assert!(walked_up >= 3, "Saltmere's ruins stand on tiers: {walked_up} spokes");
     assert!(failed.is_empty(), "{failed:#?}");
 }
 

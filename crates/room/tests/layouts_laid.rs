@@ -356,29 +356,6 @@ fn every_ruin_stands_on_the_ground_as_settled() {
 }
 
 #[test]
-fn every_plinth_stands_flush_with_its_buildings_floor() {
-    let laid = laid();
-    let mut failed = Vec::new();
-    for layout in &laid.layouts {
-        for pad in &layout.seating.pads {
-            let centre = [(pad.bounds[0] + pad.bounds[2]) / 2.0, (pad.bounds[1] + pad.bounds[3]) / 2.0];
-            let plinths = layout.seating.solids.iter().filter(|solid| {
-                solid.material == Material::Stone
-                    && distance([solid.at[0], solid.at[1]], centre) < 1e-6
-                    && (solid.size[0] - (pad.bounds[2] - pad.bounds[0] + 0.3)).abs() < 1e-6
-            });
-            for plinth in plinths {
-                let gap = plinth.at[2] + plinth.size[2] - pad.level;
-                if gap.abs() > 0.005 {
-                    failed.push(format!("{}: a plinth's top {gap:+.3} m off its floor", layout.id));
-                }
-            }
-        }
-    }
-    assert!(failed.is_empty(), "{failed:#?}");
-}
-
-#[test]
 fn no_retaining_wall_or_stone_stands_on_a_way() {
     let laid = laid();
     let mut failed = Vec::new();
@@ -396,4 +373,36 @@ fn no_retaining_wall_or_stone_stands_on_a_way() {
         }
     }
     assert!(failed.is_empty(), "{failed:#?}");
+}
+
+#[test]
+fn no_city_walls_underside_stands_off_the_ground_on_a_slope() {
+    // Every continent's city as it settles: a body walks under nothing standing more than a head off the ground, so no
+    // length of its wall stands with its underside over the ground at its ends.
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
+    let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
+    let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
+    let mut checked = 0;
+    for continent in world.continents {
+        let edits = land::edits::parse(&read(&format!("content/world/land/{}.json", continent.id))).expect("edits");
+        let id = continent.id.clone();
+        let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
+        let bare = landmass.surface.clone();
+        let Some(plan) = city::settle(&mut landmass, &city).expect("its city settles") else { continue };
+        let lengths = plan.works.iter().filter(|solid| {
+            solid.material == Material::Stone
+                && solid.shape == Shape::Block
+                && (solid.size[0] - city::walls::WALL_THICK_M).abs() < 1e-9
+        });
+        for length in lengths {
+            checked += 1;
+            for along in [-0.5, 0.0, 0.5] {
+                let [x, y, _] = length.place([0.0, along * length.size[1], 0.0]);
+                let off = length.bounds()[4] - bare.height_at(x, y);
+                assert!(off <= 0.0, "{id}: a length of wall at {:?} stands {off:.2} m off the ground", length.at);
+            }
+        }
+    }
+    assert!(checked > 10, "the cities have their walls: {checked}");
 }

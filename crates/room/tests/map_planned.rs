@@ -215,6 +215,85 @@ fn the_vales_places_stand_at_their_heights() {
 }
 
 #[test]
+fn no_way_of_saltmeres_is_carved_steeper_than_a_track_climbs() {
+    // A raised floor's level is a share of the massif's local height, its rise varied up to 1.15 times by a slow noise.
+    let most = layout::heights::STEEPEST * 1.15 + 0.02;
+    let ramp = layout::basins::RAMP_STEEPEST * 1.15 + 0.02;
+    let mut steep = Vec::new();
+    for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
+        let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
+        let bridged = |at: [f64; 2]| {
+            laid.paths
+                .iter()
+                .flat_map(|path| &path.crossings)
+                .any(|[first, second]| layout::paths::off_line(at, *first, *second) < 12.0)
+        };
+        for joined in laid.map.connections.iter().filter(|joined| joined.joined == Joined::Way) {
+            // The way's line every metre, and how far the carving raises the land there.
+            let mut line: Vec<[f64; 2]> = Vec::new();
+            for pair in joined.points.windows(2) {
+                let count = distance(pair[0], pair[1]).ceil().max(1.0) as i32;
+                line.extend((0..count).map(|step| {
+                    let share = f64::from(step) / f64::from(count);
+                    [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share]
+                }));
+            }
+            let raised: Vec<f64> = line.iter().map(|at| carved.raise(at[0], at[1], 1000.0)).collect();
+            // Over every 8 m of it; where it runs up a basin's ramp (a platform's, a shelf's, a terrace's), at the
+            // ramp's own steepest.
+            let on_ramp = |at: [f64; 2]| {
+                laid.sculpt.climbs.iter().any(|climb| {
+                    climb[5] != climb[6]
+                        && layout::paths::off_line(at, [climb[0], climb[1]], [climb[2], climb[3]]) <= climb[4]
+                })
+            };
+            for (from, to) in (0..line.len()).zip(8..line.len()) {
+                let grade = (raised[to] - raised[from]).abs() / distance(line[from], line[to]).max(1e-9);
+                let most = if on_ramp(line[from]) || on_ramp(line[to]) { ramp } else { most };
+                if grade > most && !bridged(line[from]) && !bridged(line[to]) {
+                    steep.push(format!(
+                        "{}: {} to {} climbs {grade:.2} at {:?}",
+                        laid.id, joined.from, joined.to, line[from]
+                    ));
+                    break;
+                }
+            }
+        }
+    }
+    assert!(steep.is_empty(), "{} ways: {steep:#?}", steep.len());
+}
+
+#[test]
+fn every_place_of_saltmeres_stands_at_its_briefs_height() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let briefs = bake::builders(&root).expect("the builders read").briefs;
+    for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
+        let brief = &briefs.0[&laid.id];
+        let wanted = layout::heights::levels(&laid.areas, brief);
+        let mut heights: Vec<i64> = wanted.iter().map(|level| (level * 10.0).round() as i64).collect();
+        heights.sort_unstable();
+        heights.dedup();
+        assert!(heights.len() >= 3, "{}'s places stand at {heights:?} tenths of its massif", laid.id);
+        for (((area, space), level), basin) in laid.areas.iter().zip(&laid.map.spaces).zip(wanted).zip(&laid.basins) {
+            // A place whose basin raises a terrace at its middle (a camp's mound) stands on it.
+            let mound = basin
+                .terraces
+                .iter()
+                .filter(|t| t[5] == t[6] && layout::paths::off_line(area.at, [t[0], t[1]], [t[2], t[3]]) <= t[4])
+                .fold(0.0, |high: f64, t| high.max(t[5]));
+            let level = level + mound;
+            assert!(
+                (space.level - level).abs() < 0.05,
+                "{}: {} stands at {:.2} of its massif, not {level:.2}",
+                laid.id,
+                area.name,
+                space.level
+            );
+        }
+    }
+}
+
+#[test]
 fn the_vales_coven_opens_into_a_roofed_cavern_by_a_tunnel() {
     let (layouts, ground) = laid_one();
     let laid = layouts.iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
@@ -248,8 +327,13 @@ fn the_vales_coven_opens_into_a_roofed_cavern_by_a_tunnel() {
 }
 
 #[test]
-fn each_of_the_vales_gates_closes_its_cleft_from_rock_to_rock() {
-    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+fn each_of_saltmeres_gates_closes_its_cleft_from_rock_to_rock() {
+    for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
+        gates_close(laid);
+    }
+}
+
+fn gates_close(laid: &Layout) {
     let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
     let gates = laid.areas.iter().filter(|area| area.kind == layout::brief::AreaKind::Gate);
     let mut seen = 0;
@@ -280,7 +364,7 @@ fn each_of_the_vales_gates_closes_its_cleft_from_rock_to_rock() {
             );
         }
     }
-    assert!(seen >= 3, "the Vale has its three gates");
+    assert!(seen >= 1, "{} has its gates", laid.id);
 }
 
 #[test]
@@ -355,11 +439,14 @@ fn the_vales_hamlet_steps_up_its_hillside_block_by_block() {
 }
 
 #[test]
-fn no_hamlet_building_of_saltmeres_stands_across_a_step_or_a_slope() {
+fn no_hamlet_or_ruin_building_of_saltmeres_stands_across_a_step_or_a_slope() {
     let mut across = Vec::new();
     for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
         let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
-        for hamlet in laid.areas.iter().filter(|area| area.kind == layout::brief::AreaKind::Hamlet) {
+        let stepped = |area: &&layout::areas::Area| {
+            matches!(area.kind, layout::brief::AreaKind::Hamlet | layout::brief::AreaKind::Ruin)
+        };
+        for hamlet in laid.areas.iter().filter(stepped) {
             for building in &laid.seating.buildings {
                 let [west, north, east, south] = building.footprint;
                 if distance([(west + east) / 2.0, (north + south) / 2.0], hamlet.at) > hamlet.radius {
@@ -386,8 +473,13 @@ fn no_hamlet_building_of_saltmeres_stands_across_a_step_or_a_slope() {
 }
 
 #[test]
-fn the_vales_near_places_open_into_one_floor() {
-    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+fn saltmeres_near_places_open_into_one_floor() {
+    let opened: usize =
+        continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())).map(near_places_open).sum();
+    assert!(opened > 0, "Saltmere has places near enough to open into one floor");
+}
+
+fn near_places_open(laid: &Layout) -> usize {
     let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
     let mut opened = 0;
     for way in laid.map.connections.iter().filter(|joined| joined.joined == Joined::Way) {
@@ -411,5 +503,5 @@ fn the_vales_near_places_open_into_one_floor() {
             );
         }
     }
-    assert!(opened > 0, "the Vale has places near enough to open into one floor");
+    opened
 }

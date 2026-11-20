@@ -46,11 +46,15 @@ def dripstone(module, at, radius, height, hanging=False, part=True):
 
 def build(module):
     # The shelf along the back: boulders merged into one ledge, cut flat where it is walked, sunk into the floor.
+    # Each boulder's middle set back from the shelf's front so its flat top's lip meets the shelf's part at
+    # SHELF[0]: a body steps from the stairs onto rock it sees.
+    blob_y, blob_z, blob_rz = 4.4, 0.9, 2.0
+    lip = blob_y * math.sqrt(1.0 - ((SHELF[1] - blob_z) / blob_rz) ** 2)
     blobs = []
     x = -HALF_M - 0.5
     while x < HALF_M + 0.5:
         reach = module.draw(2.6, 3.6)
-        blobs.append(((x, HALF_M - 4.0 + module.draw(-0.6, 0.6), 0.9), (reach, 4.4, 2.0)))
+        blobs.append(((x, SHELF[0] + lip, blob_z), (reach, blob_y, blob_rz)))
         x += reach * 1.3
     kit.organic(module, blobs, module.draw(0, 99), voxel=0.22, rough=0.45, triangles=3600, flat_top=SHELF[1],
                 flat_foot=-0.3)

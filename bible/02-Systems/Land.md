@@ -122,12 +122,18 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   land's own floor. `floor_share` is that level as a share of the massif's height, where a climb or a valley starts. Its raised floors
   (`levels`, capsules as climbs are) are floor at a height: a place standing high, a way graded between places. The
   land is cut to them first, then to its climbs, so a terrace stands on a raised floor as on the land's own; their
-  edges wander as a floor's do; and an outcrop standing on one rises from its level. A climb's and a raised floor's
+  edges wander as a floor's do; and an outcrop standing on one rises from its level. A point takes the level of the
+  raised floor whose line runs nearest of those it stands on by their own reaches (else of the nearest), as the ways
+  were graded along their lines; the wander only carries a floor's outer edge out against the rock. Round a roofed
+  floor (a cavern's hollow and tunnel, `roofed`) every face rises in 4 m, out to 20 m past its widest edge and easing
+  back to the 16 m run over 8 m more, so the rock a cave roof rests on stands whole under all its edges and the cliff
+  its tunnel opens in stands sheer. A climb's and a raised floor's
   level is a share of the massif's local height (its rise varied by a slow noise), faded past the claim as the land is,
   and the floor's level reads them the same way. A terraced sculpt's top (`terraced`, a layout with heights) stands
   in plateaus at 0.45, 0.72 and the whole of that height, where a slower noise crosses its steps, each riser a cliff;
   within 24 m of a floor, raised floor, climb or run the rock is held at least 0.4 of the height over its level, then
-  falls in 6 m to its plateau, so no body climbs out and a lookout stands on the top. Its runs ([[Layouts]], "Runs") are cut
+  falls in 6 m to its plateau, so no body climbs out and a lookout stands on the top. Each bucket finds every
+  capsule within that hold, so the top steps nowhere along a bucket's edge. Its runs ([[Layouts]], "Runs") are cut
   into its rock the same way. Where capsules meet (a run's at a bend, a climb's at its lookout) the level is a blend
   of the near capsules', weighted by how near each is (within 3 m), so the land climbs round the bend and beside a
   climb's top without a step. Its wings are capsules

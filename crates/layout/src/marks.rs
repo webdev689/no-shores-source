@@ -127,20 +127,30 @@ fn herbs(kit: &mut Kit, at: [f64; 2]) {
 
 /// Timber: felled logs stacked three, two and one, and the stump of the last tree with its axe.
 fn timber(kit: &mut Kit, at: [f64; 2]) {
-    let ground = kit.height(at);
     let turn = kit.draw() * TAU;
     let across = 0.55;
+    // Rolled onto its side about its own y, a log runs along its own x from where it stands: so each stands half its
+    // length back along it, and the stack's logs lie side by side along its own y.
+    let (sine, cosine) = land::exact::sin_cos(turn);
+    let (along, beside) = ([cosine, sine], [-sine, cosine]);
+    let point = |from: [f64; 2], way: [f64; 2], out: f64| [from[0] + way[0] * out, from[1] + way[1] * out];
+    // On the lowest ground under the stack, so no log's end hangs over a slope.
+    let ground = [-2.3, 0.0, 2.3]
+        .into_iter()
+        .flat_map(|length| [-0.85, 0.0, 0.85].map(|width| point(point(at, along, length), beside, width)))
+        .map(|spot| kit.height(spot))
+        .fold(f64::INFINITY, f64::min);
     for (layer, count) in [(0, 3), (1, 2), (2, 1)] {
         for log in 0..count {
             let side = (f64::from(log) - f64::from(count - 1) / 2.0) * across;
-            let spot = ahead(at, [0.0, -1.0], side, turn + FRAC_PI_2);
+            let length = 4.0 + kit.draw() * 0.6;
+            let spot = point(point(at, beside, side), along, -length / 2.0);
             let upright = Solid::upright(
                 Shape::Column { sides: 8, top: 1.0 },
                 [spot[0], spot[1], ground + across / 2.0 + f64::from(layer) * across * 0.85],
-                [across, across, 4.0 + kit.draw() * 0.6],
+                [across, across, length],
                 Material::Timber,
             );
-            // Laid along the stack: rolled onto its side about its own y.
             kit.solid(Solid { roll: FRAC_PI_2, ..upright.turned(turn) });
         }
     }

@@ -157,7 +157,10 @@ fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> 
     let valleys = ways.take(headings as usize / 2).filter_map(|way| {
         let (ahead, behind) = (floor_along(way, true)?, floor_along([-way[0], -way[1]], true)?);
         let valley = [ahead[0], ahead[1], behind[0], behind[1], VALLEY_HALF_M];
-        clear([ahead, behind], VALLEY_HALF_M).then(|| (reaches(&[valley]), valley))
+        // Between floors at different levels it ramps from one to the other, no steeper than a way may climb.
+        let rise = (carved.floor_share(ahead[0], ahead[1]) - carved.floor_share(behind[0], behind[1])).abs();
+        let gentle = rise * sculpt.rise <= crate::heights::STEEPEST * distance(ahead, behind);
+        (gentle && clear([ahead, behind], VALLEY_HALF_M)).then(|| (reaches(&[valley]), valley))
     });
     match valleys.max_by_key(|&(reached, _)| reached) {
         Some((reached, valley)) if best_climb.is_none_or(|(climbed, _)| reached > climbed) => {
@@ -427,6 +430,25 @@ mod tests {
             assert!(loop_only.floor_distance(end[0], end[1]) <= 0.0, "each end on the loop's floor: {end:?}");
         }
         assert_eq!(dead_masses(&field, &Sculpts::from(vec![sculpt]), RISE_M), Vec::new());
+    }
+
+    #[test]
+    fn a_valley_onto_a_raised_floor_ramps_to_it_no_steeper_than_a_way() {
+        let field = made_field(320.0);
+        let mut sculpt = sculpt_of(a_loop(320.0, 600.0, Vec::new(), &[]));
+        // The loop's east side a raised floor at 0.6 of the massif's height.
+        let east = sculpt.floors.remove(1);
+        sculpt.levels.push([east[0], east[1], east[2], east[3], east[4], 0.6, 0.6]);
+        reach_masses(&field, &mut sculpt);
+        let carved = Sculpts::from(vec![sculpt.clone()]);
+        assert!(sculpt.levels.len() > 1, "a valley ramps onto the raised floor: {:?}", &sculpt.floors[3..]);
+        for &[x1, y1, x2, y2, _, from, to] in sculpt.levels.iter().skip(1) {
+            let grade = (to - from).abs() * sculpt.rise / distance([x1, y1], [x2, y2]);
+            assert!(grade <= crate::heights::STEEPEST + 1e-9, "a valley climbs {grade:.2} a metre");
+            for end in [[x1, y1], [x2, y2]] {
+                assert!(carved.floor_distance(end[0], end[1]) <= 0.0, "each end on a floor: {end:?}");
+            }
+        }
     }
 
     #[test]

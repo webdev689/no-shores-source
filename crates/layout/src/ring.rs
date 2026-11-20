@@ -7,8 +7,9 @@ use crate::paths::simplified;
 
 /// How far onto its cliffs' feet a section reaches past its floor's edge, metres: a body walks no further.
 const CLIFF_FOOT_M: f64 = 4.0;
-/// How far the section keeps from the sea, metres, so its smoothed edge never reaches into the water.
-const SHORE_KEEP_M: f64 = 6.0;
+/// How far a cell of the section keeps from the sea, metres: past a cell's width (the field measures the sea's
+/// distance in whole cells, 8 m the nearest), so no cell touching the sea is taken and its edge stands back from it.
+const SHORE_KEEP_M: f64 = CELL_M + 0.5;
 
 /// The cells inside a section: on the land its sculpt leaves as floor (a few metres onto its cliffs' feet), on land or
 /// on a bridge (`bridges`, a capsule each) over the water, in the claim, as one piece with no holes, so the section's

@@ -3,7 +3,7 @@
 
 use land::sculpts::Sculpts;
 use layout::brief::Briefs;
-use layout::field::ring_holds;
+use layout::field::{distance, ring_holds};
 use layout::paths::Tier;
 use layout::sites::SiteKind;
 use std::path::Path;
@@ -84,11 +84,42 @@ fn the_other_nodes_are_planned_as_before_and_no_run_raises_their_land() {
         if ZONES.contains(&laid.id.as_str()) {
             continue;
         }
-        for &[x, y] in claim {
+        for [x, y] in over_claim(claim) {
             let (now, was) = (raised.raise(x, y, 1000.0), plain.raise(x, y, 1000.0));
             assert!(now <= was + 1e-9, "{}'s claim at {x},{y} is raised {now} by a run (was {was})", laid.id);
         }
     }
+}
+
+/// Points over a claim: along its ring every 2 m, and inside it every 8 m.
+fn over_claim(ring: &[[f64; 2]]) -> Vec<[f64; 2]> {
+    let mut points = Vec::new();
+    for (index, &from) in ring.iter().enumerate() {
+        let to = ring[(index + 1) % ring.len()];
+        let count = (distance(from, to) / 2.0).ceil().max(1.0) as i32;
+        points.extend(
+            (0..count)
+                .map(|at| f64::from(at) / f64::from(count))
+                .map(|t| [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t]),
+        );
+    }
+    let fold = |pick: fn(f64, f64) -> f64, axis: usize, start: f64| {
+        ring.iter().fold(start, |kept, point| pick(kept, point[axis]))
+    };
+    let [west, east] = [fold(f64::min, 0, f64::INFINITY), fold(f64::max, 0, f64::NEG_INFINITY)];
+    let [north, south] = [fold(f64::min, 1, f64::INFINITY), fold(f64::max, 1, f64::NEG_INFINITY)];
+    let mut y = north;
+    while y <= south {
+        let mut x = west;
+        while x <= east {
+            if ring_holds(ring, x, y) {
+                points.push([x, y]);
+            }
+            x += 8.0;
+        }
+        y += 8.0;
+    }
+    points
 }
 
 /// A check of one run: its layout, the run, and the ground's height under a point.

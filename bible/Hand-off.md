@@ -219,11 +219,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **A hamlet's terraces** ([[Zones Rise and Fall, Above and Below Ground]] approved them): no Saltmere hamlet takes
-  them. Its RMB blocks, 102.4 m each, stand 10 to 32 m apart round its plaza, so a block starts within a few metres
-  of the middle and no ramp up to a tier fits between; the lobe tiers tried stood the Vale's largest building across
-  5 m of slope. Each hamlet stands whole at its height, on a terrace of the hillside. The owner's to choose: hamlets
-  laid with wider lanes or a larger plaza so their blocks can step, terraces of another kind, or whole hamlets.
+- **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
+  none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
+  places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
+  are wanted as a cliff climb of their own, beside the ledges' stairs, and where.
 - The Dungeons session (#82, the owner's loop decisions) plans to move each patrol's procedural dungeon entrances
   onto the layouts' places, and will coordinate before it touches the layout code.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
@@ -324,21 +323,16 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is built on #63, tested
   offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
-  kinds' levels on raised floors, every way graded between them as one network and walked without a step; a terraced
-  massif top in plateaus that follows the floors ([[Land]]); ledges with cliff stairs between heights; stone bridges
-  over the Vale's river; the Hollow Coven's cavern under real rock; gates in clefts; dead rock answered by climbs to
-  lookouts and by valleys at their floors' levels; foes on floors under roofs ([[Navmesh]]); and the handcrafted
-  [[Modules]] scripted in Blender ([[Handcrafted Playspaces Are Scripted in Blender]]): the Old Stones, the keep's
-  citadel, the cavern chamber, cliff stairs and stone bridges, each walked by a body
-  (`crates/room/tests/modules_walked.rs`). A second audit of the work found ten faults, all fixed with the two its
-  fixes turned up ([[Layouts]], [[Cities]], [[Land]]). Pictured headless on the pushed head: every area, run beat,
-  stair, module and high view of the three zones, and a fly-through of the Vale from its landing to its coven, sent
-  to the owner as three contact sheets and a video. Continent 1's layouts now settle in about 1.9 s natively, each
-  Saltmere zone with its heights about half a second. Left, in order:
-  1. a hamlet's terraces (waiting on the owner, above);
-  2. switchbacks where a way would climb steeper than a track; today a way ramps straight;
-  3. the cavern's roof shows as a boxy lump over the plateau above it;
-  4. the other 24 zones take heights once the owner has looked at Saltmere's.
+  kinds' levels on raised floors, every way graded between them as one network, walked without a step and carved no
+  steeper than a track; a hamlet's blocks stepping up its hillside on terraces of their own, as the owner chose; a
+  ruin's spokes on tiers; a terraced massif top in plateaus that follows the floors ([[Land]]); ledges with cliff
+  stairs between heights; stone bridges over the Vale's river; the Hollow Coven's cavern under real rock, its roofs
+  resting on rock that stands whole beside the cave; gates in clefts; dead rock answered by climbs to lookouts and by
+  valleys at their floors' levels; foes on floors under roofs ([[Navmesh]]); and the handcrafted [[Modules]] scripted
+  in Blender ([[Handcrafted Playspaces Are Scripted in Blender]]), each walked by a body
+  (`crates/room/tests/modules_walked.rs`). A third audit found what the second missed, each fixed at its cause with a
+  test (the pull request lists them). Continent 1's layouts settle in SETTLE natively. Left: switchbacks (waiting on
+  the owner, above), and the other 24 zones take heights once the owner has looked at Saltmere's.
 - The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
   low enough to climb in places: its runs will need their end arenas cut deeper or walled.
 - The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground

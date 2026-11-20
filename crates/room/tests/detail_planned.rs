@@ -113,7 +113,7 @@ fn the_whalebacks_ends_are_clad_with_fallen_rock() {
         .filter(|solid| solid.material == Material::Rubble && matches!(solid.shape, SolidShape::Dome { .. }))
         .map(|solid| solid.at)
         .collect();
-    let mut clad = 0;
+    let mut bare = Vec::new();
     for outcrop in &laid.sculpt.outcrops {
         let ([first, last], reach) = outcrop.footprint();
         let span = [last[0] - first[0], last[1] - first[1]];
@@ -123,9 +123,13 @@ fn the_whalebacks_ends_are_clad_with_fallen_rock() {
             let along = ((x - first[0]) * span[0] + (y - first[1]) * span[1]) / length;
             (along < 0.0 || along > length) && off_line([x, y], first, last) < reach + 6.0
         };
-        clad += boulders.iter().filter(|&at| at_an_end(at)).count();
+        // Each whaleback its own: one counted for another's end does not clad this one.
+        if !boulders.iter().any(|at| at_an_end(at)) {
+            bare.push(outcrop.at);
+        }
     }
-    assert!(clad >= laid.sculpt.outcrops.len(), "{clad} boulders at {} whalebacks' ends", laid.sculpt.outcrops.len());
+    assert!(!laid.sculpt.outcrops.is_empty(), "the Downs stand whalebacks");
+    assert!(bare.is_empty(), "{} whalebacks with no fallen rock at their ends: {bare:?}", bare.len());
 }
 
 /// Each of a layout's sites, solids and props whose ground its outcrops raise by more than a face's foot (0.3 m).
@@ -622,7 +626,8 @@ fn a_farms_hedgerows_line_its_drystone_walls() {
 
 #[test]
 fn every_shrine_stands_in_a_ring_of_standing_stones() {
-    // A shrine standing a module stands in the module's own ring (modules_planned.rs).
+    // A shrine standing a module stands in the module's own ring of stones, baked into it; that it stands on the
+    // ground is modules_walked.rs's to check.
     let moduled = |laid: &layout::Layout, area: &layout::areas::Area| {
         laid.seating.solids.iter().any(|solid| {
             matches!(solid.shape, SolidShape::Module { .. })
@@ -736,4 +741,36 @@ fn the_wilds_hold_cover_round_their_ring() {
         );
     }
     assert!(seen > 0, "continent 1 has wilds");
+}
+
+#[test]
+fn a_timber_stacks_logs_lie_side_by_side() {
+    let mut stacks = 0;
+    for id in ZONES {
+        let laid = zone(id);
+        // Each log rolled onto its side: its middle, half its length along its own x from where it stands.
+        let logs: Vec<([f64; 3], f64)> = laid
+            .seating
+            .solids
+            .iter()
+            .filter(|solid| {
+                solid.material == Material::Timber
+                    && solid.shape == SolidShape::Column { sides: 8, top: 1.0 }
+                    && (solid.roll - std::f64::consts::FRAC_PI_2).abs() < 1e-9
+            })
+            .map(|solid| (solid.place([0.0, 0.0, solid.size[2] / 2.0]), solid.turn))
+            .collect();
+        for (number, &(middle, turn)) in logs.iter().enumerate() {
+            stacks += 1;
+            for &(other, other_turn) in &logs[number + 1..] {
+                let apart = ((middle[0] - other[0]).powi(2) + (middle[1] - other[1]).powi(2)).sqrt();
+                let same_layer = (middle[2] - other[2]).abs() < 0.1 && (turn - other_turn).abs() < 1e-9;
+                assert!(
+                    !same_layer || apart >= 0.5,
+                    "{id}: two logs of one layer {apart:.2} m apart at {middle:?}, not side by side"
+                );
+            }
+        }
+    }
+    assert!(stacks > 0, "Saltmere stacks timber");
 }

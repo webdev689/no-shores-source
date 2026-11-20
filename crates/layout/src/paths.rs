@@ -134,6 +134,16 @@ pub fn find(
             if !passable(next) || !passable(middle) {
                 continue;
             }
+            // Nor from dry land over a river without setting foot in it, a long step's middle or a diagonal's two
+            // corners in the water, so every crossing is found, priced and bridged; a step out of the river may pass
+            // more of it.
+            let river = |at: usize| field.water[at] == Water::River;
+            let corners =
+                [field.index(next_column as usize, row as usize), field.index(column as usize, next_row as usize)];
+            let diagonal = step_x.abs() == 1 && step_y.abs() == 1;
+            if !river(cell) && !river(next) && (river(middle) || (diagonal && river(corners[0]) && river(corners[1]))) {
+                continue;
+            }
             let length = CELL_M * f64::from(step_x * step_x + step_y * step_y).sqrt();
             let grade = (field.height[next] - field.height[cell]).abs() / length;
             if grade > steepest && next != goal {
@@ -322,7 +332,7 @@ pub fn crossings(field: &Field, cells: &[usize]) -> Vec<[[f64; 2]; 2]> {
 pub type Links = Vec<(usize, usize)>;
 
 /// The pairs of areas a network joins: a tree of the shortest links (Kruskal over the straight distances), then the
-/// shortest further links that close `loops` loops, none shorter than a fifth of the tree's span so a loop is felt.
+/// shortest further links that close `loops` loops, each crossing no link already taken.
 #[must_use]
 pub fn network(points: &[[f64; 2]], loops: usize) -> (Links, Links) {
     let mut pairs: Vec<(f64, usize, usize)> = Vec::new();
@@ -488,6 +498,35 @@ mod tests {
         assert_eq!(closing.len(), 1);
         let (none_tree, none_closing) = network(&points, 0);
         assert_eq!((none_tree.len(), none_closing.len()), (3, 0));
+    }
+
+    #[test]
+    fn a_way_over_a_river_a_cell_wide_sets_foot_in_it_so_its_crossing_is_found() {
+        // Level dry land 400 m across, all claimed, a river a cell wide running north and south through its middle.
+        let (columns, west) = (50, -200.0);
+        let count = columns * columns;
+        let centre = |at: usize| west + ((at % columns) as f64 + 0.5) * CELL_M;
+        let field = Field {
+            west,
+            north: west,
+            columns,
+            rows: columns,
+            height: vec![5.0; count],
+            water: (0..count)
+                .map(|at| if (centre(at) - 4.0).abs() < 1.0 { Water::River } else { Water::Dry })
+                .collect(),
+            slope: vec![0.0; count],
+            claimed: vec![true; count],
+            to_sea: vec![1e6; count],
+            to_fresh: vec![1e6; count],
+            inside: vec![1e6; count],
+            seaward: [0.0, -1.0],
+        };
+        let cells =
+            find(&field, [[-120.0, 30.0], [120.0, -30.0]], 0.3, &vec![false; count], &Blocked(vec![false; count]), 7)
+                .expect("a way is found");
+        assert!(cells.iter().any(|&at| field.water[at] == Water::River), "it steps into the river");
+        assert_eq!(crossings(&field, &cells).len(), 1, "and its one crossing is found");
     }
 
     #[test]

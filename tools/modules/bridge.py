@@ -7,6 +7,8 @@ so the water and a swimmer pass under the arches.
 import kit
 
 WIDE_M = 6.2
+# The stone body's width under the deck.
+BODY_M = WIDE_M - 0.3
 DECK_M = 5.5
 SLAB_M = 0.7
 PARAPET = (0.45, 1.0)
@@ -25,21 +27,26 @@ def builder(length):
         radius = span / 2
         crown = DECK_M - SLAB_M - 0.4
         # The body under the deck, its arches cut out of it.
-        body = kit.block(module, (0.0, 0.0, -1.0), (WIDE_M - 0.3, length, crown + 1.0), 'stone', bevel=0.05, wear=0.03,
-                         part=False)
+        # Up to the deck slab's underside, so no gap shows under the deck and stone stands over each arch's crown.
+        body = kit.block(module, (0.0, 0.0, -1.0), (BODY_M, length, DECK_M - SLAB_M + 1.0), 'stone', bevel=0.05,
+                         wear=0.03, part=False)
         middles = [-half + ABUTMENT_M + radius + number * (span + pier) for number in range(arches)]
         for middle in middles:
             kit.cut(body, kit.cylinder_cutter((0.0, middle, crown - radius), radius, WIDE_M + 2.0, along_y=False))
         # Its abutments and piers as parts, and a cutwater either side of each pier.
+        # Each part as wide as the stone drawn round it: the abutments and piers the body's width, and the cutwaters
+        # parts of their own, so a swimmer meets the stone where it is seen.
         for side in (-1, 1):
-            module.part((-WIDE_M / 2, side * half - (ABUTMENT_M if side > 0 else 0.0), 0.0),
-                        (WIDE_M / 2, side * half + (0.0 if side > 0 else ABUTMENT_M), DECK_M - SLAB_M))
+            module.part((-BODY_M / 2, side * half - (ABUTMENT_M if side > 0 else 0.0), 0.0),
+                        (BODY_M / 2, side * half + (0.0 if side > 0 else ABUTMENT_M), DECK_M - SLAB_M))
         for number in range(arches - 1):
             at = middles[number] + radius + pier / 2
-            module.part((-WIDE_M / 2, at - pier / 2, 0.0), (WIDE_M / 2, at + pier / 2, crown - radius * 0.2))
+            module.part((-BODY_M / 2, at - pier / 2, 0.0), (BODY_M / 2, at + pier / 2, crown - radius * 0.2))
+            # 0.6 m past where the arch springs off the pier, or past the foot where a flat arch springs under it.
+            cutwater = max(crown - radius, 0.0) + 0.6 + 1.0
             for side in (-1, 1):
-                kit.column(module, (side * (WIDE_M / 2 + 0.3), at, -1.0), pier / 2, crown - radius + 1.6, 'stone',
-                           sides=3, top=0.85, wear=0.04, part=False)
+                kit.column(module, (side * (WIDE_M / 2 + 0.3), at, -1.0), pier / 2, cutwater, 'stone', sides=3,
+                           top=0.85, wear=0.04, part=True)
         # The deck, its paving in courses across, the parapets and their coping.
         kit.block(module, (0.0, 0.0, DECK_M - SLAB_M), (WIDE_M, length, SLAB_M - 0.15), 'stone', bevel=0.04, wear=0.02,
                   part=False)

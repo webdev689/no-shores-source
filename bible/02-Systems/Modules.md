@@ -47,7 +47,7 @@ are written with paving last, since the first group carries the parts and paving
 
 - **The Old Stones** (`old-stones`, a shrine's): a dais of two broken tiers of cut stone, 1.4 m each, a flight up
   each side of the lower and up the east and west of the upper, a ring of eleven megaliths round the top, some fallen
-  and one leaning, an altar at its middle. Its paving is laid in rows of slabs of their own lengths over a bed of
+  to lie at their tier's foot with rubble and a rock in the gap they left, and one leaning, an altar at its middle. Its paving is laid in rows of slabs of their own lengths over a bed of
   rubble that shows where a slab is gone.
 - **The cavern chamber** (`cavern-chamber`, every cavern's): under the cave roof, 28 m square. A shelf of merged
   boulders 2.2 m high runs along its back, climbed by worn steps at one end, with a dolmen, its stones and a cauldron
@@ -64,8 +64,11 @@ are written with paving last, since the first group carries the parts and paving
   stands at the foot.
 - **The stone bridges** (`stone-bridge-16` to `stone-bridge-40`, a river crossing's): a deck 6.2 m wide paved
   between parapets, 5.5 m over the bridge's foot, on one, two or three round arches cut out of its stone body, its
-  piers' cutwaters pointing into the water and its abutments solid at either end. Its parts are the deck, the
-  parapets, the piers and the abutments, so the water and a swimmer pass under the arches.
+  piers' cutwaters pointing into the water and its abutments solid at either end. Its stone body rises to the deck's
+  underside, so no gap shows under the deck, and each cutwater stands 0.6 m past where its arch springs off the pier,
+  or past the foot where a flat arch springs under it. Its parts are the deck, the parapets, the piers, the
+  cutwaters and the abutments, each as wide as the stone drawn round it, so the water and a swimmer pass under the
+  arches and meet the stone where it is seen.
 
 ## Baking and publishing
 
@@ -86,13 +89,15 @@ does not make the committed manifest, and publishes with the repository's Cloudf
 
 - **The rules** read the manifest (city crate's `modules`): a module stands as one solid per surface group, all at
   its place and turn (`Shape::Module`). A solid taller or shorter than its module stands stretched up to its height,
-  its parts, pads and surfaces alike, so a cliff stair fits its climb to the centimetre. The first group's solid
+  its parts, pads and surfaces alike, so a cliff stair fits its climb to the centimetre; its normals are stretched
+  with its surfaces, so a bevel lights as it faces. The first group's solid
   carries its parts, so movement, collision, the
   [[Navmesh]] and the bake meet it box by box as they meet natural rock's parts. Its pads are laid with the layout's
   own.
 - **Where a module stands** ([[Layouts]]): only where the brief asks for heights, in place of the RMB blocks, set
   piece and dressing its area would otherwise take. A shrine stands the Old Stones and a keep its citadel, at the
-  area's middle on the lowest ground under the module's foot, turned a whole quarter at a time so its parts stay
+  area's middle on the lowest ground under the module's foot, lifted with the land by the least the carving raises it
+  under that foot, turned a whole quarter at a time so its parts stay
   square to the world, its first socket toward the zone's middle. Every cavern stands the chamber under its roof,
   its entry turned to the tunnel. The area's basin takes no platform of its own, since the module brings its
   platforms, and its ways arrive 2 m past its first socket: the citadel's ramp, the Old Stones' north flight.
@@ -108,9 +113,11 @@ does not make the committed manifest, and publishes with the repository's Cloudf
   rock is.
 
 The Gullwing Vale stands the Old Stones, the citadel at Valeguard and the chamber in the Hollow Coven's cavern, each
-walked by `crates/room/tests/modules_walked.rs`: up the Old Stones' flights to the upper tier; up the citadel's ramp,
-through its gate and up to its ward and its wall-walk; in from the tunnel and up the chamber's steps onto its shelf;
-up every ledge's stair from the low floor onto the high one; over every stone bridge both ways.
+walked by `crates/room/tests/modules_walked.rs`, a walk stopping where the body would climb: up the Old Stones'
+flights to the upper tier; up the citadel's ramp, through its gate and up to its ward and its wall-walk; from the
+coven in under the tunnel's mouth to the chamber, and up its steps onto its shelf; up every ledge's stair from the low
+floor onto the high one; over every stone bridge both ways, on its deck at its middle. The Old Stones and the citadel
+stand on the ground at every edge, and no cliff stair stands taller than it was baked.
 
 ## Limits
 

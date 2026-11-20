@@ -85,18 +85,16 @@ impl Pads {
                 nearest = Some((level, off));
             }
         };
-        // Its own pad's nearest edge, and what lies on top just past it.
+        // Each of its own pad's edges within reach (near a corner, two), and what lies on top just past it.
         if let Some(own) = top {
             let [west, north, east, south] = self.pads[own].bounds;
             let sides =
                 [(x - west, [-1.0, 0.0]), (east - x, [1.0, 0.0]), (y - north, [0.0, -1.0]), (south - y, [0.0, 1.0])];
-            let (off, out) = sides
-                .into_iter()
-                .fold((f64::INFINITY, [0.0, 0.0]), |best, side| if side.0 < best.0 { side } else { best });
-            let past = |reach: f64| [x + out[0] * reach, y + out[1] * reach];
-            let [past_x, past_y] = past(off + PAST_M);
-            if let Some(across) = self.top_at(past_x, past_y).filter(|&across| across != own) {
-                take(self.pads[across].level, off);
+            for (off, out) in sides.into_iter().filter(|&(off, _)| off <= EDGE_M) {
+                let past = [x + out[0] * (off + PAST_M), y + out[1] * (off + PAST_M)];
+                if let Some(across) = self.top_at(past[0], past[1]).filter(|&across| across != own) {
+                    take(self.pads[across].level, off);
+                }
             }
         }
         // A later pad's edge just off the point, and what lies on top just inside it.
@@ -180,6 +178,17 @@ mod tests {
         assert_eq!(pads.seam_near(49.5, 60.0), Some((20.0, 0.5)));
         assert!(pads.seam_near(50.5, 60.0).is_some_and(|(level, off)| level == 12.0 && (off - 0.5).abs() < 1e-9));
         assert_eq!(pads.seam_near(103.0, 60.0), None, "inside the later pad, the earlier's hidden edge shows nothing");
+    }
+
+    #[test]
+    fn near_a_pads_corner_the_seam_with_an_earlier_pad_shows_though_land_is_nearer() {
+        // B, then A laid after it touching its east side; a point in A's north-west corner, 0.3 m from A's open
+        // north edge and 0.6 m from its west edge on B.
+        let pads = Pads::from(vec![
+            Pad { bounds: [0.0, 0.0, 10.0, 10.0], level: 4.0 },
+            Pad { bounds: [10.0, 2.0, 20.0, 12.0], level: 6.0 },
+        ]);
+        assert!(pads.seam_near(10.6, 2.3).is_some_and(|(level, off)| level == 4.0 && (off - 0.6).abs() < 1e-9));
     }
 
     #[test]

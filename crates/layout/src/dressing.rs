@@ -168,11 +168,10 @@ fn fold(kit: &mut Kit, area: &Area, ways: &[&Path]) {
     for [from, to] in sides {
         let mut lengths = Vec::new();
         crate::halls::wall(&mut lengths, from, to, 0.0, high, FOLD_WALL_M, Material::Rubble);
-        for mut length in lengths {
+        for length in lengths {
             let [west, north, east, south, ..] = length.bounds();
             if crate::paths::clear_of([west, north, east, south], ways.iter().copied()) {
-                length.at[2] = kit.height([length.at[0], length.at[1]]) - 0.25;
-                kit.solid(length);
+                kit.solid(on_ground(kit, length));
             }
         }
     }
@@ -288,6 +287,21 @@ fn along(kit: &mut Kit, areas: &[Area], path: &Path, others: &[&Path]) {
     }
 }
 
+/// A length of wall (laid along its own y) on the ground under it: its foot sunk 0.25 m under the lower of its ends
+/// and its middle, and as much taller as the ground rises along it, so neither end hangs nor sinks out of sight.
+fn on_ground(kit: &Kit, mut length: Solid) -> Solid {
+    let reach = length.size[1] / 2.0;
+    let heights = [-reach, 0.0, reach].map(|along| {
+        let [x, y, _] = length.place([0.0, along, 0.0]);
+        kit.height([x, y])
+    });
+    let (low, high) =
+        heights.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), &each| (low.min(each), high.max(each)));
+    length.at[2] = low - 0.25;
+    length.size[2] += high - low;
+    length
+}
+
 /// One stretch of drystone wall along a way, broken now and then by a gap, a field's gate or its fall.
 fn drystone(kit: &mut Kit, ways: &[&Path], others: &[&Path], at: [f64; 2], way: [f64; 2]) {
     if kit.draw() < 0.18 || !clear(kit, others, at, WALL_STRETCH_M / 2.0) {
@@ -298,13 +312,12 @@ fn drystone(kit: &mut Kit, ways: &[&Path], others: &[&Path], at: [f64; 2], way: 
     let reach = (WALL_STRETCH_M + 0.3) / 2.0;
     let (from, to) =
         ([at[0] - way[0] * reach, at[1] - way[1] * reach], [at[0] + way[0] * reach, at[1] + way[1] * reach]);
-    let base = kit.height(at) - 0.25;
     let mut lengths = Vec::new();
-    crate::halls::wall(&mut lengths, from, to, base, base + high, DRYSTONE_M, Material::Rubble);
+    crate::halls::wall(&mut lengths, from, to, 0.0, high, DRYSTONE_M, Material::Rubble);
     for length in lengths {
         let [west, north, east, south, ..] = length.bounds();
         if crate::paths::clear_of([west, north, east, south], ways.iter().copied()) {
-            kit.solid(length);
+            kit.solid(on_ground(kit, length));
         }
     }
     if kit.draw() < 0.25 {

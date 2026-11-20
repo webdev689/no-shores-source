@@ -266,7 +266,11 @@ fn what_stands_on_a_terrace_is_lifted_with_it() {
         pads: vec![Pad { bounds: house.footprint, level: 10.0 }],
         solids: vec![plinth, lantern, far],
         rooms: vec![room],
-        walls: vec![[AT[0] - 4.0, AT[1] - 4.0, AT[0] + 4.0, AT[1] - 3.8, 12.5, 10.0]],
+        // A wall inside the house, and a door's step just outside it on the platform.
+        walls: vec![
+            [AT[0] - 4.0, AT[1] - 4.0, AT[0] + 4.0, AT[1] - 3.8, 12.5, 10.0],
+            [AT[0] + 5.5, AT[1] - 1.0, AT[0] + 6.5, AT[1] + 1.0, 10.3, 9.0],
+        ],
         props: vec![prop(offset(-15.0, 3.0)), prop(offset(0.0, 50.0))],
         ..Seating::default()
     };
@@ -291,6 +295,7 @@ fn what_stands_on_a_terrace_is_lifted_with_it() {
     );
     assert_eq!(seating.rooms[0].at[2], 14.0, "its rooms with it");
     assert_eq!([seating.walls[0][4], seating.walls[0][5]], [16.5, 14.0]);
+    assert_eq!([seating.walls[1][4], seating.walls[1][5]], [13.3, 12.0], "a door's step by the land under it");
     assert_eq!(seating.props.iter().map(|prop| prop.at[2]).collect::<Vec<_>>(), [13.0, 10.0]);
 }
 

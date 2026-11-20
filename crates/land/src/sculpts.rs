@@ -43,6 +43,13 @@ const RISER: f64 = 0.025;
 const WALL_SHARE: f64 = 0.4;
 const HOLD_M: f64 = CLIFF_RUN_M + 8.0;
 const HOLD_FALL_M: f64 = 6.0;
+/// How far a face rises from its floor near a roofed floor (a cavern's hollow and tunnel), metres; within
+/// `ROOFED_REACH_M` past such a floor's wandered edge (as far as a cave roof's corners reach), easing back to
+/// `CLIFF_RUN_M` over `ROOFED_EASE_M`. So the rock a cave's roof rests on stands whole right beside the cave and under
+/// all its edges, and the cliff its tunnel opens in stands sheer.
+pub const ROOFED_WALL_M: f64 = 4.0;
+const ROOFED_REACH_M: f64 = 20.0;
+const ROOFED_EASE_M: f64 = 8.0;
 
 /// One layout's sculpt: its claim (where it reaches fully), the floor of its network as capsules (a segment and its
 /// half-width; a basin is a capsule of no length), the outcrops raised on that floor (`Outcrop`), the
@@ -366,17 +373,27 @@ impl Sculpts {
     fn off_level(&self, number: usize, x: f64, y: f64) -> (f64, f64) {
         let sculpt = &self.sculpts[number];
         let Some((.., levels)) = self.near[number].get(&(bucket(x), bucket(y))) else { return (f64::INFINITY, 1.0) };
-        // A raised floor's edge wanders as a floor's does, so a place keeps its shape at any height.
+        // A raised floor's edge wanders as a floor's does, so a place keeps its shape at any height. Which floor's
+        // level a point takes is by the floors' own reaches, as the ways were graded along their lines: of the floors
+        // it stands on, the one whose line runs nearest (so a wide stretch of way never holds its level over the next
+        // as it ramps on), else the nearest floor. The wander only carries a floor's outer edge out against the rock.
         let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(sculpt.seed, x / 70.0, y / 70.0, 2));
+        let mut wandered = f64::INFINITY;
+        let mut on: Vec<(f64, f64)> = Vec::new();
         let parts: Vec<(f64, f64)> = levels
             .iter()
             .map(|&level| {
                 let [x1, y1, x2, y2, half, from, to] = sculpt.levels[level as usize];
                 let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
-                (distance - half * wander, from + (to - from) * along)
+                let share = from + (to - from) * along;
+                wandered = wandered.min(distance - half * wander);
+                if distance <= half {
+                    on.push((distance, share));
+                }
+                (distance - half, share)
             })
             .collect();
-        blended(&parts)
+        (wandered, blended(if on.is_empty() { &parts } else { &on }).1)
     }
 
     /// How much of a sculpt's carving stands at a point: 1 in its claim, falling to 0 over its fade past it.
@@ -527,7 +544,7 @@ impl Sculpts {
         let mut height = if rough {
             if off > 0.0 {
                 // A face in ledges up to the top's roughness.
-                let stepped = face(off);
+                let stepped = face(off * CLIFF_RUN_M / self.face_run(number, x, y));
                 let rough =
                     4.0 * fbm(sculpt.seed ^ 0x77, x / 48.0, y / 48.0, 3) * smooth(0.0, 1.0, off / (2.0 * CLIFF_RUN_M));
                 let top = self.top_at(number, x, y, rise, [(off, 0.0), cuts[0], cuts[1]]);
@@ -551,6 +568,17 @@ impl Sculpts {
             }
         }
         height
+    }
+
+    /// How far a face runs from its floor up to the top at a point, metres: `CLIFF_RUN_M`, but `ROOFED_WALL_M` near a
+    /// roofed floor, easing between.
+    fn face_run(&self, number: usize, x: f64, y: f64) -> f64 {
+        let roofed = self.sculpts[number]
+            .roofed
+            .iter()
+            .map(|&[x1, y1, x2, y2, half]| to_segment(x, y, [x1, y1], [x2, y2]) - half * (1.0 + WANDER))
+            .fold(f64::INFINITY, f64::min);
+        ROOFED_WALL_M + (CLIFF_RUN_M - ROOFED_WALL_M) * smooth(ROOFED_REACH_M, ROOFED_REACH_M + ROOFED_EASE_M, roofed)
     }
 
     /// How far one sculpt raises the land at a point, metres, before the strand: its carving, its outcrops, faded

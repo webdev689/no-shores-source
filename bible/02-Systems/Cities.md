@@ -78,7 +78,8 @@ city stands on it:
 6. **The blocks.** Each district's cells are filled with Daggerfall's RMB blocks of its kinds, as its towns mix them
    (taverns among houses, shops round a market), never the same block beside itself ([[RMB Blocks]]).
 7. **The works.** The wall along the footprint where the land holds it, 16 m high, a round tower every sixth piece
-   and a gatehouse at each gate; a quay along the shore and piers out to sea; a retaining wall wherever a terrace
+   and a gatehouse at each gate, each piece footed on the lowest ground under it and as much taller, so none is
+   walked under on a slope; a quay along the shore and piers out to sea; a retaining wall wherever a terrace
    stands apart from the ground or terrace beyond it.
 8. **The landmark**, of the motif's solids, its great masses dressed as built stone (`articulation`): a stone block
    24 m or more a side gets pilasters a bay of about 9 m apart round its faces and a cornice of trim along its top.
@@ -108,7 +109,9 @@ before its own relief (`land::pads`): the terraces, the plaza and the landmark's
 same to the bit wherever it is sampled, and a window cut round the social space keeps it ([[Land]]). Past a pad's
 edge the land blends into its level within a metre, and where the pad on top changes each side blends to their
 middle, so a lip a body would step is a slope it walks; a terrace standing higher is still a step its wall stands on.
-A seam hidden under a later pad (the cells under the plaza) shows nothing (`Pads::seam_near`).
+A seam hidden under a later pad (the cells under the plaza) shows nothing (`Pads::seam_near`), and at a pad's
+corner, where one edge borders the land and the next an earlier pad, each edge blends on its own side. A window
+keeps every pad whose seam reaches into it.
 
 ## Solids and collision
 

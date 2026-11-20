@@ -110,32 +110,53 @@ pub fn find(field: &Field, areas: &[Area], levels: &[f64], laid: Laid, (rise, se
 }
 
 /// A cavern's rock, on the land as carved: a roof over its hollow and one over its tunnel, each resting on the rock
-/// round it with its top at the massif's highest round the hollow (its faces' tops), a tunnel mouth where the tunnel
-/// opens onto the area's floor, and the chamber module under the roof.
+/// round it (which stands whole right beside a roofed floor, `land::sculpts::ROOFED_WALL_M`) with its top at the lowest
+/// the rock stands round its edges, so no roof stands over the massif; a tunnel mouth where the tunnel opens onto the
+/// area's floor, its roof begun where the cliff it opens in stands whole; and the chamber module under the roof.
 pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts) {
     let turn = turn_along(cavern.way);
     let floor = carved_at(kit, carved, cavern.middle);
-    let rim = (0..16)
-        .map(|step| {
-            let (sine, cosine) = land::exact::sin_cos(std::f64::consts::TAU * f64::from(step) / 16.0);
-            let out = cavern.reach * (1.0 + land::sculpts::WANDER) + CLIFF_RUN_M;
-            carved_at(kit, carved, [cavern.middle[0] + sine * out, cavern.middle[1] + cosine * out])
-        })
-        .fold(f64::NEG_INFINITY, f64::max);
     let mut seed = || (kit.draw() * f64::from(u32::MAX)) as u32;
     let (hollow_seed, tunnel_seed, mouth_seed) = (seed(), seed(), seed());
-    let top = rim.max(floor + HOLLOW_UP_M + 6.0);
+    // The lowest the rock stands round a roof's edges (`along` its middle and `across` either side, each a
+    // half-length), where it stands whole: off every floor by more than a wall's run.
+    let lowest = |kit: &Kit, middle: [f64; 2], [along, across]: [f64; 2]| {
+        let across_way = [-cavern.way[1], cavern.way[0]];
+        let at = |a: f64, b: f64| {
+            [middle[0] + cavern.way[0] * a + across_way[0] * b, middle[1] + cavern.way[1] * a + across_way[1] * b]
+        };
+        (0..=8)
+            .flat_map(|step| {
+                let share = f64::from(step) / 4.0 - 1.0;
+                [
+                    at(along * share, -across),
+                    at(along * share, across),
+                    at(-along, across * share),
+                    at(along, across * share),
+                ]
+            })
+            .filter(|edge| carved.floor_distance(edge[0], edge[1]) > land::sculpts::ROOFED_WALL_M + 1.0)
+            .map(|edge| carved_at(kit, carved, edge))
+            .fold(f64::INFINITY, f64::min)
+    };
     // Past the floor's edge wherever it wanders, onto the rock round it.
     let side = 2.0 * (cavern.reach * (1.0 + land::sculpts::WANDER) + RESTS_M);
     let roof = [cavern.middle[0], cavern.middle[1], floor + HOLLOW_UP_M];
+    let rim = lowest(kit, cavern.middle, [side / 2.0, side / 2.0]);
+    let top = if rim.is_finite() { rim } else { floor + HOLLOW_UP_M + 6.0 }.max(floor + HOLLOW_UP_M + 6.0);
     kit.solid(
         Solid::upright(Shape::CaveRoof { seed: hollow_seed }, roof, [side, side, top - roof[2]], Material::Rubble)
             .turned(turn),
     );
-    let middle = ahead(cavern.mouth, cavern.way, cavern.tunnel / 2.0 + 2.0);
+    // From where the cliff the tunnel opens in stands whole on to the hollow.
+    let from = land::sculpts::ROOFED_WALL_M;
+    let middle = ahead(cavern.mouth, cavern.way, from + cavern.tunnel / 2.0);
     let tunnel_floor = carved_at(kit, carved, middle);
     let over = [middle[0], middle[1], tunnel_floor + TUNNEL_UP_M];
-    let size = [2.0 * (TUNNEL_HALF_M * (1.0 + land::sculpts::WANDER) + RESTS_M), cavern.tunnel, top - over[2]];
+    let wide = 2.0 * (TUNNEL_HALF_M * (1.0 + land::sculpts::WANDER) + RESTS_M);
+    let rim = lowest(kit, middle, [cavern.tunnel / 2.0, wide / 2.0]);
+    let top = if rim.is_finite() { rim } else { over[2] + 6.0 }.max(over[2] + 6.0);
+    let size = [wide, cavern.tunnel, top - over[2]];
     kit.solid(Solid::upright(Shape::CaveRoof { seed: tunnel_seed }, over, size, Material::Rubble).turned(turn));
     // The mouth's opening, the middle 0.4 of its span (city's rock.rs), as wide as the tunnel's walked middle.
     let mouth_floor = carved_at(kit, carved, cavern.mouth);

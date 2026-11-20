@@ -1,5 +1,5 @@
 //! The Gullwing Vale's handcrafted modules (tools/modules) as the bake lays them, walked by the movement rules: up the
-//! Old Stones' flights onto their upper tier, in from the cavern's tunnel and up the chamber's steps onto its shelf,
+//! Old Stones' flights onto their upper tier, from the coven through the tunnel's mouth into the cavern and up the chamber's steps onto its shelf,
 //! through the citadel's gate to its ward and its wall-walk, and over every stone bridge; and up every ledge's cliff
 //! stair of Saltmere's three zones to the high place.
 
@@ -68,7 +68,7 @@ fn module_of<'a>(vale: &'a Vale, name: &str) -> &'a Solid {
 }
 
 /// A body walked from `from` through each waypoint in turn, steering at each tick toward the next; where it ends, and
-/// how many waypoints it passed.
+/// how many waypoints it passed, stopping where it would climb rather than walk.
 fn walked(vale: &Vale, from: [f64; 2], waypoints: &[[f64; 2]], seconds: f64) -> (movement::Body, usize) {
     let mut body = standing_on(&vale.floor, &vale.blocks, from[0], from[1]);
     let mut next = 0;
@@ -81,6 +81,10 @@ fn walked(vale: &Vale, from: [f64; 2], waypoints: &[[f64; 2]], seconds: f64) -> 
         }
         let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
         body = step_body(&body, &controls, &vale.blocks, &vale.floor, TICK_SECONDS);
+        // A body that climbs a face, or hangs or mantles, has not walked there: it stops short.
+        if matches!(body.mode, movement::Mode::Climb | movement::Mode::Hang | movement::Mode::Mantle) {
+            break;
+        }
     }
     (body, next)
 }
@@ -135,6 +139,30 @@ fn a_body_walks_in_from_the_tunnel_and_up_the_chambers_steps_onto_its_shelf() {
 }
 
 #[test]
+fn a_body_walks_from_the_coven_through_the_tunnels_mouth_to_the_chamber() {
+    let vale = vale();
+    let joined = layout::spaces::Joined::Tunnel;
+    let tunnel = vale.map.connections.iter().find(|each| each.joined == joined).expect("the Vale has a tunnel");
+    let [mouth, middle] = [tunnel.points[0], tunnel.points[1]];
+    let length = ((middle[0] - mouth[0]).powi(2) + (middle[1] - mouth[1]).powi(2)).sqrt();
+    let way = [(middle[0] - mouth[0]) / length, (middle[1] - mouth[1]) / length];
+    let from = [mouth[0] - way[0] * 6.0, mouth[1] - way[1] * 6.0];
+    // From the coven's floor in under the mouth, along the tunnel to 3 m before the chamber's entry.
+    let chamber = module_of(&vale, "cavern-chamber");
+    let module = &city::modules::all()[city::modules::number_of("cavern-chamber").expect("named") as usize];
+    let entry = module.sockets.iter().find(|socket| socket.name == "entry").expect("the entry");
+    let out = at(chamber, [entry.at[0] + entry.facing[0] * 3.0, entry.at[1] + entry.facing[1] * 3.0]);
+    let (body, passed) = walked(&vale, from, &[mouth, out], 60.0);
+    assert!(
+        passed == 2,
+        "the body stops at {:.1},{:.1}, {:.1} m short of the chamber's entry, past {passed} waypoints",
+        body.x,
+        body.y,
+        ((out[0] - body.x).powi(2) + (out[1] - body.y).powi(2)).sqrt()
+    );
+}
+
+#[test]
 fn a_body_walks_up_the_citadels_ramp_through_its_gate_and_up_to_its_ward_and_its_wall_walk() {
     let vale = vale();
     let citadel = module_of(&vale, "keep-citadel");
@@ -172,6 +200,48 @@ fn a_body_climbs_every_ledges_stair_of_saltmere_from_the_low_place_onto_the_high
             vale.map.connections.iter().filter(|joined| joined.joined == layout::spaces::Joined::Stair).collect();
         assert!(!stairs.is_empty(), "{id} cuts a ledge");
         climbs_each(&vale, id, &stairs);
+    }
+}
+
+#[test]
+fn the_old_stones_and_the_citadel_stand_on_the_ground_at_every_edge() {
+    let vale = vale();
+    for name in ["old-stones", "keep-citadel"] {
+        let module = &city::modules::all()[city::modules::number_of(name).expect("named") as usize];
+        let solid = module_of(&vale, name);
+        // Its foot on a 5 by 5 grid over its size, as it is turned: the ground there never lower than its foot.
+        let [width, depth, _] = module.size;
+        for east in -2..=2 {
+            for south in -2..=2 {
+                let local = [f64::from(east) * width / 4.0, f64::from(south) * depth / 4.0];
+                let point = at(solid, local);
+                let under = vale.floor.height_at(point[0], point[1]);
+                assert!(
+                    under >= solid.at[2] - 0.05,
+                    "{name}'s foot stands {:.2} m over the ground at {local:?}",
+                    solid.at[2] - under
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn no_cliff_stair_stands_taller_than_it_was_baked() {
+    for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors"] {
+        for solid in &zone(id).solids {
+            let Shape::Module { module, .. } = solid.shape else { continue };
+            let baked = &city::modules::all()[module as usize];
+            if baked.name.starts_with("cliff-stair") {
+                assert!(
+                    solid.size[2] <= baked.size[2] + 1e-9,
+                    "{id}: {} stands {:.2} m tall, baked {:.2} m",
+                    baked.name,
+                    solid.size[2],
+                    baked.size[2]
+                );
+            }
+        }
     }
 }
 
@@ -218,7 +288,20 @@ fn a_body_walks_over_every_stone_bridge_both_ways() {
         let past = |socket: &city::modules::Socket, out: f64| {
             at(bridge, [socket.at[0] + socket.facing[0] * out, socket.at[1] + socket.facing[1] * out])
         };
+        // Its deck's top, as the bridge stands stretched, and its middle.
+        let stretch = bridge.size[2] / city::modules::all()[module as usize].size[2];
+        let deck = bridge.at[2] + near.at[2] * stretch;
+        let middle = at(bridge, [0.0, 0.0]);
         for (from, to) in [(near, far), (far, near)] {
+            // Over the deck, not through the river under it: at its middle the body stands on the deck.
+            let (body, _) = walked(&vale, past(from, 3.0), &[past(from, -1.0), middle], 40.0);
+            assert!(
+                (body.z - deck).abs() < 0.4,
+                "at the middle of the bridge at {:.0},{:.0} the body stands {:.2} m off its deck",
+                bridge.at[0],
+                bridge.at[1],
+                body.z - deck
+            );
             let onto = past(to, 3.0);
             let (body, passed) = walked(&vale, past(from, 3.0), &[past(from, -1.0), past(to, -1.0), onto], 40.0);
             let land = vale.floor.height_at(onto[0], onto[1]);

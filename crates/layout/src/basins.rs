@@ -40,7 +40,7 @@ const PLATFORM_ROOM_M: f64 = 6.0;
 const RAMP_HALF_M: f64 = 4.5;
 /// How near two ramps' bearings run (the cosine of the angle between them) for one to serve the way the other climbs.
 const SAME_WAY: f64 = 0.9;
-const RAMP_STEEPEST: f64 = 0.25;
+pub const RAMP_STEEPEST: f64 = 0.25;
 const TALLEST_LEVEL_M: f64 = 44.0;
 /// How far a terrace's edge runs from its level down to the floor, metres, as the land crate cuts a climb's.
 pub(crate) const TERRACE_EDGE_M: f64 = 2.0;
@@ -595,7 +595,22 @@ pub fn seat_on_terraces(
         }
     }
     for solid in seating.solids.iter_mut().chain(seating.rooms.iter_mut()) {
-        if let Some(by) = by_at([solid.at[0], solid.at[1]]) {
+        // A module stood on the lowest ground under its foot is lifted by the least the carving raises it there, so
+        // no edge of it stands off the land; every other solid by the raise under its middle.
+        let by = if matches!(solid.shape, city::solids::Shape::Module { .. }) {
+            let [west, north, east, south, ..] = solid.bounds();
+            let grid = (0..25).map(|at| {
+                [west + (east - west) * f64::from(at % 5) / 4.0, north + (south - north) * f64::from(at / 5) / 4.0]
+            });
+            let under: Vec<Option<f64>> = grid.map(&by_at).collect();
+            under
+                .iter()
+                .all(Option::is_some)
+                .then(|| under.iter().flatten().fold(f64::INFINITY, |low, &by| low.min(by)))
+        } else {
+            by_at([solid.at[0], solid.at[1]])
+        };
+        if let Some(by) = by {
             solid.at[2] += by;
         }
     }
@@ -604,9 +619,10 @@ pub fn seat_on_terraces(
             prop.at[2] += by;
         }
     }
+    // A box goes with its building, or where it stands outside one (a door's steps), with the land under it, as the
+    // steps' solids do.
     for wall in &mut seating.walls {
-        let middle = middle_of([wall[0], wall[1], wall[2], wall[3]]);
-        if let Some(&(_, by)) = lifted.iter().find(|(print, _)| within(*print, middle)) {
+        if let Some(by) = by_at(middle_of([wall[0], wall[1], wall[2], wall[3]])) {
             wall[4] += by;
             wall[5] += by;
         }

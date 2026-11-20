@@ -55,7 +55,8 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   millisecond. A plain list still serves for a small course (the Test Ground's, a deck's).
 - **Head room.** The body is 1.8 m tall standing and 1.0 m crouched. Rising, by a jump, a climb or going over a lip,
   its head stops at the lowest underside over it: its feet stay that far below and its upward speed ends. A crouched
-  body under a ceiling too low to stand stays crouched, and a crouched jump there leaves it crouched. A lip is a
+  body under a ceiling too low to stand stays crouched, and a crouched jump there leaves it crouched; pressed into a
+  wall there, it does not start a climb, since a climb stands it up. A lip is a
   block's top, as before, and a slab overhead is never in the way, so it is never caught as a lip; a lip with no room
   to stand over it, under a floor above, is not gone over.
 - **Terrain.** The blocks stand on a terrain: any ground known by its height at a point (`Terrain`), so the rules

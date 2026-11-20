@@ -120,12 +120,27 @@ fn the_run_over_a_whaleback_crosses_one() {
     let (sine, cosine) = land::exact::sin_cos(bearing);
     // Ten seconds' running: the length of the run's line.
     let line = [[x, y], [x + sine * 76.0, y - cosine * 76.0]];
+    let bodies = run_over(&node, &RUNS[3]);
     let sculpts: Vec<land::sculpts::Sculpt> = node.ground.sculpts.into();
-    let crossed = sculpts.iter().flat_map(|sculpt| &sculpt.outcrops).any(|outcrop| {
-        let (spine, _) = outcrop.footprint();
-        outcrop.shape == land::sculpts::Shape::Whaleback && layout::paths::segments_apart(line, spine) < 1.0
-    });
-    assert!(crossed, "the run from {:?} crosses a whaleback's spine", [x, y]);
+    let spines: Vec<[[f64; 2]; 2]> = sculpts
+        .iter()
+        .flat_map(|sculpt| &sculpt.outcrops)
+        .filter(|outcrop| outcrop.shape == land::sculpts::Shape::Whaleback)
+        .map(|outcrop| outcrop.footprint().0)
+        .filter(|&spine| layout::paths::segments_apart(line, spine) < 1.0)
+        .collect();
+    assert!(!spines.is_empty(), "the run from {:?} crosses a whaleback's spine", [x, y]);
+    // The body itself runs over the spine, up its flank and down the far side, not round it.
+    let (first, last) = (bodies[0], bodies[bodies.len() - 1]);
+    let ran = [[first.x, first.y], [last.x, last.y]];
+    assert!(
+        spines.iter().any(|&spine| layout::paths::segments_apart(ran, spine) < 1.0),
+        "the body runs from {:?} to {:?}, not over the spine",
+        ran[0],
+        ran[1]
+    );
+    let top = bodies.iter().map(|body| body.z).fold(f64::NEG_INFINITY, f64::max);
+    assert!(top > first.z.max(last.z) + 1.0, "the body rises {:.2} m over the ridge", top - first.z.max(last.z));
 }
 
 #[test]

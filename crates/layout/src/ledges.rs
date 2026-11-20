@@ -122,7 +122,13 @@ pub fn measured(ledge: &Ledge, ground: &Ground, carved: &Sculpts) -> Option<(u32
         let at = [foot[0] + ledge.way[0] * along, foot[1] + ledge.way[1] * along];
         land(at) <= foot_m + (top_m - foot_m) * along / run + STEP_M
     });
-    let rises = (LEAST_RISE_M - 1.0..=MOST_RISE_M).contains(&(top_m - foot_m));
+    // The climb at the stair's own foot no taller than it was baked, so it is only ever pressed down to fit.
+    let baked = city::modules::all()[number as usize]
+        .sockets
+        .iter()
+        .find(|socket| socket.name == "top")
+        .map_or(0.0, |top| top.at[2]);
+    let rises = (LEAST_RISE_M - 1.0..=MOST_RISE_M).contains(&(top_m - foot_m)) && top_m - foot_m <= baked + 1e-9;
     (rises && walked && under_steps).then_some((number, run, foot_m, top_m))
 }
 
@@ -227,10 +233,16 @@ pub fn cut(field: &Field, (areas, ground): (&[Area], &Ground), sculpt: &mut Scul
             crate::paths::segments_apart([ledge.start, ledge.edge], [[x1, y1], [x2, y2]]) > half + SLOT_HALF_M + 2.0
         })
     };
-    for ledge in candidates(field, (areas, ground), &sculpt.levels, &bare).into_iter().filter(off_runs).take(TRIES) {
+    let mut measured_ones = 0;
+    for ledge in candidates(field, (areas, ground), &sculpt.levels, &bare).into_iter().filter(off_runs) {
+        // Only the ledges measured count against the tries: one too near a ledge already cut is passed over.
         if !apart(&chosen, &ledge) {
             continue;
         }
+        if measured_ones >= TRIES {
+            break;
+        }
+        measured_ones += 1;
         let share = bare.floor_share(ledge.start[0], ledge.start[1]);
         sculpt.levels.push(slot(&ledge, share));
         // Its slot cut, it and every ledge already cut still climb: one slot never spoils another's stair.

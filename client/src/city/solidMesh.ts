@@ -472,6 +472,12 @@ export function solidFaces(solid: Solid, surface: Surface): Face[] {
   }
 }
 
+/** A surface's normal once the surface is stretched up by `stretch`: scaled by the stretch's inverse, as a slope is,
+ *  so a pressed-down stair's bevels are lit, and their pictures laid, as they stand rather than as they were baked. */
+export function stretchedNormal([x, y, z]: Vector, stretch: number): Vector {
+  return normalised([x, y, z / stretch]);
+}
+
 /** A module's surface group as Blender made it, smooth where it was smooth, stretched up by `stretch` (a stair fitted
  *  to its rise), its picture laid from the axis each triangle faces most, as rock's is; none until its mesh has come. */
 function moduled(module: number, group: number, stretch: number, surface: Surface): Face[] {
@@ -483,11 +489,11 @@ function moduled(module: number, group: number, stretch: number, surface: Surfac
     mesh.positions[index * 3 + 1],
     mesh.positions[index * 3 + 2] * stretch,
   ];
-  const normal = (index: number): Vector => [
-    mesh.normals[index * 3] / 127,
-    mesh.normals[index * 3 + 1] / 127,
-    mesh.normals[index * 3 + 2] / 127,
-  ];
+  const normal = (index: number): Vector =>
+    stretchedNormal(
+      [mesh.normals[index * 3] / 127, mesh.normals[index * 3 + 1] / 127, mesh.normals[index * 3 + 2] / 127],
+      stretch,
+    );
   const faces: Face[] = [];
   for (let triangle = 0; triangle < mesh.triangles.length; triangle += 3) {
     const indices = [mesh.triangles[triangle], mesh.triangles[triangle + 1], mesh.triangles[triangle + 2]];
