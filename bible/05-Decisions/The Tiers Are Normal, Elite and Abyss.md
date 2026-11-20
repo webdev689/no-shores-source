@@ -25,4 +25,6 @@ status: in force
   [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]].
 - **Not in the game yet**: the voyage's card still offers Calm, Rough and Storm.
 
+The days and the weeks over them: [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]].
+
 It is part of [[The Game's Loop Runs From Town to the Land and the Sea]].

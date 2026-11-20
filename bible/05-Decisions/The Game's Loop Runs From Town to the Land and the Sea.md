@@ -41,7 +41,9 @@ status: in force
   ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]).
 - **Where dungeons stand**: [[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]. **How hard
   things are**: [[Where You Go and the Seas You Choose Set the Difficulty]]. **Prestige**:
-  [[Prestige Stays as Built, With a Costly Infusion]].
+  [[Prestige Stays as Built, With a Costly Infusion]]. **The days and the weeks**:
+  [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]. **What opens when**:
+  [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]].
 - **Nothing of it is built yet**: these decisions put the game's plan straight first.
 
 It builds on [[Gear and Power Follow Destiny 1 Vanilla]], [[The World Map]] and

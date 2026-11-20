@@ -152,6 +152,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Where You Go and the Seas You Choose Set the Difficulty]]
 - [[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]
 - [[The Tiers Are Normal, Elite and Abyss]]
+- [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]
+- [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
