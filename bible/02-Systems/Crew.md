@@ -73,8 +73,8 @@ Each post changes how she plays in a fight, its officer's strength times (`ship:
 ## In the browser
 
 - The gear message's ship part (`GearShip`) carries each officer and the officers offered at the muster, each with
-  their grid's columns as an item's are. The crew's asks are 50 to 54: sign on (`node` the offer), station (`item` the
-  officer, `slot` 0 aboard, 1 at their post, 2 ashore), pay off, buy and choose a node.
+  their grid's columns as an item's are. The crew's asks are 58 to 62: sign on (`column` the faction, `node` the
+  offer), station (`item` the officer, `slot` 0 aboard, 1 at their post, 2 ashore), pay off, buy and choose a node.
 
 ## Limits
 

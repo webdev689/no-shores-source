@@ -44,16 +44,25 @@ fn sailor(ship_level: u8) -> Character {
 
 /// A bold Major of the pirates at `LEVEL`, 600 m off.
 fn hostile() -> (Pirate, Commission) {
-    let commission = Commission { faction: PIRATES, rank: Rank::Major };
-    let seed = (1..).find(|seed| matches!(temper_for(commission, *seed), Temper::Bold)).unwrap_or(1);
-    let pirate = Pirate { level: LEVEL, ..Pirate::standing(CAPTAIN, seed, commission, [0.0, -600.0], 0.0, true) };
+    hostile_of(Rank::Major, LEVEL, 0)
+}
+
+/// The `nth` bold captain of the pirates of `rank` at `level`, 600 m off.
+fn hostile_of(rank: Rank, level: u8, nth: usize) -> (Pirate, Commission) {
+    let commission = Commission { faction: PIRATES, rank };
+    let mut bold = (1..).filter(|seed| matches!(temper_for(commission, *seed), Temper::Bold));
+    let seed = bold.nth(nth).unwrap_or(1);
+    let pirate = Pirate { level, ..Pirate::standing(CAPTAIN, seed, commission, [0.0, -600.0], 0.0, true) };
     (pirate, commission)
 }
 
 /// Whether the captain struck or went down, whether the player's ship did, and the share of her hull the captain lost,
 /// after a fight of the plain player's orders, her ship fitted by `character`'s.
 fn fought(character: &Character) -> (bool, bool, f64) {
-    let (pirate, commission) = hostile();
+    fought_with(character, hostile())
+}
+
+fn fought_with(character: &Character, (pirate, commission): (Pirate, Commission)) -> (bool, bool, f64) {
     let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     let mut fight = Fight::begin(ship, commission, pirate.seed, &Open, 0.0).expect("a fight");
     fight.raise(CAPTAIN, pirate.strength());
@@ -127,4 +136,33 @@ fn a_captain_sails_her_own_way_whatever_the_players_fitting() {
     fight.fit(PLAYER, fitting(&sailor(LEVEL), &[(CAPTAIN, pirate)].into()));
     assert!(matches!(fight.vessel(CAPTAIN).map(|her| &her.sailor), Some(Sailor::Captain(_))));
     assert!(fight.fitting(CAPTAIN).is_none());
+}
+
+/// The sea's fights by ship level: a plain player against bold captains of each rank at each level, her ship at the
+/// starting level, three under and level with them by her experience (her Rare modules' Prestige carries her past
+/// 20, as the table's level shows), `FIGHTS` fights a row on open water. Run by hand, in release:
+/// `cargo test -p room --release fights_by_ship_level -- --ignored --nocapture`.
+#[test]
+#[ignore = "a measurement, run by hand"]
+fn fights_by_ship_level() {
+    const FIGHTS: usize = 6;
+    println!("| Rank | Her level | Ship level | Won | Sunk | Her hull lost |");
+    println!("|---|---|---|---|---|---|");
+    for rank in [Rank::Minor, Rank::Major, Rank::Elite, Rank::Miniboss, Rank::Boss] {
+        for level in [5_u8, 12, 20] {
+            for ship in [1, level.saturating_sub(3).max(1), level] {
+                let character = sailor(ship);
+                let runs: Vec<_> =
+                    (0..FIGHTS).map(|nth| fought_with(&character, hostile_of(rank, level, nth))).collect();
+                let won = runs.iter().filter(|run| run.0 && !run.1).count();
+                let sunk = runs.iter().filter(|run| run.1).count();
+                let lost = runs.iter().map(|run| run.2).sum::<f64>() / FIGHTS as f64;
+                println!(
+                    "| {rank:?} | {level} | {} | {won}/{FIGHTS} | {sunk}/{FIGHTS} | {:.0}% |",
+                    character.ship_level(),
+                    lost * 100.0
+                );
+            }
+        }
+    }
 }
