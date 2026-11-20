@@ -11,9 +11,9 @@ pub(crate) const TORCH_INSET_M: f64 = 0.35;
 pub const TORCH_REACH_M: f64 = 8.0;
 /// Two torches of a room closer than this read as a pair, not as a room's light (m).
 pub(crate) const TORCH_APART_M: f64 = 2.4;
-/// How far along its wall each of the portal's two torches stands from its middle: past its arch, which a style's
-/// kit draws out to 1.3 m, so its bracket stands clear of it, inside its cell.
-const PORTAL_TORCH_M: f64 = 1.5;
+/// How far along its wall each of the portal's two torches stands from its middle, inside its cell: past its arch,
+/// which a style's kit draws out to 1.3 m, and a sconce's own 0.2 m, with 0.05 m between (tools/dungeon/envelope.py).
+const PORTAL_TORCH_M: f64 = 1.55;
 
 /// A torch on a wall: where its flame is (x east, y south, z up), and the side of its cell its wall is on.
 #[derive(Clone, Copy, Debug, PartialEq)]

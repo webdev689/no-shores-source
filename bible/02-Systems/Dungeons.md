@@ -121,8 +121,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   arched roof a square room or an octagon takes a dome, and a hall of alcoves or a rectangle whose longer side is at
   least half again its shorter a vault along it; a cave and every cavern takes rough rock; any other room is flat.
 - **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m. Two flank the portal first, so the end of the
-  way is lit and marked before it opens: on its wall 1.5 m either side of its middle, past its arch, or, where its
-  cell is the room's corner that way, in the middle of that side wall. Then on each room's quiet cells on every third
+  way is lit and marked before it opens: on its wall 1.55 m either side of its middle, past its arch (1.3 m) and a
+  sconce's reach (0.2 m), or, where its cell is the room's corner that way, in the middle of that side wall. Then on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; and
   on every fourth corridor cell of a block, row by row. Each of these stands in the middle of its cell's wall, none
   over the exit door or the portal, and none within 2.4 m of another of its room's, which would read as a pair.
@@ -309,8 +309,9 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   from 0.55 of their glow edge on to all of it square to the eye, lifted a little toward it by the lights round them,
   so a crystal's faces differ. Their glows peak at 1, so no facet clips. Still water lies over its bed, its cell's
   floor picture (`WATER_FLAG`): through it the bed, darker and bluer, lit as a floor is; in it the room, brighter
-  toward its lights, by Fresnel (2% square on, all of it edge on); a slow ripple moves both. Each light but water's
-  own glow, which lies on it, gleams off it.
+  toward its lights, and each light's flame but the water's own glow, which lies on it, all by Fresnel (2% square
+  on, all of it edge on). A flame mirrored is as bright however far it burns and as small as it looks from there
+  (`flame_image`), so a dark lake still shows the far torches; a slow ripple moves it all.
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
   (`roomNameAt`, `placeWords`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.

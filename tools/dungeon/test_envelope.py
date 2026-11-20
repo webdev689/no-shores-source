@@ -191,6 +191,15 @@ class KitEnvelopes(unittest.TestCase):
             line = next(line for line in file if line.startswith('pub const DOORWAY_HALF_M'))
         self.assertEqual(float(line.split('=')[1].strip(' ;\n')), envelope.DOORWAY_HALF_M)
 
+    def test_the_portals_torches_stand_clear_of_its_arch_inside_their_cell(self):
+        rules = os.path.join(HERE, '..', '..', 'crates', 'dungeon', 'src', 'torches.rs')
+        with open(rules) as file:
+            line = next(line for line in file if 'const PORTAL_TORCH_M' in line)
+        along = float(line.split('=')[1].strip(' ;\n'))
+        clear = along - envelope.SCONCE_HALF_M - envelope.ARCH_HALF_M
+        self.assertGreaterEqual(clear, envelope.PORTAL_CLEAR_M - 1e-9)
+        self.assertLess(along, catalog.CELL_M / 2)
+
     def test_an_unknown_module_fails(self):
         self.assertTrue(broken('crypt.nothing', [corner_at((0, 0, 0))]))
 

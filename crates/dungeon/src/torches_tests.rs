@@ -22,8 +22,8 @@ fn the_portals_torches_stand_either_side_of_it_on_its_wall_past_its_arch_or_on_t
             let along = (torch.at[0] - door_x) * -dy + (torch.at[1] - door_y) * dx;
             if torch.wall == portal.side {
                 assert!(along.abs() > EXIT_WIDTH_M / 2.0, "beside the portal, not over it");
-                // A style's portal arch reaches 1.3 m from its middle and a bracket 0.2 m from its torch.
-                assert!(along.abs() >= 1.5 - 1e-9, "clear of the arch: {along}");
+                // A style's portal arch reaches 1.3 m from its middle and a sconce 0.2 m from its torch.
+                assert!(along.abs() >= 1.55 - 1e-9, "clear of the arch: {along}");
                 sides.push(along.signum());
             } else if torch.wall != portal.side.opposite() {
                 // On the side wall of a corner: its side, by which way that wall lies from the portal's middle.

@@ -18,6 +18,11 @@ FAR = 1000.0
 # The way through a doorway, metres either side of its middle: the rules' jambs stand from here (DOORWAY_HALF_M in
 # crates/dungeon/src/dungeon.rs), so a door piece's reveal is where a body stops.
 DOORWAY_HALF_M = 0.8
+# How far an arch round the portal or the exit reaches from its middle along its wall, and a sconce from its torch
+# (m). The portal's torches stand past both with PORTAL_CLEAR_M between (PORTAL_TORCH_M in crates/dungeon/src/torches.rs).
+ARCH_HALF_M = 1.3
+SCONCE_HALF_M = 0.2
+PORTAL_CLEAR_M = 0.05
 KIT_TRIANGLES = {
     'door': 1500, 'pillar.base': 500, 'pillar.shaft': 350, 'pillar.capital': 750, 'wall.base': 250,
     'wall.shaft': 150, 'wall.cap': 350, 'feature': 1500, 'ceiling': 600, 'floor': 300, 'sconce': 150,
@@ -143,10 +148,12 @@ def kit_rules(piece, least, height, apex=False):
     if piece in ('floor.a', 'floor.b'):
         return _within('a floor piece lies within ±1.6, z ≤ 0.05', x=(-1.6, 1.6), y=(-1.6, 1.6), z=(None, 0.05))
     if piece == 'sconce':
-        return (_within('a sconce keeps y ≤ 0.42, |x| ≤ 0.2', x=(-0.2, 0.2), y=(None, 0.42))
+        return (_within(f'a sconce keeps y ≤ 0.42, |x| ≤ {SCONCE_HALF_M}', x=(-SCONCE_HALF_M, SCONCE_HALF_M),
+                        y=(None, 0.42))
                 + [("stand in the code's flame over the cup", _box(*FLAME))])
     if piece in ('portal', 'exit'):
-        return (_within('an arch keeps |x| ≤ 1.3, y ≤ 0.3, z ≤ 3.1', x=(-1.3, 1.3), y=(None, 0.3), z=(None, 3.1))
+        return (_within(f'an arch keeps |x| ≤ {ARCH_HALF_M}, y ≤ 0.3, z ≤ 3.1', x=(-ARCH_HALF_M, ARCH_HALF_M),
+                        y=(None, 0.3), z=(None, 3.1))
                 + [("stand before the code's face (1.4 × 2.4 at y 0.04)", _box(x=(-0.7, 0.7), y=(0.02, FAR),
                                                                                 z=(0, 2.4)))])
     raise KeyError(f'{piece!r} is no kit piece')

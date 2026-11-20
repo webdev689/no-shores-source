@@ -51,8 +51,8 @@ Two files in `content/dungeon/` say what every style builds, and the rules, the 
 | `feature.a`, `feature.b` | a room's set pieces on its walls | 0.3 m off the wall, 3 m high at most |
 | `ceiling.a`, `.b`, `.c` | bosses, beams or stalactites | hanging no lower than 2.4 m; under domes and vaults, within 0.8 m of the middle and under the smallest dome |
 | `floor.a`, `floor.b` | slabs, runners, drains, circles, scree, rails | 0.05 m high at most |
-| `sconce` | each torch's bracket, holding the code's flame | |
-| `portal`, `exit` | the arches round the return portal and the exit door | clear of the door's face |
+| `sconce` | each torch's bracket, holding the code's flame | within 0.2 m of its torch along the wall |
+| `portal`, `exit` | the arches round the return portal and the exit door | within 1.3 m of the middle along the wall; clear of the door's face |
 
 A shaft is a unit high and is stretched between its base and its cap, so its detail runs only up it. Each kind of
 piece keeps a triangle budget, the most repeated the least: a wall shaft or a sconce 150, a floor piece 300, a
