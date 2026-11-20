@@ -70,7 +70,7 @@ combat, rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]]
 captain alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. At sea a fight ends
 in a sinking and what floats, or in a captain striking and a boarding; a player who loses washes up at a port city,
 and the damage stays until repaired ([[The Sea Is a Patrol Zone, and the Ship Is Gear]],
-[[The Waters Come From the Islands]], [[Hulls]], [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]).
+[[The Waters Come From the Islands]], [[Hulls]], [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]], [[The Sea Fight Looks and Aims as DFO's Does]]).
 
 ## The fight
 

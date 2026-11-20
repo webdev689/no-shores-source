@@ -16,6 +16,12 @@ dfo_paths:
   - src/systems/naval/navalDirector.js
   - src/world/ships/galleonRig.js
   - src/world/ships/largeBoatRig.js
+  - src/scenes/naval/aimCamera.js
+  - src/scenes/naval/seaBroadsides.js
+  - src/scenes/naval/navalFeel.js
+  - src/scenes/naval/navalFlames.js
+  - src/scenes/naval/navalLoads.js
+  - src/ui/naval/navalHud.js
 dfo_commit: ce0bb33c20 (main); fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit) for ownBoats and sailAssist; 1c0fd681 for the aim and the ram
 ---
 # Pick - Sailing and Naval Combat
@@ -32,6 +38,8 @@ DFO's sailing (its port of Come Sail Away, [[Come Sail Away's Sailing Comes Over
   Sloop's own sails ([[Sailing]]).
 - **Naval combat**: ballistics, shots and shot kinds, damage, gunnery, ramming, boarding and the captains' AI. Their
   effects and sounds are drawn in the browser.
+- **The fight's look**: the aim down the sights, the aim's arcs, the fight's display, its effects and its feel, as DFO's
+  naval scenes and display draw them ([[The Sea Fight Looks and Aims as DFO's Does]]).
 - **Pirates at sea**: DFO's director, trimmed to pirates alone
   ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]): they come over the horizon round a player on the
   [[Overworld]] and go once far off, and an encounter pans the view down to the fight.
