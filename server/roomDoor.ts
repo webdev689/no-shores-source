@@ -68,7 +68,7 @@ export interface RoomDoor {
   furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
   /** A player's own gear's bytes, to send them alone; empty when it has not changed since last asked. */
   gear(player: number): Uint8Array;
-  /** Sets a node's room's seas, as its voyage set out: 0 Normal, 1 Elite, 2 Abyss; false if it is no room on land. */
+  /** Sets a node's room's difficulty, as its voyage set out: 0 Normal, 1 Elite, 2 Abyss; false if it is no room on land. */
   difficulty(seas: number): boolean;
   /** Sets the minute, counted from the epoch, whose day sets its vendors' wares (`gear::clock`); false if it is no room
    *  on land. */

@@ -60,7 +60,7 @@ export function dungeonRoom(patrol: { readonly id: string }, difficulty: Difficu
   return `node-${patrol.id}${seas}--dungeon-${number}`;
 }
 
-/** The tiers' names before Elite and Abyss, which a place the accounts kept from then may still carry. */
+/** Other names for Elite and Abyss, which a place the accounts kept may still carry. */
 const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm: 'abyss' };
 
 /** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`), and the patrol's dungeon it is
