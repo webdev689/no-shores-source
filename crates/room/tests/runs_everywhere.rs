@@ -6,7 +6,7 @@ use land::ground::WaterAt;
 use land::sculpts::Sculpts;
 use layout::brief::{RunBrief, RunKind, RunPlace};
 use layout::field::distance;
-use movement::{Block, Blocks, Controls, TICK_SECONDS, step_body};
+use movement::{Block, Blocks, Controls, Mode, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
 
@@ -25,6 +25,10 @@ fn walked(floor: &Floor, blocks: &Blocks, from: [f64; 2], waypoints: &[[f64; 2]]
         }
         let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
         body = step_body(&body, &controls, blocks, floor, TICK_SECONDS);
+        // A body that climbs a face, or hangs or mantles, has not walked there: it stops short.
+        if matches!(body.mode, Mode::Climb | Mode::Hang | Mode::Mantle) {
+            break;
+        }
     }
     [body.x, body.y]
 }
