@@ -296,9 +296,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **The Lattice in the game, being talked through** ([[The Lattice Comes Into the Game Meaningfully, Talked Through
   First]]): the owner wants it in "in a meaningful way" and to talk first about the patrol spaces' world events and
   the nine story missions. The public events are settled ([[Public Events Run on a Clock, After Destiny 1]]): on a
-  clock, nothing lasting when failed, paying gear, materials and reputation; the Fissure and the Grey Tithe raid, each
-  with a simple mechanic of its own and a heroic task; their numbers Claude's to tune. The talk stops at the rest of
-  [[Open Questions]], "The Lattice's places and events": which spaces hold which event, whose reputation they pay; the
+  clock, nothing lasting when failed, paying gear, materials and faction reputation; the Fissure and the Grey Tithe
+  raid, each with a simple mechanic of its own and a heroic task, on Saltmere's zones only for now; their numbers
+  Claude's to tune. The talk stops at the rest of [[Open Questions]], "The Lattice's places and events": the
   missions as three acts of three or one chain through
   the islands, where the Lattice and the Heart come in, how near the ninth comes to the Cube; who gives the side
   quests. Read with them: #82 (the loop, the nine missions) and #97 (activities, the

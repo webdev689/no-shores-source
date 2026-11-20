@@ -29,13 +29,19 @@ status: in force
 > tithe-taker". Asked whether the events' numbers (how often each comes round, the countdown's length, how much
 > tougher heroic is) are the owner's to set or Claude's to tune: "Claude tunes them"
 
+> Asked whose reputation an event pays and which patrol spaces hold which event: "Faction reputation for now and only
+> the island of saltmere and associated patrol zones for now"
+
 ## What it settles
 
 - **On a clock.** A patrol space's public events come at set times, the next one's time shown ahead, and each has a
   countdown to finish it, as Destiny 1's ([[Gear and Power Follow Destiny 1 Vanilla]],
   [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]).
 - **Nothing lasting.** A failed or ignored event ends and comes round again; the space does not change.
-- **What it pays**: gear (a chest at its end, a better tier for a bonus objective), materials and reputation.
+- **What it pays**: gear (a chest at its end, a better tier for a bonus objective), materials and faction reputation
+  ([[Factions]]), for now.
+- **Saltmere only, for now**: the events run on the island of Saltmere and its patrol zones, the Saltgrass Downs, the
+  Gullwing Vale and the Driftwood Moors ([[Layouts]]).
 - **Two events, each with a mechanic of its own, not overly complicated:**
   - **The Fissure**: the ground splits and the Lattice pours out
     ([[The Lattice Are the Ruined Ports' People, Overtaken]]). Felled foes drop crystal shards, which players carry to
