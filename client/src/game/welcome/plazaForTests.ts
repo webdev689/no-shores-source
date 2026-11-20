@@ -79,7 +79,7 @@ for (const { kind, counter } of STATIONS) {
 }
 const forge = 1000 - (STATIONS.find((station) => station.kind === 'weaponsmith')?.counter[0] ?? 0);
 const between = forge + Math.sign(forge) * (86 / 12);
-post('smith', -48.9, between, LANDWARD, 'kept', pointAt(COUNTER_LINE, between, 'smith'));
+post('smith', -48.9, between, Math.sign(forge) > 0 ? EAST : WEST, 'kept', pointAt(COUNTER_LINE, between, 'smith'));
 [-110, -80, -40, 0, 40, 80, 110].forEach((across, nth) =>
   post('idle', 58.4, across, SEAWARD, 'visited', pointAt(PARAPET_LINE, across, `view:seaward-${nth + 1}`)),
 );

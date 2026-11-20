@@ -159,7 +159,7 @@ function legsOf(stays: readonly Stay[], first: Post, between: (from: Post, to: P
   const legs: Leg[] = [];
   stays.forEach((stay, nth) => {
     legs.push({ start: stay.arrive, end: stay.leave, post: stay.post });
-    // Every walk on was found before its stay was booked.
+    // Every walk on is found before its stay is booked.
     const path = between(stay.post, stays[nth + 1]?.post ?? first) as Path;
     legs.push({ start: stay.leave, end: stay.leave + path.length / WALK_M_S, path });
   });

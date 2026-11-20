@@ -142,7 +142,9 @@ pub fn townsfolk_life(frame: &Frame, stations: &[Station]) -> (Ways, Vec<Post>) 
         let across = plan.across_of(forge.counter);
         let between = across + across.signum() * (ARCADE_M[1] - ARCADE_M[0]) / 12.0;
         let from = plan.point([counter_line, between], "smith");
-        plan.post(Task::Smith, [-edge + ARCADE_M[2] + 1.1, between], landward, Keep::Kept, from);
+        // Side on to the plaza, working toward the Weaponsmith's counter.
+        let toward_counter = frame.across().map(|axis| -axis * across.signum());
+        plan.post(Task::Smith, [-edge + ARCADE_M[2] + 1.1, between], toward_counter, Keep::Kept, from);
     }
     for (nth, across) in VIEWS_M.into_iter().enumerate() {
         let from = plan.point([parapet_line, across], &format!("view:seaward-{}", nth + 1));

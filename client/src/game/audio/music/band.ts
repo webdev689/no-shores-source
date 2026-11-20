@@ -95,7 +95,7 @@ export class Band {
       for (const [instrument, held] of this.players) {
         const level = levels?.[instrument] ?? 0;
         if (Math.abs(level - held.level) < 0.01) continue;
-        // Never quite to nothing: a player faded to nothing stops, and the four would no longer keep in step.
+        // Never quite to nothing: a player faded to nothing stops, and the four would fall out of step.
         held.player.fade(Math.max(level, 1e-4), now, FOLLOW_S);
         held.level = level;
       }
