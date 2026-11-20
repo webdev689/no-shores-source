@@ -72,6 +72,9 @@ struct NodeFile {
     boxes: Vec<[f64; 5]>,
     #[serde(default)]
     counters: Vec<NodeCounter>,
+    /// In Overlook's social space, where a player stands to read the bounty board.
+    #[serde(default)]
+    board: Option<[f64; 2]>,
 }
 
 /// A social space's counter as the bake writes it: its station, and its middle.
@@ -147,7 +150,10 @@ pub fn open_node(text: &[u8]) -> bool {
     let floor = Floor::Land(Box::new(node.ground));
     let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
     room.set_island(&node.continent);
-    room.counters = (node.kind == NodeKind::Social).then(|| node.counters.iter().filter_map(counter_of).collect());
+    room.counters = (node.kind == NodeKind::Social).then(|| {
+        let board = node.board.map(|at| Counter { kind: CounterKind::Board, at });
+        node.counters.iter().filter_map(counter_of).chain(board).collect()
+    });
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource

@@ -13,6 +13,7 @@ code:
   - crates/city/src/landmarks_inland.rs#sun_dome
   - crates/city/src/social.rs#plaza
   - crates/city/src/stations.rs#stations
+  - crates/city/src/board.rs#board
   - crates/city/src/courtyard.rs#courtyard
   - crates/city/src/articulation.rs#articulated
   - crates/city/src/collision.rs#boxes_within
@@ -92,8 +93,12 @@ city stands on it:
    hung lamp, the keeper's place behind it facing the plaza, and shelves of their goods against the back wall. By the
    portico, the Reader of Vestiges on one side and the Harbourmaster on the other; then a vault on each side, the
    Quartermaster's armour stands, the Armsmith's racks, and the traders' stalls (a chandler, a fishmonger, a
-   cartographer, a tailor, a herbalist and a smith). Its node is
-   `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
+   cartographer, a tailor, a herbalist and a smith). In Overlook's plaza alone the bounty board stands free
+   (`board`, [[Activities]]): 24 m seaward of the middle and 45 m across on the Reader's side, seaward of the
+   braziers, clear of the courtyard, the spawns and the processional way, and away from the Harbourmaster. It is two
+   timber posts and a timber face 3.6 m wide, six plaster notices in two rows, a lamp and a small gable roof, all
+   facing the sea, so the plaza draws, collides and lights it as the rest. It is no station and no keeper stands at
+   it; a player reads it from 2 m before its face, where its counter is. Its node is `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
    from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep
    their own levels and are built on as any other, the plaza's pad standing over its own footprint with its parapet

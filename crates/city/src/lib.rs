@@ -4,6 +4,7 @@
 //! is seen.
 
 pub mod articulation;
+pub mod board;
 pub mod collision;
 pub mod courtyard;
 pub mod districts;
@@ -123,7 +124,7 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
     let site = Site { level, ..first };
     let built =
         landmark(&city.motif, &site, ground).ok_or_else(|| format!("{}: no motif called {}", city.id, city.motif))?;
-    let social = plaza(ground, centre, level, seaward, &built);
+    let social = plaza(ground, centre, level, seaward, &built, city.id == board::BOARD_CITY);
     // Only the cells under the landmark's base rise to the platform and are kept for it. The cells under the plaza keep
     // their own levels and are built on as any other: the plaza's pad stands over its own footprint, its parapet for a
     // wall, so what is built beneath it is hidden and the city runs right up to its foot, as round the Tower.

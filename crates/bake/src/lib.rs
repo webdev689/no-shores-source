@@ -33,6 +33,9 @@ pub struct NodeFile {
     pub boxes: Vec<[f64; 5]>,
     /// In a social space, the counters that answer a player's gear, which the room serves only at each.
     pub counters: Vec<Counter>,
+    /// In Overlook's social space, where a player stands to read the bounty board: its counter, apart from the
+    /// stations' since no keeper stands at it.
+    pub board: Option<[f64; 2]>,
 }
 
 /// A counter of a social space: its station, and its middle.
@@ -117,7 +120,7 @@ pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<
         let ground = landmass.surface.window(west, north, east, south);
         let boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
         let continent = continent.id.clone();
-        NodeFile { id, kind, name, continent, ring, spawns, bounds, ground, boxes, counters: Vec::new() }
+        NodeFile { id, kind, name, continent, ring, spawns, bounds, ground, boxes, counters: Vec::new(), board: None }
     };
     let whole =
         |points: &[world::geometry::Point]| points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
@@ -131,6 +134,7 @@ pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<
         let counters = social.stations.iter().filter(|station| answers_gear(station.kind));
         NodeFile {
             counters: counters.map(|station| Counter { kind: station.kind, at: station.counter }).collect(),
+            board: social.board.map(|board| board.front),
             ..cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
         }
     });

@@ -1,8 +1,9 @@
 //! Stage I: the city's social space, the one part of it a player walks, as Destiny 1's Tower is the one part of its
 //! City walked. A plaza the Tower's size beside the landmark on its seaward side, level with the landmark's foot,
-//! walled all round with a parapet and laid out as a courtyard (`courtyard`); from it the city below and the harbour
-//! are seen whole and never reached.
+//! walled all round with a parapet and laid out as a courtyard (`courtyard`), with the bounty board in Overlook's alone
+//! (`board`); from it the city below and the harbour are seen whole and never reached.
 
+use crate::board::{Board, board};
 use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard};
 use crate::landmarks::{Landmark, ahead};
 use crate::solids::{Material, Shape, Solid};
@@ -30,6 +31,8 @@ pub struct Social {
     pub solids: Vec<Solid>,
     /// The stations in its arcades' alcoves (`stations`).
     pub stations: Vec<Station>,
+    /// Overlook's bounty board (`board`); none in any other city's plaza.
+    pub board: Option<Board>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -51,9 +54,16 @@ pub fn plaza_bounds(centre: [f64; 2], seaward: [f64; 2], reach: f64) -> ([f64; 4
 }
 
 /// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
-/// looks out over the city to the sea.
+/// looks out over the city to the sea; `with_board`, the bounty board stands in it.
 #[must_use]
-pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], landmark: &Landmark) -> Social {
+pub fn plaza(
+    ground: &Ground,
+    centre: [f64; 2],
+    level: f64,
+    seaward: [f64; 2],
+    landmark: &Landmark,
+    with_board: bool,
+) -> Social {
     let (bounds, along_seaward) = plaza_bounds(centre, seaward, landmark.reach);
     let (extent_x, extent_y) = (bounds[2] - bounds[0], bounds[3] - bounds[1]);
     let middle = [(bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0];
@@ -97,5 +107,10 @@ pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], l
     solids.extend(courtyard(&frame));
     let (stations, stalls) = stations(&frame);
     solids.extend(stalls);
-    Social { bounds, level, ring, spawns, solids, stations }
+    let board = with_board.then(|| {
+        let (board, pieces) = board(&frame);
+        solids.extend(pieces);
+        board
+    });
+    Social { bounds, level, ring, spawns, solids, stations, board }
 }

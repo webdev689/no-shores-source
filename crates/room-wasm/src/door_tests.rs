@@ -413,3 +413,23 @@ fn an_elite_dungeon_is_laid_for_a_browser_by_its_place_and_its_node_sends_its_on
     assert_ne!(player, 0);
     assert_eq!(dungeon_door::room_join_at(1), 0, "one entrance");
 }
+
+#[test]
+fn a_social_space_with_the_bounty_board_serves_its_asks_at_its_counter_and_one_without_has_none() {
+    let boards = || {
+        with_open(|opened| match opened {
+            Opened::Land { room, .. } => {
+                room.counters.iter().flatten().filter(|counter| counter.kind == CounterKind::Board).count()
+            }
+            Opened::Sea(_) | Opened::Fleet(_) => 0,
+        })
+    };
+    let mut social = node_file();
+    social["kind"] = json!("social");
+    social["board"] = json!([5.0, 0.0]);
+    assert!(open_node(social.to_string().as_bytes()));
+    assert_eq!(boards(), Some(1));
+    social.as_object_mut().expect("an object").remove("board");
+    assert!(open_node(social.to_string().as_bytes()), "every other city's file, which holds no board");
+    assert_eq!(boards(), Some(0));
+}

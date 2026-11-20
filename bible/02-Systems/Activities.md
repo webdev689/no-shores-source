@@ -184,8 +184,10 @@ One engine counts both, since the owner's side quests and the board's bounties a
   dungeon cleared for each player the room keeps as its cache opens, the way the clear pays; a shared dungeon's
   cache counts again each time it reopens. A room knows its island from its node's file, or from the patrol, the
   Elite Dungeon or the sea island its dungeon is of (`Room::set_island`); a room on no island counts no place.
-- **The bounty board** stands in Overlook's plaza and opens after the prologue, on the counters' pattern of the
-  plaza's keepers. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
+- **The bounty board** stands free in Overlook's plaza, seaward of the braziers on the Reader's side and away from
+  the Harbourmaster ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
+  plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is
+  no station and has no keeper. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
   places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an
   island or a water, since the islands' bands run from 1 to 30. A character takes any of them; each pays once when
   turned in, 1,000 XP and 60 Aurem at level 5, raised as a kill is by the character's level, and all end at the daily
@@ -256,9 +258,9 @@ server and the browser both run; each system reads them.
 It builds on the dungeons (#72, #88) and the owner's plan (#82); the board's place and the boon's reputation wait on
 the factions (#92).
 
-**Who builds what:** this session builds 1 to 5's rules and screens. The plaza's session (#92) places the board and
-its keeper, and moves Shape and the vendors onto the clock. The sea's session (#75) takes the tiers at sea and the
-sea's counts. The prologue's session records the prologue's end with the account.
+**Who builds what:** this session builds 1 to 5's rules and screens, and places the board, which has no keeper. The
+plaza's session (#92) moves Shape and the vendors onto the clock. The sea's session (#75) takes the tiers at sea and
+the sea's counts. The prologue's session records the prologue's end with the account.
 
 **Left to the builder:** the modifiers' and the rewards' exact numbers, how a modifier is shown, how a private run's
 room is named and closed, and each Elite Dungeon's Boss.

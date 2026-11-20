@@ -250,7 +250,8 @@ a city has the same pads and walls.
 A node's file holds its id, kind, name and continent; its section's ring and spawns; the rect its window covers (the
 ring's bounds and 100 m past them, beyond the 60 m where a body dies); the exact window of the ground over that rect,
 city terraces included; the boxes of the city a body runs into there; and, for a social space, the counters that
-serve a player's gear (the Reader's, the vaults', the Quartermaster's, the Armsmith's and the Tailor's). The bake takes about 8 s for the nine
+serve a player's gear (the Reader's, the vaults', the Quartermaster's, the Armsmith's and the Tailor's), and in
+Overlook's, `board`, the bounty board's counter, where a player stands before it (none in any other node). The bake takes about 8 s for the nine
 continents' 99 nodes, a few at a time, and writes about 0.44 MB in all, 145 KB compressed. `server`, `server:bundle`
 and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
 called `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2--run-00000000`,
