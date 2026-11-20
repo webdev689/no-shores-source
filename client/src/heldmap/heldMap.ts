@@ -351,9 +351,6 @@ export class HeldMap {
     return frame < HANDS_FRAMES ? frame : 0;
   }
 
-  /** What is lettered on the map this frame: each place on it and each charted water named, the ship's arrow and the
-   *  key, laid where it covers no land, word or mark; and the card over the parchment, `drop` pixels down its
-   *  lowering. */
   /** What is lettered on the map this frame (`layOut`): each place on it and each charted water named, the ship's
    *  arrow and the key, all clear of the gauntlets on the painting at `sprite`; and the card over the parchment,
    *  `drop` pixels down its lowering. */

@@ -41,8 +41,6 @@ export class HeldMapWaters {
     return washOf(this.waters, charted);
   }
 
-  /** The charted waters' names on a map `ink` wide and high, `toInk` giving a world point's place on it, `widthOf` a
-   *  name's width: each at its label point while that is on the map, held inside the map's edges. */
   /** The charted waters' names on a map `ink` wide and high, `toInk` giving a world point's place on it: each at its
    *  label point while that is on the map, in her difficulty's colour. The layout holds each inside the map. */
   letters(

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { coastField } from '../heldmap/coastField.ts';
-import { leastScale, type Rect, SCALE_MOST, stageOf, toInk, type View, zoomAt } from '../heldmap/heldMapLaw.ts';
+import { leastScale, type Rect, SCALE_MOST, SHEET, stageOf, toInk, type View, zoomAt } from '../heldmap/heldMapLaw.ts';
 import { HeldMapWaters, ruinedPlaces } from '../heldmap/heldMapWaters.ts';
 import { landUnder } from '../heldmap/mapKey.ts';
 import {
@@ -24,7 +24,8 @@ import { sitesOf } from './worldData.ts';
 const WORLD = { width: 4_915_200, height: 3_072_000 } as const;
 /** A word's width in the map's face, units: Pixelify's letters are a little over half their size wide, taken wide. */
 const widthOf = (text: string, kind: string) => text.length * 0.62 * (kind === 'port' ? PORT_PX : WORD_PX);
-const KEY = { width: 190, height: 92, row: 520 } as const;
+/** The key's panel and row as the map's face measures them, units. */
+const KEY = { width: 201, height: 84, row: 520 } as const;
 
 const overlaps = (one: Rect, other: Rect) =>
   one.x < other.x + other.width &&
@@ -79,6 +80,7 @@ async function realWorld() {
 function lettered(screen: { width: number; height: number }, view: View, real: Awaited<ReturnType<typeof realWorld>>) {
   const stage = stageOf(screen);
   const ink = stage.ink;
+  const margin = stage.sprite.y + SHEET.y1 * stage.sprite.height - (ink.y + ink.height);
   const onMap = (x: number, y: number) => x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
   const places = real.places
     .map((place) => {
@@ -88,7 +90,7 @@ function lettered(screen: { width: number; height: number }, view: View, real: A
     .filter((place) => onMap(place.x, place.y));
   const [shipX, shipY] = toInk(view, 2_809_214, 1_206_000);
   const ask: LayoutAsk = {
-    ink: { width: ink.width, height: ink.height, margin: 18 },
+    ink: { width: ink.width, height: ink.height, margin },
     scale: letterScale(ink),
     covers: handsCover(stage.sprite, ink),
     places,

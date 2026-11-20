@@ -17,6 +17,7 @@ export const RING = 6;
 /** Each mark's half width: a port's filled ring, a ruin's diamond, a node's ring, and the ship's arrow. */
 const MARK_HALF: Readonly<Record<string, number>> = { port: 4.5, ruin: 5, ship: 10 };
 const NODE_HALF = 4;
+export const markHalf = (kind: string) => MARK_HALF[kind] ?? NODE_HALF;
 
 /** Who is lettered first, and who is dropped first when no clear place is left: ports, waters' names, ruins, then
  *  nodes. The ship's arrow and every place's mark stand where they lie and are never dropped. */
@@ -99,7 +100,7 @@ const overlaps = (one: Rect, other: Rect) =>
 
 /** The box a mark covers, ink pixels. */
 export function markBox(kind: string, x: number, y: number, scale: number): Rect {
-  const half = (MARK_HALF[kind] ?? NODE_HALF) * scale;
+  const half = markHalf(kind) * scale;
   return { x: x - half, y: y - half, width: half * 2, height: half * 2 };
 }
 
@@ -122,7 +123,7 @@ export function nameBox(
       height: height + SPACE * 2 * scale,
     };
   }
-  const reach = ((MARK_HALF[letter.kind] ?? NODE_HALF) + NAME_GAP) * scale;
+  const reach = (markHalf(letter.kind) + NAME_GAP) * scale;
   const span = (width + SPACE * 2) * scale;
   const x = side === 'right' ? letter.x + reach - SPACE * scale : letter.x - reach - width * scale - SPACE * scale;
   return { x, y: top, width: span, height: height + SPACE * 2 * scale };

@@ -37,7 +37,7 @@ export const HOLDER_COLOURS: Readonly<Record<WaterHolder, string>> = {
   contested: '#b8862f',
 };
 /** How strongly the holders' colours are washed over the charted sea, and the contested waters' hatching laid over
- *  theirs: its lines' colour, a dark amber, their strength and their spacing, screen pixels. */
+ *  theirs: its lines' colour, a dark amber, their strength and their spacing, device pixels. */
 export const WASH_STRENGTH = 0.26;
 export const HATCH = { colour: [107, 74, 18], strength: 0.3, spacingPx: 7 } as const;
 export const HOLDER_WORDS: readonly (readonly [WaterHolder, string])[] = [

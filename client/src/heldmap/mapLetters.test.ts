@@ -7,7 +7,7 @@ import { levelColour } from './watersWash.ts';
 
 /** A 2D context that records what is painted, each word 6 pixels a letter wide. */
 function recorder() {
-  const calls: { name: string; args: unknown[]; font: string; fillStyle: unknown }[] = [];
+  const calls: { name: string; args: unknown[]; font: string; fillStyle: unknown; textAlign?: string }[] = [];
   const state = {
     font: '',
     fillStyle: '' as unknown,
@@ -22,7 +22,13 @@ function recorder() {
       if (key in target) return target[key as keyof typeof target];
       if (key === 'measureText') return (text: string) => ({ width: text.length * 6 });
       return (...args: unknown[]) =>
-        calls.push({ name: String(key), args, font: state.font, fillStyle: state.fillStyle });
+        calls.push({
+          name: String(key),
+          args,
+          font: state.font,
+          fillStyle: state.fillStyle,
+          ...(String(key) === 'fillText' ? { textAlign: state.textAlign } : {}),
+        });
     },
     set(target, key, value) {
       (target as Record<string, unknown>)[key as string] = value;
@@ -93,6 +99,8 @@ test('a name stands beside its mark on its side, its middle on the mark’s', ()
   const left = calls.find((call) => call.name === 'fillText' && call.args[0] === 'Ruins of Fenhallow');
   assert.ok((right?.args[1] as number) > 0 && right?.args[2] === 0);
   assert.ok((left?.args[1] as number) < 0 && left?.args[2] === 0);
+  assert.equal(right?.textAlign, 'left', 'a name on the right starts beside its mark');
+  assert.equal(left?.textAlign, 'right', 'a name on the left ends beside its mark, clear of it');
 });
 
 test('a water’s name and the ring round it are inked in her difficulty’s colour, the ring filled with parchment', () => {

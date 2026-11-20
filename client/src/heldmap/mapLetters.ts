@@ -3,7 +3,7 @@
 // parchment that its ink pass lays down with the ink, so the gauntlets holding the map cover them as they cover the
 // parchment.
 import { paintKey } from './mapKey.ts';
-import { LINE, type Lettering, type MapLetter, NAME_GAP, PORT_PX, RING, WORD_PX } from './mapLayout.ts';
+import { LINE, type Lettering, type MapLetter, markHalf, NAME_GAP, PORT_PX, RING, WORD_PX } from './mapLayout.ts';
 
 /** The map's face, Overlook's own (face.css): a port's name a step larger than every other word. */
 const FACE = "'Pixelify Mended', 'Pixelify Sans Variable', monospace";
@@ -103,9 +103,8 @@ function paintLetter(painter: Painter, letter: MapLetter): void {
   painter.strokeStyle = ink;
   painter.fillStyle = ink;
   painter.beginPath();
-  let half = 4;
+  const half = markHalf(letter.kind);
   if (letter.kind === 'ruin') {
-    half = 5;
     painter.setLineDash([2, 1.5]);
     painter.moveTo(0, -half);
     painter.lineTo(half, 0);
@@ -115,13 +114,13 @@ function paintLetter(painter: Painter, letter: MapLetter): void {
     painter.stroke();
     painter.setLineDash([]);
   } else {
-    if (letter.kind === 'port') half = 4.5;
     painter.arc(0, 0, half - 0.75, 0, 2 * Math.PI);
     if (letter.kind === 'port') painter.fill();
     else painter.stroke();
   }
   if (!letter.side || letter.side === 'centre') return;
-  painter.textAlign = letter.side;
+  // A name on the left ends at its offset from the mark; on the right it starts there.
+  painter.textAlign = letter.side === 'left' ? 'right' : 'left';
   const offset = half + NAME_GAP;
   word(painter, letter.text, letter.side === 'right' ? offset : -offset, 0, letter.chosen ? ROUTE : ink);
 }

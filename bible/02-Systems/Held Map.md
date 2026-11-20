@@ -54,7 +54,7 @@ war, and a click on it sets the ship's destination.
   than 6 in lightness.
   Each cell blends the charted sea within a cell of it (`washOf`), and the map samples between cells, so a border is
   soft over a cell or two and never stepped. The contested waters and the seam are hatched over their wash with fine
-  diagonal lines in a dark amber (`#6b4a12` at 0.3), 7 screen pixels apart, which darken it by about 2 in lightness. Fog of war is as it was: the wash is laid for the sea charted when
+  diagonal lines in a dark amber (`#6b4a12` at 0.3), 7 device pixels apart, which darken it by about 2 in lightness. Fog of war is as it was: the wash is laid for the sea charted when
   the map is raised.
 - **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
   point, the name and a ring round it inked in the band's colour on the difficulty ramp
@@ -70,8 +70,7 @@ war, and a click on it sets the ship's destination.
   left, upper right. With every corner taken it is laid in one row in the middle of the parchment's margin under the
   map, where the row fits; where it does not, it takes the first corner clear of land, the hands, the marks and the
   ports' names, and the other names under it are dropped. So it moves only when it must, and never back and forth while
-  the map stands still (`keyPlace`). On the real world, every island discovered, it stands in a corner in 64% of views
-  at five zooms on three screens, where the earlier panel at the same size did in 51%.
+  the map stands still (`keyPlace`).
 - **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
   a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
   is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
@@ -141,4 +140,5 @@ The player starts with the island they arrive on, its port, the place they arriv
 - The waters' wash is laid when the map is raised, as the charted sea's is. A water's label point is a 4.8 km cell's
   middle, so its words may stand over a small isle.
 - A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.
-- On a phone's screen the key often finds no clear corner and no room on the margin, and is left off.
+- The key is left off where no corner is clear of land, the hands, the marks and the ports' names and the margin has
+  no room for its row: on a phone's screen with much land in view, often.
