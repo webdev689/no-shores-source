@@ -5,6 +5,7 @@ import { dungeonTrips, type TripFoot, type TripGame } from './dungeonTrips.ts';
 import type { Happening } from './flow.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { NodeInfo } from './worldData.ts';
+import { BEFORE_DOOR_M } from './entrances.ts';
 
 const bytes = await readFile(
   new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url),
@@ -180,7 +181,7 @@ test('a sea island’s dungeon is entered by its name and left back onto the isl
   ]);
   trips.leave();
   await settled();
-  assert.deepEqual(ways[1], ['sea', back]);
+  assert.deepEqual(ways[1], ['sea', { ...back, x: 1_252 }], 'out before the door, facing the way out');
   assert.deepEqual(
     happenings.map((happening) => happening.kind),
     ['enter', 'surface'],
@@ -232,7 +233,7 @@ test('a company that falls is taken out by the way it came in, the veil saying i
   sea.trips.fell();
   await sea.settled();
   assert.deepEqual(sea.happenings[1], { kind: 'surface', name: 'The Caverns of the Sea', fell: true });
-  assert.deepEqual(sea.ways[1], ['sea', back]);
+  assert.deepEqual(sea.ways[1], ['sea', { x: 1, y: 0.5, facing: 0 }]);
 });
 
 test('a dungeon is shown with the entrance gone in by, so its exit door wears that door', async () => {
@@ -260,4 +261,13 @@ test('a company leaves an Elite Dungeon’s run together, at the run’s own sea
   const outTo = (ways: unknown[][]) => ways.find((way) => way[0] === 'onto')?.slice(1, 4);
   assert.deepEqual(outTo(entered.ways), ['krakens-grotto', 0, 'normal']);
   assert.deepEqual(outTo(joined.ways), outTo(entered.ways));
+});
+
+test('out of a sea island’s dungeon a player stands before its door, facing the way out of it', async () => {
+  const { trips, ways, settled } = recorded({ foot: null });
+  trips.enterSeaDungeon('sea-dungeon-continent-4-caverns-0a1b2c3d', { x: 10, y: 20, facing: Math.PI / 2 });
+  await settled();
+  trips.leave();
+  await settled();
+  assert.deepEqual(ways[1], ['sea', { x: 10 + BEFORE_DOOR_M, y: 20, facing: Math.PI / 2 }], 'a door facing east');
 });

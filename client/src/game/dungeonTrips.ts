@@ -4,7 +4,7 @@
 import { seaDungeonRoom } from '../../../server/roomNames.ts';
 import { activitiesAt, eliteRun } from './activities.ts';
 import { askLayout, type DungeonAsk, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
-import { beforeDoor, type Entrance } from './entrances.ts';
+import { BEFORE_DOOR_M, beforeDoor, type Entrance } from './entrances.ts';
 import type { AtEntrance } from './footPlace.ts';
 import { type InDungeon, seaPlace } from './footTrips.ts';
 import type { Happening } from './flow.ts';
@@ -23,8 +23,8 @@ export interface TripFoot {
   readonly held: { readonly entrances: { readonly entrances: readonly Entrance[] } };
 }
 
-/** Where a sea island's dungeon leads back to: before its door in the sea's room (x, y, metres) and the way a player
- *  walks out of it (radians clockwise from north). */
+/** Where a sea island's dungeon leads back to: its door's point in the sea's room (x, y, metres) and the bearing out,
+ *  the way a player walks out of it (radians clockwise from north). */
 export interface SeaBack {
   readonly x: number;
   readonly y: number;
@@ -168,8 +168,11 @@ export function dungeonTrips(
       void game.module.then((module) => {
         const layout = askLayout(module, ask);
         const outside = { node: seaPlace(sea.continent, layout), text: '' };
+        // Out before the door, as a patrol's entrance stands a player out of it: x east, y south.
+        const { x, y, facing } = back;
+        const before = { x: x + Math.sin(facing) * BEFORE_DOOR_M, y: y - Math.cos(facing) * BEFORE_DOOR_M, facing };
         const away = (laid: DungeonLayout, fell: boolean) =>
-          game.travel({ kind: 'surface', name: laid.name, fell }, () => game.ontoSea(back));
+          game.travel({ kind: 'surface', name: laid.name, fell }, () => game.ontoSea(before));
         const work = into(outside, { number: 0, ask }, seas, roomOf(room, seas, false), away);
         game.travel({ kind: 'enter', node: `${room}--dungeon`, name: layout.name }, work);
       });
