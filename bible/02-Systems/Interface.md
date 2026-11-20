@@ -6,6 +6,14 @@ code:
   - client/src/plus/kit.ts#kitCss
   - client/src/plus/kit.ts#wearKit
   - client/src/plus/frame.ts#frameSvg
+  - client/src/plus/frame.ts#framePixels
+  - client/src/ui/faceReader.ts#readFace
+  - client/src/ui/text.ts#layLine
+  - client/src/ui/uiRenderer.ts#UiRenderer
+  - client/src/ui/uiRenderer.ts#uiScale
+  - client/src/ui/paint.ts#paint
+  - client/src/ui/announce.ts#announce
+  - client/src/game/toasts.ts#layToasts
   - client/src/plus/tones.ts#TONES
   - client/src/plus/tones.ts#FILLS
   - client/src/plus/emblems.ts#emblemUrl
@@ -96,8 +104,21 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-Its panels, plates and words are HTML laid over the canvas; by the owner's word none is to be, the game drawing them
-all itself ([[The Interface Uses No HTML, Now or Later]]).
+The game draws its toasts itself; its other panels, plates and words are still HTML laid over the canvas, and by the
+owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each moves to the game's own drawing
+("Drawn by the game", below).
+
+## Drawn by the game
+
+- **The face.** As the page starts, Pixelify Sans is read into its own grid's cells, one texel a cell, with the
+  glyphs `face.ts` mends, so every browser reads the same cells (`readFace`). Words are laid where a browser sets
+  them: Pixelify's advances and the sheet's letter, word and line spacing, rounded as the pages round them.
+- **One draw.** Each frame's glyphs and surfaces are quads in one list, drawn in one instanced pass over the frame at
+  its end, from one atlas of glyphs and tiles, read by whole texels and never filtered (`UiRenderer`).
+- **The roles, painted.** `paint` lays a role's drop shadows, ground, bands, inner shades and bevel or carved frame as
+  the kit's sheet paints them for a page; at a whole scale they match the page's pixels. A CSS pixel is drawn at the
+  screen's ratio rounded to a whole pixel (`uiScale`), so a ratio of 1.5 draws at 2.
+- **Announced.** A toast's words go to a screen reader through `document.ariaNotify` where the browser has it.
 
 ## How it works
 
@@ -545,6 +566,11 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
+- Drawn by the game, only the toasts so far. A word's soft shade past its hard outline is not drawn, as a blur has no
+  crisp form.
+- Death drains the world to grey by a filter on the canvas, which would grey what the game draws over it too. Before
+  the foot HUD's pieces move, the drain moves into the scene's own drawing, under the interface.
+- A screen reader hears a toast only in Chromium (`ariaNotify`), and nothing else the game draws.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not

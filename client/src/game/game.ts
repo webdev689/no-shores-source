@@ -43,6 +43,8 @@ import { afterStoryOn } from './welcome/afterStory.ts';
 import { StoryHost } from './prologue/host.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { installInterfaceSounds } from './uiSounds.ts';
+import { readFace } from '../ui/faceReader.ts';
+import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -83,6 +85,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     (compiled && sloopBuild === undefined ? (sloopBuild = sloopBuildOf(sloopBuildText(compiled))) : sloopBuild) ?? null;
   const land = startLandWorker();
   const scene = new GameScene(gpu);
+  // The interface the game draws itself, once its face is read; until then it draws none.
+  let ui: UiRenderer | null = null;
+  readFace()
+    .then((face) => (ui = new UiRenderer(gpu, face)))
+    .catch((error: unknown) => console.error('the face could not be read:', error));
   const figureView = new FigureView(gpu);
   const { world, landTexts, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const after = afterStoryOn(hudRoot, forge, (x, y) => scene.groundAt(x, y));
@@ -558,6 +565,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     ambience.frame(seconds);
+    if (ui) {
+      hud.drawn(ui, { ...size, scale: uiScale(devicePixelRatio) });
+      ui.present(size.width, size.height);
+    }
     if (flow.mode === 'loading' && ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
       waited += elapsed;

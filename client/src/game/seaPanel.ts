@@ -113,6 +113,11 @@ export class FightPanel {
     parent.append(this.root);
   }
 
+  /** Whether the panel shows. */
+  get shown(): boolean {
+    return !this.root.hidden;
+  }
+
   /** Shows her ship as `ship` reads, or hides the panel for none; it writes the page only when what it says changes. */
   show(ship: ShipReadout | null): void {
     const written = JSON.stringify(ship);

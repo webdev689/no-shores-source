@@ -1,5 +1,4 @@
-/* The quest tracker, her ship's panel in a sea fight, the toasts and the key strip's keycaps (hud.ts, tasks.ts,
-   seaPanel.ts). The kit paints each surface by its role; this sheet gives each its room, on the face's grid: words at
+/* The quest tracker, her ship's panel in a sea fight and the key strip's keycaps (hud.ts, tasks.ts, seaPanel.ts). The kit paints each surface by its role; this sheet gives each its room, on the face's grid: words at
    11 px, the task and her ship's name at 22, a step up to 22 throughout where the view is 1500 by 900 or more. */
 
 .hud-quests {
@@ -234,49 +233,11 @@
   border: 1px solid;
 }
 
-/* DFO's messages and the story's word to the player, over the middle of the view above the dialogue box's top. */
-.toasts {
-  position: absolute;
-  left: 50%;
-  bottom: 268px;
-  translate: -50% 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: max-content;
-  max-width: calc(100vw - 56px);
-  pointer-events: none;
-}
-.toast {
-  padding: 4px 14px;
-  border: 2px solid transparent;
-  font-size: 22px;
-  line-height: 26px;
-  text-align: center;
-  animation: toast-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    translate: 0 6px;
-  }
-}
-
 /* The key strip's keycaps at 22 short of 2400 by 1300, past which the page zooms the whole strip twice over. */
 @media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
   (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
   .hints {
     --type-xs: 22px;
-  }
-}
-/* Narrow, the ship panel stands where the toasts would: while it shows they stand in the room right of it. */
-@media (max-width: 890px) {
-  .fight-ship:not([hidden]) ~ .toasts {
-    left: 292px;
-    translate: none;
-    align-items: flex-start;
-    max-width: calc(100vw - 320px);
   }
 }
 
@@ -320,9 +281,6 @@
 @media (prefers-reduced-motion: reduce) {
   .tasks.fresh,
   .tasks-step.met {
-    animation: none;
-  }
-  .toast {
     animation: none;
   }
   .fight-ship-fill {

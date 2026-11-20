@@ -2,7 +2,9 @@ import { button, make } from '../editor/dom.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
-import { ROLES, type Role, wearKit } from '../plus/kit.ts';
+import { motionReduced, ROLES, type Role, wearKit } from '../plus/kit.ts';
+import { announce } from '../ui/announce.ts';
+import type { UiRenderer } from '../ui/uiRenderer.ts';
 import { type Hint, hintLine } from './gearDom.ts';
 import './hud.css';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
@@ -10,6 +12,7 @@ import type { Landfall } from './seaLaw.ts';
 import { FightPanel, type ShipReadout } from './seaPanel.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { TaskTracker } from './tasks.ts';
+import { drawToasts, keptToasts, layToasts, type Toast } from './toasts.ts';
 
 /** A button of the heads-up display, in the role it plays: let go of once pressed, so Space or Enter, which the game
  *  itself answers, never press it again. */
@@ -73,24 +76,13 @@ interface MarkNode {
   readonly arrow: HTMLElement;
 }
 
-/** The most toasts that stand at once, the newest kept. */
-const MOST_TOASTS = 3;
-
 /** Writes words only when they change: called every frame, the HUD would otherwise rebuild its text each time. */
 function say(node: HTMLElement, text: string): void {
   if (node.textContent !== text) node.textContent = text;
 }
 
-/** Shows `now` in `holder`, a toast each: those no longer said leave and the new are added after, so one kept is never
- *  taken out and put back, which would play its rise again. */
-export function layToasts(holder: HTMLElement, now: readonly string[]): void {
-  const kept = new Map([...holder.children].map((shown) => [shown.textContent, shown]));
-  if (now.length === kept.size && now.every((text) => kept.has(text))) return;
-  for (const [text, shown] of kept) if (!now.includes(text ?? '')) shown.remove();
-  for (const text of now) if (!kept.has(text)) holder.append(make('div', text, `toast ${ROLES.chip}`));
-}
-
-/** The game's heads-up display: plain elements over the canvas, nothing drawn on the GPU. */
+/** The game's heads-up display: its toasts drawn by the game (`drawn`), the rest still elements over the canvas, each
+ *  to be drawn as the toasts are. */
 export class Hud {
   private readonly placeTitle = make('div', '', 'title');
   private readonly placeKind = make('div', '', 'kind');
@@ -101,11 +93,12 @@ export class Hud {
   private readonly respawn: HTMLButtonElement;
   /** The key strip, which the fight's display keeps its arrows clear of (`FootView`). */
   readonly hintList = make('div', '', 'hints');
-  /** The quest tracker, her ship's panel in a sea fight and the toasts, laid together under the menu and the veil. */
+  /** The quest tracker and her ship's panel in a sea fight, laid together under the menu and the veil. */
   private readonly quests = make('div', '', 'hud-quests');
   readonly tasks = new TaskTracker(this.quests);
   private readonly fightPanel = new FightPanel(this.quests);
-  private readonly toasts = make('div', '', 'toasts');
+  /** The toasts said now, which the game draws (`drawn`). */
+  private toasts: Toast[] = [];
   private readonly veilText = make('div', '', 'veil-text');
   private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');
@@ -155,8 +148,6 @@ export class Hud {
       this.respawn,
     );
     this.veilNode.append(this.veilText);
-    this.toasts.setAttribute('role', 'status');
-    this.quests.append(this.toasts);
     this.voyage = hudButton('', () => this.voyageWanted());
     this.landfall = hudButton('', () => this.landfallWanted(), 'primary');
     this.landfall.classList.add('landfall');
@@ -253,7 +244,17 @@ export class Hud {
   /** The short messages over the middle of the view now, the newest few: the caller says each every frame it holds,
    *  as long as its own clock keeps it, so a toast never outlives what it tells. */
   toast(...texts: string[]): void {
-    layToasts(this.toasts, texts.slice(-MOST_TOASTS));
+    const kept = keptToasts(this.toasts, texts, performance.now() / 1000);
+    for (const toast of kept) if (!this.toasts.some((shown) => shown.text === toast.text)) announce(toast.text);
+    this.toasts = kept;
+  }
+
+  /** Draws what the game draws of the HUD with `ui`, in a view `width` by `height` device pixels at `scale` device
+   *  pixels a CSS pixel: the toasts. */
+  drawn(ui: UiRenderer, view: { readonly width: number; readonly height: number; readonly scale: number }): void {
+    const { width, height, scale } = view;
+    const shown = { width: width / scale, height: height / scale, panelShown: this.fightPanel.shown };
+    drawToasts(ui, layToasts(ui.face, this.toasts, shown, performance.now() / 1000, motionReduced()), scale);
   }
 
   /** A line of what is happening (a voyage, a connection), or none. */
