@@ -585,8 +585,6 @@ table GearShip {
   officers: [GearOfficer];
   offers: [GearOfficer];
   trim: [double];
-  // The faction the player is pledged to (0 none), whose counter signs officers on.
-  pledge: ubyte;
 }
 
 // What a room sends: exactly one of these is present.

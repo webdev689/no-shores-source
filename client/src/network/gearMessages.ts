@@ -284,8 +284,6 @@ export interface GearShip {
   readonly officers: readonly GearOfficer[];
   readonly offers: readonly GearOfficer[];
   readonly trim: readonly number[];
-  /** The faction pledged to, 0 none: the one whose counter signs officers on. */
-  readonly pledge: number;
 }
 
 /** No node chosen in a column, and no resource. */
@@ -476,7 +474,6 @@ function shipOf(ship: GearShipTable | null): GearShip | null {
     officers: listed(ship.officersLength(), (index) => ship.officers(index), 'officer'),
     offers: listed(ship.offersLength(), (index) => ship.offers(index), 'offer'),
     trim: Array.from(ship.trimArray() ?? []),
-    pledge: ship.pledge(),
   };
 }
 
