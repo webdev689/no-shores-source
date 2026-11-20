@@ -121,11 +121,27 @@ Her rank, by the lowest level of her water's band:
   They lie within 30 m, drift downwind at 0.3 m/s, are gone after 180 s, and are gathered within 25 m.
 - **Striking**: a struck ship lies hove to 90 s, then is scuttled.
 - **Boarding**: within 30 m of her, both ships under 2 m/s. Her crew are 3 hands at a Minor, 3 and a heavy at a
-  Major, 4 and a heavy at an Elite, 5 and a mate at a Miniboss, 6 and her Boss at a Boss. A deck won is held 60 s,
-  then she is scuttled.
+  Major, 4 and a heavy at an Elite, 5 and a mate at a Miniboss, 6 and her Boss at a Boss. Boarders come over her rail
+  on their own ship's side, 0.5 m in, facing her bow, and a fallen one stands again at the nearest rail. A deck won is
+  held 60 s, then she is scuttled.
+- **On her deck**: the view cuts to the boarder, no pan. The third-person eye keeps clear of her masts (0.3 m), spars
+  (0.2 m) and sides (0.3 m thick, 6 m up), for the camera alone. Her name heads the place line, with "Aboard her: her
+  crew stands to meet you"; won, "Her deck is yours" and her hold's take.
 - **Losing**: washed up at the port city nearest by the sea's way; a sunk ship comes back with 10% of her hull, 25%
   of her canvas and half her men.
 - **Repair**: free at a port city, within 3 km of its roadstead, at rest: a second for each hundredth missing, 100 s
   at most.
 - **Limits**: a player or a hostile ship within 750 m of a fight joins it. A wary captain falls on a Sloop by DFO's
   own rule: one she outguns 1.25 to one, or one holed under 0.35 of her hull.
+
+### The fight's look
+
+- **Effects**: 10 puffs of smoke a gun, lifting and thinning within a few seconds; 32 splinters to a hull hit, a hole a
+  dark middle in a rim of raw timber; a ball's splash a column of water rising and falling back in a second, 0.6 to 2
+  times a round shot's, leaving a ragged patch of foam.
+- **Rig**: a third of each sail's 7 by 6 cells shot through at no canvas left; a torn sail and a fallen mast fall to
+  leeward and float 40 s; a mast falls in 3 s, taking every piece whose top lies within 2.5 m along her and 3 m over
+  its foot; colours come down in 4 s.
+- **Going down**: trimmed 10 degrees by her end with more holes, listing to the side with more; 80 flecks of foam a
+  second over her from halfway down.
+- **What floats**: each piece under a gold mark 2.5 m over it, never under about ten pixels across.
