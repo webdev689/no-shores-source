@@ -149,6 +149,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Arts' Birds Are Forged in Blender]]
 - [[Every Shader Is Checked Offline]]
 - [[Fewer Plates Show, Sized by Rank, After Destiny]]
+- [[Plates as Claude Shows Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
