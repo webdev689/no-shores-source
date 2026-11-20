@@ -14,6 +14,9 @@ code:
   - crates/dungeon/src/models.rs#PropModel
   - crates/dungeon/src/furnish.rs#furnish
   - crates/dungeon/src/fixtures.rs#Fixture
+  - crates/dungeon/src/landmarks.rs#place_landmarks
+  - crates/dungeon/src/landmark_table.rs#LANDMARKS
+  - tools/dungeon/landmarkTable.ts
   - crates/dungeon/src/props.rs#nearest_middle
   - crates/dungeon/src/torches.rs#Torch
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
@@ -148,19 +151,34 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   tops; crystals against the caverns' walls (a solid 0.6 m by 0.4 m, 0.9 m high), and glowing fungus in a Fungus
   Grove or a Dripping Gallery (the same, 0.5 m high); lanterns 2 m up on the mines' walls and posts; and a fire in
   each hearth. A fixture with a solid stands as a piece does. Every room has a light.
+- **Landmarks** (`place_landmarks`): set pieces a dungeon is remembered by, three a style, each with its solids and
+  glows (`content/dungeon/landmarks.json`, written into the crate by `tools/dungeon/landmarkTable.ts`). A dungeon of
+  two or three blocks stands one, of four or five two, none twice, each in a room of its look's style but never the
+  way in's or the end. Rooms are tried from the middle of the walk outward, each style's landmarks in an order drawn
+  on the lane `landmark:<seed>`.
+- **A landmark's place.** It covers whole cells of its room. A free one stands nearest the room's middle at a drawn
+  quarter turn, clear of the room's rim where any spot is, else with its edges on the rock. A wall one stands its
+  back row on rock along its whole width, faces away from it with its other sides in the room, nearest that wall's
+  middle. None covers a torch's cell, or covers or touches a doorway, the way in or the portal; the room's other
+  cells stay one walk and as many as its band.
+- **A landmark's room** takes its role and name, a name taken again taking a word before it. Its purpose furnishes it
+  round the piece: no prop, fixture or foe stands on its cells, which wall the walk as a solid does, and no pillar
+  whose box would meet it is stood.
 - **Where foes stand** (`nearest_middle`): a room's free cells nearest its middle, its quiet cells first and then the
   rest, so a smaller band's cells are always the first of a larger's.
 - **The walk.** Each room's walk is the fewest cells crossed from the way in's cell; every room of the way in's block
   lies nearer than the end.
 - **What a body stands on** (`heights`, `boxes`): one floor at 0 m, each open cell's height and none for rock, in
   cells of 3.2 m, and as boxes (min x, min y, max x, max y, top) the jambs, then the pillars, then the props' solids,
-  then the fixtures'.
+  then the fixtures', then the landmarks'.
 - **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
   name and its number, as the page's `DungeonLayout` reads it: its name, first style and pictures; its looks (each a
   style and its pictures) and each cell's look (-1 for rock); its cells (-2 rock, -1 corridor, or a room's number),
   ceilings, rooms (each its rectangle, height, walk, role, name, ceiling form and look), end, way in, arrival, exit
   door, portal, torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
-  lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw) and boxes; null for a number
+  lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw), boxes, landmarks (each its
+  module, its turned footprint's north-west corner and its quarter turns clockwise) and glows (each x, y, z and its
+  kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number
   past the patrol's three. The room door's `dungeon` asks it. Three dungeons' answers are pinned by their hash,
   natively and through WebAssembly, so a dungeon is the same bytes on every machine.
 
@@ -188,7 +206,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   enters rock, the grid's edge or a solid below its top (`wall_entry`), however far it flies in a tick, passes over a
   solid lower than itself, and falls onto the floor alone (`floor_at`).
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with every solid as
-  its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It
+  its colliders, each a body's height at least, since the ground walls a solid however low, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It
   lays no links: a body climbs nothing in a dungeon, so no foe paths up a solid's side or off its top.
 - **Its garrison** ([[Enemies]]): the Reeve, a Miniboss, alone on the end room's cell nearest its middle; a band of
   two to four in each other room past the way in's, one foe for each ten of its cells (`posts_for`), on its free cells

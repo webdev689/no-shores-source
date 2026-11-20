@@ -55,15 +55,19 @@ fn every_name_in_a_dungeon_is_its_own_a_purpose_used_again_taking_a_word_before_
         for room in along_the_walk(&dungeon) {
             let found = &dungeon.rooms[room];
             assert!(!seen.contains(&found.name.as_str()), "{} twice", found.name);
-            let before = roles.iter().filter(|&&role| role == found.purpose.role).count();
-            roles.push(found.purpose.role);
+            // A landmark's room is named for it, its role the landmark's; any other for its purpose.
+            let landmark = dungeon.landmarks.iter().find(|placed| placed.room == room).map(|placed| placed.landmark);
+            let base = landmark.map_or(found.purpose.name, |landmark| landmark.name.strip_prefix("the ").unwrap());
+            assert_eq!(found.role, landmark.map_or(found.purpose.role, |landmark| landmark.role));
+            let before = roles.iter().filter(|&&role| role == found.role).count();
+            roles.push(found.role);
             let want = match before {
-                0 => format!("the {}", found.purpose.name),
-                1 => format!("the Old {}", found.purpose.name),
+                0 => format!("the {base}"),
+                1 => format!("the Old {base}"),
                 _ => found.name.clone(),
             };
             assert_eq!(found.name, want);
-            assert!(found.name.starts_with("the ") && found.name.ends_with(found.purpose.name));
+            assert!(found.name.starts_with("the ") && found.name.ends_with(base));
             again += usize::from(before > 0);
             seen.push(&found.name);
         }

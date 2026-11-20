@@ -51,9 +51,20 @@ pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavM
     let anchor = [first.0, first.1, floor.height_at(first.0, first.1)];
     match floor {
         // On the cells' heights alone, the jambs and pillars its colliders: a solid read as ground would make the
-        // floor beside it too steep to walk, and narrow every doorway past a body's width.
+        // floor beside it too steep to walk, and narrow every doorway past a body's width. Each stands a body's height
+        // at least, since the ground walls a solid however low: no path runs over a pool's rim or a dais.
         Floor::Dungeon(ground) => {
-            let solids: Vec<Block> = ground.solids().iter().map(Block::from_floats).collect();
+            let solids: Vec<Block> = ground
+                .solids()
+                .iter()
+                .map(|&[min_x, min_y, max_x, max_y, top]| Block {
+                    min_x,
+                    min_y,
+                    max_x,
+                    max_y,
+                    top: top.max(agent.height),
+                })
+                .collect();
             NavMesh::bake_anchored(&solids, ground.grid(), bounds, &agent, anchor)
         }
         Floor::Flat | Floor::Land(_) => NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor),

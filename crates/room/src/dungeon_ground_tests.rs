@@ -38,8 +38,8 @@ fn a_body_run_at_a_wall_stops_its_half_width_off_it_on_the_floor() {
                         && (min_y + max_y) / 2.0 - y < CELL_M / 2.0
                         && y - (min_y + max_y) / 2.0 < CELL_M / 2.0
                 });
-                // A prop or a fixture may stand over the cell's middle: their own tests run at them.
-                if furnished {
+                // A prop, a fixture or a landmark may stand over the cell's middle: their own tests run at them.
+                if furnished || dungeon.under_landmark(cell) {
                     continue;
                 }
                 // A doorway's jamb stops it sooner.
@@ -135,6 +135,32 @@ fn way_out(dungeon: &Dungeon, solid: &[f64; 5]) -> Option<(usize, Side)> {
 }
 
 #[test]
+fn a_body_run_at_a_landmark_from_its_room_stops_its_half_width_off_its_solids_and_never_climbs_one() {
+    let mut run_at = 0;
+    for seed in 0..60 {
+        let (dungeon, ground) = forged(seed);
+        for placed in &dungeon.landmarks {
+            for (cell, side) in placed.cells.iter().flat_map(|&cell| SIDES.into_iter().map(move |side| (cell, side))) {
+                // From the middle of a free cell of its room beside the footprint, straight at it.
+                let Some(from) = dungeon.beside(cell, side) else { continue };
+                if dungeon.room_at(from) != Some(placed.room) || dungeon.holds_solid(from) {
+                    continue;
+                }
+                let body = run(&ground, dungeon.centre(from), side.opposite(), 120);
+                for &[min_x, min_y, max_x, max_y, _] in &placed.solids {
+                    let [near_x, near_y] = [body.x.clamp(min_x, max_x), body.y.clamp(min_y, max_y)];
+                    let apart = ((body.x - near_x) * (body.x - near_x) + (body.y - near_y) * (body.y - near_y)).sqrt();
+                    assert!(apart >= TUNING.radius - 1e-9, "seed {seed}: {apart} m from {}", placed.landmark.module);
+                }
+                assert!(body.z.abs() < 1e-9 && body.mode == Mode::Ground, "seed {seed}: never on it");
+                run_at += 1;
+            }
+        }
+    }
+    assert!(run_at > 50, "{run_at} runs at a landmark");
+}
+
+#[test]
 fn a_body_run_at_a_prop_from_the_room_stops_its_half_width_off_it() {
     let (mut run_at, mut seed) = (0, 0);
     while run_at < 40 {
@@ -202,12 +228,24 @@ fn a_line_is_walled_by_the_rock_and_every_solid_but_crosses_bare_floor() {
     }
 }
 
+/// Whether no taller solid stands on any of a solid's floor, as a landmark's tomb stands on its dais.
+fn uncovered(solids: &[[f64; 5]], solid: &[f64; 5]) -> bool {
+    solids.iter().all(|other| {
+        other[4] <= solid[4]
+            || other[2] <= solid[0]
+            || other[0] >= solid[2]
+            || other[3] <= solid[1]
+            || other[1] >= solid[3]
+    })
+}
+
 #[test]
 fn a_line_passes_over_a_solid_lower_than_itself_and_meets_one_where_it_is_lower_than_the_top() {
     let mut low_props = 0;
     for seed in 0..40 {
         let (dungeon, ground) = forged(seed);
-        for &[min_x, min_y, max_x, max_y, top] in &dungeon.boxes() {
+        let solids = dungeon.boxes();
+        for &[min_x, min_y, max_x, max_y, top] in solids.iter().filter(|solid| uncovered(&solids, solid)) {
             // Inside the solid's own sides, so no other solid or rock is crossed.
             let (middle_y, inset) = ((min_y + max_y) / 2.0, (max_x - min_x) / 4.0);
             let line = |z: f64| ground.line_walled([min_x + inset, middle_y, z], [max_x - inset, middle_y, z]);
@@ -240,7 +278,7 @@ fn a_shot_enters_rock_at_its_cell_side_and_a_solid_by_its_face_below_its_top_and
                 }
             }
         }
-        for &[min_x, min_y, max_x, max_y, top] in &solids {
+        for &[min_x, min_y, max_x, max_y, top] in solids.iter().filter(|solid| uncovered(&solids, solid)) {
             let (middle_y, z) = ((min_y + max_y) / 2.0, top / 2.0);
             let across = ground.wall_entry([min_x - 1.0, middle_y, z], [min_x + 3.0, middle_y, z]);
             assert!(across.is_some_and(|share| share <= 0.25 + 1e-9), "seed {seed}: stopped no later than its face");

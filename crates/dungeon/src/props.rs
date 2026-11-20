@@ -107,9 +107,13 @@ impl Dungeon {
         (at[1] / CELL_M) as usize * self.columns + (at[0] / CELL_M) as usize
     }
 
-    /// Whether a cell holds a solid: a prop's or a fixture's, each of which stands inside its own cell.
+    /// Whether a cell holds a solid: a prop's or a fixture's, each of which stands inside its own cell, or a
+    /// landmark's footprint.
     #[must_use]
     pub fn holds_solid(&self, cell: usize) -> bool {
+        if self.under_landmark(cell) {
+            return true;
+        }
         let mut solids = self
             .props
             .iter()

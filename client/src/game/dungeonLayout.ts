@@ -18,7 +18,8 @@ export const FIXTURE = { brazier: 0, candles: 1, crystals: 2, lantern: 3, hearth
  *  its north-west corner, z up from its floor. A cell is -2 rock, -1 corridor or its room's number; a side is 0 east,
  *  1 south, 2 west, 3 north; a torch is x, y, z and its wall's side; a fixture x, y, z and its kind (`FIXTURE`); a
  *  frame is its room's cell, the side its corridor lies on and its height; a pillar its corner and its height; a box
- *  min x, min y, max x, max y and top: the jambs, then the pillars, then the props' solids, then the fixtures'. */
+ *  min x, min y, max x, max y and top: the jambs, then the pillars, then the props' solids, then the fixtures', then
+ *  the landmarks'. */
 export interface DungeonLayout {
   readonly name: string;
   /** The first block's style, which names the dungeon. */
@@ -72,6 +73,12 @@ export interface DungeonLayout {
    *  wall has no solid among the boxes. */
   readonly props: readonly (readonly [number, number, number, number, number])[];
   readonly boxes: readonly (readonly [number, number, number, number, number])[];
+  /** The set pieces its rooms are remembered by (content/dungeon/landmarks.json): each its module, the north-west
+   *  corner of its turned footprint (x, y) and its quarter turns clockwise. */
+  readonly landmarks: readonly (readonly [string, number, number, number])[];
+  /** The landmarks' lights: each x, y, z and its kind, the fixtures' kinds and then 6 spirit, 7 daylight, 8 water and
+   *  9 rune. */
+  readonly glows: readonly (readonly [number, number, number, number])[];
 }
 
 export const ROCK = -2;

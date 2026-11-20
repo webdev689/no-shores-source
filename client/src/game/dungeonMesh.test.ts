@@ -49,6 +49,8 @@ const layout: DungeonLayout = {
     [3.2, 0, 3.5, 0.7, 3.2],
     [3.2, 2.5, 3.5, 3.2, 3.2],
   ],
+  landmarks: [],
+  glows: [],
 };
 
 type Corner = readonly [number, number, number];

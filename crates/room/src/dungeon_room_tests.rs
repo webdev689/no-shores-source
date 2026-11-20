@@ -9,7 +9,7 @@ use crate::{Input, standing_on};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
 use combat::{FighterId, Intent};
-use dungeon::{DOORWAY_HALF_M, Side};
+use dungeon::{DOORWAY_HALF_M, SIDES, Side};
 use movement::{Controls, Mode, TUNING};
 
 const PATROLS: [&str; 3] = ["saltgrass-downs", "thunderhoof-grasslands", "whitewind-tundra"];
@@ -83,6 +83,74 @@ fn a_dungeons_room_stands_its_reeve_alone_in_the_end_room_and_its_bands_past_the
         }
     }
     assert!(Room::dungeon(PATROLS[0], dungeon::PER_PATROL, LEVELS).is_none(), "a patrol has three");
+}
+
+#[test]
+fn no_foe_the_cache_or_the_arrival_stands_on_a_landmark() {
+    let mut landmarks = 0;
+    for nth in 0..30 {
+        let patrol = format!("patrol-{nth}");
+        for number in 0..dungeon::PER_PATROL {
+            let room = Room::dungeon(&patrol, number, LEVELS).expect("a patrol's dungeon");
+            let dungeon = forged(&patrol, number);
+            let under = |at: [f64; 2]| {
+                dungeon.under_landmark((at[1] / CELL_M) as usize * dungeon.columns + (at[0] / CELL_M) as usize)
+            };
+            for member in room.garrison.iter().flat_map(|post| post.members.iter()) {
+                assert!(!under([member.2[0], member.2[1]]), "{patrol} {number}: a foe's post on a landmark");
+            }
+            for foe in room.foes.values() {
+                assert!(!under([foe.fighter.body.x, foe.fighter.body.y]), "{patrol} {number}: a foe on a landmark");
+            }
+            let [x, y, ..] = room.cache().expect("its cache");
+            assert!(!under([x, y]) && !under(dungeon.arrival().0), "{patrol} {number}: the cache or the arrival");
+            landmarks += dungeon.landmarks.len();
+        }
+    }
+    assert!(landmarks > 90, "{landmarks} landmarks among 90 dungeons");
+}
+
+#[test]
+fn the_navmesh_leads_round_a_landmark_never_through_its_solids() {
+    let mut routes = 0;
+    for patrol in PATROLS {
+        for number in 0..dungeon::PER_PATROL {
+            let room = Room::dungeon(patrol, number, LEVELS).expect("a patrol's dungeon");
+            let dungeon = &forged(patrol, number);
+            for placed in &dungeon.landmarks {
+                // The free cells of its room beside the footprint: a route from the first to the farthest.
+                let beside: Vec<[f64; 2]> = placed
+                    .cells
+                    .iter()
+                    .flat_map(|&cell| SIDES.into_iter().filter_map(move |side| dungeon.beside(cell, side)))
+                    .filter(|&cell| dungeon.room_at(cell) == Some(placed.room) && !dungeon.holds_solid(cell))
+                    .map(|cell| dungeon.centre(cell))
+                    .collect();
+                let Some(&from) = beside.first() else { continue };
+                let to =
+                    beside.iter().copied().max_by(|first, second| apart(from, *first).total_cmp(&apart(from, *second)));
+                let Some(to) = to else { continue };
+                let route = room.nav.find_path([from[0], from[1], 0.0], [to[0], to[1], 0.0]).expect("a way round");
+                for pair in route.windows(2) {
+                    let looks =
+                        (apart([pair[0][0], pair[0][1]], [pair[1][0], pair[1][1]]) / 0.05).ceil().max(1.0) as u32;
+                    for look in 0..=looks {
+                        let share = f64::from(look) / f64::from(looks);
+                        let (x, y) = (
+                            pair[0][0] + (pair[1][0] - pair[0][0]) * share,
+                            pair[0][1] + (pair[1][1] - pair[0][1]) * share,
+                        );
+                        let inside = placed.solids.iter().any(|&[min_x, min_y, max_x, max_y, _]| {
+                            x > min_x + 1e-6 && x < max_x - 1e-6 && y > min_y + 1e-6 && y < max_y - 1e-6
+                        });
+                        assert!(!inside, "{patrol} {number}: the route through {}", placed.landmark.module);
+                    }
+                }
+                routes += 1;
+            }
+        }
+    }
+    assert!(routes >= 9, "{routes} routes round a landmark");
 }
 
 #[test]

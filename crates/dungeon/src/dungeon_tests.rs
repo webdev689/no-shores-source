@@ -115,7 +115,8 @@ fn a_doorway_narrows_to_its_frame_and_its_jambs_stand_in_the_corridor() {
         let boxes = dungeon.boxes();
         let props = dungeon.props.iter().filter(|prop| prop.solid.is_some()).count();
         let fixtures = dungeon.fixtures.iter().filter(|fixture| fixture.solid.is_some()).count();
-        assert_eq!(boxes.len(), dungeon.frames.len() * 2 + dungeon.pillars.len() + props + fixtures);
+        let landmarks: usize = dungeon.landmarks.iter().map(|placed| placed.solids.len()).sum();
+        assert_eq!(boxes.len(), dungeon.frames.len() * 2 + dungeon.pillars.len() + props + fixtures + landmarks);
         for (frame, pair) in dungeon.frames.iter().zip(boxes.chunks(2)) {
             assert!(dungeon.room_at(frame.cell).is_some());
             assert_eq!(dungeon.cells[dungeon.beside(frame.cell, frame.side).unwrap()], Cell::Corridor);
@@ -188,6 +189,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         walk: 0,
         look: 0,
         purpose: &STYLES[0].purposes.way_in,
+        role: STYLES[0].purposes.way_in.role,
         name: String::new(),
     };
     let (rock, corridor) = (Cell::Rock, Cell::Corridor);
@@ -222,6 +224,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         pillars: Vec::new(),
         props: Vec::new(),
         fixtures: Vec::new(),
+        landmarks: Vec::new(),
     };
     let _ = laid.walk();
     assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, u32::MAX]);
@@ -251,6 +254,12 @@ fn pillars_stand_on_every_second_inner_corner_of_a_great_hewn_room_four_of_its_o
     let mut stood = 0;
     for dungeon in every_dungeon(300) {
         let own = |x: usize, y: usize| dungeon.room_at(y * dungeon.columns + x);
+        // A landmark stands in place of the pillars whose boxes would meet it: those at its footprint's corners.
+        let under = |x: usize, y: usize| {
+            [(x, y), (x - 1, y), (x, y - 1), (x - 1, y - 1)]
+                .iter()
+                .any(|&(column, row)| dungeon.under_landmark(row * dungeon.columns + column))
+        };
         for (number, room) in dungeon.rooms.iter().enumerate() {
             let mut want = Vec::new();
             if room.width >= 4 && room.depth >= 4 && room.shape != Shape::Cave {
@@ -259,6 +268,7 @@ fn pillars_stand_on_every_second_inner_corner_of_a_great_hewn_room_four_of_its_o
                         if [own(x, y), own(x - 1, y), own(x, y - 1), own(x - 1, y - 1)]
                             .iter()
                             .all(|&at| at == Some(number))
+                            && !under(x, y)
                         {
                             want.push([x as f64 * CELL_M, y as f64 * CELL_M, room.height]);
                         }

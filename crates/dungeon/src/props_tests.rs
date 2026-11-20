@@ -41,6 +41,13 @@ fn solids(dungeon: &Dungeon) -> Vec<(usize, [f64; 5])> {
     all.map(|solid| (cell_at(dungeon, (solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0), solid)).collect()
 }
 
+/// The cells a room's foes may not stand on: those holding a solid, and those under a landmark.
+fn taken(dungeon: &Dungeon) -> Vec<usize> {
+    let mut cells: Vec<usize> = solids(dungeon).into_iter().map(|(cell, _)| cell).collect();
+    cells.extend(dungeon.landmarks.iter().flat_map(|placed| placed.cells.iter().copied()));
+    cells
+}
+
 #[test]
 fn the_catalogue_is_the_forged_models_measures_and_far_more_than_before() {
     let text =
@@ -161,7 +168,7 @@ fn no_piece_stands_on_a_doorway_the_way_in_the_portal_the_reeves_post_or_a_torch
 #[test]
 fn a_furnished_rooms_free_cells_are_one_walk_joining_its_doorways_and_enough_for_its_foes() {
     for dungeon in every_dungeon(600) {
-        let taken: Vec<usize> = solids(&dungeon).into_iter().map(|(cell, _)| cell).collect();
+        let taken = taken(&dungeon);
         for (number, room) in dungeon.rooms.iter().enumerate() {
             let free: Vec<usize> = room.cells.iter().copied().filter(|cell| !taken.contains(cell)).collect();
             assert!(free.len() >= posts_for(room.cells.len()), "room {number}: {} free", free.len());
@@ -223,7 +230,7 @@ fn essentially_every_room_is_furnished_and_every_pattern_is_laid() {
 #[test]
 fn a_rooms_foes_stand_on_its_free_cells_nearest_its_middle_quiet_first_each_count_the_start_of_the_next() {
     for dungeon in every_dungeon(400) {
-        let taken: Vec<usize> = solids(&dungeon).into_iter().map(|(cell, _)| cell).collect();
+        let taken = taken(&dungeon);
         for (number, room) in dungeon.rooms.iter().enumerate() {
             let most = dungeon.nearest_middle(number, POSTS_A_ROOM);
             let free = room.cells.iter().filter(|cell| !taken.contains(cell)).count();

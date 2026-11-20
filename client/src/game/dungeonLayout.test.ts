@@ -48,6 +48,15 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   const furnished = laid.frames.length * 2 + laid.pillars.length;
   assert.ok(laid.boxes.length >= furnished, 'two jambs a frame, then the pillars, then the props’ solids');
   assert.equal(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0), laid, 'laid once, kept');
+  assert.ok(laid.landmarks.length > 0, 'a landmark stands in it');
+  for (const [piece, x, y, turns] of laid.landmarks) {
+    assert.match(piece, /^(crypt|halls|cells|sanctum|caverns|mines)\.[a-z-]+$/);
+    assert.ok(x >= 0 && y >= 0 && [0, 1, 2, 3].includes(turns), 'its corner on the grid, a whole quarter turn');
+  }
+  assert.ok(
+    laid.glows.every((glow) => glow.length === 4 && Number.isInteger(glow[3])),
+    'each glow x, y, z, kind',
+  );
   assert.notEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 1), laid);
 });
 

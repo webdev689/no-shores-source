@@ -1,11 +1,13 @@
 //! A whole dungeon: two to five blocks in a chain from the way in's, each next one beside the one before and sharing
 //! one doorway with it, so the way runs from a beginning through a middle to an end; in about half of them the last
 //! block is laid in the style below the first. With it, what the rooms and the Game read: the way in's exit door, the
-//! return portal in the end room, each room's walk from the way in, purpose, name and ceiling, and what a body runs
-//! into beside the rock, the doorways' jambs, the great rooms' pillars, the props and the fixtures.
+//! return portal in the end room, each room's walk from the way in, purpose, name and ceiling, its landmarks, and what
+//! a body runs into beside the rock, the doorways' jambs, the great rooms' pillars, the props, the fixtures and the
+//! landmarks.
 
 use crate::block::{BLOCK_CELLS, BlockLayout, Ends, OPENING_FIRST, OPENING_LAST, Opening};
 use crate::fixtures::Fixture;
+use crate::landmarks::Placed;
 use crate::lane::Lane;
 use crate::purposes::Purpose;
 use crate::shapes::{Ceiling, Shape, ceiling};
@@ -35,7 +37,8 @@ const ARRIVE_PAST_MIDDLE_M: f64 = 0.4;
 
 /// A room: its rectangle in the dungeon's cells, its cells and those of them no side of which meets a corridor (row
 /// by row), the rock standing inside it, its ceiling's height and form, its shape, how many cells' walk it lies from
-/// the way in, its look (by its number among the dungeon's), and its purpose and name.
+/// the way in, its look (by its number among the dungeon's), its purpose, and its role and name: its purpose's, or
+/// its landmark's where one stands in it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Room {
     pub x: usize,
@@ -51,6 +54,7 @@ pub struct Room {
     pub walk: u32,
     pub look: usize,
     pub purpose: &'static Purpose,
+    pub role: &'static str,
     pub name: String,
 }
 
@@ -99,6 +103,8 @@ pub struct Dungeon {
     /// The props its rooms are furnished with, and the lights that are not torches (`furnish`, `fixtures`).
     pub props: Vec<crate::Prop>,
     pub fixtures: Vec<Fixture>,
+    /// The set pieces its rooms are remembered by (`landmarks`).
+    pub landmarks: Vec<Placed>,
 }
 
 /// The squares of the blocks, in a chain: the first at the start, each next one beside the one before, drawn from
@@ -172,6 +178,7 @@ impl Dungeon {
             pillars: Vec::new(),
             props: Vec::new(),
             fixtures: Vec::new(),
+            landmarks: Vec::new(),
         };
         let blocks: Vec<BlockLayout> = openings
             .iter()
@@ -203,6 +210,8 @@ impl Dungeon {
         }
         dungeon.flank_portal();
         dungeon.name_rooms(seed);
+        dungeon.place_landmarks(seed);
+        dungeon.give_names();
         dungeon.furnish(seed, &steps);
         dungeon.frame();
         dungeon
@@ -290,6 +299,7 @@ impl Dungeon {
                 look,
                 // Each room's own purpose and name are given once the walk is known (`name_rooms`).
                 purpose: &style.purposes.way_in,
+                role: style.purposes.way_in.role,
                 name: String::new(),
             };
             self.pillars.extend(self.pillars_of(&placed, first + number));
@@ -422,7 +432,8 @@ impl Dungeon {
     }
 
     /// What a body runs into beside the rock, each (min x, min y, max x, max y, top): every doorway's two jambs, up
-    /// to its ceiling, then every pillar, then every prop's solid (a hanging has none), then every fixture's.
+    /// to its ceiling, then every pillar, then every prop's solid (a hanging has none), then every fixture's, then
+    /// every landmark's.
     #[must_use]
     pub fn boxes(&self) -> Vec<[f64; 5]> {
         let half = CELL_M / 2.0;
@@ -451,6 +462,7 @@ impl Dungeon {
         }
         boxes.extend(self.props.iter().filter_map(|prop| prop.solid));
         boxes.extend(self.fixtures.iter().filter_map(|fixture| fixture.solid));
+        boxes.extend(self.landmarks.iter().flat_map(|placed| placed.solids.iter().copied()));
         boxes
     }
 }

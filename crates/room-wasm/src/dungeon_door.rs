@@ -37,8 +37,9 @@ pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
 /// or its room's number, and wears a look by its number (-1 for rock); sides are 0 east, 1 south, 2 west, 3 north;
 /// points are x east, y south, z up from the dungeon's north-west corner at its floor; a bearing is radians clockwise
 /// from north. Each prop is its forged model's id, where its origin stands (x, y, z) and its yaw, which turns its +z
-/// as an RMB block's yaw does; each fixture where its light burns and its kind. The boxes are the jambs, the pillars,
-/// the props' solids (a hanging has none) and the fixtures' solids, in that order.
+/// as an RMB block's yaw does; each fixture where its light burns and its kind; each landmark its module, its turned
+/// footprint's north-west corner (x, y) and its quarter turns clockwise; each glow x, y, z and its kind. The boxes
+/// are the jambs, the pillars, then the props', the fixtures' and the landmarks' solids (a hanging has none).
 #[must_use]
 pub fn dungeon_json(text: &[u8]) -> String {
     let (Ok(found), Some((seed, style))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
@@ -65,7 +66,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
                 "depth": room.depth,
                 "height": room.height,
                 "walk": room.walk,
-                "role": room.purpose.role,
+                "role": room.role,
                 "name": room.name,
                 "ceiling": room.ceiling.key(),
                 "look": room.look,
@@ -92,6 +93,12 @@ pub fn dungeon_json(text: &[u8]) -> String {
         .collect();
     let props: Vec<[f64; 5]> =
         laid.props.iter().map(|prop| [f64::from(prop.model), prop.at[0], prop.at[1], prop.at[2], prop.yaw]).collect();
+    let landmarks: Vec<Value> = laid
+        .landmarks
+        .iter()
+        .map(|placed| json!([placed.landmark.module, placed.origin[0], placed.origin[1], placed.turns]))
+        .collect();
+    let glows: Vec<[f64; 4]> = laid.landmarks.iter().flat_map(|placed| placed.glows.iter().copied()).collect();
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
     json!({
@@ -126,6 +133,8 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "pillarHalf": dungeon::PILLAR_HALF_M,
         "boxes": laid.boxes(),
         "props": props,
+        "landmarks": landmarks,
+        "glows": glows,
     })
     .to_string()
 }
@@ -191,7 +200,7 @@ mod tests {
         br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
         br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
     ];
-    const AGREED_HASH: u64 = 0x59a0_33c6_4d95_5038;
+    const AGREED_HASH: u64 = 0x42e0_5208_1430_f238;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
@@ -209,7 +218,7 @@ mod tests {
 
     #[test]
     fn a_dungeon_answers_every_field_of_the_pages_layout_each_consistent_with_the_rest() {
-        let mut deeper = 0;
+        let (mut deeper, mut placing) = (0, 0);
         for nth in 0..60 {
             for number in 0..dungeon::PER_PATROL {
                 let patrol = format!("patrol-{nth}");
@@ -228,6 +237,8 @@ mod tests {
                     "exitDoor",
                     "fixtures",
                     "frames",
+                    "glows",
+                    "landmarks",
                     "looks",
                     "name",
                     "pictures",
@@ -277,9 +288,21 @@ mod tests {
                 }
                 assert_eq!(laid["boxes"].as_array().unwrap().len(), native.boxes().len());
                 assert_eq!(laid["props"].as_array().unwrap().len(), native.props.len());
+                let landmarks = laid["landmarks"].as_array().unwrap();
+                assert_eq!(landmarks.len(), native.landmarks.len());
+                for (read, placed) in landmarks.iter().zip(&native.landmarks) {
+                    let want =
+                        serde_json::json!([placed.landmark.module, placed.origin[0], placed.origin[1], placed.turns]);
+                    assert_eq!(*read, want, "a landmark is its module, its corner and its turns");
+                    assert_eq!(laid["rooms"][placed.room]["role"], placed.landmark.role, "its room takes its role");
+                }
+                let glows: usize = native.landmarks.iter().map(|placed| placed.glows.len()).sum();
+                assert_eq!(laid["glows"].as_array().unwrap().len(), glows);
+                placing += usize::from(!landmarks.is_empty());
             }
         }
         assert!(deeper > 30 && deeper < 150, "{deeper} of 180 break into the style below");
+        assert!(placing > 170, "{placing} of 180 place a landmark");
     }
 
     #[test]
