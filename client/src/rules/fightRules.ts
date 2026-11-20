@@ -159,8 +159,14 @@ export function beginRequest(ship: ShipFloats, seed: number, time: number, begun
 }
 
 /** A fight's step request: its orders, the swell's time, its ticks and the world's time for its wind. */
-export function stepRequest(orders: FightOrders, time: number, ticks: number, world: number): string {
-  return JSON.stringify({ ...orders, time, ticks, world });
+export function stepRequest(
+  orders: FightOrders,
+  time: number,
+  ticks: number,
+  world: number,
+  wind?: readonly [number, number],
+): string {
+  return JSON.stringify({ ...orders, time, ticks, world, wind });
 }
 
 /** A fight's answer, or the rules' refusal as an error. */

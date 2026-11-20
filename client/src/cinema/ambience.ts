@@ -1,8 +1,8 @@
 // The sea's and the storm's ambience for the prologue's cutscenes: seven looping beds (rain, wind, waves, fire, the
 // deep, gulls, creaking timbers) that glide to the levels a scene asks for, the spot sounds that ride on them, and the
-// mission's one-shots. All of it is synthesised (noise, filters, oscillators), none recorded. Nothing plays until the
-// game's world output answers, and the output may come and go: the levels keep gliding meanwhile, and the sound picks
-// up where they stand once it returns.
+// mission's one-shots. Each is synthesised (noise, filters, oscillators) until the owner's Freesound pick for it has
+// come, which then plays in its place as loud as it was. Nothing plays until the game's world output answers, and the
+// output may come and go: the levels keep gliding meanwhile, and the sound picks up where they stand once it returns.
 
 import {
   brownNoise,
@@ -31,6 +31,7 @@ import {
   thunderVoice,
   whooshVoice,
 } from './ambienceVoices.ts';
+import { type Loudness, playSample } from '../soundSamples.ts';
 
 /** Where the world's sounds play; the game passes uiSounds' worldOutput. Null while there is no sound. */
 export type SoundOut = () => { readonly audio: AudioContext; readonly out: AudioNode } | null;
@@ -69,6 +70,29 @@ const SPOTS: readonly { readonly bed: Bed; readonly meanGapS: number; readonly v
   { bed: 'deep', meanGapS: 5, voice: groanVoice },
 ];
 
+/** Each recorded bed's cue, and the synthesiser's bed it stands in for (its spots with it) as measured offline before
+ *  the bed's gain: its peak, and its loudest RECORDED_WINDOW_S. A recording is matched to that loudness. */
+export const RECORDED_BEDS: Readonly<Partial<Record<Bed, { readonly cue: string; readonly synth: Loudness }>>> = {
+  wind: { cue: 'story.wind', synth: { peak: 0.109, loud: 0.0248 } },
+  waves: { cue: 'story.waves', synth: { peak: 0.887, loud: 0.2065 } },
+  creak: { cue: 'story.creak', synth: { peak: 0.0955, loud: 0.0097 } },
+  fire: { cue: 'story.fire', synth: { peak: 1.183, loud: 0.2414 } },
+  deep: { cue: 'story.deep', synth: { peak: 1.158, loud: 0.308 } },
+};
+const RECORDED_WINDOW_S = 4;
+/** Each play of a recorded bed fades into the next, and the first takes over from the synthesiser, at equal power. */
+const RECORDED_FADE_S = 3;
+const FADE_IN = Float32Array.from({ length: 64 }, (unused, step) => Math.sin((Math.PI / 2) * (step / 63)));
+const FADE_OUT = FADE_IN.slice().reverse();
+/** The one-shots that have recordings, each as the synthesiser's measured before the shots' gain, over its loudest
+ *  SHOT_WINDOW_S: the recording takes that loudness, its peak never past the synthesiser's. */
+export const RECORDED_SHOTS = {
+  crash: { cue: 'story.crash', synth: { peak: 1.438, loud: 0.5012 } },
+  splash: { cue: 'story.splash', synth: { peak: 0.734, loud: 0.1208 } },
+  whoosh: { cue: 'story.whoosh', synth: { peak: 0.532, loud: 0.1191 } },
+} as const;
+const SHOT_WINDOW_S = 0.4;
+
 /** The beds the world's own soundscape plays once it is heard round the listener, and how long the hand over takes,
  *  seconds. */
 const WORLD_BEDS: ReadonlySet<Bed> = new Set(['rain', 'wind', 'waves', 'creak', 'gulls']);
@@ -92,10 +116,14 @@ interface Glide {
 
 interface BedGraph {
   readonly gain: GainNode;
+  /** The synthesiser's share of the bed, faded out once its recording takes over. */
+  readonly synth: GainNode;
   readonly sources: readonly AudioScheduledSourceNode[];
   readonly nodes: readonly AudioNode[];
   /** The level last written to the bed's gain. */
   written: number;
+  /** The recording's play now sounding, once one has come, and when it ends. */
+  recorded: { readonly fade: GainNode; readonly source: AudioBufferSourceNode; readonly endsAt: number } | null;
 }
 
 interface Engine {
@@ -199,11 +227,12 @@ export class Ambience {
   }
 
   crash(): void {
-    this.shot(crashVoice);
+    this.shot(crashVoice, RECORDED_SHOTS.crash);
   }
 
   splash(size: number): void {
-    this.shot((kit, out, when) => splashVoice(kit, out, when, clampLevel(size)));
+    const level = clampLevel(size);
+    this.shot((kit, out, when) => splashVoice(kit, out, when, level), RECORDED_SHOTS.splash, level);
   }
 
   thud(): void {
@@ -223,7 +252,7 @@ export class Ambience {
   }
 
   whoosh(): void {
-    this.shot(whooshVoice);
+    this.shot(whooshVoice, RECORDED_SHOTS.whoosh);
   }
 
   /** Moves every glide on by `seconds`, writes the beds' gains, and plays the spot sounds and heartbeats now due. */
@@ -246,10 +275,12 @@ export class Ambience {
         built.gain.gain.setTargetAtTime(value * BED_GAIN[bed], now, EASE_S);
         built.written = value;
       }
+      if (built && value > 0) this.recordedBed(engine, bed, built, now);
     }
     for (const { bed, meanGapS, voice } of SPOTS) {
       const level = this.heard(bed);
-      if (level <= 0) continue;
+      // A bed playing its recording has the recording's own spots.
+      if (level <= 0 || engine.beds.get(bed)?.recorded) continue;
       let countdown = (this.spotCountdownS.get(bed) ?? nextGapS(meanGapS, this.random())) - step * level;
       const bedGain = engine.beds.get(bed)?.gain;
       if (countdown <= 0 && bedGain) {
@@ -305,14 +336,58 @@ export class Ambience {
     const nodes: AudioNode[] = [engine.shots, engine.master];
     for (const bed of engine.beds.values()) {
       for (const source of bed.sources) source.stop(end);
+      bed.recorded?.source.stop(end);
       nodes.push(...bed.nodes);
     }
     disconnectAfter(engine.kit, end, nodes);
   }
 
-  private shot(voice: (kit: Kit, out: AudioNode, when: number) => void): void {
+  /** A one-shot: its recording where it has come, as loud as the synthesiser's at `level`, else the synthesiser's. */
+  private shot(
+    voice: (kit: Kit, out: AudioNode, when: number) => void,
+    recorded?: { readonly cue: string; readonly synth: Loudness },
+    level = 1,
+  ): void {
     const engine = this.live();
-    if (engine) voice(engine.kit, engine.shots, engine.kit.audio.currentTime);
+    if (!engine) return;
+    const { audio } = engine.kit;
+    const when = audio.currentTime;
+    if (recorded) {
+      const sized = audio.createGain();
+      sized.gain.value = level;
+      sized.connect(engine.shots);
+      const like = { measured: recorded.synth, windowS: SHOT_WINDOW_S };
+      const source = playSample(audio, sized, recorded.cue, 1, { when, like });
+      if (source) {
+        source.addEventListener('ended', () => sized.disconnect());
+        return;
+      }
+      sized.disconnect();
+    }
+    voice(engine.kit, engine.shots, when);
+  }
+
+  /** A bed's recording, once it has come: each play fades into the next before it ends, the first taking over from
+   *  the synthesiser, at equal power, so the bed never dips. */
+  private recordedBed(engine: Engine, bed: Bed, built: BedGraph, now: number): void {
+    const recorded = RECORDED_BEDS[bed];
+    const playing = built.recorded;
+    if (!recorded || (playing && now < playing.endsAt - RECORDED_FADE_S)) return;
+    const { audio } = engine.kit;
+    const fade = audio.createGain();
+    const like = { measured: recorded.synth, windowS: RECORDED_WINDOW_S, most: Infinity };
+    const source = playSample(audio, fade, recorded.cue, 1, { when: now, like });
+    if (!source?.buffer) {
+      fade.disconnect();
+      return;
+    }
+    fade.gain.setValueCurveAtTime(FADE_IN, now, RECORDED_FADE_S);
+    fade.connect(built.gain);
+    const out = playing?.fade ?? built.synth;
+    out.gain.cancelScheduledValues(now);
+    out.gain.setValueCurveAtTime(FADE_OUT, now, RECORDED_FADE_S);
+    source.addEventListener('ended', () => fade.disconnect());
+    built.recorded = { fade, source, endsAt: now + source.buffer.duration };
   }
 
   /** A bed's looping graph, built the first time its level rises, so silent beds cost nothing. */
@@ -321,8 +396,10 @@ export class Ambience {
     const gain = audio.createGain();
     gain.gain.value = 0;
     gain.connect(engine.master);
+    const synth = audio.createGain();
+    synth.connect(gain);
     const sources: AudioScheduledSourceNode[] = [];
-    const nodes: AudioNode[] = [gain];
+    const nodes: AudioNode[] = [gain, synth];
     const loop = (buffer: AudioBuffer, ...chain: AudioNode[]): AudioNode => {
       const source = audio.createBufferSource();
       source.buffer = buffer;
@@ -354,14 +431,14 @@ export class Ambience {
     };
     if (bed === 'rain') {
       // A downpour: hiss over a duller roar of drops on the sea.
-      loop(white, filter('highpass', 600), filter('lowpass', 9000)).connect(gain);
-      loop(brown, filter('bandpass', 900, 0.6)).connect(gain);
+      loop(white, filter('highpass', 600), filter('lowpass', 9000)).connect(synth);
+      loop(brown, filter('bandpass', 900, 0.6)).connect(synth);
     } else if (bed === 'wind') {
       // A gale: its pitch and its strength wander at unrelated slow rates, so the gusts never repeat.
       const howl = filter('bandpass', 450, 1.6);
       const gust = audio.createGain();
       gust.gain.value = 0.5;
-      loop(brown, howl, gust).connect(gain);
+      loop(brown, howl, gust).connect(synth);
       wobble(howl.frequency, 0.09, 220);
       wobble(gust.gain, 0.19, 0.3);
       wobble(gust.gain, 0.07, 0.17);
@@ -369,19 +446,19 @@ export class Ambience {
       // The sea round the hull, swelling and easing.
       const swell = audio.createGain();
       swell.gain.value = 0.65;
-      loop(brown, filter('lowpass', 650), swell).connect(gain);
+      loop(brown, filter('lowpass', 650), swell).connect(synth);
       wobble(swell.gain, 0.11, 0.3);
     } else if (bed === 'fire') {
       // A blaze: a low roar under a loop of crackle.
-      loop(brown, filter('lowpass', 600)).connect(gain);
+      loop(brown, filter('lowpass', 600)).connect(synth);
       const crackleGain = audio.createGain();
       crackleGain.gain.value = 0.4;
-      loop(engine.kit.crackle, filter('highpass', 1200), crackleGain).connect(gain);
+      loop(engine.kit.crackle, filter('highpass', 1200), crackleGain).connect(synth);
     } else if (bed === 'deep') {
       // Under the water: a muffled pressure, all low notes.
-      loop(brown, filter('lowpass', 120, 1.2)).connect(gain);
+      loop(brown, filter('lowpass', 120, 1.2)).connect(synth);
     }
-    const built = { gain, sources, nodes, written: 0 };
+    const built = { gain, synth, sources, nodes, written: 0, recorded: null };
     engine.beds.set(bed, built);
     return built;
   }

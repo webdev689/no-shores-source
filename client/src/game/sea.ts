@@ -447,6 +447,7 @@ export class Sea {
       feet: combat ? null : this.aboard.feetOn(lying),
       stirs: combat ? combat.stirs() : own.underWay ? this.wake.stirs(lying, this.hull.waterline, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
+      fightHeard: combat?.heard ?? null,
       note: this.note(),
       landfall: this.landfall,
       sailing: this.passage.sailing,

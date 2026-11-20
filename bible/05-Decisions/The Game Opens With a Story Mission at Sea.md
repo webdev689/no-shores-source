@@ -66,6 +66,7 @@ status: in force
 - In the browser, a tap starts the game. A handcrafted intro flies the camera over the islands, through clouds and
   weather, past ships, fights and towns, and ends over Saltmere with its ambience and birds, the title, and a
   pulsing prompt to begin.
+  The flight to each island is replaced by [[The Intro Goes Straight to Saltmere]].
 - Beginning takes the camera out to a storm at sea and a brig, across her working crew to the helm, where character
   creation shows the player's whole figure. The player creates their account and chooses their skin tone and race.
   They start in armour with a sword and shield.

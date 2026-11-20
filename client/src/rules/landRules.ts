@@ -171,7 +171,14 @@ export interface LandRules {
    *  rank), or `begun`'s captains set upon it where given, every chance drawn from `seed`. */
   fightBegin(ship: ShipFloats, seed: number, time: number, begun?: FightBegun): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
-  fightStep(orders: FightOrders, time: number, ticks: number, world: number): FightView;
+  /** A step of the fight in the world's wind at `world`, or in the weather's `wind` (m/s east and south) if told. */
+  fightStep(
+    orders: FightOrders,
+    time: number,
+    ticks: number,
+    world: number,
+    wind?: readonly [number, number],
+  ): FightView;
   /** The fight ended. */
   fightEnd(): void;
 }
@@ -339,8 +346,8 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     },
     fightBegin: (ship, seed, time, begun) =>
       readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, begun)))),
-    fightStep: (orders, time, ticks, world) =>
-      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world)))),
+    fightStep: (orders, time, ticks, world, wind) =>
+      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world, wind)))),
     fightEnd: () => {
       exports.land_fight_end();
     },

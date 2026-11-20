@@ -88,6 +88,9 @@ then the players, the balls fly, fires burn and sinking ships go down, each play
 has sunk, or lies past every ship they may fight and is not fighting, leaves the fight. A player's ship's step under its hurts
 is one pure function (`sail_hurt`), which a browser predicting it runs too.
 
+Its guns, the balls striking and falling in the sea, and a ship breaking up are heard where each happens, through the
+sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
+
 ## How it works
 
 - **A ball** is a point under gravity alone (9.81 m/s², no drag), leaving its gun at the gun's speed plus the deck's
@@ -141,6 +144,9 @@ is one pure function (`sail_hurt`), which a browser predicting it runs too.
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
   Bosun keeping way its torn canvas costs it, and its Carpenter patching part of each ball's hull harm back.
+- **The wind** a fight on the land worker sails in (the World Editor's and the story's) is the world's where each
+  ship is, read each minute of world time; a fight a story plays is told its own instead, the weather drawn round it
+  ([[Prologue]]), so a storm drawn is a storm sailed.
 
 ## The captain
 

@@ -1241,6 +1241,317 @@
         45.0
       ],
       "picked": 581125
+    },
+    {
+      "id": "amb.sea.swell",
+      "use": "The open sea's swell all round a ship, no surf, looped",
+      "query": "ocean waves open sea",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 475350,
+      "cut": [
+        24,
+        60
+      ],
+      "mono": true
+    },
+    {
+      "id": "amb.sea.wash",
+      "use": "Water rushing along a ship's hull as she makes way, looped",
+      "query": "boat wake",
+      "seconds": [
+        10.0,
+        180.0
+      ],
+      "picked": 556052
+    },
+    {
+      "id": "amb.sea.wind",
+      "use": "Wind over the open sea, steady with gusts, looped",
+      "query": "wind sea ocean",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 706471,
+      "cut": [
+        73,
+        60
+      ],
+      "mono": true
+    },
+    {
+      "id": "amb.sea.rigging",
+      "use": "Wind through a ship's rigging and ropes, looped",
+      "query": "ship rigging",
+      "seconds": [
+        10.0,
+        180.0
+      ],
+      "picked": 179899
+    },
+    {
+      "id": "amb.sea.timbers",
+      "use": "A wooden ship's timbers working under way, looped",
+      "query": "wooden ship creaking",
+      "seconds": [
+        10.0,
+        180.0
+      ],
+      "picked": 397620
+    },
+    {
+      "id": "amb.sea.rain",
+      "use": "Rain falling on the open sea, looped",
+      "query": "rain ocean",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 126580,
+      "cut": [
+        23,
+        60
+      ],
+      "mono": true
+    },
+    {
+      "id": "amb.sea.rain.deck",
+      "use": "Rain drumming on a ship's wooden deck, looped",
+      "query": "rain boat",
+      "seconds": [
+        10.0,
+        180.0
+      ],
+      "picked": 849790,
+      "cut": [
+        20,
+        60
+      ],
+      "mono": true
+    },
+    {
+      "id": "amb.sea.hull.creak",
+      "use": "One creak of a ship's hull",
+      "query": "ship creak",
+      "seconds": [
+        0.5,
+        6.0
+      ],
+      "picked": 113362
+    },
+    {
+      "id": "amb.sea.rope.creak",
+      "use": "One creak of a rope under load",
+      "query": "rope creak",
+      "seconds": [
+        0.3,
+        4.0
+      ],
+      "picked": 234180
+    },
+    {
+      "id": "amb.sea.hull.slap",
+      "use": "A wave slapping a ship's side",
+      "query": "water slap",
+      "seconds": [
+        0.3,
+        4.0
+      ],
+      "picked": 61013
+    },
+    {
+      "id": "amb.sea.bow.thump",
+      "use": "A ship's bow thumping into a sea",
+      "query": "boat wave",
+      "seconds": [
+        0.5,
+        5.0
+      ],
+      "picked": 61014
+    },
+    {
+      "id": "amb.sea.canvas.flap",
+      "use": "Sailcloth flapping in the wind",
+      "query": "flag flapping",
+      "seconds": [
+        0.5,
+        6.0
+      ],
+      "picked": 72853
+    },
+    {
+      "id": "amb.sea.block.knock",
+      "use": "A wooden pulley block knocking",
+      "query": "pulley",
+      "seconds": [
+        0.1,
+        2.0
+      ],
+      "picked": 414439
+    },
+    {
+      "id": "story.waves",
+      "use": "The storm's sea: big waves breaking all round, looped",
+      "query": "storm waves ocean",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 867645,
+      "cut": [
+        228,
+        60
+      ],
+      "mono": true
+    },
+    {
+      "id": "story.wind",
+      "use": "A gale howling over the sea, looped",
+      "query": "storm wind howling",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 612721
+    },
+    {
+      "id": "story.creak",
+      "use": "A ship's timbers groaning in a storm, looped",
+      "query": "ship creaking storm",
+      "seconds": [
+        10.0,
+        180.0
+      ],
+      "picked": 483355
+    },
+    {
+      "id": "story.crash",
+      "use": "The ram: a big ship's bow smashing into another's side",
+      "query": "wood crash",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "picked": 257752
+    },
+    {
+      "id": "story.splash",
+      "use": "A body falling into the sea",
+      "query": "dive splash",
+      "seconds": [
+        0.5,
+        5.0
+      ],
+      "picked": 61015
+    },
+    {
+      "id": "story.deep",
+      "use": "Sinking deep underwater, muffled and dark, looped",
+      "query": "underwater ambience deep",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 504641
+    },
+    {
+      "id": "story.fire",
+      "use": "A wreck burning: wood fire crackling and roaring, looped",
+      "query": "fire burning wood crackling",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 213345
+    },
+    {
+      "id": "story.whoosh",
+      "use": "The camera's rush down through cloud",
+      "query": "whoosh wind rush",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 807446
+    },
+    {
+      "id": "sea.cannon.fire",
+      "use": "A ship's cannon fired",
+      "query": "cannon fire",
+      "seconds": [
+        0.5,
+        6.0
+      ],
+      "picked": 565794
+    },
+    {
+      "id": "sea.ball.hull",
+      "use": "A cannonball striking a ship's timbers, splinters flying",
+      "query": "wood impact",
+      "seconds": [
+        0.3,
+        4.0
+      ],
+      "picked": 452596
+    },
+    {
+      "id": "sea.ball.splash",
+      "use": "A cannonball falling in the sea, a tall splash",
+      "query": "big splash",
+      "seconds": [
+        0.5,
+        5.0
+      ],
+      "skip": [
+        273834
+      ],
+      "picked": 442773
+    },
+    {
+      "id": "sea.ship.break",
+      "use": "A ship breaking up as she sinks: timbers cracking and groaning",
+      "query": "wood breaking",
+      "seconds": [
+        2.0,
+        15.0
+      ],
+      "skip": [
+        256688
+      ],
+      "picked": 178658
+    },
+    {
+      "id": "amb.shore.surf",
+      "use": "Surf breaking on a beach at an island's edge, looped",
+      "query": "ocean surf waves beach",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 486594,
+      "cut": [
+        59,
+        60
+      ],
+      "mono": true
+    },
+    {
+      "id": "amb.shore.lap",
+      "use": "Water lapping at a harbour's walls and boats, looped",
+      "query": "water lapping harbour",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 634194,
+      "cut": [
+        12,
+        60
+      ],
+      "mono": true
     }
   ]
 }

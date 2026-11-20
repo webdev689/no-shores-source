@@ -156,6 +156,7 @@ export class Battle implements Beat {
       this.ambushers,
       { sails: shipSails('sloop'), marks },
       now,
+      () => stage.wind(),
       rigs,
     ).then(
       (fight) => {
@@ -250,7 +251,7 @@ export class Battle implements Beat {
       heads,
       drawers: [{ drawInto: (pass, fromEye, drawn, time) => fight.draw(pass, { fromEye, eye: drawn.eye }, time) }],
       land: false,
-      heard: { at: 'sea', deck: false, sailing: true },
+      heard: { at: 'sea', deck: false, sailing: true, fight: fight.fightHeard },
       focus: [brig.x, brig.y],
     };
   }

@@ -1,4 +1,5 @@
 // What one frame at sea is handed and what it shows, as the sea (`sea.ts`) steps and the display reads it.
+import type { FightHeard } from './audio/ambience/seaFight.ts';
 import type { Viewport } from '../overworld/overworldCamera.ts';
 import type { Pace } from '../overworld/voyage.ts';
 import type { CardAt } from '../player/cards.ts';
@@ -55,4 +56,6 @@ export interface SeaFrame {
   /** Where its bow and quarters stir the water's ripples this frame, which follow it (`focus`, world metres). */
   readonly stirs: readonly Stir[];
   readonly focus: readonly [number, number];
+  /** A fight's events this frame and its ships as they lie, for the sea's sounds; none out of a fight. */
+  readonly fightHeard: FightHeard | null;
 }

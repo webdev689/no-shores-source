@@ -93,10 +93,16 @@ test('the story fight begins on the land door with its captains, draws them, hea
       [begun, heading] = [captains, ship[2] ?? Number.NaN];
       return Promise.resolve(viewOf(['afloat', 'afloat', 'afloat']));
     },
-    fightStep: () => Promise.resolve(steps.shift() ?? viewOf(['sunk', 'sunk', 'sunk'])),
+    fightStep: (_orders: unknown, _time: number, _ticks: number, told: readonly [number, number]) => {
+      winds.push(told);
+      return Promise.resolve(steps.shift() ?? viewOf(['sunk', 'sunk', 'sunk']));
+    },
     fightEnd: () => Promise.resolve(),
   } as unknown as LandWorker;
   const marks = { drawInto: () => undefined } as unknown as MarkDrawer;
+  // The story's storm, and the wind it eases to: every step sails in the wind the story blows as it is sent.
+  const winds: (readonly [number, number])[] = [];
+  let wind: readonly [number, number] = [14, 6];
   const pirate = { distanceM: 300, faction: 2, rank: 1 } as const;
   const ambushers = [0, 2, 4].map((bearing) => ({ ...pirate, bearing }));
   const fight = await StoryFight.begin(
@@ -105,6 +111,7 @@ test('the story fight begins on the land door with its captains, draws them, hea
     ambushers,
     { sails: [], marks },
     0,
+    () => wind,
   );
   assert.equal(begun.length, 3);
   assert.ok(Math.abs(heading - (3 * Math.PI) / 2) < 1e-9, 'a heading past either end is wrapped for the rules');
@@ -127,6 +134,7 @@ test('the story fight begins on the land door with its captains, draws them, hea
   const heard: string[] = [];
   for (let step = 1; step < 20 && !frame.over; step++) {
     await new Promise((settle) => setTimeout(settle, 0));
+    if (step === 1) wind = [3, 1];
     frame = fight.frame({ ...input, time: step * 0.1 });
     heard.push(...frame.happened);
     // A captain going down settles and lists as her hurts have her, on the story's swell.
@@ -140,6 +148,8 @@ test('the story fight begins on the land door with its captains, draws them, hea
   assert.equal(frame.left, 0);
   assert.equal(frame.over, true);
   assert.ok(frame.ships.slice(1).every((ship) => ship.sunk));
+  assert.deepEqual(winds[0], [14, 6], 'the first step sails in the storm drawn round her');
+  assert.deepEqual(winds.at(-1), [3, 1], 'a later one in the wind the story eased to');
   assert.equal(frame.hulls.length, 1, 'only her footprint while the captains are gone');
 });
 
@@ -159,6 +169,7 @@ const begunOn = (land: LandWorker) =>
     [0, 2, 4].map((bearing) => ({ bearing, distanceM: 300, faction: 2, rank: 2 }) as const),
     { sails: [], marks: { drawInto: () => undefined } as unknown as MarkDrawer },
     0,
+    () => [14, 6],
   );
 
 test('a struck captain is beaten: one fewer is left to beat, and the fight is over once none fights', async () => {

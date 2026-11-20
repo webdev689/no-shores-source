@@ -40,6 +40,7 @@ export function storied(options: { land?: LandWorker; refused?: boolean } = {}) 
     weatherTowards: (_to: unknown, seconds: number) => done.push(`weather ${seconds}`),
     stepWeather: () => undefined,
     windBearing: () => 0,
+    wind: () => [14, 6],
     swell: () => undefined,
     parts: {
       scenes: scenes.scenes,

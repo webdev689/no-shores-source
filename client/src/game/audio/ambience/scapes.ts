@@ -155,7 +155,8 @@ const evening = (perMinute: number): ByPhase => ({ dusk: perMinute, night: perMi
 const GULLS = (perMinute: number) =>
   voice('gull', 'offshore', byDay(perMinute), { recorded: 'amb.sea.gull', drive: 'coast', drift: 4, gain: [0.3, 0.7] });
 /** The sea's edge on any island: its surf, breaking as the sea's swell runs in. */
-const SURF = (gain: number) => bed('shore.surf', gain, { at: 'shore', breakers: true, breath: 0 });
+const SURF = (gain: number) =>
+  bed('shore.surf', gain, { at: 'shore', breakers: true, breath: 0, recorded: 'amb.shore.surf' });
 const RIVER = (gain: number) => bed('water.brook', gain, { at: 'river', breath: 0.2 });
 /** Rain wherever it falls: its hiss all round and its patter near, both opening as it falls harder. */
 const RAIN = [
@@ -173,25 +174,40 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
     level: 1.38,
     room: { seconds: 0.9, corner: 2500, echoes: [], send: 0.06 },
     beds: [
-      bed('sea.swell', 0.8, { swell: true, breath: 0.5 }),
-      bed('sea.wash', 0.45, { drive: 'way', swell: true, breath: 0.25 }),
-      bed('wind.breeze', 0.3, { gust: 0.5, breath: 0.3 }),
-      bed('sea.rigging', 0.35, { gust: 0.6, drive: 'deck', breath: 0.3 }),
-      bed('deck.timbers', 0.55, { drive: 'deck', breath: 0.3 }),
-      bed('rain.hiss', 0.75, { drive: 'rain', brightens: true, breath: 0.2 }),
-      bed('rain.deck', 0.75, { drive: ['rain', 'deck'], brightens: true, breath: 0.25 }),
+      bed('sea.swell', 0.8, { swell: true, breath: 0.5, recorded: 'amb.sea.swell' }),
+      bed('sea.wash', 0.45, { drive: 'way', swell: true, breath: 0.25, recorded: 'amb.sea.wash' }),
+      bed('wind.breeze', 0.3, { gust: 0.5, breath: 0.3, recorded: 'amb.sea.wind' }),
+      bed('sea.rigging', 0.35, { gust: 0.6, drive: 'deck', breath: 0.3, recorded: 'amb.sea.rigging' }),
+      bed('deck.timbers', 0.55, { drive: 'deck', breath: 0.3, recorded: 'amb.sea.timbers' }),
+      bed('rain.hiss', 0.75, { drive: 'rain', brightens: true, breath: 0.2, recorded: 'amb.sea.rain' }),
+      bed('rain.deck', 0.75, { drive: ['rain', 'deck'], brightens: true, breath: 0.25, recorded: 'amb.sea.rain.deck' }),
     ],
     voices: [
-      voice('hull.creak', 'hull', always(7), { drive: 'deck', near: 3, gain: [0.4, 0.8] }),
-      voice('rope.creak', 'rigging', always(5), { drive: 'deck', gain: [0.4, 0.8] }),
-      voice('hull.slap', 'hull', always(8), { drive: 'deck', gain: [0.25, 0.55] }),
-      voice('bow.thump', 'hull', always(0.8), { drive: 'way', distance: [6, 10], gain: [0.3, 0.6] }),
-      voice('canvas.flap', 'rigging', always(1.2), { drive: 'deck', gain: [0.3, 0.6] }),
+      voice('hull.creak', 'hull', always(7), {
+        drive: 'deck',
+        near: 3,
+        gain: [0.4, 0.8],
+        recorded: 'amb.sea.hull.creak',
+      }),
+      voice('rope.creak', 'rigging', always(5), { drive: 'deck', gain: [0.4, 0.8], recorded: 'amb.sea.rope.creak' }),
+      voice('hull.slap', 'hull', always(8), { drive: 'deck', gain: [0.25, 0.55], recorded: 'amb.sea.hull.slap' }),
+      voice('bow.thump', 'hull', always(0.8), {
+        drive: 'way',
+        distance: [6, 10],
+        gain: [0.3, 0.6],
+        recorded: 'amb.sea.bow.thump',
+      }),
+      voice('canvas.flap', 'rigging', always(1.2), {
+        drive: 'deck',
+        gain: [0.3, 0.6],
+        recorded: 'amb.sea.canvas.flap',
+      }),
       voice('block.knock', 'rigging', always(1.5), {
         drive: 'deck',
         gain: [0.3, 0.6],
         bout: [1, 2],
         spacing: [0.3, 0.9],
+        recorded: 'amb.sea.block.knock',
       }),
       GULLS(3),
     ],
@@ -203,7 +219,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
     beds: [
       bed('town.hum', 0.5, { breath: 0.3 }),
       bed('wind.breeze', 0.35, { gust: 0.5, breath: 0.3 }),
-      bed('shore.lap', 2.5, { at: 'harbour', breath: 0.2 }),
+      bed('shore.lap', 2.5, { at: 'harbour', breath: 0.2, recorded: 'amb.shore.lap' }),
       SURF(1.2),
       bed('town.crowd', 2.5, {
         at: 'city',

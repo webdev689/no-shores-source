@@ -16,6 +16,7 @@ import { poseOnSwell } from '../../ships/swellPose.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
 import type { HullMask } from '../../water/hullMask.ts';
 import type { Founder } from './sailing.ts';
+import type { FightHeard } from '../audio/ambience/seaFight.ts';
 import type { Shot } from '../camera.ts';
 import { SeaCombat } from '../seaCombat.ts';
 
@@ -145,13 +146,15 @@ export class StoryFight {
 
   /** Sets `ambushers` upon her `ship` on the land worker's open landmass at `now`, every captain's Sloop drawn with
    *  `hull`'s sails and the fight's balls and arcs with its marks. A ship coming on with `way` (m/s) comes under
-   *  sail; each ship's sails go on from the rig `rigs` hands her (hers, then each ambusher's), as last drawn. */
+   *  sail; each ship's sails go on from the rig `rigs` hands her (hers, then each ambusher's), as last drawn. Every
+   *  ship sails in the story's `wind` (m/s east and south), the storm drawn round her, never the world's. */
   static async begin(
     land: LandWorker,
     ship: { x: number; y: number; heading: number; way?: number },
     ambushers: readonly Ambusher[],
     hull: { sails: readonly SailCorners[]; marks: MarkDrawer },
     now: number,
+    wind: () => readonly [number, number],
     rigs: Rigs = { captains: [] },
   ): Promise<StoryFight> {
     // The rules take a heading in [0, 2π) alone; the sea's may have turned past either end.
@@ -166,7 +169,7 @@ export class StoryFight {
     const source: FightSource = {
       fightBegin: () => Promise.reject(new Error('the story begins its own fight')),
       fightStep: async (_id, orders, time, ticks) => {
-        const view = await land.fightStep(orders, time, ticks);
+        const view = await land.fightStep(orders, time, ticks, wind());
         heard.push(...view.events);
         answered.latest = view;
         return view;
@@ -179,6 +182,11 @@ export class StoryFight {
 
   /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times her
    *  size on `swell`. A step the rules refused is thrown here. */
+  /** The fight's events this frame and its ships as they lie, as the sea's sounds hear them. */
+  get fightHeard(): FightHeard {
+    return this.combat.heard;
+  }
+
   /** The fight's two sides, as the music hears them: every captain in it, and the player's own vessel. */
   get sides(): { readonly captains: readonly FightCaptain[]; readonly vessel: FightVessel } {
     const view = this.answered.latest;

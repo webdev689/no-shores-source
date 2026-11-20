@@ -9,7 +9,6 @@ import { asWreck, Battle, type Wreck } from './battle.ts';
 import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed } from './beat.ts';
 import { Deep } from './deep.ts';
 import { Intro } from './intro.ts';
-import type { Islands } from './islands.ts';
 import { Making } from './making.ts';
 import type { Nameplate } from './nameplate.ts';
 import { Overboard } from './overboard.ts';
@@ -49,7 +48,6 @@ function seaShot(story: Story): Shot {
 
 export class Prologue {
   private readonly story: Story;
-  private readonly islands: Islands;
   private readonly nameplate: Nameplate;
   private readonly wreckContext: WreckContext;
   private readonly skipping = new HoldToSkip(1);
@@ -70,9 +68,8 @@ export class Prologue {
   /** Set once the story hands the player to the game. */
   end: StoryEnd | null = null;
 
-  constructor(story: Story, islands: Islands, nameplate: Nameplate, wreckContext: WreckContext, from: BeatName | null) {
+  constructor(story: Story, nameplate: Nameplate, wreckContext: WreckContext, from: BeatName | null) {
     this.story = story;
-    this.islands = islands;
     this.nameplate = nameplate;
     this.wreckContext = wreckContext;
     this.played = prologuePlayed(localStorage);
@@ -88,7 +85,7 @@ export class Prologue {
     if (name !== 'intro') void this.wreckContext.drawn().catch(() => undefined);
     switch (name) {
       case 'intro':
-        return new Intro(story.stage, this.islands, story.sailing);
+        return new Intro(story.stage, story.sailing);
       case 'storm':
         return new StormDive(story, shot());
       case 'creation':
@@ -185,7 +182,6 @@ export class Prologue {
     if (ended instanceof Deep) {
       this.carried.scenery?.destroy();
       this.carried.scenery = null;
-      this.islands.home().catch((error: unknown) => console.error('Saltmere would not open:', error));
     }
     if (ended instanceof Shore) {
       keepProloguePlayed(localStorage);
