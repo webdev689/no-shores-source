@@ -6,7 +6,7 @@ import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
 import { BoltView } from '../sky/bolts.ts';
 import { FallView } from '../sky/fall.ts';
-import { CITY_LAMPS, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { CITY_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
@@ -82,6 +82,8 @@ export class GameScene {
   weather: Weather = CLEAR;
   /** The sky over the eye, read from the sky's law each frame. */
   readonly sky: SkyDriver;
+  /** Lamps a story lays besides the city's while it shows them: the wreck's fires. */
+  lamps: readonly LampPlace[] = [];
   private readonly fall: FallView;
   private readonly bolts: BoltView;
   private terrain: { view: LandView; drawn: TerrainView } | null = null;
@@ -236,7 +238,7 @@ export class GameScene {
     const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
       shot.eye,
-      CITY_LAMPS.current,
+      this.lamps.length > 0 ? [...CITY_LAMPS.current, ...this.lamps] : CITY_LAMPS.current,
       light && more.carried ? { light, feet: more.carried.feet } : null,
       SKY_NOW.current.look.daylight,
       time,

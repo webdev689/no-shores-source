@@ -83,7 +83,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 |---|---|---|
 | `intro` | First light over the cloud; then through the cloud to a highland island in mist, a green one in rain, a desert town where Grey Tithe and pirates fight on the plaza, a tundra town in snow, each with ships under sail off its harbour; last Saltmere, gulls over the harbour, the title, "Press any key to begin" ("Tap to begin" on a touch screen; Space begins too) | shown |
 | `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along her side, over her working crew to her helm, where it ends in the helm's own shot, riding her deck as the helm's camera does (all her rise and fall, a quarter of her pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
-| `creation` | At the helm in the storm: the account, then the look, the whole figure in armour with sword and shield | played |
+| `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
 | `sighted` | From the shot the creation last drew (turned as it was, framed for the screen it was framed for), the camera turns from the player to look down her deck; the lookout and the bosun cry out with marks over their heads and the mate and the gunner speak; the camera pulls out over her stern as three pirate Sloops come out of the dark, and comes down behind her through the fight's own lens | shown |
 | `battle` | The sea's own fight against the three, every ship taken up under the sail and way she was sighted with, the Brig drawn as hers, the crew crying out at hits and sinkings; "Engage", "Sink them, or make them strike.", and how many ships are left until every one is beaten, sunk or struck | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to her deck; the beaten ships lie where and as the fight left them, each in her own settle, trim and list, and her sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them, then pushing in on her until she reads however far off she lies, until he cuts the mate off | shown |
@@ -153,6 +153,14 @@ open it).
 **The intro's length.** First light 6 s, each of the four islands 13 s, Saltmere's glide 15 s and the prompt 2.4 s
 after the title: about 75 s, with a second or more in the cloud for each island to open.
 
+**The story's day.** The story is told in one day and night, the game's sky drawing each beat's weather at its hour
+(`skies.ts`, `storySky.ts`): first light over the cloud at 5:15 and the islands' morning to Saltmere at 9:24; the
+storm at evening (18:00), the stillness after the fight at sunset (18:36), the Frigate out of the dusk (19:06); the
+wreck and the deep at night (21:00), under a full moon the storm hides; the shore at the next dawn (5:36). Saltmere's
+sun rises about 5:05 and sets about 18:55. The day is world day 3, the same for every player, and the clouds drift
+and the lightning strikes on the story's own clock. Every bolt the story throws is a strike in that sky: it lights
+the clouds and the decks, and its thunder comes as late as its distance makes it.
+
 **The music** is the game's own director playing the story's songs ([[Music]]), one theme told through them. Every
 frame each beat asks for its moment (`music()`): the title, whole, over the intro; the storm's song without its peak
 as the storm comes on, only its floor and tension at the helm, whole as the pirates come; the sea's own fight song once
@@ -176,8 +184,9 @@ The camera stands far enough back that the whole figure fits the part of the scr
 turns so the figure stands in its middle: the left on a screen wider than tall, with the window on the right; the top
 on one taller than wide, with the window along the bottom (`creationEye`).
 
-**The player** is dressed for the story in steel with no helm, a steel sword and a kite shield drawn (`armouredDress`).
-Their look is kept in the browser (`overlook.look`) and dresses them in the game afterwards.
+**The player** is dressed for the story in steel with no helm, a steel sword sheathed at the hip and a kite shield
+slung on the back (`armouredDress`; [[The Player's Sword and Shield Are Holstered]]): they stand at the helm with
+their hands free, and on the wreck a swing draws the sword and the shield, as the game's does. Their look is kept in the browser (`overlook.look`) and dresses them in the game afterwards.
 
 ## The wreck
 
@@ -247,10 +256,12 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
   shot its camera takes of the player standing, where the wake's flight ends. A cutscene holds it still. Its room is
   let go as the wreck's fight ends. The hints are foot's, without the menu: the story has none.
 - **Drawn** by `WreckScenery` with `WreckView`, shown by the wake, the fight, the throw overboard and, from below,
-  the deep: the one mesh built in Blender, each face in its part's picture as a ship's, lit by the light baked into
-  it there (`light_wreck.py`): the fires' light, with its shadows and what the timber throws back, flickering through
-  space and time as the fires burn, and the storm sky's, which every hollow and overhang darkens. The light is laid in
-  blocks, as the game's pixels are. Each heap is its own run of the mesh, drawn while it stands. The mesh and the
+  the deep: the one mesh built in Blender, each face in its part's picture as a ship's. Its fires' light is baked into
+  it there (`light_wreck.py`), with its shadows and what the timber throws back, flickering through space and time as
+  the fires burn, the brightest rolled off softly toward gold. The game's sky lights it as it lights a ship, at the
+  story's hour, under its cloud and lightning, darkened in every hollow and overhang the bake found. The light is laid
+  in blocks, as the game's pixels are, and kept as its square root, so its dim falloff keeps its steps. Each fire is
+  also a lamp of the night, lighting the figures, the ships and the sea round it. Each heap is its own run of the mesh, drawn while it stands. The mesh and the
   light (about 12 MB) are fetched once the story is past its intro; the wake keeps its eyes shut until they come. The
   fires burn in all four beats. Every figure they stand makes a move the forge draws its clothes in: the deep's
   fallen crew lie in `fallen`, Thule's crew leap and cry out. It lets go of its GPU buffers once the deep ends.

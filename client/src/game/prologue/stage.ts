@@ -22,12 +22,16 @@ import type { FootView } from '../footView.ts';
 import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import type { Landmass } from '../landmass.ts';
+import type { Ambience as WorldAmbience } from '../audio/ambience/ambience.ts';
+import { STRIKE_KEPT_S } from '../../sky/skyDriver.ts';
+import type { Strike } from '../../sky/skyLaw.ts';
 import type { MusicDirector } from '../audio/music/director.ts';
 import type { Drawer, GameScene, Overlay } from '../scene.ts';
 import { standingDrawers } from '../standing.ts';
 import { type Actor, actorCards } from './actors.ts';
 import type { Objective } from './objective.ts';
 import type { Hull, ShipDraw } from './sailing.ts';
+import { STORY_DAY_S, overTheSky, toldSky } from './storySky.ts';
 
 /** What a beat shows in a frame. */
 export interface StoryFrame {
@@ -46,7 +50,13 @@ export interface StoryFrame {
   readonly heads?: ReadonlyMap<string, readonly [number, number, number]>;
   /** Whether the land's own drawers (its city and nature) are drawn: not under the sea's storm far from any coast. */
   readonly land?: boolean;
+  /** Where the world's own soundscape is heard round the frame's focus: at sea (on a ship's deck or over her, under
+   *  way or not), or ashore on Saltmere's coast. None: the story's own sounds alone. */
+  readonly heard?: WorldHeard;
 }
+
+export type WorldHeard =
+  { readonly at: 'sea'; readonly deck: boolean; readonly sailing: boolean } | { readonly at: 'ashore' };
 
 /** What the stage is made of; the game makes each once. */
 export interface StageParts {
@@ -65,6 +75,8 @@ export interface StageParts {
   readonly dialogue: DialogueBox;
   readonly overheads: Overheads;
   readonly ambience: Ambience;
+  /** The game's own soundscape, which the story is heard in at sea, on the wreck and ashore. */
+  readonly worldSound: WorldAmbience;
   /** The game's music, which the story's beats tell what to play. */
   readonly music: MusicDirector;
   readonly objective: Objective;
@@ -86,6 +98,10 @@ export const HUD_VEIL_S = 0.7;
 /** How long the story's screen takes to clear its black: `Screen.clear`'s fade. */
 const SCREEN_CLEAR_S = 0.6;
 
+/** The Brig's pace under sail in the storm, as the sea's pace is set (100 her fastest): her wash and her bow's
+ *  thump. */
+const SAILING_PACE = 70;
+
 /** How many ships of one hull a frame draws at most: each has a slot of its own. */
 const SLOTS_A_HULL = 16;
 
@@ -106,10 +122,17 @@ export class Stage {
   private weatherFrom: Weather = CLEAR;
   private weatherTo: Weather = CLEAR;
   private glide = { seconds: 0, done: 0 };
+  /** The story's sky clock, which its clouds drift and its lightning strikes on, and the strikes the sky still keeps:
+   *  each a bolt the story's lightning threw, the last one's seed known so it strikes once. */
+  private skyS = 0;
+  private strikes: Strike[] = [];
+  private lastBolt: number | null = null;
   /** Counts the scenes begun and hushed: a scene stops at its next line once a later one begins or it is hushed. */
   private scenes = 0;
   /** False from the story's end until its black has wholly gone from over the game. */
   screenOpen = true;
+  /** Whether the world's own soundscape was heard last frame: a strike's thunder is then its. */
+  hearsTheWorld = false;
 
   constructor(parts: StageParts) {
     this.parts = parts;
@@ -156,6 +179,8 @@ export class Stage {
     ambience.stop();
     this.weatherTowards(CLEAR, 0);
     scene.weather = CLEAR;
+    scene.sky.told = null;
+    scene.lamps = [];
     birds.clear();
     flames.clear();
     objective.clear();
@@ -199,14 +224,25 @@ export class Stage {
     return swell && swellGained(swell, this.weatherNow.seaGain);
   }
 
-  /** Steps the weather's glide and lays the weather on the scene; a lightning flash is the beat's to add. */
+  /** Steps the weather's glide and lays it on the scene: told to the game's sky at its hour, with every bolt the
+   *  story's lightning throws as a strike there, and the rest laid by the story's own atmosphere. A weather with no
+   *  hour lays it all, a lightning flash the beat's to add. */
   stepWeather(seconds: number, flash = 0, bolt: Weather['bolt'] = null): void {
     if (this.glide.done < this.glide.seconds) {
       this.glide.done = Math.min(this.glide.seconds, this.glide.done + seconds);
       const share = this.glide.done / this.glide.seconds;
       this.weatherNow = mixWeather(this.weatherFrom, this.weatherTo, share * share * (3 - 2 * share));
     }
-    this.parts.scene.weather = { ...this.weatherNow, flash: Math.max(this.weatherNow.flash, flash), bolt };
+    this.skyS += seconds;
+    const worldS = STORY_DAY_S + this.skyS;
+    if (bolt && bolt.seed !== this.lastBolt)
+      this.strikes.push({ x: bolt.x, y: bolt.y, atS: worldS, toGround: true, power: 1 });
+    this.lastBolt = bolt?.seed ?? null;
+    this.strikes = this.strikes.filter((strike) => worldS - strike.atS <= STRIKE_KEPT_S);
+    const { scene } = this.parts;
+    scene.sky.told = toldSky(this.weatherNow, worldS, this.strikes);
+    const own = { ...this.weatherNow, flash: Math.max(this.weatherNow.flash, flash), bolt };
+    scene.weather = overTheSky(own);
   }
 
   /** Draws a beat's frame: the land, its city and nature where asked, the ships, every figure, the birds and the fire,
@@ -240,6 +276,33 @@ export class Stage {
     for (const [name, point] of frame.heads ?? []) heads.set(name, headOnView(onScreen(shot, view, point), view));
     overheads.frame(seconds, heads);
     dialogue.frame(seconds);
+    this.hear(frame, seconds);
+  }
+
+  /** The world's own soundscape round the frame's focus where the frame says it is heard; the story's beds hand it
+   *  the sea and the weather there, and take them back where it is not. */
+  private hear(frame: StoryFrame, seconds: number): void {
+    const { worldSound, ambience } = this.parts;
+    const heard = frame.heard;
+    this.hearsTheWorld = !!heard;
+    ambience.handOver(this.hearsTheWorld);
+    if (!heard) return;
+    const landmass = this.parts.landmass();
+    const { shot } = frame;
+    if (heard.at === 'sea') {
+      const [x, y] = frame.focus ?? [shot.eye[0], shot.eye[1]];
+      worldSound.atSea(
+        landmass,
+        [x, y],
+        shot,
+        { sailing: heard.sailing, pace: SAILING_PACE, deck: heard.deck },
+        seconds,
+      );
+      return;
+    }
+    // The strand is heard as any of Saltmere's coast away from its town.
+    const node = landmass.nodes.find((each) => each.kind !== 'social') ?? landmass.nodes[0];
+    if (node) worldSound.onFoot(node, landmass, shot);
   }
 
   /** Plays a scene in order: each bark over its speaker's head, each run of lines together in the dialogue box (by

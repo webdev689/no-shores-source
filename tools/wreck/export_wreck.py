@@ -184,9 +184,13 @@ def main():
     with open(CONTENT, 'w') as file:
         json.dump(laid, file, separators=(',', ':'))
         file.write('\n')
+    # The level's own hash (all but the keys): a build elsewhere that matches it laid the same ground, fires and way.
+    level_only = {key: value for key, value in laid.items() if key not in ('mesh', 'light', 'source')}
+    level_hash = hashlib.sha256(json.dumps(level_only, sort_keys=True).encode()).hexdigest()[:16]
     print(json.dumps({key: laid[key] for key in ('mesh', 'light', *(('source',) if 'source' in laid else ()))}),
           f'{len(mesh) / 2 ** 20:.2f} MiB mesh, {len(light) / 2 ** 20:.2f} MiB light,',
-          f"{header['vertices']} vertices, {header['indices'] // 3} triangles, {len(laid['course'])} blocks")
+          f"{header['vertices']} vertices, {header['indices'] // 3} triangles, {len(laid['course'])} blocks,",
+          f'level {level_hash}')
 
 
 if __name__ == '__main__':

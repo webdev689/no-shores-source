@@ -45,7 +45,7 @@ function intro() {
         answers.set(id, { answer: () => resolve(land(id)), fail: () => reject(new Error(`${id} would not open`)) }),
       );
     },
-    scene: { setLand: () => undefined },
+    scene: { setLand: () => undefined, sky: { told: null } },
     drawersOn: () => ({ release: () => undefined }),
     terrainFor: () => undefined,
     home: { landmass: land('continent-1'), drawers: { release: () => undefined } },
@@ -60,7 +60,7 @@ function intro() {
     ambience: { set: quiet, whoosh: quiet },
     birds: { clear: quiet, flock: quiet },
     keepClose: quiet,
-    scene: { groundAt: () => 0, land: null },
+    scene: { groundAt: () => 0, land: null, sky: { told: null } },
     roster: [],
   } as unknown as StageParts);
   const sailing = { frame: () => [] } as unknown as Sailing;

@@ -234,7 +234,14 @@ export class Wake implements Beat {
     const actors: Actor[] = flying ? fighters(stage.parts.roster, this.pairs, tick.clock) : [];
     if (this.thirdPerson) actors.push(this.you());
     if (flying) this.cry(tick.viewport);
-    return { shot, actors, drawers: [this.scenery.drawer], heads: this.heads, focus: [shot.eye[0], shot.eye[1]] };
+    return {
+      shot,
+      actors,
+      drawers: [this.scenery.drawer],
+      heads: this.heads,
+      focus: [shot.eye[0], shot.eye[1]],
+      heard: { at: 'sea', deck: true, sailing: false },
+    };
   }
 
   /** The player standing where they woke, as the flight sees them from outside their eyes. */

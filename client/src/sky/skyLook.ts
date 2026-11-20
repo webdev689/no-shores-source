@@ -71,7 +71,7 @@ export function cloudDrift(steeringMS: number, worldS: number): Pick<SkyLook, 'd
 const SUN_GONE = -0.03;
 const MOON_KEYED = -0.08;
 /** The fog's density, per metre, in a thick bank, a heavy fall and a sandstorm. */
-const FOG_BANK = 0.004;
+export const FOG_BANK = 0.004;
 const FALL_HAZE = 0.0012;
 const SAND_HAZE = 0.006;
 

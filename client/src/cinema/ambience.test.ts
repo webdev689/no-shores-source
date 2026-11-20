@@ -208,3 +208,16 @@ test('stop silences every bed and the next sound starts afresh', () => {
   fake.endAll();
   assert.equal(fake.live.size, 0, 'nothing left connected once the fade is done');
 });
+
+test("the world's own soundscape takes the sea, the weather, the timbers and the gulls, never the fire or the deep", () => {
+  const ambience = new Ambience(outputOf(fakeAudio(), () => true));
+  ambience.set({ rain: 1, wind: 1, waves: 1, creak: 0.5, gulls: 1, fire: 1, deep: 1 }, 0);
+  ambience.handOver(true);
+  ambience.frame(0.75);
+  assert.equal(ambience.levels().rain, 0.5, 'half handed over');
+  ambience.frame(1);
+  assert.deepEqual(ambience.levels(), { rain: 0, wind: 0, waves: 0, fire: 1, deep: 1, gulls: 0, creak: 0 });
+  ambience.handOver(false);
+  ambience.frame(1.5);
+  assert.deepEqual(ambience.levels(), { rain: 1, wind: 1, waves: 1, fire: 1, deep: 1, gulls: 1, creak: 0.5 });
+});
