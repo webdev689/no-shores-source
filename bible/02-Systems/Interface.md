@@ -258,8 +258,8 @@ weight, and made into a font in the page when it opens (`trueType.ts`), so nothi
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
 the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
 whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit);
-keys on keycaps where the menu is wide enough; Journal
-and Guild marked Later, each a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
+keys on keycaps where the menu is wide enough; Guild
+marked Later, a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
 between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
 face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
@@ -351,6 +351,13 @@ never while a press is held. Each press is an ask the room answers.
   toward its end; the tab, the close and the refusal are the synthesiser's own, which also stands in while a recording
   loads. One listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
   browsers ask.
+- **Journal** is This Week ([[Activities]]): under "Today", its reset's time in a chip, the dungeon of the day's
+  pay, the day's modifier at Elite and Abyss seas with what it does, each tier's seas taken or not today (or why its
+  gate shuts), and each island's dungeon of the day with its levels; under "The week", its reset's time, the Elite
+  and the Abyss Dungeon of the week with their levels, rules, modifiers and pay, taken or not or shut, and the Abyss
+  boon while it is held. Breaches, Bounties and Quests follow, marked Later. It is read from the rules and from the
+  last word of the character a room sent, so it reads the same at sea; before any word it shows no taken and no
+  shut. It is built again only when the minute or that word changes.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The

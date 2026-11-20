@@ -17,6 +17,7 @@ import { Ambience } from './audio/ambience/ambience.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { DungeonDrawers } from './dungeonDrawers.ts';
 import { dungeonTrips } from './dungeonTrips.ts';
+import { startActivityScreens } from './activityScreens.ts';
 import { foesAsked } from './foesAsked.ts';
 import { takeWipe } from './footTrips.ts';
 import { FootView } from './footView.ts';
@@ -208,6 +209,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     companyPlaces: () => companyPlaces(link),
     drawers: dungeons,
   });
+  const screens = startActivityScreens(hudRoot, roomModule, world.nodes, () => foot);
 
   const goSea = async () => {
     leaveHere();
@@ -362,7 +364,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The Ship tab's papers: her voyage only while she is at sea.
   const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
   const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
-  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story');
+  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story', screens.week);
   addEventListener('keyup', (event) => void (flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)));
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();

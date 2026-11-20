@@ -30,7 +30,8 @@ import { itemPage } from './itemPage.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 
 export { gearScreenOpen } from './gearScreen.ts';
-import { laterPage, settingsPage, shipPage } from './menuPages.ts';
+import { laterPage, settingsPage, shipPage, thisWeekPage } from './menuPages.ts';
+import type { ThisWeek } from './activityWords.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
 import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
@@ -44,7 +45,7 @@ import { chime, play } from './uiSounds.ts';
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
   character: { label: 'Character', key: 'I' },
   inventory: { label: 'Inventory', key: 'O' },
-  journal: { label: 'Journal', key: '', later: 'Your quests will be kept here.' },
+  journal: { label: 'Journal', key: '' },
   ship: { label: 'Ship', key: '' },
   social: { label: 'Social', key: '' },
   guild: { label: 'Guild', key: '', later: 'Your guild will gather here.' },
@@ -127,6 +128,7 @@ export function startGearWindow(
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
+  week: () => ThisWeek | null = () => null,
 ): void {
   const screen = make('div', '', `gear-screen ${ROLES.window}`);
   screen.hidden = true;
@@ -340,7 +342,8 @@ export function startGearWindow(
   /** A page that needs no gear, built again only when what it shows changes. */
   const plainPage = (shown: View): HTMLElement => {
     const panel = shown === 'ship' ? ship() : null;
-    const key = JSON.stringify([shown, panel]);
+    const board = shown === 'journal' ? week() : null;
+    const key = JSON.stringify([shown, panel, board]);
     if (plain?.key === key) return plain.page;
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     const page =
@@ -348,9 +351,11 @@ export function startGearWindow(
         ? laterPage(TAB_PRESSES[shown as Tab].label, later)
         : shown === 'ship'
           ? shipPage(panel)
-          : shown === 'social'
-            ? rosterPage(link, travel)
-            : settingsPage(link);
+          : shown === 'journal'
+            ? thisWeekPage(board)
+            : shown === 'social'
+              ? rosterPage(link, travel)
+              : settingsPage(link);
     plain = { key, page };
     return page;
   };

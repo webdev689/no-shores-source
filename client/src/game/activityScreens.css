@@ -1,0 +1,77 @@
+/* The activities' screens (client/src/game/activityScreens.ts): This Week in the menu's Journal, as the Ship page is
+   laid; the gear screen's sheet gives the words, chips and headings they share. */
+
+.gear-week {
+  max-width: 640px;
+  margin: 24px auto;
+  padding: 18px 22px;
+}
+.gear-week-part + .gear-week-part {
+  margin-top: 16px;
+}
+.gear-week-part .gear-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.gear-week-title {
+  margin: 0 0 4px;
+  font-size: var(--type-m);
+  font-weight: 500;
+  color: var(--brass-lit);
+}
+.gear-week-label {
+  margin: 8px 0 2px;
+  font-size: var(--type-xs);
+  color: var(--faint);
+}
+.gear-week-rows {
+  margin-top: 8px;
+}
+/* A line: what it is and what is said of it, and this character's word on it at its end. */
+.gear-week-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 3px 0;
+}
+.gear-week-what {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.gear-week-what b {
+  font-weight: 500;
+}
+.gear-week-state {
+  flex: none;
+  color: var(--brass-lit);
+}
+/* A line its gate shuts reads as resting, its reason in the place of its word. */
+.gear-week-shut .gear-week-what b,
+.gear-week-shut .gear-week-state {
+  color: var(--faint);
+}
+.gear-week-dungeon + .gear-week-dungeon {
+  margin-top: 10px;
+}
+.gear-week-rule,
+.gear-week-modifier {
+  margin: 2px 0;
+}
+.gear-week-modifier {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.gear-week-modifier b {
+  flex: none;
+  font-weight: 500;
+  color: var(--brass);
+}
+.gear-week-boon {
+  margin: 10px 0 0;
+  color: var(--gain);
+}

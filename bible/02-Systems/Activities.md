@@ -14,6 +14,7 @@ code:
   - crates/room-wasm/src/run_door.rs#open_run
   - client/src/game/activities.ts#eliteRun
   - client/src/game/dungeonTrips.ts#dungeonTrips
+  - client/src/game/activityWords.ts#thisWeekOf
 ---
 # Activities
 
@@ -195,8 +196,12 @@ One engine counts both, since the owner's side quests and the board's bounties a
 
 ## The screen
 
-- **This Week**, in the character's window: the day's and the week's activities, their tiers and modifiers, what
-  each pays and whether it is taken, and the time to each reset.
+- **This Week** is the menu's Journal ([[Interface]], "The menu"): the dungeon of the day and its pay, the day's
+  modifier with what it does, each tier's seas taken or not today, each island's dungeon of the day with its levels,
+  then the week's two with their levels, rules, modifiers and pay, taken or not, and the Abyss boon while held, each
+  under the time to its reset. A shut line says why in its gate's words. "Taken" is the character's record as their
+  gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken today.
+  Bounties and Quests stand under it marked Later.
 - **At a dungeon's entrance**, a card shows the run's tier, level and modifiers, what it pays and whether it is
   taken, with Enter, and Find a Company where it matches.
 
