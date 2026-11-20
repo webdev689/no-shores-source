@@ -50,6 +50,8 @@ pub const SQUARING_PACE: f64 = 0.001;
 /// A foe keeping up with its place as its group walks on walks at the share of a walk its distance behind is of this,
 /// at most a full walk: at a group's stroll it walks a little behind its place, and catches up when farther.
 pub const KEEP_UP: f64 = 2.0;
+/// A foe falling back with its group is back at its new place within this, and fights again.
+pub const FALLEN_BACK: f64 = 1.0;
 /// Noises: the awareness each adds where it is made, falling away to nothing at its reach. A gun alerts outright
 /// within half its reach; a bow or a crossbow only stirs; a swing, or a blow landing, alerts only at a fighter's elbow;
 /// a runner's feet stir once each RUN_EVERY.
@@ -104,6 +106,13 @@ pub const POISE_NEAR: f64 = 0.8;
 /// A coward below this share of its health runs, once, for this long.
 pub const FLEE_SHARE: f64 = 0.2;
 pub const FLEE: f64 = 8.0;
+/// A garrison foe whose group's leader falls breaks for as long as a coward runs: Bungie names no time.
+pub const BREAK: f64 = FLEE;
+/// A group that defends its ground fights only a target within this of a foe's place in it, unless a blow struck the
+/// foe in the last SHARE_HOLD: Halo's "small defensive cluster", a few steps past the group's 2.5 m round its post.
+/// Its shooters hide this many times as long, as Halo's "stay in cover longer".
+pub const DEFEND: f64 = 8.0;
+pub const DEFEND_HIDE: f64 = 2.0;
 
 /// A shooter closer than KITE_IN walks out to KITE_OUT, one burst of at most KITE_MAX, and not again for
 /// KITE_COOLDOWN; between the two it shoots. Caught (its target inside KITE_CAUGHT as its burst ends, or while it may
