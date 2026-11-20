@@ -1,6 +1,7 @@
 /* The activities' screens (client/src/game/activityScreens.ts): This Week in the menu's Journal, as the Ship page is
-   laid, and the card at a dungeon's entrance, the menu's window narrowed to the run it opens; the gear screen's sheet
-   gives the words, chips, headings, header and footer they share. */
+   laid, the bounty board's screen laid as This Week is (bountyBoard.ts), and the card at a dungeon's entrance, the
+   menu's window narrowed to the run it opens; the gear screen's sheet gives the words, chips, headings, header and
+   footer they share. */
 
 .gear-week {
   max-width: 640px;
@@ -76,6 +77,11 @@
   flex: none;
   font-weight: 500;
   color: var(--brass);
+}
+/* A bounty's line stands as tall as a press, with one or not, so the board's lines keep one pitch. */
+.gear-bounty {
+  align-items: center;
+  min-height: 32px;
 }
 .gear-week-boon {
   margin: 10px 0 0;
