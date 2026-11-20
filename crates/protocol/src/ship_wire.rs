@@ -9,8 +9,8 @@ use gear::crew::Officer;
 use gear::crew::recruit::{offers, wage};
 use gear::grid::{column_xp, cost};
 
-/// The hands a ship's complement holds: the Sloop's, as a captain's Sloop is manned.
-pub const HANDS_MOST: f64 = naval::arms::PIRATE_SLOOP.crew;
+/// The hands her complement holds: the player's Sloop's.
+pub const HANDS_MOST: f64 = naval::arms::LARGE_BOAT.crew;
 
 fn officer_offset<'built>(
     builder: &mut FlatBufferBuilder<'built>,
