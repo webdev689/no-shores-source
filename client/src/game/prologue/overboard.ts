@@ -128,6 +128,7 @@ export class Overboard implements Beat {
       shot,
       actors,
       drawers: [this.scenery.drawer],
+      hulls: this.scenery.hulls,
       heads,
       focus: [x, y],
       heard: { at: 'sea', deck: true, sailing: false },
