@@ -34,6 +34,8 @@ export const MIDDLE_M = 6000;
 export const FARTHEST_M = 20_000;
 /** The roles still drawn between `NEAR_M` and `MIDDLE_M`. */
 const MIDDLE_ROLES: ReadonlySet<string> = new Set(['tree', 'cliff', 'stack']);
+/** The modules that grow: the game hands them to the land's plants to draw instead (`leaves`). */
+export const GROWTH_ROLES: ReadonlySet<string> = new Set(['tree', 'shrub', 'grass']);
 
 /** A module's turn and scale on the island, as the shader does it: its point turned clockwise from north (x east,
  *  y south: x' = x cos t - y sin t, y' = x sin t + y cos t), scaled, its height lifted again, then stood at its place.
@@ -90,9 +92,13 @@ export interface IslesFrame {
   far: number;
 }
 
-/** The placements' instances sorted by module, and each module's run. */
-export function instancesOf(placements: readonly IslePlacement[]): { floats: Float32Array; runs: Run[] } {
-  const sorted = [...placements].sort((a, b) => a[0] - b[0]);
+/** The placements' instances sorted by module, and each module's run, leaving out the modules of the roles `leaves`. */
+export function instancesOf(
+  placements: readonly IslePlacement[],
+  leaves: ReadonlySet<string> = new Set(),
+): { floats: Float32Array; runs: Run[] } {
+  const drawn = placements.filter(([module]) => !leaves.has(roleOf(module) ?? ''));
+  const sorted = drawn.sort((a, b) => a[0] - b[0]);
   const floats = new Float32Array(sorted.length * INSTANCE_FLOATS);
   const runs: Run[] = [];
   sorted.forEach((placement, index) => {
@@ -128,12 +134,22 @@ export class IslesView {
   /** Each kit's pack asked for, and when one that failed may be asked for again (`performance.now()`). */
   private readonly asked = new Map<string, number>();
   private readonly offset = new Float32Array(4);
+  /** The roles another drawer draws in this one's place (`GROWTH_ROLES`, the game's plants). */
+  private readonly leaves: ReadonlySet<string>;
   private drawn: Drawn[] = [];
 
-  /** `manifest` says where the kits' packs are published, `prefix` overrides it (a page's `?islePacks=`), and
-   *  `onLoaded` is told when a pack comes, so the page draws again. */
-  constructor(gpu: Gpu, manifest: IsleManifest | null, prefix: string | null, onLoaded: () => void = () => {}) {
+  /** `manifest` says where the kits' packs are published, `prefix` overrides it (a page's `?islePacks=`),
+   *  `onLoaded` is told when a pack comes, so the page draws again, and the modules of the roles `leaves` are not
+   *  drawn: another drawer draws them. */
+  constructor(
+    gpu: Gpu,
+    manifest: IsleManifest | null,
+    prefix: string | null,
+    onLoaded: () => void = () => {},
+    leaves: ReadonlySet<string> = new Set(),
+  ) {
     this.gpu = gpu;
+    this.leaves = leaves;
     this.pipelines = pipelinesOf(gpu);
     this.manifest = manifest;
     this.prefix = prefix;
@@ -330,7 +346,7 @@ export class IslesView {
   private build(shown: IsleShown): Drawn {
     const { device } = this.gpu;
     const grid = gridOf(shown.heights);
-    const { floats, runs } = instancesOf(shown.plan.placements);
+    const { floats, runs } = instancesOf(shown.plan.placements, this.leaves);
     let instances: GPUBuffer | null = null;
     if (floats.byteLength > 0) {
       instances = device.createBuffer({

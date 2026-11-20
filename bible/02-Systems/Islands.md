@@ -61,7 +61,8 @@ arctangents. Its frame is its own: metres from its middle, x east, y south.
   hulls and cargo and the camp are set first, on their places; every module laid after them stands wholly off the
   places kept clear (the spawns, a lane from them to the door, the door's front, the landmark, the camp and the wrecks)
   and at least half its own and each neighbour's reach from every other, so a cliff breaks where a wreck lies under it.
-  Each module's solids, discs as tall as it, stand as blocks a body cannot walk through.
+  Each module's solids, discs as tall as it, stand as blocks a body cannot walk through. In the game its trees, shrubs
+  and grass are drawn as its climate's own plants where they stand ([[Island Drawing]]).
 
 ## At sea
 

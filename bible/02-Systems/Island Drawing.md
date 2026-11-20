@@ -51,6 +51,12 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
   colour (the biome kit's own stone and growth, `partColours` in `isleShader.ts`, which holds the shaders). Within 1.5 km of its coast an island draws its fine
   ground and every module, and casts shadows; to 6 km its coarse ground with its trees, cliffs and stacks; to 20 km
   its coarse ground alone. `groundAt(x, y)` is the nearest shown island's height there, null off every island.
+- **The plants.** In the game an island's trees, shrubs and grass are not its modules but the land's own plants
+  ([[Nature]]): `game/isleNature.ts` plants each where the island placed it, on its own foot, turned and scaled as
+  placed, a tree as one of its climate's cast's trees and a shrub or grass as one of its low plants, each kind as often
+  as its chance of growing says, drawn from its place. One view of the plants stands for each climate shown, its
+  ground growing nothing of its own. The islands' view leaves those modules out (`GROWTH_ROLES`); the World Editor's
+  Islands mode still draws them as modules.
 - **The World Editor's Islands mode** builds one island at a time through `room.wasm`'s door and draws it with the
   sea round it ([[World Editor]]).
 - **The held map** marks found islands: `HeldMap.setIsles(marks)`, a cove a small ring and an isle a ring with a

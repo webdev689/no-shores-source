@@ -21,7 +21,9 @@ import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { Isles } from './isles.ts';
 import { islePlanWorker } from '../network/islePlans.ts';
 import { ISLE_MANIFEST, islePacksPrefix } from '../islands/isleManifest.ts';
-import { IslesView } from '../islands/isleView.ts';
+import { GROWTH_ROLES, IslesView } from '../islands/isleView.ts';
+import { IslesNature } from './isleNature.ts';
+import type { Drawer } from './scene.ts';
 import type { DungeonDoor } from './isleLaw.ts';
 import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
 import type { IsleHeld } from './isles.ts';
@@ -129,7 +131,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     continents.map((each) => each.climate),
   );
   const isleLanding = new IsleLanding();
-  const islesView = new IslesView(gpu, ISLE_MANIFEST, islePacksPrefix(location.search));
+  // The islands' trees, shrubs and grass are the land's own plants (`isleNature.ts`), not the islands' modules.
+  const islesView = new IslesView(gpu, ISLE_MANIFEST, islePacksPrefix(location.search), undefined, GROWTH_ROLES);
+  const islesNature = new IslesNature(gpu);
+  const islesDrawer: Drawer = {
+    castInto: (pass, fromEye, shot, time, shadow) => {
+      islesView.castInto(pass, fromEye, shot, time, shadow);
+      islesNature.castInto(pass, fromEye, shot, time, shadow);
+    },
+    drawInto: (pass, fromEye, shot, time, shadow) => {
+      islesView.drawInto(pass, fromEye, shot, time, shadow);
+      islesNature.drawInto(pass, fromEye, shot, time, shadow);
+    },
+  };
   /** The island the player stands on, drawn though the sea no longer tells of it. */
   let ashore: IsleHeld | null = null;
   const waterHere = () => waterOf(scene.land?.swell, playing.landmass.heightAt);
@@ -354,7 +368,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const isleFrame = () => {
     // Off the island's beach, at sea or in a node, the island is the sea's again; under the veil ashore it is kept.
     if (playing.flow.mode === 'sea' || (playing.foot && !playing.foot.node.id.startsWith('isle-'))) ashore = null;
-    islesView.show(isles.shown(ashore));
+    const shown = isles.shown(ashore);
+    islesView.show(shown);
+    islesNature.show(shown);
     const sea = playing.sea;
     if (!sea || playing.flow.mode !== 'sea') return;
     // An island new in sight bends the voyage ahead round it.
@@ -529,7 +545,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
       ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt, story, arrive },
-      isles: islesView,
+      isles: islesDrawer,
       ...{ world, music, ambience },
     },
     playing,
