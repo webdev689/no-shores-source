@@ -128,7 +128,7 @@ export class Passage {
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
-  /** Sets sail through a course's points in turn, from where she lies, as planned: to anchor off an island. */
+  /** Sets sail through a course's points in turn, from where the ship lies, as planned: to anchor off an island. */
   sailAlong(points: readonly Point2[]): void {
     const end = points.at(-1);
     if (!end) return;

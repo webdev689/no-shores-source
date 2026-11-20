@@ -312,7 +312,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     });
   };
 
-  /** Each frame at sea: the islands the room tells of kept and built, and a landing walked ashore once she anchors or
+  /** Each frame at sea: the islands the room tells of kept and built, and a landing walked ashore once the ship anchors or
    *  a beaten player washed up on a found island's beach. */
   const isleFrame = () => {
     // Off the island's beach, at sea or in a node, the island is the sea's again.

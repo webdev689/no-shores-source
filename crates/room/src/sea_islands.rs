@@ -58,7 +58,7 @@ pub struct SeaIsland {
     held_at: u64,
 }
 
-/// A ship as the islands see her: her player, where she is, and the course she sails.
+/// A ship as the islands see it: its player, where it is, and the course it sails.
 type ShipAndCourse = (PlayerId, [f64; 2], Vec<[f64; 2]>);
 
 /// Every island standing, the draws they are rolled from, and each player's found ones.

@@ -49,13 +49,13 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_her() {
     assert!(!islands.is_empty(), "no island in three minutes");
     for island in islands {
         let off = apart(island.at, [50_000.0, 50_000.0]);
-        assert!((1_200.0..=7_000.0).contains(&off), "an island {off} m off her");
+        assert!((1_200.0..=7_000.0).contains(&off), "an island {off} m off the ship");
         assert_eq!(island.climate, "desert");
         assert_eq!(island.guards, Some(::foes::factions::PIRATES));
         assert!(island.anchorage != island.at);
     }
     let near = islands.iter().filter(|island| apart(island.at, [50_000.0, 50_000.0]) <= NEAR_M).count();
-    assert!(near <= 2, "{near} near her: more than she wants");
+    assert!(near <= 2, "{near} near the ship: more than it wants");
 }
 
 #[test]
@@ -100,7 +100,7 @@ fn a_ship_finds_an_island_she_sails_near_and_is_told_of_those_in_sight() {
         }
     }
     let ship = sea.ships().next().expect("at sea").1;
-    assert!(apart([ship.x, ship.y], anchorage) < 1.0, "she lies at its anchorage");
+    assert!(apart([ship.x, ship.y], anchorage) < 1.0, "the ship lies at its anchorage");
     assert!(apart(anchorage, at) <= FIND_M);
     assert!(sea.islands().found(player, id));
     assert_eq!(sea.islands().found_by(player).count(), 1);
@@ -129,7 +129,7 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
         sea.tick();
     }
     let (kept, left) = (sea.islands().standing[0].id, sea.islands().standing[1].id);
-    // She sails far off, out of every island's hold and too fast for new ones to keep her company long.
+    // The ship sails far off, out of every island's hold and too fast for new ones to keep it company long.
     ticks(&mut sea, 30);
     sea.course(player, &[[50_000.0, 350_000.0]], 100).expect("open sea to the south");
     for held in 0..FADE_TICKS + 2 * 60 * 60 {

@@ -65,7 +65,7 @@ arctangents. Its frame is its own: metres from its middle, x east, y south.
 The sea room holds its islands (`sea_islands.rs`):
 
 - **Rolled** every ten seconds round each ship at sea that has fewer than two islands within 8 km, three times in ten:
-  3 to 7 km from her, in hostile water (never in home waters), 3 km clear of every coast and every other island, 1.2 km
+  3 to 7 km from it, in hostile water (never in home waters), 3 km clear of every coast and every other island, 1.2 km
   clear of every ship and hostile ship, and clear of every ship's course by its reach and 300 m. At most 96 stand.
   An island in a climate the contract does not dress is not rolled.
 - **Seen and found.** Each player is told of the islands within 20 km of their ship and of those they have found;
@@ -103,10 +103,10 @@ The sea room holds its islands (`sea_islands.rs`):
 - The sea snapshot carries the islands the player is told of; the page builds each once through the room module, at
   most one a frame (`isles.ts`), and every voyage's legs are bent round each island in sight, since the route
   planner's grid is far coarser than an island (`isleLaw.ts`, `detour`).
-- Within 700 m past an island's coast the ship is offered to go ashore on it ("Go ashore on a cove"); taken, she sails
-  out to its offing on its landing's bearing, round it where she must, and in to its anchorage, and once she lies
+- Within 700 m past an island's coast the ship is offered to go ashore on it ("Go ashore on a cove"); taken, the ship sails
+  out to the island's offing on its landing's bearing, round it where it must, and in to its anchorage, and once it lies
   there the player walks ashore on its beach behind the veil ("Going ashore on a cove"). The menu's Return to ship
-  takes them back aboard, where she lies.
+  takes them back aboard, where the ship lies.
 - On foot E scavenges a wreck within 3 m ("Scavenge the wreck") and tries the door ("Enter the caverns").
 
 ## Limits

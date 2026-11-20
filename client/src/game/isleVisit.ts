@@ -55,11 +55,11 @@ export async function ashoreOn(
 /** The tiers by their number in the rooms. */
 const DIFFICULTIES: readonly Difficulty[] = ['normal', 'elite', 'abyss'];
 
-/** The landing under way: the island the ship sails in to anchor off, until she lies at its anchorage. */
+/** The landing under way: the island the ship sails in to anchor off, until it lies at its anchorage. */
 export class IsleLanding {
   private pending: number | null = null;
 
-  /** Sets her course round the island to its anchorage: whether there is one to sail. */
+  /** Sets the ship's course round the island to its anchorage: whether there is one to sail. */
   begin(sea: Sea, isles: Isles, id: number): boolean {
     const isle = isles.all().find((each) => each.seen.id === id);
     if (!isle?.built) return false;
@@ -68,7 +68,7 @@ export class IsleLanding {
     return true;
   }
 
-  /** The island she has come to anchor off, once she lies at its anchorage, taken once; the landing given up if the
+  /** The island the ship has come to anchor off, once it lies at its anchorage, taken once; the landing given up if the
    *  island no longer stands. */
   arrived(sea: Sea, isles: Isles): IsleHeld | null {
     if (this.pending === null) return null;
@@ -85,12 +85,12 @@ export class IsleLanding {
     return held;
   }
 
-  /** The landing given up: she was turned elsewhere. */
+  /** The landing given up: the ship was turned elsewhere. */
   cancel(): void {
     this.pending = null;
   }
 
-  /** The island her landing is under way to, if any. */
+  /** The island the ship's landing is under way to, if any. */
   get toward(): number | null {
     return this.pending;
   }

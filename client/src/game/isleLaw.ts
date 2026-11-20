@@ -28,7 +28,7 @@ export interface IsleAt {
 
 const apart = (one: Point2, other: Point2) => Math.hypot(one[0] - other[0], one[1] - other[1]);
 
-/** The island a ship at `ship` lies off: the nearest built one whose coast reaches within `ISLE_OFFER_M` of her. */
+/** The island a ship at `ship` lies off: the nearest built one whose coast reaches within `ISLE_OFFER_M` of it. */
 export function isleOff(ship: Point2, isles: readonly IsleAt[]): IsleAt | null {
   let best: IsleAt | null = null;
   for (const isle of isles) {

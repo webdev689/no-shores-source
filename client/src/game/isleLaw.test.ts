@@ -44,7 +44,7 @@ const keepsOff = (course: readonly Point2[], point: Point2, clear: number) =>
     return true;
   });
 
-test('a ship is offered the nearest built island whose coast she lies near', () => {
+test('a ship is offered the nearest built island whose coast it lies near', () => {
   const near = built(1, [1000, 1000]);
   const far = built(2, [1000, 5000]);
   assert.equal(isleOff([1000, 300], [far, near])?.seen.id, 1);
