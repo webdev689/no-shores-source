@@ -238,7 +238,7 @@ fn a_dungeon_falls_back_halfway_to_its_last_stand_then_gathers_there_led_by_its_
 fn a_mission_calls_a_wave_as_it_falls_back_and_another_for_its_last_stand_and_a_fallen_wave_is_gone() {
     let mut room = node(NodeKind::Mission, "keep");
     let player = room.join().unwrap();
-    // On the room's navmesh, at the middle of its square, and past the grace a player who has just stood has.
+    // On the room's navmesh, at the middle of its square, a moment settled.
     stand_player(&mut room, player, [0.0, 160.0]);
     run(&mut room, 200);
     let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
@@ -434,4 +434,119 @@ fn a_mission_holding_its_territory_again_calls_waves_again_once_the_last_wave_ha
     assert_eq!(waves(&room), 0);
     fall_back(&mut room);
     assert_eq!(waves(&room), 1, "a new wave for the new fall back");
+}
+
+#[test]
+fn a_boss_fights_from_the_start_its_escort_screening_nothing() {
+    let mut room = node(NodeKind::Boss, "ford");
+    let player = room.join().unwrap();
+    provoke(&mut room, 0, player);
+    let boss = room.garrison[0].leader.unwrap();
+    assert_eq!(room.foes[&boss].brain.rank, Rank::Boss);
+    let orders = room.foes[&boss].brain.orders();
+    assert!(!orders.screened && !orders.push, "never held back behind its escort");
+}
+
+#[test]
+fn a_wave_hunts_the_nearest_player_standing_and_none_comes_with_no_one_to_hunt() {
+    let mut room = node(NodeKind::Mission, "keep");
+    let (fallen, standing) = (room.join().unwrap(), room.join().unwrap());
+    stand_player(&mut room, fallen, [0.0, 160.0]);
+    stand_player(&mut room, standing, [12.0, 160.0]);
+    run(&mut room, 200);
+    room.players.get_mut(&fallen).unwrap().fighter.health = 0.0;
+    room.players.get_mut(&fallen).unwrap().fighter.action = Action::Dead { elapsed: 0 };
+    let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
+    let order: Vec<FighterId> = room.garrison.iter().rev().flat_map(|post| post.standing.clone()).collect();
+    let mut fallen_foes = 0;
+    while (stood - fallen_foes) * 4 > stood * 3 {
+        kill(&mut room, order[fallen_foes]);
+        fallen_foes += 1;
+    }
+    run(&mut room, 1);
+    let wave = room.garrison.iter().find(|post| post.arrival).expect("a wave");
+    assert!(wave.standing.iter().all(|id| room.foes[id].brain.fights() == Some(standing)), "the player standing");
+    // With no one in the room, no wave.
+    let mut empty = node(NodeKind::Mission, "keep");
+    let order: Vec<FighterId> = empty.garrison.iter().rev().flat_map(|post| post.standing.clone()).collect();
+    for id in order.iter().take(stood / 2 + 1) {
+        kill(&mut empty, *id);
+    }
+    run(&mut empty, 1);
+    assert!(empty.garrison.iter().all(|post| !post.arrival), "no one to hunt, no wave");
+}
+
+#[test]
+fn no_two_foes_of_a_garrison_giving_ground_share_a_place_nor_move_as_others_fall() {
+    for at in 0..40 {
+        for kind in [NodeKind::Mission, NodeKind::Dungeon] {
+            let id = format!("node{at}");
+            let mut room = node(kind, &id);
+            let player = room.join().unwrap();
+            stand_player(&mut room, player, [0.0, 160.0]);
+            let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
+            let order: Vec<FighterId> = room.garrison.iter().rev().flat_map(|post| post.standing.clone()).collect();
+            let homes = |room: &Room| -> Vec<(FighterId, [f64; 3])> {
+                room.foes
+                    .iter()
+                    .filter(|(_, foe)| !foe.fighter.dead())
+                    .map(|(id, foe)| (*id, foe.brain.home().unwrap().at))
+                    .collect()
+            };
+            let mut fallen = 0;
+            for share in [3, 2] {
+                while (stood - fallen) * 4 > stood * share {
+                    kill(&mut room, order[fallen]);
+                    fallen += 1;
+                }
+                run(&mut room, 1);
+                let placed = homes(&room);
+                for (nth, (one, first)) in placed.iter().enumerate() {
+                    for (two, second) in &placed[nth + 1..] {
+                        let apart = apart([first[0], first[1]], [second[0], second[1]]);
+                        assert!(apart >= 0.99, "{kind:?} {id}: foes {one} and {two} {apart:.2} m apart");
+                    }
+                }
+            }
+            // One more falls at the last stand: every other keeps its place.
+            let before = homes(&room);
+            let Some(&victim) = order.get(fallen) else { continue };
+            kill(&mut room, victim);
+            run(&mut room, 1);
+            for (one, place) in before.iter().filter(|(one, _)| *one != victim) {
+                assert_eq!(room.foes[one].brain.home().unwrap().at, *place, "{kind:?} {id}: a place moved as one fell");
+            }
+        }
+    }
+}
+
+#[test]
+fn a_wave_comes_on_whatever_it_loses_and_a_shooter_leader_stands_behind_no_screen() {
+    let mut room = node(NodeKind::Mission, "keep");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, 160.0]);
+    run(&mut room, 200);
+    let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
+    let order: Vec<FighterId> = room.garrison.iter().rev().flat_map(|post| post.standing.clone()).collect();
+    let mut fallen = 0;
+    while (stood - fallen) * 4 > stood * 3 {
+        kill(&mut room, order[fallen]);
+        fallen += 1;
+    }
+    run(&mut room, 1);
+    let wave = room.garrison.iter().position(|post| post.arrival).unwrap();
+    let foes = room.garrison[wave].standing.clone();
+    for id in foes.iter().take(foes.len().div_ceil(2)) {
+        kill(&mut room, *id);
+    }
+    run(&mut room, 1);
+    assert!(!room.garrison[wave].defending, "half of it fallen, a wave still comes on");
+    assert!(living(&room, wave).iter().all(|id| !room.foes[id].brain.orders().defend));
+    // Dungeon "pass": its third group, a Marksman Elite leading a Runner and two Crossbowmen Major.
+    let mut dungeon = node(NodeKind::Dungeon, "pass");
+    let player = dungeon.join().unwrap();
+    provoke(&mut dungeon, 2, player);
+    let leader = dungeon.garrison[2].leader.unwrap();
+    assert_eq!(dungeon.foes[&leader].brain.role(), Role::Archer);
+    assert!(!dungeon.foes[&leader].brain.orders().screened, "a shooter leads from where it shoots");
 }

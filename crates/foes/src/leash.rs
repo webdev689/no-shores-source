@@ -109,7 +109,7 @@ fn give_up(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) {
 fn start_home(brain: &mut Brain, why: Homeward) {
     let tells = &mut brain.tells;
     (tells.windup, tells.ended, tells.chained, tells.roar, tells.phase) = (None, None, 0, false, 1);
-    (brain.broken_until, brain.cover, brain.raging) = (0, None, false);
+    (brain.broken_until, brain.cover, brain.raging, brain.held_since) = (0, None, false, None);
     brain.calls.cleanse = true;
     brain.returning = Some(why);
 }

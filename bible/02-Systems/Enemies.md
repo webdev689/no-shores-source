@@ -191,28 +191,35 @@ WebAssembly, so names, factions and weapons are read in one place.
   a target rages (a brute first, then a skirmisher, then a swordsman, the one nearest its target; never a shooter or a
   captain, and none if one of them rages already), and the rest fall back to cover for 8 s, breaking by their role where
   there is none ([[Foes]], "Its group").
-- **Its breaking point**: once half the foes it stood have fallen, it defends its ground until it stands again: its
-  places gather back at its post, its foes fighting elsewhere fall back to them, each fighter hand to hand fights only
-  near its place, and its shooters hide longer between their looks out ([[Foes]], "Its group").
-- **The Grey Tithe's tactic**, its shield front: its shield-bearers hold the line before their target, and its leader is
-  screened by its lower ranks that fight hand to hand. While one of them that is not broken fights at its target, within
-  its range and neither falling back nor holding ground away from it, the leader waits behind them, right behind the
-  nearest shield-bearer of them; once none of them stands unbroken, it goes in at once ([[Foes]], "Its group").
+- **Its breaking point**: once half the foes it stood have fallen, a garrison's group (never a wave) defends its ground
+  until it stands again: its places gather back at its post (at its fallback point or the last stand while its garrison
+  gives ground there), its foes fighting elsewhere fall back to them, each fighter hand to hand holds near its place,
+  coming for a target that stands near it a while, and its shooters hide longer between their looks out ([[Foes]], "Its
+  group").
+- **The Grey Tithe's tactic**, its shield front: its shield-bearers hold the line before their target, and a leader that
+  fights hand to hand, under a Miniboss, is screened by its lower ranks that fight hand to hand. While one of them that
+  is not broken fights at its target, within its range and neither falling back nor holding ground away from it, the
+  leader waits behind them, right behind the nearest shield-bearer of them, and lets them take the turns; once none of
+  them stands unbroken, it goes in at once. A Miniboss or a Boss fights from its first phase, its escort screening
+  nothing, and a shooter leads from where it shoots ([[Foes]], "Its group").
 - **A mission's or a dungeon's garrison gives ground** as one encounter, by the share of the foes it stood that stand
   (its waves not counted). More than three quarters standing, it holds its territory: each group its own post and beat.
-  More than half, it falls back: each group's places gather 2.5 m round its fallback point, halfway along the navmesh's
-  way from its post to the last stand's post, the post farthest from the spawns (its own post where that point is off
-  the mesh, outside the section or within 25 m of a spawn). Less, it makes its last stand: the last stand's group at its
-  places there and every other of its foes on one ring 5 m round it, a place each, all defending (its waves come on, for
-  the players), led by the highest rank standing as it begins; that one's fall breaks every foe there; groups standing
-  again at its last stand take a leader afresh. As groups stand again the share rises, and they go back.
+  More than half, it falls back: each group's places gather 2.5 m round its fallback point, a place each kept as others
+  fall, halfway along the navmesh's way from its post to the last stand's post, the post farthest from the spawns (its
+  own post where that point is off the mesh, outside the section or within 25 m of a spawn). Less, it makes its last
+  stand: the last stand's group at its places there and every other of its foes on one ring 5 m round it, a place each
+  kept as others fall, all defending (its waves come on, for the players), led by the highest rank standing as it
+  begins; that one's fall breaks every foe there; groups standing again at its last stand take a leader afresh. As
+  groups stand again the share rises, and they go back.
 - **A mission's waves**: as its garrison falls back, a wave comes, and another for its last stand, both at once if it
   gives up both at once: each a band drawn as its bands are (two to four Runners, Collectors and Crossbowmen, Minor or
   Major), each wave its own, at the island's levels, a shield drawn as any foe's. It stands at the open point of the
-  post lattice nearest the players that is at least 25 m from each of them and 20 m from every wave standing, hunts the
-  nearest player, and holds there: its places are where it stood. A wave has its own leader, breaking point and break;
-  it never stands again once fallen. It comes once each time the garrison holds its territory, but not while a wave of
-  before stands, and only while the room's living foes leave room for all of it; a garrison sent away calls none.
+  post lattice nearest the players that is at least 25 m from each of them, 20 m from every wave standing and 10 m from
+  every foe and the place it keeps to, hunts the nearest player standing and seen, and holds there: its places are where
+  it stood. A wave has its own leader and break, but no breaking point: it comes on whatever it loses. It never stands
+  again once fallen. It comes once each time the garrison holds its territory, but not while a wave of before stands,
+  not with no player standing and seen to hunt, and only while the room's living foes leave room for all of it; a
+  garrison sent away calls none. No two places a garrison gives ground to stand within 1 m of each other or of a wave's.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
   its beat begun again from there, 120 s later, once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.

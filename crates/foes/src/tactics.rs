@@ -22,8 +22,9 @@ use crate::steer::{Ask, taken, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, DEFEND, FLEE,
-    FLEE_SHARE, FOLLOW, GUARD_RESERVE, HOME_REACHED, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RANK_GAP, RECOVER,
-    RECOVER_HOP, RING_ROOM, RING_SLACK, RUN_FROM, SHARE_HOLD, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
+    FLEE_SHARE, FOLLOW, GUARD_RESERVE, HOME_REACHED, HURT_SHARE, KITE_CORNERED, PATIENCE, POISE_NEAR, RANK_GAP,
+    RECOVER, RECOVER_HOP, RING_ROOM, RING_SLACK, RUN_FROM, SHARE_HOLD, STALE, STEP_PACE, SWING_FACE, SWING_SLACK,
+    WALLED,
 };
 use combat::arms::{stroke_shape, swing_ticks, weapon};
 use combat::fighter::Action;
@@ -250,13 +251,27 @@ fn broken(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
 }
 
 /// Its group defending its ground, a fighter hand to hand fights only a target within DEFEND of its place, or a target
-/// whose blow struck it in the last SHARE_HOLD: past that it gives its turn up, keeps to its place and faces its
-/// target, its guard up if it bears a shield.
+/// whose blow struck it in the last SHARE_HOLD, or one that has stood within its range of its place for PATIENCE, until
+/// it goes out of that range again: past that it gives its turn up, keeps to its place and faces its target, its guard
+/// up if it bears a shield.
 fn hold_ground(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Option<Ask> {
-    let home = brain.home.filter(|_| brain.orders.defend && !here.numbers.shooter && !brain.raging)?;
+    let Some(home) = brain.home.filter(|_| brain.orders.defend && !here.numbers.shooter && !brain.raging) else {
+        brain.held_since = None;
+        return None;
+    };
     let tick = here.tick();
     let struck = brain.struck_at.is_some_and(|(by, at)| by == sight.id && tick < at + Here::ticks(SHARE_HOLD));
-    if struck || apart([home.at[0], home.at[1]], [sight.spot[0], sight.spot[1]]) <= DEFEND {
+    let from_place = apart([home.at[0], home.at[1]], [sight.spot[0], sight.spot[1]]);
+    if from_place > here.range() {
+        brain.held_since = None;
+    } else if from_place > DEFEND {
+        // A standoff lasts a foe's patience, then it comes for its target.
+        let since = *brain.held_since.get_or_insert(tick);
+        if tick >= since + Here::ticks(PATIENCE) {
+            return None;
+        }
+    }
+    if struck || from_place <= DEFEND {
         return None;
     }
     board.forget(here.me);
@@ -326,7 +341,15 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     let director = here.world.director;
     let pressed = director.pressed();
     let ring = reach + pressed.ring_gap;
-    board.join(sight.id, me, false, tick);
+    // A leader its followers screen takes no turn while they fight, nor waits in their line for one, so the first of
+    // them to have waited goes in; raging, or going in now they are gone, it takes one at once, one over the count at
+    // most.
+    let screened = brain.orders.screened && !brain.raging;
+    if screened {
+        board.forget(me);
+    } else {
+        board.join(sight.id, me, false, tick);
+    }
     let from_target = bearing([sight.spot[0], sight.spot[1]], here.at());
     // Only a foe where its group means it to stand strikes a back turned to it: the flanker, or one in the line; and
     // not a back walking away, which the one whose turn it is runs after.
@@ -339,12 +362,6 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     let inside = sight.distance < ring - RING_SLACK && (closing || brain.plan == Plan::Engage);
     let opened = (back_turned && sight.distance <= ring + RING_SLACK) || inside;
     let open = board.opening(sight.id, me, opened && !board.holds(sight.id, me, false));
-    // A leader its followers screen takes no turn while they fight; raging, or going in now they are gone, it takes
-    // one at once, one over the count at most.
-    let screened = brain.orders.screened && !brain.raging;
-    if screened && board.holds(sight.id, me, false) {
-        board.hand_on(sight.id, me, tick);
-    }
     let patience = if brain.raging || brain.orders.push { 0 } else { Here::ticks(pressed.patience) };
     if brain.plan == Plan::Wait
         && ((!screened && board.take(sight.id, me, false, tick, patience, director.caps())) || open)

@@ -80,9 +80,9 @@ pub struct Orders {
 /// How a foe holds up: steady, broken by its leader's fall, or raging.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mood {
-    Steady = 0,
-    Broken = 1,
-    Raging = 2,
+    Steady,
+    Broken,
+    Raging,
 }
 
 /// A foe's brain: its type and rank, and all it keeps.
@@ -135,6 +135,8 @@ pub struct Brain {
     pub(crate) broken_until: u64,
     pub(crate) cover: Option<[f64; 3]>,
     pub(crate) raging: bool,
+    /// Since when, defending, it has held its ground before a target near its place.
+    pub(crate) held_since: Option<u64>,
     pub(crate) struck_at: Option<(FighterId, u64)>,
 }
 
@@ -173,6 +175,7 @@ impl Brain {
             broken_until: 0,
             cover: None,
             raging: false,
+            held_since: None,
             struck_at: None,
         }
     }
@@ -215,9 +218,9 @@ impl Brain {
         self.returning == Some(Homeward::Falling)
     }
 
-    /// Its group gives ground: fighting, it runs to its new place and fights from there.
+    /// Its group gives ground: fighting, it runs to its new place and fights from there; raging, it holds no ground.
     pub fn fall_back(&mut self) {
-        if self.target.is_some() && self.home.is_some() && self.returning.is_none() {
+        if self.target.is_some() && self.home.is_some() && self.returning.is_none() && !self.raging {
             self.returning = Some(Homeward::Falling);
         }
     }

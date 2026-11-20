@@ -77,15 +77,25 @@ fn a_shield_bearer_broken_huddles_on_a_farther_ring_its_guard_up_and_takes_no_tu
 }
 
 #[test]
-fn a_shooter_broken_in_the_open_holds_its_fire_and_steps_back_facing_its_target() {
+fn a_shooter_broken_in_the_open_holds_its_fire_and_steps_back_to_its_place_facing_its_target() {
+    // Posted 8 m behind where it stands: broken, it steps back there by its routes, facing the player, and no farther.
     let mut room = facing_off(CROSSBOWMAN, 10.0, 2);
+    brain_mut(&mut room, 10).posted_at([0.0, -18.0, 0.0], PI);
     let broke = room.tick;
     brain_mut(&mut room, 10).breaks(broke, false);
     room.run(break_ticks() - 10, &mut still(0.0));
     assert!(room.shots.is_empty(), "no shot loosed while broken");
-    assert!(room.distance(10, PLAYER) > 14.0, "it stepped back: {:.1} m", room.distance(10, PLAYER));
+    let distance = room.distance(10, PLAYER);
+    assert!((17.0..19.0).contains(&distance), "at its place, 18 m off: {distance:.1} m");
     let aim = room.fighter(10).aim;
     assert!(combat::sight::off(aim, room.toward(10, PLAYER)) < 0.1, "still facing its target");
+    // With no place to go back to, it holds where it stands.
+    let mut room = facing_off(CROSSBOWMAN, 10.0, 2);
+    let broke = room.tick;
+    brain_mut(&mut room, 10).breaks(broke, false);
+    room.run(break_ticks() - 10, &mut still(0.0));
+    assert!(room.shots.is_empty());
+    assert!((room.distance(10, PLAYER) - 10.0).abs() < 1.0, "held: {:.1} m", room.distance(10, PLAYER));
 }
 
 #[test]
@@ -161,33 +171,66 @@ fn a_leader_its_followers_screen_waits_behind_them_and_goes_in_at_once_when_they
 
 #[test]
 fn a_foe_defending_its_ground_fights_only_near_its_place_or_one_that_struck_it() {
-    let mut room = Room::new(6).player(PLAYER, 0.0, 0.0, 0.0).foe(10, COLLECTOR, Major, 0.0, -12.0, PI);
+    // The player 16 m from its place, out of its range: it keeps to its place, however long.
+    let mut room = Room::new(6).player(PLAYER, 0.0, 4.0, 0.0).foe(10, COLLECTOR, Major, 0.0, -12.0, PI);
     let place = [0.0, -12.0, 0.0];
     brain_mut(&mut room, 10).posted_at(place, PI);
     brain_mut(&mut room, 10).order(Orders { defend: true, ..Orders::default() });
     room = room.alert(10, PLAYER);
-    room.run(300, &mut still(0.0));
+    room.run(900, &mut still(0.0));
     let body = room.fighter(10).body;
     let from_place = combat::sight::apart([body.x, body.y], [place[0], place[1]]);
-    assert!(from_place < 1.0, "the player 12 m from its place, it keeps to it: {from_place:.1} m off");
+    assert!(from_place < 1.0, "it keeps to its place: {from_place:.1} m off");
     assert!(room.swings(10).is_empty());
     assert_eq!(room.brain(10).fights(), Some(PLAYER), "its target kept");
     // Struck by another than the one it fights, it keeps its ground; struck by its target, it goes after it.
     room.tell(10, Seen::Struck { by: 77, verdict: Verdict::Hit { damage: 1.0, poise: 0.0 } });
     room.run(120, &mut still(0.0));
     assert!(
-        room.distance(10, PLAYER) > 11.0,
+        room.distance(10, PLAYER) > 15.0,
         "another's blow draws it off nothing: {:.1} m",
         room.distance(10, PLAYER)
     );
-    let struck = room.tick;
     room.tell(10, Seen::Struck { by: PLAYER, verdict: Verdict::Hit { damage: 1.0, poise: 0.0 } });
     room.run(120, &mut still(0.0));
-    assert!(room.distance(10, PLAYER) < 12.0 - 3.0, "struck, it came on: {:.1} m", room.distance(10, PLAYER));
-    // The player within its ground, it fights.
-    room.set(PLAYER, |fighter| (fighter.body.x, fighter.body.y) = (0.0, -12.0 + DEFEND - 3.0));
+    assert!(room.distance(10, PLAYER) < 16.0 - 3.0, "struck, it came on: {:.1} m", room.distance(10, PLAYER));
+}
+
+#[test]
+fn a_foe_defending_its_ground_comes_for_a_target_near_it_once_its_patience_runs_out() {
+    // The player 12 m from its place: within its range, past its ground.
+    let mut room = Room::new(6).player(PLAYER, 0.0, 0.0, 0.0).foe(10, COLLECTOR, Major, 0.0, -12.0, PI);
+    brain_mut(&mut room, 10).posted_at([0.0, -12.0, 0.0], PI);
+    brain_mut(&mut room, 10).order(Orders { defend: true, ..Orders::default() });
+    room = room.alert(10, PLAYER);
+    let patience = u64::from(combat::ticks(foes::tuning::PATIENCE));
+    room.run(patience - 60, &mut still(0.0));
+    assert!(room.distance(10, PLAYER) > 11.0, "it holds its ground a while");
     room.run(600, &mut still(0.0));
-    assert!(swings_between(&room, 10, struck, room.tick) > 0, "within its ground, it fights");
+    assert!(!room.swings(10).is_empty(), "then comes for the player and fights");
+    // Within its ground, it fights at once.
+    room.set(PLAYER, |fighter| (fighter.body.x, fighter.body.y) = (0.0, -12.0 + DEFEND - 3.0));
+    let near = room.tick;
+    room.run(300, &mut still(0.0));
+    assert!(swings_between(&room, 10, near, room.tick) > 0, "within its ground, it fights");
+}
+
+#[test]
+fn a_screened_leader_waits_in_no_line_so_its_follower_goes_in_at_once() {
+    let mut room = Room::new(3).player(PLAYER, 0.0, 0.0, 0.0);
+    room.director = Director { heat: 0.1 };
+    // The leader waits from the first; its follower, coming from 18 m off, joins later.
+    room = room.foe(10, REEVE, Elite, -3.0, -5.0, PI).foe(11, COLLECTOR, Major, 0.0, -18.0, PI);
+    room = room.alert(10, PLAYER).alert(11, PLAYER);
+    brain_mut(&mut room, 10).order(Orders { screened: true, behind: Some(11), ..Orders::default() });
+    let mut took = false;
+    for _ in 0..240 {
+        room.step(&mut still(0.0));
+        took |= room.board.holds(PLAYER, 11, false);
+    }
+    assert!(took, "its follower takes the turn well inside a foe's patience");
+    room.run(600, &mut still(0.0));
+    assert!(room.swings(10).is_empty() && !room.swings(11).is_empty());
 }
 
 #[test]
@@ -255,9 +298,10 @@ fn a_screened_leader_stands_right_behind_its_shield_bearer_not_the_middle_of_its
             apart.push(off(at(room.fighter(10).body), at(room.fighter(11).body)));
         }
     }
-    // Behind the middle of its line it would stand about 45 degrees round from the Collector.
+    // Behind the middle of its line it would stand about 45 degrees round from the Collector; behind it, it trails it
+    // a little as the Collector goes in and out.
     let mean = apart.iter().sum::<f64>() / apart.len() as f64;
-    assert!(mean < 0.2, "behind its shield-bearer, a mean {:.0} degrees round from it", mean.to_degrees());
+    assert!(mean < 0.3, "behind its shield-bearer, a mean {:.0} degrees round from it", mean.to_degrees());
     assert!(room.distance(10, PLAYER) > room.distance(11, PLAYER) + 1.0, "and farther out");
     assert!(room.swings(10).is_empty(), "screened, it strikes nothing");
 }
@@ -300,4 +344,15 @@ fn a_foe_broken_out_of_its_range_neither_closes_on_nor_hunts_its_target() {
         "it closed in while broken: {:.1} m of {far:.1}",
         room.distance(10, PLAYER)
     );
+}
+
+#[test]
+fn a_raging_foe_holds_no_ground_its_group_gives() {
+    let mut room = facing_off(ENFORCER, 3.0, 3);
+    brain_mut(&mut room, 10).posted_at([0.0, -3.0, 0.0], PI);
+    let tick = room.tick;
+    brain_mut(&mut room, 10).breaks(tick, true);
+    brain_mut(&mut room, 10).keep_to([0.0, -20.0, 0.0], PI, false);
+    brain_mut(&mut room, 10).fall_back();
+    assert!(!room.brain(10).falling_back(), "raging, it falls back with no one");
 }

@@ -11,8 +11,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
 - The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP key is a network secret
   on the personal Default environment, with `SKILLSMP_API_KEY` set there to `proxy-injected`; Context7 runs on its
-  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives
-  in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
+  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives in `~/toolkit-data` and
+  outlives the container on the orphan branch `toolkit-data` (`tools/claude-toolkit/toolkit-data.sh`). Its first
+  review is done: claude-mem installs with its
   provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
   ([[The World Editor Is on GitHub Pages]]). The owner has drawn all nine continents; continent 1 is the main social
@@ -162,7 +163,7 @@ Where the work stands now, for the next session. Each session rewrites this note
     hit's piece breaks off and falls, each foe's health is remembered, the poise track says Iron, Staggered and Open,
     the target plate follows the foe last struck and fades after 6 s, the vitals rest when whole, ships' plates read a
     hit the same way; and plates stay light: never larger, never through a block, none past 60 m (which plates show,
-    and their sizes, change on #95).
+    and their sizes: [[Fewer Plates Show, Sized by Rank, After Destiny]]).
   - DFO's compass across the top, with the boss bar and the target's plate under it; the vitals kept in their window
     at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]); the plates just over a foe's head.
   - The gear loop fitted in, `main` with #60 merged into #61: the garrisons stand at their island's levels raised by

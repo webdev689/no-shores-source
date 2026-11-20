@@ -14,8 +14,10 @@ status: in force
 > such as a wave or a drop): "Do all of the above. Really flesh this out and build this to 100%. Take your time and
 > dont return until complete"
 
-> Told that a foe breaking or raging would pop the [[Speech]] system's fear or anger emote over its head, with its
-> sound: "Dont use the blurbs please"
+> Told, as it was built, of a mood sent with each foe "so the page can show it", and of pictures of "the emotes" over
+> foes: "Dont use the blurbs please"
+
+Claude's choices in building them, for the owner to change: [[Foe Groups as Claude Builds Them]].
 
 ## What it settles
 
@@ -27,5 +29,3 @@ status: in force
   ([[Enemy Factions Start With the Grey Tithe]]).
 - Missions have arrivals, such as a wave or a drop.
 - A foe's group uses none of the speech's blurbs: no emote or bark pops over a foe as it breaks or rages.
-- All five are built in full, as the owner asked: "Really flesh this out and build this to 100%". Claude's choices in
-  building them are listed in [[Foe Groups as Claude Builds Them]], for the owner to change.
