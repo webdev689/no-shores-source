@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type FeelEvent, type FeelShip, FightFeel, frameOf } from './fightFeel.ts';
+import { type FeelEvent, type FeelShip, FightFeel, feelOf, frameOf } from './fightFeel.ts';
 import { hullSails } from './hulls.ts';
 import { SailRig } from './sails.ts';
 
@@ -147,4 +147,30 @@ test("a gun's smoke at the raised view rolls out from her side as far as she is 
   const flash = (marks: typeof near) => marks.reduce((best, mark) => (mark.radius > best.radius ? mark : best));
   assert.ok(Math.abs(flash(near).y - 54) < 0.5, "the flash at the gun's mouth");
   assert.ok(Math.abs(flash(far).y - 66) < 2, 'four times as far off her middle at four times her size');
+});
+
+test("each of the room's events reaches the feel through the one mapping, kind by kind", () => {
+  const ships = new Map([[1, brig()]]);
+  const feel = new FightFeel(8);
+  const harm = () => ships.get(1)?.rig?.harm;
+  const take = (event: Parameters<typeof feelOf>[0], now = 0) => {
+    const felt = feelOf(event);
+    frame(feel, ships, felt ? [felt] : [], now);
+    return felt;
+  };
+  assert.equal(take({ kind: 'Splash', tick: 1, at: [1, 2] }), null, "a ball's splash comes with its shot's events");
+  assert.equal(take({ kind: 'Hit', tick: 1, ship: 1, at: [0, 4, 1], part: 'hull' }), null, 'and its hit');
+  take({ kind: 'SailLost', tick: 1, ship: 1, sail: 4 });
+  assert.ok(harm()?.sailLost(4, 1));
+  take({ kind: 'MastFell', tick: 1, ship: 1, mast: 0 });
+  assert.ok(harm()?.isFallen(0));
+  take({ kind: 'Struck', tick: 1, ship: 1 });
+  assert.ok((harm()?.struck(1) ?? 0) > 0);
+  take({ kind: 'Sinking', tick: 1, ship: 1 });
+  assert.ok(harm()?.sinking);
+  take({ kind: 'Flotsam', tick: 1, id: 4, at: [100, 50], kind_of: 'barrel' });
+  assert.equal(feel.flotsam.count, 1);
+  take({ kind: 'Gathered', tick: 1, id: 4, by: 0 });
+  assert.equal(feel.flotsam.count, 0);
+  assert.deepEqual(take({ kind: 'Boarding', tick: 1, ship: 1 }), { kind: 'Boarding', tick: 1, ship: 1 });
 });
