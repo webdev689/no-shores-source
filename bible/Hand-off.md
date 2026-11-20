@@ -5,6 +5,20 @@ type: handoff
 
 Where the work stands now, for the next session. Each session rewrites this note at its end; history stays in git.
 
+## In flight
+
+- The sea, on draft pull request #75 (`claude/waters-from-islands`, based on `main`), holds main through #105 with
+  ship power and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it"; its
+  full check passed at `ac627935`, tested offline. Merging it into `main` waits for the owner's yes.
+- Main's #98 (the prologue's second playthrough) is merged on `claude/f-main` (`8c9b9be9`, saved there, not yet
+  checked: its worker stopped before the full check). Next: `cargo xtask check` on it, read `/root/wt/reports/main75.md`
+  if it still exists (else the merge commit), merge it into `claude/waters-from-islands`, push, and check that `main`
+  has not moved again.
+- Two calls wait on the owner: the sea's ship plate (follow main's new thin vitals bars, or keep the carved window)
+  and a sea fight's wind (changing with the weather, or held from the fight's start).
+- Three cloud sessions build on the sea branch: islands, ship power and activities (bounties count in the sea room
+  through `Sea.minute`; the island dungeon trip is one line once #88's stack meets #75).
+
 ## Done
 
 - The scaffold: the TypeScript client on WebGPU, the Rust repo checks, CI, this vault.
