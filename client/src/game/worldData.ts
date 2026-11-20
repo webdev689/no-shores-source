@@ -1,4 +1,4 @@
-import { type StationInfo, socialLocked } from './nodes.ts';
+import { type Post, type StationInfo, type Ways, socialLocked } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */
 export type NodeKind = 'social' | 'patrol' | 'mission' | 'dungeon' | 'boss';
@@ -17,6 +17,9 @@ export interface NodeInfo {
   /** A social space's stations (`nodes.ts`), and where Shape may stand in it, one a week. */
   readonly stations?: readonly StationInfo[];
   readonly visitorSpots?: readonly Point[];
+  /** A social space's ways its townsfolk walk, and the posts they keep and visit (`life/`). */
+  readonly ways?: Ways;
+  readonly posts?: readonly Post[];
   /** A patrol area or mission no one may enter until a pass is done on it (`sitesOf`). */
   readonly locked?: boolean;
 }

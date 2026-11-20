@@ -3,8 +3,9 @@
 //! walled all round with a parapet and laid out as a courtyard (`courtyard`); from it the city below and the harbour
 //! are seen whole and never reached.
 
-use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, visitor_spots};
+use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, townsfolk_life, visitor_spots};
 use crate::landmarks::{Landmark, ahead};
+use crate::life::{Post, Ways};
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::{Station, stations};
 use land::ground::Ground;
@@ -20,7 +21,7 @@ const SPAWN_INSET_M: f64 = 4.0;
 const APART_M: f64 = 10.0;
 
 /// The social space: its plaza's bounds (west, north, east, south) and level, its section's ring, its spawns, its
-/// parapets, retaining walls and courtyard, and its stations.
+/// parapets, retaining walls and courtyard, its stations, and its townsfolk's ways and posts.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Social {
     pub bounds: [f64; 4],
@@ -32,6 +33,9 @@ pub struct Social {
     pub stations: Vec<Station>,
     /// Where a visitor of no counter may stand, one a week (`visitor_spots`): Shape's places.
     pub visitor_spots: Vec<[f64; 2]>,
+    /// The ways its townsfolk walk, and the posts where they work, play or stay a while (`life`).
+    pub ways: Ways,
+    pub posts: Vec<Post>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -111,5 +115,6 @@ pub fn plaza(
     let (stations, stalls) = stations(&frame);
     solids.extend(stalls);
     let visitor_spots = visitor_spots(&frame);
-    Social { bounds, level, ring, spawns, solids, stations, visitor_spots }
+    let (ways, posts) = townsfolk_life(&frame, &stations);
+    Social { bounds, level, ring, spawns, solids, stations, visitor_spots, ways, posts }
 }

@@ -11,6 +11,7 @@ import type { Cast, EmoteKind, Line } from '../../speech/cast.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { KEEPERS } from '../keepers.ts';
 import type { StationInfo } from '../nodes.ts';
+import { WayGraph } from '../life/ways.ts';
 import { ACTOR_IDS, actorCards, overHead } from '../prologue/actors.ts';
 import { headOnView } from '../prologue/stage.ts';
 import { awayFromCounters, plazaFrameOf, plazaOf } from '../townsfolk.ts';
@@ -111,7 +112,8 @@ export class Welcome {
       return onView([feet.x, feet.y, feet.z]) !== null || onView(overHead(feet)) !== null;
     };
     const frame = plazaFrameOf(plazaOf(node));
-    const walk = WelcomeWalk.round(node.stations ?? [], frame, [you.x, you.y], said, seen);
+    const ways = new WayGraph(node.ways ?? { points: [], links: [] });
+    const walk = WelcomeWalk.round(node.stations ?? [], frame, ways, [you.x, you.y], said, seen);
     return walk ? new Welcome(walk, parts, voice()) : null;
   }
 

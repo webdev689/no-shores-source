@@ -1,5 +1,6 @@
-// A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, moved each
-// frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in.
+// A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, set each
+// frame where the world clock has them, standing on the plaza's floor at their moves; and the station a player stands
+// at, whose counter offers what it deals in.
 
 import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
@@ -53,19 +54,19 @@ export class PlazaLife {
 
   constructor(node: NodeInfo, others: Others, floor: (x: number, y: number) => number | null) {
     const plaza = plazaOf(node);
-    // Seeded by the plaza, so its people walk the same each visit.
+    // Seeded by the plaza, so its people are the same each visit and in every browser.
     this.folk = new Townsfolk(plaza, Math.round(plaza.bounds[0] * 31 + plaza.bounds[1]));
     this.visitorSpots = plaza.visitorSpots ?? [];
     this.others = others;
     this.floor = floor;
   }
 
-  /** Moves everyone on by `seconds` and places their figures: Shape among them while the room's `gear` says he is
-   *  here, and a keeper away from their counter taken from it. */
-  frame(seconds: number, gear: GearState | null = null): void {
+  /** Places everyone's figures where they are at world time `worldS`, seconds: Shape among them while the room's
+   *  `gear` says he is here, and a keeper away from their counter taken from it. */
+  frame(worldS: number, gear: GearState | null = null): void {
     const shape = shapeSpot(gear?.shape, this.visitorSpots);
     const here = new Set<number>();
-    for (const person of this.folk.step(seconds, { away: awayFromCounters, shape })) {
+    for (const person of this.folk.peopleAt(worldS, { away: awayFromCounters, shape })) {
       here.add(person.id);
       const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
       this.figures.set(person.id, placed);
@@ -77,7 +78,7 @@ export class PlazaLife {
         this.floored.set(person.id, [person.x, person.y]);
       }
       placed.facing = person.facing;
-      placed.anim = person.walking ? 'walk' : 'idle';
+      placed.anim = person.anim;
     }
     for (const [id, placed] of this.figures) {
       if (here.has(id)) continue;

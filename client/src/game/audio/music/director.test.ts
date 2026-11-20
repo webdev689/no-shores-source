@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Scores, MusicDirector, overlookScores, songOf, stingOf } from './director.ts';
 import type { HeardFoe, Hearing } from './directorLaw.ts';
+import type { BandHeard } from './band.ts';
 import { makeSong } from './score.ts';
 
 const scores = overlookScores();
@@ -50,10 +51,10 @@ function directed(made: () => Scores = () => scores) {
     clock: () => now,
     scores: made,
   });
-  const frames = (hearing: Hearing, seconds: number) => {
+  const frames = (hearing: Hearing, seconds: number, band: BandHeard | null = null) => {
     for (let spent = 0; spent < seconds; spent += 0.1) {
       now += 0.1;
-      director.frame(hearing, 0.1);
+      director.frame(hearing, 0.1, band);
       director.pump(now);
     }
   };
@@ -194,4 +195,24 @@ test("a boss's wake holds the song it leads into, though that song played before
     starts.some((when) => when >= woke + 4),
     'the first phase once the wake has played',
   );
+});
+
+test('the plaza band plays where it is heard in the social space, and nowhere else', () => {
+  const social: Hearing = { ...island, place: { kind: 'social', climate: 'temperate-coast' } };
+  const band = (metres: number): BandHeard => ({
+    musicians: (['lute', 'flute', 'recorder', 'tambourine'] as const).map((instrument, nth) => ({
+      instrument,
+      place: [metres, nth],
+    })),
+    listener: [0, 0],
+  });
+  const struck = (hearing: Hearing, heard: BandHeard | null) => {
+    const run = directed();
+    run.frames(hearing, 4, heard);
+    return run.starts.length;
+  };
+  const alone = struck(social, null);
+  assert.ok(struck(social, band(3)) > alone + 20, 'its notes heard close by');
+  assert.equal(struck(social, band(40)), alone, 'none far off');
+  assert.equal(struck(island, band(3)), struck(island, null), 'and none off the social space');
 });
