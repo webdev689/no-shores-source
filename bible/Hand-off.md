@@ -219,6 +219,13 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **A hamlet's terraces** ([[Zones Rise and Fall, Above and Below Ground]] approved them): no Saltmere hamlet takes
+  them. Its RMB blocks, 102.4 m each, stand 10 to 32 m apart round its plaza, so a block starts within a few metres
+  of the middle and no ramp up to a tier fits between; the lobe tiers tried stood the Vale's largest building across
+  5 m of slope. Each hamlet stands whole at its height, on a terrace of the hillside. The owner's to choose: hamlets
+  laid with wider lanes or a larger plaza so their blocks can step, terraces of another kind, or whole hamlets.
+- The Dungeons session (#82, the owner's loop decisions) plans to move each patrol's procedural dungeon entrances
+  onto the layouts' places, and will coordinate before it touches the layout code.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
@@ -315,57 +322,20 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is approved and not yet
-  built.** The owner found the land "lanes and circles": every area is a basin at the land's own level and every
-  way a canyon at that level, under one massif, so a zone has one floor. The design: areas on heights by kind (a
-  keep's citadel up high, a hamlet's terraces, a farm's low fields, a graveyard in a sunken hollow, a camp's
-  platform, a ruin's broken tiers, the wilds' rock platforms, a coven or cave in a cavern, a quarry's stepped pit);
-  ways that switch back down faces, climb stairs, cross land bridges and bridges over chasms, and run through roofed
-  tunnels; gates set in walls from cliff to cliff or clefts in the rock; each zone's map of its spaces and
-  connections for missions, events and raids; and foes fighting in tunnels and caverns. The owner wants it
-  "insanely amazing", and chose the Gullwing Vale as the showcase, built end to end (every step below) with pictures
-  and a fly-through before the Downs and the Moors, and real 3D rock (cave ceilings, overhanging cliffs, natural
-  arches, tunnel mouths), since the ground holds one height a point. The order, each step on the Vale first:
-  1. done: the map of spaces and connections ([[Layouts]], "The map"), which shows every Saltmere area at the land's
-     own level but the camps' and the keep's platforms;
-  2. heights. The sculpt only raises, so on Saltmere (28 m) the deepest place is the land's own level, and the code
-     takes the floor to be land the carving does not raise (12 reads of `raise` in basins, lib, masses, plantings,
-     rocks, skyline and works). First give the sculpt a floor level at each point (its nearest floor's or climb's)
-     and read every height over the floor from it. Then lay the zone's network (its canyons and most basins) as
-     level flats (climbs whose two levels are equal) at a middle level, the deep places at the land's own level
-     under it (a graveyard's hollow, a coven, a river's ravine, the gates' gorges out), the high places over it (a
-     keep's citadel, a tower, a shrine, a camp), with ramps or switchbacks where a way meets a higher or lower area,
-     stairs for short rises, land bridges (a climb standing over a lower floor), and the landing climbing up from
-     its strand. Done: the floor level (`Sculpts::floor_level`), with a face's foot and dead rock measured over it.
-     Found: `map_planned.rs`'s walk of every way and climb (ignored for now) finds the Moors' way from Moorend
-     stepping 0.5 to 0.7 m onto the Tithe Camp's platform, whose ramp is cut straight and leaves the way's line.
-     Cutting each ramp along its way's own line (tried, not kept) fixed that way but stepped the way from the
-     landing to the graves, which runs between two of the camp's ramps over their raised sides. So a ramp alone is
-     not enough: the levels must be laid on the network of ways as a whole, the ground between ways that run near
-     each other graded to one level, and the walk switched on once they are. Done on the Vale ([[Layouts]],
-     "Heights"): its places at their kinds' heights, every way graded between them as one network, the raised floors
-     carved as the sculpt's `levels` ([[Land]]), every way and climb walked without a step; a way holds the lower of
-     its places' levels and ramps up near the higher. Merged in from two workers: foes walk floors under roofs and a
-     node's room bakes its boxes ([[Navmesh]]); real rock (cave roofs, overhangs, rock arches, tunnel mouths,
-     [[Cities]]). Built on it: the Hollow Coven's cavern, the gates in clefts with palisades to the rock, every natural
-     arch real rock. Pictured (scratchpad `shots/heights-v1`, a fly-through rendering): from above the Vale still reads
-     as round basins joined by canyon lanes, each at its own depth, every basin walled up to one high plateau. So the
-     owner's "lanes and circles" is not yet answered in plan, only in height. Next, in order: the massif's top
-     following the floors near it (a terraced land of plateaus and steps, not one table); tiers within an area (a
-     hamlet's terraces, a ruin's broken tiers); ledges cut along faces between heights; then the Downs and the Moors
-     (the Moors' camp step waits on them taking the graded network), switchbacks where a way would climb steeper than
-     its tier, bridges over a river a graded way crosses, the masses' valleys at their floors' levels;
-  3. below ground: tunnels and caverns as trenches roofed with solids (the mine run's slabs and ribs), sunken
-     hollows and pits;
-  4. gates and their palisades ending on rock or walls, with a check that each meets what it joins;
-  5. the [[Navmesh]]: floors under roofs, and a node's room baking its layout's boxes, so foes walk tunnels,
-     caverns, stairs and bridges;
-  6. the runs found again on the new land, every space pictured with a before-and-after montage per zone, budgets
-     (continent 1 settles in about 1.47-1.6 s against 1.5 s), and the second audit of this branch's work the owner
-     asked for ("This PR's work again").
-  The picture pass before it found and fixed five causes of floating pieces, with `held_planned.rs` following every
-  solid's support from the ground. A gorge run's fallen bridge is held now, set 1.5 m into its wall at 7.5 m, but
-  still reads as a slab in mid-face, where no way reaches: step 2's bridges between heights should replace it.
+- **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is built on #63, tested
+  offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
+  kinds' levels on raised floors, every way graded between them as one network and walked without a step; a terraced
+  massif top in plateaus that follows the floors ([[Land]]); ledges with cliff stairs between heights; stone bridges
+  over the Vale's river; the Hollow Coven's cavern under real rock; gates in clefts; dead rock answered by climbs to
+  lookouts and by valleys at their floors' levels; foes on floors under roofs ([[Navmesh]]); and the handcrafted
+  [[Modules]] scripted in Blender ([[Handcrafted Playspaces Are Scripted in Blender]]): the Old Stones, the keep's
+  citadel, the cavern chamber, cliff stairs and stone bridges, each walked by a body
+  (`crates/room/tests/modules_walked.rs`). A second audit of the work found ten faults, all fixed with the two its
+  fixes turned up ([[Layouts]], [[Cities]], [[Land]]). Left, in order:
+  1. a hamlet's terraces (waiting on the owner, above);
+  2. switchbacks where a way would climb steeper than a track; today a way ramps straight;
+  3. the cavern's roof shows as a boxy lump over the plateau above it;
+  4. the other 24 zones take heights once the owner has looked at Saltmere's.
 - The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
   low enough to climb in places: its runs will need their end arenas cut deeper or walled.
 - The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
