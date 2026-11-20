@@ -46,7 +46,7 @@ test('a node’s room name reads back as its node and difficulty, the old names 
     const room = nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, seas);
     assert.deepEqual(nodeOfRoom(room), { id: 'saltgrass-downs', seas });
   }
-  // A place the accounts kept from before the rename (a presence or a held character) still reads.
+  // A place the accounts kept under the other names (a presence or a held character) still reads.
   assert.deepEqual(nodeOfRoom('node-saltgrass-downs--rough'), { id: 'saltgrass-downs', seas: 'elite' });
   assert.deepEqual(nodeOfRoom('node-saltgrass-downs--storm'), { id: 'saltgrass-downs', seas: 'abyss' });
   assert.equal(nodeOfRoom('sea'), null);

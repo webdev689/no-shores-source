@@ -79,7 +79,7 @@ war, and a click on it sets the ship's destination.
 - **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; a node
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
   sail (Enter), or says why no way leads there. Escape lets the choice go, then lowers the map.
-- **The seas.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
+- **The difficulty.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three
   levels higher, paying half again or twice the XP, Aurem and Vestiges. The difficulty picked is the voyage's only once
   the player sets sail with it; letting the destination go lets it go too. The node landed at is joined at the
