@@ -228,6 +228,44 @@ fn a_player_walking_over_a_kills_ammo_box_takes_it_and_their_bow_holds_its_shots
 }
 
 #[test]
+fn a_test_ground_player_who_takes_up_a_crossbow_by_its_grant_fires_it_and_takes_an_ammo_box() {
+    use crate::asks::{Asked, Grant};
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.answer(player, Asked::Grant(Grant::Worn(Kind::Crossbow)));
+    let worn =
+        |room: &Room| room.player(player).and_then(|found| found.character.worn(Slot::Ranged)).map(|item| item.kind);
+    assert_eq!(worn(&room), Some(Kind::Crossbow), "a Normal one handed out and worn");
+    let arms = loadout_arms(Kind::Crossbow).code();
+    assert!(
+        crate::power::arms_allowed(&room.player(player).expect("in").character).iter().any(|each| each.code() == arms)
+    );
+    let controls = Controls { yaw: 0.0, ..Controls::default() };
+    let combat = CombatInput { shoot: true, ..CombatInput::default() };
+    for sequence in 1..=30 {
+        let intent = Intent { controls, combat };
+        room.input(player, Input { sequence, intent, arms, seen: room.clock(), ..Input::default() }).expect("taken");
+        room.tick();
+    }
+    let spent = room.player(player).expect("in").character.ammo;
+    assert!(spent < AMMO_FULL, "a bolt spent from the crossbow's ammunition");
+    let feet = room.player(player).expect("in").fighter.body;
+    room.lay_drop(player, Dropped::AmmoBox, [feet.x, feet.y, feet.z]);
+    for sequence in 31..=(31 + REST_TICKS as u32 + 2) {
+        let intent = Intent { controls, ..Intent::default() };
+        room.input(player, Input { sequence, intent, arms, seen: room.clock(), ..Input::default() }).expect("taken");
+        room.tick();
+    }
+    assert_eq!(lying(&room, player, Dropped::AmmoBox), 0, "taken");
+    assert!(room.player(player).expect("in").character.ammo > spent, "a quarter back");
+    room.answer(player, Asked::Grant(Grant::Worn(Kind::Bow)));
+    room.answer(player, Asked::Grant(Grant::Worn(Kind::Crossbow)));
+    let crossbows =
+        room.player(player).expect("in").character.items.values().filter(|(item, _)| item.kind == Kind::Crossbow);
+    assert_eq!((worn(&room), crossbows.count()), (Some(Kind::Crossbow), 1), "the carried one worn again, none more");
+}
+
+#[test]
 fn a_drop_that_lay_its_time_is_gone_from_its_players_gear_too() {
     use crate::players::GEAR_EVERY_TICKS;
     let mut room = Room::new(Vec::new(), (0.0, 0.0));

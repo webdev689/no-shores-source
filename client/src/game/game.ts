@@ -1,9 +1,6 @@
 import type { Gpu } from '../gpu.ts';
-import { coastField } from '../heldmap/coastField.ts';
-import { HeldMap } from '../heldmap/heldMap.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
-import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import type { CardAt } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
@@ -31,6 +28,7 @@ import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
+import { HelmMap } from './helmMap.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene, type Overlay } from './scene.ts';
 import { Sea } from './sea.ts';
@@ -126,10 +124,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const music = new MusicDirector();
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
-  /** The held map, made when it is first asked for, since its coasts are worked out then. */
-  let heldMap: HeldMap | null = null;
   let foot: Foot | null = null;
   let sea: Sea | null = null;
+  const outlines = continents.map((each) => each.outline);
+  const helmMap = new HelmMap({ gpu, outlines, store, root: hudRoot, sea: () => sea });
   let [ready, waited] = [false, 0];
   let wasDead = false;
   let wasWalking = false;
@@ -182,7 +180,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foot = await entering();
     if (!foot.dungeon) dungeons.forget();
   };
-  const goFoot = (node: NodeInfo, facing: number, seas = heldMap?.difficulty) =>
+  const goFoot = (node: NodeInfo, facing: number, seas = helmMap.difficulty) =>
     goInto(() => Foot.enter(footContext, node, facing, seas));
 
   const trips = dungeonTrips({
@@ -214,7 +212,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     }
     sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
-    mapOf();
+    void helmMap.made;
     // Online the server's sea room; playing alone, the same room in the page.
     await sea.enterRoom(
       rooms
@@ -230,7 +228,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   const landAt = (id: string) => {
     discovered.nodes([id]);
-    const landing = sea?.landingOf(id);
+    const landing = sea?.view.landingOf(id);
     const node = landmass.nodes.find((each) => each.id === id);
     if (!landing || !node || !sea) return;
     const from = sea.position;
@@ -244,7 +242,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // Only on foot or on deck with nothing else under way: never under the map, on the way to the helm, walking the
     // deck, landing, or while another landmass opens.
     const free = (flow.mode === 'foot' || flow.mode === 'sea') && !flow.menu;
-    if (!free || heldMap?.shown || mapWanted || sea?.aboard.active || charting)
+    if (!free || helmMap.busy || sea?.aboard.active || charting)
       return 'You are in their company. Choose Go to them once nothing else is under way.';
     // As other games keep travel out of a fight, and the fallen respawn before they go anywhere.
     if (flow.mode === 'sea' && sea?.fight) return 'You are in their company. Go to them once the fight is over.';
@@ -286,33 +284,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (flow.menu) change({ kind: 'back' });
     if (!sea.goAshore()) return;
     change({ kind: 'view-landings' });
-    discovered.nodes(sea.landings);
-  };
-
-  /** The map is wanted: it is raised once the view stands at the helm. */
-  let mapWanted = false;
-  const mapOf = (): HeldMap => {
-    if (heldMap) return heldMap;
-    const field = coastField(
-      continents.map((each) => each.outline),
-      CHART_COLUMNS,
-      CHART_ROWS,
-      CHART_CELL_M,
-    );
-    const made = new HeldMap(gpu, field, store, (to) => sea?.planTo(to) ?? { ok: false, why: 'No ship.' }, hudRoot);
-    // Lowered, the view goes back up; a destination set, the ship sets sail as it does.
-    made.onLowered((sail) => {
-      sea?.fromHelm();
-      if (sail) sea?.sailTo(sail);
-    });
-    heldMap = made;
-    return made;
+    discovered.nodes(sea.view.landings);
   };
 
   /** Takes the view down to the ship's helm, where the map is raised. */
   const openMap = () => {
-    if (flow.mode !== 'sea' || flow.menu || !sea || heldMap?.shown) return;
-    mapWanted = sea.toHelm();
+    if (flow.mode === 'sea' && !flow.menu && sea) helmMap.open(sea);
   };
 
   /** Opens Manage over her deck, or closes it. */
@@ -341,9 +318,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (flow.mode === 'sea' && !flow.menu) sea?.sailToMark(id);
     if (flow.mode !== 'landing' || !sea) return;
     if (flow.chosen === id) landAt(id);
-    else if (sea.landingOf(id)) {
+    else if (sea.view.landingOf(id)) {
       change({ kind: 'choose', node: id });
-      sea.chosen = id;
+      sea.view.chosen = id;
     }
   };
 
@@ -364,22 +341,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
-    if (event.repeat) return;
-    if (heldMap?.shown) {
-      if (key === 'escape') heldMap.escape();
-      else if (key === 'enter') heldMap.setSail();
-      return;
-    }
-    // On the way down to the helm, Escape turns back before the map is raised.
-    if (key === 'escape' && mapWanted && sea?.helmView) {
-      mapWanted = false;
-      sea.fromHelm();
-      return;
-    }
+    if (event.repeat || helmMap.key(key)) return;
     if (key === 'enter' && retry) retry();
     else if (key === 'm') change({ kind: 'menu' });
     else if (key === 'escape' && flow.mode === 'landing') {
-      sea?.backToSea();
+      sea?.view.backToSea();
       change({ kind: 'back' });
     } else if (key === 'escape') change({ kind: 'back' });
     else if (key === 'l' || (key === 'enter' && flow.mode === 'sea' && !flow.menu)) goAshore();
@@ -400,7 +366,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   seaPointer(canvas, input, {
     atSea: () => flow.mode === 'sea' && !flow.menu,
     sea: () => sea,
-    map: () => heldMap,
+    map: () => helmMap.held,
   });
 
   /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides; on foot
@@ -470,7 +436,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const swell = scene.land?.swell;
     footView.hide();
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
-    if (!paused && !heldMap?.shown)
+    if (!paused && !helmMap.shown)
       here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
     const shown = here.frame({
       seconds,
@@ -484,35 +450,26 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     });
     for (const stir of shown.stirs) scene.stir(stir);
     music.atSea(here, seconds);
-    const voyage = { ...shown, deck: here.helmView || here.aboard.active, feet: walker.player.body };
+    const voyage = { ...shown, deck: here.view.helmView || here.aboard.active, feet: walker.player.body };
     ambience.atSea(landmass, here.position, shown.shot, voyage, seconds);
     // Back at the helm, or called to it, the pointer is the player's again.
     if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
     wasWalking = here.aboard.walking;
     // What a lookout sees is discovered as the ship sails.
     if (flow.mode === 'sea') discovered.lookout(here.position);
-    if (mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
-      mapWanted = false;
-      const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
-      mapOf().open(viewport, here.position, hands, discovered.discovery.charted);
-    }
-    // The map's scene is gathered only while the map is up.
-    const mapFrame = heldMap?.shown
-      ? heldMap.frame(seconds, viewport, canvas.width / Math.max(1, canvas.clientWidth), {
-          ship: here.position,
-          heading: here.heading,
-          places: discovered.places,
-          knownIslands: discovered.knownIslands,
-          course: here.course,
-        })
-      : null;
+    const free = flow.mode === 'sea' && !flow.menu;
+    const dpr = canvas.width / Math.max(1, canvas.clientWidth);
+    const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
+    const mapDraw = helmMap.frame(here, seconds, { free, viewport, dpr, hands }, discovered);
     // The map at the helm, or the player's own hands walking her deck in first person, over the finished picture.
-    const after = mapFrame
-      ? (encoder: GPUCommandEncoder, view: GPUTextureView) => heldMap?.draw(encoder, view, mapFrame)
-      : shown.firstPerson
+    const after =
+      mapDraw ??
+      (shown.firstPerson
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
-        : undefined;
-    const more = { hulls: shown.hulls, after, focus: shown.focus, atSea: true };
+        : undefined);
+    // Walking her deck, what the player carries lights round them as it does ashore.
+    const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
+    const more = { hulls: shown.hulls, after, focus: shown.focus, atSea: true, carried };
     scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
     showStanding({ kind: 'inside' });
     showSeaHud(hud, here, shown, {

@@ -20,6 +20,7 @@ code:
   - client/src/game/dungeonTrips.ts#dungeonTrips
   - client/src/game/dungeonDrawers.ts#DungeonDrawers
   - client/src/game/sea.ts#Sea
+  - client/src/game/seaView.ts#SeaView
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene
