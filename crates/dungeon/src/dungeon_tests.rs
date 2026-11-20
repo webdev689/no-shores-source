@@ -1,4 +1,4 @@
-use crate::dungeon::{DOORWAY_HALF_M, EXIT_WIDTH_M, JAMB_DEPTH_M};
+use crate::dungeon::{DOORWAY_HALF_M, JAMB_DEPTH_M};
 use crate::shapes::Ceiling;
 use crate::torches::TORCH_M;
 use crate::{
@@ -448,30 +448,13 @@ fn a_dungeon_is_a_run_with_few_loops_not_a_maze() {
 }
 
 #[test]
-fn the_return_portal_stands_on_a_rock_wall_of_the_end_room_between_two_torches() {
+fn the_return_portal_stands_on_a_rock_wall_of_the_end_room() {
     for dungeon in every_dungeon(600) {
         let portal = dungeon.portal;
         assert_eq!(portal.room, dungeon.end());
         assert_eq!(dungeon.room_at(portal.cell), Some(portal.room));
         assert!(dungeon.beside(portal.cell, portal.side).is_none_or(|next| dungeon.cells[next] == Cell::Rock));
         assert_ne!((portal.cell, portal.side), (dungeon.way_in.cell, dungeon.way_in.side));
-        let [door_x, door_y] = dungeon.portal_door();
-        let flanking: Vec<f64> = dungeon
-            .torches
-            .iter()
-            .filter(|torch| {
-                let cell = (torch.at[0] / CELL_M) as usize + (torch.at[1] / CELL_M) as usize * dungeon.columns;
-                (cell, torch.wall) == (portal.cell, portal.side)
-            })
-            .map(|torch| {
-                (torch.at[0] - door_x) * -portal.side.unit()[1] + (torch.at[1] - door_y) * portal.side.unit()[0]
-            })
-            .collect();
-        assert_eq!(flanking.len(), 2, "two torches on the portal's wall");
-        assert!(flanking.iter().all(|along| along.abs() > EXIT_WIDTH_M / 2.0), "beside the portal, not over it");
-        // A style's portal arch reaches 1.3 m from its middle and a bracket 0.2 m from its torch.
-        assert!(flanking.iter().all(|along| along.abs() >= 1.5 - 1e-9), "clear of the arch: {flanking:?}");
-        assert!(flanking[0] * flanking[1] < 0.0, "one either side");
         let [x, y] = dungeon.portal_door();
         let [middle_x, middle_y] = dungeon.centre(portal.cell);
         let [dx, dy] = portal.side.unit();

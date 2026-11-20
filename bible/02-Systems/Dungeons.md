@@ -114,14 +114,18 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   a body arrives 0.4 m past that cell's middle, about 2 m in from the door, facing into the room.
 - **The return portal** stands on the end room's wall like the exit door, as wide and as high: on the room's cell
   farthest from the way in by walk that has rock beside it that is no stone, its quiet cells first, never on the exit
-  door's wall. It takes a player back out to the dungeon's entrance once the Reeve has fallen ("In the Game").
+  door's wall. A wall that runs on past that cell both ways comes first, so its torches stand on it clear of the
+  room's corners; four portals in five stand on one. It takes a player back out to the dungeon's entrance once the
+  Reeve has fallen ("In the Game").
 - **Ceilings** (`ceiling`): a room's form, only a look; it stands at its own height whatever its form. Under an
   arched roof a square room or an octagon takes a dome, and a hall of alcoves or a rectangle whose longer side is at
   least half again its shorter a vault along it; a cave and every cavern takes rough rock; any other room is flat.
-- **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m: on each room's quiet cells on every third
+- **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m. Two flank the portal first, so the end of the
+  way is lit and marked before it opens: on its wall 1.5 m either side of its middle, past its arch, or, where its
+  cell is the room's corner that way, in the middle of that side wall. Then on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; and
-  on every fourth corridor cell of a block, row by row. None stands over the exit door or the portal, and two stand on
-  the portal's wall, 1.5 m either side of its middle (past its arch), so the end of the way is lit and marked before it opens.
+  on every fourth corridor cell of a block, row by row. Each stands in the middle of its cell's wall, none over the
+  exit door or the portal, and none within 2.4 m of another of its room's, which would read as a pair.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
   to 1.6 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
   way stands a pillar 0.7 m square at every second inner corner whose four cells are its own.
@@ -302,9 +306,11 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   stalk under a glowing cap. Each is shaped by where it
   stands, so no two are alike.
 - **Glows and water** (`dungeonShaders.ts`): a crystal's and a lantern's glass glow by each triangle's own facing,
-  from 0.55 of their glow edge on to all of it square to the eye, and a little from the lights round them, so a
-  crystal's faces differ. Still water lies dark over a floor of half its cell's mood, under a faint sheen of the mood
-  that grows toward a grazing look, and each light but water's own glow, which lies on it, gleams off it.
+  from 0.55 of their glow edge on to all of it square to the eye, lifted a little toward it by the lights round them,
+  so a crystal's faces differ. Their glows peak at 1, so no facet clips. Still water lies over its bed, its cell's
+  floor picture (`WATER_FLAG`): through it the bed, darker and bluer, lit as a floor is; in it the room, brighter
+  toward its lights, by Fresnel (2% square on, all of it edge on); a slow ripple moves both. Each light but water's
+  own glow, which lies on it, gleams off it.
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
   (`roomNameAt`, `placeWords`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.

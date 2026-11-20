@@ -205,10 +205,11 @@ impl Dungeon {
         dungeon.end = first_of_last + blocks[last].order.last().copied().unwrap_or(0);
         let steps = dungeon.walk();
         dungeon.portal = dungeon.portal_spot(&steps);
+        // The portal's torches first: the rooms' keep clear of them.
+        dungeon.flank_portal();
         for (number, block) in blocks.iter().enumerate() {
             dungeon.light(squares[number], block);
         }
-        dungeon.flank_portal();
         dungeon.name_rooms(seed);
         dungeon.place_landmarks(seed);
         dungeon.give_names();
@@ -367,22 +368,31 @@ impl Dungeon {
     }
 
     /// Where the return portal stands: on a wall of the end room that is no stone, at its cell farthest from the way
-    /// in by walk (its quiet cells first), the first such wall; on the way in's own wall only where the end room has
-    /// no other.
+    /// in by walk (its quiet cells first), the first such wall; first one that runs on past its cell both ways, so
+    /// its torches stand on it clear of the room's corners; on the way in's own wall only where the end room has no
+    /// other.
     fn portal_spot(&self, steps: &[u32]) -> WallDoor {
         let room = self.end();
         let found = &self.rooms[room];
-        for cells in [&found.quiet, &found.cells] {
-            let mut deepest = cells.clone();
-            deepest.sort_by_key(|&cell| (core::cmp::Reverse(steps[cell]), cell));
-            for cell in deepest {
-                let door = (self.way_in.cell, self.way_in.side);
-                let wall = |side: Side| {
-                    let stone = self.beside(cell, side).is_some_and(|next| found.stones.contains(&next));
-                    self.rock_beside(cell, side) && !stone && (cell, side) != door
-                };
-                if let Some(side) = SIDES.into_iter().find(|&side| wall(side)) {
-                    return WallDoor { cell, side, room };
+        let door = (self.way_in.cell, self.way_in.side);
+        let wall = |cell: usize, side: Side| {
+            let stone = self.beside(cell, side).is_some_and(|next| found.stones.contains(&next));
+            self.rock_beside(cell, side) && !stone && (cell, side) != door
+        };
+        let runs_on = |cell: usize, side: Side| {
+            [side.clockwise(), side.clockwise().opposite()].into_iter().all(|along| {
+                self.beside(cell, along).is_some_and(|next| self.room_at(next) == Some(room) && wall(next, side))
+            })
+        };
+        for whole in [true, false] {
+            for cells in [&found.quiet, &found.cells] {
+                let mut deepest = cells.clone();
+                deepest.sort_by_key(|&cell| (core::cmp::Reverse(steps[cell]), cell));
+                for cell in deepest {
+                    let fits = |&side: &Side| wall(cell, side) && (!whole || runs_on(cell, side));
+                    if let Some(side) = SIDES.into_iter().find(fits) {
+                        return WallDoor { cell, side, room };
+                    }
                 }
             }
         }

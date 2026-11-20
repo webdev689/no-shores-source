@@ -77,6 +77,17 @@ impl Side {
         }
     }
 
+    /// The side a quarter turn clockwise seen from above: north's is east.
+    #[must_use]
+    pub const fn clockwise(self) -> Self {
+        match self {
+            Side::North => Side::East,
+            Side::East => Side::South,
+            Side::South => Side::West,
+            Side::West => Side::North,
+        }
+    }
+
     #[must_use]
     pub const fn opposite(self) -> Self {
         match self {
@@ -139,3 +150,5 @@ mod props_tests;
 mod purposes_tests;
 #[cfg(test)]
 mod shapes_tests;
+#[cfg(test)]
+mod torches_tests;
