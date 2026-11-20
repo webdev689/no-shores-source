@@ -203,7 +203,7 @@ function lightnessOf(picture: Picture | undefined): number {
 }
 
 /** Its parts' pictures and the sides' flags on the GPU: a layer each, with every level. */
-function picturesTexture(device: GPUDevice): GPUTexture {
+export function picturesTexture(device: GPUDevice): GPUTexture {
   const side = SHIP_PICTURE_TEXELS;
   const levels = Math.log2(side) + 1;
   const texture = device.createTexture({

@@ -313,7 +313,8 @@ impl Fight {
 
     /// A captain who has sunk leaves the fight, as does one not fighting who is past every ship it may fight (each
     /// player's, and each afloat captain's of another faction), or, engaged by no captain, has been out of all their
-    /// guns' reach for its give-up time, `CHASE_GIVE_UP_S`. One struck or going down never leaves but by sinking.
+    /// guns' reach for its give-up time, `CHASE_GIVE_UP_S`. One struck or going down never leaves but by sinking, and
+    /// an ambush's captains leave it only by sinking.
     fn see_off(&mut self, events: &mut Vec<Event>) {
         let foes: Vec<(Flag, [f64; 2], f64)> = self
             .ships
@@ -347,7 +348,7 @@ impl Fight {
             let broke_off = command.out_of_reach_since.is_some_and(|since| clock - since >= CHASE_GIVE_UP_S);
             let end = if sunk {
                 Some(End::Sunk)
-            } else if (nearest > DESPAWN_BEYOND || broke_off) && !engaging && !struck {
+            } else if !self.ambush && (nearest > DESPAWN_BEYOND || broke_off) && !engaging && !struck {
                 // One who struck lies hove to for boarders until it is scuttled.
                 Some(End::Gone)
             } else {

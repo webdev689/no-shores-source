@@ -22,7 +22,7 @@ pub const MOST_TICKS: f64 = 60.0;
 /// what any rig makes in the strongest sea wind; a swing of 45 degrees a second, twice its oars'; a world time past
 /// 30 years, where the swell's phases lose their bits.
 const MOST_PLACE_M: f64 = 1e9;
-const MOST_WAY: f64 = 10.0;
+pub(crate) const MOST_WAY: f64 = 10.0;
 const MOST_TURN_DEG: f64 = 45.0;
 const MOST_TIME_S: f64 = 1e9;
 

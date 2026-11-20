@@ -264,3 +264,33 @@ test('two releases queued behind one step both fire the lay the look held', asyn
     ],
   );
 });
+
+test('a joined fight names its own ship, describes every captain afloat in reach and tells of any one striking', async () => {
+  const second: FightCaptain = { ...captain, name: 'Pirate Brig', ship: [0, 300, 0, 0, 0, 0, 0, 2] };
+  const sunk: FightCaptain = { ...captain, name: 'Sunk Sloop', ship: [0, 200, 0, 0, 0, 0, 0, 2], state: 'sunk' };
+  const first: FightView = { ...VIEW, others: [second, sunk] };
+  const struck: FightEvent = { kind: 'state', ship: 2, state: 'struck' };
+  const { fights } = source({ others: [{ ...second, run_out: ['port'] }, sunk], events: [struck] });
+  const fighting = Fighting.joined(fights, 'sea', first, 0, 'Brig');
+  const lines = fighting.lines(0);
+  // Its own ship's hurts are the readout's plate, named by its kind; the lines tell of the captains within reach.
+  assert.equal(fighting.own, 'Brig');
+  assert.ok(
+    lines.some((line) => line.startsWith('Pirate Brig, 300 m off, closing')),
+    lines.join(' | '),
+  );
+  assert.ok(!lines.some((line) => line.startsWith('Sunk Sloop')), 'a sunk captain is no longer described');
+  fighting.advance(1 / 60, IDLE, 1, failed);
+  await settle();
+  const after = fighting.lines(1);
+  assert.ok(after.includes('The Pirate Brig surrenders!'), after.join(' | '));
+  assert.ok(after.includes('Broadside from the Pirate Brig: C to brace.'), 'any captain running out its guns warns');
+});
+
+test('a fight begun with several captains sights them all, by how many and the nearest', () => {
+  const near: FightCaptain = { ...captain, ship: [0, 300, 0, 0, 0, 0, 0, 2] };
+  const sunk: FightCaptain = { ...captain, ship: [0, 100, 0, 0, 0, 0, 0, 2], state: 'sunk' };
+  const fighting = Fighting.joined(source().fights, 'sea', { ...VIEW, others: [near, captain, sunk] }, 0, 'Brig');
+  const lines = fighting.lines(0);
+  assert.ok(lines.includes('3 ships are sighted, the nearest 300 m off.'), lines.join(' | '));
+});

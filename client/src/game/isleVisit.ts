@@ -26,7 +26,7 @@ export async function ashoreOn(
   const { rooms } = context;
   let link: RoomLink;
   if (rooms) {
-    const session = await context.session;
+    const session = await context.session();
     link = await RoomConnection.open(
       rooms(isleRoomName(held.seen, seas)),
       heard,

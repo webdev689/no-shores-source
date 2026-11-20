@@ -51,6 +51,8 @@ every side, dressed in its colours by the game's painter.
 
 The Sloop, built and the smallest, sails as Minor and Major ships and is the player's first ship.
 
+The prologue draws Captain Brannoc Thule's ship as the Frigate, at her own size, from the ram to the deep.
+
 ## How one is made
 
 1. `tools/ships/build_ship.py` makes the hull from its numbers in `HULLS`, in the Sloop's style: its faceted shell,

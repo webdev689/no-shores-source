@@ -169,7 +169,7 @@ impl Room {
 
 /// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, and never over
 /// its city's boxes or its whole section, which would cost more time and memory than a room has; a course's room over
-/// its blocks and the open ground round them.
+/// its blocks and the open ground round them, or over the sea, its blocks' tops alone.
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
     let (walked, middle, around): (&[Block], (f64, f64), f64) = match section {
         Some(section) => (&[], ground_middle(section, first), NODE_AROUND),
@@ -178,6 +178,7 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
     let bounds = ground_around(walked, middle, around);
     match (floor, section) {
         (Floor::Flat, _) => NavMesh::bake(walked, bounds, &navmesh::AGENT),
+        (Floor::Sea, _) => NavMesh::bake_over_sea(walked, bounds, &navmesh::AGENT),
         // A deck's mesh covers its ring alone: its planks and the walls round them.
         (Floor::Deck(_), Some(section)) => NavMesh::bake_on(walked, floor, ring_bounds(&section.ring), &navmesh::AGENT),
         _ => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),

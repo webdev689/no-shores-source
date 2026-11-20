@@ -49,8 +49,9 @@ export interface FightVessel {
   };
 }
 
-/** A captain's Sloop in a fight: its name, its faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),
- *  its mode, whether it is hostile to the player, and its sides run out. */
+/** A captain's ship in a fight: its name, its faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),
+ *  its mode, whether it is hostile to the player, its sides run out, and, from the land worker's fight, what its
+ *  hurts and its going down do to its pose (metres settled, trim and list in radians). */
 export interface FightCaptain extends FightVessel {
   readonly name: string;
   readonly faction: number;
@@ -60,6 +61,10 @@ export interface FightCaptain extends FightVessel {
   readonly run_out: readonly SideName[];
   /** The number the fight's events name it by, at sea for a captain past the first (its place in the list can move). */
   readonly number?: number;
+  readonly founder?: readonly [number, number, number];
+  /** While it goes down: how it will lie once sunk (as `founder`), and in how many seconds. */
+  readonly sunk_founder?: readonly [number, number, number];
+  readonly sinks_in?: number;
 }
 
 export type FightEvent =
@@ -117,13 +122,40 @@ export interface FightView {
   readonly balls: readonly (readonly [number, number, number, number])[];
   readonly lay: FightLay | null;
   readonly events: readonly FightEvent[];
-  readonly over: 'sunk' | 'gone' | null;
+  /** How it ended: the last captain sunk or gone, or (an ambush) every captain beaten, sunk or struck. */
+  readonly over: 'sunk' | 'gone' | 'beaten' | null;
   readonly fingerprint: string;
 }
 
+/** A captain a fight begins with, where it is given (crates/land-wasm/src/fight.rs `captains_of`): world metres
+ *  east and south, its heading (radians clockwise from north), its faction (1 the Grey Tithe, 2 pirates) and rank
+ *  (1 Minor to 5 Boss), and its way (m/s) if it comes on under sail. */
+export interface CaptainAt {
+  readonly x: number;
+  readonly y: number;
+  readonly heading: number;
+  readonly faction: number;
+  readonly rank: number;
+  readonly way?: number;
+}
+
+/** What a fight begins with besides the player's ship: `captains`, each set upon it where given; without, one called
+ *  onto the ring, a pirate in its rank's hull (a Major's unless `rank` names one). */
+export interface FightBegun {
+  readonly rank?: number;
+  readonly captains?: readonly CaptainAt[];
+}
+
 /** A fight's begin request. */
-export function beginRequest(ship: ShipFloats, seed: number, time: number, rank?: number): string {
-  return JSON.stringify({ ship: [...ship], seed, time, ...(rank === undefined ? {} : { rank }) });
+export function beginRequest(ship: ShipFloats, seed: number, time: number, begun: FightBegun = {}): string {
+  const { rank, captains } = begun;
+  return JSON.stringify({
+    ship: [...ship],
+    seed,
+    time,
+    ...(rank === undefined ? {} : { rank }),
+    ...(captains ? { captains } : {}),
+  });
 }
 
 /** A fight's step request: its orders, the swell's time, its ticks and the world's time for its wind. */

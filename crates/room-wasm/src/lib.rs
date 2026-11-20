@@ -19,6 +19,7 @@ use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
 use serde::Deserialize;
 use std::cell::RefCell;
 
+mod course_door;
 mod deck_door;
 mod snapshot_door;
 pub use snapshot_door::snapshot;
@@ -110,6 +111,15 @@ fn keep(opened: Opened) {
 /// Opens a new room on a course: the spawn's x and y, then the blocks, five numbers each, little-endian floats.
 /// Answers whether the numbers made a course.
 pub fn open(bytes: &[u8]) -> bool {
+    open_course(bytes, Room::new)
+}
+
+/// Opens a new room on a course laid over the open sea, written as `open` reads one: its foes walk its blocks alone.
+pub fn open_over_sea(bytes: &[u8]) -> bool {
+    open_course(bytes, Room::over_sea)
+}
+
+fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> bool {
     let floats = floats_of(bytes);
     let Some((spawn, blocks)) = floats.split_first_chunk::<2>() else { return false };
     if !blocks.len().is_multiple_of(BLOCK_FLOATS) {
@@ -119,7 +129,7 @@ pub fn open(bytes: &[u8]) -> bool {
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
     let blocks: Vec<Block> = blocks.collect();
     fighter_door::COURSE.with(|course| *course.borrow_mut() = blocks.clone());
-    keep(Opened::Land { room: Box::new(Room::new(blocks, (spawn[0], spawn[1]))), node: None });
+    keep(Opened::Land { room: Box::new(room_on(blocks, (spawn[0], spawn[1]))), node: None });
     true
 }
 
@@ -344,6 +354,16 @@ pub extern "C" fn room_open_deck(hull: u32, faction: u32, rank: u32, level: u32)
     u32::from(open_deck(byte(hull), byte(faction), byte(rank), byte(level)))
 }
 
+/// Opens a room on the course over the open sea written at `address`, `length` bytes long; 1 if it opened, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_open_over_sea(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(open_over_sea(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
 /// Opens a node's room from its file's text written at `address`, `length` bytes long; 1 if it opened, 0 if not.
 ///
 /// # Safety
@@ -511,6 +531,9 @@ pub unsafe extern "C" fn fleet_lay(address: *const u8, length: usize) -> u64 {
 #[cfg(test)]
 #[path = "climb_door_tests.rs"]
 mod climb_door_tests;
+#[cfg(test)]
+#[path = "course_door_tests.rs"]
+mod course_door_tests;
 
 #[cfg(test)]
 #[path = "door_tests.rs"]

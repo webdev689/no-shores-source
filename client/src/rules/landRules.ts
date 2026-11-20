@@ -1,4 +1,11 @@
-import { beginRequest, type FightOrders, type FightView, readFight, stepRequest } from './fightRules.ts';
+import {
+  beginRequest,
+  type FightBegun,
+  type FightOrders,
+  type FightView,
+  readFight,
+  stepRequest,
+} from './fightRules.ts';
 import type { Block } from './movementRules.ts';
 
 /** A river as the land generates it: its course through cell centres, source first, with the flow at each point. */
@@ -160,9 +167,9 @@ export interface LandRules {
   /** The ship sailed `ticks` ticks from the swell's `time`, in the weather's wind at world time `world` (seconds), and
    *  its pose after. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea in its rank's hull (a Major's unless `rank` names one),
-   *  every chance drawn from `seed`. */
-  fightBegin(ship: ShipFloats, seed: number, time: number, rank?: number): FightView;
+  /** A fight begun round the ship: a pirate captain put to sea in its rank's hull (a Major's unless `begun` names a
+   *  rank), or `begun`'s captains set upon it where given, every chance drawn from `seed`. */
+  fightBegin(ship: ShipFloats, seed: number, time: number, begun?: FightBegun): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
   fightStep(orders: FightOrders, time: number, ticks: number, world: number): FightView;
   /** The fight ended. */
@@ -330,8 +337,8 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         exports.release(address, length);
       }
     },
-    fightBegin: (ship, seed, time, rank) =>
-      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, rank)))),
+    fightBegin: (ship, seed, time, begun) =>
+      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, begun)))),
     fightStep: (orders, time, ticks, world) =>
       readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world)))),
     fightEnd: () => {

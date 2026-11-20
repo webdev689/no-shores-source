@@ -32,6 +32,9 @@ import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
+import type { Epilogue } from './prologue/epilogue.ts';
+import type { StoryHost } from './prologue/host.ts';
+import { FIRST_NODE } from './gameBoot.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
@@ -47,6 +50,8 @@ export interface Playing {
   sea: Sea | null;
   /** The held map at the helm, made when it is first asked for. */
   readonly helmMap: HelmMap;
+  /** The story's last moment, played on foot once it has ended. */
+  epilogue: Epilogue | null;
   seaWord: SeaWord | null;
   landmass: Landmass;
   drawers: LandDrawers;
@@ -79,6 +84,9 @@ export interface FrameParts {
   readonly syncMenu: () => void;
   readonly travel: (happening: Happening, work: () => Promise<void>) => void;
   readonly goFoot: (node: NodeInfo, facing: number) => Promise<void>;
+  /** The story that opens the game, if it does, and the arrival at the first node it hands the player to. */
+  readonly story: StoryHost | null;
+  readonly arrive: () => void;
   /** The sea's islands kept, shown and walked ashore on, each frame; their drawer; and the ground the camera keeps
    *  over, the islands' with the land's. */
   readonly isleFrame: () => void;
@@ -135,9 +143,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
     const fleet = traffic.onFoot(shown.shot.eye, parts.waterHere(), seconds, clock);
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, till they walk off.
+    const met = playing.epilogue?.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot') ?? [];
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const more = { after: hands, hulls: fleet.hulls, carried };
-    scene.draw(shown.shot, size, clock, seconds, standing(fleet.ships, shown.figures, fight), more);
+    scene.draw(shown.shot, size, clock, seconds, standing(fleet.ships, [...shown.figures, ...met], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.hints);
@@ -224,6 +234,21 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       );
   };
 
+  /** A frame of the story; once it ends, the player arrives at Overlook's social space in their own dress, the stranger
+   *  with them if they played it through. */
+  const storyFrame = (
+    host: StoryHost,
+    controls: InputFrame,
+    seconds: number,
+    size: { width: number; height: number },
+  ) => {
+    const left = host.frame(controls, seconds, size);
+    if (!left) return;
+    [playing.epilogue, walker.you.dress] = [left.epilogue, left.dress];
+    playing.flow = next(playing.flow, { kind: 'story-ended', node: FIRST_NODE, name: 'Overlook' });
+    parts.arrive();
+  };
+
   /** The GPU's work for the frame drawn last. */
   let inFlight = Promise.resolve();
   const frame = (now: number) => {
@@ -237,7 +262,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;
     let settled = true;
     playing.shipScale = 1;
-    if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
+    if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
+    else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     parts.ambience.frame(seconds);
     if (playing.flow.mode === 'loading' && playing.ready) {

@@ -37,6 +37,7 @@ code:
   - client/src/ships/dress.ts#DRESSES
   - client/src/ships/flag.ts#flagGrid
   - client/src/ships/flagPictures.ts#flagPictures
+  - client/src/ships/shipView.ts#shipViewNamed
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -202,17 +203,17 @@ Boat's sizes; a spanker is a gaff sail:
 - **Luffing.** A sail more than 150 degrees off the wind flaps on a sine of the clock, a quarter full each way.
 - **Trimmed.** The gaff swings about its luff to leeward (`gaffTrim`): square off with the wind astern, 45 degrees
   with it abeam, home by 150 off it, at 100 degrees a second (300 by DFO's rule for the swing).
-- **Square sails.** A square sail is laid on its four corners, its columns from port to starboard. It bellies forward
-  as a gaff does sideways, 1.1 m full and 0.12 hanging, most a little under its middle, its head bent straight to its
-  yard; its wind is the cosine of the wind's way off its yard's face: full with the wind astern of it, empty along
-  it, aback past that. Its yard is braced round its mast (`squareBrace`), its leeward arm aft: square with the wind
+- **Square sails.** A square sail is laid on its four corners, its columns from port to starboard and its rows from
+  its foot up to its yard; laced along its head and sheeted at its two foot corners, it bellies forward, fullest
+  amidst, 1.2 m full and 0.15 hanging. Its wind is read off its yard's face: full with the wind astern of it, half
+  full abeam and hanging with the wind ahead, never aback. Its yard is braced round its mast (`squareBrace`), its leeward arm aft: square with the wind
   astern, 45 degrees with it abeam and held there closer to it, at the gaff's 100 degrees a second. The yard is drawn
   turning with it: when its model loads, the round spar pieces lying across it within 0.8 m of the line through each
   sail's head are its yard, and a bare one across a mast with no sail on it turns with that mast's lowest sail. Each
   yard and its canvas turn by the same angle about the same upright line through the middle of the yard, so the
   sail's head stays on its yard at every brace.
 - **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, a square sail
-  gathered in a bundle half a metre deep along its yard, the gaff and the yards home.
+  gathered up to its yard in loose folds, the gaff and the yards home.
 - **Holed and torn.** In a fight ([[Naval Combat]], "How it looks") its canvas is drawn with holes: a cell of a
   sail's grid (7 by 6 a sail) is left out where a ball passed through it, and more open as its canvas's share falls,
   each new one beside an old, a third of every sail's cells shot through with none left; a hole never closes for the
@@ -223,6 +224,9 @@ Boat's sizes; a spanker is a gaff sail:
   end), so a fallen mast goes over its side with all its rig and its sails; only its bowsprit stays. A sail torn away falls
   from its yard, head first, and floats astern; its flag comes down its mast when it strikes. The harm goes with the
   fight.
+
+Any published hull is drawn by its name (`shipViewNamed`: its mesh and its sails' corners from `ships.json`), as
+the story draws the Brig and the Frigate.
 
 In the editor its sails are set on the helm's top rung; at sea, while it is under way. They are drawn in the wind
 the rules sail it in, where it is, which the page reads from the sky's law.

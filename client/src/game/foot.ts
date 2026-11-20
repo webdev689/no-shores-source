@@ -50,7 +50,7 @@ import type { NodeInfo } from './worldData.ts';
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
  *  ask a room in the page for (none but under `npm run dev`), and the session's token the rooms keep the player's
- *  character by (null for none). */
+ *  character by (null for none), read as each room connects. */
 export interface FootContext {
   readonly movement: MovementRules;
   readonly land: LandWorker;
@@ -60,7 +60,7 @@ export interface FootContext {
   readonly roomModule: Promise<WebAssembly.Module>;
   readonly groundAt: (x: number, y: number) => number | null;
   readonly foesAsked: readonly FoeAsk[];
-  readonly session: Promise<string | null>;
+  readonly session: () => Promise<string | null>;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }
@@ -214,7 +214,7 @@ export class Foot {
     const { players, heard, received } = hearing(context.forge);
     const asked = rooms ? [] : context.foesAsked;
     const gear: { gear: GearState | null } = { gear: null };
-    const session = await context.session;
+    const session = await context.session();
     const connection = rooms
       ? await RoomConnection.open(rooms(nodeRoom(node, seas)), received, (sent) => (gear.gear = sent), session)
       : null;

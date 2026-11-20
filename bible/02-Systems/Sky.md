@@ -11,6 +11,7 @@ code:
   - client/src/overworld/overworldCamera.ts#cloudBaseOf
   - client/src/sky/lamps.ts#lampsRound
   - client/src/sky/skyUniform.ts#SKY_WGSL
+  - client/src/sky/skyDriver.ts#SkyDriver
 ---
 # Sky
 
@@ -32,6 +33,11 @@ in every room and browser ([[Weather and Day and Night Come From DFO, Much Impro
 - **The moon.** One moon, new to new in eight days. It trails the sun by its phase, so a full moon rises at dusk and
   stands highest at midnight, and at full it stands as far south of the equator as the sun stands north of it.
 - **The stars** wheel about the pole once a day.
+- **A told sky.** The [[Prologue]] tells the sky what it is (`ToldSky`) in place of the world's: the moment its sun,
+  moon and stars stand at, the clock its clouds drift and its strikes fall on, its cloud, storm, rain, fog, wind and
+  wetness, and its own strikes. The sky draws it as it draws the world's, with the falling weather, the bolts and the
+  lamps; the music and the ambience hear it. When the story stops telling, the world's sky comes back at once, its
+  lightning read afresh.
 
 ## How the sky looks
 

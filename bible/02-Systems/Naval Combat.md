@@ -66,6 +66,8 @@ code:
   - crates/foes/src/crews.rs#deck_crew
   - client/src/game/seaWord.ts#SeaWord
   - client/src/network/seaHarbour.ts#harbourOf
+  - crates/naval/src/fight.rs#ambush
+  - client/src/game/prologue/fightAtSea.ts#StoryFight
 ---
 # Naval Combat
 
@@ -592,6 +594,30 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
 The World Editor's fight and its fleet room ease the eye the same way (`easedAimOf`) and draw the lay with `AimView`
 after the water.
 
+## An ambush
+
+The prologue's ambush ([[The Game Opens With a Story Mission at Sea]]) is the same fight, begun as `Fight::ambush`:
+the player's Sloop put to sea as she lies, and each captain set where and how the story gives her, numbered from 1
+on, her temper drawn from her own seed. Every one comes to fight her at once: bold whatever her temper, and cruising
+straight for her until she is in sight (750 m). A captain set where the water does not float her is refused. The
+land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank, and an optional
+`way` in m/s: given, she comes on under sail at it, else she lies at rest); its view carries every captain after the
+first in `others`, as the sea room's wire does. A captain going down carries, besides her `founder`, how she will lie
+once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry her
+on under as the rules would. A fight begun with more than one captain is sighted on the panel by how many and the
+nearest ("3 ships are sighted, the nearest 820 m off."). The game's `SeaCombat` steps a fight
+on any `FightSource`, the sea room's or the land door's, so the story's fight (`StoryFight`) is the sea's own: its
+aim, lay, effects, panel and bars, the panel naming her ship (the Brig). The story places each captain by her
+bearing off the player's bow and her distance, heading for her unless told, and puts every ship to sea under the
+sail and way she was sighted with, her rig drawn on from the one she was last drawn with; hears from each step a ball striking
+her, hers striking a captain, a captain going down and one sunk; and tells the player how many are left to beat.
+An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
+player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves her a point of hull); and it is over
+(`beaten`) once every captain has sunk, is going down, or has struck, her crew having given up the fight. It draws
+the player's ship as the Brig and every captain as a Sloop, each posed on the swell it is handed (a storm's too), for
+the drawing only; a captain's hurts and her going down settle, trim and list her on that swell by what the land door
+sends of each (`founder`). By the rules every ship in it is still a Sloop.
+
 ## In a fleet room
 
 With `?room=` in the World Editor's address, Sail joins a fleet room ([[Server]]) instead, on the open sea: every
@@ -620,6 +646,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   where its heeled deck's frame would put it; the view cuts to its deck, with no pan down.
 - A player washed up walks into the port city's social space once the page has opened the landmass it stands on, as
   it does for any coast the ship nears.
+- In the story's ambush the player's ship is drawn as the Brig but sails and fights as a Sloop, and its captains
+  never leave it but by sinking: one who runs is chased, and the fight waits for it.
 - A captain's men give out at about four fifths of their hull at every rank, so their rank's run and strike shares of their
   hull are seldom reached; striking at them would take men who stand more blows, a Major's too.
 - Two captains of one rank keep pace: a bold one gives up the chase of a wary one sailing away after 150 s.

@@ -1,6 +1,7 @@
 // A ship's sails as DFO set them (its galleonRig.js poses, its Come Sail Away's updateSails and autoTrim), on the
 // corners its own model gives each sail: a canvas of grid points filled from the side the wind blows to, flapping in
-// its eye, a gaff swung to leeward, and furled or set as its sails come down or go up.
+// its eye, a gaff swung to leeward, a square sail hung from its yard, braced round and bellied forward, and furled
+// or set as its sails come down or go up.
 
 import { ShipHarm } from './shipHarm.ts';
 
@@ -28,6 +29,11 @@ const GAFF_BELLY_M = 1.1;
 const GAFF_HANGING_M = 0.12;
 const STAY_BELLY_M = 0.55;
 const STAY_HANGING_M = 0.1;
+/** How far a square sail bellies forward set full, and hanging, metres: about a tenth of its foot, as a staysail's. */
+const SQUARE_BELLY_M = 1.2;
+const SQUARE_HANGING_M = 0.15;
+/** A square sail furled is gathered to this share of its drop below its yard. */
+const SQUARE_FURLED = 0.05;
 /** A staysail's grid stops this share of the way to its head, its head row a short cut across it. */
 const STAY_TOP = 0.985;
 /** A sail's wind walks this far a second; a gaff swings 100 degrees a second, 300 when DFO's rule says. */
@@ -103,8 +109,8 @@ function stayPose(sail: Extract<SailCorners, { kind: 'stay' }>, pose: number | '
   return points;
 }
 
-/** A square sail's grid in a pose: its belly forward at `pose` of full (-1 aback, 1 full), furled up to its yard, or
- *  flat between its corners (null). Its columns run from port to starboard, as its yard does. */
+/** A square sail's grid in a pose: its belly at `pose` of full (-1 aback, 1 forward), gathered up to its yard, or
+ *  flat between its corners (null). Columns run along it from port to starboard, rows from its foot up to its yard. */
 function squarePose(sail: Extract<SailCorners, { kind: 'square' }>, pose: number | 'stowed' | null): Float32Array {
   const points = new Float32Array(SAIL_COLUMNS * SAIL_ROWS * 3);
   for (let row = 0; row < SAIL_ROWS; row++)
@@ -112,26 +118,24 @@ function squarePose(sail: Extract<SailCorners, { kind: 'square' }>, pose: number
       const [along, up] = [column / (SAIL_COLUMNS - 1), row / (SAIL_ROWS - 1)];
       const yard = lerp(sail.head_port, sail.head_starboard, along);
       let point = lerp(lerp(sail.foot_port, sail.foot_starboard, along), yard, up);
-      // Bent to its yard along its head, it bellies most a little under its middle.
-      const arch = Math.sin(Math.PI * along) * Math.sin(Math.PI * 0.85 * (1 - up));
+      // Laced to its yard along its head, sheeted at its two foot corners: fullest amidst, its foot bellying too.
+      const arch = Math.sin(Math.PI * along) * (0.8 * Math.sin(Math.PI * up) + 0.4 * (1 - up));
       if (pose === 'stowed') {
-        // Gathered in a bundle along its yard, half a metre deep, lying a little forward of it.
-        point = lerp(yard, point, 0.06 + 0.02 * Math.sin(along * Math.PI * 4));
-        point[0] += 0.15 + 0.06 * Math.sin(along * 7 + up * 2);
-        point[2] += 0.15;
-      } else if (pose !== null) point[0] += pose === 0 ? GAFF_HANGING_M * arch : pose * GAFF_BELLY_M * arch;
+        point = lerp(yard, point, SQUARE_FURLED * (1 + Math.sin(along * Math.PI * 6 + up)));
+        point[0] += 0.2 * (1 - up) * Math.sin(Math.PI * along);
+      } else if (pose !== null) point[0] += pose === 0 ? SQUARE_HANGING_M * arch : pose * SQUARE_BELLY_M * arch;
       points.set(point, (row * SAIL_COLUMNS + column) * 3);
     }
   return points;
 }
 
 /** Where a sail's wind is drawn toward, `offDeg` from its own forward to the wind (Come Sail Away's sailWind): a gaff
- *  fullest with the wind square across it, a staysail fullest with the wind astern; a square sail full forward with
- *  the wind astern of its yard, empty with it along the yard, and aback past that. */
+ *  fullest with the wind square across it, a staysail fullest with the wind astern; a square sail, braced round, full
+ *  forward with the wind astern, half full with it abeam, hanging with it ahead. */
 export function sailWind(kind: SailCorners['kind'], offDeg: number): number {
-  if (kind === 'square') return Math.cos((offDeg * Math.PI) / 180);
   const off = Math.abs(offDeg);
   const side = offDeg > 0 ? 1 : -1;
+  if (kind === 'square') return (1 + Math.cos((off * Math.PI) / 180)) / 2;
   if (off === 0) return 0;
   if (kind === 'gaff') return (side * (off <= 90 ? off : 180 - off)) / 90;
   return side * (off <= 90 ? 1 - 0.75 * (off / 90) : 0.25 * (1 - (off - 90) / 90));
@@ -183,10 +187,10 @@ export class SailRig {
       const poseOf = (pose: number | 'stowed' | null) =>
         sail.kind === 'gaff'
           ? gaffPose(sail, pose)
-          : sail.kind === 'stay'
-            ? stayPose(sail, pose)
-            : squarePose(sail, pose);
-      const winds = sail.kind === 'stay' ? [-1, -0.5, 0, 0.5, 1] : [-1, 0, 1];
+          : sail.kind === 'square'
+            ? squarePose(sail, pose)
+            : stayPose(sail, pose);
+      const winds = sail.kind === 'gaff' ? [-1, 0, 1] : [-1, -0.5, 0, 0.5, 1];
       const poses = winds.map((wind) => [wind, poseOf(wind)] as const);
       return { corners: sail, flat: poseOf(null), stowed: poseOf('stowed'), poses, wind: 0, trimDeg: 0 };
     });

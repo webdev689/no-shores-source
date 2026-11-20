@@ -4,10 +4,10 @@ import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { DRESSES, PLAYER_LOOK, SHIP_SIDES, type ShipLook } from './dress.ts';
 import { flagFlat, flagGrid } from './flag.ts';
-import type { HullPaint } from './hulls.ts';
+import { HULL_NAMES, type HullPaint, hullPaint } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
-import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
+import { loadShip, type ShipMesh, shipSails, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 import { cellShows, flagAt, harmedCanvas, mastFalls } from './harmDrawn.ts';
 import {
   bufferOf,
@@ -15,6 +15,7 @@ import {
   MOST_MASTS,
   MOST_YARDS,
   PLACE_FLOATS,
+  picturesTexture,
   type ShipKit,
   shipKit,
   YARD_FLOATS_AT,
@@ -126,6 +127,24 @@ export function mastheadOf(mesh: ShipMesh): [number, number, number] {
   }
   if (top[2] === -Infinity) throw new Error(`the ${mesh.name || 'ship'} has no spars to fly a flag from`);
   return top;
+}
+
+/** The ships' pictures each device holds for what draws with them beside the ships' own kit (a story's wreck), and
+ *  how many hold them: one upload, let go once the last of them is. */
+const SHARED_PICTURES = new WeakMap<GPUDevice, { readonly texture: GPUTexture; holders: number }>();
+
+export function holdPictures(device: GPUDevice): GPUTexture {
+  const held = SHARED_PICTURES.get(device) ?? { texture: picturesTexture(device), holders: 0 };
+  held.holders += 1;
+  SHARED_PICTURES.set(device, held);
+  return held.texture;
+}
+
+export function releasePictures(device: GPUDevice): void {
+  const held = SHARED_PICTURES.get(device);
+  if (!held || --held.holders > 0) return;
+  held.texture.destroy();
+  SHARED_PICTURES.delete(device);
 }
 
 /** How many ships of one model are drawn in a frame: every ship a fleet room holds, its sixteen players' and four
@@ -320,4 +339,21 @@ export class ShipView {
     pass.setIndexBuffer(drawn.canvasIndices, 'uint32');
     pass.drawIndexed(canvas);
   }
+
+  /** Lets go of its buffers on the GPU; it is never drawn again. */
+  destroy(): void {
+    for (const buffer of [this.vertices, this.indices]) buffer.destroy();
+    for (const slot of this.slots)
+      for (const buffer of [slot.uniforms, slot.canvas, slot.canvasIndices]) buffer.destroy();
+  }
+}
+
+/** A published ship drawn by its name (the Sloop, the Brig): its mesh fetched as the manifest names it, its sails'
+ *  corners from it, up to `slots` of it a frame. */
+export async function shipViewNamed(
+  gpu: Gpu,
+  name: (typeof HULL_NAMES)[number],
+  slots = SHIP_SLOTS,
+): Promise<ShipView> {
+  return ShipView.open(gpu, await loadShip(name), shipSails(name), hullPaint(HULL_NAMES.indexOf(name)), slots);
 }

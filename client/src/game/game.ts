@@ -1,7 +1,6 @@
 import type { Gpu } from '../gpu.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { Point2 } from '../overworld/ground.ts';
-import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { Input } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
@@ -13,7 +12,7 @@ import { HULL_NAMES } from '../ships/hulls.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
-import { type Happening, next } from './flow.ts';
+import { arriving, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { HelmMap } from './helmMap.ts';
 import { foesAsked } from './foesAsked.ts';
@@ -26,7 +25,8 @@ import type { DungeonDoor } from './isleLaw.ts';
 import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
 import type { IsleHeld } from './isles.ts';
 import { FootView } from './footView.ts';
-import { bootGame, SEA_SHIPS } from './gameBoot.ts';
+import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
+import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
@@ -49,13 +49,13 @@ import { type NodeInfo, portsOf } from './worldData.ts';
 export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement): Promise<void> {
   // The size ships are drawn at this frame, which a ruin's wrecks are drawn at too: the sea's, true size on foot.
   let shipScale = 1;
-  const boot = await bootGame(gpu, hudRoot, () => shipScale);
-  const { hud, rooms, link, session, world, rmbText, start, discovered, roomModule, land, scene } = boot;
+  const boot = await bootGame(gpu, canvas, hudRoot, () => shipScale);
+  const { hud, story, rooms, link, session, world, rmbText, start, discovered, roomModule, land, scene } = boot;
   const { shipModels, figureView, forge, firstPerson, store, sloop, movement, drawersOn, terrainFor, builtSloop } =
     boot;
   const { continents } = world;
   const input = new Input(canvas);
-  const dress = plainDress('human', 0.3);
+  const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
   // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
   const arrivalView = { firstPerson: false, distance: 4.5, shown: 4.5 };
@@ -86,6 +86,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     flow: boot.flow,
     foot: null,
     sea: null,
+    epilogue: null,
     helmMap: new HelmMap({
       ...{ gpu, store, root: hudRoot, outlines: continents.map((each) => each.outline) },
       sea: () => playing.sea,
@@ -167,9 +168,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     behindVeil(after.words, work);
   };
 
-  /** Leaves wherever the player was: death's grey goes with them. */
+  /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
   const leaveHere = () => {
     canvas.classList.remove('dead');
+    playing.epilogue?.leave();
   };
 
   const goFoot = async (node: NodeInfo, facing: number, seas = playing.helmMap.difficulty) => {
@@ -225,7 +227,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const level = (['normal', 'elite', 'abyss'] as const).indexOf(seas);
     await playing.sea?.enterRoom(
       rooms
-        ? async (snapshot) => RoomConnection.open(rooms(seaRoomName(seas)), snapshot, undefined, await session)
+        ? async (snapshot) => RoomConnection.open(rooms(seaRoomName(seas)), snapshot, undefined, await session())
         : async (snapshot) =>
             LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities), level),
     );
@@ -233,8 +235,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   const firstNode = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];
   if (!firstNode) throw new Error(`${start.name} has no place to arrive at`);
-  if (playing.flow.mode === 'loading')
-    behindVeil(playing.flow.words, () => goFoot(firstNode, arrivalFacing(firstNode, playing.landmass.plan, null)));
+  const arrive = () =>
+    behindVeil(playing.flow.mode === 'loading' ? playing.flow.words : '', () =>
+      goFoot(firstNode, arrivalFacing(firstNode, playing.landmass.plan, null)),
+    );
+  if (playing.flow.mode === 'loading') arrive();
 
   const landAt = (id: string) => {
     discovered.nodes([id]);
@@ -445,10 +450,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null,
     );
   const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);
-  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
+  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => playing.flow.mode === 'story');
+  addEventListener(
+    'keyup',
+    (event) => void (playing.flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)),
+  );
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
-    if (event.repeat || playing.helmMap.key(key)) return;
+    if (event.repeat) return;
+    if (playing.flow.mode === 'story') return void story?.key(key, true);
+    if (playing.helmMap.key(key)) return;
     if (deckKey(key, playing.flow.mode === 'sea' && !playing.flow.menu ? playing.sea : null, respawn)) return;
     if (key === 'enter' && retry) retry();
     else if (key === 'm') change({ kind: 'menu' });
@@ -473,6 +484,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if ((key === '[' || key === ']') && playing.flow.mode === 'sea') playing.sea?.stepPace(key === ']' ? 1 : -1);
   });
   canvas.addEventListener('click', () => {
+    if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     if (playing.flow.mode === 'foot' && !playing.flow.menu && playing.foot?.standing.kind !== 'dead' && !input.locked)
       input.lock();
     if (
@@ -489,13 +501,23 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     sea: () => playing.sea,
     map: () => playing.helmMap.held,
   });
+  const ambience = new Ambience(world);
+  if (story) {
+    const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land, world };
+    const more = { rmbText, movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop, music };
+    const lands = { drawersOn, terrainFor, home: { landmass, drawers: playing.drawers }, closeSource, ambience };
+    story.begin({ ...game, ...more, ...lands }, () => {
+      playing.flow = arriving(FIRST_NODE, 'Overlook');
+      arrive();
+    });
+  }
   startFrames(
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
-      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt },
+      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt, story, arrive },
       isles: islesView,
-      ...{ world, music, ambience: new Ambience(world) },
+      ...{ world, music, ambience },
     },
     playing,
   );

@@ -91,3 +91,13 @@ test('anchored off an island, the player walks ashore on its beach behind the ve
   const landing: Flow = { mode: 'landing', chosen: null };
   assert.equal(next(landing, ashore), landing);
 });
+
+test('the story opens the game and, ended, brings the player through the veil to the social space', () => {
+  const story: Flow = { mode: 'story' };
+  assert.equal(next(story, { kind: 'menu' }), story, 'no menu over the story');
+  assert.equal(next(story, { kind: 'return-to-ship' }), story);
+  const ended = next(story, { kind: 'story-ended', node: 'overlook-social', name: 'Overlook' });
+  assert.deepEqual(ended, arriving('overlook-social', 'Overlook'));
+  const foot: Flow = { mode: 'foot', node: 'overlook-social', menu: false };
+  assert.equal(next(foot, { kind: 'story-ended', node: 'x', name: 'X' }), foot, 'only the story ends the story');
+});

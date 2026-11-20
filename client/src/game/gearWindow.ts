@@ -40,7 +40,7 @@ import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
 import { startAcquiredFeed } from './acquiredFeed.ts';
-import { chime, installInterfaceSounds, play } from './uiSounds.ts';
+import { chime, play } from './uiSounds.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -122,7 +122,8 @@ function tabPress(tab: Tab, open: () => void): HTMLButtonElement {
  * used; and an item's page laid over either when one is inspected. While it is open the world behind it is dimmed,
  * the pointer is free and the game's keys rest; Escape steps back: the item's page, then a slot's flyout, then the
  * menu. Gear shows as the player's room last sent it, built again only when that changes or the player moves within
- * it, each press an ask the room answers; where no room keeps gear it says so.
+ * it, each press an ask the room answers; where no room keeps gear it says so. While `resting` (the story plays) it
+ * never opens, so its keys stay the story's.
  */
 export function startGearWindow(
   root: HTMLElement,
@@ -130,6 +131,7 @@ export function startGearWindow(
   here: () => GearHere | null,
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
+  resting: () => boolean = () => false,
 ): void {
   // The menu wears the kit itself, so every press and panel in it is dressed wherever the menu opens.
   wearKit(root.ownerDocument);
@@ -300,7 +302,6 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
   startCompanyHud(root, link);
-  installInterfaceSounds(root);
   const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
   /** The banner's emblem, drawn again to the banner's width whenever that changes. */
@@ -556,6 +557,7 @@ export function startGearWindow(
   };
   for (const event of ['pointerup', 'pointercancel', 'blur']) addEventListener(event, released);
   addEventListener(OPEN_AT, (event) => {
+    if (resting()) return;
     const { view: wanted, shelf: onShelf } = (event as CustomEvent<Opening>).detail;
     if (view !== wanted || onShelf !== undefined) open(wanted, onShelf);
   });
@@ -568,7 +570,7 @@ export function startGearWindow(
     (event) => {
       const key = event.key.toLowerCase();
       const typing = event.target instanceof HTMLInputElement;
-      const opens = !typing && (key === 'i' || key === 'o');
+      const opens = !typing && !resting() && (key === 'i' || key === 'o');
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game.
       if (view !== null && !(event.target instanceof Node && screen.contains(event.target))) event.stopPropagation();

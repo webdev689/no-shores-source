@@ -248,7 +248,7 @@ export class Naval {
   /** The fight's readout at `now` (`fightDisplay`): its plate and rose, the card on the nearest captain with `board`'s
    *  key while it can be boarded, and its last volley's tally; none out of a fight. */
   display(now: number, board: Parameters<typeof fightDisplay>[3]): ReturnType<typeof fightDisplay> | null {
-    return this.fight ? fightDisplay(this.fight.view, this.feel, now, board) : null;
+    return this.fight ? fightDisplay(this.fight.view, this.feel, now, board, this.fight.own) : null;
   }
 
   /** Its captain's ship while it floats, heights as drawn: in its hull and its faction's colours, its sails stepped
