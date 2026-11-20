@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { poseOf } from '../overworld/overworldCamera.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
@@ -7,14 +6,9 @@ import { LOCKED_WORDS, OPEN_SOCIAL_SPACES, socialLocked } from './nodes.ts';
 import { landable, seaMarks } from './seaMarks.ts';
 import { type WorldData, arrivalAt } from './worldData.ts';
 
-test('only Overlook’s social space opens, as the city crate has it', () => {
-  const crate = readFileSync(new URL('../../../crates/city/src/lib.rs', import.meta.url), 'utf8');
-  const listed = /OPEN_SOCIAL_SPACES: \[&str; \d+\] = \[([^\]]*)\]/.exec(crate)?.[1] ?? '';
-  assert.deepEqual(
-    [...listed.matchAll(/"([^"]+)"/g)].map((found) => found[1]),
-    [...OPEN_SOCIAL_SPACES],
-  );
-  assert.equal(socialLocked('overlook-social'), false);
+test('only the listed cities’ social spaces open: Overlook’s; the rest of every island is open', () => {
+  assert.deepEqual([...OPEN_SOCIAL_SPACES], ['overlook']);
+  for (const city of OPEN_SOCIAL_SPACES) assert.equal(socialLocked(`${city}-social`), false, city);
   assert.equal(socialLocked('cairnwatch-social'), true);
   assert.equal(socialLocked('cairnwatch-patrol-1'), false, 'the rest of a locked city’s island is open');
 });

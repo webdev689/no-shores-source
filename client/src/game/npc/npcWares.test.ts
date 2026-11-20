@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS } from '../../network/gearMessages.ts';
-import { purseOf, rowsOf } from './npcWares.ts';
+import { priceWord, purseOf, rowsOf } from './npcWares.ts';
 import { item, state } from './stateForTests.ts';
 
 const headings = (rows: ReturnType<typeof rowsOf>) => rows.map((row) => row.heading);
@@ -76,6 +76,18 @@ test('Shape sells his week’s wares for Shapes while here, and is gone while aw
   assert.deepEqual(row?.wares[0]?.ask, { kind: ASKS.buyFromShape, node: 0 });
   assert.deepEqual(row?.wares[1]?.price, { amount: 15, currency: 'shapes' });
   assert.equal(row?.wares[1]?.short, true);
-  assert.deepEqual(rowsOf('shape', state({ shape: null })), []);
+  assert.deepEqual(rowsOf('shape', state({ shape: null })), [
+    { heading: 'Wares', wares: [], empty: 'Shape is away. He comes on Fridays.' },
+  ]);
   assert.deepEqual(purseOf('shape', here), [{ glyph: 'shapes', amount: 10, name: 'Shapes' }]);
+});
+
+test('a ware that cannot be asked for says why under its price, not "Not enough"; one that can is red when short', () => {
+  const poor = state({ aurem: 0, cratePrice: 300, crates: 5, cosmeticsSold: [6], level: 1 });
+  const crate = rowsOf('weaponsmith', poor)[1]?.wares[0];
+  const low = rowsOf('tailor', poor)[0]?.wares[0];
+  assert.deepEqual(crate && priceWord(crate), { words: 'You carry five', short: false });
+  assert.deepEqual(low && priceWord(low), { words: 'From level 5', short: false });
+  const able = rowsOf('weaponsmith', state({ aurem: 0, cratePrice: 300, crates: 1 }))[1]?.wares[0];
+  assert.deepEqual(able && priceWord(able), { words: 'Not enough', short: true });
 });

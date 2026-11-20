@@ -5,6 +5,7 @@ import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { NODE_REACH_M, groundRings, useAt } from './footGear.ts';
 import { OPEN_AT } from './gearScreen.ts';
 import { SERVED_M } from './plazaLife.ts';
+import { awayFromCounters } from './townsfolk.ts';
 import type { StationInfo } from './nodes.ts';
 
 const WEAPONSMITH: StationInfo = { kind: 'weaponsmith', keeper: [0, -2], counter: [0, 0] };
@@ -32,6 +33,25 @@ test('E at a counter opens its tab, and near a node asks the room to gather it',
     null,
     'a station that deals with no one offers nothing',
   );
+});
+
+test('a counter whose keeper is away offers nothing until they are back', () => {
+  const LAMPLIGHTERS: StationInfo = { kind: 'lamplighters', keeper: [0, -2], counter: [0, 0] };
+  const here = { stations: [LAMPLIGHTERS] };
+  assert.ok(
+    useAt(0, 0, here, null, () => undefined),
+    'served while she stands behind it',
+  );
+  awayFromCounters.add('lamplighters');
+  try {
+    assert.equal(
+      useAt(0, 0, here, null, () => undefined),
+      null,
+      'empty while she walks the plaza',
+    );
+  } finally {
+    awayFromCounters.delete('lamplighters');
+  }
 });
 
 test('the ground rings each dealing counter, and each node twice under a beam, on the floor; a drop is no ring', () => {

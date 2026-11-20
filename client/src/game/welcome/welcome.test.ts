@@ -2,12 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import scenes from '../../../../content/story/welcome.json' with { type: 'json' };
-import type { Cards } from '../../player/cards.ts';
+import type { CardAt, Cards } from '../../player/cards.ts';
 import { type Line, castOf, scenesOf } from '../../speech/cast.ts';
 import type { Shot } from '../camera.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import { awayFromCounters } from '../townsfolk.ts';
-import type { NodeInfo } from '../worldData.ts';
 import { AfterStory } from './afterStory.ts';
 import { SOCIAL } from './plazaForTests.ts';
 import { MET_SCENE, STOPS } from './walk.ts';
@@ -19,11 +18,11 @@ const VIEW = { width: 800, height: 600 };
 const FORGE = { frames: () => 1, card: () => ({}) } as unknown as Cards;
 
 /** A page's worth of the welcome's parts, every word and mark it shows written down. */
-function page(played = false) {
-  const kept = new Map<string, string>(played ? [[WELCOME_KEY, 'played']] : []);
+function page(played = false, kept = new Map<string, string>(played ? [[WELCOME_KEY, 'played']] : []), keeps = true) {
   const said: Line[][] = [];
   const marks: string[] = [];
   const prompts: string[] = [];
+  const shownFor: number[] = [];
   let removed = 0;
   const voice = (): WelcomeVoice => ({
     dialogue: {
@@ -34,14 +33,17 @@ function page(played = false) {
     },
     overheads: { emote: (head, kind) => void marks.push(`${head} ${kind}`), frame: () => undefined, remove: () => {} },
     objective: {
-      show: (word, line) => void prompts.push(`${word} ${line}`),
+      show: (word, line, seconds) => void (prompts.push(`${word} ${line}`), shownFor.push(seconds ?? 6)),
       clear: () => void prompts.push('cleared'),
       remove: () => undefined,
     },
   });
   const storage = {
     getItem: (key: string) => kept.get(key) ?? null,
-    setItem: (key: string, value: string) => kept.set(key, value),
+    setItem: (key: string, value: string) => {
+      if (!keeps) throw new Error('this browser keeps nothing');
+      kept.set(key, value);
+    },
   };
   const parts = { forge: FORGE, groundAt: () => 30, cast: CAST, scenes: SCENES, kept: storage };
   return {
@@ -49,6 +51,7 @@ function page(played = false) {
     said,
     marks,
     prompts,
+    shownFor,
     removed: () => removed,
     after: (asked = false) => new AfterStory(parts, voice, asked),
   };
@@ -75,20 +78,34 @@ const shotAt = (x: number, y: number): Shot => ({
   far: 900,
 });
 
-/** Frames the player standing at `at`, the scenes' promises let through after each. */
-async function frames(
+/** Frames the player standing at `at` (`held` while a screen is open), the scenes' promises let through after each;
+ *  the cards drawn at the last. */
+async function framesDrawn(
   after: AfterStory,
   count: number,
   standing: () => readonly [number, number],
-  node: NodeInfo = SOCIAL,
-) {
-  let cards = 0;
+  held = false,
+): Promise<CardAt[]> {
+  let cards: CardAt[] = [];
   for (let frame = 0; frame < count; frame++) {
     const [x, y] = standing();
-    cards = after.frame(shotAt(x, y), VIEW, 0.25, frame, you(x, y), false, node).length;
+    cards = after.frame(shotAt(x, y), VIEW, 0.25, frame, you(x, y), false, SOCIAL, held);
     await Promise.resolve();
   }
   return cards;
+}
+
+/** How many cards are drawn at the last of `count` frames. */
+const frames = async (after: AfterStory, count: number, standing: () => readonly [number, number], held = false) =>
+  (await framesDrawn(after, count, standing, held)).length;
+
+/** Follows her figure, as drawn, a step behind it, until she is drawn no more or `most` frames have gone. */
+async function followHer(after: AfterStory, most: number) {
+  let her = (await framesDrawn(after, 1, () => [1000, 2040]))[0];
+  for (let frame = 0; frame < most && her; frame += 10) {
+    const [x, y] = [her.x, her.y + 1.5];
+    her = (await framesDrawn(after, 10, () => [x, y]))[0];
+  }
 }
 
 test('the welcome holds a scene for each stop, the last hers, every line by a speaker of the cast', () => {
@@ -100,26 +117,22 @@ test('the welcome holds a scene for each stop, the last hers, every line by a sp
 test('once the stranger has gone she comes, marked played, her counter empty; the player following hears every stop', async () => {
   const { kept, said, marks, prompts, removed, after } = page();
   const welcome = after();
-  welcome.epilogue = stranger(3);
+  welcome.storyEnded(stranger(3));
   assert.equal(await frames(welcome, 2, () => [1000, 2040]), 0, 'the stranger first');
-  assert.equal(kept.get(WELCOME_KEY), undefined);
+  assert.equal(kept.get(WELCOME_KEY), 'due', 'due from the story’s end');
   assert.equal(await frames(welcome, 2, () => [1000, 2040]), 1, 'Elder Maren Hale comes');
   assert.equal(kept.get(WELCOME_KEY), 'played', 'kept once begun');
   assert.ok(awayFromCounters.has('lamplighters'), 'never two of her');
   // The player walks off and lags, then keeps by her.
   await frames(welcome, 4000, () => [1000, 2040]);
   assert.ok(prompts.includes('Follow Elder Maren Hale'), 'told to follow her');
-  let drawn = 1;
-  for (let frame = 0; frame < 40_000 && drawn > 0; frame += 100) {
-    const near = welcome as unknown as { welcome: { walk: { maren: { x: number; y: number } } } | null };
-    const maren = near.welcome?.walk.maren ?? { x: 0, y: 0 };
-    drawn = await frames(welcome, 100, () => [maren.x, maren.y + 1.5]);
-  }
+  await followHer(welcome, 40_000);
   assert.deepEqual(
     said.map((lines) => lines[0]?.say),
     [MET_SCENE, ...STOPS.map((stop) => stop.scene)].map((scene) => SCENES[scene]?.[0]?.say),
   );
   assert.ok(marks.includes('mage alert') && marks.includes('veiled alert'), 'the keepers she names are marked');
+  assert.ok(!marks.includes('lamplighters alert'), 'at her own counter she speaks, unmarked over its place');
   assert.equal(prompts.at(-1), 'cleared');
   assert.ok(!awayFromCounters.has('lamplighters'), 'her own figure is back behind her counter');
   assert.equal(removed(), 1);
@@ -128,7 +141,7 @@ test('once the stranger has gone she comes, marked played, her counter empty; th
 test('it plays never twice, and not without the story; the development switch plays it at once', async () => {
   const played = page(true);
   const again = played.after();
-  again.epilogue = stranger(1);
+  again.storyEnded(stranger(1));
   assert.equal(await frames(again, 5, () => [1000, 2040]), 0, 'played before');
   assert.equal(await frames(page().after(), 5, () => [1000, 2040]), 0, 'no story played, or ?at=');
   const asked = played.after(true);
@@ -139,18 +152,57 @@ test('it plays never twice, and not without the story; the development switch pl
 test('leaving before the stranger has gone forgoes it; leaving during it ends it where she is', async () => {
   const { after } = page();
   const forgone = after();
-  forgone.epilogue = stranger(9);
+  forgone.storyEnded(stranger(9));
   await frames(forgone, 2, () => [1000, 2040]);
   forgone.leave();
   assert.equal(await frames(forgone, 20, () => [1000, 2040]), 0);
   const left = page();
   const ended = left.after();
-  ended.epilogue = stranger(1);
+  ended.storyEnded(stranger(1));
   ended.leave();
-  assert.ok(ended.epilogue, 'before the player stood anywhere, the stranger waits for them');
-  assert.equal(await frames(ended, 30, () => [1000, 2040]), 1);
+  assert.equal(await frames(ended, 30, () => [1000, 2040]), 1, 'before the player stood anywhere, the stranger waits');
   ended.leave();
   assert.ok(!awayFromCounters.has('lamplighters'));
   assert.equal(left.removed(), 1);
   assert.equal(await frames(ended, 5, () => [1000, 2040]), 0, 'and does not come back');
+});
+
+test('a reload after the story’s end and before the welcome began brings it on the next arrival', async () => {
+  const first = page();
+  first.after().storyEnded(stranger(5));
+  // The page is loaded again: the stranger's moment is gone, the browser's mark is not.
+  const reloaded = page(false, first.kept);
+  assert.equal(await frames(reloaded.after(), 2, () => [1000, 2040]), 1, 'she comes all the same');
+  assert.equal(first.kept.get(WELCOME_KEY), 'played', 'and is due no more');
+  assert.equal(await frames(page(false, first.kept).after(), 2, () => [1000, 2040]), 0, 'once only');
+});
+
+test('while a screen is open she holds still and starts no scene; the follow prompt comes back each time they lag', async () => {
+  const { said, prompts, shownFor, after } = page();
+  const welcome = after(true);
+  const held = await framesDrawn(welcome, 40, () => [1000, 2040], true);
+  assert.equal(held.length, 1, 'still drawn');
+  assert.equal(said.length, 0, 'no scene begins behind the screen');
+  const [her] = await framesDrawn(welcome, 40, () => [1000, 2040], true);
+  assert.deepEqual([her?.x, her?.y], [held[0]?.x, held[0]?.y], 'she stands where she was');
+  // Met where she stands, the player lags behind her lead, catches up, and lags again.
+  const met = her ? ([her.x, her.y + 1.5] as const) : ([0, 0] as const);
+  await frames(welcome, 400, () => met);
+  assert.equal(said.length, 1, 'met once the screen is gone');
+  const lagged = prompts.filter((each) => each.startsWith('Follow')).length;
+  await followHer(welcome, 200);
+  await frames(welcome, 400, () => [1000, 2040]);
+  assert.ok(prompts.filter((each) => each.startsWith('Follow')).length > lagged, 'told again');
+  assert.ok(
+    shownFor.every((seconds) => seconds === Infinity),
+    'shown until they catch up, however long',
+  );
+  welcome.leave();
+});
+
+test('a browser that keeps nothing still plays the welcome once the stranger has gone', async () => {
+  const welcome = page(false, new Map(), false).after();
+  welcome.storyEnded(stranger(2));
+  assert.equal(await frames(welcome, 4, () => [1000, 2040]), 1, 'Elder Maren Hale comes');
+  welcome.leave();
 });

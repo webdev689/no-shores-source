@@ -21,7 +21,7 @@ import {
   tileLabel,
 } from '../gearDom.ts';
 import { bardingSvg, shapesSvg, svgUrl } from './npcMarks.ts';
-import type { Price, Row, Ware, WarePicture } from './npcWares.ts';
+import { type Price, type Row, type Ware, type WarePicture, priceWord } from './npcWares.ts';
 
 /** A tile's picture box, in pixels: the menu's cell's. */
 const TILE_PX = 48;
@@ -86,10 +86,10 @@ export function coinGlyph(currency: Price['currency']): HTMLImageElement {
 
 /** The words under a tile: its price, the word in its place, or "Not enough". */
 function priceLine(ware: Ware): HTMLElement {
-  const line = make('span', '', `npc-price${ware.short ? ' gear-short' : ''}`);
+  const { words, short } = priceWord(ware);
+  const line = make('span', '', `npc-price${short ? ' gear-short' : ''}`);
   if (ware.price) line.append(coinGlyph(ware.price.currency), make('b', ware.price.amount.toLocaleString('en')));
-  if (ware.short) line.append(make('span', 'Not enough', 'npc-price-note'));
-  else if (ware.note) line.append(make('span', ware.note, 'npc-price-note'));
+  if (words) line.append(make('span', words, 'npc-price-note'));
   return line;
 }
 
@@ -122,7 +122,8 @@ export function wareTile(context: PageContext, ware: Ware, act: (ware: Ware) => 
   const cost = ware.price
     ? `${ware.price.amount.toLocaleString('en')} ${ware.price.currency === 'shapes' ? 'Shapes' : 'Aurem'}`
     : '';
-  const state = ware.short ? 'not enough' : ware.note || (ware.opens ? 'press to choose' : pressed ? 'hold' : '');
+  const said = priceWord(ware);
+  const state = said.short ? 'not enough' : said.words || (ware.opens ? 'press to choose' : pressed ? 'hold' : '');
   tile.setAttribute('aria-label', tileLabel(ware.name, ware.rarity, [cost, state].filter(Boolean).join(', ')));
   const hints: readonly Hint[] = ware.opens ? [['Click', 'Choose a fragment']] : pressed ? HOLD_HINT : [];
   if (item) {

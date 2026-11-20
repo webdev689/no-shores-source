@@ -36,7 +36,7 @@ import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
 import { vaultPage } from './stationPages.ts';
 import { KEEPERS } from './keepers.ts';
-import { isKeeperView, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
+import { isKeeperView, keyBeside, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
@@ -414,9 +414,7 @@ export function startGearWindow(
     // the one beside it takes the focus, else the tab or station it is under.
     const held = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focused = held?.dataset['key'];
-    const beside = [held?.nextElementSibling, held?.previousElementSibling]
-      .map((node) => (node instanceof HTMLElement ? node.dataset['key'] : undefined))
-      .find(Boolean);
+    const beside = keyBeside(held);
     // A key's focus in a slot's grid goes back to its slot as the grid closes; a pointer's would open the slot's card.
     const slotted = held?.matches(':focus-visible')
       ? held.closest('.gear-slot-holder')?.querySelector<HTMLElement>('.gear-slot')?.dataset['key']

@@ -13,7 +13,7 @@ const turns = new LineTurns(KEEPER_LINES);
 
 /** The line being said: by whom, its typing, and the band's words that show it on the page built last. */
 let said: { readonly speaker: string; readonly typing: Typing } | null = null;
-let shown: { readonly typed: Text; readonly unseen: HTMLElement } | null = null;
+let shown: { readonly typed: Text; readonly unseen: HTMLElement; readonly heard: HTMLElement } | null = null;
 let looping = false;
 let last = 0;
 
@@ -38,6 +38,9 @@ function show(): void {
   if (!said || !shown) return;
   shown.typed.data = said.typing.visible;
   shown.unseen.textContent = said.typing.hidden;
+  // A screen reader hears the line once whole, as the live copy takes it.
+  const whole = said.typing.done ? said.typing.text : '';
+  if (shown.heard.textContent !== whole) shown.heard.textContent = whole;
 }
 
 /** The keeper of `kind` says their next line for the moment, if they have one. */
@@ -66,10 +69,12 @@ export function speechBand(kind: KeeperKind): HTMLElement {
   const typed = document.createTextNode('');
   const unseen = make('span', '', 'speech-unseen');
   words.append(typed, unseen);
-  // Read aloud once whole, not letter by letter as it types.
-  words.setAttribute('aria-live', 'off');
-  band.append(name, words);
-  shown = { typed, unseen };
+  // Read aloud once whole from the live copy, not letter by letter as it types.
+  words.setAttribute('aria-hidden', 'true');
+  const heard = make('p', '', 'npc-speech-heard');
+  heard.setAttribute('aria-live', 'polite');
+  band.append(name, words, heard);
+  shown = { typed, unseen, heard };
   if (said?.speaker !== KEEPERS[kind].speaker) said = null;
   show();
   return band;

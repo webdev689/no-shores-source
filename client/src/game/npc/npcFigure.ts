@@ -16,8 +16,11 @@ const FACING = 0;
 
 const drawn = new Map<KeeperKind, (Picture | null)[]>();
 const asked = new Set<KeeperKind>();
+/** Each keeper's frames grown for the last size asked, so a page built again reuses them. */
+const grown = new Map<KeeperKind, { readonly scale: number; readonly canvases: HTMLCanvasElement[] }>();
 
-/** The keeper's frames, drawn once; `ready` runs as they come. */
+/** The keeper's frames, drawn once; `ready` runs as they come. A failed drawing is not kept: the next build asks
+ *  again, and `ready` is not run for it, so a forge that keeps failing never loops the page. */
 function framesOf(kind: KeeperKind, forge: Cards, ready: () => void): (Picture | null)[] | null {
   const kept = drawn.get(kind);
   if (kept || asked.has(kind)) return kept ?? null;
@@ -25,6 +28,8 @@ function framesOf(kind: KeeperKind, forge: Cards, ready: () => void): (Picture |
   const { dress } = KEEPERS[kind];
   void Promise.all(FRAMES.map((frame) => forge.picture(dress, 'idle', FACING, frame).catch(() => null))).then(
     (pictures) => {
+      asked.delete(kind);
+      if (!pictures[0]) return;
       drawn.set(kind, pictures);
       ready();
     },
@@ -69,9 +74,12 @@ export function keeperFigure(kind: KeeperKind, forge: Cards | null, height: numb
   const bounds = drawnBounds(first.width, first.height, first.pixels) ?? [0, 0, first.width, first.height];
   const ratio = devicePixelRatio || 1;
   const scale = Math.max(1, Math.floor((height * ratio) / bounds[3]));
-  const canvases = frames
-    .filter((each): each is Picture => each !== null)
-    .map((each) => frameCanvas(each, bounds, scale));
+  const known = grown.get(kind);
+  const canvases =
+    known?.scale === scale
+      ? known.canvases
+      : frames.filter((each): each is Picture => each !== null).map((each) => frameCanvas(each, bounds, scale));
+  grown.set(kind, { scale, canvases });
   for (const canvas of canvases) {
     canvas.style.width = `${canvas.width / ratio}px`;
     canvas.style.height = `${canvas.height / ratio}px`;
