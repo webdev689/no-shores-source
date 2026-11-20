@@ -43,14 +43,13 @@ function roomName(request: Request): string | null {
 
 /**
  * One room on Cloudflare: a Durable Object, one for each room's name, that keeps the room in WebAssembly. Its name
- * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`node-<id>--elite` or
- * `--abyss` at a voyage's harder difficulty), `isle-<number>-<seed>` an island the sea rolled, opened on the sea's
- * word on it, `fleet-<name>` a fleet's
- * place on the open sea, and any other the Test Ground's course. Players join by WebSocket; each binary message is one
- * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
- * room in step with the clock and sends every player the snapshot after each tick. Its sockets live and die with it:
- * the room is kept only in its memory, so a socket must never outlast it. A browser's one text message is its
- * session's token; in a node's room and at sea, its player's character is kept while they play (`keeping.ts`).
+ * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`--elite` or `--abyss`
+ * after it at a voyage's harder difficulty), `isle-<number>-<seed>` an island the sea rolled, opened on the sea's
+ * word, `fleet-<name>` a fleet's place on the open sea, and any other the Test Ground's course. Players join by
+ * WebSocket; each binary message is one of their inputs, at sea their ship's course, or in a fleet their ship's
+ * orders. While anyone is in, it ticks the room with the clock and sends every player each tick's snapshot. Its sockets
+ * live and die with it: the room is kept only in its memory. A browser's one text message is its session's token; in
+ * a node's room, an island's and at sea, its player's character is kept while they play (`keeping.ts`).
  */
 export class RoomHost extends DurableObject<Env> {
   private readonly room: RoomDoor = startRoomDoor(roomModule);

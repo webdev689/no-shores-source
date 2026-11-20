@@ -91,30 +91,31 @@ fn guards(faction: u8, draws: &mut naval::random::Mulberry32) -> [Group; 3] {
 }
 
 impl Room {
-    /// A sea island's room from its plan. An isle's guards are of `guards`' faction (the Grey Tithe's or the pirates')
-    /// at its water's `levels`; with none, or on a cove, none stand.
+    /// A sea island's room from its plan, its middle at `at` in the world, where every body, block and post of it
+    /// stands, as a node's do. An isle's guards are of `guards`' faction (the Grey Tithe's or the pirates') at its
+    /// water's `levels`; with none, or on a cove, none stand.
     #[must_use]
-    pub fn island(plan: &Plan, guards: Option<u8>, levels: Option<(u8, u8)>) -> Self {
-        let section = Section { ring: plan.ring.clone(), spawns: plan.sites.spawns.clone() };
-        let floor = Floor::Island(Box::new(plan.ground.clone()));
-        let mut room = Room::node(floor, plan.blocks.clone(), section);
+    pub fn island(plan: &Plan, at: [f64; 2], guards: Option<u8>, levels: Option<(u8, u8)>) -> Self {
+        let place = |points: &[[f64; 2]]| points.iter().map(|&point| isle::placed(point, at)).collect::<Vec<_>>();
+        let section = Section { ring: place(&plan.ring), spawns: place(&plan.sites.spawns) };
+        let floor = Floor::Island(Box::new(plan.ground_at(at)));
+        let mut room = Room::node(floor, plan.blocks_at(at), section);
         room.world_seed = SEED ^ isle::draws::mix(plan.seed, 7);
         room.foes_most = crate::NODE_FOES_MOST;
         room.isle = Some(Isle {
             kind: Some(plan.kind),
-            wrecks: plan.sites.wrecks.iter().map(|wreck| wreck.at).collect(),
-            door: plan.sites.door.at,
+            wrecks: plan.sites.wrecks.iter().map(|wreck| isle::placed(wreck.at, at)).collect(),
+            door: isle::placed(plan.sites.door.at, at),
             ..Isle::default()
         });
         if let Some(faction) = guards.filter(|_| plan.kind.is_isle()) {
-            room.stand_guards(plan, faction, levels);
+            room.stand_guards(&place(&plan.sites.guards), faction, levels);
         }
         room
     }
 
     /// Bakes the navmesh over the guards' posts, then stands each group at its post in turn.
-    fn stand_guards(&mut self, plan: &Plan, faction: u8, levels: Option<(u8, u8)>) {
-        let posts = &plan.sites.guards;
+    fn stand_guards(&mut self, posts: &[[f64; 2]], faction: u8, levels: Option<(u8, u8)>) {
         let fold =
             |pick: fn(f64, f64) -> f64, axis: usize, start: f64| posts.iter().map(|post| post[axis]).fold(start, pick);
         let bounds = navmesh::Bounds {

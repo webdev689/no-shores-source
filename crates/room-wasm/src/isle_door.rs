@@ -31,8 +31,8 @@ fn seed_of(low: u32, high: u32) -> u64 {
 
 /// An island's plan as JSON: its kind and its dungeon's style, its radius and reach, where it is landed and anchored
 /// off, its spawns and the bearing a player landed faces, its door, landmark, guards' posts, camp and wrecks, its
-/// section's ring, and every module set on it as [its number in the contract, x, y, z, turn, scale, lift]. Empty for
-/// a climate the contract does not dress.
+/// section's ring, every module set on it as [its number in the contract, x, y, z, turn, scale, lift], and the blocks
+/// its modules' solids stand as [west, north, east, south, top]. Empty for a climate the contract does not dress.
 #[must_use]
 pub fn plan_json(seed: u64, climate: &str) -> String {
     let json = |plan: &Plan| {
@@ -45,6 +45,8 @@ pub fn plan_json(seed: u64, climate: &str) -> String {
                 [f64::from(each.module), x, y, z, each.turn, each.scale, each.lift]
             })
             .collect();
+        let blocks: Vec<[f64; 5]> =
+            plan.blocks.iter().map(|block| [block.min_x, block.min_y, block.max_x, block.max_y, block.top]).collect();
         let wrecks: Vec<[f64; 3]> = sites.wrecks.iter().map(|wreck| [wreck.at[0], wreck.at[1], wreck.lies]).collect();
         serde_json::json!({
             "kind": plan.kind.name(),
@@ -62,26 +64,29 @@ pub fn plan_json(seed: u64, climate: &str) -> String {
             "wrecks": wrecks,
             "ring": plan.ring,
             "placements": placements,
+            "blocks": blocks,
         })
         .to_string()
     };
     with_plan(seed, climate, json).unwrap_or_default()
 }
 
-/// An island's ground as `movement::Heights::to_floats` gives it, little-endian: what the page predicts its body on,
-/// to the bit. Empty for a climate the contract does not dress.
+/// An island's ground as `movement::Heights::to_floats` gives it, little-endian, its middle at `at` in the world: what
+/// the page predicts its body on, to the bit. Empty for a climate the contract does not dress.
 #[must_use]
-pub fn heights_bytes(seed: u64, climate: &str) -> Vec<u8> {
-    let floats = with_plan(seed, climate, |plan| plan.ground.to_floats()).unwrap_or_default();
+pub fn heights_bytes(seed: u64, climate: &str, at: [f64; 2]) -> Vec<u8> {
+    let floats = with_plan(seed, climate, |plan| plan.ground_at(at).to_floats()).unwrap_or_default();
     floats.iter().flat_map(|number| number.to_le_bytes()).collect()
 }
 
 /// The sea's word an island's room opens on: its seed as a decimal (JSON's numbers cannot hold 64 bits), its climate,
-/// whose guards stand on it (the foes' faction number, 0 for none), and its water's band of levels.
+/// where its middle lies, whose guards stand on it (the foes' faction number, 0 for none), and its water's band of
+/// levels.
 #[derive(Deserialize)]
 struct IslandRequest {
     seed: String,
     climate: String,
+    at: [f64; 2],
     guards: u8,
     levels: Option<(u8, u8)>,
 }
@@ -92,7 +97,7 @@ pub fn open_island(text: &[u8]) -> bool {
     let Ok(request) = serde_json::from_slice::<IslandRequest>(text) else { return false };
     let Ok(seed) = request.seed.parse::<u64>() else { return false };
     let Some(room) = with_plan(seed, &request.climate, |plan| {
-        Room::island(plan, (request.guards != 0).then_some(request.guards), request.levels)
+        Room::island(plan, request.at, (request.guards != 0).then_some(request.guards), request.levels)
     }) else {
         return false;
     };
@@ -142,15 +147,23 @@ pub unsafe extern "C" fn room_isle_plan(low: u32, high: u32, address: *const u8,
     hand_over(plan_json(seed_of(low, high), &climate).into_bytes())
 }
 
-/// An island's ground's numbers (`heights_bytes`), from its seed's halves and its climate's name at `address`.
+/// An island's ground's numbers (`heights_bytes`), from its seed's halves, its middle and its climate's name at
+/// `address`.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn room_isle_heights(low: u32, high: u32, address: *const u8, length: usize) -> u64 {
+pub unsafe extern "C" fn room_isle_heights(
+    low: u32,
+    high: u32,
+    x: f64,
+    y: f64,
+    address: *const u8,
+    length: usize,
+) -> u64 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let climate = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(address, length) }).into_owned();
-    hand_over(heights_bytes(seed_of(low, high), &climate))
+    hand_over(heights_bytes(seed_of(low, high), &climate, [x, y]))
 }
 
 /// Opens an island's room from the sea's word written at `address` (`open_island`); 1 if it opened, 0 if not.

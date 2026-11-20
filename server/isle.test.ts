@@ -23,7 +23,7 @@ function fingerprint(numbers: Float64Array): string {
 
 test("the page's WebAssembly builds an island's ground to the room's own bits", () => {
   const door = startRoomDoor(compiled);
-  assert.equal(fingerprint(door.isleHeights('41', 'desert')), GROUND_41_DESERT);
+  assert.equal(fingerprint(door.isleHeights('41', 'desert', [0, 0])), GROUND_41_DESERT);
 });
 
 test("an island's plan comes to the page whole, and none for home waters' climate", () => {
@@ -33,12 +33,15 @@ test("an island's plan comes to the page whole, and none for home waters' climat
   assert.equal(plan.spawns.length, 3);
   assert.ok(plan.placements.length > 20);
   assert.equal(door.islePlan('41', 'temperate-coast'), '');
-  assert.equal(door.isleHeights('41', 'moon').length, 0);
+  assert.equal(door.isleHeights('41', 'moon', [0, 0]).length, 0);
 });
 
 test("an island's room opens only on a word that makes an island", () => {
   const door = startRoomDoor(compiled);
-  assert.equal(door.openIsland('{"seed":"41","climate":"desert","guards":2,"levels":[10,14]}'), true);
+  assert.equal(
+    door.openIsland('{"seed":"41","climate":"desert","at":[700000,300000],"guards":2,"levels":[10,14]}'),
+    true,
+  );
   assert.ok(door.join() > 0);
   assert.equal(startRoomDoor(compiled).openIsland('{"seed":"41"}'), false);
 });

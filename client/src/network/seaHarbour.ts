@@ -1,6 +1,7 @@
 // What the sea's snapshot carries after its fights (crates/protocol/src/sea_snapshot.rs): each piece of what floats
 // kept for a player, each player's ship's kept hurts with her repair's time left, what each player is told this tick
-// beside their fight's view, and each deck boarded with her deck room's own snapshot.
+// beside their fight's view, each deck boarded with her deck room's own snapshot, and the islands each player sees or
+// has found.
 import type { Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PIECES } from './seaFight.ts';
 
@@ -32,12 +33,27 @@ export interface SeenDeck {
   readonly holdLeft: number | null;
 }
 
+/** The isles' kinds by their number on the wire (isle crate's `Kind::number`). */
+export const ISLE_KINDS = ['cove', 'ruin', 'quarry'] as const;
+
+/** A sea island the player sees from their ship or has found: its number, its seed as a decimal (64 bits), where its
+ *  middle is (world metres), its kind, the index of its water's continent in the layout, and whether they found it. */
+export interface SeenIsle {
+  readonly id: number;
+  readonly seed: string;
+  readonly at: readonly [number, number];
+  readonly kind: (typeof ISLE_KINDS)[number];
+  readonly continent: number;
+  readonly found: boolean;
+}
+
 export interface HarbourPart {
   readonly flotsam: readonly SeenFlotsam[];
   readonly kept: readonly SeenKept[];
   /** What each player is told this tick, in the naval crate's numbers or the sea's own (crates/room/src/harbour.rs). */
   readonly told: readonly { readonly player: number; readonly numbers: readonly number[] }[];
   readonly decks: readonly SeenDeck[];
+  readonly islands: readonly SeenIsle[];
 }
 
 /** The sea's part of a snapshot: empty from any other room. */
@@ -68,5 +84,12 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
     const holdLeft = deck.holdLeft() < 0 ? null : deck.holdLeft();
     return { aboard, hull: deck.hull(), snapshot: deck.snapshotArray() ?? new Uint8Array(), holdLeft };
   });
-  return { flotsam, kept, told, decks };
+  const islands = Array.from({ length: snapshot.islandsLength() }, (unused, index): SeenIsle => {
+    const isle = snapshot.islands(index);
+    const kind = isle && ISLE_KINDS[isle.kind()];
+    if (!isle || !kind) throw new Error(`snapshot island ${index} does not read`);
+    const at = [isle.x(), isle.y()] as const;
+    return { id: isle.id(), seed: isle.seed().toString(), at, kind, continent: isle.continent(), found: isle.found() };
+  });
+  return { flotsam, kept, told, decks, islands };
 }

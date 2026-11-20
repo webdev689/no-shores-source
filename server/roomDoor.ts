@@ -51,10 +51,11 @@ export interface RoomDoor {
   seaIsland(id: number): string;
   /** Holds the open sea's island by its number while players stand ashore: whether it stands. */
   holdAshore(id: number): boolean;
-  /** An island's plan as JSON, and its ground's numbers as `movement::Heights` gives them, from its seed (a decimal
-   *  string) and climate: both empty for a climate the islands' contract does not dress. */
+  /** An island's plan as JSON in its own frame, and its ground's numbers as `movement::Heights` gives them with its
+   *  middle at `at` in the world, from its seed (a decimal string) and climate: both empty for a climate the islands'
+   *  contract does not dress. */
   islePlan(seed: string, climate: string): string;
-  isleHeights(seed: string, climate: string): Float64Array;
+  isleHeights(seed: string, climate: string, at: readonly [number, number]): Float64Array;
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
@@ -123,7 +124,7 @@ interface RoomExports {
   room_sea_island(id: number): bigint;
   room_hold_ashore(id: number): number;
   room_isle_plan(low: number, high: number, address: number, length: number): bigint;
-  room_isle_heights(low: number, high: number, address: number, length: number): bigint;
+  room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
   room_take_foe_asks(): void;
   room_join(): number;
@@ -218,11 +219,11 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
           }, climate),
         ),
       ),
-    isleHeights: (seed, climate) => {
+    isleHeights: (seed, climate, [x, y]) => {
       const bytes = take(
         openWithAnswer((address, length) => {
           const [low, high] = halves(seed);
-          return exports.room_isle_heights(low, high, address, length);
+          return exports.room_isle_heights(low, high, x, y, address, length);
         }, climate),
       );
       return new Float64Array(bytes.buffer, bytes.byteOffset, bytes.length / 8);

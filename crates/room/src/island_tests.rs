@@ -5,6 +5,9 @@ use gear::dice::Dice;
 use isle::{Kind, Plan};
 use movement::Terrain;
 
+/// Where the islands of these tests lie in the world.
+const AT: [f64; 2] = [612_345.5, 287_654.25];
+
 fn seed_of(kind: Kind) -> u64 {
     (0..).find(|&seed| Kind::of(seed) == kind).unwrap_or(0)
 }
@@ -28,21 +31,22 @@ fn scavenged(room: &mut Room, player: PlayerId, wreck: u8) -> u8 {
 #[test]
 fn a_player_lands_on_the_islands_beach_standing_on_its_ground() {
     let plan = plan(Kind::Cove);
-    let mut room = Room::island(&plan, Some(GREY_TITHE), Some((5, 9)));
+    let mut room = Room::island(&plan, AT, Some(GREY_TITHE), Some((5, 9)));
     let player = room.join().expect("a room with space");
     let body = room.fighter(player).expect("in").body;
-    assert_eq!([body.x, body.y], plan.sites.spawns[0]);
-    assert!((body.z - plan.ground.height_at(body.x, body.y)).abs() < 1e-9);
+    assert_eq!([body.x, body.y], isle::placed(plan.sites.spawns[0], AT));
+    let [x, y] = plan.sites.spawns[0];
+    assert!((body.z - plan.ground.height_at(x, y)).abs() < 1e-6, "on the island's own ground, moved to its place");
     assert!(body.z > 0.5, "landed in the sea");
 }
 
 #[test]
 fn a_cove_holds_no_foes_and_an_isle_holds_its_holders_guards() {
-    let cove = Room::island(&plan(Kind::Cove), Some(PIRATES), Some((5, 9)));
+    let cove = Room::island(&plan(Kind::Cove), AT, Some(PIRATES), Some((5, 9)));
     assert!(cove.foes.is_empty());
     for kind in [Kind::Ruin, Kind::Quarry] {
         for faction in [GREY_TITHE, PIRATES] {
-            let room = Room::island(&plan(kind), Some(faction), Some((5, 9)));
+            let room = Room::island(&plan(kind), AT, Some(faction), Some((5, 9)));
             assert!(room.foes.len() >= 6, "{kind:?}: {} guards", room.foes.len());
             for foe in room.foes.values() {
                 assert_eq!(foe.brain.foe_type.faction, faction, "{kind:?}");
@@ -56,16 +60,16 @@ fn a_cove_holds_no_foes_and_an_isle_holds_its_holders_guards() {
 fn every_machine_stands_an_isles_guards_alike() {
     let plan = plan(Kind::Ruin);
     let places = |room: &Room| room.foes.values().map(|foe| foe.fighter.body).collect::<Vec<_>>();
-    let one = Room::island(&plan, Some(GREY_TITHE), None);
-    let other = Room::island(&plan, Some(GREY_TITHE), None);
+    let one = Room::island(&plan, AT, Some(GREY_TITHE), None);
+    let other = Room::island(&plan, AT, Some(GREY_TITHE), None);
     assert_eq!(places(&one), places(&other));
 }
 
 #[test]
 fn a_wreck_is_scavenged_once_by_each_account_from_beside_its_heap() {
     let plan = plan(Kind::Cove);
-    let mut room = Room::island(&plan, None, None);
-    let wreck = plan.sites.wrecks[0].at;
+    let mut room = Room::island(&plan, AT, None, None);
+    let wreck = isle::placed(plan.sites.wrecks[0].at, AT);
     let player = room.join().expect("a room with space");
     room.own(player, "account-a");
     stand_at(&mut room, player, [wreck[0] + WRECK_REACH + 2.0, wreck[1]]);

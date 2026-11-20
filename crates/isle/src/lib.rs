@@ -142,7 +142,35 @@ fn ground_of(shape: &Shape, cliffs: f64) -> Heights {
     Heights::new(-half, -half, CELL_M, cells, cells, heights).unwrap_or_else(|| unreachable!("a grid of its own cells"))
 }
 
+/// A point of the island's own frame shifted to the world, its middle at `at`.
+#[must_use]
+pub fn placed([x, y]: [f64; 2], at: [f64; 2]) -> [f64; 2] {
+    [x + at[0], y + at[1]]
+}
+
 impl Plan {
+    /// Its ground with its middle at `at` in the world: the same heights, its corner moved.
+    #[must_use]
+    pub fn ground_at(&self, at: [f64; 2]) -> Heights {
+        let mut floats = self.ground.to_floats();
+        floats[0] += at[0];
+        floats[1] += at[1];
+        Heights::from_floats(&floats).unwrap_or_else(|| unreachable!("its own grid, moved"))
+    }
+
+    /// Its blocks with its middle at `at` in the world.
+    #[must_use]
+    pub fn blocks_at(&self, at: [f64; 2]) -> Vec<Block> {
+        let moved = |block: &Block| Block {
+            min_x: block.min_x + at[0],
+            min_y: block.min_y + at[1],
+            max_x: block.max_x + at[0],
+            max_y: block.max_y + at[1],
+            top: block.top,
+        };
+        self.blocks.iter().map(moved).collect()
+    }
+
     /// The island a seed makes in a climate (the layout's id of its water's continent's, `desert` or `tundra`), or none
     /// for a climate the islands' contract does not dress.
     #[must_use]
