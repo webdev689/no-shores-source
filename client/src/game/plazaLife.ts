@@ -33,7 +33,8 @@ export function offerAt(stations: readonly StationInfo[], x: number, y: number):
   for (const station of stations) {
     const offer = OFFERS[station.kind];
     const near = Math.hypot(station.counter[0] - x, station.counter[1] - y) <= SERVED_M;
-    if (offer && near) return offer;
+    // A keeper away from their counter (the elder on her welcome) serves nothing there, so two of her never speak.
+    if (offer && near && !awayFromCounters.has(station.kind)) return offer;
   }
   return null;
 }

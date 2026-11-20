@@ -23,8 +23,15 @@ test('pledged to another, switching costs its price; pledged here, it says so an
   const pledged = factionRows(STORM, state({ standing: standing({ pledge: STORM }), aurem: 3_000 }), false);
   assert.equal(row(pledged, 'Pledge')?.wares[0]?.note, 'Pledged');
   assert.equal(row(pledged, 'Pledge')?.wares[0]?.ask, null);
-  assert.deepEqual(row(pledged, 'Cape')?.wares[0]?.ask, { kind: ASKS.buyCape, column: STORM });
-  const cape = item({ named: 'stormcallers_cape', kind: 18, rarity: 2 });
+  assert.equal(row(pledged, 'Pledge')?.wares[0]?.about, 'Pledged');
+  const sold = row(pledged, 'Cape')?.wares[0];
+  assert.deepEqual(sold?.ask, { kind: ASKS.buyCape, column: STORM });
+  assert.deepEqual(
+    [sold?.rarity, sold?.about],
+    [3, 'Legendary Cloak · any level'],
+    'a named Legendary, made at level 1',
+  );
+  const cape = item({ named: 'stormcallers_cape', kind: 18, rarity: 3 });
   const kept = factionRows(STORM, state({ standing: standing({ pledge: STORM }), items: [cape] }), false);
   assert.deepEqual([row(kept, 'Cape')?.wares[0]?.note, row(kept, 'Cape')?.wares[0]?.ask], ['Kept', null]);
 });
@@ -116,4 +123,11 @@ test('no package is collected while ten Vestiges are carried', () => {
   const full = state({ vestiges, standing: standing({ packages: [1, 0, 0] }) });
   const parcel = row(factionRows(STORM, full, false), 'Reputation')?.wares[0];
   assert.deepEqual([parcel?.note, parcel?.ask], ['Ten Vestiges carried', null]);
+});
+
+test('no cape is sold while nine cloaks are carried', () => {
+  const cloaks = Array.from({ length: 9 }, (unused, id) => item({ id, kind: 18, bucket: 6 }));
+  const full = state({ standing: standing({ pledge: STORM }), aurem: 9_000, items: cloaks });
+  const cape = row(factionRows(STORM, full, false), 'Cape')?.wares[0];
+  assert.deepEqual([cape?.note, cape?.ask], ['Nine cloaks carried', null]);
 });

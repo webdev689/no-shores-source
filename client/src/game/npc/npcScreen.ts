@@ -42,13 +42,14 @@ const FIGURE_LEAST = 200;
 export const isKeeperView = (view: View): view is Exclude<KeeperKind, 'vault'> =>
   view !== 'vault' && (KEEPER_KINDS as readonly string[]).includes(view);
 
-/** Whether the Art's rise waits on its fragment; the asks that wait on the room's answers (how many it had answered
- *  at the first, and how many were made); and when Shape's minutes were heard. */
+/** Whether the Art's rise waits on its fragment. */
 let choosing = false;
-/** Whether the choice has just opened, so its first fragment takes the focus. */
-let chosenFirst = false;
+/** The press to focus once the page is built again: the first fragment as the choice opens, the Rise as it closes. */
+let focusNext: string | null = null;
+const FIRST_FRAGMENT = '[data-key^="npc-rise-"]';
+const RISE_PRESS = '[data-key="npc-rise"]';
+/** The asks that wait on the room's answers: how many it had answered at the first, and how many were made. */
 let pending: Asked | null = null;
-let heard: { readonly gear: GearState; readonly at: number } | null = null;
 
 /** The screen opens at `view`: a keeper's greets the player; any other view hushes the last. */
 export function npcOpened(view: View): void {
@@ -113,20 +114,29 @@ function purseNode(context: PageContext, kind: KeeperKind): HTMLElement {
 function footNode(kind: KeeperKind, gear: GearState): HTMLElement | null {
   const shape = kind === 'shape' ? gear.shape : null;
   if (!DAILY.includes(kind) && !shape) return null;
-  if (shape && heard?.gear !== gear) heard = { gear, at: Date.now() };
   const foot = make('div', '', `npc-foot ${ROLES.well}`);
   const label = make('span', shape ? 'Leaves in' : 'Stock refresh', 'npc-foot-label');
   const time = make('b', '', 'npc-foot-time');
   const tick = () => {
     const now = Date.now();
-    time.textContent = clockWords(
-      shape ? shapeSecondsLeft(shape.minutesLeft, heard?.at ?? now, now) : secondsToMidnight(now),
-    );
+    time.textContent = clockWords(shape ? shapeSecondsLeft(now) : secondsToMidnight(now));
   };
   tick();
   const timer = window.setInterval(() => (foot.isConnected ? tick() : window.clearInterval(timer)), 1000);
   foot.append(label, time);
   return foot;
+}
+
+const ownKey = (node: Element | null | undefined) => (node as HTMLElement | null | undefined)?.dataset?.['key'];
+const innerKey = (node: Element | null | undefined) => node?.querySelector<HTMLElement>('[data-key]')?.dataset['key'];
+
+/** The key of the press to take the focus should `held` go as the page is built anew: the one beside it, or for a
+ *  keeper's tile, which stands in a holder with its price, the tile beside its holder, else the next row's first. */
+export function keyBeside(held: Element | null | undefined): string | undefined {
+  const holder = held?.closest('.npc-ware');
+  if (!holder) return [held?.nextElementSibling, held?.previousElementSibling].map(ownKey).find(Boolean);
+  const row = holder.closest('.npc-row')?.nextElementSibling;
+  return [holder.nextElementSibling, holder.previousElementSibling, row].map(innerKey).find(Boolean);
 }
 
 /** The arrows move to the nearest tile that way (arrowFocus.ts). */
@@ -145,11 +155,11 @@ function arrowsAmong(page: HTMLElement): void {
 export function npcPage(context: PageContext, kind: KeeperKind, forge: Cards | null, redraw: () => void): HTMLElement {
   const { gear } = context;
   // The room's answer to the asks made here: thanks for a ware bought, a word for a price not met.
-  const heard = pending ? answeredWith(pending, gear.answered, gear.answer) : undefined;
-  if (heard !== undefined) {
+  const answer = pending ? answeredWith(pending, gear.answered, gear.answer) : undefined;
+  if (answer !== undefined) {
     pending = null;
-    if (heard === 'Thanks') choosing = false;
-    if (heard) keeperSays(kind, heard);
+    if (answer === 'Thanks') choosing = false;
+    if (answer) keeperSays(kind, answer);
   }
   const keeper = KEEPERS[kind];
   const page = make('div', '', 'npc-screen');
@@ -168,29 +178,29 @@ export function npcPage(context: PageContext, kind: KeeperKind, forge: Cards | n
   };
   const open = () => {
     choosing = !choosing;
-    chosenFirst = choosing;
+    focusNext = choosing ? FIRST_FRAGMENT : RISE_PRESS;
     redraw();
   };
   const rows = rowsOf(kind, gear, choosing);
   const wares = make('div', '', 'npc-rows');
   wares.append(...rows.map((row) => rowNode(context, row, act, open)));
-  if (kind === 'shape' && !gear.shape)
-    wares.append(make('p', 'Shape has gone. He comes again on Friday.', 'gear-hint npc-empty'));
   side.append(wares);
   const foot = footNode(kind, gear);
   if (foot) side.append(foot);
   page.append(stage, side);
   arrowsAmong(page);
-  if (chosenFirst) {
-    chosenFirst = false;
+  if (focusNext) {
+    const wanted = focusNext;
+    focusNext = null;
     // After the menu has given the focus back to the press that opened the choice.
-    window.setTimeout(() => page.querySelector<HTMLElement>('[data-key^="npc-rise-"]')?.focus());
+    window.setTimeout(() => page.querySelector<HTMLElement>(wanted)?.focus());
   }
   // Escape first closes the Art's choice of fragments, then the screen.
   page.addEventListener(STEP_BACK, (event) => {
     if (!choosing) return;
     event.preventDefault();
     choosing = false;
+    focusNext = RISE_PRESS;
     redraw();
   });
   return page;

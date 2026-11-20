@@ -7,10 +7,10 @@ import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import cosmetics from '../../../../content/gear/cosmetics.json' with { type: 'json' };
 import emblems from '../../../../content/gear/emblems.json' with { type: 'json' };
 import { ASKS, type GearState, type Standing } from '../../network/gearMessages.ts';
-import { NAMED } from '../../player/gear.ts';
+import { CARRIED, NAMED, RARITIES, SLOTS } from '../../player/gear.ts';
 import { ARTS } from '../artsCards.ts';
-import { VESTIGES_MOST } from '../gearCards.ts';
-import type { Row, Ware } from './npcWares.ts';
+import { CARRIED_MOST, VESTIGES_MOST } from '../gearCards.ts';
+import { type Row, type Ware, rarityNamed } from './npcWares.ts';
 
 /** The fragment a rise names when there is none left to choose, which the rules do not read. */
 const NO_FRAGMENT = 255;
@@ -18,6 +18,7 @@ const NO_FRAGMENT_LEFT = 'No fragment left to choose';
 /** The highest level an Art reaches. */
 const ART_MOST = 5;
 const PER_RANK = factions.reputationPerRank;
+const SLOT_CLOAK = SLOTS.indexOf('cloak');
 
 /** A faction by its number, with its place in the list, and its Art with its place in the Arts' list. */
 export function factionOf(id: number) {
@@ -65,7 +66,7 @@ export function rankRewards(id: number): string {
 
 const plain = { rarity: null, price: null, short: false, note: '', ask: null } as const;
 
-/** What an Art's rise to the level after `level` takes beyond Aurem, in words, and whether the player holds it. */
+/** What an Art's rise takes beyond Aurem, in words, and whether the player holds it. */
 function riseMore(gear: GearState, fragments: number, essence: number) {
   const [weapon = 0, armor = 0, weaponEssence = 0, armorEssence = 0] = gear.stocks;
   const more = [
@@ -106,7 +107,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
     key: 'pledge',
     name: pledged ? `Pledged to the ${faction.name}` : `Pledge to the ${faction.name}`,
     picture: { kind: 'emblem', emblem: faction.emblem },
-    about: switching ? 'Your pledge moves here' : 'Your first pledge is free',
+    about: pledged ? 'Pledged' : switching ? 'Your pledge moves here' : 'Your first pledge is free',
     words: faction.words,
     price: switching ? { amount: cost, currency: 'aurem' } : null,
     short: pledgeShort,
@@ -119,21 +120,26 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
   ];
   if (pledged) {
     const kept = gear.items.find((each) => each.named === faction.cape) ?? null;
-    const capeShort = !kept && gear.aurem < factions.capeAurem;
+    const named = NAMED.find((each) => each.id === faction.cape);
+    const rarity = kept?.rarity ?? rarityNamed(named?.rarity ?? '');
+    // The room refuses a cape while the cloaks carried are full, as it refuses any piece.
+    const cloaks = gear.items.filter((each) => each.at === CARRIED && each.bucket === SLOT_CLOAK).length;
+    const full = !kept && cloaks >= CARRIED_MOST;
     rows.push({
       heading: 'Cape',
       wares: [
         {
           key: 'cape',
-          name: NAMED.find((each) => each.id === faction.cape)?.name ?? faction.cape,
-          rarity: kept?.rarity ?? 2,
+          name: named?.name ?? faction.cape,
+          rarity,
           picture: kept ? { kind: 'item', item: kept } : { kind: 'initials' },
-          about: 'Rare Cloak · at your level',
+          // Named pieces are made at level 1, so any level may wear one.
+          about: `${RARITIES[rarity]?.name ?? ''} Cloak · any level`,
           words: 'Earns their reputation while you wear it, pledged to them.',
           price: kept ? null : { amount: factions.capeAurem, currency: 'aurem' },
-          short: capeShort,
-          note: kept ? 'Kept' : '',
-          ask: kept ? null : { kind: ASKS.buyCape, column: id },
+          short: !kept && gear.aurem < factions.capeAurem,
+          note: kept ? 'Kept' : full ? 'Nine cloaks carried' : '',
+          ask: kept || full ? null : { kind: ASKS.buyCape, column: id },
         },
       ],
     });

@@ -436,7 +436,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
-    const met = after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', here.node);
+    const met = after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', here.node, paused);
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     scene.draw(shown.shot, size, clock, seconds, standing([], [...shown.figures, ...met], fight), {
       after: hands,
@@ -561,7 +561,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   ) => {
     const left = host.frame(controls, seconds, size);
     if (!left) return;
-    [after.epilogue, walker.you.dress] = [left.epilogue, left.dress];
+    after.storyEnded(left.epilogue);
+    walker.you.dress = left.dress;
     flow = next(flow, { kind: 'story-ended', node: FIRST_NODE, name: 'Overlook' });
     arrive();
   };

@@ -1,8 +1,8 @@
 // What the story leaves to play on foot in Overlook's social space: the stranger's last moment (`Epilogue`), and once
-// she has gone, on that first arrival only, Elder Maren Hale's welcome, unless the browser has it played. Leaving the
-// place before the stranger has gone forgoes the welcome. Under `npm run dev` (or a built page on localhost),
-// `?welcome=1` plays it at once on arriving in a social space, played or not, as `?prologue=<beat>` starts the story
-// where asked.
+// she has gone, Elder Maren Hale's welcome. The browser keeps it due from the story's end, so a reload before it
+// begins brings it on the next arrival in a social space; leaving the place before the stranger has gone forgoes it.
+// Under `npm run dev` (or a built page on localhost), `?welcome=1` plays it at once on arriving in a social space,
+// played or not, as `?prologue=<beat>` starts the story where asked.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import scenes from '../../../../content/story/welcome.json' with { type: 'json' };
 import type { CardAt, Cards } from '../../player/cards.ts';
@@ -14,24 +14,37 @@ import type { Epilogue } from '../prologue/epilogue.ts';
 import { Objective } from '../prologue/objective.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { NodeInfo } from '../worldData.ts';
-import { Welcome, type WelcomeParts, type WelcomeVoice, welcomePlayed } from './welcome.ts';
+import { Welcome, type WelcomeParts, type WelcomeVoice, keepWelcome, welcomeDue, welcomePlayed } from './welcome.ts';
 
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
 
 export class AfterStory {
   /** The stranger's last moment, set as the story hands the player over; null once she has gone or been left. */
-  epilogue: Epilogue | null = null;
+  private epilogue: Epilogue | null = null;
   private welcome: Welcome | null = null;
   private readonly parts: WelcomeParts & { readonly kept: Pick<Storage, 'getItem' | 'setItem'> };
   private readonly voice: () => WelcomeVoice;
   /** The development switch, until a social space is arrived in. */
   private asked: boolean;
+  /** Whether this arrival has been looked at for a welcome due, so it is looked at once a place. */
+  private arrived = false;
+  /** Whether the welcome is due in this page, for a browser that keeps nothing. */
+  private due = false;
 
   constructor(parts: AfterStory['parts'], voice: () => WelcomeVoice, asked: boolean) {
     [this.parts, this.voice, this.asked] = [parts, voice, asked];
   }
 
-  /** A frame on foot in `node`; `veiled` while the arrival's veil is still up. The cards of whoever is drawn. */
+  /** The story has ended and hands over the stranger's last moment, none where it was not played through: then the
+   *  welcome is due, unless already played. */
+  storyEnded(epilogue: Epilogue | null): void {
+    [this.epilogue, this.arrived] = [epilogue, false];
+    this.due = epilogue !== null && !welcomePlayed(this.parts.kept);
+    if (this.due) keepWelcome(this.parts.kept, 'due');
+  }
+
+  /** A frame on foot in `node`; `veiled` while the arrival's veil is still up, `held` while the menu or a keeper's
+   *  screen is open. The cards of whoever is drawn. */
   frame(
     shot: Shot,
     viewport: { readonly width: number; readonly height: number },
@@ -40,15 +53,17 @@ export class AfterStory {
     you: You,
     veiled: boolean,
     node: NodeInfo,
+    held = false,
   ): CardAt[] {
     const epilogue = this.epilogue;
     if (epilogue && !epilogue.done) return epilogue.frame(shot, viewport, seconds, clock, you, veiled);
-    if (!veiled && node.kind === 'social' && (epilogue || this.asked)) {
-      const wanted = this.asked || !welcomePlayed(this.parts.kept);
-      [this.epilogue, this.asked] = [null, false];
+    if (!veiled && node.kind === 'social' && !this.arrived) {
+      this.arrived = true;
+      const wanted = this.asked || this.due || welcomeDue(this.parts.kept);
+      [this.epilogue, this.asked, this.due] = [null, false, false];
       if (wanted) this.welcome = Welcome.begin(node, this.parts, this.voice);
     }
-    const cards = this.welcome?.frame(shot, viewport, seconds, clock, you) ?? [];
+    const cards = this.welcome?.frame(shot, viewport, seconds, clock, you, held) ?? [];
     if (this.welcome?.done) this.welcome = null;
     return cards;
   }
@@ -59,7 +74,12 @@ export class AfterStory {
     this.welcome?.leave();
     this.welcome = null;
     this.epilogue?.leave();
-    if (this.epilogue?.done) this.epilogue = null;
+    if (this.epilogue?.done) {
+      this.epilogue = null;
+      this.due = false;
+      if (welcomeDue(this.parts.kept)) keepWelcome(this.parts.kept, 'forgone');
+    }
+    this.arrived = false;
   }
 }
 

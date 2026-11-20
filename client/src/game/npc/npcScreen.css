@@ -149,6 +149,15 @@
 .npc-speech .speech-unseen {
   visibility: hidden;
 }
+/* The line's copy for a screen reader takes no room on the screen. */
+.npc-speech-heard {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 /* The rows scroll where a screen is too short for them all, the countdown standing beneath them. */
 .npc-rows {
   display: flex;

@@ -2,7 +2,8 @@
 // her counter to the player and walks them round the plaza (`walk.ts`), saying each stop's lines in the dialogue box,
 // the keepers she names marked over their heads, and the HUD saying to follow her while the player lags. It is no
 // cutscene: the player walks where they like the whole time. While she walks, her counter stands empty; once she is
-// back behind it the plaza's own figure of her takes over. Begun, it is kept as played in the browser.
+// back behind it the plaza's own figure of her takes over. Due once the story ends, and played once begun, in the
+// browser.
 import type { CardAt, Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { Cast, EmoteKind, Line } from '../../speech/cast.ts';
@@ -24,19 +25,25 @@ const NAMED_EMOTE: EmoteKind = 'alert';
 /** Her head's name for the speech over it, and her speaker's. */
 const HER_HEAD = 'maren';
 
-export function welcomePlayed(kept: Pick<Storage, 'getItem'>): boolean {
+/** The welcome's mark in the browser: due once the story ends, played once begun, forgone once left before it. */
+type WelcomeMark = 'due' | 'played' | 'forgone';
+
+function welcomeMark(kept: Pick<Storage, 'getItem'>): string | null {
   try {
-    return kept.getItem(WELCOME_KEY) === 'played';
+    return kept.getItem(WELCOME_KEY);
   } catch {
-    return false;
+    return null;
   }
 }
 
-function keepWelcomePlayed(kept: Pick<Storage, 'setItem'>): void {
+export const welcomePlayed = (kept: Pick<Storage, 'getItem'>): boolean => welcomeMark(kept) === 'played';
+export const welcomeDue = (kept: Pick<Storage, 'getItem'>): boolean => welcomeMark(kept) === 'due';
+
+export function keepWelcome(kept: Pick<Storage, 'setItem'>, mark: WelcomeMark): void {
   try {
-    kept.setItem(WELCOME_KEY, 'played');
+    kept.setItem(WELCOME_KEY, mark);
   } catch {
-    // A browser that keeps nothing may play the welcome again after the story.
+    // A browser that keeps nothing may play the welcome again after the story, or lose it to a reload.
   }
 }
 
@@ -80,7 +87,7 @@ export class Welcome {
   static begin(node: NodeInfo, parts: WelcomeParts, voice: () => WelcomeVoice): Welcome | null {
     const walk = WelcomeWalk.round(node.stations ?? [], plazaFrameOf(plazaOf(node)));
     if (!walk) return null;
-    keepWelcomePlayed(parts.kept);
+    keepWelcome(parts.kept, 'played');
     return new Welcome(walk, parts, voice());
   }
 
@@ -93,30 +100,35 @@ export class Welcome {
   }
 
   /** A frame on foot with the player at `you`: she walks or waits, speaks what the walk asks, and her card is drawn;
-   *  nothing once the welcome is done. */
+   *  nothing once the welcome is done. While `held` (the menu or a keeper's screen open over the view) she stands
+   *  where she is, her words wait, and no stop's scene begins, so she never talks over a keeper. */
   frame(
     shot: Shot,
     viewport: { readonly width: number; readonly height: number },
     seconds: number,
     clock: number,
     you: { readonly x: number; readonly y: number },
+    held = false,
   ): CardAt[] {
     if (this.done) return [];
-    const asked = this.walk.step(seconds, [you.x, you.y]);
-    if (asked.say) this.say(asked.say);
-    if (this.walk.phase === 'done') {
-      this.finish();
-      return [];
+    if (!held) {
+      const asked = this.walk.step(seconds, [you.x, you.y]);
+      if (asked.say) this.say(asked.say);
+      if (this.walk.phase === 'done') {
+        this.finish();
+        return [];
+      }
+      this.prompt(asked.lagging);
     }
-    this.prompt(asked.lagging);
+    const passed = held ? 0 : seconds;
     const { maren } = this.walk;
     this.z = this.parts.groundAt(maren.x, maren.y) ?? this.z;
     const heads = new Map<string, readonly [number, number] | null>();
     const seen = (point: readonly [number, number, number]) => headOnView(onScreen(shot, viewport, point), viewport);
     heads.set(HER_HEAD, seen(overHead({ ...maren, z: this.z })));
-    for (const station of this.walk.named) heads.set(station.kind, seen(keeperHead(station, this.parts.groundAt)));
-    this.voice.overheads.frame(seconds, heads);
-    this.voice.dialogue.frame(seconds);
+    for (const station of this.namedOthers()) heads.set(station.kind, seen(keeperHead(station, this.parts.groundAt)));
+    this.voice.overheads.frame(passed, heads);
+    this.voice.dialogue.frame(passed);
     const anim = maren.walking ? 'walk' : 'idle';
     return actorCards(
       [{ id: MAREN_ID, dress: this.dress, anim, ...maren, z: this.z }],
@@ -135,7 +147,7 @@ export class Welcome {
 
   /** Says a stop's lines, its keepers marked; once said, she walks on. */
   private say(scene: string): void {
-    for (const station of this.walk.named) this.voice.overheads.emote(station.kind, NAMED_EMOTE);
+    for (const station of this.namedOthers()) this.voice.overheads.emote(station.kind, NAMED_EMOTE);
     const lines = this.parts.scenes[scene] ?? [];
     const said = () => this.walk.said();
     this.voice.dialogue.play(lines, this.parts.cast, { auto: true }).then(said, (error: unknown) => {
@@ -144,10 +156,16 @@ export class Welcome {
     });
   }
 
+  /** The keepers a stop names but her own counter, where she is the one speaking, her words over her own head. */
+  private namedOthers(): readonly StationInfo[] {
+    return this.walk.named.filter((station) => station.kind !== HER_COUNTER);
+  }
+
+  /** The follow prompt, shown whenever the player lags and hidden as they catch up, for as long as the walk lasts. */
   private prompt(lagging: boolean): void {
     if (lagging === this.prompting) return;
     this.prompting = lagging;
-    if (lagging) this.voice.objective.show('Follow', 'Elder Maren Hale', 3600);
+    if (lagging) this.voice.objective.show('Follow', 'Elder Maren Hale', Infinity);
     else this.voice.objective.clear();
   }
 

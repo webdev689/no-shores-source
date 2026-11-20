@@ -84,6 +84,15 @@ interface Cosmetic {
 }
 const COSMETICS: readonly Cosmetic[] = cosmetics.cosmetics;
 
+/** The word under a ware's price, and whether it is short: a ware that cannot be asked for says why (its note), as a
+ *  low level or a full pack is no matter of Aurem; one that can be is "Not enough" when short. */
+export function priceWord(ware: Ware): { readonly words: string; readonly short: boolean } {
+  const short = ware.short && (ware.ask !== null || ware.opens !== undefined);
+  return { words: short ? 'Not enough' : ware.note, short };
+}
+
+const SHAPE_AWAY = 'Shape is away. He comes on Fridays.';
+
 export const rarityNamed = (name: string): number =>
   Math.max(
     0,
@@ -218,8 +227,9 @@ function mageRows(gear: GearState): Row[] {
   return rows;
 }
 
+/** Shape's week's wares while he is here; while away, the words for when he comes, whatever the day. */
 function shapeRows(gear: GearState): Row[] {
-  if (!gear.shape) return [];
+  if (!gear.shape) return [{ heading: 'Wares', wares: [], empty: SHAPE_AWAY }];
   const shapes = gear.shapes ?? 0;
   const wares = gear.shape.wares.map((item, place) =>
     itemWare(`shape-${place}`, item, { amount: item.price, currency: 'shapes' }, shapes < item.price, {
