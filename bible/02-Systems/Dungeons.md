@@ -262,7 +262,8 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
 - **Overhead and underfoot**, by the style's `ceiling` and `floor`: a boss at a dome's top and every second cell of a
   vault's ridge; a beam across the way on every flat cell; stalactites from one cave cell in six, where its rock comes
   lowest, their roots in the rock; slabs on one quiet cell in four, a runner or rails along the straight corridors, a
-  drain a room, a circle in a room of 4 × 4 or more, or scree on one cell in five. No ceiling piece hangs below 2.4 m.
+  drain a room or a circle in a room of 3 × 3 cells or more, each on the clear cell nearest the room's middle (which
+  mostly holds a prop or a pillar), or scree on one cell in five. No ceiling piece hangs below 2.4 m.
 - **Where kits never go.** A cell with a doorway, a torch, the exit or the portal holds only their own pieces, its
   floor's and a boss. No wall piece stands where a prop stands against the wall. No floor piece lies under a solid,
   on the arrival's cell, in the end room, where the cache stands, or in an alcove. Nothing stands on a landmark.
