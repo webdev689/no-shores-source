@@ -3,8 +3,9 @@
     python3 -I tools/islands/publish.py DIR [--dry-run]
 
 DIR is tools/islands/build.py's --out, holding a pack for every kit in kits.json and modules.blend; a pack missing,
-or not of this repository's format and parts, is refused before anything is uploaded. Each file goes up under its
-hash through tools/r2.py, comes back checked, and the manifest's one line of JSON ends the log for a commit to take.
+not of this repository's format and parts, or not written with the rest by one build, is refused before anything is
+uploaded. Each file goes up under its hash through tools/r2.py, comes back checked, and the manifest's one line of
+JSON ends the log for a commit to take.
 With --dry-run nothing is sent or written: the log shows the manifest the files would make.
 """
 import argparse
@@ -48,7 +49,14 @@ def read_build(folder):
     if not os.path.isfile(blend):
         sys.exit(f'{blend} is missing: build every kit first')
     with open(blend, 'rb') as file:
-        return packs, file.read()
+        model = file.read()
+    # Only what one build wrote together goes up: a pack an older (or a one-kit) run left would not match its model.
+    stamp = os.path.join(folder, export.STAMP)
+    built = json.load(open(stamp)) if os.path.isfile(stamp) else {}
+    hashes = {kit: hashlib.sha256(data).hexdigest() for kit, data in packs.items()}
+    if built.get('kits') != hashes or built.get('blend') != hashlib.sha256(model).hexdigest():
+        sys.exit(f'{folder} is not one build of every kit: build them together (tools/islands/build.py --out {folder})')
+    return packs, model
 
 
 def key_of(data, extension):

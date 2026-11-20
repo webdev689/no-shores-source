@@ -3,8 +3,8 @@ module's triangles against its size (`problems`).
 
 A module stands in its frame (x east, y south, z up, metres; the origin the middle of its base, its front at -y)
 within its size: x within ±size x / 2, y within ±size y / 2, z from a skirt below 0 (so it never floats where the game
-sets it on a slope) up to size z. It fills most of that box, so the footprint the game reserves reads true, keeps to
-its role's triangle budget, and has mesh where each of its solids stands.
+sets it on a slope) up to size z. Its mesh spans at least 70% of that box across and 80% up, so the footprint the game
+reserves reads true, keeps to its role's triangle budget, and has mesh where each of its solids stands.
 """
 import catalog
 

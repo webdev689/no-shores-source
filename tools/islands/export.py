@@ -56,10 +56,17 @@ def pack(kit, modules):
     return struct.pack('<I', len(text)) + text + bytes(vertices) + struct.pack(f'<{len(indices)}I', *indices)
 
 
+# The file a build writes beside its packs: each pack's and the model's hash, of that run alone.
+STAMP = 'built.json'
+
+
 def read_header(data):
     """A pack's header, checked against the contracts: its format and parts."""
-    length = struct.unpack_from('<I', data, 0)[0]
-    header = json.loads(data[4:4 + length])
+    try:
+        length = struct.unpack_from('<I', data, 0)[0]
+        header = json.loads(data[4:4 + length])
+    except (struct.error, UnicodeDecodeError) as error:
+        raise ValueError(f'not a pack: {error}') from error
     if header.get('format') != FORMAT or header.get('parts') != list(catalog.PARTS):
         raise ValueError(f"a pack of format {header.get('format')!r} and other parts than kits.json's")
     return header

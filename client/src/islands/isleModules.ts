@@ -112,7 +112,7 @@ export function readKitPack(bytes: ArrayBuffer): KitPack {
   return { kit: style, vertices, indices, modules };
 }
 
-/** Where each kit's pack is published (content/islands/modules.json, once CI writes it): `base` and each key. */
+/** Where each kit's pack is published (content/islands/modules.json, committed from CI's log): `base` and each key. */
 export interface IsleManifest {
   readonly base: string;
   readonly kits: Readonly<Record<string, string>>;

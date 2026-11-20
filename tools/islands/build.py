@@ -9,7 +9,9 @@ flat part colours. It fails listing every problem. Point --out outside the repos
 kept out of git.
 """
 import argparse
+import hashlib
 import importlib
+import json
 import os
 import sys
 import time
@@ -88,7 +90,15 @@ def main():
     out = os.path.abspath(args.out)
     os.makedirs(out, exist_ok=True)
     kits = args.kit or list(catalog.KITS)
+    contract = envelope.contract_problems()
+    if contract:
+        sys.exit('\n'.join([f'kits.json: {len(contract)} problem(s):'] + contract))
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    # The stamp names what this run wrote, so a pack left by an older run is never published beside it.
+    stamp = os.path.join(out, export.STAMP)
+    if os.path.exists(stamp):
+        os.remove(stamp)
+    written = {}
     problems, built = [], {}
     for kit_name in kits:
         began = time.time()
@@ -103,12 +113,17 @@ def main():
             data = export.pack(kit_name, [(module, triangles[module]) for module in modules])
             with open(os.path.join(out, f'{kit_name}.modules'), 'wb') as file:
                 file.write(data)
+            written[kit_name] = hashlib.sha256(data).hexdigest()
             print(f'{kit_name}: {len(modules)} modules, {sum(map(len, triangles.values()))} triangles, '
                   f'{len(data) / 1024:.0f} KiB ({time.time() - began:.1f} s)', flush=True)
         else:
             print(f'{kit_name}: {len(found)} problem(s), no pack written', flush=True)
     preview.paint()
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, 'modules.blend'), compress=True)
+    with open(os.path.join(out, 'modules.blend'), 'rb') as file:
+        blend = hashlib.sha256(file.read()).hexdigest()
+    with open(stamp, 'w') as file:
+        json.dump({'kits': written, 'blend': blend}, file, indent=2)
     if args.preview:
         for kit_name, (modules, triangles) in built.items():
             counts = {module: len(triangles.get(module, ())) for module in modules}

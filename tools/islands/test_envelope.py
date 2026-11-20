@@ -6,20 +6,27 @@ folder, every pack that build wrote too.
 
 Under -I unittest cannot import a file by its path, and discovery would import the kit, which needs Blender.
 """
+import hashlib
+import http.client
 import json
 import os
 import struct
 import sys
+import tempfile
 import unittest
 from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# R2's door is one up, as publish.py finds it.
+sys.path.insert(0, os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 
 import catalog  # noqa: E402
 import details  # noqa: E402
 import envelope  # noqa: E402
 import export  # noqa: E402
+import publish  # noqa: E402
+import r2  # noqa: E402
 import shapes  # noqa: E402
 
 
@@ -171,6 +178,57 @@ class Pack(unittest.TestCase):
                 self.assertTrue(all(corner[9] < len(catalog.PARTS) for corners in read for corner in corners), name)
                 self.assertEqual(envelope.problems(name, [[vertex[0:3] for vertex in corners] for corners in read]),
                                  [])
+
+
+class Publishing(unittest.TestCase):
+    def build(self, folder, stamped=True):
+        """A build's folder: a one-triangle pack of every kit, its model, and the stamp naming them."""
+        triangle = [[((0, 0, 0), (0, 0, 1), (0, 0), 0), ((1, 0, 0), (0, 0, 1), (1, 0), 0),
+                     ((0, 1, 0), (0, 0, 1), (0, 1), 0)]]
+        hashes = {}
+        for kit in catalog.KITS:
+            data = export.pack(kit, [(name, triangle) for name in catalog.required(kit)])
+            with open(os.path.join(folder, f'{kit}.modules'), 'wb') as file:
+                file.write(data)
+            hashes[kit] = hashlib.sha256(data).hexdigest()
+        with open(os.path.join(folder, 'modules.blend'), 'wb') as file:
+            file.write(b'blend')
+        if stamped:
+            with open(os.path.join(folder, export.STAMP), 'w') as file:
+                json.dump({'kits': hashes, 'blend': hashlib.sha256(b'blend').hexdigest()}, file)
+
+    def test_only_one_builds_every_kit_is_published(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.build(folder)
+            packs, model = publish.read_build(folder)
+            self.assertEqual((list(packs), model), (list(catalog.KITS), b'blend'))
+            # A one-kit run rewrites its own pack beside the others an older run left.
+            with open(os.path.join(folder, 'arid.modules'), 'ab') as file:
+                file.write(b' ')
+            with self.assertRaises(SystemExit):
+                publish.read_build(folder)
+        with tempfile.TemporaryDirectory() as folder:
+            self.build(folder, stamped=False)
+            with self.assertRaises(SystemExit):
+                publish.read_build(folder)
+
+    def test_a_file_too_short_for_a_pack_is_refused(self):
+        with self.assertRaises(ValueError):
+            export.read_header(b'\x01')
+
+    def test_the_committed_manifest_names_the_contracts_kits_and_parts(self):
+        with open(os.path.join(catalog.CONTENT, 'modules.json')) as file:
+            manifest = json.load(file)
+        self.assertEqual((manifest['parts'], sorted(manifest['kits'])), (list(catalog.PARTS), sorted(catalog.KITS)))
+
+    def test_a_dropped_answer_and_a_busy_answer_are_tried_again(self):
+        with mock.patch('urllib.request.urlopen', side_effect=http.client.RemoteDisconnected('closed')):
+            self.assertEqual(r2.fetch('PUT', r2.API + 'x', b'')[0], 0)
+        answers = iter([(404, b''), (429, b'slow down'), (0, b'dropped'), (200, b'')])
+        with mock.patch.object(r2, 'fetch', side_effect=lambda *_, **__: next(answers)), \
+                mock.patch.object(r2.time, 'sleep') as slept:
+            self.assertTrue(r2.put(b'data', 'islands', 'modules', 'application/octet-stream').startswith('islands/'))
+        self.assertEqual([call.args[0] for call in slept.call_args_list], [5, 20])
 
 
 class Shapes(unittest.TestCase):
