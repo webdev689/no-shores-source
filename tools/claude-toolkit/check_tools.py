@@ -662,6 +662,13 @@ def _():
     out('FAIL' if hits else 'PASS', 'context7 key', f'key value found on disk in: {hits[:6]}' if hits else f'key value in none of {n} config/log/kit/memory/transcript files')
 
 
+@check('toolkit-data')
+def _():
+    rc, o = sh(['bash', KIT + '/toolkit-data-test.sh'], timeout=300)
+    out('PASS' if rc == 0 else 'FAIL', 'toolkit-data', "toolkit-data.sh keeps two sessions' parallel saves and refuses a "
+        'log never restored (toolkit-data-test.sh)' if rc == 0 else o.strip()[-300:])
+
+
 @check('worker kit')
 def _():
     rw = open(KIT + '/workers/run-worker.sh').read()
@@ -678,6 +685,8 @@ def _():
             probs.append(f'run-worker.sh: --allowedTools lacks mcp__{s}__*')
     if 'TASK_OBSERVER_ROLE=worker' not in rw:
         probs.append('run-worker.sh: TASK_OBSERVER_ROLE=worker missing')
+    if 'npm run -s wasm' not in rw or '"$MAIN/node_modules"' not in rw or 'cargo test -q -p protocol' not in rw:
+        probs.append("run-worker.sh: a worktree's ignored builds (node_modules, generated/, the WebAssembly, the protocol's fixtures) are not prepared, so its client tests fail")
     if 'Skill superpowers:verification-before-completion, the reviewer sub-agent, then Skill ponytail:ponytail-review' not in tpl:
         probs.append('brief template lost the ALWAYS verification + reviewer + ponytail line')
     if 'OBSERVATIONS:' not in tpl:

@@ -19,6 +19,15 @@ left=$(grep -oE '<(the hand-off doc|project rules:|the session.s attribution lin
 INBOX="$OUT/inbox-$NAME.md"; [ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
 echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT
 pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped worker can leave a stale lock
+# A worktree holds only what git tracks. Link the main checkout's packages, and build here, once, what the client's
+# tests read and git ignores (the generated messages, the WebAssembly, and the message fixtures the protocol's Rust tests
+# write), so the worker's tests run as the main checkout's do, on its own Rust.
+MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+[ -e node_modules ] || [ ! -d "$MAIN/node_modules" ] || ln -s "$MAIN/node_modules" node_modules
+if [ -f package.json ] && { [ ! -d generated ] || ! ls client/public/*.wasm >/dev/null 2>&1 || [ ! -d target/protocol ]; }; then
+  { npm run -s schema && npm run -s wasm && cargo test -q -p protocol; } >> "$OUT/$NAME.log" 2>&1 ||
+    echo "run-worker.sh: the worktree's generated messages, WebAssembly or message fixtures did not build; see $OUT/$NAME.log" >&2
+fi
 [ -f .serena/project.yml ] || yes n | serena project create --name "$NAME" $(bash "$KIT_DIR/serena-languages.sh" "$WT") "$WT" >/dev/null 2>&1   # "n": extra-server prompts abort without a terminal
 G=$(git rev-parse --git-common-dir); grep -qx '.serena/' "$G/info/exclude" 2>/dev/null || echo '.serena/' >> "$G/info/exclude"
 MEM=$(ls -d /root/.claude/plugins/cache/thedotmack/claude-mem/*/ 2>/dev/null | sort -V | tail -1)
