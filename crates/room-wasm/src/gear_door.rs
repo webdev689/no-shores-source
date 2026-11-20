@@ -176,7 +176,7 @@ pub unsafe extern "C" fn room_furnish(address: *const u8, length: usize) -> u32 
 }
 
 /// Sets the difficulty a node's room's voyage set out at, or the sea's tier: 0 Normal, 1 Elite, 2 Abyss; false for no
-/// such difficulty, or a fleet.
+/// such difficulty, a fleet, or no room open.
 pub fn set_difficulty(number: u32) -> bool {
     let Some(difficulty) = usize::try_from(number).ok().and_then(|index| gear::Difficulty::ALL.get(index).copied())
     else {

@@ -66,7 +66,8 @@ pub struct Command {
     pub gone: Option<End>,
     /// Whether players went aboard her after she struck: she is no longer scuttled at `STRUCK_HOLD_S`.
     pub boarded: bool,
-    /// Since when (the fight's clock) she has been out of every foe's guns' reach and not engaging.
+    /// Since when (the fight's clock) she has been out of every foe's guns' reach, not engaging, engaged by no captain,
+    /// and neither struck nor going down.
     pub out_of_reach_since: Option<f64>,
 }
 

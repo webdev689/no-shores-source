@@ -270,6 +270,9 @@ impl Fight {
         }
     }
 
+    /// A captain who has sunk leaves the fight, as does one not fighting who is past every ship she may fight (each
+    /// player's, and each afloat captain's of another faction), or, engaged by no captain, has been out of all their
+    /// guns' reach for her give-up time, `CHASE_GIVE_UP_S`. One struck or going down never leaves but by sinking.
     fn see_off(&mut self, events: &mut Vec<Event>) {
         let foes: Vec<(Flag, [f64; 2], f64)> = self
             .ships
@@ -293,7 +296,8 @@ impl Fight {
             let others = || foes.iter().filter(|(flag, ..)| *flag != own);
             let nearest = others().map(|(_, foe, _)| distance(at, *foe)).fold(f64::INFINITY, f64::min);
             let out_of_reach = !hunted.contains(&id) && others().all(|(_, foe, reach)| distance(at, *foe) > *reach);
-            let (sunk, struck) = (vessel.damage.state == State::Sunk, vessel.damage.state == State::Struck);
+            let (sunk, struck) =
+                (vessel.damage.state == State::Sunk, matches!(vessel.damage.state, State::Struck | State::Sinking));
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
             let engaging = command.her.mode == Mode::Engage;
             // Out of every foe's guns and not engaging: she breaks off once that has lasted her give-up time.

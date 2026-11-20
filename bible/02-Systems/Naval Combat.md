@@ -223,7 +223,8 @@ Pass]]) with Claude's numbers:
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought her, kept for that player alone
   as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
   of their pieces gathers it. Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
-  her rank at her level (her water's, raised by the sea's tier): its Vestige by the rewards' foe her rank names (a Minor the Skirmisher's chance,
+  her rank at her level (her water's, raised by the sea's tier): its Vestige by the rewards' foe her rank names
+  (a Minor the Skirmisher's chance,
   a Major the Swordsman's, an Elite the Brute's, a Miniboss and a Boss the Captain's sure one; at Elite or Abyss times
   the tier's reward, as a harder voyage's kill on land, `vestige_chance`), an Ammo box by her rank,
   and from a Miniboss or a Boss an Ammo crate; what the player has no room for is lost with the piece. For an Elite or
@@ -431,8 +432,10 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   No Boss comes by a roll: the Boss Frigate sails only at the Grey Tithe's sea strike, which is not built. Her level is
   drawn evenly from the band, as a garrison foe's is, and raised by the sea's tier as a foe's on land: two levels in an
   Elite sea, three in an Abyss one (`Difficulty::raise`), the ranks that come the same. A host sets a sea's tier as it
-  sets a node's room's (`Sea::set_difficulty`, the door's `room_difficulty`); the server opens one sea, at Normal. Her level raises her strength
-  in a fight (above, "Ranks and factions"). Her faction and rank are drawn as she comes and kept on her (`sighting.rs`). The rolls wait real seconds, and
+  sets a node's room's (`Sea::set_difficulty`, the door's `room_difficulty`); the server opens one sea, at Normal.
+  Her level raises her strength
+  in a fight (above, "Ranks and factions"). Her faction and rank are drawn as she comes and kept on her
+  (`sighting.rs`). The rolls wait real seconds, and
   are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its
   own), so each sea sends its ships in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at

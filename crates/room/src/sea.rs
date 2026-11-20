@@ -376,7 +376,9 @@ impl Sea {
             // A ship in a clash is joined by a player who comes in sight of it, so she holds as a bold one does.
             let (chased, hull) = (self.pirates.chased(*player), berth.kept[0]);
             let pirates: Vec<([f64; 2], bool)> = (pirates.iter().enumerate())
-                .map(|(at, p)| ([p.x, p.y], at >= sailing_count || holds(p, [ship.x, ship.y], chased, hull)))
+                .map(|(at, hostile)| {
+                    ([hostile.x, hostile.y], at >= sailing_count || holds(hostile, [ship.x, ship.y], chased, hull))
+                })
                 .collect();
             // Judged along every leg her pace would take her through this tick, so no turn of her course slips by.
             let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS;

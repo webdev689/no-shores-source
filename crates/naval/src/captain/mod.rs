@@ -8,6 +8,7 @@ pub mod course;
 mod engage;
 pub mod land;
 pub mod odds;
+pub use odds::wary_takes;
 
 use crate::arms::{Arms, Build, Side, arms_of};
 use crate::damage::{Damage, State};
@@ -50,19 +51,6 @@ pub const WRECK_SPARE_S: f64 = 30.0;
 pub const PIRATE_RUNS_AT: f64 = 0.3;
 pub const GRAPPLE_HULL: f64 = 0.35;
 
-/// Whether a wary captain of `commission` at `strength` (`Captain::raised`), sound, falls on a player's Sloop met at
-/// sea with `hull_share` of her hull left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`, or one she outguns `WARY_ODDS` to one by
-/// their fighting powers.
-#[must_use]
-pub fn wary_takes(commission: Commission, strength: f64, hull_share: f64) -> bool {
-    if hull_share < GRAPPLE_HULL {
-        return true;
-    }
-    let arms = arms_of(commission.hull());
-    let her = Captain::new(commission, 0, 0.0, arms).raised(strength);
-    let prize = Power::player(&crate::arms::LARGE_BOAT, hull_share);
-    odds(&her.power(&commission.damage_at(strength)), &prize, [arms, arms_of(HullKind::Sloop)]) >= WARY_ODDS
-}
 pub const WARY_ODDS: f64 = 1.25;
 /// The share of pirates who are bold, by their seed's own draw.
 pub const BOLD_SHARE: f64 = 0.25;
@@ -168,8 +156,8 @@ struct Plan {
 }
 
 /// A captain: her commission (her faction and rank) and the class it gives her, what her level makes of her hull, men
-/// and guns' harm (`strength`, 1 at level 0), her temper, seed and the course she cruises, her standing with each ship she may fight (who struck her, whom she spares, whom she fights), and her
-/// memory of the ship she marks.
+/// and guns' harm (`strength`, 1 at level 0), her temper, seed and the course she cruises, her standing with each ship
+/// she may fight (who struck her, whom she spares, whom she fights), and her memory of the ship she marks.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Captain {
     pub commission: Commission,

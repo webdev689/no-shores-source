@@ -47,7 +47,7 @@ pub(crate) fn plain_orders(fight: &Fight, me: ShipId, tick: u64, close: f64) -> 
         .min_by(|one, other| {
             distance(at, [one.ship.x, one.ship.y]).total_cmp(&distance(at, [other.ship.x, other.ship.y]))
         });
-    let climb = i8::from(mine.ship.rung < SAILS_SET && tick % 20 == 0);
+    let climb = i8::from(mine.ship.rung < SAILS_SET && tick.is_multiple_of(20));
     let Some(target) = target else {
         return Orders { helm: Helm { steer: 0.0, crab: false, climb }, ..QUIET };
     };
@@ -67,7 +67,7 @@ pub(crate) fn plain_orders(fight: &Fight, me: ShipId, tick: u64, close: f64) -> 
     let steer = ((off - side * want_deg.to_radians()) / 30_f64.to_radians()).clamp(-1.0, 1.0);
     let aim = Aim { bearing_deg: off.to_degrees(), range_m: range, ray: None };
     let laid = fight.laid(me, &aim).is_some();
-    let fire = laid && range < 260.0 && tick % 15 == 0;
+    let fire = laid && range < 260.0 && tick.is_multiple_of(15);
     Orders { helm: Helm { steer, crab: false, climb }, aim: Some(aim), fire, brace: !laid && range < 400.0, load: None }
 }
 
@@ -114,7 +114,7 @@ pub(crate) fn hostile_points(sea: &Sea) -> Vec<[f64; 2]> {
             x += 37_000.0;
             let Some((water, _)) = sea.chart.water(centre) else { continue };
             let north = [centre[0], centre[1] - 700.0];
-            let open = |p: [f64; 2]| whole(&p).is_some_and(|point| !on_land(&sea.coasts, point));
+            let open = |at: [f64; 2]| whole(&at).is_some_and(|point| !on_land(&sea.coasts, point));
             if water.holder == Holder::Home || !open(centre) || !open(north) || sea.chart.water(north).is_none() {
                 continue;
             }
