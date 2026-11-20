@@ -166,13 +166,12 @@ will take it, by the room's own tick.
   port cities the Grey Tithe patrols; with a layout alone it has no lanes. The server opens it with the port cities
   read from the land files (`server/seaPorts.ts`), as the page does (`portsOf`).
 - **Measured** (`measure_tests.rs`, by hand in release): 20 players in each kind of water of the world's layout, each
-  voyaging at ×60 straight out 150 km and back for ten minutes, then the same with each chasing every ship she sights
-  (her course for the nearest each half second). With bold ships coming for the player and no chasing, the first
-  ship is sighted by 16 of 20 in the pirates' waters (median 119 s), 14 in the Grey Tithe's (208 s), 12 in contested
-  ones (135 s) and 9 in home waters (194 s, ships of the waters beside them); a ship stays in sight 40 to 75 s on
-  average, 90 to 95% of them 30 s and over; a fight comes by 5 minutes for 5 to 10% and by 10 for 5 to 10%. Chasing,
-  a fight comes by 5 minutes for 10 to 35% (the Grey Tithe's waters the most) and by 10 for 10 to 50%, 25% in the
-  pirates'; a wary ship chased never takes the player on, so she stays in sight minutes on end.
+  voyaging at ×60 straight out 150 km and back for ten minutes: sailing on whatever they sight, chasing every ship they
+  sight (the room told), or turning away from a ship coming for them. Sailing on, a fight comes by 10 minutes for 40 to
+  50% in hostile waters (by 5: 15 to 40%), 10% of those setting out from home waters; a ship stays in sight 87 to 157 s
+  on average, 88 to 100% of them 30 s and over. Chasing, by 10 minutes 55 to 80% (by 5: 45 to 65%). Turning away, of
+  those a ship came for, 8 of 13 in contested waters and 10 of 12 in the pirates' never fought (3 of 13 in the Grey
+  Tithe's, where a course away is often refused by the coast); by 10 minutes 10 to 50% fought.
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
