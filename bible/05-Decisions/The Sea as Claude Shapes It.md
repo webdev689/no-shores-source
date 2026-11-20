@@ -15,6 +15,8 @@ status: in force
 
 > "Yes, build everything in bulk and be as detailed as possible. No exceptions. Come back when you're done at 100%"
 
+> Asked whether a sea fight's wind should change with the weather or hold from the fight's start: "Whatever is best"
+
 ## What it settles
 
 Claude's calls in building the sea the owner decided ([[The Waters Come From the Islands]],
@@ -103,6 +105,9 @@ Its rank, by the lowest level of its water's band:
 
 - **Weather**: systems about 600 km across drift east at 10 m/s and change over six hours. The sea is calm 15
   percent of the time, moderate 50, rough 25 and storm 10, the wind from 2 m/s in a calm to 25 in a storm.
+- **A fight's wind** holds from where and when the fight began, with its swell, and does not change with the weather
+  while it lasts: the captains' aim and courses are laid by it, a fight is minutes long while the weather changes over
+  hours, and every player in it sails the same wind.
 - **Shelter**: the swell is a quarter of the open sea's under 2 km of open water upwind, whole at 60 km. Within 3 km
   of a port's roadstead it is 0.3 of a moderate sea's.
 - **A ship on it** rides through a lag of 0.02 s a metre of its length. It slams when the crest at its stem closes
@@ -161,7 +166,11 @@ Its rank, by the lowest level of its water's band:
 - **The aim**: the look runs from the eye as drawn, so the sight is where the guns lay. It reaches 0.15 rad over the
   horizon, past 153 m, and zooms from DFO's nearest, 11.4 m, out to the fight camera's 75 m. A ship alongside blocks
   the line by its waterline's length and beam, from its draught to 1 m over its guns.
-- **The readout**: its plate and battery rose at the bottom right, the laid side glowing gold. The card stands under
+- **The readout**: its plate at the top left, where the vitals stand on foot
+  ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]): Hull over Sails over Crew, the hull at health's height
+  and the others at stamina's, each as long as the vitals' health, with no words inside, as the vitals have none; its
+  fire and brace chips and its battery rose under them, as the buffs stand under the vitals, the laid side glowing
+  gold. In a fight the place's name gives way to them, as it does to the ships' plates. The card stands under
   the compass on the ship its laid guns fall on, else the nearest. The volley's tally stands under the sight for 4 s,
   the fight's status line at the top right. DFO's lights on nearby hulls are not drawn yet.
 - **The sea's words are notices**, as DFO's toasts are: a ship sighted, other waters entered, who joins a fight,

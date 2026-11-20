@@ -68,6 +68,11 @@ test("in a sea fight the sea's status line stands in the top right corner, never
   assert.match(rule, /top: 22px/);
   assert.match(rule, /left: auto/);
   assert.match(rule, /transform: none/);
+  assert.match(
+    seaFightCss(),
+    /#hud:has\(> \.seafight:not\(\[hidden\]\)\) \.place \{ visibility: hidden; \}/,
+    "the place's name gives way to the ship's bars",
+  );
 });
 
 test("the side the look lays glows gold round its chip, as DFO's active battery does, its fill kept", () => {

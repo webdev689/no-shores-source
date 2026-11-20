@@ -454,7 +454,7 @@ captain's number comes with them in the view, so one leaving the fight never mov
 - **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
   turning it up to a degree a unit of jar, the jars at once added together.
 - **The readout** (`plus/seaFight.ts`, fed by `ships/fightDisplay.ts`, shown by the HUD at sea and by
-  `ships/fightOverlay.ts` in the World Editor): the Sloop's plate at the bottom right with its battery rose, the card under
+  `ships/fightOverlay.ts` in the World Editor): the Sloop's plate at the top left with its battery rose, the card under
   the compass on the ship the look is on (the captain nearest where the Sloop's laid guns fall, else the nearest), and its volley's tally under the sight, in every fight from its first frame to its
   last ([[Interface]], "The sea fight's readout"). The panel leaves the Sloop's own hurts and guns to it. While a captain afloat
   stands with their guns run out, DFO's warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at: "Broadside from the Pirate Brig - C: brace". At

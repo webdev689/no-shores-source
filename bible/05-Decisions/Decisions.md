@@ -139,6 +139,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Ship's Level Raises Its Strength, and the Tiers Reach the Sea]]
 - [[Ships Are It, Not Her]]
 - [[The Sea's Screens Wear Enhanced Plus]]
+- [[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]
 - [[Model Packs Upload From Any Branch]]
 - [[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]]
 - [[Procedural Islands Are Coves, With Rarer Guarded Isles]]

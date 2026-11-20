@@ -1,11 +1,11 @@
 // The bars' sheet the on-foot HUD and the sea fight's readout both wear, so a bar and the target's plate read the same
 // wherever they stand: the bar's trough, fill, lost strip and falling pieces; the plates' emblem square, bands, title
-// and the target's size. The vitals' carved window of three labelled bars is the sea fight's ship plate alone, since
-// the vitals on foot stand at the top left as long thin bars. Each rule is laid under `scope`, the root of the display
-// that wears it.
+// and the target's size; and the long thin bars of the vitals on foot and of the ship at sea. Each rule is laid under
+// `scope`, the root of the display that wears it.
+import { BAR_EDGE, BAR_TONES, type BarTone, barFrameImage, tipOf } from './barFrame.ts';
 import { PLATES } from './barLayout.ts';
 import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl } from './emblems.ts';
-import { BEVELS, FILLS, HALO, TONES } from './tones.ts';
+import { FILLS, HALO, TONES } from './tones.ts';
 
 /** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
  *  2 px edge. */
@@ -66,41 +66,41 @@ ${scope} .target .meter.health { height: 12px; }
 `;
 }
 
-/** The vitals' carved window of three bars, each naming itself and saying its percentage inside it, under `scope`. */
-// Its keyframes are its own: the vitals on foot name theirs fight-low and fight-blink, and both sheets may share a page.
-export function windowVitalsCss(scope: string): string {
-  return `
-${scope} .vitals { position: absolute; left: 24px; bottom: 24px; width: 260px; box-sizing: border-box;
-  display: grid; gap: 6px; padding: 9px 10px; border-width: 2px; border-style: solid; }
-${scope} .vital { display: flex; align-items: center; justify-content: space-between; height: 20px;
-  border-width: 2px; }
-${scope} .vital.poise { height: 16px; }
-${scope} .vital.health { --fill: ${FILLS.health}; }
-${scope} .vital.stamina { --fill: ${FILLS.stamina}; }
-/* What a vital lost is its own body tone, faint: darker than any band of the fill, never brighter. */
-${scope} .vital .lost { background: var(--fill); opacity: 0.35; }
-/* Full and untouched, the panel rests: it goes in six steps, and comes back in two at the first change. */
-${scope} .vitals { transition: opacity 120ms steps(2, end); }
-${scope} .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }
-${scope} .vital .label, ${scope} .vital .number { position: relative; padding: 0 7px; color: ${TONES.word};
-  text-shadow: ${HALO}; }
-${scope} .vital .label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; }
-${scope} .vital .number { font-size: 11px; font-variant-numeric: tabular-nums; }
-${scope} .vital.low { animation: window-low 0.9s steps(1, end) infinite; }
-@keyframes window-low { 0% { border-color: ${BEVELS.blood}; } 50% { border-color: ${BEVELS.sunk}; } }
-${scope} .vital.stamina.flash { box-shadow: 0 0 0 1px #fff, 0 0 8px #fff; animation: window-blink 0.15s steps(2) infinite; }
-@keyframes window-blink { 50% { background-color: rgba(255,255,255,0.27); } }
-@media (prefers-reduced-motion: reduce) {
-  ${scope} .vital.low { animation: none; border-color: ${BEVELS.blood}; }
-  ${scope} .vital.stamina.flash { animation: none; }
+/** A thin bar's height, frame and all, at the first step and the larger, and the frame its warning flashes to. */
+export interface ThinBar {
+  readonly base: number;
+  readonly wide: number;
+  readonly alert: BarTone;
 }
-/* Where the HUD is wide, the vitals' words stand at the face's next step, and their bars grow to hold them. */
-@media (min-width: 1500px) and (min-height: 900px) {
-  ${scope} .vitals { width: 330px; gap: 8px; padding: 11px; }
-  ${scope} .vital { height: 33px; }
-  ${scope} .vital.poise { height: 22px; }
-  ${scope} .vital .label, ${scope} .vital .number { font-size: 22px; padding: 0 11px; }
-  ${scope} .vital.poise .label, ${scope} .vital.poise .number { font-size: 11px; }
+
+/** Long thin bars with pointed ends in a fine stone frame, under `scope`: the vitals on foot, and the ship's hull, sails
+ *  and crew at sea. `bars` gives each bar's class its heights and its warning's frame; a bar's `width` is its length.
+ *  The scope's `.wide` takes the larger step and its `.double` doubles the bars; a bar's `.low` flashes its frame. */
+export function thinBarsCss(scope: string, bars: Readonly<Record<string, ThinBar>>): string {
+  const frames = (at: string, step: 'base' | 'wide') =>
+    Object.entries(bars).map(([name, bar]) => {
+      const height = bar[step];
+      const tip = tipOf(height);
+      return `${at} .vital.${name} { height: ${height}px; border-width: ${BAR_EDGE}px ${tip}px;
+  border-image: ${barFrameImage(height, BAR_TONES.stone)}; }
+${at} .vital.${name}::after { inset: -${BAR_EDGE}px -${tip}px; border-width: ${BAR_EDGE}px ${tip}px;
+  border-image: ${barFrameImage(height, bar.alert)}; }`;
+    });
+  return `
+${scope} .vitals { position: absolute; display: flex; flex-direction: column; align-items: flex-start; }
+${scope} .vital { position: relative; box-sizing: border-box; width: 160px; border-style: solid; }
+${scope} .vital .meter { height: 100%; border: 0; background-color: ${TONES.groundTrack}; }
+/* What a bar lost is its own body tone, faint: darker than any band of the fill, never brighter. */
+${scope} .vital .lost { background: var(--fill); opacity: 0.35; }
+${scope} .vital::after { content: ''; position: absolute; border-style: solid; opacity: 0; pointer-events: none; }
+${scope} .vital.low::after { animation: thin-low 0.9s steps(1, end) infinite; }
+@keyframes thin-low { 0% { opacity: 1; } 50% { opacity: 0; } }
+/* Past 1440p the bars stand at twice their first size, as the rest of the display does. */
+${scope}.double .vitals { zoom: 2; }
+${frames(scope, 'base').join('\n')}
+${frames(`${scope}.wide`, 'wide').join('\n')}
+@media (prefers-reduced-motion: reduce) {
+  ${scope} .vital.low::after { animation: none; opacity: 1; }
 }
 `;
 }

@@ -11,8 +11,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   prologue's second playthrough) with ship power and crew, the procedural islands and their plants, the Enhanced Plus
   readout and ships as "it"; its full check passed at `ac12d3bf`, tested offline. Merging it into `main` waits for
   the owner's yes. `claude/f-main`, where the #98 merge was first saved, is wholly in it.
-- Two calls wait on the owner: the sea's ship plate (follow main's new thin vitals bars, or keep the carved window)
-  and a sea fight's wind (changing with the weather, or held from the fight's start).
+- The owner's two calls are made: the sea fight's ship plate wears the vitals' thin bars
+  ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]), at the top left with its chips and rose under them, and
+  a sea fight's wind holds from its start ("Whatever is best", Claude's call in [[The Sea as Claude Shapes It]]).
+  Tested offline: the full check, and the game's HUD with a sea fight on it pictured headless at 1280x720, 1920x1080
+  and 2560x1440. Not yet seen in a real sea fight or on a real GPU.
 - Three cloud sessions build on the sea branch: islands, ship power and activities (bounties count in the sea room
   through `Sea.minute`; the island dungeon trip is one line once #88's stack meets #75).
 

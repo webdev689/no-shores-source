@@ -142,7 +142,7 @@ should be ([[HTML Is Avoided Where It Can Be]]).
     and emblem; the status line keeps the state alone ("Under way", "Fighting"), and the sea's word (a ship
     sighted, other waters entered, who joins, colours struck, boarders away, what floats gathered, washing up) stands
     as notices, DFO's toasts;
-  - the fight: the player's plate (the vitals' window) and the card (the target plate), the rose's sides (chip), the bars (track and meter), the tally and the
+  - the fight: the player's plate (the vitals' thin bars) and the card (the target plate), the rose's sides (chip), the bars (track and meter), the tally and the
     broadside warning directly under the card at the top's middle (under the compass while no card shows), never over
     the sight or the ship aimed at (DFO's `.dfnaval-warn`, its blood edge pulsing in steps), each captain's plate
     over its masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line, its right edge 28 px in
@@ -520,12 +520,14 @@ The plate and the card are the on-foot HUD's own build, so the sea reads as the 
 (`plus/barSheet.ts`, worn on foot by `combat/hudSheet.ts` too) and its bar (`plus/meter.ts`, with its lost strip and
 falling pieces).
 
-- **The Sloop's plate**, at the bottom right, is the vitals' carved window the HUD on foot wore before its vitals went
-  to the top left (`windowVitalsCss` in `plus/barSheet.ts`, the target plate's rules shared with the HUD on foot): three labelled
-  bars, Hull, Sails and Crew, each with its name and its percentage written inside it (hull red as health, sails bone,
-  crew green as stamina), the hull's frame flashing blood at a quarter or less as health's does; an "On fire" chip while
-  it burns and a "Braced" chip while it braces, the kit's chips.
-- **The battery rose** on the plate: bow over stern, port and starboard either side. Each side is a chip with its load
+- **The Sloop's plate**, at the top left, is the vitals' long thin bars, as on foot
+  ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]; `thinBarsCss` in `plus/barSheet.ts`, the one sheet both
+  wear): Hull over Sails over Crew (hull red as health and at its height, sails bone, crew green as stamina, both at
+  stamina's height), each as long as the vitals' health is laid for the view, stepping and doubling with the display,
+  with no words inside; a reader hears each by its name and percentage. The hull's frame flashes blood at a quarter or
+  less as health's does. Under them an "On fire" chip while it burns and a "Braced" chip while it braces, the kit's
+  chips, as the buffs stand under the vitals. In a fight the place's name gives way to the plate.
+- **The battery rose** under the chips, as wide as its longest words ("Heated 88s" a side): bow over stern, port and starboard either side. Each side is a chip with its load
   ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
   loaded, glowing gold round its edge where the look lays it, flashing twice over 0.7 s as it comes ready. The side a
   blow came from (bow, stern, port or starboard, by where it struck the Sloop) is outlined red for 1.4 s.
@@ -604,6 +606,9 @@ button's corner and screen, and the Tailor's wares.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not
   the game's screens.
 - The vitals always rest when whole: DFO's switch for it waits on a settings screen.
+- At sea the ship's bars stand beside the compass only on a view 908 px wide or more; on a narrower one they run under
+  it, where on foot the compass's column steps down under the vitals. The sea's compass, card and tally do not double
+  past 1440p, as the ship's bars and the display on foot do.
 - A plate keeps its size on any screen; DFO's names also grew with the screen's height.
 - Bars at the top of the screen (the boss bar, the soft lock's, a Boss ship's) stand where they are set; only bars
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.

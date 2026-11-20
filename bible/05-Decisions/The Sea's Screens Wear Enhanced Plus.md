@@ -16,4 +16,5 @@ status: in force
   foot do ([[Pick - Enhanced Plus UI]]).
 - The sea fight's plate is the vitals' carved window and its card is the target plate, built from the HUD on foot's
   own pieces, so land and sea read as one HUD ([[Naval Combat]],
-  [[Plates Stay Light and Bars Do What Enhanced Plus Does]]).
+  [[Plates Stay Light and Bars Do What Enhanced Plus Does]]). The plate's carved window is replaced by the vitals' thin
+  bars ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]).

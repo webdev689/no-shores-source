@@ -1,10 +1,10 @@
-// The sea fight's readout is the on-foot HUD's own build: the ship's plate the vitals' window, the card the target
+// The sea fight's readout is the on-foot HUD's own build: the ship's plate the vitals' thin bars, the card the target
 // plate, each sheeted by the same rules (the kit's bar sheet), so the sea reads as the same HUD.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { findAll, onFakePage } from '../combat/page.test.ts';
 import { fightSheetCss } from '../combat/hudSheet.ts';
-import { barSheetCss } from '../plus/barSheet.ts';
+import { barSheetCss, thinBarsCss } from '../plus/barSheet.ts';
 import { SeaFightReadout, seaFightCss, type SeaFightModel } from '../plus/seaFight.ts';
 
 const side = { fill: 1, ready: true, fresh: false, laid: false, load: 'Round', left: 0 };
@@ -35,29 +35,42 @@ const MODEL: SeaFightModel = {
   warn: null,
 };
 
-test("the ship's plate is the vitals' window: Hull, Sails and Crew bars naming themselves and their percent inside", () => {
+test("the ship's plate is the vitals' thin bars: Hull over Sails over Crew, each saying its percent to a reader", () => {
   onFakePage((root) => {
     const readout = new SeaFightReadout(root);
     readout.update(MODEL);
     const [panel] = findAll(root, 'vitals');
-    assert.ok(panel?.classList.contains('plus-window'), 'the carved window');
-    const rows = findAll(root, 'meter', 'vital');
+    assert.ok(!panel?.classList.contains('plus-window'), 'no window round them, as on foot');
+    assert.equal(panel?.ariaLabel, 'Your ship');
+    const rows = findAll(root, 'vital');
     assert.deepEqual(
-      rows.map((row) => row.className.split(' ')[2]),
+      rows.map((row) => row.className.split(' ')[1]),
       ['hull', 'sails', 'crew'],
     );
-    const words = (row: (typeof rows)[number]) => [
-      findAll(row as unknown as HTMLElement, 'label')[0]?.textContent,
-      findAll(row as unknown as HTMLElement, 'number')[0]?.textContent,
-    ];
-    assert.deepEqual(rows.map(words), [
-      ['Hull', '20%'],
-      ['Sails', '50%'],
-      ['Crew', '100%'],
-    ]);
-    assert.ok(rows[0]?.classList.contains('low'), 'the hull flashes low as health does');
+    assert.deepEqual(
+      rows.map((row) => [row.role, row.ariaLabel, row.ariaValueNow]),
+      [
+        ['meter', 'Hull', '20'],
+        ['meter', 'Sails', '50'],
+        ['meter', 'Crew', '100'],
+      ],
+    );
+    assert.equal(findAll(root, 'label').length, 0, 'no words inside the bars, as on foot');
+    assert.ok(rows[0]?.classList.contains('low'), "the hull's frame flashes low as health's does");
     assert.ok(!findAll(root, 'plus-chip', 'brace')[0]?.hidden, "Braced is the kit's chip");
   });
+});
+
+test("the ship's bars wear the very thin bars the vitals wear on foot", () => {
+  const first = (scope: string) => thinBarsCss(scope, {}).trim().split('\n')[0] ?? '';
+  assert.ok(fightSheetCss().includes(first('.fight-hud')), 'on foot');
+  assert.ok(seaFightCss().includes(first('.seafight')), 'at sea');
+  assert.match(seaFightCss(), /\.seafight \.vital\.hull \{ height: 12px;/, "the hull at health's height");
+  assert.match(
+    seaFightCss(),
+    /\.seafight\.wide \.vital\.crew \{ height: 14px;/,
+    "the crew at stamina's, a step larger",
+  );
 });
 
 test("the card is the target plate: the faction's emblem framed, its name, one bar in its rank's colour, small words", () => {
