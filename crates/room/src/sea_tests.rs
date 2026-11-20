@@ -583,11 +583,20 @@ fn fight_within_ten_minutes(sea: &mut Sea) -> Option<usize> {
 }
 
 #[test]
-fn a_bold_ship_coming_abeam_of_a_voyage_meets_it_as_the_hold_eases_the_voyage() {
-    let (mut sea, player) =
-        come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], [60_000.0, 400_000.0], 0.0, true);
-    assert!(fight_within_ten_minutes(&mut sea).is_some(), "she came for him across his way, and met him");
-    assert_eq!(sea.fights().next().map(|(fighting, _)| fighting), Some(player));
+fn a_bold_ship_sighted_within_her_meeting_cone_meets_a_voyage_that_holds_its_course() {
+    // A Major 9 degrees off his course, 0.95 of his sight ahead, heading across it: he sails on north at x60.
+    let off = 9.0_f64.to_radians();
+    let out = 0.95 * crate::sighting::sight_for(60.0);
+    let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
+    let (mut sea, player) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
+    let mut least = 60;
+    let met = (0..10 * 60 * 60).find(|_| {
+        sea.tick();
+        least = least.min(ship(&sea, player).rate.max(1));
+        sea.fights().next().is_some()
+    });
+    assert!(met.is_some_and(|ticks| ticks < 60 * 60), "she met him within a minute: {met:?}");
+    assert!(least <= 5, "the hold eased him only as she came near along his way: x{least}");
 }
 
 #[test]

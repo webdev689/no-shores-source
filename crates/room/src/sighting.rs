@@ -117,6 +117,20 @@ pub fn along_lane([east, south]: [f64; 2], slant: f64) -> f64 {
     if off(one) <= off(other) { one } else { other }
 }
 
+/// The paces at which a voyage is sighted from the least sight, 5 km, and a bold ship comes anywhere ahead as a wary
+/// one does: the helm's own.
+pub const SLOW_PACE: u16 = 10;
+/// The share of her meeting cone a bold ship comes within, so she meets a voyage that holds its course.
+pub const MEETING_MARGIN: f64 = 0.8;
+
+/// The half-angle off a voyage's course, radians, within which a bold ship of `rank` can meet it at all: on the
+/// voyage's clock she sails at her way and the ship at 12 m/s, so only from where sin(angle) <= her way / his. Shrunk
+/// by `MEETING_MARGIN`, so a ship placed within it meets him if he holds his course.
+#[must_use]
+pub fn meeting_arc(rank: Rank) -> f64 {
+    libm::asin(way_of(rank) / SHIP_SPEED_M_S) * MEETING_MARGIN
+}
+
 /// A ship's helm turns her at most this fast, radians a second of her clock: the Sloop's helm (the page's
 /// `HELM_TURN`), so a captain coming for a player turns as a player can.
 pub const HELM_TURN_RAD_S: f64 = 10.0 * PI / 180.0;

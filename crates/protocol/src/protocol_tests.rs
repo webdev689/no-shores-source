@@ -146,7 +146,6 @@ const PIRATES: [Pirate; 1] = [Pirate {
     heading: 1.5,
     bold: true,
     quarry: None,
-    closing: false,
 }];
 
 /// Deep, still water everywhere.

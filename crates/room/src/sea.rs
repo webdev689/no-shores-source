@@ -376,15 +376,13 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         self.fights.retain(|_, fought| fought.fight.over().is_none());
-        let closing = |pirate: &Pirate| pirate.quarry.filter(|_| pirate.closing);
-        let pirates: Vec<_> = self.pirates().iter().map(|pirate| ([pirate.x, pirate.y], closing(pirate))).collect();
+        let pirates: Vec<[f64; 2]> = self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
             // Judged along every leg her pace would take her through this tick, so no turn of her course slips by.
             let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS;
-            let near = pirates.iter().map(|&(at, quarry)| (at, quarry == Some(*player)));
-            let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, near.clone());
+            let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, pirates.iter().copied());
             sailing.ship.rate = if self.fights.contains_key(player) {
                 0
             } else {
