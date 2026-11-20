@@ -224,7 +224,7 @@ export class GameScene {
       SKY_NOW.current.look.daylight,
       time,
     );
-    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps);
+    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps, ground);
     // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
     this.shadow.update(shot.eye, shot.yaw, above, look.key);
     this.shadow.cast(encoder, (cast) => {
