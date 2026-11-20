@@ -65,11 +65,52 @@ export function ordersMeet(first: number, second: number): boolean {
   return false;
 }
 
+/** A texel's light, 0 to 255, as the eye weighs its channels. */
+export const lightOf = (rgb: ArrayLike<number>): number =>
+  Math.round(0.299 * (rgb[0] ?? 0) + 0.587 * (rgb[1] ?? 0) + 0.114 * (rgb[2] ?? 0));
+
+/** The narrowest span of light a covering ramp is stretched across; a narrower one keeps its light as it is. */
+const SPAN_LEAST = 24;
+/** Each strip's span of light, kept: the forge draws a set dark or light, and its strips stay the same. */
+const SPANS = new WeakMap<Strip, readonly [number, number]>();
+
+/** A strip's span of light: its darkest and brightest drawn texels, leaving out the fiftieth at each end. */
+export function lightSpan(strip: Strip): readonly [number, number] {
+  const kept = SPANS.get(strip);
+  if (kept) return kept;
+  const counts = new Uint32Array(256);
+  let drawn = 0;
+  for (let texel = 0; texel < strip.data.length; texel += 4) {
+    if ((strip.data[texel + 3] ?? 0) < 128) continue;
+    counts[lightOf(strip.data.subarray(texel, texel + 3))] += 1;
+    drawn += 1;
+  }
+  const edge = drawn / 50;
+  const past = (lights: readonly number[]) => {
+    let seen = 0;
+    return lights.find((light) => (seen += counts[light] ?? 0) > edge) ?? lights[0] ?? 0;
+  };
+  const lights = Array.from({ length: 256 }, (_unused, light) => light);
+  const low = past(lights);
+  const span = [low, Math.max(low, past(lights.reverse()))] as const;
+  SPANS.set(strip, span);
+  return span;
+}
+
+/** The step of a 16-step ramp a texel of `light` takes where a ramp covers its piece: the piece's own span of light
+ *  laid across the whole ramp, darkest to the first step and brightest to the last, so a piece keeps all its shading
+ *  whether the forge drew it dark or light. */
+export function coverStep(light: number, [low, high]: readonly [number, number]): number {
+  const share = high - low < SPAN_LEAST ? light / 255 : (light - low) / (high - low);
+  return Math.max(0, Math.min(15, Math.round(share * 15)));
+}
+
 /**
  * One frame of a figure, composed as the forge's game draws it: each layer's cell (a row a view, a column a frame)
  * laid on the figure's cell by its root; at each pixel the nearest texel, a layer drawn nearer by its order where it
  * meets another on one part, armour over the clothes under it by its cover, a worn weapon and a drape by `under`.
- * The skin takes the race or the human tone, the hair its colour's ramp, a dyed layer's grey its dye's ramp, the horse's
+ * The skin takes the race or the human tone, the hair its colour's ramp, a dyed layer's grey its dye's ramp (every
+ * texel of a layer in `whole`, by its light), the horse's
  * hide its coat's (its ramp under HORSE_LAYER, `hideShade`); the frame is then snapped to the palette. The layers in
  * `held` count as the weapon in its mask, whatever part they name.
  */
@@ -83,6 +124,7 @@ export async function composeFrame(
   ramps: Readonly<Record<string, readonly Rgb[]>>,
   strip: (path: string) => Promise<Strip | null>,
   held: ReadonlySet<string> = new Set(),
+  whole: ReadonlySet<string> = new Set(),
 ): Promise<Frame | null> {
   const box = lookCell(figure, anim, looks);
   if (!box) return null;
@@ -106,6 +148,20 @@ export async function composeFrame(
   const over = (spot: number, lies: number) => outside || onBody(spot, lies);
   const dyeable = new Set(looks.dye ?? []);
   const rgb = [0, 0, 0];
+  // A covering ramp spans every covered piece's light together, so the pieces keep their light against one another.
+  const covered = await Promise.all(
+    layersOf(figure, anim, looks)
+      .filter((layer) => whole.has(layer))
+      .map(async (layer) => {
+        const found = await strip(layerPath(figure.body, layer, anim));
+        return found ? lightSpan(found) : null;
+      }),
+  );
+  const spans = covered.filter((span) => span !== null);
+  const setSpan =
+    spans.length > 0
+      ? ([Math.min(...spans.map(([low]) => low)), Math.max(...spans.map(([, high]) => high))] as const)
+      : null;
   for (const layer of layersOf(figure, anim, looks)) {
     const [colour, depth] = await Promise.all([
       strip(layerPath(figure.body, layer, anim)),
@@ -126,6 +182,7 @@ export async function composeFrame(
       figure.hair?.layer === layer ? hairRamp(colours.hair, figure.body, figure.race, figure.hair.colour) : null;
     const ramp = hair ?? (dyeable.has(layer) ? (ramps[layer] ?? null) : null);
     const coat = layer === HORSE_LAYER ? (ramps[layer] ?? null) : null;
+    const span = whole.has(layer) ? setSpan : null;
     const skin =
       figure.tone === null
         ? raceSkinOf(colours.skins, layer, figure.body, figure.race, view)
@@ -186,7 +243,10 @@ export async function composeFrame(
         skin?.(rgb);
         if (coat) hideShade(rgb, coat);
         const grey = rgb[0] === rgb[1] && rgb[1] === rgb[2];
-        const dyed = ramp && grey ? ramp[Math.max(0, Math.min(15, ((rgb[0] ?? 0) * 16) >> 8))] : null;
+        // A ramp lies on a layer's greys, as the forge draws them for it; one that covers the layer lies on every texel
+        // by its light, across the layer's own span.
+        const step = span ? coverStep(lightOf(rgb), span) : Math.max(0, Math.min(15, ((rgb[0] ?? 0) * 16) >> 8));
+        const dyed = ramp && (grey || span) ? ramp[step] : null;
         const out = spot * 4;
         pixels[out] = dyed?.[0] ?? rgb[0] ?? 0;
         pixels[out + 1] = dyed?.[1] ?? rgb[1] ?? 0;

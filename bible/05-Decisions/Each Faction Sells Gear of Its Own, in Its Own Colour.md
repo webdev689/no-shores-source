@@ -10,10 +10,19 @@ status: in force
 
 > "Do a comprehensive audit and detailed pass. Come back when this is 100%. I wanna push the limits"
 
+> Shown the gear in lemon yellow, teal and lime: "These colors are way too bright". Shown it dark and muted: "too
+> dark". Shown three rows from dark to bright: "I dont like any of the colors tbh".
+
+> Asked each faction's colour: the Stormcallers, "#1 with color accents" (the first offered, "Storm grey and
+> silver"); the Lamplighters, "White and gold"; the Veiled, "Black and silver". Shown them: "I like them, although
+> the black is too black"
+
 ## What it settles
 
 - **Each faction sells gear of its own**, as Destiny 1's factions sold armour and weapons
   ([[Three Factions Keep the Arts, After Destiny 1]]).
-- **A faction's gear has a colour of its own**, unique to it.
+- **A faction's gear has a colour of its own**, unique to it, neither glaring nor dark: the Stormcallers' storm grey
+  and silver with accents of colour, the Lamplighters' white and gold, and the Veiled's black and silver, not too
+  black.
 - What the gear is, its ranks, its prices and its colours are Claude's, the owner's to change:
   [[Factions and Vendors as Claude Shapes Them]] ("Faction gear"). How it works: [[Factions]].

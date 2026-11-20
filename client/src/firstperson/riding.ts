@@ -1,7 +1,7 @@
 import type { Strip } from '../forge/compose.ts';
 import { RIDE_HIDE, bardingLayer, bardingLook, cosmeticRamp, hideShade } from '../forge/cosmetics.ts';
 import type { Rgb } from '../forge/dyes.ts';
-import { type FrameSource, type Picture, layOver, setRamp } from './fpFrames.ts';
+import { type FrameSource, type Picture, layOver, paintSet } from './fpFrames.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
 
 /** How the horse goes: standing, walking or galloping. */
@@ -181,7 +181,7 @@ export async function reinPicture(
   const fist = own ?? glove;
   if (!rein || !fist || fist.width !== rein.width || fist.height !== rein.height) return null;
   const pixels = source.painter.paint(rein, null);
-  const fistPixels = source.painter.paint(fist, own ? setRamp(source, hands, 'Steel') : null);
+  const fistPixels = own ? paintSet(source, fist, hands, 'Steel') : source.painter.paint(fist, null);
   for (let texel = 0; texel < pixels.length; texel += 4)
     if (fistPixels[texel + 3]) pixels.set(fistPixels.subarray(texel, texel + 4), texel);
   return centred(pixels, rein.width, rein.height, sink);

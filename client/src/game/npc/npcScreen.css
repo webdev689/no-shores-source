@@ -168,6 +168,8 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-color: var(--edge) transparent;
+  scrollbar-width: thin;
 }
 .npc-row {
   flex: 1 1 100%;
@@ -313,8 +315,12 @@
     flex-basis: 132px;
   }
 }
-/* The vault keeper's two sides of the vault stand where a keeper's rows stand, across the column. */
+/* The vault keeper's two sides of the vault stand where a keeper's rows stand, across the column; a side narrower
+   than a row of five Vestiges lays them as many to a row as it holds. */
 .npc-rows > .gear-vault {
   flex: 1 1 100%;
   padding: 0;
+}
+.npc-rows > .gear-vault .gear-vestige-grid {
+  grid-template-columns: repeat(auto-fill, 64px);
 }

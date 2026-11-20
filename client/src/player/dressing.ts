@@ -156,36 +156,48 @@ export const PLAIN_DYE = 'LightBrown';
 /** The ramp each dyed layer a figure wears is laid on: a faction's piece its faction's own colour, whatever dye is
  *  worn; a metal layer its set's or metal's, a garment and its hangs their garment's dye (a clothing dye, or a cosmetic
  *  dye's look); with a dye worn, every other armour layer and garment but the cloak its ramp; and the ridden horse
- *  (HORSE_LAYER) its coat's. Layers that keep their own colours have none. */
-export function rampsOf(
+ *  (HORSE_LAYER) its coat's. Layers that keep their own colours have none. `whole` names the armour layers and padding
+ *  a worn dye or a faction's colour takes: those lay it on every texel by its light, as a shader covers a whole piece,
+ *  since many of the forge's sets are drawn in colours of their own that a ramp on greys alone would leave. */
+export function layerRamps(
   gear: readonly string[],
   outfit: Outfit,
   looks: ForgeLooks,
   table: DyeTable,
-): Record<string, readonly Rgb[]> {
+): { readonly ramps: Record<string, readonly Rgb[]>; readonly whole: string[] } {
   const metal = new Set(looks.metal ?? []);
   const dyed = new Set(looks.dye ?? []);
   const worn = cosmeticRamp(outfit.dye, table.palette);
   const armour = new Set(ARMOUR_PIECES.map((piece) => `${piece}_${outfit.armour[piece] ?? ''}`));
+  const piece = (layer: string) => armour.has(layer) || layer.startsWith('under_');
   // The dye worn takes every armour piece, the padding under it and every garment; never a weapon, a shield, the cloak
   // or the hair.
-  const takesDye = (layer: string) =>
-    armour.has(layer) || layer.startsWith('under_') || (dyed.has(layer) && !metal.has(layer) && !CLOAK.test(layer));
+  const takesDye = (layer: string) => piece(layer) || (dyed.has(layer) && !metal.has(layer) && !CLOAK.test(layer));
   const ramps: Record<string, readonly Rgb[]> = {};
+  const whole: string[] = [];
   for (const layer of gear) {
     const garment = outfit.dyes[layer.replace(HANG, '')] ?? PLAIN_DYE;
+    const own = factionRamp(outfit.dyes[layer.replace(PUT_AWAY, '')], table.palette);
+    const cosmetic = own ?? (worn && takesDye(layer) ? worn : null);
     const ramp =
-      factionRamp(outfit.dyes[layer.replace(PUT_AWAY, '')], table.palette) ??
-      (worn && takesDye(layer)
-        ? worn
-        : metal.has(layer)
-          ? table.armour[metalOfLayer(layer) ?? '']
-          : dyed.has(layer)
-            ? (table.clothing[garment] ?? cosmeticRamp(garment, table.palette) ?? undefined)
-            : undefined);
+      cosmetic ??
+      (metal.has(layer)
+        ? table.armour[metalOfLayer(layer) ?? '']
+        : dyed.has(layer)
+          ? (table.clothing[garment] ?? cosmeticRamp(garment, table.palette) ?? undefined)
+          : undefined);
     if (ramp) ramps[layer] = ramp;
+    if (cosmetic && piece(layer)) whole.push(layer);
   }
   const coat = cosmeticRamp(outfit.coat, table.palette);
   if (coat) ramps[HORSE_LAYER] = coat;
-  return ramps;
+  return { ramps, whole };
 }
+
+/** The ramps of `layerRamps` alone. */
+export const rampsOf = (
+  gear: readonly string[],
+  outfit: Outfit,
+  looks: ForgeLooks,
+  table: DyeTable,
+): Record<string, readonly Rgb[]> => layerRamps(gear, outfit, looks, table).ramps;

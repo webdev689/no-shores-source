@@ -7,7 +7,7 @@ import {
   layOver,
   looksAsked,
   metalRamp,
-  setRamp,
+  paintSet,
 } from './fpFrames.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
 import type { Shooter } from './handsLaw.ts';
@@ -65,7 +65,7 @@ async function withHands(
   ]);
   if (!own || !over || own.strip.width !== over.strip.width || own.strip.height !== over.strip.height) return null;
   const pixels = paintOwn(own.strip);
-  layOver(pixels, source.painter.paint(over.strip, setRamp(source, hands, 'Steel')));
+  layOver(pixels, paintSet(source, over.strip, hands, 'Steel'));
   return { width: own.strip.width, height: own.strip.height, pixels };
 }
 

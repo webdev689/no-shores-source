@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { type Strip, PART, composeFrame, ordersMeet } from './compose.ts';
+import { type Strip, PART, composeFrame, coverStep, lightSpan, ordersMeet } from './compose.ts';
 import { PaletteSnap } from './dyes.ts';
 import { type ForgeLooks, layersOf, lookCell } from './looks.ts';
 
@@ -71,6 +71,40 @@ test('the nearest texel is drawn, armour over the clothes it lies on by its orde
   assert.deepEqual([...bare.pixels.subarray(0, 4)], [0, 0, 128, 255]);
   assert.deepEqual([...bare.pixels.subarray(4, 8)], [200, 150, 120, 255]);
   assert.ok(Math.abs((bare.depth[0] ?? 0) - (117 * 256 + 40) / 10000 + 3) < 1e-4);
+});
+
+test('a ramp that covers its layer lies on every texel by its light, not on its greys alone', async () => {
+  const dyeable = { ...looks, dye: ['shirt', 'cuirass'] };
+  const kept = await composeFrame(figure, 'idle', 0, 0, dyeable, colours, { cuirass: blue }, read);
+  assert.deepEqual([...(kept?.pixels.subarray(0, 4) ?? [])], [90, 90, 99, 255], 'its own colour: not a grey');
+  const covered = await composeFrame(
+    figure,
+    'idle',
+    0,
+    0,
+    dyeable,
+    colours,
+    { cuirass: blue },
+    read,
+    undefined,
+    new Set(['cuirass']),
+  );
+  // The cuirass's light, 91, is all its strip holds: a span too narrow to stretch, it takes step 5 of 15 by its light.
+  assert.deepEqual([...(covered?.pixels.subarray(0, 4) ?? [])], [0, 0, 80, 255]);
+  assert.deepEqual([...(covered?.pixels.subarray(4, 8) ?? [])], [0, 0, 80, 255]);
+});
+
+test("a covering ramp spans its pieces' light together, darkest to its first step and brightest to its last", () => {
+  const shaded = strip([
+    [20, 20, 30],
+    [60, 50, 40],
+    [140, 120, 110],
+    [230, 220, 210],
+  ]);
+  const span = lightSpan(shaded);
+  assert.deepEqual([coverStep(21, span), coverStep(224, span)], [0, 15]);
+  assert.equal(coverStep(124, span), 8, 'a mid light, mid ramp');
+  assert.equal(coverStep(91, [91, 100]), 5, 'a span too narrow to stretch keeps the light as it is');
 });
 
 test('a frame says which pixels are the weapon', async () => {

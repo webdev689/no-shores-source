@@ -339,7 +339,12 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   A dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) and snapped once
   to the game's palette where it is made, so the figure, first person, the Appearance tiles and the keepers' swatches
   draw the same sixteen colours; each dye and faction colour keeps ten steps at least and stands apart from every
-  other (a test measures it). The ramp lies in place of the
+  other (a test measures it). On armour and its padding a worn dye covers the whole piece, every texel by its light, as
+  a shader covers a whole piece, since many of the forge's sets (leather, elven, dwarven, the knights', daedric,
+  adamantium and the guilds') are drawn in colours of their own a ramp on greys alone would leave. The covered pieces'
+  light is spanned across the ramp together (`lightSpan`, `coverStep`), darkest to its first step and brightest to its
+  last, so a set drawn dark and one drawn light both keep their shading and detail; first person's gauntlets and boots
+  take it so too. The ramp lies in place of the
   forge's own on every armour piece's layer, its padding and every garment but the cloak; never on a weapon, a shield,
   a sheath, the cloak or the hair. A coat lays its ramp on the horse's hide by its light (texels of the hide's hue,
   25 to 65 degrees), leaving the saddle, blanket, mane and metal as the forge drew them; the ride from the saddle

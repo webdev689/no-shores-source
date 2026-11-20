@@ -58,7 +58,7 @@ keeps a counter in Overlook's plaza ([[Cities]]).
 - **Its own colour.** Each faction's armour and weapons are drawn in a colour no dye sells (`factions.json`'s
   `gear.look`, four colours laid as a 16-step ramp and snapped to the game's palette): the armour in its guild set
   (`gear.armour`), each layer and the padding under it named for its faction in the outfit's dyes (`gearOutfit`), which
-  `rampsOf` lays over any dye worn; the weapons in its metal
+  `layerRamps` lays over any dye worn, covering every texel of the piece by its light (`whole`); the weapons in its metal
   (`gear.metal`), their colour where the forge dyes a weapon (a bow, a staff, a shield, in hand or put away). The dress
   carries it, so other players see it; first person lays it on the gauntlets, boots, bow, staff and shield.
 - **An Art's level.** Each Art keeps a level (1 to 5), XP toward the next and the fragments it owns, one bit each

@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { dressFrom, figureOf, lookOutfit, rampsOf, wardrobeOf } from './dressing.ts';
+import { dressFrom, figureOf, layerRamps, lookOutfit, rampsOf, wardrobeOf } from './dressing.ts';
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import { COSMETICS, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 
@@ -223,4 +223,17 @@ test("each faction's own colour is one no dye sells, and no other faction's", ()
   const looks = factions.factions.map((faction) => faction.gear.look.join());
   assert.equal(new Set(looks).size, factions.factions.length);
   for (const cosmetic of COSMETICS) assert.ok(!looks.includes(cosmetic.look.join()), cosmetic.id);
+});
+
+test('a dye worn and a faction colour cover their armour whole, and padding; garments, weapons and metals keep greys', () => {
+  const ramp = (light: number) => [[light, light, light] as const];
+  const table = { palette: [], clothing: { White: ramp(2) }, armour: { Elven: ramp(3), Iron: ramp(4) } };
+  const layers = ['cuirass_elven', 'under_elven', 'helm_mages', 'shirt_long_v', 'shield_kite_iron'];
+  const looks = { bodies: {}, dye: layers, metal: ['cuirass_elven', 'helm_mages', 'shield_kite_iron'] };
+  const armour = { cuirass: 'elven', helm: 'mages' } as const;
+  const dyes = { helm_mages: 'lamplighters', shirt_long_v: 'White' };
+  const { whole } = layerRamps(layers, { ...outfit, armour, dyes, dye: 'coral' }, looks, table);
+  assert.deepEqual(whole, ['cuirass_elven', 'under_elven', 'helm_mages']);
+  const own = layerRamps(layers, { ...outfit, armour, dyes, dye: null }, looks, table);
+  assert.deepEqual(own.whole, ['helm_mages'], 'with no dye worn, only the faction piece');
 });

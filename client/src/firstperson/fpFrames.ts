@@ -1,5 +1,5 @@
 import { type GlowElement, recolourToGlow } from '../elementGlow.ts';
-import type { Strip } from '../forge/compose.ts';
+import { type Strip, coverStep, lightOf, lightSpan } from '../forge/compose.ts';
 import type { DyeTable, PaletteSnap, Rgb } from '../forge/dyes.ts';
 import type { WeaponKind } from './weaponMachine.ts';
 
@@ -122,6 +122,20 @@ export function metalRamp(dyes: DyeTable, metal: string | null): readonly Rgb[] 
   return dyes.armour[metal ?? 'Steel'] ?? dyes.armour.Steel ?? null;
 }
 
+/** A picture of the hands or feet in `set` painted: a dye worn or a faction's colour covering the whole piece, a set's
+ *  own ramp on its greys. */
+export function paintSet(
+  source: FrameSource,
+  strip: Strip,
+  set: string | null,
+  bare: string,
+  part: 'hands' | 'feet' = 'hands',
+): Uint8Array {
+  const ramp = setRamp(source, set, bare, part);
+  const covers = set !== null && ramp !== null && (ramp === source.own?.[part] || ramp === source.dye);
+  return source.painter.paint(strip, ramp, covers);
+}
+
 /** The ramp an armour set's grey is laid on, worn on the `part`: a faction's own colour, else the dye worn's, else the
  *  set's own; `bare`'s with no set worn. */
 export function setRamp(
@@ -159,21 +173,28 @@ export class FramePainter {
     }
   }
 
-  /** The strip's texels painted, clear below half alpha; `ramp` the metal's, or null to snap the greys as any colour. */
-  paint(strip: Strip, ramp: readonly Rgb[] | null): Uint8Array {
+  /** The strip's texels painted, clear below half alpha; `ramp` the metal's, or null to snap the greys as any colour.
+   *  A ramp that `covers` the strip (a dye worn or a faction's colour) lies on every texel by its light, across the
+   *  strip's own span of light, as the figure's does. */
+  paint(strip: Strip, ramp: readonly Rgb[] | null, covers = false): Uint8Array {
     const pixels = Uint8Array.from(strip.data);
-    const greys: number[] = [];
+    const span = covers ? lightSpan(strip) : null;
+    const dyed: [number, number][] = [];
     for (let texel = 0; texel < pixels.length; texel += 4) {
       const drawn = (pixels[texel + 3] ?? 0) >= 128;
       pixels[texel + 3] = drawn ? 255 : 0;
-      if (drawn && ramp && pixels[texel] === pixels[texel + 1] && pixels[texel + 1] === pixels[texel + 2]) {
-        greys.push(texel);
+      const grey = pixels[texel] === pixels[texel + 1] && pixels[texel + 1] === pixels[texel + 2];
+      if (drawn && ramp && (grey || span)) {
+        const step = span
+          ? coverStep(lightOf(pixels.subarray(texel, texel + 3)), span)
+          : (this.steps[pixels[texel] ?? 0] ?? 0);
+        dyed.push([texel, step]);
         pixels[texel + 3] = 0;
       }
     }
     this.snap.snap(pixels);
-    for (const texel of greys) {
-      const colour = ramp?.[this.steps[pixels[texel] ?? 0] ?? 0] ?? [0, 0, 0];
+    for (const [texel, step] of dyed) {
+      const colour = ramp?.[step] ?? [0, 0, 0];
       pixels.set([...colour, 255], texel);
     }
     return pixels;
@@ -269,12 +290,12 @@ async function whole(
   archive: string,
   [record, frame]: readonly [number, number],
   own: string | null,
-  ramp: readonly Rgb[] | null,
+  paint: (strip: Strip) => Uint8Array,
   left: boolean,
 ): Promise<Picture | null> {
   const paths = looksAsked(own, left).map((look) => wholePath(archive, record, frame, look));
   const found = await firstOf(source, paths);
-  return found && placed(source, found.path, found.strip, source.painter.paint(found.strip, ramp));
+  return found && placed(source, found.path, found.strip, paint(found.strip));
 }
 
 /** A dagger or a sword drawn from its two layers: the hand in the gauntlets worn, the blade in its own make. */
@@ -310,7 +331,7 @@ async function layered(
   if (!oneCanvas) return left ? layered(source, archive, [record, frame], wielded, hands, false) : null;
   const blade = new Uint8Array(hand.colour.width * hand.colour.height);
   const pixels = layByDepth(
-    source.painter.paint(hand.colour, setRamp(source, hands, 'Iron')),
+    paintSet(source, hand.colour, hands, 'Iron'),
     hand.depth,
     source.painter.paint(weapon.colour, metalRamp(source.dyes, wielded.metal)),
     weapon.depth,
@@ -338,7 +359,7 @@ async function bowPicture(
     over?.width === base.strip.width &&
     over.height === base.strip.height &&
     source.frames[handsPath]?.at.join() === source.frames[base.path]?.at.join();
-  if (over && fits) layOver(pixels, source.painter.paint(over, setRamp(source, hands, 'Steel')));
+  if (over && fits) layOver(pixels, paintSet(source, over, hands, 'Steel'));
   return placed(source, base.path, base.strip, pixels);
 }
 
@@ -360,7 +381,8 @@ export async function weaponPicture(
   if (wielded.kind === 'fists') {
     const kick = KICKS.has(record);
     const set = kick ? worn.feet : worn.hands;
-    return whole(source, archive, shown, set, setRamp(source, set, 'Iron', kick ? 'feet' : 'hands'), left);
+    const paint = (strip: Strip) => paintSet(source, strip, set, 'Iron', kick ? 'feet' : 'hands');
+    return whole(source, archive, shown, set, paint, left);
   }
   if (wielded.kind === 'bow') return bowPicture(source, wielded, worn.hands, frame);
   // A staff is dyed as the figure's is; a blade, a head or a haft keeps its metal.
@@ -369,7 +391,7 @@ export async function weaponPicture(
     const laid = await layered(source, archive, shown, wielded, worn.hands, left);
     if (laid) return laid;
   }
-  return whole(source, archive, shown, wielded.metal, ramp, left);
+  return whole(source, archive, shown, wielded.metal, (strip) => source.painter.paint(strip, ramp), left);
 }
 
 /** Where the running arm's frames lie on the design screen: the right arm's corner, its foot on the bottom edge. */
@@ -382,7 +404,7 @@ export async function runPicture(source: FrameSource, hands: string | null, fram
     looksAsked(hands, false).map((look) => runPath(frame, look)),
   );
   if (!found) return null;
-  const pixels = source.painter.paint(found.strip, setRamp(source, hands, 'Iron'));
+  const pixels = paintSet(source, found.strip, hands, 'Iron');
   return { width: found.strip.width, height: found.strip.height, pixels, at: RUN_AT };
 }
 
@@ -416,7 +438,7 @@ export async function castPicture(
   if (!base || over.some((strip) => strip?.width !== base.width || strip.height !== base.height))
     return hands ? castPicture(source, element, record, null, glow) : null;
   // A set's arm is dyed as its fists are.
-  const pixels = source.painter.paint(base, hands ? setRamp(source, hands, 'Iron') : null);
+  const pixels = hands ? paintSet(source, base, hands, 'Iron') : source.painter.paint(base, null);
   over.forEach((strip, index) => {
     if (!strip) return;
     const painted = source.painter.paint(strip, null);

@@ -27,7 +27,7 @@ const SOLD = factions.factions.flatMap((faction) =>
 const RANK = factions.reputationPerRank;
 test('unpledged, the first pledge is free and no cape is sold', () => {
   const rows = factionRows(STORM, state({ standing: standing({}), factionWares: SOLD }), false);
-  assert.deepEqual(headings(rows), ['Reputation', 'Pledge', 'Armour', 'Weapons', 'Art', 'Fragments']);
+  assert.deepEqual(headings(rows), ['Reputation', 'Pledge', 'Art', 'Fragments', 'Armour', 'Weapons']);
   const pledge = row(rows, 'Pledge')?.wares[0];
   assert.deepEqual([pledge?.price, pledge?.ask], [null, { kind: ASKS.pledge, column: STORM }]);
 });

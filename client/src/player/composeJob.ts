@@ -12,6 +12,8 @@ export interface ComposeJob {
   readonly view: number;
   readonly frame: number;
   readonly ramps: Readonly<Record<string, readonly Rgb[]>>;
+  /** The layers whose ramp covers them whole: a dye worn's or a faction's colour on its armour (`layerRamps`). */
+  readonly whole?: readonly string[] | undefined;
   readonly glow: GlowLook;
   readonly alone?: readonly string[] | undefined;
 }
@@ -67,6 +69,7 @@ export async function composeCard(
     ramps,
     strip,
     cast ? SPARK : undefined,
+    new Set(job.whole),
   );
   if (!composed) return null;
   if (glow && cast) recolourToGlow(composed.pixels, glow, composed.held);

@@ -197,7 +197,10 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
     { heading: 'Reputation', wares: packages, empty: 'No packages wait for you.' },
     { heading: 'Pledge', wares: [pledge] },
   ];
-  rows.push(...gearRows(id, gear, rank, pledged));
+  // The cape stands with the pledge it is bought by.
+  const wares = gearRows(id, gear, rank, pledged);
+  const cape = wares.find((row) => row.heading === 'Cape');
+  if (cape) rows.push(cape);
   const level = standing.artLevels[artPlace] ?? 1;
   const earned = standing.artXp[artPlace] ?? 0;
   const owned = standing.artOwned[artPlace] ?? 0;
@@ -283,5 +286,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
       };
     }),
   });
+  // The faction's own services first, its Art among them; its armour and weapons after, as a short screen scrolls.
+  rows.push(...wares.filter((row) => row !== cape));
   return rows;
 }
