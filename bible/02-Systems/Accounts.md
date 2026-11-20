@@ -176,7 +176,8 @@ never the Abyss Dungeon of the week, whose company forms it.
   many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while it holds a
   socket.
 - **One search an account.** A second search, in another tab, replaces the first, which is closed with 4003 and
-  "You are finding a company in another tab.". Closing the socket leaves the queue.
+  "You are finding a company in another tab.". While an account's run is being started, a second search of theirs
+  is closed with those words, so no account is in two groups. Closing the socket leaves the queue.
 - **A run found** is named `<base>--run-<instance>` and kept for those found (`found_runs`, kept a day), so its room
   lets them in together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their
   socket closed. The finder judges no gate and keeps no clock: the room is the authority, and the page offers Find a

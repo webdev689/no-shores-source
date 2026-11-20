@@ -258,3 +258,25 @@ test('a socket that sends no token in time is let go, and only those with a toke
   await seeking(finder, tokens['Ada'] ?? '');
   assert.equal(finder.waiting, 1, 'a seeker with a token gets in');
 });
+
+test('a second tab that searches while its account’s run is being started joins no second group', async () => {
+  const names = ['Ada', 'Ben', 'Cal', 'Dee'];
+  const { made, tokens } = await world(names);
+  let keep: (kept: boolean) => void = () => undefined;
+  const finder = new Finder('node-krakens-grotto', {
+    seeker: (token) => seekerOf(made.deps.database, token, made.clock.now),
+    found: () => new Promise<boolean>((resolve) => (keep = resolve)),
+    now: () => made.clock.now,
+    instance: () => 'k3j4h5g6',
+  });
+  const all = [];
+  for (const name of names) all.push(await seeking(finder, tokens[name] ?? ''));
+  const ticking = finder.tick();
+  const again = await seeking(finder, tokens['Ada'] ?? '');
+  assert.deepEqual(again.closed, [4003, 'You are finding a company in another tab.']);
+  assert.equal(finder.waiting, 0, 'in no queue');
+  keep(true);
+  await ticking;
+  assert.deepEqual(all[0]?.sent, ['{"run":"node-krakens-grotto--run-k3j4h5g6"}'], 'the first tab goes in');
+  assert.equal((await seeking(finder, tokens['Ada'] ?? '')).closed.length, 0, 'once told, a search again is taken');
+});

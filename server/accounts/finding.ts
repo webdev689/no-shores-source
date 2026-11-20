@@ -18,6 +18,8 @@ export const BAND_LEVELS = 10;
 /** The most sockets with a token one finder holds: a guard, as the rooms' is. A socket with none is let go once
  *  TOKEN_WAIT_MS has passed, so silent ones never fill it. */
 export const FINDING_MOST = 64;
+/** Why a search ends whose account searches in another tab. */
+const ANOTHER_TAB = 'You are finding a company in another tab.';
 /** The longest base a run is found for, so its run's name (`--run-` and eight more) fits a room's 64. */
 const BASE_MOST = 50;
 /** An Elite Dungeon's base at Normal, or the week's at Elite, as Find a Company is asked for it by WebSocket. */
@@ -136,6 +138,9 @@ export class Finder {
   private readonly base: string;
   private readonly deps: FinderDeps;
   private readonly queue = new Queue();
+  /** The accounts whose run is being started, out of the queue until their group is told: no second tab joins
+   *  another group meanwhile. */
+  private readonly starting = new Set<string>();
   /** Each socket held, by its number, when it opened, and whether its token has come. */
   private readonly sockets = new Map<
     number,
@@ -166,8 +171,9 @@ export class Finder {
     if (found === undefined) return this.letGo(socket, 1011, 'the accounts did not answer');
     if (found === null) return this.letGo(socket, 4003, 'Sign in to find a company.');
     const { account, level, apart } = found;
+    if (this.starting.has(account)) return this.letGo(socket, 4003, ANOTHER_TAB);
     const replaced = this.queue.join({ socket, account, band: bandOf(level), since: this.deps.now(), apart });
-    if (replaced !== null) this.letGo(replaced, 4003, 'You are finding a company in another tab.');
+    if (replaced !== null) this.letGo(replaced, 4003, ANOTHER_TAB);
   }
 
   closed(socket: number): void {
@@ -181,7 +187,9 @@ export class Finder {
     const late = this.deps.now() - TOKEN_WAIT_MS;
     for (const [number, held] of this.sockets)
       if (!held.heard && held.since <= late) this.letGo(number, 4003, 'Sign in to find a company.');
-    for (const group of this.queue.due(this.deps.now())) {
+    const due = this.queue.due(this.deps.now());
+    for (const one of due.flat()) this.starting.add(one.account);
+    for (const group of due) {
       const run = `${this.base}--run-${this.deps.instance()}`;
       const kept = await this.deps
         .found(
@@ -199,6 +207,7 @@ export class Finder {
         held.socket.send(JSON.stringify({ run }));
         this.letGo(socket, 1000, 'found');
       }
+      for (const one of group) this.starting.delete(one.account);
     }
   }
 
