@@ -21,7 +21,7 @@ BUDGET = {
 
 
 def contract_problems():
-    """Every way kits.json does not make sense: a size not positive, a solid outside its size or not round, a role
+    """Every way kits.json does not make sense: a size not positive, a solid not wholly inside its size, a role
     without a budget, a module of no kit, or biome kits that do not hold the same pieces."""
     found = []
     for name, module in catalog.MODULES.items():
@@ -32,7 +32,7 @@ def contract_problems():
         if module['role'] not in BUDGET:
             found.append(f"{name}: role {module['role']!r} has no triangle budget")
         for x, y, r in module['solids']:
-            if r <= 0 or abs(x) > size[0] / 2 or abs(y) > size[1] / 2:
+            if r <= 0 or abs(x) + r > size[0] / 2 + TOLERANCE_M or abs(y) + r > size[1] / 2 + TOLERANCE_M:
                 found.append(f'{name}: solid ({x}, {y}, r {r}) stands outside its size {size}')
         if name.partition('.')[0] not in catalog.KITS:
             found.append(f'{name}: no kit of kits.json names it')

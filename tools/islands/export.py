@@ -1,6 +1,7 @@
 """A kit's pack, `<kit>.modules`: every module's triangles in the island module's frame, tagged by part.
 
-The bytes: a u32 little-endian header length, the header as UTF-8 JSON (format, style (the kit), parts, and each module's name,
+The bytes: a u32 little-endian header length, the header as UTF-8 JSON (format, style (the kit), parts, and each
+module's name,
 vertexStart, vertexCount, indexStart, indexCount and bounds), then every vertex (28 bytes: position 3 × f32 metres;
 normal 4 × snorm8, the 4th 0; UV 2 × f32 metres; part 4 × u8, the first the part's number), then every index (u32),
 each module's counted from its own first vertex. `pack` takes plain arrays, so it runs without Blender; `gather`
@@ -21,7 +22,7 @@ def snorm8(value):
 
 def pack(kit, modules):
     """The pack's bytes. `modules` is a list of (name, triangles), each triangle three corners (position, normal, uv,
-    part): position and normal (x, y, z) in the island module's frame, uv (u, v) metres, part a number into the parts."""
+    part): position and normal (x, y, z) in the module's frame, uv (u, v) metres, part a number into the parts."""
     vertices, indices, entries = bytearray(), [], []
     for name, triangles in modules:
         if not triangles:
@@ -78,7 +79,7 @@ def part_names(item):
 
 def gather(item, depsgraph):
     """A Blender object's triangles as `pack` takes them: its evaluated mesh, modifiers and all, placed in the scene,
-    y negated back into the island module's frame, each corner's own (split) normal, its UVs as made, and each face's part
+    y negated back into the module's frame, each corner's own (split) normal, its UVs as made, and each face's part
     its material's name. An object without UVs is refused: the page draws by them."""
     evaluated = item.evaluated_get(depsgraph)
     mesh = evaluated.to_mesh()

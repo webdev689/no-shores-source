@@ -13,7 +13,7 @@ def build(kit):
         'tree.c': trees.broadleaf(kit, f'{name}.tree.c', trunk_share=0.72, limbs=5, masses=7, part='leafAlt',
                                   slender=1.2, flat=0.5, buttress=6),
         'tree.dead': trees.snag(kit, f'{name}.tree.dead', vines=2),
-        'shrub.a': growth.fern(kit, f'{name}.shrub.a', fronds=8, width=0.4),
-        'shrub.b': growth.broad_leaves(kit, f'{name}.shrub.b'),
+        'shrub.a': growth.fern(kit, f'{name}.shrub.a', fronds=10, width=0.24),
+        'shrub.b': growth.broad_leaves(kit, f'{name}.shrub.b', leaves=5, part='leafAlt'),
         'grass': growth.grass(kit, f'{name}.grass', 22, width=0.04, heads=3),
     }

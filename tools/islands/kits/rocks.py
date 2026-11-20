@@ -25,7 +25,7 @@ def lump(kit, look, x, y, z0, sx, sy, sz, seed, fine=False, bands=None, blocky=F
     granite is jointed into blocks, as a cliff's face is."""
     body = LOOKS[look]['body']
     if look == 'granite' and blocky:
-        return [kit.rock(x, y, z0, (sx, sy, sz), seed=seed, shape='cube', detail=1, roughness=0.14, base=0.05,
+        return [kit.rock(x, y, z0, (sx, sy, sz), seed=seed, shape='cube', detail=2, roughness=0.2, base=0.05,
                          part=body, smooth=None)]
     if look == 'granite':
         return [kit.rock(x, y, z0, (sx, sy, sz), seed=seed, detail=2 if fine else 1, roughness=0.22, base=0.12,
@@ -40,7 +40,8 @@ def lump(kit, look, x, y, z0, sx, sy, sz, seed, fine=False, bands=None, blocky=F
             share = draw.uniform(0.78, 1.0) if band else 1.0
             shift = (1 - share) / 2
             made.append(kit.rock(x + draw.uniform(-shift, shift) * sx, y + draw.uniform(-shift, shift) * sy, low,
-                                 (sx * share, sy * share, high - low + (0.02 if band < count - 1 else 0.0)), seed=f'{seed}.{band}', shape='cube',
+                                 (sx * share, sy * share, high - low + (0.02 if band < count - 1 else 0.0)),
+                                 seed=f'{seed}.{band}', shape='cube',
                                  detail=1, roughness=0.12, base=0.0, part=body if band % 2 else LOOKS[look]['trim'],
                                  smooth=None))
             low = high
@@ -145,8 +146,9 @@ def stack(kit, look, name):
     tiers = [(1.0, 0.36), (0.8, 0.66), (0.64, 0.88), (0.42, 1.0)]
     made, low = [], -SINK_M
     for number, (share, top) in enumerate(tiers):
-        made += lump(kit, look, (0.3 * (number % 2) - 0.15) * bool(number), (0.2 * (number % 3) - 0.2) * bool(number), low, x * share, y * share * 0.9,
-                     z * top - low, f'{name}.st{number}', blocky=number < len(tiers) - 1)
+        shift = (0.6 * (number % 2) - 0.3, 0.4 * (number % 3) - 0.4) if number else (0.0, 0.0)
+        made += lump(kit, look, *shift, low, x * share, y * share * 0.9,
+                     z * top - low, f'{name}.st{number}', blocky=True)
         low = z * top - 0.8
     made += weed_line(kit, look, 0, 0, x, y, f'{name}.st')
     return kit.join(made)

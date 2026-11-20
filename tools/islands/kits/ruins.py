@@ -57,7 +57,8 @@ def wall(kit, module):
     run = x / len(heights)
     for number, top in enumerate(heights):
         x0 = -x / 2 + run * number
-        made.append(kit.stones(x0, x0 + run, -0.3, top, -0.4, 0.4, block=(0.7, 1.2), course=(0.45, 0.6), bevel=0.0, alt=0.3,
+        made.append(kit.stones(x0, x0 + run, -0.3, top, -0.4, 0.4, block=(0.7, 1.2), course=(0.45, 0.6),
+                               bevel=0.0, alt=0.3,
                                seed=f'{module}.{number}'))
     for number, (bx, by) in enumerate(((0.9, -0.5), (2.2, 0.45))):
         made.append(kit.bevelled_box(bx - 0.3, by - 0.12, 0, bx + 0.35, by + 0.12, 0.3, bevel=0.04, wear=0.03,

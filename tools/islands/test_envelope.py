@@ -38,6 +38,11 @@ class Contract(unittest.TestCase):
     def test_kits_json_makes_sense(self):
         self.assertEqual(envelope.contract_problems(), [])
 
+    def test_a_solid_reaching_past_its_size_is_refused(self):
+        wide = {'role': 'ruin', 'size': [6.0, 1.2, 3.5], 'solids': [[-2.5, 0, 0.6]]}
+        with mock.patch.dict(catalog.MODULES, {'common.test.wall': wide}):
+            self.assertTrue(any('common.test.wall: solid' in problem for problem in envelope.contract_problems()))
+
     def test_every_kit_holds_its_modules_in_the_files_order(self):
         names = [name for kit in catalog.KITS for name in catalog.required(kit)]
         self.assertEqual(names, list(catalog.MODULES))
@@ -82,10 +87,14 @@ class Envelope(unittest.TestCase):
         self.assertTrue(any('over the 300' in problem for problem in envelope.problems('temperate.grass', many)))
 
     def test_a_solid_with_no_mesh_under_it_fails(self):
-        x, y, z = catalog.MODULES['common.ruin.arch']['size']
-        # Only the right pier: the left solid at x -2 stands on nothing.
-        right = triangles(shapes.box(1.4, -y / 2, 0, x / 2, y / 2, z) + shapes.box(-x / 2, 0.6, z - 0.1, -2.45, 0.7, z))
-        self.assertTrue(any('solid at (-2.0' in problem for problem in envelope.problems('common.ruin.arch', right)))
+        arch = {'role': 'ruin', 'size': [5.0, 1.4, 5.5], 'solids': [[-2.0, 0, 0.45], [2.0, 0, 0.45]]}
+        with mock.patch.dict(catalog.MODULES, {'common.test.arch': arch}):
+            # Only the right pier, and a marker out at the far left: the left solid at x -2 stands on nothing.
+            right = triangles(shapes.box(1.4, -0.7, 0, 2.5, 0.7, 5.5) + shapes.box(-2.5, 0.6, 5.4, -2.45, 0.7, 5.5))
+            self.assertTrue(any('solid at (-2.0' in problem for problem in envelope.problems('common.test.arch',
+                                                                                           right)))
+            whole = right + triangles(shapes.box(-2.5, -0.7, 0, -1.4, 0.7, 5.5))
+            self.assertEqual(envelope.problems('common.test.arch', whole), [])
 
     def test_a_name_outside_the_contract_fails(self):
         self.assertTrue(envelope.problems('temperate.tree.z', filling('temperate.tree.a')))

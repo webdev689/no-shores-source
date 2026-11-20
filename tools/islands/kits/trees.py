@@ -41,7 +41,7 @@ def broadleaf(kit, module, trunk_share=0.45, limbs=4, masses=7, part='leaf', bar
     seed = seed or module
     fork = z * trunk_share
     made = [limb(kit, (0, 0, -SINK_M), (0.05, 0.03, fork + 0.3), 0.34 * slender, 0.24 * slender, sides=7)]
-    depth = (z - fork) * (0.62 if flat >= 1 else 0.3)
+    depth = (z - fork) * (0.72 if flat >= 1 else 0.3)
     # The limbs end inside the crown's underside, so no crown floats over bare limbs.
     tips = _around(limbs, x * 0.27, z - depth * 0.75, 20.0)
     for number, tip in enumerate(tips):
@@ -138,7 +138,8 @@ def conifer(kit, module, tiers=7, part='leaf', snow=False, bend=0.0, spread=1.0,
         bough = kit.lathe(profile, centre, 0.0, low, sides=8, part=part, smooth=None)
         made.append(kit.rotate_z(kit.jitter(bough, 0.14, seed=f'{seed}.{tier}'), 22.5 * tier, (centre, 0.0)))
         if snow:
-            cap = [(0.0, min(height + 0.07, z - 0.05 - low)), (reach * 0.52, height * 0.6), (reach * 0.82, height * 0.2),
+            cap = [(0.0, min(height + 0.07, z - 0.05 - low)), (reach * 0.52, height * 0.6),
+                   (reach * 0.82, height * 0.2),
                    (reach * 0.6, height * 0.25)]
             made.append(kit.lathe(cap, centre, 0.0, low + 0.06, sides=8, part='snow', smooth=None))
     made.append(kit.cone((bend, 0, z - 0.9), (bend, 0, z - 0.02), 0.35, 0.0, sides=5, part=part, smooth=None))

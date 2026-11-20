@@ -37,7 +37,8 @@ def crypt(kit, module):
         made.append(kit.bevelled_box(-1.3, front, -0.8, 1.3, front + 0.57, -0.75 * number / steps, bevel=0.03,
                                      wear=0.015, seed=f'{module}.{number}', part='stone'))
     for side in (-1, 1):
-        made.append(kit.stones(-y / 2, y / 2 - 1.2, -0.8, 1.0, 0.0, 1.2, block=(0.6, 1.0), course=(0.35, 0.45), bevel=0.0,
+        made.append(kit.stones(-y / 2, y / 2 - 1.2, -0.8, 1.0, 0.0, 1.2, block=(0.6, 1.0), course=(0.35, 0.45),
+                               bevel=0.0,
                                alt=0.3, seed=f'{module}.wall{side}'))
         made[-1] = kit.translate(kit.rotate_z(made[-1], -90 * side), side * 1.3, 0, 0)
     made.append(kit.box(-0.85, y / 2 - 1.3, -0.8, 0.85, y / 2 - 1.0, 2.0, part='earth'))

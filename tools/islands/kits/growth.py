@@ -38,7 +38,8 @@ def fern(kit, module, fronds=7, part='leaf', width=0.26, seed=None):
     """A fern: fronds springing from its crown, arching up and over."""
     x, y, z = _size(module)
     # A frond rising 2.76 heights over its reach and drooping 2 by its tip peaks near the top of the size.
-    made = [kit.frond((0, 0, 0.02), 360 * k / fronds + 11 * (k % 2), x * 0.45, width, z * 1.9, rise=z * 2.62 / (x * 0.45),
+    made = [kit.frond((0, 0, 0.02), 360 * k / fronds + 11 * (k % 2), x * 0.45, width, z * 1.9,
+                      rise=z * 2.62 / (x * 0.45),
                       segments=3, fold=0.2, part=part) for k in range(fronds)]
     made += [kit.frond((0, 0, 0.02), 360 * k / 3 + 50, x * 0.2, width * 0.6, -z * 0.4, rise=0.2, segments=2,
                        part=part) for k in range(3)]
@@ -48,8 +49,9 @@ def fern(kit, module, fronds=7, part='leaf', width=0.26, seed=None):
 def broad_leaves(kit, module, leaves=6, part='leaf', seed=None):
     """A broad-leaf plant: wide leaves on short stems, held up and out from its crown."""
     x, y, z = _size(module)
-    made = [kit.frond((0, 0, 0.0), 360 * k / leaves, x * 0.48, x * 0.34, z * 1.15, rise=z * 2.03 / (x * 0.48), segments=3,
-                      fold=0.15, part=part) for k in range(leaves)]
+    made = [kit.frond((0, 0, 0.0), 360 * k / leaves, x * 0.48, x * 0.5, z * 1.15, rise=z * 2.03 / (x * 0.48),
+                      segments=3,
+                      fold=0.05, part=part) for k in range(leaves)]
     made.append(kit.frond((0, 0, 0.0), 30, x * 0.12, x * 0.2, -z * 0.7, rise=0.3, segments=2, part=part))
     return kit.join(made)
 
