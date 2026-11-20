@@ -182,7 +182,10 @@ will take it, by the room's own tick.
   repaired by a port city. A course's message asks for a repair (1), a boarding (2) or leaving her deck (3). The sea's
   snapshot carries what floats for each player, each ship's kept hurts and her repair's seconds left, what each player
   is told beside their fight's view (the naval crate's numbers, or the sea's own: washed up, what a piece held, who
-  joined), and each deck boarded with its boarders and its room's own snapshot.
+  joined, moored), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot
+  once a tick (`room_snapshot_prepare`) and sends each socket its own cut (`room_snapshot_for`): what floats, kept
+  hurts, what is told and a deck's own snapshot reach only the players they are for. The sea takes no boarding yet
+  ([[Naval Combat]], "Limits").
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused

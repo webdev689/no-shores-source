@@ -373,3 +373,12 @@ fn what_the_sea_tells_a_player_goes_to_them_alone() {
     };
     assert_eq!((told(first), told(second)), (1, 0), "her ship moored where it was kept is her word alone");
 }
+
+#[test]
+fn the_sea_takes_no_boarding_until_the_page_can_fight_on_her_deck() {
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    assert_eq!(input(player, &protocol::ask_bytes(2)), REFUSED);
+}
