@@ -459,7 +459,10 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the day's six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
 - **A faction's rows** (`factionRows`): REPUTATION (the rank, the meter, what the next ranks keep, and each package
   waiting held to collect), PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a
-  Legendary cloak worn at any level, sold only to the pledged and not while nine cloaks are carried; kept says so), ART (the faction's Art: its level as five pips, its bar, and when the bar is
+  Legendary cloak worn at any level, sold only to the pledged and not while nine cloaks are carried; kept says so),
+  ARMOUR and WEAPONS (the faction's four armour pieces and two weapons as the room makes them, each card naming the
+  colour it is drawn in; dim with "From rank 2" or "From rank 3" until the rank, "Its slot carries nine" while its slot
+  is full), ART (the faction's Art: its level as five pips, its bar, and when the bar is
   full a Rise press with the rise's price that opens a choice of the fragments not owned; with all six owned it rises
   at once, "No fragment left to choose") and FRAGMENTS (the Art's six, owned lit, the rest dim with their price, sold
   from the first rank).

@@ -50,9 +50,10 @@ pub const SET_CORE: u8 = 41;
 pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
 pub const NO_FRAGMENT: u8 = 255;
-/// A faction's asks, the faction's number in `column`: to pledge to it, to buy its cape, to collect a package.
+/// A faction's asks, the faction's number in `column`: to pledge to it, to buy one of its wares (its place among
+/// them in `node`), to collect a package.
 pub const PLEDGE: u8 = 50;
-pub const BUY_CAPE: u8 = 51;
+pub const BUY_FACTION_WARE: u8 = 51;
 pub const COLLECT_PACKAGE: u8 = 52;
 /// An Art raised a level, or one of its fragments bought, at its faction's counter: the Art in `column`, the
 /// fragment's place in `node`.
@@ -116,7 +117,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         GRANT_WORN => Asked::Grant(Grant::Worn(Kind::from_number(ask.item_kind())?)),
         GRANT_ART_LEVEL => Asked::Grant(Grant::ArtLevel { art: column, level: ask.level() }),
         PLEDGE => Asked::Gear(Ask::Pledge { faction: column }),
-        BUY_CAPE => Asked::Gear(Ask::BuyCape { faction: column }),
+        BUY_FACTION_WARE => Asked::Gear(Ask::BuyFactionWare { faction: column, ware: node }),
         COLLECT_PACKAGE => Asked::Gear(Ask::CollectPackage { faction: column }),
         RISE_ART => Asked::Gear(Ask::RiseArt { art: column, fragment: node }),
         BUY_FRAGMENT => Asked::Gear(Ask::BuyFragment { art: column, fragment: node }),
@@ -155,7 +156,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::UseCrate => args = messages::AskArgs { kind: USE_CRATE, ..args },
             Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
             Ask::Pledge { faction } => args = messages::AskArgs { kind: PLEDGE, column: faction, ..args },
-            Ask::BuyCape { faction } => args = messages::AskArgs { kind: BUY_CAPE, column: faction, ..args },
+            Ask::BuyFactionWare { faction, ware } => {
+                args = messages::AskArgs { kind: BUY_FACTION_WARE, column: faction, node: ware, ..args };
+            }
             Ask::CollectPackage { faction } => {
                 args = messages::AskArgs { kind: COLLECT_PACKAGE, column: faction, ..args };
             }
@@ -417,6 +420,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         shape_place: more.shape_place,
         shape_minutes: more.shape_minutes,
         shape_wares: Some(more.shape_wares),
+        faction_wares: Some(more.faction_wares),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

@@ -18,9 +18,8 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **The factions' people.** The Stormcallers' and the Veiled's keepers in Overlook have no names of their own yet, as
   the Lamplighters' Elder Maren Hale has; their speakers are "Stormcaller" and "The Veiled"
   ([[Factions and Vendors as Claude Shapes Them]]).
-- **Faction wares.** Destiny 1's factions sold armour and weapons of their own by rank, and rank 25 opened an exotic
-  class item; here a faction sells its cape, its Art's rise and fragments, and its ranks give an emblem, a dye and
-  packages. Whether factions get gear of their own ([[Factions]]).
+- **A faction's rank 25.** Destiny 1's rank 25 opened a quest for an exotic class item; whether a faction's high ranks
+  give anything beyond packages ([[Factions]]).
 - **Reputation's sources.** Reputation comes from kills alone while there are no bounties or activities; whether
   those should give it when they come ([[Factions]]).
 - **Shape's hours.** Shape is in Overlook from Friday 09:00 to Sunday 21:00 UTC; whether the evening he leaves on is

@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import factions from '../../../../content/gear/factions.json' with { type: 'json' };
+import items from '../../../../content/gear/items.json' with { type: 'json' };
 import { ASKS } from '../../network/gearMessages.ts';
+import { KINDS, slotOf } from '../../player/gear.ts';
 import { factionRows, rankRewards, reputationOf } from './factionRows.ts';
 import { item, standing, state } from './stateForTests.ts';
 
@@ -9,9 +12,22 @@ const STORM = 1;
 const headings = (rows: ReturnType<typeof factionRows>) => rows.map((row) => row.heading);
 const row = (rows: ReturnType<typeof factionRows>, heading: string) => rows.find((each) => each.heading === heading);
 
+/** Every faction's wares as the room sends them: each numbered by its place among its faction's, priced in Aurem. */
+const SOLD = factions.factions.flatMap((faction) =>
+  items.items
+    .filter((named) => 'faction' in named && named.faction === faction.key)
+    .map((named, place) => {
+      const kind = KINDS.indexOf(named.kind as (typeof KINDS)[number]);
+      const price =
+        named.kind === 'cloak' ? factions.capeAurem : slotOf(kind) < 2 ? factions.weaponAurem : factions.armourAurem;
+      const level = named.kind === 'cloak' ? 1 : 20;
+      return item({ id: place, named: named.id, kind, rarity: 3, level, bucket: slotOf(kind), price });
+    }),
+);
+const RANK = factions.reputationPerRank;
 test('unpledged, the first pledge is free and no cape is sold', () => {
-  const rows = factionRows(STORM, state({ standing: standing({}) }), false);
-  assert.deepEqual(headings(rows), ['Reputation', 'Pledge', 'Art', 'Fragments']);
+  const rows = factionRows(STORM, state({ standing: standing({}), factionWares: SOLD }), false);
+  assert.deepEqual(headings(rows), ['Reputation', 'Pledge', 'Armour', 'Weapons', 'Art', 'Fragments']);
   const pledge = row(rows, 'Pledge')?.wares[0];
   assert.deepEqual([pledge?.price, pledge?.ask], [null, { kind: ASKS.pledge, column: STORM }]);
 });
@@ -20,19 +36,27 @@ test('pledged to another, switching costs its price; pledged here, it says so an
   const switching = row(factionRows(STORM, state({ standing: standing({ pledge: 2 }), aurem: 100 }), false), 'Pledge');
   assert.deepEqual(switching?.wares[0]?.price, { amount: 2_500, currency: 'aurem' });
   assert.equal(switching?.wares[0]?.short, true);
-  const pledged = factionRows(STORM, state({ standing: standing({ pledge: STORM }), aurem: 3_000 }), false);
+  const pledged = factionRows(
+    STORM,
+    state({ standing: standing({ pledge: STORM }), aurem: 3_000, factionWares: SOLD }),
+    false,
+  );
   assert.equal(row(pledged, 'Pledge')?.wares[0]?.note, 'Pledged');
   assert.equal(row(pledged, 'Pledge')?.wares[0]?.ask, null);
   assert.equal(row(pledged, 'Pledge')?.wares[0]?.about, 'Pledged');
   const sold = row(pledged, 'Cape')?.wares[0];
-  assert.deepEqual(sold?.ask, { kind: ASKS.buyCape, column: STORM });
+  assert.deepEqual(sold?.ask, { kind: ASKS.buyFactionWare, column: STORM, node: 0 });
   assert.deepEqual(
     [sold?.rarity, sold?.about],
     [3, 'Legendary Cloak · any level'],
     'a named Legendary, made at level 1',
   );
   const cape = item({ named: 'stormcallers_cape', kind: 18, rarity: 3 });
-  const kept = factionRows(STORM, state({ standing: standing({ pledge: STORM }), items: [cape] }), false);
+  const kept = factionRows(
+    STORM,
+    state({ standing: standing({ pledge: STORM }), items: [cape], factionWares: SOLD }),
+    false,
+  );
   assert.deepEqual([row(kept, 'Cape')?.wares[0]?.note, row(kept, 'Cape')?.wares[0]?.ask], ['Kept', null]);
 });
 
@@ -127,7 +151,63 @@ test('no package is collected while ten Vestiges are carried', () => {
 
 test('no cape is sold while nine cloaks are carried', () => {
   const cloaks = Array.from({ length: 9 }, (unused, id) => item({ id, kind: 18, bucket: 6 }));
-  const full = state({ standing: standing({ pledge: STORM }), aurem: 9_000, items: cloaks });
+  const full = state({ standing: standing({ pledge: STORM }), aurem: 9_000, items: cloaks, factionWares: SOLD });
   const cape = row(factionRows(STORM, full, false), 'Cape')?.wares[0];
   assert.deepEqual([cape?.note, cape?.ask], ['Nine cloaks carried', null]);
+});
+
+test("a faction's armour waits for the second rank and its weapons for the third, pledged or not", () => {
+  const atRank = (rank: number, aurem = 100_000) =>
+    factionRows(
+      STORM,
+      state({ standing: standing({ pledge: 3, reputation: [rank * RANK, 0, 0] }), aurem, factionWares: SOLD }),
+      false,
+    );
+  const names = (rows: ReturnType<typeof factionRows>, heading: string) =>
+    row(rows, heading)?.wares.map((ware) => ware.name);
+  assert.deepEqual(names(atRank(0), 'Armour'), [
+    'Stormcaller Helm',
+    'Stormcaller Hauberk',
+    'Stormcaller Gauntlets',
+    'Stormcaller Greaves',
+  ]);
+  assert.deepEqual(names(atRank(0), 'Weapons'), ['Squallbreak', 'Thunderstring']);
+  const low = row(atRank(1), 'Armour')?.wares[0];
+  assert.deepEqual([low?.note, low?.ask, low?.dim], ['From rank 2', null, true]);
+  const helm = row(atRank(2), 'Armour')?.wares[0];
+  assert.deepEqual(
+    [helm?.note, helm?.ask, helm?.dim],
+    ['', { kind: ASKS.buyFactionWare, column: STORM, node: 1 }, false],
+  );
+  assert.deepEqual(helm?.price, { amount: factions.armourAurem, currency: 'aurem' });
+  assert.equal(helm?.about, 'Legendary Head · level 20');
+  assert.match(helm?.words ?? '', /lightning comes\. Drawn in Squall, a colour none but the Stormcallers wear\.$/);
+  assert.deepEqual(
+    row(atRank(2), 'Weapons')?.wares.map((ware) => ware.note),
+    ['From rank 3', 'From rank 3'],
+  );
+  const bow = row(atRank(3), 'Weapons')?.wares[1];
+  assert.deepEqual(bow?.ask, { kind: ASKS.buyFactionWare, column: STORM, node: 6 });
+  assert.equal(row(atRank(3, 100), 'Weapons')?.wares[1]?.short, true, 'short, still held to buy');
+});
+
+test('a faction piece is not asked for while its slot carries nine', () => {
+  const helms = Array.from({ length: 9 }, (unused, id) => item({ id: 100 + id, kind: 0, bucket: 2 }));
+  const full = state({
+    standing: standing({ reputation: [2 * RANK, 0, 0] }),
+    aurem: 100_000,
+    items: helms,
+    factionWares: SOLD,
+  });
+  const helm = row(factionRows(STORM, full, false), 'Armour')?.wares[0];
+  assert.deepEqual([helm?.note, helm?.ask], ['Its slot carries nine', null]);
+});
+
+test("away from a social space the room sends no faction's pieces, and no gear row shows", () => {
+  const rows = factionRows(
+    STORM,
+    state({ standing: standing({ pledge: STORM, reputation: [9 * RANK, 0, 0] }) }),
+    false,
+  );
+  assert.deepEqual(headings(rows), ['Reputation', 'Pledge', 'Art', 'Fragments']);
 });

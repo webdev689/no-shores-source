@@ -1,5 +1,5 @@
 import type { GlowLook } from '../elementGlow.ts';
-import type { Contact, FirstPerson } from '../firstperson/firstPerson.ts';
+import type { Contact, FirstPerson, FirstPersonState } from '../firstperson/firstPerson.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Climb } from '../firstperson/climbHands.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
@@ -70,6 +70,20 @@ export function shownDress(dress: Dress, holding: boolean): Dress {
 }
 
 /** The climb a body is on, as the first person's hands follow it; null off a wall. */
+/** The faction, by its key, whose own colour each part of the first person wears: the gauntlets, the boots and each
+ *  hand's weapon, as the outfit names it for the layer it is drawn with (gearLooks.ts). */
+export function ownColours(outfit: Outfit): NonNullable<FirstPersonState['own']> {
+  const named = (layer: string | null | undefined) => (layer ? outfit.dyes[layer] : undefined);
+  const { gauntlets, boots } = outfit.armour;
+  const own = {
+    hands: named(gauntlets && `gauntlets_${gauntlets}`),
+    feet: named(boots && `boots_${boots}`),
+    right: named(outfit.right),
+    left: named(outfit.left),
+  };
+  return Object.fromEntries(Object.entries(own).filter(([, key]) => key !== undefined));
+}
+
 export function climbOf(body: Body): Climb | null {
   if (body.mode !== 'hang' && body.mode !== 'climb' && body.mode !== 'mantle' && body.mode !== 'vault') return null;
   const { over } = body;
@@ -258,6 +272,7 @@ export class Walker {
       mounted: player.mounted,
       horse: { coat: outfit.coat ?? null, barding: outfit.barding ?? null },
       dye: outfit.dye ?? null,
+      own: ownColours(outfit),
       yaw: player.yaw,
       pitch: player.pitch,
       fov: FIELD_OF_VIEW,

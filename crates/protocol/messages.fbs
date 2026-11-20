@@ -451,6 +451,9 @@ table Gear {
   shape_place: ubyte = 255;
   shape_minutes: uint;
   shape_wares: [GearItem];
+  // In a social space, every faction's wares in the factions' order, each numbered by its place among its faction's
+  // and priced in Aurem: its cape, its armour and its weapons, as the room makes them.
+  faction_wares: [GearItem];
 }
 
 // What a room sends: exactly one of these is present.

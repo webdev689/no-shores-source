@@ -39,7 +39,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Grant(Grant::Ammo(360)),
         Asked::Grant(Grant::Crates(2)),
         Asked::Gear(Ask::Pledge { faction: 2 }),
-        Asked::Gear(Ask::BuyCape { faction: 3 }),
+        Asked::Gear(Ask::BuyFactionWare { faction: 3, ware: 4 }),
         Asked::Gear(Ask::CollectPackage { faction: 1 }),
         Asked::Gear(Ask::RiseArt { art: 2, fragment: 4 }),
         Asked::Gear(Ask::BuyFragment { art: 3, fragment: 5 }),
@@ -227,8 +227,22 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     let wares: Vec<_> = gear.shape_wares().expect("his wares").iter().collect();
     assert_eq!(wares.len(), gear::shape::WARES);
     assert_eq!((wares[0].price(), wares[5].price()), (7, 15), "Legendary, then Atheric, in Shapes");
+    let sold: Vec<_> = gear.faction_wares().expect("the factions' wares").iter().collect();
+    let each: usize =
+        gear::factions::factions().factions.iter().map(|faction| gear::factions::wares(faction.id).len()).sum();
+    assert_eq!(sold.len(), each, "every faction's");
+    let hood = sold.iter().find(|ware| ware.named() == Some("lamplighters_hood")).expect("the Lamplighters' hood");
+    let numbers = gear::factions::factions();
+    assert_eq!((hood.id(), hood.price(), hood.level(), hood.defense() > 0), (1, numbers.armour_aurem, 20, true));
+    let bow = sold.iter().find(|ware| ware.named() == Some("nightpin")).expect("the Veiled's bow");
+    assert_eq!((bow.id(), bow.price(), bow.attack() > 0), (6, numbers.weapon_aurem, true));
     room.set_minute(friday - 2 * 1_440);
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     assert_eq!((gear.shape_place(), gear.shape_wares().map(|wares| wares.len())), (SHAPE_AWAY, Some(0)), "away");
+    room.counters = None;
+    assert!(room.put_player(player, 500.0, 500.0), "far from the stall");
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!(gear.faction_wares().map(|wares| wares.len()), Some(0), "none away from a social space");
 }

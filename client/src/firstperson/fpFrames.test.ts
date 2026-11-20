@@ -171,6 +171,21 @@ test('a dye worn takes the gauntlets and boots, whatever their set, and leaves b
   assert.deepEqual(pixelAt(barehanded?.pixels ?? new Uint8Array(), 0), [...(dyes.armour.Iron?.[4] ?? []), 255]);
 });
 
+test("a faction's own colour takes its gauntlets and boots over the dye worn, and the other part keeps the dye", async () => {
+  const punch = wholePath('WEAPON10', 2, 0, 'Fighters');
+  const kick = wholePath('WEAPON10', 1, 0, 'Daedric');
+  const plain = sourceOf({ [punch]: strip([grey(4)]), [kick]: strip([grey(4)]) }, [punch, kick]);
+  const source = { ...plain, dye: dyes.armour.Ebony ?? null, own: { hands: dyes.armour.Daedric ?? null } };
+  const worn = { hands: 'Fighters', feet: 'Daedric' };
+  const fists = wield(null);
+  const punched = await weaponPicture(source, fists, worn, 2, 0, false);
+  assert.deepEqual(pixelAt(punched?.pixels ?? new Uint8Array(), 0), [...(dyes.armour.Daedric?.[4] ?? []), 255]);
+  const kicked = await weaponPicture(source, fists, worn, 1, 0, false);
+  assert.deepEqual(pixelAt(kicked?.pixels ?? new Uint8Array(), 0), [...(dyes.armour.Ebony?.[4] ?? []), 255], 'the dye');
+  const feet = await weaponPicture({ ...source, own: { feet: dyes.armour.Iron ?? null } }, fists, worn, 1, 0, false);
+  assert.deepEqual(pixelAt(feet?.pixels ?? new Uint8Array(), 0), [...(dyes.armour.Iron?.[4] ?? []), 255], 'its boots');
+});
+
 test('the nearer of hand and weapon shows where both are drawn, either alone where only it is', () => {
   const hand = new Uint8Array([1, 1, 1, 255, 1, 1, 1, 255, 1, 1, 1, 255, 0, 0, 0, 0]);
   const weapon = new Uint8Array([2, 2, 2, 255, 2, 2, 2, 255, 0, 0, 0, 0, 2, 2, 2, 255]);

@@ -8,9 +8,10 @@ status: in force
 The owner handed this round over: "Please take this on with autonomy, be as detailed as possible, and come back when
 this is 100% finished". What the owner decided is in [[Three Factions Keep the Arts, After Destiny 1]],
 [[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]],
-[[Elder Maren Hale Welcomes the Player to Overlook]], [[Only Overlook's Social Space Opens for Now]] and
-[[The Character Page Opens Appearance From an Icon Button]]. Everything below is Claude's, made under that word, and
-the owner may change any of it. The numbers live in `content/gear/factions.json`, `content/arts/arts.json` (`levels`)
+[[Elder Maren Hale Welcomes the Player to Overlook]], [[Only Overlook's Social Space Opens for Now]],
+[[The Character Page Opens Appearance From an Icon Button]] and [[Each Faction Sells Gear of Its Own, in Its Own Colour]].
+Everything below is Claude's, made under that word and the owner's later "Do a comprehensive audit and detailed pass",
+and the owner may change any of it. The numbers live in `content/gear/factions.json`, `content/arts/arts.json` (`levels`)
 and `content/gear/cosmetics.json`, which the rules and the page both read.
 
 ## Destiny 1's factions, and what came over
@@ -34,6 +35,28 @@ from the vendor. Sources: Destinypedia's Faction, Reputation and Dead Orbit page
 | Faction gear for Marks | The faction's cape for 2,500 Aurem, pledged only, one kept at a time; Legendary, level 1, so any level wears it |
 
 Reputation is kept for every faction across a switch, as Destiny's was. A cape of a faction not pledged earns nothing.
+
+## Faction gear
+
+Destiny 1's faction vendors sold legendary armour from rank 2 and weapons from rank 3, for Glimmer and Legendary Marks
+(Destinypedia's faction gear list; the Destiny wiki's Dead Orbit page), and the armour was drawn in the faction's
+look. The owner said yes to gear of each faction's own, "with its own unique color".
+
+| Call | Choice |
+|---|---|
+| What | Each faction sells its cape, a full armour set (head, torso, arms and legs) and two weapons, a Melee and a Ranged: seven named Legendary pieces each (`content/gear/items.json`, `faction`) |
+| The pieces | Stormcallers: Stormcaller Helm, Hauberk, Gauntlets and Greaves, Squallbreak (sword and shield) and Thunderstring (bow). Lamplighters: Lamplighter Hood, Vestments, Gloves and Boots, Wickstaff (staff) and Dawnflight (bow). The Veiled: Veiled Cowl, Coat, Grips and Treads, Hushguard (dagger and shield) and Nightpin (bow) |
+| Ranks | Armour from rank 2, weapons from rank 3, as Destiny's; the cape to the pledged alone, as before |
+| Pledge | Armour and weapons need the rank, not the pledge: a switch keeps the reputation earned, so it keeps what that reputation buys |
+| Prices | Armour 6,000 Aurem a piece and weapons 9,000 (Destiny's weapons cost twice an armour piece's Marks); no limit on how many, as Destiny's had none |
+| Level | Named items are made at level 20, so a faction's armour and weapons are worn from level 20; the cape stays level 1 |
+| Perks | Each piece's layout is drawn from the traits its kind already takes, as the named Legendaries' are; its resource is its Art's island's in spirit: Windthistle for Storm, Sunstone for Divine, Mistbloom for Shadow |
+| Never dropped | No Vestige, no package and no Shape offers a faction's piece; one dismantled gives back as a Normal piece, with the third of any Essence spent on it, so faction gear bought and broken makes no Essence |
+| Its own colour | A colour no dye sells and no other faction's gear wears: Squall (indigo to a lightning white) for the Stormcallers, Lampglass (bronze to ivory and white) for the Lamplighters, Nightveil (black to a dark oxblood) for the Veiled. Each is four colours laid as a 16-step ramp, as a dye is (`content/gear/factions.json`, `gear.look`) |
+| Over a dye | A faction's piece keeps its own colour whatever dye is worn; the dye takes every other armour piece. The owner's "its own unique color" is the gear's, so no dye covers it |
+| Its look | The armour is drawn in a guild's set no other gear wears: the Stormcallers' in the fighters', the Lamplighters' in the mages', the Veiled's in the brotherhood's. The weapons are drawn in the faction's metal (elven, silver, ebony), and their colour lies where the forge dyes a weapon: the bows, the staff and the shields; a sword's or a dagger's blade keeps its metal |
+| First person | The gauntlets, the boots, the bow, the staff and the shield take the faction's colour in first person too |
+| The screen | The faction's counter shows rows ARMOUR and WEAPONS to everyone, the pieces not yet earned dim with "From rank 2" or "From rank 3"; each card says the colour it is drawn in |
 
 ## The Arts' levels
 

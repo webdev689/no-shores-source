@@ -329,9 +329,11 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   leather; a Normal one shows nothing.
 - **Rare and finer** pieces are armour sets of the forge: Rare in chain, steel or iron, Legendary in silver, elven,
   dwarven or the knights' set, Atheric in daedric, ebony, adamantium or mithril, the first the forge draws for every
-  piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots).
+  piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots). A faction's armour is its
+  guild's set instead, in the faction's own colour over any dye ([[Factions]], "Its own colour").
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
-  cloak in its faction's dye whatever its rarity. The hands hold the loadout drawn, in the rarity's metal.
+  cloak in its faction's dye whatever its rarity. The hands hold the loadout drawn, in the rarity's metal; a faction's
+  weapon in its faction's metal and colour.
 - **Cosmetics** ("Cosmetics", above) ride the dress (`Outfit.dye`, `coat`, `barding`), so every player sees them.
   A dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) in place of the
   forge's own on every armour piece's layer, its padding and every garment but the cloak; never on a weapon, a shield,
@@ -353,9 +355,10 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - The menu ([[Interface]], "The menu") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
-- A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own,
-  and a Normal head or arms piece shows nothing over the figure.
-- No Breach items exist yet. Of the cloaks, only the three factions' capes belong to a faction ([[Factions]]).
+- A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own
+  but a faction's piece, and a Normal head or arms piece shows nothing over the figure.
+- No Breach items exist yet. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
+  Vestige never opens to ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them
   again. In the ride, about a tenth of the hide (its darkest texels) keeps the bay's colour under a coat: colour alone
   cannot tell it from the bridle, and the forge's ride `_uv` strips would make an exact mask. A coat leaves the mane

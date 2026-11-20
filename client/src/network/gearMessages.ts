@@ -44,9 +44,10 @@ export const ASKS = {
   setCore: 41,
   /** An Art, its number in `column`, set at `level` (1 to 5) owning all its fragments: the Test Ground's grant. */
   grantArtLevel: 42,
-  /** A faction's asks, its number in `column`: pledging, its cape, collecting a package. */
+  /** A faction's asks, its number in `column`: pledging, one of its wares (its place among them in `node`),
+   *  collecting a package. */
   pledge: 50,
-  buyCape: 51,
+  buyFactionWare: 51,
   collectPackage: 52,
   /** An Art raised a level, or one of its fragments bought, at its faction's counter: the Art in `column`, the
    *  fragment's place in `node`. */
@@ -207,6 +208,8 @@ export interface GearState {
    *  and his wares of the week priced in Shapes. */
   readonly shapes?: number;
   readonly shape?: { readonly place: number; readonly minutesLeft: number; readonly wares: readonly GearItem[] } | null;
+  /** In a social space, every faction's wares, each numbered by its place among its faction's and priced in Aurem. */
+  readonly factionWares?: readonly GearItem[];
 }
 
 /** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
@@ -356,6 +359,7 @@ export function gearOf(gear: Gear): GearState {
             minutesLeft: gear.shapeMinutes(),
             wares: listed(gear.shapeWaresLength(), (index) => gear.shapeWares(index), 'Shape ware'),
           },
+    factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
   };
 }
 

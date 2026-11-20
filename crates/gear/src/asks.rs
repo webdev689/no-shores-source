@@ -77,9 +77,10 @@ pub enum Ask {
     Pledge {
         faction: u8,
     },
-    /// Buys a faction's cape, pledged to it: at its counter.
-    BuyCape {
+    /// Buys one of a faction's wares by its place among them (`factions::wares`): at its counter.
+    BuyFactionWare {
         faction: u8,
+        ware: u8,
     },
     /// Collects one of a faction's packages: at its counter.
     CollectPackage {
@@ -211,7 +212,7 @@ impl Character {
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
             Ask::Pledge { faction } => self.pledge(faction, here),
-            Ask::BuyCape { faction } => self.buy_cape(faction, here),
+            Ask::BuyFactionWare { faction, ware } => self.buy_faction_ware(faction, ware, here),
             Ask::CollectPackage { faction } => self.collect_package(faction, here, dice),
             Ask::RiseArt { art, fragment } => self.rise_art(art, fragment, here),
             Ask::BuyFragment { art, fragment } => self.buy_fragment(art, fragment, here),
@@ -373,15 +374,15 @@ impl Character {
     }
 
     /// Adds what an item dismantled gives back: Aurem, and its stock's fragments and, from a Legendary or Atheric,
-    /// Essence with a third of what was spent on it. A faction's cape, sold for Aurem, gives back as a Normal piece,
-    /// so buying and dismantling capes makes no Essence.
+    /// Essence with a third of what was spent on it. A faction's piece, sold for Aurem, gives back as a Normal one and
+    /// the third of its Essence, so buying and dismantling faction gear makes no Essence.
     pub(crate) fn salvage(&mut self, item: &Item, dice: &Dice) {
         let stock = item.kind.stock();
         let back = u16::try_from(item.essence_spent() / 3).unwrap_or(u16::MAX);
-        let cape = item.named.as_deref().is_some_and(crate::factions::is_cape);
-        let rarity = if cape { Rarity::Normal } else { item.rarity };
+        let bought = item.named.as_deref().is_some_and(crate::factions::sold_by_faction);
+        let rarity = if bought { Rarity::Normal } else { item.rarity };
         let (aurem, fragments, essence) = match rarity {
-            Rarity::Normal => (20, 0, 0),
+            Rarity::Normal => (20, 0, if bought { back } else { 0 }),
             Rarity::Magic => (50, 1, 0),
             Rarity::Rare => (100, if item.level >= NAMED_LEVEL { 3 } else { 2 }, 0),
             Rarity::Legendary => (200, 3, 2 + u16::from(dice.roll(Purpose::Essence, 0) < 0.5) + back),

@@ -1,6 +1,6 @@
 import { type GlowElement, type GlowLook, glowField } from '../elementGlow.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
-import { cosmeticRamp } from '../forge/cosmetics.ts';
+import { cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
 import { type Climb, ClimbHands, type ClimbShown, GRIP, REACH_HEIGHT } from './climbHands.ts';
@@ -80,6 +80,8 @@ export interface FirstPersonState {
   readonly horse?: { readonly coat: string | null; readonly barding: string | null };
   /** The cosmetic dye worn, by its id, which the gauntlets and boots take; none for their own colours. */
   readonly dye?: string | null;
+  /** The faction, by its key, whose own colour the gauntlets, the boots and each hand's weapon wear; none for none. */
+  readonly own?: { readonly hands?: string; readonly feet?: string; readonly right?: string; readonly left?: string };
   readonly yaw?: number;
   readonly blocking?: boolean;
   /** A weapon held in a fight's pose, one of its strokes' frames: a guard, a parry's deflect. */
@@ -197,8 +199,8 @@ const holds = (holding: Holding | null | undefined) =>
 export class FirstPerson {
   private readonly view: QuadDrawer;
   private source: FrameSource;
-  /** The cosmetic dye the pictures were composed in. */
-  private dye: string | null = null;
+  /** The cosmetic dye and the factions' colours the pictures were composed in. */
+  private dye = '';
   private readonly chain = new ChainSwing();
   private readonly bob = new Bob();
   private readonly hands: Hands;
@@ -316,10 +318,18 @@ export class FirstPerson {
     const shot = state.mounted ? this.ride.step(seconds, gaitOf(state), state.yaw ?? null) : null;
 
     this.horse = state.horse ?? this.horse;
-    // A new dye recolours every gauntlet and boot: what was composed in the old one is let go.
-    if ((state.dye ?? null) !== this.dye) {
-      this.dye = state.dye ?? null;
-      this.source = { ...this.source, dye: cosmeticRamp(this.dye) };
+    // A new dye or faction's colour recolours what wears it: what was composed in the old is let go.
+    const { hands, feet, right, left } = state.own ?? {};
+    const dyed = [state.dye ?? '', hands, feet, right, left].join('|');
+    if (dyed !== this.dye) {
+      this.dye = dyed;
+      const own = {
+        hands: factionRamp(hands),
+        feet: factionRamp(feet),
+        right: factionRamp(right),
+        left: factionRamp(left),
+      };
+      this.source = { ...this.source, dye: cosmeticRamp(state.dye), own };
       this.letGo();
       [this.look, this.spareLook] = ['', ''];
     }

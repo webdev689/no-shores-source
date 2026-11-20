@@ -114,7 +114,7 @@ function soldOnce(gear: GearState, aurem: number, level: number, kept: boolean, 
 
 /** An item sold for a price: its picture, its rarity and kind, red when short. A short ware is still held to buy: the
  *  room refuses it, and the keeper answers that refusal. */
-function itemWare(key: string, item: GearItem, price: Price, short: boolean, ask: GearAsk): Ware {
+export function itemWare(key: string, item: GearItem, price: Price, short: boolean, ask: GearAsk | null): Ware {
   return {
     key,
     name: itemName(item),

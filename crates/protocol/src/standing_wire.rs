@@ -1,6 +1,6 @@
 //! What the gear message carries of where a player stands beyond their gear: the factions (pledge, reputation,
-//! packages), each Art's level, XP and owned fragments, their cosmetics and those sold today, and Shape while he is in
-//! their social space.
+//! packages), each Art's level, XP and owned fragments, their cosmetics and those sold today, and in their social space
+//! Shape while he is there and the factions' wares.
 
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, Vector, WIPOffset};
@@ -19,6 +19,7 @@ pub(crate) struct Standing<'built> {
     pub shape_place: u8,
     pub shape_minutes: u32,
     pub shape_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
+    pub faction_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
 }
 
 /// A worn cosmetic's number; a worn id the catalogue does not hold never reaches here, as the character is made whole
@@ -73,6 +74,14 @@ pub(crate) fn standing_of<'built>(
     } else {
         Vec::new()
     };
+    let mut faction_wares = Vec::new();
+    for faction in factions.iter().filter(|_| social) {
+        for (place, named) in gear::factions::wares(faction.id).into_iter().enumerate() {
+            let ware = gear::vestige::named_item(u32::try_from(place).unwrap_or_default(), named, named.kind.slot());
+            let (price, _) = gear::factions::factions().terms(named);
+            faction_wares.push(crate::gear_wire::item_offset(builder, &ware, At::Carried, price));
+        }
+    }
     Standing {
         reputation: builder.create_vector(&reputation),
         packages: builder.create_vector(&packages),
@@ -84,5 +93,6 @@ pub(crate) fn standing_of<'built>(
         shape_place,
         shape_minutes,
         shape_wares: builder.create_vector(&wares),
+        faction_wares: builder.create_vector(&faction_wares),
     }
 }

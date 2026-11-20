@@ -1,6 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { dressFrom, figureOf, lookOutfit, rampsOf, wardrobeOf } from './dressing.ts';
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
+import { COSMETICS, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 
 const LAYERS = [
   'body',
@@ -193,4 +195,23 @@ test('a dress is read back with its dye, coat and barding; a cosmetic of the wro
       null,
       JSON.stringify(broken),
     );
+});
+
+test("a faction's piece wears its faction's own colour over any dye worn, and put away still wears it", () => {
+  const ramp = (light: number) => [[light, light, light] as const];
+  const table = { palette: [], clothing: {}, armour: { Iron: ramp(3), Mages: ramp(5), Elven: ramp(6) } };
+  const layers = ['cuirass_mages', 'helm_iron', 'sheath_bow_long_elven'];
+  const looks = { bodies: {}, dye: layers, metal: layers };
+  const dyes = { cuirass_mages: 'lamplighters', bow_long_elven: 'stormcallers' };
+  const armour = { cuirass: 'mages', helm: 'iron' } as const;
+  const dyed = rampsOf(layers, { ...outfit, armour, dyes, dye: 'coral' }, looks, table);
+  assert.deepEqual(dyed['cuirass_mages'], factionRamp('lamplighters'));
+  assert.deepEqual(dyed['sheath_bow_long_elven'], factionRamp('stormcallers'), 'on the back, as in hand');
+  assert.deepEqual(dyed['helm_iron'], cosmeticRamp('coral'), 'the rest take the dye worn');
+});
+
+test("each faction's own colour is one no dye sells, and no other faction's", () => {
+  const looks = factions.factions.map((faction) => faction.gear.look.join());
+  assert.equal(new Set(looks).size, factions.factions.length);
+  for (const cosmetic of COSMETICS) assert.ok(!looks.includes(cosmetic.look.join()), cosmetic.id);
 });

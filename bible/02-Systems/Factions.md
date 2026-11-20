@@ -7,6 +7,11 @@ code:
   - crates/gear/src/factions.rs#FactionsDef
   - crates/gear/src/factions.rs#earn_reputation
   - crates/gear/src/factions.rs#collect_package
+  - crates/gear/src/factions.rs#buy_faction_ware
+  - crates/gear/src/factions.rs#wares
+  - client/src/game/npc/factionRows.ts#gearRows
+  - client/src/player/gearLooks.ts#gearOutfit
+  - client/src/player/dressing.ts#rampsOf
   - crates/gear/src/art_levels.rs#rise_art
   - crates/gear/src/art_levels.rs#buy_fragment
   - crates/gear/src/art_levels.rs#art_shares
@@ -21,7 +26,8 @@ code:
 
 Three factions keep the three Arts, after Destiny 1's factions ([[Three Factions Keep the Arts, After Destiny 1]]):
 the Stormcallers keep Storm, the Lamplighters Divine and the Veiled Shadow. A player pledges to one, earns its
-reputation in the world while wearing its cape, and ranks up without end; the faction of each Art raises it from
+reputation in the world while wearing its cape, and ranks up without end; each sells its cape, armour and weapons in a
+colour of its own ([[Each Faction Sells Gear of Its Own, in Its Own Colour]]); the faction of each Art raises it from
 level 1 to 5 and sells its Core fragments. Claude's numbers: [[Factions and Vendors as Claude Shapes Them]]. Each
 keeps a counter in Overlook's plaza ([[Cities]]).
 
@@ -41,9 +47,18 @@ keeps a counter in Overlook's plaza ([[Cities]]).
   (`earn_due`). From rank 3, every rank leaves a package: collected at the counter, it gives a Vestige at the player's
   level for a slot of the dice's (Rare, or Legendary one time in four from level 18) and 1,000 Aurem, and is refused
   while ten Vestiges are carried.
-- **The cape.** Each faction's cape is a named Legendary cloak (`content/gear/items.json`, with its faction's key),
-  level 1, sold for 2,500 Aurem only to a player pledged to it, one kept at a time. No Vestige and no Shape offers one,
-  and one dismantled gives back as a Normal piece, so capes bought and broken make no Essence.
+- **The faction's wares.** Each faction sells seven named Legendary pieces (`content/gear/items.json`, with its
+  faction's key; `wares` lists them in that file's order, the cape first): its cape, level 1, for 2,500 Aurem, only to a
+  player pledged to it, one kept at a time; a full armour set from rank 2 for 6,000 Aurem a piece; and a Melee and a
+  Ranged weapon from rank 3 for 9,000 (`terms`). Armour and weapons need the rank alone, pledged or not, and are made at
+  level 20. One ask buys any of them (`buy_faction_ware`, by its place among the faction's), refused for a slot that
+  carries nine. No Vestige, package or Shape offers a faction's piece (`vestige_pool`), and one dismantled gives back as
+  a Normal piece with the third of its Essence, so faction gear bought and broken makes no Essence.
+- **Its own colour.** Each faction's armour and weapons are drawn in a colour no dye sells (`factions.json`'s
+  `gear.look`, four colours laid as a 16-step ramp): the armour in its guild set (`gear.armour`), each layer named for
+  its faction in the outfit's dyes (`gearOutfit`), which `rampsOf` lays over any dye worn; the weapons in its metal
+  (`gear.metal`), their colour where the forge dyes a weapon (a bow, a staff, a shield, in hand or put away). The dress
+  carries it, so other players see it; first person lays it on the gauntlets, boots, bow, staff and shield.
 - **An Art's level.** Each Art keeps a level (1 to 5), XP toward the next and the fragments it owns, one bit each
   (`WornArts`). Every kill's XP fills the worn Art's bar (`content/arts/arts.json` `levels.xp`: 8,000, 16,000, 32,000
   and 64,000) and stops when it is full. At the Art's faction's counter a full bar rises a level for its price
@@ -58,16 +73,18 @@ keeps a counter in Overlook's plaza ([[Cities]]).
   (Quicken's Haste, Momentum's and Resolve's Crit, Vanish's veil) by `levels.lasting`; 0.6 at level 1 up to 1.0 at
   level 5, the spells as written ([[Arts]]). The Sunwell's Linked damage share is a buff: its time is weighed, its
   1.2 is not.
-- **At the counters.** The room serves a faction's asks (pledge, cape, package) and its Art's (rise, fragment) only
+- **At the counters.** The room serves a faction's asks (pledge, wares, package) and its Art's (rise, fragment) only
   within reach of that faction's counter, as it serves a vendor's ([[Gear]], "In the rooms"); the Test Ground's stall
   serves them all.
 - **On the wire.** The gear message carries the pledge, each faction's reputation and packages waiting, and each Art's
-  level, XP and owned fragments (`standing_of`); the asks are numbered 50 (pledge), 51 (cape), 52 (package), 53 (rise)
-  and 54 (fragment), the faction or Art in `column` and the fragment in `node`. The refusals' words are the page's
+  level, XP and owned fragments, and in a social space every faction's wares as the room makes them (`standing_of`,
+  `faction_wares`); the asks are numbered 50 (pledge), 51 (a ware), 52 (package), 53 (rise) and 54 (fragment), the
+  faction or Art in `column` and the ware or fragment in `node`. The refusals' words are the page's
   (`client/src/player/gear.ts`).
 
 ## Limits
 
 - Reputation comes from kills alone: no bounties or activities give it yet, as there are none.
-- A package's Vestige is the only gear a faction gives; Destiny's faction armour and weapons have no like here yet.
+- A faction's weapons take its colour only where the forge dyes a weapon: a sword's or a dagger's blade keeps its
+  metal, so Squallbreak and Hushguard show it on their shields.
 - Destiny 1's rank 25 quest and its exotic class item have no like here.

@@ -172,7 +172,7 @@ export async function shieldPicture(
     heldPath(archive, 0, frame, 'Shield'),
   ];
   const handsAt = (look: string) => heldPath(archive, 0, frame, look);
-  const paint = (strip: Strip) => source.painter.paint(strip, metalRamp(source.dyes, metal));
+  const paint = (strip: Strip) => source.painter.paint(strip, source.own?.left ?? metalRamp(source.dyes, metal));
   const laid = await withHands(source, makes, handsAt, hands, paint);
   return laid && { ...laid, at: [0, DESIGN_HEIGHT - laid.height] };
 }

@@ -3,6 +3,7 @@
 // laid out as a 16-step ramp as the forge's metals and cloth dyes are; a barding's look is its forge layer.
 
 import catalogue from '../../../content/gear/cosmetics.json' with { type: 'json' };
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import type { Rgb } from './dyes.ts';
 
 /** The three kinds of cosmetic. */
@@ -62,6 +63,15 @@ export function cosmeticRamp(id: string | null | undefined): readonly Rgb[] | nu
   const found = cosmeticOf(id);
   return found && found.kind !== 'barding' && found.look.length === 4 ? rampOf(found.look) : null;
 }
+
+/** Each faction's own colour, by its key: a look no dye sells, which only its armour and weapons wear. */
+const FACTION_RAMPS: ReadonlyMap<string, readonly Rgb[]> = new Map(
+  factions.factions.map((faction) => [faction.key, rampOf(faction.gear.look)]),
+);
+
+/** A faction's own colour as a ramp, by its key, or null for anything else. */
+export const factionRamp = (key: string | null | undefined): readonly Rgb[] | null =>
+  FACTION_RAMPS.get(key ?? '') ?? null;
 
 /** A barding's forge layer by its id (`horse_warhorse`), or null for the bare horse or no barding. */
 export function bardingLayer(id: string | null | undefined): string | null {

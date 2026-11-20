@@ -1,12 +1,12 @@
 //! The factions: their file read whole, pledging and switching, reputation earned only pledged with the cape worn,
-//! the ranks' emblem, dye and packages, and the cape sold only to the pledged.
+//! the ranks' emblem, dye and packages, the cape sold only to the pledged, and their armour and weapons by rank.
 
 use crate::asks::{Ask, Here, Refusal};
 use crate::character::{At, Character, VESTIGES_MOST, Vestige};
 use crate::cosmetics::{CosmeticKind, cosmetics};
 use crate::dice::Dice;
 use crate::emblems::{Source, emblems};
-use crate::factions::factions;
+use crate::factions::{factions, wares};
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::rewards::Foe;
@@ -15,6 +15,8 @@ use crate::world::Difficulty;
 const AT_COUNTER: Here = Here { social: true, day: 0, week: 0 };
 const AFIELD: Here = Here { social: false, day: 0, week: 0 };
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
+/// The cape's place among a faction's wares.
+const CAPE: u8 = 0;
 
 fn rich() -> Character {
     let mut character = Character::starting();
@@ -26,7 +28,7 @@ fn rich() -> Character {
 fn caped(faction: u8) -> Character {
     let mut character = rich();
     assert_eq!(character.ask(Ask::Pledge { faction }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
-    assert_eq!(character.ask(Ask::BuyCape { faction }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
+    assert_eq!(character.ask(Ask::BuyFactionWare { faction, ware: CAPE }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
     let cape = character.items.iter().find(|(_, (item, _))| item.kind.slot() == Slot::Cloak).map(|(id, _)| *id);
     let wear = Ask::Wear { item: cape.expect("the cape carried"), slot: Slot::Cloak };
     assert_eq!(character.ask(wear, AFIELD, &DICE).map(|_| ()), Ok(()));
@@ -46,7 +48,80 @@ fn the_factions_file_reads_whole() {
         assert_eq!(emblem.source, Source::Faction { faction: faction.id, rank: 1 });
         let dye = cosmetics().iter().find(|found| found.id == faction.dye).expect("its dye");
         assert_eq!((dye.kind, dye.source), (CosmeticKind::Dye, Source::Faction { faction: faction.id, rank: 2 }));
+        let slots: Vec<Slot> = wares(faction.id).iter().map(|named| named.kind.slot()).collect();
+        let armour = [Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs];
+        assert_eq!(
+            slots,
+            [[Slot::Cloak].as_slice(), &armour, &[Slot::Melee, Slot::Ranged]].concat(),
+            "{}",
+            faction.key
+        );
+        assert!(wares(faction.id).iter().all(|named| named.rarity == Rarity::Legendary));
+        assert_eq!(wares(faction.id)[usize::from(CAPE)].id, faction.cape);
     }
+}
+
+#[test]
+fn no_vestige_and_no_shape_opens_to_a_factions_piece() {
+    let catalogue = crate::catalogue::catalogue();
+    for rarity in Rarity::ALL {
+        for slot in Slot::VESTIGE {
+            assert!(catalogue.vestige_pool(rarity, slot).all(|named| named.faction.is_none()), "{rarity:?} {slot:?}");
+        }
+    }
+}
+
+#[test]
+fn armour_sells_from_the_second_rank_and_weapons_from_the_third_pledged_or_not() {
+    let numbers = factions();
+    let mut character = rich();
+    character.materials.aurem = 100_000;
+    let [helm, weapon] = [1, 5];
+    assert_eq!(
+        character.ask(Ask::BuyFactionWare { faction: 2, ware: helm }, AT_COUNTER, &DICE),
+        Err(Refusal::RankTooLow)
+    );
+    character.allegiance = std::mem::take(&mut character.allegiance).kept();
+    character.allegiance.reputation[1] = u64::from(numbers.armour_rank) * numbers.reputation_per_rank;
+    assert_eq!(character.ask(Ask::BuyFactionWare { faction: 2, ware: helm }, AFIELD, &DICE), Err(Refusal::NotHere));
+    let before = character.clone();
+    assert_eq!(
+        character.ask(Ask::BuyFactionWare { faction: 2, ware: weapon }, AT_COUNTER, &DICE),
+        Err(Refusal::RankTooLow),
+        "weapons wait a rank more"
+    );
+    assert_eq!(character, before, "a refusal changes nothing");
+    assert!(character.ask(Ask::BuyFactionWare { faction: 2, ware: helm }, AT_COUNTER, &DICE).is_ok(), "unpledged");
+    assert_eq!(character.materials.aurem, 100_000 - numbers.armour_aurem);
+    let bought = character.items.values().map(|(item, _)| item).find(|item| item.named.is_some());
+    let bought = bought.expect("the hood carried");
+    assert_eq!(
+        (bought.named.as_deref(), bought.rarity, bought.level),
+        (Some("lamplighters_hood"), Rarity::Legendary, 20)
+    );
+    assert_eq!(character.carried_in(Slot::Head), 1 + before.carried_in(Slot::Head));
+    character.allegiance.reputation[1] = u64::from(numbers.weapon_rank) * numbers.reputation_per_rank;
+    assert!(character.ask(Ask::BuyFactionWare { faction: 2, ware: weapon }, AT_COUNTER, &DICE).is_ok());
+    assert_eq!(character.materials.aurem, 100_000 - numbers.armour_aurem - numbers.weapon_aurem);
+    assert_eq!(character.ask(Ask::BuyFactionWare { faction: 2, ware: 7 }, AT_COUNTER, &DICE), Err(Refusal::NoSuchItem));
+    character.materials.aurem = numbers.armour_aurem - 1;
+    assert_eq!(character.ask(Ask::BuyFactionWare { faction: 2, ware: helm }, AT_COUNTER, &DICE), Err(Refusal::Short));
+}
+
+#[test]
+fn a_factions_piece_is_refused_with_its_slot_full() {
+    let mut character = rich();
+    character.allegiance = std::mem::take(&mut character.allegiance).kept();
+    character.allegiance.reputation[0] = 3 * factions().reputation_per_rank;
+    character.materials.aurem = 1_000_000;
+    let helm = 1;
+    while character.carried_in(Slot::Head) < crate::character::CARRIED_MOST {
+        assert!(character.ask(Ask::BuyFactionWare { faction: 1, ware: helm }, AT_COUNTER, &DICE).is_ok());
+    }
+    assert_eq!(
+        character.ask(Ask::BuyFactionWare { faction: 1, ware: helm }, AT_COUNTER, &DICE),
+        Err(Refusal::CarriedFull)
+    );
 }
 
 #[test]
@@ -70,11 +145,14 @@ fn the_first_pledge_is_free_and_a_switch_costs_aurem_keeping_reputation() {
 #[test]
 fn the_cape_is_sold_only_to_the_pledged_and_kept_once() {
     let mut character = rich();
-    assert_eq!(character.ask(Ask::BuyCape { faction: 1 }, AT_COUNTER, &DICE), Err(Refusal::NotPledged));
+    assert_eq!(
+        character.ask(Ask::BuyFactionWare { faction: 1, ware: CAPE }, AT_COUNTER, &DICE),
+        Err(Refusal::NotPledged)
+    );
     let mut caped = caped(1);
     assert_eq!(caped.materials.aurem, 20_000 - factions().cape_aurem);
     assert_eq!(caped.cape_worn(), Some(1));
-    assert_eq!(caped.ask(Ask::BuyCape { faction: 1 }, AT_COUNTER, &DICE), Err(Refusal::Kept));
+    assert_eq!(caped.ask(Ask::BuyFactionWare { faction: 1, ware: CAPE }, AT_COUNTER, &DICE), Err(Refusal::Kept));
     let worn = caped.worn(Slot::Cloak).expect("the cape worn");
     assert_eq!(worn.level, 1, "any level may wear it");
 }
@@ -133,6 +211,20 @@ fn a_save_from_before_the_factions_reads_pledged_to_none() {
     let broken = kept.to_string().replacen('{', "{\"allegiance\":{\"pledge\":9,\"reputation\":[5]},", 1);
     let back = Character::from_json(&broken).expect("a broken save reads");
     assert_eq!((back.allegiance.pledge, back.reputation(1), back.allegiance.reputation.len()), (0, 5, 3));
+}
+
+#[test]
+fn a_dismantled_factions_weapon_gives_back_as_a_normal_piece_so_faction_gear_makes_no_essence() {
+    let mut character = rich();
+    character.allegiance = std::mem::take(&mut character.allegiance).kept();
+    character.allegiance.reputation[2] = 3 * factions().reputation_per_rank;
+    assert!(character.ask(Ask::BuyFactionWare { faction: 3, ware: 6 }, AT_COUNTER, &DICE).is_ok());
+    let bow = character.items.values().find(|(item, _)| item.named.as_deref() == Some("nightpin"));
+    let bow = bow.expect("the bow carried").0.id;
+    let before = character.materials.clone();
+    assert!(character.ask(Ask::Dismantle { item: bow }, AFIELD, &DICE).is_ok());
+    assert_eq!((character.materials.weapon_essence, character.materials.weapon_fragments), (0, 0));
+    assert_eq!(character.materials.aurem, before.aurem + 20);
 }
 
 #[test]

@@ -1,16 +1,18 @@
 // A faction's counter, after Destiny 1's faction vendors: the player's reputation with them and the packages it has
-// left waiting, the pledge, the cape sold only to the pledged, the faction's Art with its level and the rise its full
-// bar allows, and the Art's six fragments, sold from the first rank. Numbers from content/gear/factions.json and
-// content/arts/arts.json; the player's standing from the room's word.
+// left waiting, the pledge, the cape sold only to the pledged, its armour from the second rank and its weapons from the
+// third, the faction's Art with its level and the rise its full bar allows, and the Art's six fragments, sold from the
+// first rank. Numbers from content/gear/factions.json and content/arts/arts.json; the player's standing and the pieces
+// themselves from the room's word.
 import factions from '../../../../content/gear/factions.json' with { type: 'json' };
 import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import cosmetics from '../../../../content/gear/cosmetics.json' with { type: 'json' };
 import emblems from '../../../../content/gear/emblems.json' with { type: 'json' };
-import { ASKS, type GearState, type Standing } from '../../network/gearMessages.ts';
-import { CARRIED, NAMED, RARITIES, SLOTS } from '../../player/gear.ts';
+import items from '../../../../content/gear/items.json' with { type: 'json' };
+import { ASKS, type GearItem, type GearState, type Standing } from '../../network/gearMessages.ts';
+import { CARRIED, SLOTS, itemWords } from '../../player/gear.ts';
 import { ARTS } from '../artsCards.ts';
 import { CARRIED_MOST, VESTIGES_MOST } from '../gearCards.ts';
-import { type Row, type Ware, rarityNamed } from './npcWares.ts';
+import { type Row, type Ware, itemWare } from './npcWares.ts';
 
 /** The fragment a rise names when there is none left to choose, which the rules do not read. */
 const NO_FRAGMENT = 255;
@@ -19,6 +21,10 @@ const NO_FRAGMENT_LEFT = 'No fragment left to choose';
 const ART_MOST = 5;
 const PER_RANK = factions.reputationPerRank;
 const SLOT_CLOAK = SLOTS.indexOf('cloak');
+/** The faction each named item is sold by, by the faction's key: its cape, armour and weapons. */
+const SOLD_BY: ReadonlyMap<string, string> = new Map(
+  items.items.flatMap((each) => ('faction' in each && each.faction ? [[each.id, each.faction] as const] : [])),
+);
 
 /** A faction by its number, with its place in the list, and its Art with its place in the Arts' list. */
 export function factionOf(id: number) {
@@ -77,6 +83,73 @@ function riseMore(gear: GearState, fragments: number, essence: number) {
   return { more: more.join(', '), held };
 }
 
+/** What a faction's armour and weapons are drawn in: its own colour, by name. */
+function colourWords(id: number): string {
+  const faction = factionOf(id)?.faction;
+  return faction
+    ? `Drawn in ${faction.gear.colour}, a colour none but the ${faction.name.replace(/^The /, '')} wear.`
+    : '';
+}
+
+/** The faction's pieces as the room made them, and how many the player carries in a piece's slot. */
+function soldBy(id: number, gear: GearState) {
+  const key = factionOf(id)?.faction.key;
+  const sold = (gear.factionWares ?? []).filter((item) => item.named !== null && SOLD_BY.get(item.named) === key);
+  const carried = (item: GearItem) => gear.items.filter((each) => each.at === CARRIED && each.bucket === item.bucket);
+  return { sold, carried };
+}
+
+/** The faction's gear: its cape to the pledged, kept once; its armour from its rank and its weapons from theirs,
+ *  pledged or not, as a switch keeps the reputation earned. A piece whose slot carries nine is not asked for. */
+function gearRows(id: number, gear: GearState, rank: number, pledged: boolean): Row[] {
+  const { sold, carried } = soldBy(id, gear);
+  const ask = (item: GearItem) => ({ kind: ASKS.buyFactionWare, column: id, node: item.id });
+  const piece = (item: GearItem, from: number): Ware => {
+    const [low, full] = [rank < from, carried(item).length >= CARRIED_MOST];
+    const ware = itemWare(`gear-${item.id}`, item, { amount: item.price, currency: 'aurem' }, false, null);
+    return {
+      ...ware,
+      words: item.bucket === SLOT_CLOAK ? itemWords(item) : `${itemWords(item)} ${colourWords(id)}`,
+      short: !low && gear.aurem < item.price,
+      note: low ? `From rank ${from}` : full ? 'Its slot carries nine' : '',
+      ask: low || full ? null : ask(item),
+      dim: low,
+    };
+  };
+  const rows: Row[] = [];
+  const cape = sold.find((item) => item.bucket === SLOT_CLOAK);
+  if (pledged && cape) {
+    const kept = gear.items.find((each) => each.named === cape.named) ?? null;
+    const full = !kept && carried(cape).length >= CARRIED_MOST;
+    const ware = piece(kept ?? cape, 0);
+    rows.push({
+      heading: 'Cape',
+      wares: [
+        {
+          ...ware,
+          key: 'cape',
+          // Named cloaks are made at level 1, so any level may wear one.
+          about: `${ware.about.split(' · ')[0] ?? ''} · any level`,
+          words: 'Earns their reputation while you wear it, pledged to them.',
+          price: kept ? null : ware.price,
+          short: !kept && ware.short,
+          note: kept ? 'Kept' : full ? 'Nine cloaks carried' : '',
+          ask: kept || full ? null : ask(cape),
+        },
+      ],
+    });
+  }
+  const armour = sold.filter((item) => item.bucket !== SLOT_CLOAK && !isWeapon(item));
+  const weapons = sold.filter(isWeapon);
+  if (armour.length > 0)
+    rows.push({ heading: 'Armour', wares: armour.map((item) => piece(item, factions.armourRank)) });
+  if (weapons.length > 0)
+    rows.push({ heading: 'Weapons', wares: weapons.map((item) => piece(item, factions.weaponRank)) });
+  return rows;
+}
+
+const isWeapon = (item: GearItem) => item.bucket === SLOTS.indexOf('melee') || item.bucket === SLOTS.indexOf('ranged');
+
 /** The faction `id`'s rows; `choosing`, the Art's rise waits on the fragment it takes. */
 export function factionRows(id: number, gear: GearState, choosing: boolean): Row[] {
   const found = factionOf(id);
@@ -118,32 +191,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
     { heading: 'Reputation', wares: packages, empty: 'No packages wait for you.' },
     { heading: 'Pledge', wares: [pledge] },
   ];
-  if (pledged) {
-    const kept = gear.items.find((each) => each.named === faction.cape) ?? null;
-    const named = NAMED.find((each) => each.id === faction.cape);
-    const rarity = kept?.rarity ?? rarityNamed(named?.rarity ?? '');
-    // The room refuses a cape while the cloaks carried are full, as it refuses any piece.
-    const cloaks = gear.items.filter((each) => each.at === CARRIED && each.bucket === SLOT_CLOAK).length;
-    const full = !kept && cloaks >= CARRIED_MOST;
-    rows.push({
-      heading: 'Cape',
-      wares: [
-        {
-          key: 'cape',
-          name: named?.name ?? faction.cape,
-          rarity,
-          picture: kept ? { kind: 'item', item: kept } : { kind: 'initials' },
-          // Named pieces are made at level 1, so any level may wear one.
-          about: `${RARITIES[rarity]?.name ?? ''} Cloak · any level`,
-          words: 'Earns their reputation while you wear it, pledged to them.',
-          price: kept ? null : { amount: factions.capeAurem, currency: 'aurem' },
-          short: !kept && gear.aurem < factions.capeAurem,
-          note: kept ? 'Kept' : full ? 'Nine cloaks carried' : '',
-          ask: kept || full ? null : { kind: ASKS.buyCape, column: id },
-        },
-      ],
-    });
-  }
+  rows.push(...gearRows(id, gear, rank, pledged));
   const level = standing.artLevels[artPlace] ?? 1;
   const earned = standing.artXp[artPlace] ?? 0;
   const owned = standing.artOwned[artPlace] ?? 0;

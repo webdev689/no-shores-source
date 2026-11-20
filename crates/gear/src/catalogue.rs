@@ -45,7 +45,7 @@ pub struct NamedDef {
     pub layout: Vec<Vec<String>>,
     #[serde(default)]
     pub breach: bool,
-    /// The faction whose cape it is, by the faction's key.
+    /// The faction that sells it, by the faction's key: its cape, armour and weapons, which nothing else gives.
     #[serde(default)]
     pub faction: Option<String>,
 }
@@ -180,9 +180,12 @@ impl Catalogue {
         self.traits.iter().filter(|found| found.column == wanted && fits(found, kind, None)).collect()
     }
 
-    /// The named items a Vestige of this rarity may open to in this slot: Breach items come from Breaches alone.
+    /// The named items a Vestige of this rarity may open to in this slot: Breach items come from Breaches alone, and a
+    /// faction's from its counter alone.
     pub fn vestige_pool(&self, rarity: Rarity, slot: Slot) -> impl Iterator<Item = &NamedDef> {
-        self.items.iter().filter(move |found| found.rarity == rarity && !found.breach && found.kind.fits(slot))
+        self.items.iter().filter(move |found| {
+            found.rarity == rarity && !found.breach && found.faction.is_none() && found.kind.fits(slot)
+        })
     }
 
     /// What in the catalogue the rules cannot keep, each said in a line; none when all is well.

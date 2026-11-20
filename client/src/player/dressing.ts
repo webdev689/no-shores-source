@@ -1,5 +1,5 @@
 import { CLOTHING_DYES, type DyeTable, type Rgb, metalOfLayer } from '../forge/dyes.ts';
-import { type CosmeticKind, bardingLayer, cosmeticOf, cosmeticRamp } from '../forge/cosmetics.ts';
+import { type CosmeticKind, bardingLayer, cosmeticOf, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 import { type Figure, type ForgeBody, type ForgeLooks, HORSE_LAYER, type IndexLook } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type ArmourPiece, type Outfit, outfitLayers } from '../forge/outfit.ts';
 
@@ -16,6 +16,8 @@ const WEAPON = /^(sword|dagger|axe|mace|flail|warhammer|staff|bow|crossbow|pisto
 const NOT_GARMENT =
   /^(body|face|under_|hair_|horse(_|$)|quiver$|spark$|torch|prop_|lute$|flute$|recorder$|tambourine$|sheath_|scabbard_|slung_|shield_)/;
 const HANG = /_(drape|plated_skirted|plated|skirted)$/;
+/** A weapon or shield put away, drawn on the back or the hip: it wears what the one in hand wears. */
+const PUT_AWAY = /^(sheath|slung)_/;
 /** The lights a left hand carries. The lantern is drawn in first person only: the forge's bodies have no layer for it. */
 export const LIGHTS = ['torch_l', 'lantern'];
 
@@ -151,9 +153,10 @@ export const plainDress = (race: Race, tone: number): Dress => ({
 /** A garment's dye until one is chosen. */
 export const PLAIN_DYE = 'LightBrown';
 
-/** The ramp each dyed layer a figure wears is laid on: a metal layer its set's or metal's, a garment and its hangs
- *  their garment's dye (a clothing dye, or a cosmetic dye's look); with a dye worn, every armour layer and garment but
- *  the cloak its ramp; and the ridden horse (HORSE_LAYER) its coat's. Layers that keep their own colours have none. */
+/** The ramp each dyed layer a figure wears is laid on: a faction's piece its faction's own colour, whatever dye is
+ *  worn; a metal layer its set's or metal's, a garment and its hangs their garment's dye (a clothing dye, or a cosmetic
+ *  dye's look); with a dye worn, every other armour layer and garment but the cloak its ramp; and the ridden horse
+ *  (HORSE_LAYER) its coat's. Layers that keep their own colours have none. */
 export function rampsOf(
   gear: readonly string[],
   outfit: Outfit,
@@ -172,13 +175,14 @@ export function rampsOf(
   for (const layer of gear) {
     const garment = outfit.dyes[layer.replace(HANG, '')] ?? PLAIN_DYE;
     const ramp =
-      worn && takesDye(layer)
+      factionRamp(outfit.dyes[layer.replace(PUT_AWAY, '')]) ??
+      (worn && takesDye(layer)
         ? worn
         : metal.has(layer)
           ? table.armour[metalOfLayer(layer) ?? '']
           : dyed.has(layer)
             ? (table.clothing[garment] ?? cosmeticRamp(garment) ?? undefined)
-            : undefined;
+            : undefined);
     if (ramp) ramps[layer] = ramp;
   }
   const coat = cosmeticRamp(outfit.coat);

@@ -7,6 +7,10 @@
   "packageLegendaryFromLevel": 18,
   "packageLegendaryShare": 0.25,
   "capeAurem": 2500,
+  "armourRank": 2,
+  "armourAurem": 6000,
+  "weaponRank": 3,
+  "weaponAurem": 9000,
   "fragmentAurem": 7500,
   "fragmentRank": 1,
   "factions": [
@@ -18,7 +22,18 @@
       "cape": "stormcallers_cape",
       "emblem": "stormcallers",
       "dye": "stormcaller_blue",
-      "words": "Keepers of the Storm Art. Quick feet, and lightning in the hand."
+      "words": "Keepers of the Storm Art. Quick feet, and lightning in the hand.",
+      "gear": {
+        "colour": "Squall",
+        "armour": "fighters",
+        "metal": "elven",
+        "look": [
+          "#0a0f1f",
+          "#283a73",
+          "#7a8fd6",
+          "#f1f4ff"
+        ]
+      }
     },
     {
       "id": 2,
@@ -28,7 +43,18 @@
       "cape": "lamplighters_cape",
       "emblem": "lamplighters",
       "dye": "lamplighter_gold",
-      "words": "Keepers of the Divine Art. They mend, and they light the way for others."
+      "words": "Keepers of the Divine Art. They mend, and they light the way for others.",
+      "gear": {
+        "colour": "Lampglass",
+        "armour": "mages",
+        "metal": "silver",
+        "look": [
+          "#3d2a10",
+          "#b8862e",
+          "#f4e6c4",
+          "#ffffff"
+        ]
+      }
     },
     {
       "id": 3,
@@ -38,7 +64,18 @@
       "cape": "veiled_cape",
       "emblem": "veiled",
       "dye": "veiled_dusk",
-      "words": "Keepers of the Shadow Art. Few in Overlook could name one."
+      "words": "Keepers of the Shadow Art. Few in Overlook could name one.",
+      "gear": {
+        "colour": "Nightveil",
+        "armour": "brotherhood",
+        "metal": "ebony",
+        "look": [
+          "#050304",
+          "#1f0d12",
+          "#4e1f2b",
+          "#a86a78"
+        ]
+      }
     }
   ]
 }

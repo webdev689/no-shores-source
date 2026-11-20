@@ -273,10 +273,16 @@ const METALS: readonly (readonly string[])[] = [
 ];
 
 /** The forge layer a weapon or shield of this kind and rarity is drawn with, among those a hand of the wardrobe takes:
- *  its rarity's metal where the forge draws one, else the first of its kind. */
-function layerFor(choices: readonly string[], kind: string, rarity: number, left: boolean): string | null {
+ *  `own` metal first where one is named, then its rarity's where the forge draws one, else the first of its kind. */
+function layerFor(
+  choices: readonly string[],
+  kind: string,
+  rarity: number,
+  left: boolean,
+  own?: string,
+): string | null {
   const ofKind = choices.filter((layer) => layer.startsWith(`${kind}_`) && layer.endsWith('_l') === left);
-  for (const metal of METALS[rarity] ?? []) {
+  for (const metal of [...(own ? [own] : []), ...(METALS[rarity] ?? [])]) {
     const found = ofKind.find((layer) => layer.includes(`_${metal}`));
     if (found) return found;
   }
@@ -298,24 +304,25 @@ const HELD: Readonly<Record<string, { readonly right: string; readonly left?: 'p
 };
 
 /** What the player's hands hold, drawn, as a worn loadout has it (`loadout`, Melee or Ranged): its weapon and its
- *  second or shield, each as the forge draws it, and a greatsword's grip on its hilt. A loadout not worn is bare
- *  hands, as the room has it. */
+ *  second or shield, each as the forge draws it (in `metal` where it names one), and a greatsword's grip on its hilt.
+ *  A loadout not worn is bare hands, as the room has it. */
 export function gearHands(
   state: GearState,
   wardrobe: Wardrobe,
   loadout = MELEE,
+  metal?: string,
 ): { right: string | null; left: string | null; grip: 'hilt' | null } {
   const item = worn(state, loadout);
   if (!item) return { right: null, left: null, grip: null };
   const kind = KINDS[item.kind] ?? '';
   const held = HELD[kind] ?? { right: kind };
-  const right = layerFor(wardrobe.right, held.right, item.rarity, false);
+  const right = layerFor(wardrobe.right, held.right, item.rarity, false, metal);
   if (held.left === 'hilt') return { right, left: null, grip: 'hilt' };
   const left =
     held.left === 'pair'
-      ? layerFor(wardrobe.left, held.right, item.rarity, true)
+      ? layerFor(wardrobe.left, held.right, item.rarity, true, metal)
       : held.left === 'shield'
-        ? layerFor(wardrobe.left, 'shield', item.rarity, false)
+        ? layerFor(wardrobe.left, 'shield', item.rarity, false, metal)
         : null;
   return { right, left, grip: null };
 }

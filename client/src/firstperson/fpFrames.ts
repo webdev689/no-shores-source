@@ -122,8 +122,16 @@ export function metalRamp(dyes: DyeTable, metal: string | null): readonly Rgb[] 
   return dyes.armour[metal ?? 'Steel'] ?? dyes.armour.Steel ?? null;
 }
 
-/** The ramp an armour set's grey is laid on: the dye worn's, else the set's own; `bare`'s with no set worn. */
-export function setRamp(source: FrameSource, set: string | null, bare: string): readonly Rgb[] | null {
+/** The ramp an armour set's grey is laid on, worn on the `part`: a faction's own colour, else the dye worn's, else the
+ *  set's own; `bare`'s with no set worn. */
+export function setRamp(
+  source: FrameSource,
+  set: string | null,
+  bare: string,
+  part: 'hands' | 'feet' = 'hands',
+): readonly Rgb[] | null {
+  const own = source.own?.[part];
+  if (set !== null && own) return own;
   if (set !== null && source.dye) return source.dye;
   return metalRamp(source.dyes, set === null ? bare : UNDYED.has(set) ? 'Steel' : set);
 }
@@ -209,6 +217,17 @@ export interface FrameSource {
   readonly painter: FramePainter;
   /** The cosmetic dye worn, whose ramp every armour set's grey takes in place of its own, as the figure's do. */
   readonly dye?: readonly Rgb[] | null;
+  /** A faction's own colour on what is its: the gauntlets, the boots, the bow or staff in the right hand and the
+   *  shield in the left, each over the dye worn, as the figure's are. */
+  readonly own?: Own;
+}
+
+/** A faction's own colour, by the part of the first person that wears it; none where it is no faction's. */
+export interface Own {
+  readonly hands?: readonly Rgb[] | null;
+  readonly feet?: readonly Rgb[] | null;
+  readonly right?: readonly Rgb[] | null;
+  readonly left?: readonly Rgb[] | null;
 }
 
 /** What the hands and feet wear, by the forge's set names (`Iron`, `Leather`, `Fighters`), or null for none. */
@@ -312,7 +331,7 @@ async function bowPicture(
   const paths = looksAsked(`${wielded.bow ?? 'Long'}${metal}`, false).map((look) => wholePath(archive, 0, frame, look));
   const base = await firstOf(source, paths);
   if (!base) return null;
-  const pixels = source.painter.paint(base.strip, metalRamp(source.dyes, metal));
+  const pixels = source.painter.paint(base.strip, source.own?.right ?? metalRamp(source.dyes, metal));
   const handsPath = wholePath(archive, 0, frame, `Hands${hands ?? ''}`);
   const over = await source.strip(handsPath);
   const fits =
@@ -339,11 +358,13 @@ export async function weaponPicture(
   const archive = ARCHIVE_OF[wielded.kind];
   const shown = [record, frame] as const;
   if (wielded.kind === 'fists') {
-    const set = KICKS.has(record) ? worn.feet : worn.hands;
-    return whole(source, archive, shown, set, setRamp(source, set, 'Iron'), left);
+    const kick = KICKS.has(record);
+    const set = kick ? worn.feet : worn.hands;
+    return whole(source, archive, shown, set, setRamp(source, set, 'Iron', kick ? 'feet' : 'hands'), left);
   }
   if (wielded.kind === 'bow') return bowPicture(source, wielded, worn.hands, frame);
-  const ramp = metalRamp(source.dyes, wielded.metal);
+  // A staff is dyed as the figure's is; a blade, a head or a haft keeps its metal.
+  const ramp = (wielded.kind === 'staff' ? source.own?.right : null) ?? metalRamp(source.dyes, wielded.metal);
   if (wielded.kind === 'dagger' || wielded.kind === 'sword') {
     const laid = await layered(source, archive, shown, wielded, worn.hands, left);
     if (laid) return laid;

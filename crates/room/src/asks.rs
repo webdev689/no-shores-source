@@ -129,7 +129,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
                 Seller::Tack => CounterKind::Tack,
             })
         }
-        Ask::Pledge { faction } | Ask::BuyCape { faction } | Ask::CollectPackage { faction } => {
+        Ask::Pledge { faction } | Ask::BuyFactionWare { faction, .. } | Ask::CollectPackage { faction } => {
             Some(CounterKind::Faction(*faction))
         }
         Ask::RiseArt { art, .. } | Ask::BuyFragment { art, .. } => art_faction(*art),

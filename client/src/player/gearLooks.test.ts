@@ -149,3 +149,38 @@ test("a faction's cape is the formal cloak in its faction's dye, whatever its ra
     assert.equal(cape(named, 4).dyes['formal_cloak'], dye, named);
   }
 });
+
+/** A wardrobe that also draws the guilds' sets and the metals the factions' weapons are drawn in. */
+const guilds: Wardrobe = {
+  ...wardrobe,
+  sets: Object.fromEntries(
+    Object.entries(wardrobe.sets).map(([piece, drawn]) => [piece, [...drawn, 'fighters', 'mages', 'brotherhood']]),
+  ) as unknown as Wardrobe['sets'],
+  right: [...wardrobe.right, 'bow_long_iron', 'bow_long_elven', 'staff_iron', 'staff_silver'],
+  left: ['shield_iron', 'shield_kite_iron', 'shield_kite_elven'],
+};
+
+test("a faction's armour is its faction's own set, each of its layers named for its faction's colour", () => {
+  const dressed = gearOutfit(
+    state([
+      item({ id: 1, kind: 14, rarity: 3, at: 5, named: 'lamplighters_vestments' }),
+      item({ id: 2, kind: 13, rarity: 3, at: 4, named: 'tithebreaker_helm' }),
+    ]),
+    guilds,
+    plain,
+  );
+  assert.deepEqual([dressed.armour.cuirass, dressed.armour.pauldrons], ['mages', 'mages']);
+  assert.deepEqual([dressed.dyes['cuirass_mages'], dressed.dyes['pauldrons_mages']], ['lamplighters', 'lamplighters']);
+  assert.equal(dressed.armour.helm, 'knights', "a piece of no faction keeps its rarity's set");
+  assert.equal(Object.values(dressed.dyes).filter((dye) => dye === 'lamplighters').length, 2, 'the helm takes none');
+});
+
+test("a faction's weapon is drawn in its faction's metal, its shield too, and each wears its colour", () => {
+  const bow = state([item({ id: 1, kind: 8, rarity: 3, at: 3, named: 'thunderstring' })]);
+  const ranged = gearOutfit(bow, guilds, plain, RANGED_SLOT);
+  assert.deepEqual([ranged.right, ranged.dyes['bow_long_elven']], ['bow_long_elven', 'stormcallers']);
+  const plainBow = gearOutfit(state([item({ id: 1, kind: 8, rarity: 3, at: 3 })]), guilds, plain, RANGED_SLOT);
+  assert.equal(plainBow.dyes['bow_long_iron'], undefined, 'a bow of no faction wears no colour of one');
+  const squall = gearOutfit(state([item({ id: 1, kind: 12, rarity: 3, at: 2, named: 'squallbreak' })]), guilds, plain);
+  assert.deepEqual([squall.left, squall.dyes['shield_kite_elven']], ['shield_kite_elven', 'stormcallers']);
+});
