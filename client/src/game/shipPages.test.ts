@@ -7,7 +7,9 @@ import { musterAt } from './shipPages.ts';
 
 /** A page's context for a player pledged to `pledge` (0 none), with no officer offered today. */
 const pledged = (pledge: number): PageContext =>
-  ({ gear: { aurem: 0, ship: { pledge, offers: [] } } as unknown as GearState }) as unknown as PageContext;
+  ({
+    gear: { aurem: 0, standing: { pledge }, ship: { offers: [] } } as unknown as GearState,
+  }) as unknown as PageContext;
 
 test('the muster stands only on the screen of the faction pledged to', () =>
   onFakePage((root) => {
