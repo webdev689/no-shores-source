@@ -169,6 +169,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Page Publishes Only After the Rooms Deploy]]
 - [[No Save-Keeping Lands on Main Before the Factions Round]]
 - [[Factions and Vendors as Claude Shapes Them]]
+- [[Overlook Becomes a Hub of Courts and Ways, After the Tower]]
+- [[Overlook's Hub as Claude Shapes It]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
