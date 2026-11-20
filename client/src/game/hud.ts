@@ -263,6 +263,8 @@ export class Hud {
   /** Shows the sea fight's readout, or hides it for none. */
   seaFight(model: SeaFightModel | null): void {
     this.fight.update(model);
+    // The ships' plates keep under the card, as under the compass.
+    this.shipPlates.top = this.fight.under;
   }
 
   /** Covers the view with words while a place loads, or lifts the cover. */

@@ -90,3 +90,10 @@ test("her volley's tally once its last ball is down: how many struck, holed and 
   });
   assert.equal(fightDisplay(VIEW, feel, 10, { boardable: false, boardKey: 'E' }).tally, null, 'shown a while');
 });
+
+test('while her guns are laid the card is on the captain where they fall, as DFO names the ship the look is on', () => {
+  const end = (east: number) => ({ time: 3, point: [east, 0, 0] as const, water: true, strike: null });
+  const lay = { ...VIEW.lay!, ends: [end(196), end(204)] };
+  const model = fightDisplay({ ...VIEW, lay }, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
+  assert.equal(model.card?.name, 'Pirate Brig', 'the far one laid on, not the nearer Sloop');
+});

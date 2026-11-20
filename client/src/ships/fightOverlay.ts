@@ -20,10 +20,6 @@ export class FightOverlay {
 
   /** Draws `bars` where `project` lays them at `now` (seconds), and shows `model`, or hides the readout for none. */
   show(bars: readonly ShipBar[], project: Projector, now: number, model: SeaFightModel | null): void {
-    if (bars.length > 0) {
-      const size = { width: this.overlay.clientWidth, height: this.overlay.clientHeight };
-      this.plates.draw(this.overlay, bars, project(size), size.width, now);
-    }
     const parent = this.overlay.parentElement;
     if (!this.readout && model && parent) {
       wearKit(parent.ownerDocument);
@@ -31,5 +27,11 @@ export class FightOverlay {
       this.readout = new SeaFightReadout(parent);
     }
     this.readout?.update(model);
+    // The plates keep under the card, as the game's do.
+    if (this.readout) this.plates.top = this.readout.under;
+    if (bars.length > 0) {
+      const size = { width: this.overlay.clientWidth, height: this.overlay.clientHeight };
+      this.plates.draw(this.overlay, bars, project(size), size.width, now);
+    }
   }
 }

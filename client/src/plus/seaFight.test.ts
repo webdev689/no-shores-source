@@ -65,3 +65,9 @@ test("in a sea fight the sea's status line stands in the top right corner, never
   assert.match(rule, /left: auto/);
   assert.match(rule, /transform: none/);
 });
+
+test("the side the look lays glows gold round its chip, as DFO's active battery does, its fill kept", () => {
+  const rule = /\.seafight-side\.laid \{([^}]*)\}/.exec(seaFightCss())?.[1] ?? '';
+  assert.match(rule, /box-shadow: 0 0 0 1px #050608, 0 0 8px rgba\(243, ?207, ?134, ?0\.45\)/);
+  assert.doesNotMatch(rule, /background/, 'its load still fills it');
+});
