@@ -54,7 +54,14 @@ test('bearings are compass bearings: north 0, east a quarter turn, south half', 
 test('arriving in the social space faces out from the landmark; elsewhere inland from the ship', () => {
   const social = socialNode(plan, 'continent-1');
   assert.ok(Math.abs(Math.abs(arrivalFacing(social, plan, null)) - Math.PI) < 1e-12, 'the plaza lies south');
-  const reaching = { ...social, centre: [1400, 1300] as const, spawns: [[980, 1112], [1020, 1112]] as const };
+  const reaching = {
+    ...social,
+    centre: [1400, 1300] as const,
+    spawns: [
+      [980, 1112],
+      [1020, 1112],
+    ] as const,
+  };
   const facing = arrivalFacing(reaching, plan, null);
   assert.ok(Math.abs(Math.abs(facing) - Math.PI) < 1e-12, 'a ring reaching east still faces out over the spawns');
   const downs = { ...social, id: 'downs', kind: 'patrol' as const, spawns: [[5000, 5000]] as const };
