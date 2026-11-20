@@ -15,6 +15,7 @@ import { poseOnSwell } from '../../ships/swellPose.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
 import type { HullMask } from '../../water/hullMask.ts';
 import type { Founder } from './sailing.ts';
+import type { FightHeard } from '../audio/ambience/seaFight.ts';
 import type { Shot } from '../camera.ts';
 import { SeaCombat } from '../seaCombat.ts';
 
@@ -179,6 +180,11 @@ export class StoryFight {
 
   /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times her
    *  size on `swell`. A step the rules refused is thrown here. */
+  /** The fight's events this frame and its ships as they lie, as the sea's sounds hear them. */
+  get fightHeard(): FightHeard {
+    return this.combat.heard;
+  }
+
   /** The fight's two sides, as the music hears them: every captain in it, and the player's own vessel. */
   get sides(): { readonly captains: readonly FightCaptain[]; readonly vessel: FightVessel } {
     const view = this.answered.latest;

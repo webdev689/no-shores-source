@@ -62,6 +62,9 @@ then the players, the balls fly, fires burn and sinking ships go down, each play
 has sunk, or lies past every ship she may fight and is not fighting, leaves the fight. A player's step under her hurts
 is one pure function (`sail_hurt`), which a browser predicting her runs too.
 
+Its guns, the balls striking and falling in the sea, and a ship breaking up are heard where each happens, through the
+sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
+
 ## How it works
 
 - **A ball** is a point under gravity alone (9.81 m/s², no drag), leaving its gun at the gun's speed plus the deck's
