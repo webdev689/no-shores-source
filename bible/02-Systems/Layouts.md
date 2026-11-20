@@ -448,4 +448,5 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
 - Missions are single player with invites, but an instance's room is still a node's shared room: private instances
   wait on the server.
 - After every change in the World Editor all of a landmass's layouts are planned again, not only those it touches:
-  about 1.5 s for continent 1's ten, in the land's worker. The layouts' streets are not painted on its ground.
+  about 1.9 s natively for continent 1's ten, each of Saltmere's three zones with its heights about half a second
+  and the other seven together under 0.2 s, in the land's worker. The layouts' streets are not painted on its ground.

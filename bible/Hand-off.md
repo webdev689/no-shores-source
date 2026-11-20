@@ -331,7 +331,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   [[Modules]] scripted in Blender ([[Handcrafted Playspaces Are Scripted in Blender]]): the Old Stones, the keep's
   citadel, the cavern chamber, cliff stairs and stone bridges, each walked by a body
   (`crates/room/tests/modules_walked.rs`). A second audit of the work found ten faults, all fixed with the two its
-  fixes turned up ([[Layouts]], [[Cities]], [[Land]]). Left, in order:
+  fixes turned up ([[Layouts]], [[Cities]], [[Land]]). Pictured headless on the pushed head: every area, run beat,
+  stair, module and high view of the three zones, and a fly-through of the Vale from its landing to its coven, sent
+  to the owner as three contact sheets and a video. Continent 1's layouts now settle in about 1.9 s natively, each
+  Saltmere zone with its heights about half a second. Left, in order:
   1. a hamlet's terraces (waiting on the owner, above);
   2. switchbacks where a way would climb steeper than a track; today a way ramps straight;
   3. the cavern's roof shows as a boxy lump over the plateau above it;
