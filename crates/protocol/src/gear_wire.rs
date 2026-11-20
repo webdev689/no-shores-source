@@ -26,6 +26,7 @@ pub const WEAR_EMBLEM: u8 = 13;
 pub const BUY_EMBLEM: u8 = 14;
 pub const USE_CRATE: u8 = 15;
 pub const BUY_CRATE: u8 = 16;
+pub const FINISH_PROLOGUE: u8 = 17;
 pub const GATHER: u8 = 20;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
@@ -72,6 +73,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         BUY_EMBLEM => Asked::Gear(Ask::BuyEmblem { emblem: u16::try_from(item).ok()? }),
         USE_CRATE => Asked::Gear(Ask::UseCrate),
         BUY_CRATE => Asked::Gear(Ask::BuyCrate),
+        FINISH_PROLOGUE => Asked::Gear(Ask::FinishPrologue),
         GATHER => Asked::Gather { node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
@@ -128,6 +130,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::BuyEmblem { emblem } => args = messages::AskArgs { kind: BUY_EMBLEM, item: u32::from(emblem), ..args },
             Ask::UseCrate => args = messages::AskArgs { kind: USE_CRATE, ..args },
             Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
+            Ask::FinishPrologue => args = messages::AskArgs { kind: FINISH_PROLOGUE, ..args },
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
@@ -362,6 +365,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         crates: u8::try_from(held.crates).unwrap_or(u8::MAX),
         crate_price: if room.in_social_space(player) { gear::ammo::CRATE_PRICE } else { 0 },
         dungeons,
+        prologue_done: character.story.prologue,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

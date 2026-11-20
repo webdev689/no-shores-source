@@ -128,7 +128,9 @@ One engine counts both, since the owner's side quests and the board's bounties a
 
 - **The story's progress is kept with the account** (`Character.story`), not only in the browser: the prologue's
   end first, and each mission and side quest as they come. The room records each. A new character starts short of
-  the prologue.
+  the prologue. The gear message says whether it is done. On foot the story is behind the page, so it asks each room
+  on land whose word says not done to mark it (`Ask::FinishPrologue`): no one is kept out by a prologue that did not
+  run.
 - **After the prologue:** the board, the patrols, the dungeon of the day and the Elite Dungeons.
 - **The campaign** is the nine missions that follow the prologue, which is not one of them; finishing the ninth is its
   end. Which island each mission reaches is written with the missions. Until they exist, the prologue stands in for

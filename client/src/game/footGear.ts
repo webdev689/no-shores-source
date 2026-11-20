@@ -89,3 +89,14 @@ export function groundRings(
   }
   return out;
 }
+
+/** On foot the story is always behind the page: every way there comes after it, played through or passed over (Begin
+ *  at the title, a `?at=` link, a story that could not start or go on). So no character is kept out of the patrols by
+ *  a prologue that did not run. */
+export const STORY_BEHIND_ON_FOOT = true;
+
+/** Whether the page tells its room the prologue is done: once the story is behind it, and once for each word on the
+ *  gear that says it is not kept, so a kept character claimed after the first word is told again. */
+export function tellsPrologue(gear: GearState | null, played: boolean, told: GearState | null): boolean {
+  return played && gear !== null && gear !== told && gear.prologueDone === false;
+}

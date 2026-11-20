@@ -1,6 +1,10 @@
-//! Each character's day and week of activities, turned over by the clock and never back, and kept as JSON.
+//! Each character's day and week of activities, turned over by the clock and never back, and kept as JSON; and the
+//! prologue's end, marked by its ask.
 
 use crate::activity::{Activity, ThisWeek, Today};
+use crate::asks::{Ask, Done, Here};
+use crate::character::Character;
+use crate::dice::Dice;
 use crate::world::Difficulty;
 use std::collections::BTreeSet;
 
@@ -39,4 +43,16 @@ fn the_records_are_kept_as_this_json() {
             "this_week": { "week": 2_968, "elite": false, "abyss": true, "boon": true }
         })
     );
+}
+
+#[test]
+fn the_prologue_is_marked_played_by_its_ask_anywhere_and_again_changes_nothing() {
+    let mut character = Character::starting();
+    let afield = Here { social: false, day: 0, week: 0 };
+    let dice = Dice { seed: 3, tick: 1, player: 1 };
+    assert_eq!(character.ask(Ask::FinishPrologue, afield, &dice), Ok(Done::Done));
+    assert!(character.story.prologue);
+    let once = character.clone();
+    assert_eq!(character.ask(Ask::FinishPrologue, afield, &dice), Ok(Done::Done));
+    assert_eq!(character, once);
 }

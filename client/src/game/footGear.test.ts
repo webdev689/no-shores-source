@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
-import { NODE_REACH_M, groundRings, useAt } from './footGear.ts';
+import { NODE_REACH_M, STORY_BEHIND_ON_FOOT, groundRings, tellsPrologue, useAt } from './footGear.ts';
 import type { StationInfo } from './nodes.ts';
 
 const ARMSMITH: StationInfo = { kind: 'armsmith', keeper: [0, -2], counter: [0, 0] };
@@ -32,4 +32,22 @@ test('the ground rings each dealing counter, and each node twice under a beam, o
   // A beam is two crossed planes of two triangles each.
   assert.equal(all.length, one * 3 + 12 * MARK_FLOATS);
   assert.ok(Math.abs((all[one + 2] ?? 0) - 2) < 0.1, "a node's ring stands on the floor's height, just over it");
+});
+
+test('the room is told the prologue was played once for each word on the gear that says it is not kept', () => {
+  const unkept = { prologueDone: false } as unknown as GearState;
+  const restored = { prologueDone: false } as unknown as GearState;
+  assert.equal(tellsPrologue(unkept, true, null), true);
+  assert.equal(tellsPrologue(unkept, true, unkept), false, 'told once for that word');
+  assert.equal(tellsPrologue(restored, true, unkept), true, 'told again once the kept character comes');
+  assert.equal(tellsPrologue({ prologueDone: true } as unknown as GearState, true, null), false);
+  assert.equal(tellsPrologue(unkept, false, null), false, 'not played in this browser');
+  assert.equal(tellsPrologue(null, true, null), false);
+});
+
+test('on foot the room is always told, so no character is kept out by a prologue that did not run', () => {
+  // Every way onto foot comes after the story: played through, Begin at the title, a `?at=` link, or a story that
+  // could not start or go on.
+  const unkept = { prologueDone: false } as unknown as GearState;
+  assert.equal(tellsPrologue(unkept, STORY_BEHIND_ON_FOOT, null), true);
 });

@@ -23,6 +23,8 @@ export const ASKS = {
   /** An Ammo crate used, filling the Ranged loadout's ammunition; one bought at the Quartermaster's counter. */
   useCrate: 15,
   buyCrate: 16,
+  /** The prologue played, which the room keeps with the character. */
+  finishPrologue: 17,
   gather: 20,
   grantVestige: 30,
   grantNamed: 31,
@@ -181,6 +183,8 @@ export interface GearState {
   /** In a patrol, its dungeons' entrances, five numbers each: x, y, the ground's height, the model's yaw and which
    *  of the four entrance models it is. */
   readonly dungeons?: readonly number[];
+  /** Whether they have finished the prologue, as kept with their character. */
+  readonly prologueDone?: boolean;
 }
 
 /** No node chosen in a column, and no resource. */
@@ -296,6 +300,7 @@ export function gearOf(gear: Gear): GearState {
     crates: gear.crates(),
     cratePrice: gear.cratePrice(),
     dungeons: Array.from(gear.dungeonsArray() ?? []),
+    prologueDone: gear.prologueDone(),
   };
 }
 

@@ -1,6 +1,6 @@
 //! What a player asks of their gear, and the rules each ask must pass: wearing and taking off, buying and choosing
-//! nodes, dismantling, feeding an item a Fruit of Dagon and using an Ammo crate anywhere; identifying a Vestige, the
-//! vault and the vendors only in a social space. An ask refused changes nothing.
+//! nodes, dismantling, feeding an item a Fruit of Dagon, using an Ammo crate and marking the prologue played anywhere;
+//! identifying a Vestige, the vault and the vendors only in a social space. An ask refused changes nothing.
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, VESTIGES_MOST};
 use crate::dice::{Dice, Purpose};
@@ -72,6 +72,8 @@ pub enum Ask {
     UseCrate,
     /// Buys an Ammo crate: at the Quartermaster's counter only.
     BuyCrate,
+    /// Marks the prologue played: anywhere, and only that.
+    FinishPrologue,
 }
 
 /// Why an ask was refused.
@@ -158,6 +160,7 @@ impl Character {
             Ask::BuyEmblem { emblem } => self.buy_emblem(emblem, here),
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
+            Ask::FinishPrologue => self.finish_prologue(),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens.

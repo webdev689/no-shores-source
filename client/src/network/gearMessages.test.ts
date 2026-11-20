@@ -20,6 +20,7 @@ test('a players own gear the server wrote reads back whole, every column spelled
   const gear = readFromRoom(await written('gear.bin'));
   assert.equal(gear?.kind, 'gear');
   if (gear?.kind !== 'gear') return;
+  assert.equal(gear.prologueDone, false, 'a new character');
   assert.deepEqual([gear.level, gear.answered, gear.answer, gear.atReader, gear.spent], [20, 7, 0, true, [0]]);
   assert.deepEqual([gear.ammo, gear.ammoMost, gear.ammoShare, gear.crates, gear.cratePrice], [0, 0, 0.5, 2, 250]);
   assert.deepEqual(

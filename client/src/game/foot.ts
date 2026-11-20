@@ -12,7 +12,7 @@ import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { GearState } from '../network/gearMessages.ts';
+import { ASKS, type GearState } from '../network/gearMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
@@ -32,7 +32,7 @@ import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { FoeType } from '../rules/roster.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
-import { type Use, groundRings, useAt } from './footGear.ts';
+import { STORY_BEHIND_ON_FOOT, type Use, groundRings, tellsPrologue, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
 import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
@@ -128,6 +128,8 @@ export class Foot {
   readonly held: Held;
   private dressedIn: GearState | null = null;
   private dressedLoadout = 0;
+  /** The last word on the gear the room was told the prologue is done for. */
+  private prologueTold: GearState | null = null;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
   readonly folk: Placed[];
@@ -310,6 +312,14 @@ export class Foot {
     walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
   }
 
+  /** Tells the room the story is behind the player, once for each word on the gear that says it is not kept. */
+  private tellPrologue(): void {
+    const gear = this.held.gear;
+    if (!tellsPrologue(gear, STORY_BEHIND_ON_FOOT, this.prologueTold)) return;
+    this.prologueTold = gear;
+    this.gear?.ask({ kind: ASKS.finishPrologue });
+  }
+
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
   get gear(): GearHere | null {
     const { link, fight } = this;
@@ -358,6 +368,7 @@ export class Foot {
     const { groundAt } = this;
     const { fight, foes, effects } = this;
     this.dressInGear();
+    this.tellPrologue();
     this.plaza?.frame(seconds);
     if (this.link.joins !== this.joined) {
       // A link that joined its room again brings every dress there with its welcome.

@@ -436,6 +436,8 @@ table Gear {
   // there, the model's yaw (radians clockwise from north, turning its +z as an RMB block's yaw does), and which of
   // the four entrance models it is (0 to 3).
   dungeons: [double];
+  // Whether they have finished the prologue, as kept with their character.
+  prologue_done: bool;
 }
 
 // What a room sends: exactly one of these is present.

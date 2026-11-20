@@ -25,6 +25,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::BuyEmblem { emblem: 13 }),
         Asked::Gear(Ask::UseCrate),
         Asked::Gear(Ask::BuyCrate),
+        Asked::Gear(Ask::FinishPrologue),
         Asked::Gather { node: 2 },
         Asked::Grant(Grant::Vestige { rarity: Rarity::Legendary, slot: Slot::Arms, level: 18 }),
         Asked::Grant(Grant::Named("gullwing".to_owned())),
@@ -198,4 +199,19 @@ fn the_gear_for_the_clients_test_is_written() {
     std::fs::create_dir_all(folder).expect("the folder");
     let (room, player) = furnished();
     std::fs::write(format!("{folder}/gear.bin"), gear_bytes(&room, player).expect("written")).expect("written");
+}
+
+#[test]
+fn a_players_gear_says_whether_they_finished_the_prologue() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let done = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("written");
+        messages::root_as_from_room(&bytes).expect("read").gear().expect("gear").prologue_done()
+    };
+    assert!(!done(&room), "a new character has not");
+    room.input(player, Input { sequence: 1, ask: Some(Asked::Gear(Ask::FinishPrologue)), ..Input::default() })
+        .expect("taken");
+    room.tick();
+    assert!(done(&room));
 }
