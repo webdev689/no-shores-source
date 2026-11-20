@@ -43,6 +43,9 @@ interface Puff {
   readonly colour: Colour;
   readonly born: number;
   readonly life: number;
+  /** The share of its life it holds its size before it thins away, and how fast it thins then: 1 evenly, 2 most of
+   *  the way early (smoke, so what it hid shows again). */
+  readonly thins: number;
   /** The share of its life it holds its size before it thins away. */
   readonly holds: number;
 }
@@ -57,6 +60,9 @@ const DARK_SMOKE: Colour = [0.22, 0.21, 0.2];
 const TRAIL: Colour = [0.62, 0.62, 0.62];
 const SPRAY: Colour = [0.9, 0.95, 1];
 const FOAM: Colour = [0.96, 0.97, 0.98];
+/** Water thrown up, the sea's own green-blue, paler; and a gathered piece's gold. */
+const WATER: Colour = [0.55, 0.74, 0.8];
+const GLINT: Colour = [1, 0.82, 0.3];
 const DUST: Colour = [0.55, 0.47, 0.36];
 const CANVAS: Colour = [0.92, 0.9, 0.82];
 const TIMBER: Colour = [0.45, 0.3, 0.16];
@@ -67,7 +73,9 @@ export const SMOKE_S = 7;
 const SMOKE_DRIFT_MS = 1.5;
 /** A splash's column stands this high (metres) and is back down in this long (seconds); its foam lasts this long. */
 export const SPLASH_M = 4;
-export const SPLASH_S = 1.5;
+export const SPLASH_S = 1;
+/** A round shot's radius, metres (crates/naval/src/guns.rs): a splash is sized by its ball beside it. */
+export const ROUND_SHOT_M = 0.07;
 const FOAM_S = 2.5;
 /** Foam flecks, and bubbles with them, a second over where a ship goes down. */
 const FOAM_PER_S = 80;
@@ -115,6 +123,7 @@ export class Effects {
         windborne: false,
         floor: -Infinity,
         holds: 2 / 3,
+        thins: 1,
         ...make(index),
         anchor,
         born: now,
@@ -134,14 +143,16 @@ export class Effects {
     this.add(1, anchor, now, () => ({ from: mouth, radius: 0.8, grow: 6, colour: FLASH, life: FLASH_S, holds: 1 }));
     this.add(10, anchor, now, (index) => ({
       from: mouth,
-      velocity: [out[0] * (2 + index * 1.6) + this.spread(0.5), out[1] * (2 + index * 1.6) + this.spread(0.5), 0.3],
+      velocity: [out[0] * (1.5 + index * 0.6) + this.spread(0.5), out[1] * (1.5 + index * 0.6) + this.spread(0.5), 0.8],
       drag: 0.9,
       radius: 0.9 + this.draw() * 0.5,
       grow: 0.45,
       windborne: true,
       colour: POWDER,
       life: SMOKE_S * (0.8 + this.draw() * 0.2),
-      holds: 0.4,
+      // It thins from its first second on, most of the way early, so what it hid shows again within a few.
+      holds: 0.15,
+      thins: 2,
     }));
   }
 
@@ -152,38 +163,66 @@ export class Effects {
     for (const ball of balls) this.add(1, ball, now, () => ({ radius: 0.12, colour: TRAIL, life: TRAIL_S, holds: 0 }));
   }
 
-  /** A ball fell in the water at `at` (window metres, the water's height): a column of spray about 4 m high, back
-   *  down in 1.5 s, and a ring of foam spreading on the water. Answers its push on the water's ripples. */
-  splash(spot: Point, now: number): Splash {
-    // Up 4 m and down again in 1.5 s: launched at 4h/T and pulled down at 8h/T².
-    const [rise, pull] = [(4 * SPLASH_M) / SPLASH_S, (8 * SPLASH_M) / SPLASH_S ** 2];
+  /** A ball of `ballM` radius fell in the water at `spot` (window metres, the water's height): a column of water thrown
+   *  up, white at its head and clear lower down, that rises, spreads and falls back in about a second, and a ragged
+   *  patch of foam where it fell, all as large as the ball is heavy beside a round shot's. Answers its push on the
+   *  water's ripples. */
+  splash(spot: Point, now: number, ballM = ROUND_SHOT_M): Splash {
+    const size = Math.min(2, Math.max(0.6, ballM / ROUND_SHOT_M));
+    // Up `height` and down again in `SPLASH_S`: launched at 4h/T and pulled down at 8h/T².
+    const height = SPLASH_M * size;
+    const [rise, pull] = [(4 * height) / SPLASH_S, (8 * height) / SPLASH_S ** 2];
     this.add(28, spot, now, () => {
-      const share = 0.6 + this.draw() * 0.4;
+      const share = 0.35 + this.draw() * 0.65;
       return {
-        velocity: [this.spread(0.5), this.spread(0.5), rise * Math.sqrt(share)],
-        radius: 0.4 + this.draw() * 0.2,
-        grow: 0.15,
+        velocity: [this.spread(size), this.spread(size), rise * Math.sqrt(share)],
+        radius: (0.25 + this.draw() * 0.2) * size,
+        grow: 0.4 * size,
         gravity: pull,
         floor: 0,
-        colour: SPRAY,
+        // The fastest water goes highest and breaks white; the rest stays the sea's own colour.
+        colour: share > 0.8 ? SPRAY : WATER,
         life: SPLASH_S * Math.sqrt(share),
       };
     });
-    // A ragged ring: each fleck of foam its own size, a little in or out of the ring, spreading at its own pace.
-    this.add(24, spot, now, (index) => {
-      const turn = ((index + this.spread(0.4)) / 24) * 2 * Math.PI;
-      const [start, speed] = [0.4 + this.spread(0.25), 2 + this.spread(0.6)];
+    this.add(22, spot, now, () => {
+      const [turn, away] = [this.draw() * 2 * Math.PI, Math.sqrt(this.draw()) * 0.8 * size];
+      const drift = this.draw() * 0.6 * size;
       return {
-        from: [Math.cos(turn) * start, Math.sin(turn) * start, 0],
-        velocity: [Math.cos(turn) * speed, Math.sin(turn) * speed, 0],
-        drag: 1.2,
-        radius: 0.3 + this.draw() * 0.25,
+        from: [Math.cos(turn) * away, Math.sin(turn) * away, 0],
+        velocity: [Math.cos(turn) * drift, Math.sin(turn) * drift, 0],
+        drag: 1,
+        radius: (0.2 + this.draw() * 0.3) * size,
         grow: 0.05,
         colour: FOAM,
-        life: FOAM_S,
+        life: FOAM_S * (0.7 + this.draw() * 0.3),
       };
     });
-    return { x: spot[0], y: spot[1], radiusM: 1.2, strength: -0.05 };
+    return { x: spot[0], y: spot[1], radiusM: 1.2 * size, strength: -0.05 };
+  }
+
+  /** A piece of what floats gathered at `spot` (window metres, the water's height): a little water thrown up and a
+   *  ring of gold glints rising from where it lay. */
+  gathered(spot: Point, now: number): void {
+    this.add(8, spot, now, (index) => {
+      const turn = (index / 8) * 2 * Math.PI;
+      return {
+        from: [Math.cos(turn) * 0.5, Math.sin(turn) * 0.5, 0.2],
+        velocity: [Math.cos(turn) * 0.6, Math.sin(turn) * 0.6, 2],
+        radius: 0.12,
+        colour: GLINT,
+        life: 0.8,
+        holds: 0.5,
+      };
+    });
+    this.add(10, spot, now, () => ({
+      velocity: [this.spread(1), this.spread(1), 2 + this.draw() * 1.5],
+      radius: 0.2,
+      gravity: GRAVITY,
+      floor: 0,
+      colour: SPRAY,
+      life: 0.7,
+    }));
   }
 
   /** A ball in the ground: a puff of dust. */
@@ -314,7 +353,7 @@ export class Effects {
         const rawZ = puff.from[2] + puff.velocity[2] * carried - fall;
         // Each holds its size, then thins away over the rest of its life.
         const thinning = puff.life * (1 - puff.holds);
-        const fade = thinning > 0 ? Math.min(1, Math.max(0, (puff.life - age) / thinning)) : 1;
+        const fade = thinning > 0 ? Math.min(1, Math.max(0, (puff.life - age) / thinning)) ** puff.thins : 1;
         return {
           x: puff.anchor[0] + (puff.from[0] + puff.velocity[0] * carried + windEast * age) * scale,
           y: puff.anchor[1] + (puff.from[1] + puff.velocity[1] * carried + windSouth * age) * scale,

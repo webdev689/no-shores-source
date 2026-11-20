@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Effects, FLASH_S, SMOKE_S, SPLASH_M, SPLASH_S, SPLINTERS } from './effects.ts';
+import { Effects, FLASH_S, ROUND_SHOT_M, SMOKE_S, SPLASH_M, SPLASH_S, SPLINTERS } from './effects.ts';
 
 const highest = (marks: readonly { z: number }[]) => Math.max(...marks.map((mark) => mark.z));
 const FLASH_COLOUR = [1, 0.78, 0.35];
@@ -36,20 +36,66 @@ test('powder smoke drifts downwind', () => {
   );
 });
 
-test('a splash stands about four metres high and is back in the water in a second and a half', () => {
+test("a round shot's splash: water thrown about four metres up, white at its head, back in a second, a ragged patch", () => {
   const effects = new Effects(3);
   const stir = effects.splash([5, 6, 0], 0);
   assert.deepEqual([stir.x, stir.y], [5, 6]);
+  // Read in time's order: a puff once spent is let go.
+  const rising = effects.marks(0.3).filter((mark) => mark.z > 0.3);
+  const head = Math.max(...rising.map((mark) => mark.z));
+  const white = (mark: { readonly colour: readonly number[] }) => (mark.colour[0] ?? 0) > 0.85;
+  assert.ok(rising.filter((mark) => mark.z > head * 0.75).some(white), 'white at its head');
+  assert.ok(
+    rising.filter((mark) => mark.z < head * 0.5).some((mark) => !white(mark)),
+    'clear lower down',
+  );
+  const width = (now: number) =>
+    Math.max(
+      ...effects
+        .marks(now)
+        .filter((mark) => mark.z > 0.3)
+        .map((mark) => Math.hypot(mark.x - 5, mark.y - 6)),
+    );
+  assert.ok(width(0.5) > width(0.3), 'it spreads as it rises');
   let top = 0;
-  for (let now = 0; now < SPLASH_S; now += 0.05) top = Math.max(top, highest(effects.marks(now)));
+  for (let now = 0.3; now < SPLASH_S; now += 0.05) top = Math.max(top, highest(effects.marks(now)));
   assert.ok(top > SPLASH_M * 0.8 && top < SPLASH_M * 1.2, `${top}`);
   const spray = effects.marks(SPLASH_S + 0.01).filter((mark) => mark.z > 0.01);
   assert.equal(spray.length, 0, 'the column has fallen back');
   const foam = effects.marks(SPLASH_S + 0.2);
-  assert.ok(foam.length >= 12 && foam.every((mark) => Math.abs(mark.z) < 0.01), 'its ring of foam lies on the water');
-  const spreadOf = (now: number) => Math.max(...effects.marks(now).map((mark) => Math.hypot(mark.x - 5, mark.y - 6)));
-  assert.ok(spreadOf(1.5) > spreadOf(0.1), 'the ring spreads');
+  assert.ok(foam.length >= 12 && foam.every((mark) => Math.abs(mark.z) < 0.01), 'its foam lies on the water');
+  const apart = foam.map((mark) => Math.hypot(mark.x - 5, mark.y - 6));
+  assert.ok(Math.min(...apart) < 0.5 * Math.max(...apart), 'a patch over where it fell, not a ring round it');
   assert.equal(effects.marks(5).length, 0);
+});
+
+test('a heavier ball throws a taller splash', () => {
+  const [round, heavy] = [new Effects(4), new Effects(4)];
+  round.splash([0, 0, 0], 0, ROUND_SHOT_M);
+  heavy.splash([0, 0, 0], 0, ROUND_SHOT_M * 1.5);
+  const tallest = (effects: Effects) =>
+    Math.max(...Array.from({ length: 20 }, (unused, step) => highest(effects.marks(step * 0.05))));
+  assert.ok(tallest(heavy) > tallest(round) * 1.3);
+});
+
+test("a broadside's smoke has thinned to under half its size four seconds on, what it hid showing again", () => {
+  const effects = new Effects(5);
+  effects.fire([0, 0, 0], [0, 4, 2], [0, 300, 3], 0);
+  const meanRadius = (now: number) => {
+    const smoke = effects.marks(now);
+    return smoke.reduce((sum, mark) => sum + mark.radius, 0) / smoke.length;
+  };
+  assert.ok(meanRadius(4) < meanRadius(1) / 2, `${meanRadius(1)} then ${meanRadius(4)}`);
+  assert.ok(Math.min(...effects.marks(3).map((mark) => mark.z)) > 1.5, 'it lifts off the water');
+});
+
+test('a piece gathered leaves a ring of gold glints rising and a little water thrown up, gone in a second', () => {
+  const effects = new Effects(6);
+  effects.gathered([3, 4, 0], 0);
+  const shown = effects.marks(0.3);
+  assert.ok(shown.some((mark) => mark.colour[2] < 0.5) && shown.some((mark) => mark.colour[2] > 0.9));
+  assert.ok(shown.every((mark) => Math.hypot(mark.x - 3, mark.y - 4) < 2));
+  assert.equal(effects.marks(1).length, 0);
 });
 
 test('a hull hit bursts a few dozen chips of her paint that fall to the water', () => {

@@ -52,7 +52,11 @@ test('a hull hit, by its point in the world or in her frame, splinters her paint
   assert.ok(pirateHull.length > 20, 'her black paint flies');
   const ship = ships.get(1) as FeelShip;
   const blots = feel.scars([{ ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0 } }]);
-  assert.equal(blots.length, 8, 'each hole a ragged few dark blots');
+  assert.equal(blots.length, 8, 'each hole a ragged few blots');
+  assert.ok(
+    blots.some((blot) => blot.colour[0] < 0.1) && blots.some((blot) => blot.colour[0] > 0.5),
+    'a dark middle in a pale rim of raw timber, which reads on her black paint',
+  );
   const drawnLarger = feel.scars([
     { ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0, scale: 4 } },
   ]);

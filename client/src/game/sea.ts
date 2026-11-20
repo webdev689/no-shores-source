@@ -457,7 +457,7 @@ export class Sea {
     const aboardShot = this.aboard.target(trueLying);
     // The fight's view, the helm's or one aboard, which the view comes down to from the sea's.
     const down = combat
-      ? { near: combat.frame(dt, time, seaShot.far, fail), share: combat.share }
+      ? { near: combat.frame(dt, time, seaShot.far, fail, input.swell), share: combat.share }
       : this.view.kind === 'helm'
         ? { near: this.helmShot(trueLying, seaShot.far), share: this.helmShare }
         : aboardShot && { near: aboardShot, share: this.aboard.share };

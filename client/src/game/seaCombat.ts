@@ -11,6 +11,8 @@ import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import { playCues } from '../ships/fightSounds.ts';
 import type { Stir } from '../ships/swellPose.ts';
+import type { ShadowMap } from '../shadow.ts';
+import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { factionSide } from '../ships/dress.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
@@ -90,6 +92,9 @@ export class SeaCombat {
   /** The size the ships were last drawn at, which the fight's effects are drawn at too, and the water's pushes owed
    *  since the sea last took them. */
   private scale = 1;
+  /** The swell the water draws and its clock at the last frame, which what floats rides. */
+  private swell: ShelteredSwell | undefined;
+  private waterTime = 0;
   private stirred: Stir[] = [];
 
   constructor(
@@ -175,7 +180,8 @@ export class SeaCombat {
 
   /** One frame of the fight, `seconds` on at `time`: it steps, and answers the fight's own view, drawing to `far`,
    *  which the view pans down to from the sea's by `share`. */
-  frame(seconds: number, time: number, far: number, fail: (error: unknown) => void): Shot {
+  frame(seconds: number, time: number, far: number, fail: (error: unknown) => void, swell?: ShelteredSwell): Shot {
+    [this.swell, this.waterTime] = [swell, time];
     const orbit = this.orbitAt();
     const look = this.aiming ? this.naval.look(orbit, this.fought, this.window) : null;
     const input: FightInput = {
@@ -304,14 +310,24 @@ export class SeaCombat {
       .map(({ mask }) => mask);
   }
 
-  /** The balls aloft, the lay's arcs and the effects, from a camera in world metres. */
-  draw(pass: GPURenderPassEncoder, camera: ShipCamera, now: number): void {
+  /** The balls aloft, the lay's arcs and the effects, from a camera in world metres, in the sun's shadows when a map
+   *  is given; what floats rides the swell the water draws. */
+  draw(pass: GPURenderPassEncoder, camera: ShipCamera, now: number, shadow?: ShadowMap): void {
     const eye = [camera.eye[0] - this.window.leftM, camera.eye[1] - this.window.topM, camera.eye[2]] as const;
     const scarred = this.placed(now, this.scale).map(({ ship, place }) => ({
       ship,
       place: { ...place, x: place.x - this.window.leftM, y: place.y - this.window.topM },
     }));
-    this.naval.draw(pass, this.window, 1, { fromEye: camera.fromEye, eye }, now, this.scale, scarred);
+    const swell = this.swell;
+    const water = swell
+      ? (x: number, y: number) =>
+          swellHeight(swell, x + this.window.leftM, y + this.window.topM, this.waterTime, Infinity)
+      : undefined;
+    const windowCamera = { fromEye: camera.fromEye, eye };
+    this.naval.draw(pass, this.window, 1, windowCamera, now, this.scale, scarred, {
+      water,
+      shadow,
+    });
     playCues(worldOutput(), this.naval.takeCues(), eye, this.orbit.yaw);
   }
 

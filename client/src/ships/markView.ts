@@ -1,4 +1,5 @@
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
+import { SHADOW_WGSL, ShadowMap } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import type { Mark } from './effects.ts';
@@ -146,6 +147,7 @@ export function sphere(): { readonly corners: Float32Array<ArrayBuffer>; readonl
 
 const MARK_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
+${SHADOW_WGSL}
 const AMBIENT = 0.45;
 
 struct Camera {
@@ -159,6 +161,7 @@ struct Drawn {
   @builtin(position) clip: vec4f,
   @location(0) normal: vec3f,
   @location(1) colour: vec3f,
+  @location(2) from_eye: vec3f,
 };
 
 @vertex
@@ -172,7 +175,8 @@ fn vertex_main(
   // A mark's yaw (its colour's fourth) turns it about the upright.
   let turn = vec2f(cos(colour.w), sin(colour.w));
   let turned = vec3f(corner.x * turn.x - corner.y * turn.y, corner.x * turn.y + corner.y * turn.x, corner.z);
-  drawn.clip = camera.from_eye * vec4f(place.xyz - camera.eye.xyz + turned * place.w, 1.0);
+  drawn.from_eye = place.xyz - camera.eye.xyz + turned * place.w;
+  drawn.clip = camera.from_eye * vec4f(drawn.from_eye, 1.0);
   drawn.normal = vec3f(facing.x * turn.x - facing.y * turn.y, facing.x * turn.y + facing.y * turn.x, facing.z);
   drawn.colour = colour.rgb;
   return drawn;
@@ -180,7 +184,11 @@ fn vertex_main(
 
 @fragment
 fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
-  let light = AMBIENT + (1.0 - AMBIENT) * max(dot(normalize(drawn.normal), SUN), 0.0);
+  let normal = normalize(drawn.normal);
+  let direct = max(dot(normal, SUN), 0.0);
+  // In the sun's shadows, as the land and the ships are: a crate in a ship's shadow is darker.
+  let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0);
+  let light = AMBIENT + (1.0 - AMBIENT) * direct * sun;
   return vec4f(drawn.colour * light, 1.0);
 }
 `;
@@ -198,7 +206,10 @@ export class MarkView {
   private readonly uniforms: GPUBuffer;
   private readonly bindGroup: GPUBindGroup;
 
+  private readonly gpu: Gpu;
+
   constructor(gpu: Gpu) {
+    this.gpu = gpu;
     this.device = gpu.device;
     const meshes = shapes();
     const module = gpu.device.createShaderModule({ code: MARK_SHADER });
@@ -266,7 +277,12 @@ export class MarkView {
   }
 
   /** Draws `marks` (window metres, heights as drawn) into a pass the land's pipelines draw into. */
-  drawInto(pass: GPURenderPassEncoder, marks: readonly Mark[], camera: ShipCamera): void {
+  drawInto(
+    pass: GPURenderPassEncoder,
+    marks: readonly Mark[],
+    camera: ShipCamera,
+    shadow: ShadowMap = ShadowMap.none(this.gpu),
+  ): void {
     const count = Math.min(marks.length, MOST_MARKS);
     if (count === 0) return;
     // Grouped by shape, each shape's marks one run of instances.
@@ -285,6 +301,7 @@ export class MarkView {
     this.device.queue.writeBuffer(this.uniforms, 0, uniforms);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
+    pass.setBindGroup(1, shadow.receiverGroup(this.pipeline));
     pass.setVertexBuffer(0, this.corners);
     pass.setVertexBuffer(1, this.instances);
     pass.setIndexBuffer(this.faces, 'uint16');
