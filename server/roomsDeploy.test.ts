@@ -39,6 +39,7 @@ test('the rooms’ code is every crate the room’s WebAssembly and the bake are
     'content/world',
     'content/testground',
     'content/gear',
+    'content/arts',
     'Cargo.lock',
   ])
     assert.ok(roomsCode.includes(path), path);

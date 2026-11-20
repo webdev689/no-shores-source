@@ -58,12 +58,12 @@ impl Frame {
 
 /// Where a visitor who keeps no counter may stand, each a quiet place by something of the courtyard's: beside each
 /// brazier on its seaward side, landward of the two outer benches, and before the portico's two ends. Clear of every
-/// solid, the processional way and the spawns.
+/// solid, the processional way, the spawns and the townsfolk's lanes.
 #[must_use]
 pub fn visitor_spots(frame: &Frame) -> Vec<[f64; 2]> {
     let braziers = [-95.0, -45.0, 45.0, 95.0].map(|across| frame.at(2.5, across));
     let benches = [-120.0, 120.0].map(|across| frame.at(frame.depth / 2.0 - 20.0, across));
-    let portico = [-30.0, 30.0].map(|across| frame.at(-frame.depth / 2.0 + PORTICO_M[1] + 6.0, across));
+    let portico = [-30.0, 30.0].map(|across| frame.at(-frame.depth / 2.0 + PORTICO_M[1] + 12.0, across));
     braziers.into_iter().chain(benches).chain(portico).collect()
 }
 
@@ -224,6 +224,26 @@ mod tests {
                 assert!(gap > 1.0, "{spot:?} stands within a metre of a solid");
             }
             assert!(spawns.iter().all(|spawn| libm::hypot(spawn[0] - x, spawn[1] - y) > 10.0));
+        }
+    }
+
+    /// The townsfolk's lanes (`client/src/game/townsfolk.ts`), metres toward the sea and across: Shape stands off them,
+    /// so no one walks through him.
+    const LANES_TOWARD: [f64; 4] = [-38.0, -14.0, 14.0, 34.0];
+    const LANES_ACROSS: [f64; 6] = [-110.0, -70.0, -20.0, 20.0, 70.0, 110.0];
+
+    #[test]
+    fn every_visitor_spot_stands_off_the_townsfolks_lanes() {
+        for [x, y] in visitor_spots(&FRAME) {
+            let off = [x - FRAME.middle[0], y - FRAME.middle[1]];
+            let toward = off[0] * FRAME.seaward[0] + off[1] * FRAME.seaward[1];
+            let across = off[0] * FRAME.across()[0] + off[1] * FRAME.across()[1];
+            let nearest = LANES_TOWARD
+                .iter()
+                .map(|lane| (lane - toward).abs())
+                .chain(LANES_ACROSS.iter().map(|lane| (lane - across).abs()))
+                .fold(f64::INFINITY, f64::min);
+            assert!(nearest > 4.0, "the spot {toward} toward the sea, {across} across, stands {nearest} m off a lane");
         }
     }
 

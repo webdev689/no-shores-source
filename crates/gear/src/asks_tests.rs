@@ -245,7 +245,7 @@ fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level
 }
 
 #[test]
-fn over_four_days_the_quartermaster_sells_every_armour_piece_at_each_rarity() {
+fn over_four_days_the_armorsmith_sells_every_armour_piece_at_each_rarity() {
     use crate::vendor::{Vendor, wares};
     let mut seen = std::collections::BTreeSet::new();
     for day in 20_000..20_004 {

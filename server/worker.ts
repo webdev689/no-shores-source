@@ -208,6 +208,8 @@ export class RoomHost extends DurableObject<Env> {
     const tickMs = this.room.tickSeconds * 1000;
     this.started = Date.now() - this.ticks * tickMs;
     this.guarded(() => this.room.epoch(this.started), undefined);
+    // Before the first tick, so a room just opened or woken from rest answers its first gear and asks by today.
+    this.guarded(() => this.room.minute(Math.floor(Date.now() / MINUTE_MS)), false);
     this.ticking = setInterval(() => {
       const due = Math.floor((Date.now() - this.started) / tickMs);
       if (this.ticks >= due) return;

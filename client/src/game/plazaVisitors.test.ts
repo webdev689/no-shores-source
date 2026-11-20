@@ -22,7 +22,7 @@ test('Shape is placed at his week’s spot while the room says he is here, and M
     [1045, 2002.5],
   ] as const;
   const life = new PlazaLife({ ...SOCIAL, visitorSpots }, others, () => 30);
-  const here = { shape: { place: 1, minutesLeft: 90, wares: [] } } as unknown as GearState;
+  const here = { shape: { place: 1, wares: [] } } as unknown as GearState;
   life.frame(0.25, here);
   assert.equal(placed.length, STATIONS.length + WALKERS + 1);
   const shape = placed.find((figure) => figure.dress === KEEPERS.shape.dress);

@@ -185,6 +185,9 @@ pub struct WornArts {
     /// None only in a character kept before fragments were owned, which owns what its Cores held (`kept`).
     #[serde(default)]
     pub owned: Option<Vec<u8>>,
+    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
 }
 
 impl Default for WornArts {
@@ -196,6 +199,7 @@ impl Default for WornArts {
             levels: vec![1; count],
             xp: vec![0; count],
             owned: Some(vec![0; count]),
+            unknown: crate::character::UnknownKeys::new(),
         }
     }
 }

@@ -139,11 +139,11 @@ pub enum Refusal {
     NoFruit,
     FullOfXp,
     NoSuchEmblem,
-    /// The player does not keep that emblem.
+    /// The player does not keep that emblem or cosmetic.
     NotKept,
-    /// The player keeps that emblem already.
+    /// The player keeps that emblem, cosmetic or cape already.
     Kept,
-    /// The Tailor does not sell it that day.
+    /// The Tailor or the Tack does not sell it that day.
     NotSold,
     NoCrate,
     /// The Ranged loadout's ammunition is full already.
@@ -166,6 +166,8 @@ pub enum Refusal {
     /// The player owns the fragment already.
     Owned,
     NoSuchCosmetic,
+    /// An Art has no fragment at that place.
+    NoSuchFragment,
     /// No Ranged weapon is worn for an Ammo crate to fill: answered as 120, one past its number as every refusal is.
     NoRanged = 119,
 }

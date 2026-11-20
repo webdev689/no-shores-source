@@ -270,7 +270,7 @@ impl Room {
         }
         found.received = input.sequence;
         if let Some(dress) = input.dress.take()
-            && dress != found.dress
+            && dress != found.dress_sent
         {
             found.dress_next = Some(dress);
         }
@@ -389,18 +389,18 @@ impl Room {
     }
 
     /// A dress waiting its turn is taken at once the first time, then once DRESS_EVERY ticks have passed since the
-    /// last change.
+    /// last change; and the dress shown to others follows the cosmetics worn (`Player::dress_again`).
     fn dress_in_turn(&mut self, id: PlayerId) {
         let clock = self.clock;
         let Some(found) = self.players.get_mut(&id) else { return };
-        if found.dressed_at.is_some_and(|at| clock < at + players::DRESS_EVERY) {
-            return;
-        }
-        if let Some(dress) = found.dress_next.take() {
-            found.dress = dress;
-            found.dress_changed = true;
+        if !found.dressed_at.is_some_and(|at| clock < at + players::DRESS_EVERY)
+            && let Some(dress) = found.dress_next.take()
+        {
+            found.dress_sent = dress;
             found.dressed_at = Some(clock);
+            found.dressed_with = None;
         }
+        found.dress_again();
     }
 
     /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never

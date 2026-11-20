@@ -48,6 +48,41 @@ test('a players own gear the server wrote reads back whole, every column spelled
   );
 });
 
+test('where a player stands crosses as the server wrote it, away from Shape and while he is here', async () => {
+  // gear_wire_tests.rs writes both: the furnished player at the stall, a fresh standing, and then pledged to the
+  // Lamplighters at rank 3, Arts at levels 3, 1 and 5, the Ember Plate barding worn and 9 Shapes on a Friday noon.
+  const away = readFromRoom(await written('gear.bin'));
+  const here = readFromRoom(await written('gear_shape.bin'));
+  assert.ok(away?.kind === 'gear' && here?.kind === 'gear');
+  const fresh = { pledge: 0, reputation: [0, 0, 0], packages: [0, 0, 0], artLevels: [1, 1, 1], artXp: [0, 0, 0] };
+  assert.deepEqual(away.standing, { ...fresh, artOwned: [0, 0, 0] });
+  assert.deepEqual(away.cosmetics, [23, 16, 0], 'the start pieces: bare, bay, own colours');
+  assert.deepEqual(away.worn, { dye: 0, coat: 16, barding: 23 });
+  assert.deepEqual([away.shapes, away.shape], [0, null], 'he is away');
+  assert.deepEqual(here.standing, {
+    pledge: 2,
+    reputation: [5, 35_000, 0],
+    packages: [0, 1, 0],
+    artLevels: [3, 1, 5],
+    artXp: [700, 0, 0],
+    artOwned: [0b101, 0, 0b11_1111],
+  });
+  assert.deepEqual(here.cosmetics, [23, 16, 24, 14, 0], 'Ember Plate bought and the Lamplighters’ gold earned');
+  assert.deepEqual(here.worn, { dye: 0, coat: 16, barding: 24 });
+  assert.equal(here.cosmeticsSold?.length, 8, 'four the Tailor’s, four the Tack’s');
+  assert.equal(here.shapes, 9);
+  assert.equal(here.shape?.place, 6);
+  assert.deepEqual(
+    here.shape?.wares.map((ware) => [ware.id, ware.rarity, ware.price, ware.level]),
+    [0, 1, 2, 3, 4, 5].map((id) => [id, id < 4 ? 3 : 4, id < 4 ? 7 : 15, 20]),
+    'four Legendary, then two Atheric, numbered by place and priced in Shapes',
+  );
+  const sold = here.factionWares ?? [];
+  assert.equal(sold.length, 21, 'seven pieces of each faction’s');
+  const hood = sold.find((ware) => ware.named === 'lamplighters_hood');
+  assert.deepEqual([hood?.id, hood?.price, hood?.level], [1, 6_000, 20]);
+});
+
 test('an ask crosses into an input with every field it names', () => {
   const ask = { kind: ASKS.buy, item: 7, column: 6, node: 1 } as const;
   const bytes = inputBytes(3, {

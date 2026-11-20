@@ -95,7 +95,7 @@ fn an_ammo_crate_is_refused_with_no_ranged_weapon_worn_and_kept() {
 }
 
 #[test]
-fn the_quartermaster_sells_crates_at_the_counter_for_their_price() {
+fn the_weaponsmith_sells_crates_at_the_counter_for_their_price() {
     let mut character = wearing(Kind::Bow);
     character.materials.aurem = CRATE_PRICE * 2;
     assert_eq!(character.ask(Ask::BuyCrate, AFIELD, &DICE), Err(Refusal::NotHere));

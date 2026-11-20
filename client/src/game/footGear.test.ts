@@ -74,7 +74,7 @@ test("Shape's offer is within a counter's reach of his week's spot, ringed there
     [60, 0],
   ] as const;
   const here = { stations: [WEAPONSMITH], visitorSpots };
-  const shape = { ...lying, nodes: [], shape: { place: 1, minutesLeft: 60, wares: [] } } as GearState;
+  const shape = { ...lying, nodes: [], shape: { place: 1, wares: [] } } as GearState;
   const opened: { type: string; detail: unknown }[] = [];
   // The page's event, as the menu hears it, without a page.
   Object.assign(globalThis, {

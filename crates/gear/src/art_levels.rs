@@ -132,7 +132,7 @@ impl Character {
     /// Refuses a fragment the Art has not, or one already owned.
     fn fragment_free(&self, art: u8, fragment: u8) -> Result<(), Refusal> {
         if usize::from(fragment) >= FRAGMENTS {
-            return Err(Refusal::NoSuchNode);
+            return Err(Refusal::NoSuchFragment);
         }
         if self.owns_fragment(art, fragment) {
             return Err(Refusal::Owned);

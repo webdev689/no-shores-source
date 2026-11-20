@@ -97,3 +97,25 @@ fn a_fresh_number_is_never_one_held() {
     let _ = character.take_id();
     assert_ne!(character.next_id, 0, "never 0, the number for none");
 }
+
+#[test]
+fn keys_a_room_does_not_know_are_kept_through_a_read_and_a_write() {
+    let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).expect("a character");
+    let later = serde_json::json!({ "from": "a later room" });
+    kept["later"] = later.clone();
+    for nested in ["materials", "arts", "allegiance", "cosmetics"] {
+        kept[nested]["later"] = later.clone();
+    }
+    let items = kept["items"].as_object_mut().expect("the items");
+    let first = items.values_mut().next().expect("an item");
+    first[0]["later"] = later.clone();
+    let read = Character::from_json(&kept.to_string()).expect("a newer save reads");
+    let written: serde_json::Value = serde_json::from_str(&read.to_json()).expect("written");
+    assert_eq!(written["later"], later, "top level");
+    for nested in ["materials", "arts", "allegiance", "cosmetics"] {
+        assert_eq!(written[nested]["later"], later, "{nested}");
+    }
+    let items = written["items"].as_object().expect("the items");
+    assert_eq!(items.values().next().map(|item| &item[0]["later"]), Some(&later), "an item");
+    assert_eq!(Character::from_json(&read.to_json()), Some(read), "and read again, the same");
+}
