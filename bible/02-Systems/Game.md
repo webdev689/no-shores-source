@@ -296,8 +296,8 @@ its landmark over the city, as on arriving. Escape flies back down.
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server
 (`?room=ws://127.0.0.1:8787` under `npm run server`), any other value the deployed rooms.
 
-- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder seas
-  `node-<node id>--rough` or `--storm` (a social space is one room at any seas), and stands at the spawn the room's
+- **On foot** the player joins the node's room, `node-<node id>`, or at a voyage's harder difficulty
+  `node-<node id>--elite` or `--abyss` (a social space is one room at any difficulty), and stands at the spawn the room's
   first word puts them at, each joiner at the next of the node's spawns in turn (until it comes, at the first). The
   room judges the edge. Each tick's controls go to it with the fight's buttons and arms, the figure's look, the dress
   when it changed, the gear's asks and a respawn when asked; the player is predicted on the same ground and corrected
