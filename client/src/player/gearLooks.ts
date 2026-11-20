@@ -1,6 +1,10 @@
 // What the player's worn gear looks like on their figure: every garment is armour, so a Normal or Magic piece is drawn
-// as clothes and a Rare or finer one as an armour set, the finer the rarer; the cloak is a cloak; the hands hold what the gear wears. Each item keeps its look by its own name.
+// as clothes and a Rare or finer one as an armour set, the finer the rarer; the cloak is a cloak, a faction's cape the
+// formal cloak in its faction's dye; the hands hold what the gear wears; the dye, coat and barding worn ride along.
+// Each item keeps its look by its own name.
 
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
+import { wornCosmetic } from '../forge/cosmetics.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
 import type { Wardrobe } from './dressing.ts';
@@ -54,6 +58,9 @@ const DYES: Readonly<Record<number, readonly string[]>> = {
   4: ['Aquamarine', 'Blue'],
 };
 
+/** Each faction's cape, by its item's id, and the dye of its faction it is drawn in. */
+const CAPE_DYES: ReadonlyMap<string, string> = new Map(factions.factions.map((each) => [each.cape, each.dye]));
+
 const pick = <T>(choices: readonly T[], item: GearItem): T | undefined => choices[item.name % choices.length];
 
 /** The set an armour piece of this item is drawn in, among those the forge draws for every piece of its slot. */
@@ -97,13 +104,18 @@ export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit,
       );
   }
   const cloak = worn(state, CLOAK);
-  if (cloak) wear(cloak.rarity >= RARE ? 'formal_cloak' : 'casual_cloak', cloak);
+  const cape = CAPE_DYES.get(cloak?.named ?? '');
+  if (cloak) wear(cloak.rarity >= RARE || cape ? 'formal_cloak' : 'casual_cloak', cloak);
+  if (cape) dyes['formal_cloak'] = cape;
   return {
     ...outfit,
     armour,
     garments: garments.filter((each) => wardrobe.garments.includes(each)),
     dyes,
     ...gearHands(state, wardrobe, loadout),
+    dye: wornCosmetic(state.worn?.dye, 'dye'),
+    coat: wornCosmetic(state.worn?.coat, 'coat'),
+    barding: wornCosmetic(state.worn?.barding, 'barding'),
   };
 }
 

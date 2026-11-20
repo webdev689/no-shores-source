@@ -240,6 +240,7 @@ export class Walker {
       ...(this.castGlow ? { element: ART_LIGHTS[this.castGlow], castGlow: this.castGlow } : {}),
       climbing: holding ? 0 : 1,
       mounted: player.mounted,
+      horse: { coat: outfit.coat ?? null, barding: outfit.barding ?? null },
       yaw: player.yaw,
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,

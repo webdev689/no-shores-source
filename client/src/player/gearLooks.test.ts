@@ -5,6 +5,7 @@ import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
 import { MELEE, RANGED_SLOT } from './gear.ts';
 import { gearOutfit, spareOutfit } from './gearLooks.ts';
+import { COSMETICS } from '../forge/cosmetics.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -123,4 +124,28 @@ test('a Rare or finer piece is an armour set, the rarer the finer; Magic is tuni
   const magic = gearOutfit(state([item({ kind: 14, rarity: 1, at: 5, name: 1 })]), wardrobe, plain);
   assert.deepEqual(magic.garments, ['shirt_long_v', 'vest']);
   assert.equal(magic.dyes['vest'], 'Aquamarine', 'each item keeps its own look by its name');
+});
+
+test('the dye, coat and barding worn ride the outfit; the start pieces are none', () => {
+  const number = (id: string) => COSMETICS.findIndex((each) => each.id === id);
+  const kit = { ...state([]), worn: { dye: number('coral'), coat: number('grey'), barding: number('dawnfire') } };
+  const dressed = gearOutfit(kit, wardrobe, plain);
+  assert.deepEqual([dressed.dye, dressed.coat, dressed.barding], ['coral', 'grey', 'dawnfire']);
+  const start = { ...state([]), worn: { dye: number('own_colours'), coat: number('bay'), barding: number('bare') } };
+  const own = gearOutfit(start, wardrobe, { ...plain, dye: 'coral' });
+  assert.deepEqual([own.dye, own.coat, own.barding], [null, null, null]);
+});
+
+test("a faction's cape is the formal cloak in its faction's dye, whatever its rarity", () => {
+  const cape = (named: string, rarity: number) =>
+    gearOutfit(state([item({ kind: 17, rarity, at: 8, named })]), wardrobe, plain);
+  for (const [named, dye] of [
+    ['stormcallers_cape', 'stormcaller_blue'],
+    ['lamplighters_cape', 'lamplighter_gold'],
+    ['veiled_cape', 'veiled_dusk'],
+  ] as const) {
+    assert.deepEqual(cape(named, 2).garments, ['formal_cloak'], named);
+    assert.equal(cape(named, 2).dyes['formal_cloak'], dye, named);
+    assert.equal(cape(named, 4).dyes['formal_cloak'], dye, named);
+  }
 });

@@ -68,6 +68,8 @@ export interface FirstPersonState {
   /** The element a cast's light is recoloured to: its Art's. */
   readonly castGlow?: GlowElement | null;
   readonly mounted?: boolean;
+  /** The coat and barding the ridden horse wears, by their cosmetics' ids; none for the bay and the bare horse. */
+  readonly horse?: { readonly coat: string | null; readonly barding: string | null };
   readonly yaw?: number;
   readonly blocking?: boolean;
   /** A weapon held in a fight's pose, one of its strokes' frames: a guard, a parry's deflect. */
@@ -199,6 +201,8 @@ export class FirstPerson {
   private shield = SHIELD_REST;
   private shieldClock = 0;
   private look = '';
+  /** The coat and barding the ridden horse wears. */
+  private horse: { readonly coat: string | null; readonly barding: string | null } = { coat: null, barding: null };
   /** The other loadout's hands whose pictures were last asked for ahead of a swap. */
   private spareLook = '';
   private wanted: Wanted[] = [];
@@ -291,7 +295,8 @@ export class FirstPerson {
     this.stepShield(seconds, !!state.blocking);
     const shot = state.mounted ? this.ride.step(seconds, gaitOf(state), state.yaw ?? null) : null;
 
-    const lookKey = `${state.right}|${state.left}|${state.drawn}|${worn.hands}|${worn.feet}|${!!state.mounted}`;
+    this.horse = state.horse ?? this.horse;
+    const lookKey = `${state.right}|${state.left}|${state.drawn}|${worn.hands}|${worn.feet}|${!!state.mounted}|${this.horse.coat}|${this.horse.barding}`;
     this.wanted = this.wantedNow(state, worn, drop, sway, shot);
     // What is wanted now is asked for first, ahead of the rest of a new look's pictures.
     for (const wanted of this.wanted) this.request(wanted);
@@ -409,7 +414,12 @@ export class FirstPerson {
       right: holds(this.plan?.right),
       left: holds(this.plan?.left) || !!this.plan?.held,
     };
-    const horse = { key: `ride|${shot.key}`, ask: () => horsePicture(this.source, shot), place: ridePlace(false) };
+    const { coat, barding } = this.horse;
+    const horse = {
+      key: `ride|${shot.key}|${coat}|${barding}`,
+      ask: () => horsePicture(this.source, shot, coat, barding),
+      place: ridePlace(false),
+    };
     const reins = SIDES.filter(([, hand]) => !busy[hand]).map(([side]) => ({
       key: `rein|${shot.key}|${side}|${worn.hands}`,
       ask: () => reinPicture(this.source, shot, side, worn.hands),
