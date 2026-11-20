@@ -6,6 +6,7 @@ import type { Flames } from '../../cinema/flames.ts';
 import type { Ambience } from '../../cinema/ambience.ts';
 import type { Screen } from '../../cinema/screen.ts';
 import { CLEAR, mixWeather, swellGained, type Weather } from '../../cinema/weather.ts';
+import type { FightHeard } from '../audio/ambience/seaFight.ts';
 import type { FirstPerson } from '../../firstperson/firstPerson.ts';
 import type { Gpu } from '../../gpu.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
@@ -56,7 +57,8 @@ export interface StoryFrame {
 }
 
 export type WorldHeard =
-  { readonly at: 'sea'; readonly deck: boolean; readonly sailing: boolean } | { readonly at: 'ashore' };
+  | { readonly at: 'sea'; readonly deck: boolean; readonly sailing: boolean; readonly fight?: FightHeard }
+  | { readonly at: 'ashore' };
 
 /** What the stage is made of; the game makes each once. */
 export interface StageParts {
@@ -212,9 +214,14 @@ export class Stage {
     if (seconds <= 0) this.weatherNow = to;
   }
 
+  /** The weather's wind, metres a second east and south: the sea fight's ships sail in it. */
+  wind(): readonly [number, number] {
+    return this.weatherNow.wind;
+  }
+
   /** Where the weather's wind blows toward, radians clockwise from north: the sails fill and the rain slants by it. */
   windBearing(): number {
-    const [east, south] = this.weatherNow.wind;
+    const [east, south] = this.wind();
     return Math.atan2(east, -south);
   }
 
@@ -295,7 +302,7 @@ export class Stage {
         landmass,
         [x, y],
         shot,
-        { sailing: heard.sailing, pace: SAILING_PACE, deck: heard.deck },
+        { sailing: heard.sailing, pace: SAILING_PACE, deck: heard.deck, fightHeard: heard.fight ?? null },
         seconds,
       );
       return;

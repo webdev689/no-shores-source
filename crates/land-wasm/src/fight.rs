@@ -17,7 +17,7 @@ use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
 use sailing::ship::{SAILS_SET, Ship};
-use sailing::waters::{LandWaters, Waters, sea_wind_at};
+use sailing::waters::{LandWaters, Waters, sail_wind, sea_wind_at};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 use std::f64::consts::TAU;
@@ -290,8 +290,35 @@ fn ray_of(ray: &Value) -> Result<[[f64; 3]; 2], String> {
     Ok([[number(0)?, number(1)?, number(2)?], [number(3)?, number(4)?, number(5)?]])
 }
 
+/// The most a told wind may blow, m/s: a hurricane's.
+const MOST_WIND_M_S: f64 = 60.0;
+
+/// The weather's wind a step is told to sail in (m/s, east and south), or none to sail in the world's own.
+fn told_wind(wind: &Value) -> Result<Option<[f64; 2]>, String> {
+    const REFUSED: &str = "a told wind is two finite numbers, metres a second east and south, within 60";
+    if wind.is_null() {
+        return Ok(None);
+    }
+    let parts = wind.as_array().filter(|parts| parts.len() == 2).ok_or(REFUSED)?;
+    let part = |at: usize| parts[at].as_f64().filter(|part| part.is_finite()).ok_or(REFUSED);
+    let told = [part(0)?, part(1)?];
+    if told[0] * told[0] + told[1] * told[1] > MOST_WIND_M_S * MOST_WIND_M_S {
+        return Err(REFUSED.into());
+    }
+    Ok(Some(told))
+}
+
+/// What a step request holds, each part checked: the orders, the time and ticks, the world's time, and any told wind.
+struct Step {
+    orders: Orders,
+    time: f64,
+    ticks: u32,
+    world: f64,
+    wind: Option<[f64; 2]>,
+}
+
 /// The orders a step request holds, each checked.
-fn orders_of(request: &Value) -> Result<(Orders, f64, u32, f64), String> {
+fn orders_of(request: &Value) -> Result<Step, String> {
     let helm = &request["helm"];
     let crab = if helm["crab"].as_bool().ok_or("the helm crabs or not")? { 1.0 } else { 0.0 };
     let helm = helm_from(number(&helm["steer"], "the rudder")?, crab, number(&helm["climb"], "the climb")?)?;
@@ -318,13 +345,14 @@ fn orders_of(request: &Value) -> Result<(Orders, f64, u32, f64), String> {
     let brace = request["brace"].as_bool().ok_or("the brace is held or not")?;
     let (time, ticks) = ticks_from(number(&request["time"], "the time")?, number(&request["ticks"], "the ticks")?)?;
     let (world, _) = ticks_from(number(&request["world"], "the world's time")?, 0.0)?;
-    Ok((Orders { helm, aim, fire, brace, load }, time, ticks, world))
+    let wind = told_wind(&request["wind"])?;
+    Ok(Step { orders: Orders { helm, aim, fire, brace, load }, time, ticks, world, wind })
 }
 
 fn step(request: &[u8]) -> Result<Value, String> {
     let request: Value =
         serde_json::from_slice(request).map_err(|error| format!("a fight request is JSON: {error}"))?;
-    let (orders, time, ticks, world) = orders_of(&request)?;
+    let Step { orders, time, ticks, world, wind } = orders_of(&request)?;
     OPEN.with(|open| {
         let open = open.borrow();
         let landmass = open.as_ref().ok_or("no landmass is open")?;
@@ -345,7 +373,9 @@ fn step(request: &[u8]) -> Result<Value, String> {
                 } else {
                     Orders { helm: sailing::ship::Helm { climb: 0, ..orders.helm }, fire: false, load: None, ..orders }
                 };
-                let wind_at = |at| sea_wind_at(at, world + f64::from(tick) * TICK_SECONDS);
+                // A story tells the wind its own weather blows; else the ships sail in the world's.
+                let wind_at =
+                    |at| wind.map_or_else(|| sea_wind_at(at, world + f64::from(tick) * TICK_SECONDS), sail_wind);
                 events.extend(fight.step(&[(PLAYER, now)], &waters, &wind_at, time + f64::from(tick) * TICK_SECONDS));
             }
             Ok(view(fight, &events, orders.aim.as_ref(), &waters, time + f64::from(ticks) * TICK_SECONDS))
