@@ -100,6 +100,12 @@ pub fn kept_of(damage: &Damage) -> [f64; 3] {
     [share(damage.hull, damage.max_hull), share(damage.sail, damage.max_sail), share(damage.crew, damage.max_crew)]
 }
 
+/// Whether a captain's deck holds a crew to fight: her faction has deck hands of her rank.
+fn crewed(pirate: &Pirate) -> bool {
+    let rank = crate::sea::decks::foe_rank(pirate.commission.rank);
+    !::foes::crews::deck_crew(pirate.commission.faction, rank).is_empty()
+}
+
 fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
     (east * east + south * south).sqrt()
@@ -176,8 +182,8 @@ impl Fights {
     }
 
     /// A player boards the nearest captain who struck within `BOARD_REACH_M` of their ship, both making less way than
-    /// `BOARD_WAY_M_S`: she is no longer scuttled for want of boarders. Answers her number and her ship as she sailed at
-    /// sea.
+    /// `BOARD_WAY_M_S`, whose deck holds a crew: she is no longer scuttled for want of boarders. Answers her number and
+    /// her ship as she sailed at sea.
     pub fn board(&mut self, player: PlayerId) -> Result<(ShipId, Pirate), BoardRefused> {
         let (fought, crew) = self.of_mut(player).ok_or(BoardRefused::NotFighting)?;
         let own = fought.fight.vessel(crew.ship).filter(|vessel| vessel.damage.fighting());
@@ -188,6 +194,8 @@ impl Fights {
             .ships
             .iter()
             .filter(|(_, vessel)| vessel.damage.state == State::Struck && vessel.command().is_some())
+            // A captain whose deck would hold no crew is not boarded: her hold would open at once.
+            .filter(|(id, _)| fought.hostiles.get(id).is_some_and(crewed))
             .map(|(id, vessel)| (*id, apart([own.x, own.y], [vessel.ship.x, vessel.ship.y]), way(&vessel.ship)))
             .filter(|(_, apart, her_way)| *apart <= BOARD_REACH_M && *her_way < BOARD_WAY_M_S)
             .min_by(|one, other| one.1.total_cmp(&other.1));

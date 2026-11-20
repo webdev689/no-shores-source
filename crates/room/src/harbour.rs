@@ -6,7 +6,7 @@
 //! and men), `REPAIR_MOST_S` at most, lying at rest; sailing or leaving stops it where it stood.
 
 use crate::PlayerId;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use world::layout::Layout;
 use world::traffic::{Port, SeaWays, Traffic};
 
@@ -133,6 +133,24 @@ pub struct Harbour {
     pub flotsam: crate::flotsam::Flotsam,
     pub characters: BTreeMap<PlayerId, gear::Character>,
     pub told: Vec<(PlayerId, Vec<f64>)>,
+    /// In a sea that keeps characters, each player the keeper has not yet answered for, with the last course they
+    /// asked meanwhile; none in a sea that keeps none.
+    pub awaiting: Option<BTreeMap<PlayerId, Option<(Vec<[f64; 2]>, u16)>>>,
+    /// Each player whose character changed since their gear was last sent them, and the tick it was last sent.
+    pub changed: BTreeSet<PlayerId>,
+    pub gear_sent: BTreeMap<PlayerId, u64>,
+}
+
+impl Harbour {
+    /// Forgets all it keeps for a player who left the sea.
+    pub fn forget(&mut self, player: PlayerId) {
+        self.characters.remove(&player);
+        self.changed.remove(&player);
+        self.gear_sent.remove(&player);
+        if let Some(awaiting) = self.awaiting.as_mut() {
+            awaiting.remove(&player);
+        }
+    }
 }
 
 /// A player told they washed up: the code, the sea's tick, the port by its number among the port cities, and whether

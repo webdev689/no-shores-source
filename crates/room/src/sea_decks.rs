@@ -237,7 +237,7 @@ impl Sea {
 }
 
 /// The foes crate's rank of a captain's.
-fn foe_rank(rank: naval::ranks::Rank) -> ::foes::Rank {
+pub(crate) fn foe_rank(rank: naval::ranks::Rank) -> ::foes::Rank {
     use naval::ranks::Rank as Naval;
     match rank {
         Naval::Minor => ::foes::Rank::Minor,

@@ -46,7 +46,7 @@ function roomName(request: Request): string | null {
  * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
  * room in step with the clock and sends every player the snapshot after each tick. Its sockets live and die with it:
  * the room is kept only in its memory, so a socket must never outlast it. A browser's one text message is its
- * session's token; in a node's room, the player's character is kept by the accounts while they play (`keeping.ts`).
+ * session's token; in a node's room and at sea, its player's character is kept while they play (`keeping.ts`).
  */
 export class RoomHost extends DurableObject<Env> {
   private readonly room: RoomDoor = startRoomDoor(roomModule);
@@ -116,11 +116,14 @@ export class RoomHost extends DurableObject<Env> {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
     });
+    // At sea a player's courses wait for the keeper's word, so a ship comes back where the room last kept her.
     if (name === 'sea')
-      return this.room.openSea(
-        JSON.stringify({ layout, ports: SEA_PORTS }),
-        crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
-        Date.now() / 1000,
+      return (
+        this.room.openSea(
+          JSON.stringify({ layout, ports: SEA_PORTS }),
+          crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
+          Date.now() / 1000,
+        ) && this.room.keepCharacters()
       );
     if (name.startsWith('fleet-')) return this.room.openFleet(Date.now() / 1000);
     const node = /^node-(.+)$/.exec(name)?.[1];
@@ -146,10 +149,16 @@ export class RoomHost extends DurableObject<Env> {
     if (!held) return;
     const { player } = held;
     const { count, within } = counted(held.count, Date.now());
+    const here = () => this.players.get(socket) === held;
     if (typeof message === 'string' && TOKEN.test(message) && !held.signed) {
       held.signed = true;
       held.count = count;
-      void this.keeper?.signIn(player, message, Date.now, () => this.players.get(socket) === held);
+      // Whatever the keeper answers, the sea then sails the course it held: from where it kept her, if it did.
+      void (this.keeper?.signIn(player, message, Date.now, here) ?? Promise.resolve(false))
+        .catch(() => false)
+        .then(() => {
+          if (here()) this.guarded(() => this.room.noneKept(player), undefined);
+        });
       // At sea the room also says who is there, for the Roster.
       if (this.name === 'sea') {
         held.token = message;
@@ -158,6 +167,11 @@ export class RoomHost extends DurableObject<Env> {
       return;
     }
     held.count = count;
+    // A page that speaks before it signs in plays unkept: at sea its course sails now, and a token later is no input.
+    if (this.name === 'sea' && !held.signed) {
+      held.signed = true;
+      this.guarded(() => this.room.noneKept(player), undefined);
+    }
     if (!within) return this.dismiss(socket, 1008, 'too many messages');
     if (typeof message !== 'string' && message.byteLength > MESSAGE_MOST)
       return this.dismiss(socket, 1009, 'too large');
