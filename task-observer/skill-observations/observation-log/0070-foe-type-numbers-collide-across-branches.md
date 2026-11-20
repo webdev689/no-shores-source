@@ -1,5 +1,5 @@
 ---
-id: 47
+id: 70
 title: "Two branches took foe types 19 and 20 at once: the number registry does not cover foe types"
 status: open
 type: internal
