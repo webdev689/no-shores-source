@@ -6,6 +6,8 @@
 
 import { make } from '../editor/dom.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
+import type { Cards } from '../player/cards.ts';
+import type { Dress } from '../player/dressing.ts';
 import { RANGED_SLOT, RARITIES, SLOTS, itemName } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
@@ -26,7 +28,7 @@ import {
 } from './gearDom.ts';
 import { characterOf } from './gearScreen.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
-import { EMBLEM_SLOT, emblemSlot } from './emblemSlot.ts';
+import { appearanceButton } from './appearanceButton.ts';
 
 /** What a page of the gear screen draws from: the gear, the way to ask of it, the card, the pictures, and the height
  *  the screen gives it. */
@@ -46,6 +48,11 @@ export interface PageContext {
   readonly atVault: boolean;
   /** The worn Art's diamond, which opens its screen, where the menu has one. */
   readonly art?: HTMLElement;
+  /** Opens the Appearance screen, where the menu has one. */
+  readonly appearance?: () => void;
+  /** The forge and the player's dress, for a keeper's tile that draws the player's horse (the Tack's bardings). */
+  readonly forge?: Cards | null;
+  readonly dress?: Dress | null;
 }
 
 /** The slots each side of the figure, by the gear's slot numbers. */
@@ -208,7 +215,7 @@ export function characterPage(
   const art = make('div', '', 'gear-art');
   if (context.art) art.append(context.art);
   const weapons = side(WEAPONS, 'Weapons', [art]);
-  weapons.append(emblemSlot(context, open === EMBLEM_SLOT, () => choose(open === EMBLEM_SLOT ? null : EMBLEM_SLOT)));
+  weapons.append(appearanceButton(context));
   page.append(weapons, middle, side(ARMOUR, 'Armour'));
   return page;
 }

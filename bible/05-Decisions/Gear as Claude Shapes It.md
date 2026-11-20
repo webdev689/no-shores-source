@@ -136,6 +136,8 @@ yet.
 | What and when | Six wares a day each, three Rare and three Magic, at the buyer's level (at most 20), the same for everyone that day | Destiny 1's vendors showed a stock that changed on a schedule; Legendary and Atheric gear stays earned, so the loop of Vestiges keeps its worth |
 | Price | Aurem only: Rare 2,000, Magic 600 | About a tenth of the Aurem cap for a Rare piece, about ten patrols' kills; no marks or reputation, as no faction exists yet |
 
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: the Armorsmith sells the armour and the Weaponsmith the weapons, six a day each, and each faction sells its own by rank ([[Each Faction Sells Gear of Its Own, in Its Own Colour]]).
+
 ### Elements and shields
 
 The owner set the elements and how they meet shields ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]);
@@ -163,6 +165,8 @@ these are Claude's numbers for them.
 | What a lesser item is | Its kind's own, with its handling and perks rolled | Destiny 1's lesser items rolled their perks |
 | What activities give | Each of the owner's four (Patrol, Missions, Elite Dungeons, Breaches) gives its own Vestiges on completion, the Breaches the best and their Legendaries alone carrying Prestige to 30, set when each is built | The owner: "Best loot. Highest prestige drops" |
 
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges open at the Mage's counter.
+
 ### Materials and keeping things
 
 | Choice | Chosen | Why |
@@ -187,6 +191,8 @@ these are Claude's numbers for them.
 | The cloak | Its slot holds one; until there are factions, cloaks belong to none | Claude's: no faction exists yet |
 | Clothing | Every garment is armour of its piece, the everyday ones Normal and Magic, the heavier sets Rare and above; no toggle | The owner: clothing is armour, with a wardrobe later ([[Clothing Is Armour, With a Wardrobe Later]]) |
 | How it looks | Normal and Magic are clothes (Magic adds a tunic or vest, tall boots, a leather helm and gloves); Rare is chain, steel or iron; Legendary silver, elven, dwarven or the knights'; Atheric daedric, ebony, adamantium or mithril; a cloak is casual, formal from Rare | Rarer gear should read as rarer at a glance, as Destiny's does, with the forge's own sets in order of their worth |
+
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction's cape is a cloak that belongs to it ([[Factions]]).
 
 ### Names
 

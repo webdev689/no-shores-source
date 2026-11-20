@@ -2,6 +2,7 @@ import type { CaptainAt, FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Brush, GroundPatch, Helm, LandPatch, LandView, Pose, ShipFloats } from '../rules/landRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { ShoreField } from '../water/shore.ts';
+import type { LayoutMarks } from './layoutMarks.ts';
 
 /** What the page asks the land worker. */
 export type LandRequest =
@@ -12,8 +13,12 @@ export type LandRequest =
       readonly editsText: string | null;
       readonly keep: boolean;
       readonly rmbText?: string | null;
+      readonly buildersText?: string | null;
     }
   | { readonly kind: 'city' }
+  | { readonly kind: 'layouts' }
+  | { readonly kind: 'layout-marks' }
+  | { readonly kind: 'layouts-named'; readonly ids: readonly string[] }
   | { readonly kind: 'window'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'boxes'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'dab'; readonly brush: Brush; readonly point: readonly [number, number]; readonly starts: boolean }
@@ -42,7 +47,13 @@ export type LandRequest =
       readonly time: number;
       readonly captains?: readonly CaptainAt[];
     }
-  | { readonly kind: 'fight-step'; readonly orders: FightOrders; readonly time: number; readonly ticks: number }
+  | {
+      readonly kind: 'fight-step';
+      readonly orders: FightOrders;
+      readonly time: number;
+      readonly ticks: number;
+      readonly wind?: readonly [number, number];
+    }
   | { readonly kind: 'fight-end' };
 
 /** A ship after her ticks, and how she lies. */
@@ -67,6 +78,7 @@ export interface LandAnswer {
   /** A city's plan or a window of the ground, as JSON; null for a landmass with no city. */
   readonly text?: string | null;
   readonly boxes?: readonly Block[];
+  readonly marks?: readonly LayoutMarks[];
   readonly shore?: ShoreField;
   readonly sailed?: Sailed;
   readonly fight?: FightView;
@@ -75,16 +87,24 @@ export interface LandAnswer {
 
 /** The land, worked in a worker so the page stays responsive while a continent takes seconds. */
 export interface LandWorker {
-  /** Opens a landmass; kept, its city is settled on it, its blocks named from the RMB index's text if given. */
+  /** Opens a landmass; kept, its city is settled on it, its blocks named from the RMB index's text if given, and its
+   *  nodes' layouts with `buildersText` (the open request's `rmbBlocks`, `forged` and `briefs` members) if given. */
   open(
     layoutText: string,
     id: string,
     editsText: string | null,
     keep: boolean,
     rmbText?: string | null,
+    buildersText?: string | null,
   ): Promise<LandView>;
   /** The open landmass's city plan as JSON, or null with none. */
   cityPlan(): Promise<string | null>;
+  /** The open landmass's nodes' layouts, as a JSON list. */
+  layouts(): Promise<string>;
+  /** What the World Editor draws of them, cut down in the worker so the page never parses the rest. */
+  layoutMarks(): Promise<readonly LayoutMarks[]>;
+  /** The named layouts whole, as a JSON list, so the page parses only those it draws. */
+  layoutsNamed(ids: readonly string[]): Promise<string>;
   /** The open landmass's exact ground over a rect (west, north, east, south) as JSON, and the city's boxes there. */
   window(rect: readonly [number, number, number, number]): Promise<string>;
   boxes(rect: readonly [number, number, number, number]): Promise<readonly Block[]>;
@@ -99,7 +119,8 @@ export interface LandWorker {
   /** A fight begun round the ship over the open landmass (with `captains`, those set upon her), stepped by the
    *  player's orders, and ended. */
   fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): Promise<FightView>;
-  fightStep(orders: FightOrders, time: number, ticks: number): Promise<FightView>;
+  /** A step of the fight in the world's wind, or in the weather's `wind` (m/s east and south) a story tells it. */
+  fightStep(orders: FightOrders, time: number, ticks: number, wind?: readonly [number, number]): Promise<FightView>;
   fightEnd(): Promise<void>;
 }
 
@@ -140,9 +161,12 @@ export function startLandWorker(): LandWorker {
     return answer.view;
   };
   return {
-    open: (layoutText, id, editsText, keep, rmbText) =>
-      view({ kind: 'open', layoutText, id, editsText, keep, rmbText }),
+    open: (layoutText, id, editsText, keep, rmbText, buildersText) =>
+      view({ kind: 'open', layoutText, id, editsText, keep, rmbText, buildersText }),
     cityPlan: async () => (await ask({ kind: 'city' })).text ?? null,
+    layouts: async () => (await ask({ kind: 'layouts' })).text ?? '[]',
+    layoutMarks: async () => (await ask({ kind: 'layout-marks' })).marks ?? [],
+    layoutsNamed: async (ids) => (await ask({ kind: 'layouts-named', ids })).text ?? '[]',
     window: async (rect) => {
       const { text } = await ask({ kind: 'window', rect });
       if (typeof text !== 'string') throw new Error('the land worker answered no window');
@@ -163,7 +187,8 @@ export function startLandWorker(): LandWorker {
     },
     fightBegin: async (ship, seed, time, captains) =>
       fought(await ask({ kind: 'fight-begin', ship, seed, time, ...(captains ? { captains } : {}) })),
-    fightStep: async (orders, time, ticks) => fought(await ask({ kind: 'fight-step', orders, time, ticks })),
+    fightStep: async (orders, time, ticks, wind) =>
+      fought(await ask({ kind: 'fight-step', orders, time, ticks, wind })),
     fightEnd: async () => {
       await ask({ kind: 'fight-end' });
     },

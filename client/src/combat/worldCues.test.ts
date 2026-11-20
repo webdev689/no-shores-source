@@ -170,8 +170,8 @@ test('a footstep each step walked, at its middle', () => {
 });
 
 test('a footstep on wood, stone, in water or on the ground', () => {
-  const crate = { minX: 0, minY: 0, maxX: 2, maxY: 2, top: 1 };
-  const wall = { minX: 10, minY: 0, maxX: 12, maxY: 2, top: 3 };
+  const crate = { minX: 0, minY: 0, maxX: 2, maxY: 2, top: 1, bottom: 0 };
+  const wall = { minX: 10, minY: 0, maxX: 12, maxY: 2, top: 3, bottom: 0 };
   const ground = { blocks: [crate, wall], wooden: [crate], groundAt: (x: number) => (x < -5 ? -0.3 : 0) };
   assert.equal(stepCue([1, 1, 1], ground), 'step.wood');
   assert.equal(stepCue([11, 1, 3], ground), 'step.stone');
@@ -231,14 +231,15 @@ test('every cue the world can play is one the Freesound list searches for', () =
     [-8, 0, -0.3],
     [40, 40, 0],
   ] as const) {
-    const crate = { minX: 0, minY: 0, maxX: 2, maxY: 2, top: 1 };
-    const blocks = [crate, { minX: 10, minY: 0, maxX: 12, maxY: 2, top: 3 }];
+    const crate = { minX: 0, minY: 0, maxX: 2, maxY: 2, top: 1, bottom: 0 };
+    const blocks = [crate, { minX: 10, minY: 0, maxX: 12, maxY: 2, top: 3, bottom: 0 }];
     add(stepCue(ground, { blocks, wooden: [crate], groundAt: (x) => (x < -5 ? -1 : 0) }));
   }
   add(actionCue(idle, { kind: 'dodge', elapsed: 0, toward: [0, 1] }, 0));
   add(actionCue(idle, { kind: 'draw', elapsed: 0 }, arms(FISTS, BOW)));
   for (const cue of possible) assert.ok(searched.has(cue), `${cue} is searched for`);
-  const world = listed.cues.map((cue) => cue.id).filter((id) => !/^(ui|hold|gain|amb)\./.test(id));
+  // The interface's, the ambience's, the story's and the sea fight's cues are each checked where they play.
+  const world = listed.cues.map((cue) => cue.id).filter((id) => !/^(ui|hold|gain|amb|story|sea)\./.test(id));
   assert.deepEqual(
     world.filter((id) => !possible.has(id)),
     [],

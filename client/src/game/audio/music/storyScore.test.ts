@@ -47,9 +47,13 @@ test("the ram holds the Boarding's half step, E against F, swelling bar by bar, 
   for (const note of story.ram.notes) assert.ok(note.tick + note.duration <= story.ram.durationTicks, 'never round');
 });
 
-test("the title runs past the intro's 75 s before it comes round, so it never begins again under the title", () => {
+test("the title's theme comes in as the intro goes down through the cloud, and the song never comes round under the title", () => {
+  const horn = played(story.theme, HORN)[0];
+  assert.ok(horn);
+  const comesIn = (horn.tick / story.theme.durationTicks) * songSeconds(story.theme);
+  assert.ok(Math.abs(comesIn - 6) < 0.5, `the horn comes in at ${comesIn} s, as the intro's 6 s of first light end`);
   const seconds = songSeconds(story.theme);
-  assert.ok(seconds > 80 && seconds < 100, `${seconds} s`);
+  assert.ok(seconds > 45 && seconds < 80, `${seconds} s, past the intro's 25 s and a while waiting on the title`);
 });
 
 test('the storm and the shore grow a layer at a time, as their beats bring them in', () => {

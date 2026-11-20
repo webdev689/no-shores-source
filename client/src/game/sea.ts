@@ -1,4 +1,4 @@
-import type { Point2, Vec3 } from '../overworld/ground.ts';
+import type { Point2 } from '../overworld/ground.ts';
 import { frameSide, nearestIsland, ringCentre, sideNodes } from '../overworld/islandView.ts';
 import {
   type CameraPose,
@@ -27,8 +27,9 @@ import { type Stir, wakeStirs } from '../ships/swellPose.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { Aboard, type AboardContext } from './aboard.ts';
 import { Passage } from './passage.ts';
-import { seaMarks } from './seaMarks.ts';
+import { islandMarks, seaMarks } from './seaMarks.ts';
 import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
+import type { FightHeard } from './audio/ambience/seaFight.ts';
 import { roomSource, SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
 import { type Landfall, landfallOf, pictureAt, shownScale } from './seaLaw.ts';
@@ -39,8 +40,6 @@ const SHIP_DRAWN_M = 75;
 /** Her wake stirs the ripples only where she is drawn near her own size, the ripples round her a 32 m field, and at
  *  most as often as they step, seconds. */
 const WAKE = { mostScale: 1.5, everyS: 1 / 60 } as const;
-/** A mark stands this far over the ground it marks, metres. */
-const MARK_RISE_M = 2;
 
 /** What one frame at sea is handed: `seconds` on, at world time `time`, on a picture of `viewport` CSS pixels; the
  *  look keys' `turn` and `tilt`; the sea's `swell`, the steady wind blowing the way it runs; and the controls the
@@ -83,6 +82,8 @@ export interface SeaFrame {
   /** Where her bow and quarters stir the water's ripples this frame, which follow her (`focus`, world metres). */
   readonly stirs: readonly Stir[];
   readonly focus: readonly [number, number];
+  /** A fight's events this frame and its ships as they lie, for the sea's sounds; none out of a fight. */
+  readonly fightHeard: FightHeard | null;
 }
 
 /**
@@ -150,18 +151,7 @@ export class Sea {
   /** The landmass drawn and charted from now on. */
   setLandmass(landmass: Landmass): void {
     this.landmass = landmass;
-    const marks: Mark[] = landmass.nodes.map((node) => {
-      const ground =
-        node.kind === 'social' && landmass.plan ? landmass.plan.social.level : landmass.heightAt(...node.centre);
-      const place: Vec3 = [node.centre[0], node.centre[1], Math.max(0, ground) + MARK_RISE_M];
-      return { id: node.id, kind: node.kind, name: node.name, at: place, edge: true };
-    });
-    const harbour = landmass.plan?.harbour;
-    if (landmass.plan && harbour) {
-      const port = { id: `${landmass.plan.id}-port`, kind: 'port', name: landmass.plan.name, edge: true } as const;
-      marks.push({ ...port, at: [harbour[0], harbour[1], MARK_RISE_M] });
-    }
-    this.islandMarks = marks;
+    this.islandMarks = islandMarks(landmass);
   }
 
   /** Joins the sea room `open` makes, a server's or the page's own, the ship put to sea where it lies. */
@@ -429,6 +419,7 @@ export class Sea {
       feet: combat ? null : this.aboard.feetOn(lying),
       stirs: !combat && own.underWay ? this.wake(lying, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
+      fightHeard: combat?.heard ?? null,
       note: this.note(),
       landfall: this.landfall,
       sailing: this.passage.sailing,
@@ -473,7 +464,7 @@ export class Sea {
     const joined = this.room?.rejoining ? ' · Reconnecting…' : ` · In the sea room as player ${this.room?.own}`;
     const room = this.room ? joined : lost;
     if (this.combat) return `Fighting${room}`;
-    if (this.view.kind !== 'sail') return room.slice(3);
+    if (this.view.kind !== 'sail') return (this.view.kind === 'landing' && this.view.said) || room.slice(3);
     // Off the helm, her helmsman has her while she sails on.
     const helmsman = this.aboard.walking && this.passage.sailing ? ' · Her helmsman has the helm' : '';
     return this.passage.note + helmsman + room;

@@ -39,7 +39,7 @@ const state = (fields: Partial<GearState>): GearState => ({
   vestiges: [],
   drops: [],
   spent: [],
-  atReader: false,
+  atMage: false,
   answer: 0,
   answered: 0,
   identified: 0,
@@ -109,7 +109,7 @@ test('the inventory: Aurem its one currency, stacks shown only while held, and V
     ['consumables', 'materials'],
     'the Vestiges stand above the shelves, not on one',
   );
-  const social = inventoryPageOf(state({ atReader: true, vestiges: [vestige, { ...vestige, id: 8, vaulted: true }] }));
+  const social = inventoryPageOf(state({ atMage: true, vestiges: [vestige, { ...vestige, id: 8, vaulted: true }] }));
   assert.deepEqual(social.vestiges.cells[0]?.press?.ask, { kind: ASKS.identify, item: 9 });
   assert.equal(social.vestiges.cells[1]?.glyph, 'empty', 'a vaulted Vestige is not carried');
   assert.equal(social.vestiges.held, 1);
@@ -136,7 +136,7 @@ test('the Ammo crate stands on the Consumables shelf with its count, held to fil
 test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from what is carried', () => {
   const vault = vaultOf(
     state({
-      atReader: true,
+      atMage: true,
       items: [item({ id: 5, at: 1 }), item({ id: 6, at: 1, kind: 14 }), item({ id: 7, at: 0 }), item({ id: 8, at: 2 })],
       vestiges: [{ id: 9, rarity: 3, slot: 3, level: 20, vaulted: true }],
     }),

@@ -60,7 +60,7 @@ export function startAcquiredFeed(
     window.clearTimeout(row.timer);
     row.timer = window.setTimeout(() => leave(key, row), STAY_MS);
   };
-  /** A gain's picture: the item's own once drawn, an emblem's icon, or its glyph. */
+  /** A gain's picture: the item's own once drawn, its own picture, an emblem's icon, or its glyph. */
   const iconOf = (gain: Gain, row: () => HTMLElement | undefined): HTMLElement => {
     const now = here();
     if (gain.item) {
@@ -73,6 +73,11 @@ export function startAcquiredFeed(
       // Drawn later, the picture takes its place in the row if the row is still there.
       const swap = () => row()?.querySelector('.acquired-icon')?.replaceChildren(drawn());
       return drawn();
+    }
+    if (gain.icon !== null) {
+      const image = make('img', '', 'acquired-emblem');
+      [image.src, image.alt] = [gain.icon, ''];
+      return image;
     }
     if (gain.emblem !== null) {
       const image = make('img', '', 'acquired-emblem');

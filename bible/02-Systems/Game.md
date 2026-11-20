@@ -21,6 +21,8 @@ code:
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene
+  - client/src/game/groundTiles.ts#groundTiles
+  - client/src/terrain/groundColour.ts#GROUND_COLOUR_WGSL
   - client/src/combat/lightLayer.ts#LightLayer
   - client/src/shadow.ts#ShadowMap
   - client/src/game/figureView.ts#FigureView
@@ -64,6 +66,10 @@ it answers. `game.ts` wires the rest and keeps the flow; each mode is its own mo
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
 | Over the side | Escape | At sea |
+| On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
+
+A locked node ([[World Map]], "Seen whole, reached by nodes") is never landed at or entered: its mark and its gate
+only say it is locked.
 
 The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
 A way that fails stays on the veil, saying why, and Enter tries it again.
@@ -78,7 +84,8 @@ looking 17° down over the parapet onto the city, the harbour and the sea. Arriv
 stranger's last moment plays there once the veil has fallen ([[Prologue]]); leaving the node ends it.
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
-is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook.
+is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook. With `&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's
+spawn, offline: a way to look at one place.
 
 ## On foot
 
@@ -88,8 +95,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
   there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
   as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
-- **The camera** is the player's, held 0.3 m over the ground, with the Test Ground's 50-degree view. The player's
-  own Anima pushes it in as it is released, with a frame of its element round the screen ([[Arts]]).
+- **The camera** is the player's ([[Player]]), its boom kept clear of the node's boxes and its ground, and held
+  0.3 m over the ground, with the Test Ground's 50-degree view. The player's own Anima pushes it in as it is
+  released, with a frame of its element round the screen ([[Arts]]).
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
   with nothing pressed. Click the view to look round with the mouse.
 - **The room.** The node's room is the authority, always. Alone, the room crate runs in the page, ticked by its clock,
@@ -143,8 +151,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
-  (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
-  vendor their own; [[Interface]]); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
+  (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
+  ([[Interface]], "The social space's counters"); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
   menu is up or the player lies dead, past the edge or felled by a foe.
 
 ## The edge
@@ -288,10 +296,31 @@ attack feel"), under the first person's hands. Off foot, or with no mark or arc 
 
 The game adds the open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView`
 ([[Cities]]), drawn in its continent's climate once the forged models' tables and the RMB blocks its plan names have
-come from the pages' `world/` folder; the blocks are kept for every later city. Its nature is the nature layer's
+come from the pages' `world/` folder; the blocks are kept for every later city. Its nodes' layouts within 4 km of the eye are drawn by another `CityView`
+([[Layouts]], "In the browser"), and each drawn node's section and spawns are its layout's. Its nature is the nature layer's
 `NatureView` ([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
 (`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture. The
 land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
+
+**The ground's pictures.** The land wears its climate's ground tiles ([[Procedural Textures]], `groundTiles`), painted
+off the page's thread by the city's painter: the terrain set's grass on the low ground, its dirt on the highlands and
+roads, its stone on bare rock, its winter grass under snow and the desert's sand on beaches. Each class keeps its
+biome's colour and takes its tile's grain over it (`groundColour.ts`), a tile to 6.4 m as Daggerfall laid them, read
+again 34 m wide and turned so its repeats do not line up, and cast from three sides on cliffs so a face is not
+smeared. One class gives way to the next by their grains' heights (each grain's light, as the tiles are painted lit
+from above): stones show through the grass first as a slope steepens, bare rock standing a little proud of it, and
+snow settles in the hollows before it covers the rises. A grain is mostly its texel's light over its tile's, with
+a little of its hue, so a dark tile's thin channels never speckle the ground with colours it does not show. Bare rock
+takes its climate's stone's hue at rock's own light (sandstone in a desert, grey on a temperate coast), and the
+layouts' rubble is brought to the same colour. The grain fades into the class's colour with distance as the tile's levels average away. Until a tile is
+painted, and in the World Editor, the class is its plain colour. The layouts' paths and streets are painted on it
+too ([[Layouts]], "In the browser"), in the dirt's and the town paving's grain.
+
+**The middle ground.** Between the exact ground round the player (2 km, every 4 m) and the 1 km land, the scene keeps
+the ground sampled every 16 m over 8 km round the player (`keepMiddle`), sampled again once the player moves 1.5 km,
+so a patrol area's canyons, cliffs and mesas stand under its great works and rock as far off as they are drawn. It is
+eased in from 150 to 400 m inland of the painted coast, so at the shore the land keeps to the 1 km land the water is
+drawn from. Arriving waits for it as for the exact ground.
 
 **The sun's shadows.** Before the pass, what casts draws its depth along the sun into two maps (`shadow.ts`), 2048
 texels a side each, every square ahead of the camera and snapped to its own texels so the edges hold still:

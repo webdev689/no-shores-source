@@ -26,6 +26,9 @@ export interface FakeElement {
   getBoundingClientRect(): { left: number; top: number; width: number; height: number; right: number; bottom: number };
   /** No drawing: a canvas has no context. */
   getContext(kind: string): null;
+  /** The attributes set, by name. */
+  readonly attributes: Record<string, string>;
+  setAttribute(name: string, value: string): void;
 }
 
 function fakeElement(tag: string): FakeElement {
@@ -70,6 +73,8 @@ function fakeElement(tag: string): FakeElement {
     },
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 }),
     getContext: () => null,
+    attributes: {},
+    setAttribute: (name, value) => void (made.attributes[name] = value),
     remove() {
       if (!made.parent) return;
       made.parent.children.splice(made.parent.children.indexOf(made), 1);

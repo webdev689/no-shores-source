@@ -316,3 +316,47 @@ fn a_captain_given_her_way_comes_on_under_sail_and_one_without_lies_at_rest() {
     ));
     assert!(refused["error"].as_str().is_some(), "{refused}");
 }
+
+/// How far her ship sails in 10 s, sails set from the start, told `wind` (none for the world's) at the world's `world`.
+fn sailed(wind: &str, world: f64) -> f64 {
+    opened();
+    let begun =
+        answer(&fight_begin_json(br#"{ "ship": [180000, 360000, 0, 3, 0, 0, 3, 2], "seed": 7, "time": 1000 }"#));
+    assert!(begun.get("error").is_none(), "{begun}");
+    let mut time = 1000.0;
+    let mut last = begun;
+    for _ in 0..10 {
+        let request = format!(
+            r#"{{ "time": {time}, "ticks": 60, "world": {world}, "wind": {wind}, "helm": {{ "steer": 0, "crab": false, "climb": 0 }}, "aim": null, "fire": false, "brace": false, "load": null }}"#
+        );
+        last = answer(&fight_step_json(request.as_bytes()));
+        assert!(last.get("error").is_none(), "{last}");
+        time += 1.0;
+    }
+    let ship = |at: usize| last["player"]["ship"][at].as_f64().unwrap_or(f64::NAN);
+    let (east, south) = (ship(0) - 180_000.0, ship(1) - 360_000.0);
+    (east * east + south * south).sqrt()
+}
+
+#[test]
+fn a_told_wind_is_the_wind_sailed_whatever_the_worlds() {
+    let gale = sailed("[14, 6]", 0.0);
+    assert!((sailed("[14, 6]", 5_000.0) - gale).abs() < 1e-9, "the world's wind plays no part");
+    let air = sailed("[1, 0]", 0.0);
+    assert!(gale > air * 2.0, "a gale drives her harder than a breath of air: {gale} against {air}");
+    let worlds = [sailed("null", 0.0), sailed("null", 5_000.0)];
+    assert!((worlds[0] - worlds[1]).abs() > 1e-6, "untold, she sails in the world's wind, which changes: {worlds:?}");
+}
+
+#[test]
+fn a_told_wind_past_a_hurricane_or_not_two_numbers_is_refused() {
+    for wind in ["[61, 0]", "[1]", r#"["east", 0]"#, "3"] {
+        opened();
+        let _ = begun(7);
+        let request = format!(
+            r#"{{ "time": 1000, "ticks": 1, "world": 0, "wind": {wind}, "helm": {{ "steer": 0, "crab": false, "climb": 0 }}, "aim": null, "fire": false, "brace": false, "load": null }}"#
+        );
+        let refused = answer(&fight_step_json(request.as_bytes()));
+        assert!(refused["error"].as_str().is_some_and(|error| error.contains("told wind")), "{wind}: {refused}");
+    }
+}

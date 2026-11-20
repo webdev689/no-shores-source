@@ -42,6 +42,8 @@ export interface Figure {
   readonly tone: number | null;
   readonly hair: { readonly layer: string; readonly colour: string } | null;
   readonly gear: readonly string[];
+  /** The barding stacked over a ridden horse (`horse_warhorse`), or none. */
+  readonly barding?: string | null;
 }
 
 /** The horse a rider sits on, drawn in the mounted animations. */
@@ -94,7 +96,7 @@ export function mirroredGear(
   return gear.map((layer) => swapped.get(layer) ?? layer);
 }
 
-/** The layers a figure stacks in `anim`, bottom first: bare body, hair, gear and a ridden horse.
+/** The layers a figure stacks in `anim`, bottom first: bare body, hair, gear, a ridden horse and its barding.
  *  A beast race's face under a helm or a hood is its own. Only layers the body draws in `anim` are kept. */
 export function layersOf(figure: Figure, anim: string, looks: ForgeLooks): string[] {
   const drawn = looks.bodies[figure.body]?.layers ?? {};
@@ -107,7 +109,7 @@ export function layersOf(figure: Figure, anim: string, looks: ForgeLooks): strin
         : SHADED_FACE.test(layer)
           ? `face_${beast}`
           : layer;
-  const stacked = [body, figure.hair?.layer, ...figure.gear.map(faceOf), HORSE_LAYER];
+  const stacked = [body, figure.hair?.layer, ...figure.gear.map(faceOf), HORSE_LAYER, figure.barding];
   return stacked.filter((layer): layer is string => !!layer && !!drawn[layer]?.includes(anim));
 }
 

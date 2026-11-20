@@ -24,7 +24,8 @@ import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
-import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
+import { cameraFollowed, newPlayer, playerCamera, shownBody } from '../player/player.ts';
+import { AIM } from '../player/playerCamera.ts';
 import { PlacedLoop } from '../player/playerMoves.ts';
 import { OtherPlayers, type Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
@@ -92,7 +93,7 @@ const fightRules = new WeakMap<WebAssembly.Module, { combat: CombatRules; roster
 
 /** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
  *  tells of that). */
-export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost'>;
+export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
@@ -125,7 +126,7 @@ async function standOn(
 /** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
  *  cut there, and its boxes. */
 function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[]): string {
-  const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]);
+  const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
   const { id, kind, continent, ring, spawns } = node;
   return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
 }
@@ -323,7 +324,7 @@ export class Foot {
     const { walker, movement, forge, groundAt } = this.context;
     const { fight, foes, effects } = this;
     this.dressInGear();
-    this.plaza?.frame(seconds);
+    this.plaza?.frame(seconds, this.gear?.gear ?? null);
     if (this.link.joins !== this.joined) {
       // A link that joined its room again brings every dress there with its welcome.
       this.joined = this.link.joins;
@@ -332,7 +333,7 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
-    const aimed = () => playerCamera(walker.player, movement, this.boxes);
+    const aimed = () => playerCamera(walker.player, movement, this.boxes, AIM, groundAt);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
@@ -341,6 +342,7 @@ export class Foot {
       zoomOf: () => camera().zoom ?? 1,
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
+    walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
     const ownWeapon = effects.flashes.ownOf(fight.own);
@@ -381,7 +383,7 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const dropped = this.dropMarks(clock, shot.eye, [
-      ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
+      ...groundRings(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z, clock),
       ...foes.overheads(shot.eye, clock),
     ]);
     const marks = effects.marks(fight, seconds, {
@@ -440,7 +442,7 @@ export class Foot {
     const able = !paused && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
-    this.using = able ? useAt(x, y, this.node.stations ?? [], gear?.gear ?? null, (asked) => gear?.ask(asked)) : null;
+    this.using = able ? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked)) : null;
     this.prompt?.show(this.using?.words ?? null);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {

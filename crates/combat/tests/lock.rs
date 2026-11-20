@@ -26,7 +26,7 @@ fn it_takes_the_foe_nearest_the_look_in_range_and_sight_and_never_a_friend_or_th
     assert_eq!(choose(1, &me, 0.0, &fighters, &[]), Some(4), "nearer the look outweighs nearer by distance");
     assert_eq!(choose(1, &me, 0.65, &fighters, &[]), Some(3));
     assert_eq!(choose(1, &me, PI, &fighters, &[]), None, "nothing within the arc behind");
-    let wall = [Block { min_x: -1.0, min_y: -5.5, max_x: 1.0, max_y: -5.0, top: 3.0 }];
+    let wall = [Block { min_x: -1.0, min_y: -5.5, max_x: 1.0, max_y: -5.0, top: 3.0, bottom: 0.0 }];
     assert_eq!(choose(1, &me, 0.0, &fighters, &wall), Some(3), "not through a wall");
 }
 
@@ -44,7 +44,7 @@ fn it_lets_go_when_the_foe_dies_walks_away_is_lost_or_the_look_stays_turned_away
     let degrees = PI / 180.0;
     assert_eq!(hold(&me, 69.0 * degrees, &near, &[]).target, Some(2), "a look within the arc it takes in keeps it");
     assert_eq!(hold(&me, 71.0 * degrees, &near, &[]).target, None, "a look past 70 degrees lets go at once");
-    let wall = [Block { min_x: -1.0, min_y: -2.5, max_x: 1.0, max_y: -2.0, top: 3.0 }];
+    let wall = [Block { min_x: -1.0, min_y: -2.5, max_x: 1.0, max_y: -2.0, top: 3.0, bottom: 0.0 }];
     let lost = (0..=LOCK_UNSEEN_TICKS).fold(me, |held, _| hold(&held, 0.0, &near, &wall));
     assert_eq!(lost.target, None, "out of sight for a second");
 }

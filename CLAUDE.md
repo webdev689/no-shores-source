@@ -15,7 +15,7 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 - **Follow the rules** in `bible/00-Rules/Rules.md`. A new rule or check needs the owner's agreement.
 - **Verify before claiming.** Before saying something is not in the source, check the file it would be in; until
   then call the claim "unchecked". Say "tested offline" or "tested live"; never call something fixed without the
-  check that shows it.
+  check that shows it. A run that is not of the head names the commit it covered; `cargo xtask check` prints it last.
 
 ## Every session
 
@@ -24,8 +24,10 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 2. Read `bible/03-Code/Toolkit.md` (how to use each tool and worker) and `bible/Hand-off.md`.
 3. Run `graphify update .`, then task-observer's scan:
    `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh ${SHARED_DIR:-$HOME/toolkit-data}/task-observer`.
-4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project . --apply` (say so if
-   Gemini is unreachable), then rewrite `bible/Hand-off.md`.
+4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `bash tools/claude-toolkit/toolkit-data.sh save`
+   (the observation log, to the branch `toolkit-data`), then `headroom learn --project . --apply` (say so if Gemini is
+   unreachable, or if it finds no data because the session started in another folder; never apply it to that folder's
+   repository), then rewrite `bible/Hand-off.md`.
 
 When a tool is skipped, clashes or misfires: fix the setup, log it with task-observer, and propose the rule change.
 Rules for keys, security and deploys need the owner's named approval.

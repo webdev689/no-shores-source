@@ -75,7 +75,8 @@ pub struct Seen {
 /// what happened since it was last asked.
 #[derive(Debug)]
 pub struct Room {
-    pub(crate) blocks: Vec<Block>,
+    /// The course, with the grid the movement rules find a body's near blocks by.
+    pub(crate) blocks: movement::Blocks,
     pub(crate) floor: Floor,
     spawn_points: Vec<(f64, f64)>,
     section: Option<Section>,
@@ -133,8 +134,9 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
-    /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
-    pub day: u64,
+    /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
+    pub minute: u64,
+    pub shape_spots: Vec<[f64; 2]>,
 }
 
 impl Room {
@@ -157,7 +159,7 @@ impl Room {
         let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
         let nav = garrison::baked(&floor, &blocks, first, section.as_ref());
         Room {
-            blocks,
+            blocks: blocks.into(),
             floor,
             spawn_points,
             takes_foe_asks: section.is_none(),
@@ -196,7 +198,8 @@ impl Room {
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Calm,
             patrol: None,
-            day: 0,
+            minute: 0,
+            shape_spots: Vec::new(),
         }
     }
 
@@ -234,7 +237,7 @@ impl Room {
         self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
         let fighter = player(self.stand(spawn), BARE_HANDS);
-        self.players.insert(id, Player::new(fighter, self.clock));
+        self.players.insert(id, Player::new(fighter, self.clock, self.is_test_ground()));
         Some(id)
     }
 
@@ -267,10 +270,9 @@ impl Room {
             found.acknowledged = found.acknowledged.wrapping_add(1);
         }
         found.received = input.sequence;
-        if let Some(dress) = input.dress.take()
-            && dress != found.dress
-        {
-            found.dress_next = Some(dress);
+        // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
+        if let Some(dress) = input.dress.take() {
+            found.dress_next = (dress != found.dress_sent).then_some(dress);
         }
         // A player never begins a telegraphed blow.
         input.intent.combat.telegraph = None;
@@ -312,7 +314,9 @@ impl Room {
         let past = std::mem::take(&mut self.past);
         let ids: Vec<PlayerId> = self.players.keys().copied().collect();
         for id in ids {
-            self.dress_in_turn(id);
+            if let Some(found) = self.players.get_mut(&id) {
+                found.dress_in_turn(self.clock);
+            }
             self.answer_due(id);
             let mut taken = 0;
             while taken < CATCH_UP {
@@ -384,21 +388,6 @@ impl Room {
         let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
         found.fighter = next;
         self.happened(id, &next, happening, &view);
-    }
-
-    /// A dress waiting its turn is taken at once the first time, then once DRESS_EVERY ticks have passed since the
-    /// last change.
-    fn dress_in_turn(&mut self, id: PlayerId) {
-        let clock = self.clock;
-        let Some(found) = self.players.get_mut(&id) else { return };
-        if found.dressed_at.is_some_and(|at| clock < at + players::DRESS_EVERY) {
-            return;
-        }
-        if let Some(dress) = found.dress_next.take() {
-            found.dress = dress;
-            found.dress_changed = true;
-            found.dressed_at = Some(clock);
-        }
     }
 
     /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never

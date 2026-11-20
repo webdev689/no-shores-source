@@ -343,22 +343,10 @@
   color: var(--warn, #f0b545);
 }
 
-/* The Emblem slot's flyout holds every emblem, five a row; the Tailor's wares show each nameplate whole. */
-.gear-emblem-grid {
-  grid-template-columns: repeat(5, 64px);
-}
+/* An emblem's sign and nameplate keep their pixels whole. */
 .gear-emblem-sign,
 .gear-emblem-plate {
   image-rendering: pixelated;
-}
-.gear-tailor .gear-wares {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-}
-#hud .gear-tailor .gear-ware {
-  grid-template-columns: 1fr;
-}
-.gear-tailor .gear-ware-words b {
-  white-space: normal;
 }
 /* On a screen past 1440p the company on the HUD stands at twice its size, as the menu does. */
 @media (min-width: 2400px) and (min-height: 1300px) {

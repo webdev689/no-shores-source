@@ -8,7 +8,17 @@
     "tithe": { "name": "Tithe Deckhand", "voice": "tithe" },
     "pirate": { "name": "Pirate", "voice": "pirate" },
     "voice": { "name": "", "voice": "deep" },
-    "stranger": { "name": "Stranger", "voice": "stranger" }
+    "stranger": { "name": "Stranger", "voice": "stranger" },
+    "maren": { "name": "Elder Maren Hale", "voice": "maren" },
+    "mage": { "name": "The Mage", "voice": "mage" },
+    "vaultkeeper": { "name": "Vault Keeper", "voice": "vaultkeeper" },
+    "armorsmith": { "name": "The Armorsmith", "voice": "armorsmith" },
+    "weaponsmith": { "name": "The Weaponsmith", "voice": "weaponsmith" },
+    "tailor": { "name": "The Tailor", "voice": "tailor" },
+    "tack": { "name": "The Tack", "voice": "tack" },
+    "stormcaller": { "name": "Stormcaller", "voice": "stormcaller" },
+    "veiled": { "name": "The Veiled", "voice": "veiled" },
+    "shape": { "name": "Shape", "voice": "shape" }
   },
   "voices": {
     "mate": { "pitchHz": 176, "spreadHz": 22, "muffleHz": 1700, "volume": 0.34, "syllableS": 0.1 },
@@ -19,6 +29,16 @@
     "tithe": { "pitchHz": 104, "spreadHz": 18, "muffleHz": 1300, "volume": 0.3, "syllableS": 0.1 },
     "pirate": { "pitchHz": 132, "spreadHz": 26, "muffleHz": 1400, "volume": 0.3, "syllableS": 0.09 },
     "deep": { "pitchHz": 64, "spreadHz": 6, "muffleHz": 900, "volume": 0.42, "syllableS": 0.22 },
-    "stranger": { "pitchHz": 158, "spreadHz": 18, "muffleHz": 1800, "volume": 0.34, "syllableS": 0.1 }
+    "stranger": { "pitchHz": 158, "spreadHz": 18, "muffleHz": 1800, "volume": 0.34, "syllableS": 0.1 },
+    "maren": { "pitchHz": 168, "spreadHz": 14, "muffleHz": 1500, "volume": 0.34, "syllableS": 0.13 },
+    "mage": { "pitchHz": 190, "spreadHz": 26, "muffleHz": 2000, "volume": 0.32, "syllableS": 0.09 },
+    "vaultkeeper": { "pitchHz": 110, "spreadHz": 10, "muffleHz": 1400, "volume": 0.32, "syllableS": 0.11 },
+    "armorsmith": { "pitchHz": 172, "spreadHz": 20, "muffleHz": 1700, "volume": 0.36, "syllableS": 0.1 },
+    "weaponsmith": { "pitchHz": 98, "spreadHz": 16, "muffleHz": 1400, "volume": 0.38, "syllableS": 0.11 },
+    "tailor": { "pitchHz": 140, "spreadHz": 30, "muffleHz": 1900, "volume": 0.32, "syllableS": 0.08 },
+    "tack": { "pitchHz": 182, "spreadHz": 22, "muffleHz": 1800, "volume": 0.34, "syllableS": 0.09 },
+    "stormcaller": { "pitchHz": 128, "spreadHz": 34, "muffleHz": 2100, "volume": 0.36, "syllableS": 0.07 },
+    "veiled": { "pitchHz": 150, "spreadHz": 8, "muffleHz": 1100, "volume": 0.28, "syllableS": 0.12 },
+    "shape": { "pitchHz": 86, "spreadHz": 4, "muffleHz": 1000, "volume": 0.3, "syllableS": 0.16 }
   }
 }

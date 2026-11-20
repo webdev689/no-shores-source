@@ -88,8 +88,9 @@ The forge renders dyeable cloth and metal in greys. They take Daggerfall's exact
 for each of the ten metals.
 
 A garment's grey takes its dye's ramp. Armour, its padding, shields, bows, staffs and their sheaths take their metal's.
-Leather and chain take steel's; the guild sets keep their own colours. A composed frame is then snapped to the palette,
-nearest in OKLab with hue weighed four times light, as DFO's game does.
+Leather and chain take steel's; the guild sets keep their own colours, unless a dye or a faction's colour is worn,
+which covers every set's armour whole by its light ([[Gear]], "Cosmetics"). A composed frame is then snapped to the
+palette, nearest in OKLab with hue weighed four times light, as DFO's game does.
 
 ## Running it
 

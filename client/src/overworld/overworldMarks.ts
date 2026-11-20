@@ -5,13 +5,15 @@ import type { Vec3 } from './ground.ts';
 export const MARK_KINDS = ['social', 'patrol', 'mission', 'dungeon', 'boss', 'port'] as const;
 export type MarkKind = (typeof MARK_KINDS)[number];
 
-/** A node to mark: its place in the world and whether it is held at the picture's edge when off it. */
+/** A node to mark: its place in the world, whether it is held at the picture's edge when off it, and whether its node
+ *  is locked, shown but never landed at. */
 export interface Mark {
   readonly id: string;
   readonly kind: MarkKind;
   readonly name: string;
   readonly at: Vec3;
   readonly edge?: boolean;
+  readonly locked?: boolean;
 }
 
 /** A mark laid on the picture: where it is drawn, how far it stands from the eye, its size in the world and on the
