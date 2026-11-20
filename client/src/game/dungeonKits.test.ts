@@ -84,10 +84,15 @@ const each = (visit: (layout: DungeonLayout, placed: readonly KitPlacement[]) =>
 const kind = (placed: readonly KitPlacement[], piece: RegExp) =>
   placed.filter(({ module: name }) => piece.test(pieceName(name)));
 
-test('kitHash is FNV-1a over the dungeon’s name, the cell and the salt, the same on every machine', () => {
+test('kitHash is FNV-1a over the dungeon’s name, the cell and the salt, then fmix32, the same on every machine', () => {
   const text = 'The Crypt\u00007\u0000door.1';
   let hash = 2166136261;
   for (let index = 0; index < text.length; index++) hash = Math.imul(hash ^ text.charCodeAt(index), 16777619) >>> 0;
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, 0x85ebca6b);
+  hash ^= hash >>> 13;
+  hash = Math.imul(hash, 0xc2b2ae35);
+  hash = (hash ^ (hash >>> 16)) >>> 0;
   assert.equal(kitHash('The Crypt', 7, 'door.1'), hash);
   const drawn = new Set([
     kitHash('The Crypt', 8, 'door.1'),
@@ -96,6 +101,25 @@ test('kitHash is FNV-1a over the dungeon’s name, the cell and the salt, the sa
   ]);
   assert.equal(drawn.size, 3);
   assert.ok(!drawn.has(hash), 'each of them changes it');
+});
+
+test('a cell’s variant, its turn and its draw are each its own: no salt’s low bits follow another’s', () => {
+  let [drawn, variantA] = [0, 0];
+  const turns = [0, 0, 0, 0];
+  for (const name of ['The Crypt of the Saltgrass Downs', 'The Halls of the Sunken Fen'])
+    for (let cell = 0; cell < 4000; cell++) {
+      if (kitHash(name, cell, 'floor.draw') % 4 !== 0) continue;
+      drawn++;
+      variantA += kitHash(name, cell, 'floor') % 2 === 0 ? 1 : 0;
+      turns[kitHash(name, cell, 'floor.turns') % 4]++;
+    }
+  assert.ok(Math.abs(variantA / drawn - 0.5) < 0.05, `${variantA} of ${drawn} drawn cells take floor.a`);
+  for (const count of turns) assert.ok(Math.abs(count / drawn - 0.25) < 0.04, `turns ${turns.join()}`);
+  const slabs = [...PLACED.values()].flatMap((placed) =>
+    kind(placed, /^floor\./).filter(({ module: name }) => kits.styles[styleOf(name)].floor === 'slabs'),
+  );
+  assert.deepEqual(new Set(slabs.map(({ module: name }) => pieceName(name))), new Set(['floor.a', 'floor.b']));
+  assert.deepEqual(new Set(slabs.map(({ place }) => place.turns)), new Set([0, 1, 2, 3]));
 });
 
 test('every style lays its pieces from its own pack, and a style with no pack lays none', () => {

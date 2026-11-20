@@ -262,7 +262,8 @@ dungeon").
 - **Where kits never go.** A cell with a doorway, a torch, the exit or the portal holds only their own pieces, its
   floor's and a boss. No wall piece stands where a prop stands against the wall. No floor piece lies under a solid,
   on the arrival's cell, in the end room, where the cache stands, or in an alcove. Nothing stands on a landmark.
-  Variants are drawn by `kitHash`: FNV-1a over the dungeon's name, the cell and a salt.
+  Variants are drawn by `kitHash`: FNV-1a over the dungeon's name, the cell and a salt, then murmur3's fmix32, so
+  a cell's variant, turn and draw are each its own.
 - **Its landmarks** (`dungeonDressing.ts`): each is laid from its style's pack, turned within its footprint, and lays
   its own floor, so the mesh lays none on its cells. Without a pack its floor stays and its solids stand as plain stone
   boxes. Its glows burn as lights beside the torches and the fixtures (`burningOf`).

@@ -47,12 +47,18 @@ const SETS_STYLE: StyleKey = 'mines';
 const CUTS = 4;
 const EPS = 1e-6;
 
-/** A number from a dungeon's name, a cell and a salt: FNV-1a over their bytes, so every machine draws the same. */
+/** A number from a dungeon's name, a cell and a salt: FNV-1a over their bytes, so every machine draws the same, then
+ *  murmur3's fmix32. FNV-1a's low bits follow only its bytes' low bits, so salts that share a start would draw
+ *  together under `% 2` and `% 4`; the finaliser mixes every bit into them. */
 export function kitHash(name: string, cell: number, salt: string): number {
   let hash = 0x811c9dc5;
   for (const byte of new TextEncoder().encode(`${name}\u0000${cell}\u0000${salt}`))
     hash = Math.imul(hash ^ byte, 0x01000193);
-  return hash >>> 0;
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, 0x85ebca6b);
+  hash ^= hash >>> 13;
+  hash = Math.imul(hash, 0xc2b2ae35);
+  return (hash ^ (hash >>> 16)) >>> 0;
 }
 
 /** What every placing reads of the layout: its packs, the cells with a doorway, a torch, the exit or the portal on
