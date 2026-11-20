@@ -1,6 +1,6 @@
 """The wide wreckage between and beside the ships, where most of the fighting is: rafts of the Brig's waist and decks
 torn away whole, jammed on her fallen spars and casks, each laid within an ellipse over the sea. Each ellipse is also
-where the game draws no sea (export_wreck.footprints): the swell rises past a raft's planking, and would show through
+where the game draws no sea (`footprints`, below): the swell rises past a raft's planking, and would show through
 it.
 """
 import math

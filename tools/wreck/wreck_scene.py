@@ -8,7 +8,7 @@ from mathutils import Vector
 
 from ship_mesh import Piece
 from wreck_damage import carve, faces_where, pieces_where, snap_mast, splinter_break, splinter_rim, tear_sails
-from wreck_pieces import deck_section, seeded
+from wreck_pieces import seeded
 from wreck_ships import SEA_Z, bake_placement, build_ship, meshes, move, placing, split
 
 # Where each piece lies in the wreck's frame (x east, y north): the Frigate bow on into where the Brig's waist was; the

@@ -34,10 +34,10 @@ ZONES = (
     {'name': "the Brig's fore deck", 'area': (18.6, -6.0, 41.0, 16.0), 'checkpoint': (20.6, 7.0),
      'wave': ((7, 1, (28.4, -1.6), 180), (13, 1, (28.4, -3.4), 0), (10, 1, (32.0, -2.4), 180), (17, 1, (32.0, -4.2), 0)),
      'crew': ((26.6, -1.1), (33.8, -3.3), (30.2, -4.6))},
-    {'name': "the Sloop on her beam ends", 'area': (7.0, -29.5, 32.0, -7.0), 'checkpoint': (25.7, -11.0),
+    {'name': "the Sloop on her beam ends", 'area': (7.0, -29.5, 32.0, -8.9), 'checkpoint': (25.7, -11.0),
      'wave': ((9, 1, (25.7, -19.5), 180), (16, 1, (25.7, -21.2), 0), (14, 1, (15.0, -19.0), 0)),
      'crew': ((25.7, -17.6), (13.0, -17.0), (16.6, -17.4))},
-    {'name': "the Frigate's waist", 'area': (-24.5, -18.0, 6.0, 1.8), 'checkpoint': (3.0, -13.0),
+    {'name': "the Frigate's waist", 'area': (-24.5, -18.0, 5.8, -0.3), 'checkpoint': (3.0, -13.0),
      'wave': ((11, 1, (-17.0, -6.0), 90), (17, 1, (-15.4, -6.0), 270), (8, 1, (-18.0, -10.0), 90),
               (14, 1, (-16.4, -10.0), 270), (9, 2, (0.2, -3.5), 180)),
      'crew': ((-19.8, -8.0), (-13.8, -8.0), (-16.2, -3.8))},
@@ -84,18 +84,20 @@ FIGURE_ROOM_M = 0.45
 GROUND_LEAST_M2 = 2000.0
 # How many of the Brig's crew stand in each zone with a wave.
 CREW = 3
-# The farthest a crewman stands from a boarder of his zone, on that boarder's deck, metres: near enough that they are
-# fighting when the player comes (the page's wreckCrew test holds the same).
+# How near a crewman stands to a boarder of his zone, on that boarder's deck, metres: under this, so they are fighting
+# when the player comes (the page's wreckCrew test holds the same).
 CREW_BY_M = 4.0
-# The most a crewman's deck stands over or under his boarder's and still counts as the same deck, metres.
+# How far a crewman's deck may stand over or under his boarder's and still count as the same deck: under this, metres.
 SAME_DECK_M = 0.7
 
 
-def check(reach, gates, climb):
+def check(reach, gates, climb, place=game):
     """The level's faults on the ground `reach` (wreck_reach.Reach, the game's frame) with the gates' boxes `gates`
     (minX, minY, maxX, maxY, the game's frame, by the zone each closes, none for a zone whose way on is open): an empty
     list when it holds. Every way on is walked, and every way round a standing gate is looked for climbing as high as
-    `climb`; every figure stands on ground reached, with room round it; and the whole is as large as it must be."""
+    `climb`; every figure stands on ground reached, with room round it, where `place` (the game's frame, as the export
+    writes it) puts it; no ground reached while a zone's heap stands lies in a zone further on, which would bring the
+    player back; and the whole is as large as it must be."""
     faults = []
     for index, zone in enumerate(ZONES):
         start = game(zone['checkpoint'])
@@ -106,15 +108,28 @@ def check(reach, gates, climb):
             continue
         figures = [('a foe', at) for _, _, at, _ in zone['wave']] + [('a crewman', at) for at in zone['crew']]
         for what, at in [('its checkpoint', zone['checkpoint']), *figures]:
-            if not reach.reaches(reached, game(at)):
+            if not reach.reaches(reached, place(at)):
                 faults.append(f"{zone['name']}: {what} at {at} stands where the checkpoint does not reach")
-            elif not reach.clear(game(at), FIGURE_ROOM_M):
+            elif not reach.clear(place(at), FIGURE_ROOM_M):
                 faults.append(f"{zone['name']}: {what} at {at} has no room round it")
-        for at in zone['crew']:
-            by = min((foe for _, _, foe, _ in zone['wave']), key=lambda foe: _apart(foe, at))
-            deck = [reach.height(*reach.square_of(*game(point))) for point in (at, by)]
-            if _apart(by, at) > CREW_BY_M or None in deck or abs(deck[0] - deck[1]) > SAME_DECK_M:
-                faults.append(f"{zone['name']}: a crewman at {at} stands past {CREW_BY_M} m of a boarder on its deck")
+        for at in zone['crew'] if zone['wave'] else ():
+            by = min((foe for _, _, foe, _ in zone['wave']), key=lambda foe: _apart(place(foe), place(at)))
+            deck = [reach.height(*reach.square_of(*place(point))) for point in (at, by)]
+            if (_apart(place(by), place(at)) >= CREW_BY_M or None in deck
+                    or abs(deck[0] - deck[1]) >= SAME_DECK_M):
+                faults.append(f"{zone['name']}: a crewman at {at} stands {CREW_BY_M} m or more from a boarder on its deck")
+        # The game lets the player stand in every zone up to the first whose way on is closed (wreckProgress.ts).
+        furthest = next((ahead for ahead in range(index, len(gates)) if gates[ahead] is not None), len(ZONES) - 1)
+        for later in ZONES[furthest + 1:]:
+            box = game_area(later['area'])
+            inside = [square for square in reached
+                      if box[0] <= reach.middle(*square)[0] <= box[2] and box[1] <= reach.middle(*square)[1] <= box[3]]
+            if inside:
+                spots = [reach.middle(*square) for square in inside]
+                across = [round(f([spot[axis] for spot in spots]), 2) for axis in (0, 1) for f in (min, max)]
+                faults.append(f"{zone['name']}: {len(inside)} squares reached with its heap standing lie in "
+                              f"{later['name']} (the game's x {across[0]} to {across[1]}, y {across[2]} to "
+                              f"{across[3]}), which would bring the player back")
         has_wave = 0 < index < ARENA_ZONE
         if bool(zone['wave']) != has_wave or len(zone['crew']) != (CREW if has_wave else 0):
             faults.append(f"{zone['name']}: a wave and {CREW} crew stand in every zone but the first and the arena")

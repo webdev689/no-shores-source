@@ -192,7 +192,8 @@ def main():
     # either finds is one a body might take.
     shifted = measure([wreck], SEA_Z, tuple(edge + HALF_SQUARE_M for edge in BOUNDS), piece=0)
     for ground in (grid, shifted):
-        faults = check(Reach(ground, squares(ground)), [gate and gate[:4] for gate in gates], CLIMB_M)
+        faults = check(Reach(ground, squares(ground)), [gate and gate[:4] for gate in gates], CLIMB_M,
+                       place=lambda at: tuple(centred(game(at))))
         if faults:
             sys.exit('the wreck does not hold its level:\n' + '\n'.join(faults))
     with open(os.path.abspath(given.light), 'rb') as file:
