@@ -103,8 +103,8 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
       'human',
       0.25,
       { style: 'shoulder', colour: 'blond' },
-      ['shirt_long_deep', 'formal_tunic', 'formal_eodoric', 'casual_pants', 'shoes'],
-      { shirt_long_deep: 'White', formal_tunic: 'Red', formal_eodoric: 'Red', casual_pants: 'DarkBrown' },
+      ['shirt_long_deep', 'vest', 'breeches', 'tall_boots'],
+      { shirt_long_deep: 'White', vest: 'Red', breeches: 'DarkBrown', tall_boots: 'DarkBrown' },
     ),
   },
   tack: {

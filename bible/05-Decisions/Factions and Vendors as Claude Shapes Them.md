@@ -88,7 +88,7 @@ cartographer's, herbalist's and smith's stalls gave their alcoves to the new kee
 | The Mage | An anole woman in a hooded purple robe |
 | The Armorsmith | A human woman in chain and iron |
 | The Weaponsmith | A felid man in leather |
-| The Tailor | A human man in a red formal tunic |
+| The Tailor | A human man in a white shirt and a red waistcoat |
 | The Tack | A felid woman in a vest and riding boots, leather gauntlets |
 | Stormcaller | An anole man in a blue tunic and cloak, steel gauntlets |
 | Elder Maren Hale | An old human woman, white-haired, in yellow robes and a white formal cloak |
