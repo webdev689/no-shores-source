@@ -12,12 +12,4 @@
 2026-11-20 checkpoint: 1 observation written (0005)
 2026-11-20T13:38:08Z overlook #63 third audit: checkpoint, no new observations (fixes found by widened tests, each probed to its cause)
 2026-11-20 review: 7 observations from #63's log re-filed as 0006-0012; 6 applied on #100, 1 handed to the owner
-2026-11-20 04:38 [overlook-source] session-start scan: files=0 parsed=0 principles=0
-2026-11-20 checkpoint after 3 tasks: 1 observation (client tests need fresh wasm)
-2026-11-20 checkpoint: observation 0002 logged
-2026-11-20 deliverable flush: observations 0003 and 0004 logged
-2026-11-20 11:10 [overlook-source] session-start scan: files=4 parsed=4 principles=0
-- 2026-11-20 checkpoint: observation 0005 written (audit brief branch search)
-- 2026-11-20 checkpoint: observations 0006-0008 written at the round's end
-2026-11-20 14:46 [overlook-source] session-start scan: files=8 parsed=8 principles=0
-2026-11-20 17:44 [overlook-source] session-start scan: files=14 parsed=14 principles=0
+2026-11-20 16:56 [overlook-source] session-start scan: files=12 parsed=12 principles=0
