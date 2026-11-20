@@ -239,7 +239,7 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   [[Game]]'s place name and hints, laid straight on the world too, carry the same outline.
 - **A foe's plate**, after the owner's reference: its level in a chip square at the left, the number half the square
   high (over a figure; on the soft lock's and the boss bar's, 22 px on the face's grid), the square empty for a foe of
-  no level; to its right its name above a long thin track, the meter in its rank's
+  no level; to its right its name above a thin track, the meter in its rank's
   colour. Over each foe, the soft lock's (with its poise under the health) and the boss bar's are this one plate at
   three sizes. Over a figure its width and bar go with its foe's rank (`OVERHEAD_SIZES`), all 26 px tall: a Major's
   140 px with an 8 px bar under the whole name; a Minor's as wide, since "? Crossbowman" fills it in the face, but its

@@ -1,5 +1,5 @@
 // A foe's plate, one layout for every bar of a foe: its level in a square at the left and, to its right, its
-// name above a long thin bar of its health, the fill in its rank's colour over a dark trough with a hairline edge; its
+// name above a thin bar of its health, the fill in its rank's colour over a dark trough with a hairline edge; its
 // debuffs' icons beside the bar. Over a figure its size goes with its rank, as Destiny's bars do: a Minor's short and
 // thin, so the crowd's fodder stays quiet, and an Elite's and up long and marked in thirds, so they stand out.
 import { PLATES } from '../plus/barLayout.ts';

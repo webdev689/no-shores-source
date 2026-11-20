@@ -142,7 +142,10 @@ export class FoeBars {
         continue;
       }
       tried.add(foe.id);
-      if (camera && this.sight.hidden(foe.id, viewing.blocked(camera.eye, head), seconds)) {
+      // The hold keeps a plate shown from flickering at a railing; one not showing, perhaps long behind a hill no line
+      // was tried to, is hidden the moment its line is blocked.
+      const blocked = !!camera && viewing.blocked(camera.eye, head);
+      if (this.sight.hidden(foe.id, blocked, seconds) || (blocked && !((this.cones.get(foe.id) ?? 0) > 0))) {
         this.cones.delete(foe.id);
         continue;
       }

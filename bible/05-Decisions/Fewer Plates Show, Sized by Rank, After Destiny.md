@@ -20,7 +20,8 @@ status: in force
 
 - A foe not fought shows its plate only when it is the one nearest the crosshair, within about 5 degrees of it, or
   the one the soft lock holds ([[Enemies]], [[Interface]], [[Test Ground]]).
-- A foe fought shows its plate for 6 s after the last blow traded with it, fading as the target plate fades.
+- A fought foe keeps its plate for 6 s after the last exchange, then fades. That's the target plate's own time, so the
+  two agree.
 - A plate over a figure goes with its foe's rank: a Minor's bar short and thin, an Elite's and up longer and cut in
   thirds ([[Enemies Come in Five Ranks, After Destiny]]).
 - The land hides a plate as a block does.

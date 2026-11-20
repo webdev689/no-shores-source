@@ -245,6 +245,23 @@ test('only a foe that can show a plate, or take the cone, has its line tried aga
     assert.equal(tried.length, 2, 'two lines tried, not twenty-two');
   }));
 
+test('a foe long behind a wall shows no plate as the view comes onto it, not for a moment, nor takes the cone', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    // Foe 1 stands behind a wall; Foe 2, 3 degrees off the crosshair, in the open, holds the cone.
+    let hidden = placed(1, 40, 10);
+    const viewing: PlateViewing = {
+      ...LOOKING_NORTH,
+      blocked: (_from, to) => Math.abs(to[0] - hidden.view.x) < 0.01 && Math.abs(to[1] - hidden.view.y) < 0.01,
+    };
+    const spotOf = (view: FighterView) => ({ x: 400 + view.x * 10, y: 300, depth: view.y });
+    for (let frame = 0; frame < 60; frame++) bars.update([hidden, placed(2, 3, 10)], null, spotOf, viewing, 1 / 60);
+    // The view comes round onto it: now it stands nearest the crosshair, still behind the wall.
+    hidden = placed(1, 0, 10);
+    bars.update([hidden, placed(2, 3, 10)], null, spotOf, viewing, 1 / 60);
+    assert.deepEqual(findAll(root, 'overhead').map(nameOf), ['Foe 2']);
+  }));
+
 test('a plate leaving the cone fades out over a quarter of a second, then is gone', () =>
   onFakePage((root) => {
     const bars = new FoeBars(root, root, root);
