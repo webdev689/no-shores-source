@@ -62,12 +62,12 @@ fn rams(events: &[Event]) -> Vec<(ShipId, ShipId, f64)> {
 #[test]
 fn a_sloop_driven_into_her_side_rams_her_and_pays_its_recoil() {
     let mut fight = bow_to_side(0.5, 6.0);
-    let events = fight.step(&[(PLAYER, ROWING)], &Open, WIND, 0.0);
+    let events = fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, 0.0);
     // 0.15 of the lesser hull (240) at 6 of 8 m/s, into her side: 27; the recoil is 0.6 of it, 16.
     assert_eq!(rams(&events), [(CAPTAIN, PLAYER, 27.0)]);
     assert_eq!((hull_of(&fight, CAPTAIN), hull_of(&fight, PLAYER)), (264.0 - 27.0, 240.0 - 16.0));
     for tick in 1..30 {
-        fight.step(&[(PLAYER, ROWING)], &Open, WIND, f64::from(tick) / 60.0);
+        fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, f64::from(tick) / 60.0);
     }
     let her = fight.vessel(CAPTAIN).and_then(Vessel::command).map(|command| command.her.target());
     assert_eq!(her, Some(Some(PLAYER)), "rammed, the wary captain fights the rammer");
@@ -78,7 +78,7 @@ fn a_bump_under_a_rams_way_does_no_harm() {
     let mut fight = bow_to_side(0.5, 1.0);
     let mut events = Vec::new();
     for tick in 0..240 {
-        events.extend(fight.step(&[(PLAYER, ROWING)], &Open, WIND, f64::from(tick) / 60.0));
+        events.extend(fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, f64::from(tick) / 60.0));
     }
     assert!(rams(&events).is_empty());
     assert_eq!((hull_of(&fight, CAPTAIN), hull_of(&fight, PLAYER)), (264.0, 240.0));
@@ -87,16 +87,16 @@ fn a_bump_under_a_rams_way_does_no_harm() {
 #[test]
 fn a_ship_once_rammed_is_not_rammed_again_by_her_for_three_seconds() {
     let mut fight = bow_to_side(0.5, 6.0);
-    let mut events = fight.step(&[(PLAYER, ROWING)], &Open, WIND, 0.0);
+    let mut events = fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, 0.0);
     // Back where she rammed from, at the same way, two seconds on.
     for tick in 1..120 {
-        fight.step(&[(PLAYER, ROWING)], &Open, WIND, f64::from(tick) / 60.0);
+        fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, f64::from(tick) / 60.0);
     }
     let again = Ship { x: 0.0, y: 0.5, heading: 0.0, ahead: 6.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 1 };
     let her = Ship { x: 0.0, y: her_y(0.5), heading: std::f64::consts::FRAC_PI_2, ahead: 0.0, rung: 0, ..again };
     fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("player")).ship = again;
     fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = her;
-    events.extend(fight.step(&[(PLAYER, ROWING)], &Open, WIND, 2.0));
+    events.extend(fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, 2.0));
     assert_eq!(rams(&events).len(), 1, "the second within three seconds does not land");
 }
 
@@ -105,7 +105,7 @@ fn a_wreck_rams_nothing() {
     let mut fight = bow_to_side(0.5, 6.0);
     let player = fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("player"));
     player.damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
-    let events = fight.step(&[(PLAYER, ROWING)], &Open, WIND, 0.0);
+    let events = fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, 0.0);
     assert!(rams(&events).is_empty());
 }
 
@@ -124,7 +124,7 @@ fn hulls_that_overlap_are_pushed_apart() {
     };
     let [one, other] = flats(&fight);
     assert!(overlap(&one, &other).is_some(), "abreast, 1.2 m apart: their hulls overlap");
-    fight.step(&[(PLAYER, ROWING)], &Open, WIND, 0.0);
+    fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, 0.0);
     let [one, other] = flats(&fight);
     assert_eq!(overlap(&one, &other), None, "pushed apart, half each way");
     assert_eq!((hull_of(&fight, CAPTAIN), hull_of(&fight, PLAYER)), (264.0, 240.0), "a push is no blow");

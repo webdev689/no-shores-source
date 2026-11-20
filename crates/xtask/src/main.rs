@@ -5,6 +5,7 @@
 
 mod checks;
 mod files;
+mod shaders;
 mod toolchain;
 
 use std::process::ExitCode;
@@ -13,6 +14,7 @@ const USAGE: &str = "usage: cargo xtask <command>
 
 commands:
   check   everything CI runs: format, lints, tests, then the repo checks
+  shaders only the shaders: every one the client compiles, written out and validated as WGSL
   repo    only the repo checks: layout, crate names, file size, comments, assets, vault links";
 
 fn main() -> ExitCode {
@@ -25,6 +27,13 @@ fn main() -> ExitCode {
             report_repo_checks()
         }
         Some("repo") => report_repo_checks(),
+        Some("shaders") => {
+            if toolchain::run_matching("shaders") {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            }
+        }
         _ => {
             println!("{USAGE}");
             ExitCode::from(2)

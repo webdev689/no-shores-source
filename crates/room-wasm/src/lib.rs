@@ -14,6 +14,7 @@ use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
+use room::winds::epoch_of;
 use room::{Floor, FoeSeen, NodeKind, PlayerId, Refused, Room, Section, Seen};
 use serde::Deserialize;
 use std::cell::RefCell;
@@ -37,6 +38,9 @@ enum Opened {
 
 thread_local! {
     static OPEN: RefCell<Option<Opened>> = const { RefCell::new(None) };
+    /// The wall's time at the open room's first tick, milliseconds since 1970, as its host last set it: world time's
+    /// own start until a host sets it.
+    static EPOCH_MS: std::cell::Cell<f64> = const { std::cell::Cell::new(sky::clock::EPOCH_UNIX_MS) };
 }
 
 /// What became of an input the host handed over.
@@ -145,13 +149,28 @@ pub fn open_sea(text: &[u8], seed: u32) -> bool {
     let Some(layout) = std::str::from_utf8(text).ok().and_then(|text| world::layout::parse(text).ok()) else {
         return false;
     };
-    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone(), seed))));
+    let mut sea = Sea::new(&layout, deck_door::sloop_deck().clone(), seed);
+    sea.set_epoch(EPOCH_MS.get());
+    keep(Opened::Sea(Box::new(sea)));
     true
 }
 
 /// Opens a fleet room on the open sea.
 pub fn open_fleet() {
-    keep(Opened::Fleet(Box::new(Fleet::new())));
+    let mut fleet = Fleet::new();
+    fleet.set_epoch(EPOCH_MS.get());
+    keep(Opened::Fleet(Box::new(fleet)));
+}
+
+/// Sets the wall's time at the open room's first tick, milliseconds since 1970: the room's world time runs from it,
+/// and its welcome says so. A room opened later keeps it too.
+pub fn set_epoch(unix_ms: f64) {
+    EPOCH_MS.set(unix_ms);
+    with_open(|opened| match opened {
+        Opened::Sea(sea) => sea.set_epoch(unix_ms),
+        Opened::Fleet(fleet) => fleet.set_epoch(unix_ms),
+        Opened::Land { .. } => {}
+    });
 }
 
 /// Lets the open room take players' asks for foes, as a course's room does; a node's room otherwise takes none.
@@ -275,9 +294,9 @@ pub fn joined(player: PlayerId) -> Vec<u8> {
     with_open(|opened| match opened {
         Opened::Land { room, node } => {
             let node = node.as_ref().map(|(id, bounds)| (id.as_str(), *bounds));
-            protocol::joined_bytes(player, &room.dresses().collect::<Vec<_>>(), node)
+            protocol::joined_bytes(player, &room.dresses().collect::<Vec<_>>(), node, epoch_of(EPOCH_MS.get()))
         }
-        Opened::Sea(_) | Opened::Fleet(_) => protocol::joined_bytes(player, &[], None),
+        Opened::Sea(_) | Opened::Fleet(_) => protocol::joined_bytes(player, &[], None, epoch_of(EPOCH_MS.get())),
     })
     .unwrap_or_default()
 }
@@ -343,6 +362,12 @@ pub unsafe extern "C" fn room_open_sea(address: *const u8, length: usize, seed: 
 pub extern "C" fn room_open_fleet() -> u32 {
     open_fleet();
     1
+}
+
+/// Sets the wall's time at the room's first tick, milliseconds since 1970.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_epoch(unix_ms: f64) {
+    set_epoch(unix_ms);
 }
 
 /// How long one of the room's ticks is, in seconds: its host ticks it that often.

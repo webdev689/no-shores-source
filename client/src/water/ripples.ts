@@ -21,7 +21,7 @@ const STEP_BYTES = 256;
  * moves to follow its body, each cell reads from where its water was: 'shift.xy' for the last step's heights,
  * 'shift.zw' for the step before, which may still lie where the field was a step earlier.
  */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 struct Step {
   shift: vec4i,
   count: vec4u,

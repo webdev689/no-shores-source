@@ -91,7 +91,7 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
     assert_eq!(last.acknowledged, 200);
     let (sail, max_sail) = (last.hurts[2], last.hurts[3]);
     let mut request = put.ship.clone();
-    request.extend([0.0, sail, max_sail, 200.0 * movement::TICK_SECONDS]);
+    request.extend([0.0, sail, max_sail, 200.0 * movement::TICK_SECONDS, 0.0]);
     for sequence in 2..=200 {
         let helm = helm_at(sequence);
         request.extend([helm.steer, f64::from(u8::from(helm.crab)), f64::from(helm.climb)]);
@@ -128,7 +128,7 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
         let ray = [[eye[0], eye[1], eye[2]], [east, south, her.pose.heave + 0.6 - 2.0]];
         let aim = Aim { bearing_deg: bearing, range_m: (east * east + south * south).sqrt(), ray: Some(ray) };
         let time = fleet.time();
-        let waters = sailing::waters::OpenSea { swell: fleet.weather().0 };
+        let waters = sailing::waters::OpenSea { swell: fleet.swell() };
         let shown = fight.preview(player, &aim, &waters, time);
         let sighted = |ship: &naval::laying::Sighted| {
             let flag = f64::from(ship.flag.number());
