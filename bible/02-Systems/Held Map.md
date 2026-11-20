@@ -109,9 +109,10 @@ war, and a click on it sets the ship's destination.
     measured from the forge's strips (274 × 181 texels a frame): the left over the painting's shares 0-0.29 across and
     0.45-0.56 down, the right over 0.71-1 across and 0.46-0.57 down (`HANDS_COVER`). No name and not the key stands
     there; the ship's arrow and the places' marks stand where they lie, or just clear of a mark they meet (below).
-  - *Marks apart.* No two places' marks overlap. They are laid ports first, then ruins, then nodes, so a port's or a
-    ruin's stands where it lies over a node's. A mark that meets one laid before it moves out along the line between
-    their middles to the first spot clear of every mark and inside the map, else as near that line as it can, and
+  - *Marks apart.* No two places' marks overlap, and each keeps 1.5 px clear of the marks laid before it. They are
+    laid ports first, then ruins, then nodes, so a port's or a ruin's stands where it lies over a node's. A mark that
+    meets one laid before it moves out along the line between their middles to the first spot clear of every mark and
+    inside the map, else as near that line as it can, and
     its name stands beside it there (`layOut`). A click picks a mark where it is drawn.
   - *Priority.* The ship's arrow and every place's mark are laid first and never dropped. Then the names, the place
     chosen first, then ports, waters, ruins and nodes, each where it covers no mark, no hand and no name laid before

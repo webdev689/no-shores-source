@@ -181,7 +181,8 @@ test("a node's mark over a ruin's moves out along the line between them, just cl
   assert.ok(Math.abs(away * 4 - down * 3) < 1e-6, `along the line from the ruin (${away}, ${down})`);
   const [ruinBox, nodeBox] = [markBox('ruin', ruin.x, ruin.y, 1), markBox('patrol', node.x, node.y, 1)];
   assert.ok(!overlaps(ruinBox, nodeBox), 'clear of the ruin');
-  assert.ok(Math.max(Math.abs(away), Math.abs(down)) < 9 + 0.5, 'by no more than the overlap');
+  assert.ok(Math.max(Math.abs(away), Math.abs(down)) >= 9 + 1.5, 'with a clear gap between them');
+  assert.ok(Math.max(Math.abs(away), Math.abs(down)) < 9 + 1.5 + 0.5, 'by no more than the overlap and a clear gap');
   assert.ok(node.side && !overlaps(nameBox(node, node.side, widthOf(node.text, 'patrol'), 1), ruinBox), 'named beside');
 });
 
@@ -190,8 +191,8 @@ test('a node between two marks clears both, and one on another mark takes a clea
     ...ASK,
     places: [
       { text: 'Sunspire', x: 100, y: 200, kind: 'port', chosen: false },
-      { text: 'Ruins of Cairnwatch', x: 110, y: 200, kind: 'ruin', chosen: false },
-      { text: 'The Highwater Fells', x: 105, y: 200, kind: 'patrol', chosen: false },
+      { text: 'Ruins of Cairnwatch', x: 112, y: 200, kind: 'ruin', chosen: false },
+      { text: 'The Highwater Fells', x: 106, y: 200, kind: 'patrol', chosen: false },
       { text: 'The Ochre Wastes', x: 300, y: 100, kind: 'patrol', chosen: false },
       { text: 'Shrine of Tides', x: 300, y: 100, kind: 'shrine', chosen: false },
     ],
@@ -204,7 +205,7 @@ test('a node between two marks clears both, and one on another mark takes a clea
     lettering.letters.slice(0, 2).map((letter) => [letter.x, letter.y]),
     [
       [100, 200],
-      [110, 200],
+      [112, 200],
     ],
     'the port and the ruin where they lie',
   );

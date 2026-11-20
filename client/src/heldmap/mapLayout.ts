@@ -17,6 +17,8 @@ export const RING = 6;
 /** Each mark's half width: a port's filled ring, a ruin's diamond, a node's ring, and the ship's arrow. */
 const MARK_HALF: Readonly<Record<string, number>> = { port: 4.5, ruin: 5, ship: 10 };
 const NODE_HALF = 4;
+/** The clear gap a mark keeps round it from a mark laid before it, units. */
+const MARK_GAP = 1.5;
 export const markHalf = (kind: string) => MARK_HALF[kind] ?? NODE_HALF;
 
 /** Who is lettered first, and who is dropped first when no clear place is left: ports, waters' names, ruins, then
@@ -274,7 +276,10 @@ function spaced<T extends { x: number; y: number; kind: string }>(
         }
       }
     }
-    laid.push(boxAt(...at));
+    const box = boxAt(...at);
+    // Grown by a clear gap, so two marks never stand edge to edge, read as one.
+    const gap = MARK_GAP * scale;
+    laid.push({ x: box.x - gap, y: box.y - gap, width: box.width + gap * 2, height: box.height + gap * 2 });
     out[index] = { ...place, x: at[0], y: at[1] };
   }
   return out;
