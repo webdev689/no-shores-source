@@ -123,6 +123,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Game Opens With a Story Mission at Sea]]
 - [[The Prologue as Claude Shapes It]]
 - [[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]
+- [[The Player's Sword and Shield Are Holstered]]
 - [[Music and Ambience Come From DFO's Synthesiser]]
 - [[Landfall Is Kept as Made Again]]
 - [[Weather and Day and Night Come From DFO, Much Improved]]

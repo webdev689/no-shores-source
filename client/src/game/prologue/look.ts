@@ -92,7 +92,7 @@ export function plainDressOf(look: Look): Dress {
   return { ...plain, body: look.body, outfit: { ...plain.outfit, hair: look.hair } };
 }
 
-/** The prologue's dress: steel armour but no helm, so the face shows, sword and kite shield drawn. */
+/** The prologue's dress: steel armour but no helm, so the face shows, the sword sheathed and the kite shield slung. */
 export function armouredDress(look: Look): Dress {
   const plain = plainDressOf(look);
   return {
@@ -104,7 +104,8 @@ export function armouredDress(look: Look): Dress {
       garments: plain.outfit.garments.filter((garment) => garment !== 'boots'),
       right: 'sword_steel',
       left: 'shield_kite_steel',
-      drawn: true,
+      // Put away, as the owner asked: the sword sheathed at the hip, the shield slung on the back. A swing draws them.
+      drawn: false,
     },
   };
 }

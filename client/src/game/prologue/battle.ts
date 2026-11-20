@@ -245,7 +245,7 @@ export class Battle implements Beat {
       shot: shown.shot,
       ships,
       hulls: shown.hulls,
-      actors: own ? [...brig.crew(own, tick.clock, { gunner: 'chop' }), youAtHelm(story, own, 'guard')] : [],
+      actors: own ? [...brig.crew(own, tick.clock, { gunner: 'chop' }), youAtHelm(story, own, 'idle')] : [],
       heads,
       drawers: [{ drawInto: (pass, fromEye, drawn, time) => fight.draw(pass, { fromEye, eye: drawn.eye }, time) }],
       land: false,

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { outfitLayers } from '../../forge/outfit.ts';
 import {
   FIRST_LOOK,
   HAIR_COLOURS,
@@ -68,7 +69,7 @@ test('the first look is a human with hair the body can wear', () => {
   assert.ok(FIRST_LOOK.hair && HAIR_COLOURS.includes(FIRST_LOOK.hair.colour));
 });
 
-test('the prologue dress is steel armour with no helm, sword right and kite shield left, drawn', () => {
+test('the prologue dress is steel armour with no helm, the sword sheathed at the hip and the kite shield slung', () => {
   const dress = armouredDress(felid);
   assert.ok(!('helm' in dress.outfit.armour));
   assert.deepEqual(dress.outfit.armour, {
@@ -80,7 +81,12 @@ test('the prologue dress is steel armour with no helm, sword right and kite shie
   });
   assert.equal(dress.outfit.right, 'sword_steel');
   assert.equal(dress.outfit.left, 'shield_kite_steel');
-  assert.equal(dress.outfit.drawn, true);
+  assert.equal(dress.outfit.drawn, false);
+  // Every layer a forge body might draw: put away, the sword's sheath and the slung shield are worn, neither in hand.
+  const everything = new Proxy({}, { get: () => ['idle'] }) as Record<string, readonly string[]>;
+  const { gear } = outfitLayers(dress.outfit, everything, 'idle');
+  assert.ok(gear.includes('sheath_sword') && gear.includes('slung_shield_kite_steel'), gear.join(' '));
+  assert.ok(!gear.includes('sword_steel') && !gear.includes('shield_kite_steel'), 'nothing in hand');
   assert.deepEqual([dress.body, dress.race, dress.tone, dress.outfit.hair], ['female', 'felid', 0.3, felid.hair]);
 });
 

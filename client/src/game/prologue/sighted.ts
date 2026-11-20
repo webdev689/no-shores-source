@@ -188,7 +188,7 @@ export class Sighted implements Beat {
     return {
       shot,
       ships,
-      actors: [...brig.crew(own, tick.clock, moves), youAtHelm(story, own, 'guard')],
+      actors: [...brig.crew(own, tick.clock, moves), youAtHelm(story, own, 'idle')],
       heads: brig.heads(own),
       land: false,
       focus: [brig.x, brig.y],
