@@ -66,8 +66,8 @@ Run from `tools/forge/` with Blender's module, as the forge runs ([[Sprite Forge
 
 - Not yet in the game: the faction, the foes' numbers and blows, and their places in the world are not built, and the
   pictures are not on R2.
-- The Lattice's armour is drawn standing still on the man's body only; its every move, the woman's body, first
-  person and its weapons and shields are not yet drawn, and the game still names Daedric.
+- The Lattice's armour is on hold, drawn standing still on the man's and the woman's bodies only; its every move,
+  first person and its weapons and shields are not yet drawn, and the game still names Daedric.
 - The body's skin is coloured by the game as it composes a frame; the ashen skin each foe needs is not chosen yet.
 - Left for the game to draw, since a picture's light cannot change from frame to frame: the Idol's beam and its
   lens's glow growing through the charge, the Bulwark's core flaring before it discharges, the shards the Ravager

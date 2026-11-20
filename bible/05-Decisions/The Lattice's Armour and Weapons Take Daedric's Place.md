@@ -25,6 +25,8 @@ status: in force
 
 > Shown the set built from it, standing still from three sides: "I like it"
 
+> Then: "Let's actually hold off on this and only focus on the new faction enemies"
+
 ## What it settles
 
 - The forge's Daedric armour set and its Daedric weapons are replaced by the Lattice's own
@@ -41,6 +43,7 @@ status: in force
 - It is drawn in Daggerfall's style, properly shaded: built from the forge's own armour kit, its crystal graded red
   with purple in its shadows, every plate's edge lit purple, strapped with leather over a dark suit
   (`tools/lattice/armoury.py`, [[Lattice]]). The owner likes it.
+- It is on hold: the work goes to the Lattice's foes first.
 - It follows the Lattice's audit and detailed pass ([[The Lattice Is Drawn Whole Before It Comes Into the Game]]).
 
 How the two crystals share the set is not settled ([[Open Questions]]). Daedric's place among the gear is in

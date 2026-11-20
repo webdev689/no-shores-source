@@ -348,9 +348,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The Lattice's armour and weapons in Daedric's place**
+- **The Lattice's armour and weapons in Daedric's place**, on hold by the owner's word for the Lattice's foes
   ([[The Lattice's Armour and Weapons Take Daedric's Place]]). The armour is built after the owner's reference and
-  the owner likes it (`tools/lattice/armoury.py`, drawn standing still on the man's body). Still to do: the woman's
+  the owner likes it (`tools/lattice/armoury.py`, drawn standing still on the man's and the woman's bodies). Still to
+  do when it resumes: the woman's
   body; every move, about 48,000 renders, in a workflow that renders in parallel and publishes to R2 with the
   repository's Cloudflare key, which needs the owner's named yes; first person; the weapons and shields; and the game's
   own names (gear tiers, dyes, outfits, first person's metals, the swing's tint, their tests) from Daedric to Lattice.
