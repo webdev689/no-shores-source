@@ -25,7 +25,9 @@ import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
-import { Aboard, type AboardContext } from './aboard.ts';
+import { Aboard } from './aboard.ts';
+import { Boarding } from './deckBoarding.ts';
+import { Foot, type FootContext } from './foot.ts';
 import { CloseZoom } from './seaClose.ts';
 import { Passage } from './passage.ts';
 import type { SeaFrame, SeaInput } from './seaFrame.ts';
@@ -80,6 +82,8 @@ export class Sea {
   private readonly drawn: SeaShips;
   /** The view brought down aboard her: Manage, or the walk off the helm. */
   readonly aboard: Aboard;
+  /** The fight on foot on the deck of a struck ship the player boarded, laid on her as the sea's fight shows her. */
+  readonly boarding: Boarding;
   /** The fight the sea room began for the player, from the pan down to the pan back up. */
   private combat: SeaCombat | null = null;
   /** The water at a point, once the page has opened the waters; and what the voyage's line says of them. */
@@ -122,12 +126,15 @@ export class Sea {
     hull: SeaHull,
     start: Point2,
     heading: number,
-    aboard: AboardContext,
+    aboard: FootContext,
   ) {
     this.landmass = landmass;
     this.hull = hull;
     this.drawn = new SeaShips(hull.shown);
-    this.aboard = new Aboard(aboard, SLOOP_DECK);
+    [this.aboard, this.boarding] = [
+      new Aboard(aboard, SLOOP_DECK),
+      new Boarding(aboard, (...asked) => Foot.onDeck(...asked)),
+    ];
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
     this.passage = new Passage(outlines, () => this.landmass.mask, start, heading);
     this.camera = { ...initialCamera([start[0], start[1], 0], heading), tilt: FIRST_TILT };
@@ -456,11 +463,15 @@ export class Sea {
     const fail = (error: unknown) => this.passage.say(error instanceof Error ? error.message : String(error));
     const aboardShot = this.aboard.target(trueLying);
     // The fight's view, the helm's or one aboard, which the view comes down to from the sea's.
-    const down = combat
-      ? { near: combat.frame(dt, time, seaShot.far, fail, input.swell), share: combat.share }
-      : this.view.kind === 'helm'
-        ? { near: this.helmShot(trueLying, seaShot.far), share: this.helmShare }
-        : aboardShot && { near: aboardShot, share: this.aboard.share };
+    const fought = combat?.frame(dt, time, seaShot.far, fail, input.swell);
+    const boarded = this.boarding.frame(this.room, combat?.view ?? null, input);
+    if (boarded) combat?.letGo();
+    const down =
+      combat && fought
+        ? { near: boarded?.shot ?? fought, share: combat.share }
+        : this.view.kind === 'helm'
+          ? { near: this.helmShot(trueLying, seaShot.far), share: this.helmShare }
+          : aboardShot && { near: aboardShot, share: this.aboard.share };
     const shown = down ? panShot(seaShot, down.near, down.share) : seaShot;
     const closest = this.close.closest(overworld, trueLying, this.camera.yaw, this.camera.tilt);
     const { near, share } = down ?? { near: closest, share: this.close.eased };
@@ -507,10 +518,12 @@ export class Sea {
       hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, pirates, scale),
       bars: combat?.bars(scale) ?? [],
       marks: marks.shown,
-      figures: aboard
-        ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, this.helmShare > 0.5)
-        : [],
-      firstPerson: !combat && this.aboard.firstPerson,
+      figures: boarded
+        ? boarded.figures
+        : aboard
+          ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, this.helmShare > 0.5)
+          : [],
+      firstPerson: boarded ? boarded.firstPerson : !combat && this.aboard.firstPerson,
       stirs: combat ? combat.stirs() : own.underWay ? this.wake.stirs(lying, this.hull.waterline, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
       note: this.note(),

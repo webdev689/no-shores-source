@@ -1,11 +1,17 @@
 // What the sea's fights leave the player, as the page tells them (crates/room/src/harbour.rs, flotsam.rs, battle.rs):
-// who joins their fight, a captain's colours struck, what floats gathered and what it held, washing up at a port city,
-// and their ship's repair by one. The sea decides all of it; the page shows its word and sends the player's asks.
+// who joins their fight, a captain who struck they may board and the boarding, what floats gathered and what it held,
+// washing up at a port city, and their ship's repair by one. The sea decides all of it; the page shows its word and
+// sends the player's asks.
 import type { NavalEvent } from '../network/seaFight.ts';
+import type { FightView } from '../rules/fightRules.ts';
 import { shipName } from '../ships/shipBars.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import type { Kept } from './shipPanel.ts';
 
+/** A player boards a captain who struck with their ship within this of hers, metres, both making less way than this,
+ *  metres a second (crates/room/src/battle.rs `BOARD_REACH_M`, `BOARD_WAY_M_S`). */
+export const BOARD_REACH_M = 30;
+export const BOARD_WAY_M_S = 2;
 /** The sea's own told codes (crates/room/src/harbour.rs). */
 const WASHED_UP = 20;
 const HELD = 21;
@@ -30,6 +36,41 @@ export function portCities(ports: readonly PortCity[], mainPorts: readonly strin
   return ports.filter((port) => mainPorts.includes(port.id));
 }
 
+/** Whether the player may board a captain of their fight: one who struck lies within `BOARD_REACH_M` of their ship,
+ *  both making less way than `BOARD_WAY_M_S`. */
+export function boardable(fight: FightView): boolean {
+  const [x = 0, y = 0, , ahead = 0, abeam = 0] = fight.player.ship;
+  if (fight.player.state !== 'afloat' || Math.hypot(ahead, abeam) >= BOARD_WAY_M_S) return false;
+  return [fight.captain, ...(fight.others ?? [])].some((her) => {
+    const [herX = 0, herY = 0, , herAhead = 0, herAbeam = 0] = her.ship;
+    const near = Math.hypot(herX - x, herY - y) <= BOARD_REACH_M;
+    return her.state === 'struck' && near && Math.hypot(herAhead, herAbeam) < BOARD_WAY_M_S;
+  });
+}
+
+/** What E asks of the sea in a fight, and asks it: from her won deck, to go back aboard the player's own ship; off
+ *  any deck, to board a captain who struck alongside; else nothing. */
+export function fightAsk(sea: {
+  readonly fight: { readonly view: FightView } | null;
+  readonly boarding: { readonly onDeck: boolean; readonly won: boolean };
+  readonly sighted: { ask(ask: 'board' | 'leave-deck'): void } | null;
+}): 'board' | 'leave-deck' | null {
+  const { boarding, fight } = sea;
+  const ask = boarding.won ? 'leave-deck' : !boarding.onDeck && fight && boardable(fight.view) ? 'board' : null;
+  if (ask) sea.sighted?.ask(ask);
+  return ask;
+}
+
+/** A key pressed on her deck: E asks the sea (to leave her won deck), Enter respawns, and the menu's keys are the
+ *  game's; every other is the fight's on foot, so the sea's own (a voyage, the pace, the map) wait. Answers whether
+ *  it was taken here. */
+export function deckKey(key: string, sea: Parameters<typeof fightAsk>[0] | null, respawn: () => void): boolean {
+  if (!sea?.boarding.onDeck || key === 'm' || key === 'escape') return false;
+  if (key === 'e') fightAsk(sea);
+  else if (key === 'enter') respawn();
+  return true;
+}
+
 /** What a gathered piece held, in words. */
 function heldWords(rarity: number, ammoBox: number, ammoCrate: number): string {
   const parts = [
@@ -50,7 +91,7 @@ export function linesOf(
 ): string[] {
   const lines: string[] = [];
   for (const event of naval) {
-    if (event.kind === 'Struck') lines.push('Her colours are down.');
+    if (event.kind === 'Struck') lines.push('Her colours are down: come alongside and press E to board her.');
     if (event.kind === 'Boarding') lines.push('Boarders away: her crew stands to meet them.');
   }
   for (const numbers of told) {

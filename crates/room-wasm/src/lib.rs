@@ -28,7 +28,7 @@ mod roster_door;
 mod sea_door;
 mod waters_door;
 
-pub use fighter_door::{arms_code, predict, set_course, set_ground};
+pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
@@ -223,8 +223,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                     };
                 }
                 Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
-                // shortcut: no boarding is taken until the page can fight on her deck; take it (`sea.board`) once it can.
-                Ok(SeaInput::Board) => return REFUSED,
+                Ok(SeaInput::Board) => return if sea.board(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(SeaInput::LeaveDeck) => return if sea.leave_deck(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =
@@ -302,6 +301,26 @@ pub unsafe extern "C" fn release(address: *mut u8, length: usize) {
 pub unsafe extern "C" fn room_open(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(open(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Opens a captain's deck as a room alone, as the sea holds one boarded: her hull's deck by its number, her faction's
+/// deck crew for her rank (1 Minor to 5 Boss) at her level. The page's tests and pictures of the fight on her deck
+/// stand on it; the sea opens its own. Answers whether the hull and the rank are ones.
+#[must_use]
+pub fn open_deck(hull: u8, faction: u8, rank: u8, level: u8) -> bool {
+    let (Some(deck), Some(rank)) = (deck_door::hull_decks().get(usize::from(hull)), foes::Rank::from_number(rank))
+    else {
+        return false;
+    };
+    keep(Opened::Land { room: Box::new(room::Room::deck(deck, faction, rank, level.max(1))), node: None });
+    true
+}
+
+/// Opens a captain's deck as a room alone (`open_deck`); 1 if it opened, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_open_deck(hull: u32, faction: u32, rank: u32, level: u32) -> u32 {
+    let byte = |number: u32| u8::try_from(number).unwrap_or(u8::MAX);
+    u32::from(open_deck(byte(hull), byte(faction), byte(rank), byte(level)))
 }
 
 /// Opens a node's room from its file's text written at `address`, `length` bytes long; 1 if it opened, 0 if not.

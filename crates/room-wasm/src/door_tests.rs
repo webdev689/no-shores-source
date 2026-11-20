@@ -375,10 +375,49 @@ fn what_the_sea_tells_a_player_goes_to_them_alone() {
 }
 
 #[test]
-fn the_sea_takes_no_boarding_until_the_page_can_fight_on_her_deck() {
+fn the_sea_takes_a_boarding_and_the_boarder_fights_on_her_deck() {
     let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     assert!(open_sea(layout.as_bytes(), 66));
     let player = room_join();
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
-    assert_eq!(input(player, &protocol::ask_bytes(2)), REFUSED);
+    assert_eq!(input(player, &protocol::ask_bytes(2)), REFUSED, "no captain has struck");
+    let commission = naval::ranks::Commission { faction: 2, rank: naval::ranks::Rank::Minor };
+    let pirate = room::pirates::Pirate::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            sea.put_to_sea(pirate)
+        }
+    });
+    room_tick();
+    // Her colours come down alongside, and she lies still.
+    with_open(|opened| {
+        let Opened::Sea(sea) = opened else { panic!("a sea is open") };
+        let fought = sea.fight_mut(player).expect("the pirate met her");
+        let clock = fought.fight.clock;
+        let vessel = fought.fight.ships.get_mut(&naval::fight::CAPTAIN).unwrap();
+        let hurt = naval::damage::Hurt { hull: vessel.damage.max_hull * 0.8, sail: 0.0, crew: 0.0, fire: false };
+        vessel.damage.apply(hurt, clock, 0.0);
+        vessel.ship.ahead = 0.0;
+        if let naval::fight::Sailor::Captain(command) = &mut vessel.sailor {
+            command.struck_at = Some(clock);
+        }
+    });
+    assert_eq!(input(player, &protocol::ask_bytes(2)), TAKEN, "boarded");
+    // A land input now goes to her deck room, as the page's deck fight sends it.
+    let controls = Controls { forward: 1.0, ..Controls::default() };
+    let intent = combat::Intent { controls, ..combat::Intent::default() };
+    let walk = protocol::input_bytes(&room::Input { sequence: 1, intent, ..room::Input::default() });
+    assert_eq!(input(player, &walk), TAKEN);
+    room_tick();
+    snapshot_door::prepare();
+    let bytes = snapshot_door::snapshot_for(player);
+    let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+    let deck = snapshot.decks().expect("her deck is sent").get(0);
+    assert_eq!(deck.players().unwrap().iter().collect::<Vec<_>>(), vec![player]);
+    assert_eq!(deck.hold_left(), -1, "her crew still fights");
+    let boarder = deck.boarders().unwrap().get(0);
+    let room = messages::root_as_from_room(deck.snapshot().unwrap().bytes()).unwrap().snapshot().unwrap();
+    let seen = room.players().unwrap().iter().find(|seen| seen.player() == boarder).expect("the boarder stands there");
+    assert_eq!(seen.acknowledged(), 1, "her deck room took the boarder's step");
+    assert_eq!(room.foes().map_or(0, |foes| foes.len()), 3, "a Minor's three hands stand to meet them");
 }

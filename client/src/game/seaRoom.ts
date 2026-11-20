@@ -8,6 +8,7 @@ import {
   faceBytes,
   helmBytes,
   ordersBytes,
+  readFromRoom,
   type SeenPirate,
   type SeenShip,
   walkBytes,
@@ -60,6 +61,8 @@ export class SeaRoom {
   kept: SeenKept | null = null;
   flotsam: readonly SeenFlotsam[] = [];
   deck: SeenDeck | null = null;
+  /** What each snapshot of the deck the player stands on goes to: the page's fight on her deck, once it stands. */
+  hearDeck: ((snapshot: Snapshot) => void) | null = null;
   /** Where the room moored the player's ship once they washed up (crates/room/src/harbour.rs), until it is taken. */
   private washedAt: { readonly x: number; readonly y: number; readonly heading: number } | null = null;
   /** The room's tick by its last snapshot (none before the first), the tick the last course was sent at, and a course
@@ -125,6 +128,8 @@ export class SeaRoom {
     this.kept = snapshot.kept.find((kept) => kept.player === this.own) ?? null;
     this.flotsam = snapshot.flotsam.filter((piece) => piece.player === this.own);
     this.deck = snapshot.decks.find((deck) => deck.aboard.some(([player]) => player === this.own)) ?? null;
+    const onDeck = this.deck && this.hearDeck ? readFromRoom(this.deck.snapshot) : null;
+    if (onDeck?.kind === 'snapshot') this.hearDeck?.(onDeck);
     this.told.push(...snapshot.told.filter((told) => told.player === this.own).map((told) => [...told.numbers]));
     const own = snapshot.fights.find((fight) => fight.player === this.own);
     if (own) {
@@ -201,6 +206,16 @@ export class SeaRoom {
   /** Asks the sea for her repair, to board a captain who struck, or to leave her deck. */
   ask(ask: Parameters<typeof askBytes>[0]): void {
     this.link.send(askBytes(ask));
+  }
+
+  /** Sends a land room's input on to the deck the player stands on: the sea room hands it to her deck room. */
+  sendDeck(bytes: Uint8Array<ArrayBuffer>): void {
+    this.link.send(bytes);
+  }
+
+  /** The player's gear as the sea's link last heard it: while they board, their deck room's word. */
+  get gear(): Pick<RoomLink, 'trim' | 'arms' | 'arts'> {
+    return this.link;
   }
 
   /** Whether the player is in a fight, as the room last said. */

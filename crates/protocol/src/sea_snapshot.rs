@@ -96,12 +96,14 @@ pub fn sea_snapshot_bytes(
     let each: Vec<_> = harbour
         .decks
         .iter()
-        .map(|(aboard, hull, snapshot)| {
+        .map(|(aboard, hull, snapshot, hold_left)| {
             let players: Vec<PlayerId> = aboard.iter().map(|(player, _)| *player).collect();
             let boarders: Vec<PlayerId> = aboard.iter().map(|(_, boarder)| *boarder).collect();
             let (players, boarders) = (Some(builder.create_vector(&players)), Some(builder.create_vector(&boarders)));
             let snapshot = Some(builder.create_vector(snapshot));
-            messages::Deck::create(&mut builder, &messages::DeckArgs { players, boarders, hull: *hull, snapshot })
+            let hold_left = hold_left.map_or(-1, |ticks| i16::try_from(ticks).unwrap_or(i16::MAX));
+            let args = messages::DeckArgs { players, boarders, hull: *hull, snapshot, hold_left };
+            messages::Deck::create(&mut builder, &args)
         })
         .collect();
     let decks = Some(builder.create_vector(&each));
@@ -132,6 +134,6 @@ pub struct SeaHarbour {
     pub decks: Vec<SeaDeck>,
 }
 
-/// A deck boarded as the snapshot carries it: each boarder's number at sea with theirs on her deck, her hull, and her
-/// deck room's snapshot.
-pub type SeaDeck = (Vec<(PlayerId, PlayerId)>, u8, Vec<u8>);
+/// A deck boarded as the snapshot carries it: each boarder's number at sea with theirs on her deck, her hull, her deck
+/// room's snapshot, and the sea's ticks her won deck holds her boarders yet (none while her crew still fights).
+pub type SeaDeck = (Vec<(PlayerId, PlayerId)>, u8, Vec<u8>, Option<u64>);

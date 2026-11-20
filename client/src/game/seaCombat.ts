@@ -133,7 +133,8 @@ export class SeaCombat {
   /** A key down or up; answers whether the fight takes it: the helm's (A, D, Shift), a rung (W, S), the brace (C),
    *  and every other key but the menu's, so the sea's own (the map, a voyage, the pace) wait for the fight's end. */
   key(key: string, down: boolean): boolean {
-    if (key === 'm') return false;
+    // The menu's key, and E for the sea's own asks (to board a captain who struck, to leave her won deck).
+    if (key === 'm' || key === 'e') return false;
     if (!['a', 'd', 'w', 's', 'c', 'shift', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key))
       return true;
     if (down) {
@@ -141,6 +142,11 @@ export class SeaCombat {
       this.held.add(key);
     } else this.held.delete(key);
     return true;
+  }
+
+  /** Lets go of every key the fight holds, as the player goes on foot on a deck and their keys are the foot's. */
+  letGo(): void {
+    this.held.clear();
   }
 
   /** A drag of the view, in pixels: it turns the camera round her, or the aim's look. */

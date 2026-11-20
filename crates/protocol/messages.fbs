@@ -92,12 +92,14 @@ table Kept {
 }
 
 // A captain's deck that players boarded: each boarder's number at sea and in turn their number on her deck, her hull
-// (as Pirate numbers it), and her deck room's own snapshot (a FromRoom message of a room on land, in her own frame).
+// (as Pirate numbers it), her deck room's own snapshot (a FromRoom message of a room on land, in her own frame), and
+// the sea's ticks her won deck holds her boarders yet (-1 while her crew still fights).
 table Deck {
   players: [uint];
   boarders: [uint];
   hull: ubyte;
   snapshot: [ubyte];
+  hold_left: short = -1;
 }
 
 // What the sea tells one player this tick beside their fight's view: one event in the naval crate's numbers

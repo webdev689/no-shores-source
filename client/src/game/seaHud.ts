@@ -58,23 +58,27 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const { island, region, onSea } = state;
   const atHelm = here.helmView;
   const { aboard } = here;
-  if (state.landing) hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
+  // On a struck ship's deck, the display says where her fight stands and lists the keys on foot.
+  const deck = here.boarding.words;
+  if (deck) hud.place(deck.place, deck.line);
+  else if (state.landing) hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
   else if (atHelm) hud.place('At the helm', here.waterWords ?? region);
   else if (aboard.walking) hud.place('Aboard the Sloop', 'Off the helm');
   else if (aboard.managing) hud.place('Managing the Sloop', region);
   else hud.place('At sea', shown.landfall && island ? `Off ${island}` : (here.waterWords ?? region));
   const fighting = here.fight?.lines(state.clock) ?? null;
-  hud.hints(seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
+  hud.hints(deck ? deck.hints : seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
   hud.marks(shown.marks);
   const { eye, yaw, pitch, fov } = shown.shot;
-  hud.shipBars(shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
+  // Aboard her the ships' plates and the sea's bar give the view to the fight on foot's display, as on land.
+  hud.shipBars(deck ? [] : shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
   // The held map raised at the helm covers the view, the compass with it.
   const ships = seaShipMarks(here.fight?.captains ?? null, here.sighted);
   hud.compass(
     atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships: [...ships, ...state.friendly] },
   );
   const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
-  hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
+  hud.seaBar(onSea && !atHelm && !aboard.active && !deck ? { ...shown, ...ship } : null);
   const build = aboard.managing ? state.build() : null;
   hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);
   hud.wheelOffer(onSea && aboard.atWheel);

@@ -77,12 +77,16 @@ fn a_repair_stops_as_she_heaves_to_for_a_fight_and_the_fight_starts_from_what_it
 #[test]
 fn a_won_deck_holds_her_boarders_a_minute_then_sends_them_home_and_scuttles_her() {
     let (mut sea, player) = boarded();
+    assert_eq!(sea.hold_left(&sea.decks()[0]), None, "her crew still fights");
     for foe in sea.decks.boarded[0].room.foes.values_mut() {
         foe.fighter.action = combat::Action::Dead { elapsed: 0 };
     }
     sea.tick();
     assert!(sea.on_deck(player));
-    ticks(&mut sea, HOLD_TICKS as usize - 2);
+    assert_eq!(sea.hold_left(&sea.decks()[0]), Some(HOLD_TICKS), "the boarders' minute, as the snapshot tells it");
+    ticks(&mut sea, 600);
+    assert_eq!(sea.hold_left(&sea.decks()[0]), Some(HOLD_TICKS - 600));
+    ticks(&mut sea, HOLD_TICKS as usize - 602);
     assert!(sea.on_deck(player), "her hold is theirs for a minute");
     ticks(&mut sea, 2);
     assert!(!sea.on_deck(player) && sea.decks().is_empty());
@@ -117,6 +121,10 @@ fn on_a_deck_her_own_ship_takes_no_orders_and_a_late_character_reaches_the_deck(
     assert!(sea.restore_character(player, &real.to_json()));
     let on_deck = sea.deck_character(player).unwrap();
     assert_eq!(on_deck.materials.aurem, real.materials.aurem, "the deck fights with the real character");
+    // Their gear is sent them from her deck room, which holds that character, once it changes.
+    let (room, boarder) = sea.deck_gear_change(player).expect("the boarder's gear, first sent");
+    assert_eq!(room.kept_character(boarder).and_then(|text| gear::Character::from_json(&text)), Some(on_deck));
+    assert!(sea.deck_gear_change(player).is_none(), "sent once until it changes");
 }
 
 #[test]

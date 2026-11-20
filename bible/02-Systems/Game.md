@@ -238,6 +238,11 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   helmsman stands at the wheel and she sails on; at rest the player simply leaves it. At her wheel the offer Take the
   helm (E) takes it again, and once the room agrees the view pans back up. A fight that begins calls the player
   straight back to the helm.
+- **Boarding** ([[Naval Combat]], "The fight on her deck, on the page"). In a fight, a captain who struck alongside
+  (within 30 m, both under 2 m/s) is boarded with E. Once the sea room has the player on her deck the view is theirs
+  on foot there, as on land, among her crew and beside every other boarder, her deck riding her ship on the swell; the
+  place line names her, and once her crew has fallen it shows her minute's seconds left and her hold's take. E, or the
+  minute's end, brings the view back to the fight at the player's own helm; beaten aboard, they wash up.
 - **Her hands.** Stand-ins until crew management comes: a human, a felid and a human in plain dress, each walking
   between spots on her deck at 1.3 m/s and standing at each 2 to 7 s, on a leg the deck leaves clear and away from
   her wheel; seeded, so they walk the same however the frames fall.
