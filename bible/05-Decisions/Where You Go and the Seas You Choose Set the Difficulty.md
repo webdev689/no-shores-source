@@ -28,6 +28,6 @@ ending the run:
 - **Storm has Nightfall's rules**: limited revives, and a wipe ends the run.
 - **Foes stand up to two levels over the highest player**, to 32, as Destiny 1's hardest raid did ([[Gear]]).
 
-The weather each brings: [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]].
+The tiers' names: [[The Tiers Are Normal, Elite and Abyss]].
 
 It is part of [[The Game's Loop Runs From Town to the Land and the Sea]].

@@ -136,7 +136,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]
 - [[Where You Go and the Seas You Choose Set the Difficulty]]
 - [[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]
-- [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]]
+- [[The Tiers Are Normal, Elite and Abyss]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -151,3 +151,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]
 - [[PostgreSQL]], by [[Accounts Start as Guests, on Cloudflare D1]]
 - [[The Vitals Keep Their Panel Under DFO's Compass]], by [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]
+- [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]], by [[The Tiers Are Normal, Elite and Abyss]]

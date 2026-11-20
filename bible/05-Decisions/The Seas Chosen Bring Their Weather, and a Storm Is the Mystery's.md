@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-20
-status: in force
+status: replaced
+replaced_by: "[[The Tiers Are Normal, Elite and Abyss]]"
 ---
 # The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's
+
+It is replaced by [[The Tiers Are Normal, Elite and Abyss]]: the visual storm idea is dropped.
 
 Told that the weather's sea states and the seas a voyage chooses share the names calm, rough and storm, and asked
 whether choosing Storm brings a storm:
