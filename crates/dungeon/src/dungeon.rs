@@ -367,10 +367,10 @@ impl Dungeon {
         steps
     }
 
-    /// Where the return portal stands: on a wall of the end room that is no stone, at its cell farthest from the way
-    /// in by walk (its quiet cells first), the first such wall; first one that runs on past its cell both ways, so
-    /// its torches stand on it clear of the room's corners; on the way in's own wall only where the end room has no
-    /// other.
+    /// Where the return portal stands: on a wall of the end room that is no stone, at the cell farthest from the way
+    /// in by walk (its quiet cells first) that has the best such wall, the first of them. Best is a wall that runs on
+    /// past its cell both ways, so its torches stand on it; then one whose every end is that or the room's corner,
+    /// where a torch stands on the side wall; then any. On the way in's own wall only where the end room has no other.
     fn portal_spot(&self, steps: &[u32]) -> WallDoor {
         let room = self.end();
         let found = &self.rooms[room];
@@ -379,17 +379,27 @@ impl Dungeon {
             let stone = self.beside(cell, side).is_some_and(|next| found.stones.contains(&next));
             self.rock_beside(cell, side) && !stone && (cell, side) != door
         };
-        let runs_on = |cell: usize, side: Side| {
-            [side.clockwise(), side.clockwise().opposite()].into_iter().all(|along| {
-                self.beside(cell, along).is_some_and(|next| self.room_at(next) == Some(room) && wall(next, side))
-            })
+        let runs_on = |cell: usize, side: Side, along: Side| {
+            self.beside(cell, along).is_some_and(|next| self.room_at(next) == Some(room) && wall(next, side))
         };
-        for whole in [true, false] {
+        let cornered = |cell: usize, along: Side| self.rock_beside(cell, along) && (cell, along) != door;
+        // How well a wall holds the portal's torches: 2 on it both ways, 1 on it or a corner's side wall, 0 neither.
+        let holds = |cell: usize, side: Side| {
+            let ends = [side.clockwise(), side.clockwise().opposite()];
+            if ends.into_iter().all(|along| runs_on(cell, side, along)) {
+                2
+            } else if ends.into_iter().all(|along| runs_on(cell, side, along) || cornered(cell, along)) {
+                1
+            } else {
+                0
+            }
+        };
+        for least in [2, 1, 0] {
             for cells in [&found.quiet, &found.cells] {
                 let mut deepest = cells.clone();
                 deepest.sort_by_key(|&cell| (core::cmp::Reverse(steps[cell]), cell));
                 for cell in deepest {
-                    let fits = |&side: &Side| wall(cell, side) && (!whole || runs_on(cell, side));
+                    let fits = |&side: &Side| wall(cell, side) && holds(cell, side) >= least;
                     if let Some(side) = SIDES.into_iter().find(fits) {
                         return WallDoor { cell, side, room };
                     }

@@ -88,3 +88,30 @@ fn most_portals_stand_on_a_wall_that_runs_on_past_their_cell_both_ways() {
     // The rest are end rooms with no such wall, two cells across or broken by doors: a torch stands on a side wall.
     assert!(whole * 5 >= count * 4, "{whole} of {count}");
 }
+
+#[test]
+fn a_portal_torch_on_its_wall_stands_where_the_wall_runs_on() {
+    let (mut ends, mut sides) = (0, 0);
+    for dungeon in every_dungeon(600) {
+        let portal = dungeon.portal;
+        let [x, y] = dungeon.centre(portal.cell);
+        for torch in dungeon.torches.iter().filter(|torch| cell_of(&dungeon, torch) == portal.cell) {
+            if torch.wall != portal.side {
+                continue;
+            }
+            sides += 1;
+            // The torch stands 1.5 m along: the wall must go on into the cell beside it that way.
+            let along = [portal.side.clockwise(), portal.side.clockwise().opposite()].into_iter().find(|along| {
+                let [ax, ay] = along.unit();
+                (torch.at[0] - x) * ax + (torch.at[1] - y) * ay > 0.0
+            });
+            let runs_on = along.and_then(|along| dungeon.beside(portal.cell, along)).is_some_and(|next| {
+                dungeon.room_at(next) == Some(portal.room) && dungeon.rock_beside(next, portal.side)
+            });
+            if !runs_on {
+                ends += 1;
+            }
+        }
+    }
+    assert_eq!(ends, 0, "{ends} of {sides} portal torches hang at the end of their wall");
+}

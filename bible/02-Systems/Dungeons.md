@@ -112,11 +112,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **The way in** is in the first room of the way in's block that has a cell with rock beside it, at the cell nearest
   its middle, its quiet cells first: the exit door stands on that rock (never a stone), 1.4 m wide and 2.4 m high, and
   a body arrives 0.4 m past that cell's middle, about 2 m in from the door, facing into the room.
-- **The return portal** stands on the end room's wall like the exit door, as wide and as high: on the room's cell
-  farthest from the way in by walk that has rock beside it that is no stone, its quiet cells first, never on the exit
-  door's wall. A wall that runs on past that cell both ways comes first, so its torches stand on it clear of the
-  room's corners; four portals in five stand on one. It takes a player back out to the dungeon's entrance once the
-  Reeve has fallen ("In the Game").
+- **The return portal** stands on the end room's wall like the exit door, as wide and as high, on rock that is no
+  stone, never on the exit door's wall. Of the room's cells, its quiet cells first, it takes the one farthest from
+  the way in by walk that has the best wall for its torches: one that runs on past the cell both ways (four portals
+  in five), else one that runs on or ends in the room's corner each way, else any. It takes a player back out to the
+  dungeon's entrance once the Reeve has fallen ("In the Game").
 - **Ceilings** (`ceiling`): a room's form, only a look; it stands at its own height whatever its form. Under an
   arched roof a square room or an octagon takes a dome, and a hall of alcoves or a rectangle whose longer side is at
   least half again its shorter a vault along it; a cave and every cavern takes rough rock; any other room is flat.
@@ -124,8 +124,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   way is lit and marked before it opens: on its wall 1.5 m either side of its middle, past its arch, or, where its
   cell is the room's corner that way, in the middle of that side wall. Then on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; and
-  on every fourth corridor cell of a block, row by row. Each stands in the middle of its cell's wall, none over the
-  exit door or the portal, and none within 2.4 m of another of its room's, which would read as a pair.
+  on every fourth corridor cell of a block, row by row. Each of these stands in the middle of its cell's wall, none
+  over the exit door or the portal, and none within 2.4 m of another of its room's, which would read as a pair.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
   to 1.6 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
   way stands a pillar 0.7 m square at every second inner corner whose four cells are its own.
