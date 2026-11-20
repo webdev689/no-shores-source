@@ -12,7 +12,7 @@ the owner), the owner answered: "In general".
 
 ## What it settles
 
-- Wherever a thing can be made without HTML, it is, in general: not only a page made to test or measure something,
-  but the game's interface and what is shared with the owner.
+- "Avoid HTML when possible", in general: not only in a page made to test or measure something, but in the game's
+  interface and in what is shared with the owner.
 
 [[Interface]], [[Toolkit]].

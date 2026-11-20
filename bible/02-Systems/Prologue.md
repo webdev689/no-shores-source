@@ -270,8 +270,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   quarterdeck's broken front to her taffrail, open but for her wheel (her binnacle and skylight swept away), no wave in
   it. Its heap stands below its front, on the way up out of her gun deck. When the boss fight begins, its heap closes
   the way in behind the player, every other foe is sent away, and Captain Brannoc Thule stands before the wheel facing
-  the player, three levels over them: their blows land at 0.47 of their worth. A player back over the heap is brought
-  back in; anywhere aft of the heap, on her deck or up on her rails, is never brought back, and her rails hold them.
+  the player, three levels over them: their blows land at 0.94 of their worth (0.47 for the levels, doubled by the
+  balance pass). A player back over the heap is brought back in; anywhere aft of the heap, on her deck or up on her
+  rails, is never brought back, and her rails hold them.
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
   his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.

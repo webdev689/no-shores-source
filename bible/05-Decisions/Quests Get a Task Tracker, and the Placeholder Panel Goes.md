@@ -27,8 +27,8 @@ status: in force
   and "No need to sink them". Each captain still has her own plate.
 - Waking on the wreck the task is "Learn the controls": Move, Look round, Attack, and Block or dodge, each ticked as
   the player does it. It gives way to "Fight your way through the wreck" once a foe comes at the player, or a moment
-  after all four are ticked; foes fighting the crew further on leave it up. The boss fight's is "Face Captain Brannoc
-  Thule".
+  after all four are ticked; foes fighting the crew further on leave it up. That task counts the "Foes standing" while
+  any do. The boss fight's is "Face Captain Brannoc Thule".
 - The key strip drops walking on foot, which the lessons teach, and keeps the click that takes the mouse to look.
 - The old objective panel goes with the tracker; its one word that was no task, "You will rise at the last
   checkpoint." on falling in the wreck, is a toast.

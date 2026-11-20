@@ -29,7 +29,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The bystander | A woman of Saltmere's town, called Stranger | The player does not know her |
 | The story's dress | Steel armour without a helm, so the face shows, a steel sword and a kite shield, drawn | "armor with a sword and shield"; character creation shows the whole figure |
 | After the story | The player's look dresses them in the game; with an account, their gear does, as before | The story's armour is the story's |
-| The fight that cannot be won | Thule three levels over the player, so their blows land at 0.47; it ends when the player falls, when Thule is brought under a third, or after 150 s | "which you cannot win", and never a dead end |
+| The fight that cannot be won | Thule three levels over the player, so their blows land at 0.47, doubled by the whole game's balance pass to 0.94; it ends when the player falls, when Thule is brought under a third, or after 150 s | "which you cannot win", and never a dead end |
 | The account step without the accounts | When the accounts cannot be reached, or an ask has no answer in 10 s, "Go on without an account" plays on signed out | Creation always finishes, as the game played before the story |
 | Back from Discord | The story starts again at the helm; an account signed in with Discord alone goes on as itself | Signing in never costs the intro and the storm a second time |
 | Creation on a tall screen | The window lies along the bottom and the whole figure stands above it | "showing your full character" on a phone too |
