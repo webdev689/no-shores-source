@@ -137,6 +137,12 @@ pub struct Character {
     /// The Ranged loadout's ammunition, as a share of its capacity in `ammo::AMMO_FULL` parts.
     #[serde(default = "crate::ammo::full")]
     pub ammo: u16,
+    /// What they have done this day and this week (`activity.rs`).
+    #[serde(default)]
+    pub activity: crate::activity::Activity,
+    /// How far they are through the story (`story.rs`).
+    #[serde(default = "crate::story::Story::kept_before")]
+    pub story: crate::story::Story,
 }
 
 impl Character {
@@ -154,6 +160,8 @@ impl Character {
             emblem: crate::emblems::starting(),
             arts: crate::arts::WornArts::default(),
             ammo: crate::ammo::AMMO_FULL,
+            activity: crate::activity::Activity::default(),
+            story: crate::story::Story::default(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),
@@ -184,8 +192,8 @@ impl Character {
     /// of each island's resource added since it was kept, its stocks stay within their caps, each item is as an item
     /// should be (`Item::kept`), a node bought whose trait no longer fits its piece is given back
     /// (`old_hands::unfit`), one worn in a slot it does not fit or that another fills is carried, and its next
-    /// number stays past every one it holds. So no keeping, old or broken, can make a room refuse or fail on it. One
-    /// kept before the loadouts is read into them (`old_hands.rs`).
+    /// number stays past every one it holds, and its activities hold only what the board has. So no keeping, old or
+    /// broken, can make a room refuse or fail on it. One kept before the loadouts is read into them (`old_hands.rs`).
     #[must_use]
     pub fn from_json(text: &str) -> Option<Self> {
         let mut kept: serde_json::Value = serde_json::from_str(text).ok()?;
@@ -226,6 +234,7 @@ impl Character {
         let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         character.arts = std::mem::take(&mut character.arts).kept();
+        character.activity = std::mem::take(&mut character.activity).kept();
         character.earn_due();
         Some(character)
     }

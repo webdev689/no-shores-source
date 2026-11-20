@@ -4,6 +4,7 @@
 //! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems; everything a player holds;
 //! and the game's one clock, its day and week.
 
+pub mod activity;
 pub mod ammo;
 pub mod arts;
 pub mod asks;
@@ -21,6 +22,7 @@ pub mod power;
 pub mod rarity;
 pub mod rewards;
 pub mod shown;
+pub mod story;
 pub mod vendor;
 pub mod vestige;
 pub mod world;
@@ -33,6 +35,8 @@ pub use kinds::{Kind, Slot};
 pub use rarity::Rarity;
 pub use world::Difficulty;
 
+#[cfg(test)]
+mod activity_tests;
 #[cfg(test)]
 mod ammo_tests;
 #[cfg(test)]

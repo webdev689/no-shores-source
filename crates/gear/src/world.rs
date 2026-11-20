@@ -2,6 +2,8 @@
 //! the ninth, and the difficulty a voyage sets out at, which raises its foes and what they pay. A player's level runs
 //! 1 to 30, so the bands climb with them as Destiny 1's worlds did, Earth to Mars.
 
+use serde::{Deserialize, Serialize};
+
 /// Each island by its continent's id, and the lowest and highest level of its foes.
 pub const ISLANDS: [(&str, u8, u8); 9] = [
     ("continent-1", 1, 4),
@@ -26,7 +28,8 @@ pub fn island_levels(continent: &str) -> Option<(u8, u8)> {
 }
 
 /// The difficulty a voyage sets out at: Normal, Elite or Abyss. Elite here is a voyage's tier, not a foe's rank.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Difficulty {
     #[default]
     Normal,

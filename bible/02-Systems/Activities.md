@@ -3,6 +3,8 @@ type: system
 status: planned
 code:
   - crates/gear/src/clock.rs#day_of
+  - crates/gear/src/activity.rs#Activity
+  - crates/gear/src/story.rs#Story
 ---
 # Activities
 
@@ -98,9 +100,10 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
 
 ## What it pays, once
 
-- **Each character keeps its day and its week** with the account (`Character.activity`): which tiers of the dungeon
-  of the day it has cleared, its bounties, and which of the week's dungeons it cleared. Each turns over with the
-  clock.
+- **Each character keeps its day and its week** with the account (`Character.activity`): `today` holds the tiers of
+  the dungeon of the day it has cleared and its bounties, each by its board place with its count; `this_week` holds
+  whether it cleared each of the week's two dungeons and whether it holds the Abyss boon. Each begins anew at its
+  first touch in a later day or week, and never turns back, so a room whose clock is behind cannot pay twice.
 - **The dungeon of the day**, the first clear at each tier each day, on any island's: its cache, raised by the tier,
   and a Vestige at the run's level. Three a day at most, under the rules every Vestige keeps now (no Legendary from
   foes under level 18).
@@ -124,12 +127,14 @@ One engine counts both, since the owner's side quests and the board's bounties a
 ## What opens when
 
 - **The story's progress is kept with the account** (`Character.story`), not only in the browser: the prologue's
-  end first, and each mission and side quest as they come. The room records each.
+  end first, and each mission and side quest as they come. The room records each. A new character starts short of
+  the prologue.
 - **After the prologue:** the board, the patrols, the dungeon of the day and the Elite Dungeons.
 - **The campaign** is the nine missions that follow the prologue, which is not one of them; finishing the ninth is its
   end. Which island each mission reaches is written with the missions. Until they exist, the prologue stands in for
   the campaign's end, so the week's dungeons open too, each by its level.
-- **Characters saved before the story was kept** count as past the prologue.
+- **Characters saved before the story was kept** count as past the prologue: a save with no `story` reads as past
+  it.
 - **The rooms refuse a join a gate shuts**, and say why. The screen shows what is shut and what opens it.
 
 ## The screen
