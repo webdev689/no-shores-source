@@ -15,6 +15,8 @@ use world::waters::Holder;
 
 const TICKS_A_SECOND: u64 = 60;
 const FIGHTS_A_ROW: usize = 12;
+/// The level table's rows are half as many fights, as it has twice the rows.
+const FIGHTS_A_LEVEL: usize = 6;
 const LONGEST_S: f64 = 900.0;
 
 fn struck(vessel: &naval::fight::Vessel) -> bool {
@@ -125,8 +127,8 @@ pub(crate) fn hostile_points(sea: &Sea) -> Vec<[f64; 2]> {
     chosen
 }
 
-/// One row of the table: `FIGHTS_A_ROW` fights with bold captains of `rank` at `level`, the player turning at `close`.
-fn row(rank: Rank, level: u8, close: f64) -> String {
+/// One row of the table: `fights` fights with bold captains of `rank` at `level`, the player turning at `close`.
+fn row(rank: Rank, level: u8, close: f64, fights: usize) -> String {
     let (layout, ports) = world();
     let points = hostile_points(&Sea::new(&layout, crate::deck::test_deck(), 1, &ports));
     let commission = Commission { faction: PIRATES, rank };
@@ -134,7 +136,7 @@ fn row(rank: Rank, level: u8, close: f64) -> String {
         .step_by(7919)
         .filter(|seed| matches!(naval::captain::temper_for(commission, *seed), naval::captain::Temper::Bold));
     let mut all = Vec::new();
-    for run in 0..FIGHTS_A_ROW {
+    for run in 0..fights {
         let at = points[run % points.len()];
         let seed = seeds.next().unwrap();
         let mut sea = Sea::new(&layout, crate::deck::test_deck(), seed, &ports);
@@ -170,7 +172,7 @@ fn row(rank: Rank, level: u8, close: f64) -> String {
 fn measure_fights_by_rank() {
     eprintln!("| Captain | Stand-off: won / sunk, median length, hull kept | Closing to 150 m: the same |");
     for rank in Rank::ALL {
-        eprintln!("| {rank:?} | {} | {} |", row(rank, 0, 300.0), row(rank, 0, 150.0));
+        eprintln!("| {rank:?} | {} | {} |", row(rank, 0, 300.0, FIGHTS_A_ROW), row(rank, 0, 150.0, FIGHTS_A_ROW));
     }
 }
 
@@ -180,103 +182,8 @@ fn measure_fights_by_level() {
     eprintln!("| Captain, level | Stand-off: won / sunk, median length, hull kept | Closing to 150 m: the same |");
     for rank in [Rank::Minor, Rank::Elite] {
         for level in [1, 4, 10, 19, 27] {
-            eprintln!("| {rank:?} {level} | {} | {} |", row(rank, level, 300.0), row(rank, level, 150.0));
-        }
-    }
-}
-
-#[test]
-#[ignore = "scratch trace"]
-fn zz_trace_one_fight() {
-    let (layout, ports) = world();
-    let points = hostile_points(&Sea::new(&layout, crate::deck::test_deck(), 1, &ports));
-    let commission = Commission { faction: PIRATES, rank: Rank::Major };
-    let seed = (0x1000u32..)
-        .step_by(7919)
-        .find(|seed| matches!(naval::captain::temper_for(commission, *seed), naval::captain::Temper::Bold))
-        .unwrap();
-    let close: f64 = std::env::var("CLOSE").ok().and_then(|v| v.parse().ok()).unwrap_or(300.0);
-    let at = points[0];
-    let mut sea = Sea::new(&layout, crate::deck::test_deck(), seed, &ports);
-    let player = sea.join();
-    sea.harbour.characters.insert(player, gear::Character::starting());
-    sea.course(player, &[at], 10).unwrap();
-    sea.pirates.sailing.push(Pirate::standing(1, seed, commission, [at[0], at[1] - 700.0], std::f64::consts::PI, true));
-    sea.tick();
-    let mut shots = [0usize; 2];
-    for tick in 1..(400 * TICKS_A_SECOND) {
-        let Some((fought, crew)) = sea.fights.of_mut(player) else { break };
-        let orders = plain_orders(&fought.fight, crew.ship, tick, close);
-        if tick % 120 == 0 {
-            let me = fought.fight.vessel(crew.ship).unwrap();
-            for (id, v) in &fought.fight.ships {
-                if *id == crew.ship {
-                    continue;
-                }
-                let apart = distance([me.ship.x, me.ship.y], [v.ship.x, v.ship.y]);
-                let off = (wrap(heading_to([v.ship.x, v.ship.y], [me.ship.x, me.ship.y]) - v.ship.heading)
-                    .abs()
-                    .to_degrees()
-                    - 90.0)
-                    .abs();
-                let poff = (wrap(heading_to([me.ship.x, me.ship.y], [v.ship.x, v.ship.y]) - me.ship.heading)
-                    .abs()
-                    .to_degrees()
-                    - 90.0)
-                    .abs();
-                let mode = v.command().map(|c| format!("{:?}", c.her.mode)).unwrap_or_default();
-                let r = |x: &naval::fight::Vessel| {
-                    naval::gunnery::lay(
-                        &x.ship,
-                        &x.pose,
-                        naval::arms::arms_of(x.hull),
-                        naval::arms::Side::Starboard,
-                        x.guns.load,
-                        0.0,
-                        None,
-                    )
-                    .reach
-                };
-                let rp = |x: &naval::fight::Vessel| {
-                    naval::gunnery::lay(
-                        &x.ship,
-                        &x.pose,
-                        naval::arms::arms_of(x.hull),
-                        naval::arms::Side::Port,
-                        x.guns.load,
-                        0.0,
-                        None,
-                    )
-                    .reach
-                };
-                eprintln!(
-                    "   reach player s/p {:.0}/{:.0} her {:.0}/{:.0} hull kinds {:?} {:?}",
-                    r(me),
-                    rp(me),
-                    r(v),
-                    rp(v),
-                    me.hull,
-                    v.hull
-                );
-                eprintln!(
-                    "t{} apart {apart:.0} her off-beam {off:.0} player off-beam {poff:.0} her way {:.1} mine {:.1} hulls {:.0}/{:.0} {mode} shots p/c {shots:?}",
-                    tick / 60,
-                    v.ship.ahead,
-                    me.ship.ahead,
-                    me.damage.hull,
-                    v.damage.hull
-                );
-            }
-        }
-        let _ = sea.orders(player, orders);
-        sea.tick();
-        if let Some((fought, crew)) = sea.fights.of_mut(player) {
-            for event in &fought.events {
-                let text = format!("{event:?}");
-                if text.contains("Muzzle") {
-                    shots[usize::from(!text.contains(&format!("shooter: {},", crew.ship)))] += 1;
-                }
-            }
+            let (off, close) = (row(rank, level, 300.0, FIGHTS_A_LEVEL), row(rank, level, 150.0, FIGHTS_A_LEVEL));
+            eprintln!("| {rank:?} {level} | {off} | {close} |");
         }
     }
 }
