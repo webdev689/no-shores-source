@@ -49,6 +49,31 @@ test('locked on, a figure on foot faces its foe as it walks away from it; mounte
   assert.notEqual(riding.facing, toward);
 });
 
+test('locked on, a sprint faces where it runs, and once it ends the figure faces its foe again', () => {
+  const toward = 0.5;
+  const sprinting = updatePlayer(start(), frame(['back', 'run']), movement, TICK, false, toward);
+  assert.ok(sprinting.body.moving);
+  assert.equal(sprinting.facing, sprinting.body.facing, 'where it runs');
+  assert.notEqual(sprinting.facing, toward);
+  const walking = updatePlayer(sprinting, frame(['back']), movement, TICK, false, toward);
+  assert.equal(walking.facing, toward, 'walking away, it backs off facing its foe');
+  const stopped = updatePlayer(sprinting, frame(), movement, TICK, false, toward);
+  assert.equal(stopped.facing, toward, 'stopped, it faces its foe');
+  const held = updatePlayer(stopped, frame(['run']), movement, TICK, false, toward);
+  assert.equal(held.facing, toward, 'the run held standing still is no sprint');
+  const ahead = updatePlayer(start(), frame(['forward', 'left', 'run']), movement, TICK, false, toward);
+  assert.equal(ahead.facing, ahead.body.facing, 'a sprint any way faces where it runs');
+});
+
+test('locked on, a crouched figure with the run held goes at a crouch and keeps facing its foe', () => {
+  const toward = 0.5;
+  const crouched = updatePlayer(start(), frame([], ['crouch']), movement, TICK, false, toward);
+  assert.ok(crouched.body.crouched);
+  const creeping = updatePlayer(crouched, frame(['back', 'run']), movement, TICK, false, toward);
+  assert.ok(creeping.body.moving && creeping.body.crouched);
+  assert.equal(creeping.facing, toward);
+});
+
 test('1 draws the Melee loadout and 2 the Ranged, each readying it; Melee is drawn first', () => {
   const player = start();
   assert.equal(player.loadout, 0);

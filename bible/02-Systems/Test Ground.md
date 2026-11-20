@@ -331,8 +331,9 @@ to the ground; never shorter. Running frames last 0.125 s and crouching 0.5 s. E
 the frame it shows, so a walk that slows never jumps a frame. On the ground a foe's pace is read over its last 0.1 s,
 so a tick the rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge
 the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
-the soft lock holds a foe, a figure on foot faces it however it walks, so walking away backs off from it
-([[Locked On, the Figure Faces Its Foe]]). Swinging or casting, it turns to face where the camera looks. Dodging, a
+the soft lock holds a foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting,
+it faces where it runs, and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It
+Sprints]]). Swinging or casting, it turns to face where the camera looks. Dodging, a
 figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
 though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
 
