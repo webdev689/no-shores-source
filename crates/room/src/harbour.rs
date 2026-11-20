@@ -75,21 +75,16 @@ impl Harbours {
     #[must_use]
     pub fn nearest(&self, at: [f64; 2]) -> Option<usize> {
         let point = |[x, y]: [f64; 2]| world::geometry::Point::new(x.round() as i64, y.round() as i64);
-        let apart = |port: &(String, [f64; 2])| {
-            let by_sea = self.ways.as_ref().and_then(|ways| ways.length(point(at), point(port.1)));
-            by_sea.unwrap_or_else(|| libm::hypot(port.1[0] - at[0], port.1[1] - at[1]))
-        };
-        let mut lengths: Vec<f64> = self.ports.iter().map(apart).collect();
+        let by_sea: Vec<Option<f64>> =
+            self.ports.iter().map(|port| self.ways.as_ref()?.length(point(at), point(port.1))).collect();
         // Where some port is reached by sea, one no way reaches is no nearer for a short straight line.
-        let by_sea = |port: &(String, [f64; 2])| self.ways.as_ref()?.length(point(at), point(port.1));
-        let reached: Vec<bool> = self.ports.iter().map(|port| by_sea(port).is_some()).collect();
-        if reached.contains(&true) {
-            lengths
-                .iter_mut()
-                .zip(&reached)
-                .filter(|(_, reached)| !**reached)
-                .for_each(|(length, _)| *length = f64::INFINITY);
-        }
+        let unreached = if by_sea.iter().any(Option::is_some) { f64::INFINITY } else { 0.0 };
+        let lengths: Vec<f64> = self
+            .ports
+            .iter()
+            .zip(&by_sea)
+            .map(|(port, sea)| sea.unwrap_or(unreached + libm::hypot(port.1[0] - at[0], port.1[1] - at[1])))
+            .collect();
         (0..lengths.len()).min_by(|one, other| lengths[*one].total_cmp(&lengths[*other]))
     }
 
