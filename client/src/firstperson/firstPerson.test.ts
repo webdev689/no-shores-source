@@ -26,8 +26,12 @@ function firstPerson(drawn: (path: string) => boolean) {
     },
   };
   let quads: readonly ScreenQuad[] = [];
+  const made: number[] = [];
   const view: QuadDrawer = {
-    texture: () => ({}) as GPUTexture,
+    texture: (pixels) => {
+      made.push(pixels[0] ?? -1);
+      return { destroy: () => undefined } as GPUTexture;
+    },
     glow: () => ({}) as GPUTexture,
     forget: () => undefined,
     draw: (_encoder, _colour, _width, _height, drawnQuads) => {
@@ -42,7 +46,7 @@ function firstPerson(drawn: (path: string) => boolean) {
     const glows = quads.map((quad) => quad.glow?.look ?? 0);
     return { events, quads: quads.map(({ x, y, width, height, flip }) => ({ x, y, width, height, flip })), glows };
   };
-  return { frame, asked, person };
+  return { frame, asked, person, made };
 }
 
 const still = { attackHeld: false, attackPressed: false, attackReleased: false };
@@ -288,4 +292,30 @@ test('one crossbow is carried at a run in the forge’s own frames; a pair keeps
   for (let step = 0; step < 20; step++)
     await pair.frame(0.05, { ...crossbow, left: 'crossbow_iron_l', stride: step * 0.3 });
   assert.ok(!pair.asked.some((path) => path.startsWith('forge/held/CROSSBOW_')));
+});
+
+test('a new dye worn composes the hands again in it; the same dye composes nothing again', async () => {
+  const { frame, asked } = firstPerson(() => true);
+  const gauntleted = { ...standing, armour: { gauntlets: 'gauntlets_daedric' } };
+  await frame(0.016, gauntleted);
+  const first = asked.length;
+  await frame(0.016, gauntleted);
+  assert.equal(asked.length, first, 'kept');
+  await frame(0.016, { ...gauntleted, dye: 'coral' });
+  assert.ok(asked.length > first, 'composed again in the dye');
+  const dyed = asked.length;
+  await frame(0.016, { ...gauntleted, dye: 'coral' });
+  assert.equal(asked.length, dyed, 'kept in the dye');
+});
+
+test('a picture still composing in the old dye when the dye changes is never kept', async () => {
+  const gauntleted = { ...standing, armour: { gauntlets: 'gauntlets_daedric' } };
+  const dyedFromTheStart = firstPerson(() => true);
+  await dyedFromTheStart.frame(0.016, { ...gauntleted, dye: 'coral' });
+  const changed = firstPerson(() => true);
+  // Asked for in the old dye, then the dye changes before any of it lands.
+  changed.person.update(0.016, still, gauntleted);
+  await changed.frame(0.016, { ...gauntleted, dye: 'coral' });
+  assert.ok(changed.made.length > 0);
+  assert.deepEqual(new Set(changed.made), new Set(dyedFromTheStart.made), 'every picture kept is in the new dye');
 });

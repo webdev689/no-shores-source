@@ -84,7 +84,7 @@ test('the Core counts and locks the fragments not owned, and refuses them before
   assert.ok(conduction);
   const card = fragmentCard(art(1), conduction, null, 1, howHad(1));
   assert.equal(card.kind, 'Storm fragment, not owned');
-  assert.match(card.words, /Rise the Art at the Stormcallers' counter, or buy it there from their first rank\.$/);
+  assert.match(card.words, /Raise the Art at the Stormcallers' counter, or buy it there from their first rank\.$/);
 });
 
 test('a spell’s numbers at each level are scaled as the room scales them, the rest as written', () => {
@@ -127,6 +127,10 @@ test('a spell’s numbers at each level are scaled as the room scales them, the 
   const momentum = storm.core.find((fragment) => fragment.key === 'momentum');
   assert.ok(momentum);
   assert.deepEqual(fragmentNumbers(momentum, 1), [['Crit lasts', '3.6 s']]);
+  // With Gale in the Core, Quicken's Haste lasts its seconds more, and Momentum's Crit as long, both by the lasting.
+  assert.deepEqual(fragmentNumbers(momentum, 1, [gale]), [['Crit lasts', '5.4 s']]);
+  const held = [storm.core.indexOf(momentum), storm.core.indexOf(gale), null];
+  assert.deepEqual(fragmentCard(storm, momentum, 0, 1, null, held).rows, [['Crit lasts', '5.4 s']]);
 });
 
 /** What the room measured an Art doing at its first level (crates/room/src/standing_tests.rs writes it). */

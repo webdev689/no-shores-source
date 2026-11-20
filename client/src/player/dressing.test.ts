@@ -163,6 +163,13 @@ test('a barding worn is stacked over the horse', () => {
   assert.equal(figureOf({ body: 'male', race: 'human', tone: 0.4, outfit }, drawn).barding, undefined);
 });
 
+test('a barding is in the figure only for a move that draws the horse', () => {
+  const dress = { body: 'male', race: 'human', tone: 0.4, outfit: { ...outfit, barding: 'ember_plate' } } as const;
+  const ridden = { ...drawn, horse: ['horseidle'] };
+  assert.equal(figureOf(dress, ridden, 'horseidle').barding, 'horse_warhorse');
+  assert.equal(figureOf(dress, ridden, 'idle').barding, undefined, 'standing, the rider has no horse under them');
+});
+
 test('a dress is read back with its dye, coat and barding; a cosmetic of the wrong kind or none such is refused', () => {
   const dress = {
     body: 'male',

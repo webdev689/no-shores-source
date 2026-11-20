@@ -79,22 +79,29 @@ export function wornCosmetic(number: number | undefined, kind: CosmeticKind): st
   return found?.kind === kind && found.source.kind !== 'start' ? found.id : null;
 }
 
-/** The hues of the horse's hide, in degrees: its tack is redder and its blanket red, its mane grey. */
-const HIDE_HUES = [25, 65] as const;
+/** Whether a texel of a horse picture, by its hue in degrees and its light, is the hide a coat takes. */
+export type HideTest = (hue: number, light: number) => boolean;
+
+/** The third person's horse: its hide's hues; its tack is redder and its blanket red, its mane grey. */
+export const FIGURE_HIDE: HideTest = (hue) => hue >= 25 && hue < 65;
+/** The ride's horse from the saddle, measured on the forge's ride strips against their hide mask: its lit hide sits at
+ *  hues 20 to 25 among its bridle's, which is darker, so there only a light that bright is hide; the redder and the
+ *  grey are its tack, its mane and its ears' insides, and the shadows under 40 as much tack as hide. */
+export const RIDE_HIDE: HideTest = (hue, light) => hue >= 20 && hue < 65 && light >= (hue < 25 ? 65 : 40);
 /** The hide's light that takes a coat's lightest step: the bay's own catches the light no brighter. */
 const HIDE_TOP = 128;
 
 /**
  * Lays a coat's ramp on a texel of the horse's hide, in place, by the horse's own light, as a dyed garment's greys take
- * their dye; a texel of its tack, blanket or mane is left as it is.
+ * their dye; a texel `isHide` takes for its tack, blanket or mane is left as it is.
  */
-export function hideShade(rgb: number[], ramp: readonly Rgb[]): void {
+export function hideShade(rgb: number[], ramp: readonly Rgb[], isHide: HideTest = FIGURE_HIDE): void {
   const [red = 0, green = 0, blue = 0] = rgb;
   const [most, least] = [Math.max(red, green, blue), Math.min(red, green, blue)];
   if (most === least || most !== red) return;
   const hue = ((green - blue) / (most - least)) * 60;
-  if (hue < HIDE_HUES[0] || hue >= HIDE_HUES[1]) return;
   const light = 0.299 * red + 0.587 * green + 0.114 * blue;
+  if (!isHide(hue, light)) return;
   const shade = ramp[Math.max(0, Math.min(15, Math.floor((light / HIDE_TOP) * 16)))];
   if (shade) [rgb[0], rgb[1], rgb[2]] = shade;
 }

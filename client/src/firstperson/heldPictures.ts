@@ -65,7 +65,7 @@ async function withHands(
   ]);
   if (!own || !over || own.strip.width !== over.strip.width || own.strip.height !== over.strip.height) return null;
   const pixels = paintOwn(own.strip);
-  layOver(pixels, source.painter.paint(over.strip, setRamp(source.dyes, hands, 'Steel')));
+  layOver(pixels, source.painter.paint(over.strip, setRamp(source, hands, 'Steel')));
   return { width: own.strip.width, height: own.strip.height, pixels };
 }
 

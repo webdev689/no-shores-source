@@ -26,7 +26,7 @@ const TURN: readonly (readonly [view: number, flip: boolean])[] = [
 const TURN_MS = 1200;
 /** The horse's view: from the side, as Destiny shows a Sparrow. */
 const HORSE_VIEW = 2;
-/** Pictures kept between builds of the screen, the oldest let go past this many. */
+/** Pictures kept between builds of the screen, the least lately shown let go past this many. */
 const KEPT_MOST = 96;
 const kept = new Map<string, Promise<Picture | null>>();
 
@@ -41,10 +41,14 @@ function pictureOf(
 ): Promise<Picture | null> {
   const key = JSON.stringify([dress, anim, view, flip, alone ?? null]);
   const found = kept.get(key);
-  if (found) return found;
-  // A picture that failed is not kept, so it is asked for again once the forge's store retries its strips.
-  const asked = forge.picture(dress, anim, view, 0, alone, flip).catch(() => {
+  if (found) {
     kept.delete(key);
+    kept.set(key, found);
+    return found;
+  }
+  // A picture that failed is not kept, so it is asked for again once the forge's store retries its strips.
+  const asked: Promise<Picture | null> = forge.picture(dress, anim, view, 0, alone, flip).catch(() => {
+    if (kept.get(key) === asked) kept.delete(key);
     return null;
   });
   kept.set(key, asked);
@@ -52,10 +56,14 @@ function pictureOf(
   return asked;
 }
 
-/** The horse of a dress by itself: its coat, and its barding stacked over it. */
+/** A dress as its figure stands: no horse under it, so its coat and barding change nothing drawn. */
+export const unhorsed = (dress: Dress): Dress => ({ ...dress, outfit: { ...dress.outfit, coat: null, barding: null } });
+
+/** The horse of a dress by itself: its coat, and its barding stacked over it; the rider's dyes change nothing drawn. */
 export function horseOf(forge: Cards, dress: Dress, view = HORSE_VIEW): Promise<Picture | null> {
   const barding = bardingLayer(dress.outfit.barding);
-  return pictureOf(forge, dress, 'horseidle', view, false, barding ? [HORSE_LAYER, barding] : [HORSE_LAYER]);
+  const horse = { ...dress, outfit: { ...dress.outfit, dye: null, dyes: {} } };
+  return pictureOf(forge, horse, 'horseidle', view, false, barding ? [HORSE_LAYER, barding] : [HORSE_LAYER]);
 }
 
 /** Draws a picture on a canvas `box` wide and tall at a whole multiple, `scale` texels a pixel, standing on the
@@ -119,8 +127,9 @@ export function appearanceDisplay(forge: Cards | null, dress: Dress | null, widt
     if (turning && now === drawnStep) return;
     drawnStep = now;
     const [view, flip] = TURN[now] ?? [0, false];
-    const dressKey = JSON.stringify(wanted);
-    void pictureOf(forge, wanted, 'idle', view, flip).then((picture) => {
+    const standing = unhorsed(wanted);
+    const dressKey = JSON.stringify(standing);
+    void pictureOf(forge, standing, 'idle', view, flip).then((picture) => {
       if (!picture || shown !== wanted) return;
       const scale = scales.get(`figure${dressKey}`) ?? scaleIn(picture, figureBox);
       scales.set(`figure${dressKey}`, scale);

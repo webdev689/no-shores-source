@@ -1,7 +1,7 @@
 import { type GlowElement, type GlowField, type GlowLook, glowField, recolourToGlow } from '../elementGlow.ts';
 import { type Colours, composeFrame } from '../forge/compose.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
-import { type ForgeLooks, layersOf, mirroredGear } from '../forge/looks.ts';
+import { type ForgeLooks, HORSE_LAYER, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import { type Dress, type Wardrobe, figureOf, rampsOf, wardrobeOf } from './dressing.ts';
@@ -220,7 +220,9 @@ export class Cards {
     const held = [dress.outfit.right, dress.outfit.left, ...carried];
     const figure = { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
     const { dyes, dye, coat } = dress.outfit;
-    return { figure, key: JSON.stringify([figure, dyes, dye ?? null, coat ?? null, anim, view, frame, glow]) };
+    // The coat counts only where the move draws the horse; the barding is in the figure only there.
+    const horse = layers[HORSE_LAYER]?.includes(anim) ? (coat ?? null) : null;
+    return { figure, key: JSON.stringify([figure, dyes, dye ?? null, horse, anim, view, frame, glow]) };
   }
 
   /** A figure's frame in a move and a view, composed now if it is not kept or under way; the frame once composed. A

@@ -18,7 +18,7 @@ import { type Hint, type HoverCard, cardNode, rarityOf, tileLabel } from '../gea
 import { STEP_BACK } from '../gearScreen.ts';
 import { appearanceDisplay, horseOf } from './appearanceDisplay.ts';
 import { coatSvg, dyeSvg, svgUrl } from './appearanceMarks.ts';
-import { type AppearanceTile, appearanceRows, previewDress } from './appearanceModel.ts';
+import { type AppearanceTile, appearanceRows, previewDress, previewHeld } from './appearanceModel.ts';
 import { ARROWS, nearest } from '../arrowFocus.ts';
 
 /** What the screen draws from: the gear the room last sent and the way to ask of it, the menu's hover card, the way
@@ -135,10 +135,9 @@ function tileOf(context: AppearanceContext, tile: AppearanceTile, display: { sho
   );
   // A piece previews on the display while the pointer or the focus is on it.
   const preview = () => display.show(context.dress && previewDress(context.dress, tile));
-  // The pointer gone, the display shows the piece the focus is on, if any, else the player as they are.
+  // The pointer gone, the display shows the piece the keys hold focused, if any, else the player as they are.
   const back = () => {
-    const held = document.activeElement;
-    const focused = held instanceof HTMLElement && held !== node ? PREVIEWS.get(held) : undefined;
+    const focused = previewHeld(document.activeElement, PREVIEWS);
     if (focused) focused();
     else display.show(context.dress);
   };

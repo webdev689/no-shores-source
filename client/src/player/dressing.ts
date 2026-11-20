@@ -103,11 +103,12 @@ export function dressFrom(text: string): Dress | null {
 }
 
 /** The forge figure a dress stacks in a move: the race's own body or the human tone, and its outfit's layers and hair,
- *  what is in hand worn for a move the forge does not draw it in. */
+ *  what is in hand worn for a move the forge does not draw it in, and its barding where the move draws the horse. */
 export function figureOf(dress: Dress, drawn: ForgeBody['layers'], anim?: string): Figure {
   const { gear, hair } = outfitLayers(dress.outfit, drawn, anim);
   const race = RACES[dress.race];
-  const barding = bardingLayer(dress.outfit.barding);
+  const mounted = anim === undefined || !!drawn[HORSE_LAYER]?.includes(anim);
+  const barding = mounted ? bardingLayer(dress.outfit.barding) : null;
   return { body: dress.body, race, tone: race ? null : dress.tone, hair, gear, ...(barding && { barding }) };
 }
 

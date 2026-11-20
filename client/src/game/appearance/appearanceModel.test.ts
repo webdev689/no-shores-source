@@ -4,7 +4,7 @@ import { COSMETICS } from '../../forge/cosmetics.ts';
 import type { GearState } from '../../network/gearMessages.ts';
 import { plainDress } from '../../player/dressing.ts';
 import { EMBLEMS } from '../emblemArt.ts';
-import { appearanceRows, howHad, previewDress } from './appearanceModel.ts';
+import { appearanceRows, howHad, previewDress, previewHeld } from './appearanceModel.ts';
 
 const number = (id: string) => COSMETICS.findIndex((each) => each.id === id);
 const gear = (fields: Partial<GearState>) => fields as GearState;
@@ -75,4 +75,16 @@ test('a hovered dye, coat or barding is worn on the display; a start piece shows
   const worn = { ...dress, outfit: { ...dress.outfit, coat: 'grey' } };
   assert.equal(previewDress(worn, coats?.tiles[0] ?? null).outfit.coat, null, 'Bay');
   assert.equal(previewDress(dress, null), dress);
+});
+
+test('the pointer gone, only a tile the keys focused holds its preview, the tile left among them', () => {
+  const tile = (keyed: boolean) => ({ matches: (query: string) => keyed && query === ':focus-visible' }) as Element;
+  const [keyed, clicked] = [tile(true), tile(false)];
+  const previews = new Map([
+    [keyed, 'keyed'],
+    [clicked, 'clicked'],
+  ]);
+  assert.equal(previewHeld(keyed, previews), 'keyed', 'a tile focused by the keys, left or not, keeps its preview');
+  assert.equal(previewHeld(clicked, previews), undefined, 'a tile a click focused leaves the player as they are');
+  assert.equal(previewHeld(null, previews), undefined);
 });
