@@ -349,7 +349,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         art: if room.arts_on() { character.art().id } else { 0 },
         cores: Some(builder.create_vector(&cores)),
         anima: if room.arts_on() { casting.anima } else { 0.0 },
-        tenets: Some(builder.create_vector(&casting.tenets)),
+        tenets: Some(builder.create_vector(&if room.arts_on() { casting.tenets } else { [0.0; 2] })),
         ammo: character.shots(),
         ammo_most: character.ammo_most().unwrap_or(0),
         ammo_share: f64::from(character.ammo) / f64::from(gear::ammo::AMMO_FULL),

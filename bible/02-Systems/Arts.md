@@ -132,7 +132,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   each holding a fragment's place in its Art's list or nothing. Both are saved with the character; a save without
   them wears Storm with every Core empty, and a broken one is made whole on reading ([[Gear]]).
 - **A room without Arts.** A room told to forbid them (`Room::forbid_arts`), as the prologue's wreck is, takes no
-  cast and charges nothing; a blow in an Art's element is no more than another, and the player's gear says Art 0.
+  cast and charges nothing, a kill's share included; no fragment of a Core works; a blow in an Art's element is no
+  more than another; and the player's gear says Art 0, its Anima and Tenets empty.
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
   An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), and one set
   already in another slot of that Art (113). Only the worn Art's Core changes its spells.

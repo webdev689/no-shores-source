@@ -20,8 +20,7 @@ impl Room {
         let Some(next) = self.fighter(fighter).and_then(|now| give(now, status, ticks, from)) else { return false };
         self.set_fighter(fighter, next);
         // Overload: a foe the player Charges is Exposed too.
-        let overloads =
-            from.and_then(|from| self.players.get(&from)).is_some_and(|by| by.character.fragment("overload").is_some());
+        let overloads = from.is_some_and(|from| self.core(from, "overload").is_some());
         if status == Status::Charge && overloads {
             self.give(fighter, Status::Expose, None, from);
         }
@@ -56,7 +55,7 @@ impl Room {
     /// defender's Expose; and a player's crit on an Exposed foe 10% more with Cruelty.
     pub(crate) fn weighed(&self, blow: &Blow, defender: &Fighter, verdict: Verdict) -> Verdict {
         let striker = self.fighter(blow.striker);
-        let cruelty = self.players.get(&blow.striker).and_then(|found| found.character.fragment("cruelty"));
+        let cruelty = self.core(blow.striker, "cruelty");
         let cruel = cruelty.filter(|_| defender.statuses.has(Status::Expose) && crits(blow, striker, defender));
         let times = times(blow, striker, defender) * cruel.map_or(1.0, |cruelty| cruelty.crit_times);
         match verdict {

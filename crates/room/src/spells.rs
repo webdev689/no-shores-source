@@ -181,9 +181,10 @@ impl Room {
         self.spells.list.push(Spell { id: self.spells.next, ..spell });
     }
 
-    /// A fragment in a player's worn Core, by its key.
-    fn core(&self, player: PlayerId, key: &str) -> Option<&'static FragmentDef> {
-        self.players.get(&player).and_then(|found| found.character.fragment(key))
+    /// A fragment in a player's worn Core, by its key; none in a room without Arts. Every fragment the room plays is
+    /// read through this.
+    pub(crate) fn core(&self, player: PlayerId, key: &str) -> Option<&'static FragmentDef> {
+        self.players.get(&player).filter(|_| self.arts).and_then(|found| found.character.fragment(key))
     }
 
     /// The living foes of a faction within `radius` of `at` across the ground and `height` above or below it: a

@@ -112,7 +112,8 @@ fn able(found: &Player) -> bool {
 
 impl Room {
     /// Takes away every player's Art from now on, as the prologue's wreck does: no cast is taken, no Anima or Tenet
-    /// charges, a blow in an Art's element is no more than another, and the player's gear says no Art is worn.
+    /// charges (a kill's charge included), no fragment of a Core works (`core`), a blow in an Art's element is no more
+    /// than another, and the player's gear says no Art is worn, its Anima and Tenets empty.
     pub fn forbid_arts(&mut self) {
         self.arts = false;
     }
@@ -177,6 +178,9 @@ impl Room {
     /// Spellfeed on its loadout (`perk_on`), a Volt kill 4% of the Tenets (Recharge), a Blaze kill while Linked 5%
     /// (Zeal), and a Cosmic kill on an Exposed foe 2 s more of the Duskraven (Dread).
     pub(crate) fn arts_after(&mut self, blow: &Blow, defender: &Fighter, verdict: &Verdict, killed: bool) {
+        if !self.arts {
+            return;
+        }
         let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
         let spellfeed = self.perk_on(blow, "spellfeed");
         let Some(striker) = self.players.get(&blow.striker).map(|found| found.fighter) else { return };
