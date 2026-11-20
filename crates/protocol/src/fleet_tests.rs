@@ -2,7 +2,7 @@ use super::*;
 use naval::fight::{Aim, Fight, Orders, Refusal};
 use naval::guns::SWIVEL;
 use naval::ranks::{Commission, GREY_TITHE, Rank};
-use room::fleet::{Call, Input, STANDING};
+use room::fleet::{Call, Input, Levels, STANDING};
 use sailing::ship::{Helm, Ship};
 use sailing::waters::OpenSea;
 
@@ -18,7 +18,7 @@ fn looked() -> Input {
             load: Some(Shot::Chain),
         },
         put_to_sea: Some([200_000.0, 300_000.0, 1.25]),
-        call: Call::Captain(Commission::default()),
+        call: Call::Captain(Commission::default(), Levels::default()),
     }
 }
 
@@ -57,7 +57,10 @@ fn orders_whose_parts_are_not_of_their_shape_are_refused() {
 
 #[test]
 fn a_call_names_the_faction_and_rank_of_the_captain_it_calls() {
-    let boss = Input { call: Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Boss }), ..looked() };
+    let boss = Input {
+        call: Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Boss }, Levels::default()),
+        ..looked()
+    };
     assert_eq!(read_orders(&orders_bytes(&boss)), Ok(boss));
     let write = |call_faction: u8, call_rank: u8| {
         let mut builder = flatbuffers::FlatBufferBuilder::new();
@@ -66,10 +69,33 @@ fn a_call_names_the_faction_and_rank_of_the_captain_it_calls() {
         builder.finish(orders, None);
         read_orders(builder.finished_data()).map(|input| input.call)
     };
-    assert_eq!(write(0, 0), Ok(Call::Captain(Commission::default())), "a call that names none: a Major pirate");
-    assert_eq!(write(GREY_TITHE, 0), Ok(Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Major })));
+    assert_eq!(
+        write(0, 0),
+        Ok(Call::Captain(Commission::default(), Levels::default())),
+        "a call that names none: a Major pirate"
+    );
+    assert_eq!(
+        write(GREY_TITHE, 0),
+        Ok(Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Major }, Levels::default()))
+    );
     assert!(write(3, 2).is_err(), "no captain sails for a third faction");
     assert!(write(1, 6).is_err(), "no sixth rank");
+}
+
+#[test]
+fn a_call_carries_its_captains_level_and_the_callers_ship_level_to_thirty() {
+    let levels = Levels { captain: 30, ship: 7 };
+    let called = Input { call: Call::Captain(Commission::default(), levels), ..looked() };
+    assert_eq!(read_orders(&orders_bytes(&called)), Ok(called));
+    let write = |call_level: u8, ship_level: u8| {
+        let mut builder = flatbuffers::FlatBufferBuilder::new();
+        let args = messages::OrdersArgs { sequence: 1, call: 1, call_level, ship_level, ..Default::default() };
+        let orders = messages::Orders::create(&mut builder, &args);
+        builder.finish(orders, None);
+        read_orders(builder.finished_data()).map(|input| input.call)
+    };
+    assert!(write(31, 1).is_err(), "no captain past level 30");
+    assert!(write(1, 31).is_err(), "no ship past level 30");
 }
 
 /// The fleet the client's test reads (messages.test.ts): two players' ships at known places and one captain's, and

@@ -128,8 +128,9 @@ table Told {
 // while she aims (its bearing off her bow in degrees and how far out it meets the water in metres, then its ray: the
 // aim eye and the way it looks, east, south and up; none while she does not aim); whether she fires and whether she
 // braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where she puts to sea (x, y and heading,
-// heeded once); a captain asked for (0 none, 1 one called round her, 255 every one sent off); and the faction (1 the
-// Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the pirates.
+// heeded once); a captain asked for (0 none, 1 one called round her, 255 every one sent off); the faction (1 the
+// Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the pirates; and with a call,
+// the captain's level and the caller's ship's level (0 for none: a ship unfitted).
 table Orders {
   sequence: uint;
   steer: double;
@@ -143,6 +144,8 @@ table Orders {
   call: ubyte;
   call_faction: ubyte;
   call_rank: ubyte;
+  call_level: ubyte;
+  ship_level: ubyte;
 }
 
 // A player's dress, passed on as their browser wrote it.
@@ -184,8 +187,9 @@ table Seen {
 // gear crate's numbers, 0 for none), what it holds still and what it held whole. Then its type's number in the roster,
 // its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle,
 // 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
-// leaves after it. Last, for a companion (an officer ashore), its leader's number (0 for a foe) and its officer's given
-// and family names' places in content/gear/crew.json.
+// leaves after it. Last, for a companion (an officer ashore), its leader's number (0 for a foe), its officer's given
+// and family names' places in content/gear/crew.json, and its officer's post (0 First Mate to 4 Lookout), which it is
+// dressed by.
 table Foe {
   id: uint;
   kind: ubyte;
@@ -205,6 +209,7 @@ table Foe {
   leader: uint;
   given: ubyte;
   family: ubyte;
+  post: ubyte;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck

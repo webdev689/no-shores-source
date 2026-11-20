@@ -596,7 +596,8 @@ after the water.
 
 With `?room=` in the World Editor's address, Sail joins a fleet room ([[Server]]) instead, on the open sea: every
 player's Sloop and every captain called in fight in one fight, the room's. F calls a captain onto the ring round her
-(four at most in a room), of the faction and rank chosen in the panel (the pirates' Major if none), X sends them all
+(four at most in a room), of the faction, rank and level chosen in the panel (the pirates' Major of no level if none), and fits the caller's
+ship at the ship level chosen ([[Ship Power]], "In the fleet room"); X sends them all
 off. Captains of different factions fight each other there as they fight players. Her lay's arcs are laid in the
 browser by the same functions the room fires by (`preview`), among the ships the room last showed.
 

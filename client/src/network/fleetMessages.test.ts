@@ -83,7 +83,7 @@ test('orders are its helm, its look and its ray, the fire, the brace, a load, wh
     load: 3,
     putToSea: [200_000, 300_000, 1.25],
     call: 'captain',
-    captain: { faction: 1, rank: 4 },
+    captain: { faction: 1, rank: 4, level: 12, shipLevel: 9 },
   });
   const orders = Orders.getRootAsOrders(new flatbuffers.ByteBuffer(bytes));
   assert.deepEqual(
@@ -93,6 +93,7 @@ test('orders are its helm, its look and its ray, the fire, the brace, a load, wh
   assert.deepEqual(Array.from(orders.aimArray() ?? []), [-97.5, 64.25, ...ray]);
   assert.deepEqual([Array.from(orders.putToSeaArray() ?? []), orders.call()], [[200_000, 300_000, 1.25], 1]);
   assert.deepEqual([orders.callFaction(), orders.callRank()], [1, 4], 'a Miniboss of the Grey Tithe called');
+  assert.deepEqual([orders.callLevel(), orders.shipLevel()], [12, 9], 'at level 12, the ship fitted at level 9');
   const plain = Orders.getRootAsOrders(
     new flatbuffers.ByteBuffer(
       ordersBytes(2, {
@@ -110,6 +111,7 @@ test('orders are its helm, its look and its ray, the fire, the brace, a load, wh
   );
   assert.deepEqual([plain.aimLength(), plain.putToSeaLength(), plain.call()], [0, 0, 255]);
   assert.deepEqual([plain.callFaction(), plain.callRank()], [0, 0], 'no captain called, none named');
+  assert.deepEqual([plain.callLevel(), plain.shipLevel()], [0, 0], 'and no levels');
 });
 
 test('orders never wrap a number past its field: its number, load and call are refused, and its rudder, rung and look are held within what the room takes', () => {
@@ -138,6 +140,8 @@ test('orders never wrap a number past its field: its number, load and call are r
   const calling = { ...orders, call: 'captain' } as const;
   assert.throws(() => ordersBytes(1, { ...calling, captain: { faction: 258, rank: 2 } }), RangeError);
   assert.throws(() => ordersBytes(1, { ...calling, captain: { faction: 1, rank: 6 } }), RangeError);
+  assert.throws(() => ordersBytes(1, { ...calling, captain: { faction: 1, rank: 2, level: 31 } }), RangeError);
+  assert.throws(() => ordersBytes(1, { ...calling, captain: { faction: 1, rank: 2, shipLevel: 31 } }), RangeError);
 });
 
 test('an older room’s captain, sent with no faction or rank, reads as a Major of the pirates', () => {

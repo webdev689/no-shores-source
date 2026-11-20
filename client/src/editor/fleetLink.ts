@@ -5,10 +5,13 @@ import type { Pose, ShipFloats } from '../rules/landRules.ts';
 /** A captain asked for: none, one called round its ship, or every one sent off. */
 export type FleetCall = 'none' | 'captain' | 'send off';
 
-/** The faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of a captain called. */
+/** The faction (1 the Grey Tithe, 2 pirates), rank (1 Minor to 5 Boss) and level of a captain called, and the level
+ *  the caller's ship is fitted at from then on (0 for none: unfitted). */
 export interface CaptainChoice {
   readonly faction: number;
   readonly rank: number;
+  readonly level: number;
+  readonly shipLevel: number;
 }
 
 /** What the player does in a frame at sea in a fleet: their rudder and crab from the keys held, each rung climbed or
@@ -81,8 +84,9 @@ export interface FleetHarbour {
 }
 
 let offered: FleetHarbour | null = null;
-/** The captain F calls in a fleet, as the panel last chose: a Major of the pirates until it does. */
-let chosen: CaptainChoice = { faction: 2, rank: 2 };
+/** The captain F calls in a fleet, as the panel last chose: a Major of the pirates of no level, the ship unfitted,
+ *  until it does. */
+let chosen: CaptainChoice = { faction: 2, rank: 2, level: 0, shipLevel: 0 };
 
 /** The panel chooses the faction and rank of the captain F calls. */
 export function chooseCaptain(choice: CaptainChoice): void {

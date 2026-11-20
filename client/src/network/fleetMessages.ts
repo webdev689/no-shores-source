@@ -1,7 +1,7 @@
 import * as flatbuffers from 'flatbuffers';
 import { Orders } from '../../../generated/messages/ts/overlook/wire.ts';
 import type { Snapshot } from '../../../generated/messages/ts/overlook/wire/snapshot.ts';
-import type { FleetLook } from '../rules/fleetRules.ts';
+import { type FleetLook, LEVEL_MOST } from '../rules/fleetRules.ts';
 
 /** A captain asked for: none, one called round the player's ship, or every one sent off. */
 export type FleetCall = 'none' | 'captain' | 'send off';
@@ -19,7 +19,13 @@ export interface FleetOrders {
   readonly load: number;
   readonly putToSea: readonly [number, number, number] | null;
   readonly call: FleetCall;
-  readonly captain?: { readonly faction: number; readonly rank: number };
+  readonly captain?: {
+    readonly faction: number;
+    readonly rank: number;
+    /** The captain's level and the caller's ship's, 0 for none (a ship unfitted). */
+    readonly level?: number;
+    readonly shipLevel?: number;
+  };
 }
 
 /** A captain's faction and rank as a room sends them; an older room sends 0 for both, and every captain it held was a
@@ -83,6 +89,8 @@ export function ordersBytes(sequence: number, orders: FleetOrders): Uint8Array<A
     CALLS[orders.call],
     called ? wholeIn(captain?.faction ?? 0, 0, 0xff, "the captain's faction") : 0,
     called ? wholeIn(captain?.rank ?? 0, 0, 5, "the captain's rank") : 0,
+    called ? wholeIn(captain?.level ?? 0, 0, LEVEL_MOST, "the captain's level") : 0,
+    called ? wholeIn(captain?.shipLevel ?? 0, 0, LEVEL_MOST, "the ship's level") : 0,
   );
   builder.finish(message);
   return builder.asUint8Array().slice();

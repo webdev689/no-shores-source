@@ -150,3 +150,6 @@ export function startFleetRules(module: WebAssembly.Module): FleetRules {
     },
   };
 }
+
+/** The highest level a ship or a captain reaches (crates/gear/src/power.rs LEVEL_MOST). */
+export const LEVEL_MOST = 30;

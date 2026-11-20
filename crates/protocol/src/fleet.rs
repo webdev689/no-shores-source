@@ -9,7 +9,7 @@ use naval::fight::{Aim, End, Event, Fight, Orders, Refusal};
 use naval::guns::Shot;
 use naval::ranks::{Commission, PIRATES, Rank};
 use naval::shots::{ShipId, ShotEvent};
-use room::fleet::{Call, Input};
+use room::fleet::{Call, Input, Levels};
 use sailing::ship::Helm;
 
 /// A load as the messages number it: 0 none, then the cycle's order from 1.
@@ -38,6 +38,11 @@ fn commission_of(faction: u8, rank: u8) -> Result<Commission, String> {
     Commission::of(faction, rank).ok_or(format!("no captain sails for faction {faction}"))
 }
 
+/// A level a call names: 0 for none, else 1 to the highest a ship or a captain reaches.
+fn level_of(level: u8) -> Result<u8, String> {
+    if level <= gear::power::LEVEL_MOST { Ok(level) } else { Err(format!("no level is {level}")) }
+}
+
 /// The orders an orders' bytes hold, or why they do not read: a look of 0, 2 or 8 numbers, a load the cycle
 /// numbers, three numbers or none to put to sea, a call the messages number, of a faction and rank they number. The
 /// bytes come from a player's machine, so the verifier passes them first; the room checks the numbers.
@@ -61,7 +66,10 @@ pub fn read_orders(bytes: &[u8]) -> Result<Input, String> {
     };
     let call = match orders.call() {
         0 => Call::None,
-        CALL_CAPTAIN => Call::Captain(commission_of(orders.call_faction(), orders.call_rank())?),
+        CALL_CAPTAIN => {
+            let levels = Levels { captain: level_of(orders.call_level())?, ship: level_of(orders.ship_level())? };
+            Call::Captain(commission_of(orders.call_faction(), orders.call_rank())?, levels)
+        }
         CALL_SEND_OFF => Call::SendOff,
         other => return Err(format!("no call is numbered {other}")),
     };
@@ -81,10 +89,10 @@ pub fn orders_bytes(input: &Input) -> Vec<u8> {
     let aim = Some(builder.create_vector(&look));
     let put = input.put_to_sea.map_or_else(Vec::new, |put| put.to_vec());
     let put_to_sea = Some(builder.create_vector(&put));
-    let (call, call_faction, call_rank) = match input.call {
-        Call::None => (0, 0, 0),
-        Call::Captain(commission) => (CALL_CAPTAIN, commission.faction, commission.rank.number()),
-        Call::SendOff => (CALL_SEND_OFF, 0, 0),
+    let (call, call_faction, call_rank, levels) = match input.call {
+        Call::None => (0, 0, 0, Levels::default()),
+        Call::Captain(commission, levels) => (CALL_CAPTAIN, commission.faction, commission.rank.number(), levels),
+        Call::SendOff => (CALL_SEND_OFF, 0, 0, Levels::default()),
     };
     let helm = input.orders.helm;
     let args = messages::OrdersArgs {
@@ -100,6 +108,8 @@ pub fn orders_bytes(input: &Input) -> Vec<u8> {
         call,
         call_faction,
         call_rank,
+        call_level: levels.captain,
+        ship_level: levels.ship,
     };
     let orders = messages::Orders::create(&mut builder, &args);
     builder.finish(orders, None);
