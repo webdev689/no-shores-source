@@ -26,3 +26,5 @@ committed as "tsc clean" and caught only by the full check later.
 
 **Principle:** A delegated check list should call the project's own aggregate check, not a hand-copied subset of it;
 the subset silently drifts from what CI runs.
+
+**Another instance, 2026-11-20 (the main session, not a worker):** before the full check, `npx tsc --noEmit -p tsconfig.json` passed a test reading `role` and `ariaLabel` off the fake page's `FakeElement`; the full check's `npm run -s types` (which also runs `tsconfig.node.json`) failed it. The same round the spot checks also missed the `[layers] plus may not import combat` repo check and an `id-length` lint, each found only by the 15-minute full check. The fast pre-check that matches it is `npm run -s types && npm run -s lint && cargo xtask repo`.
