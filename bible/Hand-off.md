@@ -192,6 +192,18 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#92, Overlook's factions, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**, stacked on #74
+  (whose speech system it speaks through), waits on #74 and then the owner's yes to merge, which deploys the page and
+  the rooms. The owner named the factions (Stormcallers, Lamplighters, the Veiled) and the elder, and asked for
+  autonomy; every call made under it is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change.
+  Tested offline: the full check, three independent audits with every finding fixed, and every keeper's screen, the
+  Character page, the Appearance screen and the Art's screen in a local room (`npm run server`, the built page
+  headless). Not yet seen: Shape present in a room (he comes Fridays from 09:00 UTC), Maren's walk in a picture (the
+  software renderer is too slow for it; unit tests cover it), anything on a real GPU or the deployed rooms, and two
+  players seeing each other's dyes and horses. The open questions it leaves are in [[Open Questions]] (the two other
+  factions' keepers' names, faction gear, reputation's sources, Shape's hours, more horse looks). The Wraith Mist
+  barding's first-person ride strips on R2 are blank: a forge re-render. The rest of the world's ports (Sunspire,
+  Rimeholt) are #75's; this round only locks their social spaces ([[Only Overlook's Social Space Opens for Now]]).
 - **#74, the prologue**, waits on #71 and then the owner's yes to merge, which deploys the page and the rooms. Every
   call inside the beats is in [[The Prologue as Claude Shapes It]], the owner's to change: among them Thule's ship as
   the Frigate (the Tithe Ram is not built), the sea fight won once all three are beaten, a heap per wave in the wreck,
@@ -318,6 +330,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **After #92**: reputation from bounties and activities when they exist; Shape at Sunspire and Rimeholt when their
+  social spaces open; a hide and mane mask from the forge for coats (the ride's `_uv` strips are one); the Elite and
+  Abyss tiers' names on the voyage's card (#82), where Shapes are found.
 - **The prologue, not yet seen**: on a real GPU, and heard (its ambience, voices and their levels have never been
   listened to); played through in one run in a browser (headless, each beat was started on its own); the wreck's frame
   time, now that its decks are 760 blocks.
