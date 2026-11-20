@@ -65,6 +65,13 @@ impl Character {
         power::level(self.ship_xp, self.ship_prestige())
     }
 
+    /// How far she is to her next level, 0 to 1, and what it still takes: experience below level 20, Prestige past it;
+    /// at the highest, full and nothing.
+    #[must_use]
+    pub fn ship_to_next(&self) -> (f64, u32) {
+        power::to_next(self.ship_xp, self.ship_prestige())
+    }
+
     /// Her Attack: her guns'.
     #[must_use]
     pub fn ship_attack(&self) -> u32 {

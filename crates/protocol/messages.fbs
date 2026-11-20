@@ -488,6 +488,48 @@ table Gear {
   ammo_share: double;
   crates: ubyte;
   crate_price: uint;
+  ship: GearShip;
+}
+
+// A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),
+// names by their places in content/gear/crew.json, duty (0 aboard, 1 at their post, 2 ashore), level and how far to
+// the next, service and its most, how well they hold their post, their nodes as an item's (each column's XP their
+// service's), and an offer's wage.
+table GearOfficer {
+  id: uint;
+  post: ubyte;
+  grade: ubyte;
+  given: ubyte;
+  family: ubyte;
+  duty: ubyte;
+  level: ubyte;
+  to_next: double;
+  trained: uint;
+  trained_most: uint;
+  strength: double;
+  bought: uint;
+  chosen: [ubyte];
+  columns: [GearColumn];
+  wage: uint;
+}
+
+// The ship's own power and crew: her experience, level, Prestige, Attack and Defense and how far to her next level;
+// Timber, Canvas, Iron and Heartwood; her hands and her complement; her officers, and at a pledged faction's counter
+// the officers of the day; and her trim at sea (the gear crate's ShipTrim, in its order).
+table GearShip {
+  xp: ulong;
+  level: ubyte;
+  prestige: uint;
+  attack: uint;
+  defense: uint;
+  to_next: double;
+  to_next_needs: uint;
+  stocks: [ushort];
+  hands: ushort;
+  hands_most: ushort;
+  officers: [GearOfficer];
+  offers: [GearOfficer];
+  trim: [double];
 }
 
 // What a room sends: exactly one of these is present.

@@ -132,6 +132,32 @@ impl ShipTrim {
         true
     }
 
+    /// Every number, in the struct's order, as the gear message carries them.
+    #[must_use]
+    pub fn to_floats(&self) -> Vec<f64> {
+        let factors = [
+            self.reload,
+            self.scatter,
+            self.harm_hull,
+            self.harm_sail,
+            self.harm_crew,
+            self.finisher,
+            self.way,
+            self.turn,
+            self.hull_taken,
+            self.sail_taken,
+            self.crew_taken,
+            self.cornered,
+            self.holed_taken,
+            self.rally,
+            self.ram,
+            self.patch,
+            self.sight,
+            f64::from(self.boarders),
+        ];
+        factors.into_iter().chain(self.posts).collect()
+    }
+
     /// How well a post is held, 0 when none holds it.
     #[must_use]
     pub fn post(&self, post: Post) -> f64 {

@@ -9,6 +9,7 @@ pub mod asks;
 pub mod battle;
 pub mod chart;
 pub mod clash;
+pub mod crew;
 pub mod deck;
 mod deck_fight;
 mod drops;

@@ -350,14 +350,7 @@ impl Character {
     /// it; at the highest, full and nothing.
     #[must_use]
     pub fn to_next(&self) -> (f64, u32) {
-        let level = self.level();
-        if level < power::XP_LEVEL_MOST {
-            let (from, to) = (power::xp_for_level(level), power::xp_for_level(level + 1));
-            let share = self.xp.saturating_sub(from) as f64 / (to - from) as f64;
-            return (share.min(1.0), u32::try_from(to.saturating_sub(self.xp)).unwrap_or(u32::MAX));
-        }
-        let Some(needed) = power::PRESTIGE_FOR.get(usize::from(level - power::XP_LEVEL_MOST)) else { return (1.0, 0) };
-        (f64::from(self.prestige()) / f64::from(*needed), needed.saturating_sub(self.prestige()))
+        power::to_next(self.xp, self.prestige())
     }
 
     /// How far the next Fruit of Dagon has grown, 0 to 1; none until the player's XP reaches level 20's.

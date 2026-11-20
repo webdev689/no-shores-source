@@ -224,7 +224,7 @@ pub fn at_number(at: At) -> u8 {
 }
 
 /// A column's kind as the gear message numbers it.
-fn column_number(column: gear::grid::Column) -> u8 {
+pub(crate) fn column_number(column: gear::grid::Column) -> u8 {
     match column {
         gear::grid::Column::Upgrade => 0,
         gear::grid::Column::Handling(_) => 1,
@@ -303,7 +303,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let wares: Vec<_> = if room.in_social_space(player) {
         gear::vendor::Vendor::ALL
             .into_iter()
-            .flat_map(|vendor| gear::vendor::wares(vendor, room.day, character.level()))
+            .flat_map(|vendor| {
+                let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
+                gear::vendor::wares(vendor, room.day, level)
+            })
             .enumerate()
             .map(|(place, mut ware)| {
                 ware.id = u32::try_from(place % gear::vendor::WARES).unwrap_or_default();
@@ -357,6 +360,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let arts = gear::arts::arts().arts.iter();
     let cores: Vec<u8> = arts.flat_map(|art| character.core_of(art.id)).map(|set| set.unwrap_or(NO_FRAGMENT)).collect();
     let casting = found.casting;
+    let ship = Some(crate::ship_wire::ship_offset(&mut builder, character, room.recruiting_at(player)));
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -392,6 +396,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         ammo_share: f64::from(character.ammo) / f64::from(gear::ammo::AMMO_FULL),
         crates: u8::try_from(held.crates).unwrap_or(u8::MAX),
         crate_price: if room.in_social_space(player) { gear::ammo::CRATE_PRICE } else { 0 },
+        ship,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

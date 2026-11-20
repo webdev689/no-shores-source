@@ -108,6 +108,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         Ask::Vend { vendor, .. } => Some(CounterKind::Vendor(*vendor)),
         Ask::BuyCrate => Some(CounterKind::Vendor(Vendor::Quartermaster)),
         Ask::BuyEmblem { .. } => Some(CounterKind::Tailor),
+        Ask::Recruit { .. } => Some(crate::crew::MUSTER),
         _ => None,
     }
 }
@@ -136,7 +137,8 @@ impl Room {
             self.counters.iter().flatten().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
         let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
-        Here { social, day: self.day, ..Here::default() }
+        let (pledge, rank) = self.player(player).map_or((0, 0), |found| crate::crew::pledge_of(&found.character));
+        Here { social, day: self.day, pledge, rank }
     }
 
     /// Whether a player stands in a social space, or within reach of the stall: where the vendors' wares are shown.
