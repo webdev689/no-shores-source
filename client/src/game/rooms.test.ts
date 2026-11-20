@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
-import { accountsFrom, nodeOfRoom, nodeRoom, roomsFrom } from './rooms.ts';
+import { accountsFrom, nodeOfRoom, nodeRoom, roomsFrom, seaRoomName } from './rooms.ts';
 
 test('without ?room= the game plays offline', () => {
   assert.equal(roomsFrom(null), null);
@@ -50,4 +50,11 @@ test('a node’s room name reads back as its node and difficulty, the old names 
   assert.deepEqual(nodeOfRoom('node-saltgrass-downs--rough'), { id: 'saltgrass-downs', seas: 'elite' });
   assert.deepEqual(nodeOfRoom('node-saltgrass-downs--storm'), { id: 'saltgrass-downs', seas: 'abyss' });
   assert.equal(nodeOfRoom('sea'), null);
+});
+
+test('a voyage sails in its difficulty’s sea room', () => {
+  assert.deepEqual(
+    (['normal', 'elite', 'abyss'] as const).map(seaRoomName),
+    ['sea', 'sea--elite', 'sea--abyss'],
+  );
 });

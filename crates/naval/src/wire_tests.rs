@@ -125,3 +125,10 @@ fn a_fight_with_more_captains_shows_each_other_one_with_her_faction_and_rank() {
     assert_eq!(numbers.len(), others_at + 4 + VESSEL_NUMBERS + 4 + 3);
     assert!(view_numbers(&Fight::among(&captains, &Open, 0.0), PLAYER, &[], None, &Open, 0.0).is_empty(), "no player");
 }
+
+#[test]
+fn a_hit_part_and_a_floating_piece_carry_one_number_each_wherever_they_are_sent() {
+    use crate::fight::{Part, Piece};
+    assert_eq!([Part::Hull, Part::Sail, Part::Rig].map(Part::number), [0, 1, 2]);
+    assert_eq!([Piece::Crate, Piece::Barrel, Piece::Chest].map(Piece::number), [0, 1, 2]);
+}

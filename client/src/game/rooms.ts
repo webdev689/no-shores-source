@@ -51,6 +51,11 @@ export function nodeRoom(node: { readonly id: string; readonly kind: string }, d
   return node.kind === 'social' || difficulty === 'normal' ? `node-${node.id}` : `node-${node.id}--${difficulty}`;
 }
 
+/** The sea's room a voyage at `difficulty` sails in: `sea` at Normal, else `sea--elite` or `sea--abyss`. */
+export function seaRoomName(difficulty: Difficulty): string {
+  return difficulty === 'normal' ? 'sea' : `sea--${difficulty}`;
+}
+
 /** Other names for Elite and Abyss, which a place the accounts kept may still carry. */
 const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm: 'abyss' };
 

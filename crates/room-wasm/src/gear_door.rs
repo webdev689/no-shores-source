@@ -128,7 +128,8 @@ pub fn own(player: PlayerId, bytes: &[u8]) -> bool {
     let Ok(owner) = std::str::from_utf8(bytes) else { return false };
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.own(player, owner),
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => sea.own(player, owner),
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }

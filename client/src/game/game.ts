@@ -1,6 +1,6 @@
 import type { Gpu } from '../gpu.ts';
 import { coastField } from '../heldmap/coastField.ts';
-import { HeldMap } from '../heldmap/heldMap.ts';
+import { type Difficulty, HeldMap } from '../heldmap/heldMap.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
@@ -23,7 +23,7 @@ import { type Landmass, openLandmass } from './landmass.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { startGearWindow } from './gearWindow.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
-import { nodeOfRoom } from './rooms.ts';
+import { nodeOfRoom, seaRoomName } from './rooms.ts';
 import { Sea } from './sea.ts';
 import { SeaAfter, deckKey, fightAsk } from './seaAfter.ts';
 import { seaPointer } from './seaPointer.ts';
@@ -183,12 +183,20 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     playing.sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
     mapOf();
-    // Online the server's sea room; playing alone, the same room in the page.
-    await playing.sea.enterRoom(
+    await enterSea(playing.heldMap?.difficulty ?? 'normal');
+  };
+
+  /** The sea room a voyage at `seas` sails in, joined: online the server's at that difficulty; playing alone, the same
+   *  room in the page. */
+  let seaSeas: Difficulty = 'normal';
+  const enterSea = async (seas: Difficulty) => {
+    seaSeas = seas;
+    const level = (['normal', 'elite', 'abyss'] as const).indexOf(seas);
+    await playing.sea?.enterRoom(
       rooms
-        ? async (snapshot) => RoomConnection.open(rooms('sea'), snapshot, undefined, await session)
+        ? async (snapshot) => RoomConnection.open(rooms(seaRoomName(seas)), snapshot, undefined, await session)
         : async (snapshot) =>
-            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities)),
+            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities), level),
     );
   };
 
@@ -276,9 +284,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       hudRoot,
     );
     // Lowered, the view goes back up; a destination set, the ship sets sail as it does.
+    // A voyage set at another difficulty sails in that difficulty's sea room.
     made.onLowered((sail) => {
       playing.sea?.fromHelm();
-      if (sail) playing.sea?.sailTo(sail);
+      if (!sail) return;
+      const sea = playing.sea;
+      if (!sea || made.difficulty === seaSeas) sea?.sailTo(sail);
+      else {
+        sea.leaveRoom();
+        void enterSea(made.difficulty).then(() => sea.sailTo(sail));
+      }
     });
     if (opened) made.setWaters(opened.map);
     playing.heldMap = made;

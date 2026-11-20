@@ -142,6 +142,11 @@ pub struct Harbour {
     /// Each player whose character changed since their gear was last sent them, and the tick it was last sent.
     pub changed: BTreeSet<PlayerId>,
     pub gear_sent: BTreeMap<PlayerId, u64>,
+    /// The account that keeps each player's character, kept after they leave: what floats for them waits for it, and
+    /// a ship they fought is told as theirs.
+    pub accounts: BTreeMap<PlayerId, String>,
+    /// Each captain's ship gone down in the last tick, for its hosts to take.
+    pub downs: Vec<crate::battle::ShipDown>,
 }
 
 impl Harbour {
@@ -160,7 +165,7 @@ impl Harbour {
 /// their ship went down (1) or they were beaten aboard her enemy (0).
 pub const WASHED_UP: f64 = 20.0;
 /// A player told that someone joined their fight: the code, the tick, the player's number (0 for a hostile ship),
-/// and a hostile ship's faction and rank (0 for a player).
+/// and a hostile ship's faction, rank and hull (`HullKind::number`; 0 for a player).
 pub const JOINED: f64 = 22.0;
 /// A player told where their ship lies once the accounts gave her back: the code, the tick, x and y, and her heading.
 pub const MOORED: f64 = 23.0;
