@@ -4,6 +4,7 @@ import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { NoticeStack } from '../plus/notices.ts';
+import { hudLayout } from '../combat/hudLayout.ts';
 import { SeaFightReadout, type SeaFightModel, wearSeaFight } from '../plus/seaFight.ts';
 import { type Hint, hintLine } from './gearDom.ts';
 import './hud.css';
@@ -308,6 +309,10 @@ export class Hud {
 
   /** Shows the sea fight's readout, or hides it for none. */
   seaFight(model: SeaFightModel | null): void {
+    // shortcut: a view too narrow for the bars beside the compass (under 908 px) runs them under it; stand the
+    // compass under them, as on foot, if the sea is played that narrow.
+    const { clientWidth, clientHeight } = this.fight.root;
+    if (model && clientWidth > 0 && clientHeight > 0) this.fight.lay(hudLayout(clientWidth, clientHeight));
     this.fight.update(model);
     // The ships' plates keep under the card, as under the compass.
     this.shipPlates.top = this.fight.under;

@@ -4,9 +4,8 @@
 // the TARGET CARD under the compass is the target's plate (the faction's emblem, its name, one hull bar in its rank's
 // colour, its class, distance and state as small words); the TALLY of the last volley; and the WARNING under the
 // card while a battery is run out at the player's ship. A readout, never a window: made once, updated each frame.
-import { EDGE, hudLayout, VITAL_SIZES } from '../combat/hudLayout.ts';
 import { barSheetCss, thinBarsCss } from './barSheet.ts';
-import { BAR_TONES } from './barFrame.ts';
+import { BAR_TONES, CORNER, VITAL_SIZES } from './barFrame.ts';
 import { PIECE_LEAST } from './barLoss.ts';
 import { UNDER_COMPASS } from './compass.ts';
 import { ROLES } from './kit.ts';
@@ -134,8 +133,8 @@ export class SeaFightReadout {
   private shownAt: number | null = null;
   /** The card's ship last shown, so its bar forgets another's losses. */
   private carded: string | null = null;
-  /** The view's size the bars were last laid for. */
-  private laidFor = '';
+  /** The layout the bars were last laid at. */
+  private laidAt = '';
 
   constructor(parent: HTMLElement) {
     this.root = made('div', 'seafight', parent);
@@ -177,15 +176,13 @@ export class SeaFightReadout {
    *  the compass; measured once a frame, as the readout is shown. */
   under = UNDER_COMPASS;
 
-  /** Lays the bars as the vitals on foot are laid for a view of the readout's size: their length, and their step. */
-  private lay(): void {
-    const { clientWidth: width, clientHeight: height } = this.root;
-    const size = `${width}x${height}`;
-    if (!(width > 0 && height > 0) || size === this.laidFor) return;
-    this.laidFor = size;
-    // shortcut: a view too narrow for the bars beside the compass (under 908 px) runs them under it; stand the
-    // compass under them, as on foot, if the sea is played that narrow.
-    const { length, wide, zoom } = hudLayout(width, height);
+  /** Lays the bars as the vitals on foot are laid (`combat/hudLayout.ts`): their `length`, and whether they stand at
+   *  the larger step or doubled. Unlaid, as in the World Editor, they stand at the first step, 160 px long. */
+  lay(layout: { readonly length: number; readonly wide: boolean; readonly zoom: number }): void {
+    const { length, wide, zoom } = layout;
+    const laid = `${length} ${wide} ${zoom}`;
+    if (laid === this.laidAt) return;
+    this.laidAt = laid;
     this.root.classList.toggle('wide', wide);
     this.root.classList.toggle('double', zoom === 2);
     for (const { node } of Object.values(this.bars)) node.style.width = `${length}px`;
@@ -203,7 +200,6 @@ export class SeaFightReadout {
     const { ship, card } = model;
     this.plate.hidden = ship === null;
     if (ship) {
-      this.lay();
       for (const kind of ['hull', 'sail', 'crew'] as const) {
         const { node, meter } = this.bars[kind];
         meter.set(ship[kind], seconds);
@@ -259,7 +255,7 @@ export class SeaFightReadout {
  *  sides filling from their foot, gold where laid, flashing when fresh. */
 export function seaFightCss(): string {
   const step = (scope: string, sizes: { readonly gap: number }) =>
-    `${scope} .vitals { left: ${EDGE.side}px; top: ${EDGE.top}px; gap: ${sizes.gap}px; }`;
+    `${scope} .vitals { left: ${CORNER.side}px; top: ${CORNER.top}px; gap: ${sizes.gap}px; }`;
   return `${barSheetCss('.seafight')}${thinBarsCss('.seafight', SHIP_BARS)}
 .seafight { position: absolute; inset: 0; pointer-events: none; color: ${TONES.word}; text-shadow: ${HALO}; }
 .seafight [hidden] { display: none !important; }

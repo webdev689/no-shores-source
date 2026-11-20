@@ -8,7 +8,8 @@ import { ROLES } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { poiseTrackOf, type PoiseState } from './foePlate.ts';
-import { barLength, VITAL_SIZES } from './hudLayout.ts';
+import { VITAL_SIZES } from '../plus/barFrame.ts';
+import { barLength } from './hudLayout.ts';
 import { element, LOW_SHARE, lowShare, Meter } from '../plus/meter.ts';
 import { ownBuffs, StatusRow } from './statusIcons.ts';
 

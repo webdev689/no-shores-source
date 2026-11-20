@@ -77,13 +77,13 @@ export interface ThinBar {
  *  and crew at sea. `bars` gives each bar's class its heights and its warning's frame; a bar's `width` is its length.
  *  The scope's `.wide` takes the larger step and its `.double` doubles the bars; a bar's `.low` flashes its frame. */
 export function thinBarsCss(scope: string, bars: Readonly<Record<string, ThinBar>>): string {
-  const frames = (at: string, step: 'base' | 'wide') =>
+  const frames = (scoped: string, step: 'base' | 'wide') =>
     Object.entries(bars).map(([name, bar]) => {
       const height = bar[step];
       const tip = tipOf(height);
-      return `${at} .vital.${name} { height: ${height}px; border-width: ${BAR_EDGE}px ${tip}px;
+      return `${scoped} .vital.${name} { height: ${height}px; border-width: ${BAR_EDGE}px ${tip}px;
   border-image: ${barFrameImage(height, BAR_TONES.stone)}; }
-${at} .vital.${name}::after { inset: -${BAR_EDGE}px -${tip}px; border-width: ${BAR_EDGE}px ${tip}px;
+${scoped} .vital.${name}::after { inset: -${BAR_EDGE}px -${tip}px; border-width: ${BAR_EDGE}px ${tip}px;
   border-image: ${barFrameImage(height, bar.alert)}; }`;
     });
   return `

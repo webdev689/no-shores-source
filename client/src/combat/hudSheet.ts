@@ -6,11 +6,10 @@ import { wearCompass } from '../plus/compass.ts';
 import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { barSheetCss, thinBarsCss } from '../plus/barSheet.ts';
 import { wearKit } from '../plus/kit.ts';
-import { BAR_EDGE, BAR_TONES, tipOf } from '../plus/barFrame.ts';
+import { BAR_EDGE, BAR_TONES, CORNER, tipOf, VITAL_SIZES } from '../plus/barFrame.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { OVERHEAD_SIZES } from './foePlate.ts';
-import { EDGE, VITAL_SIZES } from './hudLayout.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 import { statusCss } from './statusIcons.ts';
 import { weaponsCss } from './weapons.ts';
@@ -138,7 +137,7 @@ const VITAL_BARS = Object.fromEntries(
 function vitalStepCss(scope: string, wide: boolean): string {
   const sizes = wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
   return `${scope} .vital.poise .poise-word { left: calc(100% + ${tipOf(sizes.poise) + (wide ? 10 : 6)}px); }
-${scope} .vitals { left: ${EDGE.side}px; top: ${EDGE.top}px; gap: ${sizes.gap}px; }
+${scope} .vitals { left: ${CORNER.side}px; top: ${CORNER.top}px; gap: ${sizes.gap}px; }
 ${scope} .vitals .poise-word { font-size: ${wide ? 22 : 11}px; line-height: ${wide ? 22 : 12}px; }
 ${wide ? `${scope} .vitals .poise-word { top: -${BAR_EDGE}px; translate: none; }` : ''}
 ${scope} .vitals > .statuses .status { --size: ${wide ? 36 : 24}px; }`;

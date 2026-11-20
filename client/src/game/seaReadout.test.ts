@@ -41,14 +41,17 @@ test("the ship's plate is the vitals' thin bars: Hull over Sails over Crew, each
     readout.update(MODEL);
     const [panel] = findAll(root, 'vitals');
     assert.ok(!panel?.classList.contains('plus-window'), 'no window round them, as on foot');
-    assert.equal(panel?.ariaLabel, 'Your ship');
+    assert.equal((panel as unknown as Record<string, string>)['ariaLabel'], 'Your ship');
     const rows = findAll(root, 'vital');
     assert.deepEqual(
       rows.map((row) => row.className.split(' ')[1]),
       ['hull', 'sails', 'crew'],
     );
     assert.deepEqual(
-      rows.map((row) => [row.role, row.ariaLabel, row.ariaValueNow]),
+      rows.map((row) => {
+        const { role, ariaLabel, ariaValueNow } = row as unknown as Record<string, string>;
+        return [role, ariaLabel, ariaValueNow];
+      }),
       [
         ['meter', 'Hull', '20'],
         ['meter', 'Sails', '50'],
