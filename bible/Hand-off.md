@@ -179,25 +179,29 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
-- The first story mission, the [[Prologue]], on pull request #74 (stacked on #71, whose ships it uses), as the owner
-  set it ([[The Game Opens With a Story Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]].
-  The default page opens on it: a tap to start; the intro over four islands to Saltmere's title; the storm and the
-  Brig; creation at her helm; the sighting, the sea fight won by beating all three pirates, the calm, and Thule's
-  Frigate ramming her; waking in the wreck and fighting through it, a heap of debris opening as each wave falls, to
-  Thule and the fight that cannot be won; overboard, the deep, and the shore, where a stranger helps the player up and
-  walks them into Overlook. Its layers are the [[Cinema]] (camera rails, weather, lightning, birds, fire, sound made in
-  the browser) and [[Speech]] (voices, the dialogue box, barks and marks over heads), and the [[Dialogue]] rule with
-  its check. Tested offline: the full check; headless pictures of every beat at 960x540, each started on its own with
-  `?prologue=<beat>`, since a frame there takes seconds.
+- The first story mission, the [[Prologue]], on pull request #74, as the owner set it ([[The Game Opens With a Story
+  Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
+  asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
+  it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
+  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck
+  at night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger
+  walks the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in;
+  its fires are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky),
+  heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
+  theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
+  Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
+  the intro, each started on its own with `?prologue=<beat>`.
 
 ## Waiting on the owner
 
-- **#74, the prologue**, waits on #71 and then the owner's yes to merge, which deploys the page and the rooms. Every
-  call inside the beats is in [[The Prologue as Claude Shapes It]], the owner's to change: among them Thule's ship as
-  the Frigate (the Tithe Ram is not built), the sea fight won once all three are beaten, a heap per wave in the wreck,
-  and the crew's and the stranger's words.
-- Music in the story: `storyCue` plays nothing yet. #73's music director would take a story beat as a new cue; the
-  pull request that reaches `main` second wires it.
+- **#74, the prologue**, now merges into `main` (it was stacked on #71, still open, so it carries #71's ships too),
+  and waits on the owner's yes, which deploys the page and the rooms. Every call inside the beats is in
+  [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
+  sound.
+- **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
+  repository's Cloudflare token, as the ships workflow does. Its log's last line names the keys for
+  `content/prologue/wreck.json` and the level's hash, which must match the committed level's. Until the keys are
+  committed from a run, the wreck is drawn only where its files are served by hand.
 - fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
   session that finished the prologue, so the likeness is unchecked.
 - Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch
@@ -318,9 +322,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The prologue, not yet seen**: on a real GPU, and heard (its ambience, voices and their levels have never been
-  listened to); played through in one run in a browser (headless, each beat was started on its own); the wreck's frame
-  time, now that its decks are 760 blocks.
+- **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
+  through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
+  with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
+  whether its foes can be seen well enough away from the fires.
 - **The waters, next** ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): the owner asked to hear more and was
   shown Claude's proposal, not yet decided: a water is a named stretch of sea with an owner and a level band; its band
   follows the islands' (`crates/gear/src/world.rs` ISLANDS), a ship's level from her water and her hull by rank
@@ -329,7 +334,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   contested waters hold both fighting each other; each water keeps its own ships on their own courses, sighted
   kilometres out, in place of today's rolls near the player; the held map tints each water with its name and level.
   Waiting on the owner: whether they draw the waters in the World Editor (Claude's pick) or they are generated from
-  the islands. The prologue session (`claude/loving-darwin-sw4eae`) works in the sea room and draws ships: coordinate.
+  the islands.
 - **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate have
   the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call it
   there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her
@@ -359,8 +364,7 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **The music and the ambience (#73)**, tested offline: every piece rendered and measured, and the built game headless
   in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the green score in
   as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both running. Left
-  open: the prologue's `storyCue(name)` (branch `claude/loving-darwin-sw4eae`) routed to the director as a new cue kind,
-  by whichever reaches `main` second. #76 gives the night ambiences their time of day, plays the four sea songs while
+  open, now done on #74: the story's songs and its hearing in the director. #76 gives the night ambiences their time of day, plays the four sea songs while
   sailing, and sets each recording at the loudness of the synthesised sound it replaces.
 - **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
   its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
