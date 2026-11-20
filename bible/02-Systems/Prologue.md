@@ -121,26 +121,31 @@ still stands in sight, held at the water or at the town's middle. Leaving Overlo
 part at once, her words with it. The game is the player's from there.
 
 **The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
-first arrival, Elder Maren Hale of the Lamplighters comes to the player from the lane crossing nearest them, at
-1.5 m/s, and stops 1.8 m before them, facing them. She leads them to the plaza's counters, the nearest stop first each
-time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the Stormcallers, the Veiled
-and her own Lamplighters, then walks home. She keeps to the townsfolk's lanes and the counters' fronts, round her
-counter's end clear of the arcade's columns, so she walks through nothing (`welcome/lanes.ts`). Each stop is where
-customers stand before its counter (3.1 m out), a pair's the middle of the two. At each she waits until the player is
-within 6 m, then says its lines in the dialogue box, the keepers she names marked with an alert over their heads and
-some of them answering her; the HUD says "Follow" over her name past 6 m and clears it inside 5 m. The player walks
-freely the whole time: it is no cutscene. What she says (`content/story/welcome.json`) is the state of the world as
-Overlook's people know it and what the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook paying
-the Tithe nothing (the owner's "The Grey Tithe Take a Tenth, and Overlook Does Not Pay", on pull request #77), three
-ports standing and ruins no one agrees about (the owner's three port cities, on pull request #75), and the town's
-memory (three people name four builders of the beacon). It is due from the story's end until its last scene is said:
-the browser keeps the scenes said (`overlook.welcome.said`), so a reload or a leaving takes it up from there on the
-next arrival in Overlook's social space, without the greeting; leaving before the stranger has gone forgoes it.
-Opening the Lamplighters' counter while she walks ends the welcome there, and a player more than 40 m from her for a
-minute ends the walk: she goes home, and it stays due. While the menu or a keeper's screen is open she stands idle and
-no stop begins; while she walks her counter offers only the welcome's end; at her own counter she is the one speaking,
-and no mark stands over its place. When it ends she is her counter's keeper again, never two of her at once. Under `npm run dev`, and on a built page
-served on `localhost`, `?welcome=1` plays it at once in the social space.
+first arrival, Elder Maren Hale of the Lamplighters starts at the lane crossing nearest the player that is at least 15 m
+from them, and out of their view where one is, and comes to them by the lanes at 1.5 m/s. She stops 1.8 m before a
+player on the lanes, facing them; for a player off them, she stops at the lane point nearest them and greets them there
+once they are within 6 m, waiting until then with "Follow" shown. She leads them to the plaza's counters, the nearest
+stop first each time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the
+Stormcallers, the Veiled and her own Lamplighters, then walks home. She keeps to the townsfolk's lanes, the counters'
+fronts and the parapet's lookers' line, and goes round her counter's end clear of the arcade's columns, so she walks
+through no solid and never through Shape (`welcome/lanes.ts`; the lanes are in `content/world/social.json`). Each stop
+is where customers stand before its counter (3.1 m out), a pair's the middle of the two. At each she waits until the
+player is within 6 m, then says its lines in the dialogue box, the keepers she names marked with an alert over their
+heads and some of them answering her; the HUD says "Follow" over her name past 6 m and clears it inside 5 m. The player
+walks freely the whole time: it is no cutscene. What she says (`content/story/welcome.json`) is the state of the world
+as Overlook's people know it and what the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook
+paying the Tithe nothing (the owner's "The Grey Tithe Take a Tenth, and Overlook Does Not Pay", on pull request #77),
+three ports standing and ruins no one agrees about (the owner's three port cities, on pull request #75), and the town's
+memory (three people name four builders of the beacon). It is due from the story's end until its last scene is said: the
+browser keeps the scenes said (`overlook.welcome.said`), so a reload or a leaving takes it up from there on the next
+arrival in Overlook's social space, without the greeting; leaving before the stranger has gone forgoes it. A browser
+that has played the story and holds no mark of the welcome is welcomed on its next arrival there. Opening the
+Lamplighters' counter while she walks ends the welcome there, and a player more than 40 m from her for a minute ends the
+walk: she goes home, and it stays due. While the menu or a keeper's screen is open she stands idle and no stop begins
+and the Follow prompt is hidden; opening her counter while she walks ends the welcome there and opens the Lamplighters'
+whole screen; at her own counter she is the one speaking, and no mark stands over its place. When it ends she is her
+counter's keeper again, never two of her at once. Under `npm run dev`, and on a built page served on `localhost`,
+`?welcome=1` plays it at once in the social space.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the
 swell. The sea is sounded every 150 m across the 3 km round it, where every ship of the story sails, and the place is

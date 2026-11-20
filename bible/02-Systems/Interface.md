@@ -438,38 +438,40 @@ Every keeper in the social space who deals with a player, and Shape, keeps a scr
 window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
 serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
-- **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and
-  thanks in lines of his own: what it keeps on the left and what the player carries on the right, each in
-  weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
-  right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row
-  (as many as fit, in the keepers' column), an empty place a dark Vestige, as the inventory's.
-- **A keeper's screen** (`npcPage`), one for every counter, after the owner's Destiny 1 references: the
-  keeper large at the left, from the forge in their own dress (`keepers.ts`), idle and facing the viewer, grown by
-  whole pixels and breathing between the idle's two frames (still with less motion asked for), over a ground lit in
-  their colour (a faction's in its Art's element, the rest brass), with their mark and their title in capitals above
-  them. At the right their words, the currencies they deal in (Aurem; Shapes at Shape's; at a faction's its rank,
-  its meter to the next and the materials an Art's rise takes), the band they speak in, then their wares in rows
-  under engraved headings, each a gear tile held to buy, its price under it, red with "Not enough" when short, a card
-  on hover or focus; a ware that cannot be asked for says why under its price (a level not reached, a pack full),
-  and "Not enough" is only for one the room would sell. At the foot "Stock refresh" and the time to the next
-  midnight, UTC (0:00:00 at midnight), for the smiths, the Tailor and the Tack, or "Leaves in" and the time left for
-  Shape, by the world's clock to Sunday 21:00 UTC. The footer: Hold (Buy; Open at the Mage's), I (Open
-  Character), Esc (Dismiss). Arrow keys move among the tiles, Enter presses, Escape steps back, and the focus goes back where it
-  came from.
-- **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown
-  after. The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate
-  with how many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS,
-  the day's six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
-- **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen
-  scrolls to its armour: REPUTATION (the rank, the meter, what the next ranks keep, and each package waiting held to
-  collect), PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a Legendary cloak
-  worn at any level, sold only to the pledged and not while nine cloaks are carried; kept says so), ART (the faction's
-  Art: its level as five pips, its bar, and when the bar is full a Rise press with the rise's price that opens a choice
-  of the fragments not owned; with all six owned it rises at once, "No fragment left to choose"), FRAGMENTS (the Art's
-  six, owned lit, the rest dim with their price, sold from the first rank), then ARMOUR and WEAPONS (the faction's four
-  armour pieces and two weapons as the room makes them, each card naming the colour it is drawn in; dim with "From
-  rank 2" or "From rank 3" until the rank, then "From level 20" below the level they are made at, "Its slot carries
-  nine" while its slot is full). The rows scroll under a thin bar of the menu's.
+- **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and thanks
+  in lines of his own: what it keeps on the left and what the player carries on the right, each in weapons, armour and
+  Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a right-click shows its
+  page. Each side lays its shelves and Vestiges as many to a row as it holds (six across at 1920x1080, five at
+  1500x900), an empty place a dark Vestige, as the inventory's; the arrows move among its cells as among a keeper's
+  tiles.
+- **A keeper's screen** (`npcPage`), one for every counter, after the owner's Destiny 1 references: the keeper large at
+  the left, from the forge in their own dress (`keepers.ts`), idle and facing the viewer, grown by whole pixels and
+  breathing between the idle's two frames (still with less motion asked for), over a ground lit in their colour (a
+  faction's in its Art's element, the rest brass), with their mark and their title in capitals above them. At the right
+  their words, the currencies they deal in (Aurem; Shapes at Shape's; at a faction's its rank, its meter to the next and
+  the materials an Art's rise takes), the band they speak in, then their wares in rows under engraved headings, each a
+  gear tile held to buy, its price under it, red with "Not enough" when short, a card on hover or focus; a ware that
+  cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
+  room would sell. At the foot "Stock refresh" and the time to the next midnight, UTC (0:00:00 at midnight), for the
+  smiths, the Tailor and the Tack, or "Leaves in" and the time left for Shape, by the world's clock to Sunday 21:00 UTC.
+  The footer: Hold (Buy; Open at the Mage's), I (Open Character), Esc (Dismiss); while a fragment is chosen it says Esc
+  (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter presses, Escape steps
+  back, and the focus goes back where it came from.
+- **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
+  The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
+  many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
+  six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
+- **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen scrolls
+  to its armour: REPUTATION (the rank, the meter, what the next ranks keep, and each package waiting held to collect),
+  PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a Legendary cloak worn at any
+  level, sold only to the pledged and not while nine cloaks are carried; kept says so), ART (the faction's Art: its
+  level as five pips, its bar, and when the bar is full a Rise press with the rise's price that opens a choice of the
+  fragments not owned, each said as it works at the level the rise makes; with all six owned it rises at once, "No
+  fragment left to choose"), FRAGMENTS (the Art's six, owned lit, the rest with their price, dim only before the first
+  rank, from which they are sold), then ARMOUR and WEAPONS (the faction's four armour pieces and two weapons as the room
+  makes them, each card naming the colour it is drawn in; dim with "From rank 2" or "From rank 3" until the rank, then
+  "From level 20" below the level they are made at, "Its slot carries nine" while its slot is full). The rows scroll
+  under a thin bar of the menu's.
 - **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape is away. He comes on
   Fridays."
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
