@@ -68,7 +68,7 @@ test("a scene that cannot be played is thrown from its beat's next frame, never 
   }
 });
 
-test('the fight takes each ship up under the sail and way she was sighted with, and the calm draws her rig on', async () => {
+test('the fight takes each ship up under the sail and way it was sighted with, and the calm draws its rig on', async () => {
   const { land, begun } = door(() => viewOf(['struck', 'struck', 'sinking']));
   const { story, run } = storied({ land });
   const sighted = new Sighted(story);
@@ -79,16 +79,16 @@ test('the fight takes each ship up under the sail and way she was sighted with, 
   assert.ok(begun.floats && (begun.floats[3] ?? 0) > 0 && begun.floats[7] === 2, `${begun.floats?.join()}`);
   assert.ok(begun.captains?.every((captain) => captain.way === INBOUND_WAY_M_S));
   const opening = frames[0]?.frame.ships ?? [];
-  rigs.forEach((rig, index) => assert.equal(opening[index]?.rig, rig, `ship ${index} keeps her rig`));
+  rigs.forEach((rig, index) => assert.equal(opening[index]?.rig, rig, `ship ${index} keeps its rig`));
   assert.equal(battle.done, true);
   const calm = new Calm(story, FROM, battle.wrecks ?? []);
   const after = run(calm, STEP_S, 3)[0]?.frame.ships ?? [];
   const last = frames.at(-1)?.frame.ships ?? [];
   assert.equal(after.length, 4);
-  after.forEach((ship, index) => assert.equal(ship.rig, last[index]?.rig, `ship ${index} sails on with her rig`));
+  after.forEach((ship, index) => assert.equal(ship.rig, last[index]?.rig, `ship ${index} sails on with its rig`));
 });
 
-test('each wreck goes on from the pose the fight left her in, into the calm and on into the ram', async () => {
+test('each wreck goes on from the pose the fight left it in, into the calm and on into the ram', async () => {
   const { land } = door(() => viewOf(['struck', 'struck', 'sinking']));
   const { story, run } = storied({ land });
   const battle = new Battle(story, inboundAt(story.brig));
@@ -101,17 +101,17 @@ test('each wreck goes on from the pose the fight left her in, into the calm and 
     assert.ok(was && now && Math.abs(was.z - now.z) < 0.05, `wreck ${index}: ${was?.z} then ${now?.z}`);
     assert.ok(Math.abs(was.roll - now.roll) < 0.01 && Math.abs(was.pitch - now.pitch) < 0.01, `wreck ${index}`);
   }
-  assert.ok((first[3]?.place.roll ?? 0) < 0, 'she lists to port, as the rules list her');
+  assert.ok((first[3]?.place.roll ?? 0) < 0, 'it lists to port, as the rules list it');
   const calmLast = calmFrames.at(-1)?.frame.ships ?? [];
   const ramFirst = run(new Ram(story, calm.wrecks), STEP_S, 5)[0]?.frame.ships ?? [];
   assert.equal(ramFirst.length, 5, 'the Brig, the Frigate and the three wrecks');
   for (const index of [1, 2, 3]) {
     const [was, now] = [calmLast[index]?.place, ramFirst[index + 1]?.place];
-    assert.ok(was && now && Math.abs(was.z - now.z) < 0.05 && was.x === now.x, `wreck ${index} stays where she lies`);
+    assert.ok(was && now && Math.abs(was.z - now.z) < 0.05 && was.x === now.x, `wreck ${index} stays where it lies`);
   }
 });
 
-test('a wreck going down settles on as the rules sink her, and is gone once under; a struck one lies as she was', () => {
+test('a wreck going down settles on as the rules sink it, and is gone once under; a struck one lies as it was', () => {
   const [under, trim, list] = GOING.sunk_founder;
   const going: Wreck = {
     ship: { ...lying('going', 0, 0, 0), founder: [under * 0.25, trim * 0.5, list * 0.5] },

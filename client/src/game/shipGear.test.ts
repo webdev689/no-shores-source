@@ -92,7 +92,7 @@ const state = (fields: Partial<GearState>): GearState => ({
   vestiges: [],
   drops: [],
   spent: [],
-  atReader: false,
+  atMage: false,
   answer: 0,
   answered: 0,
   nodes: [],

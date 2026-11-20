@@ -159,7 +159,7 @@ test('each strike thunders once, as its sound arrives; a strike past hearing nev
   assert.equal(thunder?.sound, 'thunder.roll');
 });
 
-test("the player's own steps are heard on her deck as they walk it, a step a stride, none in the air", (context) => {
+test("the player's own steps are heard on its deck as they walk it, a step a stride, none in the air", (context) => {
   const stepped = mock.method(ScapePlayer.prototype, 'footstep', () => undefined);
   context.after(() => stepped.mock.restore());
   const fake = fakeAudio();

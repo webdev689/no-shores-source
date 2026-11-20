@@ -168,5 +168,6 @@ Its rank, by the lowest level of its water's band:
   colours struck, boarders away, what floats gathered and washing up, each standing 6 s at the top right; the status
   line keeps the state alone.
 - **A captain is "it"**, as its ship is, since a captain is the ship's mind in the rules.
-- **Ship down**: one word to the room for each ship sunk or taken in a fight with players, naming its water, holder,
-  rank, level and players. Fights among captains alone give none.
+- **The sea's clock**: the sea holds the Unix minute its host sets (`Sea::minute`), as a room on land does; the
+  bounties count the ships sunk or taken in the sea room itself once the activities branch lands, so the sea tells
+  its hosts no word of a ship gone down.

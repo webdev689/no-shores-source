@@ -39,7 +39,7 @@ const state = (fields: Partial<GearState>): GearState => ({
   vestiges: [],
   drops: [],
   spent: [],
-  atReader: false,
+  atMage: false,
   answer: 0,
   answered: 0,
   nodes: [],
@@ -98,16 +98,16 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
       ['Hold to feed a Fruit of Dagon', 'button'],
     ],
   );
-  const carried = itemDetailOf({ ...legendary, at: 0 }, state({ atReader: true }));
+  const carried = itemDetailOf({ ...legendary, at: 0 }, state({ atMage: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),
     ['Equip', 'Hold to dismantle'],
   );
   assert.equal(carried.presses.at(-1)?.role, 'warn');
   // At the vault's counter, it may be put in; a vaulted one, taken out.
-  const atVault = itemDetailOf({ ...legendary, at: 0 }, state({ atReader: true }), true);
+  const atVault = itemDetailOf({ ...legendary, at: 0 }, state({ atMage: true }), true);
   assert.ok(atVault.presses.some((press) => press.label === 'Put in the vault'));
-  const vaulted = itemDetailOf({ ...legendary, at: 1 }, state({ atReader: true }), true);
+  const vaulted = itemDetailOf({ ...legendary, at: 1 }, state({ atMage: true }), true);
   assert.deepEqual(vaulted.presses[0]?.ask, { kind: ASKS.withdraw, item: legendary.id });
 });
 
@@ -122,24 +122,25 @@ test('each vendor’s stall shows its six wares of the day, bought for their pri
     ...six({ kind: 2, rarity: 2, attack: 120 }, { kind: 12, rarity: 1 }),
     ...six({ kind: 25, rarity: 1, bucket: 8, defense: 40 }, { kind: 24, rarity: 0, bucket: 7 }),
   ];
-  const [quartermaster, armsmith, shipwright] = vendorsOf(state({ wares, aurem: 1_000 }));
-  assert.equal(quartermaster?.name, 'The Quartermaster');
+  const [armorsmith, weaponsmith, shipwright] = vendorsOf(state({ wares, aurem: 1_000, day: 20_400 }));
+  assert.equal(armorsmith?.name, 'The Armorsmith');
   assert.deepEqual(
-    quartermaster?.wares.slice(0, 2).map((ware) => [ware.kind, ware.affordable]),
+    armorsmith?.wares.slice(0, 2).map((ware) => [ware.kind, ware.affordable]),
     [
       ['Rare Head', false],
       ['Magic Torso', true],
     ],
   );
-  assert.equal(quartermaster?.wares.length, 6);
-  assert.deepEqual(armsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0 });
-  assert.equal(armsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
+  assert.equal(armorsmith?.wares.length, 6);
+  // Asked by the day it was shown, so the room refuses it once the day has turned.
+  assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0, item: 20_400 });
+  assert.equal(weaponsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
   assert.equal(shipwright?.name, 'The Shipwright');
   assert.deepEqual(
     shipwright?.wares.slice(0, 2).map((ware) => [ware.tile.name, ware.kind, ware.press.ask]),
     [
-      ['Tarred Hull', 'Magic Hull', { kind: ASKS.vend, column: 2, node: 0 }],
-      ['Guns', 'Normal Guns', { kind: ASKS.vend, column: 2, node: 1 }],
+      ['Tarred Hull', 'Magic Hull', { kind: ASKS.vend, column: 2, node: 0, item: 20_400 }],
+      ['Guns', 'Normal Guns', { kind: ASKS.vend, column: 2, node: 1, item: 20_400 }],
     ],
   );
 });

@@ -36,7 +36,10 @@ pub struct NodeFile {
     pub boxes: Vec<city::collision::Box2>,
     /// In a social space, the counters that answer a player's gear, which the room serves only at each.
     pub counters: Vec<Counter>,
-    /// Whether its room takes no player until a pass is done on it ([`lock`]).
+    /// In a social space Shape visits, the places he may stand, one a week.
+    pub shape_spots: Vec<[f64; 2]>,
+    /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
+    /// space still locked (`city::social_open`).
     pub locked: bool,
 }
 
@@ -96,11 +99,10 @@ pub fn bounds_of(ring: &[[f64; 2]]) -> [f64; 4] {
     [west - MARGIN_M, north - MARGIN_M, east + MARGIN_M, south + MARGIN_M]
 }
 
-/// Whether a station answers a player's gear: the Reader opens Vestiges, the vaults keep gear, the Quartermaster and
-/// the Armsmith sell it, and the Tailor sells emblems.
+/// Whether a station answers a player's gear: every one but the chandler's, who makes the plaza busy; the
+/// Harbourmaster's counter sells the Shipwright's modules.
 fn answers_gear(kind: StationKind) -> bool {
-    use StationKind::{Armsmith, Quartermaster, Reader, Tailor, Vault};
-    matches!(kind, Reader | Vault | Quartermaster | Armsmith | Tailor)
+    kind != StationKind::Chandler
 }
 
 /// What a continent's layouts are built with: the RMB blocks' contents and the forged models' boxes, and every
@@ -133,7 +135,21 @@ pub fn nodes_of(
         let mut boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
         boxes.extend(layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
         let continent = continent.id.clone();
-        NodeFile { id, kind, name, continent, ring, spawns, bounds, ground, boxes, counters: Vec::new(), locked: false }
+        let (counters, shape_spots) = (Vec::new(), Vec::new());
+        NodeFile {
+            id,
+            kind,
+            name,
+            continent,
+            ring,
+            spawns,
+            bounds,
+            ground,
+            boxes,
+            counters,
+            shape_spots,
+            locked: false,
+        }
     };
     let whole =
         |points: &[world::geometry::Point]| points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
@@ -148,8 +164,11 @@ pub fn nodes_of(
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
         let counters = social.stations.iter().filter(|station| answers_gear(station.kind));
+        let visited = city::shape_visits(&plan.id);
         NodeFile {
             counters: counters.map(|station| Counter { kind: station.kind, at: station.counter }).collect(),
+            shape_spots: if visited { social.visitor_spots.clone() } else { Vec::new() },
+            locked: !city::social_open(&plan.id),
             ..cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
         }
     });
@@ -157,10 +176,11 @@ pub fn nodes_of(
 }
 
 /// Marks each node locked or not by the open list, `open` the ids in `content/world/open.json`
-/// ([`land::sites::locked`]).
+/// ([`land::sites::locked`]); a social space keeps the lock its city gave it (`city::social_open`).
 pub fn lock(nodes: &mut [NodeFile], open: &[String]) {
     for node in nodes {
-        node.locked = land::sites::locked(node.kind, &node.id, open);
+        let social = node.kind == NodeKind::Social && node.locked;
+        node.locked = social || land::sites::locked(node.kind, &node.id, open);
     }
 }
 
@@ -267,5 +287,15 @@ mod tests {
         assert!(serde_json::to_string(&nodes[0]).unwrap().contains(r#""locked":true"#));
         lock(&mut nodes, &["glade".to_owned()]);
         assert!(!nodes[0].locked);
+    }
+
+    #[test]
+    fn a_social_space_keeps_its_city_s_lock_whatever_the_open_list_says() {
+        let (node, _) = glade();
+        let social =
+            |locked| NodeFile { id: "harbour-social".to_owned(), kind: NodeKind::Social, locked, ..node.clone() };
+        let mut nodes = vec![social(true), social(false)];
+        lock(&mut nodes, &["harbour-social".to_owned()]);
+        assert_eq!([nodes[0].locked, nodes[1].locked], [true, false], "a city's own word on its social space");
     }
 }

@@ -1,6 +1,6 @@
 //! Ammunition for the Ranged loadout: each kind's capacity, kept on the character as a share of the full one so a
 //! different Ranged weapon worn keeps the same share; a shot spends one; an Ammo box taken gives back a quarter, an Ammo
-//! crate used fills it. Crates are carried five at most and sold by the Quartermaster. A kill drops a box by the foe's
+//! crate used fills it. Crates are carried five at most and sold by the Weaponsmith. A kill drops a box by the foe's
 //! rank, and a Miniboss or a Boss a crate.
 
 use crate::asks::{Done, Here, Refusal};
@@ -11,7 +11,7 @@ use crate::kinds::{Kind, Slot};
 pub const AMMO_FULL: u16 = 720;
 /// What an Ammo box gives back: a quarter of the capacity, at least one shot of any kind.
 pub const BOX_SHARE: u16 = AMMO_FULL / 4;
-/// The most Ammo crates carried, and what the Quartermaster asks for one, in Aurem.
+/// The most Ammo crates carried, and what the Weaponsmith asks for one, in Aurem.
 pub const CRATES_MOST: u16 = 5;
 pub const CRATE_PRICE: u32 = 250;
 
@@ -107,7 +107,7 @@ impl Character {
         Ok(None)
     }
 
-    /// An Ammo crate bought from the Quartermaster: at the counter only.
+    /// An Ammo crate bought from the Weaponsmith: at the counter only.
     pub(crate) fn buy_crate(&mut self, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);

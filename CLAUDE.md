@@ -7,8 +7,7 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 ## Musts
 
 - **The owner sets the vision.** Never invent game design. Record a decision only once the owner makes it, in the
-  owner's words (`bible/04-Procedures/Recording a Decision.md`). When a choice is the owner's, ask. A change that
-  builds or records a decision gets a fidelity review before its pull request; CI holds a decision's pull request to it.
+  owner's words (`bible/04-Procedures/Recording a Decision.md`). When a choice is the owner's, ask.
 - **More organisation, less bloat.** Whatever comes from DFO Online comes over better organised and smaller.
 - **Done means `cargo xtask check` passes.** Run it before every push (after `npm ci` once). CI runs the same.
 - **Ask before merging or deploying.** A pull request for each change; merge into `main`, deploy or release only
@@ -25,10 +24,11 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 2. Read `bible/03-Code/Toolkit.md` (how to use each tool and worker) and `bible/Hand-off.md`.
 3. Run `graphify update .`, then task-observer's scan:
    `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh ${SHARED_DIR:-$HOME/toolkit-data}/task-observer`.
-4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `bash tools/claude-toolkit/toolkit-data.sh save`
-   (the observation log, to the branch `toolkit-data`), then `headroom learn --project . --apply` (say so if Gemini is
-   unreachable, or if it finds no data because the session started in another folder; never apply it to that folder's
-   repository), then rewrite `bible/Hand-off.md`.
+4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `headroom learn --project . --apply` (say so if
+   Gemini is unreachable, or if it finds no data because the session started in another folder; never apply it to
+   that folder's repository), then rewrite `bible/Hand-off.md`, and last
+   `bash tools/claude-toolkit/toolkit-data.sh save` (the observation log, to the branch `toolkit-data`), so nothing
+   logged after it is lost.
 
 When a tool is skipped, clashes or misfires: fix the setup, log it with task-observer, and propose the rule change.
 Rules for keys, security and deploys need the owner's named approval.

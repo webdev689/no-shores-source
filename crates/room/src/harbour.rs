@@ -142,11 +142,8 @@ pub struct Harbour {
     /// Each player whose character changed since their gear was last sent them, and the tick it was last sent.
     pub changed: BTreeSet<PlayerId>,
     pub gear_sent: BTreeMap<PlayerId, u64>,
-    /// The account that keeps each player's character, kept after they leave: what floats for them waits for it, and
-    /// a ship they fought is told as theirs.
+    /// The account that keeps each player's character, kept after they leave: what floats for them waits for it.
     pub accounts: BTreeMap<PlayerId, String>,
-    /// Each captain's ship gone down in the last tick, for its hosts to take.
-    pub downs: Vec<crate::battle::ShipDown>,
 }
 
 impl Harbour {

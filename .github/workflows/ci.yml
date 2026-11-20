@@ -33,11 +33,15 @@ jobs:
       - name: cargo xtask check
         run: cargo xtask check
 
-  # Publishes to GitHub Pages from main, once this same commit has passed the check. A called workflow's jobs get
-  # at most what its caller grants; inside, only the deploy job takes the write and the identity token.
+  # Publishes to GitHub Pages from main, once this same commit has passed the check and the rooms have deployed or
+  # had nothing to, so no page is published on a protocol no room speaks. A called workflow's jobs get at most what
+  # its caller grants; inside, only the deploy job takes the write and the identity token.
   pages:
-    needs: check
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: [check, rooms]
+    if: >-
+      !cancelled() && needs.check.result == 'success' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (needs.rooms.outputs.deploy == 'no' || needs.rooms.outputs.deployed == 'yes')
     permissions:
       contents: read
       pages: write

@@ -91,18 +91,6 @@ pub struct Sank {
     pub wind: [f64; 2],
 }
 
-/// A captain's ship gone down, sunk or taken (a won ship is scuttled), as the sea tells its hosts once for each: the
-/// water it went down in (its continent's index in the layout; none off every water) and its holder, the ship's rank
-/// and level, and the accounts of the players who fought it that the room keeps.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ShipDown {
-    pub water: Option<usize>,
-    pub holder: world::waters::Holder,
-    pub rank: naval::ranks::Rank,
-    pub level: u8,
-    pub players: Vec<String>,
-}
-
 /// A fighting player's fight as their browser is sent it: the naval crate's numbers, its first captain's commission,
 /// and whether a boarding they asked now would be taken (`Fights::alongside`).
 #[derive(Debug, Clone, PartialEq)]

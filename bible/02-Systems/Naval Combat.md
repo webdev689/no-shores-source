@@ -303,10 +303,9 @@ Pass]]) with Claude's numbers:
   fight, and the struck ship is scuttled with no one aboard; a captain going down or struck in a fight its last player left (gone,
   or gone down) goes down all the same, laying what floats for those who fought it. The page says washing up one way, in its notice and on the
   veil alike: "Your ship went down: you washed up at Sunspire; your ship lies at its roadstead."
-- **A ship gone down.** Each captain's ship sunk or taken (a won ship is scuttled, so it counts once) is kept once for
-  the sea's hosts, for the bounties: `ShipDown` (`battle.rs`), the water it went down in and its holder, its rank and
-  level, and the accounts the room keeps of the players who fought it (`Sea::take_ship_downs`, the last tick's). No
-  host takes them yet: the bounties are still to come.
+- **The sea's minute.** The sea holds the Unix minute its host sets (`Sea::minute`, through `set_minute` as a room on
+  land takes it). The bounties count the captains' ships sunk or taken in the sea room itself, once the activities
+  branch lands; until then a ship gone down is told to no host.
 - **Kept damage.** A player's ship's hull, canvas and men are kept as shares of whole, with their berth at sea and in
   their character (`ship`, in ten-thousandths), across sessions, until repaired; it starts every fight with them, and
   its voyage sails at its pace times the canvas it keeps (never under half), in the room and the page alike. Where

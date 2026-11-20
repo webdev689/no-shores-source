@@ -29,6 +29,7 @@ import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
 import type { IsleHeld } from './isles.ts';
 import { FootView } from './footView.ts';
 import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
+import { afterStoryOn } from './welcome/afterStory.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { askedArrival } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
@@ -92,7 +93,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     flow: boot.flow,
     foot: null,
     sea: null,
-    epilogue: null,
+    after: afterStoryOn(hudRoot, forge, (x, y) => scene.groundAt(x, y)),
     through: null,
     helmMap: new HelmMap({
       ...{ gpu, store, root: hudRoot, outlines: continents.map((each) => each.outline) },
@@ -190,7 +191,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
   const leaveHere = () => {
     canvas.classList.remove('dead');
-    playing.epilogue?.leave();
+    playing.after.leave();
   };
 
   const goFoot = async (node: NodeInfo, facing: number, seas = playing.helmMap.difficulty) => {

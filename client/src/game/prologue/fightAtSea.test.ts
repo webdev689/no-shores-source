@@ -7,22 +7,22 @@ import { ambushersAt, happenedOf, StoryFight } from './fightAtSea.ts';
 
 const near = (value: number, to: number): boolean => Math.abs(value - to) < 1e-6;
 
-test('each ambusher is put to sea on her bearing off the bow, at her distance, heading for the player unless told', () => {
+test('each ambusher is put to sea on its bearing off the bow, at its distance, heading for the player unless told', () => {
   const ship = { x: 1000, y: 2000, heading: Math.PI / 2 };
   const [ahead, astern, toPort] = ambushersAt(ship, [
     { bearing: 0, distanceM: 400, faction: 2, rank: 1 },
     { bearing: Math.PI, distanceM: 300, faction: 1, rank: 3, heading: 1 },
     { bearing: -Math.PI / 2, distanceM: 500, faction: 2, rank: 2 },
   ]);
-  // Heading east, her bow points +x; her port side is north (-y).
+  // Heading east, its bow points +x; its port side is north (-y).
   assert.ok(ahead && near(ahead.x, 1400) && near(ahead.y, 2000), JSON.stringify(ahead));
-  assert.ok(near(ahead.heading, (3 * Math.PI) / 2), 'ahead of her, she heads west for her');
+  assert.ok(near(ahead.heading, (3 * Math.PI) / 2), 'ahead of the ship, it heads west for it');
   assert.equal(ahead.faction, 2);
   assert.ok(astern && near(astern.x, 700) && near(astern.y, 2000) && astern.heading === 1 && astern.rank === 3);
   assert.ok(toPort && near(toPort.x, 1000) && near(toPort.y, 1500) && near(toPort.heading, Math.PI));
 });
 
-test('the story hears a ball strike her, hers strike a captain, and a captain go down and sink, and nothing else', () => {
+test('the story hears a ball strike it, its own strike a captain, and a captain go down and sink, and nothing else', () => {
   const point = [0, 0, 0] as const;
   const events: FightEvent[] = [
     { kind: 'muzzle', ship: 1, point, launch: point },
@@ -53,7 +53,7 @@ const vessel: FightVessel = {
 };
 const captainAt = (x: number, state: FightVessel['state']): FightCaptain => ({
   ...vessel,
-  // The rules' own pose rides their own swell: the drawing takes her settling from `founder` alone.
+  // The rules' own pose rides their own swell: the drawing takes its settling from `founder` alone.
   pose: [state === 'sinking' ? -7 : 0, 0, 0.1, 0],
   founder: state === 'sinking' ? [3, 0, 0.4] : [0, 0, 0],
   ship: [x, 5600, 2, 0, 0, 0, 0, 2],
@@ -137,7 +137,7 @@ test('the story fight begins on the land door with its captains, draws them, hea
     if (step === 1) wind = [3, 1];
     frame = fight.frame({ ...input, time: step * 0.1 });
     heard.push(...frame.happened);
-    // A captain going down settles and lists as her hurts have her, on the story's swell.
+    // A captain going down settles and lists as its hurts have it, on the story's swell.
     if (frame.happened.includes('sinking')) {
       const going = frame.ships[2]?.place;
       assert.ok(going && going.z === -3 && going.roll === 0.4, JSON.stringify(going));
@@ -148,9 +148,9 @@ test('the story fight begins on the land door with its captains, draws them, hea
   assert.equal(frame.left, 0);
   assert.equal(frame.over, true);
   assert.ok(frame.ships.slice(1).every((ship) => ship.sunk));
-  assert.deepEqual(winds[0], [14, 6], 'the first step sails in the storm drawn round her');
+  assert.deepEqual(winds[0], [14, 6], 'the first step sails in the storm drawn round it');
   assert.deepEqual(winds.at(-1), [3, 1], 'a later one in the wind the story eased to');
-  assert.equal(frame.hulls.length, 1, 'only her footprint while the captains are gone');
+  assert.equal(frame.hulls.length, 1, 'only its footprint while the captains are gone');
 });
 
 /** The land door, its fight begun with three afloat, then answering each step from `steps` in turn. */

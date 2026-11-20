@@ -10,7 +10,7 @@ import type { ScreenMark } from './hud.ts';
 import { distanceText } from './hudLaw.ts';
 import { HOSTILE_PREFIX, hostileLook, hostileMarks, hostileNote } from './seaHostiles.ts';
 import type { Landmass } from './landmass.ts';
-import { portOf } from './nodes.ts';
+import { LOCKED_WORDS, portOf, socialLater, socialLocked } from './nodes.ts';
 import { declutter, namesShown, PORT_SEEN_M } from './seaLaw.ts';
 import { lockedWords } from './worldData.ts';
 
@@ -31,18 +31,21 @@ export function landingChoice(
 ): { readonly kind: 'choose' | 'land' } | { readonly kind: 'locked'; readonly words: string } | null {
   const mark = side.find((each) => each.id === id);
   if (!mark) return null;
-  if (mark.locked) return { kind: 'locked', words: lockedWords(mark.name) };
+  if (mark.locked)
+    return { kind: 'locked', words: socialLater(mark.id) ? `${mark.name} opens later` : lockedWords(mark.name) };
   return { kind: chosen === id ? 'land' : 'choose' };
 }
 
-/** A landmass's marks: each node over its ground (its social space on the city's level), and its port over its
+/** A landmass's marks: each node over its ground (its social space on the city's level), a locked node marked so (a
+ *  patrol area or mission until a pass is done on it, or a social space still locked), and its port over its
  *  harbour. */
 export function islandMarksOf(landmass: Pick<Landmass, 'nodes' | 'plan' | 'heightAt'>): Mark[] {
   const marks: Mark[] = landmass.nodes.map((node) => {
     const ground =
       node.kind === 'social' && landmass.plan ? landmass.plan.social.level : landmass.heightAt(...node.centre);
     const place: Vec3 = [node.centre[0], node.centre[1], Math.max(0, ground) + MARK_RISE_M];
-    return { id: node.id, kind: node.kind, name: node.name, at: place, edge: true, locked: node.locked === true };
+    const locked = node.locked === true || socialLocked(node.id);
+    return { id: node.id, kind: node.kind, name: node.name, at: place, edge: true, locked };
   });
   const harbour = portOf(landmass.plan)?.harbour;
   if (landmass.plan && harbour) {
@@ -50,6 +53,12 @@ export function islandMarksOf(landmass: Pick<Landmass, 'nodes' | 'plan' | 'heigh
     marks.push({ ...port, at: [harbour[0], harbour[1], MARK_RISE_M] });
   }
   return marks;
+}
+
+/** The landing `id` among the side's marks, if a player may land there: a locked one is none. */
+export function landable(side: readonly Mark[], id: string): Mark | null {
+  const mark = side.find((each) => each.id === id);
+  return mark && !mark.locked ? mark : null;
 }
 
 /** The marks laid for the view (`sail` over the ship, `landing` over an island's side, else none), the ship at `ship`
@@ -70,7 +79,8 @@ export function seaMarks(
     view === 'sail'
       ? island.filter((mark) => mark.kind === 'port' && away(mark.at) <= PORT_SEEN_M)
       : view === 'landing'
-        ? side
+        ? // A desolate city's social space is no landing, and shows no mark.
+          side.filter((mark) => !socialLocked(mark.id) || socialLater(mark.id))
         : [];
   const edges = view === 'sail' ? MARK_EDGES.sea : MARK_EDGES.side;
   const laid = placeMarks(marks, pose, viewport, edges);
@@ -88,7 +98,11 @@ export function seaMarks(
     const mark = marks.find((one) => one.id === each.id);
     return {
       ...marked,
-      note: mark?.locked ? 'Locked' : distanceText(mark ? away(mark.at) : each.distance),
+      note: socialLater(each.id)
+        ? LOCKED_WORDS
+        : mark?.locked
+          ? 'Locked'
+          : distanceText(mark ? away(mark.at) : each.distance),
       locked: mark?.locked === true,
     };
   });

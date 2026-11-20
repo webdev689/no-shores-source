@@ -51,7 +51,7 @@ export interface StoryFrame {
   readonly heads?: ReadonlyMap<string, readonly [number, number, number]>;
   /** Whether the land's own drawers (its city and nature) are drawn: not under the sea's storm far from any coast. */
   readonly land?: boolean;
-  /** Where the world's own soundscape is heard round the frame's focus: at sea (on a ship's deck or over her, under
+  /** Where the world's own soundscape is heard round the frame's focus: at sea (on a ship's deck or over it, under
    *  way or not), or ashore on Saltmere's coast. None: the story's own sounds alone. */
   readonly heard?: WorldHeard;
 }
@@ -100,7 +100,7 @@ export const HUD_VEIL_S = 0.7;
 /** How long the story's screen takes to clear its black: `Screen.clear`'s fade. */
 const SCREEN_CLEAR_S = 0.6;
 
-/** The Brig's pace under sail in the storm, as the sea's pace is set (100 her fastest): her wash and her bow's
+/** The Brig's pace under sail in the storm, as the sea's pace is set (100 its fastest): its wash and its bow's
  *  thump. */
 const SAILING_PACE = 70;
 

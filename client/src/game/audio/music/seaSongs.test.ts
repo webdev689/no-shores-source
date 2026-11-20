@@ -98,7 +98,7 @@ test('danger takes over from a sea song, and after it the sea is quiet a while',
   assert.ok((played[2]?.[1] ?? 0) >= REST_S[0], 'a rest after the danger');
 });
 
-test('landfall plays once as she comes off a coast, whatever the rest or the sky; never on sailing out', () => {
+test('landfall plays once as it comes off a coast, whatever the rest or the sky; never on sailing out', () => {
   const rain = { ...sailing, sky: { ...fair, falling: 0.5 } };
   const offCoast = { ...rain, sea: { ...quietSea, landfall: true } };
   const { heard } = sail(400, (second) => (second < 50 ? rain : offCoast));

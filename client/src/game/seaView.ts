@@ -16,6 +16,7 @@ import type { Shot } from './camera.ts';
 import { CloseZoom } from './seaClose.ts';
 import { landingChoice } from './seaMarks.ts';
 import { HELM, helmEye } from './seaLaw.ts';
+import { landable } from './seaMarks.ts';
 
 /** The view the ship first comes to: lower than DFO's, so the island it lies off stands in it. */
 const FIRST_TILT = (30 * Math.PI) / 180;
@@ -104,9 +105,9 @@ export class SeaView {
     return this.side;
   }
 
-  /** The id and name of a landing on the side in view, or null. */
+  /** The id and name of a landing on the side in view, or null; a social space still locked is none. */
   landingOf(id: string): { readonly id: string; readonly name: string } | null {
-    const mark = this.side.find((each) => each.id === id);
+    const mark = landable(this.side, id);
     return mark ? { id: mark.id, name: mark.name } : null;
   }
 

@@ -30,9 +30,21 @@ pub enum Deed {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Source {
     Start,
-    Level { level: u8 },
-    Deed { deed: Deed },
-    Sold { aurem: u32, level: u8 },
+    Level {
+        level: u8,
+    },
+    Deed {
+        deed: Deed,
+    },
+    Sold {
+        aurem: u32,
+        level: u8,
+    },
+    /// A rank reached with a faction, by its number.
+    Faction {
+        faction: u8,
+        rank: u32,
+    },
 }
 
 /// An emblem as the catalogue holds it.
@@ -122,8 +134,8 @@ impl Character {
         }
     }
 
-    /// Keeps every emblem the player's level and their gear have earned so far: the starting one, each level
-    /// reached, and a piece fully upgraded.
+    /// Keeps every emblem the player's level, their gear and their factions have earned so far: the starting one,
+    /// each level reached, a piece fully upgraded and each faction's rank; and the cosmetics due with them.
     pub fn earn_due(&mut self) {
         let level = self.level();
         let due: Vec<String> = emblems()
@@ -131,6 +143,7 @@ impl Character {
             .filter(|emblem| match emblem.source {
                 Source::Start => true,
                 Source::Level { level: wanted } => level >= wanted,
+                Source::Faction { faction, rank } => self.rank(faction) >= rank,
                 _ => false,
             })
             .map(|emblem| emblem.id.clone())
@@ -144,6 +157,7 @@ impl Character {
         if !self.keeps_emblem(&self.emblem) {
             self.emblem = starting();
         }
+        self.earn_cosmetics_due();
     }
 
     /// Wears an emblem the player keeps.

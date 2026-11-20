@@ -4,6 +4,7 @@
 
 import { LEVEL_BY_XP, LEVEL_MOST } from '../rules/fleetRules.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
+import type { KeeperKind } from './keepers.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import {
@@ -23,8 +24,9 @@ import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
-/** The screens a social space's counters open: the vault, and each vendor's stall. */
-export type Station = 'vault' | 'quartermaster' | 'armsmith' | 'tailor' | 'harbourmaster';
+/** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), and the
+ *  Harbourmaster's. */
+export type Station = KeeperKind | 'harbourmaster';
 /** What the menu shows: a tab, or a station's screen. */
 export type View = Tab | Station;
 /** What a counter or a key opens: a view, and the inventory's shelf to open it at. */
@@ -213,10 +215,10 @@ export interface Ware {
 
 /** The vendors by the gear crate's numbers (`Vendor::ALL`), and how many wares each sells a day (`vendor::WARES`): the
  *  message lists them vendor by vendor. */
-const VENDORS = ['The Quartermaster', 'The Armsmith', 'The Shipwright'] as const;
+const VENDORS = ['The Armorsmith', 'The Weaponsmith', 'The Shipwright'] as const;
 export const WARES = 6;
 
-/** The vendors' stalls: the Quartermaster's, the Armsmith's and the Shipwright's wares of the day, each bought for its
+/** The vendors' stalls: the Armorsmith's, the Weaponsmith's and the Shipwright's wares of the day, each bought for its
  *  price in Aurem. */
 export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
   return VENDORS.map((name, vendor) => ({
@@ -229,7 +231,7 @@ export function vendorsOf(state: GearState): readonly { readonly name: string; r
       affordable: state.aurem >= item.price,
       press: {
         label: `Hold to buy · ${item.price.toLocaleString()}`,
-        ask: { kind: ASKS.vend, column: vendor, node: item.id },
+        ask: { kind: ASKS.vend, column: vendor, node: item.id, ...(state.day !== undefined && { item: state.day }) },
         role: 'button',
         held: true,
       },

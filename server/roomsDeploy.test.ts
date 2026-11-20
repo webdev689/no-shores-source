@@ -1,9 +1,19 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, normalize } from 'node:path';
 import { test } from 'node:test';
+import numberedContent from '../tools/numbered.json' with { type: 'json' };
 
 const workflow = readFileSync(new URL('../.github/workflows/rooms.yml', import.meta.url), 'utf8');
 
@@ -39,40 +49,52 @@ test('the rooms’ code is every crate the room’s WebAssembly and the bake are
     'content/world',
     'content/testground',
     'content/gear',
+    'content/arts',
     'Cargo.lock',
   ])
     assert.ok(roomsCode.includes(path), path);
 });
 
-/** The files a crate's own code builds in (`include_str!`, `include_bytes!`), from the repository's root: its tests'
- *  (a file named `…tests.rs`) left out, as the rooms are not built from them. */
-function builtIn(crate: string): string[] {
-  const root = new URL('../', import.meta.url);
-  const source = new URL(`crates/${crate}/src/`, root);
-  const files = readdirSync(source, { recursive: true, encoding: 'utf8' }).filter(
-    (file) => file.endsWith('.rs') && !file.endsWith('tests.rs'),
-  );
-  return files.flatMap((file) => {
-    const text = readFileSync(new URL(file, source), 'utf8');
-    return [...text.matchAll(/include_(?:str|bytes)!\(\s*"([^"]+)"/g)].map(([, path]) =>
-      new URL(path ?? '', new URL(file, source)).pathname.slice(root.pathname.length),
-    );
-  });
-}
+const repo = new URL('../', import.meta.url);
+/** Every file under a folder of the repository, by its path from the root. */
+const filesUnder = (folder: string): string[] =>
+  readdirSync(new URL(folder, repo), { recursive: true, encoding: 'utf8' }).map((name) => join(folder, name));
+/** Whether a path from the root lies under one of the rooms' code paths. */
+const deployed = (path: string) => roomsCode.some((code) => path === code || path.startsWith(`${code}/`));
 
-test('the rooms’ code holds every file the rooms’ crates build in, so a change to one deploys them', () => {
-  const files = builtFrom(['room-wasm', 'bake']).flatMap(builtIn);
-  assert.ok(files.includes('content/islands/kits.json'), 'the crates are read');
-  for (const file of files)
-    assert.ok(
-      roomsCode.some((path) => file === path || file.startsWith(`${path}/`)),
-      `${file} is built into the rooms but not in ROOMS_CODE`,
-    );
+test('every file the rooms read lies under the rooms’ code, so a change to it deploys them', () => {
+  // What the room's crates build in: each `include_str!` and `include_bytes!` of their sources, not their tests'.
+  const sources = builtFrom(['room-wasm', 'bake'])
+    .flatMap((crate) => filesUnder(`crates/${crate}/src`))
+    .filter((path) => path.endsWith('.rs') && !path.endsWith('_tests.rs') && !path.includes('/tests/'));
+  const included = sources.flatMap((path) =>
+    [...readFileSync(new URL(path, repo), 'utf8').matchAll(/include_(?:str|bytes)!\(\s*"([^"]+)"/g)].map(([, file]) =>
+      normalize(join(dirname(path), file ?? '')),
+    ),
+  );
+  // What the protocol's version hashes: the content numbered on the wire, and the list that names it.
+  const numbered = [...numberedContent.paths, 'tools/numbered.json'];
+  // What the Workers import from beyond their own folder, but the room's WebAssembly built from the crates.
+  const imported = filesUnder('server')
+    .filter((path) => path.endsWith('.ts') && !path.endsWith('.test.ts'))
+    .flatMap((path) =>
+      [...readFileSync(new URL(path, repo), 'utf8').matchAll(/from '(\.[^']+)'/g)].map(([, file]) =>
+        normalize(join(dirname(path), file ?? '')),
+      ),
+    )
+    .filter((path) => !path.startsWith('server/') && !path.startsWith('target/'));
+  for (const [what, paths] of Object.entries({ included, numbered, imported })) {
+    assert.ok(paths.length > 0, `some ${what} found`);
+    for (const path of paths) assert.ok(existsSync(new URL(path, repo)) && deployed(path), `${what}: ${path}`);
+  }
 });
 
 /** What the `ready` step decides for a commit that changes `changed` over the one last deployed: with the token, from
  *  a merge (or by hand), while the commit is main's head (or after main moved on), and with that deploy found. */
-function decided(changed: string, options: { byHand?: boolean; moved?: boolean; found?: boolean } = {}): string {
+function decided(
+  changed: string,
+  options: { byHand?: boolean; moved?: boolean; found?: boolean; token?: boolean } = {},
+): string {
   const root = mkdtempSync(join(tmpdir(), 'rooms-deploy-'));
   const git = (...args: string[]) =>
     execFileSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@test', ...args], { cwd: root })
@@ -112,7 +134,7 @@ function decided(changed: string, options: { byHand?: boolean; moved?: boolean; 
     write('output', '');
     const env = {
       PATH: `${join(root, 'bin')}:${process.env['PATH'] ?? ''}`,
-      HAS_TOKEN: 'true',
+      HAS_TOKEN: options.token === false ? 'false' : 'true',
       BY_HAND: options.byHand ? 'true' : 'false',
       ROOMS_CODE: roomsCode.join(' '),
       GITHUB_OUTPUT: join(root, 'output'),
@@ -137,4 +159,15 @@ test('by hand the rooms deploy whatever changed; with no deploy found they deplo
   assert.equal(decided('bible/Hand-off.md', { byHand: true }), 'deploy=yes');
   assert.equal(decided('bible/Hand-off.md', { found: false }), 'deploy=yes');
   assert.equal(decided('server/worker.ts', { moved: true }), 'deploy=no');
+  assert.equal(decided('server/worker.ts', { token: false }), 'deploy=blocked', 'the rooms to deploy, with no token');
+  assert.equal(decided('bible/Hand-off.md', { token: false }), 'deploy=no', 'nothing to deploy, token or not');
+});
+
+test('on main, the page is published only once the rooms have deployed or had nothing to deploy', () => {
+  const checks = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const pages = /\n  pages:\n((?: {4}.*\n|\s*\n)*)/.exec(checks)?.[1] ?? '';
+  assert.match(pages, /needs: \[check, rooms\]/, 'the page waits for the rooms');
+  const when = /if: >-\n((?: {6}.*\n)*)/.exec(pages)?.[1]?.replace(/\s+/g, ' ') ?? '';
+  assert.ok(when.includes("needs.rooms.outputs.deploy == 'no' || needs.rooms.outputs.deployed == 'yes'"), when);
+  assert.ok(!when.includes('blocked'), 'a blocked deploy publishes no page');
 });

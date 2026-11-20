@@ -6,9 +6,9 @@ import { WALKERS } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const STATIONS = [
-  { kind: 'reader', keeper: [960.8, 1946.6], counter: [960.8, 1948.4] },
+  { kind: 'mage', keeper: [960.8, 1946.6], counter: [960.8, 1948.4] },
   { kind: 'chandler', keeper: [1000, 1946.6], counter: [1000, 1948.4] },
-  { kind: 'armsmith', keeper: [1039.2, 1946.6], counter: [1039.2, 1948.4] },
+  { kind: 'weaponsmith', keeper: [1039.2, 1946.6], counter: [1039.2, 1948.4] },
   { kind: 'harbourmaster', keeper: [1078.4, 1946.6], counter: [1078.4, 1948.4] },
 ] as const;
 const PLAZA: NodeInfo = {
@@ -31,12 +31,9 @@ const PLAZA: NodeInfo = {
 };
 
 test('a counter that deals with the player opens its screen; a trader’s, and one out of reach, offer nothing', () => {
-  assert.deepEqual(offerAt(STATIONS, 960.8, 1950), {
-    words: 'The Reader of Vestiges: open your Vestiges',
-    opens: { view: 'inventory' },
-  });
-  assert.deepEqual(offerAt(STATIONS, 1039.2, 1949)?.opens, { view: 'armsmith' });
-  assert.deepEqual(offerAt(STATIONS, 1078.4, 1949)?.opens, { view: 'harbourmaster' }, 'the Shipwright and the muster');
+  assert.deepEqual(offerAt(STATIONS, 960.8, 1950), { words: 'The Mage', opens: { view: 'mage' } });
+  assert.deepEqual(offerAt(STATIONS, 1039.2, 1949)?.opens, { view: 'weaponsmith' });
+  assert.deepEqual(offerAt(STATIONS, 1078.4, 1949)?.opens, { view: 'harbourmaster' }, 'the Shipwright');
   assert.equal(offerAt(STATIONS, 1000, 1949), null, 'the chandler sells nothing a player keeps');
   assert.equal(offerAt(STATIONS, 960.8, 1948.4 + SERVED_M + 0.1), null);
 });

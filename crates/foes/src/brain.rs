@@ -10,7 +10,7 @@ use crate::roles::{Numbers, Role};
 use crate::roster::FoeType;
 use crate::shoot::Bow;
 use crate::tell::Tells;
-use crate::tuning::HURT_WINDOW;
+use crate::tuning::{BREAK, HURT_WINDOW};
 use combat::fighter::Side;
 use combat::{FighterId, Verdict};
 
@@ -57,11 +57,33 @@ pub struct Home {
 }
 
 /// Why a garrison foe walks back to its post: its target led it past its leash, when it heeds nothing on the way but a
-/// blow; or its search found no one, when it heeds what it sees and hears as ever.
+/// blow; its search found no one, when it heeds what it sees and hears as ever; or its group gave ground, when it runs
+/// to its new place, its target and its awareness kept, and fights again from there.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Homeward {
     Leashed,
     Searched,
+    Falling,
+}
+
+/// What a garrison foe's group asks of it, set by the room each tick: whether it is the leader its followers screen,
+/// held back behind them while one fights hand to hand at its target (`screened`), and the shield-bearer of them it
+/// stands behind (`behind`); or the leader going in at once now they are gone (`push`); and whether its group defends
+/// its ground.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Orders {
+    pub screened: bool,
+    pub behind: Option<FighterId>,
+    pub push: bool,
+    pub defend: bool,
+}
+
+/// How a foe holds up: steady, broken by its leader's fall, or raging.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mood {
+    Steady,
+    Broken,
+    Raging,
 }
 
 /// A foe's brain: its type and rank, and all it keeps.
@@ -112,6 +134,15 @@ pub struct Brain {
     /// before it walks back there.
     pub(crate) side: Side,
     pub(crate) heel: Option<f64>,
+    /// What its group asks of it; until when it is broken, the cover it falls back behind, and whether it rages; who
+    /// last struck it, and when.
+    pub(crate) orders: Orders,
+    pub(crate) broken_until: u64,
+    pub(crate) cover: Option<[f64; 3]>,
+    pub(crate) raging: bool,
+    /// Since when, defending, it has held its ground before a target near its place.
+    pub(crate) held_since: Option<u64>,
+    pub(crate) struck_at: Option<(FighterId, u64)>,
 }
 
 impl Brain {
@@ -147,6 +178,12 @@ impl Brain {
             returning: None,
             side: foe_type.side(),
             heel: None,
+            orders: Orders::default(),
+            broken_until: 0,
+            cover: None,
+            raging: false,
+            held_since: None,
+            struck_at: None,
         }
     }
 
@@ -185,10 +222,65 @@ impl Brain {
         self.side
     }
 
-    /// Whether it walks back to its post, its fight given up or its search let go.
+    /// Whether it walks back to its post, its fight given up or its search let go; falling back with its group, it
+    /// still fights.
     #[must_use]
     pub fn returning(&self) -> bool {
-        self.returning.is_some()
+        matches!(self.returning, Some(Homeward::Leashed | Homeward::Searched))
+    }
+
+    /// Called to a fight, it hunts `target` where it last stood, `at`, as though it had just seen it there: alert, it
+    /// runs there, and takes it on once it sees it.
+    pub fn hunt(&mut self, target: FighterId, at: [f64; 3], tick: u64) {
+        (self.target, self.last_seen) = (Some(target), Some(at));
+        (self.seen_at, self.taken_at) = (tick, tick);
+        (self.awareness.level, self.awareness.alert) = (1.0, true);
+    }
+
+    /// Whether it falls back with its group, running to its new place.
+    #[must_use]
+    pub fn falling_back(&self) -> bool {
+        self.returning == Some(Homeward::Falling)
+    }
+
+    /// Its group gives ground: fighting, it runs to its new place and fights from there; raging, it holds no ground.
+    pub fn fall_back(&mut self) {
+        if self.target.is_some() && self.home.is_some() && self.returning.is_none() && !self.raging {
+            self.returning = Some(Homeward::Falling);
+        }
+    }
+
+    /// What its group asks of it this tick.
+    pub fn order(&mut self, orders: Orders) {
+        self.orders = orders;
+    }
+
+    /// What its group asks of it.
+    #[must_use]
+    pub fn orders(&self) -> Orders {
+        self.orders
+    }
+
+    /// Its leader fell: from `tick` it breaks for BREAK by its role, or rages for the rest of its fight.
+    pub fn breaks(&mut self, tick: u64, rages: bool) {
+        if rages {
+            self.raging = true;
+            self.broken_until = 0;
+        } else if !self.raging {
+            self.broken_until = tick + u64::from(combat::ticks(BREAK));
+        }
+    }
+
+    /// How it holds up at `tick`.
+    #[must_use]
+    pub fn mood(&self, tick: u64) -> Mood {
+        if self.raging {
+            Mood::Raging
+        } else if tick < self.broken_until {
+            Mood::Broken
+        } else {
+            Mood::Steady
+        }
     }
 
     /// Its numbers now: its type's at its rank, in its phase.
@@ -263,6 +355,7 @@ pub fn notice(brain: &mut Brain, me: FighterId, seen: &Seen, tick: u64) {
         Seen::Loosed { by, speed } if by != me && alert => brain.reactions.saw_shot(by, speed, tick),
         Seen::Struck { by, .. } => {
             brain.awareness.level = 1.0;
+            brain.struck_at = Some((by, tick));
             // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place;
             // fighting another, it weighs turning on it as it next thinks.
             if brain.target.is_none() {

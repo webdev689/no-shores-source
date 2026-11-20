@@ -2,16 +2,28 @@
 // naval rules say it is), its power with a meter to its next level, its four modules and those carried, each a tile
 // opening the module's page with its node grid, its materials and its hands. Crew: each officer by name, post and
 // grade, their level's meter, their duty and the presses that change it, paying them off, and their node grid on a
-// page of their own. The counter: the Shipwright's wares, and the muster of the officers of the day.
+// page of their own. The harbourmaster's counter: the Shipwright's wares. The muster of the officers of the day
+// stands on the screen of the faction pledged to's keeper, whose counter signs them on.
 
 import './shipScreen.css';
 import { make } from '../editor/dom.ts';
 import type { GearItem, GearOfficer } from '../network/gearMessages.ts';
+import { WORN } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
-import { traitsShown } from './gearCards.ts';
-import { glyphImage, heldPress, pressOf, rarityOf, tileLabel, traitNode } from './gearDom.ts';
-import { tileOf } from './gearScreen.ts';
+import { cardOf, traitsShown } from './gearCards.ts';
+import {
+  cardNode,
+  glyphImage,
+  heldPress,
+  itemIcon,
+  itemMarks,
+  pressOf,
+  rarityOf,
+  tileLabel,
+  traitNode,
+} from './gearDom.ts';
+import { WARES, tileOf, vendorsOf } from './gearScreen.ts';
 import { bar, nodeGrid } from './itemPage.ts';
 import { shipPage } from './menuPages.ts';
 import {
@@ -28,7 +40,10 @@ import {
   shipPowerOf,
 } from './shipGear.ts';
 import type { ShipPanel } from './shipPanel.ts';
-import { vendorPage } from './stationPages.ts';
+
+/** The Shipwright's number among the vendors (`Vendor::ALL`), and a ware's picture box in pixels. */
+const SHIPWRIGHT = 2;
+const WARE_PX = 64;
 
 /** The ship tab's parts, as the inventory's shelves are chosen. */
 export const SHIP_PARTS = [
@@ -177,7 +192,7 @@ function crewPart(context: PageContext, officer: number | null, open: (id: numbe
   roster.setAttribute('role', 'list');
   roster.append(...officers.map((each) => officerRow(context, each, open)));
   if (officers.length === 0)
-    roster.append(make('p', "No officers yet. Sign them on at the harbourmaster's counter.", 'gear-hint gear-empty'));
+    roster.append(make('p', "No officers yet. Sign them on at your faction's counter.", 'gear-hint gear-empty'));
   return roster;
 }
 
@@ -208,13 +223,14 @@ export function shipTab(
   return page;
 }
 
-/** The harbourmaster's counter: the Shipwright's wares of the day, and the muster of the officers of the day, each
- *  held to sign on for their wage. */
-export function harbourPage(context: PageContext): HTMLElement {
-  const page = make('div', '', 'ship-harbour');
+/** The officers of the day, each held to sign on, on the screen of the keeper of `faction`'s counter: none but at the
+ *  faction pledged to's. */
+export function musterAt(context: PageContext, faction: number | undefined): HTMLElement[] {
+  const pledge = context.gear.ship?.pledge ?? 0;
+  if (pledge === 0 || faction !== pledge) return [];
   const muster = make('section', '', `ship-muster ${ROLES.panel}`);
   muster.append(heading('The muster'));
-  const offered = musterOf(context.gear, context.gear.ship?.pledge ?? 0);
+  const offered = musterOf(context.gear, pledge);
   for (const offer of offered) {
     const row = make('div', '', 'ship-offer');
     const sign = heldPress('Hold to sign on', () => context.ask(offer.ask));
@@ -228,6 +244,57 @@ export function harbourPage(context: PageContext): HTMLElement {
     muster.append(row);
   }
   if (offered.length === 0) muster.append(make('p', NO_OFFERS, 'gear-hint'));
-  page.append(vendorPage(context, 2), muster);
+  return [muster];
+}
+
+/** The Harbourmaster's counter: the Shipwright's modules of the day, each held to buy, as Destiny's vendors sell. */
+export function harbourPage(context: PageContext): HTMLElement {
+  const page = make('div', '', 'ship-harbour gear-vendor');
+  const stall = vendorsOf(context.gear)[SHIPWRIGHT];
+  if (!stall) return page;
+  const wares = make('div', '', 'gear-wares');
+  stall.wares.forEach((ware, place) => {
+    const nth = SHIPWRIGHT * WARES + place;
+    const item = context.gear.wares[nth];
+    // One the player cannot pay for says so, and cannot be held; its picture charges as it is held.
+    const block = heldPress('', () => context.ask(ware.press.ask), 'button', { charges: () => cell });
+    block.classList.add('gear-ware');
+    block.dataset['key'] = `buy-${nth}`;
+    if (!ware.affordable) block.setAttribute('aria-disabled', 'true');
+    const cell = make('div', '', `gear-cell ${ROLES.tile}`);
+    rarityOf(cell, item?.rarity ?? null);
+    // A module's glyph stands for its picture.
+    const glyph = item ? moduleGlyph(item.kind) : null;
+    const drawn = glyph ? glyphImage(glyph) : null;
+    drawn?.classList.add('ship-glyph');
+    cell.append(drawn ?? (item ? itemIcon(context.picture(item), ware.tile.name, WARE_PX) : glyphImage('empty')));
+    if (item) itemMarks(cell, item);
+    const words = make('div', '', 'gear-ware-words');
+    const name = make('b', ware.tile.name);
+    name.style.color = ware.tile.colour;
+    words.append(name, make('span', `${ware.kind} · level ${ware.level}`, 'gear-hint'));
+    if (ware.tile.power) words.append(make('span', ware.tile.power, 'gear-ware-power'));
+    const price = make('span', '', `gear-price${ware.affordable ? '' : ' gear-short'}`);
+    price.append(glyphImage('aurem'), make('b', ware.price.toLocaleString()));
+    if (!ware.affordable) price.append(make('span', 'Not enough Aurem', 'gear-hint'));
+    words.append(price);
+    block.append(cell, words);
+    // Said as it reads: the kind already names its rarity.
+    const said = [
+      ware.tile.name,
+      ware.kind,
+      `level ${ware.level}`,
+      ware.tile.power,
+      `${ware.price.toLocaleString()} Aurem`,
+    ];
+    said.push(ware.affordable ? 'hold to buy' : 'not enough Aurem');
+    block.setAttribute('aria-label', said.filter(Boolean).join(', '));
+    if (item) {
+      const worn = context.gear.items.find((each) => each.at === WORN + item.bucket) ?? null;
+      context.tip.over(block, () => cardNode(cardOf(item, worn), context.picture(item), [['Hold', 'Buy']]));
+    }
+    wares.append(block);
+  });
+  page.append(wares);
   return page;
 }

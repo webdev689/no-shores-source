@@ -107,7 +107,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
     if (item.at === CARRIED) {
       for (const wear of wearAsks(item)) actions.push(button(wear.label, () => ask(wear.ask)));
       actions.push(button('Dismantle', () => ask({ kind: ASKS.dismantle, item: item.id })));
-      if (view.atStall || gear.atReader) actions.push(button('Vault', () => ask({ kind: ASKS.store, item: item.id })));
+      if (view.atStall || gear.atMage) actions.push(button('Vault', () => ask({ kind: ASKS.store, item: item.id })));
     }
     if (item.at === VAULTED) actions.push(button('Take out', () => ask({ kind: ASKS.withdraw, item: item.id })));
     if (item.columns.length > 0)
@@ -226,7 +226,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       if (vestige.vaulted) row.append(button('Take out', () => ask({ kind: ASKS.withdrawVestige, item: vestige.id })));
       else {
         row.append(button('Identify', () => ask({ kind: ASKS.identify, item: vestige.id })));
-        if (view.atStall || gear.atReader)
+        if (view.atStall || gear.atMage)
           row.append(button('Vault', () => ask({ kind: ASKS.storeVestige, item: vestige.id })));
       }
       return row;
@@ -241,7 +241,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       ...(opened && opened.at === CARRIED ? [make('p', `The Vestige opened: ${itemName(opened)}.`)] : []),
       make(
         'p',
-        view.atStall || gear.atReader
+        view.atStall || gear.atMage
           ? 'At the stall: Vestiges open, and the vault is here.'
           : 'The stall is south-east of the start.',
         'hint',

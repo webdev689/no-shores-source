@@ -16,7 +16,10 @@ cd "$WT"
 # Refuse a brief copied from brief-common-template.md whose <...> lines were never filled in (check-tools expects this).
 left=$(grep -oE '<(the hand-off doc|project rules:|the session.s attribution lines)[^>]*>' "$BRIEF" | head -3 | tr '\n' ' ')
 [ -z "$left" ] || { echo "run-worker.sh: brief $BRIEF still has: $left(fill in the template's <...> lines first)" >&2; exit 2; }
-INBOX="$OUT/inbox-$NAME.md"; [ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
+INBOX="$OUT/inbox-$NAME.md"
+# A fresh run starts an empty inbox: one left by an earlier worker of this name is kept aside, not handed on.
+[ "$MODE" != "--resume" ] && [ -f "$INBOX" ] && mv "$INBOX" "$OUT/inbox-$NAME.$(date +%Y%m%d%H%M%S).md"
+[ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
 echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT
 pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped worker can leave a stale lock
 # A worktree holds only what git tracks. Link the main checkout's packages, and build here, once, what the client's
@@ -65,28 +68,19 @@ CAVE=$(python3 -c "import re,os;print(re.sub(r'\A---.*?---\s*','',open(os.path.e
 NOTE="CAVEMAN MODE ACTIVE (worker only): your final reply goes to the controller Claude, never to a person. Keep code, comments, commits, docs, ledger and report files in normal prose.
 Your inbox is $INBOX: re-read it before each commit and before your final report, and act on anything new in it (the controller appends late owner changes there)."
 export TASK_OBSERVER_ROLE=worker WORKER_INBOX=$INBOX
-TOOLS="Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*"
-REPLY="$OUT/$NAME.reply"
-# One run of the worker: its reply goes to the log, and alone to $REPLY for the finish check below.
-run() {
-  claude "$@" --append-system-prompt "$CAVE
+work() {   # work <prompt> [-c]: one headless run, its output to the log
+  claude "${@:2}" -p "$1" --append-system-prompt "$CAVE
 
-$NOTE" --strict-mcp-config --mcp-config "$CFG" --allowedTools "$TOOLS" --max-turns 600 </dev/null > "$REPLY" 2>&1
-  local rc=$?; cat "$REPLY" >> "$OUT/$NAME.log"; return $rc
-}
-# Finished: the reply carries its OBSERVATIONS line (and its INBOX line, where the brief asks for one), and nothing
-# tracked is left uncommitted.
-finished() {
-  grep -q "OBSERVATIONS:" "$REPLY" && { ! grep -q "INBOX:" "$BRIEF" || grep -q "INBOX:" "$REPLY"; } &&
-    [ -z "$(git -C "$WT" status --porcelain --untracked-files=no)" ]
+$NOTE" --strict-mcp-config --mcp-config "$CFG" \
+    --allowedTools "Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*" \
+    --max-turns 600 </dev/null >> "$OUT/$NAME.log" 2>&1
+  echo "WORKER $NAME EXIT $?" >> "$OUT/$NAME.log"
 }
 C=(); [ "$MODE" = "--resume" ] && C=(-c)
-run "${C[@]}" -p "$(cat "$BRIEF")"; rc=$?
-# A run can end before its finish: a review skill's reply taken as the last, a reviewer left running in the
-# background. It is resumed once with the finish steps; still unfinished, the log says so.
-if [ $rc -eq 0 ] && ! finished; then
-  run -c -p "Your run ended before its finish. Wait for and read any reviewer sub-agent's findings and fix the real ones; run the full check in the background and watch it; commit; write your report file; then give your final reply, with its INBOX and OBSERVATIONS lines, as the last thing you write."
-  rc=$?
-  finished || echo "WORKER $NAME UNFINISHED" >> "$OUT/$NAME.log"
+work "$(cat "$BRIEF")" "${C[@]}"
+# The branch is the deliverable: a run that ends with its edits uncommitted is resumed once to commit them.
+left=$(git status --porcelain | grep -vc 'graphify-out/')
+if [ "$left" -gt 0 ]; then
+  echo "WORKER $NAME UNCOMMITTED $left files: resumed once to commit" >> "$OUT/$NAME.log"
+  work "Your run ended with $left files changed and not committed. Re-read your inbox, finish what your brief and inbox still ask, run the brief's checks, commit on your branch with the brief's trailer, write your report and give the final reply the brief asks for." -c
 fi
-echo "WORKER $NAME EXIT $rc" >> "$OUT/$NAME.log"

@@ -11,8 +11,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
 - The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP key is a network secret
   on the personal Default environment, with `SKILLSMP_API_KEY` set there to `proxy-injected`; Context7 runs on its
-  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives
-  in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
+  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives in `~/toolkit-data` and
+  outlives the container on the orphan branch `toolkit-data` (`tools/claude-toolkit/toolkit-data.sh`). Its first
+  review is done: claude-mem installs with its
   provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
   ([[The World Editor Is on GitHub Pages]]). The owner has drawn all nine continents; continent 1 is the main social

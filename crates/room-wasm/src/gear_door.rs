@@ -203,14 +203,19 @@ pub extern "C" fn room_difficulty(number: u32) -> u32 {
     u32::from(set_difficulty(number))
 }
 
-/// Sets the day, counted from the epoch, whose wares a room's vendors show; false with no room on land.
-pub fn set_day(day: u32) -> bool {
+/// Sets the minute, counted from the epoch, whose day sets the wares a room's vendors show and whose week sets when
+/// Shape comes and where he stands, or the sea's; false in a fleet.
+pub fn set_minute(minute: u32) -> bool {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => {
-            room.set_day(u64::from(day));
+            room.set_minute(u64::from(minute));
             true
         }
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => {
+            sea.minute = u64::from(minute);
+            true
+        }
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }
@@ -235,8 +240,8 @@ pub extern "C" fn room_reseed(loot_low: u32, loot_high: u32, world_low: u32, wor
     u32::from(reseed([loot_low, loot_high, world_low, world_high]))
 }
 
-/// Sets the room's day (`set_day`); 1 if set, 0 if not.
+/// Sets the room's minute (`set_minute`); 1 if set, 0 if not.
 #[unsafe(no_mangle)]
-pub extern "C" fn room_day(day: u32) -> u32 {
-    u32::from(set_day(day))
+pub extern "C" fn room_minute(minute: u32) -> u32 {
+    u32::from(set_minute(minute))
 }

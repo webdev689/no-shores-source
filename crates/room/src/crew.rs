@@ -2,15 +2,14 @@
 //! at the counter of the faction a player is pledged to; the pledge and their rank with it are read here, in one
 //! place, so the faction rules decide them.
 
-use crate::asks::CounterKind;
 use crate::{PlayerId, Room};
 use gear::{Ask, Character};
 
 /// The faction a player is pledged to (0 none) and their rank with it.
 #[must_use]
 pub fn pledge_of(character: &Character) -> (u8, u32) {
-    let _ = character;
-    (0, 0)
+    let pledge = character.allegiance.pledge;
+    (pledge, character.rank(pledge))
 }
 
 /// Whether an ask is of the ship's: its modules, its materials or its crew. The sea keeps those while their player
@@ -32,15 +31,13 @@ pub fn of_the_ship(ask: &Ask, character: &Character) -> bool {
     }
 }
 
-/// The counter that signs officers on.
-pub const MUSTER: CounterKind = CounterKind::Vendor(gear::vendor::Vendor::Shipwright);
-
 impl Room {
     /// The pledged faction, rank with it and the day, where a player stands at the counter that signs its officers
     /// on; none elsewhere, or with no pledge.
     #[must_use]
     pub fn recruiting_at(&self, player: PlayerId) -> Option<(u8, u32, u64)> {
-        let here = self.here(player, &Ask::Recruit { faction: 0, offer: 0 });
+        let faction = self.player(player).map_or(0, |found| found.character.allegiance.pledge);
+        let here = self.here(player, &Ask::Recruit { faction, offer: 0 });
         (here.social && here.pledge != 0).then_some((here.pledge, here.rank, here.day))
     }
 }
@@ -48,10 +45,29 @@ impl Room {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::asks::counter_for;
+    use crate::asks::{Counter, CounterKind, counter_for};
 
     #[test]
-    fn officers_are_signed_on_at_the_muster() {
-        assert_eq!(counter_for(&Ask::Recruit { faction: 0, offer: 0 }), Some(MUSTER));
+    fn officers_are_signed_on_at_the_counter_of_the_faction_named() {
+        assert_eq!(counter_for(&Ask::Recruit { faction: 2, offer: 0 }), Some(CounterKind::Faction(2)));
+    }
+
+    #[test]
+    fn a_pledged_characters_faction_counter_offers_officers() {
+        let mut room = Room::new(Vec::new(), (0.0, 0.0));
+        let player = room.join().expect("a room with space");
+        let fighter = *room.fighter(player).expect("in");
+        let at = [fighter.body.x, fighter.body.y];
+        room.counters = Some(vec![Counter { kind: CounterKind::Faction(2), at }]);
+        assert_eq!(room.recruiting_at(player), None, "no pledge, no officers");
+        let character = &mut room.players.get_mut(&player).expect("in").character;
+        character.allegiance.pledge = 2;
+        character.allegiance.reputation = vec![0, 35_000, 0];
+        let rank = character.rank(2);
+        let (pledge, ranked, day) = room.recruiting_at(player).expect("at the Lamplighters' counter, pledged");
+        assert_eq!((pledge, ranked), (2, rank));
+        assert!(!gear::crew::recruit::offers(pledge, day, 1, ranked).is_empty(), "the officers of the day");
+        room.counters = Some(vec![Counter { kind: CounterKind::Faction(3), at }]);
+        assert_eq!(room.recruiting_at(player), None, "another faction's counter signs none on for them");
     }
 }

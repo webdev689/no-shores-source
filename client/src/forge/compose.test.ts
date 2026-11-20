@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { type Strip, PART, composeFrame, ordersMeet } from './compose.ts';
+import { coverSteps } from './coverLight.ts';
 import { PaletteSnap } from './dyes.ts';
 import { type ForgeLooks, layersOf, lookCell } from './looks.ts';
 
@@ -71,6 +72,27 @@ test('the nearest texel is drawn, armour over the clothes it lies on by its orde
   assert.deepEqual([...bare.pixels.subarray(0, 4)], [0, 0, 128, 255]);
   assert.deepEqual([...bare.pixels.subarray(4, 8)], [200, 150, 120, 255]);
   assert.ok(Math.abs((bare.depth[0] ?? 0) - (117 * 256 + 40) / 10000 + 3) < 1e-4);
+});
+
+test('a ramp that covers its layer lies on every texel by its light, not on its greys alone', async () => {
+  const dyeable = { ...looks, dye: ['shirt', 'cuirass'] };
+  const kept = await composeFrame(figure, 'idle', 0, 0, dyeable, colours, { cuirass: blue }, read);
+  assert.deepEqual([...(kept?.pixels.subarray(0, 4) ?? [])], [90, 90, 99, 255], 'its own colour: not a grey');
+  const covered = await composeFrame(
+    figure,
+    'idle',
+    0,
+    0,
+    dyeable,
+    colours,
+    { cuirass: blue },
+    read,
+    undefined,
+    new Map([['cuirass', coverSteps([strips['forge/layers/male/cuirass_idle.png'] ?? strip([])])]]),
+  );
+  // The cuirass's light, 91, is all its strip holds: a span too narrow to stretch, it takes step 5 of 15 by its light.
+  assert.deepEqual([...(covered?.pixels.subarray(0, 4) ?? [])], [0, 0, 80, 255]);
+  assert.deepEqual([...(covered?.pixels.subarray(4, 8) ?? [])], [0, 0, 80, 255]);
 });
 
 test('a frame says which pixels are the weapon', async () => {
@@ -168,4 +190,50 @@ test('a composed frame is snapped to the palette, its clear texels left alone', 
   assert.ok(frame);
   // The dyed blue goes to the palette's blue; the bare body's tan to its nearest, the grey.
   assert.deepEqual([...frame.pixels.subarray(0, 8)], [0, 0, 250, 255, 128, 128, 128, 255]);
+});
+
+test("a barding is stacked over the horse it lies a little behind, and a coat lays its ramp on the horse's hide", async () => {
+  const mounted: ForgeLooks = {
+    bodies: { male: { anims: { ride: cell }, layers: { body: ['ride'], horse: ['ride'], horse_plate: ['ride'] } } },
+  };
+  const horse: Record<string, Strip> = {
+    'forge/layers/male/body_ride.png': strip([null, null, null, null]),
+    'forge/layers/male/body_ride_z.png': strip([null, null, null, null]),
+    'forge/layers/male/horse_ride.png': strip([[140, 100, 50], [90, 55, 40], null, null]),
+    'forge/layers/male/horse_ride_z.png': strip([[117, 40, PART.horse], [117, 40, PART.horse], null, null]),
+    // A hair's breadth behind the hide, as the forge renders a barding on it.
+    'forge/layers/male/horse_plate_ride.png': strip([null, [10, 10, 200], null, null]),
+    'forge/layers/male/horse_plate_ride_z.png': strip([null, [117, 41, PART.horse], null, null]),
+  };
+  const ridden = (path: string) => Promise.resolve(horse[path] ?? null);
+  const rider = { ...figure, gear: [], barding: 'horse_plate' };
+  assert.deepEqual(layersOf(rider, 'ride', mounted), ['body', 'horse', 'horse_plate']);
+  const red = Array.from({ length: 16 }, () => [255, 0, 0] as const);
+  const frame = await composeFrame(rider, 'ride', 0, 0, mounted, colours, { horse: red }, ridden);
+  assert.deepEqual(
+    [...(frame?.pixels ?? [])],
+    [255, 0, 0, 255, 10, 10, 200, 255],
+    'the hide red, the plate over the saddle',
+  );
+  const bare = await composeFrame({ ...rider, barding: null }, 'ride', 0, 0, mounted, colours, {}, ridden);
+  assert.deepEqual([...(bare?.pixels ?? [])], [140, 100, 50, 255, 90, 55, 40, 255], 'the bay as forged');
+});
+
+test("a barding's far side, well behind the horse, is hidden by the hide; its near side, a little behind, is drawn", async () => {
+  const mounted: ForgeLooks = {
+    bodies: { male: { anims: { ride: cell }, layers: { body: ['ride'], horse: ['ride'], horse_plate: ['ride'] } } },
+  };
+  // The hide at 2.9992 m; the plate 0.2 m behind it on the left texel (its far side), 0.1 m behind on the right.
+  const horse: Record<string, Strip> = {
+    'forge/layers/male/body_ride.png': strip([null, null, null, null]),
+    'forge/layers/male/body_ride_z.png': strip([null, null, null, null]),
+    'forge/layers/male/horse_ride.png': strip([[140, 100, 50], [140, 100, 50], null, null]),
+    'forge/layers/male/horse_ride_z.png': strip([[117, 40, PART.horse], [117, 40, PART.horse], null, null]),
+    'forge/layers/male/horse_plate_ride.png': strip([[200, 0, 0], [10, 10, 200], null, null]),
+    'forge/layers/male/horse_plate_ride_z.png': strip([[124, 248, PART.horse], [121, 16, PART.horse], null, null]),
+  };
+  const ridden = (path: string) => Promise.resolve(horse[path] ?? null);
+  const rider = { ...figure, gear: [], barding: 'horse_plate' };
+  const frame = await composeFrame(rider, 'ride', 0, 0, mounted, colours, {}, ridden);
+  assert.deepEqual([...(frame?.pixels ?? [])], [140, 100, 50, 255, 10, 10, 200, 255], 'the hide, then the plate');
 });

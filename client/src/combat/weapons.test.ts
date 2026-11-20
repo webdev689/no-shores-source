@@ -43,7 +43,7 @@ const gear = (items: readonly GearItem[], ammo = 18, ammoMost = 24): GearState =
   vestiges: [],
   drops: [],
   spent: [],
-  atReader: false,
+  atMage: false,
   answer: 0,
   answered: 0,
   identified: 0,

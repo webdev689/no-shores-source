@@ -7,8 +7,8 @@ use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
-const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0 };
-const AT_THE_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0 };
+const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0, week: 0 };
+const AT_THE_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
 
 /// A starting character wearing a level 1 Normal Ranged loadout of this kind.
 fn wearing(kind: Kind) -> Character {
@@ -95,7 +95,7 @@ fn an_ammo_crate_is_refused_with_no_ranged_weapon_worn_and_kept() {
 }
 
 #[test]
-fn the_quartermaster_sells_crates_at_the_counter_for_their_price() {
+fn the_weaponsmith_sells_crates_at_the_counter_for_their_price() {
     let mut character = wearing(Kind::Bow);
     character.materials.aurem = CRATE_PRICE * 2;
     assert_eq!(character.ask(Ask::BuyCrate, AFIELD, &DICE), Err(Refusal::NotHere));

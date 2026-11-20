@@ -32,7 +32,7 @@ import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
-import type { Epilogue } from './prologue/epilogue.ts';
+import type { AfterStory } from './welcome/afterStory.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import { type GateWay, gateWay } from './gates.ts';
@@ -51,8 +51,8 @@ export interface Playing {
   sea: Sea | null;
   /** The held map at the helm, made when it is first asked for. */
   readonly helmMap: HelmMap;
-  /** The story's last moment, played on foot once it has ended. */
-  epilogue: Epilogue | null;
+  /** The story's last moment, played on foot once it has ended, and the elder's welcome after it. */
+  readonly after: AfterStory;
   /** The way through the gate the player stands in, if any. */
   through: GateWay | null;
   seaWord: SeaWord | null;
@@ -147,8 +147,17 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
     const fleet = traffic.onFoot(shown.shot.eye, parts.waterHere(), seconds, clock);
-    // The story's last moment, on foot once the veil is gone: the stranger before the player, till they walk off.
-    const met = playing.epilogue?.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot') ?? [];
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
+    const met = playing.after.frame(
+      shown.shot,
+      viewport,
+      seconds,
+      clock,
+      walker.you,
+      flow.mode !== 'foot',
+      here.node,
+      paused,
+    );
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const more = { after: hands, hulls: fleet.hulls, carried };
     scene.draw(shown.shot, size, clock, seconds, standing(fleet.ships, [...shown.figures, ...met], fight), more);
@@ -251,7 +260,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   ) => {
     const left = host.frame(controls, seconds, size);
     if (!left) return;
-    [playing.epilogue, walker.you.dress] = [left.epilogue, left.dress];
+    playing.after.storyEnded(left.epilogue);
+    walker.you.dress = left.dress;
     playing.flow = next(playing.flow, { kind: 'story-ended', node: FIRST_NODE, name: 'Overlook' });
     parts.arrive();
   };

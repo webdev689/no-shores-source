@@ -15,7 +15,8 @@ const QUICKEN: u8 = 2;
 const MEND: u8 = 5;
 const VANISH: u8 = 9;
 
-/// A room with a player at the origin, looking north (toward -y).
+/// A room with a player at the origin, looking north (toward -y): a room with no section, the Test Ground, so every
+/// Art is at its highest level with every fragment owned and its spells are as `content/arts/arts.json` writes them.
 pub(crate) fn room_with_player() -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
@@ -236,10 +237,50 @@ fn the_room_answers_the_arts_asks_and_the_test_ground_readies_every_spell() {
     room.answer(player, Asked::Art(ArtAsk::SetCore { art: 1, slot: 0, fragment: 1 }));
     room.answer(player, Asked::Art(ArtAsk::SetCore { art: 1, slot: 2, fragment: 1 }));
     assert_eq!(code(&room), 113);
+    room.players.get_mut(&player).expect("in").character.arts.owned = Some(vec![0; 3]);
+    room.answer(player, Asked::Art(ArtAsk::SetCore { art: 1, slot: 2, fragment: 3 }));
+    assert_eq!(code(&room), 114, "a fragment not owned");
     room.answer(player, Asked::Art(ArtAsk::Wear { art: 3 }));
     assert_eq!((code(&room), room.player(player).expect("in").character.art().key.as_str()), (0, "shadow"));
     room.answer(player, Asked::Grant(Grant::ArtsReady));
     assert_eq!((casting(&room, player).anima, casting(&room, player).tenets), (1.0, [1.0, 1.0]));
+}
+
+#[test]
+fn the_test_ground_sets_an_art_s_level_and_owns_all_its_fragments() {
+    let (mut room, player) = room_with_player();
+    let character = |room: &Room| room.player(player).expect("in").character.clone();
+    room.players.get_mut(&player).expect("in").character.arts.owned = Some(vec![0; 3]);
+    room.players.get_mut(&player).expect("in").character.arts.xp = vec![500; 3];
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 2, level: 3 }));
+    let now = character(&room);
+    assert_eq!((now.art_level(2), now.art_xp(2), now.art_level(1)), (3, 0, 5));
+    assert!((0..6).all(|fragment| now.owns_fragment(2, fragment)));
+    assert!(!now.owns_fragment(1, 0), "another Art's fragments stay as they were");
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 2, level: 9 }));
+    assert_eq!(character(&room).art_level(2), 5, "a level past the highest is the highest");
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 2, level: 0 }));
+    assert_eq!(character(&room).art_level(2), 1);
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 7, level: 2 }));
+    assert_eq!(room.player(player).expect("in").answer, 110, "an Art the rules do not know");
+    assert_eq!(character(&room).art_shares(2), (0.6, 0.6), "level 1's shares");
+}
+
+#[test]
+fn a_test_ground_player_joins_with_every_art_at_its_highest_owning_every_fragment() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.answer(player, Asked::Art(ArtAsk::SetCore { art: 1, slot: 0, fragment: 0 }));
+    let found = room.player(player).expect("in");
+    assert_eq!(found.answer, 0, "a Core pick is taken");
+    assert!((1..=3).all(|art| found.character.art_shares(art) == (1.0, 1.0)), "every spell as written");
+    let mut wreck = Room::over_sea(Vec::new(), (0.0, 0.0));
+    let player = wreck.join().expect("a room with space");
+    let found = wreck.player(player).expect("in");
+    assert_eq!((found.character.art_level(1), found.character.owns_fragment(1, 0)), (1, false), "a story level");
+    wreck.answer(player, Asked::Grant(Grant::ArtLevel { art: 1, level: 5 }));
+    let found = wreck.player(player).expect("in");
+    assert_eq!(found.character.art_level(1), 1, "the Test Ground's grants are the Test Ground's alone");
 }
 
 #[test]
