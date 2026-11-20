@@ -51,15 +51,17 @@ export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltm
 /** The region every island lies in. */
 export const REGION = 'The Pale Expanse';
 
-/** The words under a place's name: the room of a dungeon the player stands in, the place's kind, and its island's
- *  name where it has one. */
+/** The words under a place's name: the room of a dungeon the player stands in, the place's kind, its island's name
+ *  where it has one, and in an Abyss run the revives its company has left (-1, none counted, elsewhere). */
 export function placeWords(
   place: { readonly kind: MarkKind; readonly continent: string },
   room?: string | null,
+  revives = -1,
 ): string {
   const island = ISLANDS[place.continent];
   const named = room ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${KIND_WORDS[place.kind]}` : KIND_WORDS[place.kind];
-  return island ? `${named} · ${island}` : named;
+  const left = revives === 0 ? 'No revives left' : `${revives} revive${revives === 1 ? '' : 's'} left`;
+  return [named, ...(island ? [island] : []), ...(revives < 0 ? [] : [left])].join(' · ');
 }
 
 /** A distance as a mark shows it: metres near, kilometres past one. */

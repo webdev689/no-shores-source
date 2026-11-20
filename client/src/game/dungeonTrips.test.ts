@@ -212,3 +212,24 @@ test('a company member is joined in the very room they are in', async () => {
   );
   assert.equal(happenings[0]?.kind, 'join');
 });
+
+test('a company that falls is taken out by the way it came in, the veil saying it fell', async () => {
+  const { trips, happenings, ways, settled } = recorded({ foot: standing(patrol, 'abyss') });
+  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  await settled();
+  trips.fell();
+  await settled();
+  assert.deepEqual(
+    happenings.map((happening) => happening.kind),
+    ['enter', 'wiped'],
+  );
+  assert.deepEqual(ways[1]?.slice(0, 2), ['onto', 'saltgrass-downs']);
+  const sea = recorded({ foot: null });
+  const back = { x: 1, y: 2, facing: 0 };
+  sea.trips.enterSeaDungeon('sea-dungeon-continent-4-caverns-0a1b2c3d--abyss', back);
+  await sea.settled();
+  sea.trips.fell();
+  await sea.settled();
+  assert.deepEqual(sea.happenings[1], { kind: 'surface', name: 'The Caverns of the Sea', fell: true });
+  assert.deepEqual(sea.ways[1], ['sea', back]);
+});

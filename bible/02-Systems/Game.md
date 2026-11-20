@@ -194,6 +194,10 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   "Leaving" the dungeon, by the way out kept as the player went in: the node's room is joined at the entrance the
   player went in by, online its address with `?entrance=<number>`, alone the node's room opened again in the page and
   joined with `room_join_at`. The player stands 1.5 m before the entrance's door, facing away from it.
+- **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives
+  left", "1 revive left", "No revives left"). When the room says this player's company fell (`Wiped`, `heardRun`),
+  the page takes them out by the way they came in, even with the menu open, the veil saying "Your company fell.
+  Leaving" the dungeon: before its entrance, or from a sea island's back to the sea.
 
 **Its scene** (`DungeonScene`) has no land, sky, sea or sun: the dungeon and what stands in it, in one pass over a
 near-black, then the blows' arcs, the see-through marks and their light over the picture, as the game's scene draws

@@ -18,6 +18,7 @@ import { Foot, type FootContext } from './foot.ts';
 import { DungeonDrawers } from './dungeonDrawers.ts';
 import { dungeonTrips } from './dungeonTrips.ts';
 import { foesAsked } from './foesAsked.ts';
+import { takeWipe } from './footTrips.ts';
 import { FootView } from './footView.ts';
 import { keptDiscovered } from './discovered.ts';
 import { Hud } from './hud.ts';
@@ -420,6 +421,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       travel({ kind: 'shut', why: here.shut }, goSea);
       return true;
     }
+    if (takeWipe(here.held)) trips.fell();
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
@@ -442,7 +444,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         carried,
       });
     showStanding(shown.standing);
-    hud.place(here.node.name, placeWords(here.node, here.roomName));
+    hud.place(here.node.name, placeWords(here.node, here.roomName, here.held.revives));
     hud.hints(shown.hints);
     hud.marks([]);
     hud.seaBar(null);

@@ -23,10 +23,8 @@ Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign'
 [[The Story Is Nine Missions, With Side Quests Between Them]], [[Where You Go and the Seas You Choose Set the
 Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
-([[The Activities Are Built in Full, Before the Story's Missions]]). Its core is built (step 1): the clock, the tiers,
-the records, the story kept with the account and the gates. Of the dungeons (step 2), the rules are built: what is
-on, the Elite Dungeons and their Bosses, the modifiers, what a first clear pays, a run's room, Abyss's revives and
-wipe, the server's runs and the page's trips. Abyss on the screen is not, nor the rest.
+([[The Activities Are Built in Full, Before the Story's Missions]]). Its core and its dungeons are built (steps 1 and
+2); the screen, companies of four and the quests are not.
 
 ## What it is for
 
@@ -113,10 +111,12 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
 
 - **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, the
   lowest player number first when two fall together; when none are left, the fallen stay down.
-- **A wipe ends the run:** when every player in it is down at once, each is told (`Wiped`), the dungeon starts over
-  and its five revives with it (`start_over`): its foes stand again at their posts, its shots, spells and drops are
-  gone, its cache shuts, and its players stand whole at the way in. A run whose cache stands open is won and never
-  wiped, so a cleared run keeps what it paid, and a room no one is in is never wiped.
+- **A wipe ends the run:** when every player in it is down at once, each is told (`Wiped`), the dungeon starts over and
+  its five revives with it (`start_over`): its foes stand again at their posts, its shots, spells and drops are gone,
+  its cache shuts, and its players stand whole at the way in. The page takes them out by the way they came in, the veil
+  saying "Your company fell. Leaving" the dungeon, and the place line shows the revives left ("3 revives left", "No
+  revives left"). A run whose cache stands open is won and never wiped, so a cleared run keeps what it paid, and a room
+  no one is in is never wiped.
 - **Modifiers** are drawn from a set, each one hook in the rules (`room::run`), read only in a room whose run
   carries it:
   - Burn: one Art's spells deal twice, and a player wearing it takes twice from foes.

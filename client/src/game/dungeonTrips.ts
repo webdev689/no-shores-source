@@ -66,13 +66,15 @@ export function dungeonTrips(
 ): {
   enter(number: number, name: string): void;
   leave(): void;
+  /** Out by the way in, the veil saying the company fell: before the entrance, or back to the sea. */
+  fell(): void;
   join(node: NodeInfo, place: string): void;
   /** Into a sea island's dungeon by its room's name (`sea-dungeon-...`, server/roomNames.ts), back out before its
    *  door; a name that is none goes nowhere. */
   enterSeaDungeon(room: string, back: SeaBack): void;
 } {
-  /** The way out of the dungeon the player is in, kept as they went in. */
-  let out: (() => void) | null = null;
+  /** The way out of the dungeon the player is in, kept as they went in; `fell` when their company fell. */
+  let out: ((fell: boolean) => void) | null = null;
   /** A dungeon's room at `seas` from its name before any run: shared at Normal unless it is `always` a run, else the
    *  company's run of it or a new one. */
   const roomOf = (base: string, seas: Difficulty, always: boolean) => async () =>
@@ -80,28 +82,30 @@ export function dungeonTrips(
       ? base
       : (sharedRun(base, await game.companyPlaces()) ?? runOf(base, chance.instance()));
   /** Out to a node at `seas`, before the entrance gone in by where there was one. */
-  const toNode = (node: NodeInfo, seas: Difficulty, number: number, entrance?: Entrance) => (layout: DungeonLayout) => {
-    const props = game.drawers.props;
-    const before = entrance && props ? beforeDoor(entrance, props) : null;
-    const arriving = before ? { number, ...before } : undefined;
-    game.travel({ kind: 'leave', node: node.id, name: layout.name }, () =>
-      game.ontoPatrol(node, before?.facing ?? 0, seas, arriving),
-    );
-  };
+  const toNode =
+    (node: NodeInfo, seas: Difficulty, number: number, entrance?: Entrance) =>
+    (layout: DungeonLayout, fell: boolean) => {
+      const props = game.drawers.props;
+      const before = entrance && props ? beforeDoor(entrance, props) : null;
+      const arriving = before ? { number, ...before } : undefined;
+      game.travel({ kind: fell ? 'wiped' : 'leave', node: node.id, name: layout.name }, () =>
+        game.ontoPatrol(node, before?.facing ?? 0, seas, arriving),
+      );
+    };
   const into =
     (
       outside: { readonly node: NodeInfo; readonly text: string },
       dungeon: { readonly number: number; readonly ask: DungeonAsk },
       seas: Difficulty,
       room: () => Promise<string>,
-      away: (layout: DungeonLayout) => void,
+      away: (layout: DungeonLayout, fell: boolean) => void,
       entrance?: Entrance,
     ) =>
     async () => {
       const layout = askLayout(await game.module, dungeon.ask);
       await game.intoDungeon(outside, { ...dungeon, room: await room() }, layout, seas);
       await game.drawers.show(layout, outside.node, entrance);
-      out = () => away(layout);
+      out = (fell) => away(layout, fell);
     };
   return {
     enter: (number, name) => {
@@ -128,7 +132,10 @@ export function dungeonTrips(
       });
     },
     leave: () => {
-      if (game.foot()?.dungeon) out?.();
+      if (game.foot()?.dungeon) out?.(false);
+    },
+    fell: () => {
+      if (game.foot()?.dungeon) out?.(true);
     },
     // A company joins online only, where a dungeon's room never asks for its node's file.
     join: (node, place) => {
@@ -159,8 +166,8 @@ export function dungeonTrips(
       void game.module.then((module) => {
         const layout = askLayout(module, ask);
         const outside = { node: seaPlace(sea.continent, layout), text: '' };
-        const away = (laid: DungeonLayout) =>
-          game.travel({ kind: 'surface', name: laid.name, fell: false }, () => game.ontoSea(back));
+        const away = (laid: DungeonLayout, fell: boolean) =>
+          game.travel({ kind: 'surface', name: laid.name, fell }, () => game.ontoSea(back));
         const work = into(outside, { number: 0, ask }, seas, roomOf(room, seas, false), away);
         game.travel({ kind: 'enter', node: `${room}--dungeon`, name: layout.name }, work);
       });

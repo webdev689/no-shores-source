@@ -23,6 +23,7 @@ export type Happening =
   | { readonly kind: 'enter'; readonly node: string; readonly name: string }
   | { readonly kind: 'leave'; readonly node: string; readonly name: string }
   | { readonly kind: 'surface'; readonly name: string; readonly fell: boolean }
+  | { readonly kind: 'wiped'; readonly node: string; readonly name: string }
   | { readonly kind: 'back' }
   | { readonly kind: 'story-ended'; readonly node: string; readonly name: string }
   | { readonly kind: 'shut'; readonly why: string };
@@ -69,6 +70,14 @@ export function next(flow: Flow, happening: Happening): Flow {
       const words = `${happening.kind === 'enter' ? 'Entering' : 'Leaving'} ${happening.name}`;
       return { mode: 'loading', words, then: { mode: 'foot', node: happening.node, menu: false } };
     }
+    case 'wiped':
+      // A company that fell in an Abyss run is taken out to its entrance, even with the menu open.
+      if (flow.mode !== 'foot') return flow;
+      return {
+        mode: 'loading',
+        words: `Your company fell. Leaving ${happening.name}`,
+        then: { mode: 'foot', node: happening.node, menu: false },
+      };
     case 'surface': {
       // Out of a sea island's dungeon onto the sea, even with the menu open, as a company that fell is taken out.
       if (flow.mode !== 'foot') return flow;

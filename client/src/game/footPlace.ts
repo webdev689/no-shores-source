@@ -110,4 +110,7 @@ export interface Held {
   gear: GearState | null;
   readonly entrances: Entrances;
   cache: Cache | null;
+  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell. */
+  revives: number;
+  wiped: boolean;
 }

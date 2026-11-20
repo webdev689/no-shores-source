@@ -127,3 +127,15 @@ test('a sea island’s dungeon is entered from the sea and left back to it, the 
   });
   assert.deepEqual(next(atSea, surface), atSea);
 });
+
+test('a company that falls in an Abyss run is taken out to its entrance, the veil saying so', () => {
+  const words = 'Your company fell. Leaving The Halls of the Saltgrass Downs';
+  const out = { mode: 'loading', words, then: { mode: 'foot', node: 'saltgrass-downs', menu: false } };
+  const happening = { kind: 'wiped', node: 'saltgrass-downs', name: 'The Halls of the Saltgrass Downs' } as const;
+  assert.deepEqual(
+    next({ mode: 'foot', node: 'saltgrass-downs--dungeon-1', menu: true }, happening),
+    out,
+    'even with the menu open',
+  );
+  assert.deepEqual(next({ mode: 'sea', menu: false }, happening), { mode: 'sea', menu: false });
+});

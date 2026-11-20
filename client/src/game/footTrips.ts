@@ -1,7 +1,9 @@
 // Going into a dungeon and out again on foot: what E offers at a patrol's or an Elite Dungeon's entrance's door or a
 // dungeon's exit door, and the place a dungeon is played as.
 import { runAsk } from '../../../server/roomNames.ts';
+import { EVENT } from '../combat/cues.ts';
 import { LocalRoom } from '../network/localRoom.ts';
+import type { FightEvent } from '../network/messages.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -59,6 +61,23 @@ export function dungeonPlace(patrol: NodeInfo, layout: DungeonLayout): NodeInfo 
 /** The place outside a sea island's dungeon, as a trip reads a patrol's: no place on land, its continent's climate. */
 export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
   return { id: 'sea-dungeon', kind: 'dungeon', name: layout.name, continent, ring: [], spawns: [], centre: [0, 0] };
+}
+
+/** Takes an Abyss run's word from a snapshot: its revives left, and whether it told this player their company fell. */
+export function heardRun(
+  held: { revives: number; wiped: boolean },
+  snapshot: { readonly revives: number; readonly events: readonly FightEvent[] },
+  own: number | null,
+): void {
+  held.revives = snapshot.revives;
+  if (snapshot.events.some((event) => event.kind === EVENT.wiped && event.defender === own)) held.wiped = true;
+}
+
+/** Whether the room said this player's company fell, taken once. */
+export function takeWipe(held: { wiped: boolean }): boolean {
+  const wiped = held.wiped;
+  held.wiped = false;
+  return wiped;
 }
 
 /** A dungeon's room in the page, played alone: a patrol's shared dungeon from the patrol's node file, any other room

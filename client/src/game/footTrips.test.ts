@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { DungeonLayout } from './dungeonLayout.ts';
 import type { PropTable } from '../models/tables.ts';
-import { dungeonPlace, Entrances, roomNameAt, tripAt, type Trips } from './footTrips.ts';
+import { EVENT } from '../combat/cues.ts';
+import type { FightEvent } from '../network/messages.ts';
+import { dungeonPlace, Entrances, heardRun, roomNameAt, tripAt, type Trips } from './footTrips.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const patrol: NodeInfo = {
@@ -86,4 +88,14 @@ test("a point is named for the dungeon's room it stands in, and nothing in a cor
   assert.equal(roomNameAt(layout, { x: 4, y: 1 }), null);
   assert.equal(roomNameAt(layout, { x: 8, y: 1 }), 'the Old Ossuary');
   assert.equal(roomNameAt(layout, { x: 12, y: 1 }), null);
+});
+
+test('an Abyss run’s revives are heard from each snapshot, and its wipe once it names this player', () => {
+  const held = { revives: -1, wiped: false };
+  heardRun(held, { revives: 5, events: [] }, 7);
+  assert.deepEqual(held, { revives: 5, wiped: false });
+  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 8 } as FightEvent] }, 7);
+  assert.equal(held.wiped, false, 'another player’s word');
+  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 7 } as FightEvent] }, 7);
+  assert.equal(held.wiped, true);
 });

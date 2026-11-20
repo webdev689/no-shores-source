@@ -71,6 +71,14 @@ test("in a dungeon's room the words under its name start with the room's", () =>
   assert.ok(placeWords(dungeon, null).startsWith('Dungeon'));
 });
 
+test('in an Abyss run the words under its name end with the revives its company has left', () => {
+  const dungeon = { kind: 'dungeon', continent: 'continent-1' } as const;
+  assert.equal(placeWords(dungeon, 'the Ossuary', 3), `${placeWords(dungeon, 'the Ossuary')} · 3 revives left`);
+  assert.ok(placeWords(dungeon, null, 1).endsWith(' · 1 revive left'));
+  assert.ok(placeWords(dungeon, null, 0).endsWith(' · No revives left'));
+  assert.equal(placeWords(dungeon, null, -1), placeWords(dungeon, null), 'none counted outside Abyss');
+});
+
 test("a place's words name its kind, and its island where the owner has named one", () => {
   assert.equal(placeWords({ kind: 'social', continent: 'continent-1' }), 'Social space · Saltmere');
   assert.equal(placeWords({ kind: 'patrol', continent: 'continent-9' }), 'Patrol');

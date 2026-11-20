@@ -39,7 +39,16 @@ import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
-import { dungeonPlace, Entrances, type InDungeon, openAlone, roomNameAt, standInDungeon, tripAt } from './footTrips.ts';
+import {
+  dungeonPlace,
+  Entrances,
+  heardRun,
+  type InDungeon,
+  openAlone,
+  roomNameAt,
+  standInDungeon,
+  tripAt,
+} from './footTrips.ts';
 import { cacheOf } from './dungeonChest.ts';
 import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { chime, worldOutput } from './uiSounds.ts';
@@ -261,7 +270,7 @@ export class Foot {
       remove: () => undefined,
     });
     let fight: Fighting | null = null;
-    const held: Held = { gear: null, entrances: new Entrances(), cache: null };
+    const held: Held = { gear: null, entrances: new Entrances(), cache: null, revives: -1, wiped: false };
     const online = context.rooms !== null;
     const asked = online ? [] : context.foesAsked;
     const heard: Heard = {
@@ -269,6 +278,7 @@ export class Foot {
         players.takeDresses(snapshot.dressed);
         fight?.receive(snapshot);
         held.cache = cacheOf(snapshot.cache);
+        heardRun(held, snapshot, fight?.player ?? null);
         // Before the fight stands there is no own number to tell the player from the others.
         if (fight) players.seen(snapshot.players, fight.player, forge);
       },
