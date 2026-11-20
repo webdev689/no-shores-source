@@ -23,7 +23,7 @@ const HEAP_INSET_M: f64 = 12.0;
 /// How far from the plaza no rubble lies, metres: past the window of ground its node is cut to, so no heap stands in
 /// its room.
 const PLAZA_CLEAR_M: f64 = 110.0;
-/// The water a wreck settles in, deeper than this, metres; and how far out from the harbour her search starts and
+/// The water a wreck settles in, deeper than this, metres; and how far out from the harbour its search starts and
 /// steps.
 const WRECK_DEPTH_M: f64 = 4.0;
 const WRECK_OUT_M: [f64; 2] = [170.0, 20.0];
@@ -109,8 +109,8 @@ pub enum Hull {
     Schooner,
 }
 
-/// A wreck settled in a ruined harbour: which ship, where she lies (east, south), her heading clockwise from north
-/// and her heel to starboard, radians. The browser settles her to her deck and draws her mastless.
+/// A wreck settled in a ruined harbour: which ship, where it lies (east, south), its heading clockwise from north
+/// and its heel to starboard, radians. The browser settles it to its deck and draws it mastless.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct Wreck {
     pub ship: Hull,

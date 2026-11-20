@@ -1,8 +1,8 @@
-//! What a fight leaves a player's ship, and the port cities that take her in. Her hull, canvas and men are kept with
-//! her (as shares of whole) until repaired, and she starts every fight with them. A player whose ship goes down, or
+//! What a fight leaves a player's ship, and the port cities that take it in. Its hull, canvas and men are kept with
+//! it (as shares of whole) until repaired, and it starts every fight with them. A player whose ship goes down, or
 //! who is beaten on a deck with no player left standing there, washes up at the nearest of the port cities: on foot by
 //! its harbour, their ship moored at its roadstead, a sunk one at `SUNK_KEPT`. Within `REPAIR_REACH_M` of a port's
-//! roadstead she may be repaired, free: made whole over a second for each hundredth missing (the most of hull, canvas
+//! roadstead it may be repaired, free: made whole over a second for each hundredth missing (the most of hull, canvas
 //! and men), `REPAIR_MOST_S` at most, lying at rest; sailing or leaving stops it where it stood.
 
 use crate::PlayerId;
@@ -10,15 +10,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use world::layout::Layout;
 use world::traffic::{Port, SeaWays, Traffic};
 
-/// What a sunk ship comes back with: a tenth of her hull, a quarter of her canvas and half her men.
+/// What a sunk ship comes back with: a tenth of its hull, a quarter of its canvas and half its men.
 pub const SUNK_KEPT: [f64; 3] = [0.10, 0.25, 0.5];
-/// How near a port's roadstead she is repaired, metres; and the longest a repair takes, seconds.
+/// How near a port's roadstead it is repaired, metres; and the longest a repair takes, seconds.
 pub const REPAIR_REACH_M: f64 = 3_000.0;
 pub const REPAIR_MOST_S: f64 = 100.0;
-/// A repair takes this many seconds for each hundredth she is missing.
+/// A repair takes this many seconds for each hundredth it is missing.
 pub const REPAIR_S_PER_HUNDREDTH: f64 = 1.0;
 
-/// A repair under way: what she had when it began, and the seconds it has run.
+/// A repair under way: what it had when it began, and the seconds it has run.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Repair {
     pub from: [f64; 3],
@@ -26,14 +26,14 @@ pub struct Repair {
 }
 
 impl Repair {
-    /// How long making her whole from `from` takes, seconds.
+    /// How long making it whole from `from` takes, seconds.
     #[must_use]
     pub fn takes(from: [f64; 3]) -> f64 {
         let missing = from.iter().map(|share| 1.0 - share.clamp(0.0, 1.0)).fold(0.0, f64::max);
         (missing * 100.0 * REPAIR_S_PER_HUNDREDTH).min(REPAIR_MOST_S)
     }
 
-    /// What she has now: each share risen evenly toward whole over the repair's time.
+    /// What it has now: each share risen evenly toward whole over the repair's time.
     #[must_use]
     pub fn now(&self) -> [f64; 3] {
         let takes = Repair::takes(self.from);
@@ -96,7 +96,7 @@ pub struct Repairs {
 }
 
 impl Repairs {
-    /// One tick of `seconds`: each repair runs on; one done is answered with what she has, and ends.
+    /// One tick of `seconds`: each repair runs on; one done is answered with what it has, and ends.
     pub fn tick(&mut self, seconds: f64) -> Vec<(PlayerId, [f64; 3])> {
         let mut done = Vec::new();
         for (player, repair) in &mut self.under_way {
@@ -107,7 +107,7 @@ impl Repairs {
         done
     }
 
-    /// A repair stops where it stood: what she has then, if one was under way.
+    /// A repair stops where it stood: what it has then, if one was under way.
     pub fn stop(&mut self, player: PlayerId) -> Option<[f64; 3]> {
         self.under_way.remove(&player).map(|repair| repair.now())
     }
@@ -120,7 +120,7 @@ pub enum RepairRefused {
     NotAtSea,
     /// In a fight, under way, or past `REPAIR_REACH_M` of every port's roadstead.
     NotThere,
-    /// She is whole.
+    /// It is whole.
     Whole,
 }
 
@@ -168,7 +168,7 @@ pub const WASHED_UP: f64 = 20.0;
 /// A player told that someone joined their fight: the code, the tick, the player's number (0 for a hostile ship),
 /// and a hostile ship's faction, rank and hull (`HullKind::number`; 0 for a player).
 pub const JOINED: f64 = 22.0;
-/// A player told where their ship lies once the accounts gave her back: the code, the tick, x and y, and her heading.
+/// A player told where their ship lies once the accounts gave it back: the code, the tick, x and y, and its heading.
 pub const MOORED: f64 = 23.0;
 /// A player told what a piece they gathered held: the code, the tick, the piece, the Vestige's rarity (0 none, else
 /// the gear crate's number and one), and whether it held an Ammo box and an Ammo crate (1 or 0).

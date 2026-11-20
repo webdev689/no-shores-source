@@ -15,8 +15,8 @@ pub struct Spot {
 pub trait Waters {
     fn at(&self, x: f64, y: f64, time: f64) -> Spot;
 
-    /// The spot as a hull of time constant `lag` seconds rides it: the swell answered through her inertia
-    /// (`Swell::lagged_height_at`). Water without a swell is the same however slow she is.
+    /// The spot as a hull of time constant `lag` seconds rides it: the swell answered through its inertia
+    /// (`Swell::lagged_height_at`). Water without a swell is the same however slow it is.
     fn lagged(&self, x: f64, y: f64, time: f64, lag: f64) -> Spot {
         let _ = lag;
         self.at(x, y, time)

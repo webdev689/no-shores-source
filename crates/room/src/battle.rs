@@ -1,9 +1,9 @@
 //! The sea's fights with players in them. A fight begins when a ship meets a player (`Fight::meet`) or a player comes
 //! on a fight among captains (`clash`); then any player not fighting who comes within `ENGAGE_RANGE` of one of its
-//! ships joins it, and so does any hostile ship at sea, on her own side. Every player in it fights every captain, and
+//! ships joins it, and so does any hostile ship at sea, on its own side. Every player in it fights every captain, and
 //! players never harm each other (a ball passes through a ship of its own flag). The room steps each fight by its
 //! players' orders; a player whose ship goes down leaves it, and when its last captain has left it its players sail on
-//! from where it left them, each ship keeping her hurts.
+//! from where it left them, each ship keeping its hurts.
 
 use crate::PlayerId;
 use crate::clash::{Clash, ship_at, sighted};
@@ -23,8 +23,8 @@ use std::collections::BTreeMap;
 /// Players who join a fight under way sail under numbers from this one on, past every captain's.
 pub const PLAYERS_FROM: ShipId = 1_000;
 
-/// A player boards a captain who struck with their ship within this of hers (metres), both making less way than this
-/// (metres a second).
+/// A player boards a captain who struck with their ship within this of the captain's (metres), both making less way
+/// than this (metres a second).
 pub const BOARD_REACH_M: f64 = 30.0;
 pub const BOARD_WAY_M_S: f64 = 2.0;
 
@@ -56,7 +56,7 @@ pub struct Crew {
 }
 
 /// A fight with players in it: the fight, each player's place in it, what happened in its last tick, each captain's
-/// ship as she sailed at sea (by her number, for her level when she sinks), and every player who has fought in it.
+/// ship as it sailed at sea (by its number, for its level when it sinks), and every player who has fought in it.
 #[derive(Debug)]
 pub struct SeaFight {
     pub fight: Fight,
@@ -72,7 +72,7 @@ pub struct SeaFight {
 }
 
 /// What became of a player in a fight this tick: still in it, where their ship lies; out of it afloat, where it left
-/// them, with the shares of hull, canvas and men she keeps; or gone down there.
+/// them, with the shares of hull, canvas and men it keeps; or gone down there.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Outcome {
     Fighting { player: PlayerId, ship: Ship },
@@ -80,20 +80,20 @@ pub enum Outcome {
     Sunk { player: PlayerId, at: [f64; 2] },
 }
 
-/// A captain's ship that went down this tick: hers as she sailed at sea, where she sank, and the players who fought
-/// her.
+/// A captain's ship that went down this tick: the ship as it sailed at sea, where it sank, and the players who fought
+/// it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sank {
     pub pirate: Pirate,
     pub at: [f64; 2],
     pub players: Vec<PlayerId>,
-    /// The wind of her fight, which what floats drifts down.
+    /// The wind of its fight, which what floats drifts down.
     pub wind: [f64; 2],
 }
 
 /// A captain's ship gone down, sunk or taken (a won ship is scuttled), as the sea tells its hosts once for each: the
-/// water she went down in (its continent's index in the layout; none off every water) and its holder, her rank and
-/// level, and the accounts of the players who fought her that the room keeps.
+/// water it went down in (its continent's index in the layout; none off every water) and its holder, the ship's rank
+/// and level, and the accounts of the players who fought it that the room keeps.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ShipDown {
     pub water: Option<usize>,
@@ -113,14 +113,14 @@ pub struct FightSeen {
     pub may_board: bool,
 }
 
-/// The shares of hull, canvas and men a ship's hurts leave her.
+/// The shares of hull, canvas and men a ship's hurts leave it.
 #[must_use]
 pub fn kept_of(damage: &Damage) -> [f64; 3] {
     let share = |have: f64, whole: f64| if whole > 0.0 { (have / whole).clamp(0.0, 1.0) } else { 1.0 };
     [share(damage.hull, damage.max_hull), share(damage.sail, damage.max_sail), share(damage.crew, damage.max_crew)]
 }
 
-/// Whether a captain's deck holds a crew to fight: her faction has deck hands of her rank.
+/// Whether a captain's deck holds a crew to fight: its faction has deck hands of its rank.
 fn crewed(pirate: &Pirate) -> bool {
     let rank = crate::sea::decks::foe_rank(pirate.commission.rank);
     !::foes::crews::deck_crew(pirate.commission.faction, rank).is_empty()
@@ -152,7 +152,7 @@ impl SeaFight {
         ships.into_iter().any(|vessel| apart(at, [vessel.ship.x, vessel.ship.y]) <= ENGAGE_RANGE)
     }
 
-    /// A player's Sloop put into it hove to at `own`, with the hurts she keeps, under the next player's number.
+    /// A player's Sloop put into the fight hove to at `own`, with the hurts it keeps, under the next player's number.
     fn put_in(&mut self, player: PlayerId, own: Ship, kept: [f64; 3], coasts: &[Coast], time: f64) {
         let waters = CoastWaters { coasts, swell: &self.swell };
         let taken = self.crews.values().map(|crew| crew.ship);
@@ -164,10 +164,10 @@ impl SeaFight {
         }
     }
 
-    /// The commission of its first captain, as a view shows her.
+    /// The commission of its first captain, as a view shows the captain.
     fn first_captain(&self) -> Commission {
         let captain = self.fight.ships.values().find_map(Vessel::command);
-        captain.map_or_else(Commission::default, |command| command.her.commission)
+        captain.map_or_else(Commission::default, |command| command.mind.commission)
     }
 }
 
@@ -202,8 +202,8 @@ impl Fights {
         true
     }
 
-    /// A player boards the captain `alongside` them: she is no longer scuttled for want of boarders. Answers her number
-    /// and her ship as she sailed at sea.
+    /// A player boards the captain `alongside` them: the captain is no longer scuttled for want of boarders. Answers
+    /// the captain's number and ship as it sailed at sea.
     pub fn board(&mut self, player: PlayerId) -> Result<(ShipId, Pirate), BoardRefused> {
         let (id, pirate) = self.alongside(player)?;
         let (fought, _) = self.of_mut(player).ok_or(BoardRefused::NotFighting)?;
@@ -214,7 +214,7 @@ impl Fights {
     }
 
     /// The captain a player would board: the nearest who struck within `BOARD_REACH_M` of their ship, both making less
-    /// way than `BOARD_WAY_M_S`, whose deck holds a crew. Answers her number and her ship as she sailed at sea.
+    /// way than `BOARD_WAY_M_S`, whose deck holds a crew. Answers its number and its ship as it sailed at sea.
     pub fn alongside(&self, player: PlayerId) -> Result<(ShipId, Pirate), BoardRefused> {
         let fought =
             self.list.iter().find(|fought| fought.crews.contains_key(&player)).ok_or(BoardRefused::NotFighting)?;
@@ -227,10 +227,10 @@ impl Fights {
             .ships
             .iter()
             .filter(|(_, vessel)| vessel.damage.state == State::Struck && vessel.command().is_some())
-            // A captain whose deck would hold no crew is not boarded: her hold would open at once.
+            // A captain whose deck would hold no crew is not boarded: its hold would open at once.
             .filter(|(id, _)| fought.hostiles.get(id).is_some_and(crewed))
             .map(|(id, vessel)| (*id, apart([own.x, own.y], [vessel.ship.x, vessel.ship.y]), way(&vessel.ship)))
-            .filter(|(_, apart, her_way)| *apart <= BOARD_REACH_M && *her_way < BOARD_WAY_M_S)
+            .filter(|(_, apart, its_way)| *apart <= BOARD_REACH_M && *its_way < BOARD_WAY_M_S)
             .min_by(|one, other| one.1.total_cmp(&other.1));
         let (id, _, _) = alongside.filter(|_| way(&own) < BOARD_WAY_M_S).ok_or(BoardRefused::NoneAlongside)?;
         let pirate = *fought.hostiles.get(&id).ok_or(BoardRefused::NoneAlongside)?;
@@ -245,14 +245,14 @@ impl Fights {
         })
     }
 
-    /// Where the captain who sailed at sea as `pirate` lies, and her fight's wind.
+    /// Where the captain who sailed at sea as `pirate` lies, and its fight's wind.
     pub fn position_of(&mut self, pirate: u32) -> Option<([f64; 2], [f64; 2])> {
         let (fought, id) = self.holding(pirate)?;
         let wind = fought.wind;
         fought.fight.vessel(id).map(|vessel| ([vessel.ship.x, vessel.ship.y], wind))
     }
 
-    /// The captain who sailed at sea as `pirate` is scuttled, and her fight told.
+    /// The captain who sailed at sea as `pirate` is scuttled, and its fight told.
     pub fn scuttle_by(&mut self, pirate: u32) {
         if let Some((fought, id)) = self.holding(pirate) {
             let told = fought.fight.scuttle(id);
@@ -260,15 +260,15 @@ impl Fights {
         }
     }
 
-    /// A player leaves their fight afloat: their ship leaves it, with the hurts she keeps.
+    /// A player leaves their fight afloat: their ship leaves the fight with the hurts it keeps.
     pub fn release(&mut self, player: PlayerId) -> Option<[f64; 3]> {
         let kept = self.hurts_of(player).map(|(kept, _)| kept);
         self.leave(player);
         kept
     }
 
-    /// The hurts a fighting player's ship keeps as the fight has her now (a sunk ship's if she is going down), and
-    /// where she lies.
+    /// The hurts a fighting player's ship keeps as the fight has it now (a sunk ship's if it is going down), and
+    /// where it lies.
     #[must_use]
     pub fn hurts_of(&self, player: PlayerId) -> Option<([f64; 3], [f64; 2])> {
         let fought = self.list.iter().find(|fought| fought.crews.contains_key(&player))?;
@@ -302,7 +302,7 @@ impl Fights {
         self.list.retain(|fought| !fought.crews.is_empty());
     }
 
-    /// A ship that met a player begins their fight under `weather`: she where she lay, under sail; their Sloop hove
+    /// A ship that met a player begins their fight under `weather`: the ship where it lay, under sail; their Sloop hove
     /// to at `own`.
     pub(crate) fn begin_met(
         &mut self,
@@ -346,8 +346,8 @@ impl Fights {
         true
     }
 
-    /// The first fight a hostile ship at sea comes within `ENGAGE_RANGE` of; whether she joined it, on her own side,
-    /// where she lay and under sail, her temper and her chances drawn from her seed.
+    /// The first fight a hostile ship at sea comes within `ENGAGE_RANGE` of; whether the ship joined it, on its own
+    /// side, where it lay and under sail, its temper and its chances drawn from its seed.
     pub(crate) fn join_hostile(&mut self, pirate: &Pirate, coasts: &[Coast], time: f64) -> bool {
         let Some(fought) = self.list.iter_mut().find(|fought| fought.near([pirate.x, pirate.y])) else { return false };
         let captains = fought.fight.ships.keys().copied().filter(|id| *id < PLAYERS_FROM);
@@ -363,8 +363,8 @@ impl Fights {
     /// After the sea's ships sailed: each ship that met a player (`met`) begins their fight; rivals that met begin
     /// a clash; each player at sea not fighting (`ships`) who comes within `ENGAGE_RANGE` of a fight joins it, or of a
     /// clash takes it for their fight; and each hostile ship within `ENGAGE_RANGE` of a fight joins it. `heave` brings
-    /// a player's ship to rest for it and answers her with the hurts she keeps. Answers who joined a fight under way
-    /// (a player, or a hostile ship's commission) and the players already in it.
+    /// a player's ship to rest for it and answers the ship with the hurts it keeps. Answers who joined a fight under
+    /// way (a player, or a hostile ship's commission) and the players already in it.
     pub(crate) fn take_in(
         &mut self,
         met: Vec<(PlayerId, Pirate)>,

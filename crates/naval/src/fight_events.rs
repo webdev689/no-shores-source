@@ -31,7 +31,7 @@ pub enum Event {
         ship: ShipId,
         refusal: Refusal,
     },
-    /// A player's sails would not set: her rigging is shot away, or she is a wreck.
+    /// A player's sails would not set: its rigging is shot away, or it is a wreck.
     NoSail {
         ship: ShipId,
         wrecked: bool,
@@ -45,7 +45,7 @@ pub enum Event {
         ship: ShipId,
         end: End,
     },
-    /// A player's stem rammed a ship (`ship`, rammed `by`): where it struck, and the hull it took from her.
+    /// A player's stem rammed a ship (`ship`, rammed `by`): where it struck, and the hull it took from it.
     Ram {
         ship: ShipId,
         by: ShipId,
@@ -56,27 +56,27 @@ pub enum Event {
     Splash {
         at: [f64; 2],
     },
-    /// A ball struck her: where, in her own frame, and on which part.
+    /// A ball struck it: where, in its own frame, and on which part.
     Hit {
         ship: ShipId,
         at: [f64; 3],
         part: Part,
     },
-    /// A sail of hers (her sail index, as her manifest lists them) tore away.
+    /// A sail of the ship's (its sail index, as its manifest lists them) tore away.
     SailLost {
         ship: ShipId,
         sail: usize,
     },
-    /// A mast of hers (0 fore to aft) fell, with every sail on it.
+    /// A mast of the ship's (0 fore to aft) fell, with every sail on it.
     MastFell {
         ship: ShipId,
         mast: usize,
     },
-    /// Her colours came down.
+    /// Its colours came down.
     Struck {
         ship: ShipId,
     },
-    /// She began to go down.
+    /// It began to go down.
     Sinking {
         ship: ShipId,
     },
@@ -91,13 +91,13 @@ pub enum Event {
         id: u32,
         by: u32,
     },
-    /// Players went aboard her.
+    /// Players went aboard it.
     Boarding {
         ship: ShipId,
     },
 }
 
-/// The part of her a ball struck: her hull, a sail still set, or her rig where its sail is gone.
+/// The part of a ship a ball struck: its hull, a sail still set, or its rig where its sail is gone.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Part {
     Hull,
@@ -106,14 +106,14 @@ pub enum Part {
 }
 
 impl Part {
-    /// Her part as every wire numbers it: 0 her hull, 1 a sail, 2 her rig.
+    /// Its part as every wire numbers it: 0 its hull, 1 a sail, 2 its rig.
     #[must_use]
     pub fn number(self) -> u8 {
         self as u8
     }
 }
 
-/// A piece of what floats: a crate or a barrel of what she carried, or a chest.
+/// A piece of what floats: a crate or a barrel of what it carried, or a chest.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Piece {
     Crate,

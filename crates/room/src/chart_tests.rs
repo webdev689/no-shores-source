@@ -68,7 +68,7 @@ fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
         }
     }
     let tithe: Vec<_> = seen.values().filter(|pirate| pirate.commission.faction == naval::ranks::GREY_TITHE).collect();
-    assert!(!tithe.is_empty(), "the Tithe's waters send her ships");
+    assert!(!tithe.is_empty(), "the Tithe's waters send its ships");
     let along = tithe.iter().filter(|pirate| {
         let (off, [east, south]) = chart.lane([pirate.x, pirate.y]).unwrap();
         let heading = libm::atan2(east, -south).rem_euclid(std::f64::consts::TAU);
@@ -123,5 +123,5 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
         turned.abs() > std::f64::consts::FRAC_PI_2
     });
     assert_eq!(flips.count(), 0, "no swinging back and forth: {headings:?}");
-    assert!(sailed > 0.8 * crate::sighting::way_of(elite.rank) * 600.0, "she kept sailing along the edge: {sailed} m");
+    assert!(sailed > 0.8 * crate::sighting::way_of(elite.rank) * 600.0, "it kept sailing along the edge: {sailed} m");
 }

@@ -67,7 +67,7 @@ fn a_level_is_drawn_evenly_from_the_band() {
 }
 
 #[test]
-fn a_tithe_ship_heads_the_way_of_her_lane_nearer_her_slant() {
+fn a_tithe_ship_heads_the_way_of_its_lane_nearer_its_slant() {
     assert!((along_lane([1.0, 0.0], 1.0) - PI / 2.0).abs() < 1e-12, "east, slanting east");
     assert!((along_lane([1.0, 0.0], 4.0) - 1.5 * PI).abs() < 1e-12, "west, slanting west");
     assert!((along_lane([0.0, -1.0], 6.0)).abs() < 1e-12, "north, slanting a little west of north");
@@ -76,12 +76,12 @@ fn a_tithe_ship_heads_the_way_of_her_lane_nearer_her_slant() {
 #[test]
 fn lead_pursuit_heads_where_the_ship_will_be_and_straight_at_one_that_cannot_be_reached() {
     let close = |one: f64, other: f64| (one - other).abs() < 1e-9;
-    assert!(close(intercept_heading([0.0, 0.0], 3.0, [0.0, -1_000.0], [0.0, 0.0]), 0.0), "at rest: straight at her");
-    // She is 1 km north sailing east at 3 m/s; a chaser at 5 m/s meets her where 3-4-5 says: 750 m east of her.
+    assert!(close(intercept_heading([0.0, 0.0], 3.0, [0.0, -1_000.0], [0.0, 0.0]), 0.0), "at rest: straight at it");
+    // It is 1 km north sailing east at 3 m/s; a chaser at 5 m/s meets it where 3-4-5 says: 750 m east of it.
     let lead = intercept_heading([0.0, 0.0], 5.0, [0.0, -1_000.0], [3.0, 0.0]);
     assert!(close(lead, libm::atan2(750.0, 1_000.0)), "{lead}");
     let away = intercept_heading([0.0, 0.0], 2.4, [0.0, -1_000.0], [0.0, -12.0]);
-    assert!(close(away, 0.0), "the faster sailing away: straight at her");
+    assert!(close(away, 0.0), "the faster sailing away: straight at it");
 }
 
 #[test]
@@ -94,7 +94,7 @@ fn a_heading_turns_toward_another_by_at_most_the_most_the_shorter_way() {
 }
 
 #[test]
-fn a_bold_ships_meeting_cone_is_where_her_way_can_meet_a_voyage_holding_its_course() {
+fn a_bold_ships_meeting_cone_is_where_its_way_can_meet_a_voyage_holding_its_course() {
     let major = meeting_arc(Rank::Major);
     assert!((major - libm::asin(0.2) * MEETING_MARGIN).abs() < 1e-12, "a fifth of his way: 11.5 degrees, shrunk");
     assert!(meeting_arc(Rank::Minor) < major && major < meeting_arc(Rank::Miniboss));

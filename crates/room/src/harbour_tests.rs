@@ -9,7 +9,7 @@ fn a_repair_takes_a_second_for_each_hundredth_missing_of_the_most_missing_and_a_
 }
 
 #[test]
-fn a_repair_makes_her_whole_evenly_and_stops_where_it_stood() {
+fn a_repair_makes_it_whole_evenly_and_stops_where_it_stood() {
     let mut repairs = Repairs::default();
     repairs.under_way.insert(1, Repair { from: [0.5, 0.8, 1.0], seconds: 0.0 });
     // Half of its 50 s.
@@ -24,7 +24,7 @@ fn a_repair_makes_her_whole_evenly_and_stops_where_it_stood() {
 }
 
 #[test]
-fn a_repair_done_ends_with_her_whole() {
+fn a_repair_done_ends_with_it_whole() {
     let mut repairs = Repairs::default();
     repairs.under_way.insert(1, Repair { from: [0.99, 1.0, 1.0], seconds: 0.0 });
     let mut last = Vec::new();
@@ -48,7 +48,7 @@ fn the_nearest_port_is_the_nearest_roadstead_and_repairs_reach_three_kilometres(
 
 #[test]
 fn the_nearest_port_city_is_nearest_by_the_seas_way_round_land_not_in_a_straight_line() {
-    // A long thin continent between where she went down and the port city a straight line finds nearest.
+    // A long thin continent between where it went down and the port city a straight line finds nearest.
     let text = r#"{ "continents": [{ "id": "wall", "outline": [[500000, 100000], [520000, 100000], [520000, 900000], [500000, 900000]] }], "isles": [] }"#;
     let layout = world::layout::parse(text).unwrap();
     let points = [world::geometry::Point::new(545_000, 500_000), world::geometry::Point::new(480_000, 300_000)];

@@ -31,7 +31,7 @@ impl Chart for OneWater {
     }
 }
 
-/// A player's ship at `at`, heading north at `pace`, fighting or not; her waters run at her pace.
+/// A player's ship at `at`, heading north at `pace`, fighting or not; its waters run at its pace.
 fn voyager(player: PlayerId, at: [f64; 2], pace: u16, fighting: bool) -> Voyager {
     Voyager { player, at, heading: 0.0, pace, fighting, clock: f64::from(pace.max(1)), hull: 1.0 }
 }
@@ -58,7 +58,7 @@ fn brought(chart: &OneWater, seeds: u32, hours: u32, at: [f64; 2], pace: u16) ->
 }
 
 #[test]
-fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_near_her_sight_out() {
+fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_near_its_sight_out() {
     let mut pirates = Pirates::default();
     let ship = [500_000.0, 500_000.0];
     for _ in 0..4 * 3600 {
@@ -83,7 +83,7 @@ fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_ne
 }
 
 #[test]
-fn a_ship_stays_while_a_player_is_within_1_1_times_her_sight_and_goes_past_it() {
+fn a_ship_stays_while_a_player_is_within_1_1_times_its_sight_and_goes_past_it() {
     let mut pirates = Pirates {
         sailing: vec![standing(1, [5_400.0, 0.0], 0.0, false), standing(2, [5_600.0, 0.0], 0.0, false)],
         ..Pirates::default()
@@ -93,7 +93,7 @@ fn a_ship_stays_while_a_player_is_within_1_1_times_her_sight_and_goes_past_it() 
 }
 
 #[test]
-fn a_ship_takes_the_sight_of_the_player_nearest_her_and_keeps_the_largest() {
+fn a_ship_takes_the_sight_of_the_player_nearest_it_and_keeps_the_largest() {
     let mut pirates = Pirates { sailing: vec![standing(1, [5_000.0, 0.0], 0.0, false)], ..Pirates::default() };
     let far_off = voyager(2, [200_000.0, 0.0], 100, false);
     pirates.tick(1.0, &[voyager(1, [0.0, 0.0], 0, false), far_off], &PIRATE_WATER);
@@ -112,13 +112,13 @@ fn a_bold_pirate_within_engage_range_of_a_player_meets_them_and_a_wary_one_sails
     };
     let met = pirates.tick(1.0, &[voyager(5, [0.0, 0.0], 0, false)], &PIRATE_WATER);
     assert_eq!(met.iter().map(|(player, pirate)| (*player, pirate.id)).collect::<Vec<_>>(), [(5, 2)]);
-    assert_eq!(pirates.sailing.len(), 1, "the one met leaves the sea for her fight");
+    assert_eq!(pirates.sailing.len(), 1, "the one met leaves the sea for its fight");
     pirates.sailing.push(standing(3, [700.0, 0.0], 0.0, true));
     assert!(pirates.tick(1.0, &[voyager(5, [0.0, 0.0], 0, true)], &PIRATE_WATER).is_empty(), "none for a fighter");
 }
 
 #[test]
-fn a_ship_goes_about_where_she_may_not_sail_and_none_comes_where_she_may_not() {
+fn a_ship_goes_about_where_it_may_not_sail_and_none_comes_where_it_may_not() {
     let walled = OneWater { open: |_, _| false, ..PIRATE_WATER };
     let mut pirates = Pirates { sailing: vec![standing(1, [0.0, 0.0], 0.0, false)], ..Pirates::default() };
     pirates.tick(1.0, &[voyager(1, [0.0, 500.0], 0, false)], &walled);
@@ -131,7 +131,7 @@ fn a_ship_goes_about_where_she_may_not_sail_and_none_comes_where_she_may_not() {
 }
 
 #[test]
-fn a_ship_sails_on_the_clock_of_the_player_she_sails_by_and_a_shared_sea_keeps_real_time() {
+fn a_ship_sails_on_the_clock_of_the_player_it_sails_by_and_a_shared_sea_keeps_real_time() {
     let way = |ships: &[Voyager]| {
         let mut pirates = Pirates { sailing: vec![standing(1, [0.0, 0.0], 0.0, false)], ..Pirates::default() };
         pirates.tick(1.0, ships, &PIRATE_WATER);
@@ -147,7 +147,7 @@ fn a_ship_sails_on_the_clock_of_the_player_she_sails_by_and_a_shared_sea_keeps_r
 }
 
 #[test]
-fn each_rank_has_her_own_way() {
+fn each_rank_has_its_own_way() {
     let ways: Vec<f64> = RANKS_AT_SEA.iter().map(|&rank| way_of(rank) / PIRATE_WAY_M_S).collect();
     let expected = [0.9, 1.0, 1.1, 1.2];
     assert!(ways.iter().zip(expected).all(|(way, wanted)| (way - wanted).abs() < 1e-12), "{ways:?}");
@@ -183,7 +183,7 @@ fn seas_opened_with_other_seeds_send_other_ships_and_the_same_courses_the_same_o
 }
 
 #[test]
-fn home_waters_send_no_one_and_each_holder_sends_her_own_faction() {
+fn home_waters_send_no_one_and_each_holder_sends_its_own_faction() {
     let home = OneWater { holder: Holder::Home, levels: Some((1, 4)), ..PIRATE_WATER };
     assert!(brought(&home, 10, 4, [0.0, 0.0], 0).is_empty(), "nothing comes in home waters");
     let tithe = OneWater { holder: Holder::GreyTithe, ..PIRATE_WATER };
@@ -231,13 +231,13 @@ fn ranks_come_by_their_band_and_a_level_evenly_from_it() {
 }
 
 #[test]
-fn under_way_a_ship_comes_ahead_within_60_degrees_and_a_bold_one_within_her_meeting_cone() {
+fn under_way_a_ship_comes_ahead_within_60_degrees_and_a_bold_one_within_its_meeting_cone() {
     let mut pirates = Pirates::default();
     let ship = Voyager { heading: TAU / 4.0, ..voyager(1, [0.0, 0.0], 60, false) };
     let (mut count, mut bold) = (0, 0);
     for _ in 0..4 * 3600 {
         pirates.sailing.clear();
-        // Held in place, she rolls as if under way at x60, heading east.
+        // Held in place, it rolls as if under way at x60, heading east.
         pirates.tick(1.0, &[Voyager { clock: 1.0, ..ship }], &PIRATE_WATER);
         for pirate in &pirates.sailing {
             count += 1;
@@ -251,7 +251,7 @@ fn under_way_a_ship_comes_ahead_within_60_degrees_and_a_bold_one_within_her_meet
             bold += usize::from(pirate.bold);
         }
     }
-    assert!(count > 15 && bold > 0 && bold < count, "{count} ships, {bold} bold: a bold one within her meeting cone");
+    assert!(count > 15 && bold > 0 && bold < count, "{count} ships, {bold} bold: a bold one within its meeting cone");
     assert!((sight_for(60.0) - SIGHT_HOLD_S * (12.0 + 2.4) * 60.0).abs() < 1e-9);
 }
 
@@ -269,9 +269,9 @@ fn pirates_keep_nearer_coasts_and_tithe_ships_nearer_lanes_on_average() {
     assert!(mean(&tithe, &lane) < mean(&pirates, &lane) - 2_000.0);
     let along =
         |pirate: &Pirate| (pirate.heading - TAU / 4.0).abs() < 1e-9 || (pirate.heading - 0.75 * TAU).abs() < 1e-9;
-    assert!(tithe.iter().all(along), "a Tithe ship heads along her lane");
+    assert!(tithe.iter().all(along), "a Tithe ship heads along its lane");
     let no_lane = brought(&OneWater { holder: Holder::GreyTithe, ..PIRATE_WATER }, 20, 4, at, 0);
-    assert!(mean(&no_lane, &coast) < 17_000.0, "with no lane near, she comes as a pirate does");
+    assert!(mean(&no_lane, &coast) < 17_000.0, "with no lane near, it comes as a pirate does");
 }
 
 #[test]
@@ -283,7 +283,7 @@ fn a_bold_ship_meets_the_nearest_rival_in_sight_and_two_that_parted_meet_only_on
     let ships = [at_sea(1, elite, 0.0, true), at_sea(2, friend, 100.0, true), at_sea(3, major, 700.0, false)];
     let mut pirates = Pirates { sailing: ships.to_vec(), ..Pirates::default() };
     let met: Vec<[u32; 2]> = pirates.meet_rivals().iter().map(|pair| pair.map(|pirate| pirate.id)).collect();
-    assert_eq!(met, [[1, 3]], "her own faction's ship is no rival");
+    assert_eq!(met, [[1, 3]], "its own faction's ship is no rival");
     let mut pirates = Pirates::default();
     pirates.back_from_clash(vec![ships[0], Pirate { x: 400.0, ..ships[2] }]);
     assert!(pirates.meet_rivals().is_empty(), "they parted");
@@ -294,8 +294,8 @@ fn a_bold_ship_meets_the_nearest_rival_in_sight_and_two_that_parted_meet_only_on
 }
 
 #[test]
-fn a_bold_ship_comes_for_a_player_in_her_sight_at_the_helms_rate_and_a_wary_one_keeps_her_course() {
-    // A player 4 km east of her at rest; she heads north.
+fn a_bold_ship_comes_for_a_player_in_its_sight_at_the_helms_rate_and_a_wary_one_keeps_its_course() {
+    // A player at rest 4 km east of the ship; it heads north.
     let player = voyager(1, [4_000.0, 0.0], 0, false);
     let mut pirates = Pirates {
         sailing: vec![standing(1, [0.0, 0.0], 0.0, true), standing(2, [0.0, 100.0], 0.0, false)],
@@ -314,12 +314,12 @@ fn a_bold_ship_comes_for_a_player_in_her_sight_at_the_helms_rate_and_a_wary_one_
     let far = voyager(1, [5_400.0, 0.0], 0, false);
     pirates.sailing[0].heading = 0.0;
     pirates.tick(1.0, &[far], &PIRATE_WATER);
-    assert_eq!((pirates.sailing[0].heading, pirates.sailing[0].quarry), (0.0, None), "out of her sight: lost");
+    assert_eq!((pirates.sailing[0].heading, pirates.sailing[0].quarry), (0.0, None), "out of its sight: lost");
 }
 
 #[test]
 fn a_bold_ship_leads_a_player_under_way_and_lets_one_fighting_be() {
-    // He is 3 km north and 200 m east, sailing south at x10, past her: she heads for where he will be, south of him.
+    // He is 3 km north and 200 m east, sailing south at x10, past it: it heads for where he will be, south of him.
     let straight = libm::atan2(200.0, 3_000.0);
     let mut pirates = Pirates { sailing: vec![standing(1, [0.0, 0.0], straight, true)], ..Pirates::default() };
     let player = Voyager { heading: TAU / 2.0, ..voyager(1, [200.0, -3_000.0], 10, false) };
@@ -334,14 +334,14 @@ fn a_bold_ship_leads_a_player_under_way_and_lets_one_fighting_be() {
 }
 
 #[test]
-fn a_wary_ship_comes_for_a_sloop_she_would_take_and_lets_a_sound_one_be() {
+fn a_wary_ship_comes_for_a_sloop_it_would_take_and_lets_a_sound_one_be() {
     let sound = voyager(1, [4_000.0, 0.0], 0, false);
     let holed = Voyager { hull: 0.3, ..sound };
     let mut pirates = Pirates { sailing: vec![standing(2, [0.0, 0.0], 0.0, false)], ..Pirates::default() };
     pirates.tick(1.0, &[sound], &PIRATE_WATER);
-    assert_eq!(pirates.sailing[0].quarry, None, "a sound Sloop she does not outgun");
+    assert_eq!(pirates.sailing[0].quarry, None, "a sound Sloop it does not outgun");
     pirates.tick(1.0, &[holed], &PIRATE_WATER);
-    assert_eq!(pirates.sailing[0].quarry, Some(1), "one holed under GRAPPLE_HULL she comes for");
+    assert_eq!(pirates.sailing[0].quarry, Some(1), "one holed under GRAPPLE_HULL it comes for");
     assert!((pirates.sailing[0].heading - HELM_TURN_RAD_S).abs() < 1e-9);
 }
 

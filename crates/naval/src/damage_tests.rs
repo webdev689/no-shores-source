@@ -44,7 +44,7 @@ fn the_waterline_band_is_1_1_metres_over_the_water() {
 }
 
 #[test]
-fn a_captain_strikes_at_a_quarter_of_her_hull_and_sinks_at_none() {
+fn a_captain_strikes_at_a_quarter_of_its_hull_and_sinks_at_none() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     assert_eq!(damage.apply(hurt(197.0, 0.0, 0.0), 1.0, 0.0), None);
     assert_eq!(damage.apply(hurt(1.0, 0.0, 0.0), 2.0, 0.0), Some(State::Struck), "66 of 264 left");
@@ -64,7 +64,7 @@ fn a_crew_with_every_man_down_strikes() {
 }
 
 #[test]
-fn the_rest_of_the_volley_that_struck_her_cannot_sink_her() {
+fn the_rest_of_the_volley_that_struck_it_cannot_sink_it() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     damage.apply(hurt(200.0, 0.0, 0.0), 1.0, 0.0);
     assert_eq!(damage.state, State::Struck);
@@ -82,7 +82,7 @@ fn the_players_sloop_never_strikes_and_goes_down_at_none() {
 }
 
 #[test]
-fn a_scuttled_ship_goes_down_from_where_she_lies() {
+fn a_scuttled_ship_goes_down_from_where_it_lies() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     damage.apply(hurt(200.0, 0.0, 0.0), 1.0, 0.0);
     assert_eq!(damage.state, State::Struck);
@@ -118,7 +118,7 @@ fn three_fires_burn_at_once_and_overlapping_ones_take_men() {
 }
 
 #[test]
-fn a_ship_that_strikes_has_her_fires_doused() {
+fn a_ship_that_strikes_has_its_fires_doused() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     damage.apply(Hurt { fire: true, ..hurt(0.0, 0.0, 0.0) }, 0.0, 0.0);
     damage.apply(hurt(200.0, 0.0, 0.0), 1.0, 0.0);
@@ -126,7 +126,7 @@ fn a_ship_that_strikes_has_her_fires_doused() {
 }
 
 #[test]
-fn her_way_falls_with_her_canvas_to_bare_poles() {
+fn its_way_falls_with_its_canvas_to_bare_poles() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     assert_eq!(damage.way_share(), 1.0);
     damage.apply(hurt(0.0, 48.0, 0.0), 0.0, 0.0);
@@ -136,7 +136,7 @@ fn her_way_falls_with_her_canvas_to_bare_poles() {
 }
 
 #[test]
-fn her_hands_mend_her_only_in_quiet_waters_and_to_half() {
+fn its_hands_mend_it_only_in_quiet_waters_and_to_half() {
     let mut damage = Damage::new(&LARGE_BOAT, true);
     damage.apply(hurt(200.0, 96.0, 0.0), 0.0, 0.0);
     assert_eq!(damage.state, State::Afloat);
@@ -153,7 +153,7 @@ fn her_hands_mend_her_only_in_quiet_waters_and_to_half() {
 }
 
 #[test]
-fn going_down_she_lists_and_trims_by_her_seed_and_settles_slow_then_fast() {
+fn going_down_it_lists_and_trims_by_its_seed_and_settles_slow_then_fast() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     damage.apply(hurt(264.0, 0.0, 0.0), 0.0, 0.0);
     damage.step(SINK_SECONDS / 2.0, 10.0);
@@ -168,7 +168,7 @@ fn going_down_she_lists_and_trims_by_her_seed_and_settles_slow_then_fast() {
 }
 
 #[test]
-fn hurt_she_lists_to_the_side_she_will_go_down_on() {
+fn hurt_it_lists_to_the_side_it_will_go_down_on() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     damage.apply(hurt(200.0, 0.0, 0.0), 0.0, 0.0);
     for _ in 0..600 {
@@ -181,15 +181,15 @@ fn hurt_she_lists_to_the_side_she_will_go_down_on() {
 }
 
 #[test]
-fn a_crew_struck_down_to_the_last_man_strikes_with_her_fires_still_burning() {
+fn a_crew_struck_down_to_the_last_man_strikes_with_its_fires_still_burning() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     damage.apply(Hurt { fire: true, ..hurt(0.0, 0.0, 0.0) }, 0.0, 0.0);
     assert_eq!(damage.apply(hurt(0.0, 0.0, 10.0), 1.0, 0.0), Some(State::Struck));
     assert_eq!(damage.fires(), 1, "nobody is left to fight them");
 }
 
-/// Many seeded broadsides of `guns` a side from a gun of `rank`'s Sloop's harm and `shot`, each ball into her hull
-/// (`zone`), as the fight takes them: her mean hull, canvas, men and fires lost a broadside.
+/// Many seeded broadsides of `guns` a side from a gun of `rank`'s Sloop's harm and `shot`, each ball into its hull
+/// (`zone`), as the fight takes them: its mean hull, canvas, men and fires lost a broadside.
 fn broadsides(guns: usize, rank: crate::ranks::Rank, shot: Shot, zone: Zone) -> [f64; 4] {
     let commission = crate::ranks::Commission { faction: crate::ranks::PIRATES, rank };
     let gun =
@@ -210,7 +210,7 @@ fn broadsides(guns: usize, rank: crate::ranks::Rank, shot: Shot, zone: Zone) -> 
 }
 
 #[test]
-fn a_broadside_takes_as_much_hull_canvas_men_and_fire_from_her_whatever_hull_fires_it() {
+fn a_broadside_takes_as_much_hull_canvas_men_and_fire_from_it_whatever_hull_fires_it() {
     use crate::ranks::Rank;
     for (rank, shot, zone) in [
         (Rank::Major, Shot::Round, Zone::Hull),
@@ -222,9 +222,9 @@ fn a_broadside_takes_as_much_hull_canvas_men_and_fire_from_her_whatever_hull_fir
         let sloop = broadsides(3, rank, shot, zone);
         for guns in [5, 7, 10] {
             let other = broadsides(guns, rank, shot, zone);
-            for (part, (mine, hers)) in ["hull", "canvas", "men", "fires"].iter().zip(other.iter().zip(sloop)) {
-                let near = (mine - hers).abs() <= 0.02 * hers.max(0.05);
-                assert!(near, "{guns} guns, {rank:?} {shot:?} {zone:?}: {part} {mine} against the Sloop's {hers}");
+            for (part, (mine, theirs)) in ["hull", "canvas", "men", "fires"].iter().zip(other.iter().zip(sloop)) {
+                let near = (mine - theirs).abs() <= 0.02 * theirs.max(0.05);
+                assert!(near, "{guns} guns, {rank:?} {shot:?} {zone:?}: {part} {mine} against the Sloop's {theirs}");
             }
         }
     }

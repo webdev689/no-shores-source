@@ -9,7 +9,7 @@ fn sank(rank: Rank, players: Vec<PlayerId>) -> Sank {
 }
 
 #[test]
-fn a_ship_lays_her_ranks_pieces_for_each_player_who_fought_her_within_thirty_metres() {
+fn a_ship_lays_its_ranks_pieces_for_each_player_who_fought_it_within_thirty_metres() {
     for (rank, count) in [(Rank::Minor, 3), (Rank::Major, 4), (Rank::Elite, 5), (Rank::Miniboss, 6), (Rank::Boss, 8)] {
         let mut flotsam = Flotsam::new(1);
         let laid = flotsam.lay(&sank(rank, vec![1, 2]), 0, (1, 0));
@@ -25,7 +25,7 @@ fn a_ship_lays_her_ranks_pieces_for_each_player_who_fought_her_within_thirty_met
 }
 
 #[test]
-fn a_chest_is_rolled_a_rank_up_and_her_hold_lays_twice_over_with_each_chest_another_rank_up() {
+fn a_chest_is_rolled_a_rank_up_and_its_hold_lays_twice_over_with_each_chest_another_rank_up() {
     let mut flotsam = Flotsam::new(1);
     flotsam.lay(&sank(Rank::Elite, vec![1]), 0, (2, 1));
     let pieces: Vec<&Floating> = flotsam.for_player(1).collect();
@@ -71,7 +71,7 @@ fn a_harder_seas_pieces_hold_a_vestige_as_often_as_a_harder_voyage_pays_one_on_l
     use gear::Difficulty;
     for rank in Rank::ALL {
         let plain = vestige_chance(rank, Difficulty::Normal);
-        assert_eq!(plain, gear::rewards::worth(foe_of(rank)).vestige, "{rank:?} at Normal: her foe's own chance");
+        assert_eq!(plain, gear::rewards::worth(foe_of(rank)).vestige, "{rank:?} at Normal: its foe's own chance");
         for difficulty in [Difficulty::Elite, Difficulty::Abyss] {
             let raised = (plain * difficulty.reward()).min(1.0);
             assert_eq!(vestige_chance(rank, difficulty), raised, "{rank:?} {difficulty:?}");

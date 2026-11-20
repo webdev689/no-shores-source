@@ -2,7 +2,7 @@ use super::*;
 use crate::guns::SWIVEL;
 
 #[test]
-fn a_major_is_a_ship_as_she_was_before_ranks() {
+fn a_major_is_a_ship_as_it_was_before_ranks() {
     let major = Commission::default();
     assert_eq!((major.faction, major.rank), (PIRATES, Rank::Major));
     assert_eq!(major.build(), PIRATE_SLOOP);
@@ -14,8 +14,8 @@ fn a_major_is_a_ship_as_she_was_before_ranks() {
 }
 
 #[test]
-fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
-    // Hull, might, reload, aim error, always bold, the shares of her hull she runs under and strikes at.
+fn each_rank_scales_its_hull_its_guns_its_reload_its_aim_and_its_boldness() {
+    // Hull, might, reload, aim error, always bold, the shares of its hull it runs under and strikes at.
     let table = [
         (Rank::Minor, [0.6, 0.9, 1.2, 1.3], false, [0.3, 0.25]),
         (Rank::Major, [1.0, 1.0, 1.0, 1.0], false, [0.3, 0.25]),
@@ -39,7 +39,7 @@ fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
 }
 
 #[test]
-fn each_faction_sails_her_own_class_and_only_captains_factions_take_a_commission() {
+fn each_faction_sails_its_own_class_and_only_captains_factions_take_a_commission() {
     let minor = Commission { faction: PIRATES, rank: Rank::Minor }.build().hull;
     let elite = Commission { faction: PIRATES, rank: Rank::Elite }.build().hull;
     let schooner = hull_exposure(sailing::HullKind::Schooner);
@@ -61,7 +61,7 @@ fn a_rank_is_numbered_one_to_five() {
 }
 
 #[test]
-fn each_rank_sails_her_own_hull() {
+fn each_rank_sails_its_own_hull() {
     use sailing::HullKind;
     let hulls = [HullKind::Sloop, HullKind::Sloop, HullKind::Schooner, HullKind::Brig, HullKind::Frigate];
     for (rank, hull) in Rank::ALL.into_iter().zip(hulls) {
@@ -73,21 +73,21 @@ fn each_rank_sails_her_own_hull() {
 }
 
 #[test]
-fn a_captain_is_named_for_her_faction_and_her_hull() {
+fn a_captain_is_named_for_its_faction_and_its_hull() {
     let names = |faction: u8| Rank::ALL.map(|rank| Commission { faction, rank }.build().name);
     assert_eq!(names(PIRATES), ["Pirate Sloop", "Pirate Sloop", "Pirate Schooner", "Pirate Brig", "Pirate Frigate"]);
     assert_eq!(names(GREY_TITHE), ["Tithe Sloop", "Tithe Sloop", "Tithe Schooner", "Tithe Brig", "Tithe Frigate"]);
 }
 
 #[test]
-fn a_bigger_hull_is_as_much_tougher_as_she_is_easier_to_hit() {
+fn a_bigger_hull_is_as_much_tougher_as_it_is_easier_to_hit() {
     use crate::arms::{FRIGATE_ARMS, SLOOP_ARMS};
     use crate::captain::odds::hit_share;
     use sailing::HullKind;
     assert_eq!((exposure(HullKind::Sloop), hull_exposure(HullKind::Sloop)), (1.0, 1.0), "the Sloop's, to the bit");
     let frigate = hit_share(&SLOOP_ARMS, &FRIGATE_ARMS, 0.45) / hit_share(&SLOOP_ARMS, &SLOOP_ARMS, 0.45);
     assert!((exposure(HullKind::Frigate) - frigate).abs() < 1e-12 && (frigate - 0.778 / 0.413).abs() < 0.01);
-    // Her hull's, each hit holed by the waterline band's share of her height.
+    // Its hull's, each hit holed by the waterline band's share of its height.
     let holed = |top: f64| 1.0 + 0.4 * (1.1 / top);
     let hulled = frigate * holed(FRIGATE_ARMS.hull[1][2]) / holed(SLOOP_ARMS.hull[1][2]);
     assert!((hull_exposure(HullKind::Frigate) - hulled).abs() < 1e-12 && (hulled - 1.79).abs() < 0.01, "{hulled}");
@@ -96,12 +96,12 @@ fn a_bigger_hull_is_as_much_tougher_as_she_is_easier_to_hit() {
     }
     let boss = |faction| Commission { faction, rank: Rank::Boss }.build();
     let exposed = exposure(HullKind::Frigate);
-    assert_eq!(boss(PIRATES).hull, (264.0 * 5.0 * hulled).round(), "her hull, her rank's and her size's");
+    assert_eq!(boss(PIRATES).hull, (264.0 * 5.0 * hulled).round(), "its hull, its rank's and its size's");
     assert_eq!((boss(PIRATES).sail, boss(PIRATES).crew), ((96.0 * exposed).round(), (10.0 * 5.0 * exposed).round()));
 }
 
-/// Balls fired at a ship of `hull` sound as `damage` (each striking by the fight's hit share on her hull, a round
-/// ball's harm into her hull, holed as often as the waterline band is of her height) until she strikes, over many
+/// Balls fired at a ship of `hull` sound as `damage` (each striking by the fight's hit share on its hull, a round
+/// ball's harm into its hull, holed as often as the waterline band is of its height) until it strikes, over many
 /// seeds: the mean count.
 fn balls_to_strike(hull: sailing::HullKind, sound: &Damage) -> f64 {
     use crate::arms::{SLOOP_ARMS, arms_of};
@@ -130,15 +130,15 @@ fn the_same_fire_makes_any_hull_of_one_rank_strike_as_soon_as_the_sloop() {
     for rank in [Rank::Elite, Rank::Miniboss, Rank::Boss] {
         let commission = Commission { faction: PIRATES, rank };
         let own = balls_to_strike(rank.hull(), &commission.damage());
-        // The same rank in the Sloop: her class's hull and men by her rank's alone, striking where her rank strikes.
+        // The same rank in the Sloop: its class's hull and men by its rank's alone, striking where its rank strikes.
         let (hull, crew) = ((264.0 * rank.scale().hull).round(), (10.0 * rank.scale().hull).round());
         let in_sloop = Build { hull, crew, ..PIRATE_SLOOP };
         let mut in_sloop = Damage::new(&in_sloop, false);
         in_sloop.struck_at = rank.scale().strikes_at;
         let sloop = balls_to_strike(sailing::HullKind::Sloop, &in_sloop);
-        assert!((own - sloop).abs() <= 0.03 * sloop, "{rank:?} in her {:?}: {own} balls against {sloop}", rank.hull());
+        assert!((own - sloop).abs() <= 0.03 * sloop, "{rank:?} in its {:?}: {own} balls against {sloop}", rank.hull());
     }
-    // Her strike time as a captain reckons it, under a Major's fire from a Sloop: her hull's, to a hair of the Sloop's.
+    // Its strike time as a captain reckons it, under a Major's fire from a Sloop: its hull's, to a hair of the Sloop's.
     use crate::arms::{SLOOP_ARMS, arms_of};
     use crate::captain::odds::{Power, strike_time};
     let major = Power::captain(&PIRATE_SLOOP, 1.0, 1.0);
@@ -149,7 +149,7 @@ fn the_same_fire_makes_any_hull_of_one_rank_strike_as_soon_as_the_sloop() {
     let sloop = time(Commission { faction: PIRATES, rank: Rank::Major });
     for rank in [Rank::Elite, Rank::Miniboss, Rank::Boss] {
         let own = time(Commission { faction: PIRATES, rank }) / rank.scale().hull;
-        // Within her whole men and points' rounding.
+        // Within its whole men and points' rounding.
         assert!((own - sloop).abs() <= 0.02 * sloop, "{rank:?}: {own} against {sloop}");
     }
 }

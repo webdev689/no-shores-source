@@ -1,6 +1,6 @@
-//! How a ship sails, the same on the server and in a browser: the helm's ladder from oars to sails, her way and turn
-//! eased by Come Sail Away's handling under DFO's responsive helm, her sails' pull against the wind, her pose on the
-//! swell and where she takes the ground. Ships step by whole ticks of `TICK_SECONDS`.
+//! How a ship sails, the same on the server and in a browser: the helm's ladder from oars to sails, its way and turn
+//! eased by Come Sail Away's handling under DFO's responsive helm, its sails' pull against the wind, its pose on the
+//! swell and where it takes the ground. Ships step by whole ticks of `TICK_SECONDS`.
 
 pub mod floats;
 pub mod helm;

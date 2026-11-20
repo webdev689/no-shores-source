@@ -21,7 +21,8 @@ fn ship_of(fleet: &Fleet, player: PlayerId) -> Option<Ship> {
     fleet.fight().vessel(player).map(|vessel| vessel.ship)
 }
 
-/// A room with one player put to sea at `AT`, rowing ahead: her orders sent up to `sequence`, the room ticked as many.
+/// A room with one player put to sea at `AT`, rowing ahead: their orders sent up to `sequence`, the room ticked as
+/// many.
 fn rowing(ticks: u32) -> (Fleet, PlayerId) {
     let mut fleet = Fleet::new();
     let player = fleet.join().unwrap_or_default();
@@ -37,18 +38,18 @@ fn rowing(ticks: u32) -> (Fleet, PlayerId) {
 }
 
 #[test]
-fn a_ship_puts_to_sea_where_her_player_asks_and_only_once() {
+fn a_ship_puts_to_sea_where_its_player_asks_and_only_once() {
     let mut fleet = Fleet::new();
     let player = fleet.join().unwrap_or_default();
     fleet.tick();
-    assert_eq!(ship_of(&fleet, player), None, "not at sea until her orders put her there");
+    assert_eq!(ship_of(&fleet, player), None, "not at sea until their orders put it there");
     assert_eq!(fleet.input(player, put(1, AT)), Ok(()));
     fleet.tick();
     let at_sea = ship_of(&fleet, player).map(|ship| (ship.x, ship.y, ship.heading));
     assert_eq!(at_sea, Some((AT[0], AT[1], AT[2])));
     assert_eq!(fleet.input(player, put(2, [AT[0] + 5000.0, AT[1], 0.0])), Ok(()));
     fleet.tick();
-    assert_eq!(ship_of(&fleet, player).map(|ship| ship.x), Some(AT[0]), "at sea, only her helm moves her");
+    assert_eq!(ship_of(&fleet, player).map(|ship| ship.x), Some(AT[0]), "at sea, only its helm moves it");
 }
 
 #[test]
@@ -68,7 +69,7 @@ fn orders_out_of_turn_or_past_what_a_helm_can_ask_are_refused() {
 }
 
 #[test]
-fn a_flood_of_orders_steps_her_no_faster_than_the_rooms_clock() {
+fn a_flood_of_orders_steps_a_ship_no_faster_than_the_rooms_clock() {
     let mut fleet = Fleet::new();
     let player = fleet.join().unwrap_or_default();
     assert_eq!(fleet.input(player, put(1, AT)), Ok(()));
@@ -91,8 +92,8 @@ fn a_flood_of_orders_steps_her_no_faster_than_the_rooms_clock() {
 
 #[test]
 fn time_in_harbour_is_not_banked_to_catch_up_on_at_sea() {
-    // One player waits in harbour 600 ticks, then floods the room; another joins as she puts to sea and sends one
-    // order a tick. Each sets her sails, then holds her course.
+    // One player waits in harbour 600 ticks, then floods the room; another joins as they put to sea and sends one
+    // order a tick. Each sets their sails, then holds their course.
     let mut fleet = Fleet::new();
     let waited = fleet.join().unwrap_or_default();
     for _ in 0..600 {
@@ -120,13 +121,13 @@ fn time_in_harbour_is_not_banked_to_catch_up_on_at_sea() {
         (east * east + south * south).sqrt()
     };
     let (waited_run, honest_run) = (run(waited, to_wait), run(honest, to_honest));
-    assert!(honest_run > 10.0, "under sail she runs: {honest_run} m");
+    assert!(honest_run > 10.0, "under sail it runs: {honest_run} m");
     // A view's lag and the slack are 30 ticks to catch up on, 5% of 600.
-    assert!(waited_run < honest_run * 1.06, "she ran {waited_run} m to the honest {honest_run} m");
+    assert!(waited_run < honest_run * 1.06, "it ran {waited_run} m to the honest {honest_run} m");
 }
 
 #[test]
-fn a_release_in_a_late_tick_is_her_last_order_of_it_so_it_is_judged_by_its_own_brace() {
+fn a_release_in_a_late_tick_is_their_last_order_of_it_so_it_is_judged_by_its_own_brace() {
     let mut fleet = Fleet::new();
     let player = fleet.join().unwrap_or_default();
     assert_eq!(fleet.input(player, put(1, AT)), Ok(()));
@@ -142,7 +143,7 @@ fn a_release_in_a_late_tick_is_her_last_order_of_it_so_it_is_judged_by_its_own_b
     let events = fleet.take_events();
     let refused = events.iter().any(|(_, event)| matches!(event, Event::Refused { .. }));
     let fired = events.iter().any(|(_, event)| matches!(event, Event::Shot(ShotEvent::Muzzle { .. })));
-    assert!(fired && !refused, "unbraced when she fired: {events:?}");
+    assert!(fired && !refused, "unbraced when they fired: {events:?}");
     assert_eq!(fleet.acknowledged(player), Some(2), "none after the release this tick");
     fleet.tick();
     assert_eq!(fleet.acknowledged(player), Some(4), "the braces the next tick");
@@ -150,21 +151,21 @@ fn a_release_in_a_late_tick_is_her_last_order_of_it_so_it_is_judged_by_its_own_b
 }
 
 #[test]
-fn a_player_whose_orders_stop_lies_still_a_views_lag_then_her_helm_stands() {
+fn a_player_whose_orders_stop_lies_still_a_views_lag_then_their_helm_stands() {
     let (mut fleet, player) = rowing(60);
     let before = ship_of(&fleet, player);
     for _ in 0..VIEW_LAG {
         fleet.tick();
     }
-    assert_eq!(ship_of(&fleet, player), before, "her orders may yet come");
+    assert_eq!(ship_of(&fleet, player), before, "their orders may yet come");
     fleet.tick();
     let after = ship_of(&fleet, player);
-    assert_ne!(after, before, "with her helm standing she rows on");
+    assert_ne!(after, before, "with their helm standing the ship rows on");
     assert_eq!(after.map(|ship| ship.rung), Some(1));
 }
 
 #[test]
-fn her_ship_is_her_orders_stepped_by_the_rules_to_the_bit() {
+fn their_ship_is_their_orders_stepped_by_the_rules_to_the_bit() {
     let (fleet, player) = rowing(120);
     let (swell, wind) = fleet.weather();
     let waters = OpenSea { swell };
@@ -176,13 +177,13 @@ fn her_ship_is_her_orders_stepped_by_the_rules_to_the_bit() {
         ship = sail_hurt(&ship, &sailing::SLOOP, helm, whole, &waters, wind, 0.0).0;
     }
     let room = ship_of(&fleet, player).map(|ship| ship.to_floats().map(f64::to_bits));
-    assert_eq!(room, Some(ship.to_floats().map(f64::to_bits)), "a browser predicting her agrees with the room");
+    assert_eq!(room, Some(ship.to_floats().map(f64::to_bits)), "a browser predicting it agrees with the room");
     let hurts = fleet.fight().vessel(player).map(|vessel| Hurts::of(&vessel.damage));
-    assert_eq!(hurts, Some(whole), "her hurts as a snapshot's numbers give them");
+    assert_eq!(hurts, Some(whole), "its hurts as a snapshot's numbers give them");
 }
 
 #[test]
-fn a_captain_is_called_round_her_ship_four_at_most_and_all_sent_off_at_once() {
+fn a_captain_is_called_round_their_ship_four_at_most_and_all_sent_off_at_once() {
     let (mut fleet, player) = rowing(1);
     let mut sequence = 4;
     let mut call = |fleet: &mut Fleet, call: Call| {
@@ -196,7 +197,7 @@ fn a_captain_is_called_round_her_ship_four_at_most_and_all_sent_off_at_once() {
     }
     let captains = |fleet: &Fleet| fleet.fight().ships.values().filter(|vessel| vessel.command().is_some()).count();
     assert_eq!(captains(&fleet), CAPTAINS_MOST);
-    let Some(own) = ship_of(&fleet, player) else { panic!("her ship is at sea") };
+    let Some(own) = ship_of(&fleet, player) else { panic!("their ship is at sea") };
     for vessel in fleet.fight().ships.values().filter(|vessel| vessel.command().is_some()) {
         let (east, south) = (vessel.ship.x - own.x, vessel.ship.y - own.y);
         let apart = (east * east + south * south).sqrt();
@@ -210,7 +211,7 @@ fn a_captain_is_called_round_her_ship_four_at_most_and_all_sent_off_at_once() {
 }
 
 #[test]
-fn two_players_sail_in_one_fight_and_one_who_leaves_takes_her_ship() {
+fn two_players_sail_in_one_fight_and_one_who_leaves_takes_their_ship() {
     let mut fleet = Fleet::new();
     let (first, second) = (fleet.join().unwrap_or_default(), fleet.join().unwrap_or_default());
     assert_ne!(first, second);
@@ -261,15 +262,15 @@ fn a_captain_called_comes_of_the_faction_and_rank_asked_for() {
         .fight()
         .ships
         .values()
-        .filter_map(|vessel| vessel.command().map(|command| (command.her.commission, vessel.damage.max_hull)))
+        .filter_map(|vessel| vessel.command().map(|command| (command.mind.commission, vessel.damage.max_hull)))
         .collect();
     let frigates = (264.0 * 5.0 * naval::ranks::hull_exposure(Rank::Boss.hull())).round();
-    assert_eq!(called, [(boss, frigates)], "a Boss of the Grey Tithe, her hull five times a Major's in her Frigate's");
+    assert_eq!(called, [(boss, frigates)], "a Boss of the Grey Tithe, its hull five times a Major's in its Frigate's");
     assert_eq!(fleet.fight().ships.values().filter_map(|vessel| vessel.command()).count(), 1);
 }
 
 #[test]
-fn a_captain_of_each_rank_called_into_a_fleet_room_sails_her_ranks_hull() {
+fn a_captain_of_each_rank_called_into_a_fleet_room_sails_its_ranks_hull() {
     for rank in Rank::ALL {
         let (mut fleet, player) = rowing(1);
         let commission = Commission { faction: GREY_TITHE, rank };

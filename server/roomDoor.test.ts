@@ -335,11 +335,11 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   const helms = Array.from({ length: 149 }, (unused, index) => helmAt(index + 2));
   const hurts = { wrecked: false, sail: last?.hurts.sail ?? 0, maxSail: last?.hurts.maxSail ?? 0 };
   const predicted = rules.predict(put?.ship ?? [], hurts, 151 / 60, helms);
-  assert.deepEqual(Array.from(predicted?.ship ?? []), Array.from(last?.ship ?? []), 'her ship, to the bit');
+  assert.deepEqual(Array.from(predicted?.ship ?? []), Array.from(last?.ship ?? []), 'their ship, to the bit');
   assert.equal(room.input(first, orders(151, { call: 'captain' })), 'taken');
   room.tick();
   const called = read();
-  assert.equal(called.vessels.filter((vessel) => vessel.captain).length, 1, 'a captain called round her');
+  assert.equal(called.vessels.filter((vessel) => vessel.captain).length, 1, 'a captain called round it');
 });
 
 /** How often, in ticks, the room sends one player's gear (`room::GEAR_EVERY_TICKS`). */
@@ -402,6 +402,6 @@ test('a sea that keeps characters sails a course only once the keeper has answer
     [kept, 60_000, 40_000],
     [unkept, 50_000, 50_000],
   ]);
-  assert.ok(room.gear(kept).length > 0, 'her gear, from the character given back');
+  assert.ok(room.gear(kept).length > 0, 'their gear, from the character given back');
   assert.equal(room.gear(unkept).length, 0, 'none for a character not kept');
 });

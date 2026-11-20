@@ -3,7 +3,8 @@
 /// A gun: its muzzle speed (m/s), its carriage's lowest and highest elevation (degrees), its reload (seconds, a full
 /// crew's), its scatter left and right and up and down (degrees), its ball's radius (metres), the harm one ball
 /// does to a hull, a canvas and a crew before the zone, the load and the ship's toughness weigh it, and the share of
-/// that harm and of each ball's chances a ball of hers takes (1 for the Sloop's; her side's guns split her broadside).
+/// that harm and of each ball's chances a ball of the ship's takes (1 for the Sloop's; its side's guns split its
+/// broadside).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gun {
     pub speed: f64,
@@ -34,7 +35,7 @@ pub const SWIVEL: Gun = Gun {
     share: 1.0,
 };
 
-/// The chance a ball into a hull sets her alight, unless its load says otherwise.
+/// The chance a ball into a hull sets it alight, unless its load says otherwise.
 pub const FIRE_CHANCE: f64 = 0.06;
 /// Grapeshot's reach: its men whole to this flight (seconds), half by the next and after.
 pub const GRAPE_FULL_S: f64 = 1.2;
@@ -162,7 +163,7 @@ pub fn loaded(gun: &Gun, shot: Shot) -> Gun {
     }
 }
 
-/// The chance a ball of `shot` into a hull sets her alight.
+/// The chance a ball of `shot` into a hull sets it alight.
 #[must_use]
 pub fn fire_chance(shot: Shot) -> f64 {
     load(shot).fire.unwrap_or(FIRE_CHANCE)

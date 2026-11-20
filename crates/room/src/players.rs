@@ -254,7 +254,7 @@ impl Room {
     }
 
     /// Every player's dress is sent to everyone once more with the next changes, for one who joined with no welcome
-    /// to carry them (a boarder come over her side).
+    /// to carry them (a boarder come over a ship's side).
     pub fn announce_dresses(&mut self) {
         for found in self.players.values_mut().filter(|found| !found.dress.is_empty()) {
             found.dress_changed = true;
