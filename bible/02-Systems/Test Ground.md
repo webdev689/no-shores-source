@@ -363,8 +363,11 @@ fails to arrive is asked for again 5 s later, not every frame. Decoded strips ar
 the worker that composes the figures, 96 MB on the page, the least lately asked for let go and fetched again if asked.
 
 A frame is composed in the browser as DFO's game composes it (`composeFrame`), in a worker off the page's thread (on
-the page where no worker starts), so the page only uploads it. A frame a figure shows now goes ahead of every frame
-composed ahead, and a move shown before it is composed asks for the rest of its frames in that view with it:
+the page where no worker starts), so the page only uploads it. A move shown before it is composed asks for the rest of
+its frames in that view with it. The worker composes the frames whose strips have come in the order they are wanted:
+those shown now, then the rest of a move just shown, then those composed ahead (`ComposeQueue`). A frame still
+waiting for its strips holds up none of the others, and one under way that is now shown goes ahead. A frame that
+fails is asked for again 5 s later, not every tick. Each frame is composed so:
 
 - Each layer's cell is laid on the figure's cell by its root.
 - At each pixel the nearest texel shows. Where two layers meet on one part of the body, the one with the higher order

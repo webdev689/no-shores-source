@@ -4,15 +4,22 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import type { StripWhere } from '../forge/store.ts';
 import { type ComposeJob, type ComposedCard, composeCard, stripsOf } from './composeJob.ts';
+import type { Haste } from './composeQueue.ts';
 import type { ComposeAnswer, ComposeMessage } from './composeWorker.ts';
 
-/** Whatever composes figures' frames: a frame a figure shows now (`urgent`) before any composed ahead. */
+/** Whatever composes figures' frames, each kept by `key`: the frames shown now first, then those next in a move just
+ *  shown, then those composed ahead of need. */
 export interface Composer {
-  compose(job: ComposeJob, urgent: boolean): Promise<ComposedCard | null>;
+  /** Whether it composes off the page's thread, so warming may go as fast as it keeps up. */
+  readonly offPage: boolean;
+  compose(key: string, job: ComposeJob, haste: Haste): Promise<ComposedCard | null>;
+  /** A frame under way that is now shown goes ahead of every frame not shown. */
+  hurry(key: string): void;
 }
 
-/** Composes on the page's own thread, in turn as asked: for tests, and where no worker can start. */
+/** Composes on the page's own thread, each frame as its strips come: for tests, and where no worker can start. */
 export class PageComposer implements Composer {
+  readonly offPage = false;
   private readonly looks: ForgeLooks;
   private readonly colours: Colours;
   private readonly strip: (path: string) => Promise<Strip | null>;
@@ -23,17 +30,17 @@ export class PageComposer implements Composer {
     this.strip = strip;
   }
 
-  compose(job: ComposeJob): Promise<ComposedCard | null> {
+  compose(_key: string, job: ComposeJob): Promise<ComposedCard | null> {
     return composeCard(job, this.looks, this.colours, this.strip);
   }
+
+  hurry(): void {}
 }
 
-/** A worker given this many frames at once keeps busy while some wait for their strips, and a frame asked for now
- *  waits behind no more than these. */
-const IN_FLIGHT = 4;
-
-interface Waiting {
+interface Sent {
+  readonly key: string;
   readonly job: ComposeJob;
+  haste: Haste;
   readonly done: (card: ComposedCard | null) => void;
   readonly failed: (why: Error) => void;
 }
@@ -47,25 +54,30 @@ export interface ComposeTables {
 }
 
 /**
- * Composes in a worker, off the page's thread: a frame a figure shows now goes ahead of every frame composed ahead.
- * The page says where each of a frame's strips lies, so the worker needs no pack index. A worker that fails is let
- * go, and what it had and every frame after is composed on the page instead.
+ * Composes in a worker, off the page's thread, which orders the frames (`ComposeQueue`); each is sent as it is asked
+ * for, as the cards ask for few at a time. The page says where each of a frame's strips lies, so the worker needs no
+ * pack index. Where no worker starts, or one fails, what it had and every frame after is composed on the page.
  */
 export class WorkerComposer implements Composer {
-  private worker: Worker | null;
+  private worker: Worker | null = null;
   private readonly fallback: Composer;
   private readonly looks: ForgeLooks;
   private readonly where: (path: string) => StripWhere | null;
-  private readonly urgent: Waiting[] = [];
-  private readonly later: Waiting[] = [];
-  private readonly sent = new Map<number, Waiting>();
+  private readonly sent = new Map<number, Sent>();
+  private readonly ids = new Map<string, number>();
   private nextId = 0;
 
   constructor(tables: ComposeTables, where: (path: string) => StripWhere | null, fallback: Composer) {
     this.looks = tables.looks;
     this.where = where;
     this.fallback = fallback;
-    const worker = new Worker(new URL('./composeWorker.ts', import.meta.url), { type: 'module' });
+    let worker: Worker;
+    try {
+      worker = new Worker(new URL('./composeWorker.ts', import.meta.url), { type: 'module' });
+    } catch {
+      // No worker here (none in this runtime, or the page's policy forbids one): the page composes.
+      return;
+    }
     worker.addEventListener('message', (event: MessageEvent<ComposeAnswer>) => this.answered(event.data));
     worker.addEventListener('error', (event) => {
       event.preventDefault();
@@ -76,44 +88,47 @@ export class WorkerComposer implements Composer {
     this.worker = worker;
   }
 
-  compose(job: ComposeJob, urgent: boolean): Promise<ComposedCard | null> {
-    if (!this.worker) return this.fallback.compose(job, urgent);
+  get offPage(): boolean {
+    return this.worker !== null;
+  }
+
+  compose(key: string, job: ComposeJob, haste: Haste): Promise<ComposedCard | null> {
+    const worker = this.worker;
+    if (!worker) return this.fallback.compose(key, job, haste);
     return new Promise((done, failed) => {
-      (urgent ? this.urgent : this.later).push({ job, done, failed });
-      this.send();
+      const id = this.nextId++;
+      const where = Object.fromEntries(stripsOf(job, this.looks).map((path) => [path, this.where(path)]));
+      const message: ComposeMessage = { kind: 'job', id, haste, job, where };
+      worker.postMessage(message);
+      this.sent.set(id, { key, job, haste, done, failed });
+      this.ids.set(key, id);
     });
   }
 
-  private send(): void {
-    const worker = this.worker;
-    while (worker && this.sent.size < IN_FLIGHT) {
-      const waiting = this.urgent.shift() ?? this.later.shift();
-      if (!waiting) return;
-      const id = this.nextId++;
-      this.sent.set(id, waiting);
-      const where = Object.fromEntries(stripsOf(waiting.job, this.looks).map((path) => [path, this.where(path)]));
-      const message: ComposeMessage = { kind: 'job', id, job: waiting.job, where };
-      worker.postMessage(message);
-    }
+  hurry(key: string): void {
+    const id = this.ids.get(key);
+    const sent = id === undefined ? undefined : this.sent.get(id);
+    if (!this.worker || id === undefined || !sent || sent.haste === 'now') return;
+    sent.haste = 'now';
+    const message: ComposeMessage = { kind: 'hurry', id };
+    this.worker.postMessage(message);
   }
 
   private answered({ id, card, failure }: ComposeAnswer): void {
-    const waiting = this.sent.get(id);
+    const sent = this.sent.get(id);
+    if (!sent) return;
     this.sent.delete(id);
-    if (waiting) {
-      if (failure === null) waiting.done(card);
-      else waiting.failed(new Error(failure));
-    }
-    this.send();
+    if (this.ids.get(sent.key) === id) this.ids.delete(sent.key);
+    if (failure === null) sent.done(card);
+    else sent.failed(new Error(failure));
   }
 
   private failed(): void {
     this.worker?.terminate();
     this.worker = null;
-    for (const waiting of [...this.sent.values(), ...this.urgent, ...this.later])
-      this.fallback.compose(waiting.job, true).then(waiting.done, waiting.failed);
+    for (const sent of this.sent.values())
+      this.fallback.compose(sent.key, sent.job, sent.haste).then(sent.done, sent.failed);
     this.sent.clear();
-    this.urgent.length = 0;
-    this.later.length = 0;
+    this.ids.clear();
   }
 }
