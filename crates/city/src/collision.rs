@@ -39,6 +39,10 @@ fn into_boxes(solid: &Solid) -> Vec<Box2> {
             own([-radius, -half_depth, crown, radius, half_depth, height]),
         ];
     }
+    // A block turned off the world's axes (a length of quay, a pier) in slices, so its boxes keep to it.
+    if solid.shape == Shape::Block && solid.lean == 0.0 && solid.roll == 0.0 {
+        return crate::rock::sliced(solid, vec![[-half_width, -half_depth, 0.0, half_width, half_depth, height]]);
+    }
     vec![own([-half_width, -half_depth, 0.0, half_width, half_depth, height])]
 }
 
@@ -60,7 +64,6 @@ pub fn boxes_within(plan: &Plan, bounds: [f64; 4]) -> Vec<Box2> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::solids::Shape;
 
     #[test]
     fn paving_and_low_kerbs_are_stepped_over() {
@@ -100,6 +103,22 @@ mod tests {
         for later in &standing[1..] {
             assert_eq!(into_boxes(later), Vec::<Box2>::new(), "a later surface is no box of its own");
         }
+    }
+
+    #[test]
+    fn a_turned_length_of_quay_is_boxed_in_slices_that_keep_to_it() {
+        let quay = Solid::upright(Shape::Block, [0.0, 0.0, -4.0], [8.0, 90.0, 7.0], Material::Stone).turned(-1.16);
+        let boxes = into_boxes(&quay);
+        assert!(boxes.len() > 10, "{}", boxes.len());
+        // Every box's middle lies within the quay's half width (and a slice's lean) of its middle line.
+        let way = [libm::sin(1.16), libm::cos(-1.16)];
+        for [west, north, east, south, top, bottom] in boxes {
+            let (x, y) = ((west + east) / 2.0, (north + south) / 2.0);
+            let off = (x * way[1] - y * way[0]).abs();
+            assert!(off < 4.0 + 1.0 && top == 3.0 && bottom == -4.0, "{off} {top} {bottom}");
+        }
+        let square = Solid::upright(Shape::Block, [0.0, 0.0, 0.0], [8.0, 90.0, 7.0], Material::Stone);
+        assert_eq!(into_boxes(&square), vec![[-4.0, -45.0, 4.0, 45.0, 7.0, 0.0]]);
     }
 
     #[test]

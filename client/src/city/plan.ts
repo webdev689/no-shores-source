@@ -46,7 +46,21 @@ export type PlanCell = {
   readonly block?: string;
 };
 
-export type Pad = { readonly bounds: readonly [number, number, number, number]; readonly level: number };
+/** A rectangle of ground the city sets to a level: at its west or north edge, falling to `fall`'s level at its east
+ *  or south edge where it slopes (a ramp). */
+export type Pad = {
+  readonly bounds: readonly [number, number, number, number];
+  readonly level: number;
+  readonly fall?: { readonly east: number } | { readonly south: number };
+};
+
+/** One walked piece of a ramp or a switchback (the city crate's `ramps::Ramp`): its pad, its rise over its run, and
+ *  its centre line from its top to its foot (east, south, level), which the next piece's line carries on from. */
+export type Ramp = Pad & {
+  readonly piece: 'ramp' | 'leg' | 'landing';
+  readonly slope: number;
+  readonly line: readonly [readonly [number, number, number], readonly [number, number, number]];
+};
 
 /** A forged model already placed in the world: its id, whether it is a building, its origin (east, south, up) and
  *  its yaw in degrees clockwise from north. */
@@ -86,6 +100,9 @@ export type CityPlan = {
     readonly solids: readonly Solid[];
   };
   readonly pads: readonly Pad[];
+  /** The ramps and switchbacks joining each avenue's terraces and climbing to the platform: their pads are among
+   *  `pads`, their walls and paving among `works`. A layout's plan has none. */
+  readonly ramps?: readonly Ramp[];
   /** Models placed in the world and pictures laid on the land, beside the blocks the cells stand. */
   readonly pieces?: readonly Piece[];
   readonly decals?: readonly Decal[];

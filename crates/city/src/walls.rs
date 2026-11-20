@@ -1,5 +1,6 @@
 //! Stages F and G: the city's wall along its footprint where the land holds it, with towers and gatehouses; its
-//! harbour's quay and piers along the shore; and the retaining walls between its terraces and the ground round them.
+//! harbour's quay and piers along the shore; and the retaining walls between its terraces and the ground round them,
+//! cut where a ramp crosses.
 
 use crate::footprint::{Footprint, RAYS, Stop};
 use crate::grid::{CELL_M, Grid, SIDE_CELLS, index};
@@ -19,6 +20,10 @@ const SINK_M: f64 = 2.0;
 const LEAST_RETAIN_M: f64 = 0.3;
 /// A raised terrace's parapet over its edge, metres.
 const PARAPET_M: f64 = 1.0;
+/// The quay's top and the piers' over the sea, one level so a pier's root runs onto the quay, and their feet, metres.
+pub const QUAY_TOP_M: f64 = 3.0;
+const QUAY_FOOT_M: f64 = -4.0;
+const PIER_FOOT_M: f64 = -5.0;
 
 fn ray_end(footprint: &Footprint, ray: usize) -> [f64; 2] {
     let at = footprint.rays[ray % RAYS];
@@ -126,19 +131,49 @@ pub fn harbour_works(footprint: &Footprint) -> Vec<Solid> {
             continue;
         }
         let middle = [(from[0] + to[0]) / 2.0, (from[1] + to[1]) / 2.0];
-        let quay =
-            Solid::upright(Shape::Block, [middle[0], middle[1], -4.0], [8.0, length + 4.0, 7.0], Material::Stone);
+        let size = [8.0, length + 4.0, QUAY_TOP_M - QUAY_FOOT_M];
+        let quay = Solid::upright(Shape::Block, [middle[0], middle[1], QUAY_FOOT_M], size, Material::Stone);
         solids.push(quay.turned(turn_toward([east / length, south / length])));
     }
-    for (place, &ray) in shore.iter().enumerate().filter(|(place, _)| place % 3 == 1) {
+    for (place, ray) in pier_rays(footprint) {
         let direction = footprint.rays[ray].direction;
         let middle_share = 1.0 - (place as f64 / shore.len().max(1) as f64 - 0.5).abs() * 2.0;
         let length = 120.0 + 140.0 * middle_share;
         let middle = ahead(ray_end(footprint, ray), direction, length / 2.0);
-        let pier = Solid::upright(Shape::Block, [middle[0], middle[1], -5.0], [10.0, length, 7.0], Material::Timber);
+        let size = [10.0, length, QUAY_TOP_M - PIER_FOOT_M];
+        let pier = Solid::upright(Shape::Block, [middle[0], middle[1], PIER_FOOT_M], size, Material::Timber);
         solids.push(pier.turned(turn_toward(direction)));
     }
     solids
+}
+
+/// The shore's rays a pier runs out from (every third), each with its place among the shore's rays.
+fn pier_rays(footprint: &Footprint) -> Vec<(usize, usize)> {
+    let shore = (0..RAYS).filter(|&ray| footprint.rays[ray].stop == Stop::Shore);
+    shore.enumerate().filter(|(place, _)| place % 3 == 1).collect()
+}
+
+/// Points every metre along the quay's middle, between each pair of shore rays it joins.
+#[must_use]
+pub fn quay_points(footprint: &Footprint) -> Vec<[f64; 2]> {
+    let shore: Vec<usize> = (0..RAYS).filter(|&ray| footprint.rays[ray].stop == Stop::Shore).collect();
+    let mut points = Vec::new();
+    for pair in shore.windows(2).filter(|pair| pair[1] == pair[0] + 1) {
+        let (from, to) = (ray_end(footprint, pair[0]), ray_end(footprint, pair[1]));
+        let length = ((to[0] - from[0]) * (to[0] - from[0]) + (to[1] - from[1]) * (to[1] - from[1])).sqrt();
+        let count = length.ceil() as usize;
+        points.extend((0..=count).map(|step| {
+            let share = step as f64 / count.max(1) as f64;
+            [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share]
+        }));
+    }
+    points
+}
+
+/// Where each pier meets the quay: on the quay's line along the shore.
+#[must_use]
+pub fn pier_roots(footprint: &Footprint) -> Vec<[f64; 2]> {
+    pier_rays(footprint).into_iter().map(|(_, ray)| ray_end(footprint, ray)).collect()
 }
 
 /// A retaining wall on every built cell's edge whose level stands apart from the ground or terrace beyond it, from
@@ -184,4 +219,57 @@ pub fn retaining_walls(ground: &Ground, grid: &Grid, footings: &[Footing]) -> Ve
         }
     }
     solids
+}
+
+/// A cut in a terrace's retaining wall where a ramp crosses it: the wall on the cell edge whose middle is `middle`
+/// (running north and south when `north_south`) is taken down over `span` (world metres along it, the lower first) to
+/// `top`, or wholly where `top` is None.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Cut {
+    pub middle: [f64; 2],
+    pub north_south: bool,
+    pub span: [f64; 2],
+    pub top: Option<f64>,
+}
+
+/// The walls with every cut made: a wall on a cut's edge is split round its span, the part within it lowered to the
+/// cut's top or left out. Walls off every cut's edge are kept as they are.
+#[must_use]
+pub fn cut(walls: Vec<Solid>, cuts: &[Cut]) -> Vec<Solid> {
+    let mut walls = walls;
+    for cut in cuts {
+        let (along, across) = if cut.north_south { (1, 0) } else { (0, 1) };
+        let mut kept = Vec::with_capacity(walls.len() + 2);
+        for wall in walls {
+            let on_edge = wall.turn == 0.0
+                && wall.lean == 0.0
+                && wall.size[across] < 2.0
+                && (wall.at[across] - cut.middle[across]).abs() < 1e-6
+                && (wall.at[along] - cut.middle[along]).abs() < CELL_M / 2.0;
+            let (from, to) = (wall.at[along] - wall.size[along] / 2.0, wall.at[along] + wall.size[along] / 2.0);
+            if !on_edge || to <= cut.span[0] || from >= cut.span[1] {
+                kept.push(wall);
+                continue;
+            }
+            let piece = |start: f64, end: f64, top: f64| {
+                let mut piece = wall;
+                piece.at[along] = (start + end) / 2.0;
+                piece.size[along] = end - start;
+                piece.size[2] = top - wall.at[2];
+                piece
+            };
+            let top = wall.at[2] + wall.size[2];
+            if from < cut.span[0] {
+                kept.push(piece(from, cut.span[0], top));
+            }
+            if let Some(lowered) = cut.top.filter(|&lowered| lowered > wall.at[2]) {
+                kept.push(piece(cut.span[0].max(from), cut.span[1].min(to), lowered.min(top)));
+            }
+            if to > cut.span[1] {
+                kept.push(piece(cut.span[1], to, top));
+            }
+        }
+        walls = kept;
+    }
+    walls
 }
