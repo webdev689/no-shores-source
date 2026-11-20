@@ -226,14 +226,52 @@ def triangles(item):
     return count
 
 
+# How near a plane a point lies to be on it, metres.
+PLANE_M = 1e-5
+
+
+def _uv_map(face, layer):
+    """A face's UVs as a map of position: its first corner's UV plus each UV's gradient in the face's plane."""
+    corners = [(loop.vert.co.copy(), loop[layer].uv.copy()) for loop in face.loops]
+    origin, at_origin = corners[0]
+    best = max(((first, second) for first in corners[1:] for second in corners[1:] if first is not second),
+               key=lambda pair: (pair[0][0] - origin).cross(pair[1][0] - origin).length)
+    (first, uv_first), (second, uv_second) = best
+    one, two = first - origin, second - origin
+    aa, ab, bb = one.dot(one), one.dot(two), two.dot(two)
+    det = aa * bb - ab * ab
+    if abs(det) < 1e-18:
+        return lambda point: at_origin.copy()
+    gradients = []
+    for axis in range(2):
+        du, dv = uv_first[axis] - at_origin[axis], uv_second[axis] - at_origin[axis]
+        gradients.append(one * ((du * bb - dv * ab) / det) + two * ((dv * aa - du * ab) / det))
+    return lambda point: Vector((at_origin[0] + gradients[0].dot(point - origin),
+                                 at_origin[1] + gradients[1].dot(point - origin)))
+
+
 def bevel(item, width=0.02, segments=1, degrees=30.0):
-    """Chamfers (one segment) or rounds an object's edges where its faces meet at more than `degrees`, in place."""
+    """Chamfers (one segment) or rounds an object's edges where its faces meet at more than `degrees`, in place.
+    Blender's bevel works its corners' UVs out in an order that changes from run to run, so their last bits do:
+    each corner's UV is taken again from the map of the face it lay on before the bevel, found by its plane, and the
+    build stays the same bytes."""
     bm = bmesh.new()
     bm.from_mesh(item.data)
+    layer = bm.loops.layers.uv.active
     edges = [edge for edge in bm.edges if edge.is_manifold and math.degrees(edge.calc_face_angle(0.0)) > degrees]
+    planes = [(face.normal.copy(), face.normal.dot(face.verts[0].co), _uv_map(face, layer))
+              for face in bm.faces] if layer is not None else []
     if edges:
         bmesh.ops.bevel(bm, geom=edges, offset=width, offset_type='OFFSET', segments=segments, profile=0.5,
                         affect='EDGES', clamp_overlap=True)
+    on = [lambda point, plane=plane: abs(plane[0].dot(point) - plane[1]) < PLANE_M for plane in planes]
+    for face in bm.faces if edges else ():
+        own = next((plane for plane in planes if plane[0].dot(face.normal) > 0.9999
+                    and abs(plane[0].dot(face.calc_center_median()) - plane[1]) < PLANE_M), None)
+        for loop in face.loops:
+            plane = own or next((plane for plane, lies in zip(planes, on) if lies(loop.vert.co)), None)
+            if plane is not None:
+                loop[layer].uv = plane[2](loop.vert.co)
     bm.to_mesh(item.data)
     bm.free()
     item.data.update()

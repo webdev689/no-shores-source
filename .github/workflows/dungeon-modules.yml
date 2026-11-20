@@ -41,6 +41,12 @@ jobs:
         env:
           DUNGEON_MODULES: ${{ runner.temp }}/modules
         run: python -I tools/dungeon/test_envelope.py
+      # A pack is named by its hash, so a build that changes its bytes from run to run would publish a new pack and
+      # leave the manifest and every machine's own build disagreeing.
+      - name: Build again and check every pack is the same bytes
+        run: |
+          python -I tools/dungeon/build.py --out "$RUNNER_TEMP/again"
+          for pack in "$RUNNER_TEMP"/modules/*.modules; do cmp "$pack" "$RUNNER_TEMP/again/$(basename "$pack")"; done
       - uses: actions/upload-artifact@v4
         with:
           name: dungeon-module-previews
