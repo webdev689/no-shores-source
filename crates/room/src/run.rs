@@ -16,34 +16,30 @@ use gear::activities::{
 pub const REVIVES: u8 = 5;
 
 /// What a run's first clear in its period pays beside its kills and its cache.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Pays {
+    #[default]
     Nothing,
     /// The shared patrol room's: the dungeon of the day's at Normal alone, while this patrol's dungeon is its island's
     /// as the cache opens. It carries no day's modifier, so it pays no harder tier.
-    Today {
-        patrol: String,
-        number: usize,
-    },
+    Today { patrol: String, number: usize },
     /// A run's opened as its island's dungeon of the day, with that day's modifier: the day's, in that day alone.
-    Day {
-        day: u64,
-    },
+    Day { day: u64 },
     /// The week's Elite or Abyss Dungeon's, in the week the run was opened for.
-    Week {
-        weekly: Weekly,
-        week: u64,
-    },
+    Week { weekly: Weekly, week: u64 },
 }
 
 /// A dungeon's run: what it pays, its modifiers, the revives left at Abyss, and the level every foe stands at in the
 /// week's two.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Run {
     pub pays: Pays,
     pub modifiers: Vec<Modifier>,
     pub revives: Option<u8>,
     pub foes_at: Option<u8>,
+    /// In a run that counts revives, the share of their health each kept player left with, by account, 0 for one
+    /// who left down: given back as they come again, so leaving stands no one up whole (`abyss::keep_body`).
+    pub left: std::collections::BTreeMap<String, f64>,
 }
 
 impl Run {
@@ -51,12 +47,7 @@ impl Run {
     /// more.
     #[must_use]
     pub fn today(patrol: &str, number: usize) -> Self {
-        Run {
-            pays: Pays::Today { patrol: patrol.to_owned(), number },
-            modifiers: Vec::new(),
-            revives: None,
-            foes_at: None,
-        }
+        Run { pays: Pays::Today { patrol: patrol.to_owned(), number }, ..Run::default() }
     }
 }
 

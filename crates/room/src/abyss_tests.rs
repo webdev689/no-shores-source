@@ -105,3 +105,57 @@ fn when_every_player_is_down_at_once_the_run_starts_over_and_its_five_revives_wi
     cleared.tick();
     assert!(wiped(&cleared.take_events()).is_empty(), "a cleared run is won: no wipe");
 }
+
+/// A kept player who left the run and came back, as the host joins them and notes their account.
+fn back(room: &mut Room, owner: &str) -> PlayerId {
+    let again = room.join().expect("in");
+    assert!(room.own(again, owner));
+    again
+}
+
+#[test]
+fn a_player_who_leaves_a_run_down_comes_back_down_and_one_wounded_comes_back_wounded() {
+    let mut room = abyss_run();
+    let (ada, _ben) = (room.join().expect("in"), room.join().expect("in"));
+    assert!(room.own(ada, "ada"));
+    room.run.as_mut().expect("a run").revives = Some(0);
+    fallen(&mut room, ada);
+    room.leave(ada);
+    let ada = back(&mut room, "ada");
+    room.tick();
+    assert!(room.players[&ada].fighter.dead(), "still down, with none left");
+    assert_eq!(room.revives(), Some(0));
+    room.run.as_mut().expect("a run").revives = Some(2);
+    room.leave(ada);
+    let ada = back(&mut room, "ada");
+    room.tick();
+    assert!(!room.players[&ada].fighter.dead(), "stands at the next raising");
+    assert_eq!(room.revives(), Some(1), "and spends one");
+    let found = room.players.get_mut(&ada).expect("in");
+    found.fighter.health = found.fighter.health_max / 3.0;
+    room.leave(ada);
+    let ada = back(&mut room, "ada");
+    let fighter = room.players[&ada].fighter;
+    assert!((fighter.health - fighter.health_max / 3.0).abs() < 1e-9, "a third, as she left");
+    let mut elite =
+        Room::dungeon_run(&RunOf::Elite { place: "krakens-grotto".into() }, gear::Difficulty::Normal, FRIDAY_NINE)
+            .expect("a run at Normal");
+    let cal = elite.join().expect("in");
+    assert!(elite.own(cal, "cal"));
+    fallen(&mut elite, cal);
+    elite.leave(cal);
+    let cal = back(&mut elite, "cal");
+    assert!(!elite.players[&cal].fighter.dead(), "a run that counts no revives keeps no one's body");
+}
+
+#[test]
+fn a_run_started_over_remembers_no_one_who_left() {
+    let mut room = abyss_run();
+    let (ada, _ben) = (room.join().expect("in"), room.join().expect("in"));
+    assert!(room.own(ada, "ada"));
+    fallen(&mut room, ada);
+    room.leave(ada);
+    room.start_over();
+    let ada = back(&mut room, "ada");
+    assert!(!room.players[&ada].fighter.dead(), "whole, as the run is whole again");
+}

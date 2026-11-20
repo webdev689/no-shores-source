@@ -114,7 +114,9 @@ Company]]).
 They hold in every Abyss run, which the owner gave "Nightfall's rules: limited revives, and a wipe ends the run".
 
 - **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, the
-  lowest player number first when two fall together; when none are left, the fallen stay down.
+  lowest player number first when two fall together; when none are left, the fallen stay down. Leaving stands no one
+  up: the run keeps each kept player's body as they leave (`keep_body`), so one who left down comes back down and
+  one who left wounded comes back at the share of health they left with, until the run starts over.
 - **A wipe ends the run:** when every player in it is down at once, each is told (`Wiped`), the dungeon starts over and
   its five revives with it (`start_over`): its foes stand again at their posts, its shots, spells and drops are gone,
   its cache shuts, and its players stand whole at the way in. The page takes them out by the way they came in, the veil

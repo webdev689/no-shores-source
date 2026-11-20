@@ -10,7 +10,7 @@ use combat::{BlowKind, Ranged, Stroke};
 use gear::activities::Modifier;
 
 fn run_of(modifiers: Vec<Modifier>) -> Run {
-    Run { pays: Pays::Nothing, modifiers, revives: None, foes_at: None }
+    Run { modifiers, ..Run::default() }
 }
 
 /// A blow of `kind` from `striker`, as a swing or a shot lands it before power.

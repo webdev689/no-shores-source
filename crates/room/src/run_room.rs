@@ -58,7 +58,7 @@ impl Room {
                 let modifiers =
                     if tier != Difficulty::Normal && today { vec![modifier_of_the_day(day)] } else { vec![] };
                 let pays = if today { Pays::Day { day } } else { Pays::Nothing };
-                let run = Run { pays, modifiers, revives, foes_at: None };
+                let run = Run { pays, modifiers, revives, ..Run::default() };
                 let (seed, style) = dungeon::of_patrol(patrol, *number);
                 let name = format!("{patrol}--dungeon-{number}");
                 let levels = island_levels(island.continent);
@@ -72,7 +72,7 @@ impl Room {
                 let laid = Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
                 let (levels, run, gated) = match Weekly::of(tier) {
                     None => {
-                        let run = Run { pays: Pays::Nothing, modifiers: Vec::new(), revives, foes_at: None };
+                        let run = Run { revives, ..Run::default() };
                         (island_levels(island.continent), run, Place::EliteDungeon)
                     }
                     Some(weekly) => {
@@ -81,7 +81,13 @@ impl Room {
                         }
                         let foes_at = weekly.foes_at();
                         let modifiers = week_modifiers(week, weekly);
-                        let run = Run { pays: Pays::Week { weekly, week }, modifiers, revives, foes_at: Some(foes_at) };
+                        let run = Run {
+                            pays: Pays::Week { weekly, week },
+                            modifiers,
+                            revives,
+                            foes_at: Some(foes_at),
+                            ..Run::default()
+                        };
                         (Some((foes_at, foes_at)), run, Place::Week(weekly))
                     }
                 };
@@ -93,7 +99,7 @@ impl Room {
             RunOf::Sea { seed, style, continent } => {
                 let (levels, style) = (island_levels(continent)?, dungeon::style_of(style)?);
                 let name = format!("sea-dungeon-{continent}-{}-{seed:08x}", style.key);
-                let run = Run { pays: Pays::Nothing, modifiers: Vec::new(), revives, foes_at: None };
+                let run = Run { revives, ..Run::default() };
                 Self::laid_dungeon(&name, &Dungeon::forge(*seed, style), Some(levels), end_reeve, Some(run))?
             }
         };
