@@ -77,9 +77,15 @@ export const HINTS = {
   ],
 } as const satisfies Record<string, readonly Hint[]>;
 
-/** The keys shown on foot with the Art worn (its id, 0 for none): an aimed Tenet is named only while its Art is worn. */
+/** The Arts' own keys on foot, shown only while an Art is worn. */
+const ART_KEYS = new Set(['R', 'Q / G']);
+
+/** The keys shown on foot with the Art worn (its id, 0 for none, as in the prologue): the Arts' keys only while one is
+ *  worn, and an aimed Tenet named only while its Art is. */
 export function footHints(worn: number): readonly Hint[] {
-  const aimed = AIMED[arts.arts.find((art) => art.id === worn)?.tenets[0]?.key ?? ''];
+  const art = arts.arts.find((each) => each.id === worn);
+  if (!art) return HINTS.foot.filter(([key]) => !ART_KEYS.has(key));
+  const aimed = AIMED[art.tenets[0]?.key ?? ''];
   return aimed ? [...HINTS.foot, aimed] : HINTS.foot;
 }
 

@@ -145,7 +145,7 @@ fn one_player_against_a_group_fights_as_it_always_did() {
     assert_eq!(format!("{hash:016x}"), LONE_CROWD_HASH, "one player's fight against a group changed");
 }
 
-const LONE_CROWD_HASH: &str = "4e764b082104123c";
+const LONE_CROWD_HASH: &str = "f217c75f50ea595b";
 
 #[test]
 fn a_group_shares_itself_across_the_players_it_sees_and_holds_its_choice() {

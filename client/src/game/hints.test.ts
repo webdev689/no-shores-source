@@ -29,6 +29,8 @@ test('on foot the keys shown take in the fight: the weapon, the swing, the guard
 test('the keys name how to aim Dusk Daggers only while Shadow is worn', () => {
   assert.equal(footHints(1), HINTS.foot, 'Storm');
   assert.equal(footHints(2), HINTS.foot, 'Divine');
-  assert.equal(footHints(0), HINTS.foot, 'no Art worn yet');
+  const bare = footHints(0).map(([key]) => key);
+  assert.ok(!bare.includes('R') && !bare.includes('Q / G'), 'no Art worn, as in the prologue: none of its keys');
+  assert.equal(footHints(0).length, HINTS.foot.length - 2, 'and every other key kept');
   assert.deepEqual(footHints(3), [...HINTS.foot, ['Hold Q', 'Aim Dusk Daggers']], 'Shadow');
 });
