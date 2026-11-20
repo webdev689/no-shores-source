@@ -186,7 +186,7 @@ fn a_cut_splits_the_wall_on_its_edge_round_its_span_and_leaves_every_other() {
 fn every_wall_stands_on_its_ramps_and_every_sloped_top_follows_the_way_it_guards() {
     let town = town();
     let laid = laid(&town);
-    for wall in &laid.walls {
+    for wall in &laid.works {
         let [west, north, east, south, _, _] = wall.bounds();
         let middle = [(west + east) / 2.0, (north + south) / 2.0];
         assert!(laid.ramps.iter().any(|ramp| holds(ramp.pad.bounds, middle[0], middle[1])), "{wall:?} off the ramps");
@@ -195,7 +195,7 @@ fn every_wall_stands_on_its_ramps_and_every_sloped_top_follows_the_way_it_guards
     // the same at both its ends; on every leg and ramp, both.
     let sloped: Vec<Ramp> = laid.ramps.iter().copied().filter(|ramp| ramp.slope > 0.0).collect();
     let mut parapets = 0;
-    for leaned in laid.walls.iter().filter(|wall| wall.lean != 0.0) {
+    for leaned in laid.works.iter().filter(|wall| wall.lean != 0.0) {
         let over = [-0.5, 0.5].map(|end| {
             let [x, y, z] = leaned.place([0.0, end * leaned.size[1], leaned.size[2]]);
             let way = sloped.iter().find(|ramp| holds(ramp.pad.bounds, x, y));
@@ -249,9 +249,9 @@ fn the_harbour_avenue_runs_down_a_flight_from_its_first_cells_middle_onto_the_qu
     let cut = laid.cuts.iter().find(|cut| close(cut.middle[1], north)).expect("the cell's edge cut");
     assert!(!cut.north_south && cut.top.is_none() && close(cut.span[0], left) && close(cut.span[1], right));
     // The walls stand on the flight, parapeted where it runs out over the shore.
-    assert!(laid.walls.iter().all(|wall| {
-        let [w, n, e, s, _, _] = wall.bounds();
-        holds(flight.pad.bounds, (w + e) / 2.0, (n + s) / 2.0)
+    assert!(laid.works.iter().all(|wall| {
+        let [west, north, east, south, _, _] = wall.bounds();
+        holds(flight.pad.bounds, (west + east) / 2.0, (north + south) / 2.0)
     }));
 }
 

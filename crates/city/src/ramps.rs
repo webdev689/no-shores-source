@@ -26,6 +26,8 @@ pub const LONGEST_M: f64 = 64.0;
 pub const WALL_M: f64 = 1.2;
 /// A parapet's height over the way it guards, and how far a wall's foot is sunk under the ground, metres.
 pub const PARAPET_M: f64 = 1.1;
+/// How deep a piece's paving slab is under its top, metres.
+const PAVING_M: f64 = 0.4;
 const SINK_M: f64 = 2.0;
 /// A switchback's legs: the most one rises, the widest it is, metres.
 pub const LEG_RISE_M: f64 = 12.0;
@@ -62,12 +64,12 @@ pub struct Ramp {
     pub line: [[f64; 3]; 2],
 }
 
-/// Every avenue's ramps, their walls, and the cuts they make in the retaining walls.
+/// Every avenue's ramps, their works (walls and paving), and the cuts they make in the retaining walls.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Laid {
     /// Each avenue's ramps from its start to its head, then its switchback from its foot to its top.
     pub ramps: Vec<Ramp>,
-    pub walls: Vec<Solid>,
+    pub works: Vec<Solid>,
     pub cuts: Vec<Cut>,
 }
 
@@ -173,10 +175,10 @@ fn end_wall(frame: &Frame, across: [f64; 2], along: f64, bottom: f64, top: f64) 
     Solid::upright(Shape::Block, [middle[0], middle[1], bottom], size, Material::Stone)
 }
 
-/// A block leaned so its top runs straight from `top_from` over `from` to `top_to` over `to`, `vertical` metres deep
-/// under its top all along. Its foot reaches past its higher end by `vertical` x the slope's sine and cosine: under
-/// the ground or a wall there.
-fn leaned(from: [f64; 2], to: [f64; 2], top_from: f64, top_to: f64, vertical: f64) -> Solid {
+/// A block `width` wide leaned so its top runs straight from `top_from` over `from` to `top_to` over `to`, `vertical`
+/// metres deep under its top all along. Its foot reaches past its higher end by `vertical` x the slope's sine and
+/// cosine: under the ground or a wall there.
+fn leaned(from: [f64; 2], to: [f64; 2], [top_from, top_to]: [f64; 2], vertical: f64, width: f64) -> Solid {
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
     let run = (east * east + south * south).sqrt();
     let lean = libm::atan2(top_from - top_to, run);
@@ -189,10 +191,30 @@ fn leaned(from: [f64; 2], to: [f64; 2], top_from: f64, top_to: f64, vertical: f6
     let block = Solid::upright(
         Shape::Block,
         [middle[0], middle[1], top - deep * cosine],
-        [WALL_M, run / cosine, deep],
+        [width, run / cosine, deep],
         Material::Stone,
     );
     Solid { lean, ..block.turned(turn_toward(way)) }
+}
+
+/// A piece's paving: a slab its pad's size, its top the pad's, leaned along its fall.
+fn paving(pad: &Pad) -> Solid {
+    let [west, north, east, south] = pad.bounds;
+    let slab = match pad.fall {
+        None => {
+            let (middle, size) = ([(west + east) / 2.0, (north + south) / 2.0], [east - west, south - north, PAVING_M]);
+            Solid::upright(Shape::Block, [middle[0], middle[1], pad.level - PAVING_M], size, Material::Stone)
+        }
+        Some(Fall::East(to)) => {
+            let middle = (north + south) / 2.0;
+            leaned([west, middle], [east, middle], [pad.level, to], PAVING_M, south - north)
+        }
+        Some(Fall::South(to)) => {
+            let middle = (west + east) / 2.0;
+            leaned([middle, north], [middle, south], [pad.level, to], PAVING_M, east - west)
+        }
+    };
+    Solid { material: Material::Paving, ..slab }
 }
 
 /// A wall guarding a sloped way along a frame's `along` (from..to) at `across`, the way's level running from
@@ -204,8 +226,8 @@ fn sloped_wall(frame: &Frame, across: f64, along: [f64; 2], surface: [f64; 2], g
     let rise = (surface[0] - surface[1]).abs();
     [
         upright(frame, across, along, ground - SINK_M, low),
-        leaned(from, to, surface[0], surface[1], rise + SINK_M / 4.0),
-        leaned(from, to, surface[0] + PARAPET_M, surface[1] + PARAPET_M, PARAPET_M),
+        leaned(from, to, surface, rise + SINK_M / 4.0, WALL_M),
+        leaned(from, to, surface.map(|level| level + PARAPET_M), PARAPET_M, WALL_M),
     ]
 }
 
@@ -253,8 +275,8 @@ fn straight(site: &Avenues, upper: (usize, usize), lower: (usize, usize), laid: 
     });
     for side in [WALL_M / 2.0, 2.0 * half_width - WALL_M / 2.0] {
         // In the upper cell a cutting, its wall's top flush with the lawn; in the lower an embankment, parapeted.
-        laid.walls.push(upright(&road, side, [0.0, run / 2.0], middle - SINK_M, high));
-        laid.walls.extend(sloped_wall(&road, side, [0.0, -run / 2.0], [middle, low], low));
+        laid.works.push(upright(&road, side, [0.0, run / 2.0], middle - SINK_M, high));
+        laid.works.extend(sloped_wall(&road, side, [0.0, -run / 2.0], [middle, low], low));
     }
     let along = |point: [f64; 2]| if edge.along[0] == 0.0 { point[1] } else { point[0] };
     let ends = [along(edge.at(0.0, flank)), along(edge.at(0.0, flank + 2.0 * half_width))];
@@ -309,8 +331,8 @@ fn quay_flight(site: &Avenues, start: (usize, usize), harbour: &Harbour, laid: &
     });
     let at_edge = QUAY_TOP_M + rise * gap / run;
     for side in [WALL_M / 2.0, 2.0 * half_width - WALL_M / 2.0] {
-        laid.walls.push(upright(&flight, side, [0.0, inside], at_edge - SINK_M, level));
-        laid.walls.extend(sloped_wall(&flight, side, [0.0, -gap], [at_edge, QUAY_TOP_M], 0.0));
+        laid.works.push(upright(&flight, side, [0.0, inside], at_edge - SINK_M, level));
+        laid.works.extend(sloped_wall(&flight, side, [0.0, -gap], [at_edge, QUAY_TOP_M], 0.0));
     }
     let span = |across: f64| if edge.along[0] == 0.0 { edge.at(0.0, across)[1] } else { edge.at(0.0, across)[0] };
     laid.cuts.push(Cut {
@@ -392,7 +414,7 @@ fn switchback(site: &Avenues, head: (usize, usize), landmark: (usize, usize), la
         pieces.push(Ramp { piece: Piece::Landing, pad: frame.pad(spanned, high_end, top, top), slope: 0.0, line });
     }
     profiles.reverse();
-    laid.walls.extend(switchback_walls(&frame, width, length, ground, site.platform, &profiles));
+    laid.works.extend(switchback_walls(&frame, width, length, ground, site.platform, &profiles));
     laid.ramps.extend(pieces);
     if out == 0.0 {
         // The platform's parapet opens over the top landing.
@@ -515,6 +537,7 @@ pub fn lay(site: &Avenues) -> Laid {
             }
         }
     }
+    laid.works.extend(laid.ramps.iter().map(|ramp| paving(&ramp.pad)));
     laid
 }
 

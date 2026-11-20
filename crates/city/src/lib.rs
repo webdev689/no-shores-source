@@ -192,7 +192,7 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         let [west, north, east, south, _, _] = wall.bounds();
         !overlaps([west, north, east, south], social.bounds)
     }));
-    works.extend(laid.walls);
+    works.extend(laid.works);
     let mut pads: Vec<Pad> = Vec::new();
     let mut cells = Vec::new();
     for row in 0..SIDE_CELLS {
