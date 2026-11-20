@@ -362,3 +362,16 @@ fn vanish_rolls_only_where_a_dodge_could_start_and_elsewhere_veils_without_the_r
         }
     }
 }
+
+#[test]
+fn a_players_spell_never_strikes_an_ally_on_their_side() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 1, &[]);
+    let (crew, foe) = (stand_foe(&mut room, 0.0, -4.0, 1000.0), stand_foe(&mut room, 0.5, -4.0, 1000.0));
+    if let Some(found) = room.foes.get_mut(&crew) {
+        (found.fighter.side, found.fighter.ally) = (combat::Side::Players, true);
+    }
+    cast(&mut room, player, ARC_LASH, None, 0);
+    assert!(health(&room, foe) < 1000.0, "the foe beside it is struck");
+    assert_eq!((health(&room, crew), has(&room, crew, Status::Charge)), (1000.0, 0));
+}

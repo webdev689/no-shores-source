@@ -12,10 +12,11 @@ use movement::{Block, Body, standing};
 
 impl Room {
     /// An empty room on a course of blocks laid over the open sea, as a wreck's decks are: a body that falls off them
-    /// stands in the sea at 0, and its foes' navmesh is the blocks' tops alone.
+    /// stands in the sea at 0, and its foes' navmesh is the blocks' tops alone. It holds as many foes as a node, for
+    /// a wreck's boarders and the crew who fight them.
     #[must_use]
     pub fn over_sea(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        Self::on(Floor::Sea, blocks, vec![spawn], None)
+        Self { foes_most: crate::NODE_FOES_MOST, ..Self::on(Floor::Sea, blocks, vec![spawn], None) }
     }
 
     /// A body standing at (x, y) on the top of the highest block under it, or on the floor where none stands.

@@ -437,8 +437,8 @@ impl Room {
     }
 
     /// A telegraphed blow's wind-up ends: an aimed shot leaves along its line from the foe's own weapon; any other is
-    /// judged at once against every foe of another side standing in its shape, and against every player near enough
-    /// to stand in it, as each saw it. Found by no one, it overreaches its foe.
+    /// judged at once against every foe of another side standing in its shape, and against every player of another
+    /// side near enough to stand in it, as each saw it. Found by no one, it overreaches its foe.
     pub(crate) fn telegraph_lands(&mut self, id: FighterId, foe: &Fighter, telegraph: &Telegraph) {
         if telegraph.shape == Shape::Aimed {
             self.aimed_shot(id, foe, telegraph);
@@ -469,7 +469,7 @@ impl Room {
         let near: Vec<FighterId> = self
             .players
             .iter()
-            .filter(|(_, player)| !player.fighter.dead())
+            .filter(|(_, player)| player.fighter.side != foe.side && !player.fighter.dead())
             .filter(|(_, player)| {
                 combat::sight::apart(
                     [player.fighter.body.x, player.fighter.body.y],

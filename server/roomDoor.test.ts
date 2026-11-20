@@ -79,7 +79,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   });
 });
 
-test('the roster reads from the rules: every enemy type with its name, faction, ranks and hands', () => {
+test('the roster reads from the rules: every type it drives with its name, faction, ranks and hands', () => {
   const roster = JSON.parse(startRoomDoor(compiled).roster()) as {
     type: number;
     name: string;
@@ -87,7 +87,7 @@ test('the roster reads from the rules: every enemy type with its name, faction, 
     ranks: number[];
     right: string;
   }[];
-  assert.equal(roster.length, 18);
+  assert.equal(roster.length, 20);
   const thule = roster.find((entry) => entry.type === 12);
   assert.deepEqual(
     [thule?.name, thule?.faction_name, thule?.ranks, thule?.right],

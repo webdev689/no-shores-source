@@ -58,9 +58,11 @@ phases) is [[Enemies]].
 - **One crate for every machine.** The `foes` crate stands on the `combat` crate's rules. Each tick the room hands a
   foe's brain what it knows (the room's tick and seed, every fighter, the course's blocks, routes and firing spots,
   which the room's [[Navmesh]] gives, and the room's director), and the brain asks its fighter for controls and
-  buttons, as a player's keys would, telegraphed blows included; the combat rules carry them out. What the room saw
-  happen (a swing begun, a shot loosed, a blow landed on it or by it, its telegraphed blow's landing, a noise, an
-  ally's shout) it tells the brain, which notes it for its next thought. The foes of a room share a board of turns.
+  buttons, as a player's keys would, telegraphed blows included; the combat rules carry them out. A brain may drive a
+  fighter on the players' side, as the Brig's crew are ([[Enemies]]): it fights the factions by a foe's rules (its
+  reach, parry window, telegraphed blows and stir), and its telegraphed blows are never judged against a player, nor
+  a player's spells against it. What the room saw happen (a swing begun, a shot loosed, a blow landed on it or by it,
+  its telegraphed blow's landing, a noise, an ally's shout) it tells the brain, which notes it for its next thought. The foes of a room share a board of turns.
   Chance comes from a hash of the room's seed, the tick, the foe and what is being decided, so the same seed plays the
   same fight.
 - **Roles.** Every type of foe fights as one of five roles; its rank scales the role's numbers ([[Enemies]]). Reaction
