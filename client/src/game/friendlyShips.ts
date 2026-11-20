@@ -15,7 +15,7 @@ import {
   type WatersTable,
 } from '../rules/watersRules.ts';
 import type { WorldData } from './worldData.ts';
-import type { SeaFrame } from './sea.ts';
+import type { SeaFrame } from './seaFrame.ts';
 import { hullSails, hullWaterline } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
