@@ -1,24 +1,21 @@
-import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import { coastField } from '../heldmap/coastField.ts';
 import { HeldMap } from '../heldmap/heldMap.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
-import { type CardAt, openCards } from '../player/cards.ts';
+import type { CardAt } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
-import { startMovementRules } from '../rules/movementRules.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
-import { loadShip, shipSails } from '../ships/shipMesh.ts';
-import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
+import { loadGameAssets } from './gameAssets.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
@@ -42,23 +39,15 @@ import type { SeaShip } from './seaShips.ts';
 import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
 import { showSeaHud } from './seaHud.ts';
 import { continentToOpen, firstAnchorage } from './seaLaw.ts';
-import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
+import { arrivalAt, type NodeInfo } from './worldData.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
 const FIRST_NODE = 'overlook-social';
-/** The most ships drawn at sea in a frame: the player's and those near it. */
-const SEA_SHIPS = 16;
 /** The veil stays down until the exact ground round the player has come, or this long. */
 const GROUND_WAIT_S = 20;
 /** How often the sea looks for another continent's coast nearby, seconds. */
 const CHART_EVERY_S = 1;
-
-/** The forge's figures and the first person's hands, read from the forge's published renders. */
-async function openForge(gpu: Gpu, figures: FigureView) {
-  const { forge, store } = await openCards(figures);
-  return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
-}
 
 /**
  * The game: the player arrives in Overlook's social space, plays on foot, returns to their ship, sails the sea, views
@@ -84,20 +73,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
-  const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
-    loadWorld(base),
-    fetch(`${base}world/rmb/index.json`)
-      .then((answer) => (answer.ok ? answer.text() : null))
-      .catch(() => null),
-    fetch(`${base}movement.wasm`)
-      .then((answer) => {
-        if (!answer.ok) throw new Error(`movement.wasm: ${answer.status}`);
-        return answer.arrayBuffer();
-      })
-      .then(startMovementRules),
-    openForge(gpu, figureView),
-    loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'), SEA_SHIPS)),
-  ]);
+  const { world, rmbText, movement, forge, firstPerson, store, sloop } = await loadGameAssets(gpu, base, figureView);
   const { continents } = world;
   const ambience = new Ambience(world);
   const cityAssets = loadCityAssets(base);
