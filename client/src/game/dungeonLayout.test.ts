@@ -80,7 +80,7 @@ test('an older room module that answers no landmarks or glows is read as standin
     0,
   );
   assert.ok(laid.landmarks.length > 0 && laid.glows.length > 0);
-  const older: Partial<DungeonLayout> = { ...laid };
+  const older: Record<string, unknown> = { ...laid };
   delete older.landmarks;
   delete older.glows;
   const read = readDungeon(JSON.stringify(older));
