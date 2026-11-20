@@ -81,6 +81,8 @@ pub struct Room {
     section: Option<Section>,
     /// Whether players' asks for foes are taken: a course's room takes them, a node's only once told to.
     takes_foe_asks: bool,
+    /// Whether players' Arts work here: everywhere but the prologue's wreck, where the player has none yet.
+    arts: bool,
     pub(crate) clock: u64,
     next_fighter: FighterId,
     /// How many players have joined: the next stands at the spawn this many turns on.
@@ -161,6 +163,7 @@ impl Room {
             floor,
             spawn_points,
             takes_foe_asks: section.is_none(),
+            arts: true,
             section,
             clock: 0,
             next_fighter: 1,

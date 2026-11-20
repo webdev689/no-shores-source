@@ -138,6 +138,8 @@ export class WreckRun {
       (snapshot) => fight?.receive(snapshot),
       (gear) => (level.value = gear.level),
     );
+    // The prologue's player has no Art yet: one comes after it, with the factions.
+    room.forbidArts();
     fight = new Fighting(combat, room);
     return new WreckRun(context, layout, { room, fight, combat, module }, { scenery, level, origin });
   }

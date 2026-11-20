@@ -114,6 +114,11 @@ export class LocalRoom implements RoomLink {
     this.door.clearFoes();
   }
 
+  /** Takes away the player's Art (`RoomDoor.forbidArts`): no cast is taken and their gear says none is worn. */
+  forbidArts(): void {
+    this.door.forbidArts();
+  }
+
   /** Sets where the next respawn stands the player: a checkpoint. */
   setSpawn(x: number, y: number): void {
     this.door.setSpawn(x, y);

@@ -345,9 +345,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         emblems: Some(builder.create_vector(&emblems)),
         emblem: gear::emblems::number_of(&character.emblem).unwrap_or_default(),
         emblems_sold: Some(builder.create_vector(&emblems_sold)),
-        art: character.art().id,
+        // A room without Arts says none is worn (0 is no Art's number), so the page shows no Art.
+        art: if room.arts_on() { character.art().id } else { 0 },
         cores: Some(builder.create_vector(&cores)),
-        anima: casting.anima,
+        anima: if room.arts_on() { casting.anima } else { 0.0 },
         tenets: Some(builder.create_vector(&casting.tenets)),
         ammo: character.shots(),
         ammo_most: character.ammo_most().unwrap_or(0),

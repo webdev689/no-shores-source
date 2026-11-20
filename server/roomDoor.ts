@@ -45,6 +45,8 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
+  /** Takes away every player's Art: the prologue's wreck, where the player has none yet. */
+  forbidArts(): void;
   /** A new player's number, or 0 when the room is full. */
   join(): number;
   /** The welcome's bytes for a player. */
@@ -111,6 +113,7 @@ interface RoomExports {
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
   room_take_foe_asks(): void;
+  room_forbid_arts(): void;
   room_join(): number;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -177,6 +180,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
     openFleet: () => exports.room_open_fleet() === 1,
     takeFoeAsks: () => exports.room_take_foe_asks(),
+    forbidArts: () => exports.room_forbid_arts(),
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),

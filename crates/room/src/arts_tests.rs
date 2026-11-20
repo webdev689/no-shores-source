@@ -122,6 +122,18 @@ fn a_cast_is_refused_unless_charged_of_the_worn_art_and_its_caster_able() {
 }
 
 #[test]
+fn a_room_without_arts_takes_no_cast_and_charges_nothing() {
+    let (mut room, player) = room_with_player();
+    room.forbid_arts();
+    room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
+    assert_eq!(casting(&room, player).releasing, None, "Quicken is ready, but no Art works here");
+    for _ in 0..600 {
+        room.tick();
+    }
+    assert_eq!(casting(&room, player).anima, 0.0, "the Anima charges no more");
+}
+
+#[test]
 fn a_body_dead_past_its_section_casts_nothing_and_takes_no_spell() {
     let (mut room, player) = room_with_player();
     wearing(&mut room, player, 1, &[]);

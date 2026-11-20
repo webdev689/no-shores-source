@@ -248,6 +248,8 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
   entered, Thule's health, how the fight ended, the points over every head for barks and emotes (by crew), and the
   shot its camera takes of the player standing, where the wake's flight ends. A cutscene holds it still. Its room is
   let go as the wreck's fight ends. The hints are foot's, without the menu: the story has none.
+- **No Art.** The player fights the wreck with no Art ([[The Player Has No Art in the Prologue]]): its room is told
+  to forbid them (`Room::forbid_arts`), so no ability bar shows and no cast is taken.
 - **Drawn** by `WreckScenery` with `WreckView`, shown by the wake, the fight, the throw overboard and, from below,
   the deep: the one mesh built in Blender, each face in its part's picture as a ship's. Its fires' light is baked into
   it there (`light_wreck.py`), with its shadows and what the timber throws back, flickering through space and time as
