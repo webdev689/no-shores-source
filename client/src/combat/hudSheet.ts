@@ -9,6 +9,7 @@ import { wearKit } from '../plus/kit.ts';
 import { BAR_EDGE, BAR_TONES, barFrameImage, tipOf } from '../plus/barFrame.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
+import { OVERHEAD_SIZES } from './foePlate.ts';
 import { EDGE, VITAL_SIZES } from './hudLayout.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 import { statusCss } from './statusIcons.ts';
@@ -16,6 +17,8 @@ import { weaponsCss } from './weapons.ts';
 import { wordsCss } from './wordsSheet.ts';
 
 const SHEET_ID = 'fight-hud';
+/** The light either side of a third's dark mark, so it reads over a bar's empty trough as well as over its fill. */
+const THIRD_EDGE = `color-mix(in srgb, ${TONES.wordDim} 60%, transparent)`;
 /** Each plate's level square, as large as a ship's emblem square at the same scale, inside a 2 px edge. */
 const SQUARE_SCALE = { overhead: 2, target: 3, boss: 4 } as const;
 const { overhead, boss } = PLATES;
@@ -41,6 +44,14 @@ function platesCss(): string {
     const letters = place === 'overhead' ? Math.round(side / 2) : 22;
     return `.fight-hud .${place} .level { width: ${side}px; height: ${side}px; font-size: ${letters}px; }`;
   });
+  // Over a figure a plate's size says its foe's rank at a glance, so the crowd's fodder stays quiet.
+  const tiers = Object.entries(OVERHEAD_SIZES).map(
+    ([tier, { width, bar, barShare }]) => `.fight-hud .overhead[data-tier='${tier}'] { width: ${width}px; }
+.fight-hud .overhead[data-tier='${tier}'] .body { width: ${width - overhead.height - 5}px; }
+/* An ally's plate shows no level square, so its body takes the whole plate. */
+.fight-hud .overhead[data-tier='${tier}'][data-band='ally'] .body { width: ${width}px; }
+.fight-hud .overhead[data-tier='${tier}'] .meter { height: ${bar}px; width: ${barShare * 100}%; }`,
+  );
   return `
 .fight-hud .level { display: flex; flex: none; align-items: center; justify-content: center; box-sizing: border-box;
   border-width: 2px; border-style: solid; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1;
@@ -86,12 +97,15 @@ ${wards}
   .fight-hud .poise-flash .poise-fill { animation: none; }
 }
 
-.fight-hud .overhead { width: ${overhead.width}px; height: ${overhead.height}px; translate: -50% -100%;
+.fight-hud .overhead { height: ${overhead.height}px; translate: -50% -100%;
   transform-origin: 50% 100%; margin-top: -4px; font-size: ${PLATE_SIZE.letters}px; }
-.fight-hud .overhead .body { width: ${overhead.width - overhead.height - 5}px; }
-.fight-hud .overhead[data-band='ally'] .body { width: ${overhead.width}px; }
+${tiers.join('\n')}
 .fight-hud .overhead .title { height: 15px; line-height: 15px; }
-.fight-hud .overhead .meter { height: ${overhead.bar}px; }
+/* Over a figure an Elite's and up's bar is cut in thirds, as Destiny's are, so how much is left, and how much is lost,
+   reads at a glance. */
+.fight-hud .meter .third-mark { display: none; position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
+  background: ${TONES.outline}; box-shadow: -1px 0 0 ${THIRD_EDGE}, 1px 0 0 ${THIRD_EDGE}; }
+.fight-hud .overhead[data-tier='elite'] .third-mark { display: block; }
 
 
 .fight-hud .boss { width: min(${boss.width}px, ${boss.share * 100}%); }

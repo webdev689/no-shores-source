@@ -13,9 +13,7 @@ import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { wearFightSheet } from './hudSheet.ts';
 import { element, setStyle, showNode } from '../plus/meter.ts';
-import { cameraOf, plateScale, SIGHT_SKIN_M } from './plateSight.ts';
-import { PLATES } from '../plus/barLayout.ts';
-import { BOSS_RANK } from '../rules/roster.ts';
+import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 import { UNABLE } from './casting.ts';
@@ -50,6 +48,9 @@ export interface HudFrame {
   readonly parryOpen?: boolean;
   /** The blocks of the place, which no plate over a figure is seen through. */
   readonly blocks?: readonly Block[];
+  /** The land's height under a point (null where none is known), which no plate over a figure is seen through either;
+   *  null for a place with no land of its own. */
+  readonly groundAt: ((x: number, y: number) => number | null) | null;
   /** The Art's abilities as the bar shows them (Fighting's abilities); none hides the bar. */
   readonly abilities?: AbilityState | null;
   /** Whether the player has just stepped onto an Ammo box they cannot take, their ammunition full (DropsShown's
@@ -251,11 +252,12 @@ export class Hud {
     };
     const lock = own?.target ?? null;
     const chosen = this.foeTarget.step({ player: frame.player, lock, foes: frame.foes, events: frame.events }, seconds);
-    const blocks = frame.blocks ?? [];
+    const { blocks = [], groundAt } = frame;
     const viewing: PlateViewing = {
       camera: cameraOf(frame.matrix),
-      blocked: (from, to) => blockedBy(blocks, from, to),
-      fought: (id) => this.foeTarget.foughtWith(id),
+      blocked: (from, to) => blockedBy(blocks, from, to) || (!!groundAt && landBlocks(groundAt, from, to)),
+      fought: (id) => this.foeTarget.foughtShare(id),
+      locked: lock,
     };
     if (viewing.camera) this.compass.update(headingOf(viewing.camera.forward));
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
@@ -400,7 +402,7 @@ export class Hud {
       const place = frame.firstPerson ? null : ([x, y, z + WORD_HIGH_M] as const);
       this.words.say({ text: AMMO_FULL, tone: 'plain', tags: [] }, place, 0, 0.5);
     }
-    this.words.update(projectWord, frame.width, frame.height, seconds, platesOf(frame));
+    this.words.update(projectWord, frame.width, frame.height, seconds, this.foeBars.columns);
   }
 
   /** The side of the screen a word is thrown to: the way its stroke's blade travelled as the eye sees it, else one
@@ -421,18 +423,4 @@ export class Hud {
     this.nextSide = -this.nextSide;
     return this.nextSide;
   }
-}
-
-/** Where each foe's plate may stand, as the bars lay it: a column as wide as the plate, above the point over its head
- *  (a plate lifted clear of another stands higher still). */
-function platesOf(frame: HudFrame): Box[] {
-  const focal = cameraOf(frame.matrix)?.focal ?? Number.NaN;
-  return frame.foes.flatMap(({ view, rank }) => {
-    if (rank === BOSS_RANK || view.action.kind === 'dead') return [];
-    const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
-    const spot = project(frame.matrix, point, frame.width, frame.height);
-    if (!spot) return [];
-    const half = (PLATES.overhead.width * plateScale(clipOf(frame.matrix, point)[2], focal)) / 2;
-    return [{ left: spot.x - half, right: spot.x + half, top: -Infinity, bottom: spot.y }];
-  });
 }
