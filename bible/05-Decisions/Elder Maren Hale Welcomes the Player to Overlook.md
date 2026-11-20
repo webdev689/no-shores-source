@@ -17,10 +17,14 @@ status: in force
 
 > Asked which faction is the elder's, the first major faction the player meets: "Divine (Recommended)"
 
+> Asked what to do about her "Three ports still stand. The rest are ruins." while the ruined cities wait on another
+> pull request: "Keep the line (Recommended)"
+
 ## What it settles
 
 - **After the first story beat**, the [[Prologue]], an elder approaches the player in Overlook.
 - **She is Elder Maren Hale**, one of the game's first main characters, a woman of **the Lamplighters**, the faction of
   the Divine Art and the first major faction the player meets ([[Three Factions Keep the Arts, After Destiny 1]]).
 - **She introduces the state of the world and what the social space offers.**
+- **She tells of the ruins** before the world draws them; the world catches up when the ruins come.
 - How it plays is Claude's: [[Factions and Vendors as Claude Shapes Them]].

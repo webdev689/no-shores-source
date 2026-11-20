@@ -333,8 +333,9 @@ every other figure drawn on from where the new room has it, though its clock sta
 ## Running it
 
 - **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`. CI
-  deploys it after a merge into `main`, once the same commit has passed the check, as it publishes the page
-  ([[The Rooms Deploy When Their Code Changes]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret,
+  deploys it after a merge into `main`, once the same commit has passed the check, and publishes the page only once the
+  rooms have deployed or had nothing to ([[The Rooms Deploy When Their Code Changes]],
+  [[The Page Publishes Only After the Rooms Deploy]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret,
   only while that commit is still `main`'s head, and only when what the rooms are built from differs from the commit
   they were last deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker, the content
   they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`). A merge

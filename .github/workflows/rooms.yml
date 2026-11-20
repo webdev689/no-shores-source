@@ -5,9 +5,17 @@ name: rooms
 # the repository has them), then the rooms (built first without the token, then deployed with it alone), whose
 # service binding reaches the accounts. ci.yml calls it from main once the same commit has passed the check, as it
 # publishes the page, and it deploys only when what the rooms are built from has changed since their last deploy; it
-# also runs by hand from main, deploying whether anything changed or not.
+# also runs by hand from main, deploying whether anything changed or not. It tells ci.yml whether the rooms had
+# nothing to deploy or deployed, so the page is published only then.
 on:
   workflow_call:
+    outputs:
+      deploy:
+        description: 'yes when the rooms were to deploy, no when they had nothing to'
+        value: ${{ jobs.ready.outputs.deploy }}
+      deployed:
+        description: 'yes once the rooms deployed'
+        value: ${{ jobs.deploy.outputs.deployed }}
   workflow_dispatch:
 
 permissions:
@@ -155,6 +163,8 @@ jobs:
     environment: rooms
     env:
       CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
+    outputs:
+      deployed: ${{ steps.deployed.outputs.deployed }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install the pinned toolchain
@@ -173,3 +183,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: npx wrangler deploy --config server/wrangler.jsonc
+      - id: deployed
+        run: echo "deployed=yes" >> "$GITHUB_OUTPUT"

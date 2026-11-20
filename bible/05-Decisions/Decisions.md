@@ -154,6 +154,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Elder Maren Hale Welcomes the Player to Overlook]]
 - [[Only Overlook's Social Space Opens for Now]]
 - [[The Character Page Opens Appearance From an Icon Button]]
+- [[Characters Made Before the Arts' Levels Start Every Art at Level 1]]
+- [[The Page Publishes Only After the Rooms Deploy]]
+- [[No Save-Keeping Lands on Main Before the Factions Round]]
 - [[Factions and Vendors as Claude Shapes Them]]
 
 - [[Overlook Is Our Own Game]]

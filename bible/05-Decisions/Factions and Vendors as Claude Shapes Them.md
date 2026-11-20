@@ -69,7 +69,7 @@ look. The owner said yes to gear of each faction's own, "with its own unique col
 | A core each level | Each rise owns one of the Art's six fragments of the player's choice; four by level 5 |
 | Fragments owned | A Core slot holds only a fragment owned. The faction sells the others for 7,500 Aurem each, from its first rank (Destiny's rank-gated faction wares) |
 | Power and duration | Level 1 to 5: 0.6, 0.7, 0.8, 0.9 and 1.0 of every spell's harm and healing, and of how long the Sunwell, the Duskraven and Dusk Daggers last and the buffs they give (Quicken's Haste, Momentum's and Resolve's Crit, Vanish's veil). Recharges, reaches and counts are as written. Level 5 is the Arts as they were |
-| Old characters | Every Art at level 1; they own the fragments their Cores held, so nothing set is taken away |
+| Old characters | The owner's: every Art at level 1, owning the fragments their Cores held ([[Characters Made Before the Arts' Levels Start Every Art at Level 1]]) |
 
 ## The keepers and their wares
 
