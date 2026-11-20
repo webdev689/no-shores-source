@@ -29,9 +29,9 @@ export type FeelEvent =
   | { readonly kind: 'splash'; readonly point?: Point; readonly at?: readonly number[] }
   | RoomEvent;
 
-/** One of the room's events as the feel reads it among the fight's: every fight path (the sea room's, the fleet
- *  room's, the World Editor's) hands its events through here. None for a ball's splash and hit, which its shot's own
- *  events carry. */
+/** One of the room's events as the feel reads it among the fight's: the sea room's and the fleet room's hand theirs
+ *  through here, and the World Editor's fight names its own the same. None for a ball's splash and hit, which its
+ *  shot's own events carry. */
 export function feelOf(event: NavalEvent): FightEvent | null {
   if (event.kind === 'Splash' || event.kind === 'Hit') return null;
   // The fight's view carries its events as the World Editor's; the feel tells these from them by their kinds.

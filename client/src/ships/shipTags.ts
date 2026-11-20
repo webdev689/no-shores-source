@@ -20,7 +20,8 @@ const ON_MAST_M = 1.2;
  *  along her and this far over its foot, metres: a rope is made fast to the mast it holds up. */
 const ROPE_ON_MAST_M = 2.5;
 const ROPE_OVER_FOOT_M = 3;
-/** A piece within this of a mast's spar hangs from it, metres. */
+/** A piece in a cell this wide, or one beside it, holding a mast's spar hangs from it (within about twice this),
+ *  metres. */
 const HUNG_M = 0.3;
 /** What is never a mast's: her hull, her deck and her canvas. */
 const NOT_RIG = new Set(['hull', 'deck', 'sail']);

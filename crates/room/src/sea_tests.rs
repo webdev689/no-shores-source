@@ -479,7 +479,11 @@ fn a_player_who_comes_within_sight_of_a_clash_joins_it_and_its_captains_choose_w
     assert_eq!((sailed(&fought.fight, PLAYER).rung, ship(&sea, player).pace), (0, 0), "hove to");
     let others_at = 2 + 2 * naval::wire::VESSEL_NUMBERS + 4;
     let views: Vec<Vec<f64>> = sea.fight_views().into_iter().map(|(_, view, _)| view).collect();
-    assert_eq!(views[0][others_at..others_at + 3], [1.0, 2.0, 2.0], "her view shows the other: the pirates' Major");
+    assert_eq!(
+        views[0][others_at..others_at + 4],
+        [1.0, 2.0, 2.0, 2.0],
+        "her view shows the other: ship 2, the pirates' Major"
+    );
     sea.tick();
     let fought = &sea.fights().next().expect("the fight goes on").1.fight;
     let elite = fought.vessel(CAPTAIN).and_then(Vessel::command).map(|command| command.her.target());

@@ -165,6 +165,15 @@ test("every hull's rig high over her deck is tagged to a mast, so nothing of one
       above.set(view.getUint8(byte + 27), (above.get(view.getUint8(byte + 27)) ?? 0) + 1);
     }
     assert.equal(untagged.size, 0, `${HULL_NAMES[hull]}: ${untagged.size} corners of her rig stand untagged`);
+    // And nothing that is not a mast's falls with one: her hull, her deck and her bowsprit, forward of her foremast.
+    const foremast = mastsOf(hullSails(hull)).masts[0] ?? 0;
+    for (let vertex = 0; vertex < mesh.vertexCount; vertex++) {
+      const byte = vertex * VERTEX_BYTES;
+      const part = SHIP_PARTS[view.getUint8(byte + 24)];
+      const forward = view.getFloat32(byte, true) > foremast + 8;
+      if (part === 'hull' || part === 'deck' || (part === 'spar' && forward))
+        assert.equal(view.getUint8(byte + 27), 0, `${HULL_NAMES[hull]}: a ${part} vertex is tagged to a mast`);
+    }
     assert.equal([...above.keys()].filter((mast) => mast > 0).length, mastsOf(hullSails(hull)).masts.length);
   }
 });

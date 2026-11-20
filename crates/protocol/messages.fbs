@@ -246,8 +246,8 @@ table Pirate {
 
 // A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and
 // her captain's faction, rank and hull, as Pirate numbers them. Then the other captains in the fight, their count and
-// each one's numbers (none when there are none), which the view leaves out so a page that knows one captain reads it
-// whole.
+// each one's numbers (the number her events name her by, her faction and rank, her ship and her mind; none when
+// there are none), which the view leaves out so a page that knows one captain reads it whole.
 table SeaFight {
   player: uint;
   view: [double];
