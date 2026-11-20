@@ -19,6 +19,7 @@ use crate::social::Social;
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::{Station, StationKind};
 use land::ground::Ground;
+pub use courts::BOARD_LANDING_M;
 pub use placing::{Stood, stand_against, stand_at};
 
 /// The city whose social space is this hub.
