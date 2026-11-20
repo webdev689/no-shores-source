@@ -89,8 +89,15 @@ are in [[Crew]].
   the muster, and its trim. Its modules are the gear message's items of kinds 24 to 27, worn in slots 7 to 10.
 - Infusion is ask 17 (the kept module in `item`, the fed one in `count`).
 
+## In the fleet room
+
+The World Editor's fleet room holds no characters, so its panel sets the levels: F calls a captain at the level
+chosen (none by default, as combat's own numbers), its ship raised as a captain's level raises one at sea, and fits the
+caller's ship from then on as a plain ship of the level chosen (`ShipPower::plain`: four Normal modules of that level,
+no officers; unfitted by default). Both cross with the call (`Orders.call_level`, `ship_level`, 30 at most), so a
+browser predicting its ship fits it alike.
+
 ## Limits
 
 - Way and turn act in a fight; out of one the sea moves the ship on a course at its own pace. A Lookout's sight
   lengthens each ship's sight in that player's own sea snapshot.
-- The World Editor's fleet room holds no characters, so its ships are unfitted.

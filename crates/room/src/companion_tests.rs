@@ -286,3 +286,41 @@ fn a_players_ball_passes_their_companion_and_sending_foes_away_or_a_status_on_th
     assert_eq!(room.companion_of(player, ids[0]), Some(id), "sending the foes away leaves the companion");
     assert_eq!(room.living_foes(), 0);
 }
+
+#[test]
+fn the_fights_heat_counts_what_a_companion_deals_kills_and_takes_as_a_players() {
+    let mut room = room();
+    let (_, ids) = with_officers(&mut room, &[Post::FirstMate], 1);
+    room.tick();
+    let (companion, _) = companions(&room)[&ids[0]];
+    let foe = tithe(&mut room, 1, -30.0);
+    let blow = |striker, damage| Blow {
+        striker,
+        kind: BlowKind::Swing(Stroke::Down),
+        from: [0.0, 0.0],
+        damage,
+        poise: 0.0,
+        guard: 0.0,
+        parryable: true,
+        blockable: true,
+        knocks_down: false,
+        through: 1.0,
+        stagger: 1.0,
+        element: 0,
+        crit: false,
+    };
+    let hit = |damage| Verdict::Hit { damage, poise: 0.0 };
+    let rest = room.director.heat;
+    room.settle(&blow(companion, 20.0), How::Swing, foe, hit(20.0), None);
+    let dealt = room.director.heat;
+    assert!(dealt > rest, "what a companion deals heats the fight: {rest} to {dealt}");
+    room.settle(&blow(foe, 20.0), How::Swing, companion, hit(20.0), None);
+    let taken = room.director.heat;
+    assert!(taken < dealt, "what a companion takes cools it: {dealt} to {taken}");
+    let left = room.foes[&foe].fighter.health;
+    room.settle(&blow(companion, left * 10.0), How::Swing, foe, hit(left * 10.0), None);
+    assert!(room.foes[&foe].fighter.dead(), "the companion fells the foe");
+    let mut dealt_only = ::foes::director::Director { heat: taken };
+    dealt_only.dealt(left / gear::power::foe_health_times(1));
+    assert!(room.director.heat > dealt_only.heat, "and their kill heats it as a player's does");
+}

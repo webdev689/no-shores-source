@@ -57,7 +57,7 @@ specification ([[Pick - Crew and Ship Power]]).
 ## Ashore
 
 - Two officers sent ashore stand beside their player in a land room as companions, by DFO's own rules: their post's
-  type in the pirates' clothes, at their own level, following and fighting with a foe's brain on the players' side,
+  type in their post's own clothes, at their own level, following and fighting with a foe's brain on the players' side,
   knocked out rather than killed and resting eight minutes ([[Gear]], "Companions"). A boarded deck has none.
 
 ## Posts

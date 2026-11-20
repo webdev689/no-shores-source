@@ -7,6 +7,7 @@ use crate::battle::{Fights, Sank};
 use crate::pirates::Pirate;
 use gear::Character;
 use gear::crew::Post;
+use gear::ship::ShipPower;
 use gear::ship::trim::ShipTrim;
 #[cfg(test)]
 use gear::{Ask, asks::Here};
@@ -44,13 +45,20 @@ pub fn trim_of(trim: &ShipTrim) -> Trim {
 /// its level, a captain's on it by its Defense, in place of what the captain's level makes of its guns.
 #[must_use]
 pub fn fitting(character: &Character, hostiles: &BTreeMap<ShipId, Pirate>) -> Fitting {
-    let power = character.ship_power();
-    let dealt = hostiles.iter().map(|(id, other_ship)| (*id, power.harm_dealt(other_ship.level))).collect();
-    let taken = hostiles
-        .iter()
-        .map(|(id, other_ship)| (*id, power.harm_taken(other_ship.level) / other_ship.strength()))
-        .collect();
-    Fitting { dealt, taken, trim: trim_of(&character.ship_trim()), patching: 0.0 }
+    let levels = hostiles.iter().map(|(id, other_ship)| (*id, other_ship.level));
+    fitted(character.ship_power(), trim_of(&character.ship_trim()), levels)
+}
+
+/// A ship of `power` and `trim` fitted against each captain by its level: what its balls do to one by its Attack, and
+/// what one's do to it by its Defense, a captain's level having raised its own guns' harm already.
+#[must_use]
+pub fn fitted(power: ShipPower, trim: Trim, levels: impl Iterator<Item = (ShipId, u8)>) -> Fitting {
+    let (mut dealt, mut taken) = (BTreeMap::new(), BTreeMap::new());
+    for (id, level) in levels {
+        dealt.insert(id, power.harm_dealt(level));
+        taken.insert(id, power.harm_taken(level) / gear::power::foe_health_times(level));
+    }
+    Fitting { dealt, taken, trim, patching: 0.0 }
 }
 
 impl Fights {
