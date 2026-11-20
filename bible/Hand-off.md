@@ -196,36 +196,24 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **#95, fewer plates, sized by rank, after Destiny**, a draft from branch `ccr-800481d9-kbbd62`, waits on the
-  owner's yes ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate,
-  the foe in sight nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and
-  shows none over its head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's
-  bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates.
-  Three audits of it (the code; its fidelity to the approval and its records; its frame cost and look) are fixed on
-  it, each fix with a test seen to fail without it. Tested offline: the full check; headless on the built page,
-  walking into the Saltgrass Downs garrison, six plates on `main` against one on #95, over the foe at the crosshair
-  (the foes stayed wary, so no blow was traded in the pictures); and each rank's plate whole and at three quarters.
-  Claude's calls, listed in its description, are the owner's to change: the cone's numbers and its hold; no second
-  plate by the cone while the foe at the crosshair is fought, locked or a Boss; a fought plate fading within the 6 s,
-  as the target plate does; the bars' sizes; thirds only over figures; the words of blows clear only of plates drawn;
-  ships' plates as they are. Not yet seen on a real GPU or with blows traded. The target's own plate over its head is
-  to be looked at again once the owner has played with which plates show. Found in passing, not on #95: the compass
-  writes its marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
-- **#96, the kit's first review**, a draft from branch `ccr-800481d9-kbbd62-kit`, waits on the owner's yes: a fidelity
-  review (`workers/fidelity-review.sh`, a fixed brief) with a CI check that fails a pull request changing a decision
-  without its verdict, as the owner chose for a rule broken three times in one task; workers' worktrees made ready to
-  test; the observation log kept on the branch `toolkit-data`, saved by a git merge so a parallel session's save is
-  kept, with a test check-tools runs; `cargo xtask check` naming the commit it checked; and Toolkit rows for web research
-  and for measuring text before sizing a box. Tested offline: the full check, check-tools with a headless worker, the
-  save's test, and a fidelity review of #95, whose eight findings are fixed or answered there. Open for the owner, in
-  its description: where the claude-mem store lives (an archive, kept out of git), whether CI should require the verdict
-  to name the pull request's head (a new review after each push), and making the check required on GitHub.
+- **#102, foes fight in groups that lead, break and give ground, after Bungie**, a draft from branch
+  `ccr-800481d9-kbbd62`, waits on the owner's yes ([[Foes Fight in Groups That Lead, Break and Give Ground, After
+  Bungie]]; Claude's calls in [[Foe Groups as Claude Builds Them]]): every garrison group's leader, whose fall breaks
+  the rest (to cover, or running or huddling in the open, one raging); a group's breaking point at half, defending its
+  post; a mission's or a dungeon's garrison falling back halfway at three quarters standing and gathering at its last
+  stand at half; the Grey Tithe's leader screened behind a shield-bearer of its lower ranks; and a mission's two waves,
+  hunting the players. No blurbs pop over foes, as the owner asked. Tested offline: the full check, 23 new tests (34
+  rules each broken once and seen to fail), three fidelity reviews and two audits fixed on it, and a simulation of 72
+  scripted fights. Left for the owner, in its description: defending foes that never come for a player just past 8 m
+  unless struck; a screened leader, Corvane among them, holding back while its lower ranks fight before it; a wave the
+  room's limit has no room for not coming later; whether "no blurbs" covers the plate's alert mark too (nothing is
+  added to it). Not yet seen: a group fight played by hand on a real GPU.
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
-- **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
-  storm and creation once begun; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about
-  25 s; the story's sea fight sails in the story's wind, not the world's, so the Brig makes way in the storm drawn
-  round her. Waits on the owner's yes to merge, which deploys the page and the rooms.
+- **The prologue's follow-ups (#94, on `main`)**, after the owner played it live: the title's prompt no longer stays
+  over the storm and creation once begun; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]),
+  about 25 s; the story's sea fight sails in the story's wind, not the world's, so the Brig makes way in the storm drawn
+  round her.
 - **The sea's sounds from Freesound (#94)** ([[The Sea's Sounds Come From Freesound]]): all 27, the open sea's, the
   story's, the sea fight's (new) and the shore's, are the owner's picks from the sea sound sheet,
   https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its store's `picks` collection holds each
@@ -365,10 +353,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
   fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
   fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
-- **The kit's observation log** has had its first review: all five observations are actioned, their fixes on #96,
-  waiting on the owner's merge. The log is on the orphan branch `toolkit-data` (#96's `toolkit-data.sh`; until #96
-  merges, its restore and save are on that branch only). The earlier review's four changes to the instructions, and one
-  closing, were lost with their container; only that session's report has them.
+- **#95 and #96 are on `main`**, merged and deployed with the owner's yes. #95: fewer plates, sized by rank, after
+  Destiny ([[Fewer Plates Show, Sized by Rank, After Destiny]]); its Claude's calls (the cone's numbers, the bars'
+  sizes, the fought plate's fade) stay the owner's to change, and the target's own plate over its head is to be looked
+  at again once the owner has played. #96: the kit's first review: the fidelity review and its CI check (`fidelity`),
+  worktrees ready to test, `cargo xtask check` naming its commit, and the observation log kept on the orphan branch
+  `toolkit-data` (`tools/claude-toolkit/toolkit-data.sh`, restored by the install and saved at a session's end). Open
+  from #96 for the owner: where the claude-mem store lives, whether CI should require the verdict to name the pull
+  request's head, and making the check required on GitHub. Found in passing: the compass writes its marks' place and
+  visibility every frame, changed or not (`client/src/plus/compass.ts`).
 
 ## Next
 
