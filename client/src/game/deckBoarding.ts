@@ -142,7 +142,11 @@ export class Boarding {
     if (left === null) return { place: captain.name, line: 'Aboard: its crew stands to meet you', hints: frame.hints };
     // The take on one line under its name, as the place's line holds it; the minute left with the key that ends it.
     const line = take ? `Its hold: ${holdWords(take)}` : 'Its hold is open';
-    return { place: 'Its deck is yours', line, hints: [['E', `Back aboard your ship · ${left} s left`], ...frame.hints] };
+    return {
+      place: 'Its deck is yours',
+      line,
+      hints: [['E', `Back aboard your ship · ${left} s left`], ...frame.hints],
+    };
   }
 
   /** The fight on foot on its deck while the player plays there, for the display's respawn. */

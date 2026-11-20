@@ -100,7 +100,9 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const { fight } = here;
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.
-  hud.hints(deck ? deck.hints : seaHints({ fighting: fight !== null, landing: state.landing, atHelm, ...aboard.where }));
+  hud.hints(
+    deck ? deck.hints : seaHints({ fighting: fight !== null, landing: state.landing, atHelm, ...aboard.where }),
+  );
   hud.notices([...state.notices, ...(fight && !deck ? fight.messages(state.clock) : [])]);
   // shortcut: at sea the tracker shows only a fight's task, so a quest's would be hidden; share it once quests sail.
   const task = fight && !deck ? fight.readout(state.clock) : null;
@@ -128,11 +130,12 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
 }
 
 /** Takes down what the sea alone shows, once the player is on land: the ships' plates and the sight, the fight's
- *  readout, the sea bar, Manage's panel and the wheel's offer. */
+ *  readout and its task, the sea bar, Manage's panel and the wheel's offer. */
 export function hideSeaHud(hud: Hud): void {
   // With no plate to place, the pose is never read.
   hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: forwardOf(0, 0) }, 1));
   hud.seaFight(null);
+  hud.tasks.show(null);
   hud.seaBar(null);
   hud.shipPanel(null);
   hud.wheelOffer(false);
