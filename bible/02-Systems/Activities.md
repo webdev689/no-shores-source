@@ -56,6 +56,8 @@ Company]]).
 - **Draws** are seeded by the day or the week, so every player and room sees the same (`gear::activities`). The
   week's two never fall on the same dungeon.
 - **The dungeon of the day** carries one modifier of the day at Elite and Abyss.
+- **Elite names three things**, as the owner kept it: the tier, the Elite Dungeons and a foe's rank. Each screen says
+  which it means, as "Elite seas", "Elite Dungeon" or an Elite foe's nameplate.
 - **The week's levels** stand two over the level that opens each, as Destiny 1's weekly strikes stood at fixed
   levels, so a player who may enter can harm every foe (`gear::power::gap`).
 
@@ -119,9 +121,11 @@ One engine counts both, since the owner's side quests and the board's bounties a
 
 - **The story's progress is kept with the account** (`Character.story`), not only in the browser: the prologue's
   end first, and each mission and side quest as they come. The room records each.
-- **After the prologue:** the board, the patrols, the dungeon of the day and the Elite Dungeons. Until more of the
-  campaign exists, the prologue stands in for its end, so the week's dungeons open too, each by its level. Characters
-  saved before the story was kept count as past the prologue.
+- **After the prologue:** the board, the patrols, the dungeon of the day and the Elite Dungeons.
+- **The campaign** is the nine missions that follow the prologue, which is not one of them; finishing the ninth is its
+  end. Which island each mission reaches is written with the missions. Until they exist, the prologue stands in for
+  the campaign's end, so the week's dungeons open too, each by its level.
+- **Characters saved before the story was kept** count as past the prologue.
 - **The rooms refuse a join a gate shuts**, and say why. The screen shows what is shut and what opens it.
 
 ## The screen
