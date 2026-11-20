@@ -185,7 +185,7 @@ type Player = ReturnType<Awaited<ReturnType<typeof world>>['player']>;
 async function playing(...named: string[]) {
   const made = await world(...named);
   for (const name of named) await made.play(name, 'node-overlook-social');
-  return { ...made, players: named.map(made.player) as [Player, Player, Player, Player, Player] };
+  return { ...made, players: named.map(made.player) as [Player, Player, Player, Player, Player, Player] };
 }
 
 test('a block between the joiner and any member keeps them out, by join or by invite, answered as closed', async () => {
