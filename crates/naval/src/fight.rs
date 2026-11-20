@@ -66,6 +66,9 @@ pub struct Command {
     pub gone: Option<End>,
     /// Whether players went aboard her after she struck: she is no longer scuttled at `STRUCK_HOLD_S`.
     pub boarded: bool,
+    /// Since when (the fight's clock) she has been out of every foe's guns' reach, not engaging, engaged by no captain,
+    /// and neither struck nor going down.
+    pub out_of_reach_since: Option<f64>,
 }
 
 impl Vessel {
@@ -356,7 +359,7 @@ impl Fight {
         let her = Captain::new(commission, seed, ship.heading, arms_of(hull));
         let damage = commission.damage();
         let under = sink_depth(seed, arms_of(hull));
-        let command = Command { her, under, struck_at: None, gone: None, boarded: false };
+        let command = Command { her, under, struck_at: None, gone: None, boarded: false, out_of_reach_since: None };
         let vessel = Vessel {
             hull,
             pose: pose_of(&ship, hull.hull(), waters, time),
@@ -367,6 +370,15 @@ impl Fight {
             sailor: Sailor::Captain(Box::new(command)),
         };
         self.ships.insert(id, vessel);
+    }
+
+    /// The captain numbered `id`, just enlisted, raised to `strength` (`Captain::raised`): her hull and men, sound, and
+    /// her guns' harm, that many times her rank's.
+    pub fn raise(&mut self, id: ShipId, strength: f64) {
+        let Some(vessel) = self.ships.get_mut(&id) else { return };
+        let Sailor::Captain(command) = &mut vessel.sailor else { return };
+        command.her = command.her.clone().raised(strength);
+        vessel.damage = command.her.commission.damage_at(strength);
     }
 
     /// A ship leaves the fight: the captains forget her; balls she fired fly on.

@@ -23,7 +23,7 @@ pub const RUN_IN_DEG: f64 = 45.0;
 pub const RUN_OUT_WAIT_S: f64 = 2.5;
 pub const RUN_IN_S: f64 = 2.0;
 /// She runs out within this share of her reach, and fires within this many degrees at the most.
-pub const RUN_OUT_REACH: f64 = 0.92;
+pub const RUN_OUT_REACH: f64 = 1.0;
 pub const BEAR_DEG: f64 = 13.0;
 /// The miss her gunners allow, as a share of the mark's length across her line of fire, and its skill's part.
 pub const FIRE_EXTENT_K: f64 = 0.35;
@@ -68,6 +68,20 @@ pub fn fire_window(me: [f64; 2], at: [f64; 2], mark_heading: Option<f64>, target
     let spread = SWIVEL.yaw_spread_deg * (1.5 - skill).clamp(0.4, 1.5);
     let range = distance(me, at).max(1.0);
     BEAR_DEG.min(spread.max(libm::asin((miss / range).min(1.0)) / DEG))
+}
+
+/// The metres of a fight's range, centre to centre, that lie inside the two hulls along the line of fire from `me`
+/// to `at`: her own half beam, out to her gun mouths, and the mark's depth along the line (her half length end-on,
+/// her half beam abeam; her middle with no way). A ball laid to her reach strikes a mark their sum farther off.
+#[must_use]
+pub fn hull_span(me: [f64; 2], at: [f64; 2], mark_heading: Option<f64>, own: &Arms, target: &Arms) -> [f64; 2] {
+    let half = |arms: &Arms| ((arms.hull[1][0] - arms.hull[0][0]) / 2.0, (arms.hull[1][1] - arms.hull[0][1]) / 2.0);
+    let ((_, own_beam), (half_length, half_beam)) = (half(own), half(target));
+    let line = heading_to(me, at);
+    let depth = mark_heading.map_or((half_length + half_beam) * 2.0 / PI, |heading| {
+        half_length * libm::cos(heading - line).abs() + half_beam * libm::sin(heading - line).abs()
+    });
+    [own_beam, depth]
 }
 
 /// Seconds until the bearing of `lead`, moving at `rel` to her, comes within `window` of `want_deg` off her bow;
@@ -186,7 +200,9 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
         let range = distance(me, lead);
         let error = wrap(heading_to(me, lead) - ship.heading - want * DEG).abs() / DEG;
         let loaded = at.guns.ready(side);
-        let reach = lay(ship, at.pose, at.arms, side, at.guns.load, 0.0, None).reach;
+        // Her reach out to the mark's near side, as a player's balls strike her.
+        let [beam, depth] = hull_span(me, lead, mark.heading, at.arms, mark.arms);
+        let reach = lay(ship, at.pose, at.arms, side, at.guns.load, 0.0, None).reach + beam + depth;
         let lay_k = |share: f64| {
             let target = [
                 me[0] + (lead[0] - me[0]) * share,
@@ -195,7 +211,10 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
             ];
             lay_on(ship, at.pose, at.arms, side, at.guns.load, target)
         };
-        let strikes = || lay_passes(&lay_k(1.0), carry, lead, band);
+        // The mark's near side, where a ball laid past her middle's reach still strikes her.
+        let toward = depth.min(range) / range.max(1e-6);
+        let near = [lead[0] - (lead[0] - me[0]) * toward, lead[1] - (lead[1] - me[1]) * toward];
+        let strikes = || lay_passes(&lay_k(1.0), carry, lead, band) || lay_passes(&lay_k(1.0), carry, near, band);
         let window = fire_window(me, lead, mark.heading, mark.arms, skill);
         let Some(since) = run.out[side.index()] else {
             if run.run_in[side.index()] > clock - RUN_IN_S {

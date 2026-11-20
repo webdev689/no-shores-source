@@ -65,3 +65,16 @@ fn a_players_ship_gathers_their_own_pieces_within_twenty_five_metres_and_no_one_
     let far = flotsam.tick(2, &[(1, [5_000.0, 2_000.0])], &mut characters);
     assert!(far.is_empty());
 }
+
+#[test]
+fn a_harder_seas_pieces_hold_a_vestige_as_often_as_a_harder_voyage_pays_one_on_land() {
+    use gear::Difficulty;
+    for rank in Rank::ALL {
+        let plain = vestige_chance(rank, Difficulty::Normal);
+        assert_eq!(plain, gear::rewards::worth(foe_of(rank)).vestige, "{rank:?} at Normal: her foe's own chance");
+        for difficulty in [Difficulty::Elite, Difficulty::Abyss] {
+            let raised = (plain * difficulty.reward()).min(1.0);
+            assert_eq!(vestige_chance(rank, difficulty), raised, "{rank:?} {difficulty:?}");
+        }
+    }
+}

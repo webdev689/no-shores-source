@@ -15,6 +15,13 @@ use std::collections::BTreeMap;
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 
 impl Sea {
+    /// Sets the sea's tier, as a host sets it once the sea has opened: an Elite or Abyss sea sends its ships at the
+    /// levels the tier raises foes to on land, and their pieces hold a Vestige as often as a harder voyage pays one.
+    pub fn set_difficulty(&mut self, difficulty: gear::Difficulty) {
+        self.pirates.difficulty = difficulty;
+        self.harbour.flotsam.difficulty = difficulty;
+    }
+
     /// What its fights' tick made of each player and each captain's ship that sank: a player's ship where the fight
     /// has her, her hurts kept once it lets her go, a player whose ship went down washed up, and what floats laid for
     /// each player who fought a ship that sank.
@@ -311,7 +318,7 @@ pub(super) fn wary_meet(
             !ship.fighting
                 && near
                 && !met.iter().any(|(player, _)| *player == ship.player)
-                && naval::captain::wary_takes(pirate.commission, hull)
+                && naval::captain::wary_takes(pirate.commission, pirate.strength(), hull)
         };
         match ships.iter().find(takes).filter(|_| !pirate.bold) {
             Some(ship) => met.push((ship.player, pirates.sailing.remove(at))),

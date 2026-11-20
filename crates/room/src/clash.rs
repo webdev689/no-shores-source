@@ -40,7 +40,11 @@ impl Clash {
             .iter()
             .map(|(_, pirate)| (ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET), pirate.commission, pirate.seed))
             .collect();
-        Clash { fight: Fight::among(&captains, &waters, time), crews, swell, wind }
+        let mut fight = Fight::among(&captains, &waters, time);
+        for (id, pirate) in &crews {
+            fight.raise(*id, pirate.strength());
+        }
+        Clash { fight, crews, swell, wind }
     }
 
     /// Each of its ships by her number in the fight, as she sailed at sea.

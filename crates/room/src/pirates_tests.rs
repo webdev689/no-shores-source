@@ -344,3 +344,24 @@ fn a_wary_ship_comes_for_a_sloop_she_would_take_and_lets_a_sound_one_be() {
     assert_eq!(pirates.sailing[0].quarry, Some(1), "one holed under GRAPPLE_HULL she comes for");
     assert!((pirates.sailing[0].heading - HELM_TURN_RAD_S).abs() < 1e-9);
 }
+
+#[test]
+fn a_harder_seas_ships_come_at_the_levels_its_tier_raises_foes_to_on_land_and_of_the_same_ranks() {
+    let water = OneWater { levels: Some((10, 13)), ..PIRATE_WATER };
+    let here = water.water([0.0, 0.0]).unwrap();
+    let ship = voyager(1, [0.0, 0.0], 0, false);
+    let sent = |difficulty: gear::Difficulty| {
+        let mut pirates = Pirates::new(5);
+        pirates.difficulty = difficulty;
+        (0..200).filter_map(|_| pirates.come(&ship, here, &water, &|_| f64::MAX)).collect::<Vec<Pirate>>()
+    };
+    let normal = sent(gear::Difficulty::Normal);
+    for difficulty in [gear::Difficulty::Elite, gear::Difficulty::Abyss] {
+        let harder = sent(difficulty);
+        assert_eq!(harder.len(), normal.len());
+        for (plain, raised) in normal.iter().zip(&harder) {
+            assert_eq!(raised.level, difficulty.raise(plain.level), "{difficulty:?}");
+            assert_eq!(raised.commission, plain.commission, "the same ranks come");
+        }
+    }
+}
