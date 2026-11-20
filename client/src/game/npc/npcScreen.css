@@ -207,6 +207,8 @@
 .npc-price-note {
   color: var(--faint);
   letter-spacing: 0;
+  /* A note that wraps keeps its words together, never a number alone on the last line. */
+  text-wrap: balance;
 }
 .npc-price.gear-short .npc-price-note {
   color: var(--loss);
@@ -315,12 +317,13 @@
     flex-basis: 132px;
   }
 }
-/* The vault keeper's two sides of the vault stand where a keeper's rows stand, across the column; a side narrower
-   than a row of five Vestiges lays them as many to a row as it holds. */
+/* The vault keeper's two sides of the vault stand where a keeper's rows stand, across the column; each side lays its
+   shelves and Vestiges as many to a row as it holds, however wide the menu. */
 .npc-rows > .gear-vault {
   flex: 1 1 100%;
   padding: 0;
 }
-.npc-rows > .gear-vault .gear-vestige-grid {
+.npc-rows > .gear-vault .gear-vestige-grid,
+.npc-rows > .gear-vault .gear-grid {
   grid-template-columns: repeat(auto-fill, 64px);
 }

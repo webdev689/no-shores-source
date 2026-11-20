@@ -2,8 +2,18 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { StationInfo } from '../nodes.ts';
 import { inPlaza, plazaPoint } from '../townsfolk.ts';
-import { FRAME, STATIONS, solidAt } from './plazaForTests.ts';
-import { CAUGHT_UP_M, FOLLOW_M, LEFT_BEHIND_S, MEET_M, MET_SCENE, STOPS, WALK_M_S, WelcomeWalk } from './walk.ts';
+import { FRAME, SHAPE_SPOTS, STATIONS, solidAt } from './plazaForTests.ts';
+import {
+  CAUGHT_UP_M,
+  FOLLOW_M,
+  LEFT_BEHIND_S,
+  MEET_M,
+  MET_SCENE,
+  START_FAR_M,
+  STOPS,
+  WALK_M_S,
+  WelcomeWalk,
+} from './walk.ts';
 
 type Point = readonly [number, number];
 const station = (kind: string) => STATIONS.find((station) => station.kind === kind) as StationInfo;
@@ -16,15 +26,17 @@ const SPAWNS: readonly Point[] = [place(56, -60), place(56, -20), place(56, 20),
 /** Half a body's width, metres: no solid of the courtyard comes nearer her middle. */
 const BODY_M = 0.3;
 
-/** The whole walk with a player who stands at `start` until she has met them, then keeps close behind her: the
- *  scenes heard, each with the stations named, and the seconds walked. Every step she stands clear of every solid. */
+/** The whole walk with a player who stands at `start` until she has met them, or waits for them on the lanes, then
+ *  keeps close behind her: the scenes heard, each with the stations named, and the seconds walked. Every step she
+ *  stands clear of every solid and of Shape. */
 function walkedFrom(start: Point) {
   const walk = WelcomeWalk.round(STATIONS, FRAME, start) as WelcomeWalk;
   const heard: { scene: string; named: string[]; across: number }[] = [];
-  let [seconds, given] = [0, 0];
+  let [seconds, given, waited] = [0, 0, false];
   for (let tick = 0; tick < 40_000 && walk.phase !== 'done'; tick++) {
-    const player = walk.phase === 'coming' ? start : ([walk.maren.x, walk.maren.y + 1.5] as const);
-    const { say } = walk.step(0.1, player);
+    const player = walk.phase === 'coming' && !waited ? start : ([walk.maren.x, walk.maren.y + 1.5] as const);
+    const { say, lagging } = walk.step(0.1, player);
+    waited ||= lagging;
     seconds += 0.1;
     if (say) {
       const named = walk.named.map((each) => each.kind);
@@ -34,13 +46,100 @@ function walkedFrom(start: Point) {
       if (walk.given && !given) given = seconds;
     }
     const { toward, across } = inPlaza(FRAME, [walk.maren.x, walk.maren.y]);
-    const solid = solidAt(toward, across, BODY_M);
-    assert.equal(solid, null, `from ${start}: in the ${solid} at (${toward.toFixed(2)}, ${across.toFixed(2)})`);
+    clearOfAll(toward, across, `from ${start}`);
   }
   return { walk, heard, given };
 }
 
-test('she starts within sight of where the player arrives, and comes to them', () => {
+/** She stands clear of every solid of the courtyard and of Shape at any spot of his. */
+function clearOfAll(toward: number, across: number, why: string): void {
+  const solid = solidAt(toward, across, BODY_M);
+  assert.equal(solid, null, `${why}: in the ${solid} at (${toward.toFixed(2)}, ${across.toFixed(2)})`);
+  for (const [spotToward, spotAcross] of SHAPE_SPOTS) {
+    const apart = Math.hypot(toward - spotToward, across - spotAcross);
+    assert.ok(apart > 2 * BODY_M, `${why}: ${apart.toFixed(2)} m from Shape at (${spotToward}, ${spotAcross})`);
+  }
+}
+
+/** The places a player may stand on the plaza, in its own frame: a grid every `step` metres clear of the solids, in
+ *  each alcove before and behind its counter, under the portico, and a step before each of Shape's spots. */
+function playerPlaces(step: number): [number, number][] {
+  const places: [number, number][] = [];
+  for (let toward = -58; toward <= 58; toward += step)
+    for (let across = -128; across <= 128; across += step) places.push([toward, across]);
+  for (const station of STATIONS) {
+    const { across } = inPlaza(FRAME, station.counter);
+    for (const toward of [-50.4, -53, -55]) for (const aside of [-2.5, 0, 2.5]) places.push([toward, across + aside]);
+  }
+  for (const across of [-24, -12, -4, 4, 12, 24]) for (const toward of [-58, -50, -43]) places.push([toward, across]);
+  for (const [toward, across] of SHAPE_SPOTS) places.push([toward + 2, across], [toward - 2, across]);
+  return places.filter(([toward, across]) => solidAt(toward, across, BODY_M) === null);
+}
+
+/** She comes to a player standing still at `start`, by the lanes: clear of every solid, of Shape and of the player,
+ *  until she greets them or stands on the lanes nearest them, waiting with the prompt. */
+function cameTo(start: Point, seen?: (point: Point) => boolean): WelcomeWalk {
+  const walk = WelcomeWalk.round(STATIONS, FRAME, start, [], seen) as WelcomeWalk;
+  const from = inPlaza(FRAME, start);
+  const why = `to a player at (${from.toward}, ${from.across})`;
+  for (let tick = 0; tick < 3000; tick++) {
+    const asked = walk.step(0.1, start);
+    const { toward, across } = inPlaza(FRAME, [walk.maren.x, walk.maren.y]);
+    clearOfAll(toward, across, why);
+    assert.ok(near(walk, start) > MEET_M - WALK_M_S * 0.1 - 1e-6, `${why}: she comes within ${near(walk, start)} m`);
+    if (asked.say) {
+      assert.equal(asked.say, MET_SCENE);
+      return walk;
+    }
+    if (!walk.maren.walking && tick > 0) {
+      assert.ok(asked.lagging, `${why}: she waits on the lanes with the prompt`);
+      assert.ok(near(walk, start) > FOLLOW_M, `${why}: she waits only for a player out of reach`);
+      return walk;
+    }
+  }
+  assert.fail(`${why}: she never came`);
+}
+
+test('coming to a player wherever they stand, she keeps to the lanes, clear of every solid, Shape and the player', () => {
+  for (const [toward, across] of playerPlaces(8)) cameTo(place(toward, across));
+});
+
+test('coming to a player out of reach of the lanes, she waits on them and greets them once they come near', () => {
+  const portico = place(-50, 4);
+  const walk = cameTo(portico);
+  assert.equal(walk.phase, 'coming');
+  const { toward } = inPlaza(FRAME, [walk.maren.x, walk.maren.y]);
+  assert.ok(Math.abs(toward - -38) < 1e-6, `on the landward lane, at ${toward}`);
+  assert.equal(walk.step(0.1, place(-43, 4)).say, MET_SCENE);
+});
+
+test('between the last row and the benches, she greets the player from the row before them', () => {
+  assert.equal(cameTo(place(38, 0)).phase, 'speaking');
+});
+
+test('she starts well away from the player, and out of their view where a crossing of the lanes is', () => {
+  const crossing = place(34, 20);
+  const walk = WelcomeWalk.round(STATIONS, FRAME, crossing) as WelcomeWalk;
+  assert.ok(near(walk, crossing) >= START_FAR_M, `starts ${near(walk, crossing).toFixed(2)} m from them`);
+  for (const [toward, across] of playerPlaces(8)) {
+    const player = place(toward, across);
+    for (const look of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+      // A view of 120 degrees about the way they look, as far as the plaza reaches.
+      const seen = (point: Point) => {
+        const there = inPlaza(FRAME, point);
+        const off = Math.atan2(there.across - across, there.toward - toward) - look;
+        return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) < Math.PI / 3;
+      };
+      const started = WelcomeWalk.round(STATIONS, FRAME, player, [], seen) as WelcomeWalk;
+      const start: Point = [started.maren.x, started.maren.y];
+      assert.ok(near(started, player) >= START_FAR_M, `from (${toward}, ${across}): ${near(started, player)} m`);
+      assert.ok(!seen(start), `from (${toward}, ${across}) looking ${look}: she starts in their view`);
+      if (look === 0) cameTo(player, seen);
+    }
+  }
+});
+
+test('she starts a way off from where the player arrives, and comes to them', () => {
   for (const spawn of SPAWNS) {
     const walk = WelcomeWalk.round(STATIONS, FRAME, spawn) as WelcomeWalk;
     assert.ok(near(walk, spawn) < 30, `starts ${near(walk, spawn).toFixed(1)} m from them`);
@@ -49,7 +148,7 @@ test('she starts within sight of where the player arrives, and comes to them', (
     for (; seconds < 120 && !asked.say; seconds += 0.1) asked = walk.step(0.1, spawn);
     assert.equal(asked.say, MET_SCENE);
     assert.ok(seconds < 30, `met after ${seconds.toFixed(0)} s`);
-    assert.ok(near(walk, spawn) <= MEET_M + 1e-6, 'stopped before them');
+    assert.ok(near(walk, spawn) <= FOLLOW_M, 'stopped before them, on the lanes');
     const facing = Math.atan2(spawn[0] - walk.maren.x, walk.maren.y - spawn[1]);
     assert.ok(Math.abs(walk.maren.facing - facing) < 1e-6, 'facing the player');
     assert.equal(walk.step(1, spawn).say, null, 'she says it once');

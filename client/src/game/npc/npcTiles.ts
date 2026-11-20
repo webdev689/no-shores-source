@@ -9,7 +9,6 @@ import { bardingTile } from '../appearance/bardingTile.ts';
 import { ARTS, emblemSvg, fragmentSvg } from '../artsCards.ts';
 import type { PageContext } from '../characterPage.ts';
 import { emblemImage, emblemOf } from '../emblemArt.ts';
-import { cardOf } from '../gearCards.ts';
 import {
   type Hint,
   cardNode,
@@ -22,7 +21,7 @@ import {
   tileLabel,
 } from '../gearDom.ts';
 import { shapesSvg, svgUrl } from './npcMarks.ts';
-import { type Price, type Row, type Ware, type WarePicture, priceWord } from './npcWares.ts';
+import { type Price, type Row, type Ware, type WarePicture, priceWord, wareCard } from './npcWares.ts';
 
 /** A tile's picture box, in pixels: the menu's cell's. */
 const TILE_PX = 48;
@@ -130,7 +129,9 @@ export function wareTile(context: PageContext, ware: Ware, act: (ware: Ware) => 
   const hints: readonly Hint[] = ware.opens ? [['Click', 'Choose a fragment']] : pressed ? HOLD_HINT : [];
   if (item) {
     const worn = context.gear.items.find((each) => each.at === WORN + item.bucket && each.id !== item.id) ?? null;
-    context.tip.over(tile, () => cardNode(cardOf(item, item.at >= WORN ? null : worn), context.picture(item), hints));
+    context.tip.over(tile, () =>
+      cardNode(wareCard(ware, item, item.at >= WORN ? null : worn), context.picture(item), hints),
+    );
   } else context.tip.over(tile, () => plainCard(ware, hints));
   if (ware.opens) tile.addEventListener('click', () => (context.tip.hide(), open()));
   else if (ware.ask) holdToAct(tile, () => act(ware), { charges: () => tile });

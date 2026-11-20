@@ -29,12 +29,15 @@ import { vaultPage } from '../stationPages.ts';
 const DAILY: readonly KeeperKind[] = ['armorsmith', 'weaponsmith', 'tailor', 'tack'];
 /** The menu's brass, the ground of a keeper who serves no Art. */
 const BRASS = '#c08a3e';
-/** What the footer says the screen's keys do, as the references' footer does: the Mage's holds open a Vestige. */
+/** What the footer says the screen's keys do, as the references' footer does: the Mage's holds open a Vestige, and
+ *  Escape steps back out of the Art's choice of fragments before it dismisses the screen. */
 export const npcHints = (view: View): readonly Hint[] => [
   ['Hold', view === 'mage' ? 'Open' : 'Buy'],
   ['I', 'Open Character'],
-  ['Esc', 'Dismiss'],
+  ['Esc', choosing ? 'Back' : 'Dismiss'],
 ];
+/** Whether the screen shows the Art's choice of fragments, a step the footer steps back out of. */
+export const npcChoosing = (): boolean => choosing;
 /** The figure's height beside what the screen's body leaves it, and the least it is drawn at. */
 const FIGURE_AROUND = 120;
 const FIGURE_LEAST = 200;
@@ -42,6 +45,8 @@ const FIGURE_LEAST = 200;
 /** Whether a view of the menu is a keeper's screen: every counter's, the vault's among them. */
 export const isKeeperView = (view: View): view is KeeperKind => (KEEPER_KINDS as readonly string[]).includes(view);
 
+/** What the arrows move among: a keeper's tiles, and at the vault its cells that take the focus. */
+const KEEPER_PRESSES = '.npc-tile, .gear-vault button.gear-cell, .gear-vault .gear-cell[tabindex]';
 /** Whether the Art's rise waits on its fragment. */
 let choosing = false;
 /** The press to focus once the page is built again: the first fragment as the choice opens, the Rise as it closes. */
@@ -155,7 +160,7 @@ function arrowsAmong(page: HTMLElement): void {
   page.addEventListener('keydown', (event) => {
     const step = ARROWS[event.key];
     const from = document.activeElement;
-    const tiles = [...page.querySelectorAll<HTMLElement>('.npc-tile')];
+    const tiles = [...page.querySelectorAll<HTMLElement>(KEEPER_PRESSES)];
     if (!step || !(from instanceof HTMLElement) || !tiles.includes(from)) return;
     event.preventDefault();
     nearest(from, tiles, step)?.focus();
