@@ -33,14 +33,14 @@ ZONES = (
      'crew': ((8.2, 8.4), (12.8, 8.4), (10.4, 12.4))},
     {'name': "the Brig's fore deck", 'area': (18.6, -6.0, 41.0, 16.0), 'checkpoint': (20.6, 7.0),
      'wave': ((7, 1, (28.4, -1.6), 180), (13, 1, (28.4, -3.4), 0), (10, 1, (32.0, -2.4), 180), (17, 1, (32.0, -4.2), 0)),
-     'crew': ((26.6, -1.1), (24.5, 10.1), (30.2, -4.6))},
+     'crew': ((26.6, -1.1), (33.8, -3.3), (30.2, -4.6))},
     {'name': "the Sloop on her beam ends", 'area': (7.0, -29.5, 32.0, -7.0), 'checkpoint': (25.7, -11.0),
      'wave': ((9, 1, (25.7, -19.5), 180), (16, 1, (25.7, -21.2), 0), (14, 1, (15.0, -19.0), 0)),
-     'crew': ((25.7, -17.6), (13.0, -17.0), (16.6, -15.0))},
+     'crew': ((25.7, -17.6), (13.0, -17.0), (16.6, -17.4))},
     {'name': "the Frigate's waist", 'area': (-24.5, -18.0, 6.0, 1.8), 'checkpoint': (3.0, -13.0),
      'wave': ((11, 1, (-17.0, -6.0), 90), (17, 1, (-15.4, -6.0), 270), (8, 1, (-18.0, -10.0), 90),
               (14, 1, (-16.4, -10.0), 270), (9, 2, (0.2, -3.5), 180)),
-     'crew': ((-19.8, -8.0), (-13.8, -8.0), (2.0, -7.9))},
+     'crew': ((-19.8, -8.0), (-13.8, -8.0), (-16.2, -3.8))},
     {'name': "the Frigate's gun deck", 'area': (-19.5, -28.4, 4.6, -22.0), 'checkpoint': (0.1, -25.2),
      'wave': ((10, 1, (-13.0, -27.0), 180), (13, 1, (-13.0, -28.6), 0), (12, 1, (-10.6, -31.5), 270)),
      'crew': ((-15.6, -27.8), (-10.4, -27.8), (-13.0, -24.8))},
@@ -66,6 +66,11 @@ def game(point):
     return (round(point[0], 3), round(-point[1], 3))
 
 
+def _apart(one, other):
+    """How far apart two points are, metres."""
+    return ((one[0] - other[0]) ** 2 + (one[1] - other[1]) ** 2) ** 0.5
+
+
 def game_area(area):
     """A box (west, south, east, north) of the wreck's frame as the game's (minX, minY, maxX, maxY)."""
     west, south, east, north = area
@@ -79,6 +84,11 @@ FIGURE_ROOM_M = 0.45
 GROUND_LEAST_M2 = 2000.0
 # How many of the Brig's crew stand in each zone with a wave.
 CREW = 3
+# The farthest a crewman stands from a boarder of his zone, on that boarder's deck, metres: near enough that they are
+# fighting when the player comes (the page's wreckCrew test holds the same).
+CREW_BY_M = 4.0
+# The most a crewman's deck stands over or under his boarder's and still counts as the same deck, metres.
+SAME_DECK_M = 0.7
 
 
 def check(reach, gates, climb):
@@ -100,6 +110,11 @@ def check(reach, gates, climb):
                 faults.append(f"{zone['name']}: {what} at {at} stands where the checkpoint does not reach")
             elif not reach.clear(game(at), FIGURE_ROOM_M):
                 faults.append(f"{zone['name']}: {what} at {at} has no room round it")
+        for at in zone['crew']:
+            by = min((foe for _, _, foe, _ in zone['wave']), key=lambda foe: _apart(foe, at))
+            deck = [reach.height(*reach.square_of(*game(point))) for point in (at, by)]
+            if _apart(by, at) > CREW_BY_M or None in deck or abs(deck[0] - deck[1]) > SAME_DECK_M:
+                faults.append(f"{zone['name']}: a crewman at {at} stands past {CREW_BY_M} m of a boarder on its deck")
         has_wave = 0 < index < ARENA_ZONE
         if bool(zone['wave']) != has_wave or len(zone['crew']) != (CREW if has_wave else 0):
             faults.append(f"{zone['name']}: a wave and {CREW} crew stand in every zone but the first and the arena")
