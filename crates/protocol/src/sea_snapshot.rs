@@ -114,7 +114,8 @@ pub fn sea_snapshot_bytes(
             messages::Isle::create(&mut builder, &messages::IsleArgs { id, seed, x, y, kind, continent, found })
         })
         .collect();
-    let islands = Some(builder.create_vector(&each));
+    // None when there are none, so a sea without islands sends the bytes it always did.
+    let islands = (!each.is_empty()).then(|| builder.create_vector(&each));
     let args = messages::SnapshotArgs {
         tick,
         players,
