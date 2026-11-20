@@ -1,0 +1,14 @@
+[package]
+name = "sky"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "The world's clock, its sun and moon, and its weather: one field over the whole map from world time and place, the same on the server and in every browser."
+
+[dependencies]
+land = { path = "../land" }
+world = { path = "../world" }
+
+[lints]
+workspace = true

@@ -252,8 +252,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   make the accounts' database.
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
   shield comes back after a while; and which foes beyond the patrols' carry them.
-- **#69, the Arts round, waits on the owner's yes to merge**, which deploys the page and the rooms. Every number and
-  call the owner left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
+- **#69, the Arts round, is on `main`**, merged and deployed with the owner's yes. Every number and call the owner
+  left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
   cooldowns, the fragments, the new perks' columns and rules (Marked Shot an opener, Exploit for the spec's
   Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 3.5 m up and 1.5 m along its
   caster's aim, the Armsmith's wares, the seven named armour pieces that gave Bulwark and now give another armour
@@ -261,13 +261,25 @@ Where the work stands now, for the next session. Each session rewrites this note
   leather ramp, the view held still for reduced motion. Left to the owner by the screens' critique: emptying a Core
   slot, and resting the ability bar with the vitals. The forge's gun puff is blue in its art
   (`tools/forge/tools/sprite-forge/guns3p.py`); a re-render would change it.
-- **Every world sound on #69 is the owner's pick**, over seven passes on the sound sheet
+- **Every world sound is the owner's pick**, over seven passes on the sound sheet
   ([[The World Sounds From the Sound Picker]]): 63 Freesound recordings, DFO's own steps and Voidrend
   ([[DFO's Own Sounds Join the Sound Sheet]]), the Duskraven's fire
   ([[The Duskraven Sounds With Fire Under Its Raven]]); Exposed, Charged and Haste make none
   ([[Exposed, Charged and Haste Make No Sound]]). Claude's calls in the layer, the
   owner's to change: a gun's ball on a body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the
   [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
+- **#73, the music and the ambience, waits on the owner's yes to merge**, which deploys the page and the rooms
+  ([[Music and Ambience Come From DFO's Synthesiser]], [[Music]], [[Ambience]]). The owner kept every piece on the
+  sound sheet, Landfall as made again after their "Less jolly" ([[Landfall Is Kept as Made Again]]), and picked the
+  seven recordings. Claude's calls, the owner's to confirm: Thule plays the Boarding, Corvane the Reckoning, any other Boss
+  the Wrath; the climates' families and each family's key, metre and tempo; Saltmere's theme as written; the sounds
+  nearest "no glass" (wet's kalimba drips, cold's high tremolo, Landfall's soft bell, the fights' reverse-cymbal
+  risers).
+- **#76, the weather and day and night, waits on the owner's yes to merge**, stacked on #73
+  ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]], [[Sky]], [[Weather]]).
+  Claude made the calls the owner left open ([[Weather and Day as Claude Shapes It]]), the owner's to change. The
+  owner judged the weather's first sounds and picked the gutters and both thunders from Freesound
+  ([[The Weather's Gutters and Thunder Come From Freesound]]); those picks are on R2.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -282,8 +294,27 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
-  renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+- **The weather and day and night (#76)**, tested offline: the full check, the weather's statistics per climate and
+  its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under cloud, at sunset
+  and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to compile. Four
+  audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old wind, a fleet
+  sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun for moon in
+  daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording held under
+  its synthesised sound's peak. Not yet: lightning's bolts seen in a picture (no strike falls near Saltmere by day in
+  60 world days, and the page always arrives there), ships and marks under the lamps, snow, a carried light on the
+  Sloop's deck, a real GPU's frame time (the sky reads some ten noise lookups a pixel, twice while one cloud pattern
+  fades into the next), and a person playing through an hour's day.
+- **Every shader checked offline (#79)**, stacked on #76, waits on the owner's yes with it
+  ([[Every Shader Is Checked Offline]]): `cargo xtask check` writes out every shader the client compiles and naga
+  validates each.
+- **The music and the ambience (#73)**, tested offline: every piece rendered and measured, and the built game headless
+  in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the green score in
+  as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both running. Left
+  open: the prologue's `storyCue(name)` (branch `claude/loving-darwin-sw4eae`) routed to the director as a new cue kind,
+  by whichever reaches `main` second. #76 gives the night ambiences their time of day, plays the four sea songs while
+  sailing, and sets each recording at the loudness of the synthesised sound it replaces.
+- **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
+  its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
   heard in the game, the layer on foot in a browser, the walking blows looked at frame by frame.
 - **Publishing the world's picks**: read the sheet's `marks` with ArtifactData; set each Freesound pick as the cue's
@@ -294,20 +325,20 @@ Where the work stands now, for the next session. Each session rewrites this note
   synthesised sounds come from its `tools/{climb,gather,lock,storefront,naval}Sfx.mjs`: import their `CLIPS` and
   render each `make()` at 44.1 kHz 16-bit, from a scratch folder, since `navalSfx.mjs` writes `public/sfx` on import.
 
-- **The Arts round (#69)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and verbs with
-  foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar, the verb
-  perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not yet
-  seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a live
-  room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
-- **Its second round, attack visuals beyond the limits (#69)**, tested offline in the Test Ground, and the game's own
-  page headless at 960x540: swing arcs, struck figures, impacts, crits and kills with elemental finishers, damage
-  words, guns, tracers, telegraphs, every spell landing, the Anima moment, the light layer, marks drawn in depth
-  ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). Not yet seen: a fight in the game's own view
-  with the player's swing (headless has no pointer lock), the water's order at a coast, any GPU timing (the light's
-  0.4-0.5 ms is an estimate). Left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the
-  marks still copied into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still light;
-  `camera.ts` `shifted` keeps the HUD matrix's translation in float32 (about 0.25 m off far out); whether a bow or
-  gun drawn can punch, and in what element.
+- **The Arts round (#69, on `main`)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and
+  verbs with foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar,
+  the verb perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not
+  yet seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a
+  live room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
+- **Its second round, attack visuals beyond the limits (#69, on `main`)**, tested offline in the Test Ground, and the
+  game's own page headless at 960x540: swing arcs, struck figures, impacts, crits and kills with elemental finishers,
+  damage words, guns, tracers, telegraphs, every spell landing, the Anima moment, the light layer, marks drawn in depth
+  ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). Not yet seen: a fight in the game's own view with
+  the player's swing (headless has no pointer lock), the water's order at a coast, any GPU timing (the light's 0.4-0.5
+  ms is an estimate). Left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the marks still
+  copied into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still light; `camera.ts`
+  `shifted` keeps the HUD matrix's translation in float32 (about 0.25 m off far out); whether a bow or gun drawn can
+  punch, and in what element.
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
@@ -378,7 +409,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   they played, not heard: the owner should listen for their level and character. A ware bought at the
   Quartermaster's counter, and a Vestige opened at the Reader's, were not walked to headless.
 - **Sounds come from Freesound** ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the owner judges every
-  sound and piece of music on the sound sheet, https://claude.ai/artifact/YT29RAFbgdPRLByLUVC7nh (private to them),
+  sound and piece of music on the sound sheet, https://claude.ai/artifact/YT29RAFbgdPRLByLUVC7nh (private to them, in
+  four tabs: Interface, World, Music, Ambience),
   marking each Keep, Redo or a candidate picked, with a note; the marks are its store's `marks` collection, read with
   ArtifactData. Candidates come from the `freesound` workflow on GitHub's machines, with no key: it reads Freesound's
   public pages for the cues in `content/audio/freesound.json` and keeps each cue's first four CC0 or Attribution
@@ -414,7 +446,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
   crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
   which boarding needs, is the `movement` crate's grid of heights, walked on the player's own Sloop.
-- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
+- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell (on #76 the weather's
+  wind drives the sails, the chop and the whitecaps; the long swell is still one swell).
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
 - The fight's open ends ([[Combat]], [[Foes]]): running's stamina, casting's harm. Whether players may harm one another

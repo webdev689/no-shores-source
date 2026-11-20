@@ -88,8 +88,9 @@ export class RoomHost extends DurableObject<Env> {
     server.addEventListener('message', (event) => this.message(server, event.data));
     server.addEventListener('close', () => this.left(server));
     server.addEventListener('error', () => this.left(server));
-    server.send(this.room.joined(player));
+    // Ticking first: a room waking from rest sets its first tick's time anew, which the welcome carries.
     this.startTicking();
+    server.send(this.room.joined(player));
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -206,6 +207,7 @@ export class RoomHost extends DurableObject<Env> {
     if (this.ticking) return;
     const tickMs = this.room.tickSeconds * 1000;
     this.started = Date.now() - this.ticks * tickMs;
+    this.guarded(() => this.room.epoch(this.started), undefined);
     this.ticking = setInterval(() => {
       const due = Math.floor((Date.now() - this.started) / tickMs);
       if (this.ticks >= due) return;

@@ -371,23 +371,22 @@ never while a press is held. Each press is an ask the room answers.
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
-  Under it, the players blocked, each with a press to unblock them; then the volumes of the interface and of the
-  world ("World sounds"), each kept in this browser, and the recorded sounds' credits: each one's name, author,
-  licence and source, and what was changed.
+  Under it, the players blocked, each with a press to unblock them; then the volumes of the interface, the world
+  ("World sounds"), the music ("Music") and the [[Ambience]] ("Ambience"), each kept in this browser, and the recorded
+  sounds' credits: each one's name, author, licence and source, and what was changed.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
   wash move: no quiver, no shards, and the gains appear without sliding in.
 
 ## World sounds
 
-`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the
-[[Test Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the
-owner has picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
+`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the [[Test
+Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the owner has
+picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
 `content/audio/sounds.json`; until then it is silent, with no synthesised sound in its place. A pick is Freesound's,
-put in by `tools/freesound/publish.py`, or one of DFO's own, by `tools/freesound/own.py`
-([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have, plays any but the one it
-played last. The Duskraven plays its raven with a fire of its own under it
-([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
-(`combat/worldCues.ts`):
+put in by `tools/freesound/publish.py` through the `freesound` workflow ([[Code Map]]), or one of DFO's own, by
+`tools/freesound/own.py` ([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have,
+plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it ([[The Duskraven
+Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules (`combat/worldCues.ts`):
 
 - **Blows.** A swing as its blade sweeps to its blow, started so its recording's loudest 20 ms meet the tick the blow
   lands (never before the swing begins, and not once a dodge or a flinch has cut it short), or as a foe's wound-up blow

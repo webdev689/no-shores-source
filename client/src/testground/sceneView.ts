@@ -19,7 +19,7 @@ const TILES = 100;
 const SCENE_BYTES = 96;
 const CARD_BYTES = 48 + CARD_LOOK_FLOATS * 4;
 
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 struct Scene { viewProjection: mat4x4f, eye: vec4f, marker: vec4f }
 @group(0) @binding(0) var<uniform> scene: Scene;
 

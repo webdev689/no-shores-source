@@ -1,3 +1,5 @@
+import { SKY_NOW } from '../sky/skyDriver.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { NEAR, ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SLOW_CLOCK_S } from '../water/shore.ts';
@@ -18,11 +20,34 @@ export interface NatureFrame {
   readonly exaggeration: number;
   /** Seconds, for the wind. */
   readonly time: number;
-  /** The way the wind blows (east, south), a unit vector; a steady breeze from the west-south-west without one. */
+  /** The way the wind blows (east, south), a unit vector, as a steady breeze; the weather's wind without one. */
   readonly wind?: readonly [number, number];
 }
 
+/** The plants' wind: the way it blows (east, south, a unit vector), how hard it bends them (1 a fresh breeze) and how
+ *  gusty it is (0 to 1). */
+export interface PlantWind {
+  readonly way: readonly [number, number];
+  readonly bend: number;
+  readonly gust: number;
+}
+
+/** The breeze from the west-south-west the plants sway in before the weather is read, or in a calm's last way. */
 const DEFAULT_WIND = [0.8, -0.6] as const;
+const BREEZE: PlantWind = { way: DEFAULT_WIND, bend: 1, gust: 0.3 };
+/** A fresh breeze, m/s: the wind that bends the plants as they were drawn. A storm's bends them about twice as far. */
+const BREEZE_MS = 6;
+
+/** The plants' wind from the weather's (m/s east and south) and its gusts; the breeze while no weather is read. */
+export function plantWind(
+  weather: { readonly wind: readonly [number, number]; readonly gust: number } | null,
+): PlantWind {
+  if (!weather) return BREEZE;
+  const speed = Math.hypot(...weather.wind);
+  const way: readonly [number, number] =
+    speed > 0.1 ? [weather.wind[0] / speed, weather.wind[1] / speed] : DEFAULT_WIND;
+  return { way, bend: Math.min(2.2, Math.max(0.1, Math.sqrt(speed / BREEZE_MS))), gust: weather.gust };
+}
 /** How much higher than the plants' reach the eye may stand over the ground below before nothing is drawn, metres. */
 const HIGH_MARGIN_M = 2000;
 const GUST_PER_M = 0.035;
@@ -90,7 +115,10 @@ export class NatureView {
     });
     const module = device.createShaderModule({ code: NATURE_SHADER });
     const shadows = shadowLayouts(device);
-    const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadows.receiver] });
+    const sky = skyUniformFor(device);
+    const layout = device.createPipelineLayout({
+      bindGroupLayouts: [this.layout, shadows.receiver, sky.empty, sky.layout],
+    });
     const mesh: GPUVertexBufferLayout = {
       arrayStride: VERTEX_BYTES,
       attributes: [
@@ -159,13 +187,15 @@ export class NatureView {
     if (this.listed !== packed) this.sendList(packed);
     if (!this.bind) this.rebind();
     const [eastFromAnchor, southFromAnchor] = [packed.anchor[0] - frame.eye[0], packed.anchor[1] - frame.eye[1]];
-    const wind = frame.wind ?? DEFAULT_WIND;
+    const { reading } = SKY_NOW.current;
+    const blowing = frame.wind ? { ...BREEZE, way: frame.wind } : plantWind(reading);
+    const wind = blowing.way;
     const gusts = ((packed.anchor[0] * wind[0] + packed.anchor[1] * wind[1]) * GUST_PER_M) % (Math.PI * 2);
     const floats = new Float32Array(FRAME_FLOATS);
     floats.set(frame.fromEye);
     floats.set([eastFromAnchor, southFromAnchor, -frame.eye[2], frame.exaggeration], 16);
     floats.set([frame.time % SLOW_CLOCK_S, wind[0], wind[1], gusts], 20);
-    floats.set([ground.snowM, 0, 0, 0], 24);
+    floats.set([ground.snowM, blowing.bend, blowing.gust, 0], 24);
     floats.set([...(ground.groundColour ?? [0, 0, 0]), ground.groundColour ? 1 : 0], 28);
     this.gpu.device.queue.writeBuffer(this.frameBuffer, 0, floats);
     const anchorFromEye = [eastFromAnchor, southFromAnchor, -frame.eye[2]] as const;
@@ -235,6 +265,7 @@ export class NatureView {
     pass.setPipeline(this.pipelines.shade);
     // Every pipeline here shares the shadow's layout, so one group serves them all.
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipelines.shade));
+    skyUniformFor(this.gpu.device).bindShared(pass, [2]);
     for (const { part, first, count } of this.draws) {
       if (!part.shaded) continue;
       pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);
