@@ -32,7 +32,7 @@ const CLOCK_WRAP_S = 240;
 
 /** A weapon's outline: its quad grown by the pad, each texel of its field lit by `glow_colour` at the picture's own
  *  pixel. */
-const GLOW_SHADER = /* wgsl */ `
+export const GLOW_SHADER = /* wgsl */ `
 ${GLOW_WGSL}
 
 // The corners in clip space; whether it is mirrored, its element and the glow's clock; its surge, whether a blow's rim
@@ -72,7 +72,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
 }
 `;
 
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 // The corners in clip space; whether it is mirrored, the share of the picture across it draws, and how far down;
 // and the light on it, against a clear afternoon's.
 struct Quad { corners: vec4f, drawn: vec4f, light: vec4f }

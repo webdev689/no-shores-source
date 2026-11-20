@@ -304,6 +304,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   60 world days, and the page always arrives there), ships and marks under the lamps, snow, a carried light on the
   Sloop's deck, a real GPU's frame time (the sky reads some ten noise lookups a pixel, twice while one cloud pattern
   fades into the next), and a person playing through an hour's day.
+- **Every shader checked offline (#79)**, stacked on #76, waits on the owner's yes with it
+  ([[Every Shader Is Checked Offline]]): `cargo xtask check` writes out every shader the client compiles and naga
+  validates each.
 - **The music and the ambience (#73)**, tested offline: every piece rendered and measured, and the built game headless
   in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the green score in
   as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both running. Left

@@ -54,7 +54,7 @@ export interface Drawn {
 }
 
 /** Copies the land's multisampled depth into one float a pixel, which the water's shaders can read. */
-const DEPTH_COPY = /* wgsl */ `
+export const DEPTH_COPY = /* wgsl */ `
 @group(0) @binding(0) var depths: texture_depth_multisampled_2d;
 
 @vertex
