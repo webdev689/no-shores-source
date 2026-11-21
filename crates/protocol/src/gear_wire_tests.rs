@@ -50,7 +50,65 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::BuyFromShape { ware: 5 }),
         Asked::Grant(Grant::ArtLevel { art: 3, level: 4 }),
         Asked::Grant(Grant::Worn(Kind::Thunderlock)),
+        Asked::Gear(Ask::Speak { keeper: 12 }),
+        Asked::Gear(Ask::ChooseFragment { art: 2, fragment: 4 }),
     ]
+}
+
+#[test]
+fn asks_64_and_65_speak_with_a_keeper_by_column_and_choose_a_fragment_by_column_and_node() {
+    let mut builder = FlatBufferBuilder::new();
+    let speak = messages::Ask::create(&mut builder, &messages::AskArgs { kind: 64, column: 3, ..Default::default() });
+    builder.finish(speak, None);
+    let read = flatbuffers::root::<messages::Ask>(builder.finished_data()).expect("an ask");
+    assert_eq!(asked_of(&read), Some(Asked::Gear(Ask::Speak { keeper: 3 })));
+    let mut builder = FlatBufferBuilder::new();
+    let choose = messages::AskArgs { kind: 65, column: 1, node: 5, ..Default::default() };
+    let choose = messages::Ask::create(&mut builder, &choose);
+    builder.finish(choose, None);
+    let read = flatbuffers::root::<messages::Ask>(builder.finished_data()).expect("an ask");
+    assert_eq!(asked_of(&read), Some(Asked::Gear(Ask::ChooseFragment { art: 1, fragment: 5 })));
+}
+
+/// The gear message a player of a node's room is sent, its character the one given.
+fn quest_gear(character: &gear::Character) -> Vec<u8> {
+    let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
+    let section = room::Section { ring, spawns: vec![[0.0, 180.0]], falls_kill: false };
+    let mut room =
+        Room::garrisoned(room::Floor::Flat, Vec::new(), section, room::NodeKind::Social, ("saltgrass-downs", None));
+    let beacon = gear::quests::Place { name: "The Old Beacon".to_owned(), at: [50.0, -20.0], radius: 30.0 };
+    room.set_places(vec![beacon]);
+    let player = room.join().expect("a room with space");
+    assert!(room.restore_character(player, &character.to_json()));
+    gear_bytes(&room, player).expect("a player of the room")
+}
+
+#[test]
+fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where_its_place_stands() {
+    let bytes = quest_gear(&gear::Character::starting());
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    let list = |vector: Option<flatbuffers::Vector<'_, u8>>| vector.map(|found| found.iter().collect::<Vec<_>>());
+    assert_eq!((gear.quest(), gear.quest_task(), gear.art()), (1, 0, 0), "the opening, no Art worn");
+    assert_eq!(gear.quest_counts().map(|counts| counts.iter().collect::<Vec<_>>()), Some(vec![0, 0, 0]));
+    assert_eq!((list(gear.quests_done()), list(gear.arts_earned())), (Some(vec![0; 4]), Some(vec![0; 3])));
+    assert_eq!(gear.quest_at().map(|at| at.len()), Some(0), "no place of the opening's is here");
+    let mut pledged = gear::Character::starting();
+    pledged.allegiance.pledge = 1;
+    pledged.quests.roads[0].done = true;
+    pledged.quests.roads[1].task = 3;
+    pledged.quests.choices[0] = 2;
+    pledged.arts.earned = Some(vec![gear::arts::EARNED_ART, 0, 0]);
+    pledged.arts.worn = 1;
+    let bytes = quest_gear(&pledged);
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!((gear.quest(), gear.quest_task(), gear.art()), (2, 3, 1), "the Stormcallers' fourth task, Storm worn");
+    assert_eq!((list(gear.quests_done()), list(gear.arts_earned())), (Some(vec![1, 0, 0, 0]), Some(vec![1, 0, 0])));
+    assert_eq!(list(gear.fragment_choices()), Some(vec![2, 0, 0]));
+    pledged.quests.roads[1].task = 0;
+    let bytes = quest_gear(&pledged);
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    let at = gear.quest_at().map(|at| at.iter().collect::<Vec<_>>());
+    assert_eq!(at, Some(vec![50.0, -20.0, 30.0]), "the Old Beacon, here");
 }
 
 #[test]

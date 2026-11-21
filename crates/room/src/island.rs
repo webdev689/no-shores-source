@@ -194,6 +194,7 @@ impl Room {
         scavenger.spent.push(wreck);
         scavenger.character.scavenge(seed, wreck);
         let taken = scavenger.character.take_salvage(found);
+        scavenger.character.tell(&gear::quests::Event::Scavenge);
         scavenger.gear_changed = true;
         if let Some(isle) = self.isle.as_mut() {
             isle.hauls.push((player, wreck, taken));

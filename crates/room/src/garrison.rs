@@ -284,6 +284,7 @@ impl Room {
         (id, levels): (&str, Option<(u8, u8)>),
     ) -> Self {
         let mut room = Self::node(floor, blocks, section);
+        (room.quests.node, room.quests.levels) = (Some(id.to_owned()), levels);
         room.world_seed = node_seed(id);
         room.foes_most = NODE_FOES_MOST;
         room.stand_garrison(kind, levels);
@@ -409,7 +410,7 @@ impl Room {
     }
 
     /// A garrison level raised by the room's seas; 0, none, stays none.
-    fn at_seas(&self, level: u8) -> u8 {
+    pub(crate) fn at_seas(&self, level: u8) -> u8 {
         if level == 0 { 0 } else { self.difficulty.raise(level) }
     }
 

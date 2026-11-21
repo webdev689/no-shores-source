@@ -62,8 +62,8 @@ pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
 
-/// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, and whether
-/// it is locked. A page playing alone writes its own, never locked.
+/// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, whether
+/// it is locked, and the places the houses' roads name. A page playing alone writes its own, never locked.
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
@@ -83,6 +83,8 @@ struct NodeFile {
     counters: Vec<NodeCounter>,
     #[serde(default)]
     shape_spots: Vec<[f64; 2]>,
+    #[serde(default)]
+    places: Vec<gear::quests::Place>,
 }
 
 /// A social space's counter as the bake writes it: its station, and its middle.
@@ -167,6 +169,7 @@ pub fn open_node(text: &[u8]) -> bool {
     let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
     room.counters = (node.kind == NodeKind::Social).then(|| node.counters.iter().filter_map(counter_of).collect());
     room.shape_spots = node.shape_spots;
+    room.set_places(node.places);
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource

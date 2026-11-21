@@ -89,6 +89,13 @@ pub struct Sank {
     pub players: Vec<PlayerId>,
     /// The wind of its fight, which what floats drifts down.
     pub wind: [f64; 2],
+    /// Whether its captain struck before it went down, or it was sunk fighting.
+    pub struck: bool,
+}
+
+/// Whether a captain's ship struck its colours, whatever became of it after.
+fn struck(vessel: &naval::fight::Vessel) -> bool {
+    vessel.damage.state == State::Struck || vessel.command().is_some_and(|command| command.struck_at.is_some())
 }
 
 /// A fighting player's fight as their browser is sent it: the naval crate's numbers, its first captain's commission,
@@ -294,7 +301,7 @@ impl Fights {
                 let going = down && vessel.command().is_some_and(|it| it.gone.is_none());
                 let Some(pirate) = fought.hostiles.get(id).filter(|_| going) else { continue };
                 let (at, players) = ([vessel.ship.x, vessel.ship.y], fought.fought.clone());
-                self.lost.push(Sank { pirate: *pirate, at, players, wind: fought.wind });
+                self.lost.push(Sank { pirate: *pirate, at, players, wind: fought.wind, struck: struck(vessel) });
             }
         }
         self.list.retain(|fought| !fought.crews.is_empty());
@@ -457,7 +464,7 @@ impl Fights {
                     continue;
                 };
                 let (at, players) = ([vessel.ship.x, vessel.ship.y], fought.fought.clone());
-                sank.push(Sank { pirate: *pirate, at, players, wind: fought.wind });
+                sank.push(Sank { pirate: *pirate, at, players, wind: fought.wind, struck: struck(vessel) });
             }
             let mut gone = Vec::new();
             for (player, crew) in &fought.crews {

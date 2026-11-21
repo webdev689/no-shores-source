@@ -29,6 +29,7 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+mod quests;
 mod recharge;
 pub mod sea;
 pub mod sea_weather;
@@ -162,6 +163,8 @@ pub struct Room {
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
+    /// Its node and places, and the groups the houses' roads stood here (`quests.rs`).
+    pub(crate) quests: quests::QuestGround,
 }
 
 impl Room {
@@ -220,6 +223,7 @@ impl Room {
             isle: None,
             minute: 0,
             shape_spots: Vec::new(),
+            quests: quests::QuestGround::default(),
         }
     }
 
@@ -256,6 +260,7 @@ impl Room {
             story::arm_for_story(&mut joined.character);
         }
         self.players.insert(id, joined);
+        self.arrived(id);
         Some(id)
     }
 
@@ -318,6 +323,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_quests();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {

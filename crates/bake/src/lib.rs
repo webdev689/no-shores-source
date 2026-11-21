@@ -41,6 +41,27 @@ pub struct NodeFile {
     /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
     /// space still locked (`city::social_open`).
     pub locked: bool,
+    /// The places the houses' roads name: each of its layout's areas, and each run at its mouth.
+    pub places: Vec<Place>,
+}
+
+/// A place of a node: its name, middle and reach, metres.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Place {
+    pub name: String,
+    pub at: [f64; 2],
+    pub radius: f64,
+}
+
+/// How far a run's place reaches round its mouth, metres.
+pub const RUN_REACH_M: f64 = 25.0;
+
+/// A layout's places: its areas, then its runs at their mouths.
+#[must_use]
+pub fn places_of(layout: &layout::Layout) -> Vec<Place> {
+    let areas = layout.areas.iter().map(|area| Place { name: area.name.clone(), at: area.at, radius: area.radius });
+    let runs = layout.runs.iter().map(|run| Place { name: run.name.clone(), at: run.mouth, radius: RUN_REACH_M });
+    areas.chain(runs).collect()
 }
 
 /// A counter of a social space: its station, and its middle.
@@ -135,7 +156,7 @@ pub fn nodes_of(
         let mut boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
         boxes.extend(layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
         let continent = continent.id.clone();
-        let (counters, shape_spots) = (Vec::new(), Vec::new());
+        let (counters, shape_spots, places) = (Vec::new(), Vec::new(), Vec::new());
         NodeFile {
             id,
             kind,
@@ -149,6 +170,7 @@ pub fn nodes_of(
             counters,
             shape_spots,
             locked: false,
+            places,
         }
     };
     let whole =
@@ -159,7 +181,8 @@ pub fn nodes_of(
             || (whole(&node.ring), whole(&node.spawns)),
             |layout| (layout.ring.clone(), layout.spawns.clone()),
         );
-        cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns)
+        let places = laid.map(places_of).unwrap_or_default();
+        NodeFile { places, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -265,6 +288,20 @@ mod tests {
         for (x, y) in [(260_500.25, 360_500.75), (259_950.5, 361_050.5)] {
             assert_eq!(node.ground.height_at(x, y).to_bits(), whole.surface.height_at(x, y).to_bits());
         }
+    }
+
+    #[test]
+    fn a_laid_node_names_its_areas_and_its_runs_as_places_for_the_houses_roads() {
+        let layout = world::layout::parse(SQUARE).unwrap();
+        let brief = r#"{ "glade": { "theme": "", "areas": [{ "kind": "camp", "name": "The Camp" }] } }"#;
+        let builders = Builders { briefs: Briefs::parse(brief).unwrap(), ..Builders::default() };
+        let edits = land::edits::parse(GLADE).unwrap();
+        let node = nodes_of(&layout.continents[0], edits, &Blocks::default(), &builders).unwrap().remove(0);
+        let camp = node.places.iter().find(|place| place.name == "The Camp").expect("the camp is a place");
+        assert_eq!(camp.radius, layout::areas::radius_of(layout::brief::AreaKind::Camp, 0));
+        let [west, north, east, south] = node.bounds;
+        assert!((west..east).contains(&camp.at[0]) && (north..south).contains(&camp.at[1]), "within its window");
+        assert!(serde_json::to_string(&node).unwrap().contains(r#""places":[{"name":"The Camp","at":["#));
     }
 
     #[test]

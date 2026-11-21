@@ -142,8 +142,24 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         | Ask::Recruit { faction, .. } => Some(CounterKind::Faction(*faction)),
         Ask::RiseArt { art, .. } | Ask::BuyFragment { art, .. } => art_faction(*art),
         Ask::BuyFromShape { .. } => Some(CounterKind::Shape),
+        Ask::Speak { keeper } => keeper_counter(*keeper),
         _ => None,
     }
+}
+
+/// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the Mage's (10), the
+/// vault's, the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the Harbourmaster's (16).
+fn keeper_counter(keeper: u8) -> Option<CounterKind> {
+    Some(match keeper {
+        10 => CounterKind::Mage,
+        11 => CounterKind::Vault,
+        12 => CounterKind::Vendor(Vendor::Armorsmith),
+        13 => CounterKind::Vendor(Vendor::Weaponsmith),
+        14 => CounterKind::Tailor,
+        15 => CounterKind::Tack,
+        16 => CounterKind::Vendor(Vendor::Shipwright),
+        house => CounterKind::Faction(gear::factions::factions().faction(house)?.id),
+    })
 }
 
 /// The number an answer sends: 0 done, else the refusal's.
@@ -295,6 +311,7 @@ impl Room {
             patrol.gathered.entry(owner.clone()).or_default().push(node);
         }
         found.character.gather(usize::from(spot.resource));
+        found.character.tell(&gear::quests::Event::Gather);
         0
     }
 

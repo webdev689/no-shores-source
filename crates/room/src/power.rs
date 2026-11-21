@@ -174,8 +174,8 @@ impl Room {
     }
 
     /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, with the
-    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each; on land its XP pays their officers
-    /// ashore too.
+    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each, and tells each one's quest log; on
+    /// land its XP pays their officers ashore too.
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
@@ -195,6 +195,7 @@ impl Room {
             found.character.add_shapes(gear::shape::found(great, self.difficulty, &dice));
             found.gear_changed = true;
             self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
+            self.tell_kill(player, brain.foe_type.name, brain.rank as u8, [at[0], at[1]]);
         }
     }
 }

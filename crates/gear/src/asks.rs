@@ -139,6 +139,15 @@ pub enum Ask {
     BuyFromShape {
         ware: u8,
     },
+    /// Speaks with a keeper, a house's by its faction's number or one of `quests::KEEPERS`: at their counter.
+    Speak {
+        keeper: u8,
+    },
+    /// Owns one of an Art's fragments by its place, for a choice a house's road gave: anywhere.
+    ChooseFragment {
+        art: u8,
+        fragment: u8,
+    },
 }
 
 /// Why an ask was refused.
@@ -210,6 +219,12 @@ pub enum Refusal {
     AshoreFull = 133,
     /// The officer offered is in the crew already.
     OfficerKept = 134,
+    /// No keeper has that number.
+    NoSuchKeeper = 135,
+    /// No goal of the player's task asks a word with that keeper.
+    NothingToSay = 136,
+    /// No fragment choice waits for that Art.
+    NoChoice = 137,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -270,6 +285,8 @@ impl Character {
             Ask::WearCosmetic { cosmetic } => self.wear_cosmetic(cosmetic),
             Ask::BuyCosmetic { cosmetic } => self.buy_cosmetic(cosmetic, here),
             Ask::BuyFromShape { ware } => self.buy_from_shape(ware, here),
+            Ask::Speak { keeper } => self.speak(keeper, here),
+            Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens.

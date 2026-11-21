@@ -398,13 +398,14 @@ impl Room {
         self.players.get(&player).map(|found| found.character.to_json())
     }
 
-    /// Gives a player the character kept for them, trimming their fight by it and sending them their gear; false if
-    /// they are not in the room or the text is not a character.
+    /// Gives a player the character kept for them, trimming their fight by it and sending them their gear, its quest
+    /// log told they arrived here; false if they are not in the room or the text is not a character.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let Some(character) = gear::Character::from_json(text) else { return false };
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.character = character;
         found.gear_changed = true;
+        self.arrived(player);
         self.retrim(player);
         if let Some(found) = self.players.get_mut(&player) {
             found.fighter = found.armed(found.fighter);

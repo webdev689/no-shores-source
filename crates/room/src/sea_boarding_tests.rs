@@ -5,7 +5,7 @@ use crate::players::{Input, SpawnAsk};
 use crate::sea::decks::{HOLD_TICKS, foe_rank};
 use naval::damage::Hurt;
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
-use naval::ranks::{GREY_TITHE, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, PIRATES, Rank};
 
 /// The captain of the player's fight struck where it lies, making no way.
 fn strike(sea: &mut Sea, player: PlayerId) {
@@ -216,4 +216,63 @@ fn an_officer_who_joins_at_sea_while_its_player_fights_a_deck_never_shares_an_id
     assert!(kept.items.contains_key(&picked), "the piece is kept");
     assert_eq!(kept.crew.officers.len(), 1, "and the officer");
     assert!(kept.crew.officers.keys().all(|id| !kept.items.contains_key(id)), "under ids of their own");
+}
+
+/// A character pledged to `faction`, its road at `task`, kept by the sea for `player`.
+fn on_road(sea: &mut Sea, player: PlayerId, faction: u8, task: u8) {
+    let mut character = gear::Character::starting();
+    character.allegiance.pledge = faction;
+    character.quests.roads[usize::from(faction)].task = task;
+    sea.harbour.characters.insert(player, gear::Character::from_json(&character.to_json()).unwrap());
+}
+
+fn road(sea: &Sea, player: PlayerId) -> Option<(usize, usize)> {
+    sea.harbour.characters[&player].quest_now()
+}
+
+#[test]
+fn a_ship_that_went_down_tells_each_who_fought_it_its_side_and_whether_it_struck_or_was_sunk() {
+    let mut sea = super::tests::sea();
+    let players: Vec<PlayerId> = (0..3).map(|_| sea.join()).collect();
+    // A Tithe ship beaten any way, one boarded, and a pirate: the Stormcallers', the Veiled's and the Lamplighters'.
+    for (player, faction) in players.iter().zip([1, 3, 2]) {
+        on_road(&mut sea, *player, faction, 5);
+    }
+    let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    let tithe = crate::pirates::Pirate::standing(1, 7, commission, [0.0, 0.0], 0.0, false);
+    let sank = |pirate, struck| Sank { pirate, at: [0.0, 0.0], players: players.clone(), wind: [0.0; 2], struck };
+    sea.after_fights(Vec::new(), &[sank(tithe, true)]);
+    let roads: Vec<_> = players.iter().map(|player| road(&sea, *player)).collect();
+    assert_eq!(roads, [Some((1, 6)), Some((3, 5)), Some((2, 5))], "struck: not boarded, nor a pirate");
+    assert!(sea.harbour.changed.contains(&players[0]), "its gear goes out");
+    let pirate = crate::pirates::Pirate { commission: Commission { faction: PIRATES, ..commission }, ..tithe };
+    sea.after_fights(Vec::new(), &[sank(pirate, false)]);
+    assert_eq!((road(&sea, players[1]), road(&sea, players[2])), (Some((3, 5)), Some((2, 6))), "a pirate sunk");
+}
+
+#[test]
+fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
+    let mut sea = super::tests::sea();
+    let player = sea.join();
+    on_road(&mut sea, player, 3, 5);
+    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    let standing = crate::pirates::Pirate::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
+    sea.pirates.sailing.push(crate::pirates::Pirate { level: 9, ..standing });
+    sea.tick();
+    strike(&mut sea, player);
+    let ship = sea.fights.of_mut(player).unwrap().1.ship;
+    vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+    sea.board(player).unwrap();
+    let room = &mut sea.decks.boarded[0].room;
+    let hands = room.ashore.hands.clone();
+    for (id, foe) in &mut room.foes {
+        if !hands.contains_key(id) {
+            foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+        }
+    }
+    sea.tick();
+    ticks(&mut sea, HOLD_TICKS as usize + 1);
+    assert!(!sea.on_deck(player), "stepped off");
+    assert_eq!(road(&sea, player), Some((3, 6)), "the tally ship boarded and taken");
 }
