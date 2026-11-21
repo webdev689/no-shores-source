@@ -230,6 +230,30 @@ test('while aiming the look may rise over the horizon to the longest throw; the 
   assert.ok(shot && shot.pitch >= 0.05 - 1e-9, `the orbit looks ${shot?.pitch} down`);
 });
 
+test('a held aim keeps its look on the side it laid on: no drag takes it over the bow or the stern', async () => {
+  const { fight, orders, frames } = ordered();
+  const turn = (degrees: number) => fight.drag((degrees * Math.PI) / 180 / 0.005, 0);
+  const bearing = () => orders.at(-1)?.aim?.bearing ?? Number.NaN;
+  // Aimed looking over the bow: nothing is held until the look first lays on a side.
+  fight.aim(true);
+  turn(90);
+  await frames(2);
+  assert.ok(Math.abs(bearing() - 90) < 1, `turned onto the starboard battery it bears ${bearing()}`);
+  turn(100);
+  await frames(2);
+  assert.ok(Math.abs(bearing() - 139) < 1, `dragged past the stern it stops at ${bearing()}`);
+  turn(-200);
+  await frames(2);
+  assert.ok(Math.abs(bearing() - 36) < 1, `dragged across the bow onto port it stops at ${bearing()}`);
+  // Let go, the camera turns as it likes again.
+  fight.aim(false);
+  turn(-36);
+  await frames(2);
+  fight.aim(true);
+  await frames(2);
+  assert.ok(Math.abs(bearing()) < 1, `aimed again over the bow it bears ${bearing()}`);
+});
+
 test('a trackpad burst steps the load once; a notch after a quiet of 0.18 s steps it again', async () => {
   const { fight, orders, frames } = ordered();
   fight.aim(true);

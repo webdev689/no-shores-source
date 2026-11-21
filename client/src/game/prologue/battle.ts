@@ -249,7 +249,14 @@ export class Battle implements Beat {
       hulls: shown.hulls,
       actors: own ? [...brig.crew(own, tick.clock, { gunner: 'chop' }), youAtHelm(story, own, 'idle')] : [],
       heads,
-      drawers: [{ drawInto: (pass, fromEye, drawn, time) => fight.draw(pass, { fromEye, eye: drawn.eye }, time) }],
+      // The balls and effects with the ships; the aim and the see-through puffs after the water, as at sea.
+      drawers: [
+        {
+          drawInto: (pass, fromEye, drawn, time) => fight.draw(pass, { fromEye, eye: drawn.eye }, time),
+          overWater: (encoder, target, fromEye, depth) => fight.overWater(encoder, target, fromEye, depth),
+          lightInto: (pass) => fight.lightInto(pass),
+        },
+      ],
       land: false,
       heard: { at: 'sea', deck: false, sailing: true, fight: fight.fightHeard },
       focus: [brig.x, brig.y],

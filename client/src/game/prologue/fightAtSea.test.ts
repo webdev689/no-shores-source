@@ -203,3 +203,23 @@ test('a step the rules refuse is thrown from the next frame, for the director to
   await new Promise((settle) => setTimeout(settle, 0));
   assert.throws(() => fight.frame({ ...input, time: 0.1 }), /no fight is on/);
 });
+
+test("the story fight draws its see-through puffs and its puffs' light after the water, as the sea's fight does", async () => {
+  const drawn: string[] = [];
+  const marks = {
+    drawInto: () => undefined,
+    drawOver: () => drawn.push('over'),
+    drawLight: () => drawn.push('light'),
+  } as unknown as MarkDrawer;
+  const fight = await StoryFight.begin(
+    door([]),
+    { x: 5000, y: 6000, heading: 0 },
+    [{ bearing: 2, distanceM: 300, faction: 2, rank: 2 }],
+    { sails: [], marks },
+    0,
+    () => [14, 6],
+  );
+  fight.overWater({} as GPUCommandEncoder, {} as GPUTextureView, new Float32Array(16), {} as GPUTexture);
+  fight.lightInto({} as GPURenderPassEncoder);
+  assert.deepEqual(drawn, ['over', 'light']);
+});

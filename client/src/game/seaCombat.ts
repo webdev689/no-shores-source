@@ -2,7 +2,7 @@
 // down from the raised sea to their Sloop at true scale, every captain in its own hull and colours, and the sea
 // room's fight is fought there, by the World Editor's own fight (its aim, lay, effects and panel), until every
 // captain sinks or is gone; then it pans back up.
-import { AIM_LOOK_TOP, lookBearing } from '../editor/aim.ts';
+import { AIM_LOOK_TOP, batterySide, lookBearing, yawInBattery } from '../editor/aim.ts';
 import { AimCamera, aimHullOf } from '../editor/aimCamera.ts';
 import { type FightInput, type FightSource, Fighting } from '../editor/fighting.ts';
 import { type MarkDrawer, Naval, type Window } from '../editor/naval.ts';
@@ -102,6 +102,9 @@ export class SeaCombat {
   private readonly held = new Set<string>();
   private readonly presses: string[] = [];
   private aiming = false;
+  /** The side the aim's look has laid on since the aim was taken, or null until it first does: from then until it is
+   *  let go, no drag and no turn of the ship under it takes the look out of that battery's arc. */
+  private aimSide: 1 | -1 | null = null;
   private fire = false;
   private loadSteps = 0;
   /** When the wheel last turned, seconds, and how far back the fight's camera stands. */
@@ -192,6 +195,7 @@ export class SeaCombat {
    *  horizon. */
   drag(right: number, down: number): void {
     this.orbit = { yaw: this.orbit.yaw + right * DRAG_TURN, pitch: this.pitched(this.orbit.pitch + down * DRAG_TURN) };
+    this.holdAimSide();
   }
 
   /** A pitch within the aim's clamp while aiming, else the orbit's. */
@@ -199,16 +203,29 @@ export class SeaCombat {
     return Math.min(PITCH[1], Math.max(this.aiming ? -AIM_LOOK_TOP : PITCH[0], pitch));
   }
 
+  /** While aiming, the look kept on the battery it first laid on; out of the aim, no side is held. */
+  private holdAimSide(): void {
+    if (!this.aiming) {
+      this.aimSide = null;
+      return;
+    }
+    const heading = this.last.player.ship[2] ?? 0;
+    this.aimSide ??= batterySide(this.orbit.yaw, heading);
+    if (this.aimSide !== null) this.orbit = { ...this.orbit, yaw: yawInBattery(this.orbit.yaw, heading, this.aimSide) };
+  }
+
   /** The right button held aims; let go, the lay held fires. A left click while aiming holds fire. */
   aim(held: boolean): void {
     if (this.aiming && !held) this.fire = true;
     this.aiming = held;
     this.orbit = { ...this.orbit, pitch: this.pitched(this.orbit.pitch) };
+    this.holdAimSide();
   }
 
   holdFire(): void {
     this.aiming = false;
     this.orbit = { ...this.orbit, pitch: this.pitched(this.orbit.pitch) };
+    this.holdAimSide();
   }
 
   /** Whether the right button holds the aim. */
@@ -257,6 +274,8 @@ export class SeaCombat {
    *  which the view pans down to from the sea's by `share`. */
   frame(seconds: number, time: number, far: number, fail: (error: unknown) => void, swell?: ShelteredSwell): Shot {
     [this.swell, this.waterTime] = [swell, time];
+    // Nor does the ship turning under a held aim leave the look outside its battery's arc.
+    this.holdAimSide();
     const orbit = this.orbitAt();
     const eye = this.eyeAt(orbit, seconds);
     const look = this.aiming ? this.naval.look(orbit, this.fought, this.window, eye) : null;
