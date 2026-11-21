@@ -22,6 +22,16 @@
       "page": "https://freesound.org/people/TheKingOfGeeks360/sounds/868165/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.bird.cuckoo": {
+      "key": "sounds/a5c2907283824dd51e8309c63263a21ef1abc01f039a87730ec146c6a2e12561.mp3",
+      "freesound": 337828,
+      "name": "Cuckoo[1].mp3",
+      "author": "Navadaux",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Navadaux/sounds/337828/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.bird.curlew": {
       "key": "sounds/e78eb5fca3f53558b54a5154cb8f06069af20d5534bbe16003f5466dcf8070fc.mp3",
       "freesound": 72892,
@@ -50,6 +60,16 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/csengeri/sounds/50494/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.fluter": {
+      "key": "sounds/3d7bb0fb9e390cf380ec77f3ff3db67ec7b0028d18157c1333b61b0f64533aff.mp3",
+      "freesound": 393508,
+      "name": "Bird Thailand notification",
+      "author": "rubekolo",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/rubekolo/sounds/393508/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.bird.lark": {
@@ -102,6 +122,16 @@
       "page": "https://freesound.org/people/klankbeeld/sounds/633811/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.bird.weaver": {
+      "key": "sounds/e4da1ca3716ad610373e9804b646b5124179d6f316a113455f07ad01c6ca5d77.mp3",
+      "freesound": 868751,
+      "name": "Miscellaneous Birds - Livingstone&#x27;s Turaco; Chatter",
+      "author": "TheKingOfGeeks360",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/TheKingOfGeeks360/sounds/868751/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.bird.woodpecker": {
       "key": "sounds/27ced4dbae6a4e5f4d8a7fba8a7f0a6b1ce2c406ce07f219742db73c7c741ad4.mp3",
       "freesound": 795970,
@@ -130,6 +160,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/gbayles/sounds/632771/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.fish.splash": {
+      "key": "sounds/99392c9e0471b9a5c0d5d49c5390089ce37492b1f05c7282c9cd3536ebcc31a3.mp3",
+      "freesound": 445875,
+      "name": "58-chapuz\u00f3n2.wav",
+      "author": "lauracarolina09",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/lauracarolina09/sounds/445875/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.frog.bull": {
@@ -222,6 +262,16 @@
       "page": "https://freesound.org/people/rogerforeman/sounds/68067/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.land.breeze": {
+      "key": "sounds/93cba31c2b65b80ad4f78899424617e631f0312a432f316434796811d167e370.mp3",
+      "freesound": 517941,
+      "name": "EXT_spring_light_wind_mourningdove_MS.wav",
+      "author": "mitchellsounds",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/mitchellsounds/sounds/517941/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.land.brook": {
       "key": "sounds/f4941f11f3f802e96b162935c53851b1f0b89c764241fa3cf6fa861e604263cc.mp3",
       "freesound": 608359,
@@ -292,6 +342,16 @@
       "page": "https://freesound.org/people/TRP/sounds/715698/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.land.rain": {
+      "key": "sounds/8bc40b1f3d5657748cc40064461c713268f981967944e55934b90cafe48afcd8.mp3",
+      "freesound": 217236,
+      "name": "steady rain in the city.wav",
+      "author": "roofusj",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/roofusj/sounds/217236/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.land.whistle": {
       "key": "sounds/e8f5089795176d65760f1191c09cebb8a10b40b66da8df2b056b9cf6406fba9b.mp3",
       "freesound": 428318,
@@ -330,6 +390,16 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/IllusiaProductions/sounds/249944/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.rainforest.drips": {
+      "key": "sounds/8a9d07d1ac917e6b0b20c23ef3098166eb446afef3eee0cf19971ed156c1a8d4.mp3",
+      "freesound": 277466,
+      "name": "the sound of a forest after rain / drops falling on ferns rear",
+      "author": "CRAFTCREST.com",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/CRAFTCREST.com/sounds/277466/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.rainforest.parrot": {
@@ -562,6 +632,16 @@
       "page": "https://freesound.org/people/Benboncan/sounds/77698/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.social.cart": {
+      "key": "sounds/7703cb610c9974eeeea7dd2b5b3f99879dfbb3843bfa6dc5270e34ba5145ff00.mp3",
+      "freesound": 388391,
+      "name": "Horse and Carriage.mp3",
+      "author": "maadmacs",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/maadmacs/sounds/388391/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.social.crowd": {
       "key": "sounds/30bce71c3eddb9d0c3a0bade377327c43cda2d45885c2bb268d78850de4dff3d.mp3",
       "freesound": 260727,
@@ -590,6 +670,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/sgrowe/sounds/342542/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.social.hum": {
+      "key": "sounds/e05d9d93561b041aea0e7b7b4f4b1f2da54c79d1cd69a05850386d1cf9890fe6.mp3",
+      "freesound": 450676,
+      "name": "city skyline distant mosque call to prayer +traffic, kids, and sheep on roof nearby Dakar, Senegal, Africa.flac",
+      "author": "kyles",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/kyles/sounds/450676/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.social.pigeon": {
@@ -1260,6 +1350,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/fennelliott/sounds/347647/",
+      "changes": "Unchanged."
+    },
+    "ship.whistle": {
+      "key": "sounds/2792a2c57153acc8e1b0b06543e3843127e10e369b9edefe1e6ec80d33fb8530.mp3",
+      "freesound": 564729,
+      "name": "bird flies close by sound effect",
+      "author": "Garuda1982",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Garuda1982/sounds/564729/",
       "changes": "Unchanged."
     },
     "shot.splash": {
