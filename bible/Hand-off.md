@@ -251,12 +251,16 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), tested offline (`cargo xtask check`), waits on the
-  owner's yes to merge. The player's melee swings chain side cut, overhead and thrust, starting over after a second
-  without a swing ([[The Player's Swings Chain Side Cut, Overhead and Thrust]]); foes walk and run at three quarters
-  of a player's pace ([[Foes Walk and Run at Three Quarters of a Player's Pace]]); the prologue's parry freeze reads
-  the player's aim, as the rules judge a guard. Not yet played live or seen in a browser. Its open points: whether
-  the one-second reset and the pace feel right in play; the raised shield's walk, deferred by the owner (Next).
+- **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), audited (an independent read-only audit and a ponytail
+  review, their fixes in 50c45ef4: a running foe no longer pushed past its own run, the chain started over after a
+  death), tested offline (`cargo xtask check`), waits on the owner's yes to merge. The player's melee swings chain side
+  cut, overhead and thrust, starting over after a second without a swing
+  ([[The Player's Swings Chain Side Cut, Overhead and Thrust]]); foes walk and run at three quarters of a player's pace
+  ([[Foes Walk and Run at Three Quarters of a Player's Pace]]); the prologue's parry freeze reads the player's aim, as
+  the rules judge a guard. Not yet played live or seen in a browser. Its open points: whether the one-second reset and
+  the pace feel right in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge
+  of reach every swing thrusts), or the chain kept strictly and a short stroke left to miss; the raised shield's walk,
+  deferred by the owner (Next).
 - **#118, every sound from Freesound and the music's pass** (`ccr-c504a08b-gyns6o`), the owner's words in
   [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]], is on `main`, merged with the owner's yes
   ("Merge and deploy"), which deploys the page and the rooms. Every sound effect and ambience sound plays the owner's
