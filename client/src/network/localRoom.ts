@@ -9,8 +9,6 @@ export interface Furnishing {
   readonly nodes: readonly CourseNode[];
 }
 
-/** A room in the page itself, for playing alone: the same room crate the servers run, in its own WebAssembly, ticked
- *  by the page's clock, its snapshots handed on as a server's would be. */
 /** A dev page's play of its own room (`publicBots.ts` `BotPlay`, behind `&speed=` and `&bots=`), never a built
  *  page's: how many ticks a frame, the players it joins as the room opens, their inputs before each tick, and its
  *  reading of each tick's snapshot, which answers whether the frame's ticks stop there. */
@@ -21,6 +19,8 @@ export interface RoomPlay {
   heard(snapshot: Snapshot): boolean;
 }
 
+/** A room in the page itself, for playing alone: the same room crate the servers run, in its own WebAssembly, ticked
+ *  by the page's clock, its snapshots handed on as a server's would be. */
 export class LocalRoom implements RoomLink {
   private readonly door: RoomDoor;
   private readonly snapshot: (snapshot: Snapshot) => void;

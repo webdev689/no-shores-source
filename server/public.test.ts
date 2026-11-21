@@ -130,16 +130,24 @@ test('two scripted players hold a heroic raid to the same fingerprint through We
  *  own player, who stands still: the event as it ended (its kind, phase and heroic task). */
 function playInPage(minute: number, heroic: boolean): readonly number[] {
   let ended: readonly number[] | null = null;
-  const room = LocalRoom.openNode(
-    compiled,
-    JSON.stringify(NODE),
-    (snapshot) => {
-      const event = snapshot.public;
-      if (event && event.phase >= 2) ended ??= [event.kind, event.phase, event.heroic];
-    },
-    { minuteShift: minute - Math.floor(Date.now() / 60_000), play: new BotPlay({ speed: 60, bots: 2, heroic }) },
-  );
-  for (let frame = 0; frame * 60 < MOST_TICKS && !ended; frame++) room.pump(0);
+  // The world's minute held still, so the event starts at `minute` however long the play takes.
+  const realNow = Date.now;
+  const now = realNow();
+  Date.now = () => now;
+  try {
+    const room = LocalRoom.openNode(
+      compiled,
+      JSON.stringify(NODE),
+      (snapshot) => {
+        const event = snapshot.public;
+        if (event && event.phase >= 2) ended ??= [event.kind, event.phase, event.heroic];
+      },
+      { minuteShift: minute - Math.floor(now / 60_000), play: new BotPlay({ speed: 60, bots: 2, heroic }) },
+    );
+    for (let frame = 0; frame * 60 < MOST_TICKS && !ended; frame++) room.pump(0);
+  } finally {
+    Date.now = realNow;
+  }
   return ended ?? [0, 0, 0];
 }
 
