@@ -5,6 +5,7 @@
 import type { Context } from '../../player/binds.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Dress } from '../../player/dressing.ts';
+import type { GearHere } from '../gearScreen.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { backAtHelm } from './accountAsk.ts';
 import { beatNamed, prologuePlayed } from './beat.ts';
@@ -79,6 +80,11 @@ export class StoryHost {
   /** A tap or click, as the pad's A is one: the title's beginning, or the stranger's hand taken. */
   press(): void {
     this.story?.prologue.press();
+  }
+
+  /** The player's gear for the menu, while the story keeps any: on the wreck, as they play it. */
+  get gear(): GearHere | null {
+    return this.story?.prologue.gear ?? null;
   }
 
   /** Whether a click should lock the pointer for the story's play on foot. */

@@ -46,7 +46,8 @@ export interface Seen {
  * checkpoint kept and its wave stood as the player enters it, far across it, no more than `ALIVE_MOST` alive at once
  * (so no foe of a zone fights before the player comes into it, and the first zone, with no wave, is quiet); the way on
  * from each zone closed until its wave has fallen; a fall into the sea, or a climb over a closed way (once the boss
- * fight begins, back over the arena's heap), brought back to the last checkpoint; and the boss fight's end.
+ * fight begins, back over the arena's heap), brought back to the last checkpoint; and the boss fight's end. While
+ * `held` no wave stands, so no way on from a zone reached opens.
  */
 export class WreckProgress {
   private readonly layout: WreckLayout;
@@ -61,6 +62,8 @@ export class WreckProgress {
   private inSea = 0;
   private bossFor: number | null = null;
   outcome: Outcome | null = null;
+  /** Whether the waves wait to stand, as they do while the player is taught: zones reached keep theirs waiting. */
+  held = false;
 
   constructor(layout: WreckLayout) {
     this.layout = layout;
@@ -124,7 +127,7 @@ export class WreckProgress {
     // The boss fight is one on one: a wave still waiting never comes.
     if (this.fighting) this.waiting.length = 0;
     const alive = seen.alive.reduce((sum, count) => sum + count, 0);
-    const stand = this.waiting.splice(0, Math.max(0, ALIVE_MOST - alive));
+    const stand = this.held ? [] : this.waiting.splice(0, Math.max(0, ALIVE_MOST - alive));
     this.inSea = inSea && !seen.dead ? this.inSea + seconds : 0;
     const last = zones[Math.max(0, this.zone)]?.checkpoint ?? null;
     // A player who climbs over a closed way into a zone beyond it is brought back; so, once the boss fight begins, is

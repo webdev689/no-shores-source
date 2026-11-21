@@ -25,11 +25,14 @@ const COLUMN = 400;
 const KEYS_SHARE = 0.36;
 const PAD_SHARE = 0.18;
 
-/** A control's keys as a screen reader hears them, "or" between keys that do the same, a pad's by its name. */
+/** The signs a screen reader may pass over, by the words it says for them. */
+const SPOKEN: Readonly<Record<string, string>> = { ',': 'Comma', '[': 'Left bracket', ']': 'Right bracket' };
+/** A control's keys as a screen reader hears them, each sign by its name, a pad's by its name, "or" between keys
+ *  that do the same. */
 export const spokenKeys = (keys: string): string =>
   keys
     .split(' / ')
-    .map((key) => key.replace(/^pad:/, '').replace('+', ' and '))
+    .map((key) => SPOKEN[key] ?? key.replace(/^pad:/, '').replace('+', ' and '))
     .join(' or ');
 
 /** The groups in `count` columns, in their order, each column holding near an even share of the rows. */

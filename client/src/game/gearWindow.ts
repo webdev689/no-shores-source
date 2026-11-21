@@ -67,8 +67,8 @@ const ofGear = (view: View) => view === 'character' || view === 'inventory' || v
  * when its counter is used; and an item's page laid over either when one is inspected. While it is open the world
  * behind it is dimmed, the pointer is free and the keys and the pad are its; Escape or the pad's B steps back: the
  * item's page, then a slot's flyout, then the menu. Gear shows as the player's room last sent it, each press an ask
- * the room answers; where no room keeps gear it says so. While `resting` (the story plays) it never opens, so its keys
- * stay the story's. Answers the layer that draws it, with the company and what the player gains, shown in play too.
+ * the room answers; where no room keeps gear it says so. While `resting` (the story plays where it keeps no gear, all but
+ * the wreck) it never opens, so its keys stay the story's. Answers the layer that draws it, with the company and what the player gains, shown in play too.
  */
 export function startGearWindow(
   fighting: () => boolean,
@@ -423,6 +423,9 @@ export function startGearWindow(
   /** The layer: the company, the menu while it is open, what the player gains, and where holds acted. */
   const layer: Layer = (frame) => {
     ui = frame;
+    // Where the menu may no longer open (the story's wreck over, its gear let go), an open one shuts, so it never
+    // keeps the keys from what plays after it.
+    if (view !== null && resting()) shut();
     // Escape, or the pad's B, steps back once, letting go of a hold under way before it could act.
     if (view !== null && frame.escaped) stepOnce();
     holds.frame(frame);

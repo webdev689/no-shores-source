@@ -11,6 +11,7 @@ import { figureMuzzle, screenMuzzle } from '../../combat/tracers.ts';
 import { WorldSounds } from '../../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../../editor/orbit.ts';
 import type { Gpu } from '../../gpu.ts';
+import type { GearState } from '../../network/gearMessages.ts';
 import { LocalRoom } from '../../network/localRoom.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
 import { crosshairPoint } from '../../player/crosshair.ts';
@@ -26,11 +27,14 @@ import { type Shot, shotOfOrbit } from '../camera.ts';
 import { IDLE, type FootFight, type FootFrame } from '../foot.ts';
 import { footHints, onFoot } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
+import type { GearHere } from '../gearScreen.ts';
 import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
+import type { Arms, Boarder } from './tutorial.ts';
 import { WreckCrew } from './wreckCrew.ts';
 import { courseOf, titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
+import { armsOf, BOARDER, boarderAt, holdingArms, LyingArms } from './wreckTeaching.ts';
 
 /** What the wreck needs of the game: the movement rules, the walker, the forge's cards, the room's compiled module,
  *  the ground as the scene draws it, the GPU, and the wreck's mesh and baked light, fetched the first time they are
@@ -83,7 +87,14 @@ export class WreckRun {
   private readonly sounds = new WorldSounds(louder(worldOutput, STORY_FIGHT_GAIN));
   private readonly scenery: WreckScenery;
   private readonly progress: WreckProgress;
-  private readonly level: { value: number };
+  /** The player's gear as the room last sent it. */
+  private readonly gearHeld: { value: GearState | null };
+  /** The player's sword and shield lying on the deck, drawn while they lie there; and whether the room has been asked
+   *  for them and has not yet sent word of them in the pack. */
+  private readonly lying: LyingArms;
+  private asked = false;
+  /** The boarder met one on one, by its number in the room, once one stands. */
+  private boarderId = 0;
   /** Thule's number in the room, once he stands. */
   private thule = 0;
   /** The foes stood that no snapshot has shown yet: counted alive, so a wave never outruns the room's word. */
@@ -96,7 +107,7 @@ export class WreckRun {
     context: WreckContext,
     layout: WreckLayout,
     parts: { room: LocalRoom; fight: Fighting; combat: CombatRules; module: WebAssembly.Module },
-    drawn: { scenery: WreckScenery; level: { value: number }; origin: readonly [number, number] },
+    drawn: { scenery: WreckScenery; gear: { value: GearState | null }; origin: readonly [number, number] },
   ) {
     this.context = context;
     this.layout = layout;
@@ -107,7 +118,8 @@ export class WreckRun {
     this.course = [...this.base];
     this.foes = new FoeFigures(rosterOf(parts.module));
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
-    [this.scenery, this.level] = [drawn.scenery, drawn.level];
+    [this.scenery, this.gearHeld] = [drawn.scenery, drawn.gear];
+    this.lying = new LyingArms(layout, context.forge);
     this.progress = new WreckProgress(layout);
     this.boxes = this.base;
     this.node = { spawns: [drawn.origin], centre: drawn.origin };
@@ -136,20 +148,20 @@ export class WreckRun {
     const woke = newPlayer(movement, x, y);
     const body = { ...woke.body, z: topAt(course, x, y) };
     walker.player = { ...woke, body, previous: body, view: walker.player.view, yaw: facing, facing };
-    const level = { value: 1 };
+    const gear: { value: GearState | null } = { value: null };
     let fight: Fighting | null = null;
     const room = LocalRoom.openOverSea(
       module,
       { x, y },
       course,
       (snapshot) => fight?.receive(snapshot),
-      (gear) => (level.value = gear.level),
+      (sent) => (gear.value = sent),
     );
-    // The prologue's player has no Art yet (one comes after it, with the factions), fights with the sword and shield
-    // the story dressed them in, and meets the boarders as one side.
+    // The prologue's player has no Art yet (one comes after it, with the factions), wakes hurt without the sword and
+    // shield the story dressed them in, and meets the boarders as one side.
     room.storyWreck();
     fight = new Fighting(combat, room);
-    return new WreckRun(context, layout, { room, fight, combat, module }, { scenery, level, origin });
+    return new WreckRun(context, layout, { room, fight, combat, module }, { scenery, gear, origin });
   }
 
   /** The room, while the run is played. */
@@ -193,6 +205,78 @@ export class WreckRun {
     return this.progress.outcome;
   }
 
+  /** The player's level, as the room last sent it. */
+  private get level(): number {
+    return this.gearHeld.value?.level ?? 1;
+  }
+
+  /** The player's gear in the room and the way to ask of it, for the menu, the figure drawn in `dress`. */
+  gearHere(dress: Dress): GearHere {
+    const { fight } = this;
+    return { gear: this.gearHeld.value, ask: (ask) => fight.askGear(ask), forge: this.context.forge, dress };
+  }
+
+  /** `dress` holding the arms the player wears, as their gear has them. */
+  armedDress(dress: Dress): Dress {
+    return holdingArms(dress, this.gearHeld.value, this.context.forge);
+  }
+
+  /** Where the player's sword and shield are. */
+  get arms(): Arms {
+    return armsOf(this.gearHeld.value);
+  }
+
+  /** Holds the wreck's waves back, or lets them come. */
+  holdWaves(held: boolean): void {
+    this.progress.held = held;
+  }
+
+  /** The boarder met one on one stands at the far end of the quiet deck from the player, facing them, and comes for
+   *  them at once, wherever on the wreck they stand. */
+  standBoarder(): void {
+    const { body } = this.context.walker.player;
+    const { at, facing } = boarderAt(this.layout, body.x, body.y);
+    const room = this.openRoom;
+    const id = room.standFoe(BOARDER.type, BOARDER.rank, ...at, facing, this.level);
+    if (id === 0) return;
+    room.storyHunt(id);
+    this.boarderId = id;
+    this.unseen.add(id);
+    this.stood.set(id, { ...BOARDER, at, facing, zone: 0 });
+  }
+
+  /** The boarder as the room last showed it, while it stands. */
+  get boarderView(): FighterView | null {
+    const kept = this.fight.foes.get(this.boarderId);
+    return kept && kept.view.health > 0 ? kept.view : null;
+  }
+
+  /** The boarder: not yet come, standing, or fallen. */
+  get boarder(): Boarder {
+    if (this.boarderId === 0) return 'none';
+    return this.unseen.has(this.boarderId) || this.boarderView ? 'standing' : 'fallen';
+  }
+
+  /** Whether the arms lie on the deck: neither in the pack nor asked for. */
+  private get armsLie(): boolean {
+    return this.arms === 'lying' && !this.asked;
+  }
+
+  /** `marks` with the arms lying on the deck laid after them, while they lie. */
+  private lyingMarks(marks: number[], clock: number, eye: readonly [number, number, number]): number[] {
+    if (this.armsLie) this.lying.mark(marks, clock, eye);
+    return marks;
+  }
+
+  /** The arms lying on the deck are taken up once the player walks over them: the room puts them in the pack. Should
+   *  they leave the pack (dismantled), they lie on the deck again to be taken up. */
+  private takeArms(): void {
+    if (this.arms !== 'lying') this.asked = false;
+    if (!this.armsLie) return;
+    const { body } = this.context.walker.player;
+    if (this.lying.reached([body.x, body.y, body.z]) && this.openRoom.storyTakeArms()) this.asked = true;
+  }
+
   /** The boss fight begins: the heap closes the way into the arena behind the player, every other foe is sent away,
    *  and Thule stands where the layout puts him, facing the player, three levels over them. */
   beginBoss(): void {
@@ -205,7 +289,7 @@ export class WreckRun {
     const [x, y] = this.layout.arena.thule;
     const { body } = this.context.walker.player;
     const facing = Math.atan2(body.x - x, -(body.y - y));
-    this.thule = room.standFoe(THULE.type, THULE.rank, x, y, facing, this.level.value + THULE.over);
+    this.thule = room.standFoe(THULE.type, THULE.rank, x, y, facing, this.level + THULE.over);
   }
 
   /** Thule's health, once he stands. */
@@ -257,10 +341,10 @@ export class WreckRun {
       figures: this.foes,
       foes: this.fight.foes,
       layout: this.layout,
-      level: this.level.value,
+      level: this.level,
     });
     for (const foe of asks.stand) {
-      const id = room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level.value);
+      const id = room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level);
       if (id === 0) continue;
       this.unseen.add(id);
       this.stood.set(id, foe);
@@ -275,22 +359,33 @@ export class WreckRun {
 
   /** One frame: the player plays and fights (nothing pressed while `paused`, the fight's buttons only while
    *  `hands`), or while `held` everything stands still for a cutscene; the camera follows; every figure and mark is
-   *  placed for an eye there. */
+   *  placed for an eye there. While `frozen` the fight stands as it was, its room's clock, the player's body and every
+   *  figure stopped, `clock` held by the caller. */
   frame(
     controls: InputFrame,
-    seconds: number,
+    elapsed: number,
     clock: number,
-    { paused, hands, aspect, held }: { paused: boolean; hands: boolean; aspect: number; held: boolean },
+    {
+      paused,
+      hands,
+      aspect,
+      held,
+      frozen = false,
+    }: { paused: boolean; hands: boolean; aspect: number; held: boolean; frozen?: boolean },
   ): FootFrame {
     const { walker, movement, forge, groundAt } = this.context;
     const { fight, foes, effects, feel } = this;
-    const still = paused || held;
-    if (!held) this.advance(seconds);
+    const seconds = frozen ? 0 : elapsed;
+    const still = paused || held || frozen;
+    if (!held && !frozen) {
+      this.advance(seconds);
+      this.takeArms();
+    }
     const bodies = [...foes.placed.values()].map((placed) => [placed.x, placed.y, placed.z] as const);
     const aimed = () => playerCamera(walker.player, movement, this.course);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
-      running: !held,
+      running: !held && !frozen,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.course, bodies, groundAt),
       zoomOf: () => camera().zoom ?? 1,
@@ -327,6 +422,8 @@ export class WreckRun {
     figures.push(
       ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, tickSeconds, effects.flashes, foeFeel),
     );
+    const lying = this.armsLie ? this.lying.figure(walker.you.dress) : null;
+    if (lying) figures.push(lying);
     const muzzle = walker.muzzle;
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
@@ -337,7 +434,7 @@ export class WreckRun {
       origin: shot.eye,
       groundAt,
       drawn: { foes: foes.placed, others: new Map() },
-      more: foes.overheads(shot.eye, clock),
+      more: this.lyingMarks(foes.overheads(shot.eye, clock), clock, shot.eye),
     });
     this.sounds.frame({
       seconds,
@@ -414,6 +511,7 @@ export class WreckRun {
    *  movement, and the room let go of. */
   leave(): void {
     showAnimaEdge(QUIET);
+    this.lying.leave();
     this.context.movement.setHeights(null);
     this.room = null;
   }

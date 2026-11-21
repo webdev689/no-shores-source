@@ -216,7 +216,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.through =
       paused || looking || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    hud.hints(looking ? HINTS.landMap : withMapKey(shown.hints));
+    // N raises the map on foot unless a menu is up or the player has fallen, as `openMap` has it.
+    hud.hints(looking ? HINTS.landMap : paused || here.fallen ? shown.hints : withMapKey(shown.hints));
     hud.marks([]);
     hideSeaHud(hud);
     hud.note(here.roomNote);
@@ -298,7 +299,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       charting: charting.busy,
       friendly: fleet.marks,
       notices,
-      free: !input.locked,
+      free: !input.locked && !paused,
     });
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');

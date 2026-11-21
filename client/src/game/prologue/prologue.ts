@@ -4,6 +4,7 @@
 import { HoldToSkip } from '../../cinema/cues.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
+import type { GearHere } from '../gearScreen.ts';
 import { hushed } from './music.ts';
 import { asWreck, Battle, type Wreck } from './battle.ts';
 import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed } from './beat.ts';
@@ -214,6 +215,11 @@ export class Prologue {
     return this.beat instanceof WreckFight && this.beat.playing;
   }
 
+  /** The player's gear for the menu, while they play on the wreck; none elsewhere in the story. */
+  get gear(): GearHere | null {
+    return this.beat instanceof WreckFight ? this.beat.gear : null;
+  }
+
   /** The sea fight the pointer drives, while one is on. */
   get fight(): Battle['fighting'] {
     return this.beat instanceof Battle ? this.beat.fighting : null;
@@ -241,10 +247,12 @@ export class Prologue {
     size: { width: number; height: number },
     viewport: { width: number; height: number },
   ): void {
-    this.clock += seconds;
-    const { stage } = this.story;
-    stage.step(seconds);
     const beat = this.beat;
+    // A beat holding its world still holds the story's time, though its own frame still hears what is pressed.
+    const passing = beat.still ? 0 : seconds;
+    this.clock += passing;
+    const { stage } = this.story;
+    stage.step(passing);
     if (beat.skippable && beat.skip) {
       const holding = controls.held('jump') || this.touching;
       const skipped = this.skipping.step(seconds, holding);
@@ -265,7 +273,7 @@ export class Prologue {
     stage.parts.music.frame(beat.music?.() ?? hushed(), seconds);
     if (shown) {
       this.carried.shot = shown.shot;
-      stage.draw(shown, size, this.clock, seconds);
+      stage.draw(shown, size, this.clock, passing);
     }
     if (beat.done) this.next();
   }

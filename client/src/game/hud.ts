@@ -59,6 +59,8 @@ export interface Besides {
 const SHADE_S = 0.4;
 export const VEIL_S = 0.7;
 const BREATH_S = 2.4;
+/** The most entries the key strip holds, the key to every control last among them. */
+const HINTS_MOST = 8;
 
 /** The screen's edge darkened toward black, as a radial gradient over the whole view clear to 35% of the way out: drawn
  *  small and stretched, its steps too fine to see. */
@@ -146,14 +148,16 @@ export class Hud {
     this.respawnWanted = respawn;
   }
 
-  /** The keys the player can press now, each on its keycap beside what it does; none hides the strip. */
+  /** The keys the player can press now, each on its keycap beside what it does, the most needed first; none hides
+   *  the strip. Past eight, those nearest the last give way to it, the key to every control. */
   hints(hints: readonly StripHint[]): void {
-    this.hintsShown = hints;
+    this.hintsShown = hints.length > HINTS_MOST ? [...hints.slice(0, HINTS_MOST - 1), ...hints.slice(-1)] : hints;
   }
 
-  /** Whether the key strip offers keys now, the sheet of every control's among them. */
+  /** Whether the key strip shows keys now, the sheet of every control's among them: it gives way while someone
+   *  speaks. */
   get keysOffered(): boolean {
-    return this.hintsShown.length > 0;
+    return this.hintsShown.length > 0 && !this.besides().speaking;
   }
 
   /** Shows the sea fight's readout, or hides it for none. */

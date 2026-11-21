@@ -512,15 +512,19 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   is B. On foot: with the weapon put away, draw, run, jump, crouch and the menu; a melee weapon drawn, the swing, the
   guard or parry, the dodge, the drink and the Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink
   and the Melee loadout; aiming, the fire and letting go; Dusk Daggers aimed, only letting go of the first Tenet;
-  riding, getting down, the gallop and the menu; the Arts' three while one is worn and the hands are free to cast; the
-  click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told, and nothing
-  while the fall plays out. The prompt for Use says what it does, with Use's key or button, so the strip leaves it
+  riding, getting down, the gallop and the menu; hanging from a ledge, the climb and letting go, and on a wall the kick
+  off too, whatever is drawn; the Arts' three while one is worn and the hands are free to cast, Shadow's first Tenet
+  apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the menu's; the click that
+  takes the mouse to look round first while the mouse is free; dead, Respawn once death is told, and nothing while the
+  fall plays out. The prompt for Use says what it does, with Use's key or button, so the strip leaves it
   out. At sea: sailing, the click to sail there, the helm's controls and the menu (the sea bar names its own keys); in
-  Manage, the drag, the wheel and Manage's key back; on the deck, run, jump and Use to take the helm; at the map and
+  Manage, the drag, the wheel and Manage's key back; on the deck, the click to look round as on foot, run, jump and Use
+  to take the helm; at the map and
   choosing a landing, their clicks, Set sail and Escape; with the land's held map raised, the drag, the wheel and its
   key or Escape to close it (the pad's B); in a fight, the helm, the sails, the burst, the aim and the
   brace, and while aiming, letting go to fire (the pad's RT), holding fire, the shot and the drag. Eight entries at
-  most ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the strip stands at twice its size
+  most: past eight, those just before All controls give way, the last first, so the menu's goes, then the map's, then
+  the Arts' ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the strip stands at twice its size
   and wraps 960 px short of the view's width, so it never runs over the weapons; a view under 720 px wide gives it
   240 px, room for its widest entry.
 - **The sheet of every control** (`ControlsSheet`) opens with its key (K, or the pad's View) wherever the key strip
@@ -533,10 +537,12 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   bright and the other faint, and the words are that side's ("Swing; fire" on the pad). The groups stand in as many
   400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each column near an even
   share of the rows; the words take their larger step at 1500 by 900 and up. The list scrolls inside a window kept
-  16 px from the view's edges. Opening it lets the mouse go and moves the focus to the first key; Tab, the arrows and
-  the pad move among the keys, the focused one lit in brass, and a screen reader hears "All controls", then each key
-  with its row's words as it takes focus. While it is open no key reaches the game (a key let go still does, so none
-  stays held) and its scrim takes the pointer, so nothing behind it is clicked; the world goes on, as under the menu.
+  16 px from the view's edges. Opening it lets the mouse go and moves the focus to the first key; while it is open the
+  keys are the interface's, and Tab, the arrows and the pad move among the keys, the focused one lit in brass. A screen
+  reader hears "All controls", then each key with its row's words as it takes focus, a sign by its name (Comma, Left
+  bracket). While it is open no key reaches the game (a key let go still does, so none stays held) and its scrim takes
+  the pointer, so nothing behind it is clicked, the held map no more than the world; the world goes on, as under the
+  menu.
 - **Binding a control** (`rebinding.ts`): a key chosen in the sheet (a click, Enter or the pad's A) is lit and waits;
   on a key's side the next key or mouse button binds it, on the pad's the next button, held past 0.3 s for its hold,
   or with another within 0.12 s for the two together. Escape cancels, as does six seconds with nothing pressed. A

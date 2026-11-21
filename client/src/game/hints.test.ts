@@ -12,6 +12,7 @@ import {
   hintsFor,
   keysShown,
   seaHints,
+  withMapKey,
 } from './hints.ts';
 import { standingOf } from './hudLaw.ts';
 
@@ -22,6 +23,7 @@ const AT_REST: OnFoot = {
   aiming: false,
   daggers: false,
   mounted: false,
+  mode: 'ground',
   free: false,
 };
 const SAILING: AtSea = {
@@ -79,6 +81,60 @@ test("the Arts' keys show only while an Art is worn and the hands are free to ca
   assert.ok(!shown({ worn: 1, mounted: true }).includes(cast), 'no cast on horseback');
 });
 
+test("Shadow worn offers holding Q to aim Dusk Daggers until they are aimed; no other Art's Q does", () => {
+  const shadow = 3;
+  for (const foot of [{}, { drawn: true }, { drawn: true, ranged: true }]) {
+    const strip = shown({ worn: shadow, ...foot });
+    assert.ok(
+      strip.some((entry) => entry.startsWith('Q ') && /hold/i.test(entry)),
+      strip.join(', '),
+    );
+    assert.ok(!strip.some((entry) => /R \/ Q \/ G/.test(entry)), 'Q is said once');
+    assert.ok(
+      strip.some((entry) => entry.startsWith('R / G ')),
+      'the other Arts still show',
+    );
+  }
+  assert.ok(!shown({ worn: shadow, daggers: true }).some((entry) => /hold/i.test(entry)), 'aimed, only the release');
+  for (const art of [1, 2]) assert.ok(!shown({ worn: art }).some((entry) => /hold/i.test(entry)), `Art ${art}`);
+});
+
+test('hanging or climbing shows only the climb’s keys, the weapon drawn or not', () => {
+  for (const drawn of [false, true]) {
+    const hanging = shown({ worn: 1, drawn, mode: 'hang' });
+    const climbing = shown({ worn: 1, drawn, mode: 'climb' });
+    for (const strip of [hanging, climbing]) {
+      assert.ok(strip.includes('C Let go'), strip.join(', '));
+      for (const fight of ['Swing', 'Guard', 'Dodge', 'Heal', 'Ranged', 'Arts', 'Draw'])
+        assert.ok(!strip.some((entry) => entry.endsWith(` ${fight}`)), `${fight} on a wall`);
+    }
+    assert.ok(!hanging.some((entry) => entry.startsWith('Space')), 'a jump does nothing from a ledge');
+    assert.ok(
+      climbing.some((entry) => entry.startsWith('Space')),
+      'a jump kicks off a wall',
+    );
+  }
+});
+
+test('the map’s N shows in every stance on foot, before the menu’s M, and K stays last', () => {
+  const stances: Partial<OnFoot>[] = [
+    {},
+    { drawn: true },
+    { drawn: true, ranged: true },
+    { drawn: true, ranged: true, aiming: true },
+    { worn: 3, daggers: true },
+    { mounted: true },
+    { mode: 'climb' },
+  ];
+  for (const foot of stances) {
+    const strip = words(withMapKey(footHints({ ...AT_REST, ...foot })));
+    assert.ok(strip.includes('N Map'), strip.join(', '));
+    assert.equal(strip.at(-1), 'K All controls');
+    const menu = strip.indexOf('M Menu');
+    if (menu >= 0) assert.equal(strip.indexOf('N Map'), menu - 1);
+  }
+});
+
 test('riding shows how to get down and gallop', () => {
   assert.deepEqual(shown({ mounted: true, drawn: true }), [', Get down', 'Shift Gallop', 'M Menu', 'K All controls']);
 });
@@ -114,6 +170,8 @@ test('every strip is a handful of keys, ends with the key to every control, and 
     { drawn: true, ranged: true, aiming: true },
     { daggers: true },
     { mounted: true },
+    { mode: 'hang' },
+    { mode: 'climb' },
   ];
   const strips = [...Object.values(HINTS), ...stances.map((foot) => footHints({ ...AT_REST, ...foot }))];
   const known: ReadonlySet<string> = new Set(BIND_IDS);

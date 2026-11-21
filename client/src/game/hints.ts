@@ -3,9 +3,12 @@
 // last the key to the sheet of every control (`controls.ts`). A strip names controls (`binds.ts`), or the mouse's
 // gestures and a window's keys by name; `hintsFor` shows them as bound now, for the keys or the pad.
 
+import { DAGGERS } from '../combat/casting.ts';
 import type { PlayerFightFrame } from '../combat/playerFight.ts';
 import type { Fighting } from '../combat/fighting.ts';
+import { SPELLS, spellNumber } from '../network/artMessages.ts';
 import { type Binds, CONTROLS, type Device } from '../player/binds.ts';
+import type { Mode } from '../rules/movementRules.ts';
 import type { Walker } from '../player/walker.ts';
 import { keyName, padName } from './controls.ts';
 import type { Hint } from './gearNodes.ts';
@@ -20,6 +23,7 @@ export const ALL_CONTROLS: StripHint = ['controls', 'All controls'];
 /** The click that takes the mouse to look round, shown while the mouse is free. */
 const LOOK: StripHint = ['Left button', 'Look round'];
 const MENU: StripHint = ['menu', 'Menu'];
+const MAP: StripHint = ['landMap', 'Map'];
 
 /** The keys each moment shows, the strip's last entry with them. */
 export const HINTS = {
@@ -90,6 +94,15 @@ const STANCES = {
     ['dodge', 'Dodge'],
   ],
   daggers: [['tenetOne', 'Release to cast']],
+  hang: [
+    ['forward / left / right', 'Climb'],
+    ['crouch', 'Let go'],
+  ],
+  climb: [
+    ['forward / left / back / right', 'Climb'],
+    ['jump', 'Kick off'],
+    ['crouch', 'Let go'],
+  ],
   mounted: [
     ['mount', 'Get down'],
     ['run', 'Gallop'],
@@ -139,7 +152,8 @@ export function hintsFor(hints: readonly StripHint[], device: Device, binds: Bin
 
 /** What the player is doing on foot, for the keys shown: the Art worn (its id, 0 for none, as in the prologue),
  *  whether a weapon is drawn and is one that shoots, whether it aims, whether Dusk Daggers are being aimed, whether
- *  the player rides, and whether the mouse is free for a click to take it. */
+ *  the player rides, the body's mode (hanging from a ledge or climbing a wall among them), and whether the mouse is
+ *  free for a click to take it. */
 export interface OnFoot {
   readonly worn: number;
   readonly drawn: boolean;
@@ -147,6 +161,7 @@ export interface OnFoot {
   readonly aiming: boolean;
   readonly daggers: boolean;
   readonly mounted: boolean;
+  readonly mode: Mode;
   readonly free: boolean;
 }
 
@@ -165,27 +180,39 @@ export function onFoot(
     aiming: shown.aiming,
     daggers: fight.aimRing !== null,
     mounted: walker.player.mounted,
+    mode: walker.player.body.mode,
     free,
   };
 }
 
 function stanceOf(foot: OnFoot): Stance {
   if (foot.mounted) return 'mounted';
+  // On a wall only the climb's keys act: the fight's and the Arts' wait for the ground.
+  if (foot.mode === 'hang' || foot.mode === 'climb') return foot.mode;
   if (foot.daggers) return 'daggers';
   if (foot.aiming) return 'aiming';
   if (!foot.drawn) return 'away';
   return foot.ranged ? 'ranged' : 'melee';
 }
 
+/** The Arts' keys while one is worn and the hands are free to cast: Shadow's First Tenet held aims Dusk
+ *  Daggers. */
+const ARTS: readonly StripHint[] = [['anima / tenetOne / tenetTwo', 'Arts']];
+const SHADOW: readonly StripHint[] = [
+  ['tenetOne', 'Hold to aim daggers'],
+  ['anima / tenetTwo', 'Arts'],
+];
+
 /** The keys shown on foot: the click to look while the mouse is free, the stance's own, the Arts' while one is worn
  *  and nothing else holds the keys, the menu's at rest or riding, and the strip's last. */
 export function footHints(foot: OnFoot): readonly StripHint[] {
   const stance = stanceOf(foot);
   const casts = foot.worn !== 0 && (stance === 'away' || stance === 'melee' || stance === 'ranged');
+  const daggersWorn = spellNumber(foot.worn, DAGGERS) === SPELLS.duskDaggers;
   return [
     ...(foot.free ? [LOOK] : []),
     ...STANCES[stance],
-    ...(casts ? [['anima / tenetOne / tenetTwo', 'Arts'] as const] : []),
+    ...(casts ? (daggersWorn ? SHADOW : ARTS) : []),
     ...(stance === 'away' || stance === 'mounted' ? [MENU] : []),
     ALL_CONTROLS,
   ];
@@ -198,10 +225,12 @@ export function keysShown(standing: Standing, foot: OnFoot): readonly StripHint[
   return standing.told ? HINTS.dead : [];
 }
 
-/** The keys shown on foot where the held map is raised (not in the story, nor on a ship's deck): N beside the
- *  menu's M. */
+/** The keys shown on foot where the held map can be raised (not in the story, nor on a ship's deck, nor down): the
+ *  map's before the menu's, or before the strip's last where the menu's is not shown. */
 export function withMapKey(hints: readonly StripHint[]): readonly StripHint[] {
-  return hints.flatMap((hint): StripHint[] => (hint[0] === 'menu' ? [['landMap', 'Map'], hint] : [hint]));
+  const menu = hints.findIndex(([names]) => names === 'menu');
+  const place = menu >= 0 ? menu : hints.length - 1;
+  return [...hints.slice(0, place), MAP, ...hints.slice(place)];
 }
 
 /** What the player is doing at sea, for the keys shown: fighting and aiming the guns, choosing a landing, at the helm

@@ -82,7 +82,11 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
   },
   {
     name: 'Arts',
-    controls: [row('Anima', 'anima'), row('First Tenet', 'tenetOne'), row('Second Tenet', 'tenetTwo')],
+    controls: [
+      row('Anima', 'anima'),
+      row('First Tenet; hold aims daggers', 'tenetOne'),
+      row('Second Tenet', 'tenetTwo'),
+    ],
   },
   {
     name: 'Camera',

@@ -25,8 +25,8 @@ export function seaPointer(
 ): void {
   const { sea, map, overInterface } = pointing;
   const atSea = () => pointing.atSea() && !overInterface();
-  /** While the map is up, the pointer and the wheel are the map's. */
-  const mapUp = () => map()?.shown ?? false;
+  /** While the map is up, the pointer and the wheel are the map's, but where the interface is over it. */
+  const mapUp = () => (map()?.shown ?? false) && !overInterface();
   canvas.addEventListener('pointerdown', (event) => {
     if (!atSea() && !mapUp()) return;
     // A locked pointer is held already.

@@ -88,3 +88,9 @@ test("a press names its control's key as bound now, on the keys or the pad playe
   BINDS.device = 'keys';
   BINDS.set(DEFAULTS);
 });
+
+test('the sheet says how Dusk Daggers aim: on the First Tenet’s key, held', () => {
+  const daggers = ROWS.find((row) => row.binds.includes('tenetOne'));
+  assert.match(daggers?.does ?? '', /hold/i);
+  assert.match(daggers?.does ?? '', /dagger/i);
+});

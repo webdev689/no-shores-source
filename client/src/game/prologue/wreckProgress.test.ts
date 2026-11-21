@@ -199,3 +199,18 @@ test("once the boss fight begins, a player back over the arena's heap is brought
   assert.deepEqual(atTheBoss().frame(over, 0.016).bringBack, checkpoint, 'over the heap');
   for (const x of [-5.6, 5.6]) assert.equal(topAt(course, x, 34), 0, `outboard of its rail at ${x}, the sea`);
 });
+
+test('while held, a zone reached keeps its wave waiting and its way on shut; let go, the wave stands', () => {
+  const progress = new WreckProgress(layout);
+  progress.held = true;
+  progress.frame(standing(0), 0.016);
+  const alive = layout.zones.map(() => 0);
+  for (let frame = 0; frame < 30; frame++) {
+    const asks = progress.frame(standing(1, { alive }), 0.1);
+    assert.deepEqual([asks.stand, asks.open], [[], []], 'nothing stands, nothing opens');
+  }
+  assert.equal(progress.zone, 1, 'the zone is reached all the same');
+  progress.held = false;
+  const wave = (layout.zones[1]?.wave ?? []).map((foe) => ({ ...foe, zone: 1 }));
+  assert.deepEqual(progress.frame(standing(1, { alive }), 0.016).stand, wave);
+});
