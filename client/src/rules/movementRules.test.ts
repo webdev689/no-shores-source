@@ -102,13 +102,31 @@ test("a body walking out of its section is warned, dies, and respawns by the roo
       [90, 90],
     ],
   });
-  assert.deepEqual(reach.reachTick(50, 50), { kind: 'inside' });
-  assert.deepEqual(reach.reachTick(120, 50), { kind: 'warned', ticksLeft: 599 });
-  assert.deepEqual(reach.reachTick(170, 50), { kind: 'dead', ticks: 0 });
+  const feet = (x: number, y: number) => reach.standing(x, y);
+  assert.deepEqual(reach.reachTick(feet(50, 50)), { kind: 'inside' });
+  assert.deepEqual(reach.reachTick(feet(120, 50)), { kind: 'warned', ticksLeft: 599 });
+  assert.deepEqual(reach.reachTick(feet(170, 50)), { kind: 'dead', ticks: 0, fell: false });
   assert.equal(reach.respawn(95, 95), null);
-  for (let tick = 0; tick < 240; tick++) reach.reachTick(170, 50);
+  for (let tick = 0; tick < 240; tick++) reach.reachTick(feet(170, 50));
   assert.deepEqual(reach.respawn(95, 95), [90, 90]);
-  assert.deepEqual(reach.reachTick(90, 90), { kind: 'inside' });
+  assert.deepEqual(reach.reachTick(feet(90, 90)), { kind: 'inside' });
+  reach.setSection(null);
+});
+
+test("a social space's section kills a body in the air 6 m below where it stood, as the room's rules do", async () => {
+  const reach = await movement();
+  const ring: [number, number][] = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  reach.setSection({ ring, spawns: [[50, 50]], fallsKill: true });
+  const stood = { ...reach.standing(50, 50), z: 87 };
+  assert.deepEqual(reach.reachTick(stood), { kind: 'inside' });
+  assert.deepEqual(reach.reachTick({ ...stood, mode: 'air', z: 81.1 }), { kind: 'inside' }, '5.9 m down');
+  assert.deepEqual(reach.reachTick({ ...stood, mode: 'air', z: 81 }), { kind: 'dead', ticks: 0, fell: true });
+  assert.deepEqual(reach.reachTick({ ...stood, z: 46 }), { kind: 'dead', ticks: 1, fell: true }, 'landed, still dead');
   reach.setSection(null);
 });
 

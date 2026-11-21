@@ -8,7 +8,7 @@ const SPAWN: [f64; 2] = [0.0, 0.0];
 
 fn patrol(difficulty: Difficulty) -> (Room, PlayerId) {
     let ring = vec![[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
-    let mut room = Room::node(Floor::Flat, Vec::new(), Section { ring, spawns: vec![SPAWN] });
+    let mut room = Room::node(Floor::Flat, Vec::new(), Section { ring, spawns: vec![SPAWN], falls_kill: false });
     room.start_patrol("saltgrass-downs", 0);
     room.set_difficulty(difficulty);
     let player = room.join().expect("a room with space");

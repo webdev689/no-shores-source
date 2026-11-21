@@ -1,12 +1,16 @@
 use super::*;
+use crate::pack::unpack;
+use combat::Shot;
 use combat::arms::{Arms, OffHand, Ranged, Stroke, WeaponClass};
 use combat::fighter::{Action, Side, Weight, fighter, player};
+use combat::shots::Line;
 use combat::shots::loose;
 use combat::{CombatInput, Fighter};
 use movement::{Controls, Flat, TICK_SECONDS, standing, step_body};
 use naval::ranks::Commission;
 use room::pirates::Pirate;
 use room::sea::Ship;
+use room::{Event, FoeSeen, Seen};
 use room::{EventKind, How};
 
 /// An input with these controls and nothing else.
@@ -116,10 +120,10 @@ fn shots() -> Vec<Shot> {
 }
 
 /// Foe 12's ball, six ticks out east from (4, -6, 1.1) at 60 m/s, stopped half a metre into its seventh tick.
-fn lines() -> Vec<Line> {
+fn lines() -> Vec<(u64, Line)> {
     let ball =
         Shot { ranged: Ranged::Pistolet, at: [10.0, -6.0, 1.1], velocity: [60.0, 0.0, 0.0], age: 6, ..shots()[0] };
-    vec![combat::shots::stopped_line(&ball, [10.5, -6.0, 1.1])]
+    vec![(1233, combat::shots::stopped_line(&ball, [10.5, -6.0, 1.1]))]
 }
 
 const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
@@ -216,13 +220,40 @@ const SHIPS: [(PlayerId, Ship); 2] = [
     (4, Ship { x: 61_000.0, y: 149_000.0, heading: std::f64::consts::FRAC_PI_2, pace: 0, rate: 0 }),
 ];
 
+/// The room's middle the test snapshot measures others from, as a node's rect (-1, -4, 3, 0) floors it.
+const MIDDLE: [f64; 2] = [1.0, -2.0];
+
+/// The test snapshot, for player 9: whole, building on nothing.
 fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
     shots: &'snapshot [Shot],
-    lines: &'snapshot [Line],
+    lines: &'snapshot [(u64, Line)],
 ) -> Snapshot<'snapshot> {
-    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines, spells: &SPELLS }
+    Snapshot {
+        tick: 1234,
+        viewer: 9,
+        middle: MIDDLE,
+        base: 0,
+        gone_players: &[],
+        gone_foes: &[],
+        own_base: None,
+        base_players: None,
+        base_foes: None,
+        players,
+        dressed: &DRESSED,
+        foes,
+        events: &EVENTS,
+        shots,
+        lines,
+        spells: &SPELLS,
+    }
+}
+
+/// Whether `read` is `sent` packed and unpacked: each within half a thousandth.
+fn near(sent: &[f64], read: &[f64]) -> bool {
+    sent.len() == read.len()
+        && sent.iter().zip(read).all(|(one, two)| (one - two).abs() <= 0.0005 + 1e-9 || (one.is_nan() && two.is_nan()))
 }
 
 /// The dresses a message holds.
@@ -244,6 +275,7 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         pitch: -0.2,
         aim: true,
         mark: Some([1.0, -2.0, 1.5]),
+        heal: true,
         telegraph: None,
     };
     let sent = Input {
@@ -326,7 +358,12 @@ fn a_course_reads_back_as_its_points_and_pace_and_odd_numbers_are_refused() {
 
 #[test]
 fn every_standing_crosses_and_comes_back() {
-    for standing in [Standing::Inside, Standing::Warned { ticks_left: 599 }, Standing::Dead { ticks: 241 }] {
+    for standing in [
+        Standing::Inside,
+        Standing::Warned { ticks_left: 599 },
+        Standing::Dead { ticks: 241, fell: false },
+        Standing::Dead { ticks: 3, fell: true },
+    ] {
         let (kind, ticks) = standing_parts(standing);
         assert_eq!(standing_of(kind, ticks), standing);
     }
@@ -347,41 +384,34 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let bytes = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
     let read = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     assert_eq!(read.tick(), 1234);
-    let fighters: Vec<Fighter> = read
-        .players()
-        .unwrap()
-        .iter()
-        .map(|seen| {
-            // A snapshot's fighter leaves out its trim: put back the plain one each test player wears.
-            let mut floats: Vec<f64> = seen.fighter().unwrap().iter().collect();
-            assert_eq!(floats.len(), crate::UNTRIMMED_FLOATS);
-            floats.extend(combat::Trim::PLAIN.to_floats());
-            Fighter::from_floats(&floats.try_into().unwrap())
-        })
-        .collect();
-    assert_eq!(fighters, players.iter().map(|seen| seen.fighter).collect::<Vec<_>>());
-    let bodies: Vec<_> = read
-        .players()
-        .unwrap()
-        .iter()
-        .map(|seen| body_of(&seen.fighter().unwrap().iter().take(22).collect::<Vec<_>>()))
-        .collect();
-    assert_eq!(bodies, players.iter().map(|seen| Some(seen.fighter.body)).collect::<Vec<_>>());
+    let read_players: Vec<_> = read.players().unwrap().iter().collect();
+    assert_eq!(read_players.iter().map(messages::Seen::player).collect::<Vec<_>>(), [7, 9]);
+    assert!(read_players[0].fighter().is_none(), "another player's fighter crosses packed");
+    let other = unpack(read_players[0].packed().unwrap().bytes(), crate::UNTRIMMED_FLOATS, MIDDLE).unwrap();
+    assert!(near(&players[0].fighter.to_floats()[..crate::UNTRIMMED_FLOATS], &other));
+    // The player the snapshot is for has their fighter whole, less its trim: put back the plain one they wear.
+    let mut own: Vec<f64> = read_players[1].fighter().unwrap().iter().collect();
+    assert_eq!(own.len(), crate::UNTRIMMED_FLOATS);
+    assert_eq!(body_of(&own[..22]), Some(players[1].fighter.body));
+    own.extend(combat::Trim::PLAIN.to_floats());
+    assert_eq!(Fighter::from_floats(&own.try_into().unwrap()), players[1].fighter);
+    assert!(read_players[1].packed().is_none());
+    assert_eq!(read.middle().unwrap().iter().collect::<Vec<_>>(), MIDDLE, "it says what others are measured from");
     let standings: Vec<Standing> =
         read.players().unwrap().iter().map(|seen| standing_of(seen.standing(), seen.standing_ticks())).collect();
     assert_eq!(standings, players.iter().map(|seen| seen.standing).collect::<Vec<_>>());
     let foe = read.foes().unwrap().get(0);
-    let glance: [f64; combat::floats::GLANCE_FLOATS] =
-        foe.glance().unwrap().iter().collect::<Vec<_>>().try_into().unwrap();
-    assert_eq!((foe.id(), foe.kind(), glance), (12, 3, foes[0].fighter.glance()));
-    let named = (foe.type_(), foe.rank(), foe.faction(), foe.phase(), foe.alert());
-    assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
-    assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
-    assert_eq!((foe.expose(), foe.charge(), foe.charge_immune()), (200, 0, 90), "its debuffs' ticks cross");
-    assert_eq!((foe.leader(), foe.given(), foe.family()), (0, 0, 0), "a foe is no one's companion");
+    let numbers = unpack(foe.packed().unwrap().bytes(), crate::land::FOE_NUMBERS, MIDDLE).unwrap();
+    assert!(foe.changed().is_none(), "a foe in a whole snapshot crosses whole");
+    let (glance, rest) = numbers.split_at(combat::floats::GLANCE_FLOATS);
+    assert_eq!(foe.id(), 12);
+    assert!(near(&foes[0].fighter.glance(), glance), "a foe's glance crosses packed");
+    // Its role, type, rank, faction, phase, alertness and level; its shield; its debuffs' ticks; no one's companion.
+    assert_eq!(rest, [3.0, 15.0, 3.0, 2.0, 1.0, 2.0, 7.0, 3.0, 40.0, 40.0, 200.0, 0.0, 90.0, 0.0, 0.0, 0.0, 0.0]);
     let ashore = read.foes().unwrap().get(1);
-    assert_eq!((ashore.leader(), ashore.given(), ashore.family()), (9, 2, 5), "a companion's names");
-    assert_eq!(ashore.post(), 4, "and their post, the Lookout");
+    let numbers = unpack(ashore.packed().unwrap().bytes(), crate::land::FOE_NUMBERS, MIDDLE).unwrap();
+    // A companion's leader, given and family names, and post (the Lookout), last.
+    assert_eq!(numbers[crate::land::FOE_NUMBERS - 4..], [9.0, 2.0, 5.0, 4.0]);
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);
@@ -395,7 +425,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let ends = |shot: messages::Flying<'_>| {
         [shot.at(), shot.velocity(), shot.muzzle()].map(|part| part.map(|numbers| numbers.iter().collect::<Vec<_>>()))
     };
-    let line = lines[0];
+    let (stopped_at, line) = lines[0];
+    assert_eq!((flying.stopped(), stopped.stopped()), (0, stopped_at), "a stopped ball carries the tick it stopped");
     let sent = [Some(line.last.at.to_vec()), Some(line.last.velocity.to_vec()), Some(line.muzzle.to_vec())];
     assert_eq!((stopped.age(), ends(stopped)), (6, sent), "a stopped ball's last segment, and where it left its gun");
     assert!(read.ships().is_none());
@@ -487,11 +518,12 @@ fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
 #[test]
 fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
     let orders = Orders {
-        helm: sailing::ship::Helm { steer: 0.5, crab: false, climb: -1 },
+        helm: sailing::ship::Helm { steer: 0.5, climb: -1 },
         aim: None,
         fire: true,
         brace: false,
         load: None,
+        boost: true,
     };
     assert_eq!(read_sea_input(&orders_bytes(&orders)), Ok(SeaInput::Orders(orders)));
     assert_eq!(read_sea_input(&course_bytes(&[[1.0, 2.0]], 5)), Ok(SeaInput::Course(vec![[1.0, 2.0]], 5)));
@@ -508,4 +540,40 @@ fn the_bytes_for_the_clients_test_are_written() {
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
+}
+
+#[test]
+fn a_fighter_built_on_another_sends_only_the_numbers_that_changed() {
+    let base = [1.0, 2.0, f64::NAN, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
+    let now = [1.0, 2.5, f64::NAN, 4.0, 5.0, 6.0, 7.0, 8.0, -9.0];
+    let (numbers, bits) = crate::land::changed_since(&now, &base);
+    assert_eq!((numbers, bits), (vec![2.5, -9.0], vec![0b0000_0010, 0b0000_0001]), "a NaN that stays is no change");
+    let (all, every) = crate::land::changed_since(&now, &base[..3]);
+    assert_eq!((all.len(), every), (9, vec![0xff, 0x01]), "a base of another length changes every number");
+}
+
+/// An input whose earlier inputs are one table written once and pointed at again and again: small on the wire, yet a
+/// reader that followed every pointer would read it thousands of times.
+fn aliased_input(times: usize) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let mut heavy = input(1, Controls::default());
+    heavy.shown.anim = "a".repeat(2_500);
+    let once = input_offset(&mut builder, &heavy, None);
+    let again = builder.create_vector(&vec![once; times]);
+    let top = input_offset(&mut builder, &input(2, Controls::default()), Some(again));
+    builder.finish(top, None);
+    builder.finished_data().to_vec()
+}
+
+#[test]
+fn an_input_pointing_at_one_earlier_input_again_and_again_is_refused_before_it_is_read_through() {
+    let bytes = aliased_input(900);
+    assert!(bytes.len() < 8_192, "it fits a message: {} bytes", bytes.len());
+    for read in [read_inputs(&bytes).map(|_| ()), read_input(&bytes).map(|_| ())] {
+        let refused = read.expect_err("refused");
+        assert!(!refused.contains("earlier inputs, more than"), "the verifier stops it first: {refused}");
+    }
+    // As many as an input may carry, written once each, still read.
+    let earlier: Vec<Input> = (1..=8).map(|sequence| input(sequence, Controls::default())).collect();
+    assert_eq!(read_inputs(&inputs_bytes(&input(9, Controls::default()), &earlier)).expect("read").len(), 9);
 }

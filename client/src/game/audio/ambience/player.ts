@@ -16,6 +16,7 @@ import {
   moodOf,
   type Phase,
   swellAt,
+  walkedOn,
 } from './law.ts';
 import { type Lay, type Point3, cityPoint, placeCall, riverNear, shorePoints } from './places.ts';
 import { BED_LOUD, SOFTER_BEDS } from './recordings.ts';
@@ -212,9 +213,9 @@ export class ScapePlayer {
     this.recorded('step.wood', point, heard, shape);
   }
 
-  /** One of the sea fight's sounds where it happens (seaFight.ts). */
-  fight(cue: string, point: Point3, heard: Heard): void {
-    this.recorded(cue, point, heard, { gain: 1, pitch: between(this.random, [0.95, 1.05]), near: FIGHT_NEAR_M });
+  /** One of the sea fight's sounds where it happens (seaFight.ts), `gain` times as loud. */
+  fight(cue: string, point: Point3, heard: Heard, gain = 1): void {
+    this.recorded(cue, point, heard, { gain, pitch: between(this.random, [0.95, 1.05]), near: FIGHT_NEAR_M });
   }
 
   /** A bed's recording given its gain by its law, and placed where it stands: silent where there is no such place near. */
@@ -379,7 +380,7 @@ export class ScapePlayer {
         this.walked.set(person.id, { x: person.x, y: person.y, since: 0 });
         continue;
       }
-      kept.since += Math.hypot(person.x - kept.x, person.y - kept.y);
+      kept.since = walkedOn(kept.since, Math.hypot(person.x - kept.x, person.y - kept.y));
       [kept.x, kept.y] = [person.x, person.y];
       if (kept.since < STRIDE_M) continue;
       kept.since -= STRIDE_M;

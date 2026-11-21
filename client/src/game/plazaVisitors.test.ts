@@ -4,8 +4,8 @@ import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
 import { KEEPERS } from './keepers.ts';
 import { PlazaLife } from './plazaLife.ts';
-import { WALKERS, awayFromCounters } from './townsfolk.ts';
-import { SOCIAL, STATIONS } from './welcome/plazaForTests.ts';
+import { awayFromCounters } from './townsfolk.ts';
+import { POSTS, SOCIAL, STATIONS } from './welcome/plazaForTests.ts';
 
 test('Shape is placed at his week’s spot while the room says he is here, and Maren’s counter empties while she walks', () => {
   const placed: Placed[] = [];
@@ -24,7 +24,8 @@ test('Shape is placed at his week’s spot while the room says he is here, and M
   const life = new PlazaLife({ ...SOCIAL, visitorSpots }, others, () => 30);
   const here = { shape: { place: 1, wares: [] } } as unknown as GearState;
   life.frame(0.25, here);
-  assert.equal(placed.length, STATIONS.length + WALKERS + 1);
+  const townsfolk = POSTS.filter((post) => post.keep === 'kept').length + 1 + 14;
+  assert.equal(placed.length, STATIONS.length + townsfolk + 1);
   const shape = placed.find((figure) => figure.dress === KEEPERS.shape.dress);
   assert.deepEqual([shape?.x, shape?.y, shape?.anim], [1045, 2002.5, 'idle']);
   life.frame(0.25, { ...here, shape: null });

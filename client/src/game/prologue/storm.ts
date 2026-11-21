@@ -24,17 +24,20 @@ const RUN_S = 20;
 const OVER_DECK_S = 12.5;
 
 /** The run in the Brig's own frame (metres to its bow, to its starboard, up from its waterline), so it keeps with
- *  it as it sails: low over the swell astern and to port, up along its port side, over its deck aft to its helm,
- *  where it ends on the creation's own shot for a view `aspect` wide to its height. */
-function runKeys(aspect: number): RailKey[] {
+ *  it as it sails: low over the swell astern and to port, then well out from its port side, bow to quarter, its
+ *  crew at work across the deck, and in over its quarter's rail under the spanker's boom to its helm, where it ends
+ *  on the creation's own shot for a view `aspect` wide to its height. Its yards reach 6.5 m out each side and its
+ *  spanker swings some 8 m out over its quarter, so the run keeps 16 m out until it comes in under the boom (5.9 m
+ *  up), at the quarter's height. */
+export function runKeys(aspect: number): RailKey[] {
   const creation = creationEye(0, aspect);
   return [
     { at: 0, eye: [-420, -260, 22], look: [0, 0, 6] },
     { at: 6, eye: [-150, -90, 14], look: [0, 0, 8] },
-    { at: 9.5, eye: [-30, -24, 9], look: [8, 0, 6] },
-    { at: OVER_DECK_S, eye: [14, -9, 8], look: [16, 0, 3] },
-    { at: 15, eye: [4, -5.5, 7.5], look: [-4, 1, 3] },
-    { at: 17.5, eye: [-7, -4.5, 6.8], look: [-11, 0, 4] },
+    { at: 9.5, eye: [-34, -40, 12], look: [0, 0, 7] },
+    { at: OVER_DECK_S, eye: [18, -24, 11], look: [2, 0, 6] },
+    { at: 15, eye: [-4, -18, 8.5], look: [-6, 0, 5] },
+    { at: 17.5, eye: [-11.5, -10, 5.3], look: [-9.5, 0, 4.6] },
     // It ends in the creation's own lens, so the helm takes the shot up without a jump.
     { at: RUN_S, eye: creation.eye, look: creation.look, fov: CREATION_LENS.fov },
   ];

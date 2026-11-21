@@ -142,3 +142,10 @@ export function nearness(distance: number, full: number, none: number): number {
   const share = Math.max(0, Math.min(1, (none - distance) / (none - full)));
   return share * share * (3 - 2 * share);
 }
+
+/** Feet moved farther than this in a frame, metres, were set down elsewhere rather than walked. */
+export const STRIDE_MOST_M = 2;
+
+/** How far feet have walked since their last step, `moved` more this frame: what they were set down by (a moved clock,
+ *  a hidden page, a spawn) counts for nothing, so it never makes a run of steps. */
+export const walkedOn = (since: number, moved: number): number => since + (moved <= STRIDE_MOST_M ? moved : 0);

@@ -178,4 +178,3 @@ export const keeperMarkSvg = (kind: string): string => {
 export const shapesSvg = (): string => markSvg(SHAPES_GLYPH, SHAPES);
 /** A barding's mark, for a row that names the barding beside it: the gains feed's. */
 export const bardingSvg = (): string => markSvg(BARDING, BRASS);
-export const svgUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`;

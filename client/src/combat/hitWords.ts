@@ -4,10 +4,13 @@
 // staggered, or a wind-up held through it) rides on its number. Blows on one foe in quick succession add into one
 // rising total. A number stands where the blow met the body, thrown to the side the stroke travelled, kept clear of
 // every plate drawn and of the other words, so a crowd of numbers never piles into one.
+import { GLOW_RAMPS, type Rgb } from '../elementGlow.ts';
 import { motionReduced } from '../plus/kit.ts';
 import type { FightEvent } from '../network/messages.ts';
+import { ELEMENTS } from '../player/gear.ts';
+import type { Node } from '../ui/node.ts';
+import { baselineRise } from './barDraw.ts';
 import { EVENT, type Tone, wordOf } from './cues.ts';
-import { element } from '../plus/meter.ts';
 
 /** How long a word stands, in frames at 60 a second: a crit's and a kill's longer. */
 export const WORD_FRAMES = { plain: 57, loud: 72 } as const;
@@ -131,9 +134,6 @@ export function placeWord(want: Box, plates: readonly Box[], placed: readonly Bo
 
 /** A word on the display: over a place in the world, or (null) at the player's own spot in first person. */
 interface Word {
-  readonly element: HTMLElement;
-  readonly rise: HTMLElement;
-  readonly number: HTMLElement;
   readonly at: readonly [number, number, number] | null;
   readonly line: number;
   readonly side: number;
@@ -141,22 +141,46 @@ interface Word {
   /** How far it has been pushed down to clear the plates, which it never rises back from while it shows. */
   drop: number;
   readonly key: string | null;
-  readonly stamps: Set<string>;
+  /** The element a shield that took it stands in (the gear crate's number). */
+  readonly shield: number | null;
   said: Said;
   life: number;
   frames: number;
+  /** Where it stands this frame (its box's middle across and its top, CSS pixels), how much larger, and whether it
+   *  shows. */
+  pose: { readonly x: number; readonly y: number; readonly scale: number; readonly shown: boolean } | null;
 }
 
 type Project = (point: readonly [number, number, number]) => { readonly x: number; readonly y: number } | null;
 
+/** The colour of a word's number: an element's own light on the player's blow that burnt in it, a crit's or a kill's
+ *  gold (a blow taken's red), else its tone's; a shield's in its element's colour. */
+const TONE_COLOURS: Readonly<Record<Tone, string>> = {
+  dealt: '#f2f2f2',
+  taken: '#ff7468',
+  great: '#ffd95a',
+  good: '#ffd95a',
+  plain: '#bfc8d2',
+  warn: '#ffffff',
+  shield: '#f2efe6',
+  healed: '#7ee06a',
+};
+const STAMP_GOLD = '#ffd95a';
+const cssOf = ([red, green, blue]: Rgb) =>
+  `rgb(${Math.round(red * 255)}, ${Math.round(green * 255)}, ${Math.round(blue * 255)})`;
+
+function numberColour(word: Word): string {
+  const { said } = word;
+  const glow = said.tone === 'dealt' && said.element ? GLOW_RAMPS[said.element as 1 | 2 | 3]?.[2] : undefined;
+  if (glow) return cssOf(glow);
+  if (said.crit || said.killed) return said.tone === 'taken' ? TONE_COLOURS.taken : STAMP_GOLD;
+  if (said.tone === 'shield' && word.shield !== null) return ELEMENTS[word.shield]?.colour ?? TONE_COLOURS.shield;
+  return TONE_COLOURS[said.tone];
+}
+
 /** The words standing on the display. */
 export class Words {
-  private readonly over: HTMLElement;
   private words: Word[] = [];
-
-  constructor(over: HTMLElement) {
-    this.over = over;
-  }
 
   /** Says `said` over `place` (null for the player's own spot), thrown to `side` (-1 left, 1 right, 0 neither) and
    *  scattered beside that by `scatter` (0 to 1); a shield's word in its `shield`'s colour (the gear crate's number).
@@ -174,52 +198,42 @@ export class Words {
       const { crit = false, killed = false } = young.said;
       const amount = young.said.amount + said.amount;
       young.said = { ...young.said, amount, crit: crit || !!said.crit, killed: killed || !!said.killed };
-      young.number.textContent = textOf(young.said);
-      this.stamp(young);
       [young.frames, young.life] = [0, lifeOf(young.said)];
       return;
     }
-    const made = element('div', `word ${said.tone}`, this.over);
-    if (said.shield !== undefined) made.dataset['element'] = String(said.shield);
-    if (said.element) made.dataset['glow'] = String(said.element);
-    const rise = element('span', 'rise', made);
-    const number = element('span', 'number', rise, textOf(said));
-    for (const tag of said.tags) element('small', 'tag', rise, tag);
     const line = place ? 0 : this.words.filter((word) => !word.at).length;
     const across = place ? Math.round((scatter * 2 - 1) * WORD_SCATTER_PX) : 0;
     const full: Said = { defender: -1, ...said };
-    const word: Word = {
-      element: made,
-      rise,
-      number,
+    this.words.push({
       at: place,
       line,
       side: place ? side : 0,
       across,
       key,
-      stamps: new Set(),
+      shield: said.shield ?? null,
       said: full,
-      life: 0,
+      life: lifeOf(full),
       frames: 0,
       drop: 0,
-    };
-    this.stamp(word);
-    word.life = lifeOf(full);
-    this.words.push(word);
+      pose: null,
+    });
   }
 
-  /** Stamps a crit's word and a kill's beside its number, larger and in gold. */
-  private stamp(word: Word): void {
-    const { crit = false, killed = false } = word.said;
-    word.element.classList.toggle('loud', crit || killed);
-    for (const [name, wanted] of [
-      [CRIT_WORD, crit],
-      [SLAIN, killed],
-    ] as const) {
-      if (!wanted || word.stamps.has(name)) continue;
-      word.stamps.add(name);
-      element('b', 'stamp', word.rise, name);
-    }
+  /** The words standing: what each says, and where it stood this frame (its middle across and its top). */
+  get standing(): readonly {
+    readonly text: string;
+    readonly stamps: readonly string[];
+    readonly tags: readonly string[];
+    readonly x: number | null;
+    readonly y: number | null;
+  }[] {
+    return this.words.map((word) => ({
+      text: textOf(word.said),
+      stamps: stampsOf(word.said),
+      tags: word.said.tags,
+      x: word.pose?.x ?? null,
+      y: word.pose?.y ?? null,
+    }));
   }
 
   /** Moves each word to where `project` puts its place on a display `width` by `height`, `seconds` on, clear of
@@ -232,10 +246,7 @@ export class Words {
       const frame = Math.floor(word.frames + 1e-6);
       const ownSpot = { x: width / 2, y: height / 2 + OWN_WORD_BELOW + word.line * OWN_WORD_LINE };
       const spot = word.at ? project(word.at) : ownSpot;
-      if (frame >= word.life || !spot) {
-        word.element.remove();
-        return false;
-      }
+      if (frame >= word.life || !spot) return false;
       const pose = wordPose(frame, word.life, still);
       const [half, size] = [widthOf(word) / 2, sizeOf(word.said)];
       // Its near edge stands its throw from the blow, so the blow itself stays clear; a crit's or a kill's twice as far.
@@ -250,17 +261,57 @@ export class Words {
       const box = word.at ? placeWord(lowered, plates, placed) : want;
       if (word.at) word.drop = box.top - inside.top;
       placed.push(box);
-      const scaled = pose.scale === 1 ? '' : ` scale(${pose.scale})`;
-      const across = (box.left + box.right) / 2;
-      word.element.style.transform = `translate(${across.toFixed(1)}px, ${box.top.toFixed(1)}px)${scaled}`;
-      word.element.style.visibility = pose.shown ? '' : 'hidden';
+      word.pose = { x: (box.left + box.right) / 2, y: box.top, scale: pose.scale, shown: pose.shown };
       return true;
+    });
+  }
+
+  /** The words as they stand: each its number in the game's face, outlined hard, with the small words on it and its
+   *  stamps beside it in gold, grown about its middle while it pops. */
+  nodes(): Node[] {
+    return this.words.flatMap((word) => {
+      const pose = word.pose;
+      if (!pose?.shown) return [];
+      const { said } = word;
+      const loud = !!(said.crit || said.killed);
+      const warn = said.tone === 'warn';
+      const grow = pose.scale;
+      const outline = (width: number) =>
+        warn ? {} : { edge: 'halo' as const, edgeColour: '#000000', edgeWidth: width };
+      const size = (loud ? 3 : 2) * grow;
+      const small = (words: string, step: number): Node => ({
+        text: { words: words.toUpperCase(), size: step * grow, colour: STAMP_GOLD, wrap: false, ...outline(2) },
+        offset: [0, -Math.round(baselineRise(step * grow, size))],
+      });
+      // Its middle where a line as tall as its letters would stand, so its rise is the letters' own.
+      const tall = (loud ? 3 : 2) * 11 + (warn ? 8 : 0);
+      return [
+        {
+          direction: 'row',
+          alignY: 'end',
+          gap: 6 * grow,
+          // A warning on red inside a white edge 2 px deep, its words 2 px in from that.
+          ...(warn ? { padding: [4, 8] as const, fill: '#a0140c', outline: { width: 2, colour: '#ffffff' } } : {}),
+          float: { to: 'screen', anchor: [0.5, 0.5], x: pose.x, y: pose.y + tall / 2, z: 1 },
+          children: [
+            { text: { words: textOf(said), size, colour: numberColour(word), wrap: false, ...outline(loud ? 3 : 2) } },
+            ...said.tags.map((tag) => small(tag, 1)),
+            ...stampsOf(said).map((stamp) => small(stamp, 2)),
+          ],
+        } satisfies Node,
+      ];
     });
   }
 }
 
+/** The stamps beside a crit's number and a kill's. */
+const stampsOf = (said: Partial<Said>): string[] => [
+  ...(said.crit ? [CRIT_WORD] : []),
+  ...(said.killed ? [SLAIN] : []),
+];
+
 /** A word's text: a number's total, after the word before it. */
-const textOf = (said: Pick<Said, 'text'> & Partial<Said>): string =>
+export const textOf = (said: Pick<Said, 'text'> & Partial<Said>): string =>
   said.amount === undefined ? said.text : said.before ? `${said.before} ${said.amount}` : String(said.amount);
 const lifeOf = (said: Partial<Said>): number => (said.crit || said.killed ? WORD_FRAMES.loud : WORD_FRAMES.plain);
 const sizeOf = (said: Partial<Said>): number => (said.crit || said.killed ? WORD_PX.loud : WORD_PX.word);

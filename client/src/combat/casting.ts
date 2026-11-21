@@ -20,8 +20,9 @@ export const DAGGERS = 1;
  *  another Art worn; past this long (seconds) the keys open again all the same, as a cast the room let fall sends no
  *  word. */
 export const CAST_LOCKOUT_MOST_S = 2;
-/** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down, dead. */
-export const UNABLE: ReadonlySet<string> = new Set(['staggered', 'down', 'dead']);
+/** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down,
+ *  drinking, dead. */
+export const UNABLE: ReadonlySet<string> = new Set(['staggered', 'down', 'drink', 'dead']);
 
 /** Dusk Daggers aimed: the middle of the ring where they will whirl, its radius, and its Art's element. */
 export interface AimRing {
@@ -145,6 +146,11 @@ export class CastKeys {
     }
     this.sent = { art: art.id, ability, seconds: 0 };
     return { cast: { spell, aim: null }, ring: null };
+  }
+
+  /** Whether a cast is under way: sent and not yet answered, or Dusk Daggers aimed. A drink waits for it. */
+  get waiting(): boolean {
+    return this.sent !== null || this.aiming;
   }
 
   /** Runs the wait after a cast on by `seconds`, and ends it once the room's word shows the cast spent (its ability's

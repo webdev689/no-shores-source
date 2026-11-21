@@ -72,6 +72,7 @@ test('a guard by what holds it, a parry, a guard broken, a kill and its finisher
   assert.deepEqual(cuesOf({ kind: EVENT.shielded }), ['shield.hit']);
   assert.deepEqual(cuesOf({ kind: EVENT.shieldBroken }), ['shield.break']);
   assert.deepEqual(cuesOf({ kind: EVENT.dodged }), [], 'a dodge is heard as its roll');
+  assert.deepEqual(cuesOf({ kind: EVENT.healed }), ['respawn'], 'a drink’s heal sounds as standing again whole');
   assert.ok(eventCues(event({ kind: EVENT.parried }), { striker: 0, defender: 0, look: 0 })[0]?.at === 'defender');
 });
 

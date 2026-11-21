@@ -355,9 +355,9 @@ impl Fleet {
     }
 }
 
-/// A player's helm standing for a tick: no rudder, no rung, no fire, no brace, no look.
+/// A player's helm standing for a tick: no rudder, no rung, no fire, no brace, no look, no burst.
 pub const STANDING: Orders =
-    Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: false, load: None };
+    Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: false, load: None, boost: false };
 
 #[cfg(test)]
 #[path = "fleet_tests.rs"]

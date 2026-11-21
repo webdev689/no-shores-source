@@ -31,8 +31,10 @@ export const CHUNK_CELLS = 4;
  *  chunk's bounds. */
 const TALLEST_M = 60;
 const OVERHANG_M = 20;
+/** The materials laid as ground, whose pieces join as one surface: a walk's flagstones, a lawn, trodden earth. */
+const GROUNDS: ReadonlySet<Solid['material']> = new Set(['path', 'lawn', 'earth']);
 /** A retaining wall's thickness, as the planner lays it. */
-const RETAINING_THICK_M = 1.5;
+const RETAINING_THICK_M = 1.2;
 /** How far a decal stands over the ground it is laid on, so the land's own triangles never show through it. */
 const DECAL_LIFT_M = 0.04;
 const TERRACE_WALL_M = 16;
@@ -222,14 +224,16 @@ export function buildCity(
     -Infinity,
   ]);
   const solids: Solid[] = [...plan.landmark, ...plan.works, ...plan.social.solids, ...heaps];
+  const onRamp = rampWall(plan);
   for (const solid of solids) {
     const chunk = chunkOf(
       Math.floor((solid.at[0] - plan.grid.west) / CELL_M),
       Math.floor((solid.at[1] - plan.grid.north) / CELL_M),
     );
-    const layer = retaining(solid) ? book.terrace : book.materials[solid.material];
+    const layer = retaining(solid) || onRamp(solid) ? book.terrace : book.materials[solid.material];
     const picture = book.pictures[layer] ?? { width: 64, height: 64 };
-    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height }, chunkMeshes[chunk]);
+    const grounded = GROUNDS.has(solid.material);
+    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height, grounded }, chunkMeshes[chunk]);
     const reach = solidReach(solid);
     const [east, south] = [solid.at[0] - origin[0], solid.at[1] - origin[1]];
     const box = solidBoxes[chunk];
@@ -326,19 +330,33 @@ export function buildCity(
   };
 }
 
-/** Whether a solid is a terrace's retaining wall: a stone block a cell long and 1.2 m thick, square to the grid, as
- *  the planner lays one along a terrace's edge, no taller than a terrace steps. The landmark's platform, far taller,
- *  keeps the city's stone. */
+/** Whether a solid is a terrace's retaining wall: a stone block a cell long (or a length of one a ramp cuts) and
+ *  1.2 m thick, square to the grid, as the planner lays one along a terrace's edge, no taller than a terrace steps.
+ *  The landmark's platform, far taller, keeps the city's stone. */
 export function retaining(solid: Solid): boolean {
   const [long, thick] = [Math.max(solid.size[0], solid.size[1]), Math.min(solid.size[0], solid.size[1])];
   return (
     solid.shape === 'block' &&
     solid.material === 'stone' &&
     solid.turn === 0 &&
-    Math.abs(long - CELL_M) < 0.01 &&
-    thick <= RETAINING_THICK_M &&
+    solid.lean === 0 &&
+    long < CELL_M + 0.01 &&
+    Math.abs(thick - RETAINING_THICK_M) < 0.01 &&
     solid.size[2] <= TERRACE_WALL_M
   );
+}
+
+/** Whether a solid is one of a ramp's walls, which wear the terrace walls' picture: a stone block standing on a
+ *  ramp's or a switchback's pad, as the planner stands every wall of theirs. */
+export function rampWall(plan: CityPlan): (solid: Solid) => boolean {
+  const ramps = plan.ramps ?? [];
+  return (solid) =>
+    solid.shape === 'block' &&
+    solid.material === 'stone' &&
+    ramps.some(
+      ({ bounds: [west, north, east, south] }) =>
+        solid.at[0] > west && solid.at[0] < east && solid.at[1] > north && solid.at[1] < south,
+    );
 }
 
 /** Every building's masses (for the middle distance) and hull (for far off), grouped by chunk: all the masses in

@@ -21,7 +21,7 @@ const EYE_M = 1.45;
 /** The figure the camera keeps whole: its height and breadth with a margin (sword and shield held out), how far its
  *  nearest part stands before its feet, and the height of its middle. */
 const FIGURE = { tall: 2.4, broad: 1.7, depth: 0.6, middle: 0.95 } as const;
-/** Where the figure stands, clear of the creation window (creation.css): on a screen wider than tall the window has
+/** Where the figure stands, clear of the creation window (creation.ts): on a screen wider than tall the window has
  *  the right from 49% across, so the figure keeps the left 46%; on one taller than wide the window has the bottom
  *  from 54% down, so the figure keeps the top 51%. Each is a box of the view's -1..1 across and up. */
 const CLEAR = {

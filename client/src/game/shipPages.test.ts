@@ -1,21 +1,216 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { findAll, onFakePage } from '../combat/page.test.ts';
-import type { GearState } from '../network/gearMessages.ts';
-import type { PageContext } from './characterPage.ts';
-import { musterAt } from './shipPages.ts';
+import type { GearAsk, GearItem, GearOfficer, GearShip, GearState } from '../network/gearMessages.ts';
+import type { Node } from '../ui/node.ts';
+import { fakeInterface } from '../ui/uiForTests.ts';
+import type { UiEvent } from '../ui/ui.ts';
+import { Holds } from './gearHold.ts';
+import { sizesOf } from './gearNodes.ts';
+import { sampleItem } from './gearShots.ts';
+import type { MenuContext } from './menuPage.ts';
+import { harbourPage, musterAt, shipTab } from './shipPages.ts';
+import { stationTitle } from './stationView.ts';
 
-/** A page's context for a player pledged to `pledge` (0 none), with no officer offered today. */
-const pledged = (pledge: number): PageContext =>
-  ({ gear: { aurem: 0, ship: { pledge, offers: [] } } as unknown as GearState }) as unknown as PageContext;
+const officer = (fields: Partial<GearOfficer>): GearOfficer => ({
+  id: 4,
+  post: 1,
+  grade: 2,
+  given: 0,
+  family: 1,
+  duty: 1,
+  level: 3,
+  toNext: 0.4,
+  trained: 500,
+  trainedMost: 2_000,
+  strength: 0.5,
+  bought: 1,
+  chosen: [0],
+  columns: [{ kind: 3, traits: ['gun_captain', 'layer'], xp: 400, aurem: 900, fragments: 0, essence: 2, resource: 0 }],
+  wage: 0,
+  ...fields,
+});
 
-test('the muster stands only on the screen of the faction pledged to', () =>
-  onFakePage((root) => {
-    assert.deepEqual(musterAt(pledged(0), 2), [], 'no pledge, no muster');
-    assert.deepEqual(musterAt(pledged(2), 3), [], "another faction's screen");
-    assert.deepEqual(musterAt(pledged(2), undefined), [], 'a keeper of no faction');
-    const [muster] = musterAt(pledged(2), 2);
-    assert.ok(muster, "the Lamplighters' screen, pledged to them");
-    root.append(muster);
-    assert.equal(findAll(root, 'ship-muster').length, 1);
-  }));
+const ship = (fields: Partial<GearShip> = {}): GearShip => ({
+  xp: 0n,
+  level: 4,
+  prestige: 9,
+  attack: 100,
+  defense: 60,
+  toNext: 0.35,
+  toNextNeeds: 1_200,
+  stocks: [140, 62, 31, 3],
+  hands: 18,
+  handsMost: 24,
+  officers: [officer({})],
+  offers: [officer({ id: 7, post: 4, wage: 1_500 }), officer({ id: 8, post: 3, wage: 16_000 })],
+  trim: [],
+  pledge: 2,
+  ...fields,
+});
+
+/** Guns fitted, the Sails carried, and the Shipwright's six modules for sale after the smiths' twelve wares. */
+const gear = (fields: Partial<GearState> = {}): GearState =>
+  ({
+    aurem: 12_480,
+    items: [
+      sampleItem({ id: 20, kind: 24, rarity: 2, level: 3, at: 9, bucket: 7, attack: 48 }),
+      sampleItem({ id: 23, kind: 26, rarity: 3, level: 5, at: 0, bucket: 9, prestige: 6 }),
+    ],
+    wares: [
+      ...Array.from({ length: 12 }, (unused, place) => sampleItem({ id: 100 + place, kind: 13, price: 500 })),
+      ...[24, 25, 26, 27, 24, 26].map((kind, place) =>
+        sampleItem({ id: 120 + place, kind, level: 2 + place, price: place === 5 ? 13_400 : 2_400 }),
+      ),
+    ],
+    ship: ship(),
+    ...fields,
+  }) as GearState;
+
+/** A page drawn frame by frame with the clock `now` for its holds; every ask it made, and each item it opened. */
+function drawn(state: GearState, page: (context: MenuContext) => Node) {
+  let now = 0;
+  const { ui, step } = fakeInterface();
+  const holds = new Holds(() => now);
+  const asked: GearAsk[] = [];
+  const opened: GearItem[] = [];
+  const context: MenuContext = {
+    ui,
+    gear: state,
+    ask: (ask) => asked.push(ask),
+    picture: () => null,
+    figure: null,
+    room: { width: 1180, height: 520 },
+    sizes: sizesOf(1280, 720, 1),
+    holds,
+    card: () => undefined,
+    inspect: (item) => opened.push(item),
+    details: () => undefined,
+    atVault: false,
+    forge: null,
+    dress: null,
+  };
+  let words: string[] = [];
+  const frame = (events: UiEvent[] = [], spent = 16) => {
+    now += spent;
+    step(() => {
+      holds.frame(ui);
+      const root = page(context);
+      holds.end();
+      words = wordsOf(root);
+      return { width: 'grow', height: 'grow', direction: 'column', children: [root] };
+    }, events);
+  };
+  const middle = (id: string) => {
+    const box = ui.boxOf(id);
+    assert.ok(box, `${id} is laid`);
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  };
+  const click = (id: string) => {
+    const point = middle(id);
+    frame([
+      { kind: 'pointer', ...point },
+      { kind: 'down', ...point, button: 0 },
+      { kind: 'up', ...point, button: 0 },
+    ]);
+    frame();
+  };
+  /** Held down for `held` milliseconds, then let go. */
+  const hold = (id: string, held: number) => {
+    const point = middle(id);
+    frame([
+      { kind: 'pointer', ...point },
+      { kind: 'down', ...point, button: 0 },
+    ]);
+    for (let spent = 0; spent < held; spent += 100) frame([], 100);
+    frame([{ kind: 'up', ...point, button: 0 }]);
+  };
+  frame();
+  frame();
+  return { ui, asked, opened, frame, click, hold, shows: () => words.join(' | ') };
+}
+
+function wordsOf(node: Node | null | false | undefined | ''): string[] {
+  if (!node) return [];
+  const own = node.text && typeof node.text.words === 'string' ? [node.text.words] : [];
+  return [...own, ...(node.children ?? []).flatMap((child) => wordsOf(child))];
+}
+
+const PAPERS = { title: 'Your Sloop', parts: [{ heading: 'Vessel', rows: [['Hull', '96 / 120']] as const }] };
+
+test('Manage shows its papers with its materials and hands, its power and its modules; a module opens its page', () => {
+  let part = 'manage';
+  const page = drawn(gear(), (context) => shipTab(context, PAPERS, [part, null], (chosen) => (part = chosen)));
+  const shown = page.shows();
+  assert.match(shown, /Your Sloop \| VESSEL \| Hull \| 96 \/ 120 \| MATERIALS \| 140 \| Timber/);
+  assert.match(shown, /CREW \| Hands aboard \| 18 \/ 24/);
+  assert.match(shown, /SHIP LEVEL \| 4 \| Attack \| 100 \| Defense \| 60 \| Prestige \| 9/);
+  assert.match(shown, /Sea fights carry your ship to level 5/);
+  assert.match(shown, /FITTED .*Level 3 \| 48 Attack \| Hull \| None fitted/);
+  assert.match(shown, /CARRIED .*Level 5 \| 6 Prestige/);
+  page.click('item-20');
+  assert.deepEqual(
+    page.opened.map((item) => item.id),
+    [20],
+    'a fitted module opens its page',
+  );
+  page.click('ship-crew');
+  assert.equal(part, 'crew', 'the Crew press shows the crew');
+});
+
+test('without the room’s word on the ship, Manage shows its papers alone', () => {
+  const page = drawn(gear({ ship: null }), (context) => shipTab(context, PAPERS, ['manage', null], () => undefined));
+  assert.match(page.shows(), /Your Sloop \| VESSEL/);
+  assert.doesNotMatch(page.shows(), /SHIP LEVEL|MATERIALS/);
+});
+
+test('an officer’s duty is a click, their page a press, and paying them off is held', () => {
+  let open: number | null = null;
+  const page = drawn(gear(), (context) => shipTab(context, PAPERS, ['crew', open], (part, chosen) => (open = chosen)));
+  assert.match(page.shows(), /Gunner · Seasoned · level 3 · at post \| At post \| Ashore \| Aboard \| Nodes/);
+  page.click('duty-4-2');
+  assert.deepEqual(page.asked, [{ kind: 59, item: 4, slot: 2 }], 'sent ashore');
+  page.click('dismiss-4');
+  assert.equal(page.asked.length, 1, 'a click pays no one off');
+  page.hold('dismiss-4', 900);
+  assert.deepEqual(page.asked[1], { kind: 60, item: 4 }, 'held, they are paid off');
+  page.click('officer-4');
+  assert.equal(open, 4);
+  page.frame();
+  assert.match(page.shows(), /PERKS \| Gun Captain/);
+  assert.ok(page.ui.boxOf('node-0-0'), 'their node grid is laid');
+});
+
+test('with no officers, the crew says where they sign on', () => {
+  const page = drawn(gear({ ship: ship({ officers: [] }) }), (context) =>
+    shipTab(context, PAPERS, ['crew', null], () => undefined),
+  );
+  assert.equal(page.shows(), "MANAGE | CREW | No officers yet. Sign them on at your faction's counter.");
+});
+
+test('the muster stands only on the screen of the faction pledged to, and signs on only what can be paid', () => {
+  const muster = (pledge: number, faction: number | undefined) =>
+    drawn(gear({ ship: ship({ pledge }) }), (context) => ({ children: musterAt(context, faction) }));
+  assert.equal(muster(0, 2).shows(), '', 'no pledge, no muster');
+  assert.equal(muster(2, 3).shows(), '', "another faction's screen");
+  assert.equal(muster(2, undefined).shows(), '', 'a keeper of no faction');
+  const page = muster(2, 2);
+  assert.match(page.shows(), /THE MUSTER .*1,500 \| Hold to sign on .*16,000 \| Not enough Aurem \| Hold to sign on/);
+  page.hold('recruit-8', 900);
+  assert.deepEqual(page.asked, [], 'one not paid for is never signed on');
+  page.hold('recruit-7', 900);
+  assert.deepEqual(page.asked, [{ kind: 58, column: 2, node: 7 }]);
+});
+
+test('the Harbourmaster sells the Shipwright’s modules, each held to buy, and none the player cannot pay for', () => {
+  const page = drawn(gear(), (context) => harbourPage(context));
+  assert.match(page.shows(), /Guns \| Normal Guns · level 2 \| .*2,400/);
+  assert.match(page.shows(), /13,400 \| Not enough Aurem/);
+  page.click('buy-12');
+  assert.deepEqual(page.asked, [], 'a click buys nothing');
+  page.hold('buy-12', 900);
+  assert.equal(page.asked.length, 1, 'held, it is bought');
+  page.hold('buy-17', 900);
+  assert.equal(page.asked.length, 1, 'one not paid for is never bought');
+  assert.equal(stationTitle('harbourmaster'), 'The Harbourmaster');
+  assert.equal(stationTitle('lamplighters'), 'Lamplighters');
+});

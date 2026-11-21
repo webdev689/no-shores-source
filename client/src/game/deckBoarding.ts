@@ -17,7 +17,7 @@ import {
   type StandOnDeck,
 } from './deckFight.ts';
 import type { FootContext, FootFrame } from './foot.ts';
-import type { Hint } from './gearDom.ts';
+import type { Hint } from './gearNodes.ts';
 import type { FootView } from './footView.ts';
 import type { Drawer } from './scene.ts';
 

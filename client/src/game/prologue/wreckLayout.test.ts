@@ -34,7 +34,7 @@ test("the wreck's ground holds its pieces at their heights: the Brig's halves, t
   near(2.5, 15.0, 2.7, "the Frigate's waist");
   near(-20.0, 8.8, 2.8, "the wreckage off the Frigate's port bow");
   near(-1.6, 27.0, 1.0, "the Frigate's gun deck");
-  near(-13.0, 29.2, 1.8, 'the wreckage off her port quarter');
+  near(-13.0, 29.2, 1.8, 'the wreckage off its port quarter');
   near(2.0, 35.0, 3.3, "the Frigate's quarterdeck");
   // The Brig's waist on the side the Frigate struck fell into its hold: the sea under it.
   assert.equal(topAt(course, -21.6, -4.2), 0, "the Brig's fallen waist");
@@ -153,7 +153,7 @@ test('the zones follow the path, each checkpoint on the ground in its own zone, 
   );
   assert.ok(
     [...seen].some((type) => type >= 13 && type <= 17),
-    'and pirates, to fight each other',
+    'and pirates, boarding together',
   );
 });
 

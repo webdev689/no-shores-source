@@ -30,6 +30,17 @@ export function artPalette(element: number): readonly string[] {
 /** A map as an SVG picture in `element`'s colours, crisp at any whole size, each run of one colour along a row one
  *  rect; empty for no map. */
 export function mapSvg(rows: readonly string[] | undefined, element: number): string {
+  const kept = rows && drawnSvgs.get(rows)?.get(element);
+  if (kept !== undefined) return kept;
+  const svg = svgOf(rows, element);
+  if (rows) drawnSvgs.set(rows, (drawnSvgs.get(rows) ?? new Map()).set(element, svg));
+  return svg;
+}
+
+/** Each map's picture by its element, written once: the menu's screens ask for theirs every frame. */
+const drawnSvgs = new WeakMap<readonly string[], Map<number, string>>();
+
+function svgOf(rows: readonly string[] | undefined, element: number): string {
   const colours = artPalette(element);
   if (!rows || colours.length === 0) return '';
   const rects: string[] = [];

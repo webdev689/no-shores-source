@@ -37,10 +37,6 @@ const RECORDED: Partial<Record<Cue, string>> = {
   tab: 'ui.tab',
   close: 'ui.close',
 };
-/** What a press is: buttons and what acts like them. */
-const PRESSABLE = 'button, a[href], summary, select, [role="button"], [role="tab"], input[type="checkbox"]';
-/** What a tick is heard on, reached by the pointer. */
-const TICKED = `${PRESSABLE}, .gear-cell`;
 
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -336,38 +332,26 @@ export function charge(holdMs: number): () => void {
 }
 
 /** Hears every press and every control reached in `root`, and plays its tick or its press. */
-export function installInterfaceSounds(root: HTMLElement): void {
-  let gestureAt = -Infinity;
-  let keyed = false;
-  let over: Element | null = null;
-  addEventListener('pointerdown', () => ((gestureAt = performance.now()), (keyed = false), wake()), true);
-  addEventListener('keydown', () => ((keyed = true), wake()), true);
-  // After the press's own handlers, so a press that made its own sound makes no other.
-  addEventListener(
-    'click',
-    (event) => {
-      const target = event.target instanceof Element ? event.target.closest(PRESSABLE) : null;
-      if (!target || !root.contains(target) || target.matches(':disabled, [aria-disabled="true"]')) return;
-      const when = event.detail > 0 ? gestureAt : performance.now();
-      window.setTimeout(() => lastCueAt < when && play(target.getAttribute('role') === 'tab' ? 'tab' : 'press'), 0);
-    },
-    true,
-  );
-  // A control reached by a press or key that already sounded (a tab opened, a tab moved to) ticks no more.
-  const tick = (target: Element | null) => {
-    if (target === over) return;
-    over = target;
-    if (!target) return;
-    const now = performance.now();
-    if (now - Math.max(lastTickAt, lastCueAt) < TICK_MS || target.matches('.gear-vacant')) return;
-    lastTickAt = now;
-    play('hover');
-  };
-  root.addEventListener('pointerover', (event) => {
-    if (event.pointerType !== 'mouse') return;
-    tick(event.target instanceof Element ? event.target.closest(TICKED) : null);
-  });
-  root.addEventListener('focusin', (event) => {
-    if (keyed) tick(event.target instanceof Element ? event.target.closest(TICKED) : null);
-  });
+/** A drawn press let go that makes no press's sound: a hold, whose own charge is its sound. */
+export function quietPress(): void {
+  lastCueAt = performance.now();
+}
+
+/** A press the game draws, let go at `when` (`performance.now()`): it sounds, unless a sound of its own played since. */
+export function drawnPress(when: number): void {
+  if (lastCueAt < when) play('press');
+}
+
+/** A control the game draws, reached by the pointer or the keys: a tick, no oftener than a patter. */
+export function drawnReach(): void {
+  const now = performance.now();
+  if (now - Math.max(lastTickAt, lastCueAt) < TICK_MS) return;
+  lastTickAt = now;
+  play('hover');
+}
+
+/** Wakes the sounds at the player's every press or key (`wake`). */
+export function wakeOnGesture(): void {
+  addEventListener('pointerdown', () => wake(), true);
+  addEventListener('keydown', () => wake(), true);
 }

@@ -4,6 +4,7 @@ mod assets;
 mod comments;
 mod crates;
 mod dialogue;
+mod html;
 mod layers;
 mod layout;
 mod script_comments;
@@ -70,6 +71,10 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     problems.extend(size::check(&code));
     problems.extend(comments::check(&code));
     problems.extend(layers::check(&code));
+    problems.extend(html::check_scripts(&code));
+    let (pages, skipped) = repo.sources(html::is_page);
+    problems.extend(unreadable(&skipped));
+    problems.extend(html::check_pages(&pages, &repo.files));
     let sized: Vec<(String, u64)> =
         repo.files.iter().filter(|path| !kept_as_shipped(path)).map(|path| (path.clone(), repo.size(path))).collect();
     problems.extend(assets::check(&sized));

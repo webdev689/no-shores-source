@@ -2,7 +2,7 @@
 //! navmesh, walks back healing, heeds no one on its way but a blow, and stands idle in its place again, its group then
 //! walking its beat on; a foe with no post never does. A Boss or a Miniboss that leashes goes back to its first phase,
 //! its called foes falling; and a garrison foe whose search finds no one walks home as well, heeding what it sees on
-//! the way.
+//! the way. A blow on a foe walking home fills no healing meter.
 
 use super::beat::LAG;
 use super::garrison_tests::{called_by, into_its_last_phase, levelled, node, run, section, shoot, stand_player};
@@ -232,6 +232,25 @@ fn a_blow_on_a_garrison_foe_walking_back_brings_it_back_to_the_fight() {
     assert_eq!((room.foes[&first].brain.target(), alert(&room, first)), (Some(player), 2));
     run(&mut room, 60);
     assert_eq!(room.foes[&first].brain.target(), Some(player), "and fights on");
+}
+
+#[test]
+fn a_garrison_foe_shot_from_off_its_navmesh_as_it_walks_home_fills_no_healing_meter() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    let player = room.join().unwrap();
+    provoke(&mut room, player);
+    let first = group(&room)[0].0;
+    let off = point_at(&room, place_of(&room, first), LEASH - 10.0, false);
+    stand_player(&mut room, player, off);
+    run(&mut room, 1);
+    let found = room.players.get_mut(&player).unwrap();
+    (found.fighter.charges, found.fighter.meter) = (0, 0.0);
+    for _ in 0..20 {
+        assert!(room.foes[&first].brain.returning(), "it gives the fight up again at once");
+        shoot(&mut room, player, first, 1.0);
+    }
+    let fighter = room.players[&player].fighter;
+    assert_eq!((fighter.charges, fighter.meter), (0, 0.0), "no fight, no charge");
 }
 
 #[test]

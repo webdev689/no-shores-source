@@ -1,4 +1,13 @@
+import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
+import { FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS } from './fighters.ts';
 import { type Block, blockFloats } from './movementRules.ts';
+
+/** The address of the room's rules a page serves under `base`. It names the protocol, which hashes the fight's
+ *  layouts, so a cache never hands a new page an old `room.wasm`. */
+export const roomWasmAt = (base: string): string => `${base}room.wasm?v=${PROTOCOL}`;
+/** The room's rules fetched from `roomWasmAt`, asked of the server again each time (a "not modified" costs little), as
+ *  a change to the rules alone leaves the layouts and so the address as they were. */
+export const fetchRoomWasm = (base: string): Promise<Response> => fetch(roomWasmAt(base), { cache: 'no-cache' });
 
 /** A fired shot's numbers after a predicted fighter's: its weapon, where it left, its velocity. */
 const FIRED_FLOATS = 7;
@@ -71,7 +80,19 @@ interface FightExports {
   fighter_stroke_arc(stroke: number): number;
 }
 
-/** Starts the fight's rules from the compiled `room-wasm` module. */
+/** The page's own count of the numbers in a fighter, an intent and a glance (`fighters.ts`). */
+export const PAGE_SIZES: CombatSizes = { fighter: FIGHTER_FLOATS, intent: INTENT_FLOATS, glance: GLANCE_FLOATS };
+
+/** Refuses rules that count a fighter, an intent or a glance otherwise than the page: every number would be read in
+ *  the wrong place. */
+export function checkSizes(sizes: CombatSizes): void {
+  const { fighter, intent, glance } = PAGE_SIZES;
+  if (sizes.fighter !== fighter || sizes.intent !== intent || sizes.glance !== glance)
+    throw new Error("the game's rules are from another version than this page. Reload the page");
+}
+
+/** Starts the fight's rules from the compiled `room-wasm` module; refused, with a word why, if they are not the
+ *  page's own. */
 export function startCombatRules(module: WebAssembly.Module): CombatRules {
   const exports = new WebAssembly.Instance(module, {}).exports as unknown as FightExports;
   const lend = <T>(bytes: Uint8Array, use: (address: number) => T): T => {
@@ -91,6 +112,7 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
   };
   const packed = exports.fighter_sizes();
   const sizes: CombatSizes = { fighter: packed & 0xff, intent: (packed >> 8) & 0xff, glance: (packed >> 16) & 0xff };
+  checkSizes(sizes);
   const floatBytes = (floats: Float64Array) => new Uint8Array(floats.buffer, floats.byteOffset, floats.byteLength);
   return {
     sizes,
