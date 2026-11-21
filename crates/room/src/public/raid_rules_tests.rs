@@ -56,7 +56,7 @@ fn a_collector_holds_a_post_by_its_store_toward_the_approach_and_is_sent_to_the_
     let post = raid(&room).posts[store];
     let found = room.foes.get_mut(&collector).unwrap();
     (found.fighter.body.x, found.fighter.body.y) = (post[0], post[1]);
-    running_mut(&mut room).play_mut().stores[store].1 = 0.5 / PLUNDER_TICKS;
+    running_mut(&mut room).play_raid_mut().stores[store].1 = 0.5 / PLUNDER_TICKS;
     room.tick();
     assert!(raid(&room).stores[store].1 <= 0.0, "plundered");
     let body = room.foes[&collector].fighter.body;
@@ -143,12 +143,5 @@ fn failed_its_foes_march_back_out_at_four_metres_a_second() {
         let now = out(&room);
         assert!((3.6..=4.4).contains(&(was - now)), "second {second}: {} m nearer, at a walk", was - now);
         was = now;
-    }
-}
-
-impl super::Running {
-    fn play_mut(&mut self) -> &mut super::raid::Raid {
-        let super::Play::Raid(raid) = &mut self.play else { panic!("a raid") };
-        raid
     }
 }

@@ -153,6 +153,7 @@ fn opened_in_person_with_their_ten_full_its_vestige_goes_to_the_vault_and_with_t
     assert_eq!(room.drops_for(player).count(), 0, "nothing on the ground");
     let (mut room, player, chest) = chested();
     fill(&mut room, player, true);
+    let at = chest_at(&room, player).unwrap();
     place(&mut room, player, [at[0] + 1.0, at[1]]);
     assert_eq!(room.open_chest(player, chest), 0);
     let character = &room.players[&player].character;

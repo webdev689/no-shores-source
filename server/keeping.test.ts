@@ -306,13 +306,13 @@ test('a new account’s character is the one the room holds, given back to the r
 
 test("a leaver's chest is opened before their character's last save reads it, and the room lets them go last", () => {
   // The room's character for player 1: its XP, which opening the chest lying for them raises.
-  let xp = 10;
+  let gained = 10;
   let joined = true;
   const steps: string[] = [];
   const room = {
     parting: (player: number) => {
       steps.push(`parting ${player}`);
-      xp += 500;
+      gained += 500;
     },
     leave: (player: number) => {
       steps.push(`leave ${player}`);
@@ -323,7 +323,7 @@ test("a leaver's chest is opened before their character's last save reads it, an
   const keeper = {
     leave: (player: number) => {
       // As Keeper.leave does: the character read at once, before any wait.
-      kept.push(joined ? `{"player":${player},"xp":${xp}}` : null);
+      kept.push(joined ? `{"player":${player},"xp":${gained}}` : null);
       return Promise.resolve();
     },
   };
@@ -341,4 +341,6 @@ test("a leaver's chest is opened before their character's last save reads it, an
     }
   });
   assert.equal(caught.length, 1);
+  assert.deepEqual(steps.slice(-1), ['leave 1'], 'the room still lets them go');
+  assert.equal(kept.length, 2, 'and their character is still kept');
 });

@@ -140,7 +140,7 @@ fn the_tithe_taker_killed_on_his_round_turns_it_heroic_and_marrow_must_be_broken
 }
 
 impl super::Running {
-    fn play_raid_mut(&mut self) -> &mut super::raid::Raid {
+    pub(super) fn play_raid_mut(&mut self) -> &mut super::raid::Raid {
         let Play::Raid(raid) = &mut self.play else { panic!("a raid") };
         raid
     }

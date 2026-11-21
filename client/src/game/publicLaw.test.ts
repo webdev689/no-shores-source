@@ -202,7 +202,7 @@ test("the page's schedule is the room's: every minute of a day, the shift to eac
     countdown: number;
     zones: Record<string, [number, number][]>;
   };
-  const at = (zone: string, minute: number): [number, number] => {
+  const slotOf = (zone: string, minute: number): [number, number] => {
     const slot = zones[zone]?.[minute - first];
     assert.ok(slot, `${zone} at ${minute} is in the file`);
     return slot;
@@ -219,21 +219,22 @@ test("the page's schedule is the room's: every minute of a day, the shift to eac
     for (const zone of names) {
       for (const kind of [PUBLIC_KIND.fissure, PUBLIC_KIND.raid]) {
         let shift = 0;
-        while (at(zone, minute + shift)[0] !== kind || at(zone, minute + shift)[1] !== minute + shift) shift += 1;
+        while (slotOf(zone, minute + shift)[0] !== kind || slotOf(zone, minute + shift)[1] !== minute + shift)
+          shift += 1;
         const asked = kind === PUBLIC_KIND.fissure ? 'fissure' : 'raid';
         assert.equal(minuteShift(zone, asked, minute), shift, `${zone}'s next ${asked} from ${minute}`);
       }
       // The zone's next event as the room tells it (crates/room/src/public/seen.rs), and the others' slots.
-      const [nextKind, nextStart] = at(zone, at(zone, minute)[1] + 15);
+      const [nextKind, nextStart] = slotOf(zone, slotOf(zone, minute)[1] + 15);
       const event = fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextKind });
       const shown = elsewhereOf({ ...event, nextTicks: (nextStart - minute) * 3600 }, zone);
-      const others = names.filter((other) => other !== zone).map((other) => ({ other, slot: at(other, minute) }));
+      const others = names.filter((other) => other !== zone).map((other) => ({ other, slot: slotOf(other, minute) }));
       const placed = (other: string, kind: number) => where[other]?.[kind === PUBLIC_KIND.fissure ? 0 : 1];
       const running = others
         .filter(({ slot }) => minute - slot[1] < countdown)
         .sort((one, two) => two.slot[1] - one.slot[1])[0];
       const next = others
-        .map(({ other, slot }) => ({ other, slot: at(other, slot[1] + 15) }))
+        .map(({ other, slot }) => ({ other, slot: slotOf(other, slot[1] + 15) }))
         .sort((one, two) => one.slot[1] - two.slot[1])[0];
       const wanted = running
         ? `Elsewhere on Saltmere: ${named(running.slot[0])} at ${placed(running.other, running.slot[0])}, under way`
