@@ -503,14 +503,17 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   words' step and edged dark to read over the world (`keyIcons.ts`). On foot: with the weapon put away, Z to draw it,
   Shift, Space, C and the menu; a melee weapon drawn, the swing, the guard or parry, the dodge, the drink and the
   Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink and the Melee loadout; aiming, the fire and
-  letting go; Dusk Daggers aimed, only letting go of Q; riding, getting down, the gallop and the menu; the Arts'
-  R, Q and G while one is worn and the hands are free to cast; the click that takes the mouse to look round first
-  while the mouse is free; dead, Enter to respawn once death is told, and nothing while the fall plays out. The
-  prompt for E says what E does, so the strip leaves it out. At sea: sailing, the click to sail there, the helm's
-  keys and the menu (the sea bar names its own keys); in Manage, the drag, the wheel and B back; on the deck, Shift,
+  letting go; Dusk Daggers aimed, only letting go of Q; riding, getting down, the gallop and the menu; hanging from a
+  ledge, the climb and letting go, and on a wall the kick off too, whatever is drawn; the Arts' R, Q and G while one
+  is worn and the hands are free to cast, Shadow's Q apart as held to aim Dusk Daggers; N for the map wherever it can
+  be raised, before the menu's M; the click that takes the mouse to look round first while the mouse is free; dead,
+  Enter to respawn once death is told, and nothing while the fall plays out. The prompt for E says what E does, so
+  the strip leaves it out. At sea: sailing, the click to sail there, the helm's keys and the menu (the sea bar names
+  its own keys); in Manage, the drag, the wheel and B back; on the deck, the click to look round as on foot, Shift,
   Space and E to take the helm; at the map and choosing a landing, their clicks, Enter and Escape; in a fight, the
   helm, the sails, the burst, the aim and the brace, and while aiming, letting go to fire, holding fire, the shot and
-  the drag. Eight entries at most ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the
+  the drag. Eight entries at most: past eight, those just before K give way, the last first, so the menu's goes, then
+  the map's, then the Arts' ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the
   strip stands at twice its size and wraps 960 px short of the view's width, so it never runs over the weapons; a
   view under 720 px wide gives it 240 px, room for its widest entry.
 - **The sheet of every control** (`ControlsSheet`) opens with K wherever the key strip shows, except over the menu's
@@ -522,10 +525,11 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   stand in as many 400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each
   column near an even share of the rows; the words take their larger step at 1500 by 900 and up. The list scrolls
   inside a window kept 16 px from the view's edges. Opening it lets the mouse go and moves the focus to its first
-  control; Tab and the arrows move among the controls, the focused one lit in brass, and a screen reader hears "All
-  controls", then each control's keys and sentence as it takes focus. While it is open no key reaches the game (a
-  key let go still does, so none stays held) and its scrim takes the pointer, so nothing behind it is clicked; the
-  world goes on, as under the menu.
+  control; while it is open the keys are the interface's, and Tab and the arrows move among the controls, the focused
+  one lit in brass. A screen reader hears "All controls", then each control's keys and sentence as it takes focus, a
+  sign by its name (Comma, Left bracket). While it is open no key reaches the game (a key let go still does, so none
+  stays held) and its scrim takes the pointer, so nothing behind it is clicked, the held map no more than the world;
+  the world goes on, as under the menu.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; Back to
   the sea stands on its footer. It is built again only when what it
   shows changes.
