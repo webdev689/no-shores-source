@@ -4,6 +4,7 @@
 // player to the game with the epilogue to play on foot and their look to dress them.
 import type { InputFrame } from '../../player/input.ts';
 import type { Dress } from '../../player/dressing.ts';
+import type { GearHere } from '../gearScreen.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { backAtHelm } from './accountAsk.ts';
 import { beatNamed, prologuePlayed } from './beat.ts';
@@ -63,6 +64,11 @@ export class StoryHost {
 
   key(key: string, down: boolean): void {
     this.story?.prologue.key(key, down);
+  }
+
+  /** The player's gear for the menu, while the story keeps any: on the wreck, as they play it. */
+  get gear(): GearHere | null {
+    return this.story?.prologue.gear ?? null;
   }
 
   /** Whether a click should lock the pointer for the story's play on foot. */

@@ -54,6 +54,8 @@ export interface StoryFrame {
   /** Where the world's own soundscape is heard round the frame's focus: at sea (on a ship's deck or over it, under
    *  way or not), or ashore on Saltmere's coast. None: the story's own sounds alone. */
   readonly heard?: WorldHeard;
+  /** How far the picture drains toward grey under the interface, 0 to 1: a frozen fight's. */
+  readonly drain?: number;
 }
 
 export type WorldHeard =
@@ -288,6 +290,7 @@ export class Stage {
       focus: frame.focus,
       // The screen's blur in CSS pixels, as device pixels of the picture.
       blur: screen.blurPixels * (canvas.width / Math.max(1, canvas.clientWidth)),
+      drain: frame.drain ?? 0,
     });
     const view = { width: canvas.clientWidth, height: canvas.clientHeight };
     const heads = new Map<string, readonly [number, number] | null>();

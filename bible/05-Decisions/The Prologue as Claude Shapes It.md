@@ -27,7 +27,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The crew who speak | The First Mate, the Lookout, the Bosun and the Gunner, by role, no names | [[Dialogue]]: no names the owner has not set |
 | The voice in the deep | No name; "Not yet." then "Wake." | "a snippet of mysterious dialouge"; a mystery stays one |
 | The bystander | A woman of Saltmere's town, called Stranger | The player does not know her |
-| The story's dress | Steel armour without a helm, so the face shows, a steel sword and a kite shield, drawn | "armor with a sword and shield"; character creation shows the whole figure |
+| The story's dress (the arms in part replaced: from the wreck on, the item worn, [[The Wreck Opens by Teaching the Player]]) | Steel armour without a helm, so the face shows, a steel sword and a kite shield, drawn | "armor with a sword and shield"; character creation shows the whole figure |
 | After the story | The player's look dresses them in the game; with an account, their gear does, as before | The story's armour is the story's |
 | The fight that cannot be won | Thule three levels over the player, so their blows land at 0.47, doubled by the whole game's balance pass to 0.94; it ends when the player falls, when Thule is brought under a third, or after 150 s | "which you cannot win", and never a dead end |
 | The account step without the accounts | When the accounts cannot be reached, or an ask has no answer in 10 s, "Go on without an account" plays on signed out | Creation always finishes, as the game played before the story |
@@ -39,7 +39,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The beaten ships in the calm | Where the fight left them, each from the pose the fight left it in; the camera looks out over the Lookout to the nearest while he asks whether to board what is left, and the First Mate says to leave them | The crew talk of what is shown, as they do |
 | The way through the wreck | A heap of debris across the way on from each zone, cleared when that zone's wave falls; no one climbs on the wreck ([[Climbing Is Off in the Prologue]]) | "fighting through the linear wreckage, killing foes" |
 | A death in the wreck | "Fallen", and the player rises at the last checkpoint by themselves | The room raises them there; there is nothing to press |
-| The wreck's cries | Two lines in the wake's flight from a pair on screen; "Survivor! Get that one!" from the first Tithe hand seen in the fight | Every line heard once, from a speaker on screen |
+| The wreck's cries (in part replaced: the flight is dropped, [[The Wreck Opens by Teaching the Player]]) | Two lines in the wake's flight from a pair on screen; "Survivor! Get that one!" from the first Tithe hand seen in the fight | Every line heard once, from a speaker on screen |
 | Thule struck | "Your debt grows." | The Tithe is a debt Thule collects; a stock line is not his |
 | Into overboard | The fight fades out, then the throw overboard fades in | "The screen fades out and back in" |
 | The deep's fire | The wreck's hulls and their fires drawn above the surface, seen from below | "fire above shown through the water" |
