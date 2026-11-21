@@ -210,3 +210,13 @@ test('a right press is heard on what it is over, and the focus says whether the 
   step(ui, presses(), [{ kind: 'down', x: 15, y: 15, button: 2 }], false);
   assert.ok(!ui.rightClicked('one'), 'nothing is pressed while the pointer looks round');
 });
+
+test('the pointer is where it last moved while free, and nowhere once it leaves or looks round', () => {
+  const ui = new Interface(renderer());
+  step(ui, presses(), [{ kind: 'pointer', x: 12, y: 30 }]);
+  assert.deepEqual(ui.pointerAt, { x: 12, y: 30 });
+  step(ui, presses(), [{ kind: 'leave' }]);
+  assert.equal(ui.pointerAt, null);
+  step(ui, presses(), [{ kind: 'pointer', x: 12, y: 30 }], false);
+  assert.equal(ui.pointerAt, null);
+});

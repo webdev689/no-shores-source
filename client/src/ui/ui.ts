@@ -75,6 +75,7 @@ export class Interface {
   speak: (words: string) => void = announce;
   private laid: Laid[] = [];
   private pointer: { x: number; y: number } | null = null;
+  private free = true;
   private hover: string | null = null;
   private held: string | null = null;
   /** What the pointer let go of this frame, and where. */
@@ -115,6 +116,7 @@ export class Interface {
     keys = true,
   ): void {
     this.clock += seconds;
+    this.free = free;
     this.scale = view.scale;
     this.view = { width: view.width / view.scale, height: view.height / view.scale };
     this.clicks.clear();
@@ -237,6 +239,11 @@ export class Interface {
     const laid = this.focus ? this.laid.find((each) => each.node.id === this.focus && each.node.field) : null;
     if (!laid || !this.focus) return null;
     return { id: this.focus, state: this.fieldOf(this.focus), secret: Boolean(laid.node.field?.secret), box: laid.box };
+  }
+
+  /** Where the pointer is, CSS pixels, while it is free on the view; null once it has left or looks round. */
+  get pointerAt(): { readonly x: number; readonly y: number } | null {
+    return this.free ? this.pointer : null;
   }
 
   /** Whether the pointer is over the interface, so a click there is not the world's. */
