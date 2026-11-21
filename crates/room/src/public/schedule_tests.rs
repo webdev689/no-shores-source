@@ -92,7 +92,30 @@ fn a_room_whose_minute_jumps_past_its_events_end_ends_it_quietly_and_begins_the_
     assert!(!shown(crate::EventKind::PublicFailed) && !shown(crate::EventKind::PublicWon), "no result shown");
     let events_foes = room.foes.values().count();
     assert_eq!(events_foes, 0, "its foes gone");
+    let room = left_running(super::COUNTDOWN_MINUTES);
+    assert!(room.public.as_ref().unwrap().running.is_none(), "come back as its end minute comes: past too");
     let mut room = left_running(PERIOD_MINUTES);
     assert_eq!((running(&room).kind, running(&room).start), (Kind::Raid, FISSURE_MINUTE + PERIOD_MINUTES));
     assert!(room.take_events().iter().all(|event| event.kind != crate::EventKind::PublicFailed));
+}
+
+#[test]
+fn a_room_opened_late_in_a_minute_runs_its_event_out_and_shows_the_whole_result_as_its_minutes_come() {
+    let (mut room, _) = room_at(FISSURE_MINUTE + 3, 0);
+    room.tick();
+    // Opened at 3:59 into the event: its next minute comes a second later, then one every minute.
+    let (mut ticked, mut failed_at) = (1_u64, None);
+    while room.public.as_ref().unwrap().running.is_some() {
+        if ticked % TICKS_PER_MINUTE == 60 {
+            room.minute += 1;
+        }
+        room.tick();
+        ticked += 1;
+        if failed_at.is_none() && room.take_events().iter().any(|event| event.kind == crate::EventKind::PublicFailed) {
+            failed_at = Some(ticked);
+        }
+        assert!(ticked < COUNTDOWN_TICKS, "the event ends");
+    }
+    let failed_at = failed_at.expect("its countdown ran out and it failed, shown");
+    assert_eq!(ticked - failed_at, super::RESULT_TICKS, "its result shown its whole time");
 }

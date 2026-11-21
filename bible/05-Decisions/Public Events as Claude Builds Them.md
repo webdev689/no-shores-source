@@ -72,6 +72,6 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | An opened chest | Stands open 6 s after the room takes it | The lid's swing is seen whole |
 | The dev address | `&public=fissure` or `&public=raid` sets a room in the page's clock to that event's start, dev builds only | Every beat can be seen without waiting |
 | The bonus once sealed | Settled as the seal completes: a Warden who falls after half the countdown keeps it | The owner's words: "sealed with at least half of the 8 minutes left" |
-| A room left empty | Its running event held to the clock when its minute jumps: a whole minute past its end, ended quietly (no result, no chests, its foes gone); else its countdown cut to what its start minute leaves | A room's Durable Object may stay in memory, unticked, and come back late |
+| A room left empty | Its running event held to the clock when its minute jumps: past its end, ended quietly (no result, no chests, its foes gone); else its countdown cut to what its start minute leaves | A room's Durable Object may stay in memory, unticked, and come back late |
 | A leaver's Vestige, ten and vault full | Into the vault over its limit | A leaver's chest is never lost; the ground would lose it, and the gear crate holds nothing else waiting for a player |
 | Heroic missed with a result | Told before the win or the failure | The result is the beat a page keeps |

@@ -88,7 +88,7 @@ fn saltmeres_stores_banners_and_growths_keep_clear_of_its_beacons_and_resource_m
         let grounds = bake::grounds_of(laid).expect("an event zone has grounds");
         let raid = grounds.raid.expect("a raid");
         let fissure = grounds.fissure.expect("a fissure");
-        let kept = raid.stores.iter().map(|at| (*at, [1.2, 0.8], 1.5, "store"));
+        let kept = raid.stores.iter().map(|at| (*at, layout::grounds::STORE_HALF, 1.5, "store"));
         let kept = kept.chain(raid.banners.iter().map(|at| (*at, [0.5, 0.5], 0.5, "banner")));
         for (at, half, clear, what) in kept.chain([(fissure.growth, [2.5, 2.5], 1.0, "growth")]) {
             let hit = solids.iter().find(|solid| overlaps(at, half, clear, **solid));

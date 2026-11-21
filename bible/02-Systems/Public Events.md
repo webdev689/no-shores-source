@@ -37,8 +37,9 @@ event a Unix minute falls in and the minute it starts; it is a pure function, so
 The host sets the room's minute about once a second; an event begins in the first tick its minute comes, and a room
 opened during one starts it with the countdown its start minute leaves, to the minute. A room keeps no event across
 its closing. A room left empty stops ticking but may stay open: when the minute it is given jumps, its event keeps no
-more than the countdown its start minute leaves, and one a whole minute past its end is ended quietly, with no result,
-no chests and its foes gone. An event has 8 minutes; won or failed, its result shows for 12 seconds, and the next is shown from then.
+more than the countdown its start minute leaves, and one past its end is ended quietly, with no result, no chests and
+its foes gone (unjumped, two minutes past its end). An event has 8 minutes; won or failed, its result shows for 12
+seconds, and the next is shown from then.
 
 **The grounds.** The layout marks them with its other sites ([[Layouts]]): three stores in each hamlet, on clear
 ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of every building, set piece and prop and 2 m
@@ -124,7 +125,8 @@ the growth (rising, standing, sinking, broken), each store (whole, plundered; al
 (its life left) and carried (by whom), the tithe-taker (arriving, counting, leaving), each banner and the approach.
 New fight events: 14 begun, 15 next stage, 16 a shard taken, 17 a shard set, 18 heroic met, 19 heroic missed, 20 won,
 21 failed, 22 a store plundered, 23 a chest opened. A heroic window still open as the event is won or failed is told
-missed before the result, so the result is the last beat of its tick. A foe carries the name it stands under, if any; a drop of kind 3 is
+missed before the result, so the result is the last beat of its tick. A foe carries the name it stands under, if any;
+a drop of kind 3 is
 a chest, with its tier. The browser reads it all in `client/src/network/publicMessages.ts`.
 
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their

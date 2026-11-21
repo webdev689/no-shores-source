@@ -66,8 +66,8 @@ pub(crate) struct Taker {
 }
 
 /// A raid as it plays: each store's middle and health (0 to 1), where a Collector stands at each, the approach, the
-/// raiders' home (the stores' middle; both on the navmesh), the banners, the wave and how many come, the foes of the wave standing, the tick the next comes, each Collector's
-/// store, and the tithe-taker.
+/// raiders' home (the stores' middle; both on the navmesh), the banners, the wave and how many come, the foes of the
+/// wave standing, the tick the next comes, each Collector's store, and the tithe-taker.
 #[derive(Debug)]
 pub(crate) struct Raid {
     pub stores: Vec<([f64; 3], f64)>,
