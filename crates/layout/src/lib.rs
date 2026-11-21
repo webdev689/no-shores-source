@@ -29,6 +29,7 @@ pub mod pieces;
 pub mod pieces_coast;
 pub mod pieces_land;
 pub mod plantings;
+pub mod resources;
 pub mod ring;
 pub mod rocks;
 pub mod run_climbs;
@@ -125,9 +126,10 @@ fn ways_of(paths: &[Path], runs: &[runs::Run]) -> Vec<Path> {
 
 /// Plans a node's layout on the ground from its brief: for a patrol area, `links` are the instances its gates lead
 /// to; for an instance, the patrol area it is entered from. `biome` is its landmass's, which sets how high its massif
-/// stands and the shape of its outcrops where its brief names none. `avoid` are the other nodes' claims, which its
-/// runs past its edge keep clear of.
+/// stands and the shape of its outcrops where its brief names none; `resource` its island's resource, which its resource
+/// sites hold. `avoid` are the other nodes' claims, which its runs past its edge keep clear of.
 #[must_use]
+#[expect(clippy::too_many_arguments, reason = "a node's brief, its land and its neighbours, each read once")]
 pub fn plan(
     node: &Node,
     ground: &Ground,
@@ -135,6 +137,7 @@ pub fn plan(
     links: &[Link],
     book: &Book,
     biome: Option<&str>,
+    resource: Option<&str>,
     avoid: &[Vec<[f64; 2]>],
 ) -> Layout {
     let (rise, shape) = (carve::rise_of(biome), carve::shape_of(brief, biome));
@@ -195,7 +198,7 @@ pub fn plan(
         }
     }
     dressing::dress(&mut kit, &areas, &paths, &moduled);
-    let mut sites = sites::mark(&field, &areas, &paths, &seating, seed);
+    let mut sites = sites::mark(&field, &areas, &paths, &seating, seed, resource);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x51E5, draws: 0, into: &mut seating };
     marks::build(&mut kit, &sites);
     let anchor = areas.first().map_or_else(|| middle_of(node), |area| area.at);

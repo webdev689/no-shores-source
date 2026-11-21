@@ -39,19 +39,29 @@ Asked after the change's audit:
 
 Seeing them in the game: "The harvest nodes are way too big"; at half the size, "Nvm size looks good now".
 
+Then, on seeing every node drawn as ore, herbs, timber or salvage whatever its island: "Wait... hold the fucking phone.
+Did you just forget about the entire project and how resources work? Plus what the resources actually are?" Asked what
+then becomes of the 3D pile at each spot: "Match the resource"; of tools: "No tools, just interaction prompt. Smaller
+procedural islands within islands with certain resources also should carry the resource"; and how a procedural
+island's nodes come back: "Once a visit (Recommended)" (two to four nodes standing on each isle at once, each gathered
+once per player while that isle's room is open, back on the next landing).
+
 ## What it settles
 
 - **A patrol's material nodes stand at its layout's dressed resource places** ([[Layouts]]): the ore outcrop, the
   salvage, the herbs' drying rack, the felled logs. The room gathers there, still a third of them at a time
   ([[Server]]).
-- **No ring and no beam**: each node is drawn as a sprite baked in the owner's Blender pipeline ([[Sprite Forge]]),
-  for its detail, and the sprite alone marks it. It stands in front of its place's dressing, a few metres toward the
+- **No ring and no beam**: each node is drawn as a sprite of its resource baked in the owner's Blender pipeline
+  ([[Sprite Forge]]), for its detail, and the sprite alone marks it. It stands in front of its place's dressing, a few metres toward the
   path, and the room gathers it there, about knee high beside a body: half the size it was first drawn.
-- **Gathering is E held about two seconds** while the player's figure works the node, with a progress ring and a
-  sound; moving or being hit stops it. A node gathered looks spent until it returns ([[Game]]). It is not done on
-  horseback.
-- **Every node gives its island's resource**, whatever its kind; the kind is how it looks and how it is worked
-  ([[Gear]]).
+- **Gathering is E held about two seconds** with a progress ring and a sound, the interaction prompt alone: no tool,
+  and the figure does not work the node. Moving or being hit stops it. A node gathered looks spent until it returns
+  ([[Game]]). It is not done on horseback.
+- **A node is its island's resource** ([[Gear]], each island's from its biome): it is drawn as that resource, Saltmere's
+  as Brineglass, Cairnwatch's as Cairn Iron, and so on for all nine, and the 3D pile at its spot matches the
+  resource. Ore, herbs, timber and salvage are no longer kinds of node.
+- **The sea's procedural islands carry the resource** of the island whose waters they lie in: two to four nodes on
+  each, all standing at once, each gathered once per player while that isle's room is open.
 - **The pickup feed tells of everything gained**: XP, faction reputation, Art progress and what is gathered at sea
   besides what it tells now ([[Interface]]). Currency, XP and reputation stand as short lines, a count beside its
   icon with no panel, above the items' rows, as Destiny shows them.

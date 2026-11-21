@@ -4,7 +4,7 @@
 
 use crate::areas::Area;
 use crate::brief::AreaKind;
-use crate::field::{Field, Water, distance};
+use crate::field::{Field, distance};
 use crate::paths::Path;
 use crate::seat::Seating;
 use land::exact::rand01;
@@ -78,7 +78,16 @@ fn off_paths(paths: &[Path], at: [f64; 2]) -> bool {
 }
 
 #[must_use]
-pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec<Site> {
+/// Marks a layout's sites; each resource site holds `resource`, its island's (content/gear/resources.json), or nothing
+/// on land that has none.
+pub fn mark(
+    field: &Field,
+    areas: &[Area],
+    paths: &[Path],
+    seating: &Seating,
+    seed: u32,
+    resource: Option<&str>,
+) -> Vec<Site> {
     let mut sites = Vec::new();
     let site =
         |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site { kind, at, radius, holds, node: None };
@@ -146,25 +155,10 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, se
             {
                 let back = NODE_FRONT_M / off;
                 let node = [at[0] + (pair[1][0] - at[0]) * back, at[1] + (pair[1][1] - at[1]) * back];
-                let holds = Some(resource_at(field, at).to_owned());
+                let holds = resource.map(str::to_owned);
                 sites.push(Site { node: Some(node), ..site(SiteKind::Resource, at, 2.0, holds) });
             }
         }
     }
     sites
-}
-
-/// What a resource node at a point holds, by the land there: ore on steep or rocky ground, salvage by the sea, herbs
-/// by fresh water, timber elsewhere.
-fn resource_at(field: &Field, at: [f64; 2]) -> &'static str {
-    let cell = field.nearest(at[0], at[1]);
-    if field.slope[cell] > 0.3 {
-        "ore"
-    } else if field.to_sea[cell] < 60.0 {
-        "salvage"
-    } else if field.to_fresh[cell] < 60.0 || field.water[cell] != Water::Dry {
-        "herbs"
-    } else {
-        "timber"
-    }
 }
