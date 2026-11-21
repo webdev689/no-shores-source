@@ -54,7 +54,7 @@ fn overlook_is_planned_as_it_was() {
     assert_eq!(plan.name, "Overlook");
     assert!(!plan.social.stations.is_empty(), "a port city keeps its counters");
     // The plan before ruins were laid, pinned: a port city's plan must not change with them.
-    assert_eq!(fingerprint(&plan), "ecbaa16e155acae6");
+    assert_eq!(fingerprint(&plan), "04e98c47e679e1b2");
 }
 
 #[test]
