@@ -43,5 +43,6 @@ for eighteen they chose None of these. Searched again with other words, and for 
 the marmot offered real recordings by name ("Come on..", "Do better"), they picked the rest but three. Of the hyena,
 "Why is it so hard to get distint sounds"; asked, they chose to drop it: the savanna's night has no hyena. A ship
 going down plays the sea's break-up, Breaking wood ("Use 'Breaking wood'"). The ice's creak stays the ice's crack.
+Asked whether the shore's separate wave crash, over its surf, should go or be found on Freesound: "Drop it".
 
 [[Music]], [[Ambience]].

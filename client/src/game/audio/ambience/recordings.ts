@@ -1,18 +1,22 @@
-// The Freesound recording each synthesised bed and call of the ambience is heard as, once the owner picks it on the
-// sound sheet (content/audio/freesound.json); the synthesiser's sound plays until then.
-import type { BedKey } from './beds.ts';
-import type { SoundKey } from './sounds.ts';
+// The ambience's sounds: the Freesound recording (content/audio/freesound.json) each bed and call of the scapes is
+// heard as, by the name the scapes give it, where a place names none of its own; and how loud a bed is heard.
 
-/** The Freesound cue each synthesised bed and call is heard as once the owner picks one, the synthesiser's until then;
- *  a place may name another for its own. */
-export const RECORDINGS: Readonly<Partial<Record<BedKey | SoundKey, string>>> = {
-  'town.hum': 'amb.social.hum',
+/** Each bed's recording. */
+export const BED_RECORDINGS = {
+  'sea.swell': 'amb.sea.swell',
+  'sea.wash': 'amb.sea.wash',
   'wind.breeze': 'amb.land.breeze',
   'sea.rigging': 'amb.sea.rigging',
-  'shore.lap': 'amb.shore.lap',
-  'insects.crickets': 'amb.land.crickets',
+  'deck.timbers': 'amb.sea.timbers',
   'rain.hiss': 'amb.land.rain',
+  'rain.deck': 'amb.sea.rain.deck',
+  'town.hum': 'amb.social.hum',
+  'shore.lap': 'amb.shore.lap',
+  'shore.surf': 'amb.shore.surf',
+  'town.crowd': 'amb.social.crowd',
+  'insects.crickets': 'amb.land.crickets',
   'rain.patter': 'amb.land.patter',
+  'rain.gutters': 'amb.rain.gutters',
   grass: 'amb.land.grass',
   'water.brook': 'amb.land.brook',
   'wind.moan': 'amb.land.moan',
@@ -24,11 +28,21 @@ export const RECORDINGS: Readonly<Partial<Record<BedKey | SoundKey, string>>> = 
   'frogs.chorus': 'amb.wet.frogs',
   'insects.marsh': 'amb.swamp.insects',
   'wind.snow': 'amb.tundra.snow',
-  bell: 'amb.social.bell',
-  anvil: 'amb.social.anvil',
+} as const;
+export type BedKey = keyof typeof BED_RECORDINGS;
+
+/** Each call's recording. */
+export const CALL_RECORDINGS = {
   'hull.creak': 'amb.sea.hull.creak',
   'rope.creak': 'amb.sea.rope.creak',
+  'hull.slap': 'amb.sea.hull.slap',
+  'bow.thump': 'amb.sea.bow.thump',
+  'canvas.flap': 'amb.sea.canvas.flap',
   'block.knock': 'amb.sea.block.knock',
+  gull: 'amb.sea.gull',
+  bell: 'amb.social.bell',
+  anvil: 'amb.social.anvil',
+  'anvil.light': 'amb.social.anvil',
   halyard: 'amb.social.halyard',
   'fish.splash': 'amb.fish.splash',
   hammer: 'amb.social.hammer',
@@ -49,12 +63,14 @@ export const RECORDINGS: Readonly<Partial<Record<BedKey | SoundKey, string>>> = 
   'wind.gust': 'amb.wind.gust',
   'rock.whistle': 'amb.rock.whistle',
   'rock.fall': 'amb.rock.fall',
+  raven: 'amb.highland.raven',
   'wolf.howl': 'amb.wolf.howl',
   'wolf.howl.low': 'amb.wolf.far',
   'song.wren': 'amb.bird.wren',
   'song.chiff': 'amb.bird.chiffchaff',
   woodpecker: 'amb.bird.woodpecker',
   dove: 'amb.bird.dove',
+  crow: 'amb.woodland.crow',
   'branch.creak': 'amb.wood.creak',
   'twig.snap': 'amb.wood.twig',
   'leaf.gust': 'amb.wood.leafgust',
@@ -75,4 +91,16 @@ export const RECORDINGS: Readonly<Partial<Record<BedKey | SoundKey, string>>> = 
   'ice.creak': 'amb.ice.crack',
   'ice.crack': 'amb.ice.crack',
   'ice.ping': 'amb.ice.ping',
+} as const;
+export type SoundKey = keyof typeof CALL_RECORDINGS;
+
+/** How loud a bed of gain 1 is heard, the root mean square of the whole of its recording: as loud as the beds it took
+ *  the place of, which all stood at this but for the few softer below. */
+export const BED_LOUD = 0.1;
+export const SOFTER_BEDS: Readonly<Partial<Record<BedKey, number>>> = {
+  'deck.timbers': 0.051,
+  'forest.drips': 0.0985,
+  'rain.patter': 0.0605,
+  'rain.gutters': 0.0689,
+  'rain.deck': 0.0913,
 };

@@ -142,20 +142,3 @@ export function nearness(distance: number, full: number, none: number): number {
   const share = Math.max(0, Math.min(1, (none - distance) / (none - full)));
   return share * share * (3 - 2 * share);
 }
-
-/** A breaker curls for this long before it crashes; its run back is this share of its period. */
-export const CURL_S = 1;
-const RUN_SHARE = 0.45;
-/** The surf's floor between breakers. */
-const SURF_FLOOR = 0.22;
-/** A breaker's period, seconds, drawn between these. */
-export const BREAKER_S: readonly [number, number] = [7, 11];
-
-/** A breaker's swell `time` seconds into a wave of `period`: rising as it curls, whole at the crash, running back to
- *  the surf's floor. */
-export function breakerAt(time: number, period: number): number {
-  const into = Math.max(0, time);
-  if (into < CURL_S) return SURF_FLOOR + (1 - SURF_FLOOR) * (into / CURL_S) ** 2;
-  const run = Math.max(0.5, period * RUN_SHARE);
-  return SURF_FLOOR + (1 - SURF_FLOOR) * Math.exp(-(into - CURL_S) / (run / 3));
-}

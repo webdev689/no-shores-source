@@ -1,11 +1,9 @@
 // The eleven ambiences, each its own: what beds lie under it, where they stand, and the voices heard over them, how
 // often by the time of day, where each is placed round the listener and what drives it. Data only; the laws are
-// law.ts's, the making the worker's, the playing ambience.ts's.
+// law.ts's, the recordings recordings.ts's, the playing ambience.ts's.
 
-import type { BedKey } from './beds.ts';
 import { type AmbienceKey, type ByPhase, always } from './law.ts';
-import { RECORDINGS } from './recordings.ts';
-import type { SoundKey } from './sounds.ts';
+import { BED_RECORDINGS, type BedKey, CALL_RECORDINGS, type SoundKey } from './recordings.ts';
 
 /** Where a voice is placed round the listener: in the open round them, on the ground near, in the trees, high in the
  *  sky, on the highest ground near, at the sea's edge or over the water past it; in a port city, at its harbour, in
@@ -31,7 +29,7 @@ export type Spot =
 export type Drive = 'way' | 'still' | 'coast' | 'deck' | 'wind' | 'rain' | 'sand';
 
 /** A bed: wide about the listener, or standing at a point (the sea's edge, the harbour, the nearest river, the city
- *  below) through a panner, and `breakers` where a shore's waves swell and crash on it. */
+ *  below) through a panner. */
 export interface BedLayer {
   readonly bed: BedKey;
   readonly gain: number;
@@ -43,25 +41,19 @@ export interface BedLayer {
   readonly drive?: Drive | readonly Drive[];
   /** Its gain rides the sea's swell. */
   readonly swell?: boolean;
-  /** How deep the wind's gusts move it, 0 to 1: its gain, and its top opening as a gust blows. */
+  /** How deep the wind's gusts move its gain, 0 to 1. */
   readonly gust?: number;
-  /** A hiss whose top stays open between gusts: blown sand or snow, which a gust swells but never darkens. */
-  readonly bright?: boolean;
-  /** Rain: its top opens the harder it falls. */
-  readonly brightens?: boolean;
-  readonly breakers?: boolean;
   /** How near a standing bed is heard whole, metres, where not its kind's own. */
   readonly near?: number;
-  /** A Freesound cue whose recording plays in its place once the owner has picked it. */
-  readonly recorded?: string;
+  /** The Freesound cue whose recording it plays. */
+  readonly recorded: string;
 }
 
-/** A voice: its sound, or sounds sung in turn through a bout; a Freesound cue to play once picked (with no sound of
- *  its own, it is silent until then); its calls a minute by phase; its bouts; where, how far and how high; its gain at
- *  its panner's near distance and its pitch's spread; and how fast a call drifts as it sounds, metres a second. */
+/** A voice: the sounds it is named by; the Freesound cue whose recording it plays, once a bout; its calls a minute by
+ *  phase; its bouts; where, how far and how high; and its gain at its panner's near distance and its pitch's spread. */
 export interface Voice {
   readonly sounds: readonly SoundKey[];
-  readonly recorded?: string;
+  readonly recorded: string;
   readonly perMinute: ByPhase;
   readonly bout: readonly [number, number];
   readonly spacing: readonly [number, number];
@@ -71,9 +63,8 @@ export interface Voice {
   readonly near: number;
   readonly gain: readonly [number, number];
   readonly pitch: readonly [number, number];
-  readonly drift: number;
   readonly drive?: Drive;
-  /** A bird or insect that shelters from the rain, where its sounds do not say so (a voice only recorded). */
+  /** A bird or insect that shelters from the rain, where its sounds do not say so (a voice named by its cue alone). */
   readonly shelters?: boolean;
 }
 
@@ -122,7 +113,7 @@ const voice = (
   const list = typeof sounds === 'string' ? [sounds] : sounds;
   return {
     sounds: list,
-    recorded: list[0] && RECORDINGS[list[0]],
+    recorded: list[0] ? CALL_RECORDINGS[list[0]] : '',
     perMinute,
     bout: [1, 1],
     spacing: [0, 0],
@@ -130,11 +121,10 @@ const voice = (
     ...SPOTS[spot],
     gain: [0.5, 1],
     pitch: [0.94, 1.06],
-    drift: 0,
     ...more,
   };
 };
-/** A voice heard only as its Freesound recording, silent until the owner picks one. */
+/** A voice named by its cue alone. */
 const recordedOnly = (cue: string, spot: Spot, perMinute: ByPhase, more: Partial<Voice> = {}): Voice => ({
   ...voice([], spot, perMinute, more),
   recorded: cue,
@@ -143,7 +133,7 @@ const recordedOnly = (cue: string, spot: Spot, perMinute: ByPhase, more: Partial
 const bed = (key: BedKey, gain: number, more: Partial<BedLayer> = {}): BedLayer => ({
   bed: key,
   gain,
-  recorded: RECORDINGS[key],
+  recorded: BED_RECORDINGS[key],
   when: always(1),
   breath: 0.4,
   at: 'wide',
@@ -157,22 +147,21 @@ const byDay = (perMinute: number): ByPhase => ({ dawn: perMinute * 0.7, day: per
 const byNight = (perMinute: number): ByPhase => ({ dusk: perMinute * 0.3, night: perMinute, dawn: perMinute * 0.2 });
 const evening = (perMinute: number): ByPhase => ({ dusk: perMinute, night: perMinute * 0.8, dawn: perMinute * 0.1 });
 
-/** Gulls wherever the sea is near: the recording once picked, the synthesiser's until then. */
+/** Gulls wherever the sea is near. */
 const GULLS = (perMinute: number) =>
-  voice('gull', 'offshore', byDay(perMinute), { recorded: 'amb.sea.gull', drive: 'coast', drift: 4, gain: [0.3, 0.7] });
+  voice('gull', 'offshore', byDay(perMinute), { recorded: 'amb.sea.gull', drive: 'coast', gain: [0.3, 0.7] });
 /** The sea's edge on any island: its surf, breaking as the sea's swell runs in. */
-const SURF = (gain: number) =>
-  bed('shore.surf', gain, { at: 'shore', breakers: true, breath: 0, recorded: 'amb.shore.surf' });
+const SURF = (gain: number) => bed('shore.surf', gain, { at: 'shore', breath: 0, recorded: 'amb.shore.surf' });
 const RIVER = (gain: number) => bed('water.brook', gain, { at: 'river', breath: 0.2 });
 /** Rain wherever it falls: its hiss all round and its patter near, both opening as it falls harder. */
 const RAIN = [
-  bed('rain.hiss', 0.75, { drive: 'rain', brightens: true, breath: 0.2 }),
-  bed('rain.patter', 0.7, { drive: 'rain', brightens: true, breath: 0.3 }),
+  bed('rain.hiss', 0.75, { drive: 'rain', breath: 0.2 }),
+  bed('rain.patter', 0.7, { drive: 'rain', breath: 0.3 }),
 ];
 /** A sandstorm's hiss over the ground, where the ground lifts sand. */
-const SANDSTORM = bed('wind.sand', 1.4, { drive: 'sand', bright: true, gust: 0.7, breath: 0.3 });
+const SANDSTORM = bed('wind.sand', 1.4, { drive: 'sand', gust: 0.7, breath: 0.3 });
 const RAVEN = (perMinute: ByPhase) =>
-  voice('raven', 'sky', perMinute, { recorded: 'amb.highland.raven', distance: [40, 160], lift: [20, 60], drift: 6 });
+  voice('raven', 'sky', perMinute, { recorded: 'amb.highland.raven', distance: [40, 160], lift: [20, 60] });
 
 export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
   'sea': {
@@ -185,8 +174,8 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('wind.breeze', 0.3, { gust: 0.5, breath: 0.3, recorded: 'amb.sea.wind' }),
       bed('sea.rigging', 0.35, { gust: 0.6, drive: 'deck', breath: 0.3, recorded: 'amb.sea.rigging' }),
       bed('deck.timbers', 0.55, { drive: 'deck', breath: 0.3, recorded: 'amb.sea.timbers' }),
-      bed('rain.hiss', 0.75, { drive: 'rain', brightens: true, breath: 0.2, recorded: 'amb.sea.rain' }),
-      bed('rain.deck', 0.75, { drive: ['rain', 'deck'], brightens: true, breath: 0.25, recorded: 'amb.sea.rain.deck' }),
+      bed('rain.hiss', 0.75, { drive: 'rain', breath: 0.2, recorded: 'amb.sea.rain' }),
+      bed('rain.deck', 0.75, { drive: ['rain', 'deck'], breath: 0.25, recorded: 'amb.sea.rain.deck' }),
     ],
     voices: [
       voice('hull.creak', 'hull', always(7), {
@@ -244,10 +233,9 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
         distance: [15, 60],
         lift: [12, 40],
         near: 12,
-        drift: 4,
         gain: [0.3, 0.6],
       }),
-      voice('gull', 'harbour', byDay(2.5), { recorded: 'amb.sea.gull', lift: [8, 30], near: 40, drift: 4 }),
+      voice('gull', 'harbour', byDay(2.5), { recorded: 'amb.sea.gull', lift: [8, 30], near: 40 }),
       voice('bell', 'harbour', always(0.4), {
         bout: [1, 3],
         spacing: [1.4, 1.8],
@@ -268,7 +256,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('block.knock', 'harbour', always(1), { near: 40, gain: [0.3, 0.6] }),
       voice('fish.splash', 'harbour', always(0.3), { near: 30, gain: [0.3, 0.6] }),
       voice('hammer', 'city', byDay(0.7), { bout: [3, 8], spacing: [0.42, 0.6], near: 40, gain: [0.5, 0.8] }),
-      voice('cart', 'city', byDay(0.5), { drift: 2.5, near: 40, gain: [0.6, 0.9] }),
+      voice('cart', 'city', byDay(0.5), { near: 40, gain: [0.6, 0.9] }),
       voice('pigeon', 'plaza', byDay(1.6), { bout: [1, 3], spacing: [1.4, 2], gain: [0.3, 0.5] }),
       voice('song.sparrow', 'plaza', byDay(2.2), { gain: [0.2, 0.4] }),
       voice('owl.tawny', 'city', byNight(0.5), { distance: [40, 140], lift: [8, 20], near: 30, gain: [0.4, 0.6] }),
@@ -373,7 +361,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
     level: 1.55,
     room: { seconds: 0.7, corner: 4000, echoes: [0.55], send: 0.05 },
     beds: [
-      bed('wind.sand', 0.65, { bright: true, gust: 0.7, breath: 0.3 }),
+      bed('wind.sand', 0.65, { gust: 0.7, breath: 0.3 }),
       bed('wind.moan', 0.45, { gust: 0.6, breath: 0.3 }),
       bed('wind.whistle', 0.12, { gust: 0.8, breath: 0.3 }),
       bed('insects.crickets', 0.25, { when: byNight(1) }),
@@ -387,7 +375,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('rock.fall', 'ridge', always(0.25), { distance: [80, 300] }),
       voice('buzzard', 'sky', byDay(0.3)),
       RAVEN(byDay(0.3)),
-      voice('fly', 'ear', byDay(0.5), { drift: 0.8, gain: [0.15, 0.3] }),
+      voice('fly', 'ear', byDay(0.5), { gain: [0.15, 0.3] }),
       voice('jackal.yips', 'ridge', byNight(0.6), { gain: [0.5, 0.8] }),
       voice('owl.deep', 'around', byNight(0.15), { distance: [40, 120] }),
       voice('cricket', 'ground', byNight(1.2), { gain: [0.2, 0.4] }),
@@ -413,7 +401,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('song.fluter', 'canopy', byDay(0.9), { distance: [20, 80], gain: [0.3, 0.6] }),
       voice('buzzard', 'sky', byDay(0.4)),
       voice('cicada', 'canopy', byDay(1.2), { gain: [0.2, 0.45] }),
-      voice('fly', 'ear', byDay(0.4), { drift: 0.8, gain: [0.15, 0.3] }),
+      voice('fly', 'ear', byDay(0.4), { gain: [0.15, 0.3] }),
       voice('jackal.yips', 'ridge', byNight(0.2)),
       voice('nightjar', 'ground', { dusk: 0.8, night: 0.5 }, { distance: [30, 120], gain: [0.3, 0.5] }),
       voice('owl.deep', 'canopy', byNight(0.3), { distance: [40, 120] }),
@@ -440,11 +428,11 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('song.warbler', 'canopy', byDay(1), { gain: [0.25, 0.5] }),
       voice('drip', 'canopy', always(6), { distance: [2, 12], lift: [1, 8], near: 2, gain: [0.1, 0.3] }),
       voice('cicada', 'canopy', byDay(2), { gain: [0.2, 0.45] }),
-      voice('mosquito', 'ear', always(0.6), { drift: 0.5, gain: [0.08, 0.18] }),
+      voice('mosquito', 'ear', always(0.6), { gain: [0.08, 0.18] }),
       voice('frog.peeps', 'canopy', { dusk: 2, night: 3 }, { distance: [6, 30], lift: [1, 6], gain: [0.25, 0.5] }),
       voice('frog.croak', 'ground', byNight(1.5), { distance: [6, 30] }),
       voice('woodpecker', 'canopy', byDay(0.3), { distance: [30, 90] }),
-      recordedOnly('amb.rainforest.parrot', 'canopy', byDay(1.2), { distance: [20, 80], drift: 5, shelters: true }),
+      recordedOnly('amb.rainforest.parrot', 'canopy', byDay(1.2), { distance: [20, 80], shelters: true }),
       voice('owl.deep', 'canopy', byNight(0.4), { distance: [30, 100] }),
       voice('branch.creak', 'canopy', always(0.4)),
       GULLS(0.6),
@@ -494,8 +482,8 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('frog.croak', 'ground', { dawn: 2, day: 2, dusk: 4, night: 5 }, { distance: [4, 30], gain: [0.3, 0.7] }),
       voice('frog.bull', 'ground', { day: 0.6, dusk: 1.5, night: 2.5 }, { distance: [10, 50], gain: [0.4, 0.8] }),
       voice('frog.peeps', 'ground', byNight(2), { distance: [5, 30], gain: [0.2, 0.45] }),
-      voice('mosquito', 'ear', always(1.5), { drift: 0.5, gain: [0.08, 0.2] }),
-      voice('fly', 'ear', byDay(0.5), { drift: 0.8, gain: [0.12, 0.25] }),
+      voice('mosquito', 'ear', always(1.5), { gain: [0.08, 0.2] }),
+      voice('fly', 'ear', byDay(0.5), { gain: [0.12, 0.25] }),
       voice('fish.splash', 'around', always(0.3), { distance: [10, 40], lift: [0, 0.2] }),
       recordedOnly('amb.swamp.heron', 'around', always(0.4), { distance: [40, 150], gain: [0.5, 0.8], shelters: true }),
       voice('song.warbler', 'around', byDay(0.8), { distance: [10, 40], lift: [0.5, 2], gain: [0.25, 0.5] }),
@@ -512,7 +500,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
     beds: [
       bed('wind.moan', 1, { gust: 0.6, breath: 0.3 }),
       bed('wind.whistle', 0.45, { gust: 0.8, breath: 0.3 }),
-      bed('wind.snow', 0.55, { bright: true, gust: 0.7, breath: 0.3 }),
+      bed('wind.snow', 0.55, { gust: 0.7, breath: 0.3 }),
       SURF(0.8),
       ...RAIN,
     ],
