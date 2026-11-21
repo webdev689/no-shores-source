@@ -153,7 +153,9 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
     if (node.picture) ui.picture(node.picture, scaled(inner, scale), clip, fade);
     if (node.text) {
       const size = node.text.size ?? 1;
-      const tall = lineHeight(size);
+      const tall = node.text.leading ?? lineHeight(size);
+      // The words stand in the middle of a line set taller (or shorter) than the face's own.
+      const lift = Math.floor((tall - lineHeight(size)) / 2);
       each.lines.forEach((line, index) => {
         const tracking = node.text?.tracking;
         const width = layLine(ui.face, line.map((span) => span.words).join(''), size, tracking).width;
@@ -164,7 +166,7 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
         drawLine(
           ui,
           line,
-          { x, y: inner.y + index * tall, size, scale, tracking },
+          { x, y: inner.y + index * tall + lift, size, scale, tracking },
           { colour, edge: node.text?.edge, edgeColour: node.text?.edgeColour, edgeWidth: node.text?.edgeWidth, fade },
           clip,
         );

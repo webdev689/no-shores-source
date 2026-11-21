@@ -44,3 +44,27 @@ test('words in a clear colour keep their room but draw no halo, as words typed l
   assert.equal(drawn([{ words: 'ab' }, { words: 'cd' }]), 4 * 9);
   assert.equal(drawn([{ words: 'ab' }, { words: 'cd', colour: 'rgba(0,0,0,0)' }]), 2 * 9);
 });
+
+test('lines set taller than the face are laid that tall, their words in the middle', () => {
+  const firstTop = (leading?: number) => {
+    const laid = layout(
+      { width: 20, text: { words: 'ab cd', size: 2, leading } },
+      { x: 0, y: 0, width: 400, height: 100 },
+      { face, scrollOf: () => 0 },
+    );
+    const ui = renderer();
+    drawLaid(ui, laid, 1, {
+      clock: 0,
+      field: () => null,
+      focused: () => false,
+      state: () => 'rest',
+      fieldScroll: new Map(),
+    });
+    return { height: laid[0]?.box.height, top: ui.quads.data[1] };
+  };
+  const plain = firstTop();
+  const tall = firstTop(33);
+  assert.equal(plain.height, 2 * 26);
+  assert.equal(tall.height, 2 * 33);
+  assert.equal((tall.top ?? 0) - (plain.top ?? 0), 3, 'the 7 px more shared, the odd one under');
+});

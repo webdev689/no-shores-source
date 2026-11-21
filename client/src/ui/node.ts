@@ -39,6 +39,9 @@ export interface Text {
   readonly tracking?: number;
   /** Wrapped lines are evened in length, as CSS's `text-wrap: balance` evens them. */
   readonly balance?: boolean;
+  /** Each line this many CSS pixels tall, its words in the middle of it, as a sheet's `line-height` sets it; the face's
+   *  own unless said. */
+  readonly leading?: number;
   readonly align?: Align;
 }
 
