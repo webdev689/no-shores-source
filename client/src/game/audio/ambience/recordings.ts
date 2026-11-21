@@ -73,7 +73,7 @@ export const RECORDINGS: Readonly<Partial<Record<BedKey | SoundKey, string>>> = 
   marmot: 'amb.marmot',
   bubbles: 'amb.swamp.bubbles',
   'frog.bull': 'amb.frog.bull',
-  'ice.creak': 'amb.ice.creak',
+  'ice.creak': 'amb.ice.crack',
   'ice.crack': 'amb.ice.crack',
   'ice.ping': 'amb.ice.ping',
 };

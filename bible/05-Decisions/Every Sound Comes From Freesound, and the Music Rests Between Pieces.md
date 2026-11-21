@@ -18,13 +18,16 @@ Freesound footsteps should be offered beside DFO's recorded steps: "Keep".
 
 ## What it settles
 
-- **No synthesised sound remains but the music.** Every sound effect and every sound of the ambience is a Freesound
-  recording the owner picks on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the menu's,
-  the gains and a hold's build-up, the world's, the ships' and the story's, and every bed and call of the sea, the
-  social space and the islands. This replaces the gains and the hold being made by the synthesiser, the menu sounds
-  kept as the synthesiser's, the ambience being synthesised ([[Music and Ambience Come From DFO's Synthesiser]]) and
-  DFO's synthesised sounds as candidates ([[DFO's Own Sounds Join the Sound Sheet]]).
+- **No synthesised sound remains but the music and the six below.** Every sound effect and every sound of the ambience
+  is a Freesound recording the owner picks on the sound sheet
+  ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the menu's, the world's, the ships' and the story's, and
+  every bed and call of the sea, the social space and the islands. This replaces the menu sounds kept as the
+  synthesiser's, the ambience being synthesised ([[Music and Ambience Come From DFO's Synthesiser]]) and DFO's
+  synthesised sounds as candidates ([[DFO's Own Sounds Join the Sound Sheet]]).
 - **The footsteps stay DFO's recordings**, as the owner picked them.
+- **Six of the synthesiser's sounds stay**, kept on the sheet with the note "keep": the gains' chimes, a hold's
+  build-up, the menu's refusal and the spoken voice ("Keep").
+- **The ice's creak is the ice's crack**: "Use ice cracking".
 - **The music stays the synthesiser's**, and gets a detailed pass: more variation, no high ringing or whining, not
   overly happy, fitting the world's lore, with a modern spin.
 - **Music comes and goes everywhere.** On the islands, in the social space and at sea a calm piece comes now and then,
@@ -33,6 +36,9 @@ Freesound footsteps should be offered beside DFO's recorded steps: "Keep".
 
 On the sound sheet the owner kept the fourteen calm pieces, Landfall, the storm at sea, the Boarding's first phase and
 the story's storm and deep, and asked for the green, wet and cold fights again: of the green fight, "Theres still a
-high pitch whine in the beginning"; of the wet, "High pitch whine".
+high pitch whine in the beginning"; of the wet, "High pitch whine". Made again, they kept all three.
+
+Every other sound the sheet offered the owner picked a recording for, the pick named in `content/audio/freesound.json`;
+for eighteen they chose None of these, and those are searched again with other words.
 
 [[Music]], [[Ambience]].

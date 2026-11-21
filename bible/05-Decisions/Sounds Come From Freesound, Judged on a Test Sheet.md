@@ -27,7 +27,8 @@ electric charge".
   [[Own Work]]. Each CC-BY sound is credited by name in the game.
 - **They take the place of generated sounds** once the owner picks them.
 - **The gains are made by the game's synthesiser**: one family, a distinct sound for each rarity, the rest from
-  Freesound. Replaced: they come from Freesound too ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]).
+  Freesound. Offered Freesound's again, the owner kept them
+  ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]).
 - **A hold builds up slightly, never as a sci-fi or electric charge**: high, thin air swelling, made by the
   synthesiser.
 - **Every sound and piece of music is judged on a test sheet**, a page on claude.ai where each plays beside where it

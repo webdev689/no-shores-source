@@ -38,7 +38,8 @@
       "seconds": [
         0.05,
         0.6
-      ]
+      ],
+      "picked": 20247
     },
     {
       "id": "ui.open",
@@ -57,7 +58,8 @@
       "seconds": [
         0.1,
         1.2
-      ]
+      ],
+      "picked": 699324
     },
     {
       "id": "ui.refused",
@@ -66,7 +68,8 @@
       "seconds": [
         0.1,
         1.0
-      ]
+      ],
+      "keep": true
     },
     {
       "id": "hold.charge",
@@ -75,7 +78,8 @@
       "seconds": [
         0.6,
         3.0
-      ]
+      ],
+      "made": "synthesiser"
     },
     {
       "id": "hold.dismantle",
@@ -104,7 +108,8 @@
       "seconds": [
         0.1,
         1.2
-      ]
+      ],
+      "made": "synthesiser"
     },
     {
       "id": "gain.rare",
@@ -113,7 +118,8 @@
       "seconds": [
         0.3,
         2.5
-      ]
+      ],
+      "made": "synthesiser"
     },
     {
       "id": "gain.legendary",
@@ -122,7 +128,8 @@
       "seconds": [
         0.5,
         3.5
-      ]
+      ],
+      "made": "synthesiser"
     },
     {
       "id": "swing.light",
@@ -878,7 +885,8 @@
       "seconds": [
         0.3,
         2.5
-      ]
+      ],
+      "picked": 541478
     },
     {
       "id": "status.linked",
@@ -1024,7 +1032,8 @@
       "seconds": [
         0.5,
         3.0
-      ]
+      ],
+      "picked": 184651
     },
     {
       "id": "ship.cannon-far",
@@ -1033,7 +1042,8 @@
       "seconds": [
         1.0,
         6.0
-      ]
+      ],
+      "picked": 565794
     },
     {
       "id": "ship.swivel",
@@ -1042,7 +1052,8 @@
       "seconds": [
         0.3,
         1.5
-      ]
+      ],
+      "picked": 347647
     },
     {
       "id": "ship.hit",
@@ -1051,7 +1062,8 @@
       "seconds": [
         0.3,
         2.0
-      ]
+      ],
+      "picked": 390723
     },
     {
       "id": "ship.blast",
@@ -1060,7 +1072,8 @@
       "seconds": [
         1.0,
         6.0
-      ]
+      ],
+      "picked": 753843
     },
     {
       "id": "ship.grapple",
@@ -1069,7 +1082,8 @@
       "seconds": [
         0.3,
         2.5
-      ]
+      ],
+      "picked": 541975
     },
     {
       "id": "ship.runout",
@@ -1078,7 +1092,8 @@
       "seconds": [
         0.6,
         3.0
-      ]
+      ],
+      "picked": 796564
     },
     {
       "id": "ship.ready",
@@ -1087,24 +1102,35 @@
       "seconds": [
         0.1,
         1.0
-      ]
+      ],
+      "picked": 381854
     },
     {
       "id": "ship.sinking",
       "use": "A ship goes down, groaning as the sea rushes in",
-      "query": "ship sinking",
+      "query": "sinking",
       "seconds": [
         2.0,
         12.0
+      ],
+      "skip": [
+        101638,
+        256688
       ]
     },
     {
       "id": "ship.whistle",
       "use": "A ball whistles past close by",
-      "query": "whizz",
+      "query": "fly by",
       "seconds": [
         0.3,
         2.0
+      ],
+      "skip": [
+        337880,
+        430707,
+        800858,
+        805124
       ]
     },
     {
@@ -1538,19 +1564,31 @@
     {
       "id": "amb.social.hum",
       "use": "A port city far below the plaza: its streets' murmur and work, no word clear, looped",
-      "query": "medieval town ambience",
+      "query": "distant city",
       "seconds": [
         20,
         600
+      ],
+      "skip": [
+        760377,
+        787823,
+        832577,
+        837047
       ]
     },
     {
       "id": "amb.land.breeze",
       "use": "A light wind over open land, looped",
-      "query": "gentle wind outdoor",
+      "query": "light wind",
       "seconds": [
         20,
         600
+      ],
+      "skip": [
+        740051,
+        874807,
+        875984,
+        877039
       ]
     },
     {
@@ -1560,7 +1598,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 768410
     },
     {
       "id": "amb.land.leaves",
@@ -1569,7 +1608,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 244942
     },
     {
       "id": "amb.land.moan",
@@ -1578,7 +1618,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 156414
     },
     {
       "id": "amb.land.whistle",
@@ -1587,7 +1628,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 428318
     },
     {
       "id": "amb.land.brook",
@@ -1596,7 +1638,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 608359
     },
     {
       "id": "amb.land.crickets",
@@ -1605,7 +1648,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 523439
     },
     {
       "id": "amb.land.cicadas",
@@ -1614,15 +1658,22 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 268964
     },
     {
       "id": "amb.land.rain",
       "use": "Rain falling on open land all round, looped",
-      "query": "rain ambience",
+      "query": "steady rain",
       "seconds": [
         20,
         600
+      ],
+      "skip": [
+        321176,
+        329511,
+        360639,
+        744003
       ]
     },
     {
@@ -1632,7 +1683,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 715698
     },
     {
       "id": "amb.desert.sand",
@@ -1641,15 +1693,22 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 632771
     },
     {
       "id": "amb.rainforest.drips",
       "use": "A rainforest's canopy dripping, looped",
-      "query": "rainforest dripping",
+      "query": "forest after rain",
       "seconds": [
         20,
         600
+      ],
+      "skip": [
+        457447,
+        638554,
+        651512,
+        663656
       ]
     },
     {
@@ -1659,7 +1718,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 788360
     },
     {
       "id": "amb.swamp.insects",
@@ -1668,7 +1728,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 346536
     },
     {
       "id": "amb.swamp.water",
@@ -1677,7 +1738,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 733287
     },
     {
       "id": "amb.tundra.snow",
@@ -1686,7 +1748,8 @@
       "seconds": [
         20,
         600
-      ]
+      ],
+      "picked": 835136
     },
     {
       "id": "amb.social.bell",
@@ -1695,7 +1758,8 @@
       "seconds": [
         0.5,
         8.0
-      ]
+      ],
+      "picked": 77698
     },
     {
       "id": "amb.social.anvil",
@@ -1704,7 +1768,8 @@
       "seconds": [
         0.3,
         6.0
-      ]
+      ],
+      "picked": 103632
     },
     {
       "id": "amb.social.halyard",
@@ -1713,7 +1778,8 @@
       "seconds": [
         0.5,
         8.0
-      ]
+      ],
+      "picked": 861827
     },
     {
       "id": "amb.social.hammer",
@@ -1722,15 +1788,22 @@
       "seconds": [
         0.5,
         6.0
-      ]
+      ],
+      "picked": 342542
     },
     {
       "id": "amb.social.cart",
       "use": "A cart's wooden wheels on the streets below",
-      "query": "cart wheels",
+      "query": "carriage",
       "seconds": [
         2.0,
         15.0
+      ],
+      "skip": [
+        232519,
+        387590,
+        387591,
+        434653
       ]
     },
     {
@@ -1740,15 +1813,20 @@
       "seconds": [
         0.5,
         8.0
-      ]
+      ],
+      "picked": 844331
     },
     {
       "id": "amb.fish.splash",
       "use": "A fish jumping in the water",
-      "query": "fish jump splash",
+      "query": "fish splash",
       "seconds": [
         0.2,
         3.0
+      ],
+      "skip": [
+        59104,
+        507092
       ]
     },
     {
@@ -1758,7 +1836,8 @@
       "seconds": [
         0.3,
         8.0
-      ]
+      ],
+      "picked": 628953
     },
     {
       "id": "amb.bird.lark",
@@ -1767,7 +1846,8 @@
       "seconds": [
         1.0,
         15.0
-      ]
+      ],
+      "picked": 684853
     },
     {
       "id": "amb.bird.warbler",
@@ -1776,7 +1856,8 @@
       "seconds": [
         0.5,
         10.0
-      ]
+      ],
+      "picked": 633811
     },
     {
       "id": "amb.bird.finch",
@@ -1785,7 +1866,8 @@
       "seconds": [
         0.5,
         8.0
-      ]
+      ],
+      "picked": 50494
     },
     {
       "id": "amb.bird.thrush",
@@ -1794,7 +1876,8 @@
       "seconds": [
         1.0,
         12.0
-      ]
+      ],
+      "picked": 365664
     },
     {
       "id": "amb.bird.wren",
@@ -1803,7 +1886,8 @@
       "seconds": [
         1.0,
         10.0
-      ]
+      ],
+      "picked": 683402
     },
     {
       "id": "amb.bird.chiffchaff",
@@ -1812,7 +1896,8 @@
       "seconds": [
         1.0,
         10.0
-      ]
+      ],
+      "picked": 868165
     },
     {
       "id": "amb.bird.cuckoo",
@@ -1821,6 +1906,12 @@
       "seconds": [
         0.5,
         8.0
+      ],
+      "skip": [
+        28113,
+        462929,
+        517779,
+        789948
       ]
     },
     {
@@ -1830,7 +1921,8 @@
       "seconds": [
         1.0,
         10.0
-      ]
+      ],
+      "picked": 688794
     },
     {
       "id": "amb.bird.woodpecker",
@@ -1839,7 +1931,8 @@
       "seconds": [
         0.5,
         6.0
-      ]
+      ],
+      "picked": 795970
     },
     {
       "id": "amb.bird.curlew",
@@ -1848,7 +1941,8 @@
       "seconds": [
         0.5,
         10.0
-      ]
+      ],
+      "picked": 72892
     },
     {
       "id": "amb.bird.buzzard",
@@ -1857,7 +1951,8 @@
       "seconds": [
         0.5,
         8.0
-      ]
+      ],
+      "picked": 194678
     },
     {
       "id": "amb.bird.nightjar",
@@ -1866,24 +1961,32 @@
       "seconds": [
         1.0,
         15.0
-      ]
+      ],
+      "picked": 86343
     },
     {
       "id": "amb.bird.weaver",
       "use": "Weaver birds chattering in the grasslands",
-      "query": "weaver",
+      "query": "birds chattering",
       "seconds": [
         1.0,
         10.0
+      ],
+      "skip": [
+        613990
       ]
     },
     {
       "id": "amb.bird.fluter",
       "use": "A tropical bird's fluting whistle",
-      "query": "tropical bird call",
+      "query": "exotic bird",
       "seconds": [
         0.5,
         10.0
+      ],
+      "skip": [
+        56551,
+        874260
       ]
     },
     {
@@ -1893,7 +1996,8 @@
       "seconds": [
         0.5,
         8.0
-      ]
+      ],
+      "picked": 558214
     },
     {
       "id": "amb.owl.deep",
@@ -1902,7 +2006,8 @@
       "seconds": [
         0.5,
         8.0
-      ]
+      ],
+      "picked": 868096
     },
     {
       "id": "amb.wolf.howl",
@@ -1911,6 +2016,12 @@
       "seconds": [
         1.0,
         12.0
+      ],
+      "skip": [
+        267179,
+        427694,
+        712068,
+        784596
       ]
     },
     {
@@ -1920,7 +2031,8 @@
       "seconds": [
         2.0,
         15.0
-      ]
+      ],
+      "picked": 267179
     },
     {
       "id": "amb.jackal",
@@ -1929,7 +2041,8 @@
       "seconds": [
         1.0,
         12.0
-      ]
+      ],
+      "picked": 68067
     },
     {
       "id": "amb.hyena",
@@ -1938,6 +2051,12 @@
       "seconds": [
         1.0,
         10.0
+      ],
+      "skip": [
+        253598,
+        547685,
+        681389,
+        719047
       ]
     },
     {
@@ -1947,6 +2066,9 @@
       "seconds": [
         0.2,
         4.0
+      ],
+      "skip": [
+        236567
       ]
     },
     {
@@ -1956,7 +2078,8 @@
       "seconds": [
         0.3,
         4.0
-      ]
+      ],
+      "picked": 377109
     },
     {
       "id": "amb.frog.peeps",
@@ -1965,7 +2088,8 @@
       "seconds": [
         0.5,
         8.0
-      ]
+      ],
+      "picked": 866772
     },
     {
       "id": "amb.frog.bull",
@@ -1974,7 +2098,8 @@
       "seconds": [
         0.5,
         6.0
-      ]
+      ],
+      "picked": 571424
     },
     {
       "id": "amb.insect.cricket",
@@ -1983,7 +2108,8 @@
       "seconds": [
         0.3,
         6.0
-      ]
+      ],
+      "picked": 753271
     },
     {
       "id": "amb.insect.cicada",
@@ -1992,7 +2118,8 @@
       "seconds": [
         1.0,
         10.0
-      ]
+      ],
+      "picked": 57888
     },
     {
       "id": "amb.insect.fly",
@@ -2001,7 +2128,8 @@
       "seconds": [
         0.5,
         6.0
-      ]
+      ],
+      "picked": 443059
     },
     {
       "id": "amb.insect.mosquito",
@@ -2010,6 +2138,12 @@
       "seconds": [
         0.5,
         5.0
+      ],
+      "skip": [
+        371721,
+        409354,
+        546328,
+        757764
       ]
     },
     {
@@ -2019,15 +2153,22 @@
       "seconds": [
         1.0,
         8.0
-      ]
+      ],
+      "picked": 726317
     },
     {
       "id": "amb.rock.whistle",
       "use": "A gust whistling through the rocks",
-      "query": "whistling wind",
+      "query": "howling wind",
       "seconds": [
         1.0,
         8.0
+      ],
+      "skip": [
+        218386,
+        470130,
+        832320,
+        875698
       ]
     },
     {
@@ -2037,7 +2178,8 @@
       "seconds": [
         0.5,
         5.0
-      ]
+      ],
+      "picked": 389618
     },
     {
       "id": "amb.sand.gust",
@@ -2046,7 +2188,8 @@
       "seconds": [
         1.0,
         8.0
-      ]
+      ],
+      "picked": 182868
     },
     {
       "id": "amb.wood.creak",
@@ -2055,7 +2198,8 @@
       "seconds": [
         0.5,
         6.0
-      ]
+      ],
+      "picked": 94356
     },
     {
       "id": "amb.wood.twig",
@@ -2064,7 +2208,8 @@
       "seconds": [
         0.1,
         2.0
-      ]
+      ],
+      "picked": 811533
     },
     {
       "id": "amb.wood.leafgust",
@@ -2073,7 +2218,8 @@
       "seconds": [
         1.0,
         6.0
-      ]
+      ],
+      "picked": 443065
     },
     {
       "id": "amb.shore.backwash",
@@ -2082,7 +2228,8 @@
       "seconds": [
         1.0,
         8.0
-      ]
+      ],
+      "picked": 245681
     },
     {
       "id": "amb.water.drip",
@@ -2091,24 +2238,22 @@
       "seconds": [
         0.1,
         2.0
-      ]
+      ],
+      "picked": 51754
     },
     {
       "id": "amb.swamp.bubbles",
       "use": "Marsh gas bubbling up through mud",
-      "query": "bubbles water",
+      "query": "bubbling",
       "seconds": [
         0.3,
         4.0
-      ]
-    },
-    {
-      "id": "amb.ice.creak",
-      "use": "Ice creaking under strain",
-      "query": "ice creaking",
-      "seconds": [
-        0.5,
-        6.0
+      ],
+      "skip": [
+        261597,
+        263953,
+        567457,
+        876750
       ]
     },
     {
@@ -2118,15 +2263,20 @@
       "seconds": [
         0.3,
         5.0
-      ]
+      ],
+      "picked": 819721
     },
     {
       "id": "amb.ice.ping",
       "use": "A frozen lake's ice singing",
-      "query": "singing ice",
+      "query": "frozen lake",
       "seconds": [
         0.5,
         10.0
+      ],
+      "skip": [
+        29514,
+        764657
       ]
     },
     {
@@ -2136,7 +2286,8 @@
       "seconds": [
         1.0,
         10.0
-      ]
+      ],
+      "keep": true
     },
     {
       "id": "story.thud",
@@ -2145,7 +2296,8 @@
       "seconds": [
         0.2,
         2.0
-      ]
+      ],
+      "picked": 376819
     },
     {
       "id": "story.ringing",
@@ -2154,7 +2306,8 @@
       "seconds": [
         1.0,
         8.0
-      ]
+      ],
+      "picked": 758149
     },
     {
       "id": "story.heartbeat",
@@ -2163,7 +2316,8 @@
       "seconds": [
         0.4,
         3.0
-      ]
+      ],
+      "picked": 418866
     },
     {
       "id": "story.flash",
@@ -2172,7 +2326,8 @@
       "seconds": [
         1.0,
         6.0
-      ]
+      ],
+      "picked": 547365
     }
   ]
 }
