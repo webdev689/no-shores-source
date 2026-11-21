@@ -82,10 +82,8 @@ code:
   - client/src/game/itemPage.ts#itemPage
   - client/src/game/inventoryPage.ts#inventoryPage
   - client/src/game/gearDom.ts#holdOn
-  - client/src/game/gearDom.ts#dismantleOnHold
   - client/src/game/acquiredFeed.ts#AcquiredFeed
   - client/src/game/menuPage.ts#MenuContext
-  - client/src/game/menuPage.ts#PageContext
   - client/src/game/gearIsland.ts#Island
   - client/src/game/gearHold.ts#Holds
   - client/src/game/gearNodes.ts#tileNode
@@ -102,8 +100,6 @@ code:
   - client/src/combat/worldCues.ts#eventCues
   - client/src/game/gearCards.ts#cardOf
   - client/src/player/itemPictures.ts#ItemPictures
-  - client/src/game/gearDom.ts#HoverCard
-  - client/src/game/gearDom.ts#compareNode
   - client/src/player/iconFit.ts#fitIcon
   - client/src/game/gearGlyphs.ts#nodeGlyphSvg
   - client/src/game/accountTab.ts#accountPanel
@@ -114,13 +110,17 @@ code:
   - client/src/game/emblemArt.ts#emblemPixels
   - client/src/game/appearanceButton.ts#emblemCard
   - client/src/game/appearance/appearancePage.ts#appearancePage
+  - client/src/game/appearance/appearanceDisplay.ts#displayNode
+  - client/src/game/appearance/bardingTile.ts#bardingPicture
   - client/src/forge/cosmetics.ts#rampOf
   - client/src/game/companyHud.ts#CompanyHud
   - client/src/game/stationPages.ts#vaultPage
   - client/src/game/npc/npcScreen.ts#npcPage
+  - client/src/game/npc/npcTiles.ts#wareTile
+  - client/src/game/npc/npcFigure.ts#keeperFigure
+  - client/src/game/npc/npcSpeech.ts#speechBand
   - client/src/game/npc/factionRows.ts#factionRows
   - content/story/keepers.json
-  - client/src/game/gearDom.ts#itemMarks
   - client/src/game/gearNodes.ts#ringNode
   - client/src/game/elementGlyphs.ts#elementSvg
   - client/src/face.css
@@ -182,9 +182,11 @@ moves to the game's own drawing
   the one hover card (shown beside a press while the pointer is over it or the keys gave it the focus, floated over
   everything on the screen and kept above the footer), what X opens, and the Art's and Appearance screens' doors. It
   reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view, and
-  Escape's steps. A page still made of elements (Ship, Social, Settings, the pages to come, the Art's screen,
-  Appearance and the keepers' screens with the vault) takes `PageContext` and stands in an island laid over the drawn
-  body each frame, with its own hover card, until it is drawn; while its controls have the focus the keys are its own.
+  Escape's steps. The worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the
+  Art's and Appearance stand to the body's edges, the Art's scene a live picture the game paints a step at a time, and
+  the figures, the horse and the keepers drawn from the forge's pixels, kept whole. A page still made of elements
+  (Ship, Social, Settings, the pages to come) stands in an island laid over the drawn body each frame until it is
+  drawn; while its controls have the focus the keys are its own.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
 
@@ -636,8 +638,8 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
-- Drawn by the game: the heads-up display, the toasts, the fight's display and the menu; the menu's Ship, Social,
-  Settings, Art, Appearance and keepers' pages stand in their island of elements. Tab does not cross from the drawn
+- Drawn by the game: the heads-up display, the toasts, the fight's display and the menu; the menu's Ship, Social and
+  Settings pages stand in their island of elements. Tab does not cross from the drawn
   menu into the island: the pointer reaches it, or a press of its own. A word's soft shade past its hard outline is
   not drawn, as a blur has no crisp form, nor a chosen mark's or a ship's mark's blur (a chosen mark's glow is a drawn
   gradient); the fight's glows (the soft lock's mark, the charged crosshair, a full Anima, a ready Tenet, the poise's
@@ -677,6 +679,11 @@ button's corner and screen, and the Tailor's wares.
 - The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.
 - The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
+- The Art's, Appearance and keepers' screens draw no soft glow: the Art's emblem opens without the glow that swelled
+  round it, the Anima breathes as a ring, a fragment just set flares as a white ring and wash, and the worn Art's and
+  the focused one's outlines are drawn diamonds round their emblems. A fragment not owned and a ware not had stand
+  dimmed and tinted grey, not wholly grey. Within the Core's open flyout the arrows reach the screen's other tiles
+  too, as they move to the nearest that way anywhere on a drawn page; Escape still closes the flyout first.
 - No gamepad or touch layer yet, and so none of DFO's narrow-screen places for the compass.
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card
   under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where the
