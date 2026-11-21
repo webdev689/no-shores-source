@@ -43,6 +43,10 @@ code:
   - client/src/game/hudPieces.ts#seaBarNode
   - client/src/game/hudMarks.ts#markNodes
   - client/src/game/hudParts.ts#keycap
+  - client/src/game/keyIcons.ts#iconNode
+  - client/src/game/hints.ts#keysShown
+  - client/src/game/controls.ts#CONTROL_GROUPS
+  - client/src/game/controlsSheet.ts#ControlsSheet
   - client/src/game/compassNode.ts#compassNode
   - client/src/game/shipPlates.ts#shipPlateNodes
   - client/src/game/usePrompt.ts#UsePrompt
@@ -222,7 +226,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **The heads-up display** is a layer of its own (`Hud`): the place's name, the edge's warning and its darkening,
   death's words and Respawn, the key strip on its keycaps, the task tracker, the
   toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
-  and its offers, Manage's panel, the menu, the prompt for E and the veil. Each stands where the page's sheet stood
+  and its offers, Manage's panel, the menu, the prompt for E, the veil and the sheet of every control. Each stands where the page's sheet stood
   it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
   let a click through to the world; the marks, presses and panels take it. A mark's glyph is
   drawn into a picture in the mended face (`CANVAS_FACE`), which holds the ones Pixelify lacks. It gives way to the fight's display as that says it shows, and to the
@@ -492,10 +496,40 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   notices; in the prologue's fight they are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
   3.5 s), rising in over 0.2 s; one already shown keeps its place.
-- **The key strip** shows the keys of what the player does now, each on a keycap beside its words, 8 px apart,
-  wrapping right to left. On foot it keeps to the fight's keys and the body's beyond walking, the Arts' only while
-  one is worn; at 1280 by 720 that is two lines, three with Shadow's Dusk Daggers. Past 1440p the strip stands at
-  twice its size and wraps 960 px short of the view's width, so it never runs over the weapons.
+- **The key strip** shows only the keys of what the player is doing now (`hints.ts`), in plain verbs, each beside
+  its words, 8 px apart, wrapping right to left, and always last K, All controls. A key stands on its keycap; an
+  arrow key is drawn on its cap; a mouse button is drawn as a small pixel mouse with that button lit in brass, the
+  wheel, a side button or a drag (the mouse with a two-headed arrow) likewise, each texel a pixel larger than the
+  words' step and edged dark to read over the world (`keyIcons.ts`). On foot: with the weapon put away, Z to draw it,
+  Shift, Space, C and the menu; a melee weapon drawn, the swing, the guard or parry, the dodge, the drink and the
+  Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink and the Melee loadout; aiming, the fire and
+  letting go; Dusk Daggers aimed, only letting go of Q; riding, getting down, the gallop and the menu; hanging from a
+  ledge, the climb and letting go, and on a wall the kick off too, whatever is drawn; the Arts' R, Q and G while one
+  is worn and the hands are free to cast, Shadow's Q apart as held to aim Dusk Daggers; N for the map wherever it can
+  be raised, before the menu's M; the click that takes the mouse to look round first while the mouse is free; dead,
+  Enter to respawn once death is told, and nothing while the fall plays out. The prompt for E says what E does, so
+  the strip leaves it out. At sea: sailing, the click to sail there, the helm's keys and the menu (the sea bar names
+  its own keys); in Manage, the drag, the wheel and B back; on the deck, the click to look round as on foot, Shift,
+  Space and E to take the helm; at the map and choosing a landing, their clicks, Enter and Escape; in a fight, the
+  helm, the sails, the burst, the aim and the brace, and while aiming, letting go to fire, holding fire, the shot and
+  the drag. Eight entries at most: past eight, those just before K give way, the last first, so the menu's goes, then
+  the map's, then the Arts' ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the
+  strip stands at twice its size and wraps 960 px short of the view's width, so it never runs over the weapons; a
+  view under 720 px wide gives it 240 px, room for its widest entry.
+- **The sheet of every control** (`ControlsSheet`) opens with K wherever the key strip shows, except over the menu's
+  gear screen, and K, Escape or its Close press shuts it. It is a window of the kit over a dimmed view, over every
+  layer the game draws but the screen's keyboard: ALL CONTROLS on its header band, then its groups, Move, Fight,
+  Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name in faint capitals over a rule and its
+  controls under it: the keys drawn as the strip draws them beside a few words on what they do. A control on one of
+  the player's bindings shows that binding's own keys, so the sheet always says what the game hears. The groups
+  stand in as many 400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each
+  column near an even share of the rows; the words take their larger step at 1500 by 900 and up. The list scrolls
+  inside a window kept 16 px from the view's edges. Opening it lets the mouse go and moves the focus to its first
+  control; while it is open the keys are the interface's, and Tab and the arrows move among the controls, the focused
+  one lit in brass. A screen reader hears "All controls", then each control's keys and sentence as it takes focus, a
+  sign by its name (Comma, Left bracket). While it is open no key reaches the game (a key let go still does, so none
+  stays held) and its scrim takes the pointer, so nothing behind it is clicked, the held map no more than the world;
+  the world goes on, as under the menu.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; Back to
   the sea stands on its footer. It is built again only when what it
   shows changes.

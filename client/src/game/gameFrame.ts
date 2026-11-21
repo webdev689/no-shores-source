@@ -215,7 +215,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.through =
       paused || looking || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    hud.hints(looking ? HINTS.landMap : withMapKey(shown.hints));
+    // N raises the map on foot unless a menu is up or the player has fallen, as `openMap` has it.
+    hud.hints(looking ? HINTS.landMap : paused || here.fallen ? shown.hints : withMapKey(shown.hints));
     hud.marks([]);
     hideSeaHud(hud);
     hud.note(here.roomNote);
@@ -291,6 +292,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       charting: charting.busy,
       friendly: fleet.marks,
       notices,
+      free: !input.locked && !paused,
     });
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
@@ -327,7 +329,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
-    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys() || creationOpen());
+    // The keys are the interface's while a menu, the gear screen, the creation or the sheet of every control is up.
+    const keys = menuUp || gearTakesKeys() || creationOpen() || hud.controls.open;
+    const tookWheel = ui.hear(seconds, !input.locked, keys);
     const heard = input.frame();
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;

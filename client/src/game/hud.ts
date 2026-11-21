@@ -2,6 +2,7 @@ import { hudLayout } from '../combat/hudLayout.ts';
 import { SeaFightReadout } from '../combat/seaReadout.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { compassNode } from './compassNode.ts';
+import { ControlsSheet } from './controlsSheet.ts';
 import type { ShipMark } from '../plus/compass.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { NoticeStack } from '../plus/notices.ts';
@@ -56,6 +57,8 @@ export interface Besides {
 const SHADE_S = 0.4;
 export const VEIL_S = 0.7;
 const BREATH_S = 2.4;
+/** The most entries the key strip holds, the key to every control last among them. */
+const HINTS_MOST = 8;
 
 /** The screen's edge darkened toward black, as a radial gradient over the whole view clear to 35% of the way out: drawn
  *  small and stretched, its steps too fine to see. */
@@ -78,13 +81,15 @@ const VIGNETTE: Picture = {
 
 /** The game's heads-up display, drawn by the game as a layer of its interface (`node`): the place's name, the edge's
  *  warning and death, the key strip, the quests, the toasts, the status line, the notices, the compass, the marks and
- *  the ships' plates at sea, the sea fight's readout, the sea bar and its offers, Manage's panel, a menu, and the veil
- *  while a place loads. The game tells it what to show each frame through its methods and hears its presses through
- *  the `on` callbacks. */
+ *  the ships' plates at sea, the sea fight's readout, the sea bar and its offers, Manage's panel, a menu, the veil
+ *  while a place loads, and the sheet of every control. The game tells it what to show each frame through its
+ *  methods and hears its presses through the `on` callbacks. */
 export class Hud {
   readonly tasks = new TaskTracker();
   /** What E does where the player stands, low in the middle of the view. */
   readonly usePrompt = new UsePrompt();
+  /** Every control, opened with K over everything else. */
+  readonly controls = new ControlsSheet();
   /** The sea fight's readout: the ship's plate and rose, the card and the tally; and what it shows now. */
   private readonly fight = new SeaFightReadout();
   private fightModel: SeaFightModel | null = null;
@@ -141,9 +146,16 @@ export class Hud {
     this.respawnWanted = respawn;
   }
 
-  /** The keys the player can press now, each on its keycap beside what it does; none hides the strip. */
+  /** The keys the player can press now, each on its keycap beside what it does, the most needed first; none hides
+   *  the strip. Past eight, those nearest the last give way to it, the key to every control. */
   hints(hints: readonly Hint[]): void {
-    this.hintsShown = hints;
+    this.hintsShown = hints.length > HINTS_MOST ? [...hints.slice(0, HINTS_MOST - 1), ...hints.slice(-1)] : hints;
+  }
+
+  /** Whether the key strip shows keys now, the sheet of every control's among them: it gives way while someone
+   *  speaks. */
+  get keysOffered(): boolean {
+    return this.hintsShown.length > 0 && !this.besides().speaking;
   }
 
   /** Shows the sea fight's readout, or hides it for none. */
@@ -380,6 +392,7 @@ export class Hud {
       this.seaSight.node(),
       // The page raised each mark over the rest of the display, so they stand over it here too.
       ...markNodes(ui, this.marksShown, (id) => this.markChosen(id)),
+      this.controls.node(ui, view),
     ];
     return { width: 'grow', height: 'grow', children };
   }

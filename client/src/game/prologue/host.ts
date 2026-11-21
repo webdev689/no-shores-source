@@ -27,15 +27,16 @@ export class StoryHost {
   private readonly ready = new Promise<Started | null>((resolve) => (this.started = resolve));
   private readonly canvas: HTMLCanvasElement;
 
-  constructor(stack: Stack, canvas: HTMLCanvasElement) {
+  /** The story on `canvas`, its pointer let alone while `covered` (the sheet of every control over it takes it). */
+  constructor(stack: Stack, canvas: HTMLCanvasElement, covered: () => boolean = () => false) {
     this.canvas = canvas;
     void tapToStart(stack, this.ready).then(async () => (this.story = await this.ready));
-    canvas.addEventListener('pointerdown', () => this.story?.prologue.press());
+    canvas.addEventListener('pointerdown', () => covered() || this.story?.prologue.press());
     // A touch held anywhere on the view skips, so it is heard from the window.
     addEventListener('pointerdown', (event) => event.pointerType === 'touch' && this.story?.prologue.touch(true));
     for (const ending of ['pointerup', 'pointercancel'] as const)
       addEventListener(ending, (event) => event.pointerType === 'touch' && this.story?.prologue.touch(false));
-    fightPointer(canvas, () => this.story?.prologue.fight ?? null);
+    fightPointer(canvas, () => (covered() ? null : (this.story?.prologue.fight ?? null)));
   }
 
   /** Starts the story on the game's parts, once the rooms' module has compiled; `failed` if it cannot start. */

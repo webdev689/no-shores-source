@@ -7,6 +7,8 @@ import { QuadList } from '../ui/quads.ts';
 import { type Face, widthOf } from '../ui/text.ts';
 import { Interface, type UiEvent } from '../ui/ui.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
+import type { Hint } from './gearNodes.ts';
+import { type OnFoot, footHints, withMapKey } from './hints.ts';
 import { Hud } from './hud.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
@@ -181,6 +183,50 @@ test('the key strip stands over the sea bar and its offer, gives way to speech, 
   hud.onBesides(() => ({ fight: false, bossed: false, speaking: true, map: false }));
   frame(ui, hud);
   assert.equal(hud.hintsBox(ui), null);
+});
+
+test('the key strip as shown holds eight entries at most, the key to every control last', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  const rest: OnFoot = {
+    worn: 3,
+    drawn: false,
+    ranged: false,
+    aiming: false,
+    daggers: false,
+    mounted: false,
+    mode: 'ground',
+    free: true,
+  };
+  const away = withMapKey(footHints(rest));
+  const drawn = withMapKey(footHints({ ...rest, worn: 1, drawn: true }));
+  const boarded: Hint[] = [['E', 'Back aboard your ship · 30 s left'], ...footHints({ ...rest, drawn: true })];
+  for (const strip of [away, drawn, boarded]) {
+    assert.ok(strip.length > 8, 'more than the strip holds');
+    hud.hints(strip);
+    const laid = frame(ui, hud);
+    const entries = laid.filter((each) => each.parent?.node.id === 'hud:hints');
+    assert.equal(entries.length, 8);
+    const said = words(laid.filter((each) => entries.some((entry) => each.parent === entry)));
+    assert.equal(said.at(-1), 'All controls');
+    assert.equal(said[strip[0]?.[0] === 'E' ? 1 : 0], 'Look round', 'the click to look round kept');
+  }
+  hud.hints(away);
+  const said = words(frame(ui, hud));
+  assert.ok(said.includes('Hold to aim daggers'), 'the Arts kept');
+  assert.ok(!said.includes('Menu'), 'the menu’s key gave way');
+});
+
+test('the sheet of every control is offered only while the key strip shows', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.hints([['K', 'All controls']]);
+  frame(ui, hud);
+  assert.ok(hud.keysOffered);
+  hud.onBesides(() => ({ fight: false, bossed: false, speaking: true, map: false }));
+  frame(ui, hud);
+  assert.equal(hud.hintsBox(ui), null, 'speech hides the strip');
+  assert.ok(!hud.keysOffered);
 });
 
 test('Manage’s panel lists each part, and its way back runs Manage', () => {
