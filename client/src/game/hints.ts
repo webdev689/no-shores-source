@@ -28,6 +28,11 @@ export const HINTS = {
     ['Wheel', 'Third person'],
     ['M', 'Menu'],
   ],
+  landMap: [
+    ['Drag', 'Pan'],
+    ['Wheel', 'Zoom'],
+    ['N / Esc', 'Put the map away'],
+  ],
   dead: [['Enter', 'Respawn at the nearest spawn']],
   sea: [
     ['Click', 'Sail there'],
@@ -98,6 +103,12 @@ export function footHints(worn: number): readonly Hint[] {
 export function keysShown(standing: Standing, worn: number): readonly Hint[] {
   if (standing.kind !== 'dead') return footHints(worn);
   return standing.told ? HINTS.dead : [];
+}
+
+/** The keys shown on foot where the held map is raised (not in the story, nor on a ship's deck): N beside the
+ *  menu's M. */
+export function withMapKey(hints: readonly Hint[]): readonly Hint[] {
+  return hints.flatMap((hint): Hint[] => (hint[0] === 'M' ? [['N', 'Map'], hint] : [hint]));
 }
 
 /** What the player is doing at sea, for the keys shown: fighting, choosing a landing, at the helm with the map,
