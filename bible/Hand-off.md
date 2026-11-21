@@ -264,6 +264,24 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **The controls and the marks are on `main`**, merged with the owner's yes ("Yes start the merges and deploys"),
+  each after an independent audit whose findings were all fixed ("Fix all"): the key strip that follows the moment and
+  K's sheet of every control (#130, [[The Key Strip Follows the Moment, and K Opens Every Control]]); every control
+  rebound and kept with the account, the pad as Destiny's, the pad's cursor in windows and DFO's gauntlet as the
+  pointer (#133, [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]],
+  [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]); a mark over each keeper and usable thing in
+  place of the rings on the ground (#134, [[What a Player Can Use Wears Its Mark Over It]]). Tested offline with the
+  full check. Not yet: a real controller, the mouse's gauntlet seen in Chromium and Firefox (headless pictures never
+  show the system cursor), the binds' D1 migration and route live, the marks on a real GPU.
+- **The dungeons-to-mail stack** (#72 → #88 → #97 → #122 → #123): a second and third audit's findings are all fixed,
+  and each layer passes the full check on its head (64ca61c6, 4878453b, ad1c2084, 1b7dab08, b87ffb3e). It conflicts
+  with `main` since #118, #126, #119, #130, #133 and #134, so it needs a catch-up before it merges, with the owner's
+  yes. #122's move of the asset workflows to `R2_TOKEN` waits on the owner's named yes. Meeting #134, the Postmaster's
+  letter mark should beat while mail waits (his ring did), the board wear a gold "!", an entrance a door.
+- **The picture driver and the game's worker**: main draws in a worker, so `webgpu-shot.cjs` fails headless ("A valid
+  external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
+  So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
+  (cfd75bba), unmerged; the marks were pictured with it.
 - **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
   after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
   and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three
