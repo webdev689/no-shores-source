@@ -211,8 +211,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   [[Crew]]): a ship's level, Attack, Defense and Prestige by the character's law; four modules with the gear's grid,
   ship materials, salvage, the Shipwright and infusion; officers at posts that change its fight, ashore as companions,
   recruited at a pledged faction's counter or taken from won decks; ten hands who load its guns and board with the
-  player. The sea's fights measured by ship level are in #99's description. Every kit-framed surface has a border
-  (`framed.test.ts`), officers' pages name their perks, and rarity names hold 4.5:1 (`rarityContrast.test.ts`).
+  player. The sea's fights measured by ship level are in #99's description. Every kit-framed surface has a border,
+  officers' pages name their perks, and rarity names hold 4.5:1 (`rarityContrast.test.ts`).
 - The sea's procedural [[Islands]], from draft PR #101, merged into #75's branch and tested offline: coves
   and rarer guarded isles built from a seed by the `isle` crate (the same bits natively and in the page), dressed with
   95 Blender modules ([[Island Modules]]) and drawn by the islands layer ([[Island Drawing]]), with a World Editor
@@ -256,19 +256,22 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
-- **The whole plan of the owner's four points, on branch `ccr-3320a365-bzwp4s`, tested offline (the full check on
-  78c918b5) and live headless, not yet in a pull request**: no HTML anywhere in the interface
-  ([[The Interface Uses No HTML, Now or Later]]): the HUD, the fight's display, the menu and every page of it, the
-  story's screens, the held map's marks, the Test Ground and the World Editor drawn by the game, each page one canvas
-  and its script, and a repo check (`html`) refusing new HTML with no baselines; the game in a worker of its own
-  ([[Work Leaves the Main Thread Where It Can]], [[Game]], "Threads"); the network packed and sent as changes
-  ([[The Network Is Made Smaller and Readied for WebTransport]]). #112 holds the first part of it, in draft. Asked of
-  the owner: whether this work goes on #112's branch or a pull request of its own; signing in without a browser's
-  password manager (passkeys, Chromium's credential store, or neither); a WebTransport relay outside Cloudflare; the
-  game's files at an address of their own; whether the layer check's widening stands (combat, testground, editor,
-  speech, cinema and heldmap may import `ui`; the new `thread` layer imports `ui`); and whether shared memory or Rust's
-  WebAssembly threads are wanted, now that the page's thread is busy 0.0 ms a frame (measured; neither is needed for
-  it). Merging needs the owner's yes.
+- **The whole plan of the owner's four points, on branch `ccr-3320a365-bzwp4s`, merged with `main`, audited and
+  tested offline (the full check on the head pushed), in a pull request of its own that supersedes #112**: no HTML
+  anywhere in the interface ([[The Interface Uses No HTML, Now or Later]]): the HUD, the fight's display, the menu and
+  every page of it, the story's screens, the held map's marks, the Test Ground and the World Editor drawn by the game,
+  each page one canvas and its script, and a repo check (`html`) refusing new HTML with no way round it; the game in a
+  worker of its own ([[Work Leaves the Main Thread Where It Can]], [[Game]], "Threads"), the page's thread busy 0.0 ms
+  a frame where it was 41 (SwiftShader, 480 by 270); the network packed and sent as changes
+  ([[The Network Is Made Smaller and Readied for WebTransport]]). The owner's "make the best decision" let Claude make
+  the open calls ([[Claude Makes the Four Points' Open Calls]]): one pull request; Chromium's password store for
+  sign-ins; no relay outside Cloudflare; the files' own address once the owner has a domain; the layers' widening
+  stands; no shared memory. Five audits (the drawn interface, the screens, the thread, the network, the repo's rules)
+  found an input that stalled a room (verified now under tight limits), a pointer off at a fractional ratio, a Discord
+  sign-in's return that stopped the game, keys leaking past the menu, Space and Backspace lost in a field, no modal
+  scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Needs the owner's yes:
+  the `html` check by name (a new check), and the merge. Playing alone at sea is now sent the per-player cut of the
+  snapshot, as with others.
 - **The co-dev's `webgpu-shot` cannot picture the game now**: it reads the page's WebGPU canvas, and the game draws
   from its worker. Its picture runs work for the Test Ground and the World Editor, which stay on the page; for the
   game, a worker-aware measure is in the session's notes (it times the worker's frames through Playwright's worker
@@ -450,10 +453,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
-- **After the four points**: the creation's typing driven live through the worker (only its pieces are tested); the
-  game's frame time on a real GPU, in and out of the worker; a sound heard by a person from the worker's cues; the
-  face's `=` drawn as a solid block and `~` read as `-`, as the World Editor's port reported (unchecked), mended in
-  `face.ts` if the owner chooses ([[Interface]]).
+- **After the four points**: the game's frame time on a real GPU, in and out of the worker; a sound heard by a person
+  from the worker's cues; holding a press with the pad's A, which waits on an "A held" signal from the interface (main
+  had no pad holds either).
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
   `server/garrison.test.ts`): its 13 foes stand all 1500 ticks and its player falls about tick 900, run straight into
   the wall #63 gave its node, steered round it, or with the starting sword asked for; its swings seem never to land.

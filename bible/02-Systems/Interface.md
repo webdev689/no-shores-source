@@ -36,7 +36,7 @@ code:
   - client/src/game/toasts.ts#layToasts
   - client/src/plus/tones.ts#TONES
   - client/src/plus/tones.ts#FILLS
-  - client/src/plus/emblems.ts#emblemUrl
+  - client/src/plus/emblems.ts#emblemSvg
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
   - client/src/game/hud.ts#Hud
