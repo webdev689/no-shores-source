@@ -91,6 +91,21 @@ impl Character {
         Reward { xp, aurem, vestige }
     }
 
+    /// Keeps a Vestige a first clear pays as it is paid: in the carried ten, else in the vault; false, keeping nothing,
+    /// when both are full. Numbered as it is kept, as one taken off the ground is.
+    pub fn keep_paid(&mut self, vestige: Vestige) -> bool {
+        let vaulted = if self.vestiges_held(false) < crate::character::VESTIGES_MOST {
+            false
+        } else if self.vestiges_held(true) < crate::character::VAULT_MOST {
+            true
+        } else {
+            return false;
+        };
+        let id = self.take_id();
+        self.vestiges.insert(id, (Vestige { id, ..vestige }, vaulted));
+        true
+    }
+
     /// Takes a Vestige off the ground into the carried ten; refused, leaving it lying, when they are full.
     pub fn pick_up(&mut self, vestige: Vestige) -> bool {
         if self.vestiges_held(false) >= crate::character::VESTIGES_MOST {

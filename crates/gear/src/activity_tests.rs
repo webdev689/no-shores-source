@@ -37,7 +37,7 @@ fn the_records_are_kept_as_this_json() {
     let mut activity = Activity::default();
     activity.today(20_778).cleared.extend([Difficulty::Abyss, Difficulty::Normal]);
     activity.today(20_778).bounties.insert(2, 5);
-    *activity.this_week(2_968) = ThisWeek { week: 2_968, elite: false, abyss: true, boon: true };
+    *activity.this_week(2_968) = ThisWeek { week: 2_968, elite: false, abyss: true, boon: true, ..ThisWeek::default() };
     assert_eq!(
         serde_json::to_value(&activity).expect("written"),
         serde_json::json!({
@@ -45,6 +45,21 @@ fn the_records_are_kept_as_this_json() {
             "this_week": { "week": 2_968, "elite": false, "abyss": true, "boon": true }
         })
     );
+}
+
+#[test]
+fn a_later_builds_keys_and_tiers_are_kept_through_a_rollback_or_left_out_never_failing_the_read() {
+    let later = serde_json::json!({
+        "today": { "day": 20_778, "cleared": ["normal", "legend"], "bounties": {}, "streak": 3 },
+        "this_week": { "week": 2_968, "elite": true, "abyss": false, "boon": false, "raid": true },
+        "season": 4
+    });
+    let read: Activity = serde_json::from_value(later).expect("read, though a later build wrote it");
+    assert_eq!(read.today.cleared, std::collections::BTreeSet::from([Difficulty::Normal]), "an unknown tier left out");
+    let written = serde_json::to_value(&read).expect("written");
+    assert_eq!(written["this_week"]["raid"], true, "the week's unknown key kept");
+    assert_eq!(written["season"], 4, "the record's own unknown key kept");
+    assert_eq!(written["today"]["streak"], 3, "the day's, as before");
 }
 
 #[test]

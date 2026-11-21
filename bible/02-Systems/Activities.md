@@ -40,7 +40,8 @@ the sea's room keeps no characters.
 - **One rhythm for everyone.** The day and the week turn at the same moment for every player and every system.
 - **A stark board.** What is on is the same for everyone and reads at a glance, with what it pays and when it turns.
 - **Abyss at the top.** The hardest thing outside Breaches, once a week, with the best weekly drop.
-- **Gates kept by the rooms.** No client can skip a gate or take a reward twice.
+- **Gates kept by the rooms.** No client can skip a level gate or take a reward twice. The prologue's end is the page's
+  word, since the story plays in the page alone and may be passed over ([[Prologue]]).
 
 **Not now:** Breaches themselves and sea Breaches ("I dont want to build this yet"), the story's missions and side
 quests past the prologue (the quest engine below is built for them), and dungeons on the sea's islands, which wait on
@@ -165,14 +166,15 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
   and the Abyss boon until the week turns: a quarter more of each kill's XP, rounded down, and as much more
   reputation for the faction pledged while its cape is worn ([[Factions]]), as `boon_xp` pays it.
-- **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and lays
-  the Vestige 1.4 m before the cache (`pay_clear`). A player playing unkept finds the cache's own Vestige alone. A
-  run's first clear pays only in the day or the week it was opened for, as its modifiers are fixed then. The day's
-  pays in a run opened while its dungeon was its island's dungeon of the day, with that day's modifier at Elite and
-  Abyss, and cleared that day; and at Normal in a patrol's shared room while it is its island's dungeon of the day by
-  the room's clock then. The week's pays only in the week its run was opened for. So a run opened before a reset and
-  cleared after it pays as a clear again. An Elite Dungeon at Normal and a sea island's pay their kills and cache
-  alone.
+- **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and keeps the
+  Vestige with the record that pays it, in the carried ten or else the vault, so a Vestige once paid is never lost; only
+  with both full does it lie 1.4 m before the cache (`pay_clear`, `keep_paid`). A player playing unkept finds the
+  cache's own Vestige alone. A run's first clear pays only in the day or the week it was opened for, as its modifiers
+  are fixed then. The day's pays in a run opened while its dungeon was its island's dungeon of the day, with that day's
+  modifier at Elite and Abyss, and cleared that day; and at Normal in a patrol's shared room while it is its island's
+  dungeon of the day by the room's clock then. The week's pays only in the week its run was opened for. So a run opened
+  before a reset and cleared after it pays as a clear again. An Elite Dungeon at Normal and a sea island's pay their
+  kills and cache alone.
 - **A clear again** in the same period pays its kills and its cache as any run, no more.
 
 ## Quests and bounties

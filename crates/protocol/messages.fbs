@@ -488,8 +488,9 @@ table Gear {
   // there, the model's yaw (radians clockwise from north, turning its +z as an RMB block's yaw does), and which of
   // the four entrance models it is (0 to 3).
   dungeons: [double];
-  // Whether they have finished the prologue, as kept with their character.
-  prologue_done: bool;
+  // Whether they have finished the prologue, as kept with their character. A room that writes no word of it (one built
+  // before it was said) reads as past it, as a save with no story does.
+  prologue_done: bool = true;
   // Their day's and week's record as kept with their character (gear's Activity): the day it is for and the tiers of
   // the dungeon of the day cleared then (0 Normal, 1 Elite, 2 Abyss); the week it is for, whether they cleared the
   // Elite and the Abyss Dungeon of the week, and whether they hold the Abyss boon. The page judges each by its own day.

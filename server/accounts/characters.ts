@@ -39,6 +39,7 @@ export async function liveAccount(database: Db, token: string, now: number): Pro
 
 /** What the accounts answer the rooms over their binding. */
 export interface Characters {
+  look(token: string): Promise<Claimed | null>;
   claim(token: string, holder: string): Promise<Claimed | null>;
   save(account: string, holder: string, body: string): Promise<boolean>;
   release(account: string, holder: string, body: string | null): Promise<boolean>;
@@ -72,6 +73,17 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
       if (account === null) return false;
       await present(database, account, room, now());
       return true;
+    },
+    /** The account a session's token is for and its character as last kept, taken from no room that holds it; null
+     *  when the token is no session, or one that lapsed. */
+    async look(token) {
+      const account = await live(token);
+      if (account === null) return null;
+      const kept = await database
+        .prepare('SELECT body FROM characters WHERE account_id = ?1')
+        .bind(account)
+        .first<{ body: string | null }>();
+      return { account, body: kept?.body ?? null };
     },
     /** The account a session's token is for, its character held for `holder`; null when the token is no session, or
      *  one that lapsed. */

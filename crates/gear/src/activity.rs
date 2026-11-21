@@ -16,6 +16,9 @@ pub const BOUNTIES: u8 = 6;
 pub struct Activity {
     pub today: Today,
     pub this_week: ThisWeek,
+    /// What a later build kept here, kept as it was through a rollback.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
 }
 
 /// The day's record: the tiers of the dungeon of the day cleared, and each bounty held, by its board place, with its
@@ -24,6 +27,7 @@ pub struct Activity {
 #[serde(default)]
 pub struct Today {
     pub day: u64,
+    #[serde(deserialize_with = "known_tiers")]
     pub cleared: BTreeSet<Difficulty>,
     pub bounties: BTreeMap<u8, u32>,
     /// The board's places turned in today: each pays once.
@@ -43,6 +47,16 @@ pub struct ThisWeek {
     pub elite: bool,
     pub abyss: bool,
     pub boon: bool,
+    /// What a later build kept here, kept as it was through a rollback.
+    #[serde(flatten)]
+    pub unknown: crate::character::UnknownKeys,
+}
+
+/// The tiers cleared as read: one this build does not know (a later build's) is left out rather than failing the
+/// whole character's read.
+fn known_tiers<'de, D: serde::Deserializer<'de>>(reader: D) -> Result<BTreeSet<Difficulty>, D::Error> {
+    let read = Vec::<serde_json::Value>::deserialize(reader)?;
+    Ok(read.into_iter().filter_map(|tier| serde_json::from_value(tier).ok()).collect())
 }
 
 impl Activity {

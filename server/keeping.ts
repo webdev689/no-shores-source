@@ -7,11 +7,11 @@
  * A run's room is kept to one company of four accounts at most (`forCompany`), and keeps no one unkept.
  */
 
-import type { Characters as Kept } from './accounts/characters.ts';
+import type { Claimed, Characters as Kept } from './accounts/characters.ts';
 import { runFull } from './roomNames.ts';
 
 /** What a room keeps characters with: claiming, saving and letting go, and a player's companions. */
-type Characters = Pick<Kept, 'claim' | 'save' | 'release' | 'companions'>;
+type Characters = Pick<Kept, 'look' | 'claim' | 'save' | 'release' | 'companions'>;
 
 /** Why a run's room sends a player away who is in no company of those kept in it. */
 export const ANOTHER_COMPANY = "This run is another company's.";
@@ -93,12 +93,28 @@ export class Keeper {
     return this;
   }
 
+  /** Whether a player's inputs wait, unplayed: in a run, until the room keeps their character. */
+  waiting(player: number): boolean {
+    return this.company && !this.held.has(player);
+  }
+
   /** Claims a player's character with their session's token and gives it to them; whether it is now kept. `here`
    *  says whether the player is still in the room once the claim is answered. */
   async signIn(player: number, token: string, now: () => number, here: () => boolean): Promise<boolean> {
     const characters = this.characters;
     if (!characters || this.held.has(player) || this.room.character(player) === null) return false;
     const holder = `${this.name}:${crypto.randomUUID()}`;
+    if (this.company) {
+      // A run judges its character before it claims it, so one it turns away is never taken from the room that has it
+      // (a second tab plays on); the claim is judged again, as the character may have moved on meanwhile.
+      const looked = await this.tried(() => characters.look(token), here);
+      const shut = looked ? await this.judged(player, looked, here) : looked === null ? SIGN_IN_FOR_RUN : undefined;
+      if (shut !== '') {
+        const trouble = shut === undefined;
+        if (here()) this.lost(player, shut ?? ACCOUNTS_TROUBLE, trouble);
+        return false;
+      }
+    }
     const claimed = await this.tried(() => characters.claim(token, holder), here);
     if (!claimed) {
       // A claim the accounts never answered (undefined) may be answered on a join again; no session never is.
@@ -106,23 +122,13 @@ export class Keeper {
       if (this.company && here()) this.lost(player, passing ? ACCOUNTS_TROUBLE : SIGN_IN_FOR_RUN, passing);
       return false;
     }
-    // Asked before the checks, so nothing waits between judging the company and keeping the character.
-    const companions = this.company
-      ? await this.tried(() => characters.companions(claimed.account, this.name), here)
-      : null;
-    if (companions === undefined) {
+    const shut = await this.judged(player, claimed, here);
+    if (shut === undefined) {
       // The company cannot be judged: refused for now, with nothing of this room saved over the character.
       await characters.release(claimed.account, holder, null).catch(() => false);
       if (here()) this.lost(player, ACCOUNTS_TROUBLE, true);
       return false;
     }
-    // A run is full by the accounts it keeps, so a member's own older socket never counts against them.
-    const others = new Set(
-      [...this.held.values()].map((held) => held.account).filter((one) => one !== claimed.account),
-    );
-    const full = this.company ? runFull(this.name, others.size + 1) : null;
-    const shut =
-      this.room.shut(player, claimed.body) || (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : ''));
     if (shut !== '') {
       // Left as kept: the gate shuts here, so nothing of this room may be saved over it.
       await characters.release(claimed.account, holder, null).catch(() => false);
@@ -156,6 +162,19 @@ export class Keeper {
       inFlight: null,
     });
     return true;
+  }
+
+  /** Why this room turns a character away ('' when it lets it in): its gate, and in a run its four accounts and its
+   *  company; undefined when the accounts cannot say who the company is. Nothing waits between this and keeping it. */
+  private async judged(player: number, { account, body }: Claimed, here: () => boolean): Promise<string | undefined> {
+    const characters = this.characters;
+    const companions =
+      this.company && characters ? await this.tried(() => characters.companions(account, this.name), here) : null;
+    if (companions === undefined) return undefined;
+    // A run is full by the accounts it keeps, so a member's own older socket never counts against them.
+    const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
+    const full = this.company ? runFull(this.name, others.size + 1) : null;
+    return this.room.shut(player, body) || (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : ''));
   }
 
   /** What `ask` answers, asked again after each of a claim's waits while the accounts do not answer and the player is

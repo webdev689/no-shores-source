@@ -37,8 +37,14 @@ fn clear_the_end(room: &mut Room) {
     room.tick();
 }
 
-fn vestiges_for(room: &Room, player: PlayerId) -> usize {
-    room.drops.iter().filter(|drop| drop.player == player && matches!(drop.what, crate::Dropped::Vestige(_))).count()
+/// A player's Vestiges: those lying for them, and those their character keeps.
+fn vestiges_for(room: &Room, player: PlayerId) -> (usize, usize) {
+    let laid = room
+        .drops
+        .iter()
+        .filter(|drop| drop.player == player && matches!(drop.what, crate::Dropped::Vestige(_)))
+        .count();
+    (laid, room.players[&player].character.vestiges.len())
 }
 
 #[test]
@@ -114,22 +120,22 @@ fn the_first_clear_of_a_tier_on_any_islands_dungeon_of_the_day_pays_once_and_a_c
     let mut first = run("gullwing-vale", 0, gear::Difficulty::Elite);
     let player = kept_in(&mut first, &character);
     clear_the_end(&mut first);
-    assert_eq!(vestiges_for(&first, player), 2, "its cache's and the day's");
+    assert_eq!(vestiges_for(&first, player), (1, 1), "its cache's on the floor, the day's kept at once");
     let kept = first.players[&player].character.clone();
     assert_eq!(kept.activity.today.cleared, BTreeSet::from([gear::Difficulty::Elite]));
     let mut other = run("highwater-fells", 2, gear::Difficulty::Elite);
     let again = kept_in(&mut other, &kept);
     clear_the_end(&mut other);
-    assert_eq!(vestiges_for(&other, again), 1, "Elite is taken today on every island: its cache alone");
+    assert_eq!(vestiges_for(&other, again), (1, 1), "Elite is taken today on every island: its cache alone");
     let mut shared = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("the shared Normal room");
     shared.set_minute(FRIDAY_NINE);
     let plain = kept_in(&mut shared, &kept);
     clear_the_end(&mut shared);
-    assert_eq!(vestiges_for(&shared, plain), 2, "Normal is its own tier");
+    assert_eq!(vestiges_for(&shared, plain), (1, 2), "Normal is its own tier");
     let mut not_today = run("gullwing-vale", 1, gear::Difficulty::Normal);
     let late = kept_in(&mut not_today, &shared.players[&plain].character.clone());
     clear_the_end(&mut not_today);
-    assert_eq!(vestiges_for(&not_today, late), 1, "not the dungeon of the day");
+    assert_eq!(vestiges_for(&not_today, late), (1, 2), "not the dungeon of the day");
 }
 
 #[test]
@@ -146,7 +152,7 @@ fn a_weeks_run_cleared_after_the_week_turns_pays_as_a_clear_again() {
         clear_the_end(&mut room);
         let week = &room.players[&player].character.activity.this_week;
         assert_eq!((week.abyss, week.boon), (paid, paid), "cleared at {cleared_at}");
-        assert_eq!(vestiges_for(&room, player), if paid { 2 } else { 1 });
+        assert_eq!(vestiges_for(&room, player), (1, usize::from(paid)));
     }
 }
 
@@ -178,7 +184,7 @@ fn a_player_playing_unkept_finds_the_caches_vestige_alone_and_their_kept_charact
     let mut first = shared();
     let player = first.join().expect("in, unkept until its claim answers");
     clear_the_end(&mut first);
-    assert_eq!(vestiges_for(&first, player), 1, "the cache's alone: a player playing unkept keeps nothing");
+    assert_eq!(vestiges_for(&first, player), (1, 0), "the cache's alone: a player playing unkept keeps nothing");
     assert!(first.restore_character(player, &past_the_prologue().to_json()));
     assert!(first.own(player, "an account"));
     let kept = first.players[&player].character.clone();
@@ -186,7 +192,7 @@ fn a_player_playing_unkept_finds_the_caches_vestige_alone_and_their_kept_charact
     let mut later = shared();
     let again = kept_in(&mut later, &kept);
     clear_the_end(&mut later);
-    assert_eq!(vestiges_for(&later, again), 2, "its own clear takes the day's");
+    assert_eq!(vestiges_for(&later, again), (1, 1), "its own clear takes the day's");
 }
 
 #[test]
@@ -196,7 +202,11 @@ fn a_days_clear_pays_only_in_a_run_opened_as_that_days_dungeon_and_cleared_that_
     shared.set_minute(FRIDAY_NINE);
     let player = kept_in(&mut shared, &past_the_prologue());
     clear_the_end(&mut shared);
-    assert_eq!(vestiges_for(&shared, player), 1, "the shared room carries no day's modifier, so pays no Elite clear");
+    assert_eq!(
+        vestiges_for(&shared, player),
+        (1, 0),
+        "the shared room carries no day's modifier, so pays no Elite clear"
+    );
     let run_at = |minute: u64| {
         let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 0 };
         Room::dungeon_run(&of, gear::Difficulty::Elite, minute).expect("a run of a patrol's dungeon")
@@ -209,15 +219,15 @@ fn a_days_clear_pays_only_in_a_run_opened_as_that_days_dungeon_and_cleared_that_
     let player = kept_in(&mut early, &past_the_prologue());
     early.set_minute(FRIDAY_NINE);
     clear_the_end(&mut early);
-    assert_eq!(vestiges_for(&early, player), 1, "opened before the reset, when it was not the day's");
+    assert_eq!(vestiges_for(&early, player), (1, 0), "opened before the reset, when it was not the day's");
     let mut today = run_at(FRIDAY_NINE);
     assert_eq!(modifiers(&today), Some(vec![Modifier::Burn(3)]));
     let player = kept_in(&mut today, &past_the_prologue());
     clear_the_end(&mut today);
-    assert_eq!(vestiges_for(&today, player), 2, "opened as the day's, carrying its modifier");
+    assert_eq!(vestiges_for(&today, player), (1, 1), "opened as the day's, carrying its modifier");
     let mut late = run_at(FRIDAY_NINE);
     let player = kept_in(&mut late, &past_the_prologue());
     late.set_minute(FRIDAY_NINE + gear::clock::DAY_MINUTES);
     clear_the_end(&mut late);
-    assert_eq!(vestiges_for(&late, player), 1, "cleared after the next reset");
+    assert_eq!(vestiges_for(&late, player), (1, 0), "cleared after the next reset");
 }

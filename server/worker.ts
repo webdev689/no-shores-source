@@ -134,6 +134,7 @@ export class RoomHost extends DurableObject<Env> {
       shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
     };
     const characters = {
+      look: (token: string) => accounts.look(token),
       claim: (token: string, holder: string) => accounts.claim(token, holder),
       save: (account: string, holder: string, body: string) => accounts.save(account, holder, body),
       release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
@@ -204,6 +205,8 @@ export class RoomHost extends DurableObject<Env> {
     if (!within) return this.dismiss(socket, 1008, 'too many messages');
     if (typeof message !== 'string' && message.byteLength > MESSAGE_MOST)
       return this.dismiss(socket, 1009, 'too large');
+    // In a run no one plays before the room keeps their character: their inputs wait unplayed until then.
+    if (typeof message !== 'string' && this.keeper?.waiting(player)) return;
     const answer =
       typeof message === 'string'
         ? 'not an input'

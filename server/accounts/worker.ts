@@ -23,6 +23,10 @@ const wait = (millis: number) => new Promise<void>((resolve) => setTimeout(resol
 export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters {
   private readonly kept = characters(this.env.DB, Date.now, wait);
 
+  look(token: string): Promise<Claimed | null> {
+    return this.kept.look(token);
+  }
+
   claim(token: string, holder: string): Promise<Claimed | null> {
     return this.kept.claim(token, holder);
   }

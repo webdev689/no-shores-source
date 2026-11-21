@@ -340,6 +340,44 @@ test('a character the room’s gate shuts is let go untouched, and its player se
   assert.equal(back.held.get(3), '{"level":1}', 'as it was kept, at once');
 });
 
+test('a run its gate shuts judges before it claims, so the room playing the character keeps it', async () => {
+  const { clock, kept, token } = await world();
+  const plaza = roomOf();
+  plaza.held.set(1, '{"level":1}');
+  const lost: number[] = [];
+  const first = new Keeper(kept, plaza, 'node-overlook-social', (player) => void lost.push(player));
+  assert.equal(
+    await first.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  first.changed(1);
+  await first.due(clock.now + 3_600_000);
+  const run = roomOf((body) => (body === '{"level":1}' ? 'Abyss seas open at level 20.' : ''));
+  run.held.set(2, '{"starting":true}');
+  const sent: [number, string | undefined][] = [];
+  const gated = new Keeper(kept, run, 'node-tidewall--abyss--run-k3j4h5g6', (player, why) => sent.push([player, why]));
+  gated.forCompany();
+  assert.equal(
+    await gated.signIn(
+      2,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    false,
+  );
+  assert.deepEqual(sent, [[2, 'Abyss seas open at level 20.']], 'turned away with the reason');
+  plaza.held.set(1, '{"level":2}');
+  first.changed(1);
+  await first.due(clock.now + 7_200_000);
+  assert.deepEqual(lost, [], 'the plaza still holds the character: its next save is its own');
+});
+
 test('a run’s room keeps to the company of those it let in, though they all left a while', async () => {
   const made = accounts();
   const tokens: Record<string, string> = {};
@@ -391,8 +429,11 @@ test('a run keeps no one unkept: a token that is no session, none in time, or no
   const cut = new Keeper(down, room, run, told, () => Promise.resolve()).forCompany();
   assert.equal(await cut.signIn(4, token, now, here), false);
   assert.deepEqual(sent.slice(2), [[4, ACCOUNTS_TROUBLE, true]], 'joining again may find the accounts back');
+  assert.ok(keeper.waiting(5) && keeper.waiting(2), 'none plays a run until kept');
   assert.equal(await keeper.signIn(5, token, now, here), true, 'a player kept is let in');
+  assert.equal(keeper.waiting(5), false, 'and plays from then on');
   const open = new Keeper(kept, room, 'node-saltgrass-downs', told, () => Promise.resolve());
+  assert.equal(open.waiting(2), false, 'any other room lets a player play while they sign in');
   await open.tokenDue(2, () => false, here);
   assert.equal(await open.signIn(2, 'f'.repeat(64), now, here), false);
   assert.equal(sent.length, 3, 'any other room still lets a player play unkept');

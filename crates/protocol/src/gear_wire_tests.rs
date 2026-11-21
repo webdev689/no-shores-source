@@ -346,7 +346,8 @@ fn a_players_gear_carries_their_days_and_weeks_record_as_kept() {
     let mut character = room.player(player).expect("in the room").character.clone();
     let cleared = [gear::Difficulty::Elite, gear::Difficulty::Abyss].into_iter().collect();
     character.activity.today = gear::activity::Today { day: 20_778, cleared, ..Default::default() };
-    character.activity.this_week = gear::activity::ThisWeek { week: 2_968, elite: true, abyss: false, boon: true };
+    character.activity.this_week =
+        gear::activity::ThisWeek { week: 2_968, elite: true, abyss: false, boon: true, ..Default::default() };
     assert!(room.restore_character(player, &character.to_json()));
     let bytes = gear_bytes(&room, player).expect("written");
     let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
