@@ -24,7 +24,7 @@ them out is [[Gear]] and [[Ship Power]].
 | Its two perks | An **intrinsic**, always on while it is worn, shown at the head of its page; and **its own** node, bought in the column the Atheric already has, for 1,000 Aurem and 1 Essence | Destiny 1's exotics: an exotic perk that is the weapon, and a second one earned in its tree. The grid keeps its shape, so no kept item's nodes move |
 | What they do | Something a number cannot: lightning that leaps, a kill that bursts, a guard that bites back, a count that builds; never only a share more | The owner: "more like exotic weapons from destiny" |
 | Their element | An Atheric's leaps and bursts carry the perk's own element, whatever the weapon rolled | Lightning is Volt on any bow; whether named weapons keep an element of their own is still the owner's |
-| A kept Atheric | Follows its catalogue entry: each node bought and each choice kept, the new perk standing where the old one was bought | Destiny's reworked exotics changed every copy, and nobody bought them again. A node costs the same whatever its perk, so nothing is given back and nothing is lost to a stock's cap |
+| A kept Atheric | Follows its catalogue entry: a node bought moves with its perk where its column changed, else to the perk it merged into, else stays on the plain perk in its place, a reworked Atheric's own among them; one left only a perk that gives and takes, or a place another took, is given back | Destiny's reworked exotics changed every copy, and nobody bought them again. A node costs the same whatever its perk, so mostly nothing is given back; nor is a cost pressed on a player who never chose it |
 | Its look | Its own metal or set, and its own make where the forge has more than one (a shield's kind, a bow's), with its rarity's glow | Destiny's exotics each had a model of their own |
 
 ### The Atheric weapons
@@ -68,6 +68,11 @@ came from, a bite as a flash on its striker.
 | From the Deep | Doubles a ball's hull harm in the waterline band, on top of the band's own | The band already holes harder; the Atheric makes it worse |
 | Snare | Slows ships of another flag within 30 m of its centre; the strongest Snare counts, never two | Balls strike only another flag; a Snare is a ship's reach |
 | Squall and Web | Squall counts every ball that strikes it; Web only a ball in the rigging, each new one starting its 6 s again | What each Atheric is made of |
+| A blow that does nothing | Sets off no leap, burst or bite: one on a foe four or more levels above its player, or an arrow on a foe slain this tick | A chain is a share of its blow |
+| A punch with a ranged Atheric drawn | Sets off none of its perks | Its perks are its shots' |
+| Conduit's cut | Tells the page as a Tenet comes ready, not at every blow | The gear message carries every item |
+| Snare | Slows a ship at its oars too | A ship rowing is no freer of the web |
+| On the item page | Both an Atheric's perks under "Atheric", its own dimmed until chosen; a trade-off's cost on its own line in the colour of a loss; its intrinsic first on its card | Destiny's exotic pages show both perks; a cost should read as a cost |
 | A Legendary's sails and rigging | Six perks each, Backed Sails, Boarding Ladders and Preventer Stays among them, so no module offers a perk twice | The merged pools had too few for a Legendary's six nodes |
 
 ### The Atheric ship modules

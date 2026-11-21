@@ -76,10 +76,15 @@ number is one of [[Gear as Claude Shapes It]].
   can open to; every rolled pool holds enough traits.
 - **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
   [[Ship Power]]), a rarity, a level (1 to 20; a
-  Legendary or Atheric is 20), its XP and the nodes bought and chosen. A named item follows its catalogue entry: a
-  kept one offers its entry's traits, each node bought and each choice kept, so a reworked perk stands where the old
-  one was bought. A rolled one offering a trait the catalogue no longer holds offers the first of its column's pool it
-  lacks in its place, bought and chosen as it was.
+  Legendary or Atheric is 20), its XP and the nodes bought and chosen. A named item follows its catalogue entry: in
+  a kept one's column whose traits changed, a node bought moves with its perk to where the perk stands now, else to the
+  perk it merged into, else stays where it was if a plain perk stands there (a reworked one, as an Atheric's own);
+  one where only a perk that gives and takes stands, or a place another took, is given back for what it cost, so no
+  cost is pressed on a player who never chose it. Each choice follows its node. A rolled one offering a trait the
+  catalogue no longer holds offers in its place the perk it merged into where that fits it, else the first plain perk
+  of its column's pool it lacks, bought and chosen as it was; with none left but perks that give and take, the first
+  of those, its node given back (`old_hands::unfit`). A named item of another rarity than its entry keeps its traits
+  and takes no intrinsic.
 - **Where it is worn.** Each kind in its one slot: a Melee loadout for Melee, a Ranged one for Ranged, each armour
   piece and the cloak its own ("Loadouts", below). A player wears an item only at its level or above, and one Atheric
   in the loadouts and one in the armour at a time.
@@ -486,7 +491,11 @@ Officers ashore fight beside their player, as DFO's crew companions did
 - A loadout's traits work whichever of its hands strikes, and every trait worn counts once however many pieces give
   it. Until a drawn loadout's new trim reaches the browser, the player's own screen predicts them by the old one.
 - A kill's stamina and Last Light's reload come from the loadout drawn as the kill lands: an arrow that kills after a
-  swap to Melee gives Melee's.
+  swap to Melee gives Melee's. So do an Atheric's perks on a shot: an arrow loosed before Gullwing is worn and landing
+  after leaps, and one loosed from Gullwing landing after it is taken off does not.
+- A leap, a burst or a bite is a share of its blow as it struck: a blow on a foe four or more levels above its player
+  does nothing ([[Gear]], "Kills"), so it sets off none.
+- A rolled guns module kept with Double Shotted in a perk column, from before it became a finish, keeps it there.
 - The menu ([[Interface]], "The menu") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).

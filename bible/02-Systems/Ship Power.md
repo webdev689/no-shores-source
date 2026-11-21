@@ -81,10 +81,12 @@ are in [[Crew]].
   their finish, what is loaded, Double Shotted (hole a hull 10% more), Chain Locker (tear canvas 20% more) and Grape
   Locker (cut down men 20% more); in their perks Raking Fire (20% more on a ship below a third of its hull), Firing
   Drill (reload 5% faster and scatter 5% less), Run Out and Overcharged. A hull offers Oak Ribs (it takes 10% less),
-  Copper Sheathing (a ball below its waterline harms it 20% less), Iron Ram, Last Timbers, Carpenter's Stores and
-  Stripped Ballast; sails Storm Canvas (tears 12% less), Flying Jib (sails 6% faster), Lookout Yard, Crowd of Sail and
-  Reefed Sails and Backed Sails; rigging Quick Braces (turns 10% faster), Grapnels, Boarding Nets (balls cut down 12%
-  fewer of its men), Taut Rigging, Boarding Ladders and Preventer Stays. No module offers a perk twice. The officers' perks are their own ([[Crew]]).
+  Copper Sheathing (a ball below its waterline harms it 20% less), Iron Ram, Last Timbers, Carpenter's Stores (its
+  Carpenter patches back 25% more of each ball's harm, so it asks for one at that post) and Stripped Ballast; sails
+  Storm Canvas (tears 12% less), Flying Jib (sails 6% faster), Lookout Yard, Crowd of Sail, Reefed Sails and Backed
+  Sails; rigging Quick Braces (turns 10% faster), Grapnels, Boarding Nets (balls cut down 12% fewer of its men), Taut
+  Rigging, Boarding Ladders and Preventer Stays. No module offers a perk twice. The officers' perks are their own
+  ([[Crew]]).
 - **Perks that give and take**: Heavy Charge (balls hole a hull 15% more, guns reload 8% slower), Hot Guns (reload
   18% faster, scatter 12% more), Run Out (reload 12% faster, balls cut down 10% more of its men), Overcharged (hole a
   hull 20% more, scatter 15% more), Stripped Ballast (sails 8% faster in a fight, its hull takes 8% more), Crowd of
@@ -100,7 +102,7 @@ are in [[Crew]].
   | Kraken's Roar (guns) | **From the Deep**: its balls in a ship's waterline band hole it twice as hard | **Feeding**: a ship it sinks reloads both its sides at once |
   | Leviathan's Rib (hull) | **Living Bone**: afloat in a fight its hull mends 1% of its whole a second, with a Carpenter or none | **Hard to Kill**: once a fight, a ball that would sink it leaves it a tenth of its hull |
   | Stormcaller's Sheet (sails) | **Own Wind**: torn canvas costs it no way while any canvas stands; with none left it sails as any ship does | **Squall**: each ball that strikes it gives it 3% more way for 6 s, to 15% |
-  | The Spider's Web (rigging) | **Web**: four more hands board with it, and a ship its balls strike in the rigging turns 30% slower for 6 s | **Snare**: a ship of another flag within 30 m of it sails 15% slower |
+  | The Spider's Web (rigging) | **Web**: four more hands board with it, and a ship its balls strike in the rigging turns 30% slower for 6 s | **Snare**: in a fight, a ship of another flag within 30 m of it sails 15% slower, under sail or at its oars |
 
   A ship sinks to the ball that takes the last of its hull: that ball's shooter sank it. Only a player's ship is
   fitted, so a captain's carries none of these. The trim's numbers cross in the gear message beside the rest.
@@ -128,6 +130,10 @@ browser predicting its ship fits it alike.
 
 ## Limits
 
+- A ball in the rigging takes canvas by the larger of its canvas harm and half its hull harm, and men as a flat share,
+  so the canvas and crew perks reach a rigging hit only in part.
+- A player beaten on a boarded deck who washes up and comes back into the same fight comes back as a new ship, its
+  Hard to Kill, Squall and Carpenter's debt begun again.
 - Way and turn act in a fight; out of one the sea moves the ship on a course at its own pace. The fleet room fits a
   plain ship, so no Atheric acts there and a browser's prediction of its ship needs none of them. A Lookout's sight
   lengthens each ship's sight in that player's own sea snapshot.

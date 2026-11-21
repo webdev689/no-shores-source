@@ -860,6 +860,20 @@ img.gear-glyph-fine {
 .gear-card-words {
   margin: 4px 0;
 }
+/* A perk's cost, where it gives and takes; a word on where an Atheric's perk stands; and its own node not yet chosen,
+   shown dim beside its intrinsic. */
+.gear-trait-words .gear-trait-takes {
+  color: var(--loss);
+}
+.gear-trait-words .gear-trait-note {
+  font-size: var(--type-xs);
+  color: var(--faint);
+  letter-spacing: round(up, calc(1em / 11), 1px);
+  text-transform: uppercase;
+}
+.gear-trait-off {
+  opacity: 0.62;
+}
 /* What a piece changes over the one worn: each number's meter, the change a segment in its colour. */
 .gear-compare {
   margin-top: 10px;

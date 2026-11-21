@@ -438,9 +438,12 @@ export function compareNode(compare: NonNullable<Card['compare']>): HTMLElement 
 
 /** A trait as a card or a page lists it: its column's glyph, its name and its words. */
 export function traitNode(trait: Trait): HTMLElement {
-  const line = make('div', '', 'gear-card-trait');
+  const line = make('div', '', trait.off ? 'gear-card-trait gear-trait-off' : 'gear-card-trait');
   const words = make('div', '', 'gear-trait-words');
-  words.append(make('b', trait.name), make('span', trait.words));
+  words.append(make('b', trait.name), make('span', trait.takes ? (trait.gives ?? trait.words) : trait.words));
+  // What a perk that gives and takes costs stands apart, in the colour of a loss.
+  if (trait.takes) words.append(make('span', trait.takes, 'gear-trait-takes'));
+  if (trait.note) words.append(make('small', trait.note, 'gear-trait-note'));
   line.append(nodeGlyph(trait.kind), words);
   return line;
 }

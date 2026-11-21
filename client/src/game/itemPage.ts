@@ -7,13 +7,12 @@
 // bought is chosen by a click. To the right, the item itself drawn large on a lit floor; what may be done with it goes
 // to the menu's footer.
 
-import items from '../../../content/gear/items.json' with { type: 'json' };
 import { make } from '../editor/dom.ts';
 import type { GearItem } from '../network/gearMessages.ts';
-import { CARRIED, ELEMENTS, RARITIES, type NodeShown, WORN, traitOf } from '../player/gear.ts';
+import { CARRIED, ELEMENTS, RARITIES, type NodeShown, WORN } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
-import { type Trait, cardOf, traitsShown } from './gearCards.ts';
+import { ATHERIC_OWN, cardOf, intrinsicOf, ownOf, traitsShown } from './gearCards.ts';
 import {
   HOLD_MS,
   compareNode,
@@ -39,17 +38,6 @@ const ART_AROUND = 110;
 /** The most an item's Attack and Prestige reach, for their meters. */
 const ATTACK_MOST = 300;
 const PRESTIGE_MOST = 30;
-
-/** The column kind an Atheric's own node has, whose glyph its intrinsic shows too. */
-const ATHERIC_OWN = 4;
-
-/** An Atheric's intrinsic, always on while it is worn and never a node, as its page shows it; null for any other. */
-export function intrinsicOf(item: Pick<GearItem, 'named'>): Trait | null {
-  const entry: { readonly id: string; readonly intrinsic?: string } | undefined = items.items.find(
-    (found) => found.id === item.named,
-  );
-  return entry?.intrinsic ? { ...traitOf(entry.intrinsic), kind: ATHERIC_OWN } : null;
-}
 
 /** A meter sunk into the page, filled to `share`; with `value`, its label and value beside it. */
 export function bar(label: string, share: number, value = ''): HTMLElement {
@@ -158,8 +146,9 @@ export function itemPage(
   name.tabIndex = -1;
   head.append(name, kind);
   const left = make('div', '', 'gear-item-left');
-  const intrinsic = intrinsicOf(item);
-  if (intrinsic) left.append(make('h3', 'Intrinsic', `gear-heading ${ROLES.rule}`), traitNode(intrinsic));
+  // An Atheric's two perks of its own head its page together, its own node's shown even before it is chosen.
+  const atheric = [intrinsicOf(item), ownOf(item)].filter((trait) => trait !== null);
+  if (atheric.length > 0) left.append(make('h3', 'Atheric', `gear-heading ${ROLES.rule}`), ...atheric.map(traitNode));
   if (detail.words) left.append(make('p', detail.words, 'gear-card-words'));
   const main = item.attack
     ? { label: 'Attack', value: item.attack, most: ATTACK_MOST }
@@ -176,7 +165,7 @@ export function itemPage(
   const worn = item.at === CARRIED ? context.gear.items.find((each) => each.at === WORN + item.bucket) : undefined;
   const compare = worn ? cardOf(item, worn).compare : null;
   if (compare) left.append(compareNode(compare));
-  const traits = traitsShown(item);
+  const traits = traitsShown(item).filter((trait) => trait.kind !== ATHERIC_OWN);
   if (traits.length > 0)
     left.append(make('h3', 'Perks', `gear-heading ${ROLES.rule}`), ...traits.map((trait) => traitNode(trait)));
   if (detail.columns.length > 0)

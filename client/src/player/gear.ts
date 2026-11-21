@@ -149,10 +149,17 @@ export function itemWords(item: Pick<GearItem, 'named'>): string {
   return item.named ? (items.items.find((found) => found.id === item.named)?.words ?? '') : '';
 }
 
-/** A trait's name and words. */
-export function traitOf(id: string): { readonly name: string; readonly words: string } {
+/** A trait's name and words: all it does (`words`), and for a perk that gives and takes, what it gives and what it
+ *  costs apart (`gives`, `takes`), so a screen can set the cost apart. */
+export function traitOf(id: string): {
+  readonly name: string;
+  readonly words: string;
+  readonly gives: string;
+  readonly takes: string;
+} {
   const found = traits.traits.find((each) => each.id === id);
-  return { name: found?.name ?? id, words: found?.words ?? '' };
+  const [gives, takes] = [found?.words ?? '', (found && 'takes' in found ? found.takes : '') ?? ''];
+  return { name: found?.name ?? id, words: takes ? `${gives} ${takes}` : gives, gives, takes };
 }
 
 /** An island's resource's name, by its place in the list. */
