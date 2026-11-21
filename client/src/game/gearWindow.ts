@@ -518,7 +518,10 @@ export function startGearWindow(
         : isKeeperView(view) && npcChoosing()
           ? npcHints(view)
           : null;
-    const hints = shown ? HINTS.item : (aside ?? (view === 'inventory' ? shelfHints : (HINTS[view] ?? npcHints(view))));
+    // A board shut before the prologue takes nothing in or out, so it offers no keys.
+    const shutBoard = view === 'board' && gear.prologueDone === false;
+    const viewHints = shutBoard ? [] : (HINTS[view] ?? npcHints(view));
+    const hints = shown ? HINTS.item : (aside ?? (view === 'inventory' ? shelfHints : viewHints));
     hinted(hints ?? []);
     actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || aside ? [stepBack] : [close]));
     // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it

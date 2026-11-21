@@ -93,11 +93,6 @@ export class Keeper {
     return this;
   }
 
-  /** Whether a player's inputs wait, unplayed: in a run, until the room keeps their character. */
-  waiting(player: number): boolean {
-    return this.company && !this.held.has(player);
-  }
-
   /** Claims a player's character with their session's token and gives it to them; whether it is now kept. `here`
    *  says whether the player is still in the room once the claim is answered. */
   async signIn(player: number, token: string, now: () => number, here: () => boolean): Promise<boolean> {

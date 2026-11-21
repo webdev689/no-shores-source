@@ -166,6 +166,17 @@ pub fn own(player: PlayerId, bytes: &[u8]) -> bool {
     .unwrap_or(false)
 }
 
+/// Holds a player's inputs (`held` 1) or lets them play (0): held, each is taken in its order and played as standing
+/// still. 1 if the player is in a room on land, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_hold(player: PlayerId, held: u32) -> u32 {
+    let held = with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.hold(player, held != 0),
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    });
+    u32::from(held.unwrap_or(false))
+}
+
 /// Notes the account written at `address` that keeps a player's character; 1 if noted, 0 if not.
 ///
 /// # Safety

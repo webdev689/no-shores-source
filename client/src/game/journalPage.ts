@@ -160,7 +160,7 @@ export function startJournal(source: JournalSource | null, now: () => number = r
       return arrow;
     });
     const pageWords = heard(
-      make('span', `${pageAt + 1} / ${count}`, 'journal-page-at'),
+      make('span', `${pageAt + 1}/${count}`, 'journal-page-at'),
       `Page ${pageAt + 1} of ${count}`,
     );
     pager.append(...(back ? [back] : []), pageWords, ...(next ? [next] : []));
@@ -175,7 +175,7 @@ export function startJournal(source: JournalSource | null, now: () => number = r
     head.append(make('h3', 'Bounties', 'journal-title'));
     // How many are taken of the board's, once there is a board to count.
     if (column.slots > 0)
-      head.append(make('span', `${column.taken.length} / ${column.slots}`, `gear-chip ${ROLES.chip}`));
+      head.append(make('span', `${column.taken.length}/${column.slots}`, `gear-chip ${ROLES.chip}`));
     const grid = make('div', '', 'journal-tiles');
     const said = make('div', '', 'journal-bounty-said');
     said.dataset['key'] = 'bounty-said';
@@ -227,7 +227,11 @@ export function startJournal(source: JournalSource | null, now: () => number = r
         buildQuests(cards, written.length);
         buildBounties(gear, day);
         // A control gone (a tile as the day turns, an arrow as the last quest goes) leaves the focus on the hourglass.
-        if (focused) (keyed.get(focused) ?? hourglass).focus();
+        const again = focused ? keyed.get(focused) : undefined;
+        const other = keyed.get(focused === 'quests-next' ? 'quests-back' : 'quests-next');
+        // An arrow that turned to the last page it can rests: the focus goes to the arrow that turns back.
+        const resting = again?.getAttribute('aria-disabled') === 'true' && other ? other : again;
+        if (focused) (resting ?? hourglass).focus();
       }
       panel.show(week, now());
       return node;

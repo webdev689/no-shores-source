@@ -189,7 +189,7 @@ function weekMarks(dungeon: WeekDungeon): HTMLElement[] {
       : [
           mark(iconImage('revive', '', MARK_ICON), `${dungeon.revives} revives for the company.`, `${dungeon.revives}`),
           mark(iconImage('wipe', '', MARK_ICON), 'A wipe starts the run over.'),
-        ];
+        ].map((rule) => (rule.classList.add('journal-rule'), rule));
   return [
     ...marksLine(level, ...standingMark(dungeon)),
     ...marksLine(...abyss, ...dungeon.modifiers.map(modifierMark), ...rewardMarks(dungeon.rewards)),
@@ -252,7 +252,15 @@ function groupsOf(week: ThisWeek): readonly Group[] {
       id: 'later',
       name: 'Later',
       reset: null,
-      rows: [{ id: 'breaches', icon: 'breach', name: 'Breaches', marks: [], words: 'Breaches come later.' }],
+      rows: [
+        {
+          id: 'breaches',
+          icon: 'breach',
+          name: 'Breaches',
+          marks: marksLine(mark(iconImage('locked', '', MARK_ICON), 'Not open yet.')),
+          words: 'Breaches come later.',
+        },
+      ],
     },
   ];
 }
@@ -267,7 +275,7 @@ export function timersPanel(close: () => void): TimersPanel {
   const head = make('div', '', 'journal-timers-head');
   const title = make('h3', 'Timers', 'journal-timers-title');
   title.id = 'journal-timers-title';
-  const closer = pressOf('Close', close);
+  const closer = pressOf('Close', close, 'button', 'T');
   closer.dataset['key'] = 'timers-close';
   closer.setAttribute('aria-label', 'Close the timers');
   head.append(title, closer);
@@ -331,7 +339,14 @@ export function timersPanel(close: () => void): TimersPanel {
       list.replaceChildren(make('p', 'Loading…', 'gear-hint gear-empty'));
       return;
     }
-    list.replaceChildren(...groupsOf(week).flatMap((group) => [headOf(group), ...group.rows.map(rowOf)]));
+    // Each group a section of its own, so its head stays in sight only while its rows are, and the next pushes it off.
+    list.replaceChildren(
+      ...groupsOf(week).map((group) => {
+        const section = make('section', '', 'journal-timers-section');
+        section.append(headOf(group), ...group.rows.map(rowOf));
+        return section;
+      }),
+    );
     // A row focused as the rows are written again (the day turning, a level, a clear) keeps the focus.
     const again = rows.find((row) => row.dataset['key'] === focused);
     if (!again) return;

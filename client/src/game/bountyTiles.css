@@ -67,7 +67,7 @@ img.bounty-tile-check {
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--word);
+  color: var(--brass-lit);
 }
 /* Its kind by its mark, small under its name, as Destiny's tracker says "Crucible Bounty" under a bounty's. */
 .bounty-card-kind {
@@ -190,7 +190,7 @@ img.bounty-tile-check {
   gap: 8px;
   margin-top: 4px;
   font-size: var(--type-m);
-  color: var(--brass-lit);
+  color: var(--gain);
   font-variant-numeric: tabular-nums;
 }
 .gear-board-bar {

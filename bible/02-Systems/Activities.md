@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: built
 code:
   - crates/gear/src/clock.rs#day_of
   - crates/gear/src/activity.rs#Activity
@@ -44,9 +44,8 @@ them.
 - **Gates kept by the rooms.** No client can skip a level gate or take a reward twice. The prologue's end is the page's
   word, since the story plays in the page alone and may be passed over ([[Prologue]]).
 
-**Not now:** Breaches themselves and sea Breaches ("I dont want to build this yet"), the story's missions and side
-quests past the prologue (the quest engine below is built for them), and dungeons on the sea's islands, which wait on
-the islands themselves.
+**Not now:** Breaches themselves and sea Breaches ("I dont want to build this yet"), and the story's missions and side
+quests past the prologue (the quest engine below is built for them).
 
 **Must not happen:** a second clock; a reward taken twice in its period by leaving and coming back; an activity a
 player cannot tell is on, or cannot tell why it is shut; Destiny's own words on screen ([[A Group of Players Is a
@@ -112,9 +111,10 @@ Company]]).
   both of the week's. A dungeon at Normal in a patrol stays in the patrol's shared room, as does a sea island's.
 - **A run's room** is named by an instance after its dungeon's name (`--run-` and eight lowercase letters or digits,
   [[Server]]). Once its first player is in, only those it let in and their companies join, for as long as it lives
-  (`Keeper.forCompany`); a player from another is sent back saying "This run is another company's.", and one it cannot keep (no session, or no token in time)
-  saying "Sign in to enter this run.". No one plays in a run unkept. It is forgotten a minute after its last player
-  leaves.
+  (`Keeper.forCompany`); a player from another is sent back saying "This run is another company's.", and one it cannot
+  keep (no session, or no token in time) saying "Sign in to enter this run.". No one plays in a run unkept: until the
+  room keeps their character, a player's inputs are taken in their order and stand still (`Room::hold`). It is forgotten
+  a minute after its last player leaves.
 - **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band (tens of
   levels, from the level their room last kept), from the entrance's card. A run starts with four, or with fewer after
   a minute's wait, never with two where one blocks the other, and those found go into it together ([[Accounts]],
@@ -124,7 +124,8 @@ Company]]).
 
 ## Abyss's rules
 
-They hold in every Abyss run, which the owner gave "Nightfall's rules: limited revives, and a wipe ends the run".
+They hold in every Abyss run: the hardest seas take Nightfall's rules, limited revives and a wipe ending the run, as
+the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]]).
 
 - **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, the
   lowest player number first when two fall together; when none are left, the fallen stay down. Leaving stands no one
