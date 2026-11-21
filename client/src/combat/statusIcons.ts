@@ -1,12 +1,17 @@
 // The statuses' icons, drawn pixel by pixel as the elements' and the gear's glyphs are, each in its element's colours:
 // Crit and Linked in Blaze, Expose and Veiled in Cosmic, Charge and Haste in Volt. A row of them stands beside a foe's
-// plate for its debuffs and by the player's health for their buffs, each over a thin line that shrinks as its time
+// plate for its debuffs and under the player's vitals for their buffs, each over a thin line that shrinks as its time
 // runs out, each with words for a screen reader.
 import type { FoeStatuses } from '../network/messages.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { TONES } from '../plus/tones.ts';
 import type { StatusName, Statuses } from '../rules/fighters.ts';
-import { element, setStyle, showNode } from './meter.ts';
+import type { Child, Node, Picture } from '../ui/node.ts';
+import { colourOf } from '../ui/quads.ts';
+import { paintBox, ring } from './barDraw.ts';
+
+/** A glyph's side, in its own pixels. */
+const GLYPH = 12;
 
 /** Each status's glyph as rows of letters (a the outline, b the body, c its light, a dot none), 12 × 12. */
 const MAPS: Readonly<Record<StatusName, readonly string[]>> = {
@@ -137,16 +142,19 @@ export function statusWords(shown: ShownStatus): string {
   return `${shown.faded ? 'Immune to Charge' : LOOKS[shown.name].word}, ${seconds} s left`;
 }
 
-/** A status's glyph as an SVG picture, crisp at any size. */
-export function statusSvg(name: StatusName): string {
+/** A status's glyph as RGBA pixels, 12 by 12, each a pixel of the picture drawn at whole multiples. */
+export function statusPixels(name: StatusName): Uint8Array {
   const colours = ELEMENTS[LOOKS[name].element]?.palette ?? [];
-  const squares = MAPS[name].flatMap((row, line) =>
-    [...row].flatMap((letter, column) => {
+  const pixels = new Uint8Array(GLYPH * GLYPH * 4);
+  MAPS[name].forEach((row, line) =>
+    [...row].forEach((letter, column) => {
       const fill = colours['abc'.indexOf(letter)];
-      return fill ? [`<rect x="${column}" y="${line}" width="1" height="1" fill="${fill}"/>`] : [];
+      if (!fill) return;
+      const [red, green, blue] = colourOf(fill);
+      pixels.set([red * 255, green * 255, blue * 255, 255].map(Math.round), (line * GLYPH + column) * 4);
     }),
   );
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" shape-rendering="crispEdges">${squares.join('')}</svg>`;
+  return pixels;
 }
 
 /** The share of its time each status shown has left: its ticks over the most it held since it last began or was
@@ -167,31 +175,22 @@ export class StatusClock {
   }
 }
 
-/** A row of status icons for one fighter at a time, its words naming what it holds. */
+/** A row of status icons for one fighter at a time: each glyph over the line of its time left. */
 export class StatusRow {
-  readonly root: HTMLElement;
-  private readonly icons: { root: HTMLElement; time: HTMLElement }[] = [];
   private readonly clock = new StatusClock();
+  private readonly label: string;
+  private shown: readonly { readonly status: ShownStatus; readonly share: number }[] = [];
 
-  constructor(parent: HTMLElement, label: string) {
-    this.root = element('div', 'statuses', parent);
-    this.root.role = 'group';
-    this.root.ariaLabel = label;
+  constructor(label: string) {
+    this.label = label;
   }
 
   /** Shows `shown` for the fighter numbered `owner`. */
   show(owner: number, shown: readonly ShownStatus[]): void {
-    shown.forEach((status, index) => {
-      const icon = this.icons[index] ?? this.icon();
-      const share = this.clock.share(`${owner}:${status.name}:${status.faded}`, status.left);
-      if (icon.root.dataset['status'] !== status.name) icon.root.dataset['status'] = status.name;
-      icon.root.classList.toggle('faded', status.faded);
-      showNode(icon.root, true);
-      const words = statusWords(status);
-      if (icon.root.ariaLabel !== words) icon.root.ariaLabel = words;
-      setStyle(icon.time, 'width', `${Math.round(share * 1000) / 10}%`);
-    });
-    for (let index = shown.length; index < this.icons.length; index++) showNode(this.icons[index]!.root, false);
+    this.shown = shown.map((status) => ({
+      status,
+      share: this.clock.share(`${owner}:${status.name}:${status.faded}`, status.left),
+    }));
   }
 
   /** Forgets the fighters not in `present`, whose numbers may come again for others. */
@@ -199,36 +198,53 @@ export class StatusRow {
     this.clock.keep((key) => present.has(Number(key.split(':')[0])));
   }
 
-  private icon(): { root: HTMLElement; time: HTMLElement } {
-    const root = element('span', 'status', this.root);
-    root.role = 'img';
-    element('i', 'glyph', root);
-    const made = { root, time: element('i', 'time', root) };
-    this.icons.push(made);
-    return made;
+  /** The row, each icon `size` CSS pixels square and `gap` apart, its lines `zoom` times their size; nothing while it
+   *  holds none. */
+  node(size: number, gap = 3, zoom = 1): Child {
+    if (this.shown.length === 0) return null;
+    return {
+      label: this.label,
+      gap,
+      alignY: 'end',
+      children: this.shown.map(({ status, share }) => statusNode(status, share, size, zoom)),
+    };
   }
 }
 
-/** The icons' sheet: each a square of its glyph over its time's line in its element's colour, 24 px wherever it
- *  stands, over a figure too, where the row is scaled back up as the plate shrinks with distance; a Charge's immunity
- *  faded; a plate's row beside its bar and the player's over their health, 6 px apart. */
-export function statusCss(): string {
-  const looks = (Object.keys(LOOKS) as StatusName[]).map((name) => {
-    const colour = ELEMENTS[LOOKS[name].element]?.colour ?? '#fff';
-    const picture = `url("data:image/svg+xml,${encodeURIComponent(statusSvg(name))}")`;
-    return `.fight-hud .status[data-status='${name}'] { --status: ${colour}; }
-.fight-hud .status[data-status='${name}'] .glyph { background-image: ${picture}; }`;
+/** One icon: its glyph with a hard shadow a pixel down and right, over the line of its time left in its element's
+ *  colour; a Charge's immunity faded. */
+export function statusNode(status: ShownStatus, share: number, size: number, zoom = 1): Node {
+  const colour = ELEMENTS[LOOKS[status.name].element]?.colour ?? '#ffffff';
+  const glyph = (tint?: string): Picture => ({
+    key: `status ${status.name}`,
+    source: { pixels: () => statusPixels(status.name) },
+    pixel: { width: GLYPH, height: GLYPH },
+    ...(tint ? { tint } : {}),
   });
-  return `
-.fight-hud .statuses { display: flex; gap: 3px; align-items: flex-end; }
-.fight-hud .status { --size: 24px; display: flex; flex-direction: column; gap: 2px; width: var(--size); }
-.fight-hud .status .glyph { display: block; width: var(--size); height: var(--size); background-size: 100% 100%;
-  image-rendering: pixelated; filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
-.fight-hud .status .time { display: block; height: 2px; background: var(--status); box-shadow: 0 0 0 1px ${TONES.outline}; }
-.fight-hud .status.faded { opacity: 0.4; }
-${looks.join('\n')}
-.fight-hud .target, .fight-hud .boss { position: relative; }
-.fight-hud .plate .statuses { position: absolute; left: calc(100% + 5px); bottom: 0; }
-.fight-hud .overhead .statuses { transform-origin: left bottom; }
-`;
+  return {
+    direction: 'column',
+    gap: 2 * zoom,
+    width: size,
+    label: statusWords(status),
+    ...(status.faded ? { opacity: 0.4 } : {}),
+    children: [
+      {
+        width: size,
+        height: size,
+        children: [
+          { width: size, height: size, picture: glyph(TONES.outline), float: { x: 1, y: 1, z: 1 } },
+          { width: size, height: size, picture: glyph(), float: { z: 1 } },
+        ],
+      },
+      {
+        width: `${Math.round(share * 1000) / 10}%`,
+        height: 2 * zoom,
+        draw: (ui, box, scale, clip, fade) => {
+          const pen = { ui, box, scale: scale * zoom, clip, fade };
+          ring(pen, box, TONES.outline);
+          paintBox(pen, box, colour);
+        },
+      },
+    ],
+  };
 }

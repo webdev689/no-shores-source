@@ -1,5 +1,5 @@
 // A long thin bar's fine frame with pointed ends, after a souls-like display's vitals: a picture drawn pixel for pixel
-// and used at 1:1 as a three-part border, so it is never scaled. Each end comes to a point, its outline and stone line
+// and drawn at 1:1 in three parts, so it is never scaled. Each end comes to a point, its outline and stone line
 // meeting at a brass tip; the trough runs into the point, and the fill stands between the points. Light falls from the
 // top left, as on the kit's other frames, so the upper slopes and the top edge are lit and the lower ones shaded.
 import { TONES } from './tones.ts';
@@ -26,14 +26,13 @@ const SLOPE = 2;
 /** How far a bar `height` pixels tall (frame and all) reaches into each point. */
 export const tipOf = (height: number): number => SLOPE * Math.ceil(height / 2);
 
-/** The frame for a bar `height` pixels tall as an SVG: each point's `tipOf` columns, and one column between them that
- *  the border stretches along the bar. */
-export function barFrameSvg(height: number, tone: BarTone): string {
+/** The frame for a bar `height` pixels tall, row by row, each pixel its colour or null where clear: each point's
+ *  `tipOf` columns, and one column between them that is stretched along the bar. */
+export function barFrameCells(height: number, tone: BarTone): (string | null)[] {
   const tip = tipOf(height);
   const width = tip * 2 + 1;
-  const pixels: string[] = [];
-  const paint = (x: number, y: number, colour: string) =>
-    pixels.push(`<rect x='${x}' y='${y}' width='1' height='1' fill='${colour}'/>`);
+  const cells: (string | null)[] = Array.from({ length: width * height }, () => null);
+  const paint = (x: number, y: number, colour: string) => (cells[y * width + x] = colour);
   for (let y = 0; y < height; y++) {
     // Rows from the middle: 0 on the middle row (or the two of an even height), up to the top and foot.
     const fromMiddle = Math.abs(y - (height - 1) / 2) - (height % 2 === 0 ? 0.5 : 0);
@@ -57,12 +56,5 @@ export function barFrameSvg(height: number, tone: BarTone): string {
       else paint(x, y, TONES.groundTrack);
     }
   }
-  return `<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' shape-rendering='crispEdges'>${pixels.join('')}</svg>`;
-}
-
-/** The frame as a `border-image` for a bar `height` pixels tall: the picture, its slices and their widths. */
-export function barFrameImage(height: number, tone: BarTone): string {
-  const tip = tipOf(height);
-  const url = `url("data:image/svg+xml,${encodeURIComponent(barFrameSvg(height, tone))}")`;
-  return `${url} ${BAR_EDGE} ${tip} / ${BAR_EDGE}px ${tip}px stretch`;
+  return cells;
 }

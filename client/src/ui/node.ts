@@ -30,6 +30,8 @@ export interface Text {
   /** A hard shadow a step down and right (`shadow`), or a step all round (`halo`), as the sheets write them. */
   readonly edge?: 'shadow' | 'halo';
   readonly edgeColour?: string;
+  /** How many CSS pixels the shadow or halo stands out from the words: 1 unless said. */
+  readonly edgeWidth?: number;
   readonly wrap?: boolean;
   /** Kept to one line, cut short with '...' where it does not fit, as CSS's `text-overflow: ellipsis`. */
   readonly ellipsis?: boolean;
@@ -78,8 +80,9 @@ export interface Field {
 }
 
 /** Draws inside a node's box, for what boxes and words cannot say: a bar's strips, a dial's ticks. `box` is in device
- *  pixels, at `scale` device pixels a CSS pixel. */
-export type Drawing = (ui: UiRenderer, box: Box, scale: number, clip: Box) => void;
+ *  pixels, at `scale` device pixels a CSS pixel; `fade` is how faded the node stands with its parents' opacity, which
+ *  what it draws takes on. */
+export type Drawing = (ui: UiRenderer, box: Box, scale: number, clip: Box, fade: number) => void;
 
 /** One node of the interface. */
 export interface Node {
@@ -126,6 +129,9 @@ export interface Node {
   readonly keys?: readonly string[];
   /** Takes the pointer even with nothing to press, so a click on it does not fall through to the world. */
   readonly solid?: boolean;
+  /** Lets the pointer through to what lies under it, its children too, as CSS's `pointer-events: none`: a display
+   *  over the world that a click must pass. */
+  readonly through?: boolean;
   readonly draw?: Drawing;
 }
 

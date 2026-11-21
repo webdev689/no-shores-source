@@ -136,7 +136,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
   };
-  const footView = new FootView(gpu, hudRoot, forge, [hud.hintList]);
+  const footView = new FootView(gpu, stack, forge, () => [hud.hintList.getBoundingClientRect()]);
   const music = new MusicDirector();
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
@@ -576,6 +576,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     ambience.frame(seconds);
+    // The page's own pieces at the top make way for the fight's display while it shows.
+    const fightShown = footView.shown.fight ? (footView.shown.bossed ? 'bossed' : '') : null;
+    if (fightShown === null) hudRoot.removeAttribute('data-fight');
+    else if (hudRoot.dataset['fight'] !== fightShown) hudRoot.dataset['fight'] = fightShown;
     ui.present(stack);
     if (flow.mode === 'loading' && ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.

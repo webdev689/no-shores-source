@@ -136,7 +136,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   on a keycap under its icon. A spell just cast flashes its frame white for 0.5 s; while the player cannot cast
   (staggered, down or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and up) the
   diamond is 102 px and a ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and
-  each Tenet's recharge, as shares, and each frame writes only what changed. With no Art worn it is not shown.
+  each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown.
 
 ## In the rules
 

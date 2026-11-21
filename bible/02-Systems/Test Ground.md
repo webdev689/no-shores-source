@@ -36,7 +36,7 @@ code:
   - client/src/testground/panel.ts#startPanel
   - client/src/player/foeDress.ts#foeDress
   - client/src/combat/foeBars.ts#FoeBars
-  - client/src/combat/hudSheet.ts#wearFightSheet
+  - client/src/combat/hud.ts#Hud
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/tracers.ts#Tracers
   - client/src/combat/gunLooks.ts#GunLooks

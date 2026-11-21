@@ -67,6 +67,8 @@ const takes = (node: Node) =>
 const acts = (node: Node) => Boolean((node.press || node.field || node.focusable) && !node.disabled && node.id);
 const inside = (box: Box, x: number, y: number) =>
   x >= box.x && y >= box.y && x < box.x + box.width && y < box.y + box.height;
+/** Whether `laid` or one of its parents lets the pointer through. */
+const passes = (laid: Laid | null): boolean => (laid ? Boolean(laid.node.through) || passes(laid.parent) : false);
 const middleOf = (box: Box) => [box.x + box.width / 2, box.y + box.height / 2] as const;
 
 export class Interface {
@@ -277,7 +279,7 @@ export class Interface {
   private hitAt(x: number, y: number): Laid | null {
     for (let index = this.laid.length - 1; index >= 0; index--) {
       const laid = this.laid[index];
-      if (laid && takes(laid.node) && inside(laid.box, x, y) && inside(laid.clip, x, y)) return laid;
+      if (laid && takes(laid.node) && inside(laid.box, x, y) && inside(laid.clip, x, y) && !passes(laid)) return laid;
     }
     return null;
   }

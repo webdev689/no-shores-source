@@ -172,17 +172,17 @@
         visibility: hidden;
       }
       /* On foot the fight's display holds the compass; the game's own is the sea's. */
-      #hud:has(> .fight:not([hidden])) > .compass-column {
+      #hud[data-fight] > .compass-column {
         display: none;
       }
       /* On foot the vitals hold the top left, so the place's name stands at the top right, as far from the compass. */
-      #hud:has(> .fight:not([hidden])) .place {
+      #hud[data-fight] .place {
         left: auto;
         right: 28px;
         text-align: right;
       }
       /* A boss's bar under the compass takes the top from the place's name while it shows. */
-      #hud:has(> .fight.bossed:not([hidden])) .place {
+      #hud[data-fight='bossed'] .place {
         visibility: hidden;
       }
       /* At sea the line stands under the compass. */
@@ -198,7 +198,7 @@
       }
       /* On foot the fight's column holds the top's middle, so the line stands under the place's name at the top right,
          at the words' size and no wider than the place's name may be, and under a boss's bar while one shows. */
-      #hud:has(> .fight:not([hidden])) > .status {
+      #hud[data-fight] > .status {
         left: auto;
         right: 28px;
         top: 84px;
@@ -209,11 +209,11 @@
         white-space: normal;
         text-align: right;
       }
-      #hud:has(> .fight.bossed:not([hidden])) > .status {
+      #hud[data-fight='bossed'] > .status {
         top: 128px;
       }
       @media (min-width: 1500px) and (min-height: 900px) {
-        #hud:has(> .fight:not([hidden])) > .status {
+        #hud[data-fight] > .status {
           font-size: 22px;
         }
       }
@@ -221,11 +221,11 @@
          doubled too, so the line keeps clear of it as of the single one, and under the doubled boss bar while one
          shows. */
       @media (min-width: 2400px) and (min-height: 1300px) {
-        #hud:has(> .fight:not([hidden])) > .status {
+        #hud[data-fight] > .status {
           top: 140px;
           max-width: calc(50vw - min(520px, 30vw) - 60px);
         }
-        #hud:has(> .fight.bossed:not([hidden])) > .status {
+        #hud[data-fight='bossed'] > .status {
           top: 232px;
         }
       }

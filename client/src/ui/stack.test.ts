@@ -26,3 +26,16 @@ test('each layer is laid over the whole view, the later over the earlier, and on
     false,
   );
 });
+
+test('a layer put under is drawn under every layer added before it, and taken away like any other', () => {
+  const stack = new Stack();
+  stack.add(() => ({ id: 'menu', width: 10, height: 10 }));
+  const remove = stack.under(() => ({ id: 'display', width: 10, height: 10 }));
+  const order = () =>
+    layout(stack.node({} as Interface), VIEW, { face: { glyph: () => block } }).flatMap((each) =>
+      each.node.id ? [each.node.id] : [],
+    );
+  assert.deepEqual(order(), ['display', 'menu']);
+  remove();
+  assert.deepEqual(order(), ['menu']);
+});

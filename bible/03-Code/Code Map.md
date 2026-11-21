@@ -38,7 +38,7 @@ decision, made in the same change as its entry here.
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/sky/` | The sky layer, which imports nothing: the world's clock set right by the rooms, the [[Sky]] and [[Weather]] read from the sky crate through its own WebAssembly, and what the scene draws by them |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving |
-| `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display and its stylesheet, the ground's marks for telegraphed blows and shots, the shots' tracers, the drops lying for the player ([[Gear]], "Drops"), and [[Blood]]; the [[Arts]]' casting keys, ability bar and every spell's view; and a Sloop's session in a fleet room ([[Naval Combat]]), her orders sent and her ship predicted |
+| `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display as nodes of the interface the game draws, the ground's marks for telegraphed blows and shots, the shots' tracers, the drops lying for the player ([[Gear]], "Drops"), and [[Blood]]; the [[Arts]]' casting keys, ability bar and every spell's view; and a Sloop's session in a fleet room ([[Naval Combat]]), her orders sent and her ship predicted |
 | `client/src/nature/` | The nature layer: each biome's trees, plants and rocks, made in code, scattered over the ground round the eye and drawn on WebGPU ([[Nature]]). Imports `rules` and `water` |
 | `client/src/ships/` | The ships layer: a ship's mesh read from R2 and drawn at her pose on the water ([[Sailing]]), and a fight's balls and effects drawn as small spheres ([[Naval Combat]]) |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
@@ -118,9 +118,9 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
 (imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain`, `ships`, `city`
 and `layout`),
-`combat` (imports `rules`, `network`, `plus`, `player` and the editor's camera), `player` (imports `rules`, `network`,
-`forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`
-and the editor's panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
+`combat` (imports `rules`, `network`, `plus`, `player`, the editor's camera and `ui`, whose nodes its display builds), `player` (imports `rules`, `network`,
+`forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`,
+the editor's panel helpers and `ui`, which draws the fight's display there), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
 `water`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture drawer and the editor's page
 helpers),
 `plus` (imports nothing), `ui` and `speech` (each imports `plus`), `cinema` (imports `water` and `combat`) and `game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;

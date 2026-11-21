@@ -192,3 +192,47 @@ test('a node’s age counts from when it was first laid, and starts again once i
   ui.frame(VIEW, [], 0.5);
   assert.equal(ui.age('toast'), 0);
 });
+
+test('a node that lets the pointer through takes no hit, nor do its children, so a click there is the world’s', () => {
+  const ui = new Interface(renderer());
+  const root: Node = {
+    through: true,
+    children: [{ fill: '#fff', width: 50, height: 50, children: [{ text: { words: 'Hi' } }] }],
+  };
+  step(ui, root, [{ kind: 'pointer', x: 10, y: 10 }]);
+  ui.frame(VIEW, [], 1 / 60);
+  assert.equal(ui.takesPointer, false);
+  step(ui, { children: [{ fill: '#fff', width: 50, height: 50 }] });
+  ui.frame(VIEW, [], 1 / 60);
+  assert.equal(ui.takesPointer, true);
+});
+
+test('words drawn with a wider edge stand their halo that many pixels out all round, one unless said', () => {
+  const lettered = () => {
+    const made = renderer();
+    return Object.assign(made, { glyphTexels: () => ({ x: 0, y: 0, width: 1, height: 1 }) });
+  };
+  const leftmost = (edgeWidth?: number) => {
+    const ui = new Interface(lettered());
+    ui.frame(VIEW, [], 1 / 60);
+    const root: Node = {
+      padding: 10,
+      children: [{ text: { words: 'A', edge: 'halo', ...(edgeWidth ? { edgeWidth } : {}) } }],
+    };
+    ui.draw(root);
+    const data = ui.renderer.quads.data;
+    const lefts = Array.from({ length: ui.renderer.quads.count }, (_unused, index) => data[index * 20] ?? 0);
+    return Math.min(...lefts);
+  };
+  const plain = leftmost();
+  assert.equal(leftmost(3), plain - 2, 'three pixels out where one stood one out');
+  assert.equal(leftmost(1), plain);
+});
+
+test('a node’s own drawing is told how faded it stands, its parents’ opacity and its own', () => {
+  const ui = new Interface(renderer());
+  ui.frame(VIEW, [], 1 / 60);
+  const told: number[] = [];
+  ui.draw({ opacity: 0.5, children: [{ opacity: 0.5, width: 10, height: 10, draw: (...args) => told.push(args[4]) }] });
+  assert.deepEqual(told, [0.25]);
+});

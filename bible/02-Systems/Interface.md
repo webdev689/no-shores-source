@@ -31,7 +31,12 @@ code:
   - client/src/game/seaPanel.ts#FightPanel
   - client/src/game/seaPanel.ts#readoutOf
   - client/src/game/seaPanel.ts#seaFightQuest
-  - client/src/combat/hudSheet.ts#wearFightSheet
+  - client/src/combat/hud.ts#Hud
+  - client/src/combat/hudCues.ts#crosshairNode
+  - client/src/combat/compassNode.ts#compassNode
+  - client/src/combat/barDraw.ts#barFrame
+  - client/src/combat/meter.ts#Meter
+  - client/src/ui/stack.ts#Stack
   - client/src/plus/tones.ts#HALO
   - client/src/plus/compass.ts#Compass
   - client/src/plus/compass.ts#compassPlace
@@ -42,7 +47,7 @@ code:
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/hudLayout.ts#hudLayout
   - client/src/combat/hudLayout.ts#barLength
-  - client/src/plus/barFrame.ts#barFrameSvg
+  - client/src/plus/barFrame.ts#barFrameCells
   - client/src/combat/weapons.ts#WeaponRows
   - client/src/combat/weapons.ts#weaponsOf
   - client/src/combat/weaponPicture.ts#lengthwise
@@ -189,7 +194,9 @@ owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each 
   in a view 900 px wide or less; her ship's panel in a sea fight at the bottom left, over the dialogue box's top in a
   view 890 px wide or less; the toasts in the middle over the dialogue box's top. The key strip gives way while
   someone speaks in the dialogue box. The edge's warning stands under the compass's column.
-- **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. It stands the compass at
+- **The fight's display** ([[Enemies]], [[Test Ground]]) is drawn by the game, a layer of its interface under the
+  game's own windows that lets the pointer through to the world (`combat/hud.ts`); in the [[Game]] the page's own
+  pieces at the top make way for it while it shows (`data-fight` on the HUD). It stands the compass at
   the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does; the vitals at the
   top left; and the Arts and weapons at the bottom left
   ([[The Vitals Go Top Left and the Arts and Weapons Bottom Left]], with Claude's choices in
@@ -213,7 +220,7 @@ owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each 
   drawn pixel for pixel and never scaled. Health is 12 px tall, stamina 10 and poise 8, 4 px apart (16, 14 and 10, 5
   apart, at the larger step). Health's bar is 26% of the view's width, 150 to 600 px, kept 16 px clear of the
   compass; stamina's and poise's are as long as what they hold beside health's most. No words stand on health or
-  stamina; poise says Iron, Staggered or Open beside its bar, and a screen reader reads each bar as a meter. Health at
+  stamina; poise says Iron, Staggered or Open beside its bar, and each bar is labelled with its name and its share. Health at
   a quarter or less flashes its frame to blood; stamina's lights white for a swing or a dodge asked with none; poise's
   turns brass while open. Whole and untouched for 4 s (health and stamina short of no whole point, no poise taken),
   with no buff and no foe on the target plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s;
@@ -221,7 +228,7 @@ owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each 
 - **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
   ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
   picture in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or muzzle to the right
-  (`combat/weaponPicture.ts`), drawn again when the screen's pixel ratio changes. A Ranged weapon's shots stand large
+  (`combat/weaponPicture.ts`), grown by whole pixels at the screen's own ratio where that keeps most of its size. A Ranged weapon's shots stand large
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
   name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
@@ -231,16 +238,16 @@ owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each 
   the start; a reload fills a line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys
   its picture and words over the row's own dark band. In a view too narrow for the vitals beside the compass, the
   weapons stand over the Arts, so the corner keeps clear of the view's middle and the hands drawn there
-  (`combat/weapons.ts`). A frame that changes nothing writes nothing to the page, and the display reads where its
-  corners stand only after they change size, never each frame.
+  (`combat/weapons.ts`). The display is built afresh each frame from what its pieces keep; an arrow at the edge keeps
+  clear of the corners where they were laid the frame before, and reads the page's own pieces only while it shows.
 - **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
   colours (Crit a burst and Linked two rings in Blaze; Expose a diamond cracked through, the mark the Arts' fragments
   give it, and Veiled a crescent in Cosmic; Charge a crackling bolt and Haste two chevrons in Volt), over a thin line
-  in the element's colour that shrinks from the most time it held since it began or was refreshed. Each tells a screen
-  reader what it is and the whole seconds it has left. The player's buffs (Crit, Haste, Linked, Veiled) stand in a row
+  in the element's colour that shrinks from the most time it held since it began or was refreshed. Each is labelled
+  with what it is and the whole seconds it has left. The player's buffs (Crit, Haste, Linked, Veiled) stand in a row
   under the vitals, 24 px each (36 at the larger step) and 6 apart, and keep the vitals awake while one holds. A
   foe's debuffs (Expose, then Charge, or the Charge's immunity as a faded Charge) stand beside the bar of each of its
-  plates, 24 px each: over a figure the row is scaled back up as the plate shrinks with distance, so it never reads
+  plates, 24 px each: over a figure the row keeps its size as the plate shrinks with distance, so it never reads
   smaller.
 - **A bar's losses.** After a loss a strip holds where the bar stood for 0.55 s (1.2 s at most however the losses
   keep coming), then drains at 70% of the bar a second: on a vital it is the bar's own colour, faint; on a foe's or a
@@ -594,8 +601,18 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
-- Drawn by the game, only the toasts so far. A word's soft shade past its hard outline is not drawn, as a blur has no
-  crisp form.
+- Drawn by the game: the toasts and the fight's display. A word's soft shade past its hard outline is not drawn, as a
+  blur has no crisp form; the fight's glows (the soft lock's mark, the charged crosshair, a full Anima, a ready Tenet,
+  the poise's break, the struck edge's red) stand in hard rings and bands instead.
+- A plate over a figure shrinks with its distance, but its words keep the face's 11 px, never smaller and never the
+  12 px a page's plate wrote; so does its alert's mark, 15 px on a page. A blow's number pops at sizes between the
+  face's steps for its first four frames, as no whole step is 1.4 times another.
+- The small words in capitals (a boss's faction and phase, the poise's word, the compass's lesser points, the weapons'
+  counts) keep the face's own spacing, not the wider spacing a page gave them.
+- The Anima's edge frame is drawn with the fight's display, under the game's own windows and the page's HUD; on a
+  page it stood over everything.
+- The fight's display tells a screen reader nothing: its labels (each vital, status, ability and weapon) wait on the
+  interface speaking what is not focused.
 - A cutscene's blur is still a filter on the canvas, which would blur what the game draws over it too. It moves into
   the scene's own drawing with the cinema's screen.
 - A screen reader hears a toast only in Chromium (`ariaNotify`), and nothing else the game draws.
