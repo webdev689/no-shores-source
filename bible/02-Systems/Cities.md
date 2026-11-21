@@ -205,7 +205,8 @@ forged models' by how much the city wears them. Up to four workers paint them; a
 painted, and what is painted is kept for the next city. Gold, iron, bone and cloth are painted in the shader on the
 texels a picture would have, 24 a metre: wrought iron's hammer marks, pits and rust, most on what faces up; gilding
 burnished and worn through to the bronze; bone's grain and yellowing; cloth's dye under a weave of uneven threads,
-taken unevenly. A picture is lighter or darker in patches some metres wide, so its repeats do not line up. The glow
+taken unevenly. A picture is lighter or darker in patches some metres wide, so its repeats do not line up. A walk's flagstones
+(`path`) wear their own picture over the paving's, the flags in courses, so a way reads apart from the ground. The glow
 is lit warm and unshaded, brighter at night, each flame flickering on its own, and each glowing solid is a lamp
 ([[Sky]]). Faces are lit as the land is, with a
 little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen.

@@ -321,10 +321,12 @@ the levelled land so it shows; and a module bake that CI makes byte for byte (si
 published to R2 by CI. Seen in the built page under rain pinned by the clock: no rain or puddles in the Hall, rain on
 the courts and before the portico, the rug crimson from first and third person.
 
-Then, under the owner's [[The Hub Feels Lively, Its Ground Populated]] ("Populate everything"): every court filled
-by `hub/dress.rs`, each court's own pieces on a seeded scatter clear of every way and post, then small pieces between
-them at half the spacing (998 module solids in the hub, eleven pieces new in `tools/modules/dress.py`), each new
-stall's keeper at work, a walker's place at each piece (599 places, 78 kept posts), and up to 48 walkers. A test pins it (`every_court_is_filled_and_its_pieces_have_walkers_places`).
+Then, under the owner's [[The Hub Feels Lively, Its Ground Populated]] and
+[[The Hub's Pieces Tell a Story, and Its Paths Are Paved Apart]] (a first scatter of some 900 pieces was "way too
+crowded"): the platform's ways laid as flagstone walks (material `path`), and each court set as a scene by
+`hub/dress.rs` (eleven pieces new in `tools/modules/dress.py`), each new stall's keeper at work, a walker's place at
+each piece, up to 48 walkers. A test pins every scene standing (`every_court_is_set_as_a_scene_and_its_ways_are_walks`);
+a test build prints any piece a scene asks for that is left out, and why.
 
 Left to do, in order:
 1. How the page holds some 125 figures and the courts' pieces: a frame's cost on a real GPU is unmeasured.

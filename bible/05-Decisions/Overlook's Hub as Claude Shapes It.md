@@ -76,20 +76,21 @@ Under the owner's [[The Hub's Fidelity Goes Beyond the Limits, by Procedural Tex
 | Pictures | Lighter or darker in patches some metres wide, so a picture's repeats do not line up across a wall |
 | The Hall's floor | Paved wall to wall, as its own floor: the land under the Beacon is not it |
 
-## Every court populated
+## Every court set as a scene
 
-Under the owner's [[The Hub Feels Lively, Its Ground Populated]]:
+Under the owner's [[The Hub Feels Lively, Its Ground Populated]], then
+[[The Hub's Pieces Tell a Story, and Its Paths Are Paved Apart]]:
 
 | Call | Choice |
 |---|---|
-| How | Each court's own pieces laid over its open ground on a seeded scatter, 9 to 11 m apart, each faced to the way nearest it and kept clear of every way (its 1.3 m and 0.4 m more), post, arrival, counter, what already stands and the ring's edge (`hub/dress.rs`) |
-| The Watch Court | Shade and green round the obelisk: court trees in raised ring beds, lawn beds, benches, planters, potted trees, a flower cart, a parasol table |
-| The West Court | A garden with tables: trees, lawn beds, parasol tables, tables with benches, benches, potted trees |
-| The Forge Yard | The smiths' stores: woodpiles under lean-tos, stacked barrels, crates, hay bales, carts, sacks, a table for the workers |
-| The Beacon Walk | A market either side of the portico: stalls of cloth, bread, flowers, fruit, fish and pots, parasol tables, carts and goods |
-| The Stair Yard | The stable's stores: hay bales, a hay cart, barrels, crates, sacks |
-| Between them | A second pass at half the spacing of small pieces: benches, planters, potted trees and lamps in the gardens; sacks, crates and jars in the yards and the market |
-| Who is there | Each new stall's keeper at its counter; a walker's place at each piece (a browser at a stall, drinkers at a table, a porter at a pile, an idler at a bench, a bed or a tree), reached straight from the nearest way point that sees it; up to 48 walkers, from 24 |
+| The walks | Every way on the platform laid as a walk of dressed flagstones (its own material, `path`), 3.2 m wide and 6 cm proud of the courts' cobbles, a round at each joint; the portico's podium and the Hall keep their own floors |
+| How | Each court a scene, every piece placed for a reason and faced to its way or to what it looks at; one a scene asks for where it would block a way, a post, an arrival or a counter is left out (`hub/dress.rs`) |
+| The Watch Court | Where the arrivals land: an avenue of trees along the seaward walk between its ways in, a garden bed in each quarter round the obelisk and a bench by it, potted trees down the walk to the Beacon, a flower seller by the passage to the Forge Yard |
+| The West Court | A garden for the music: a tree on each quarter of the fountain, benches looking at it, the band's listeners at tables and under parasols beside the bandstand with the drinks' barrels behind it, beds along the parapet |
+| The Forge Yard | At work: fuel stacked by the forge, stores by the armoury, hay by the cart, a table where the smiths eat by their anvils, the charcoal's cart come in |
+| The Beacon Walk | A market lane: a row of stalls either side facing it (cloth, bread, flowers, fruit, fish, pots), their deliveries stood behind them |
+| The Stair Yard | The stable's stores: hay, barrels, a hay cart |
+| Who is there | Each new stall's keeper at its counter; a walker's place at each piece (a browser at a stall, drinkers at a table, a porter at a pile, an idler at a bench, a bed or a tree); up to 48 walkers |
 
 ## The townsfolk
 
