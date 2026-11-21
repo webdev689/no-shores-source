@@ -273,6 +273,10 @@ pub fn plan(
     seating.pads.extend(module_pads);
     let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
     let ring = ring::traced(reach, &cells);
+    // A resource's node stands on the section's floor, or it has none: a place past the floor is only dressed.
+    for site in sites.iter_mut().filter(|site| site.kind == sites::SiteKind::Resource) {
+        site.node = site.node.filter(|&[x, y]| cells.get(reach.nearest(x, y)).copied().unwrap_or(false));
+    }
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     // The works keep off the climbs' ways as off every other, though those are walked only once the works stand.
     let kept: Vec<paths::Path> = paths.iter().cloned().chain(climb_ways(&sculpt.climbs)).collect();

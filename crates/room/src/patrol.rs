@@ -19,12 +19,10 @@ pub struct Patrol {
 }
 
 impl Room {
-    /// Makes this node's room a patrol: `resource`'s nodes at its layout's resource places (`places`), those within its
-    /// section, in the layout's order.
+    /// Makes this node's room a patrol: `resource`'s nodes where its layout stands them (`places`, each on its
+    /// section's floor), numbered in the layout's order as the page numbers them.
     pub fn start_patrol(&mut self, resource: u8, places: &[[f64; 2]]) {
-        let Some(section) = &self.section else { return };
-        let inside = places.iter().filter(|&&[x, y]| reach::inside(&section.ring, x, y));
-        self.resource_nodes = inside.map(|&[x, y]| ResourceNode { x, y, resource }).collect();
+        self.resource_nodes = places.iter().map(|&[x, y]| ResourceNode { x, y, resource }).collect();
         self.patrol = Some(Patrol::default());
     }
 

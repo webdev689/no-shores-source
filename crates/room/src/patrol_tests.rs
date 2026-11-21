@@ -8,12 +8,9 @@ use gear::Difficulty;
 
 const SPAWN: [f64; 2] = [0.0, 0.0];
 
-/// Twelve resource places within the section, and one past its edge.
+/// Twelve resource places within the section.
 fn places() -> Vec<[f64; 2]> {
-    let mut places: Vec<[f64; 2]> =
-        (0..12).map(|at| [f64::from(at % 4) * 80.0 - 120.0, f64::from(at / 4) * 80.0 - 80.0]).collect();
-    places.push([500.0, 0.0]);
-    places
+    (0..12).map(|at| [f64::from(at % 4) * 80.0 - 120.0, f64::from(at / 4) * 80.0 - 80.0]).collect()
 }
 
 fn patrol(difficulty: Difficulty) -> (Room, PlayerId) {
@@ -55,14 +52,14 @@ fn a_patrol_stands_no_camps_of_its_own_its_fights_are_its_garrisons() {
         room.tick();
     }
     assert!(room.foes.is_empty(), "with a player in it a minute, no camp stood");
-    assert_eq!(room.resource_nodes.len(), 12, "its nodes keep their places; the one past its edge stands none");
+    assert_eq!(room.resource_nodes.len(), 12, "its nodes keep their places");
 }
 
 #[test]
 fn resource_nodes_stand_at_the_layouts_places_a_third_at_a_time_and_each_may_be_gathered_again_next_turn() {
     let (mut room, player) = patrol(Difficulty::Normal);
     let at = |room: &Room| room.resource_nodes.iter().map(|node| [node.x, node.y]).collect::<Vec<_>>();
-    assert_eq!(at(&room), places()[..12], "at the layout's places, in its order");
+    assert_eq!(at(&room), places(), "at the layout's places, in its order");
     let standing = |room: &Room| room.nodes_for(player).map(|(index, _)| index).collect::<Vec<u8>>();
     let first = standing(&room);
     assert_eq!(first.len(), 12 / GROUPS);

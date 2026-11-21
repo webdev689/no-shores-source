@@ -40,7 +40,8 @@ pub struct Site {
     pub radius: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub holds: Option<String>,
-    /// Where a resource's node stands: `NODE_FRONT_M` before its dressing, toward the path it lies off.
+    /// Where a resource's node stands: `NODE_FRONT_M` before its dressing, toward the path it lies off; none where that
+    /// is off the section's floor.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node: Option<[f64; 2]>,
 }

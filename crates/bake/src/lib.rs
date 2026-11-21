@@ -164,7 +164,7 @@ pub fn nodes_of(
         );
         let resources = laid.map_or_else(Vec::new, |layout| {
             let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource);
-            places.map(|site| site.node.unwrap_or(site.at)).collect()
+            places.filter_map(|site| site.node).collect()
         });
         NodeFile { resources, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
@@ -278,7 +278,7 @@ mod tests {
         let resource = |site: &&layout::sites::Site| site.kind == layout::sites::SiteKind::Resource;
         let nodes: Vec<_> = glade.sites.iter().filter(resource).filter_map(|site| site.node).collect();
         assert!(!nodes.is_empty(), "the glade lays resources");
-        for site in glade.sites.iter().filter(resource) {
+        for site in glade.sites.iter().filter(resource).filter(|site| site.node.is_some()) {
             let [x, y] = site.node.expect("a resource's node");
             let off = (x - site.at[0]).hypot(y - site.at[1]);
             assert!((off - layout::sites::NODE_FRONT_M).abs() < 1e-6, "before its dressing: {off}");
