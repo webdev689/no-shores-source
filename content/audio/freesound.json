@@ -34,7 +34,7 @@
     {
       "id": "ui.tab",
       "use": "A tab of the menu turned",
-      "query": "menu tab switch",
+      "query": "page turn",
       "seconds": [
         0.05,
         0.6
@@ -53,7 +53,7 @@
     {
       "id": "ui.close",
       "use": "The menu shuts",
-      "query": "menu close soft",
+      "query": "book close",
       "seconds": [
         0.1,
         1.2
@@ -71,7 +71,7 @@
     {
       "id": "hold.charge",
       "use": "A hold charging, 0.6 to 1.8 seconds",
-      "query": "shimmer swell rising",
+      "query": "charge up",
       "seconds": [
         0.6,
         3.0
@@ -100,7 +100,7 @@
     {
       "id": "gain.common",
       "use": "A Normal or Magic gain",
-      "query": "soft chime pickup",
+      "query": "coin pickup",
       "seconds": [
         0.1,
         1.2
@@ -874,7 +874,7 @@
     {
       "id": "finish.cosmic",
       "use": "A foe slain by Cosmic implodes",
-      "query": "implosion magic",
+      "query": "magic impact",
       "seconds": [
         0.3,
         2.5
@@ -1056,7 +1056,7 @@
     {
       "id": "ship.blast",
       "use": "A ship's magazine blows up",
-      "query": "huge explosion debris",
+      "query": "big explosion",
       "seconds": [
         1.0,
         6.0
@@ -1074,7 +1074,7 @@
     {
       "id": "ship.runout",
       "use": "A battery runs out its guns, the tell before its broadside",
-      "query": "cannon roll wood",
+      "query": "heavy roll",
       "seconds": [
         0.6,
         3.0
@@ -1083,7 +1083,7 @@
     {
       "id": "ship.ready",
       "use": "A side of its guns is loaded and ready",
-      "query": "wooden latch click",
+      "query": "latch click",
       "seconds": [
         0.1,
         1.0
@@ -1101,7 +1101,7 @@
     {
       "id": "ship.whistle",
       "use": "A ball whistles past close by",
-      "query": "cannonball whizz",
+      "query": "whizz",
       "seconds": [
         0.3,
         2.0
@@ -1709,7 +1709,7 @@
     {
       "id": "amb.social.halyard",
       "use": "A halyard knocking on a mast in the wind",
-      "query": "halyard mast",
+      "query": "rope creak",
       "seconds": [
         0.5,
         8.0
@@ -1727,7 +1727,7 @@
     {
       "id": "amb.social.cart",
       "use": "A cart's wooden wheels on the streets below",
-      "query": "horse cart wheels",
+      "query": "cart wheels",
       "seconds": [
         2.0,
         15.0
@@ -1871,7 +1871,7 @@
     {
       "id": "amb.bird.weaver",
       "use": "Weaver birds chattering in the grasslands",
-      "query": "weaver bird",
+      "query": "weaver",
       "seconds": [
         1.0,
         10.0
@@ -1916,7 +1916,7 @@
     {
       "id": "amb.wolf.far",
       "use": "Wolves howling far off",
-      "query": "wolves howling distant",
+      "query": "wolf howl",
       "seconds": [
         2.0,
         15.0
@@ -1925,7 +1925,7 @@
     {
       "id": "amb.jackal",
       "use": "Jackals yipping at night",
-      "query": "jackals",
+      "query": "coyote",
       "seconds": [
         1.0,
         12.0
@@ -2024,7 +2024,7 @@
     {
       "id": "amb.rock.whistle",
       "use": "A gust whistling through the rocks",
-      "query": "wind whistle rocks",
+      "query": "whistling wind",
       "seconds": [
         1.0,
         8.0
@@ -2042,7 +2042,7 @@
     {
       "id": "amb.sand.gust",
       "use": "A gust lifting sand",
-      "query": "sand blowing",
+      "query": "sand wind",
       "seconds": [
         1.0,
         8.0
@@ -2078,7 +2078,7 @@
     {
       "id": "amb.shore.backwash",
       "use": "A wave's backwash dragging pebbles",
-      "query": "pebbles wave",
+      "query": "pebble beach",
       "seconds": [
         1.0,
         8.0
@@ -2096,7 +2096,7 @@
     {
       "id": "amb.swamp.bubbles",
       "use": "Marsh gas bubbling up through mud",
-      "query": "mud bubbles",
+      "query": "bubbles water",
       "seconds": [
         0.3,
         4.0
@@ -2168,7 +2168,7 @@
     {
       "id": "story.flash",
       "use": "The bright flash in the deep: a glassy swell rising",
-      "query": "glass swell shimmer",
+      "query": "magic shimmer",
       "seconds": [
         1.0,
         6.0
