@@ -61,6 +61,8 @@ export interface FightButtons {
   readonly guardPressed?: boolean;
 }
 
+/** The fight's numbers of an intent that fights not at all: no stroke, guard, dodge, shot, pitch or aim, no mark. */
+const STILL_FIGHT = [0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN] as const;
 const NO_BUTTONS: FightButtons = { swing: false, shoot: false, guard: false, dodge: false, pitch: 0 };
 
 /**
@@ -124,8 +126,8 @@ export class Fighting {
   private artsAt = 0;
   private sentDress = '';
   private respawnAsked = false;
-  /** Where the player stands with a node's section, as the room last said: dead past its edge, the room takes their
-   *  inputs without moving them. */
+  /** Where the player stands with a node's section, as the room last said: dead, by a fall or past its edge, the room
+   *  takes their inputs without steering them, and their body falls under its own weight to lie where it lands. */
   standing: Standing = { kind: 'inside' };
   /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
    *  Daggerfall Unity's click chooses among all six, and again once used. */
@@ -335,8 +337,11 @@ export class Fighting {
     };
     this.respawnAsked = false;
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
-    // Dead past the edge, the room holds the fighter still while it takes the inputs: nothing is swung or shot.
-    if (this.standing.kind === 'dead') return bodyOf(Array.from(this.fighter.subarray(0, 22)));
+    // Dead, the room steps the fighter as it lies, whatever is asked: nothing is swung or shot, and it falls on.
+    if (this.standing.kind === 'dead') {
+      this.fighter = this.lying(this.fighter, view);
+      return bodyOf(Array.from(this.fighter.subarray(0, 22)));
+    }
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
     const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
@@ -354,6 +359,17 @@ export class Fighting {
     return bodyOf(Array.from(this.fighter.subarray(0, 22)));
   }
 
+  /** The fighter one tick on as the room steps a body the section killed (the room's `lying_still`): no push, its
+   *  facing kept, letting go of any wall or lip it held, nothing fought and its arms kept, so it falls under its own
+   *  weight and lies where it lands. */
+  private lying(fighter: Float64Array, view: readonly Glanced[]): Float64Array {
+    const body = bodyOf(Array.from(fighter.subarray(0, 22)));
+    const holding = body.mode === 'hang' || body.mode === 'climb';
+    const controls = { forward: 0, sideways: 0, yaw: body.facing, run: false, jump: false, crouch: holding };
+    const intent = new Float64Array([...floatsOfControls({ ...controls, mounted: false }), ...STILL_FIGHT]);
+    return this.rules.predict(fighter, intent, this.player, fighter[ARMS_AT] ?? 0, view).fighter;
+  }
+
   /** Takes a room's snapshot: the player's fighter set by the room's word with every input it has not taken stepped on
    *  top; every other player and foe kept, each foe with its glance at the snapshot before; its shots and events. */
   receive(snapshot: Snapshot): void {
@@ -369,23 +385,20 @@ export class Fighting {
         // The snapshot leaves out the player's trim: it is theirs from their gear.
         const whole = trimmed(seen.fighter, this.link.trim);
         this.standing = seen.standing;
-        const still = seen.standing.kind === 'dead';
-        this.fighter = this.prediction.corrected(
-          whole,
-          seen.acknowledged,
-          (fighter, asked) => {
-            const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
-            // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
-            // has been drawn already.
-            if (replayed.fired && !asked.fired) {
-              this.fired.push(replayed.fired);
-              this.shotsLoosed += 1;
-            }
-            asked.fired = replayed.fired ?? asked.fired;
-            return replayed.fighter;
-          },
-          still,
-        );
+        const dead = seen.standing.kind === 'dead';
+        this.fighter = this.prediction.corrected(whole, seen.acknowledged, (fighter, asked) => {
+          // The room took every input after a death as the body lying, whatever the input asked.
+          if (dead) return this.lying(fighter, asked.view);
+          const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
+          // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
+          // has been drawn already.
+          if (replayed.fired && !asked.fired) {
+            this.fired.push(replayed.fired);
+            this.shotsLoosed += 1;
+          }
+          asked.fired = replayed.fired ?? asked.fired;
+          return replayed.fighter;
+        });
         continue;
       }
       this.others.set(seen.player, seen);

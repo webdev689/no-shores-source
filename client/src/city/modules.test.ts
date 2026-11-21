@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import manifest from '../../../content/modules/modules.json' with { type: 'json' };
 import { readModuleMesh } from './modules.ts';
+import { pictureBook } from './pictures.ts';
 
 test('a module mesh reads its vertices, normals and triangles', () => {
   const bytes = new ArrayBuffer(8 + 3 * 16 + 12);
@@ -21,4 +23,12 @@ test('a module mesh reads its vertices, normals and triangles', () => {
   assert.deepEqual([...mesh.normals], [0, 0, 127, 0, 0, 127, 0, 0, 127]);
   assert.deepEqual([...mesh.triangles], [0, 2, 1]);
   assert.throws(() => readModuleMesh(bytes.slice(0, 20)), /wrong length/);
+});
+
+test("every material a module's surfaces wear is one the page draws, and the first group is never paving", () => {
+  const book = pictureBook({ climate: 'temperate', season: 'summer' }, [], [2], () => []);
+  for (const module of manifest.modules) {
+    assert.notEqual(module.groups[0]?.material, 'paving', module.name);
+    for (const group of module.groups) assert.ok(group.material in book.materials, `${module.name}: ${group.material}`);
+  }
 });

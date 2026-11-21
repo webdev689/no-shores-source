@@ -21,7 +21,28 @@ export type SolidShape =
   | RockShape;
 
 export type SolidMaterial =
-  'stone' | 'trim' | 'roof' | 'timber' | 'plaster' | 'paving' | 'gold' | 'iron' | 'bone' | 'glow' | 'rubble' | 'chalk';
+  | 'stone'
+  | 'trim'
+  | 'roof'
+  | 'timber'
+  | 'plaster'
+  | 'paving'
+  | 'path'
+  | 'lawn'
+  | 'earth'
+  | 'gold'
+  | 'iron'
+  | 'bone'
+  | 'glow'
+  | 'water'
+  | 'rubble'
+  | 'chalk'
+  | ClothMaterial;
+
+/** Cloth's plain dyed colours (the city crate's `Material`): linen, crimson, verdant, black, straw, and each
+ *  faction's dye. */
+export type ClothMaterial =
+  'linen' | 'crimson' | 'verdant' | 'black' | 'straw' | 'stormcaller_blue' | 'lamplighter_gold' | 'veiled_dusk';
 
 /** One solid: the middle of its base in world metres (z up), its width, depth and height, its turn clockwise from
  *  north (its own x east and y south at 0), its lean toward its own +y and its roll about its own y, radians. */
@@ -46,7 +67,21 @@ export type PlanCell = {
   readonly block?: string;
 };
 
-export type Pad = { readonly bounds: readonly [number, number, number, number]; readonly level: number };
+/** A rectangle of ground the city sets to a level: at its west or north edge, falling to `fall`'s level at its east
+ *  or south edge where it slopes (a ramp). */
+export type Pad = {
+  readonly bounds: readonly [number, number, number, number];
+  readonly level: number;
+  readonly fall?: { readonly east: number } | { readonly south: number };
+};
+
+/** One walked piece of a ramp or a switchback (the city crate's `ramps::Ramp`): its pad, its rise over its run, and
+ *  its centre line from its top to its foot (east, south, level), which the next piece's line carries on from. */
+export type Ramp = Pad & {
+  readonly piece: 'ramp' | 'leg' | 'landing';
+  readonly slope: number;
+  readonly line: readonly [readonly [number, number, number], readonly [number, number, number]];
+};
 
 /** A wreck settled in a ruin's harbour (the city crate's `Wreck`): which ship, where it lies, its heading clockwise
  *  from north and its heel to starboard, radians. */
@@ -67,6 +102,15 @@ export type Piece = {
   readonly at: readonly [number, number, number];
   readonly yaw: number;
 };
+
+/** A plant a city stands (the city crate's `hub::plants::Plant`): a tree or a bush, where its foot stands (east,
+ *  south, up), its turn and how much its drawn size is scaled. */
+export interface CityPlant {
+  readonly growth: 'tree' | 'bush';
+  readonly at: readonly [number, number, number];
+  readonly turn: number;
+  readonly scale: number;
+}
 
 /** A ground picture laid on the land: four corners in world metres (north-west, north-east, south-east, south-west,
  *  on the ground), each corner's UV in pictures, and the ground record whose picture it wears. */
@@ -93,8 +137,13 @@ export type CityPlan = {
     readonly ring: readonly (readonly [number, number])[];
     readonly spawns: readonly (readonly [number, number])[];
     readonly solids: readonly Solid[];
+    /** The trees and bushes its beds, pots and planters stand, drawn as the land's own plants. */
+    readonly plants?: readonly CityPlant[];
   };
   readonly pads: readonly Pad[];
+  /** The ramps and switchbacks joining each avenue's terraces and climbing to the platform: their pads are among
+   *  `pads`, their walls and paving among `works`. A layout's plan has none. */
+  readonly ramps?: readonly Ramp[];
   /** Whether the city is a ruin, desolate and destroyed (the city crate's `ruins`); a port city's plan says false. */
   readonly ruined?: boolean;
   readonly wrecks?: readonly Wreck[];

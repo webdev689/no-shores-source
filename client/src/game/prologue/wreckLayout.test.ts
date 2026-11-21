@@ -153,7 +153,7 @@ test('the zones follow the path, each checkpoint on the ground in its own zone, 
   );
   assert.ok(
     [...seen].some((type) => type >= 13 && type <= 17),
-    'and pirates, to fight each other',
+    'and pirates, boarding together',
   );
 });
 

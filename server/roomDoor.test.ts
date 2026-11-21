@@ -199,13 +199,16 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   while (seen.standing.kind === 'inside') seen = play(room, second, ++sequence, east);
   assert.deepEqual(seen.standing, { kind: 'warned', ticks: 599 });
   while (seen.standing.kind === 'warned') seen = play(room, second, ++sequence, east);
-  assert.deepEqual(seen.standing, { kind: 'dead', ticks: 0 });
+  assert.deepEqual(seen.standing, { kind: 'dead', ticks: 0, fell: false });
   assert.ok(seen.body.x >= 110, `dead 60 m past the edge, at ${seen.body.x}`);
-  const died = floatsOf(seen.body);
+  const died = seen.body;
   for (let ticks = 1; ticks <= 240; ticks++) {
     seen = play(room, second, ++sequence, east, true);
-    assert.deepEqual([seen.standing, floatsOf(seen.body)], [{ kind: 'dead', ticks }, died], 'still, and refused');
+    assert.deepEqual(seen.standing, { kind: 'dead', ticks, fell: false }, 'refused');
   }
+  // Running on as it died, the body slides to rest on its feet, not steered by the inputs the room still takes.
+  const [lies, before] = [seen.body, died];
+  assert.ok(lies.x >= before.x && lies.x < before.x + 3 && lies.vx === 0, `at rest near where it died: ${lies.x}`);
   seen = play(room, second, ++sequence, east, true);
   assert.deepEqual(seen.standing, { kind: 'inside' });
   assert.deepEqual(floatsOf(seen.body), floatsOf(movement.standing(30, -40)), 'back at the spawn nearest its death');
@@ -307,14 +310,14 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), 'b58376454aaf5aa9');
+  assert.equal(hash.toString(16).padStart(16, '0'), '931bb63be1946e30');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
   const room = startRoomDoor(compiled);
   assert.equal(room.openFleet(), true);
   const [first, second] = [room.join(), room.join()];
-  const still: Helm = { steer: 0, crab: false, climb: 0 };
+  const still: Helm = { steer: 0, climb: 0 };
   const helmAt = (sequence: number): Helm =>
     sequence <= 3 ? { ...still, climb: 1 } : { ...still, steer: sequence % 40 < 15 ? 0.7 : -0.3 };
   const orders = (sequence: number, more: Partial<FleetOrders> = {}): Uint8Array<ArrayBuffer> =>
@@ -359,10 +362,10 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
 /** How often, in ticks, the room sends one player's gear (`room::GEAR_EVERY_TICKS`). */
 const GEAR_EVERY_TICKS = 12;
 
-test('a room told to forbid Arts sends gear with no Art worn, so the page shows no ability bar', () => {
+test("a room playing the prologue's wreck sends gear with no Art worn, so the page shows no ability bar", () => {
   const room = startRoomDoor(compiled);
   assert.equal(room.open(course.start, course.blocks, true), true);
-  room.forbidArts();
+  room.storyWreck();
   const player = room.join();
   room.tick();
   const gear = readFromRoom(room.gear(player));

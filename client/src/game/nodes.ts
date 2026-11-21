@@ -28,6 +28,10 @@ export interface CityPlan {
     /** Overlook's bounty board: its middle, the way its face looks, and where a player stands to read it. */
     readonly board?: { readonly at: Point; readonly facing: number; readonly front: Point } | null;
     readonly visitor_spots?: readonly Point[];
+    readonly ways?: Ways;
+    readonly posts?: readonly Post[];
+    /** Ships moored beside its pier: each one's middle (east, south) and her bow's bearing. */
+    readonly moorings?: readonly (readonly [number, number, number])[];
   };
   readonly pads: readonly Pad[];
   /** Whether the city is a ruin: no port, no docking, no one in its plaza. */
@@ -40,6 +44,53 @@ export interface StationInfo {
   readonly kind: string;
   readonly keeper: Point;
   readonly counter: Point;
+}
+
+/** A point of a social space's ways (the city crate's `WayPoint`): where it stands, and what it is, as
+ *  "counter:mage" or "view:seaward-2", or "" for a plain turn. */
+export interface WayPoint {
+  readonly at: Point;
+  readonly name: string;
+}
+
+/** The ways a social space's townsfolk walk: its points, and the links between them by their place among the points,
+ *  each walked either way. */
+export interface Ways {
+  readonly points: readonly WayPoint[];
+  readonly links: readonly (readonly [number, number])[];
+}
+
+/** What someone does at a post: a move the forge draws for every townsfolk garment, an instrument's naming it. */
+export type Task =
+  | 'idle'
+  | 'sweep'
+  | 'carry'
+  | 'smith'
+  | 'gesture'
+  | 'drink'
+  | 'dance'
+  | 'juggle'
+  | 'charm'
+  | 'hold'
+  | 'pray'
+  | 'beg'
+  | 'lean_cane'
+  | 'play_lute'
+  | 'play_flute'
+  | 'play_recorder'
+  | 'play_tambourine';
+
+/** Who keeps a post: one person always there, one walking the posts of a round in turn, or the walkers by. */
+export type Keep = 'kept' | 'visited' | { readonly round: number };
+
+/** A place where someone works, plays or stays (the city crate's `Post`): their task, where they stand and face (the
+ *  compass bearing, `bearingTo`), who keeps it, and the way point it is reached from, by its place among the points. */
+export interface Post {
+  readonly task: Task;
+  readonly at: Point;
+  readonly facing: number;
+  readonly keep: Keep;
+  readonly reached_from: number;
 }
 
 /** How far past a section's ring its window of the ground reaches, as the bake cuts it: past the 60 m where a body
@@ -58,9 +109,19 @@ export function windowRect(ring: readonly Point[]): Rect {
   ];
 }
 
+/** The middle of a node's spawns, or its centre where it has none. */
+function spawnsMiddle(node: NodeInfo): Point {
+  if (node.spawns.length === 0) return node.centre;
+  const sum = node.spawns.reduce<[number, number]>(
+    (total, [east, south]) => [total[0] + east, total[1] + south],
+    [0, 0],
+  );
+  return [sum[0] / node.spawns.length, sum[1] / node.spawns.length];
+}
+
 /** A city's social space as a node: `<city id>-social`, named for its city, its plaza's section and spawns. */
 export function socialNode(plan: CityPlan, continent: string): NodeInfo {
-  const { ring, spawns, stations = [], visitor_spots: visitorSpots = [] } = plan.social;
+  const { ring, spawns, stations = [], visitor_spots: visitorSpots = [], ways, posts = [] } = plan.social;
   return {
     id: `${plan.id}-social`,
     kind: 'social',
@@ -72,6 +133,7 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
     stations,
     board: plan.social.board?.front ?? null,
     visitorSpots,
+    ...(ways ? { ways, posts } : {}),
   };
 }
 
@@ -112,10 +174,11 @@ export function clearedBy(pads: readonly Pad[]): (x: number, y: number) => boole
     pads.some(({ bounds: [west, north, east, south] }) => x >= west && x <= east && y >= north && y <= south);
 }
 
-/** The way a player faces on arriving in a node: in a city's social space, out from its landmark over the city;
- *  elsewhere, inland, the way they came ashore from `from` (their ship), or north with nowhere to come from. */
+/** The way a player faces on arriving in a node: in a city's social space, out from its landmark through the middle
+ *  of its spawns, over the city, however far its ring reaches elsewhere; elsewhere, inland, the way they came ashore
+ *  from `from` (their ship), or north with nowhere to come from. */
 export function arrivalFacing(node: NodeInfo, plan: CityPlan | null, from: Point | null): number {
   const spawn = node.spawns[0] ?? node.centre;
-  if (node.kind === 'social' && plan) return bearingTo(plan.centre, node.centre);
+  if (node.kind === 'social' && plan) return bearingTo(plan.centre, spawnsMiddle(node));
   return from && Math.hypot(spawn[0] - from[0], spawn[1] - from[1]) > 1 ? bearingTo(from, spawn) : 0;
 }

@@ -34,9 +34,16 @@ fn across_of(corner: vec2f) -> f32 {
   return corner.x * card.size.x - card.root.x;
 }
 
-// A corner where it stands from the eye, the card's face turned along 'right'.
-fn card_point(corner: vec2f, right: vec2f) -> vec3f {
-  return vec3f(card.feet.xy + right * across_of(corner), card.feet.z + card.root.y - corner.y * card.size.y);
+// A corner where it stands from the eye, the card's face turned along 'right' and its height along 'up'.
+fn card_point(corner: vec2f, right: vec2f, up: vec3f) -> vec3f {
+  return vec3f(card.feet.xy + right * across_of(corner), card.feet.z) + up * (card.root.y - corner.y * card.size.y);
+}
+
+// Which way a card stands up from its feet: straight up, or, for one that faces the eye (size.z), leaned square to
+// the line from the eye, so a body seen from high above still shows whole.
+fn card_up(right: vec2f) -> vec3f {
+  if (card.size.z < 0.5) { return vec3f(0.0, 0.0, 1.0); }
+  return normalize(cross(normalize(card.feet.xyz), vec3f(right, 0.0)));
 }
 
 fn texel_at(corner: vec2f) -> vec2i {
@@ -68,7 +75,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @lo
 
 @vertex fn card_vertex(@builtin(vertex_index) index: u32) -> Out {
   let corner = CORNERS[index];
-  let offset = card_point(corner, view.right.xy);
+  let offset = card_point(corner, view.right.xy, card_up(view.right.xy));
   var out: Out;
   out.position = view.from_eye * vec4f(offset, 1.0);
   // A smear stands a hair behind its figure (depth is reversed), so the figure is drawn over it.
@@ -150,7 +157,7 @@ struct Shadowed { @builtin(position) position: vec4f, @location(0) corner: vec2f
   let square = normalize(vec2f(-key_toward().y, key_toward().x) + vec2f(1e-6, 0.0));
   let right = select(-square, square, dot(square, view.right.xy) >= 0.0);
   var out: Shadowed;
-  out.position = shadow.from_eye * vec4f(card_point(corner, right), 1.0);
+  out.position = shadow.from_eye * vec4f(card_point(corner, right, vec3f(0.0, 0.0, 1.0)), 1.0);
   out.corner = corner;
   return out;
 }
@@ -300,7 +307,7 @@ export class FigureView implements CardMaker {
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) * metres;
       const cardValues = new Float32Array([
         ...[x - eye[0] + Math.cos(yaw) * across, y - eye[1] + Math.sin(yaw) * across, z - eye[2] + up, flip ? 1 : 0],
-        ...[card.width * metres, card.height * metres, 0, 0],
+        ...[card.width * metres, card.height * metres, shown.facesEye ? 1 : 0, 0],
         ...[rootX, card.root[1] * metres, 0, 0],
         ...cardLookValues(shown, time, !!smear),
         ...(light ? [...light([x, y, z + LIT_AT_M]), 1] : [0, 0, 0, 0]),

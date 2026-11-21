@@ -35,6 +35,30 @@ export function lookBearing(lookYaw: number, heading: number): number {
   return degrees > 180 ? degrees - 360 : degrees;
 }
 
+/** No battery bears within this of the bow or the stern, degrees: the rules' `BOW_ARC_DEG` and `STERN_ARC_DEG`
+ *  (crates/naval/src/arms.rs). A look outside lays nothing, so the aim and its lay are gone. */
+export const BATTERY_ARC_DEG = { bow: 35, stern: 40 } as const;
+/** A look held back into the arc stands this far inside its end, degrees, so it lays every frame. */
+const ARC_INSIDE_DEG = 1;
+
+/** The side whose battery a look bears on (1 starboard, -1 port), or null for one over the bow or the stern. */
+export function batterySide(lookYaw: number, heading: number): 1 | -1 | null {
+  const bearing = lookBearing(lookYaw, heading);
+  const off = Math.abs(bearing);
+  if (off <= BATTERY_ARC_DEG.bow || off >= 180 - BATTERY_ARC_DEG.stern) return null;
+  return bearing > 0 ? 1 : -1;
+}
+
+/** `lookYaw` held within the arc of `side`'s battery (1 starboard, -1 port) on a ship heading `heading`: a look past
+ *  either end, or across the bow or the stern onto the other side, comes back to the nearer end. */
+export function yawInBattery(lookYaw: number, heading: number, side: 1 | -1): number {
+  const bearing = lookBearing(lookYaw, heading) * side;
+  const [least, most] = [BATTERY_ARC_DEG.bow, 180 - BATTERY_ARC_DEG.stern];
+  if (bearing > least && bearing < most) return lookYaw;
+  const held = bearing >= most || bearing < -90 ? most - ARC_INSIDE_DEG : least + ARC_INSIDE_DEG;
+  return lookYaw + ((held - bearing) * side * Math.PI) / 180;
+}
+
 /** The aim eye on the ship's starboard (`side` 1) or port (-1) side, in the world. */
 export function aimEye(ship: Lying, side: number): [number, number, number] {
   const { forward, starboard } = headingFrame(ship.heading);

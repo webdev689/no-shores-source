@@ -23,15 +23,15 @@ const SQUARE = JSON.stringify({
 
 /** The voyage the door's own test sails (VOYAGE): each leg's helm and ticks. */
 const VOYAGE: readonly (readonly [Helm, number])[] = [
-  [{ steer: 0, crab: false, climb: 1 }, 30],
-  [{ steer: 0, crab: false, climb: 1 }, 30],
-  [{ steer: 1, crab: false, climb: 0 }, 60],
-  [{ steer: 1, crab: false, climb: 0 }, 60],
-  [{ steer: 1, crab: false, climb: 0 }, 60],
-  [{ steer: 0, crab: false, climb: 0 }, 60],
-  [{ steer: -1, crab: false, climb: 0 }, 60],
-  [{ steer: 0, crab: false, climb: -1 }, 60],
-  [{ steer: 1, crab: true, climb: 0 }, 60],
+  [{ steer: 0, climb: 1 }, 30],
+  [{ steer: 0, climb: 1 }, 30],
+  [{ steer: 1, climb: 0 }, 60],
+  [{ steer: 1, climb: 0 }, 60],
+  [{ steer: 1, climb: 0 }, 60],
+  [{ steer: 0, climb: 0 }, 60],
+  [{ steer: -1, climb: 0 }, 60],
+  [{ steer: 0, climb: -1 }, 60],
+  [{ steer: 1, climb: 0 }, 60],
 ];
 
 async function openSquare() {
@@ -64,12 +64,12 @@ test('a voyage through WebAssembly sails to the same fingerprint as the door nat
     time += ticks / 60;
   }
   assert.equal(ship[7], 1, 'it ends on its oars');
-  assert.equal(fingerprint(sailed), '8674ae6496b52c9a');
+  assert.equal(fingerprint(sailed), 'abf7572961569df1');
 });
 
 test('the sail door refuses a ship that is not a ship, and answers aground on land', async () => {
   const rules = await openSquare();
-  const still: Helm = { steer: 0, crab: false, climb: 0 };
+  const still: Helm = { steer: 0, climb: 0 };
   assert.throws(() => rules.sail(new Float64Array([Number.NaN, 0, 0, 0, 0, 0, 0, 0]), still, 0, 1, 0), /finite/);
   assert.throws(() => rules.sail(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), still, 0, 61, 0), /ticks/);
   const beached = rules.sail(new Float64Array([260_000, 360_000, 0, 0, 0, 0, 0, 0]), still, 0, 0, 0);
@@ -81,9 +81,9 @@ test('a voyage onto the shore and off it sails to the same fingerprint as the do
   // As crates/land-wasm/src/door_tests.rs shore_voyage: two minutes under sail onto the square's west shore, its
   // sails struck, then its oars astern.
   const legs: Helm[] = [
-    ...Array.from({ length: 120 }, (): Helm => ({ steer: 0, crab: false, climb: 0 })),
-    ...Array.from({ length: 3 }, (): Helm => ({ steer: 0, crab: false, climb: -1 })),
-    ...Array.from({ length: 20 }, (): Helm => ({ steer: 0, crab: false, climb: 0 })),
+    ...Array.from({ length: 120 }, (): Helm => ({ steer: 0, climb: 0 })),
+    ...Array.from({ length: 3 }, (): Helm => ({ steer: 0, climb: -1 })),
+    ...Array.from({ length: 20 }, (): Helm => ({ steer: 0, climb: 0 })),
   ];
   let ship = new Float64Array([199_750, 360_000, Math.PI / 2, 0, 0, 0, 0, 2]);
   let [time, touched] = [0, false];

@@ -12,9 +12,12 @@ import bpy  # noqa: I001 (Blender's bmesh and mathutils load with bpy)
 import bmesh
 import mathutils
 
-# The game's materials a module's surfaces wear (city's `Material`), each drawn in the climate's picture, in the order
-# its groups are written: paving last, as the first group carries the parts and paving is never run into.
-MATERIALS = ('stone', 'trim', 'rubble', 'timber', 'iron', 'paving')
+# The game's materials a module's surfaces wear (city's `Material`), each drawn in the climate's picture or its plain
+# colour, in the order its groups are written: paving last, as the first group carries the parts and paving is never
+# run into. Cloth is the plain dyes: undyed linen, crimson, verdant, black, straw and the three factions' own.
+CLOTHS = ('linen', 'crimson', 'verdant', 'black', 'straw', 'stormcaller_blue', 'lamplighter_gold', 'veiled_dusk')
+MATERIALS = ('stone', 'trim', 'rubble', 'timber', 'iron', 'plaster', 'roof', 'gold', 'bone', 'glow', *CLOTHS, 'paving',
+             'lawn', 'water')
 
 
 class Module:
@@ -272,6 +275,20 @@ def battlements(module, start, end, z, thick, material='stone', every=2.0, wide=
         block(module, at, (wide, thick, high), material, turn=turn, bevel=0.03, wear=0.03, part=False)
 
 
+def _in_order(group):
+    """Puts a group's vertices and triangles in one order, whatever order Blender made them in: an exact boolean's
+    threads hand its faces back in a different order each run, and a mesh's key is the hash of its bytes."""
+    order = sorted(range(len(group['vertices'])), key=lambda at: group['vertices'][at])
+    new = {old: at for at, old in enumerate(order)}
+    group['vertices'] = [group['vertices'][old] for old in order]
+    triangles = []
+    for triangle in group['triangles']:
+        a, b, c = (new[old] for old in triangle)
+        # Turned to start at its least vertex, so it keeps its winding.
+        triangles.append(min((a, b, c), (b, c, a), (c, a, b)))
+    group['triangles'] = sorted(triangles)
+
+
 def exported(module):
     """The module's surfaces by material, each a list of vertices (position, normal) and triangles, its parts and its
     sockets, all in the game's frame (x east, y south, z up), and its size: the box round its surfaces and parts."""
@@ -291,8 +308,9 @@ def exported(module):
             for loop in triangle.loops:
                 point = mesh.vertices[mesh.loops[loop].vertex_index].co
                 normal = normals[loop]
-                game = (round(point.x, 4), round(-point.y, 4), round(point.z, 4))
-                facing = (round(normal.x, 3), round(-normal.y, 3), round(normal.z, 3))
+                # + 0.0 drops a zero's sign: a coordinate a machine leaves a hair under zero is the same bytes.
+                game = (round(point.x, 4) + 0.0, round(-point.y, 4) + 0.0, round(point.z, 4) + 0.0)
+                facing = (round(normal.x, 3) + 0.0, round(-normal.y, 3) + 0.0, round(normal.z, 3) + 0.0)
                 key = (game, facing)
                 if key not in group['index']:
                     group['index'][key] = len(group['vertices'])
@@ -314,5 +332,10 @@ def exported(module):
     sockets = [dict(name=s['name'], at=[s['at'][0], -s['at'][1], s['at'][2]], facing=[s['facing'][0], -s['facing'][1]])
                for s in module.sockets]
     size = [max(abs(low[0]), abs(high[0])) * 2, max(abs(low[1]), abs(high[1])) * 2, high[2]]
+    unknown = set(groups) - set(MATERIALS)
+    if unknown:
+        raise ValueError(f'{module.name}: materials the game does not know: {sorted(unknown)}')
+    for group in groups.values():
+        _in_order(group)
     return dict(groups={name: groups[name] for name in MATERIALS if name in groups}, parts=parts, sockets=sockets,
                 pads=pads, size=[round(side, 3) for side in size])

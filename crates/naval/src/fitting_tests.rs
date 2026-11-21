@@ -14,8 +14,8 @@ impl Waters for Open {
     }
 }
 
-const STILL: Helm = Helm { steer: 0.0, crab: false, climb: 0 };
-const IDLE: Orders = Orders { helm: STILL, aim: None, fire: false, brace: false, load: None };
+const STILL: Helm = Helm { steer: 0.0, climb: 0 };
+const IDLE: Orders = Orders { helm: STILL, aim: None, fire: false, brace: false, load: None, boost: false };
 
 /// A fight with its captain lying `east` metres off the player's starboard beam (both heading north), still.
 fn abeam(east: f64) -> Fight {

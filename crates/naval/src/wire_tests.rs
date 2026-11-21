@@ -19,16 +19,17 @@ fn sloop_at(x: f64, y: f64, heading: f64) -> Ship {
 #[test]
 fn orders_cross_as_their_numbers_and_back() {
     let orders = Orders {
-        helm: Helm { steer: -0.5, crab: true, climb: 1 },
+        helm: Helm { steer: -0.5, climb: 1 },
         aim: Some(Aim { bearing_deg: 85.0, range_m: 120.0, ray: Some([[4.0, 2.5, 6.0], [0.2, 1.0, -0.1]]) }),
         fire: true,
         brace: false,
         load: Some(Shot::Chain),
+        boost: true,
     };
     assert_eq!(orders_numbers(&orders).len(), ORDERS);
     assert_eq!(orders_from(&orders_numbers(&orders)), Ok(orders));
     let quiet =
-        Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: true, load: None };
+        Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: true, load: None, boost: false };
     assert_eq!(orders_from(&orders_numbers(&quiet)), Ok(quiet));
     let rayless = Orders { aim: Some(Aim { bearing_deg: -90.0, range_m: 60.0, ray: None }), ..quiet };
     assert_eq!(orders_from(&orders_numbers(&rayless)), Ok(rayless));
@@ -50,6 +51,7 @@ fn numbers_that_are_not_orders_are_refused() {
     assert!(spoilt(5, f64::NAN).is_err(), "not a number");
     assert!(spoilt(6, 0.5).is_err(), "a ray that is neither");
     assert!(spoilt(9, f64::INFINITY).is_err(), "a ray's eye past the world");
+    assert!(spoilt(1, 0.5).is_err(), "a boost that is neither");
     assert!(spoilt(13, 2.0).is_err(), "a fire that is neither");
     assert!(spoilt(15, 5.0).is_err(), "a fifth shot");
 }
@@ -63,6 +65,13 @@ fn a_fights_view_holds_its_clock_both_ships_its_captain_and_counts_for_the_rest(
     let ship_of = |id| fight.vessel(id).map(|vessel| vessel.ship.to_floats()).unwrap_or_default();
     assert_eq!(numbers[2..10], ship_of(PLAYER));
     assert_eq!(numbers[2 + VESSEL_NUMBERS..10 + VESSEL_NUMBERS], ship_of(CAPTAIN));
+    let boost_at = 2 + VESSEL_NUMBERS - 3;
+    assert_eq!(numbers[boost_at..boost_at + 3], [0.0, 1.0, 0.0], "its burst unspent, wholly charged, then its hull");
+    let mut tapped = fight.clone();
+    let tap = Orders { boost: true, ..orders_from(&[0.0; ORDERS]).unwrap_or_else(|error| panic!("{error}")) };
+    tapped.step(&[(PLAYER, tap)], &Open, &|_| [1.5, 0.0], 0.0);
+    let numbers = view_numbers(&tapped, PLAYER, &[], None, &Open, 0.0);
+    assert!(numbers[boost_at] > 0.99 && numbers[boost_at + 1] == 0.0, "bursting: {:?}", &numbers[boost_at..]);
     let aim = Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
     let laid =
         view_numbers(&fight, PLAYER, &[Event::RunOut { ship: CAPTAIN, side: Side::Port }], Some(&aim), &Open, 0.0);

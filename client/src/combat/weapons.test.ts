@@ -186,6 +186,22 @@ test('a weapon whose picture never comes still says its name; one pictured lets 
     );
   }));
 
+test('a weapon with an element shows its glyph in its picture’s corner and says it; one with none shows none', () =>
+  onFakePage((root) => {
+    const rows = new WeaponRows(
+      root,
+      forge(() => blade),
+    );
+    const volt = gear([{ ...item('sword', 0, 2), element: 2 }, item('crossbow', 1)]);
+    onScreen(1, () => rows.update({ ...arms(0, true, volt), dress: {} as Dress }, own, 1 / 60));
+    const rowOf = (where: string) => findAll(root, 'weapon', where)[0] as unknown as HTMLElement | undefined;
+    const [hand, next] = [rowOf('hand'), rowOf('next')];
+    const glyphOf = (row?: HTMLElement) => (row && findAll(row, 'element')[0]) as unknown as HTMLElement | undefined;
+    assert.match(glyphOf(hand)?.innerHTML ?? '', /^<svg/, 'Volt’s glyph in the hand’s picture');
+    assert.match(hand?.ariaLabel ?? '', /, Volt$/);
+    assert.equal(glyphOf(next)?.innerHTML, '', 'no element, no glyph');
+  }));
+
 test('a swap pressed during a swap trades the rows again from the start', () =>
   onFakePage((root) => {
     const rows = new WeaponRows(root, null);

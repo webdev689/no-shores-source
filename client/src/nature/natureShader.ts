@@ -198,9 +198,10 @@ fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, s
   let through = leaf * (vec3f(0.2 * sky_level()) + sky_state.key_light.rgb * behind) * occlusion;
   let lamps = sky_lamps(from_eye, normal);
   var colour = base * (ambient + direct * mix(1.0, occlusion, 0.5) + lamps) + base * through;
-  let settled = snow * smoothstep(0.35, 0.75, normal.z);
+  let open = select(1.0, 0.0, sky_sheltered(from_eye + normal * 0.6));
+  let settled = snow * smoothstep(0.35, 0.75, normal.z) * open;
   colour = mix(colour, SNOW * (sky_ambient(normal) + direct + lamps), settled);
-  let wet = sky_state.ambient_sky.w * (1.0 - settled);
+  let wet = sky_state.ambient_sky.w * (1.0 - settled) * open;
   return sky_soaked(colour, wet * (1.0 - leaf) * 0.6) + sky_sheen(normal, from_eye, wet * leaf);
 }
 

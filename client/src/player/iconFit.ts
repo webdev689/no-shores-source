@@ -1,7 +1,8 @@
 // How a picture is fitted to its box, as Enhanced Plus fits its icons: its clear margin trimmed, then grown by whole
 // pixels where that keeps most of the size the box allows, so its pixels stay square, and otherwise grown by whole
 // pixels past the size and smoothed down to it once; never past four screen pixels to one of its own, and drawn at the
-// screen's own pixel ratio, so it is crisp on any screen.
+// screen's own pixel ratio, so it is crisp on any screen. One larger than its box (a weapon's large picture) is shrunk
+// to it by an area average (`shrunk`).
 
 /** The most screen pixels one of a picture's pixels grows to, before the screen's ratio: an icon's. A picture shown
  *  large (the figure, an item's page) may grow further. */
@@ -88,4 +89,75 @@ export function drawnBounds(
       south = Math.max(south, row);
     }
   return east < 0 ? null : [west, north, east - west + 1, south - north + 1];
+}
+
+/** For each of `to` new pixels along a line of `from` old ones, the old pixels it covers and the share of it each
+ *  fills. */
+function spans(from: number, to: number): (readonly [number, number])[][] {
+  const step = from / to;
+  return Array.from({ length: to }, (unused, place) => {
+    const [start, end] = [place * step, (place + 1) * step];
+    const covered: (readonly [number, number])[] = [];
+    for (let old = Math.floor(start); old < Math.min(from, Math.ceil(end)); old++)
+      covered.push([old, (Math.min(end, old + 1) - Math.max(start, old)) / step]);
+    return covered;
+  });
+}
+
+/** A picture's pixels shrunk to `toWidth` by `toHeight` by an exact area average: each new pixel the mean of the old
+ *  ones it covers, each weighed by how much of it falls there and by its cover, and covered as much as they cover it.
+ *  So a fine detail fades by its share of a pixel, never dropped, nor blurred over pixels it does not touch, and a
+ *  clear ground darkens no edge. */
+export function shrunk(
+  width: number,
+  height: number,
+  pixels: ArrayLike<number>,
+  toWidth: number,
+  toHeight: number,
+): Uint8ClampedArray<ArrayBuffer> {
+  const [across, down] = [spans(width, toWidth), spans(height, toHeight)];
+  // Each colour weighed by its cover, averaged across each row, then down each column.
+  const rows = new Float64Array(toWidth * height * 4);
+  for (let row = 0; row < height; row++)
+    for (let column = 0; column < toWidth; column++)
+      for (const [old, share] of across[column] ?? []) {
+        const [from, to] = [(row * width + old) * 4, (row * toWidth + column) * 4];
+        const cover = ((pixels[from + 3] ?? 0) / 255) * share;
+        for (let channel = 0; channel < 3; channel++) rows[to + channel] += (pixels[from + channel] ?? 0) * cover;
+        rows[to + 3] += cover;
+      }
+  const out = new Uint8ClampedArray(toWidth * toHeight * 4);
+  const sum = [0, 0, 0, 0];
+  for (let row = 0; row < toHeight; row++)
+    for (let column = 0; column < toWidth; column++) {
+      sum.fill(0);
+      for (const [old, share] of down[row] ?? [])
+        for (let channel = 0; channel < 4; channel++)
+          sum[channel] += (rows[(old * toWidth + column) * 4 + channel] ?? 0) * share;
+      const [red = 0, green = 0, blue = 0, cover = 0] = sum;
+      if (cover > 0) out.set([red / cover, green / cover, blue / cover, cover * 255], (row * toWidth + column) * 4);
+    }
+  return out;
+}
+
+/** A canvas of `own`'s pixels shrunk to `width` by `height` (`shrunk`); given a palette's `snap`, cut at half cover and
+ *  snapped to it, so a picture that keeps to a palette still shows only its colours. */
+export function shrunkCanvas(
+  own: HTMLCanvasElement,
+  width: number,
+  height: number,
+  snap?: (pixels: Uint8ClampedArray) => void,
+): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  [canvas.width, canvas.height] = [width, height];
+  const pixels = own.getContext('2d')?.getImageData(0, 0, own.width, own.height).data ?? [];
+  const small = shrunk(own.width, own.height, pixels, width, height);
+  if (snap) {
+    for (let texel = 0; texel < small.length; texel += 4)
+      if ((small[texel + 3] ?? 0) < 128) small.fill(0, texel, texel + 4);
+      else small[texel + 3] = 255;
+    snap(small);
+  }
+  canvas.getContext('2d')?.putImageData(new ImageData(small, width), 0, 0);
+  return canvas;
 }

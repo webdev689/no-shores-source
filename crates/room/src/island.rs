@@ -95,7 +95,7 @@ impl Room {
     #[must_use]
     pub fn island(plan: &Plan, at: [f64; 2], guards: Option<u8>, levels: Option<(u8, u8)>) -> Self {
         let place = |points: &[[f64; 2]]| points.iter().map(|&point| isle::placed(point, at)).collect::<Vec<_>>();
-        let section = Section { ring: place(&plan.ring), spawns: place(&plan.sites.spawns) };
+        let section = Section { ring: place(&plan.ring), spawns: place(&plan.sites.spawns), falls_kill: false };
         let floor = Floor::Island(Box::new(plan.ground_at(at)));
         let blocks = plan.blocks_at(at);
         let spawns: Vec<(f64, f64)> = section.spawns.iter().map(|&[x, y]| (x, y)).collect();

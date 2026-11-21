@@ -10,9 +10,12 @@ pub mod courtyard;
 pub mod districts;
 pub mod footprint;
 pub mod grid;
+pub mod hub;
 pub mod landmarks;
 pub mod landmarks_inland;
+pub mod life;
 pub mod modules;
+pub mod ramps;
 pub mod rmb;
 pub mod rock;
 pub mod ruins;
@@ -83,6 +86,9 @@ pub struct Plan {
     /// The wall, its towers and gatehouses, the quay and piers, and the terraces' retaining walls.
     pub works: Vec<Solid>,
     pub social: Social,
+    /// The ramps and switchbacks joining each avenue's terraces to each other and to the platform, each avenue's from
+    /// its start to its head and up to the platform; their pads are among `pads` and their walls among `works`.
+    pub ramps: Vec<ramps::Ramp>,
     /// The levels the city sets the land to, in order: later pads stand over earlier ones.
     pub pads: Vec<Pad>,
     /// Whether the city is a ruin, desolate and destroyed: every city but the port cities (`ruins`).
@@ -136,7 +142,7 @@ pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> R
     let site = Site { level, ..first };
     let built =
         landmark(&city.motif, &site, ground).ok_or_else(|| format!("{}: no motif called {}", city.id, city.motif))?;
-    let social = plaza(ground, centre, level, seaward, &built, ruined, city.id == board::BOARD_CITY);
+    let mut social = plaza(&city.id, ground, centre, level, seaward, &built, ruined);
     // Only the cells under the landmark's base rise to the platform and are kept for it. The cells under the plaza keep
     // their own levels and are built on as any other: the plaza's pad stands over its own footprint, its parapet for a
     // wall, so what is built beneath it is hidden and the city runs right up to its foot, as round the Tower.
@@ -161,38 +167,88 @@ pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> R
             }
         }
     }
-    for start in gates.iter().chain(harbour.iter()) {
+    let mut avenues = Vec::new();
+    let mut harbour_avenue = None;
+    for (number, start) in gates.iter().chain(harbour.iter()).enumerate() {
         let Some(cell) = ways::built_cell_near(&grid, &cell_footings, *start) else { continue };
-        for (column, row) in ways::avenue(&cell_footings, cell).unwrap_or_default() {
+        if number == gates.len() {
+            harbour_avenue = Some(ramps::Harbour {
+                avenue: avenues.len(),
+                roots: walls::pier_roots(&footprint),
+                quay: walls::quay_points(&footprint),
+            });
+        }
+        let cells = ways::avenue(&cell_footings, cell).unwrap_or_default();
+        for &(column, row) in &cells {
             if uses[index(column, row)] == Use::Open {
                 uses[index(column, row)] = Use::Avenue;
             }
         }
+        avenues.push(cells);
     }
+    let harbour_way = harbour_avenue.as_ref().map(|found| (found.avenue, found.roots.clone()));
+    let laid = ramps::lay(&ramps::Avenues {
+        grid: &grid,
+        footings: &cell_footings,
+        uses: &uses,
+        avenues: &avenues,
+        platform: level,
+        plaza: social.bounds,
+        over: &[base],
+        harbour: harbour_avenue,
+    });
     fill(&grid, &cell_footings, &mut uses, &footprint, blocks, seed);
     let mut works = walls::city_wall(ground, &footprint, &gate_rays, ruined);
     works.extend(walls::harbour_works(&footprint, ruined));
     // The plaza's pad stands over the cells under it: no terrace wall of theirs may cross it.
-    works.extend(walls::retaining_walls(ground, &grid, &cell_footings).into_iter().filter(|wall| {
+    let retaining = walls::cut(walls::retaining_walls(ground, &grid, &cell_footings), &laid.cuts);
+    works.extend(retaining.into_iter().filter(|wall| {
         let [west, north, east, south, _, _] = wall.bounds();
         !overlaps([west, north, east, south], social.bounds)
     }));
+    works.extend(laid.works);
+    if city.id == hub::HUB_CITY
+        && let Some((harbour_avenue, roots)) = &harbour_way
+    {
+        let (bounds, along_seaward) = social::plaza_bounds(centre, seaward, reach);
+        let frame = courtyard::Frame {
+            middle: [f64::midpoint(bounds[0], bounds[2]), f64::midpoint(bounds[1], bounds[3])],
+            seaward: along_seaward,
+            depth: social::PLAZA_M[1],
+            length: social::PLAZA_M[0],
+            level,
+        };
+        let way = hub::Harboured {
+            grid: &grid,
+            footings: &cell_footings,
+            uses: &uses,
+            avenue: &avenues[*harbour_avenue]
+                .iter()
+                .copied()
+                .filter(|&(column, row)| uses[index(column, row)] == Use::Avenue)
+                .collect::<Vec<_>>(),
+            ramps: &laid.ramps,
+            works: &works,
+            roots,
+        };
+        hub::harbour(&mut social, &frame, &way);
+    }
     let mut pads: Vec<Pad> = Vec::new();
     let mut cells = Vec::new();
     for row in 0..SIDE_CELLS {
         for column in 0..SIDE_CELLS {
             let footing = cell_footings[index(column, row)];
             if let Footing::Level { level } = footing {
-                pads.push(Pad { bounds: grid.bounds(column, row), level });
+                pads.push(Pad::flat(grid.bounds(column, row), level));
             }
             if footing != Footing::Outside {
                 cells.push(Cell { column, row, footing, used: uses[index(column, row)].clone() });
             }
         }
     }
-    pads.push(Pad { bounds: social.bounds, level });
-    let reach = built.reach;
-    pads.push(Pad { bounds: [centre[0] - reach, centre[1] - reach, centre[0] + reach, centre[1] + reach], level });
+    pads.extend(laid.ramps.iter().map(|ramp| ramp.pad));
+    pads.push(Pad::flat(social.bounds, level));
+    pads.push(Pad::flat(base, level));
     let (name, landmark_solids, wrecks) = if ruined {
         works.extend(ruins::street_rubble(&grid, &cells, social.bounds, seed));
         let wrecks = harbour.map(|at| ruins::wrecks(ground, &footprint, at, seed)).unwrap_or_default();
@@ -213,6 +269,7 @@ pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> R
         landmark: landmark_solids,
         works,
         social,
+        ramps: laid.ramps,
         pads,
         ruined,
         wrecks,

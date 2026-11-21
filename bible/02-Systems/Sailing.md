@@ -65,9 +65,10 @@ sail the other hulls ([[Hulls]]) by the same laws.
   sail running dead before it) by the point of sail (0.9 running dead
   before the wind, 1 on the quarter, 0.55 in the wind's eye), in the sea's wind, a fifth again. Under sail its rudder
   swings it at its steerage, read at its way over its rig's gain: 3 degrees a second at no way, about 12 at its best
-  way in the usual breeze. On its oars it swings at 20.
+  way in the usual breeze. On its oars it swings at 20. In a sea fight every ship sails and rows 1.8 times as fast,
+  swings twice as fast and answers its helm twice as soon, and a player's ship may burst for more ([[Naval Combat]]).
 - **The ladder.** W climbs a rung, S comes down one: oars astern, oars at rest, oars ahead, sails set. A and D steer;
-  backing water, the helm answers the other way. Shift with A or D pulls it sideways on its oars.
+  backing water, the helm answers the other way.
 - **A step.** Its swing and its way move toward what its rung asks, at the mod's rates under DFO's responsive helm.
   With its sails struck and its oars at rest, it coasts to a stop, faster for the share of its way its canvas made.
   It moves in its own frame, then swings, as the mod's boat did. Its heading stays in [0, 2π).
@@ -98,7 +99,9 @@ sail the other hulls ([[Hulls]]) by the same laws.
 - **One crate, every machine.** The browser steps it through `land-wasm`'s door, over the open landmass, in ticks of
   1/60 s, a second's at most a request, the Sloop unless the request names another hull. Its maths is exact or `libm`'s,
   so a voyage's fingerprint is the same natively and as WebAssembly ([[Agree to the Bit]]). The door refuses numbers no
-  ship could have: a way over 10 m/s, a swing over 45 degrees a second, a time past the world's.
+  ship could have: a way over 20 m/s, a swing over 45 degrees a second, a time past the world's. A fight hands its
+  ship back to sailing as it left it, so the bounds stand past a fight's: a burst in the strongest sea wind makes
+  14.4 m/s, and oars in a fight swing at 40.
 
 ## The Sloop
 

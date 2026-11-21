@@ -1,5 +1,6 @@
 import { type SkyLaw, type SkyReading, type Strike, windBearing } from './skyLaw.ts';
 import { lookOf } from './skyLook.ts';
+import { type Roofing, type Shelter, shelterOver, stillServes } from './shelter.ts';
 import { AFTERNOON, type Lamp, type SkyLook, type SkyUniform } from './skyUniform.ts';
 import { WORLD_CLOCK, type WorldClock } from './worldClock.ts';
 
@@ -117,7 +118,10 @@ export function flashOf(strike: Strike, ageS: number, distanceM: number): number
  */
 export class SkyDriver {
   private law: SkyLaw | null = null;
-  private readonly uniform: Pick<SkyUniform, 'write'>;
+  private readonly uniform: Pick<SkyUniform, 'write'> & Partial<Pick<SkyUniform, 'writeShelter'>>;
+  /** What keeps the rain off where the player stands (a node's boxes), and the grid laid round the eye from it. */
+  private roofing: readonly Roofing[] = [];
+  private shelter: Shelter | null = null;
   private asked = Number.NEGATIVE_INFINITY;
   private strikes: Strike[] = [];
   /** The air the weather was last read in, the reading last shown, and an easing from one air into the next. */
@@ -131,7 +135,7 @@ export class SkyDriver {
 
   constructor(
     law: Promise<SkyLaw>,
-    uniform: Pick<SkyUniform, 'write'>,
+    uniform: Pick<SkyUniform, 'write'> & Partial<Pick<SkyUniform, 'writeShelter'>>,
     clock: Pick<WorldClock, 'seconds'> = WORLD_CLOCK,
   ) {
     this.uniform = uniform;
@@ -139,6 +143,24 @@ export class SkyDriver {
     law
       .then((started) => (this.law = started))
       .catch((error: unknown) => console.error('the sky could not start:', error));
+  }
+
+  /** Shelters the rain under `boxes` (world metres) from the next frame: a node's boxes on foot, none elsewhere. */
+  shelterUnder(boxes: readonly Roofing[]): void {
+    this.roofing = boxes;
+    this.shelter = null;
+  }
+
+  /** Where the eye stands in the shelter grid, laid again round it when it has strayed (as the uniform's
+   *  shelter_place); none laid where nothing shelters. */
+  private shelterPlace(eye: readonly [number, number, number]): [number, number, number, number] {
+    if (this.roofing.length === 0 || !this.uniform.writeShelter) return [0, 0, 0, 0];
+    if (!this.shelter || !stillServes(this.shelter, eye)) {
+      this.shelter = shelterOver(this.roofing, eye);
+      this.uniform.writeShelter(this.shelter.undersides);
+    }
+    const { west, north, base } = this.shelter;
+    return [eye[0] - west, eye[1] - north, eye[2] - base, 1];
   }
 
   /** The sky over the eye (world metres, height above the sea) in a climate's air, its weather read at the ground
@@ -164,7 +186,7 @@ export class SkyDriver {
     this.strikes = this.strikes.filter((strike) => worldS - strike.atS <= STRIKE_KEPT_S);
     const flash = flashOfAll(this.strikes, worldS, eye);
     const look = lookOf(reading, worldS, flash);
-    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)]);
+    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)], this.shelterPlace(eye));
     const sails = windBearing(law.seaWind(eye[0], eye[1], worldS));
     const held = heldLight(look, lamps);
     SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails, held };
@@ -184,7 +206,7 @@ export class SkyDriver {
     const { worldS, strikes } = told;
     const reading = { ...law.at(eye[0], eye[1], Math.max(0, groundM), told.hourS, climate), ...told.weather };
     const look = lookOf(reading, worldS, flashOfAll(strikes, worldS, eye));
-    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)]);
+    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)], this.shelterPlace(eye));
     const sails = windBearing(told.weather.wind);
     SKY_NOW.current = { reading, look, climate, eye, worldS, strikes, sails, held: heldLight(look, lamps) };
     return SKY_NOW.current;

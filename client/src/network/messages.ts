@@ -16,14 +16,16 @@ export interface Look {
   readonly facing: number;
 }
 
-/** Where a body stands with its node's section: inside, warned with `ticks` left before it dies, or dead `ticks`. */
+/** Where a body stands with its node's section: inside, warned with `ticks` left before it dies, or dead `ticks`, by
+ *  a fall in a social space or by straying. */
 export type Standing =
   | { readonly kind: 'inside' }
   | { readonly kind: 'warned'; readonly ticks: number }
-  | { readonly kind: 'dead'; readonly ticks: number };
+  | { readonly kind: 'dead'; readonly ticks: number; readonly fell: boolean };
 
-/** The standings in the order the messages number them. */
-const STANDINGS = ['inside', 'warned', 'dead'] as const;
+/** The standings in the order the messages number them: 2 dead by straying, 3 dead by a fall. */
+const STANDINGS = ['inside', 'warned', 'dead', 'dead'] as const;
+const FELL = 3;
 
 /** One player as a room last stepped them, what their figure showed with it, the number of their last input it took,
  *  their whole fighter in the combat crate's order, and where they stand with its section. In the sea room, a player
@@ -334,6 +336,7 @@ function dressesOf(count: number, entry: (index: number) => Dressed | null): Pla
 /** A standing from its number and ticks; a number the messages do not give reads as inside. */
 function standingOf(number: number, ticks: number): Standing {
   const kind = STANDINGS[number] ?? 'inside';
+  if (kind === 'dead') return { kind, ticks, fell: number === FELL };
   return kind === 'inside' ? { kind } : { kind, ticks };
 }
 

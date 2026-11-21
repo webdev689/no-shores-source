@@ -26,8 +26,9 @@ import { type Shot, shotOfOrbit } from '../camera.ts';
 import type { FootFight, FootFrame } from '../foot.ts';
 import { footHints } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
+import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
 import { WreckCrew } from './wreckCrew.ts';
-import { courseOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
+import { courseOf, titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
 
@@ -79,7 +80,7 @@ export class WreckRun {
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
   private readonly feel: AttackFeel;
-  private readonly sounds = new WorldSounds(worldOutput);
+  private readonly sounds = new WorldSounds(louder(worldOutput, STORY_FIGHT_GAIN));
   private readonly scenery: WreckScenery;
   private readonly progress: WreckProgress;
   private readonly level: { value: number };
@@ -130,7 +131,11 @@ export class WreckRun {
     for (const rules of [movement, combat]) rules.setRim(course);
     const [x, y] = layout.wake.at;
     const { facing } = layout.wake;
-    walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
+    // On the deck under the wake, as the room stands them: the rim's own ground is the sea below it, so the shot the
+    // wake's flight ends on would stand inside the hull.
+    const woke = newPlayer(movement, x, y);
+    const body = { ...woke.body, z: topAt(course, x, y) };
+    walker.player = { ...woke, body, previous: body, view: walker.player.view, yaw: facing, facing };
     const level = { value: 1 };
     let fight: Fighting | null = null;
     const room = LocalRoom.openOverSea(
@@ -140,8 +145,9 @@ export class WreckRun {
       (snapshot) => fight?.receive(snapshot),
       (gear) => (level.value = gear.level),
     );
-    // The prologue's player has no Art yet: one comes after it, with the factions.
-    room.forbidArts();
+    // The prologue's player has no Art yet (one comes after it, with the factions), fights with the sword and shield
+    // the story dressed them in, and meets the boarders as one side.
+    room.storyWreck();
     fight = new Fighting(combat, room);
     return new WreckRun(context, layout, { room, fight, combat, module }, { scenery, level, origin });
   }

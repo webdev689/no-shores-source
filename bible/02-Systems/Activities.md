@@ -197,8 +197,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
   opens again, so one dungeon farms no "Clear 3 dungeons."; a run is a room of its own, so each run counts. A room
   knows its island from its node's file, or from the patrol, the Elite Dungeon or the sea island its dungeon is of
   (`Room::set_island`); a room on no island counts no place.
-- **The bounty board** stands free in Overlook's plaza, seaward of the braziers on the Mage's side and away from
-  the Harbourmaster ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
+- **The bounty board** stands on the notice board's landing in the Watch Court of Overlook's hub, its face to the
+  court ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
   plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is
   no station and has no keeper. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
   places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an

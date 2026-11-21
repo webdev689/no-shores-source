@@ -166,14 +166,16 @@ on Cloudflare.
   moves faster than real time and one catching up after a stall replays no faster than three times over.
 - **A player whose inputs stop** is stepped standing still once they fall a view's lag (24 ticks) behind, so nothing
   they were doing (a dodge's safe stretch, a parry window) outlasts its time, and time away is never banked to spend as
-  speed; a body the section killed lies where it fell, but its ticks count the same. Past 30 waiting inputs, the oldest
+  speed; a body the section killed is stepped with no controls of its own, so it falls on and lies where it lands, its
+  ticks counting the same. Past 30 waiting inputs, the oldest
   is let go as though taken, so a burst after a stall never breaks the order. The room tick a player says their screen
   showed moves on at most 4 ticks an input, so they cannot pick the moment they are judged at. A dress change is taken
   at most once a second.
 - **The section:** after each player's inputs a node's room judges their body against the node's section ([[Reach]]):
-  inside, warned with a count, or dead. A body dead past the section is still: its inputs are taken without moving it.
-  An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn nearest where
-  it died. A room with no section never judges.
+  inside, warned with a count, or dead; in a social space a fall of 6 m or more from where the feet last stood kills.
+  A body dead past the section is stepped with no controls of its own: its inputs are taken, and it falls on and lies
+  where it lands. An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn
+  nearest where it died, a fall measured from there. A room with no section never judges.
 - **What it sees:** every player's fighter, where they stand with the section, and the number of their last input it
   took; every foe; the shots in flight, each with the ticks it has flown, and every gun's ball that stopped since it
   was last asked as its last segment, to where it stopped, with the point it left its gun, so every screen ends its
@@ -340,19 +342,20 @@ an older reader skips them.
 |---|---|---|
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim and the point an aimed shot is laid on), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the pirates' type in that role, a Major), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go) |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
-| Orders | A browser, in a fleet | Its number; the helm (rudder, crab, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the pirates' Major) or every one sent off |
+| Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the pirates' Major) or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema and of the content the wire numbers by place (cosmetics, emblems, factions, items, resources, rolled names and the Arts), so a page built from another schema or another order of that content loads again, once |
 | Snapshot | The room | The room's tick; every player: their number, their fighter without its gear's trim (its first 22 numbers their body, its statuses' ticks left after its action's numbers, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves; the fight's events since the last snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the last snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
-starboard), crab and climb; whether a look is laid, its bearing off its bow (degrees) and range (metres); whether it
-has a ray, and the ray's eye (east, south, up) and the way it looks, so a look on the captain lays on it; the fire, the
-brace, and a load (0 none, else 1 and its place among round, grape, chain and heated). The view: the clock and its
-end (0 on, 1 sunk, 2 gone); each ship, the player's then the captain's, 27 numbers (its own 8, its pose's 4, hull,
-canvas and men with their most, its state, its fires, each side's seconds left and progress, its load and brace, and
-its hull: 0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate); the
+starboard), a tap for a burst (1 or 0, acting once) and climb; whether a look is laid, its bearing off its bow
+(degrees) and range (metres); whether it has a ray, and the ray's eye (east, south, up) and the way it looks, so a look
+on the captain lays on it; the fire, the brace, and a load (0 none, else 1 and its place among round, grape, chain and
+heated). The view: the clock and its end (0 on, 1 sunk, 2 gone); each ship, the player's then the captain's, 29 numbers
+(its own 8, its pose's 4, hull, canvas and men with their most, its state, its fires, each side's seconds left and
+progress, its load and brace, its burst's share still to run and its recharge's share done, and its hull: 0 the Sloop,
+1 the Schooner, 2 the Brig, 3 the Frigate); the
 captain's mode, whether it is hostile and its sides run out; any other captains in the fight, a count and each one's
-faction, rank, 27 numbers, mode, hostility and sides run out; the balls aloft, a count and four each; the lay, 0 or 1
+faction, rank, 29 numbers, mode, hostility and sides run out; the balls aloft, a count and four each; the lay, 0 or 1
 and its side, elevation, reach, landing zone's radius, whether on target, and a count of sixteen each: the gun's
 launch (six), then where its ball stops (whether it does, its time, point, whether in the water, and whether and
 where it strikes the ship); and the events, a count and each one's kind and numbers (a ram, the tenth kind: the ship

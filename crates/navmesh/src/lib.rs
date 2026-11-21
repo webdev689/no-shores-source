@@ -60,6 +60,20 @@ pub const AGENT: Agent = Agent {
     cell_height: TUNING.step / 2.0,
 };
 
+/// The open sea at 0 m under a course laid over it, where no body climbs, as its rim holds them (`Heights::rim`): its
+/// links are only those walked, jumped, vaulted or dropped.
+struct OverSea;
+
+impl Terrain for OverSea {
+    fn height_at(&self, _x: f64, _y: f64) -> f64 {
+        0.0
+    }
+
+    fn climbs(&self) -> bool {
+        false
+    }
+}
+
 /// The open ground a navmesh covers, in metres: x east, y south.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Bounds {
@@ -154,6 +168,7 @@ impl NavMesh {
     ) -> Self {
         let floor: &dyn Terrain = match &ground {
             Some(heights) => heights,
+            None if over_sea => &OverSea,
             None => &Flat,
         };
         // The solid is let go of once the open surface is built: the two at once would double the bake's memory.
