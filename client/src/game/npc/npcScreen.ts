@@ -31,7 +31,7 @@ const BRASS = '#c08a3e';
  *  Escape steps back out of the Art's choice of fragments before it dismisses the screen. */
 export const npcHints = (view: View): readonly Hint[] => [
   ['Hold', view === 'mage' ? 'Open' : 'Buy'],
-  ['I', 'Open Character'],
+  ['character', 'Open Character'],
   ['Esc', choosing ? 'Back' : 'Dismiss'],
 ];
 /** Whether the screen shows the Art's choice of fragments, a step the footer steps back out of. */
