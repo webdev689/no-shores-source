@@ -31,6 +31,7 @@ mod players;
 mod power;
 mod quests;
 mod recharge;
+mod routes;
 pub mod sea;
 pub mod sea_weather;
 pub mod ship_power;

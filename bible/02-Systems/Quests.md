@@ -9,6 +9,7 @@ code:
   - crates/gear/src/quests.rs#Event
   - crates/gear/src/arts.rs#WornArts
   - crates/room/src/quests.rs#QuestGround
+  - crates/room/src/quests.rs#set_places
   - crates/protocol/src/quest_wire.rs#quests_of
   - crates/bake/src/lib.rs#places_of
   - client/src/game/quests/questBook.ts#trackedOf
@@ -50,7 +51,8 @@ A `kill` goal with a `spawn` stands its foes at its place: a list of `[type, ran
 it comes in. A player on that goal coming within 150 m of the place stands the group there, at the node's island levels
 raised by its seas, as a garrison's group that never stands again once it falls; while the goal is unmet and none of
 the group stands, the next to come near stands it again. Anyone may fight it, and each kill counts for every player
-who struck it.
+who struck it. The room bakes a navmesh square round each such place as it opens ([[Navmesh]]), so the group holds its
+place, fights there and walks back to its post as a garrison's group does.
 
 A reward gives the Art (`art`, its Anima with it, worn at once), a Tenet (`tenet`: 1 or 2, in the Art's order), or
 fragments to choose (`fragments`: how many choices). Which Art is the quest's house's.

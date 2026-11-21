@@ -239,3 +239,79 @@ fn the_isle_s_leader_shot_on_a_guarded_isle_counts_and_its_task_gives_a_fragment
     assert_eq!(now(&isle, player).0, Some((3, 7)), "the next task");
     assert_eq!(isle.player(player).expect("in").character.fragment_choices(3), 1);
 }
+
+/// Each foe of `group` living, with its place in its group and how alert it is.
+fn homes(room: &Room, group: &[FighterId]) -> Vec<([f64; 3], [f64; 3], ::foes::Alertness)> {
+    let living = group.iter().filter_map(|id| room.foes.get(id)).filter(|foe| !foe.fighter.dead());
+    living
+        .map(|foe| {
+            let body = foe.fighter.body;
+            let home = foe.brain.home().expect("it holds its place").at;
+            ([body.x, body.y, body.z], home, foe.brain.alertness())
+        })
+        .collect()
+}
+
+#[test]
+fn a_group_300_m_from_the_spawn_stands_on_its_places_own_mesh_fights_there_and_walks_back_to_its_post() {
+    let mut room =
+        node_room("saltgrass-downs", &[("Tithe Camp", [0.0, -120.0], 48.0), ("Saltgrass", [0.0, 0.0], 70.0)]);
+    assert_eq!(room.quests.grounds.len(), 1, "a mesh round the camp alone, where a group stands");
+    let player = joined(&mut room, &on_road(1, 1), [0.0, 25.0]);
+    run(&mut room, 1);
+    let group = living(&room);
+    assert_eq!(group.len(), 5);
+    let camp = &room.quests.grounds[0].1;
+    for (feet, home, alert) in homes(&room, &group) {
+        assert_eq!((room.mesh_index([feet[0], feet[1]]), alert), (1, ::foes::Alertness::Idle), "idle on the camp's");
+        let near = camp.nearest_point(feet).expect("the camp's mesh");
+        assert!(combat::sight::apart([near[0], near[1]], [feet[0], feet[1]]) < 0.1 && feet == home, "at its place");
+    }
+    stand_at(&mut room, player, [0.0, -108.0]);
+    let (mut closest, mut struck) = (f64::INFINITY, false);
+    for _ in 0..1200 {
+        room.tick();
+        let at = room.fighter(player).map(|fighter| [fighter.body.x, fighter.body.y]).expect("in");
+        for (feet, _, _) in homes(&room, &group) {
+            closest = closest.min(combat::sight::apart(at, [feet[0], feet[1]]));
+        }
+        struck |= room.take_events().iter().any(|event| group.contains(&event.striker) && event.defender == player);
+        if struck {
+            break;
+        }
+    }
+    assert!(struck && closest < 3.0, "it noticed them, closed to {closest:.1} m and struck");
+    stand_at(&mut room, player, [0.0, 150.0]);
+    run(&mut room, 3600);
+    let home = homes(&room, &group);
+    assert!(!home.is_empty());
+    for (feet, place, alert) in home {
+        let back = combat::sight::apart([feet[0], feet[1]], [place[0], place[1]]);
+        assert!(back < 1.0 && alert == ::foes::Alertness::Idle, "back at its place: {back:.1} m, {alert:?}");
+    }
+}
+
+#[test]
+fn a_patrols_own_garrison_stands_and_fights_the_same_whatever_meshes_its_places_add() {
+    let fought = |places: Vec<Place>| {
+        let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
+        let section = Section { ring, spawns: vec![[0.0, 180.0]], falls_kill: false };
+        let id = ("saltgrass-downs", None);
+        let mut room = Room::garrisoned(Floor::Flat, Vec::new(), section, NodeKind::Patrol, id);
+        room.set_places(places);
+        let player = room.join().expect("a room with space");
+        let post = room.garrison[0].at;
+        stand_at(&mut room, player, [post[0] + 6.0, post[1]]);
+        let mut struck = 0;
+        for _ in 0..900 {
+            room.tick();
+            struck += room.take_events().iter().filter(|event| event.defender == player).count();
+        }
+        (room.quests.grounds.len(), struck, room.fighters())
+    };
+    let camp = Place { name: "Tithe Camp".to_owned(), at: [0.0, -120.0], radius: 48.0 };
+    let (without, with) = (fought(Vec::new()), fought(vec![camp]));
+    assert_eq!((without.0, with.0), (0, 1));
+    assert!(with.1 > 0, "its garrison fights the player");
+    assert_eq!((without.1, without.2), (with.1, with.2), "every blow, and every fighter where it was, as it was");
+}

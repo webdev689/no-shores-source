@@ -1,30 +1,34 @@
 //! The houses' roads in a room: its node and the places its file names, and each player's quest log told what they do
 //! here (`gear::quests`): a place reached, checked each tick only for a player whose task waits on one in this node;
 //! a foe's fall they struck; a spell cast; the node, or the sea island, arrived in. A kill goal's group stands at its
-//! place for a player on it coming near, as a wave arrives, and again while the goal is unmet and none of it stands.
+//! place for a player on it coming near, as a wave arrives, and again while the goal is unmet and none of it stands,
+//! on a navmesh baked round that place as the room opens.
 
-use crate::garrison::{Post, SPREAD, gird_of, leader_of};
+use crate::garrison::{Group, draws_of, gird_of, ground_middle, square, square_of};
 use crate::players::Player;
 use crate::{PlayerId, Room};
 use ::foes::Rank;
 use ::foes::roster::{FoeType, ROSTER};
 use combat::fighter::FighterId;
-use core::f64::consts::TAU;
-use gear::quests::{Event, GoalDef, GoalKind, Kill, Place, RANKS, SPAWN_NEAR};
-use movement::Terrain;
+use gear::quests::{Event, GoalDef, GoalKind, Kill, Place, RANKS, SPAWN_NEAR, quests};
 use std::collections::BTreeMap;
 
 /// The stream a road's groups draw their levels and shields from, apart from the garrison's.
 const QUEST_STREAM: u64 = 0x7175_6573_7473;
 
 /// A room's own for the roads: its node's id, the places its file names, its island's band of levels, and each kill
-/// goal's group stood here, by the goal's quest, task and place in the task, with its foes.
+/// goal's group stood here, by the goal's quest, task and place in the task, with its foes. The node's own square,
+/// once its places are known, and the square and navmesh round each place a group stands at; and the mesh each foe's
+/// way was last found on, but the node's own (`routes.rs`).
 #[derive(Debug, Default)]
 pub(crate) struct QuestGround {
     pub node: Option<String>,
     pub places: Vec<Place>,
     pub levels: Option<(u8, u8)>,
     pub groups: Vec<([usize; 3], Vec<FighterId>)>,
+    pub square: Option<navmesh::Bounds>,
+    pub grounds: Vec<(navmesh::Bounds, navmesh::NavMesh)>,
+    pub way_on: BTreeMap<FighterId, usize>,
 }
 
 /// The side of the sea a hostile ship sails for, by its faction (the foes crate's), as a goal names it.
@@ -51,9 +55,30 @@ fn tell_one(players: &mut BTreeMap<PlayerId, Player>, player: PlayerId, event: &
 }
 
 impl Room {
-    /// The places of the node this room is, as its file names them.
+    /// The places of the node this room is, as its file names them; and round each a kill goal stands a group at, a
+    /// navmesh of its own, as large as the node's own and baked as it is (`garrison::square`).
     pub fn set_places(&mut self, places: Vec<Place>) {
         self.quests.places = places;
+        let (Some(node), Some(section)) = (self.quests.node.as_deref(), self.section.as_ref()) else { return };
+        let goals = quests().quests.iter().flat_map(|quest| &quest.tasks).flat_map(|task| &task.goals);
+        let spawned = goals.filter(|goal| goal.kind == GoalKind::Kill && !goal.spawn.is_empty());
+        let mut names: Vec<&str> = Vec::new();
+        for name in spawned.filter(|goal| goal.node.as_deref() == Some(node)).filter_map(|goal| goal.place.as_deref()) {
+            if !names.contains(&name) {
+                names.push(name);
+            }
+        }
+        let first = self.spawn_points.first().copied().unwrap_or_default();
+        self.quests.square = Some(square_of(&[], ground_middle(section, first)).0);
+        let places = names.iter().filter_map(|name| self.quests.places.iter().find(|place| place.name == *name));
+        let middles: Vec<(f64, f64)> = places.map(|place| (place.at[0], place.at[1])).collect();
+        self.quests.grounds = middles.into_iter().map(|middle| square(&self.floor, &self.blocks, middle)).collect();
+    }
+
+    /// How many navmeshes the room baked round its places.
+    #[must_use]
+    pub fn place_grounds(&self) -> usize {
+        self.quests.grounds.len()
     }
 
     /// Tells a player's quest log of something they did here.
@@ -124,47 +149,36 @@ impl Room {
         }
     }
 
-    /// Stands a kill goal's group round its place, idle and facing out, at the island's levels raised by the seas, as
-    /// an arriving post that never stands again once it falls; none while the room's living foes leave no room. Its
-    /// foes keep to no place: a node's navmesh covers only the ground by its spawn (`garrison::NODE_AROUND`), and a
-    /// foe leashed off it gives up every fight (`foes::leash::within`).
+    /// Stands a kill goal's group round its place on that place's own mesh, facing out and holding it, at the island's
+    /// levels raised by the seas, as an arriving post that never stands again once it falls; none while the room's
+    /// living foes leave no room, or the place's mesh cannot hold them.
     fn stand_group(&mut self, key: [usize; 3], goal: &'static GoalDef, at: [f64; 2]) {
-        let members: Vec<(&'static FoeType, Rank)> =
-            goal.spawn.iter().filter_map(|(name, rank)| named(name, rank)).collect();
+        let members: Vec<(u8, Rank)> = goal
+            .spawn
+            .iter()
+            .filter_map(|(name, rank)| named(name, rank))
+            .map(|(foe, rank)| (foe.number, rank))
+            .collect();
+        let Some(section) = self.section.clone() else { return };
         if members.is_empty() || self.living_foes() + members.len() > self.foes_most {
             return;
         }
-        let middle = [at[0], at[1], self.floor.height_at(at[0], at[1])];
-        let mut post = Post {
-            at: middle,
-            members: Vec::new(),
-            girds: Vec::new(),
-            beat: None,
-            standing: Vec::new(),
-            cleared_at: None,
-            leader: None,
-            broken: false,
-            defending: false,
-            fallback: middle,
-            anchor: None,
-            arrival: true,
-        };
         let seed = self.world_seed ^ QUEST_STREAM ^ (key[0] << 16 | key[1] << 8 | key[2]) as u64;
-        for (nth, &(foe, rank)) in members.iter().enumerate() {
-            let facing = TAU * nth as f64 / members.len() as f64;
-            let (x, y) = (at[0] + libm::sin(facing) * SPREAD, at[1] - libm::cos(facing) * SPREAD);
-            let place = [x, y, self.floor.height_at(x, y)];
-            let id = self.stand_foe(foe, rank, place, facing, None);
+        let (mut draws, mut beats) = (draws_of(seed), draws_of(seed));
+        // It holds its place, walking no beat, as a group at the farthest post does.
+        let group = Group { members, leads: false, farthest: true };
+        let Some(mut post) = self.post_at(&group, (at[0], at[1]), (&section, &[]), (&mut draws, &mut beats)) else {
+            return;
+        };
+        post.arrival = true;
+        for (nth, &(_, rank, _, _)) in post.members.iter().enumerate() {
             let (level, shield) = gird_of(seed, u32::try_from(nth).unwrap_or(0), self.quests.levels);
-            let shield = shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss));
-            self.gird(id, self.at_seas(level), shield);
-            post.members.push((foe.number, rank, place, facing));
-            post.girds.push((level, shield));
-            post.standing.push(id);
+            post.girds.push((level, shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss))));
         }
-        post.leader = leader_of(self, &post.standing);
-        self.quests.groups.push((key, post.standing.clone()));
         self.garrison.push(post);
+        let stood = self.garrison.len() - 1;
+        self.stand_post(stood);
+        self.quests.groups.push((key, self.garrison[stood].standing.clone()));
     }
 
     /// Where the first goal not yet met of a player's task with a place in this room stands: its middle and its
