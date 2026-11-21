@@ -53,9 +53,9 @@ test('the inbound ships are where they would be sighted, without playing the sig
   const ships = inboundAt(brig);
   assert.equal(ships.length, 3);
   for (const ship of ships) {
-    assert.ok(Math.hypot(ship.x - 100, ship.y - 200) > 700, 'off her bow, far out');
-    assert.ok(ship.y < 200, 'ahead of her (north)');
-    assert.ok(turnBetween(ship.heading, Math.atan2(100 - ship.x, ship.y - 200)) < 1e-9, 'each heads for her');
+    assert.ok(Math.hypot(ship.x - 100, ship.y - 200) > 700, 'off its bow, far out');
+    assert.ok(ship.y < 200, 'ahead of it (north)');
+    assert.ok(turnBetween(ship.heading, Math.atan2(100 - ship.x, ship.y - 200)) < 1e-9, 'each heads for it');
   }
 });
 
@@ -120,7 +120,7 @@ test('as the lookout speaks of the wrecks the camera looks out over him to the n
   const { story, saying, run } = storied();
   const wrecks: Wreck[] = [
     { ship: lying('far', 10_900, 20_600, 1), going: null },
-    // Astern of her, where the deck shot looking forward down her deck cannot see it.
+    // Astern of it, where the deck shot looking forward down its deck cannot see it.
     { ship: lying('near', 9_839, 20_191, 2), going: null },
   ];
   const calm = new Calm(story, FROM, wrecks);
@@ -184,7 +184,7 @@ test('the ram opens where the calm left the camera, its cries on the view and th
   }
 });
 
-test("the larger ship is Thule's Frigate at her own size, lighter than a captain's, her stem first touching the Brig's side as she strikes", () => {
+test("the larger ship is Thule's Frigate at its own size, lighter than a captain's, its stem first touching the Brig's side as it strikes", () => {
   const { story, run } = storied();
   const frames = run(new Ram(story, []), IMPACT_S);
   const drawn = frames.at(-1)?.frame.ships ?? [];
@@ -193,16 +193,16 @@ test("the larger ship is Thule's Frigate at her own size, lighter than a captain
   assert.equal(rammer.hull, 'frigate');
   assert.equal(rammer.place.scale, 1);
   assert.equal(rammer.shade, RAMMER_SHADE);
-  // The head of her stem, the fore end of her hull's box, is at the Brig's side where her hull is broadest.
+  // The head of its stem, the fore end of its hull's box, is at the Brig's side where its hull is broadest.
   const [stemX, stemY] = onDeck(rammer.place, ships.ships.frigate.boxes.hull[1][0], 0, 0);
   const out = Math.hypot(stemX - own.x, stemY - own.y);
   const broadest = ships.ships.brig.boxes.hull[1][1];
-  assert.ok(Math.abs(out - broadest) < 0.05, `her stem ${out.toFixed(2)} m from the Brig's middle`);
+  assert.ok(Math.abs(out - broadest) < 0.05, `its stem ${out.toFixed(2)} m from the Brig's middle`);
   const coming = (rammerAway(IMPACT_S - 1) - rammerAway(IMPACT_S)) / 1;
-  assert.ok(coming > 4 && coming < 8, `she comes at a ship's pace under sail: ${coming.toFixed(1)} m/s`);
+  assert.ok(coming > 4 && coming < 8, `it comes at a ship's pace under sail: ${coming.toFixed(1)} m/s`);
 });
 
-test('a ram skipped at once still leaves her struck and the screen black, and says and sounds nothing', () => {
+test('a ram skipped at once still leaves it struck and the screen black, and says and sounds nothing', () => {
   const { story, said, done, run } = storied();
   const ram = new Ram(story, []);
   ram.skip();
@@ -269,7 +269,7 @@ test('a story begun at the fight takes its ships without playing the sighting', 
   assert.ok(!done.includes('weather 1.5'), 'no sighting eased the fog in');
 });
 
-test('a wreck the fight left far off still reads as the lookout speaks of her', () => {
+test('a wreck the fight left far off still reads as the lookout speaks of it', () => {
   const { story, saying, run } = storied();
   // As far as the pirates were sighted: about 700 m astern.
   const calm = new Calm(story, FROM, [{ ship: lying('far', 9_550, 20_530, 1), going: null }]);

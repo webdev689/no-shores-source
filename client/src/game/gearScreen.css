@@ -357,6 +357,12 @@ img.gear-glyph {
   width: 36px;
   height: 36px;
 }
+/* A ship glyph's 24 cells stand at twice where the gear's 12 stand at three times: whole pixels either way. Where a
+   place sets its own size (a price's 24, a module's tile, its page) that place's rule stands. */
+img.gear-glyph-fine {
+  width: 48px;
+  height: 48px;
+}
 .gear-chip {
   display: inline-block;
   padding: 1px 8px;

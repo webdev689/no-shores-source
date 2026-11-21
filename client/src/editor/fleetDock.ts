@@ -4,12 +4,12 @@ import { FleetSloop } from './fleetPlay.ts';
 import { heightAt } from './reliefView.ts';
 
 /** A fleet room's sea is open water: the Sloop joins it from water this deep, where the swell rolls whole, so the sea
- *  drawn round her is the room's (metres; the land crate's FULL_DEPTH_M). */
+ *  drawn round it is the room's (metres; the land crate's FULL_DEPTH_M). */
 export const OPEN_WATER_M = 15;
 
 /**
  * The World Editor's mooring in a fleet room, when its page offered one (`?room=`): it puts the Sloop to sea there
- * from open water, and keeps her while she sails.
+ * from open water, and keeps it while it sails.
  */
 export class FleetDock {
   private readonly harbour: FleetHarbour;
@@ -20,18 +20,18 @@ export class FleetDock {
     this.harbour = harbour;
   }
 
-  /** Her, while she is in the fleet. */
+  /** The Sloop, while it is in the fleet. */
   get sloop(): FleetSloop | null {
     return this.held;
   }
 
-  /** Whether she has asked to join and the room has not answered yet. */
+  /** Whether it has asked to join and the room has not answered yet. */
   get joining(): boolean {
     return this.asked;
   }
 
   /** Joins the fleet with the Sloop put to sea at world (x, y), heading `yaw`, in open water: `joined` once the room
-   *  has welcomed her, or `fail` with why not. */
+   *  has welcomed it, or `fail` with why not. */
   join(
     view: LandView,
     [x, y, yaw]: readonly [number, number, number],
@@ -60,7 +60,7 @@ export class FleetDock {
     );
   }
 
-  /** Brings her in, or lets go of her join: she leaves the fleet. */
+  /** Brings it in, or lets go of its join: it leaves the fleet. */
   leave(): void {
     this.harbour.leave();
     [this.held, this.asked] = [null, false];

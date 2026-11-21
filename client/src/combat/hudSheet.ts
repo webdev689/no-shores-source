@@ -4,12 +4,12 @@
 import { PLATES } from '../plus/barLayout.ts';
 import { wearCompass } from '../plus/compass.ts';
 import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
+import { barSheetCss, thinBarsCss } from '../plus/barSheet.ts';
 import { wearKit } from '../plus/kit.ts';
-import { BAR_EDGE, BAR_TONES, barFrameImage, tipOf } from '../plus/barFrame.ts';
+import { BAR_EDGE, BAR_TONES, CORNER, tipOf, VITAL_SIZES } from '../plus/barFrame.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { OVERHEAD_SIZES } from './foePlate.ts';
-import { EDGE, VITAL_SIZES } from './hudLayout.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 import { statusCss } from './statusIcons.ts';
 import { weaponsCss } from './weapons.ts';
@@ -47,22 +47,16 @@ function platesCss(): string {
   const tiers = Object.entries(OVERHEAD_SIZES).map(
     ([tier, { width, bar, barShare }]) => `.fight-hud .overhead[data-tier='${tier}'] { width: ${width}px; }
 .fight-hud .overhead[data-tier='${tier}'] .body { width: ${width - overhead.height - 5}px; }
+/* An ally's plate shows no level square, so its body takes the whole plate. */
+.fight-hud .overhead[data-tier='${tier}'][data-band='ally'] .body { width: ${width}px; }
 .fight-hud .overhead[data-tier='${tier}'] .meter { height: ${bar}px; width: ${barShare * 100}%; }`,
   );
   return `
-.fight-hud .plate { display: flex; gap: 5px; align-items: stretch; }
-.fight-hud .plate[data-band='red'] { --fill: ${FILLS.red}; }
-.fight-hud .plate[data-band='orange'] { --fill: ${FILLS.orange}; }
-.fight-hud .plate[data-band='yellow'] { --fill: ${FILLS.yellow}; }
-.fight-hud .plate[data-band='green'] { --fill: ${FILLS.green}; }
 .fight-hud .level { display: flex; flex: none; align-items: center; justify-content: center; box-sizing: border-box;
   border-width: 2px; border-style: solid; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1;
   color: ${TONES.word}; text-shadow: ${HALO}; }
+.fight-hud .plate[data-band='ally'] .level { display: none; }
 ${squares.join('\n')}
-.fight-hud .plate .body { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
-.fight-hud .plate .title { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden;
-  color: ${TONES.word}; text-shadow: ${HALO}; }
-.fight-hud .plate .name { overflow: hidden; text-overflow: ellipsis; }
 .fight-hud .rank-mark { display: none; flex: none; background-size: 100% 100%; image-rendering: pixelated;
   filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
 ${marks.join('\n')}
@@ -71,13 +65,6 @@ ${marks.join('\n')}
 .fight-hud .alert:empty { display: none; }
 .fight-hud .alert.now { color: #ff5a4a; }
 
-.fight-hud .meter { position: relative; display: block; box-sizing: border-box; border-width: 1px; border-style: solid; }
-.fight-hud .meter .lost, .fight-hud .meter .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%;
-  display: block; }
-.fight-hud .meter .fill { background-color: var(--fill); }
-/* What a foe's bar lost stands pale, its own hue lightened under a cream top line. */
-.fight-hud .meter .lost { opacity: 0.6;
-  background: linear-gradient(180deg, #fff6e4 0 1px, color-mix(in srgb, var(--fill) 45%, #fff6e4) 1px); }
 /* A shield's ward over a foe's health, as DFO's Enhanced HUD laid a boss's: from the bar's left end, a lit top line, its
    element's colour through, a dark foot line. */
 .fight-hud .meter .ward { position: absolute; left: 0; top: 0; bottom: 0; display: block; pointer-events: none;
@@ -85,13 +72,6 @@ ${marks.join('\n')}
     var(--ward-dark) calc(100% - 1px)); opacity: 0.9; }
 .fight-hud .meter .ward[hidden] { display: none; }
 ${wards}
-/* A piece a loss breaks off: two halves the display drops a step at a time, under the words, over the fill. */
-.fight-hud .meter .piece { position: absolute; top: 0; bottom: 0; display: block; pointer-events: none; }
-.fight-hud .meter .piece > i { position: absolute; top: 0; bottom: 0; display: block; box-shadow: 0 0 0 1px ${TONES.outline};
-  background: linear-gradient(180deg, #fff6e4 0 2px, var(--fill) 2px calc(100% - 3px),
-    color-mix(in srgb, var(--fill), #000 35%) calc(100% - 3px)); }
-.fight-hud .meter .piece .left { left: 0; width: 55%; }
-.fight-hud .meter .piece .right { left: 55%; right: 0; }
 
 /* The poise track under a foe's health: its poise filling toward a break, iron hatched in red (never by its colour
    alone), a white flash as it breaks into a stagger, a brass edge while it stands open; its word centred under it. It
@@ -113,7 +93,6 @@ ${wards}
 .fight-hud .poise-staggered .poise-word { color: #fff; }
 .fight-hud .poise-open .poise-word { color: #f1c04f; }
 @media (prefers-reduced-motion: reduce) {
-  .fight-hud .meter .piece { display: none !important; }
   .fight-hud .poise-flash .poise-fill { animation: none; }
 }
 
@@ -127,11 +106,6 @@ ${tiers.join('\n')}
   background: ${TONES.outline}; box-shadow: -1px 0 0 ${THIRD_EDGE}, 1px 0 0 ${THIRD_EDGE}; }
 .fight-hud .overhead[data-tier='elite'] .third-mark { display: block; }
 
-/* The boss bar and the target's plate stand in the compass's column, under it, the target under the boss bar while both
-   show. */
-.fight-hud .target { width: min(340px, ${boss.share * 100}%); font-size: 11px; }
-.fight-hud .target .body { flex: 1; gap: 3px; }
-.fight-hud .target .meter.health { height: 12px; }
 
 .fight-hud .boss { width: min(${boss.width}px, ${boss.share * 100}%); }
 .fight-hud .boss .body { flex: 1; }
@@ -146,22 +120,24 @@ ${tiers.join('\n')}
 `;
 }
 
-/** One step of the vitals: each bar's height and pointed frame (stone, and the warning it flashes to), the gap, the
- *  poise's word and the buffs' icons. */
+/** The vitals as the kit's thin bars: each at its height, health's frame warning in blood, stamina's in white, poise's
+ *  in brass. */
+const VITAL_BARS = Object.fromEntries(
+  (['health', 'stamina', 'poise'] as const).map((name) => [
+    name,
+    {
+      base: VITAL_SIZES.base[name],
+      wide: VITAL_SIZES.wide[name],
+      alert: name === 'health' ? BAR_TONES.blood : name === 'stamina' ? BAR_TONES.light : BAR_TONES.brass,
+    },
+  ]),
+);
+
+/** One step of the vitals: where they stand, the gap between two, the poise's word and the buffs' icons. */
 function vitalStepCss(scope: string, wide: boolean): string {
   const sizes = wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
-  const bars = (['health', 'stamina', 'poise'] as const).map((name) => {
-    const height = sizes[name];
-    const tip = tipOf(height);
-    const alert = name === 'health' ? BAR_TONES.blood : name === 'stamina' ? BAR_TONES.light : BAR_TONES.brass;
-    return `${scope} .vital.${name} { height: ${height}px; border-width: ${BAR_EDGE}px ${tip}px;
-  border-image: ${barFrameImage(height, BAR_TONES.stone)}; }
-${scope} .vital.${name}::after { inset: -${BAR_EDGE}px -${tip}px; border-width: ${BAR_EDGE}px ${tip}px;
-  border-image: ${barFrameImage(height, alert)}; }
-${scope} .vital.${name} .poise-word { left: calc(100% + ${tip + (wide ? 10 : 6)}px); }`;
-  });
-  return `${bars.join('\n')}
-${scope} .vitals { left: ${EDGE.side}px; top: ${EDGE.top}px; gap: ${sizes.gap}px; }
+  return `${scope} .vital.poise .poise-word { left: calc(100% + ${tipOf(sizes.poise) + (wide ? 10 : 6)}px); }
+${scope} .vitals { left: ${CORNER.side}px; top: ${CORNER.top}px; gap: ${sizes.gap}px; }
 ${scope} .vitals .poise-word { font-size: ${wide ? 22 : 11}px; line-height: ${wide ? 22 : 12}px; }
 ${wide ? `${scope} .vitals .poise-word { top: -${BAR_EDGE}px; translate: none; }` : ''}
 ${scope} .vitals > .statuses .status { --size: ${wide ? 36 : 24}px; }`;
@@ -171,17 +147,10 @@ ${scope} .vitals > .statuses .status { --size: ${wide ? 36 : 24}px; }`;
  *  frame flashes blood when low, stamina's white for a press with none, poise's brass while open. */
 function vitalsCss(): string {
   return `
-.fight-hud .vitals { position: absolute; display: flex; flex-direction: column; align-items: flex-start; }
-.fight-hud .vital { position: relative; box-sizing: border-box; width: 160px; border-style: solid; }
+${thinBarsCss('.fight-hud', VITAL_BARS)}
 .fight-hud .vital.health { --fill: ${FILLS.health}; }
 .fight-hud .vital.stamina { --fill: ${FILLS.stamina}; }
 .fight-hud .vital.poise { --fill: ${FILLS.poise}; }
-.fight-hud .vital .meter { height: 100%; border: 0; background-color: ${TONES.groundTrack}; }
-/* What a vital lost is its own body tone, faint: darker than any band of the fill, never brighter. */
-.fight-hud .vital .lost { background: var(--fill); opacity: 0.35; }
-.fight-hud .vital::after { content: ''; position: absolute; border-style: solid; opacity: 0; pointer-events: none; }
-.fight-hud .vital.low::after { animation: fight-low 0.9s steps(1, end) infinite; }
-@keyframes fight-low { 0% { opacity: 1; } 50% { opacity: 0; } }
 .fight-hud .vital.stamina.flash::after { opacity: 1; animation: fight-blink 0.15s steps(2) infinite; }
 .fight-hud .vital.stamina.flash .meter { animation: fight-blink-ground 0.15s steps(2) infinite; }
 @keyframes fight-blink { 50% { opacity: 0; } }
@@ -200,14 +169,12 @@ function vitalsCss(): string {
 /* Whole and untouched, the vitals rest: they go in six steps, and come back in two at the first change. */
 .fight-hud .vitals { transition: opacity 120ms steps(2, end); }
 .fight-hud .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }
-/* Past 1440p the vitals, and the compass's column with the boss bar and the target's plate, stand at twice their
-   first size, as the rest of the display does. */
-.fight-hud.double .vitals { zoom: 2; }
+/* Past 1440p the compass's column with the boss bar and the target's plate stands at twice its first size, as the
+   vitals and the rest of the display do. */
 .fight-hud.double .compass-column { zoom: 2; }
 ${vitalStepCss('.fight-hud', false)}
 ${vitalStepCss('.fight-hud.wide', true)}
 @media (prefers-reduced-motion: reduce) {
-  .fight-hud .vital.low::after { animation: none; opacity: 1; }
   .fight-hud .vital.stamina.flash::after { animation: none; }
   .fight-hud .vital.stamina.flash .meter { animation: none; }
   .fight-hud .vital.poise-flash .fill { animation: none; }
@@ -272,7 +239,7 @@ ${shieldWords}
 
 /** The whole sheet. */
 export function fightSheetCss(): string {
-  return cuesCss() + platesCss() + vitalsCss() + weaponsCss() + statusCss() + wordsCss();
+  return cuesCss() + barSheetCss('.fight-hud') + platesCss() + vitalsCss() + weaponsCss() + statusCss() + wordsCss();
 }
 
 /** Lays the kit's sheet, the compass's and then the display's on `page`, once each. */

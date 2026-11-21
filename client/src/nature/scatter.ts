@@ -11,19 +11,25 @@ export const SLOT_M: Readonly<Record<Layer, number>> = { tall: 8, low: 4 };
  *  at its foot. */
 export const PLANTED_FLOATS = 12;
 
-/** A plant a layout planted: its kind's name in the cast and where it stands, metres east and south. */
+/** A plant a caller planted: its kind's name in the cast and where it stands, metres east and south; and where the
+ *  caller knows them, its foot's height (the ground is then not read under it, so it stands on ground of the caller's
+ *  own, such as a sea island's), its turn, and how much its drawn size is scaled. */
 export interface Planted {
   readonly kind: string;
   readonly at: readonly [number, number];
+  readonly z?: number;
+  readonly turn?: number;
+  readonly scale?: number;
 }
 
-/** The ground a scatter reads: the sampler, the caller's cleared places, the snow line, metres, and what the caller
- *  planted in a tile. */
+/** The ground a scatter reads: the sampler, the caller's cleared places, the snow line, metres, what the caller
+ *  planted in a tile, and whether the ground grows plants of its own (unless false, it does). */
 export interface ScatterGround {
   readonly sample: GroundSampler;
   readonly cleared: Cleared;
   readonly snowM: number;
   readonly planted?: (tileX: number, tileY: number) => readonly Planted[];
+  readonly grows?: boolean;
 }
 
 /** A 32-bit hash of whole numbers: every machine plants the same thing in the same slot. */
@@ -157,7 +163,8 @@ export function scatterTile(
   const total = kinds[kinds.length - 1]?.to ?? 0;
   const planted: number[][] = [];
   const salt = layer === 'tall' ? 1 : 2;
-  for (let index = 0; index < across * across; index++) {
+  const slots = ground.grows === false ? 0 : across * across;
+  for (let index = 0; index < slots; index++) {
     const seed = hashOf(tileX, tileY, salt, index);
     const pick = drawn(seed, 0);
     if (pick >= total) continue;
@@ -180,15 +187,19 @@ export function scatterTile(
     planted.push(plantOf(kind, forms[share.kind] ?? 0, seed, [east, south], here));
   }
   // What the caller planted stands where it was planted, whatever the ground's growth and clearings say.
-  for (const { kind: name, at } of ground.planted?.(tileX, tileY) ?? []) {
+  for (const { kind: name, at, z, turn, scale } of ground.planted?.(tileX, tileY) ?? []) {
     const index = cast.kinds.findIndex((each) => each.name === name && each.layer === layer);
     const kind = cast.kinds[index];
     if (!kind) continue;
     const seed = hashOf(Math.round(at[0] * 100), Math.round(at[1] * 100), salt + 2);
     if (far && (kind.reachM <= far.beyondM || drawn(seed, 8) >= far.keepBelow)) continue;
-    const here = ground.sample(at[0], at[1]);
+    const here: GroundAt =
+      z === undefined ? ground.sample(at[0], at[1]) : { height: z, slope: 0, water: 'dry', mark: 0 };
     if (here.water !== 'dry') continue;
-    planted.push(plantOf(kind, forms[index] ?? 0, seed, [at[0] - tileX * TILE_M, at[1] - tileY * TILE_M], here));
+    const plant = plantOf(kind, forms[index] ?? 0, seed, [at[0] - tileX * TILE_M, at[1] - tileY * TILE_M], here);
+    if (turn !== undefined) plant[4] = turn;
+    if (scale !== undefined) [plant[5], plant[6]] = [(plant[5] ?? 0) * scale, (plant[6] ?? 0) * scale];
+    planted.push(plant);
   }
   planted.sort((a, b) => (a[0] ?? 0) - (b[0] ?? 0) || (a[8] ?? 0) - (b[8] ?? 0));
   return Float32Array.from(planted.flat());

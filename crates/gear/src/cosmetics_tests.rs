@@ -6,7 +6,7 @@ use crate::cosmetics::{CosmeticKind, SOLD_A_DAY, Seller, cosmetics, number_of, s
 use crate::dice::Dice;
 use crate::emblems::Source;
 
-const AT_COUNTER: Here = Here { social: true, day: 20_400, week: 0 };
+const AT_COUNTER: Here = Here { social: true, day: 20_400, pledge: 0, rank: 0, week: 0 };
 const DICE: Dice = Dice { seed: 1, tick: 1, player: 1 };
 
 #[test]

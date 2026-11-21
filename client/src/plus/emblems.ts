@@ -3,7 +3,7 @@
 import { TONES } from './tones.ts';
 
 /** A picture's rows, a letter a pixel ('.' is clear), and the tone each letter paints. */
-interface Pixels {
+export interface Pixels {
   readonly rows: readonly string[];
   readonly tones: Readonly<Record<string, string>>;
 }
@@ -81,6 +81,11 @@ const urlOf = (pixels: Pixels) => `data:image/svg+xml,${encodeURIComponent(pixel
 export function emblemUrl(faction: number): string | null {
   const emblem = EMBLEMS[faction];
   return emblem ? urlOf(emblem) : null;
+}
+
+/** A faction's emblem as its rows and tones, for a picture drawn elsewhere (a ship's flag); null for one with none. */
+export function emblemPixels(faction: number): Pixels | null {
+  return EMBLEMS[faction] ?? null;
 }
 
 /** The factions that have an emblem, by number. */

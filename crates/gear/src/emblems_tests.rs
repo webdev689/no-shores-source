@@ -7,7 +7,7 @@ use crate::emblems::{Deed, SOLD_A_DAY, Source, emblems, number_of, sold_on, star
 use std::collections::BTreeSet;
 
 const DICE: Dice = Dice { seed: 1, tick: 2, player: 3 };
-const AT_TAILOR: Here = Here { social: true, day: 20_400, week: 0 };
+const AT_TAILOR: Here = Here { social: true, day: 20_400, pledge: 0, rank: 0, week: 0 };
 
 #[test]
 fn the_catalogue_reads_with_one_start_and_ids_of_its_own() {
@@ -26,8 +26,8 @@ fn a_new_player_keeps_and_wears_the_starting_emblem_and_earns_by_level_and_deed(
     character.earn_xp(u32::MAX, None);
     assert!(character.keeps_emblem("deckhand") && character.keeps_emblem("captain"), "levels 5 to 20 reached");
     assert!(!character.keeps_emblem("stormborn"));
-    character.earn(Deed::StormFoe);
-    character.earn(Deed::StormFoe);
+    character.earn(Deed::AbyssFoe);
+    character.earn(Deed::AbyssFoe);
     assert_eq!(character.emblems.iter().filter(|kept| *kept == "stormborn").count(), 1, "kept once");
 }
 

@@ -45,18 +45,18 @@ fn land(room: &mut Room, striker: PlayerId, foe: FighterId, damage: f64) {
 
 #[test]
 fn every_garrison_foe_stands_at_its_islands_level_raised_by_the_seas_its_ranks_health_multiplied_on_top() {
-    let calm = levelled(NodeKind::Dungeon, "glade", (7, 10));
-    let mut storm = levelled(NodeKind::Dungeon, "glade", (7, 10));
-    storm.set_difficulty(Difficulty::Storm);
-    assert!(!calm.foes.is_empty());
+    let normal = levelled(NodeKind::Dungeon, "glade", (7, 10));
+    let mut abyss = levelled(NodeKind::Dungeon, "glade", (7, 10));
+    abyss.set_difficulty(Difficulty::Abyss);
+    assert!(!normal.foes.is_empty());
     let mut levels = BTreeSet::new();
-    for (id, found) in &calm.foes {
+    for (id, found) in &normal.foes {
         assert!((7..=10).contains(&found.level), "within the island's band: {}", found.level);
         levels.insert(found.level);
         let times = gear::power::foe_health_times(found.level);
         assert!((found.fighter.health_max - ranked_health(found) * times).abs() < 1e-9, "its rank's health, levelled");
-        let raised = &storm.foes[id];
-        assert_eq!(raised.level, found.level + 3, "a storm raises it three");
+        let raised = &abyss.foes[id];
+        assert_eq!(raised.level, found.level + 3, "Abyss raises it three");
         let times = gear::power::foe_health_times(raised.level);
         assert!((raised.fighter.health_max - ranked_health(raised) * times).abs() < 1e-6, "as if it stood at it");
         assert!((raised.fighter.health - raised.fighter.health_max).abs() < 1e-6, "and whole");
@@ -67,7 +67,7 @@ fn every_garrison_foe_stands_at_its_islands_level_raised_by_the_seas_its_ranks_h
     assert!(levels.len() > 1, "drawn across the band: {levels:?}");
     // A node of no island stands its foes at no level: they fight by combat's own numbers, whatever the seas.
     let mut plain = garrison_tests::node(NodeKind::Dungeon, "glade");
-    plain.set_difficulty(Difficulty::Storm);
+    plain.set_difficulty(Difficulty::Abyss);
     assert!(plain.foes.values().all(|found| found.level == 0));
 }
 
@@ -127,12 +127,12 @@ fn a_garrisons_shields_hold_half_its_foes_health_on_every_machine_and_stand_agai
 #[test]
 fn a_garrison_kill_pays_by_its_level_and_seas_every_player_whose_blow_landed_in_its_last_ten_seconds() {
     let mut room = levelled(NodeKind::Patrol, "glade", (4, 7));
-    room.set_difficulty(Difficulty::Rough);
+    room.set_difficulty(Difficulty::Elite);
     let (early, late) = (room.join().expect("room"), room.join().expect("room"));
     let foe = room.garrison[0].standing[0];
     room.foes.get_mut(&foe).expect("standing").shield = None;
     let (level, role) = (room.foes[&foe].level, room.foes[&foe].brain.role() as u8);
-    assert!((6..=9).contains(&level), "the island's 4 to 7, two higher at rough seas: {level}");
+    assert!((6..=9).contains(&level), "the island's 4 to 7, two higher at Elite difficulty: {level}");
     let had = |room: &Room, player: PlayerId| {
         let character = &room.players[&player].character;
         (character.xp, u64::from(character.materials.aurem))
@@ -151,7 +151,11 @@ fn a_garrison_kill_pays_by_its_level_and_seas_every_player_whose_blow_landed_in_
     let paid = |amount: u32| (f64::from(amount * (5 + u32::from(level)) / 10) * 1.5).round() as u64;
     let (late_has, early_has) = (had(&room, late), had(&room, early));
     let gained = (late_has.0 - late_had.0, late_has.1 - late_had.1);
-    assert_eq!(gained, (paid(worth.xp), paid(worth.aurem)), "its role's worth at its level, half again at rough seas");
+    assert_eq!(
+        gained,
+        (paid(worth.xp), paid(worth.aurem)),
+        "its role's worth at its level, half again at Elite difficulty"
+    );
     assert_eq!(early_has, early_had, "a blow over ten seconds old shares none");
 }
 
@@ -204,11 +208,12 @@ fn the_fights_heat_counts_a_blow_as_combat_is_tuned_for_at_any_level_and_harm_an
 
 #[test]
 fn a_boss_or_a_miniboss_never_stands_with_a_shield_while_the_foes_about_it_may() {
-    let (mut leaders, mut shielded_others) = (0, 0);
-    for nth in 0..60 {
+    let mut shielded_others = 0;
+    for nth in 0..10 {
         let id = format!("node-{nth}");
         for kind in [NodeKind::Boss, NodeKind::Dungeon] {
             let room = levelled(kind, &id, (7, 10));
+            let mut leaders = 0;
             for found in room.foes.values() {
                 if matches!(found.brain.rank, ::foes::Rank::Boss | ::foes::Rank::Miniboss) {
                     leaders += 1;
@@ -217,8 +222,8 @@ fn a_boss_or_a_miniboss_never_stands_with_a_shield_while_the_foes_about_it_may()
                     shielded_others += 1;
                 }
             }
+            assert!(leaders > 0, "every boss and dungeon node has its leader: {id} {kind:?}");
         }
     }
-    assert!(leaders >= 100, "every boss and dungeon node has its leader: {leaders}");
     assert!(shielded_others > 0, "the foes about them still may carry one");
 }

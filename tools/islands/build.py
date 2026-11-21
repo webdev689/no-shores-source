@@ -1,0 +1,136 @@
+"""Builds every island kit's modules in Blender, checks each against its envelope, and writes the packs.
+
+    <python with bpy> -I tools/islands/build.py --out DIR [--kit K ...] [--preview]
+
+For each kit (all of kits.json's by default) it runs kits/<kit>.py's build(kit), refuses a missing or extra name,
+and checks every module (envelope.py). It writes DIR/<kit>.modules for each kit that passes, DIR/modules.blend with
+every kit in a collection of its own, and with --preview DIR/previews/<kit>.png, a contact sheet of every module in
+flat part colours. It fails listing every problem. Point --out outside the repository: packs, models and renders are
+kept out of git.
+"""
+import argparse
+import hashlib
+import importlib
+import json
+import os
+import sys
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+# Run with -I, the script's own folder is not on the path: the kit and the kits sit beside it.
+sys.path.insert(0, HERE)
+
+import bpy  # noqa: E402
+
+import catalog  # noqa: E402
+import envelope  # noqa: E402
+import export  # noqa: E402
+import kit  # noqa: E402
+import preview  # noqa: E402
+
+
+def named(kit_name, made):
+    """The kit's objects by module name, in the pack's order, and the problems with what build(kit) gave."""
+    problems, found, seen = [], {}, {}
+    if not isinstance(made, dict):
+        return {}, [f'{kit_name}: build(kit) gave {type(made).__name__}, not {{name: object}}']
+    for key, item in made.items():
+        module = key if key.startswith(f'{kit_name}.') else f'{kit_name}.{key}'
+        if module in found:
+            problems.append(f'{module}: given twice (as {key!r} and by its other name): give it once')
+        elif not isinstance(item, bpy.types.Object) or item.type != 'MESH':
+            problems.append(f'{module}: {item!r} is not a mesh object')
+        elif item.name in seen:
+            problems.append(f'{module}: the same object as {seen[item.name]}: give each its own (kit.copy)')
+        else:
+            seen[item.name] = module
+            found[module] = item
+    required = catalog.required(kit_name)
+    problems += [f'{module}: missing' for module in required if module not in found]
+    problems += [f'{module}: no module of {kit_name} in kits.json' for module in found if module not in required]
+    return {module: found[module] for module in required if module in found}, problems
+
+
+def tidy(collection, kept):
+    """Removes what a kit left in its collection besides its modules, saying what went."""
+    left = [item for item in collection.objects if item not in kept]
+    if left:
+        print(f'{collection.name}: removed {len(left)} object(s) in no module: {", ".join(item.name for item in left)}')
+    for item in left:
+        bpy.data.objects.remove(item)
+
+
+def build_kit(kit_name):
+    """A kit's modules, their triangles, and the problems with them."""
+    collection = kit.start(kit_name)
+    made = importlib.import_module(f'kits.{kit_name}').build(kit)
+    modules, problems = named(kit_name, made)
+    tidy(collection, set(modules.values()))
+    for module, item in modules.items():
+        item.name = item.data.name = module
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    triangles = {}
+    for module, item in modules.items():
+        try:
+            triangles[module] = export.gather(item, depsgraph)
+        except ValueError as refusal:
+            # The refusal names the object, which is named by its module.
+            problems.append(str(refusal))
+            continue
+        problems += envelope.problems(module, [[corner[0] for corner in corners] for corners in triangles[module]])
+    return modules, triangles, problems
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    parser.add_argument('--out', required=True, help='the folder to write into, outside the repository')
+    parser.add_argument('--kit', action='append', choices=list(catalog.KITS), help='a kit (repeat for more)')
+    parser.add_argument('--preview', action='store_true', help="render each kit's contact sheet in flat parts")
+    args = parser.parse_args()
+    out = os.path.abspath(args.out)
+    os.makedirs(out, exist_ok=True)
+    kits = args.kit or list(catalog.KITS)
+    contract = envelope.contract_problems()
+    if contract:
+        sys.exit('\n'.join([f'kits.json: {len(contract)} problem(s):'] + contract))
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    # The stamp names what this run wrote, so a pack left by an older run is never published beside it.
+    stamp = os.path.join(out, export.STAMP)
+    if os.path.exists(stamp):
+        os.remove(stamp)
+    written = {}
+    problems, built = [], {}
+    for kit_name in kits:
+        began = time.time()
+        # A kit that fails writes no pack, so an older one left in the folder would be published beside it.
+        stale = os.path.join(out, f'{kit_name}.modules')
+        if os.path.exists(stale):
+            os.remove(stale)
+        modules, triangles, found = build_kit(kit_name)
+        problems += found
+        built[kit_name] = (modules, triangles)
+        if not found:
+            data = export.pack(kit_name, [(module, triangles[module]) for module in modules])
+            with open(os.path.join(out, f'{kit_name}.modules'), 'wb') as file:
+                file.write(data)
+            written[kit_name] = hashlib.sha256(data).hexdigest()
+            print(f'{kit_name}: {len(modules)} modules, {sum(map(len, triangles.values()))} triangles, '
+                  f'{len(data) / 1024:.0f} KiB ({time.time() - began:.1f} s)', flush=True)
+        else:
+            print(f'{kit_name}: {len(found)} problem(s), no pack written', flush=True)
+    preview.paint()
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, 'modules.blend'), compress=True)
+    with open(os.path.join(out, 'modules.blend'), 'rb') as file:
+        blend = hashlib.sha256(file.read()).hexdigest()
+    with open(stamp, 'w') as file:
+        json.dump({'kits': written, 'blend': blend}, file, indent=2)
+    if args.preview:
+        for kit_name, (modules, triangles) in built.items():
+            counts = {module: len(triangles.get(module, ())) for module in modules}
+            print(f"{kit_name}: {preview.sheet(kit_name, modules, counts, os.path.join(out, 'previews'))}", flush=True)
+    if problems:
+        sys.exit('\n'.join([f'{len(problems)} problem(s):'] + problems))
+
+
+if __name__ == '__main__':
+    main()

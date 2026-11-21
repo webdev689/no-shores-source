@@ -1,15 +1,15 @@
-// Stand-in crew on the Sloop's deck until crew management comes: a few hands walking between spots on her deck and
-// pausing at each, each leg one the deck leaves clear, all kept away from her wheel. Seeded, so a voyage's hands move
-// the same however it is drawn. In her own frame.
+// Stand-in crew on the Sloop's deck until crew management comes: a few hands walking between spots on its deck and
+// pausing at each, each leg one the deck leaves clear, all kept away from its wheel. Seeded, so a voyage's hands move
+// the same however it is drawn. In its own frame.
 import { type Race } from '../player/dressing.ts';
 import { cellHeight, cellsReached, type Deck } from '../ships/deck.ts';
 
-/** How many hands stand in for her crew. */
+/** How many hands stand in for its crew. */
 export const STAND_INS = 3;
 /** A hand's walk, metres a second, and how long they stand at each spot, seconds. */
 const WALK_M_S = 1.3;
 const PAUSE_S = [2, 7] as const;
-/** No hand comes nearer her wheel than this, metres: the helm is the player's, or her helmsman's. */
+/** No hand comes nearer its wheel than this, metres: the helm is the player's, or its helmsman's. */
 const WHEEL_CLEAR_M = 1.2;
 /** A leg's step up or down between two of its points, at most, metres: the deck's own, not over a fitting. */
 const LEG_STEP_M = 0.25;
@@ -20,7 +20,7 @@ const LOOKS: readonly (readonly [Race, number])[] = [
   ['human', 0.75],
 ];
 
-/** A hand on her deck: where they stand (her frame), the way they face, whether walking, and how they look. */
+/** A hand on its deck: where they stand (its frame), the way they face, whether walking, and how they look. */
 export interface Hand {
   readonly x: number;
   readonly y: number;
@@ -80,7 +80,7 @@ export class Crew {
   constructor(deck: Deck, seed: number) {
     this.deck = deck;
     const [helmX, helmY] = deck.helm;
-    // Only where a body walks from her helm: never a rail's top beyond a wall.
+    // Only where a body walks from its helm: never a rail's top beyond a wall.
     this.spots = cellsReached(deck, helmX, helmY)
       .filter((cell) => Math.hypot(cell.x - helmX, cell.y - helmY) > WHEEL_CLEAR_M)
       .map((cell) => [cell.x, cell.y, cell.z] as const);

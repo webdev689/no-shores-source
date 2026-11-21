@@ -17,7 +17,7 @@ const tick = (seconds: number): Tick => ({
   size: VIEW,
   viewport: VIEW,
 });
-/** The Brig in a heavy swell: high on a crest, her bow up and heeled to port. */
+/** The Brig in a heavy swell: high on a crest, its bow up and heeled to port. */
 const RIDING = { x: 500, y: -300, z: 1.8, heading: 0.6, pitch: 0.09, roll: -0.12 };
 
 /** The storm's story, writing down every sound, flash and strike it makes and the weather it sets. */
@@ -68,7 +68,7 @@ test('played through, the storm sounds its moments', () => {
   for (const sound of ['thunder', 'whoosh', 'flash', 'strike']) assert.ok(heard.includes(sound), sound);
 });
 
-test("the storm's run ends in the helm's own shot of her riding the swell, so the cut to the helm never jumps", () => {
+test("the storm's run ends in the helm's own shot of it riding the swell, so the cut to the helm never jumps", () => {
   const { story: storm } = story();
   const dive = new StormDive(storm, FROM);
   let last = dive.frame(tick(0.5));

@@ -166,6 +166,8 @@ pub fn layers_of(slot: crate::kinds::Slot, kind: crate::kinds::Kind) -> &'static
         (_, Kind::Pistolet | Kind::DoublePistolet) => &["pistolet_"],
         (_, Kind::Thunderlock) => &["thunderlock_"],
         (_, Kind::Head | Kind::Torso | Kind::Arms | Kind::Legs | Kind::Cloak) => &[],
+        // A ship's modules are never worn on a figure.
+        (_, Kind::Guns | Kind::Hull | Kind::Sails | Kind::Rigging) => &[],
     }
 }
 

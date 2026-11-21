@@ -6,7 +6,7 @@ import type { FoeStatuses } from '../network/messages.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { TONES } from '../plus/tones.ts';
 import type { StatusName, Statuses } from '../rules/fighters.ts';
-import { element, setStyle, showNode } from './meter.ts';
+import { element, setStyle, showNode } from '../plus/meter.ts';
 
 /** Each status's glyph as rows of letters (a the outline, b the body, c its light, a dot none), 12 × 12. */
 const MAPS: Readonly<Record<StatusName, readonly string[]>> = {
