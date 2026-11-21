@@ -48,7 +48,7 @@ pub fn board(frame: &Frame) -> (Board, Vec<Solid>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::courtyard::{SPAWN_OFFSETS_M, courtyard};
+    use crate::courtyard::{SPAWN_OFFSETS_M, courtyard, visitor_spots};
     use crate::stations::stations;
 
     const FRAMES: [Frame; 2] = [
@@ -97,6 +97,14 @@ mod tests {
             }
             let [toward, across] = local(&frame, board.front);
             assert!((toward - 26.0).abs() < 1e-9 && (across + 45.0).abs() < 1e-9, "read from before its face");
+            // Twice a counter's reach (the room's 4 m) apart, so where the board serves no other counter does: every
+            // station's, the Harbourmaster's among them, and every spot Shape may stand at.
+            let (stations, _) = stations(&frame, false);
+            let counters = stations.iter().map(|station| station.counter).chain(visitor_spots(&frame));
+            for [x, y] in counters {
+                let apart = libm::hypot(board.front[0] - x, board.front[1] - y);
+                assert!(apart > 8.0, "a counter {apart:.1} m from where the board is read");
+            }
             assert!((board.facing - turn_toward(frame.seaward)).abs() < 1e-9, "its face to the sea");
         }
     }
