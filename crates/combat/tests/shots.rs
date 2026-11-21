@@ -84,12 +84,27 @@ fn an_aimed_gun_or_crossbow_hits_half_again_at_once_onto_the_aims_mark() {
     for (ranged, damage) in [(Ranged::Pistolet, 30.0), (Ranged::Crossbow, 26.0)] {
         let mark = Some([20.0, 0.0, combat::tuning::CHEST]);
         let (raised, _) = run(holding(ranged), asking(0.0, CombatInput { mark, ..AIMING }), 2, None);
-        assert!((raised.aim - PI / 2.0).abs() < 1e-9, "the weapon points at its mark");
+        assert!(raised.aim.abs() < 1e-9, "the fighter faces the look, its shot alone turned to the mark");
         let (_, happenings) = run(raised, asking(0.0, CombatInput { shoot: true, mark, ..AIMING }), 1, None);
         let shot = only_shot(&happenings).1;
         assert!((shot.damage - damage * AIMED_POWER).abs() < 1e-9, "{ranged:?}");
         assert!(shot.velocity[0] > 0.0 && shot.velocity[1].abs() < 1e-6, "east, onto the mark");
     }
+}
+
+#[test]
+fn an_aimed_weapon_faces_the_look_through_its_reload_while_its_shot_flies_onto_a_near_mark_aside() {
+    // Over the shoulder, the crosshair's point on a foe 2 m off lies right of the look.
+    let near = [0.8, -2.0, combat::tuning::CHEST];
+    let aimed = CombatInput { mark: Some(near), ..AIMING };
+    let (raised, _) = run(holding(Ranged::Pistolet), asking(0.0, aimed), 2, None);
+    assert!(raised.aim.abs() < 1e-9 && raised.body.facing.abs() < 1e-9, "it faces the look: {}", raised.aim);
+    let (fired, happenings) = run(raised, asking(0.0, CombatInput { shoot: true, ..aimed }), 1, None);
+    let ball = only_shot(&happenings).1;
+    assert!((ball.velocity[0] / -ball.velocity[1] - 0.4).abs() < 1e-6, "onto the mark: {:?}", ball.velocity);
+    assert!(matches!(fired.action, Action::Reload { .. }) && fired.aim.abs() < 1e-9, "its reload faces the look");
+    let (quick, _) = run(holding(Ranged::Pistolet), asking(0.0, TRIGGER), 1, Some(near));
+    assert!(matches!(quick.action, Action::Reload { .. }) && quick.aim > 0.3, "a quick shot points where it fired");
 }
 
 #[test]

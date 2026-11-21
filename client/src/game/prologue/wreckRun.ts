@@ -2,6 +2,7 @@ import { QUIET, pushedIn, showAnimaEdge } from '../../combat/animaMoment.ts';
 import { AttackFeel, type DrawnFigure } from '../../combat/attackFeel.ts';
 import { FightEffects } from '../../combat/fightEffects.ts';
 import { Fighting } from '../../combat/fighting.ts';
+import { crosshairOf } from '../../combat/reticle.ts';
 import { FoeFigures } from '../../combat/foeFigures.ts';
 import { PlayerFight } from '../../combat/playerFight.ts';
 import { veiledIn } from '../../combat/spellLooks.ts';
@@ -325,10 +326,8 @@ export class WreckRun {
       eye: shot.eye,
       blocks: this.course,
       bodies,
-      muzzleOf: (fired) =>
-        muzzle
-          ? screenMuzzle(kicked, aspect, muzzle)
-          : figureMuzzle([body.x, body.y, body.z], Math.atan2(fired.velocity[0], -fired.velocity[1])),
+      muzzleOf: () =>
+        muzzle ? screenMuzzle(kicked, aspect, muzzle) : figureMuzzle([body.x, body.y, body.z], walker.you.facing),
       origin: shot.eye,
       groundAt,
       drawn: { foes: foes.placed, others: new Map() },
@@ -385,7 +384,7 @@ export class WreckRun {
       abilities: fight.abilities,
       ammo: sights ? (ownView?.ammo ?? null) : null,
       ammoMost: null,
-      crosshair: sights ? { charge: null } : null,
+      crosshair: crosshairOf(shown.reticle, sights, ownView, fight.reach),
     };
     // The room raises a fallen player at the last checkpoint by itself: there is no edge to stray past, nothing
     // to press, and the story says what happens.
