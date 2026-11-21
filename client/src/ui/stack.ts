@@ -19,6 +19,16 @@ export class Stack {
     };
   }
 
+  /** Adds `layer` under every layer, as a display over the world stands under the game's own windows; answers what
+   *  takes it away again. */
+  under(layer: Layer): () => void {
+    this.layers.unshift(layer);
+    return () => {
+      const index = this.layers.indexOf(layer);
+      if (index >= 0) this.layers.splice(index, 1);
+    };
+  }
+
   /** The whole interface this frame: each layer over the whole view. */
   node(ui: Interface): Node {
     return {
