@@ -40,8 +40,8 @@ status: in force
 - On land, a player's blow on a foe strikes ×1.5 and a foe's on a player ×0.75, halfway back from ×2 and ×0.5. Sea
   fights stay as they are.
 - Loot follows Destiny 1's order in four ways: by rank, a higher rank dropping more often and better; by rarity, each
-  colour rarer than the one below it; by content, Patrol, Mission, Dungeon and World boss in turn, and at sea a Minor
-  ship up to a Miniboss; by difficulty, Normal, Elite and Abyss in turn everywhere, deck fights included.
+  colour far rarer than the one below it; by content, Mission, Dungeon and World boss in turn; by difficulty, Normal,
+  Elite and Abyss in turn, deck fights included.
 - A kill leaves a Vestige by the foe's rank: Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always. At sea a
   ship rolls once at its rank, and a boarded hold once a rank up.
 - A Vestige opens to its own colour about three times in four, below it about one time in five, above it about one in
@@ -73,24 +73,31 @@ status: in force
 - A player still fells any Major before it fells them, the Brute with less to spare than under the pass; an Elite
   beats a player who never guards, as it did before the pass, so guarding and dodging matter again.
 
-- **The colours by rank**, in 1,000, Normal, Magic, Rare, Legendary, Atheric: Minor 720, 230, 45, 5, 0; Major 640,
-  280, 70, 10, 0; Elite 520, 320, 130, 28, 2; Miniboss 400, 330, 200, 60, 10; Boss 300, 280, 250, 135, 35. Each row
-  falls from Normal to Atheric, and each better colour rises from Minor to Boss. A Boss's sure Vestige is a Normal
-  three times in ten: "strictly followed" holds at every rank.
+- **The colours by rank**, in 1,000, Normal, Magic, Rare, Legendary, Atheric: Minor 720, 230, 45, 4, 1; Major 640,
+  280, 68, 10, 2; Elite 520, 320, 130, 27, 3; Miniboss 400, 330, 200, 60, 10; Boss 300, 280, 250, 135, 35. Each row
+  falls from Normal to Atheric, and the chance of each colour or better rises from Minor to Boss (a Boss's Magic alone
+  is less likely than a Miniboss's, as more of its drops are Rare and better). A Boss's sure Vestige is a Normal three
+  times in ten: "strictly followed" holds at every rank. Any foe may leave an Atheric, as any Destiny 1 enemy could
+  an exotic engram: about one Minor kill in 50,000 from level 20.
 - **The level's gate** (Legendary from level 18, Atheric from 20) strikes the colours too good for a level out rather
   than folding them into the next colour down, which would have made Rare likelier than Magic from a low Boss.
 - **What a Vestige opens to**, in 100: Normal 95 Normal, 5 Magic; Magic 20, 75, 5; Rare 20 Magic, 75, 5 Legendary;
   Legendary 20 Rare, 75, 5 Atheric; Atheric 20 Legendary, 80. From every rank, the items that come out keep each colour
   rarer than the one below (`vestige_tests.rs`).
-- **The kinds' pay** narrowed so a higher rank always pays more whatever the kinds, as Major at level 5: Skirmisher
-  80 XP and 7 Aurem, Archer 85 and 7, Swordsman 95 and 8, Brute 110 and 9, Captain 120 and 10. Read with the owner's
-  option alone, an Elite Marksman would have paid less than a Major Enforcer. A Boss at level 5 now pays 840 XP, where
-  Corvane and every Captain paid 2,000; an Elite Reeve 264.
+- **The kinds' pay** narrowed so a higher rank always pays more whatever the kinds, at every level and tier, as Major
+  at level 5: Skirmisher 80 XP and 7 Aurem, Archer 85 and 7, Swordsman 95 and 7, Brute 110 and 8, Captain 120 and 8.
+  Read with the owner's option alone, an Elite Marksman would have paid less than a Major Enforcer. A Boss at level 5
+  now pays 840 XP and 56 Aurem, where Corvane and every Captain paid 2,000 and 120; an Elite Reeve 264 and 18.
+- **The content's order** follows from the ranks: a patrol's Minors and Majors, a mission's Elites, a dungeon's
+  Miniboss, a world boss's Boss; at sea a Minor ship up to a Miniboss, its hold a rank higher.
+- **Fights on foot on a boarded deck** take the land's ×1.5 and ×0.75, as they took the pass's ×2 and ×0.5: "the
+  sea" that stays as it is is the fight between ships.
 - **A ship's drop.** The first piece laid for each player holds the ship's one kill's drop (its Vestige, Ammo box and,
   from a Miniboss or a Boss, Ammo crate); every piece holds its salvage. Before, each piece was a kill of its own: six
   sure Vestiges and six Ammo crates from a Miniboss ship.
 - **Modules' colours** follow the same rows by the rank of their source: a piece its ship's, a chest the rank it is
-  rolled at, a cove's wreckage a Major's, an isle's an Elite's, a Breach's a Boss's.
+  rolled at, a cove's wreckage a Major's, an isle's an Elite's, a Breach's a Boss's. A chest's or a Breach's module,
+  which never came Normal before, now does three or four times in ten, as the rows ask.
 - **Essence.** A dismantled Atheric gives 3 Essence, where a Legendary gives 2 or 3, so the rarer never gives less.
 - **The difficulty everywhere.** A boarded deck's room takes the sea's tier, and a sinking's XP is raised by it, as a
   kill on land is.

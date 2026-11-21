@@ -80,9 +80,11 @@ fn every_rank_drops_more_often_and_better_than_the_one_below_and_each_colour_rar
     for rank in 1..5 {
         assert!(chance(rank) < chance(rank + 1), "rank {rank} drops less often than rank {}", rank + 1);
         let (lower, higher) = (colours(rank), colours(rank + 1));
-        for better in 2..5 {
-            let share = |weights: [u32; 5]| f64::from(weights[better]) / f64::from(weights.iter().sum::<u32>());
-            assert!(share(higher) >= share(lower), "rank {} drops colour {better} no less often", rank + 1);
+        for better in 1..5 {
+            let share = |weights: [u32; 5]| {
+                f64::from(weights[better..].iter().sum::<u32>()) / f64::from(weights.iter().sum::<u32>())
+            };
+            assert!(share(higher) > share(lower), "rank {} drops colour {better} or better more often", rank + 1);
         }
     }
     assert!((chance(5) - 1.0).abs() < f64::EPSILON, "a Boss always leaves one");
@@ -113,7 +115,7 @@ fn a_boss_always_leaves_a_vestige_and_the_best_colours_wait_on_the_foes_level() 
     let minors = colours(1, 30);
     let dropped_count: u32 = minors.iter().sum();
     assert!((50..120).contains(&dropped_count), "about 2 in 100 from a Minor: {dropped_count}");
-    assert_eq!(minors[4], 0, "a Minor never leaves an Atheric");
+    assert!(minors[4] <= 2, "a Minor all but never leaves an Atheric: {minors:?}");
 }
 
 #[test]
@@ -193,24 +195,31 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
 fn a_kill_pays_every_player_who_struck_by_the_foes_kind_rank_and_level() {
     let mut character = Character::starting();
     let reward = character.reward_kill(Foe::Swordsman, 2, 5, Some(Slot::Melee), Difficulty::Normal, &dice(1));
-    assert_eq!((reward.xp, reward.aurem), (95, 8), "a Major swordsman's worth at level 5");
+    assert_eq!((reward.xp, reward.aurem), (95, 7), "a Major swordsman's worth at level 5");
     let boss = character.reward_kill(Foe::Captain, 5, 15, None, Difficulty::Normal, &dice(1));
-    assert_eq!((boss.xp, boss.aurem), (1_680, 140), "a Boss captain's at level 15: seven times a Major's, twice");
+    assert_eq!((boss.xp, boss.aurem), (1_680, 112), "a Boss captain's at level 15: seven times a Major's, twice");
     assert!(boss.vestige.is_some(), "a Boss always leaves a Vestige");
     assert_eq!(character.xp, 1_775);
-    assert_eq!(character.materials.aurem, 148);
+    assert_eq!(character.materials.aurem, 119);
 }
 
 #[test]
-fn a_higher_rank_always_pays_more_than_the_rank_below_whatever_their_kinds() {
+fn a_higher_rank_always_pays_more_than_the_rank_below_whatever_their_kinds_levels_and_tiers() {
     let kinds = [Foe::Skirmisher, Foe::Archer, Foe::Swordsman, Foe::Brute, Foe::Captain];
-    for rank in 1..5 {
-        let most_below = kinds.map(|kind| worth(kind, rank));
-        let least_above = kinds.map(|kind| worth(kind, rank + 1));
-        for (below, above) in most_below.iter().flat_map(|below| least_above.iter().map(move |above| (below, above))) {
-            assert!(above.xp > below.xp && above.aurem > below.aurem, "rank {}: {above:?} over {below:?}", rank + 1);
-            assert!(above.vestige > below.vestige);
-        }
+    let paid = |kind: Foe, rank: u8, level: u8, difficulty: Difficulty| {
+        let reward = Character::starting().reward_kill(kind, rank, level, None, difficulty, &dice(1));
+        (reward.xp, reward.aurem)
+    };
+    for (rank, level, difficulty) in
+        (1..5).flat_map(|rank| (0..=32).flat_map(move |level| Difficulty::ALL.map(|tier| (rank, level, tier))))
+    {
+        let most_below = kinds.map(|kind| paid(kind, rank, level, difficulty));
+        let least_above = kinds.map(|kind| paid(kind, rank + 1, level, difficulty));
+        let (xp_below, aurem_below) = (most_below.map(|pay| pay.0), most_below.map(|pay| pay.1));
+        let (xp_above, aurem_above) = (least_above.map(|pay| pay.0), least_above.map(|pay| pay.1));
+        let fits = xp_above.iter().min() > xp_below.iter().max() && aurem_above.iter().min() > aurem_below.iter().max();
+        assert!(fits, "rank {} at level {level} {difficulty:?}: {least_above:?} over {most_below:?}", rank + 1);
+        assert!(kinds.iter().all(|kind| worth(*kind, rank + 1).vestige > worth(*kind, rank).vestige));
     }
 }
 

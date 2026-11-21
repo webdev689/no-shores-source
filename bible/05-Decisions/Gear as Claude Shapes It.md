@@ -186,6 +186,9 @@ its colour and what it opens to go by the foe's rank in Destiny 1's order, and a
 | What a player carries | One equipped and 9 more in each slot; 10 Vestiges | Destiny 1 at launch |
 | The vault | 20 weapons, 20 armour, shields and cloaks, 20 Vestiges, reached in a social space | Destiny 1 at launch: 20, 20 and 20, in the Tower |
 
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a kill's Aurem goes by
+its kind and rank, and a dismantled Atheric gives 3 Essence ([[Gear]], "A kill's pay", "Asks").
+
 ### Wearing
 
 | Choice | Chosen | Why |

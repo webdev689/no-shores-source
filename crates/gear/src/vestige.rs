@@ -16,12 +16,12 @@ pub const ATHERIC_FROM: u8 = 20;
 /// one, as Destiny 1's bosses did, and every rank more often than the one below.
 const CHANCE: [f64; 5] = [0.02, 0.04, 0.10, 0.35, 1.0];
 /// A Vestige's colour by the foe's rank, Minor to Boss, in 1,000, Normal to Atheric: at every rank each colour is
-/// rarer than the one below it, and each better colour likelier the higher the rank, as Destiny 1's majors and ultras
-/// dropped the better engrams.
+/// rarer than the one below it, and each colour or better likelier the higher the rank, as Destiny 1's majors and
+/// ultras dropped the better engrams.
 const COLOURS: [[u32; 5]; 5] = [
-    [720, 230, 45, 5, 0],
-    [640, 280, 70, 10, 0],
-    [520, 320, 130, 28, 2],
+    [720, 230, 45, 4, 1],
+    [640, 280, 68, 10, 2],
+    [520, 320, 130, 27, 3],
     [400, 330, 200, 60, 10],
     [300, 280, 250, 135, 35],
 ];

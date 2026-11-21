@@ -31,7 +31,8 @@ pub const NODE_YIELD: u16 = 3;
 /// How long a player must have struck a foe before its death to share its kill, in the room's ticks of 1/60 s.
 pub const SHARE_TICKS: u64 = 600;
 /// A kill's pay by the foe's rank, Minor to Boss: its rank's health against a Major's (`foes::ranks`), so a kill pays
-/// as it took to bring down. A kind's own pay spans less than one rank's step, so a higher rank always pays more.
+/// as it took to bring down. The kinds' own pay spans less than one rank's step, and their Aurem so little that a
+/// higher rank pays more even at level 0, where a kill pays half.
 pub const RANK_PAY: [f64; 5] = [0.6, 1.0, 2.2, 4.0, 7.0];
 
 /// What a foe of its kind and rank (1 Minor to 5 Boss) is worth at level 5: its kind's XP and Aurem as a Major, times
@@ -41,9 +42,9 @@ pub fn worth(foe: Foe, rank: u8) -> Worth {
     let (xp, aurem) = match foe {
         Foe::Skirmisher => (80.0, 7.0),
         Foe::Archer => (85.0, 7.0),
-        Foe::Swordsman => (95.0, 8.0),
-        Foe::Brute => (110.0, 9.0),
-        Foe::Captain => (120.0, 10.0),
+        Foe::Swordsman => (95.0, 7.0),
+        Foe::Brute => (110.0, 8.0),
+        Foe::Captain => (120.0, 8.0),
     };
     let pay = RANK_PAY[usize::from(rank.clamp(1, 5) - 1)];
     let rounded = |amount: f64| libm::round(amount * pay) as u32;

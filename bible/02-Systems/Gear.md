@@ -97,9 +97,9 @@ number is one of [[Gear as Claude Shapes It]].
   before its last three 5 fragments and 10 of the resource, and its last three upgrades (every upgrade of an armour
   piece) 6 Essence each; an Atheric's own, 1,000 Aurem and 1 Essence ([[Gear as Claude Shapes It]]).
 - **A kill's pay.** XP and Aurem are the foe's kind's as a Major at level 5 (Skirmisher 80 and 7, Archer 85 and 7,
-  Swordsman 95 and 8, Brute 110 and 9, Captain 120 and 10), times its rank's health against a Major's (Minor 0.6,
+  Swordsman 95 and 7, Brute 110 and 8, Captain 120 and 8), times its rank's health against a Major's (Minor 0.6,
   Elite 2.2, Miniboss 4, Boss 7; `rewards::RANK_PAY`), times (5 + its level) ÷ 10, times the voyage's tier. The kinds
-  span less than one rank's step, so a higher rank always pays more, whatever the kinds.
+  span less than one rank's step, so a higher rank always pays more, whatever the kinds, at every level and tier.
 - **XP.** A kill's XP goes to every player who struck the foe in its last 10 s, a tenth more with Scholar worn; for
   each, to the loadout whose blow last landed and to every armour piece worn. An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
@@ -114,7 +114,7 @@ number is one of [[Gear as Claude Shapes It]].
 - **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]). A
   kill may leave a Vestige for each player who struck the foe, seen by them alone: by the foe's rank (Minor 2 in 100,
   Major 4, Elite 10, Miniboss 35, a Boss always; `vestige::chance`), its colour weighted by its rank, for one slot, its
-  item at the foe's level. At every rank each colour is rarer than the one below it, and each better colour likelier
+  item at the foe's level. At every rank each colour is rarer than the one below it, and each colour or better likelier
   the higher the rank (`vestige::colours`); a colour too good for the foe's level (Legendary below 18, Atheric below
   20) is struck out, the rest keeping their order. A player carries ten. Identified in a social space, it opens to its
   own colour three times in four, one colour below one time in five and one above one time in twenty (a Normal opens

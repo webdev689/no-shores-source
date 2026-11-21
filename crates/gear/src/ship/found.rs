@@ -18,7 +18,7 @@ pub enum Source {
     Flotsam { rank: u8, chest: bool },
     /// Wreckage scavenged on foot on an island: a cove's, or an isle's, which its guards keep richer.
     Wreckage { isle: bool },
-    /// A sea Breach's hold, which always holds a module of the better colours.
+    /// A sea Breach's hold, which always holds a module, coloured as a Boss's drop.
     Breach,
 }
 
