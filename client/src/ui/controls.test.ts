@@ -112,3 +112,39 @@ test('a choice opens its list, takes the option pressed, and shuts', () => {
   assert.equal(chosen, 'b');
   assert.equal(ui.boxOf('pick:b'), null, 'and shut');
 });
+
+test('a slider in steps of a fraction keeps whole steps, never a float that strays from them', () => {
+  const ui = new Interface(renderer());
+  let value = 0.25;
+  const build = (): Node => {
+    const made = slider(ui, 'trail', value, { low: 0.25, high: 2.5, step: 0.05, width: 100 });
+    value = made.value;
+    return made.node;
+  };
+  ui.frame(VIEW, [], 0.016);
+  ui.draw(build());
+  ui.frame(VIEW, click(2, 5), 0.016);
+  ui.draw(build());
+  assert.equal(value, 0.3);
+  for (let step = 0; step < 3; step++) {
+    ui.frame(VIEW, [{ kind: 'key', key: 'ArrowRight' }], 0.016);
+    ui.draw(build());
+  }
+  assert.equal(value, 0.45);
+});
+
+test("a choice's long list scrolls inside a height of its own, so every option can be reached", () => {
+  const ui = new Interface(renderer());
+  const options = Array.from({ length: 60 }, (_unused, index) => ({ value: `o${index}`, words: `Option ${index}` }));
+  const build = (): Node => ({ padding: 10, children: [choice(ui, 'many', 'o0', options).node] });
+  ui.frame(VIEW, [], 0.016);
+  ui.draw(build());
+  ui.frame(VIEW, click(15, 15), 0.016);
+  ui.draw(build());
+  const list = ui.boxOf('many:list');
+  assert.ok(list && list.height <= 240, 'held to its height');
+  ui.frame(VIEW, [{ kind: 'wheel', x: list.x + 5, y: list.y + 5, dy: 10_000 }], 0.016);
+  ui.draw(build());
+  const last = ui.boxOf('many:o59');
+  assert.ok(last && last.y + last.height <= list.y + list.height + 1, 'the last option scrolled into sight');
+});
