@@ -17,7 +17,8 @@
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
 // waits minutes behind. The console's errors are printed, and so is every shader that fails to compile: WebGPU
-// reports those only as warnings, so a broken shader would otherwise draw nothing and say nothing. The game takes one
+// reports those only as warnings, so a broken shader would otherwise draw nothing and say nothing; so is every WebGPU
+// validation error, which loses a frame without a word. The game takes one
 // wheel notch a frame, so a wheel step sends its notches (1 unless said) 0.1 s apart: from the arrival's 4.5 m, about
 // 20 notches in (deltaY < 0) reach first person. To arrive in a camera instead, the address asks for it as it asks
 // for a spawn: `&view=first` or `&view=third,<metres>`. Many views in one load (a page takes minutes to load),
@@ -30,6 +31,13 @@ const { chromium } = require('playwright');
 const { mkdirSync, readFileSync } = require('node:fs');
 
 const SHADER_ERRORS = () => {
+  // A validation error (a destroyed buffer drawn, a bad binding) loses the frame without a word: say each one.
+  const requestDevice = GPUAdapter.prototype.requestDevice;
+  GPUAdapter.prototype.requestDevice = async function (descriptor) {
+    const device = await requestDevice.call(this, descriptor);
+    device.addEventListener('uncapturederror', (event) => console.error(`WebGPU: ${event.error.message}`));
+    return device;
+  };
   const create = GPUDevice.prototype.createShaderModule;
   GPUDevice.prototype.createShaderModule = function (descriptor) {
     const made = create.call(this, descriptor);

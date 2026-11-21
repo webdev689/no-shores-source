@@ -141,6 +141,11 @@ export class FootView {
     };
   }
 
+  /** Hides the fight's display for this frame alone, its drawing kept: as while the held map is up. */
+  hideDisplay(): void {
+    this.root.hidden = true;
+  }
+
   /** Hides the fight's display off foot, and lets go of the last node's blood. */
   hide(): void {
     this.root.hidden = true;

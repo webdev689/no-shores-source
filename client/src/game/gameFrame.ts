@@ -174,7 +174,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
     // The fight's crosshair, plates and compass give way to the map while it is up.
-    if (looking) footView.hide();
+    if (looking) footView.hideDisplay();
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
