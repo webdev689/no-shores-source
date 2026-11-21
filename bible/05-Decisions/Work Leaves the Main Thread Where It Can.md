@@ -23,7 +23,8 @@ status: in force
   `OffscreenCanvas`). The main thread keeps only what a browser allows nowhere else: input, pointer lock,
   fullscreen, gamepads, sound and typing. Every browser that runs the game runs WebGPU in a worker.
 - Messages first, not shared memory: shared memory needs headers GitHub Pages cannot send, and Rust's WebAssembly
-  threads still need the nightly compiler. Both are measured again once the game worker stands.
+  threads still need the nightly compiler. Measured once the game worker stood, the page's thread is busy 0.0 ms a
+  frame with messages alone, so neither is taken up ([[Claude Makes the Four Points' Open Calls]]).
 - Sound stays on the main thread, its cues sent ahead by the game worker.
 - Frame time, long tasks and input to frame are measured before and after.
 - It is built once the interface has left HTML ([[The Interface Uses No HTML, Now or Later]]): a worker has no page.

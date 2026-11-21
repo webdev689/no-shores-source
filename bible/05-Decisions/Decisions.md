@@ -160,6 +160,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Interface Uses No HTML, Now or Later]]
 - [[Work Leaves the Main Thread Where It Can]]
 - [[The Network Is Made Smaller and Readied for WebTransport]]
+- [[Claude Makes the Four Points' Open Calls]]
 - [[Music and Ambience Come From DFO's Synthesiser]]
 - [[Landfall Is Kept as Made Again]]
 - [[Weather and Day and Night Come From DFO, Much Improved]]

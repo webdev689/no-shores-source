@@ -34,7 +34,7 @@ It replaces [[HTML Is Avoided Where It Can Be]].
   outside Chromium, and a screen reader beyond the announcements.
 - The order: the HUD, then the menus and screens, then the Test Ground and the World Editor. A check then refuses new
   HTML.
-- Asked of the owner: signing in, which a browser's password manager can no longer fill: passkeys, Chromium's own
-  credential store, or neither.
+- Signing in, which a browser's password manager can no longer fill from the page: Chromium's own store, through
+  the browser's credential manager; no passkeys for now ([[Claude Makes the Four Points' Open Calls]]).
 
 [[Interface]], [[Platform Research]].
