@@ -3,9 +3,11 @@ import { wheelNotches } from '../overworld/overworldInput.ts';
 import type { Sea } from './sea.ts';
 import { fightControls } from './seaCombat.ts';
 
-/** What the sea's pointer reaches: whether the player is at sea with no menu up, the sea, and the held map. */
+/** What the sea's pointer reaches: whether the player is at sea with no menu up, the sea, the held map, and whether the
+ *  pointer is over the interface the game draws, whose press it is then. */
 export interface SeaPointing {
   readonly atSea: () => boolean;
+  readonly overInterface: () => boolean;
   readonly sea: () => Sea | null;
   readonly map: () => HeldMap | null;
 }
@@ -19,7 +21,8 @@ export function seaPointer(
   input: { readonly locked: boolean },
   pointing: SeaPointing,
 ): void {
-  const { atSea, sea, map } = pointing;
+  const { sea, map, overInterface } = pointing;
+  const atSea = () => pointing.atSea() && !overInterface();
   /** While the map is up, the pointer and the wheel are the map's. */
   const mapUp = () => map()?.shown ?? false;
   canvas.addEventListener('pointerdown', (event) => {
@@ -45,7 +48,7 @@ export function seaPointer(
     forgetPresses();
   });
   canvas.addEventListener('pointercancel', forgetPresses);
-  fightControls(canvas, () => sea()?.fight ?? null);
+  fightControls(canvas, () => (overInterface() ? null : (sea()?.fight ?? null)));
   canvas.addEventListener('wheel', (event) => {
     if (!atSea()) return;
     if (mapUp()) map()?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);

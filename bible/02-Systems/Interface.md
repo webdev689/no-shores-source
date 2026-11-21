@@ -27,6 +27,12 @@ code:
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
   - client/src/game/hud.ts#Hud
+  - client/src/game/hudPieces.ts#seaBarNode
+  - client/src/game/hudMarks.ts#markNodes
+  - client/src/game/hudParts.ts#keycap
+  - client/src/game/compassNode.ts#compassNode
+  - client/src/game/shipPlates.ts#shipPlateNodes
+  - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/tasks.ts#TaskTracker
   - client/src/game/seaPanel.ts#FightPanel
   - client/src/game/seaPanel.ts#readoutOf
@@ -125,8 +131,9 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-The game draws its toasts and its menu itself; its other panels, plates and words are still HTML laid over the canvas, and by the
-owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each moves to the game's own drawing
+The game draws its heads-up display, its fight's display and its menu itself; its other panels and words are still
+HTML laid over the canvas, and by the owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each
+moves to the game's own drawing
 ("Drawn by the game", below).
 
 ## Drawn by the game
@@ -159,6 +166,14 @@ owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each 
   a worker. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
 - **Controls.** A press with words, a toggle, a slider (dragged, or stepped by its arrows) and a choice from a list
   that opens under it are built once, for every screen (`controls.ts`).
+- **The heads-up display** is a layer of its own (`Hud`): the place's name, the edge's warning and its darkening,
+  death's words and Respawn, the key strip on its keycaps, the task tracker, her ship's panel in a sea fight, the
+  toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
+  and its offers, Manage's panel, the menu, the prompt for E and the veil. Each stands where the page's sheet stood
+  it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
+  let a click through to the world; the marks, presses and panels take it. The glyphs Pixelify lacks (a mark's) are
+  drawn in the page's own face into a picture. It gives way to the fight's display as that says it shows, and to the
+  dialogue box, still the page's, as the page shows it (`speakingIn`).
 - **The menu.** The menu's frame (its tabs, the account's mark, the banner, the footer and the world dimmed behind
   it), the Character and Inventory pages, an item's page, the hover card, the holds and their bursts, what the player
   gains and the company on the heads-up display are one layer of the game's drawing (`startGearWindow`).
@@ -621,31 +636,30 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
-- Drawn by the game: the toasts, the fight's display and the menu; the menu's Ship, Social, Settings, Art,
-  Appearance and keepers' pages stand in their island of elements. Tab does not cross from the drawn menu into the
-  island: the pointer reaches it, or a press of its own. A word's soft shade past its hard outline is not drawn, as a
-  blur has no crisp form; the fight's glows (the soft lock's mark, the charged crosshair, a full Anima, a ready Tenet,
-  the poise's break, the struck edge's red) stand in hard rings and bands instead.
+- Drawn by the game: the heads-up display, the toasts, the fight's display and the menu; the menu's Ship, Social,
+  Settings, Art, Appearance and keepers' pages stand in their island of elements. Tab does not cross from the drawn
+  menu into the island: the pointer reaches it, or a press of its own. A word's soft shade past its hard outline is
+  not drawn, as a blur has no crisp form, nor a chosen mark's or a ship's mark's blur (a chosen mark's glow is a drawn
+  gradient); the fight's glows (the soft lock's mark, the charged crosshair, a full Anima, a ready Tenet, the poise's
+  break, the struck edge's red) stand in hard rings and bands instead.
 - A plate over a figure shrinks with its distance, but its words keep the face's 11 px, never smaller and never the
   12 px a page's plate wrote; so does its alert's mark, 15 px on a page. A blow's number pops at sizes between the
-  face's steps for its first four frames, as no whole step is 1.4 times another.
-- The small words in capitals (a boss's faction and phase, the poise's word, the compass's lesser points, the weapons'
-  counts) keep the face's own spacing, not the wider spacing a page gave them.
-- The Anima's edge frame is drawn with the fight's display, under the game's own windows and the page's HUD; on a
-  page it stood over everything.
+  face's steps for its first four frames, as no whole step is 1.4 times another. A ship's plate writes her name at
+  the face's 11 and 22 px, where the page wrote 12 and 18, outlined a pixel round where the page stroked it 1.5.
+- The small words in capitals of the fight's display and the menu (a boss's faction and phase, the poise's word,
+  the weapons' counts, the menu's headings and labels) keep the face's own spacing, not the wider spacing a page gave
+  them; the heads-up display's take theirs (`Text.tracking`).
+- The Anima's edge frame is drawn with the fight's display, under the game's own windows; on a page it stood over
+  everything.
 - The fight's display tells a screen reader nothing: its labels (each vital, status, ability and weapon) wait on the
   interface speaking what is not focused.
-- The company on the heads-up display is drawn under the HUD's elements, so the veil, still an element, hides it while
-  the player travels, until the veil is drawn too.
 - The drawn menu is not doubled past 1440p: the interface draws at one scale, so the menu there stands at 1280 by
-  720's sizes rather than twice them. Words keep the face's one letter spacing, so the sheet's wide capitals (headings,
-  labels) are as tightly spaced as other words. A tile's soft glow and a card's drop shadow are drawn as hard light
-  and no shadow; a charging picture quivers but does not brighten. A word's soft shade past its hard outline is not
-  drawn, as a blur has no crisp form.
+  720's sizes rather than twice them. A tile's soft glow and a card's drop shadow are drawn as hard light and no
+  shadow; a charging picture quivers but does not brighten.
 - A cutscene's blur is still a filter on the canvas, which would blur what the game draws over it too. It moves into
   the scene's own drawing with the cinema's screen.
-- A screen reader hears a toast, a press's label as the keys reach it, the menu's answers and what is gained only in
-  Chromium (`ariaNotify`), and nothing else the game draws.
+- A screen reader hears what the game draws only in Chromium (`ariaNotify`): a toast, a new task, a broadside run out
+  at her, the prompt for E, the menu's answers, what is gained, and each press's label as focus reaches it.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not

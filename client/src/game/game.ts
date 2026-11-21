@@ -46,7 +46,8 @@ import { StoryHost } from './prologue/host.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { installInterfaceSounds } from './uiSounds.ts';
 import { Stack } from '../ui/stack.ts';
-import { DrawnInterface } from './drawnInterface.ts';
+import type { Interface } from '../ui/ui.ts';
+import { DrawnInterface, speakingIn } from './drawnInterface.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -66,8 +67,15 @@ const CHART_EVERY_S = 1;
 export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement): Promise<void> {
   /** The interface's layers, each part of it drawn over the whole view. */
   const stack = new Stack();
-  const hud = new Hud(hudRoot);
-  stack.add(() => hud.node());
+  const hud = new Hud();
+  /** The interface as it last drew, for what keeps clear of where it laid the HUD. */
+  let drawnBy: Interface | null = null;
+  stack.add((ui) => {
+    drawnBy = ui;
+    return hud.node(ui);
+  });
+  // The HUD gives way to the fight's display and the dialogue box while they hold the screen.
+  hud.onBesides(() => ({ ...footView.shown, speaking: speakingIn(hudRoot) }));
   // The first tap or key wakes the sound, so the story's intro begins heard.
   installInterfaceSounds(hudRoot);
   const asked = new URLSearchParams(location.search).get('at');
@@ -136,8 +144,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // Under `npm run dev` only, `?spawn=` asks a room in the page for foes to fight.
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
+    usePrompt: hud.usePrompt,
   };
-  const footView = new FootView(gpu, stack, forge, () => [hud.hintList.getBoundingClientRect()]);
+  // The fight's display keeps clear of the HUD's hints, where the interface last laid them.
+  const footView = new FootView(gpu, stack, forge, () => {
+    const box = drawnBy && hud.hintsBox(drawnBy);
+    return box ? [box] : [];
+  });
   const music = new MusicDirector();
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
@@ -390,6 +403,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   });
   seaPointer(canvas, input, {
     atSea: () => flow.mode === 'sea' && !flow.menu,
+    overInterface: () => ui.takesPointer,
     sea: () => sea,
     map: () => helmMap.held,
   });

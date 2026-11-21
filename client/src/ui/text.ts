@@ -15,8 +15,9 @@ const WORDS_PX = 11;
 export const lineHeight = (size: number): number => Math.round((WORDS_PX * size * 1200) / 1000);
 export const baselineOf = (size: number): number => Math.round((WORDS_PX * size * 920) / 1000);
 
-/** A letter's spacing and a word's, in units, at `size`, each rounded up as the pages' sheet rounds it. */
-export const letterSpacing = (size: number): number => Math.ceil((WORDS_PX * size) / 22);
+/** A letter's spacing and a word's, in units, at `size`, each rounded up as the pages' sheet rounds it; a letter's is
+ *  `tracking` 22nds of the size, 1 unless said, as a sheet's `calc(3em / 22)` widens a label's. */
+export const letterSpacing = (size: number, tracking = 1): number => Math.ceil((WORDS_PX * size * tracking) / 22);
 export const wordSpacing = (size: number): number => Math.ceil((3 * WORDS_PX * size) / 110);
 
 /** What stands in for a glyph the face does not hold. */
@@ -32,7 +33,12 @@ export interface Laid {
 }
 
 /** A line of words at `size`: its glyphs, and its width in units from its first pen to its last. */
-export function layLine(face: Face, words: string, size: number): { readonly width: number; readonly glyphs: Laid[] } {
+export function layLine(
+  face: Face,
+  words: string,
+  size: number,
+  tracking = 1,
+): { readonly width: number; readonly glyphs: Laid[] } {
   const glyphs: Laid[] = [];
   const scale = (WORDS_PX * size) / 1000;
   const baseline = baselineOf(size);
@@ -49,23 +55,24 @@ export function layLine(face: Face, words: string, size: number): { readonly wid
       const y = baseline - (glyph.bottom + glyph.height) * size;
       glyphs.push({ glyph, x, y, index });
     }
-    pen += glyph.advance * scale + letterSpacing(size) + (char === ' ' ? wordSpacing(size) : 0);
+    pen += glyph.advance * scale + letterSpacing(size, tracking) + (char === ' ' ? wordSpacing(size) : 0);
   }
   // The sheet's spacing follows every letter, the last too, as a browser's does.
   return { width: Math.ceil(pen), glyphs };
 }
 
-/** The width of `words` at `size`, in units. */
-export const widthOf = (face: Face, words: string, size: number): number => layLine(face, words, size).width;
+/** The width of `words` at `size` and `tracking`, in units. */
+export const widthOf = (face: Face, words: string, size: number, tracking = 1): number =>
+  layLine(face, words, size, tracking).width;
 
 /** `words` broken at spaces into lines no wider than `width` units at `size`: a word wider than the width stands
  *  alone on its line, never broken. */
-export function wrapped(face: Face, words: string, size: number, width: number): string[] {
+export function wrapped(face: Face, words: string, size: number, width: number, tracking = 1): string[] {
   const lines: string[] = [];
   let line = '';
   for (const word of words.split(' ')) {
     const tried = line ? `${line} ${word}` : word;
-    if (line && widthOf(face, tried, size) > width) {
+    if (line && widthOf(face, tried, size, tracking) > width) {
       lines.push(line);
       line = word;
     } else line = tried;

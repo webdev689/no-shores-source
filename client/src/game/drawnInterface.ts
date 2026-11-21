@@ -9,6 +9,12 @@ import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { drawnPress, drawnReach } from './uiSounds.ts';
 
+/** Whether the dialogue box under `root` holds the screen, which the drawn display gives way to.
+ *  shortcut: read from the page while the dialogue box is still an element; it goes once the box is drawn. */
+export function speakingIn(root: ParentNode): boolean {
+  return root.querySelector(':scope > .speech-box:not([hidden])') !== null;
+}
+
 export class DrawnInterface {
   private ui: Interface | null = null;
   private readonly canvas: HTMLCanvasElement;
@@ -29,9 +35,11 @@ export class DrawnInterface {
     return Boolean(this.ui?.typing);
   }
 
-  /** Whether the pointer is over it, so a click is not the world's. */
+  /** Whether the pointer is over it now, so a click is not the world's: where the page last heard the pointer, as the
+   *  click is heard before the interface's next frame takes it. */
   get takesPointer(): boolean {
-    return Boolean(this.ui?.takesPointer);
+    const pointer = this.events.pointer;
+    return Boolean(pointer && this.ui?.takes(pointer.x, pointer.y));
   }
 
   /** Hears the events since the last frame, `seconds` ago; with the pointer `free` it can be pressed, and with `keys`

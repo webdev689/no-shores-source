@@ -64,6 +64,7 @@ const takes = (node: Node) =>
     node.text ||
     node.scroll,
   );
+/** Whether the pointer passes through `laid`: it, or what holds it, lets it through. */
 const acts = (node: Node) => Boolean((node.press || node.field || node.focusable) && !node.disabled && node.id);
 const inside = (box: Box, x: number, y: number) =>
   x >= box.x && y >= box.y && x < box.x + box.width && y < box.y + box.height;
@@ -137,6 +138,11 @@ export class Interface {
     const over = free && this.pointer ? this.targetAt(this.pointer.x, this.pointer.y) : null;
     this.hover = over?.node.id ?? null;
     if (this.hover && this.hover !== before) this.reach = true;
+  }
+
+  /** The view this frame, CSS pixels: what a component lays itself against where the room it has is the view's. */
+  get size(): { readonly width: number; readonly height: number } {
+    return this.view;
   }
 
   /** Whether anything was pressed this frame, for its sound. */
@@ -251,6 +257,12 @@ export class Interface {
   /** Whether the pointer is over the interface, so a click there is not the world's. */
   get takesPointer(): boolean {
     return this.pointer !== null && this.hitAt(this.pointer.x, this.pointer.y) !== null;
+  }
+
+  /** Whether the interface as it was last laid takes the pointer at `x`, `y` (CSS pixels): asked by a page's own
+   *  handler, which hears a click before the interface's next frame does. */
+  takes(x: number, y: number): boolean {
+    return this.hitAt(x, y) !== null;
   }
 
   /** Whether the wheel turned over the interface this frame. */

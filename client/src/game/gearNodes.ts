@@ -82,10 +82,10 @@ export function edges(
   alpha = 1,
 ): Drawing {
   const [top, right, bottom, left] = typeof depth === 'number' ? [depth, depth, depth, depth] : depth;
-  return (ui, box, scale, clip) => {
+  return (ui, box, scale, clip, shown) => {
     const tone = (css: string) => {
       const [red, green, blue, opacity] = colourOf(css);
-      return [red, green, blue, opacity * alpha] as const;
+      return [red, green, blue, opacity * alpha * shown] as const;
     };
     const { x, y, width, height } = box;
     if (ring) {

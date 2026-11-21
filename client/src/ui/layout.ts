@@ -67,13 +67,18 @@ function linesOf(face: Face, item: Item, width: number | null): Span[][] {
   const text = item.node.text;
   if (!text) return [];
   const size = text.size ?? 1;
+  const tracking = text.tracking ?? 1;
   const { text: all, colours } = flat(text.words, text.colour);
   const chars = [...all];
   const lines: Span[][] = [];
   let next = 0;
   for (const paragraph of all.split('\n')) {
     const broken =
-      width === null || text.wrap === false || text.ellipsis ? [paragraph] : wrapped(face, paragraph, size, width);
+      width === null || text.wrap === false || text.ellipsis
+        ? [paragraph]
+        : text.balance
+          ? balanced(face, paragraph, size, width, tracking)
+          : wrapped(face, paragraph, size, width, tracking);
     for (const line of broken) {
       const spans: Span[] = [];
       for (const char of line) {
@@ -83,7 +88,7 @@ function linesOf(face: Face, item: Item, width: number | null): Span[][] {
         else spans.push({ words: char, colour });
         next += 1;
       }
-      lines.push(width !== null && text.ellipsis ? cut(face, spans, size, width) : spans);
+      lines.push(width !== null && text.ellipsis ? cut(face, spans, size, width, tracking) : spans);
       // The space a break took, or the paragraph's newline.
       if (chars[next] === ' ' || chars[next] === '\n') next += 1;
     }
@@ -93,13 +98,27 @@ function linesOf(face: Face, item: Item, width: number | null): Span[][] {
 
 const lineWords = (line: readonly Span[]) => line.map((span) => span.words).join('');
 
+/** `words` wrapped to `width` in as many lines as they need there, each line as even as can be: the narrowest width
+ *  that keeps that many lines. */
+function balanced(face: Face, words: string, size: number, width: number, tracking: number): string[] {
+  const most = wrapped(face, words, size, width, tracking);
+  if (most.length < 2) return most;
+  let [low, high] = [0, width];
+  while (high - low > 1) {
+    const middle = Math.floor((low + high) / 2);
+    if (wrapped(face, words, size, middle, tracking).length > most.length) low = middle;
+    else high = middle;
+  }
+  return wrapped(face, words, size, high, tracking);
+}
+
 const ELLIPSIS = '...';
 
 /** `line` cut short with an ellipsis to fit `width` units, its colours kept; whole when it fits. */
-function cut(face: Face, line: Span[], size: number, width: number): Span[] {
-  if (widthOf(face, lineWords(line), size) <= width) return line;
+function cut(face: Face, line: Span[], size: number, width: number, tracking: number): Span[] {
+  if (widthOf(face, lineWords(line), size, tracking) <= width) return line;
   const chars = line.flatMap((span) => Array.from(span.words, (char) => ({ char, colour: span.colour })));
-  while (chars.length > 0 && widthOf(face, chars.map((each) => each.char).join('') + ELLIPSIS, size) > width)
+  while (chars.length > 0 && widthOf(face, chars.map((each) => each.char).join('') + ELLIPSIS, size, tracking) > width)
     chars.pop();
   const kept: Span[] = [];
   for (const { char, colour } of [
@@ -122,13 +141,17 @@ function fitWidths(face: Face, item: Item): void {
   let least = 0;
   if (node.text) {
     const size = node.text.size ?? 1;
+    const tracking = node.text.tracking ?? 1;
     const lines = linesOf(face, item, null);
-    fit = Math.max(0, ...lines.map((line) => widthOf(face, lineWords(line), size)));
+    fit = Math.max(0, ...lines.map((line) => widthOf(face, lineWords(line), size, tracking)));
     least = node.text.ellipsis
-      ? widthOf(face, ELLIPSIS, size)
+      ? widthOf(face, ELLIPSIS, size, tracking)
       : node.text.wrap === false
         ? fit
-        : Math.max(0, ...lines.flatMap((line) => lineWords(line).split(' ')).map((word) => widthOf(face, word, size)));
+        : Math.max(
+            0,
+            ...lines.flatMap((line) => lineWords(line).split(' ')).map((word) => widthOf(face, word, size, tracking)),
+          );
   } else if (node.picture?.pixel && node.width === undefined) {
     fit = least = node.picture.pixel.width;
   } else {

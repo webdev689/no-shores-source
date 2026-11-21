@@ -169,3 +169,20 @@ test('words kept to one line are cut short with an ellipsis where they do not fi
   const roomy = lay({ children: [{ id: 'name', text: { words: 'abc', ellipsis: true } }] });
   assert.equal(roomy.find((each) => each.node.id === 'name')?.lines[0]?.[0]?.words, 'abc');
 });
+
+test('a label tracked wider takes a wider box, each letter its extra spacing', () => {
+  const plain = boxOf(lay({ children: [{ id: 'words', text: { words: 'ABCD' } }] }), 'words');
+  const tracked = boxOf(lay({ children: [{ id: 'words', text: { words: 'ABCD', tracking: 3 } }] }), 'words');
+  assert.equal((tracked?.width ?? 0) - (plain?.width ?? 0), 4 * 1, 'a pixel more after each of the four letters');
+});
+
+test('balanced words break into as many lines as they need, each as even as can be', () => {
+  const words = 'aa bb cc dd ee';
+  const room = widthOf(face, 'aa bb cc dd', 1) + 1;
+  const lines = (balance: boolean) =>
+    lay({ width: room, children: [{ id: 'words', width: 'grow', text: { words, balance } }] })
+      .find((each) => each.node.id === 'words')
+      ?.lines.map((line) => line.map((span) => span.words).join(''));
+  assert.deepEqual(lines(false), ['aa bb cc dd', 'ee']);
+  assert.deepEqual(lines(true), ['aa bb cc', 'dd ee']);
+});

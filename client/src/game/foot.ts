@@ -45,7 +45,7 @@ import { type Rect, windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
 import { chime, worldOutput } from './uiSounds.ts';
-import { UsePrompt } from './usePrompt.ts';
+import type { UsePrompt } from './usePrompt.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
@@ -62,6 +62,8 @@ export interface FootContext {
   readonly groundAt: (x: number, y: number) => number | null;
   readonly foesAsked: readonly FoeAsk[];
   readonly session: () => Promise<string | null>;
+  /** What E does where the player stands, drawn low in the middle of the view. */
+  readonly usePrompt: UsePrompt;
 }
 
 /** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
@@ -166,7 +168,7 @@ export class Foot {
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
   readonly folk: Placed[];
-  private readonly prompt: UsePrompt | null;
+  private readonly prompt: UsePrompt;
   private using: Use | null = null;
 
   private constructor(
@@ -186,8 +188,7 @@ export class Foot {
     [this.otherPlayers, this.gearHeld, this.folk] = [people.otherPlayers, people.gear, people.folk];
     this.foes = new FoeFigures(parts.roster);
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
-    const hud = document.querySelector<HTMLElement>('#hud');
-    this.prompt = hud ? new UsePrompt(hud) : null;
+    this.prompt = context.usePrompt;
     const floor = (x: number, y: number) => context.movement.standing(x, y).z;
     const placing: Others = {
       place: (dress, x, y, facing) => {
@@ -445,7 +446,7 @@ export class Foot {
     const gear = this.gear;
     const { x, y } = walker.player.body;
     this.using = able ? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked)) : null;
-    this.prompt?.show(this.using?.words ?? null);
+    this.prompt.show(this.using?.words ?? null);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
       if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
@@ -565,7 +566,7 @@ export class Foot {
     if (this.link instanceof RoomConnection) this.link.close();
     this.otherPlayers.clear();
     this.plaza?.close();
-    this.prompt?.remove();
+    this.prompt.show(null);
     // An Anima's edge frame cast just before leaving must not stay over the next place.
     showAnimaEdge(QUIET);
   }

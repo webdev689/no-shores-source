@@ -193,18 +193,28 @@ test('a node’s age counts from when it was first laid, and starts again once i
   assert.equal(ui.age('toast'), 0);
 });
 
-test('a node that lets the pointer through takes no hit, nor do its children, so a click there is the world’s', () => {
+test('the view’s size is answered in CSS pixels, as the frame was given it at its scale', () => {
+  const ui = new Interface(renderer());
+  ui.frame({ width: 800, height: 600, scale: 2 }, [], 1 / 60);
+  assert.deepEqual(ui.size, { width: 400, height: 300 });
+});
+
+test('words laid over the world let the pointer through, and all they hold, so a click there is the world’s', () => {
   const ui = new Interface(renderer());
   const root: Node = {
-    through: true,
-    children: [{ fill: '#fff', width: 50, height: 50, children: [{ text: { words: 'Hi' } }] }],
+    width: 'grow',
+    height: 'grow',
+    children: [
+      { width: 100, height: 40, through: true, children: [{ id: 'held', press: true, width: 40, height: 20 }] },
+      { text: { words: 'over the world' }, through: true },
+    ],
   };
   step(ui, root, [{ kind: 'pointer', x: 10, y: 10 }]);
-  ui.frame(VIEW, [], 1 / 60);
+  step(ui, root, [{ kind: 'pointer', x: 10, y: 10 }]);
   assert.equal(ui.takesPointer, false);
-  step(ui, { children: [{ fill: '#fff', width: 50, height: 50 }] });
-  ui.frame(VIEW, [], 1 / 60);
-  assert.equal(ui.takesPointer, true);
+  assert.equal(ui.hovered('held'), false);
+  step(ui, root, [{ kind: 'pointer', x: 110, y: 5 }]);
+  assert.equal(ui.takesPointer, false, 'the words too');
 });
 
 test('words drawn with a wider edge stand their halo that many pixels out all round, one unless said', () => {
@@ -263,4 +273,11 @@ test('the pointer is where it last moved while free, and nowhere once it leaves 
   assert.equal(ui.pointerAt, null);
   step(ui, presses(), [{ kind: 'pointer', x: 12, y: 30 }], false);
   assert.equal(ui.pointerAt, null);
+});
+
+test('the interface as last laid answers whether it takes the pointer at a point, for a click heard before a frame', () => {
+  const ui = new Interface(renderer());
+  step(ui, presses());
+  assert.equal(ui.takes(15, 15), true, 'on a press');
+  assert.equal(ui.takes(300, 250), false, 'the empty view is the world’s');
 });

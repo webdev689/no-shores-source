@@ -42,6 +42,8 @@ type EditingCanvas = HTMLCanvasElement & { editContext: EditContextLike | null }
 export class CanvasEvents {
   private readonly canvas: EditingCanvas;
   private events: UiEvent[] = [];
+  /** Where the pointer is on the canvas now, CSS pixels, as its last event put it; null off it or locked. */
+  pointer: { readonly x: number; readonly y: number } | null = null;
   private readonly context: EditContextLike | null;
   private typing: Typing | null = null;
   private readonly padHeld = new Map<PadButton, number>();
@@ -58,16 +60,33 @@ export class CanvasEvents {
       return { x: event.clientX - rect.left, y: event.clientY - rect.top };
     };
     const locked = () => document.pointerLockElement === canvas;
-    canvas.addEventListener('pointermove', (event) => {
-      if (!locked()) this.events.push({ kind: 'pointer', ...placed(event) });
+    // Heard as the pointer goes down to the canvas, before the world's own handlers there, which may stop it.
+    const first = { capture: true };
+    canvas.addEventListener(
+      'pointermove',
+      (event) => {
+        if (!locked()) this.events.push({ kind: 'pointer', ...(this.pointer = placed(event)) });
+      },
+      first,
+    );
+    canvas.addEventListener('pointerleave', () => {
+      this.pointer = null;
+      this.events.push({ kind: 'leave' });
     });
-    canvas.addEventListener('pointerleave', () => this.events.push({ kind: 'leave' }));
-    canvas.addEventListener('pointerdown', (event) => {
-      if (!locked()) this.events.push({ kind: 'down', ...placed(event), button: event.button });
-    });
-    addEventListener('pointerup', (event) => {
-      if (!locked()) this.events.push({ kind: 'up', ...placed(event), button: event.button });
-    });
+    canvas.addEventListener(
+      'pointerdown',
+      (event) => {
+        if (!locked()) this.events.push({ kind: 'down', ...(this.pointer = placed(event)), button: event.button });
+      },
+      first,
+    );
+    addEventListener(
+      'pointerup',
+      (event) => {
+        if (!locked()) this.events.push({ kind: 'up', ...placed(event), button: event.button });
+      },
+      first,
+    );
     canvas.addEventListener('wheel', (event) => {
       if (!locked()) this.events.push({ kind: 'wheel', ...placed(event), dy: event.deltaY });
     });

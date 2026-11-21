@@ -35,6 +35,10 @@ export interface Text {
   readonly wrap?: boolean;
   /** Kept to one line, cut short with '...' where it does not fit, as CSS's `text-overflow: ellipsis`. */
   readonly ellipsis?: boolean;
+  /** A letter's spacing in 22nds of the size, 1 unless said, as a sheet's `letter-spacing: calc(3em / 22)` writes 3. */
+  readonly tracking?: number;
+  /** Wrapped lines are evened in length, as CSS's `text-wrap: balance` evens them. */
+  readonly balance?: boolean;
   readonly align?: Align;
 }
 
@@ -129,8 +133,8 @@ export interface Node {
   readonly keys?: readonly string[];
   /** Takes the pointer even with nothing to press, so a click on it does not fall through to the world. */
   readonly solid?: boolean;
-  /** Lets the pointer through to what lies under it, its children too, as CSS's `pointer-events: none`: a display
-   *  over the world that a click must pass. */
+  /** Lets the pointer through, it and all it holds, to what lies under it, as words laid over the world do: nothing
+   *  in it is pressed, hovered or scrolled. */
   readonly through?: boolean;
   readonly draw?: Drawing;
 }

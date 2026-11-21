@@ -95,3 +95,27 @@ test('a rival not fighting her is no ship of hers to beat, nor her broadside a w
   const readout = readoutOf(view([captain('afloat'), rival]), 'Brig', []);
   assert.deepEqual([readout.left, readout.men, readout.ship.broadside], [1, 12, false]);
 });
+
+test('her panel stands at the bottom left, the broadside’s warning only while one is run out, its bars easing', async () => {
+  const { FightPanel } = await import('./seaPanel.ts');
+  const panel = new FightPanel();
+  const ship = {
+    name: 'Your Sloop',
+    hull: [50, 100],
+    sails: [80, 80],
+    crew: [20, 20],
+    guns: ['Ready', '3.4 s'],
+    shot: 'Round shot',
+    braced: false,
+    broadside: false,
+  } as const;
+  assert.equal(panel.shown, false);
+  panel.show(ship, 0);
+  const said = (now: number, still = false) => JSON.stringify(panel.node({ width: 1280, height: 720 }, now, still));
+  assert.ok(!said(0).includes('BROADSIDE') && !said(0).includes('Braced'));
+  assert.ok(said(0).includes('"50%"'), 'the hull half full from the first');
+  panel.show({ ...ship, hull: [0, 100], broadside: true, braced: true }, 1);
+  assert.ok(said(1).includes('"50%"') && said(2).includes('"0%"'), 'eased to what she has now');
+  assert.ok(said(2).includes('BROADSIDE! BRACE') && said(2).includes('Braced'));
+  assert.equal(panel.node({ width: 800, height: 600 }, 2, true)?.float?.y, -262, 'over the dialogue box when narrow');
+});

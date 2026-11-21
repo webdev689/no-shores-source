@@ -1,33 +1,51 @@
 // What E does where the player stands, shown as Destiny shows it: a keycap and the deed, low in the middle of the view,
-// above the player's bars; gone when nothing is within reach.
+// above the player's bars; gone when nothing is within reach. The game draws it as a layer of its own.
+import { TONES } from '../plus/tones.ts';
+import { announce } from '../ui/announce.ts';
+import type { Node } from '../ui/node.ts';
+import { edges } from './hudParts.ts';
 
-import './usePrompt.css';
-import { make } from '../editor/dom.ts';
-import { ROLES } from '../plus/kit.ts';
+/** The keycap's brass bevel, its foot deeper. */
+const BRASS_KEY = {
+  top: [1, '#f3cf86'],
+  left: [1, '#f3cf86'],
+  right: [1, '#8a5f17'],
+  bottom: [3, '#8a5f17'],
+} as const;
 
 export class UsePrompt {
-  private readonly shown: HTMLElement;
-  private readonly words: HTMLElement;
   private said: string | null = null;
 
-  constructor(root: HTMLElement) {
-    this.shown = make('div', '', `use-prompt ${ROLES.chip}`);
-    this.shown.setAttribute('role', 'status');
-    this.words = make('span', '', 'use-prompt-words');
-    this.shown.append(make('kbd', 'E', 'use-prompt-key'), this.words);
-    this.shown.hidden = true;
-    root.append(this.shown);
-  }
-
-  /** Shows the deed within reach, or nothing; the page is touched only when it changes. */
+  /** Shows the deed within reach, or nothing; a new deed is told aloud, as a status is. */
   show(deed: string | null): void {
     if (deed === this.said) return;
     this.said = deed;
-    this.shown.hidden = deed === null;
-    this.words.textContent = deed ?? '';
+    if (deed !== null) announce(deed);
   }
 
-  remove(): void {
-    this.shown.remove();
+  /** The prompt in a view `width` by `height` CSS pixels, standing taller where the fight's display takes its larger
+   *  step; none while nothing is within reach. */
+  node(view: { readonly width: number; readonly height: number }): Node | null {
+    if (this.said === null) return null;
+    const big = view.width >= 1500 && view.height >= 900;
+    return {
+      role: 'chip',
+      through: true,
+      gap: 10,
+      alignY: 'center',
+      padding: [8, 16, 8, 10],
+      float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 },
+      children: [
+        {
+          minWidth: 36,
+          padding: [2, 7, 4, 7],
+          fill: 'rgba(192,138,62,0.15)',
+          alignX: 'center',
+          draw: edges(BRASS_KEY),
+          children: [{ text: { words: 'E', colour: TONES.brassHi, wrap: false } }],
+        },
+        { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
+      ],
+    };
   }
 }

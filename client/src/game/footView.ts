@@ -1,7 +1,7 @@
 import { FEEL } from '../combat/attackFeel.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import { Hud } from '../combat/hud.ts';
-import type { Box } from '../combat/hitWords.ts';
+import type { Box as Laid } from '../ui/quads.ts';
 import { abilityPictures } from './artsCards.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
@@ -42,18 +42,13 @@ export class FootView {
   private blood: { readonly foot: FootShown; readonly drawn: FightBlood; readonly origin: Point } | null = null;
 
   /** The display is a layer of `stack` under the game's own; `beside` answers where the game's own pieces over the
-   *  view stand (its hints, CSS pixels), which the fight's display keeps clear of. */
-  constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: () => readonly Box[] = () => []) {
+   *  view stand (its hints, in the interface's pixels), which the fight's display keeps clear of. */
+  constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: () => readonly Laid[] = () => []) {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
     this.swings = new SwingView(gpu);
-    // The page's pieces stand in its CSS pixels; the drawn interface lays out in pixels of its own whole scale.
-    const toDrawn = () => devicePixelRatio / uiScale(devicePixelRatio);
     this.hud = new Hud(abilityPictures, forge, () =>
-      beside().map((box) => {
-        const step = toDrawn();
-        return { left: box.left * step, top: box.top * step, right: box.right * step, bottom: box.bottom * step };
-      }),
+      beside().map((box) => ({ left: box.x, top: box.y, right: box.x + box.width, bottom: box.y + box.height })),
     );
     stack.under((ui) => (this.showing ? this.hud.node(ui) : null));
   }
