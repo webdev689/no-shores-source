@@ -1,6 +1,5 @@
 import type { Gpu } from '../gpu.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { LandSheet } from '../heldmap/landSheet.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Placed } from '../player/figures.ts';
 import { Input } from '../player/input.ts';
@@ -38,7 +37,7 @@ import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
 import { landSheetOf } from './landMap.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
-import { startGearWindow } from './gearWindow.ts';
+import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { nodeOfRoom, seaRoomName } from './rooms.ts';
 import { Sea } from './sea.ts';
@@ -201,6 +200,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     playing.foot?.leave();
     playing.foot = null;
     playing.sea?.leaveRoom();
+    // The held map's coasts are worked out behind the veil, not on its first raising on land.
+    void playing.helmMap.made;
     playing.foot = await Foot.enter(footContext, node, facing, seas);
     // The rain stops under whatever a body meets overhead there: a roof, a ceiling, an arch.
     scene.sky.shelterUnder(playing.foot.boxes);
@@ -423,24 +424,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     }
   };
 
-  /** The held map's sheet of the land a node stands on, worked out once a node: an island's relief read off the ground
-   *  drawn, the continent's off its landmass. */
-  let sheet: { readonly id: string; readonly sheet: LandSheet } | null = null;
-  const sheetOf = (node: NodeInfo): LandSheet => {
-    const heightAt = node.id.startsWith('isle-')
-      ? (x: number, y: number) => scene.groundAt(x, y)
-      : playing.landmass.heightAt;
-    if (sheet?.id !== node.id) sheet = { id: node.id, sheet: landSheetOf(node, playing.landmass, heightAt) };
-    return sheet.sheet;
-  };
-
   /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
    *  pointer let go to pan it. */
   const openMap = () => {
     const { flow, sea, foot } = playing;
     if (flow.mode === 'sea' && !flow.menu && sea) playing.helmMap.open(sea);
-    else if (flow.mode === 'foot' && !flow.menu && foot && !foot.fallen) {
-      playing.helmMap.openLand(sheetOf(foot.node));
+    else if (flow.mode === 'foot' && !flow.menu && !gearScreenOpen() && foot && !foot.fallen) {
+      // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
+      // player): the ground drawn by then is the truest.
+      playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));
       document.exitPointerLock();
     }
   };

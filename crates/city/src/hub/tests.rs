@@ -246,4 +246,10 @@ fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
     for area in &social.areas {
         assert!(inside(area.at), "{} at {:?} stands in the hub", area.name, area.at);
     }
+    // Each where its name puts it: the West Court west of the Watch Court and the Forge Yard east of it; from the quay
+    // inland, the Seaward Walk, the Watch Court, the Beacon Walk and the Hall of the Arts.
+    let at = |name: &str| social.areas.iter().find(|area| area.name == name).expect("named").at;
+    assert!(at("West Court")[0] < at("Watch Court")[0] && at("Watch Court")[0] < at("Forge Yard")[0]);
+    let inland = ["Quay", "Seaward Walk", "Watch Court", "Beacon Walk", "Hall of the Arts"].map(|name| at(name)[1]);
+    assert!(inland.windows(2).all(|pair| pair[0] < pair[1]), "{inland:?}");
 }

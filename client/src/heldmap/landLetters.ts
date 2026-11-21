@@ -1,55 +1,70 @@
-// The land sheet (landSheet.ts) painted onto the parchment's picture in the map's own inks, as the waters are lettered
-// at sea (mapLetters.ts): the ground's relief and shore, the plan's floors, walks, paths and what stands, the edge
-// walked, the marks and the places by name, the player's arrow, the land's name and a key of its marks.
+// The land sheet (landSheet.ts) painted onto the parchment's picture in the map's own inks and washes, as the waters
+// are lettered at sea (mapLetters.ts): the sea washed and the shore inked, the ground's relief, the plan's grounds
+// hand-coloured, its walks, paths, what stands with its shadow, its trees and bushes, the edge walked; the places by
+// name; every mark as its glyph; the player's arrow; and the table that says what each glyph is (landTable.ts).
+import { PATH_WIDTH_M } from '../layout/layouts.ts';
 import type { Point2 } from '../overworld/ground.ts';
-import type { View } from './heldMapLaw.ts';
-import { FACE, INK } from './mapKey.ts';
-import { PORT_PX, WORD_PX } from './mapLayout.ts';
-import { LIGHT_INK, paintArrow, type Painter, ROUTE, word } from './mapLetters.ts';
-import type { LandMarkKind, LandSheet, Quad } from './landSheet.ts';
+import type { Rect, View } from './heldMapLaw.ts';
+import { GLYPH_HALF, paintGlyph } from './landGlyphs.ts';
+import type { GroundKind, LandSheet, Quad } from './landSheet.ts';
+import { barOf, paintTable, tablePlace, tableRows, tableSize } from './landTable.ts';
+import { FACE, INK, type KeyPlace } from './mapKey.ts';
+import { PORT_PX } from './mapLayout.ts';
+import { LIGHT_INK, paintArrow, type Painter, word } from './mapLetters.ts';
 
 /** What a painting of the land asks: the sheet, the view of it (its metres), the map's size, how many times over its
- *  words and marks are drawn (`letterScale`), and the player's arrow where they stand and face, the sheet's metres. */
+ *  words and marks are drawn (`letterScale`), the gauntlets' cover over the map (ink pixels), where the table stood
+ *  last, and the player's arrow where they stand and face, the sheet's metres. */
 export interface LandPainting {
   readonly sheet: LandSheet;
   readonly view: View;
   readonly ink: { readonly width: number; readonly height: number };
   readonly scale: number;
+  readonly covers: readonly Rect[];
+  readonly table: KeyPlace | null;
   readonly player: { readonly at: Point2; readonly heading: number } | null;
 }
 
-/** The inks of the plan: its floors faint, its walks a shade more, what stands on it near solid. */
-const FLOOR = 'rgba(58, 40, 22, 0.06)';
-const WALK = 'rgba(92, 70, 49, 0.24)';
-const STANDING = 'rgba(58, 40, 22, 0.72)';
-const PATH = 'rgba(92, 70, 49, 0.55)';
-const RELIEF = 'rgba(92, 70, 49, 0.32)';
-const KEY_FILL = 'rgba(238, 222, 190, 0.92)';
-/** A track's width and a footpath's, metres. */
-const PATH_M = { track: 4, footpath: 2 } as const;
-const TITLE_PX = 20;
-
-/** What the key calls each mark; a keeper's stall is named beside its mark instead. */
-export const MARK_WORDS: Readonly<Record<Exclude<LandMarkKind, 'vendor'>, string>> = {
-  landing: 'Landing',
-  gate: 'Gate',
-  event: 'Public event',
-  beacon: 'Beacon',
-  resource: 'Resource',
-  foes: 'Foes',
-  objective: 'Objective',
-  door: 'Sealed door',
+/** The washes and inks of the land, as a surveyor colours a plan: the sea, each ground, the walks, what stands and
+ *  its shadow, the tracks' casing and their way, the footpaths, the relief and its index lines, the trees. */
+const SEA = 'rgba(96, 128, 140, 0.24)';
+const GROUNDS: Readonly<Record<GroundKind, string>> = {
+  paving: 'rgba(58, 40, 22, 0.07)',
+  lawn: 'rgba(104, 132, 64, 0.26)',
+  earth: 'rgba(150, 108, 58, 0.2)',
+  water: 'rgba(80, 122, 142, 0.38)',
 };
+const WALK = 'rgba(92, 70, 49, 0.26)';
+const STANDING = 'rgba(58, 40, 22, 0.78)';
+const SHADOW = 'rgba(58, 40, 22, 0.22)';
+const CASING = 'rgba(58, 40, 22, 0.6)';
+const TRACK = 'rgb(226, 206, 164)';
+const FOOTPATH = 'rgba(92, 70, 49, 0.6)';
+const RELIEF = 'rgba(92, 70, 49, 0.28)';
+const INDEX = 'rgba(92, 70, 49, 0.5)';
+const TREE = 'rgba(84, 112, 56, 0.6)';
+const RIVER = 'rgba(80, 122, 142, 0.55)';
+const LOW = 'rgba(58, 40, 22, 0.38)';
+const OVERHEAD = 'rgba(58, 40, 22, 0.55)';
+/** A tree's crown and a bush's, metres across, and the least, units. */
+const CROWN_M = { tree: 5, bush: 2.4 } as const;
+const LEAST_CROWN = 1.4;
+/** How far a place's name stands from its middle, units: under it, else over it. */
+const NAME_OFF = 12;
+
+const overlaps = (one: Rect, two: Rect) =>
+  one.x < two.x + two.width && two.x < one.x + one.width && one.y < two.y + two.height && two.y < one.y + one.height;
 
 /** Paints `painting` onto the parchment's picture: `inkAt` is where the map's top-left stands in it, and `dpr` its
- *  pixels a screen pixel. The picture is cleared first, and nothing is painted outside the map. */
+ *  pixels a screen pixel. The picture is cleared first, and nothing is painted outside the map. Answers where the
+ *  table stands, for the next painting to keep it there. */
 export function paintLand(
   painter: Painter,
   picture: { readonly width: number; readonly height: number },
   inkAt: { readonly x: number; readonly y: number },
   dpr: number,
   painting: LandPainting,
-): void {
+): KeyPlace {
   const { sheet, view, ink, scale, player } = painting;
   painter.setTransform(1, 0, 0, 1, 0, 0);
   painter.clearRect(0, 0, picture.width, picture.height);
@@ -61,11 +76,11 @@ export function paintLand(
   painter.textBaseline = 'middle';
   painter.lineJoin = 'round';
   const onMap = (point: Point2): Point2 => [(point[0] - view.left) * view.scale, (point[1] - view.top) * view.scale];
-  const trace = (points: readonly Point2[]) =>
+  const trace = (points: readonly Point2[], shift = 0) =>
     points.forEach((point, index) => {
       const [x, y] = onMap(point);
-      if (index === 0) painter.moveTo(x, y);
-      else painter.lineTo(x, y);
+      if (index === 0) painter.moveTo(x + shift, y + shift);
+      else painter.lineTo(x + shift, y + shift);
     });
   const lines = (segments: readonly (readonly Point2[])[], colour: string, width: number) => {
     painter.beginPath();
@@ -74,24 +89,61 @@ export function paintLand(
     painter.lineWidth = width;
     painter.stroke();
   };
-  const fills = (quads: readonly Quad[], colour: string) => {
+  const fills = (shapes: readonly (readonly Point2[])[], colour: string, shift = 0) => {
     painter.beginPath();
-    for (const quad of quads) {
-      trace(quad);
+    for (const shape of shapes) {
+      trace(shape, shift);
       painter.closePath();
     }
     painter.fillStyle = colour;
     painter.fill();
   };
-  lines(sheet.relief, RELIEF, 0.8 * scale);
-  lines(sheet.coast, INK, 1.6 * scale);
-  fills(sheet.floors, FLOOR);
-  fills(sheet.walks, WALK);
-  for (const tier of ['footpath', 'track'] as const) {
-    const laid = sheet.paths.filter((path) => path.track === (tier === 'track')).map((path) => path.points);
-    lines(laid, PATH, Math.max(1.2 * scale, PATH_M[tier] * view.scale));
+  fills(sheet.sea, SEA);
+  painter.strokeStyle = RIVER;
+  for (const river of sheet.rivers) {
+    painter.lineWidth = Math.max(1.2 * scale, river.width * view.scale);
+    painter.beginPath();
+    trace([river.from, river.to]);
+    painter.stroke();
   }
+  lines(sheet.relief, RELIEF, 0.7 * scale);
+  lines(sheet.index, INDEX, 1.1 * scale);
+  lines(sheet.coast, INK, 1.5 * scale);
+  for (const kind of Object.keys(GROUNDS) as GroundKind[]) {
+    const quads: Quad[] = sheet.grounds.filter((ground) => ground.kind === kind).map((ground) => ground.quad);
+    fills(quads, GROUNDS[kind]);
+  }
+  fills(sheet.walks, WALK);
+  const paths = (track: boolean) => sheet.paths.filter((path) => path.track === track).map((path) => path.points);
+  const trackWidth = Math.max(1.6 * scale, PATH_WIDTH_M.track * view.scale);
+  lines(paths(true), CASING, trackWidth + 1.4 * scale);
+  lines(paths(true), TRACK, trackWidth);
+  painter.setLineDash([3 * scale, 2 * scale]);
+  lines(paths(false), FOOTPATH, Math.max(1.1 * scale, PATH_WIDTH_M.footpath * view.scale * 0.6));
+  painter.setLineDash([]);
+  fills(sheet.low, LOW);
+  fills(sheet.standing, SHADOW, 1.4 * scale);
   fills(sheet.standing, STANDING);
+  // What stands overhead, walked under: its outline only, dashed, as a plan shows a roof or an arch above.
+  painter.setLineDash([2.5 * scale, 2 * scale]);
+  painter.beginPath();
+  for (const quad of sheet.overhead) {
+    trace(quad);
+    painter.closePath();
+  }
+  painter.strokeStyle = OVERHEAD;
+  painter.lineWidth = 0.8 * scale;
+  painter.stroke();
+  painter.setLineDash([]);
+  painter.beginPath();
+  for (const plant of sheet.plants) {
+    const [x, y] = onMap(plant.at);
+    const radius = Math.max(LEAST_CROWN * scale, ((plant.tree ? CROWN_M.tree : CROWN_M.bush) * view.scale) / 2);
+    painter.moveTo(x + radius, y);
+    painter.arc(x, y, radius, 0, 2 * Math.PI);
+  }
+  painter.fillStyle = TREE;
+  painter.fill();
   painter.setLineDash([4 * scale, 3 * scale]);
   lines([[...sheet.ring, ...sheet.ring.slice(0, 1)]], LIGHT_INK, scale);
   painter.setLineDash([]);
@@ -102,136 +154,32 @@ export function paintLand(
     draw();
     painter.restore();
   };
-  for (const mark of sheet.marks) local(onMap(mark.at), () => paintMark(painter, mark.kind));
-  // The places' names under their middles, clear of a mark standing there; then each keeper's beside their stall:
-  // each where it keeps clear of every name before it.
-  const taken: { x: number; y: number; width: number; height: number }[] = [];
+  // Every mark as its glyph; then each place's name under its middle, else over it, where it keeps clear of the
+  // glyphs, the names before it and the gauntlets; then the player's arrow over all, and the table.
+  const half = GLYPH_HALF * scale;
+  const taken: Rect[] = sheet.marks.map((mark) => {
+    const [x, y] = onMap(mark.at);
+    return { x: x - half, y: y - half, width: 2 * half, height: 2 * half };
+  });
+  for (const mark of sheet.marks) local(onMap(mark.at), () => paintGlyph(painter, mark.glyph));
   painter.font = `500 ${PORT_PX}px ${FACE}`;
   painter.textAlign = 'center';
   for (const place of sheet.places) {
     const [x, y] = onMap(place.at);
-    const [width, middle] = [painter.measureText(place.name).width * scale, y + 10 * scale];
-    const box = { x: x - width / 2, y: middle - PORT_PX * 0.6 * scale, width, height: PORT_PX * 1.2 * scale };
-    if (taken.some((other) => overlaps(box, other))) continue;
-    taken.push(box);
-    local([x, middle], () => word(painter, place.name, 0, 0, INK));
-  }
-  painter.font = `500 ${WORD_PX}px ${FACE}`;
-  painter.textAlign = 'left';
-  for (const mark of sheet.marks) {
-    if (!mark.name) continue;
-    const [x, y] = onMap(mark.at);
-    const width = painter.measureText(mark.name).width * scale;
-    const box = { x: x + 7 * scale, y: y - (WORD_PX / 2) * scale, width, height: WORD_PX * scale };
-    if (taken.some((other) => overlaps(box, other))) continue;
-    taken.push(box);
-    local([x, y], () => word(painter, mark.name ?? '', 7, 0, LIGHT_INK));
+    const [width, height] = [painter.measureText(place.name).width * scale, PORT_PX * 1.2 * scale];
+    const spot = [y + NAME_OFF * scale, y - NAME_OFF * scale]
+      .map((middle) => ({ middle, box: { x: x - width / 2, y: middle - height / 2, width, height } }))
+      .find(({ box }) => ![...taken, ...painting.covers].some((other) => overlaps(box, other)));
+    if (!spot) continue;
+    taken.push(spot.box);
+    local([x, spot.middle], () => word(painter, place.name, 0, 0, INK));
   }
   if (player) local(onMap(player.at), () => paintArrow(painter, player.heading));
-  painter.font = `500 ${TITLE_PX}px ${FACE}`;
-  painter.textAlign = 'center';
-  local([ink.width / 2, 16 * scale], () => word(painter, sheet.name, 0, 0, INK));
-  paintMarkKey(painter, sheet, ink, scale);
+  const rows = tableRows(sheet);
+  const size = tableSize(painter, sheet.name, rows);
+  const box = { width: size.width * scale, height: size.height * scale };
+  const place = tablePlace(ink, box, scale, taken, painting.covers, painting.table);
+  paintTable(painter, place, scale, { name: sheet.name, rows, bar: barOf(view, scale) });
   painter.restore();
-}
-
-const overlaps = (
-  one: { x: number; y: number; width: number; height: number },
-  two: { x: number; y: number; width: number; height: number },
-) => one.x < two.x + two.width && two.x < one.x + one.width && one.y < two.y + two.height && two.y < one.y + one.height;
-
-/** The key in the map's top-right corner: each kind of mark the sheet holds, its mark and what it is. */
-function paintMarkKey(painter: Painter, sheet: LandSheet, ink: { readonly width: number }, scale: number): void {
-  const kinds = (Object.keys(MARK_WORDS) as (keyof typeof MARK_WORDS)[]).filter((kind) =>
-    sheet.marks.some((mark) => mark.kind === kind),
-  );
-  if (kinds.length === 0) return;
-  painter.font = `500 ${WORD_PX}px ${FACE}`;
-  const widest = Math.max(...kinds.map((kind) => painter.measureText(MARK_WORDS[kind]).width));
-  const [width, height] = [widest + 34, kinds.length * 17 + 10];
-  painter.save();
-  painter.translate(ink.width - (width + 10) * scale, 10 * scale);
-  painter.scale(scale, scale);
-  painter.fillStyle = KEY_FILL;
-  painter.fillRect(0, 0, width, height);
-  painter.lineWidth = 1;
-  painter.strokeStyle = INK;
-  painter.strokeRect(0, 0, width, height);
-  painter.textAlign = 'left';
-  kinds.forEach((kind, index) => {
-    const y = 13 + index * 17;
-    painter.save();
-    painter.translate(13, y);
-    paintMark(painter, kind);
-    painter.restore();
-    painter.fillStyle = INK;
-    painter.fillText(MARK_WORDS[kind], 25, y);
-  });
-  painter.restore();
-}
-
-/** A mark at the origin, units: a stall's filled coin, a landing's chevron, a gate's arch, a public event's red-brown
- *  diamond, a beacon's flame, a resource's small ring, foes' cross, an objective's ringed dot, a sealed door. */
-export function paintMark(painter: Painter, kind: LandMarkKind): void {
-  painter.lineWidth = 1.4;
-  painter.strokeStyle = INK;
-  painter.fillStyle = INK;
-  painter.beginPath();
-  if (kind === 'vendor') {
-    painter.arc(0, 0, 3.5, 0, 2 * Math.PI);
-    painter.fill();
-  } else if (kind === 'landing') {
-    painter.moveTo(-4.5, -3);
-    painter.lineTo(0, 1.5);
-    painter.lineTo(4.5, -3);
-    painter.moveTo(-4.5, 1);
-    painter.lineTo(0, 5.5);
-    painter.lineTo(4.5, 1);
-    painter.stroke();
-  } else if (kind === 'gate') {
-    painter.moveTo(-3.5, 4);
-    painter.lineTo(-3.5, 0);
-    painter.arc(0, 0, 3.5, Math.PI, 0);
-    painter.lineTo(3.5, 4);
-    painter.stroke();
-  } else if (kind === 'event') {
-    painter.fillStyle = ROUTE;
-    painter.moveTo(0, -5.5);
-    painter.lineTo(5.5, 0);
-    painter.lineTo(0, 5.5);
-    painter.lineTo(-5.5, 0);
-    painter.closePath();
-    painter.fill();
-  } else if (kind === 'beacon') {
-    painter.moveTo(0, -5);
-    painter.lineTo(3.5, 3.5);
-    painter.lineTo(-3.5, 3.5);
-    painter.closePath();
-    painter.fill();
-  } else if (kind === 'resource') {
-    painter.strokeStyle = LIGHT_INK;
-    painter.arc(0, 0, 2.5, 0, 2 * Math.PI);
-    painter.stroke();
-  } else if (kind === 'foes') {
-    painter.strokeStyle = ROUTE;
-    painter.lineWidth = 1.8;
-    painter.moveTo(-3.5, -3.5);
-    painter.lineTo(3.5, 3.5);
-    painter.moveTo(3.5, -3.5);
-    painter.lineTo(-3.5, 3.5);
-    painter.stroke();
-  } else if (kind === 'objective') {
-    painter.strokeStyle = ROUTE;
-    painter.fillStyle = ROUTE;
-    painter.arc(0, 0, 4.5, 0, 2 * Math.PI);
-    painter.stroke();
-    painter.beginPath();
-    painter.arc(0, 0, 1.6, 0, 2 * Math.PI);
-    painter.fill();
-  } else {
-    painter.strokeRect(-3, -4, 6, 8);
-    painter.moveTo(0, -4);
-    painter.lineTo(0, 4);
-    painter.stroke();
-  }
+  return place;
 }

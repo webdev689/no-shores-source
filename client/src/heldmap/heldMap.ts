@@ -110,6 +110,8 @@ export class HeldMap {
   private readonly painter: CanvasRenderingContext2D;
   private readonly field: CoastField;
   private key: KeyPlace | null = null;
+  /** Where the land's table stood when last painted, so it keeps its corner while it can. */
+  private table: KeyPlace | null = null;
   /** The words' widths and the key's size as last measured, and the face's loading they were measured in. */
   private readonly widths = new Map<string, number>();
   private keySize: { width: number; height: number } | null = null;
@@ -203,6 +205,7 @@ export class HeldMap {
   ): void {
     if (this.phase.kind !== 'closed') return;
     [this.land, this.extent] = [sheet, { width: sheet.width, height: sheet.height, most: LAND_SCALE_MOST }];
+    this.table = null;
     this.raise(viewport, gauntlets, (ink) => viewOn(standing, ink, this.extent, LAND_SPAN_M));
   }
 
@@ -226,6 +229,13 @@ export class HeldMap {
     if (phase.kind === 'closed' || phase.kind === 'closing') return;
     const from = phase.kind === 'opening' ? raised(phase.t / OPEN_S) : 1;
     this.phase = { kind: 'closing', t: 0, from, sail };
+  }
+
+  /** Puts the map away at once, with no destination: where the player is taken from where it was raised. */
+  drop(): void {
+    this.phase = { kind: 'closed' };
+    this.press = null;
+    this.layer.hidden = true;
   }
 
   /** Reads the art for a set of gauntlets. Art that will not come lets the map go, and is asked for again the next
@@ -394,8 +404,9 @@ export class HeldMap {
         at: [scene.ship[0] - land.origin[0], scene.ship[1] - land.origin[1]] as const,
         heading: scene.heading,
       };
-      const painting = { sheet: land, view: this.mapView, ink: this.ink, scale: letterScale(this.ink), player };
-      paintLand(this.painter, this.lettering, inkAt, dpr, painting);
+      const [scale, covers] = [letterScale(this.ink), handsCover(sprite, this.ink)];
+      const painting = { sheet: land, view: this.mapView, ink: this.ink, scale, covers, table: this.table, player };
+      this.table = paintLand(this.painter, this.lettering, inkAt, dpr, painting);
     }
     return true;
   }

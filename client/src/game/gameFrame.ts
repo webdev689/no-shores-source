@@ -20,7 +20,7 @@ import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { gearScreenOpen } from './gearWindow.ts';
-import { HINTS } from './hints.ts';
+import { HINTS, withMapKey } from './hints.ts';
 import type { Hud } from './hud.ts';
 import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
@@ -173,6 +173,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         : undefined);
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
+    // The fight's crosshair, plates and compass give way to the map while it is up.
+    if (looking) footView.hide();
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
@@ -195,9 +197,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     // As E's other use, a gate takes no one while a menu is up or the player is down.
-    playing.through = paused || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
+    playing.through =
+      paused || looking || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    hud.hints(looking ? HINTS.landMap : shown.hints);
+    hud.hints(looking ? HINTS.landMap : withMapKey(shown.hints));
     hud.marks([]);
     hideSeaHud(hud);
     hud.note(here.roomNote);

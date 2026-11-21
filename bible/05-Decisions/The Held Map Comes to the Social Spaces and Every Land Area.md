@@ -24,6 +24,9 @@ The owner then showed Destiny 2's maps as references: the Tower's (the social sp
 areas named, each vendor marked where they stand, the landing marked) and the EDZ's (a patrol area's ground with its
 regions named, its landing zones, public events, lost sectors and the player's place marked).
 
+Seeing the first map of Overlook raised on land, the owner: "Do a comprehensive audit and a major detail pass. This
+needs to be perfect. Utilize icon glyphs and reduce text along with a table that guides the player with what is what"
+
 ## What it settles
 
 - **The held map** ([[Held Map]]), which today is raised only at the ship's helm
@@ -35,3 +38,5 @@ regions named, its landing zones, public events, lost sectors and the player's p
   its vendors and the like, as Destiny's maps show the Tower and a patrol area.
 - **A click on it does nothing**: on land it is only looked at.
 - **The world goes on while it is up**, as at the helm.
+- **On land the map speaks in icon glyphs, with less text**, and **a table guides the player through what each glyph
+  is**.

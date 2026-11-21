@@ -82,7 +82,7 @@ export class HelmMap {
 
   /** Whether the land's map is up or wanted on foot: the view is the player's eyes, and they stand still to look. */
   get looking(): boolean {
-    return this.onLand && this.busy;
+    return this.onLand && (this.shown || this.landWanted !== null);
   }
 
   /** The difficulty the last voyage set out at, once a map has set one. */
@@ -100,20 +100,21 @@ export class HelmMap {
   /** Raises the map of `sheet`, the land the player stands on, once the view is in their eyes. */
   openLand(sheet: LandSheet): void {
     if (this.shown) return;
-    this.landWanted = sheet;
-    this.onLand = true;
+    // The way down to a helm left behind at sea is let go.
+    [this.landWanted, this.onLand, this.wanted] = [sheet, true, false];
   }
 
-  /** A key pressed: the map's own while it is up (on land N lowers it as Escape does), and Escape turns back on the way
-   *  down before it is raised; answers whether the key was taken. */
+  /** A key pressed: the map's own while it is up (on land N lowers it as Escape does); Escape turns back on the way
+   *  down to the helm before it is raised, and on land Escape or N before it rises, every other key held meanwhile;
+   *  answers whether the key was taken. */
   key(key: string): boolean {
     if (this.map?.shown) {
       if (key === 'escape' || (key === 'n' && this.onLand)) this.map.escape();
       else if (key === 'enter') this.map.setSail();
       return true;
     }
-    if (this.landWanted && key === 'escape') {
-      this.landWanted = null;
+    if (this.landWanted) {
+      if (key === 'escape' || key === 'n') this.landWanted = null;
       return true;
     }
     const sea = this.sea();
@@ -164,6 +165,8 @@ export class HelmMap {
       readonly heading: number;
     },
   ): MapDraw | undefined {
+    // A map raised at sea and carried ashore (washed up with it up) is put away at once.
+    if (this.map?.shown && !this.onLand) this.map.drop();
     if (!foot.free) {
       this.landWanted = null;
       if (this.onLand) this.map?.close();
