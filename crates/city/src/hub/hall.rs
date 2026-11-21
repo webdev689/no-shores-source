@@ -17,6 +17,10 @@ const COLUMN_TOWARD_M: [f64; 3] = [-124.0, -140.0, -156.0];
 const TABLE_TOWARD_M: f64 = -140.0;
 const LIGHTS_TOWARD_M: [f64; 2] = [-132.0, -148.0];
 
+/// How far in from the Hall's near end the rug's middle lies, and how high the stone walk on from it stands, metres.
+pub(crate) const RUG_FROM_DOOR_M: f64 = 9.5;
+const NAVE_HIGH_M: f64 = 0.08;
+
 /// The Hall's near and far ends, metres seaward of the plaza's middle, and its half width.
 pub(crate) fn hall_span() -> (f64, f64, f64) {
     let [across, deep, _] = BEACON_HALL_M;
@@ -66,10 +70,22 @@ pub fn hall(frame: &Frame, laid: &mut Laid) {
     laid.stall(StationKind::Veiled, veiled);
     let lamps = stand_against("chapel-lamplighters", "counter", frame.at(far, 0.0), frame.level, frame.seaward);
     laid.stall(StationKind::Lamplighters, lamps);
-    // Its own paved floor, wall to wall: the land the base stands on is not the Hall's floor.
-    laid.solids.push(frame.block((near + far) / 2.0, 0.0, 0.0, [2.0 * half, near - far, 0.01], Material::Paving));
-    let from = near - 3.0;
+    // Its own paved floor, wall to wall but round the rug, and a raised stone walk on from the rug to the war table. The
+    // rug lies on the levelled land itself: the city is drawn a few centimetres nearer than it stands, a bend across
+    // a face this large, so a thin rug laid over such a face can lose to it.
+    let [rug_wide, rug_long, _] =
+        crate::modules::number_of("rug-long").map_or([0.0; 3], |number| crate::modules::all()[number as usize].size);
+    let (rug_near, rug_far) = (near - RUG_FROM_DOOR_M + rug_long / 2.0, near - RUG_FROM_DOOR_M - rug_long / 2.0);
+    let side = (half - rug_wide / 2.0) / 2.0;
+    for (toward, across, size) in [
+        ((near + far) / 2.0, -half + side, [2.0 * side, near - far]),
+        ((near + far) / 2.0, half - side, [2.0 * side, near - far]),
+        ((near + rug_near) / 2.0, 0.0, [rug_wide, near - rug_near]),
+        ((rug_far + far) / 2.0, 0.0, [rug_wide, rug_far - far]),
+    ] {
+        laid.solids.push(frame.block(toward, across, 0.0, [size[0], size[1], 0.01], Material::Paving));
+    }
     let to = far + 12.0;
-    laid.solids.push(frame.block((from + to) / 2.0, 0.0, 0.0, [4.0, from - to, 0.02], Material::Stone));
+    laid.solids.push(frame.block((rug_far + to) / 2.0, 0.0, 0.0, [4.0, rug_far - to, NAVE_HIGH_M], Material::Stone));
     laid.spots.push(frame.at(TABLE_TOWARD_M + 12.0, 7.0));
 }

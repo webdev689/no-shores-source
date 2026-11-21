@@ -6,7 +6,7 @@
 //! by its `front`.
 
 use super::courts::{RANGE_ACROSS_M, RANGE_DEEP_M};
-use super::hall::hall_span;
+use super::hall::{RUG_FROM_DOOR_M, hall_span};
 use super::placing::stand_by_socket;
 use super::walks::{BASE_FACE_M, SEALED_EAST_M, SEALED_M};
 use super::{Laid, stand_at};
@@ -122,7 +122,7 @@ fn hall(frame: &Frame, laid: &mut Laid, north: [f64; 2], south: [f64; 2]) {
     for across in [-20.0, 20.0] {
         hang(frame, laid, "wall-brazier", (near - 0.05, across, WALL_BRAZIER_M), south);
     }
-    stand(frame, laid, "rug-long", (near - 9.5, 0.0), north);
+    stand(frame, laid, "rug-long", (near - RUG_FROM_DOOR_M, 0.0), north);
 }
 
 /// The market lane on the Beacon Walk: lamp posts with bunting slung between each two, a cart and sacks by the
