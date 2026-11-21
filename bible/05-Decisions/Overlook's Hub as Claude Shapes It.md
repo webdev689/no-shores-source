@@ -60,6 +60,22 @@ flat terraces with walls between; the ramps are laid by the city's plan, so ever
 | Statues | The keeper of the Beacon raising her lit lamp, before the Beacon; sentinels with spear and plain shield at the walks and the Harbour Stair |
 | The rest | Bunting slung between the market lane's lamp posts, a well in the West Court, a long rug from the Hall's door toward the war table, a board of shields and a rack of weapons at the forge, a cart, sacks and amphorae by the market |
 
+## Fidelity, by procedural textures
+
+Under the owner's [[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]:
+
+| Call | Choice |
+|---|---|
+| Rain indoors | What a body meets overhead shelters: no fall, wet, puddle or snow under it, read to a 2 m grid ([[Weather]]) |
+| Plain colours | Gold, iron, bone and cloth painted in the shader on the pictures' own texels, 24 a metre, so they read as painted |
+| Iron | Hammer marks, black pits, rust blooming in patches, more on what faces up |
+| Gold | Burnished texels and glints, the leaf worn through to the bronze in patches |
+| Bone | A grain along it and a yellowing in patches |
+| Cloth | Uneven threads in the weave, the dye taken unevenly |
+| Flames | Each flickers on its own |
+| Pictures | Lighter or darker in patches some metres wide, so a picture's repeats do not line up across a wall |
+| The Hall's floor | Paved wall to wall, as its own floor: the land under the Beacon is not it |
+
 ## The townsfolk
 
 | Call | Choice |

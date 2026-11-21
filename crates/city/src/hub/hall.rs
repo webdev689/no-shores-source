@@ -66,6 +66,8 @@ pub fn hall(frame: &Frame, laid: &mut Laid) {
     laid.stall(StationKind::Veiled, veiled);
     let lamps = stand_against("chapel-lamplighters", "counter", frame.at(far, 0.0), frame.level, frame.seaward);
     laid.stall(StationKind::Lamplighters, lamps);
+    // Its own paved floor, wall to wall: the land the base stands on is not the Hall's floor.
+    laid.solids.push(frame.block((near + far) / 2.0, 0.0, 0.0, [2.0 * half, near - far, 0.01], Material::Paving));
     let from = near - 3.0;
     let to = far + 12.0;
     laid.solids.push(frame.block((from + to) / 2.0, 0.0, 0.0, [4.0, from - to, 0.02], Material::Stone));
