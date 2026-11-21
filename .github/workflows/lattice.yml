@@ -1,0 +1,124 @@
+name: lattice
+
+# Renders the Lattice's foes, every move from all five views, and its death wave (tools/lattice/), and publishes them
+# to R2 beside the forge's published renders with the repository's Cloudflare token, only when a run is asked for. A
+# job a move renders in parallel; one job lays them all in and publishes, and its log ends with the forge's manifest
+# on one line, which a commit then takes into content/forge/renders.json.
+on:
+  workflow_dispatch:
+    inputs:
+      foes:
+        description: 'The foes to render, by name, comma-separated'
+        default: 'husk,flicker,idol,ravager,bulwark,heart'
+      samples:
+        description: 'Cycles samples a pixel'
+        default: '32'
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      jobs: ${{ steps.plan.outputs.jobs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Plan a job a move
+        id: plan
+        env:
+          FOES: ${{ inputs.foes }}
+        run: echo "jobs=$(python3 -I tools/lattice/jobs.py "$FOES")" >> "$GITHUB_OUTPUT"
+
+  # No token here: the renders read only the forge's public tables.
+  render:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.jobs) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install Blender's module
+        run: |
+          pip install --require-hashes --only-binary=:all: -r tools/forge/tools/sprite-forge/artbirds-requirements.txt
+      - name: Check the publisher lays renders in
+        if: matrix.foe == 'wave'
+        run: python -I tools/test_forge_lattice.py
+      - name: Pull the forge's tables
+        run: python -I tools/forge_publish.py pull
+      - name: Render ${{ matrix.move }}
+        working-directory: tools/forge
+        env:
+          FOE: ${{ matrix.foe }}
+          MOVE: ${{ matrix.move }}
+          SAMPLES: ${{ inputs.samples }}
+        run: |
+          start=$(date +%s)
+          if [ "$FOE" = wave ]; then
+            python -I ../lattice/wave.py --samples "$SAMPLES" --out "$RUNNER_TEMP/lattice/$MOVE"
+          else
+            python -I ../lattice/render.py --enemy "$FOE" --anims "$MOVE" --samples "$SAMPLES" \
+              --out "$RUNNER_TEMP/lattice/$MOVE"
+          fi
+          echo "::notice::$MOVE rendered in $(( $(date +%s) - start )) s"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lattice-${{ matrix.move }}
+          path: ${{ runner.temp }}/lattice/${{ matrix.move }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: render
+    runs-on: ubuntu-latest
+    # It publishes the same tables as the forge workflow: its publishing waits for theirs, and theirs for it.
+    concurrency:
+      group: forge
+      cancel-in-progress: false
+    timeout-minutes: 30
+    # The token reaches only the two steps that check it and publish; what they import is installed as the exact
+    # wheels the requirements name by their hashes, and the checkout keeps no git credential.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Check the token is set
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+      - name: Install the publisher's packages
+        if: steps.token.outputs.set == 'true'
+        run: |
+          pip install --require-hashes --only-binary=:all: -r tools/forge/tools/sprite-forge/artbirds-requirements.txt
+      - uses: actions/download-artifact@v4
+        if: steps.token.outputs.set == 'true'
+        with:
+          pattern: lattice-*
+          path: ${{ runner.temp }}/lattice
+      # The published tables first, then the Lattice laid in, then its pictures beside what is published.
+      - name: Publish them
+        if: steps.token.outputs.set == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          python -I tools/forge_publish.py pull
+          python -I tools/forge_publish.py lattice "$RUNNER_TEMP"/lattice/lattice-*
+          python -I tools/forge_publish.py add
+          node -p "JSON.stringify(require('./content/forge/renders.json'))"

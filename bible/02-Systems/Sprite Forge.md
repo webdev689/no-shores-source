@@ -75,6 +75,9 @@ tables in `src/systems/studioArt/`, packs in `packs/`.
 - `pull` fetches the tables back for the forge to render more. `pull --strips` also unpacks every strip as PNG.
 - `roll <folder>` lays the dodge roll DFO drew outside its studio in beside the studio's strips, and its moves into
   the looks table, for `add` to publish.
+- `lattice <folder>...` does the same for the [[Lattice]]'s renders: each foe's strips, its moves and layers in the
+  looks table, its body's skin (the man's, in the dead's colour) in the skins table, and the death wave cut into its
+  frames as the site's own pictures (`@art/lattice/wave-<frame>.png`).
 
 The bucket is public at `pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev` and lets the site and local servers read it.
 Cloudflare limits how often an `r2.dev` address answers; the renders will move to a name under `daggerfalljs.dev`
@@ -106,7 +109,10 @@ A strip whose inputs did not change is kept; `fanout.py` splits a large render i
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
 The `forge` workflow renders the Arts' birds and adds them to what is published with the repository's Cloudflare token
 whenever `artbirds.py` or its pinned packages change on main, or when a run is asked for on a branch; its log ends with
-the manifest, which a commit takes into `content/forge/renders.json`. It installs only the exact wheels
+the manifest, which a commit takes into `content/forge/renders.json`. The `lattice` workflow runs only when asked: a
+job plans one render job for each move of each foe asked for and one for the wave (`tools/lattice/jobs.py`), they
+render in parallel without the token, and one job pulls the tables, lays them all in (`lattice`), adds them to what
+is published and ends its log with the manifest. Both share one queue, as both publish the same tables. It installs only the exact wheels
 `artbirds-requirements.txt` names by their hashes, and its checkout keeps no git credential.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the

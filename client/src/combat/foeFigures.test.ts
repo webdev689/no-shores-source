@@ -199,3 +199,56 @@ test('a foe dressed in its own clothes is drawn in them, with its type’s weapo
   assert.deepEqual([own?.race, own?.body, own?.outfit.garments], ['felid', 'female', look.outfit.garments]);
   assert.deepEqual([own?.outfit.right, own?.outfit.left, own?.outfit.drawn], [crew.right, crew.left, true]);
 });
+
+/** A Lattice Husk (type 39) the room saw at the origin, doing `action`, beside the roster's own types. */
+function huskFight(action: KeptFoe['view']['action'] = { kind: 'idle' } as KeptFoe['view']['action']) {
+  const fight = fightWith(0, 0, 10);
+  const kept = fight.foes.get(7);
+  if (!kept) throw new Error('no foe');
+  const foe = { ...kept, type: 39, faction: 3, view: { ...kept.view, action } };
+  return { ...fight, foes: new Map([[7, foe]]) } as unknown as Fighting;
+}
+const latticeRoster = [
+  ...roster,
+  {
+    type: 39,
+    name: 'Husk',
+    faction: 3,
+    factionName: 'The Lattice',
+    domain: 'land',
+    role: 1,
+    ranks: [1],
+    right: null,
+    left: null,
+  },
+];
+
+test('a Lattice foe whose pictures are not published is drawn as a plain figure', () => {
+  const figures = new FoeFigures(latticeRoster);
+  const asked: string[] = [];
+  const unpublished = {
+    ...forge,
+    draws: (body: string) => body !== 'husk',
+    card: (...[, dress]: Parameters<Cards['card']>) => (asked.push(dress.body), card),
+  } as unknown as Cards;
+  const [drawn] = figures.cards(huskFight(), unpublished, { x: 0, y: 5 }, 0, 1, 1 / 60, new Flashes());
+  assert.deepEqual(asked, ['male']);
+  assert.ok(drawn, 'drawn, not left out');
+});
+
+test('a Lattice foe with its pictures plays its own moves, and dying fades as its wave bursts', () => {
+  const figures = new FoeFigures(latticeRoster);
+  const asked: string[] = [];
+  const published = {
+    ...forge,
+    card: (...[, dress, anim]: Parameters<Cards['card']>) => (asked.push(`${dress.body} ${anim}`), card),
+  } as unknown as Cards;
+  figures.cards(huskFight(), published, { x: 0, y: 5 }, 0, 1, 1 / 60, new Flashes());
+  assert.deepEqual(asked, ['husk husk_idle']);
+  const dead = huskFight({ kind: 'dead', elapsed: 1 } as KeptFoe['view']['action']);
+  const fading = figures.cards(dead, published, { x: 0, y: 5 }, 1, 1, 1 / 60, new Flashes())[0]?.dissolve;
+  assert.ok(fading && fading.share < 0.1, 'at once, no fall first');
+  const later = figures.cards(dead, published, { x: 0, y: 5 }, 1.15, 1, 1 / 60, new Flashes())[0]?.dissolve;
+  assert.ok(later && later.share > 0.4 && later.share < 1, 'faded as the wave takes it');
+  assert.equal(figures.cards(dead, published, { x: 0, y: 5 }, 2, 1, 1 / 60, new Flashes()).length, 0, 'gone');
+});

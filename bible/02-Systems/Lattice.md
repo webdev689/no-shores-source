@@ -21,12 +21,21 @@ code:
   - tools/lattice/armoury.py
   - tools/lattice/wave.py
   - tools/lattice/props.py
+  - tools/lattice/jobs.py
+  - tools/forge_publish.py#lattice
+  - client/src/combat/lattice.ts#latticeMove
+  - client/src/combat/lattice.ts#latticeHidden
+  - client/src/combat/latticeLooks.ts#LatticeWaves
+  - client/src/combat/latticeLooks.ts#layLatticeLooks
+  - client/src/combat/latticeLooks.ts#sealWave
+  - client/src/player/foeDress.ts#CLOTHES
 ---
 # Lattice
 
 The Lattice's six foes drawn by the [[Sprite Forge]], each with its look and its own moves, as pictures the game will
 compose as it composes any figure ([[The Lattice Are the Ruined Ports' People, Overtaken]],
-[[The Lattice as Claude Shapes It]]). Drawn, not yet in the game.
+[[The Lattice as Claude Shapes It]]). The game draws them from their published pictures once the `lattice` workflow
+has run ([[Public Events as Claude Builds Them]]).
 
 ## How it works
 
@@ -69,7 +78,8 @@ compose as it composes any figure ([[The Lattice Are the Ruined Ports' People, O
   rock, a crate, a barrel, a cart, a wall, a lamppost, a boat); its own structures (a nest, a pylon, a shrine); and
   what an event leaves (a fissure, a crater). `python -I ../lattice/props.py --out <folder> [--props spire,crate]
   [--strain red]` draws a picture of each.
-- **Its public event**, the Fissure ([[Public Events Run on a Clock, After Destiny 1]]), is not built yet.
+- **Its public event**, the Fissure ([[Public Events Run on a Clock, After Destiny 1]]), is being built with the
+  public events.
 - **Sizes.** The Bulwark is drawn at 1.2 times a man and the Heart at 3 times, each on a larger work frame. Every
   move has rows under the ground for what it brings down before its feet (a maul's head, an anchor's crown).
 
@@ -77,24 +87,45 @@ compose as it composes any figure ([[The Lattice Are the Ruined Ports' People, O
 python -I ../lattice/render.py --enemy husk --anims husk_walk,husk_lunge,husk_gore --out <folder>
 ```
 
-Run from `tools/forge/` with Blender's module, as the forge runs ([[Sprite Forge]], "Running it").
+Run from `tools/forge/` with Blender's module, as the forge runs ([[Sprite Forge]], "Running it"). The `lattice`
+workflow renders every move of every foe and the wave this way, a job a move, and publishes them ([[Sprite Forge]]).
+
+## In the game
+
+- **Types and dress.** `foeDress.ts` dresses types 39 Husk, 40 Flicker, 41 Idol, 42 Ravager, 43 Bulwark and 44 the
+  Heart, the numbers the public events give them for the rules' roster, each on its own body in the cloth it still wears, dyed, then its crystal, gore, veins and
+  own parts. Their skin is published with their bodies, the man's in the ashen grey-green of the dead, whatever tone
+  is asked. 45 the Tithe-Taker, a Grey Tithe officer, wears the forge's own pieces.
+- **Moves.** `lattice.ts` `latticeMove` plays each foe's own moves in the man's place: the Husk lunges at a thrust
+  and gores at any other blow; the Flicker slashes left and right in turn and brings both blades down; the Idol
+  charges as it draws and fires its beam; the Ravager hurls its shards as it shoots and mauls up close; the Bulwark
+  discharges its shield, and once changed (its second phase, or half its health; the change played once) sweeps and
+  slams its maul; the Heart slams, sweeps, stomps and tears. A telegraphed blow holds in its tell. The Flicker and
+  the Idol never walk: the rules' dodge is a blink, out through their landing backwards and in through it.
+- **Its parts.** `latticeHidden` takes away the Ravager's shards from its first throw to its hurl's end, the
+  Bulwark's maul until it changes and its shield from then, and the Heart's torn one but from its grip to its fling.
+- **What the game draws over the pictures** (`latticeLooks.ts`): the Idol's lens glowing through its charge and its
+  beam to the chest it aims at; the Bulwark's core flaring through its discharge's tell, then its burst; each shard
+  the Ravager throws, from alternate hands; and the blink's dissolve, in the purple.
+- **The death wave.** A Lattice foe killed bursts at once in its wave, tinted in its crystal (red graded purple, or
+  the purple) and scaled to its size, as its figure fades; `sealWave` bursts the same wave four times a man's size
+  for the Fissure to call where it is sealed.
+- **Before the pictures are published** a Lattice foe is drawn as a plain man in grey and brown at its size, and dies
+  in its fade alone.
 
 ## Limits
 
-- Not yet in the game: the faction, the foes' numbers and blows, and their places in the world are not built, and the
-  pictures are not on R2.
+- The pictures reach the game only once the `lattice` workflow has run with the repository's Cloudflare token and a
+  commit has taken its manifest into `content/forge/renders.json`.
+- Where its foes appear (the Fissure) and their numbers are the rules' ([[Public Events as Claude Builds Them]]).
 - The Lattice's armour is on hold, drawn standing still on the man's and the woman's bodies only; its every move,
   first person and its weapons and shields are not yet drawn, and the game still names Daedric.
-- The props are pictures only: not painted with the game's pictures, not exported as meshes the game loads, and not
-  placed in the world.
-- The body's skin is coloured by the game as it composes a frame; the ashen skin each foe needs is not chosen yet.
-- The game is to play the wave at a foe's death, tinted and scaled, fading the foe's figure; it does not yet.
-- Left for the game to draw, since a picture's light cannot change from frame to frame: the Idol's beam and its
-  lens's glow growing through the charge, the Bulwark's core flaring before it discharges, the shards the Ravager
-  throws, a blink's dissolve. It also shows a part's layer only in the frames it belongs to: the Ravager's shards
-  until each throw, the shield before the change and the maul after it, the person the Heart tears out from the grip
-  to the fling.
+- The props are pictures only here; those the events need are made as modules ([[Modules]]).
+- The Tithe-Taker holds no ledger: the forge has no ledger to give him.
+- The Idol's beam and the Ravager's shards are drawn along the foe's facing when it aims at no fighter the page
+  knows; the Heart's moves are drawn but it is in no event.
 - The wardrobe asks DFO's game code what may be worn under each garment, and that code is not in this repository:
   `render.py` answers it from the foe's fixed outfit.
-- On four cores at 32 samples, every move of a foe takes from a quarter of an hour (the Husk) to an hour and a half
-  (the Heart) to render, and a render does not survive the session going idle.
+- A move is the finest the forge's render splits: `--views` draws views only beside a move's strips already drawn. On
+  four cores at 32 samples the Husk's four-frame flinch takes about two minutes and the wave six seconds; a move of
+  the Heart's takes far longer.

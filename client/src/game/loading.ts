@@ -3,6 +3,7 @@
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import { loadForgedBirds } from '../combat/forgedBirds.ts';
+import { loadLatticeWave } from '../combat/latticeLooks.ts';
 import { openCards } from '../player/cards.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { loadShip, shipSails } from '../ships/shipMesh.ts';
@@ -18,6 +19,7 @@ const SEA_SHIPS = 16;
 async function openForge(gpu: Gpu, figures: FigureView) {
   const { forge, store } = await openCards(figures);
   loadForgedBirds((path) => store.strip(path));
+  loadLatticeWave((path) => store.strip(path));
   return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
 }
 

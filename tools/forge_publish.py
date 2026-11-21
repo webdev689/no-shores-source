@@ -4,6 +4,7 @@
     python3 -I tools/forge_publish.py add       # the same for the pictures there, beside those already published
     python3 -I tools/forge_publish.py pull [--strips]   # the tables back, and with --strips every strip as PNG
     python3 -I tools/forge_publish.py roll <folder>     # DFO's dodge roll laid in beside the studio's, for `add`
+    python3 -I tools/forge_publish.py lattice <folder>...   # the Lattice's renders laid in the same way
 
 Every object is named by the SHA-256 of its bytes, so a published object never changes and is cached for good. The
 upload goes through tools/r2.py.
@@ -199,10 +200,105 @@ def roll(folder):
           + (f'; no such body in the looks table: {", ".join(skipped)}' if skipped else ''))
 
 
+# The Lattice's skin: the ashen grey-green of the dead, each share of the man's skin light laid on these weights, so a
+# Lattice body shades as a man's does but in no living tone. Its own skin and every race's are this one, so a race's
+# tone over the races' mean is none and every tone asked for draws it.
+DEAD_SKIN = (0.80, 0.90, 0.78)
+# The global tables of the looks index a layer's entry goes in; a layer's own (its order, cover and under) or its list.
+LOOK_VALUES = ('order', 'cover', 'under')
+LOOK_LISTS = ('dye', 'metal')
+WAVE_FRAMES = os.path.join(ART, 'lattice')
+
+
+def dead_skin(ramp):
+    """A skin ramp in the dead's colour: each share's light (its channels' mean) on DEAD_SKIN's weights."""
+    return [[round(sum(colour) / 3 * weight, 1) for weight in DEAD_SKIN] for colour in ramp]
+
+
+def merge_foe(looks, skins, own):
+    """A Lattice render's index (`own`, render.py's forgeLooks.json for one or more of a foe's moves) laid into the
+    forge's: each move it drew replacing what was published of that move (its cell, the layers drawn in it and their
+    own cells), each Lattice layer's order, cover and under, each layer's dye, and the body's skin made from the man's
+    in the dead's colour. Answers the bodies laid in."""
+    man = skins['bodies']['male']
+    for name, body in own['bodies'].items():
+        kept = looks['bodies'].setdefault(name, {})
+        drawn = set(body.get('anims', {}))
+        for moves in kept.get('layers', {}).values():
+            moves[:] = [move for move in moves if move not in drawn]
+        for cells in kept.get('cells', {}).values():
+            for move in drawn:
+                cells.pop(move, None)
+        kept.setdefault('anims', {}).update(body.get('anims', {}))
+        for layer, cells in body.get('cells', {}).items():
+            kept.setdefault('cells', {}).setdefault(layer, {}).update(cells)
+        for layer, moves in body.get('layers', {}).items():
+            listed = kept.setdefault('layers', {}).setdefault(layer, [])
+            listed += [move for move in moves if move not in listed]
+        skins['bodies'][name] = {'skin': [dead_skin(ramp) for ramp in man['skin']],
+                                 'races': {race: dead_skin(ramp) for race, ramp in man['races'].items()}}
+    for table in LOOK_VALUES:
+        for layer, value in own.get(table, {}).items():
+            # a wardrobe layer keeps the forge's own; the Lattice's own take what this render drew them with
+            if layer.startswith('lattice_'):
+                looks.setdefault(table, {})[layer] = value
+            else:
+                looks.setdefault(table, {}).setdefault(layer, value)
+    for table in LOOK_LISTS:
+        listed = looks.setdefault(table, []) if own.get(table) else []
+        listed += [layer for layer in own.get(table, []) if layer not in listed]
+    looks.setdefault('depth', own.get('depth'))
+    return list(own['bodies'])
+
+
+def wave_frames(folder):
+    """wave.py's strip cut into its frames, each a picture of the site's own (`@art/lattice/wave-<frame>.png`), as
+    the Arts' birds are."""
+    from PIL import Image
+
+    with open(os.path.join(folder, 'lattice_wave.json')) as file:
+        told = json.load(file)
+    strip = Image.open(os.path.join(folder, 'lattice_wave.png'))
+    width, height = told['cell']
+    os.makedirs(WAVE_FRAMES, exist_ok=True)
+    for frame in range(told['frames']):
+        strip.crop((frame * width, 0, (frame + 1) * width, height)).save(os.path.join(WAVE_FRAMES, f'wave-{frame}.png'))
+    return told['frames']
+
+
+def lattice(folders):
+    """Every Lattice render in `folders` laid in beside the studio's, for `add` to publish: each foe's strips, its index
+    and its skin (render.py's --out folders), and the death wave's frames (wave.py's)."""
+    paths = {name: os.path.join(TABLES_DIR, TABLES[name]) for name in ('looks', 'skins')}
+    tables = {}
+    for name, path in paths.items():
+        with open(path) as file:
+            tables[name] = json.load(file)
+    laid = 0
+    for folder in folders:
+        if os.path.exists(os.path.join(folder, 'lattice_wave.json')):
+            print(f'{wave_frames(folder)} wave frames from {folder}')
+            continue
+        with open(os.path.join(folder, 'forgeLooks.json')) as file:
+            own = json.load(file)
+        for name in merge_foe(tables['looks'], tables['skins'], own):
+            target = os.path.join(ART, 'studio', 'forge', 'layers', name)
+            os.makedirs(target, exist_ok=True)
+            for picture in os.listdir(os.path.join(folder, name)):
+                if picture.endswith('.png'):
+                    shutil.copyfile(os.path.join(folder, name, picture), os.path.join(target, picture))
+                    laid += 1
+    for name, path in paths.items():
+        with open(path, 'w') as file:
+            json.dump(tables[name], file, separators=(',', ':'))
+    print(f'{laid} Lattice strips laid in from {len(folders)} folders; the looks and skins tables have them')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    parser.add_argument('command', choices=['publish', 'add', 'pull', 'roll'])
-    parser.add_argument('folder', nargs='?', help="roll: the folder DFO's forge drew the roll into")
+    parser.add_argument('command', choices=['publish', 'add', 'pull', 'roll', 'lattice'])
+    parser.add_argument('folder', nargs='*', help="roll: the folder DFO's forge drew the roll into; lattice: the "
+                                                  "Lattice's render folders")
     parser.add_argument('--strips', action='store_true', help='pull: unpack every strip as PNG too')
     args = parser.parse_args()
     if args.command == 'publish':
@@ -210,9 +306,13 @@ def main():
     elif args.command == 'add':
         add()
     elif args.command == 'roll':
-        if not args.folder:
+        if len(args.folder) != 1:
             parser.error("roll needs the folder DFO's forge drew the roll into")
-        roll(args.folder)
+        roll(args.folder[0])
+    elif args.command == 'lattice':
+        if not args.folder:
+            parser.error("lattice needs the Lattice's render folders")
+        lattice(args.folder)
     else:
         pull(args.strips)
 

@@ -26,11 +26,32 @@ const clothes = (
   dyed: Readonly<Record<string, string>>,
   hair: Outfit['hair'] = null,
 ): Clothes => ({ body, tone, outfit: { armour, garments: Object.keys(dyed), dyes: dyed, hair } });
+/** A Lattice foe's clothes on its own body (tools/lattice/): the cloth it still wears, dyed, then its crystal, its
+ *  flesh and blood and its veins, and its own parts, which its moves show or take away (combat/lattice.ts). Its skin
+ *  is the dead's whatever the tone, as its body's skin is published. */
+const lattice = (body: string, dyed: Readonly<Record<string, string>>, parts: readonly string[] = []): Clothes => ({
+  body,
+  tone: 0,
+  outfit: {
+    armour: {},
+    garments: [
+      ...Object.keys(dyed),
+      `lattice_${body}_veins`,
+      `lattice_${body}`,
+      `lattice_${body}_gore`,
+      ...parts.map((part) => `lattice_${body}_${part}`),
+    ],
+    dyes: dyed,
+    hair: null,
+  },
+});
 
 /** Each type's clothes by its number. The Grey Tithe wear grey cloth, over leather when they skirmish or shoot and
  *  over iron when they stand and fight; their captain is in steel from head to foot under a long grey cloak, and their
  *  High Assessor in iron from head to foot under a grey surcoat and a long grey cloak. The pirates wear the Test
- *  Ground's five foes' clothes. The Brig's crew wear a plain hand's white shirt and brown breeches. */
+ *  Ground's five foes' clothes. The Brig's crew wear a plain hand's white shirt and brown breeches. The Lattice's
+ *  foes wear what the ruined ports' people wore when it took them, torn and soaked; the Tithe-Taker, a Grey Tithe
+ *  officer, a dark coat over grey under a grey cloak. */
 const CLOTHES: Readonly<Record<number, Clothes>> = {
   1: clothes(
     'male',
@@ -132,6 +153,27 @@ const CLOTHES: Readonly<Record<number, Clothes>> = {
   18: clothes('male', 0.4, every('iron'), { breeches: 'Grey', dwynnen_surcoat: 'Grey', formal_cloak: 'Grey' }),
   19: clothes('male', 0.45, {}, { shirt_long_v: 'White', breeches: 'DarkBrown', boots: 'DarkBrown' }),
   20: clothes('female', 0.45, {}, { shirt_long_v: 'White', breeches: 'DarkBrown', boots: 'DarkBrown' }),
+  39: lattice('husk', { shirt_long_round: 'Grey', belt: 'DarkBrown', breeches: 'DarkBrown', boots: 'DarkBrown' }),
+  40: lattice('flicker', { breeches: 'Grey' }, ['blade_L', 'blade_R']),
+  41: lattice('idol', { breeches: 'DarkBrown' }, ['emitter']),
+  42: lattice(
+    'ravager',
+    { shirt_short_v: 'Grey', vest: 'DarkBrown', belt: 'DarkBrown', casual_pants: 'Grey', tall_boots: 'DarkBrown' },
+    ['shroud', 'blades', 'ammunition'],
+  ),
+  43: lattice('bulwark', { breeches: 'DarkBrown', belt: 'DarkBrown', tall_boots: 'DarkBrown' }, [
+    'head',
+    'shield',
+    'maul',
+  ]),
+  44: lattice('heart', {}, ['fused', 'core', 'anchor', 'torn']),
+  45: clothes(
+    'male',
+    0.3,
+    { gauntlets: 'leather', boots: 'leather' },
+    { shirt_long_v: 'Grey', breeches: 'DarkBrown', formal_tunic: 'DarkBrown', formal_cloak: 'Grey' },
+    { style: 'crop', colour: 'black' },
+  ),
 };
 
 /** A type's dress: its own clothes, with the weapons the rules' roster puts in its hands drawn. Null for a type with
