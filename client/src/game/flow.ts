@@ -36,6 +36,11 @@ export function arriving(node: string, name: string): Flow {
   return { mode: 'loading', words: `Arriving at ${name}`, then: { mode: 'foot', node, menu: false } };
 }
 
+/** Whether the player is on the sea: sailing, or looking over an island's side to land; never between places. */
+export function onTheSea(flow: Flow): boolean {
+  return flow.mode === 'sea' || flow.mode === 'landing';
+}
+
 /** The flow after something happens. Anything that does not fit the mode leaves it as it was. */
 export function next(flow: Flow, happening: Happening): Flow {
   switch (happening.kind) {

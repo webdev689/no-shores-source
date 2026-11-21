@@ -14,7 +14,7 @@ import { HULL_NAMES } from '../ships/hulls.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
-import { arriving, type Happening, next } from './flow.ts';
+import { arriving, type Happening, next, onTheSea } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { DungeonDrawers } from './dungeonDrawers.ts';
 import { startActivities } from './activityScreens.ts';
@@ -81,7 +81,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The activities: the ways into the dungeons and out, each going in as `goInto` goes, and their screens.
   const { trips, screens, onFoot, heed } = startActivities(hudRoot, world.nodes, link, {
     foot: () => playing.foot,
-    atSea: () => (playing.flow.mode === 'foot' ? null : seaGear),
+    atSea: () => (onTheSea(playing.flow) ? seaGear : null),
     travel: (happening, work) => travel(happening, work),
     module: roomModule,
     intoDungeon: (...into) => goInto(() => Foot.enterDungeon(footContext, ...into)),
