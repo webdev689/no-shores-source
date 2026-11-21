@@ -50,6 +50,17 @@ const GROWTH: (u8, Rank) = (IDOL, Elite);
 pub const GROWTH_NAME: &str = "Crystal Growth";
 pub const WARDEN_NAME: &str = "The Warden of the Fissure";
 
+/// The crystal spires standing in the open fissure, a body runs into while it stands: each a box in its own frame (x
+/// east, y south, z up; west, north, bottom, east, south, top), as tools/modules' lattice-fissure has its parts, the
+/// fissure square to the grid; sunk this far, so a slope never leaves a gap under one.
+pub(crate) const SPIRES: [[f64; 6]; 4] = [
+    [-2.8, -0.37, 0.0, -2.4, 0.03, 2.04],
+    [0.2, -0.381, 0.0, 0.6, 0.019, 2.76],
+    [2.9, 0.047, 0.0, 3.3, 0.447, 1.74],
+    [-1.1, -0.698, 0.0, -0.7, -0.298, 1.32],
+];
+const SPIRE_SUNK: f64 = 0.3;
+
 /// A shard on the ground: its number, where it lies, the tick it fades.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Shard {
@@ -58,13 +69,14 @@ pub(crate) struct Shard {
     pub until: u64,
 }
 
-/// A Fissure as it plays: its middle and its growth's spot, the shards set and the most players seen at it at once,
+/// A Fissure as it plays: its middle and its growth's spot, its spires standing, the shards set and the most players seen at it at once,
 /// the shards added by its heroic turn, those lying and those carried (by whom, and where they last stood), its
 /// growth and the tick it rose, its Warden, and its waves so far and the tick of the last.
 #[derive(Debug)]
 pub(crate) struct Fissure {
     pub at: [f64; 3],
     pub growth_spot: [f64; 3],
+    pub spires: Vec<movement::Block>,
     pub set: u16,
     pub players_most: u16,
     pub heroic_more: u16,
@@ -92,6 +104,7 @@ impl Room {
         Fissure {
             at: self.on_ground(ground.at),
             growth_spot: self.on_ground(ground.growth),
+            spires: Vec::new(),
             set: 0,
             players_most: 1,
             heroic_more: 0,
@@ -106,9 +119,17 @@ impl Room {
         }
     }
 
-    /// The fissure opens and its first wave pours out.
+    /// The fissure opens, its spires standing, and its first wave pours out.
     pub(crate) fn begin_fissure(&mut self, public: &Public, running: &mut Running) {
         let Play::Fissure(mut fissure) = core::mem::replace(&mut running.play, Play::Aside) else { return };
+        let [x, y, _] = fissure.at;
+        for [west, north, _, east, south, top] in SPIRES {
+            let [_, _, ground] = self.on_ground([x + (west + east) / 2.0, y + (north + south) / 2.0]);
+            let (min_x, min_y, max_x, max_y) = (x + west, y + north, x + east, y + south);
+            let spire = movement::Block { min_x, min_y, max_x, max_y, top: ground + top, bottom: ground - SPIRE_SUNK };
+            self.stand_block(spire);
+            fissure.spires.push(spire);
+        }
         self.fissure_wave(public, running, &mut fissure);
         running.play = Play::Fissure(fissure);
     }
@@ -151,6 +172,7 @@ impl Room {
         if won {
             self.win(public, running);
             self.shatter(running, &mut fissure);
+            self.fell_spires(&mut fissure.spires);
         }
         running.play = Play::Fissure(fissure);
     }
@@ -289,6 +311,13 @@ impl Room {
             fissure.warden = Some(id);
             running.stage = 2;
             self.tell(EventKind::PublicStage, None, 0, id, 2.0);
+        }
+    }
+
+    /// The fissure no longer stands open: its spires are gone with it.
+    pub(crate) fn fell_spires(&mut self, spires: &mut Vec<movement::Block>) {
+        for spire in core::mem::take(spires) {
+            self.take_block(spire);
         }
     }
 

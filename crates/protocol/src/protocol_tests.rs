@@ -562,3 +562,37 @@ fn the_bytes_for_the_clients_test_are_written() {
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }
+
+/// What a zone's events add to each snapshot: waiting (the hamlet's three stores), and a busy Fissure (its fissure
+/// and growth, twenty shards lying and four carried).
+fn public_bytes() -> (usize, usize) {
+    let bare = Snapshot {
+        tick: 1,
+        players: &[],
+        dressed: &[],
+        foes: &[],
+        events: &[],
+        shots: &[],
+        lines: &[],
+        spells: &[],
+        public: None,
+    };
+    let mark =
+        |kind: u8, id: u32| room::public::PublicMark { kind, id, at: [512.25, -301.5, 12.75], health: 0.5, state: 1 };
+    let waiting =
+        room::public::PublicSeen { kind: 0, phase: 0, marks: (1..=3).map(|id| mark(3, id)).collect(), ..public() };
+    let mut marks = vec![mark(1, 0), mark(2, 77)];
+    marks.extend((1..=20).map(|id| mark(4, id)));
+    marks.extend((1..=4).map(|id| mark(5, id)));
+    let busy = room::public::PublicSeen { marks, ..public() };
+    let none = snapshot_bytes(&bare).len();
+    let size = |seen: &room::public::PublicSeen| snapshot_bytes(&Snapshot { public: Some(seen), ..bare }).len() - none;
+    (size(&waiting), size(&busy))
+}
+
+#[test]
+fn a_zone_s_events_add_few_bytes_to_each_snapshot_their_marks_packed_as_structs() {
+    let (waiting, busy) = public_bytes();
+    // Measured: 256 and 808.
+    assert!(waiting <= 260 && busy <= 820, "waiting {waiting} bytes, busy {busy}");
+}

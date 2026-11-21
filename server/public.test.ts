@@ -16,8 +16,8 @@ const compiled = new WebAssembly.Module(
 );
 
 /** The room door's test holds the same node, script and fingerprints (crates/room-wasm/src/public_door_tests.rs). */
-const FISSURE_HASH = 'a1cff10c';
-const RAID_HASH = '2a5776f0';
+const FISSURE_HASH = '94ee4dc0';
+const RAID_HASH = '979709e9';
 const FISSURE_MINUTE = 15_000;
 const RAID_MINUTE = 15_015;
 const MOST_TICKS = 8 * 3_600;

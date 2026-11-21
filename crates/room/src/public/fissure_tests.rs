@@ -441,8 +441,8 @@ fn its_growth_and_warden_stand_more_health_for_more_players_at_it() {
         (health, room.foes[&warden].fighter.health_max)
     };
     let (alone, three) = (great(1), great(3));
-    assert!((three.0 / alone.0 - 2.5).abs() < 1e-9, "the growth: {alone:?} {three:?}");
-    assert!((three.1 / alone.1 - 2.5).abs() < 1e-9, "the Warden: {alone:?} {three:?}");
+    assert!((three.0 / alone.0 - 2.0).abs() < 1e-9, "the growth: {alone:?} {three:?}");
+    assert!((three.1 / alone.1 - 2.0).abs() < 1e-9, "the Warden: {alone:?} {three:?}");
 }
 
 #[test]
@@ -460,4 +460,27 @@ fn every_foe_that_pours_out_has_its_arrival_told_for_the_page_to_raise_it_out_of
         room.take_events().iter().filter(|e| e.kind == EventKind::Spawned).map(|e| e.defender).collect();
     assert!(told_now.contains(&growth), "the growth's rising told");
     assert!(all.iter().all(|id| spawned.contains(id) || told_now.contains(id)), "every foe of it told");
+}
+
+#[test]
+fn its_spires_stand_as_tools_modules_draws_them_and_a_body_runs_into_them_while_it_stands_open() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let read = std::fs::read_to_string(root.join("content/modules/modules.json")).expect("the modules' manifest");
+    let manifest: serde_json::Value = serde_json::from_str(&read).expect("it parses");
+    let modules = manifest["modules"].as_array().expect("its modules");
+    let fissure_module = modules.iter().find(|module| module["name"] == "lattice-fissure").expect("lattice-fissure");
+    let parts: Vec<[f64; 6]> = serde_json::from_value(fissure_module["parts"].clone()).expect("its parts");
+    assert_eq!(parts, super::fissure::SPIRES, "the room's spires are the module's parts");
+
+    let (mut room, _) = room_at(FISSURE_MINUTE, 1);
+    let before = room.blocks.len();
+    room.tick();
+    assert_eq!(room.blocks.len(), before + 4, "its spires stand");
+    // Nothing passes through a spire, a body or a blow.
+    let spire = super::fissure::SPIRES[2];
+    let at = [FISSURE_AT[0] + spire[3], FISSURE_AT[1] + spire[1], 0.0];
+    assert!(!combat::sight::clear_line(&room.blocks, [at[0] + 2.0, at[1] + 0.2, 1.0], [at[0] - 2.0, at[1] + 0.2, 1.0]));
+    running_mut(&mut room).ticks_left = 1;
+    room.tick();
+    assert_eq!(room.blocks.len(), before, "failed, the fissure closing: its spires gone");
 }

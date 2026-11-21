@@ -31,22 +31,27 @@ fn saltmeres_zones_have_their_stores_approaches_banners_and_growths_and_only_the
         let fissure = grounds.fissure.expect("its wilds holds a fissure");
         assert_eq!(raid.stores.len(), 3, "{id}: three stores");
         assert_eq!(raid.banners.len(), 2, "{id}: two banners");
-        for store in &raid.stores {
+        for (nth, store) in raid.stores.iter().enumerate() {
             assert!(ring_holds(&laid.ring, store[0], store[1]), "{id}: the store at {store:?} is in the section");
             assert!(distance(*store, raid.at) < raid.radius, "{id}: within the raid's ground");
+            let [half_x, half_y] = layout::grounds::STORE_HALF;
             for building in &laid.seating.buildings {
                 let [west, north, east, south] = building.footprint;
-                let under = store[0] + 1.2 > west && store[0] - 1.2 < east && store[1] + 0.8 > north;
-                assert!(!(under && store[1] - 0.8 < south), "{id}: the store at {store:?} is under a building");
+                let under = store[0] + half_x > west && store[0] - half_x < east && store[1] + half_y > north;
+                assert!(!(under && store[1] - half_y < south), "{id}: the store at {store:?} is under a building");
             }
-            let walled = laid
-                .boxes
-                .iter()
-                .any(|found| (found[0] - (store[0] - 1.2)).abs() < 1e-9 && (found[3] - (store[1] + 0.8)).abs() < 1e-9);
-            assert!(walled, "{id}: a body runs into the store at {store:?}");
+            // Its box is the stack the page draws it as, its own size.
+            let ([half_x, half_y], tall) = layout::grounds::store_stack(nth);
+            let walled = laid.boxes.iter().any(|found| {
+                let fits = |one: f64, two: f64| (one - two).abs() < 1e-9;
+                fits(found[0], store[0] - half_x)
+                    && fits(found[3], store[1] + half_y)
+                    && fits(found[4] - found[5], tall + 0.3)
+            });
+            assert!(walled, "{id}: a body runs into the store at {store:?}, its stack's own size");
             for path in &laid.paths {
                 let off = path.points.windows(2).map(|pair| layout::paths::off_line(*store, pair[0], pair[1]));
-                assert!(off.fold(f64::INFINITY, f64::min) > path.tier.width() / 2.0 + 1.2, "{id}: off the ways");
+                assert!(off.fold(f64::INFINITY, f64::min) > path.tier.width() / 2.0 + half_x, "{id}: off the ways");
             }
         }
         assert!(ring_holds(&laid.ring, raid.approach[0], raid.approach[1]), "{id}: the raiders come in from inside");
@@ -100,7 +105,7 @@ fn saltmeres_stores_banners_and_growths_keep_clear_of_its_beacons_and_resource_m
 #[test]
 fn saltmeres_fissures_open_on_clear_ground_beside_their_battlefields_obelisk_never_on_it_or_its_ruins() {
     let layouts = continent_one();
-    let half = [layout::grounds::FISSURE_HALF, layout::grounds::FISSURE_HALF];
+    let half = layout::grounds::FISSURE_HALF;
     for id in bake::EVENT_ZONES {
         let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
         let fissure = bake::grounds_of(laid).and_then(|grounds| grounds.fissure).expect("its wilds holds a fissure");

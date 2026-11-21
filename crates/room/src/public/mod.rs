@@ -45,7 +45,7 @@ const SQUARE_PAST: f64 = 16.0;
 const STREAM: u64 = 0x7075_626c_6963;
 /// An event's great foes (its growth, the Warden, Marrow) stand this much more health for each player at the event
 /// beyond the first.
-const HEALTH_PER_PLAYER: f64 = 0.75;
+const HEALTH_PER_PLAYER: f64 = 0.5;
 /// How far beyond a raid's approach its waves form.
 const FORMED_PAST: f64 = 14.0;
 
@@ -492,8 +492,11 @@ impl Room {
         running.ticks_left = RESULT_TICKS;
         running.bonus = false;
         self.tell(EventKind::PublicFailed, None, 0, 0, f64::from(running.kind as u8));
-        let to = match &running.play {
-            Play::Fissure(fissure) => fissure.at,
+        let to = match &mut running.play {
+            Play::Fissure(fissure) => {
+                self.fell_spires(&mut fissure.spires);
+                fissure.at
+            }
             Play::Raid(raid) => raid.formed,
             Play::Aside => return,
         };
@@ -511,6 +514,9 @@ impl Room {
 
     /// The event's result has shown its time: whatever of it still stands is gone with it.
     fn close(&mut self, running: &mut Running) {
+        if let Play::Fissure(fissure) = &mut running.play {
+            self.fell_spires(&mut fissure.spires);
+        }
         for id in std::mem::take(&mut running.foes) {
             if self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead()) {
                 self.gone(id);
