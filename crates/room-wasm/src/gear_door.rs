@@ -45,7 +45,10 @@ pub fn gear(player: PlayerId) -> Vec<u8> {
         Opened::Sea(sea) if sea.on_deck(player) => {
             sea.deck_gear_change(player).and_then(|(room, boarder)| protocol::gear_wire::gear_bytes(room, boarder))
         }
-        Opened::Sea(sea) => sea.take_character_change(player).and_then(sea_gear_bytes),
+        Opened::Sea(sea) => {
+            let minute = sea.minute;
+            sea.take_character_change(player).and_then(|character| sea_gear_bytes(character, minute))
+        }
         Opened::Fleet(_) => None,
     })
     .flatten()
@@ -58,8 +61,9 @@ thread_local! {
 }
 
 /// A player's gear at sea, from the character the sea keeps for them: written by a room that holds them alone, so
-/// with no drops, nodes, wares or casting, none of which the sea has.
-fn sea_gear_bytes(character: &gear::Character) -> Option<Vec<u8>> {
+/// with no drops, nodes, wares or casting, none of which the sea has, at the sea's minute, so its day's bounties are
+/// today's.
+fn sea_gear_bytes(character: &gear::Character, minute: u64) -> Option<Vec<u8>> {
     GEAR_ROOM.with(|held| {
         let mut held = held.borrow_mut();
         if held.is_none() {
@@ -67,6 +71,7 @@ fn sea_gear_bytes(character: &gear::Character) -> Option<Vec<u8>> {
             *held = room.join().map(|player| (room, player));
         }
         let (room, player) = held.as_mut()?;
+        room.set_minute(minute);
         room.restore_character(*player, &character.to_json()).then(|| protocol::gear_wire::gear_bytes(room, *player))?
     })
 }
