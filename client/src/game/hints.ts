@@ -18,38 +18,38 @@ const MENU: Hint = ['M', 'Menu'];
 export const HINTS = {
   dead: [['Enter', 'Respawn'], ALL_CONTROLS],
   sea: [['Left button', 'Sail there'], ['A / D', 'Steer'], ['W', 'Sail on'], ['S', 'Heave to'], MENU, ALL_CONTROLS],
-  manage: [['Drag', 'Turn round the ship'], ['Wheel', 'Zoom'], ['B', 'Back to the sea'], ALL_CONTROLS],
+  manage: [['Drag', 'Turn'], ['Wheel', 'Zoom'], ['B', 'Back'], ALL_CONTROLS],
   deck: [['Shift', 'Run'], ['Space', 'Jump'], ['E', 'Take the helm'], ALL_CONTROLS],
   fight: [
     ['A / D', 'Steer'],
     ['W / S', 'Sails'],
-    ['Shift', 'Burst of speed'],
-    ['Right button', 'Hold to aim'],
+    ['Shift', 'Burst'],
+    ['Right button', 'Aim'],
     ['C', 'Brace'],
     ALL_CONTROLS,
   ],
   aim: [
     ['Drag', 'Aim'],
-    ['Right button', 'Let go to fire'],
+    ['Right button', 'Release to fire'],
     ['Left button', 'Hold fire'],
     ['Wheel', 'Change shot'],
     ALL_CONTROLS,
   ],
   map: [
-    ['Drag', 'Move the map'],
+    ['Drag', 'Pan'],
     ['Wheel', 'Zoom'],
-    ['Left button', 'Choose a port or the sea'],
+    ['Left button', 'Choose'],
     ['Enter', 'Set sail'],
-    ['Esc', 'Put the map away'],
+    ['Esc', 'Close'],
     ALL_CONTROLS,
   ],
-  landing: [['Left button', 'Choose a mark, again to land'], ['Enter', 'Land'], ['Esc', 'Back to sea'], ALL_CONTROLS],
+  landing: [['Left button', 'Choose; again to land'], ['Enter', 'Land'], ['Esc', 'Back'], ALL_CONTROLS],
 } as const satisfies Record<string, readonly Hint[]>;
 
 /** The keys of each stance on foot, before the Arts', the menu's and the strip's last. */
 const STANCES = {
   away: [
-    ['Z', 'Draw weapon'],
+    ['Z', 'Draw'],
     ['Shift', 'Run'],
     ['Space', 'Jump'],
     ['C', 'Crouch'],
@@ -70,10 +70,10 @@ const STANCES = {
   ],
   aiming: [
     ['Left button / F', 'Fire'],
-    ['Right button', 'Let go to stop aiming'],
+    ['Right button', 'Release to stop'],
     ['V', 'Dodge'],
   ],
-  daggers: [['Q', 'Let go to cast']],
+  daggers: [['Q', 'Release to cast']],
   mounted: [
     [',', 'Get down'],
     ['Shift', 'Gallop'],
@@ -129,7 +129,7 @@ export function footHints(foot: OnFoot): readonly Hint[] {
   return [
     ...(foot.free ? [LOOK] : []),
     ...STANCES[stance],
-    ...(casts ? [['R / Q / G', 'Cast your Art'] as const] : []),
+    ...(casts ? [['R / Q / G', 'Arts'] as const] : []),
     ...(stance === 'away' || stance === 'mounted' ? [MENU] : []),
     ALL_CONTROLS,
   ];

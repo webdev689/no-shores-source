@@ -517,7 +517,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   gear screen, and K, Escape or its Close press shuts it. It is a window of the kit over a dimmed view, over every
   layer the game draws but the screen's keyboard: ALL CONTROLS on its header band, then its groups, Move, Fight,
   Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name in faint capitals over a rule and its
-  controls under it: the keys drawn as the strip draws them beside one sentence on what they do. A control on one of
+  controls under it: the keys drawn as the strip draws them beside a few words on what they do. A control on one of
   the player's bindings shows that binding's own keys, so the sheet always says what the game hears. The groups
   stand in as many 400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each
   column near an even share of the rows; the words take their larger step at 1500 by 900 and up. The list scrolls

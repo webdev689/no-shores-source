@@ -21,8 +21,10 @@ Asked how, the owner chose from Claude's options:
 - The key strip shows only the keys that apply at the moment, in plain verbs, each key on its keycap and the mouse's
   buttons drawn ([[Interface]], "The key strip").
 - Near something E uses, E and what it does show.
-- K opens a sheet of every control, grouped Move, Fight, Arts, Camera and Menus, each control with a sentence on
-  what it does ([[Interface]], "The sheet of every control").
+- K opens a sheet of every control, grouped Move, Fight, Arts, Camera and Menus, each control with what it does
+  ([[Interface]], "The sheet of every control").
+- Shown the sheet, the owner wrote "The text is too over explanatory": each control says what it does in a few
+  words, and the strip's words are as few.
 
 ## Claude's calls
 

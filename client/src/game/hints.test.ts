@@ -26,7 +26,7 @@ const words = (hints: readonly (readonly [string, string])[]) => hints.map(([key
 const shown = (foot: Partial<OnFoot>) => words(footHints({ ...AT_REST, ...foot }));
 
 test('at rest on foot the strip shows the weapon, the body, the menu and the key to every control', () => {
-  assert.deepEqual(shown({}), ['Z Draw weapon', 'Shift Run', 'Space Jump', 'C Crouch', 'M Menu', 'K All controls']);
+  assert.deepEqual(shown({}), ['Z Draw', 'Shift Run', 'Space Jump', 'C Crouch', 'M Menu', 'K All controls']);
 });
 
 test('the click to look round shows only while the mouse is free', () => {
@@ -50,15 +50,15 @@ test("a melee weapon drawn shows the fight's keys, and a ranged one how to aim a
 test('aiming shows the shot and the way out of the aim, and Dusk Daggers aimed only their release', () => {
   assert.deepEqual(shown({ drawn: true, ranged: true, aiming: true }), [
     'Left button / F Fire',
-    'Right button Let go to stop aiming',
+    'Right button Release to stop',
     'V Dodge',
     'K All controls',
   ]);
-  assert.deepEqual(shown({ worn: 3, daggers: true }), ['Q Let go to cast', 'K All controls']);
+  assert.deepEqual(shown({ worn: 3, daggers: true }), ['Q Release to cast', 'K All controls']);
 });
 
 test("the Arts' keys show only while an Art is worn and the hands are free to cast", () => {
-  const cast = 'R / Q / G Cast your Art';
+  const cast = 'R / Q / G Arts';
   assert.ok(!shown({}).includes(cast), 'none worn, as in the prologue');
   assert.ok(shown({ worn: 1 }).includes(cast));
   assert.ok(shown({ worn: 1, drawn: true }).includes(cast));
@@ -85,8 +85,8 @@ test('at sea the keys shown follow what the player is doing, a fight first and i
   assert.equal(seaHints({ ...SAILING, landing: true }), HINTS.landing);
   assert.equal(seaHints({ ...SAILING, walking: true, fighting: true }), HINTS.fight);
   assert.equal(seaHints({ ...SAILING, fighting: true, aiming: true }), HINTS.aim);
-  assert.ok(words(HINTS.aim).includes('Right button Let go to fire'));
-  assert.ok(words(HINTS.fight).includes('Shift Burst of speed'));
+  assert.ok(words(HINTS.aim).includes('Right button Release to fire'));
+  assert.ok(words(HINTS.fight).includes('Shift Burst'));
 });
 
 test('every strip is a handful of keys, ends with the key to every control, and names only keys the sheet explains', () => {

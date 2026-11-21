@@ -60,10 +60,7 @@ function openIn(width: number, height: number) {
 test('opening moves the focus to the first control, and a screen reader hears the sheet and that control', () => {
   const { ui, heard } = openIn(1280, 720);
   assert.equal(ui.focusedId, 'controls:Move:0');
-  assert.deepEqual(heard, [
-    'All controls',
-    'W or A or S or D: Walk. Hanging from a ledge, A and D move along it and W climbs over.',
-  ]);
+  assert.deepEqual(heard, ['All controls', 'W or A or S or D: Move; climb']);
 });
 
 test('the sheet lists every control once, inside the view from a phone to 1440p', () => {
