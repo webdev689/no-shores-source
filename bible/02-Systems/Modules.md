@@ -136,8 +136,8 @@ are written with paving last, since the first group carries the parts and paving
 bpy is Blender as a Python module, on Python 3.13: `pip install --require-hashes --only-binary=:all: -r
 tools/modules/requirements.txt` installs bpy 5.3.0 and what it needs, each wheel by its hash; the hashes are of the
 wheels for x86-64 Linux and Python 3.13, so it installs only there (CI bakes on `ubuntu-24.04` with Python 3.13.18). The
-bake takes in the Lattice's own builders (`tools/lattice/props.py` and `growth.py`) and through them the [[Sprite
-Forge]]'s bodies, rig and materials (`tools/forge/tools/sprite-forge/`), which need nothing more.
+bake takes in the Lattice's own builders (`tools/lattice/props.py` and `growth.py`) and through them the
+[[Sprite Forge]]'s bodies, rig and materials (`tools/forge/tools/sprite-forge/`), which need nothing more.
 
 | Command | What it does |
 |---|---|
@@ -198,7 +198,9 @@ publishes the first bake's meshes with the repository's Cloudflare token.
   Each material is its own colour worked by code over the module's own frame (canvas oiled tan, the Tithe's banner
   its unmarked grey, as its sails are); the crystal is lit as above, its
   brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A module that
-  opens first sets the scene's depth far over its mouth, so its chasm under the ground is seen.
+  opens draws each point of its chasm under the ground at the depth where the eye's line to it crosses the land at
+  its foot, 2 to 4% of that distance nearer (`chasm_depth`), so the land round the mouth gives way and anything nearer
+  keeps its place; a point whose crossing falls outside the mouth is not drawn.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
   (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
   rock is.
@@ -214,9 +216,9 @@ stand on the ground at every edge, and no cliff stair stands taller than it was 
 
 - The city draws a module's crystal half alight everywhere: its glow by vertex reaches only the event props' drawer,
   and only that drawer gives crystal's light into the light layer.
-- The fissure's mouth opens the depth of whatever is drawn before it there, a rise of the land or a layout's piece
-  standing in front of it as well as the land under it; the events stand on clear ground. Grass drawn after it can
-  stand over the chasm.
+- The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
+  than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
+  behind it; the events stand on clear ground. Grass drawn after it can stand over the chasm.
 - Every city's load fetches the event props' meshes with the rest.
 - A module's surfaces carry no ambient occlusion of their own, and their pictures are laid flat by axis, not
   unwrapped.

@@ -44,9 +44,9 @@ seconds, and the next is shown from then.
 
 **The grounds.** The layout marks them with its other sites ([[Layouts]]), in the three zones alone: three stores in the
 first hamlet with room for them, on clear ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear
-of every building, set piece and prop and 2 m
-off every way; the point its raiders come in from, 36 m out toward the zone's nearest camp (the Vale has none: from the
-shore); their two banners, 28 m out, 6 m either side; and in its first wilds where its fissure opens, 12 m (or 9, or 15)
+of every building, set piece and prop and 2 m off every way; the point its raiders come in from, 36 m out toward the
+zone's nearest camp (the Vale has none: from the shore); their two banners, 28 m out, 6 m either side; and in its
+first wilds where its fissure opens, 12 m (or 9, or 15)
 from its middle beside the obelisk its battlefield stands there, on ground 15.4 m east and west and 9.8 m north and
 south (the fissure's own mesh, square to the grid, its long side east and west) clear of the obelisk, the ruins and
 everything standing, and the spot its crystal growth rises, 14 to 20 m from the fissure. A store stands square to the
@@ -66,7 +66,7 @@ Moors. In Node's WebAssembly the room opens in 0.7 to 1.0 s, as "Limits" gives.
 
 **Its foes**, its growth and its tithe-taker among them, stand at the event's level (the top of the island's band,
 raised by the voyage's seas), at home round the event's ground. Each but the growth and the tithe-taker hunts the
-nearest player there, and fights a player within a leash of the event's reach (its ground's radius, or its farthest
+living player nearest its home as it stands, wherever they are, and fights a player within a leash of the event's reach (its ground's radius, or its farthest
 point from its middle past it: the growth's spot, the approach, where the raid's waves form) and 16 m more, measured
 from its own place (the ground's middle, or a Collector's post at its store), on ground the room's mesh covers; past
 that it gives them up and walks back. A zone's room that holds events stands 40 foes alive at most and keeps 16 of them
@@ -214,8 +214,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   picture's own texels; each Lattice foe coming while it runs climbs out of its wave played backwards. A raid won
   topples its banners; a failed Fissure closes into the plain turf. A Lattice figure's crystal glows of itself at
   night. The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
-  A room lost leaves no event on the screen but its stores, whose walls still stand; and a page come mid-event or
-  back from a hidden tab replays no beat.
+  A room lost leaves no event on the screen but its stores, whose walls still stand; a page come mid-event replays no
+  beat; and one back from a hidden tab slides the last beat in, but plays none of the sounds, stings, chimes or
+  tremors kept meanwhile.
 - **Sounds**, all samples the game already holds, none longer than 4.5 s, each held 5 s at most and faded
   (`HEARD_MOST_S`, `combat/worldSounds.ts`): the ground splitting (`amb.ice.crack`) or the Tithe sighted (`foe.alert`)
   as one begins and at each stage; a shard taken (`element.cosmic`, and the player's own chimes) and set
@@ -223,8 +224,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   (`story.crash`); a store plundered (`sea.ship.break`); a chest opened (`ship.ready` and the interface's open); a
   heroic task missed (the interface's refusal); the heroic chance (`cast.charge` at its target); the next a minute off
   and the start (`drop.land` at the player and a chime); the Warden climbing out (`amb.ice.crack` and `story.crash`); a
-  chest coming (`drop.land`); the last ten seconds (the interface's tick); a Fissure failed (`amb.ice.crack`); a raid
-  won (`story.flash`) or failed (`story.crash`). The interface's own (the chimes, the tick, the refusal) are not played
+  chest coming (`drop.land`); the last ten seconds (the interface's `tab`); a Fissure failed (`amb.ice.crack`); a raid
+  won (`story.flash`) or failed (`story.crash`). The interface's own (the chimes, the `tab`, the refusal) are not played
   while the game is paused. A chest opened shows in the reward feed with its tier as four pips,
   its XP and its reputation. **Stings**, through the music director's `moment`, in the place's own fight score: its
   cadence as one begins, its victory for heroic met and won, its defeat for failed.

@@ -374,8 +374,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   whole pixel rows in a pale health red as the player's blows fill its meter. A diamond brightens in two steps over
   0.4 s, near white and then pale red, as a charge is gained or drunk (not under reduced motion). A screen reader
   reads them as a meter, "Healing charges", with how many of the three are held and how far the next has filled,
-  to a whole percent while the diamond fills in whole pixel rows ([[Three Healing Charges, Refilled by Blows and
-  Kills]]). Whole and untouched for 4 s (health
+  to a whole percent while the diamond fills in whole pixel rows
+  ([[Three Healing Charges, Refilled by Blows and Kills]]). Whole and untouched for 4 s (health
   and stamina short of no whole point, no poise taken, all three charges held), with no buff and no foe on the target
   plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s; the first point lost or spent brings
   them back in two.
@@ -429,26 +429,26 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   of the foe's whole health it holds still, lit along its top and dark along its foot in its element's colours, Blaze
   orange, Volt blue, Cosmic violet (`wardOf`). It is gone once broken. What it takes from the player's own blows is
   said in its element's colour; a blow it holds whole fills no poise, so the poise track says nothing of it.
-- **Plates over figures are never overbearing**, and few show at once, after Destiny's ([[Fewer Plates Show, Sized by
-  Rank, After Destiny]]; Claude's calls in [[Plates as Claude Shows Them]]). The cone round the crosshair shows one
-  plate (`aimedFoe`): the foe whose body the crosshair is on, the nearest of them if several, so a foe behind another on
-  the line never takes it; else the foe in sight nearest the crosshair, measured to the nearest point of its body, feet
-  to head and its breadth round (`bodyDegrees`), whole within 4 degrees and none past 6, easing in and out over 0.25 s.
-  Another foe takes the cone only once the crosshair is on it, or it stands a degree nearer, or the cone would show a
-  quarter more of it, so two side by side, or a view wobbling between them, do not trade it. When the foe at the
-  crosshair is already fought or locked, the cone shows no other foe's plate; a Boss there takes the cone too, and shows
-  none over its head. The foe the soft lock holds shows wherever it is, and so does a foe the player traded a blow with,
-  for as long as the target plate would stand from that blow, fading as it fades (`foughtShare`); being the target
-  alone, a foe winding up at the player or one the lock let go, holds no plate. A plate new on the screen starts at what
-  it should show, without easing in: past the cone it starts hidden, at the cone's edge or in a fought plate's fade it
-  starts at that share, and otherwise whole. A plate fading out of the cone holds its place and lifts none over it, so
-  the one taking the cone stands where it will stay; for that quarter second the two may overlap. The words of blows
-  keep clear of the plates drawn, never of a foe with none, and a word pushed down clear of a plate stays down as the
-  plate goes. A plate shows for no foe farther than 60 m across the ground, nor one whose head the place's blocks or its
-  land hide (`landBlocks`, the line tried every 2 m, only for a foe that could show a plate or take the cone): a plate
-  showing goes once its line has stayed blocked 0.15 s, one not showing stays hidden from the moment it is; seen again
-  it comes back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does farther
-  off, never growing, its name never under 9 px.
+- **Plates over figures are never overbearing**, and few show at once, after Destiny's
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]; Claude's calls in [[Plates as Claude Shows Them]]). The cone
+  round the crosshair shows one plate (`aimedFoe`): the foe whose body the crosshair is on, the nearest of them if
+  several, so a foe behind another on the line never takes it; else the foe in sight nearest the crosshair, measured to
+  the nearest point of its body, feet to head and its breadth round (`bodyDegrees`), whole within 4 degrees and none
+  past 6, easing in and out over 0.25 s. Another foe takes the cone only once the crosshair is on it, or it stands a
+  degree nearer, or the cone would show a quarter more of it, so two side by side, or a view wobbling between them, do
+  not trade it. When the foe at the crosshair is already fought or locked, the cone shows no other foe's plate; a Boss
+  there takes the cone too, and shows none over its head. The foe the soft lock holds shows wherever it is, and so does
+  a foe the player traded a blow with, for as long as the target plate would stand from that blow, fading as it fades
+  (`foughtShare`); being the target alone, a foe winding up at the player or one the lock let go, holds no plate. A
+  plate new on the screen starts at what it should show, without easing in: past the cone it starts hidden, at the
+  cone's edge or in a fought plate's fade it starts at that share, and otherwise whole. A plate fading out of the cone
+  holds its place and lifts none over it, so the one taking the cone stands where it will stay; for that quarter second
+  the two may overlap. The words of blows keep clear of the plates drawn, never of a foe with none, and a word pushed
+  down clear of a plate stays down as the plate goes. A plate shows for no foe farther than 60 m across the ground, nor
+  one whose head the place's blocks or its land hide (`landBlocks`, the line tried every 2 m, only for a foe that could
+  show a plate or take the cone): a plate showing goes once its line has stayed blocked 0.15 s, one not showing stays
+  hidden from the moment it is; seen again it comes back at once. It is whole as near as 12 m through a 60 degree lens
+  and shrinks as its figure does farther off, never growing, its name never under 9 px.
 - **A blow's words** stand where the blow met the body, in the face at 22 px with no box and a hard 2 px outline,
   thrown the way the stroke's blade went, its near edge 28 px from the blow (a crit's and a kill's 56; a number with
   no stroke one side and the other in turn), and kept on the screen. Each pops
@@ -679,14 +679,15 @@ never while a press is held. Each press is an ask the room answers.
 
 ## World sounds
 
-`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the [[Test
-Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the owner has
-picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
+`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the
+[[Test Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the owner
+has picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
 `content/audio/sounds.json`; until then it is silent, with no synthesised sound in its place. A pick is Freesound's,
 put in by `tools/freesound/publish.py` through the `freesound` workflow ([[Code Map]]), or one of DFO's own, by
 `tools/freesound/own.py` ([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have,
-plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it ([[The Duskraven
-Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules (`combat/worldCues.ts`):
+plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it
+([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
+(`combat/worldCues.ts`):
 
 - **Blows.** A swing as its blade sweeps to its blow, started so its recording's loudest 20 ms meet the tick the blow
   lands (never before the swing begins, and not once a dodge or a flinch has cut it short), or as a foe's wound-up blow

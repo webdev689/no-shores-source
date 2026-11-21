@@ -247,37 +247,40 @@ Where the work stands now, for the next session. Each session rewrites this note
   asked: sixteen across the owner's four kinds, each on its own patch of corrupted ground, drawn as pictures in both
   crystals ([[The Lattice Has Props of Its Own, Made in Blender]], `tools/lattice/props.py`); tested offline, every
   one rendered in red and purple and looked at.
-- **The public events**, on #124 (stacked on #77), not yet merged: built in full on Claude's autonomy ([[Public Events
-  Are Built in Full, on Claude's Autonomy]]) after the owner's decisions ([[Public Events Run on a Clock, After Destiny
-  1]]), the system in [[Public Events]] and every call of Claude's in [[Public Events as Claude Builds Them]]. On
-  Saltmere's three zones, on a clock: the Fissure in each wilds, beside its battlefield's obelisk, and the Grey Tithe
-  raid in each hamlet, each with its heroic task, a bonus, and a chest for each player who took part (XP, faction
-  reputation, a Vestige, materials). The Lattice is in the rules (faction 3, types 39 to 44) beside the Grey Tithe's
-  Tithe-Taker (type 45), and in the game: its five event foes rendered and published by `lattice.yml` and laid into
-  main's forge tables (`content/forge/renders.json`), their moves and death wave drawn. Thirteen new modules made in
-  Blender through the modules pipeline and published by `modules.yml`, four of them (the fissure, its scar, the growth
-  and the shard) built from the Lattice's props' own shards, clusters, crusts and boulders; a crystal material and
-  chalk, turf and canvas. The page's banner, marks, props, lights and sounds; offline play; dev-only `&public=`,
-  `&speed=`, `&bots=`, `&heroic=0`. Paced by scripted players at Saltmere's levels; a first read-only audit, its
-  findings each tested first and fixed. Then the owner's "comprehensive audit and deep detail pass": five read-only
-  audits (the rules and server, the page, the assets and pipelines, the bible's truth, the design's detail), whose
-  rules, page, assets and bible fixes are merged into #124's branch; still to come, a
-  picture pass of every beat on a quiet machine. Tested offline: `cargo xtask check`, native and WebAssembly agreeing,
-  both events played through on the built page and pictured; not tested live. The `modules` workflow baked and
-  published #124's branch byte for byte at 421cbd38 (the event props' normals worked out in doubles); after this
-  merge the 13 event modules' meshes have new keys (main's sorted vertex order, the same geometry), which wait on the
-  workflow's run on the merge before a page built from it can draw the props. `main` is merged in again
+- **The public events**, on #124 (stacked on #77), not yet merged: built in full on Claude's autonomy
+  ([[Public Events Are Built in Full, on Claude's Autonomy]]) after the owner's decisions
+  ([[Public Events Run on a Clock, After Destiny 1]]), the system in [[Public Events]] and every call of Claude's in
+  [[Public Events as Claude Builds Them]]. On Saltmere's three zones, on a clock: the Fissure in each wilds, beside its
+  battlefield's obelisk, and the Grey Tithe raid in each hamlet, each with its heroic task, a bonus, and a chest for
+  each player who took part (XP, faction reputation, a Vestige, materials). The Lattice is in the rules (faction 3,
+  types 39 to 44) beside the Grey Tithe's Tithe-Taker (type 45), and in the game: its five event foes rendered and
+  published by `lattice.yml` and laid into main's forge tables (`content/forge/renders.json`), their moves and death
+  wave drawn. Thirteen new modules made in Blender through the modules pipeline and published by `modules.yml`, four of
+  them (the fissure, its scar, the growth and the shard) built from the Lattice's props' own shards, clusters, crusts
+  and boulders; a crystal material and chalk, turf and canvas. The page's banner, marks, props, lights and sounds;
+  offline play; dev-only `&public=`, `&speed=`, `&bots=`, `&heroic=0`. Paced by scripted players at Saltmere's levels; a
+  first read-only audit, its findings each tested first and fixed. Then the owner's "comprehensive audit and deep detail
+  pass": five read-only audits (the rules and server, the page, the assets and pipelines, the bible's truth, the
+  design's detail), whose rules, page, assets and bible fixes are merged into #124's branch. Then the owner's third
+  ask, "Do one more comprehensive audit. Ensure this is perfect": six read-only audits (the rules, the page, the
+  assets, the bible, regressions outside the events, the tests), whose rules, page and assets fixes are merged; still
+  to come, its tests and bible fixes and a picture pass of every beat on a quiet machine. Tested offline:
+  `cargo xtask check` passes at 41f08483, native and WebAssembly agreeing; both events played through on the built page
+  and pictured before the second audit's fixes; not tested live. The `modules` workflow's run on a2c51a17 baked and
+  published the 13 event modules: all 42 of their groups answer on R2 but one, the sealed scar's rubble, which the
+  assets fixes (3e1bf535) re-keyed and which waits on the workflow's run of that commit. `main` is merged in again
   after the hub, the healing charges and the ship's burst: the events' banner, store bars and compass marks are drawn
   as nodes of the game's own interface, the events' fight events moved up to 15 to 24 past main's heal (14), and
   their wire fields appended after main's packed, delta snapshots.
 - **Overlook's hub**, on `main` (#113), merged with the owner's yes ("Merge and deploy"), which deploys the page and
   the rooms, after a comprehensive audit whose findings were each measured and fixed
-  ([[Overlook Becomes a Hub of Courts and Ways, After the Tower]], every call in [[Overlook's Hub as Claude Shapes
-  It]], [[Cities]]): Overlook's social space as courts and ways after the Tower, every keeper in a stall of their own,
-  29 adornments, each court a scene, flagstone walks curved at every corner over lawn and earth, the land's own oak
-  and gorse in its beds, no rain indoors, procedural iron, gold, bone, cloth and water, ramps on every city's avenues,
-  the fall that kills in a social space, townsfolk on the plan's ways, and the harbour way to the pier with its two
-  moored ships. Tested offline with the full check; CI baked its modules byte for byte. Not yet seen on a real GPU.
+  ([[Overlook Becomes a Hub of Courts and Ways, After the Tower]], every call in
+  [[Overlook's Hub as Claude Shapes It]], [[Cities]]): Overlook's social space as courts and ways after the Tower, every
+  keeper in a stall of their own, 29 adornments, each court a scene, flagstone walks curved at every corner over lawn
+  and earth, the land's own oak and gorse in its beds, no rain indoors, procedural iron, gold, bone, cloth and water,
+  ramps on every city's avenues, the fall that kills in a social space, townsfolk on the plan's ways, and the harbour
+  way to the pier with its two moored ships. Tested offline with the full check; CI baked its modules byte for byte. Not
+  yet seen on a real GPU.
 - **The held map on land**, on `main` (#128), merged with the owner's yes ("Merge and deploy"), which deploys the page
   ([[The Held Map Comes to the Social Spaces and Every Land Area]], [[Held Map]]): N anywhere on foot raises it from the
   player's eyes, only to look at, the world going on; a social space's plan, a patrol area's or an island's ground, in
@@ -285,18 +288,6 @@ Where the work stands now, for the next session. Each session rewrites this note
   what each is. Audited by two independent reviewers and every finding fixed with a test. Tested offline with the
   full check; seen headless at Overlook and the Saltgrass Downs. Not yet seen: an island's map, a real GPU, a fall
   while it is up.
-
-## Waiting on the owner
-
-- **#124, the public events**: its merge, the owner's yes; it holds #77 beneath it, and #77's merge waits on the
-  owner ("Not yet"), so merging #124 merges both. Its points for the owner are in its description and in
-  [[Open Questions]], "The public events".
-- **The Lattice's story**: the talk stops at the rest of [[Open Questions]], "The Lattice's places and events": the
-  nine story missions as three acts of three or one chain through the islands, where the Lattice and the Heart come
-  in, how near the ninth comes to the Cube; who gives the side quests. Read with them: #82 (the loop, the nine
-  missions) and #97 (activities, the quest engine), both open; #97's one clock can replace the events' own schedule.
-- **The Lattice's other props**: its sixteen props are pictures only; four of the events' modules are built from
-  their parts, and the rest wait on where its corrupted areas lie.
 - **#118, every sound from Freesound and the music's pass** (`ccr-c504a08b-gyns6o`), the owner's words in
   [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]], is on `main`, merged with the owner's yes
   ("Merge and deploy"), which deploys the page and the rooms. Every sound effect and ambience sound plays the owner's
@@ -317,6 +308,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   the vitals, the drink on `3`, the green word and its sound, and charges coming back in a fight. Left as named in
   the decision: a heal and a blow judged in the same tick or two can both stand, and dying or rejoining refills all
   three.
+
+## Waiting on the owner
+
+- **#124, the public events**: its merge, the owner's yes; it holds #77 beneath it, and #77's merge waits on the
+  owner ("Not yet"), so merging #124 merges both. Its points for the owner are in its description and in
+  [[Open Questions]], "The public events".
+- **The Lattice's story**: the talk stops at the rest of [[Open Questions]], "The Lattice's places and events": the
+  nine story missions as three acts of three or one chain through the islands, where the Lattice and the Heart come
+  in, how near the ninth comes to the Cube; who gives the side quests. Read with them: #82 (the loop, the nine
+  missions) and #97 (activities, the quest engine), both open; #97's one clock can replace the events' own schedule.
+- **The Lattice's other props**: its sixteen props are pictures only; four of the events' modules are built from
+  their parts, and the rest wait on where its corrupted areas lie.
 - **The held map on land's fog of war**: on land the sheet has none, so all of a land shows the first time the map is
   raised there; whether it should be fogged as the sea is.
 - **Overlook's hub's flora**: whether "any flora like bushes or trees" also covers the wall ivy and the cut flowers
