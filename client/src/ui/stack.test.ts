@@ -39,3 +39,14 @@ test('a layer put under is drawn under every layer added before it, and taken aw
   remove();
   assert.deepEqual(order(), ['menu']);
 });
+
+test('a layer that takes itself away as it is built leaves every other layer drawn that frame', () => {
+  const stack = new Stack();
+  const remove = stack.add(() => {
+    remove();
+    return { id: 'going' };
+  });
+  stack.add(() => ({ id: 'after' }));
+  const laid = layout(stack.node({} as Interface), VIEW, { face: { glyph: () => block } });
+  assert.ok(laid.some((each) => each.node.id === 'after'));
+});
