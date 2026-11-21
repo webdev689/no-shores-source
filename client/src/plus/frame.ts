@@ -30,9 +30,12 @@ function fittingAt(across: number, down: number): string | null {
   return TONES.brass;
 }
 
-/** The frame as an SVG, `BAND * 2 + 1` pixels square. */
-export function frameSvg(): string {
-  const size = BAND * 2 + 1;
+/** Pixels a side of the whole picture. */
+export const FRAME_SIDE = BAND * 2 + 1;
+
+/** The frame's pixels, `FRAME_SIDE` square, row by row from the top: each its colour, or null where it is clear. */
+export function framePixels(): (string | null)[] {
+  const size = FRAME_SIDE;
   // One row of a lit (top or left) and a shaded (bottom or right) edge, outside to in.
   const lit = [
     TONES.outline,
@@ -54,30 +57,23 @@ export function frameSvg(): string {
     TONES.stoneLo,
     '#1c1a15',
   ];
-  const pixels: string[] = [];
-  const paint = (x: number, y: number, colour: string | undefined) => {
-    if (colour) pixels.push(`<rect x='${x}' y='${y}' width='1' height='1' fill='${colour}'/>`);
-  };
+  const pixels: (string | null)[] = [];
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const [left, right, top, bottom] = [x < BAND, x > BAND, y < BAND, y > BAND];
       const fromTop = top ? y : size - 1 - y;
       const fromSide = left ? x : size - 1 - x;
-      const along = (from: number, litSide: boolean) => (litSide ? lit[from] : shade[from]);
+      const along = (from: number, litSide: boolean) => (litSide ? lit[from] : shade[from]) ?? null;
       if ((left || right) && (top || bottom)) {
         const fitting = fittingAt(fromTop, fromSide);
-        if (fitting) paint(x, y, fitting);
-        else if (fromTop < EDGE) paint(x, y, along(fromTop, top));
-        else if (fromSide < EDGE) paint(x, y, along(fromSide, left));
-      } else if ((top || bottom) && fromTop < EDGE) paint(x, y, along(fromTop, top));
-      else if ((left || right) && fromSide < EDGE) paint(x, y, along(fromSide, left));
+        if (fitting) pixels.push(fitting);
+        else if (fromTop < EDGE) pixels.push(along(fromTop, top));
+        else if (fromSide < EDGE) pixels.push(along(fromSide, left));
+        else pixels.push(null);
+      } else if ((top || bottom) && fromTop < EDGE) pixels.push(along(fromTop, top));
+      else if ((left || right) && fromSide < EDGE) pixels.push(along(fromSide, left));
+      else pixels.push(null);
     }
   }
-  return `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' shape-rendering='crispEdges'>${pixels.join('')}</svg>`;
-}
-
-/** The frame as a `border-image`: the picture, its slice, its width and how far it reaches out. */
-export function frameImage(): string {
-  const url = `url("data:image/svg+xml,${encodeURIComponent(frameSvg())}")`;
-  return `${url} ${BAND} / ${BAND}px / ${OUTSET}px stretch`;
+  return pixels;
 }

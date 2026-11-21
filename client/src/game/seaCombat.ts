@@ -97,8 +97,6 @@ export class SeaCombat {
   /** The world point the fight is drawn from, where it began: marks lie near it, so float32 holds them exactly. */
   private readonly window: Window;
   private last: FightView;
-  /** Her ship's kind, as the HUD names her. */
-  private readonly own: string;
   private orbit: { yaw: number; pitch: number };
   private readonly held = new Set<string>();
   private readonly presses: string[] = [];
@@ -130,8 +128,8 @@ export class SeaCombat {
   private readonly shake = new Shake(1);
 
   /** The fight the sea room began (`room`, which steps it and says whether a boarding would be taken now), or one a
-   *  source of its own steps (the story's, on the land worker's door, `own` naming the player's ship's kind on the
-   *  panel); its first view `first`. */
+   *  source of its own steps (the story's, on the land worker's door, `own` naming the player's ship's kind on its
+   *  plate); its first view `first`. */
   constructor(
     fought: SeaRoom | { readonly source: FightSource; readonly own: string },
     first: FightView,
@@ -147,7 +145,6 @@ export class SeaCombat {
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     const source = own?.source ?? roomSource(fought as SeaRoom, first);
     this.naval.join(Fighting.joined(source, 'sea', first, now, own?.own));
-    this.own = own?.own ?? 'Sloop';
     this.last = first;
     const [x = 0, y = 0, heading = 0] = first.player.ship;
     this.window = { leftM: Math.round(x), topM: Math.round(y) };
@@ -483,7 +480,7 @@ export class SeaCombat {
   /** What the fight's task counts at `now`: its ship as the fight last left it, DFO's messages, and how many captains
    *  are still afloat. */
   readout(now: number): FightReadout {
-    return readoutOf(this.last, this.own, this.naval.messages(now));
+    return readoutOf(this.last, this.naval.messages(now));
   }
 }
 

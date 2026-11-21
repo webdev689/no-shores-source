@@ -82,12 +82,13 @@ export interface RoomDoor {
    *  their ship's orders in a fleet. */
   input(player: number, bytes: Uint8Array): InputAnswer;
   tick(): void;
-  /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
-   *  bytes. */
-  snapshot(): Uint8Array;
+  /** A player's snapshot after the last tick, as its bytes (`snapshotPrepare`, then `snapshotFor`). */
+  snapshot(player: number): Uint8Array;
   /** Takes the snapshot after the last tick, for `snapshotFor` to cut each player's from. */
   snapshotPrepare(): void;
-  /** The prepared snapshot as one player is sent it: at sea only what is theirs of the sea's own part. */
+  /** The prepared snapshot as one player is sent it: on land what changed since the one their screen last showed;
+   *  at sea every ship near them and only what is theirs of the sea's own part; in a fleet every ship, its balls and
+   *  what happened. */
   snapshotFor(player: number): Uint8Array;
   /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
    *  course open. */
@@ -169,7 +170,6 @@ interface RoomExports {
   room_leave(player: number): void;
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
-  room_snapshot(): bigint;
   room_snapshot_prepare(): void;
   room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
@@ -286,7 +286,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     input: (player, bytes) =>
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
-    snapshot: () => take(exports.room_snapshot()),
+    snapshot: (player) => {
+      exports.room_snapshot_prepare();
+      return take(exports.room_snapshot_for(player));
+    },
     snapshotPrepare: () => exports.room_snapshot_prepare(),
     snapshotFor: (player) => take(exports.room_snapshot_for(player)),
     furnish: (stall, nodes) => {

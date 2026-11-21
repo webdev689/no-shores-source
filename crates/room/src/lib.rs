@@ -29,6 +29,7 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+mod recharge;
 pub mod sea;
 pub mod sea_weather;
 pub mod ship_power;
@@ -287,6 +288,7 @@ impl Room {
             found.acknowledged = found.acknowledged.wrapping_add(1);
         }
         found.received = input.sequence;
+        found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
         // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
         if let Some(dress) = input.dress.take() {
             found.dress_next = (dress != found.dress_sent).then_some(dress);
@@ -346,6 +348,10 @@ impl Room {
                     self.take_ask(id, asked);
                 }
                 self.ask_cast(id, input.cast.filter(|_| !input.intent.controls.mounted));
+                // A cast under way holds off a drink, so neither is lost to the other; the page holds its press too.
+                if self.players.get(&id).is_some_and(|found| found.casting.releasing.is_some()) {
+                    input.intent.combat.heal = false;
+                }
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
@@ -392,7 +398,7 @@ impl Room {
     }
 
     /// What a fighter's tick set off, among `view`, everyone as it saw them: a blow landing on whoever it reaches, a
-    /// shot leaving, a feint.
+    /// shot leaving, a feint, a drink's heal.
     pub(crate) fn happened(
         &mut self,
         id: FighterId,
@@ -435,6 +441,7 @@ impl Room {
                 }
             }
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
+            Some(Happening::Drank(healed)) => self.tell(EventKind::Healed, None, id, id, healed),
             _ => {}
         }
     }
@@ -463,6 +470,13 @@ impl Room {
         } else if let Some(foe) = self.foes.get_mut(&id) {
             foe.fighter = fighter;
         }
+    }
+
+    /// The number of a player's last input received, the latest tick their screen said it showed, and the tick they
+    /// joined at; none for no such player.
+    #[must_use]
+    pub fn heard(&self, player: PlayerId) -> Option<(u32, u64, u64)> {
+        self.players.get(&player).map(|found| (found.received, found.shown_tick, found.joined))
     }
 
     /// Every player as the room last stepped them, in the order of their numbers.
@@ -527,6 +541,8 @@ mod pace_tests;
 mod patrol_tests;
 #[cfg(test)]
 mod perks_tests;
+#[cfg(test)]
+mod recharge_tests;
 #[cfg(test)]
 mod ring_tests;
 #[cfg(test)]

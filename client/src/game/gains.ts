@@ -11,7 +11,7 @@ import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { GAME_PALETTE } from './appearance/gamePalette.ts';
 import { EMBLEMS } from './emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
-import { bardingSvg, shapesSvg, svgUrl } from './npc/npcMarks.ts';
+import { bardingSvg, shapesSvg } from './npc/npcMarks.ts';
 import { rarityNamed } from './npc/npcWares.ts';
 
 /** One gain: what merges with the same gain shown already, its name, how many, and how it is drawn. */
@@ -27,7 +27,8 @@ export interface Gain {
   readonly item: GearItem | null;
   /** An emblem's place in the catalogue, drawn as its own icon. */
   readonly emblem: number | null;
-  /** The picture of what has no glyph of the menu's: Shapes' mark, a cosmetic's colours or its barding's mark. */
+  /** The picture of what has no glyph of the menu's, as SVG markup: Shapes' mark, a cosmetic's colours or its
+   *  barding's mark. */
   readonly icon: string | null;
 }
 
@@ -67,7 +68,7 @@ function bandsSvg(id: string): string {
 function cosmeticGain(number: number): Gain[] {
   const cosmetic = cosmetics.cosmetics[number];
   if (!cosmetic) return [];
-  const icon = svgUrl(cosmetic.kind === 'barding' ? bardingSvg() : bandsSvg(cosmetic.id));
+  const icon = cosmetic.kind === 'barding' ? bardingSvg() : bandsSvg(cosmetic.id);
   return [gain(`cosmetic-${number}`, cosmetic.name, 1, { rarity: rarityNamed(cosmetic.rarity), icon })];
 }
 
@@ -76,7 +77,7 @@ export function gainsOf(before: GearState, after: GearState): Gain[] {
   const gains: Gain[] = [];
   if (after.aurem > before.aurem) gains.push(gain('aurem', 'Aurem', after.aurem - before.aurem, { glyph: 'aurem' }));
   const [shapes, shapesBefore] = [after.shapes ?? 0, before.shapes ?? 0];
-  if (shapes > shapesBefore) gains.push(gain('shapes', 'Shapes', shapes - shapesBefore, { icon: svgUrl(shapesSvg()) }));
+  if (shapes > shapesBefore) gains.push(gain('shapes', 'Shapes', shapes - shapesBefore, { icon: shapesSvg() }));
   after.stocks.forEach((count, index) => {
     const grown = count - (before.stocks[index] ?? 0);
     if (grown > 0)

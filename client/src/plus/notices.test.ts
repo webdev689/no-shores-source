@@ -1,59 +1,43 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { NoticeStack, noticesCss } from './notices.ts';
+import { NoticeStack, slidIn } from './notices.ts';
 
-/** The least of a page the stack touches: elements that keep their children in order. */
-class Node {
-  className = '';
-  textContent = '';
-  id = '';
-  hidden = false;
-  parent: Node | null = null;
-  readonly children: Node[] = [];
-  readonly ownerDocument: Page;
-  constructor(page: Page) {
-    this.ownerDocument = page;
-  }
-  setAttribute(): void {}
-  append(...nodes: Node[]): void {
-    for (const node of nodes) {
-      node.remove();
-      node.parent = this;
-      this.children.push(node);
-    }
-  }
-  remove(): void {
-    const siblings = this.parent?.children;
-    if (siblings) siblings.splice(siblings.indexOf(this), 1);
-    this.parent = null;
-  }
-}
-class Page {
-  readonly head = new Node(this);
-  createElement(): Node {
-    return new Node(this);
-  }
-  getElementById(): null {
-    return null;
-  }
-}
-
-const words = (stack: NoticeStack) => (stack.root as unknown as Node).children.map((row) => row.textContent);
+const words = (stack: NoticeStack) => stack.rows.map((row) => row.text);
 
 test('the notices stand newest last, three at most, and one said again moves to the foot', () => {
-  const page = new Page();
-  const stack = new NoticeStack(page.createElement() as unknown as HTMLElement);
-  stack.show(['No guns bear there.', 'The Pirate Brig surrenders!']);
+  const stack = new NoticeStack();
+  const told: string[] = [];
+  stack.show(['No guns bear there.', 'The Pirate Brig surrenders!'], 0, (text) => told.push(text));
   assert.deepEqual(words(stack), ['No guns bear there.', 'The Pirate Brig surrenders!']);
-  stack.show(['The Pirate Brig surrenders!', 'No guns bear there.']);
+  stack.show(['The Pirate Brig surrenders!', 'No guns bear there.'], 1, (text) => told.push(text));
   assert.deepEqual(words(stack), ['The Pirate Brig surrenders!', 'No guns bear there.'], 'said again, it is newest');
-  stack.show(['a', 'b', 'c', 'd']);
+  assert.deepEqual(told, ['No guns bear there.', 'The Pirate Brig surrenders!'], 'a line is told once, as it comes');
+  stack.show(['a', 'b', 'c', 'd'], 2);
   assert.deepEqual(words(stack), ['b', 'c', 'd']);
-  stack.show([]);
-  assert.equal(stack.root.hidden, true, 'none hides the stack');
+  stack.show([], 3);
+  assert.deepEqual(words(stack), [], 'none shows none');
 });
 
-test("the notices' right edge lines up with the status chip's, 28 px in from the screen's", () => {
-  const rule = /\.plus-notices \{([^}]*)\}/.exec(noticesCss())?.[1] ?? '';
-  assert.match(rule, /right: 28px/);
+test('a row in order keeps the moment it came, so only a new or moved one slides in again', () => {
+  const stack = new NoticeStack();
+  stack.show(['a', 'b'], 0);
+  stack.show(['a', 'b', 'c'], 5);
+  assert.deepEqual(
+    stack.rows.map((row) => row.since),
+    [0, 0, 5],
+  );
+  stack.show(['a', 'c', 'b'], 9);
+  assert.deepEqual(
+    stack.rows.map((row) => row.since),
+    [0, 9, 9],
+    'a stays first; c and b are laid again after it',
+  );
+});
+
+test('a notice slides in over 0.26 s in four steps, and at once with less motion', () => {
+  assert.equal(slidIn(0, 0, false), 0);
+  assert.equal(slidIn(0, 0.07, false), 0.25);
+  assert.equal(slidIn(0, 0.2, false), 0.75);
+  assert.equal(slidIn(0, 0.3, false), 1);
+  assert.equal(slidIn(0, 0, true), 1);
 });

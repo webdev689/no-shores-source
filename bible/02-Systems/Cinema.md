@@ -6,6 +6,7 @@ code:
   - client/src/cinema/cues.ts#Cues
   - client/src/cinema/cues.ts#HoldToSkip
   - client/src/cinema/screen.ts#Screen
+  - client/src/game/blur.ts#BlurView
   - client/src/cinema/lightning.ts#Lightning
   - client/src/cinema/ambience.ts#Ambience
   - client/src/cinema/ambienceShapes.ts#thunderShape
@@ -43,14 +44,16 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   order, exactly once, however long the frames are; a skipped cutscene runs every moment left at once, so the world
   is left as its end would leave it. Holding Space (or a touch anywhere on the view) for a second skips (`HoldToSkip`):
   the hint shows faintly at the bottom right while a cutscene can be skipped, and brightens with its share filled.
-- **The screen** (`Screen`), laid over the canvas: fades to black or white over any time, a white flash, the
-  letterbox's bars, eyelids that close from above and below for waking, a blur over the whole view, the title (the
-  game's name over a brass rule, sized to fit a phone's width) and a prompt that breathes under it. Each layer eases
-  by its own transition except the eyelids and the blur, which the story sets frame by frame: while the screen stands
-  the canvas's own ease (kept for the death's grey) is held off, so the blur follows each frame and clears at once.
-  While it stands a touch on the canvas or the HUD is the story's (`touch-action: none`), so no drag pans the page or
-  pulls it to reload and a held touch is never cut short. Once the story's black has gone after its end, the screen
-  is taken away and the canvas and the HUD have their own ease and touches back.
+- **The screen** (`Screen`), drawn by the game as a layer of its interface over every other, the HUD's and the
+  menu's: fades to black or white over any time, a white flash, the letterbox's bars, eyelids that close from above
+  and below for waking, the title (the game's name over a brass rule, sized to fit a phone's width) and a prompt that
+  breathes under it. Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`), except the eyelids, which
+  the story sets frame by frame. The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
+  the interface, as death's grey is, so the words over it stay sharp: a Gaussian whose deviation is the blur's CSS
+  pixels, set each frame, so it follows each frame and clears at once.
+  While it stands a touch on the canvas is the story's (`touchesHeld`), so no drag pans the page or pulls it to reload
+  and a held touch is never cut short. Once the story's black has gone after its end, the screen is taken away and the
+  canvas has its own touches back.
 - **Lightning** (`Lightning`). Strikes come by themselves at seeded moments, 4 to 11 s apart, 0.4 to 4.5 km round the
   eye, or where a story calls one. Each is two flashes and a fading glow over a second, brighter the nearer it falls,
   its bolt shown for 0.22 s, and its thunder heard as late as its distance makes it.
@@ -168,3 +171,4 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
   six fires' height burns thinner and is lit only at those points.
 - Fire does not spread, die down or burn anything: a fire burns as it was lit until it is put out.
 - Ships are posed on the rules' swell, so in a storm's gained sea a hull may sit into a drawn crest.
+- Past the picture's edge the blur takes the edge's own pixels, so a blurred view keeps its brightness to the edge. The title's and the prompt's soft dark glow is not drawn, only their hard shadow under them.

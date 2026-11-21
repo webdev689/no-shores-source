@@ -4,7 +4,7 @@
 // player's asks.
 import type { NavalEvent } from '../network/seaFight.ts';
 import { TOLD } from '../network/seaHarbour.ts';
-import { RARITIES } from '../player/gear.ts';
+import { RARITIES, capital } from '../player/gear.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
 import { shipName } from '../ships/shipBars.ts';
 import type { SeaRoom } from './seaRoom.ts';
@@ -70,7 +70,6 @@ export function linesOf(told: readonly (readonly number[])[], naval: readonly Na
     const name = words.nameOf(ship);
     return name ? `the ${name}’s` : 'its';
   };
-  const capital = (line: string) => line.charAt(0).toUpperCase() + line.slice(1);
   for (const event of naval) {
     if (event.kind === 'Struck')
       lines.push(capital(`${whose(event.ship)} colours are down: come alongside and press E to board it.`));

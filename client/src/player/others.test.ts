@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { SeenPlayer } from '../network/messages.ts';
-import type { Body } from '../rules/movementRules.ts';
+import { UNTRIMMED_FLOATS } from '../rules/fighters.ts';
+import { BODY_FLOATS, type Body } from '../rules/movementRules.ts';
 import type { Cards } from './cards.ts';
 import { plainDress } from './dressing.ts';
 import type { Placed } from './figures.ts';
-import { OtherPlayers, moveOf } from './others.ts';
+import { OtherPlayers, dressNow, moveOf } from './others.ts';
 
 const body: Body = {
   x: 0,
@@ -82,4 +83,37 @@ test('other players are placed in their own dress, moved as the room saw them, a
   );
   others.clear();
   assert.equal(shown.length, 0);
+});
+
+test('another player drinking has their weapon put away at once, from the snapshot, and back in hand after', () => {
+  const armed = { ...plainDress('human', 0.6), outfit: { ...plainDress('human', 0.6).outfit, drawn: true } };
+  const doing = (kind: number) => Object.assign(new Float64Array(UNTRIMMED_FLOATS), { [BODY_FLOATS + 23]: kind });
+  assert.equal(dressNow(armed, doing(13)).outfit.drawn, false, 'drinking: put away');
+  assert.equal(dressNow(armed, doing(0)), armed, 'at rest: as they dress');
+  assert.equal(dressNow(armed, null), armed, 'no fighter: as they dress');
+  const placed: Placed[] = [];
+  const others = new OtherPlayers({
+    place: (dress, x, y, facing) => {
+      const one: Placed = { id: 2, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
+      placed.push(one);
+      return one;
+    },
+    remove: () => undefined,
+  });
+  others.takeDresses([{ player: 7, dress: JSON.stringify(armed) }]);
+  const forge = { draws: () => false } as unknown as Cards;
+  const seen = (kind: number): SeenPlayer => ({
+    player: 7,
+    acknowledged: 0,
+    body,
+    fighter: doing(kind),
+    standing: { kind: 'inside' },
+    anim: '',
+    frame: 0,
+    facing: 0,
+  });
+  others.seen([seen(13)], 1, forge);
+  assert.equal(others.placed.get(7)?.dress.outfit.drawn, false);
+  others.seen([seen(0)], 1, forge);
+  assert.equal(others.placed.get(7)?.dress.outfit.drawn, true);
 });

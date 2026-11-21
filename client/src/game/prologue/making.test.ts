@@ -22,7 +22,7 @@ function story() {
   const made = {
     stage: {
       parts: {
-        hudRoot: {},
+        stack: {},
         screen: { bars: () => undefined },
         ambience: { set: (bed: { rain?: number }) => set.push(`rain ${bed.rain}`) },
       },

@@ -1,5 +1,5 @@
 // The page's one audio listener, round which the world's sounds and the ambience both place theirs. The ambience
-// counts its frame from an origin (her ship, at sea, so all it plays rides with her); every sound placed through a
+// counts its frame from an origin (its ship, at sea, so all it plays rides with it); every sound placed through a
 // panner is placed in that same frame, so neither hears the other's sounds kilometres away.
 
 type Point = readonly [number, number, number];

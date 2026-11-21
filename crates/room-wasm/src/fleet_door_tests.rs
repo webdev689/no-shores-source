@@ -65,7 +65,7 @@ fn a_fleet_room_puts_ships_to_sea_by_their_orders_and_shows_them() {
     assert_eq!(send(second, orders(5)), OUT_OF_ORDER);
     assert_eq!(input_of(second, b"not orders"), NOT_AN_INPUT);
     room_tick();
-    let shown = vessels_in(&snapshot());
+    let shown = vessels_in(&snapshot(0));
     assert_eq!(
         shown.iter().map(|vessel| (vessel.id, vessel.acknowledged)).collect::<Vec<_>>(),
         [(first, 1), (second, 1)]
@@ -82,12 +82,12 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
     let player = room_join();
     assert_eq!(send(player, Input { put_to_sea: Some(AT), ..orders(1) }), TAKEN);
     room_tick();
-    let put = vessels_in(&snapshot())[0].clone();
+    let put = vessels_in(&snapshot(0))[0].clone();
     for sequence in 2..=200 {
         assert_eq!(send(player, orders(sequence)), TAKEN);
         room_tick();
     }
-    let last = vessels_in(&snapshot())[0].clone();
+    let last = vessels_in(&snapshot(0))[0].clone();
     assert_eq!(last.acknowledged, 200);
     let (sail, max_sail) = (last.hurts[2], last.hurts[3]);
     let mut request = put.ship.clone();

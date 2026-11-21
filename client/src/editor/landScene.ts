@@ -3,9 +3,9 @@ import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
 import { MarkView } from '../ships/markView.ts';
+import { type PlacedBar, ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { PLAYER_LOOK } from '../ships/dress.ts';
-import { FightOverlay } from '../ships/fightOverlay.ts';
 import { type DrawnShip, openHull, ShipModels } from '../ships/shipModels.ts';
 import type { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
@@ -24,6 +24,7 @@ import {
   walkStep,
 } from './closeUp.ts';
 import type { CloseGround } from '../terrain/landClient.ts';
+import { DEPTH_COPY } from './depthCopy.ts';
 import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
@@ -31,7 +32,7 @@ import { type TerrainData, type TerrainOptions, TerrainView } from '../terrain/t
 import { BOOST_KEY, helmOf, isRungKey } from '../ships/helmKeys.ts';
 import type { Afloat } from './afloat.ts';
 import type { FightSource } from './fighting.ts';
-import { chosenCaptain, type FleetCall } from './fleetLink.ts';
+import { chosenCaptain, type FleetCall, type Readout } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
 import { FleetScene } from './fleetScene.ts';
 import { Harbour } from './harbour.ts';
@@ -57,28 +58,6 @@ export interface Drawn {
   readonly multidepth: GPUTexture;
 }
 
-/** Copies the land's multisampled depth into one float a pixel, which the water's shaders can read. */
-export const DEPTH_COPY = /* wgsl */ `
-@group(0) @binding(0) var depths: texture_depth_multisampled_2d;
-
-@vertex
-fn copy_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
-  let corner = vec2f(f32((index << 1u) & 2u), f32(index & 2u));
-  return vec4f(corner * 2.0 - 1.0, 0.0, 1.0);
-}
-
-// The mean of the pixel's samples: the depth at its centre on a slope. The nearest sample would sit far in front of
-// it where the view grazes the ground, a pixel spanning hundreds of metres there.
-@fragment
-fn copy_fragment(@builtin(position) position: vec4f) -> @location(0) vec4f {
-  var sum = 0.0;
-  for (var sample = 0; sample < ${SAMPLES}; sample++) {
-    sum += textureLoad(depths, vec2i(position.xy), sample);
-  }
-  return vec4f(sum / ${SAMPLES}.0, 0.0, 0.0, 1.0);
-}
-`;
-
 /** One frame of the 3D view: the landmass, its 1 km window, the camera, and the walker's keys. */
 export interface SceneFrame {
   readonly id: string;
@@ -86,6 +65,12 @@ export interface SceneFrame {
   readonly view: LandView;
   readonly orbit: Orbit;
   readonly size: { readonly width: number; readonly height: number };
+  /** The same view in CSS pixels, which the ships' plates are laid in. */
+  readonly flat: { readonly width: number; readonly height: number };
+  /** What the picture is drawn into, `size` big. */
+  readonly target: GPUTextureView;
+  /** The sea fight's readout the page offered, which the scene shows a captain's fight in. */
+  readonly readout: Readout | null;
   readonly exaggeration: number;
   readonly brush: TerrainOptions['brush'];
   readonly walking: boolean;
@@ -159,16 +144,15 @@ export class LandScene {
   private readonly naval: Naval;
   private fleet: FleetScene | null = null;
   private readonly layoutCity: LayoutCity;
-  /** Each captain's plate over the picture, and the fight's readout beside it. */
-  private readonly fightOverlay: FightOverlay;
+  /** Each captain's plate over it, laid from frame to frame. */
+  private readonly shipPlates = new ShipPlates();
   /** The sky's law, for the wind its sails feel: the rules sail it in the weather's, at the wall's world time. */
   private law: SkyLaw | null = null;
 
-  constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void, overlay: SVGSVGElement) {
+  constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
     this.gpu = gpu;
     this.redraw = redraw;
     this.fail = fail;
-    this.fightOverlay = new FightOverlay(overlay);
     this.water = new WaterView(gpu);
     this.models = new ShipModels(openHull(gpu), fail);
     this.harbour = new Harbour(() => this.models.load(SLOOP_HULL), fail);
@@ -247,8 +231,13 @@ export class LandScene {
   }
 
   /** Steps the walker, keeps the close-up, and draws the land, then the water. Answers the camera as drawn and, for
-   *  the scale cues, the ground at its target when the close-up shows. */
-  draw(frame: SceneFrame): { orbit: Orbit; feet: readonly [number, number, number] | null; sailing: boolean } {
+   *  the scale cues, the ground at its target when the close-up shows, and the ships' plates. */
+  draw(frame: SceneFrame): {
+    orbit: Orbit;
+    feet: readonly [number, number, number] | null;
+    sailing: boolean;
+    plates: PlacedBar[];
+  } {
     const now = performance.now();
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
@@ -358,8 +347,15 @@ export class LandScene {
     if (fleet) fleet.draw(pass, view, shown, shipCamera, now / 1000);
     else this.naval.draw(pass, view, shown, shipCamera, time);
     const bars = fleet ? fleet.bars(view, shown) : this.naval.bars(view, shown);
-    const display = fleet ? null : this.naval.display(time, { boardable: false, boardKey: 'E' });
-    this.fightOverlay.show(bars, (size) => screenProjector(seen, size), now / 1000, display);
+    // A captain's fight shows its readout; the plates keep under its card, as the game's do.
+    if (frame.readout) {
+      frame.readout.update(fleet ? null : this.naval.display(time, { boardable: false, boardKey: 'E' }));
+      this.shipPlates.top = frame.readout.under;
+    }
+    const plates =
+      bars.length > 0
+        ? this.shipPlates.place(bars, screenProjector(seen, frame.flat), frame.flat.width, now / 1000)
+        : [];
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -377,7 +373,7 @@ export class LandScene {
     copy.draw(3);
     copy.end();
     const eyeWater = this.waterAt(id, view, camera.eye[0], camera.eye[1], time);
-    const target = this.gpu.context.getCurrentTexture().createView();
+    const { target } = frame;
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(FIELD_OF_VIEW / 2) },
       size: [frame.size.width, frame.size.height],
@@ -402,7 +398,7 @@ export class LandScene {
     this.gpu.device.queue.submit([encoder.finish()]);
     const feet =
       near && !frame.walking && !this.sailing ? ([orbit.targetX, orbit.targetY, ground * shown] as const) : null;
-    return { orbit, feet, sailing: frame.sailing && this.mayStillSail };
+    return { orbit, feet, sailing: frame.sailing && this.mayStillSail, plates };
   }
 
   /** The Sloop: put to sea at the camera's target, then stepped by the rules with the keys' helm, its wake stirring

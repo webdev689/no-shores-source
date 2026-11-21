@@ -145,6 +145,8 @@ pub struct Player {
     /// the tick that input was seeing.
     pub seen: u64,
     pub history: VecDeque<(u64, Fighter)>,
+    /// The latest tick their screen said it showed, as it said it: the snapshot their browser surely holds.
+    pub shown_tick: u64,
     /// The room tick until which the foes leave the player be, having just stood again.
     pub graced: u64,
     /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
@@ -181,6 +183,9 @@ pub struct Player {
     pub casting: crate::arts::Casting,
     /// What their perks count from blow to blow, kept while they are in the room.
     pub(crate) counts: crate::perks::PerkCounts,
+    /// The foes their own blows landed on in the last ten seconds, with the tick of each one's last: each shares its
+    /// kill's healing charge with them (`recharge.rs`).
+    pub(crate) struck: std::collections::BTreeMap<FighterId, u64>,
 }
 
 impl Player {
@@ -207,6 +212,7 @@ impl Player {
             waiting: VecDeque::new(),
             seen: joined,
             history: VecDeque::new(),
+            shown_tick: 0,
             graced: 0,
             dress_next: None,
             dressed_at: None,
@@ -226,6 +232,7 @@ impl Player {
             trims: [combat::Trim::PLAIN; 2],
             casting: crate::arts::Casting::default(),
             counts: crate::perks::PerkCounts::default(),
+            struck: std::collections::BTreeMap::new(),
         }
     }
 

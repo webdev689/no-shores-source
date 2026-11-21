@@ -88,7 +88,7 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
 test('an ask crosses into an input with every field it names', () => {
   const ask = { kind: ASKS.buy, item: 7, column: 6, node: 1 } as const;
   const bytes = inputBytes(3, {
-    intent: new Float64Array(16),
+    intent: new Float64Array(17),
     look: { anim: 'idle', frame: 0, facing: 0 },
     arms: 0,
     seen: 0n,
@@ -103,7 +103,7 @@ test('an ask crosses into an input with every field it names', () => {
   const named = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(
       inputBytes(4, {
-        intent: new Float64Array(16),
+        intent: new Float64Array(17),
         look: { anim: 'idle', frame: 0, facing: 0 },
         arms: 0,
         seen: 0n,
@@ -115,7 +115,7 @@ test('an ask crosses into an input with every field it names', () => {
   const none = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(
       inputBytes(5, {
-        intent: new Float64Array(16),
+        intent: new Float64Array(17),
         look: { anim: 'idle', frame: 0, facing: 0 },
         arms: 0,
         seen: 0n,

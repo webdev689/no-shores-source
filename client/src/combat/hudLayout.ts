@@ -38,10 +38,10 @@ export interface HudLayout {
 /** The compass's width in a view `width` wide, its column zoomed `zoom` times, in the view's own pixels. */
 export const compassWidth = (width: number, zoom = 1): number => Math.min(COMPASS.width * zoom, COMPASS.share * width);
 
-/** How far down the vitals reach, the buffs' row under them, at a step, at their own size. */
+/** How far down the vitals reach, the healing charges and the buffs' row under them, at a step, at their own size. */
 export function vitalsDepth(wide: boolean): number {
   const sizes = wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
-  return CORNER.top + sizes.health + sizes.stamina + sizes.poise + sizes.gap * 3 + sizes.buffs;
+  return CORNER.top + sizes.health + sizes.stamina + sizes.poise + sizes.drinks + sizes.gap * 4 + sizes.buffs;
 }
 
 /** The layout for a view `width` by `height` CSS pixels. */

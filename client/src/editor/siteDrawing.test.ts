@@ -4,7 +4,7 @@ import type { Places } from './marks.ts';
 import type { Project } from './screenMarks.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { fitOrbit } from './orbit.ts';
-import { groundProjector, siteMarks } from './siteDrawing.ts';
+import { groundProjector, siteInks, siteMarks } from './siteDrawing.ts';
 
 const places: Places = {
   city: { id: 'overlook', name: 'Overlook', centre: [10_000, 10_000], motif: 'beacon' },
@@ -60,8 +60,39 @@ test('a ring that runs behind the camera is drawn in pieces and not filled', () 
   const behindEast: Project = (x, y) => (x > 12_900 ? null : { x: x / 2, y: y / 2 });
   const marks = siteMarks(places, behindEast);
   const downs = marks.find((mark) => mark.shape === 'section' && mark.colour === '#5cc96b');
-  assert.ok(downs?.shape === 'section' && !downs.whole && !downs.path.endsWith('Z'));
-  assert.equal(downs.path, 'M6000.0,5500.0L6000.0,5000.0', 'the edge back to the first point is kept');
+  assert.ok(downs?.shape === 'section' && !downs.whole && !downs.closed);
+  assert.deepEqual(
+    downs.runs,
+    [
+      [
+        { x: 6000, y: 5500 },
+        { x: 6000, y: 5000 },
+      ],
+    ],
+    'the edge back to the first point is kept',
+  );
+  const { inks } = siteInks(marks);
+  const drawn = inks.filter((ink) => ink.kind !== 'stroke' || ink.colour === '#5cc96b');
+  assert.ok(
+    !drawn.some((ink) => ink.kind === 'fill' && ink.colour.startsWith('#5cc96b')),
+    'a ring cut short is not filled',
+  );
+});
+
+test('the marks are drawn in order: each section filled under its edge, each dot ringed, the names apart', () => {
+  const { inks, labels } = siteInks(siteMarks(places, flat(2)));
+  const kinds = inks.map((ink) => ink.kind);
+  assert.deepEqual(kinds.slice(0, 5), ['stroke', 'fill', 'stroke', 'fill', 'stroke'], 'the wall, then each section');
+  assert.deepEqual(kinds.slice(5), ['disc', 'ring', 'disc', 'ring', 'disc', 'ring']);
+  assert.equal(inks[1]?.colour, '#5cc96b30', 'a section is washed in its colour');
+  assert.deepEqual(
+    labels.map((label) => [label.text, label.anchor]),
+    [
+      ['Overlook', 'middle'],
+      ['Downs', 'middle'],
+      ['Maw', 'middle'],
+    ],
+  );
 });
 
 test('no name is laid over a box kept clear, such as the 3D scale cues', () => {

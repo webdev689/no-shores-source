@@ -1,4 +1,13 @@
-import type { FoeAsk, Look, FightEvent, FlyingShot, SeenFoe, SeenPlayer, Standing } from '../network/messages.ts';
+import type {
+  FoeAsk,
+  FightEvent,
+  FlyingShot,
+  InputParts,
+  Look,
+  SeenFoe,
+  SeenPlayer,
+  Standing,
+} from '../network/messages.ts';
 import type { ArtState, CastAsk } from '../network/artMessages.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
@@ -45,14 +54,15 @@ export interface KeptFoe extends Omit<SeenFoe, 'glance'> {
 }
 
 /** The fight's buttons for the ticks of a frame: a swing held (and the stroke the next one takes, 1 to 6), a shot's
- *  trigger held, the guard held, a dodge pressed, the look's pitch, a ranged weapon held up to aim and the point an
- *  aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or the guard
- *  was pressed since the last frame (even let go again). */
+ *  trigger held, the guard held, a dodge pressed, a drink pressed, the look's pitch, a ranged weapon held up to aim and
+ *  the point an aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or
+ *  the guard was pressed since the last frame (even let go again). */
 export interface FightButtons {
   readonly swing: boolean;
   readonly shoot: boolean;
   readonly guard: boolean;
   readonly dodge: boolean;
+  readonly heal?: boolean;
   readonly pitch: number;
   readonly aim?: boolean;
   readonly mark?: readonly [number, number, number] | null;
@@ -112,12 +122,20 @@ export class Fighting {
   /** The link's welcomes the page has followed: one more means the player joined the room again. */
   private joined: number;
   private fighter: Float64Array | null = null;
+  /** The last inputs sent, which go again with the next on a link that may lose one (`RoomLink.resend`). */
+  private sentLately: { readonly sequence: number; readonly parts: InputParts }[] = [];
   /** The trim last laid on the fighter from the room's word on the player's gear. */
   private trimTaken: readonly number[] | null = null;
   private seen = 0n;
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
-  private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
+  private readonly latches = {
+    swing: new Latch(),
+    shoot: new Latch(),
+    guard: new Latch(),
+    dodge: new Latch(),
+    heal: new Latch(),
+  };
   private readonly spawnsQueued: { readonly foe: FoeAsk; readonly level: number }[] = [];
   private readonly gearQueued: GearAsk[] = [];
   /** A cast waiting for the next tick's input, and the room's word on the Arts with the room tick it came by. */
@@ -172,6 +190,7 @@ export class Fighting {
     if (this.link.joins === this.joined) return;
     this.joined = this.link.joins;
     [this.prediction, this.fighter, this.seen, this.view, this.sentDress] = [new Prediction(), null, 0n, [], ''];
+    this.sentLately = [];
     [this.castQueued, this.castSent, this.artsTaken, this.artsAt] = [null, null, null, 0];
     this.foes.clear();
     this.others.clear();
@@ -204,6 +223,7 @@ export class Fighting {
     if (buttons.shootPressed) this.latches.shoot.press();
     if (buttons.guardPressed) this.latches.guard.press();
     if (buttons.dodge) this.latches.dodge.press();
+    if (buttons.heal) this.latches.heal.press();
   }
 
   /** Asks the room to stand a foe of a type and a rank before the player, at a level (0, a foe of none), or to send
@@ -312,6 +332,7 @@ export class Fighting {
       pitch,
       this.buttons.aim ? 1 : 0,
       ...(this.buttons.mark ?? [Number.NaN, Number.NaN, Number.NaN]),
+      this.latches.heal.tick(false) ? 1 : 0,
     ]);
     const dress = this.dressToSend();
     const view = this.view;
@@ -336,7 +357,12 @@ export class Fighting {
       ...(cast === null ? {} : { cast }),
     };
     this.respawnAsked = false;
-    this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
+    const sent = { sequence, parts: dress === undefined ? parts : { ...parts, dress } };
+    this.link.send(inputBytes(sent.sequence, sent.parts, this.sentLately));
+    this.link.inputSent?.(sequence);
+    // Kept to go again with the next, on a link that may lose one; a WebSocket keeps none.
+    const resend = this.link.resend ?? 0;
+    this.sentLately = resend > 0 ? [...this.sentLately, sent].slice(-resend) : [];
     // Dead, the room steps the fighter as it lies, whatever is asked: nothing is swung or shot, and it falls on.
     if (this.standing.kind === 'dead') {
       this.fighter = this.lying(this.fighter, view);

@@ -20,7 +20,7 @@ import type { HullMask } from '../../water/hullMask.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import type { FigureView } from '../figureView.ts';
 import type { FootView } from '../footView.ts';
-import type { Hud } from '../hud.ts';
+import { type Hud, VEIL_S } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import type { Landmass } from '../landmass.ts';
 import type { Ambience as WorldAmbience } from '../audio/ambience/ambience.ts';
@@ -29,6 +29,7 @@ import type { Strike } from '../../sky/skyLaw.ts';
 import type { MusicDirector } from '../audio/music/director.ts';
 import type { Drawer, GameScene, Overlay } from '../scene.ts';
 import { standingDrawers } from '../standing.ts';
+import type { Stack } from '../../ui/stack.ts';
 import { type Actor, actorCards } from './actors.ts';
 import type { Hull, ShipDraw } from './sailing.ts';
 import { STORY_DAY_S, overTheSky, toldSky } from './storySky.ts';
@@ -63,7 +64,8 @@ export type WorldHeard =
 export interface StageParts {
   readonly gpu: Gpu;
   readonly canvas: HTMLCanvasElement;
-  readonly hudRoot: HTMLElement;
+  /** The game's interface, which the story's own windows join as layers of. */
+  readonly stack: Stack;
   readonly hud: Hud;
   readonly scene: GameScene;
   readonly figures: FigureView;
@@ -92,9 +94,8 @@ export interface StageParts {
   readonly landmass: () => Landmass;
 }
 
-/** How long the game's veil over a loading place takes to rise or to fall, seconds: `.veil`'s transition in
- *  client/index.html. */
-export const HUD_VEIL_S = 0.7;
+/** How long the game's veil over a loading place takes to rise or to fall, seconds: the HUD's own. */
+export const HUD_VEIL_S = VEIL_S;
 /** How long the story's screen takes to clear its black: `Screen.clear`'s fade. */
 const SCREEN_CLEAR_S = 0.6;
 
@@ -260,7 +261,7 @@ export class Stage {
     clock: number,
     seconds: number,
   ): void {
-    const { scene, figures, forge, hulls, birds, flames, overheads, dialogue, canvas } = this.parts;
+    const { scene, figures, forge, hulls, birds, flames, overheads, dialogue, canvas, screen } = this.parts;
     const shot = frame.shot;
     const land = frame.land === false ? null : this.parts.landDrawers();
     const cards = [...actorCards(frame.actors ?? [], forge, shot.eye, clock), ...(frame.cards ?? [])];
@@ -285,6 +286,8 @@ export class Stage {
       after: frame.after,
       hulls: frame.hulls,
       focus: frame.focus,
+      // The screen's blur in CSS pixels, as device pixels of the picture.
+      blur: screen.blurPixels * (canvas.width / Math.max(1, canvas.clientWidth)),
     });
     const view = { width: canvas.clientWidth, height: canvas.clientHeight };
     const heads = new Map<string, readonly [number, number] | null>();

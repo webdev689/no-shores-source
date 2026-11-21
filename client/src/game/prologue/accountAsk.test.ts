@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Account } from '../../network/accounts.ts';
+import { BROWSERS_SIGN_INS, type KeptSignIn, useSignIns } from '../../ui/page.ts';
 import { OUT_OF_REACH, type Accounts, askAccounts, backAtHelm, discordAway, goingOn, markHelm } from './accountAsk.ts';
 
 const guest: Account = { id: 'g1', username: null, discord: false, guest: true };
@@ -112,4 +113,22 @@ test('a player who left for Discord comes back to the helm once, and a store tha
   assert.equal(backAtHelm(tab, false), false, 'and the mark is cleared all the same');
   assert.doesNotThrow(() => markHelm(broken));
   assert.equal(backAtHelm(broken, false), false);
+});
+
+test("a sign-in that worked is offered to the browser's password store, and one refused is not", async () => {
+  const kept: KeptSignIn[] = [];
+  useSignIns({ keep: async (signIn) => void kept.push(signIn), kept: async () => null });
+  try {
+    const named: Account = { ...guest, username: 'Wren', guest: false };
+    await askAccounts(accounts({ register: named }), 'create', 'Wren', 'hunter22');
+    await askAccounts(accounts({ login: named }), 'sign in', 'Wren', 'hunter22');
+    await askAccounts(accounts({ login: 'Wrong username or password.' }), 'sign in', 'Wren', 'nope');
+    await askAccounts(accounts({}), 'guest', '', '');
+    assert.deepEqual(kept, [
+      { id: 'Wren', password: 'hunter22' },
+      { id: 'Wren', password: 'hunter22' },
+    ]);
+  } finally {
+    useSignIns(BROWSERS_SIGN_INS);
+  }
 });

@@ -58,7 +58,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   third of a second, behind the veil on first going to sea): each cell's exact distance to the nearest coast within 60 km, negative on land, and whose coast
   it is. A discovered island's coast is drawn as a pen does, a soft wash on the sea's side and then the line, with
   engraved lines following it out to sea and fading; the charted sea carries a faint wash, its edge soft.
-- **The waters** ([[The Waters Come From the Islands]]). The page opens the waters once, just after its first frame
+- **The waters** ([[The Waters Come From the Islands]]). The game opens the waters once, just after its first frame
   (about 0.6 s in WebAssembly, `pageWaters.ts`), and takes their grid at the coast field's own 4.8 km cell
   ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour,
   at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the pirates red `#d95c5c`,
@@ -90,7 +90,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   names, round which the other names laid again lose least: a water's name lost counts ten, land under the key five,
   any other name lost one. So it moves only when it must, and never back and forth while the map stands still
   (`keyPlace`). It is never laid on the
-  parchment's margin, where the page's hints stand under the map.
+  parchment's margin, where the game's hints stand under the map.
 - **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
   a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
   is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
@@ -100,11 +100,11 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
-  over the picture as a page element. They are laid out again only when something the layout reads has changed
+  over the picture, a node of the game's interface. They are laid out again only when something the layout reads has changed
   (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the charted sea, the ship's point
   and heading, the places and islands known, the place chosen); a still frame lays out nothing (at 1920 × 1080,
   0.02 ms against 8 ms). How it reads:
-  - *Sizes.* In the page's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
+  - *Sizes.* In the game's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
     mark and line grows with the map on a larger screen (`letterScale`: the map's height over its height at
     1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.
   - *Hierarchy.* Ports strongest: the larger size, the darkest ink and a filled ring. Waters' names in their rings in

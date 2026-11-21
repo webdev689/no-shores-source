@@ -1,34 +1,17 @@
-import { canvasSize } from './canvasSize.ts';
-import { useMendedFace } from './face.ts';
-import { startGame } from './game/game.ts';
-import { GpuUnavailable, startGpu } from './gpu.ts';
+// The game's page: one canvas, handed to the game's own thread to draw on (`gameWorker.ts`), and the page's side of
+// it, which keeps what only a page has (`thread/pageHost.ts`).
+import { PageHost } from './thread/pageHost.ts';
+import { stopped } from './ui/page.ts';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game');
-const hud = document.querySelector<HTMLElement>('#hud');
-if (!canvas || !hud) throw new Error('index.html has no <canvas id="game"> and <div id="hud">');
-useMendedFace();
+if (!canvas) throw new Error('index.html has no <canvas id="game">');
 
-/** Keeps the drawing buffer at the canvas's displayed size in device pixels, so nothing is blurred or stretched. */
-function fitCanvas(target: HTMLCanvasElement): void {
-  const size = canvasSize(target.clientWidth, target.clientHeight, window.devicePixelRatio);
-  if (target.width !== size.width || target.height !== size.height) {
-    target.width = size.width;
-    target.height = size.height;
-  }
-}
-
-new ResizeObserver(() => fitCanvas(canvas)).observe(canvas);
-fitCanvas(canvas);
-
-/** Tells the player plainly why the game could not start. */
-function stopped(message: string): void {
-  document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;background:#000;font-size:22px;padding:24px';
-}
-
-try {
-  await startGame(await startGpu(canvas), canvas, hud);
-} catch (error) {
-  if (error instanceof GpuUnavailable) stopped(error.message);
-  else stopped(`The game could not start: ${error instanceof Error ? error.message : String(error)}`);
+if (typeof canvas.transferControlToOffscreen !== 'function') {
+  stopped('This browser cannot draw the game from a thread of its own. Try a current Chrome, Edge, Firefox or Safari.');
+} else {
+  const worker = new Worker(new URL('./gameWorker.ts', import.meta.url), { type: 'module' });
+  const host = new PageHost(canvas, worker);
+  worker.addEventListener('error', (error) => host.thrown(error));
+  const offscreen = canvas.transferControlToOffscreen();
+  worker.postMessage(host.start(offscreen), [offscreen]);
 }

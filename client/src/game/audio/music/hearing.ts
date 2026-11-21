@@ -3,6 +3,7 @@
 // fight it began, the coast it may land on and the sky over it. Pure readings of what the game already has, for the
 // director's law.
 
+import { EVENT } from '../../../combat/cues.ts';
 import type { MarkedFoe } from '../../../combat/foePlate.ts';
 import type { FightEvent, SeenPirate } from '../../../network/messages.ts';
 import type { FightCaptain, FightVessel } from '../../../rules/fightRules.ts';
@@ -29,8 +30,6 @@ export interface SeaHeard {
   readonly fight: { readonly captains: readonly FightCaptain[]; readonly vessel: FightVessel } | null;
 }
 
-/** A fight event's kind when a blow killed (the combat crate's numbering). */
-const KILLED = 8;
 /** A foe alert, with a target. */
 const ALERT = 2;
 /** A hostile ship this near is closing on the player, metres: the edge of the ring the sea sends one out on. */
@@ -46,9 +45,11 @@ export function hearFoot(place: Place, fight: FootHeard): Hearing {
   const struck = new Set<number>();
   let kills = 0;
   for (const event of events) {
+    // A player standing again or drinking names only themselves: no fight.
+    if (event.kind === EVENT.respawned || event.kind === EVENT.healed) continue;
     if (event.striker === player) struck.add(event.defender);
     if (event.defender === player) struck.add(event.striker);
-    if (event.kind === KILLED && event.striker === player) kills++;
+    if (event.kind === EVENT.killed && event.striker === player) kills++;
   }
   const here = own ? ([own.x, own.y] as const) : null;
   // An ally on the players' side (the Brig's crew on the wreck) fights alert by them: no danger to them.

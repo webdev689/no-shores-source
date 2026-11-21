@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 // The browser's side of the messages, so this run sends the room exactly the bytes a browser sends.
 import { inputBytes, readFromRoom } from '../client/src/network/messages.ts';
+import { SnapshotKeeper } from '../client/src/network/snapshots.ts';
 import { startRoomDoor } from './roomDoor.ts';
 
 const compiled = new WebAssembly.Module(
@@ -13,7 +14,7 @@ const compiled = new WebAssembly.Module(
 
 /** The room door's agreement test holds the same node, script and fingerprint
  *  (crates/room-wasm/src/garrison_door_tests.rs). */
-const GARRISON_HASH = 'e986cd40';
+const GARRISON_HASH = 'e3c3fb58';
 const RUN_IN = 420;
 const SWING_EVERY = 30;
 const RUN_TICKS = 1500;
@@ -67,20 +68,23 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
   const room = startRoomDoor(compiled);
   assert.equal(room.openNode(JSON.stringify(NODE)), true);
   const player = room.join();
+  const kept = new SnapshotKeeper();
   let hash = 0x811c_9dc5;
   let mostAlert = 0;
   let events = 0;
   for (let tick = 1; tick <= RUN_TICKS; tick++) {
     const running = tick <= RUN_IN;
     const swing = !running && tick % SWING_EVERY === 0 ? 1 : 0;
-    const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN]);
+    const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
     const look = { anim: '', frame: 0, facing: 0 };
     assert.equal(room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) })), 'taken');
     room.tick();
-    const bytes = room.snapshot();
+    const bytes = room.snapshot(player);
     for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x0100_0193) >>> 0;
-    const message = readFromRoom(bytes);
-    if (message?.kind !== 'snapshot') continue;
+    const read = readFromRoom(bytes);
+    // Kept whole as a page keeps it: a snapshot names only the foes that changed since the last one shown.
+    const message = read?.kind === 'snapshot' ? kept.whole(read) : null;
+    if (!message) continue;
     mostAlert = Math.max(mostAlert, message.foes.filter((foe) => foe.alert === 2).length);
     events += message.events.length;
   }
@@ -90,7 +94,7 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
 
 /** The room door's agreement test holds the same run and fingerprint: two players, the garrison's foes shared out
  *  between them. */
-const GARRISON_PAIR_HASH = '432ddeda';
+const GARRISON_PAIR_HASH = '89db848e';
 
 test('two players against a node’s garrison fight to the same fingerprint through WebAssembly as natively', () => {
   const room = startRoomDoor(compiled);
@@ -103,13 +107,14 @@ test('two players against a node’s garrison fight to the same fingerprint thro
       // The second player swings half a beat of swings after the first.
       const running = tick <= RUN_IN;
       const swing = !running && (tick + 15 * index) % SWING_EVERY === 0 ? 1 : 0;
-      const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN]);
+      const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
       const look = { anim: '', frame: 0, facing: 0 };
       assert.equal(room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) })), 'taken');
     });
     room.tick();
-    const bytes = room.snapshot();
-    for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x0100_0193) >>> 0;
+    // Each player's own snapshot, the first's then the second's; every event comes in both.
+    const bytes = room.snapshot(players[0] ?? 0);
+    for (const byte of [...bytes, ...room.snapshot(players[1] ?? 0)]) hash = Math.imul(hash ^ byte, 0x0100_0193) >>> 0;
     const message = readFromRoom(bytes);
     if (message?.kind !== 'snapshot') continue;
     for (const event of message.events) {

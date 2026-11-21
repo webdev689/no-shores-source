@@ -45,12 +45,12 @@ export class Making implements Beat {
 
   private async steps(steps: MakingSteps): Promise<void> {
     const { story } = this;
-    const root = story.stage.parts.hudRoot;
+    const { stack } = story.stage.parts;
     story.stage.parts.screen.bars(false);
     const { signal } = this.left;
-    await steps.account(root, story.link, signal);
+    await steps.account(stack, story.link, signal);
     const chosen = await steps.look(
-      root,
+      stack,
       story.look,
       (look) => this.dressAs(look),
       (step) => (this.turnTo += step * TURN_STEP),

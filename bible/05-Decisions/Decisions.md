@@ -159,6 +159,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Quests Get a Task Tracker, and the Placeholder Panel Goes]]
 - [[Speech Blurbs Show Their Text Without Glyphs]]
 - [[HTML Is Avoided Where It Can Be]]
+- [[The Interface Uses No HTML, Now or Later]]
+- [[Work Leaves the Main Thread Where It Can]]
+- [[The Network Is Made Smaller and Readied for WebTransport]]
+- [[Claude Makes the Four Points' Open Calls]]
 - [[Music and Ambience Come From DFO's Synthesiser]]
 - [[Landfall Is Kept as Made Again]]
 - [[Weather and Day and Night Come From DFO, Much Improved]]
@@ -213,6 +217,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Wreck's Boarders Are One Side]]
 - [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]
 - [[The Prologue's Camera Flights Stand Clear and Go Slower]]
+- [[Three Healing Charges, Refilled by Blows and Kills]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
