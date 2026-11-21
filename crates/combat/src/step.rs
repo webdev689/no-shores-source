@@ -449,6 +449,10 @@ fn wind_up<B: Near + ?Sized>(
     }
     if elapsed >= telegraph.windup {
         next.action = Action::Idle;
+        // A leap strikes from where it came down: its height is its landing's, not its take-off's.
+        if telegraph.shape == crate::shapes::Shape::Leap {
+            telegraph.origin[2] = next.body.z;
+        }
         return Some(Happening::Landed(telegraph));
     }
     next.action = Action::Telegraph(telegraph);

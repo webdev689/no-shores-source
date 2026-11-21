@@ -145,3 +145,20 @@ fn a_charge_or_a_leap_off_a_drop_never_sets_its_foe_down_inside_the_block_it_lef
         }
     }
 }
+
+#[test]
+fn a_leap_off_a_block_strikes_from_where_it_lands_not_from_where_it_set_off() {
+    let platform = movement::Block { min_x: -8.0, min_y: -3.0, max_x: 2.0, max_y: 3.0, top: 1.6, bottom: 0.0 };
+    let mut foe = foe_at(-1.0, 0.0, FRAC_PI_2);
+    foe.body.z = platform.top;
+    let (_, happenings) =
+        common::run_on(foe, telegraphing(order(Shape::Leap, 60, FRAC_PI_2, 6.0)), 70, None, &[platform]);
+    let landed = happenings.iter().find_map(|(_, happening)| match happening {
+        Happening::Landed(telegraph) => Some(*telegraph),
+        _ => None,
+    });
+    let landed = landed.expect("it landed");
+    let [x, y] = landed.landing().expect("a leap lands");
+    assert!(landed.origin[2].abs() < 1e-9, "it came down on the ground: {landed:?}");
+    assert!(landed.strikes([x, y, 0.0], &[platform]), "a body on the ground where it lands is struck");
+}
