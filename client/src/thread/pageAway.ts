@@ -5,6 +5,7 @@
 // page can do.
 import { canvasSize } from '../canvasSize.ts';
 import { hearFromAway, type PageEvents } from '../ui/canvasEvents.ts';
+import { type KeptSignIn, useSignIns } from '../ui/page.ts';
 import { useSvgDrawer } from '../ui/pictures.ts';
 import type { Typing, UiEvent } from '../ui/ui.ts';
 import type { Pointer, Start, ToGame, ToPage, View } from './pageOps.ts';
@@ -207,6 +208,16 @@ export function pageAway(start: Start, send: Send): Away {
         send({ kind: 'svg', id, svg, width, height });
       }),
   );
+  // The password store is the page's: each ask goes to it, and its answer comes back.
+  const signing = new Map<number, (kept: KeptSignIn | null) => void>();
+  let asked = 0;
+  const signIn = (keep: KeptSignIn | null) =>
+    new Promise<KeptSignIn | null>((answer) => {
+      const id = ++asked;
+      signing.set(id, answer);
+      send({ kind: 'signIn', id, keep });
+    });
+  useSignIns({ keep: async (kept) => void (await signIn(kept)), kept: () => signIn(null) });
   return {
     canvas,
     events,
@@ -246,6 +257,10 @@ export function pageAway(start: Start, send: Send): Away {
         case 'svg':
           drawing.get(message.id)?.(message.picture);
           drawing.delete(message.id);
+          return;
+        case 'signIn':
+          signing.get(message.id)?.(message.kept);
+          signing.delete(message.id);
           return;
         case 'qa': {
           const hook = global[message.hook] as ((...args: unknown[]) => unknown) | undefined;

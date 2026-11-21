@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { addressOf, HeardEvents, KeptStorage, pageAway } from './pageAway.ts';
 import type { Start, ToPage } from './pageOps.ts';
+import { BROWSERS_SIGN_INS, SIGN_INS, useSignIns } from '../ui/page.ts';
 
 test('storage reads what the page had and sends each change on at once', () => {
   const sent: ToPage[] = [];
@@ -42,7 +43,7 @@ test('what the interface types in is sent to the page only as it changes', () =>
   assert.equal(sent.length, 2);
 });
 
-test("an event the page heard on its canvas reaches the canvas's listeners, then the window's; the lock is the page's", () => {
+test("an event the page heard on its canvas reaches the canvas's listeners, then the window's; the lock is the page's", async () => {
   const before = new Map(
     [
       'location',
@@ -96,6 +97,13 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     away.heard({ kind: 'view', view: { width: 800, height: 600, left: 0, top: 0, ratio: 1 } });
     assert.deepEqual([canvas.width, canvas.height, away.canvas.clientWidth], [800, 600, 800]);
     assert.ok(sent.some((message) => message.kind === 'lock' && message.locked));
+    // The password store is the page's: an ask goes to it, and its answer comes back to the one who asked.
+    const asked = SIGN_INS.kept();
+    const signIn = sent.find((message) => message.kind === 'signIn');
+    assert.ok(signIn?.kind === 'signIn' && signIn.keep === null);
+    away.heard({ kind: 'signIn', id: signIn.id, kept: { id: 'Wren', password: 'hunter22' } });
+    assert.deepEqual(await asked, { id: 'Wren', password: 'hunter22' });
+    useSignIns(BROWSERS_SIGN_INS);
   } finally {
     for (const [name, descriptor] of before)
       if (descriptor) Object.defineProperty(globalThis, name, descriptor);

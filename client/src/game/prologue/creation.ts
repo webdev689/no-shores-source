@@ -2,6 +2,7 @@
 // at the right of the screen so the figure standing at the left stays clear, drawn by the game as a layer of its
 // interface. On a screen wider than tall a window stands at the right, never nearer the left than 49% across; on one
 // taller than wide it stands along the bottom, never higher than 54% down, as helm.ts frames the figure.
+import { type KeptSignIn, SIGN_INS } from '../../ui/page.ts';
 import { type Account, type AccountLink, DISCORD_LINKED, DISCORD_SIGNED_IN } from '../../network/accounts.ts';
 import { TONES } from '../../plus/tones.ts';
 import { type Race } from '../../player/dressing.ts';
@@ -242,6 +243,9 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
     };
     let waiting = false;
     let focusNext: string | null = link === null ? 'creation-go-on' : 'creation-username';
+    /** The sign-in the browser keeps, asked once the form shows, to fill its fields while they are still empty. */
+    let kept: KeptSignIn | null = null;
+    let keptAsked = false;
     const typed = { name: '', password: '' };
     let up = true;
     const done = (outcome: AccountOutcome) => {
@@ -307,6 +311,15 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
           words('Accounts are kept when you play online.', size),
           press(ui, 'creation-go-on', 'Go on', () => done({ kind: 'alone' }), { role: 'primary', width: 'grow' }),
         ]);
+      if (!keptAsked) {
+        keptAsked = true;
+        void SIGN_INS.kept().then((found) => (kept = found));
+      }
+      if (kept && ui.fieldText('creation-username') === '' && ui.fieldText('creation-password') === '') {
+        ui.setFieldText('creation-username', kept.id);
+        ui.setFieldText('creation-password', kept.password);
+        kept = null;
+      }
       typed.name = ui.fieldText('creation-username');
       typed.password = ui.fieldText('creation-password');
       const going = offered;

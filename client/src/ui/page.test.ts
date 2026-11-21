@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { PAGE, copyText, openFile, saveFile, touchesHeld } from './page.ts';
+import { BROWSERS_SIGN_INS, PAGE, copyText, openFile, saveFile, touchesHeld } from './page.ts';
 
 test('a link opens in a new tab, apart from the game', () => {
   const opened: unknown[][] = [];
@@ -88,4 +88,32 @@ test('a file opened answers its words, and a chooser closed with none answers nu
   (made[1] as { fire: (kind: string) => void }).fire('cancel');
   assert.equal(await none, null);
   done();
+});
+
+test("the browser's password store keeps a sign-in and gives it back, and a browser without one keeps nothing", async () => {
+  const stored: unknown[] = [];
+  class PasswordCredential {
+    readonly type = 'password';
+    readonly id: string;
+    readonly password: string;
+    constructor({ id, password }: { id: string; password: string }) {
+      [this.id, this.password] = [id, password];
+    }
+  }
+  const credentials = {
+    store: async (credential: unknown) => void stored.push(credential),
+    get: async () => stored.at(-1) ?? null,
+  };
+  Object.defineProperty(globalThis.navigator, 'credentials', { value: credentials, configurable: true });
+  Object.assign(globalThis, { PasswordCredential });
+  try {
+    assert.equal(await BROWSERS_SIGN_INS.kept(), null, 'none kept yet');
+    await BROWSERS_SIGN_INS.keep({ id: 'Wren', password: 'hunter22' });
+    assert.deepEqual(await BROWSERS_SIGN_INS.kept(), { id: 'Wren', password: 'hunter22' });
+  } finally {
+    delete (globalThis as { PasswordCredential?: unknown }).PasswordCredential;
+    Object.defineProperty(globalThis.navigator, 'credentials', { value: undefined, configurable: true });
+  }
+  await BROWSERS_SIGN_INS.keep({ id: 'Wren', password: 'hunter22' });
+  assert.equal(await BROWSERS_SIGN_INS.kept(), null);
 });

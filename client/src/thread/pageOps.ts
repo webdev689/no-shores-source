@@ -1,6 +1,7 @@
 // What the page and the game's worker say to each other (`pageHost.ts` on the page, `pageAway.ts` in the worker): the
 // page hands over its canvas, its storage, its address, its size and what the player does; the worker asks for what
 // only a page can do.
+import type { KeptSignIn } from '../ui/page.ts';
 import type { Typing, UiEvent } from '../ui/ui.ts';
 import type { AudioOp, AudioReply } from './audioOps.ts';
 
@@ -100,6 +101,8 @@ export type ToGame =
   | { readonly kind: 'audio'; readonly reply: AudioReply }
   | { readonly kind: 'svg'; readonly id: number; readonly picture: ImageBitmap | null }
   | { readonly kind: 'tick' }
+  /** The browser's answer: the sign-in it keeps, or null with none or once one offered is taken. */
+  | { readonly kind: 'signIn'; readonly id: number; readonly kept: KeptSignIn | null }
   /** A tool driving the page asks one of the game's hooks for pictures (`QA_HOOKS`). */
   | { readonly kind: 'qa'; readonly id: number; readonly hook: string; readonly args: readonly unknown[] };
 
@@ -125,4 +128,6 @@ export type ToPage =
   /** The worker has no frames of its own: the page sends a tick each of its frames. */
   | { readonly kind: 'ticks' }
   | { readonly kind: 'qa'; readonly id: number; readonly answer: unknown }
+  /** A sign-in to offer the browser to keep, or, with none, the one it keeps asked for. */
+  | { readonly kind: 'signIn'; readonly id: number; readonly keep: KeptSignIn | null }
   | { readonly kind: 'stopped'; readonly message: string };

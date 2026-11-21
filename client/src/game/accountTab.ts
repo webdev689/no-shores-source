@@ -5,7 +5,7 @@
 import type { Account, AccountLink } from '../network/accounts.ts';
 import { button } from '../ui/controls.ts';
 import type { Child, Node } from '../ui/node.ts';
-import { PAGE, type Page } from '../ui/page.ts';
+import { type KeptSignIn, PAGE, type Page, SIGN_INS } from '../ui/page.ts';
 import { announce } from '../ui/announce.ts';
 import { fillNode } from './gearHold.ts';
 import { INK, words } from './gearNodes.ts';
@@ -41,6 +41,9 @@ export class AccountPanel {
   private emptied = false;
   /** The place in the list whose press takes the focus once the list comes again, after an unblock. */
   private focusAt: number | null = null;
+  /** The sign-in the browser keeps, asked for a guest's form once it shows, to fill its fields while they are empty. */
+  private kept: KeptSignIn | null = null;
+  private keptAsked = false;
 
   private readonly link: AccountLink;
   private readonly page: Page;
@@ -68,8 +71,10 @@ export class AccountPanel {
     });
   }
 
-  /** Signed in, registered, or refused: words, the page loaded again, or the account shown anew. */
-  private after(answer: Account | string, reload: boolean): void {
+  /** Signed in, registered, or refused: words, the page loaded again, or the account shown anew. A sign-in that worked
+   *  is offered to the browser's password store first, as a page's form would be. */
+  private async after(answer: Account | string, reload: boolean, signIn: KeptSignIn): Promise<void> {
+    if (typeof answer !== 'string') await SIGN_INS.keep(signIn);
     if (typeof answer === 'string') this.say(answer);
     else if (reload) this.page.reload();
     else {
@@ -103,8 +108,21 @@ export class AccountPanel {
     }
     const press = (id: string, said: string, run: () => void, role: 'button' | 'primary' = 'button') =>
       button(ui, id, said, run, { role, padding: PRESS_PADDING });
-    const typed = () => [ui.fieldText(NAME), ui.fieldText(PASSWORD)] as const;
-    const login = () => void link.login(...typed()).then((answer) => this.after(answer, true));
+    if (account?.guest && !this.keptAsked) {
+      this.keptAsked = true;
+      void SIGN_INS.kept().then((found) => (this.kept = found));
+    }
+    const kept = this.kept;
+    if (kept && ui.fieldText(NAME) === '' && ui.fieldText(PASSWORD) === '') {
+      ui.setFieldText(NAME, kept.id);
+      ui.setFieldText(PASSWORD, kept.password);
+      this.kept = null;
+    }
+    const typed = (): KeptSignIn => ({ id: ui.fieldText(NAME), password: ui.fieldText(PASSWORD) });
+    const login = () => {
+      const tried = typed();
+      void link.login(tried.id, tried.password).then((answer) => this.after(answer, true, tried));
+    };
     const named = account?.username !== null && account?.username !== undefined;
     let presses: Child[] = [];
     let leaving: Child[] = [];
@@ -117,7 +135,10 @@ export class AccountPanel {
       const keep = press(
         'account-keep',
         'Keep this character with a username',
-        () => void link.register(...typed()).then((answer) => this.after(answer, false)),
+        () => {
+          const tried = typed();
+          void link.register(tried.id, tried.password).then((answer) => this.after(answer, false, tried));
+        },
         'primary',
       );
       // A guest who signs in to another account leaves their own behind for good, so that is held, not clicked.

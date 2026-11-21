@@ -2,7 +2,7 @@
 // the pointer's lock, the pad, typing, sound, storage, the address) and sends the game what it hears, doing what the
 // game asks of it. The game draws on the page's canvas from its worker.
 import { CanvasEvents } from '../ui/canvasEvents.ts';
-import { stopped, touchesHeld } from '../ui/page.ts';
+import { BROWSERS_SIGN_INS, stopped, touchesHeld } from '../ui/page.ts';
 import { drawSvgInPage } from '../ui/pictures.ts';
 import { AudioHost } from './audioHost.ts';
 import { EVENT_FIELDS, HEARD, MEDIA, QA_HOOKS, type Start, type ToGame, type ToPage, type View } from './pageOps.ts';
@@ -174,6 +174,12 @@ export class PageHost {
           () => this.post({ kind: 'svg', id: message.id, picture: null }),
         );
         return;
+      case 'signIn': {
+        const { id, keep } = message;
+        const asked = keep ? BROWSERS_SIGN_INS.keep(keep).then(() => null) : BROWSERS_SIGN_INS.kept();
+        void asked.then((kept) => this.post({ kind: 'signIn', id, kept }));
+        return;
+      }
       case 'ticks':
         this.ticking = true;
         return;

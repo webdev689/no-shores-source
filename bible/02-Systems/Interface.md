@@ -12,6 +12,7 @@ code:
   - client/src/game/prologue/creation.ts#windowNode
   - client/src/heldmap/heldMap.ts#HeldMap
   - client/src/ui/page.ts#touchesHeld
+  - client/src/ui/page.ts#SIGN_INS
   - client/src/plus/frame.ts#frameSvg
   - client/src/plus/frame.ts#framePixels
   - client/src/ui/faceReader.ts#readFace
@@ -776,8 +777,10 @@ button's corner and screen, and the Tailor's wares.
   chosen mark's or a ship's mark's blur (a chosen mark's glow is a drawn
   gradient); the fight's glows (the soft lock's mark, the charged crosshair, a full Anima, a ready Tenet, the poise's
   break, the struck edge's red) stand in hard rings and bands instead.
-- The account's username and password are the game's own drawn fields, so a browser's password manager neither
-  offers nor keeps them; nothing stands in for it (no passkeys, no browser's store), and the player types them.
+- The account's username and password are the game's own drawn fields, which a browser's password manager cannot
+  see. In Chromium its store is asked instead, through its credential manager (`SIGN_INS`): a sign-in that works is
+  offered to be kept, and a kept one fills a guest's empty fields, the player choosing among several; elsewhere the
+  player types them, and passkeys wait ([[Claude Makes the Four Points' Open Calls]]).
 - Settings' volumes are the kit's drawn sliders, a brass fill in a track, where the page showed the browser's own; a
   credit's link opens its page in a new tab from a press, and the browser's own menu for a link (copy, open in a
   window) is not offered. A slider steps by its arrows only: Home, End and Page Up or Down do not move it.

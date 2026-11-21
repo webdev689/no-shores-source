@@ -1,6 +1,7 @@
 // The page's own services that a screen drawn by the game asks for and cannot draw: opening a link in a new tab, the
 // page's address, loaded again or left for another, its touches held, its clipboard, a file saved or opened from the
-// player's chooser, a yes or no asked in the browser's dialog, and words said when nothing can be drawn. Each borrows
+// player's chooser, a yes or no asked in the browser's dialog, a sign-in kept in the browser's own password store,
+// and words said when nothing can be drawn. Each borrows
 // the page for a moment and builds no interface. Only here, canvasEvents.ts, pictures.ts and announce.ts touch the
 // page, so the interface itself runs anywhere.
 
@@ -71,3 +72,50 @@ export function openFile(accept: string): Promise<string | null> {
 export function ask(question: string): boolean {
   return window.confirm(question);
 }
+
+/** A sign-in the browser keeps: its username and password. */
+export interface KeptSignIn {
+  readonly id: string;
+  readonly password: string;
+}
+
+/** The browser's own password store (Chromium's credential manager, "Claude Makes the Four Points' Open Calls"): a
+ *  sign-in that worked is offered to be kept, and a kept one fills the drawn fields. Where the browser has no such
+ *  store, nothing is kept or offered. */
+export interface SignIns {
+  /** Offers `signIn` to the browser to keep; done once the browser has taken it or turned it down. */
+  keep(signIn: KeptSignIn): Promise<void>;
+  /** The sign-in the browser keeps for the game, the player choosing among several; null with none. */
+  kept(): Promise<KeptSignIn | null>;
+}
+
+type PasswordMade = new (data: { readonly id: string; readonly password: string }) => Credential;
+type PasswordFound = Credential & { readonly password?: string };
+
+/** The browser's store, where this page has it. */
+export const BROWSERS_SIGN_INS: SignIns = {
+  async keep({ id, password }) {
+    const Made = (globalThis as { PasswordCredential?: PasswordMade }).PasswordCredential;
+    const store = globalThis.navigator?.credentials;
+    if (!Made || !store) return;
+    await store.store(new Made({ id, password })).catch(() => undefined);
+  },
+  async kept() {
+    const store = globalThis.navigator?.credentials;
+    if (!(globalThis as { PasswordCredential?: PasswordMade }).PasswordCredential || !store) return null;
+    const asked = { password: true, mediation: 'optional' } as CredentialRequestOptions;
+    const found = (await store.get(asked).catch(() => null)) as PasswordFound | null;
+    return found?.type === 'password' && found.password ? { id: found.id, password: found.password } : null;
+  },
+};
+
+/** How sign-ins are kept: the browser's own here, or the page's, asked from the game's worker (`useSignIns`). */
+let signIns: SignIns = BROWSERS_SIGN_INS;
+
+/** Puts in place how sign-ins are kept, for the game's worker, which has no password store of its own. */
+export function useSignIns(through: SignIns): void {
+  signIns = through;
+}
+
+/** The sign-ins the browser keeps, wherever the game runs. */
+export const SIGN_INS: SignIns = { keep: (signIn) => signIns.keep(signIn), kept: () => signIns.kept() };
