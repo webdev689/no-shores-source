@@ -44,6 +44,7 @@ import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import { type GateWay, gateWay } from './gates.ts';
 import { mooredShips } from './moorings.ts';
+import { nodeCardsAt } from './nodeCards.ts';
 import { HULLS } from '../water/hullMask.ts';
 
 /** The region every island lies in. */
@@ -208,7 +209,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       drain: drain.share,
     };
     const ships = [...moored.ships, ...fleet.ships];
-    scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), more);
+    // Each material node as the forge draws it, standing while the room stands it for the player, else gathered.
+    const standsFor = ([east, south]: readonly [number, number]) =>
+      here.gear?.gear?.nodes.some((node) => Math.hypot(node.x - east, node.y - south) < 0.5) ?? false;
+    const nodes = nodeCardsAt(here.node.resources ?? [], standsFor, (x, y) => parts.groundAt(x, y) ?? body.z);
+    scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met, ...nodes], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     // As E's other use, a gate takes no one while a menu is up or the player is down.

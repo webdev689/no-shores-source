@@ -97,7 +97,7 @@ interface Placed {
   readonly ring: readonly Point[];
   readonly spawns: readonly Point[];
   readonly centre: Point;
-  readonly resources?: readonly Point[];
+  readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
 }
 
 /** The drawn nodes with each laid node's section and spawns in place of the ring it was drawn with, and its resource
@@ -111,7 +111,7 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
       0, 0,
     ] as const);
     const centre = [sum[0] / laid.ring.length, sum[1] / laid.ring.length] as const;
-    const resources = laid.sites.filter((site) => site.kind === 'resource').map((site) => site.at);
+    const resources = laid.sites.filter((site) => site.kind === 'resource').map(({ at, holds }) => ({ at, holds }));
     return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources };
   });
 }

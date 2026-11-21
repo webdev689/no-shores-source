@@ -473,6 +473,7 @@ export class Foot {
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     this.using = able ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked))) : null;
     this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able, gear?.gear ?? null));
+    walker.working = this.hold.worked(gear?.gear ?? null, this.node.resources ?? []);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
       if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
@@ -588,8 +589,8 @@ export class Foot {
     this.plaza?.close();
     this.prompt.show(null);
     this.falling.close();
-    // The figure stands again wherever the walker goes next, at sea as on foot.
-    this.context.walker.fall = null;
+    // The figure stands again wherever the walker goes next, at sea as on foot, working nothing.
+    [this.context.walker.fall, this.context.walker.working] = [null, null];
     // An Anima's edge frame cast just before leaving must not stay over the next place.
     showAnimaEdge(QUIET);
   }

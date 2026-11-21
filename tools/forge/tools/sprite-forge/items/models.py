@@ -16,6 +16,6 @@ def model(fn):
 
 def load_all():
     """Import every module of models, so each registers."""
-    from . import (coffer, fish, food, foraging, gather, gems, goods, hides, materials, papers, quiver,  # noqa: F401
-                   particles, standins, survival, torches, trinkets)
+    from . import (coffer, fish, food, foraging, gather, gems, goods, hides, materials, nodes, papers,  # noqa: F401
+                   particles, quiver, standins, survival, torches, trinkets)
     return MODELS
