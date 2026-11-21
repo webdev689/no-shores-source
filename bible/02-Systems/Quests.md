@@ -49,6 +49,12 @@ out) and its kind:
 | `land` | Landing on a sea island | `island` (`cove` or `isle`) |
 | `scavenge` | A wreck searched on a sea island | |
 | `enter` | Arriving in a node | `node` |
+| `escort` | A figure met at a place walking to another while the player keeps up; it waits while they lag and while an ambush stands | `node`, `from`, `to` (places), `who` (a speaker of the cast), `near` (metres), `ambush` (`[type, rank]`s stood halfway), `shout` (its bark as they come) |
+| `tail` | Following a figure from place to place at a distance: never nearer than `far`, never past `near`; nearer, it notices and walks back to start again | `node`, `from`, `to`, `who` or `foe` (a roster type's look), `far`, `near`, `noticed` (its line) |
+| `defend` | A ward standing at a place through its waves of foes, one after another; if it falls, the waves leave and it is tried again after a wait | `node`, `place`, `ward` (its name) or `who`, `waves` (lists of `[type, rank]`), `lost` (its line) |
+| `puzzle` | Points round a place used in the right order; a wrong one puts them all out | `node`, `place`, `points` (each a `name`, a `bearing` in degrees from north and `at` metres out), `order`, `wrong` (its line) |
+| `unseen` | Reaching a place with no foe turned alert on the player; seen, it waits until no foe has been on them for 10 s | `node`, `place`, `seen` (its line) |
+| `race` | Passing checkpoints in order before the clock runs out, from the first passed; late, it starts again from the first | `node`, `checkpoints` (places), `seconds`, `late` (its line) |
 
 A `kill` goal with a `spawn` stands its foes at its place: a list of `[type, rank]`, each the roster's name and a rank
 it comes in. A player on that goal coming within 150 m of the place stands the group there, at the node's island levels
@@ -62,7 +68,7 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 
 ## In the rules
 
-- **Kept in the character** (`gear`, `quests.rs`): for each quest in the file's order, the task reached, each of that
+- **Kept in the character** (`gear`, `quests.rs`), **by id**: for each quest by its `id`, the task reached by its task's `id` (so a quest or task added anywhere in the file keeps every save's place), each of that
   task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A character kept before
   quests reads every quest unbegun.
 - **The quest walked**: with no pledge, the opening, until it is done; pledged, the pledged house's road, until it is
@@ -79,7 +85,7 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 
 ## On the wire
 
-- **Asks**: 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
+- **Asks**: 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
   the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), answered only within reach of that counter;
   65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
 - **The gear message** carries, at the end of its table: the quest walked (`quest`, its place in the file counted
@@ -98,6 +104,10 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map marks the nodes the task's goals name.
+- **The varied steps**: the page draws the quest figures (`quest_figures`) as the cast's figures or the roster's, the
+  ward (`quest_ward`) at its place with its health, and the puzzle's points (`quest_points`), each lit or not, with
+  "Use" and its name within reach; the tracker shows the running clock (`quest_clock`); and a goal's line is said as
+  it fails (`quest_fails`).
 - **Locks**: the Art's screen and the ability bar show an Art, a Tenet or a Core fragment not earned locked, saying
   which road earns it; a fragment choice waiting is offered on the Art's screen, its unowned fragments to choose from.
 

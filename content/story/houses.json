@@ -95,7 +95,7 @@
       { "who": "maren", "say": "Then we mend the living first. Your hands know how now." }
     ],
     "lampBarrows": [
-      { "who": "maren", "say": "Tithe collectors are opening the barrows. Stop them, and mend whoever bleeds." }
+      { "who": "maren", "say": "Tithe collectors are coming for the wounded. Hold the hamlet, and mend them." }
     ],
     "lampCoin": [
       { "who": "maren", "say": "Pirate silver in Tithe purses. Someone pays the wreckers." },
@@ -147,7 +147,7 @@
       { "who": "veiled", "say": "The raven is yours. It hunts what you mark." }
     ],
     "veilChalk": [
-      { "who": "wren", "say": "The tallies go to the chalk pits on the Downs. Send the raven ahead." }
+      { "who": "wren", "say": "A collector carries the tallies to the chalk. Follow him, not too close." }
     ],
     "veilRuin": [
       { "who": "wren", "say": "Guards in the Adit. Too many to walk past." },
@@ -188,6 +188,58 @@
       { "who": "veiled", "say": "I burned your page. The Tithe will have to remember you unwritten." },
       { "who": "veiled", "say": "Who paid half? A question for another night." },
       { "who": "wren", "say": "We never say welcome. You will know it anyway." }
+    ],
+    "stormHold": [
+      { "who": "stormcaller", "say": "Plant the glass on the High Downs and hold it. The Tithe will come." }
+    ],
+    "stormLost": [
+      { "who": "stormcaller", "say": "The glass is broken. Plant it again, and hold it this time." }
+    ],
+    "stormSlow": [
+      { "who": "stormcaller", "say": "Too slow. The riders are gone. Back to the mill, and run again." }
+    ],
+    "stormGround": [
+      { "who": "pell", "say": "Ground the storm before Corvane takes it. Strike the rods as it walks." },
+      { "who": "pell", "say": "It walks in from the sea. West, then north, then east, then south." }
+    ],
+    "stormGrounded": [
+      { "who": "stormcaller", "say": "The rods are cold. Corvane has nothing left to count." }
+    ],
+    "stormWrong": [
+      { "who": "pell", "say": "No. Start again, from the sea." }
+    ],
+    "lampAmbush": [
+      { "who": "tobin", "say": "Wreckers! By the rocks!" }
+    ],
+    "lampLost": [
+      { "who": "maren", "say": "They reached the wounded. Go back, and hold them this time." }
+    ],
+    "lampLight": [
+      { "who": "maren", "say": "Light the stones as dawn comes: east, then south, west, and north last." }
+    ],
+    "lampLit": [
+      { "who": "maren", "say": "The stones remember the light. Now the Tomb will show its door." }
+    ],
+    "lampWrong": [
+      { "who": "maren", "say": "Not that one. Begin again with the east." }
+    ],
+    "veilWren": [
+      { "who": "wren", "say": "Keep up, and keep quiet. The Hollow is not far." }
+    ],
+    "veilSeen": [
+      { "who": "wren", "say": "They saw you. Get clear, and try again." }
+    ],
+    "veilNoticed": [
+      { "who": "wren", "say": "He felt you there. Let him settle, then try again." }
+    ],
+    "veilMarks": [
+      { "who": "veiled", "say": "His chest opens by his marks: the tithe, the debt, the interest, the fee." }
+    ],
+    "veilOpened": [
+      { "who": "wren", "say": "Empty, but for his ledger. One word in it: Grotto." }
+    ],
+    "veilWrong": [
+      { "who": "veiled", "say": "Wrong. The reckoner counts the tithe first, always." }
     ]
   }
 }

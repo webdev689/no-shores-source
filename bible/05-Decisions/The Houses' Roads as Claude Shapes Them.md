@@ -68,3 +68,23 @@ on the Saltgrass Downs (**Dusk Daggers**) and the Chalk Adit, a Tithe ship board
 isle, where only the player's page is found (a fragment). At Moorhold on the Driftwood Moors the twist: half the debt is
 paid already, by someone in Overlook (**Vanish**). The road ends in Kraken's Grotto with the book, and Sable burning the
 page unread. Who paid half stays a mystery.
+
+## The varied steps
+
+The owner asked for missions that are more than simple tasks ([[Missions Are Varied, Not Only Simple Tasks]]). Six
+kinds came, each a goal any later mission may use ([[Quests]]), and each road took them in its house's way:
+
+| Kind | What it asks | Where the roads use it |
+|---|---|---|
+| Escort | Meet a figure and keep within 15 m as it walks; it waits while the player lags, and while an ambush stands | The Lamplighters bring Tobin from Drowned Men's Graves to Moorend, wreckers springing on them halfway (the Art comes on arriving); the Veiled meet Wren at Vale Mouth and follow her into the Hollow Coven |
+| Tail | Follow a figure between 10 and 40 m; nearer, it notices and the tail starts again | The Veiled follow a Tithe collector from Saltgrass to Chalkpit Ruin (the first Tenet comes there) |
+| Defend | Keep a ward standing through two waves of foes; if it falls, try again | The Stormcallers hold the storm-glass on the High Downs while the storm finds it (the Art comes as it does); the Lamplighters hold Saltgrass's wounded against the Tithe while mending them |
+| Puzzle | Use four points round a place in the order a line gives | The Stormcallers strike Grey Point's rods as the storm walks (west, north, east, south: Pell's lines); the Lamplighters light the Old Stones as dawn comes (east, south, west, north: Maren's); the Veiled open the reckoner's chest at Moorhold by his marks (tithe, debt, interest, fee: Sable's) |
+| Unseen | Reach a place with no foe alert on the player | The Veiled wait under Valeguard unseen (the Art comes there) |
+| Race | Pass checkpoints in order within a time | The Stormcallers run the river road from Weir Mill by Gullwing to the Water Meadows in 150 s after the tally riders |
+
+Each road is now eleven tasks: the puzzle comes before its instance. A failed step says its own line (the glass broken,
+the riders gone, seen, noticed, a wrong rod, stone or mark) and is tried again: a defence or an escort after 10 s, an
+unseen step once no foe has been on the player for 10 s, a race from its first checkpoint, a puzzle from its first
+point. Every task has an `id`, and the save keeps each road and task by id, so a mission added anywhere keeps every
+player's place. A figure, a ward and a puzzle's points are the player's own: other players in the room do not see them.

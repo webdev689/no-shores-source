@@ -580,6 +580,17 @@ table Gear {
   arts_earned: [ubyte];
   fragment_choices: [ubyte];
   quest_at: [double];
+  // The task's running goal's clock: seconds left on a race, or until a failed goal may be tried again (below 0 for
+  // none). Each goal's failures this task, in its order, so the page says a goal's line as it fails. A puzzle's points
+  // in their room, each x, y and 1 lit or 0. Their quest figures in their room (an escort, a tail's quarry), each its
+  // look (1 and up a speaker's place in content/story/cast.json's speakers, 101 and up a roster type's number plus
+  // 100), x, y, z, facing, and its state (0 waiting, 1 walking, 2 noticed the player, 3 arrived). A defended ward in
+  // their room: x, y, and its health's share (empty with none).
+  quest_clock: double = -1;
+  quest_fails: [ushort];
+  quest_points: [double];
+  quest_figures: [double];
+  quest_ward: [double];
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),
