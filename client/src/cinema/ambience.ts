@@ -5,7 +5,8 @@
 // levels keep gliding meanwhile, and the sound picks up where they stand once it returns.
 
 import { clampLevel, glided, nextGapS, seededRandom, thunderShape } from './ambienceShapes.ts';
-import { type Loudness, playSample } from '../soundSamples.ts';
+import type { Loudness } from '../soundMeasure.ts';
+import { playSample } from '../soundSamples.ts';
 
 /** Where the world's sounds play; the game passes uiSounds' worldOutput. Null while there is no sound. */
 export type SoundOut = () => { readonly audio: AudioContext; readonly out: AudioNode } | null;
@@ -101,6 +102,8 @@ interface BedGraph {
   written: number;
   /** The recording's play now sounding, once one has come, and when it ends. */
   play: { readonly fade: GainNode; readonly source: AudioBufferSourceNode; readonly endsAt: number } | null;
+  /** The fade made for a play whose recording has not come, kept for the next try rather than made each frame. */
+  waiting: GainNode | null;
 }
 
 interface Engine {
@@ -319,13 +322,11 @@ export class Ambience {
     const playing = built.play;
     if (playing && now < playing.endsAt - RECORDED_FADE_S) return;
     const { audio } = engine;
-    const fade = audio.createGain();
+    const fade = built.waiting ?? audio.createGain();
     const like = { measured: recorded.loudness, windowS: RECORDED_WINDOW_S, most: Infinity };
     const source = this.play(audio, fade, recorded.cue, 1, { when: now, like });
-    if (!source?.buffer) {
-      fade.disconnect();
-      return;
-    }
+    built.waiting = source?.buffer ? null : fade;
+    if (!source?.buffer) return;
     fade.gain.setValueCurveAtTime(FADE_IN, now, RECORDED_FADE_S);
     fade.connect(built.gain);
     if (playing) {
@@ -341,7 +342,7 @@ export class Ambience {
     const gain = engine.audio.createGain();
     gain.gain.value = 0;
     gain.connect(engine.master);
-    const built = { gain, written: 0, play: null };
+    const built = { gain, written: 0, play: null, waiting: null };
     engine.beds.set(bed, built);
     return built;
   }

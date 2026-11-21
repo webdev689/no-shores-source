@@ -42,7 +42,8 @@ each part works is in its system note.
   climate's plants, landed on through a room of their own.
 - **The [[Held Map]]**, at the helm and on foot anywhere on land; **[[Weather]] and day and night**, with the [[Sky]].
 - **The [[Prologue]]**: the intro to Saltmere, the storm, creation, the sea fight, the wreck that opens by teaching the
-  player, the deep and the shore; the wreck built and published by its workflow.
+  player, the deep and the shore, the Brig's crew regrouping ahead ([[The Crew Still Standing Regroup Ahead]]); the
+  wreck built and published by its workflow.
 - **[[Music]] and [[Ambience]]**: every sound the owner's Freesound pick but the four synthesised ones kept; recordings
   load as wanted, held once within 192 MB and kept in the browser's storage.
 - **The [[Interface]] without HTML**, held by the `html` check; the game in a worker of its own ([[Game]]); the
@@ -67,6 +68,8 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
+  are in its pull request's description and under Next ("The audit's findings left").
 - **Open pull requests.** For the owner's yes once their checks pass: #139 (areas in chunks), #135 (swings chain;
   foes at 75% of the player's pace), #134 (a keeper's mark over what can be used), #132 (resource nodes), #131 (the
   houses' roads), #124 (public events on Saltmere). Drafts: #72 and #88 (dungeons), #77 (lore), #82 (the owner's
@@ -154,10 +157,11 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **Areas in chunks**, after #139: the hitch risks it found (playing alone, a room opens on the game's thread; a city
-  is built in one go after each landmass switch and every 1.5 km); a landmass readied before it opens; the hitching
-  measured on a real GPU. Memory to measure: the figure cards' 4000-texture budget (`player/cards.ts`) and the
-  scene's full-size targets, about 590 MB at 5120 by 2880, uncapped (`scene.ts`).
+- **Areas in chunks**, after #139 ([[Areas Load in Chunks With Proper Caching]]): the hitch risks it found (playing
+  alone, a room opens on the game's thread; a city is built in one go after each landmass switch and every 1.5 km); a
+  landmass readied before it opens; the hitching measured on a real GPU. Memory to measure: the figure cards' 4000-texture budget (`player/cards.ts`), the scene's
+  full-size targets, about 590 MB at 5120 by 2880, uncapped (`scene.ts`), and the item pictures' cache, uncapped
+  (`player/itemPictures.ts`).
 - **Browser QA**: `tools/claude-toolkit/webgpu-shot.cjs` reads the page's canvas, so it pictures the Test Ground and
   the World Editor but not the game, which draws in its worker ([[Toolkit]]); time the game's frames through
   Playwright's worker handle. The kit is kept as shipped, so its fix is the co-dev's (observation 0068).
@@ -219,3 +223,24 @@ The decisions in [[Open Questions]] are not repeated here.
   wash laid while it is up; on land, the relief past the camera's 2 km read off the worker's exact ground, and lakes,
   which only the 1 km grid holds.
 - **Touch**: no touch layer yet, so the sea fight and the wreck's fights need keys or a pad ([[Interface]], "Limits").
+- **The audit's findings left** (the audit's pull request lists each with its evidence), each needing the owner's word
+  or more than a fix:
+  - A player who opens sockets and never sends fills a room's 16 places (the sea's 64); #122 dismisses unsigned
+    ones, but a signed idle player is never let go: whether an idle player is sent away is the owner's call.
+  - A stalled network that resumes sends a second's held inputs at once, past the room's 240 a second, and the room
+    sends the player away for good (`roomConnection.ts`, `budget.ts`).
+  - A Guns module's Prestige climbs past Ship Power's caps (the weapon grid's five upgrades), and a ship four levels
+    under still burns a captain with heated shot though its balls do nothing: the owner's to say which way each goes.
+  - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
+    a rebound Details or Character. The clash finder sees neither.
+  - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`, which #135 changes).
+  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), the water and the
+    scene make about 13 GPU objects a frame, an island room's hauls are kept and never told, and `RoomHost`
+    (`server/worker.ts`) has no test.
+  - Workflows: `content/forged` is not in `ROOMS_CODE` though the bake reads it; the wreck's and the ships' workflows
+    miss inputs they import (`tools/ships`, `shipPictures.ts`); a failed accounts deploy still lets the rooms record
+    a deploy and the page publish.
+  - Repo checks that still let things through: `shaders.mjs` reads a shader only when `code:` is its call's first key;
+    the html check misses `.after`/`.before` and `attributeStyleMap`; a Python docstring is found only at a line's
+    start; the assets check misses `.modules` and `.bin`.
+
