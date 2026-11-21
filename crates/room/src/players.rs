@@ -310,6 +310,8 @@ impl Room {
             let graced = self.clock + GRACE;
             if let Some(found) = self.players.get_mut(&id) {
                 found.fighter = found.armed(player(body, fighter.arms));
+                // A fall is measured from where the feet stand again, not from where the player died.
+                found.stood = body.z;
                 found.graced = graced;
                 raised.push(id);
             }

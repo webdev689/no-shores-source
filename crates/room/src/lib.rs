@@ -344,15 +344,16 @@ impl Room {
                 if let Standing::Dead { .. } = found.standing {
                     found.shown = input.shown;
                     found.remember(seen);
-                    let (still, fallen) = (players::lying_still(&found.fighter), found.armed(found.fighter));
-                    found.fighter = player_tick(id, &fallen, &still, &view, &self.blocks, &self.floor).0;
+                    let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
+                    found.fighter = player_tick(id, &dead, &lying, &view, &self.blocks, &self.floor).0;
                     if input.respawn && found.standing.may_respawn() {
-                        let fallen = found.fighter;
-                        let body = self.stand_again(fallen.body.x, fallen.body.y);
+                        let lain = found.fighter;
+                        let body = self.stand_again(lain.body.x, lain.body.y);
                         let graced = self.clock + GRACE;
                         if let Some(found) = self.players.get_mut(&id) {
-                            found.fighter = found.armed(player(body, fallen.arms));
+                            found.fighter = found.armed(player(body, lain.arms));
                             found.standing = Standing::Inside;
+                            found.stood = body.z;
                             found.graced = graced;
                         }
                     }

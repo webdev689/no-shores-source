@@ -41,12 +41,14 @@ impl Pad {
     #[must_use]
     pub fn level_at(&self, x: f64, y: f64) -> f64 {
         let [west, north, east, south] = self.bounds;
-        let (to, share) = match self.fall {
+        let (to, from, along, span) = match self.fall {
             None => return self.level,
-            Some(Fall::East(to)) => (to, (x - west) / (east - west)),
-            Some(Fall::South(to)) => (to, (y - north) / (south - north)),
+            Some(Fall::East(to)) => (to, west, x, east - west),
+            Some(Fall::South(to)) => (to, north, y, south - north),
         };
-        self.level + (to - self.level) * share.clamp(0.0, 1.0)
+        // A pad with no length along its fall stands at its first level, never at a level divided by nothing.
+        let share = if span > 0.0 { ((along - from) / span).clamp(0.0, 1.0) } else { 0.0 };
+        self.level + (to - self.level) * share
     }
 }
 
@@ -244,6 +246,13 @@ mod tests {
             Pad::flat([0.0, 100.0, 100.0, 200.0], 4.0),
             Pad { fall: Some(Fall::South(4.0)), ..Pad::flat([40.0, 70.0, 60.0, 130.0], 10.0) },
         ])
+    }
+
+    #[test]
+    fn a_sloped_pad_with_no_length_along_its_fall_stands_at_its_level() {
+        let flat_east = Pad { bounds: [10.0, 0.0, 10.0, 5.0], level: 3.0, fall: Some(Fall::East(7.0)) };
+        let flat_south = Pad { bounds: [0.0, 4.0, 5.0, 4.0], level: 3.0, fall: Some(Fall::South(7.0)) };
+        assert_eq!((flat_east.level_at(10.0, 2.0), flat_south.level_at(2.0, 4.0)), (3.0, 3.0));
     }
 
     #[test]

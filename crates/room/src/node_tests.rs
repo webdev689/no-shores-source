@@ -52,6 +52,16 @@ impl Driver {
         room.seen().find(|seen| seen.player == self.player).unwrap()
     }
 
+    /// Sends `controls` `inputs` times, as a page whose inputs bunched on the way, then ticks once.
+    fn play_bunched(&mut self, room: &mut Room, controls: Controls, inputs: u32) -> Seen {
+        for _ in 1..inputs {
+            self.sequence += 1;
+            let intent = combat::Intent { controls, ..combat::Intent::default() };
+            room.input(self.player, Input { sequence: self.sequence, intent, ..Input::default() }).unwrap();
+        }
+        self.play(room, controls, false)
+    }
+
     /// Plays `controls` until the standing is no longer `while_standing`; answers the ticks taken and the last seen.
     fn until(&mut self, room: &mut Room, controls: Controls, keep: impl Fn(Standing) -> bool) -> (u32, Seen) {
         let mut ticks = 0;
@@ -384,4 +394,39 @@ fn a_body_the_section_killed_is_not_stood_again_by_the_fight_s_own_respawn() {
     let seen = room.seen().next().unwrap();
     assert_eq!(seen.standing, Standing::Dead { ticks: 1, fell: true }, "still dead, until it asks to respawn");
     assert!(seen.fighter.dead(), "not made whole behind the section's back");
+}
+
+#[test]
+fn a_fall_just_past_six_metres_kills_however_the_inputs_bunched_on_the_way() {
+    for inputs in [1, 3] {
+        let mut room = ledge(7.2, true);
+        let mut runner = Driver::join(&mut room);
+        let mut died = false;
+        for _ in 0..200 {
+            let off = room.seen().next().is_some_and(|seen| seen.fighter.body.y > 12.0);
+            let controls = if off { STILL } else { Controls { yaw: PI, ..RUN_NORTH } };
+            died |=
+                runner.play_bunched(&mut room, controls, inputs).standing == Standing::Dead { ticks: 0, fell: true };
+        }
+        assert!(died, "{inputs} inputs a tick: a fall of 6.2 m from the edge's foot kills");
+    }
+}
+
+#[test]
+fn a_player_stood_again_below_where_they_died_may_jump_at_once() {
+    let below = Section { spawns: vec![[0.0, 30.0]], falls_kill: true, ..section() };
+    let mut room = Room::node(raised(20.0), Vec::new(), below);
+    let mut jumper = Driver::join(&mut room);
+    let found = room.players.get_mut(&jumper.player).unwrap();
+    found.fighter.body = Body { x: 0.0, y: 0.0, z: 20.0, ..found.fighter.body };
+    room.tick();
+    room.players.get_mut(&jumper.player).unwrap().fighter.action =
+        combat::fighter::Action::Dead { elapsed: combat::tuning::RESPAWN };
+    room.tick();
+    let stood = room.seen().next().unwrap().fighter.body;
+    assert!(stood.z < 1.0 && !room.seen().next().unwrap().fighter.dead(), "stood again on the land: {stood:?}");
+    for tick in 0..60 {
+        let jump = Controls { jump: tick % 2 == 0, ..STILL };
+        assert_eq!(jumper.play(&mut room, jump, false).standing, Standing::Inside, "jump at {tick}");
+    }
 }

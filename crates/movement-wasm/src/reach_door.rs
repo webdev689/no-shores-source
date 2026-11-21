@@ -86,6 +86,8 @@ pub fn respawn(x: f64, y: f64) -> Option<[f64; 2]> {
     let point = SECTION.with(|slot| slot.borrow().as_ref().and_then(|section| respawn_point(section, x, y)))?;
     allowed.then(|| {
         STANDING.with(|standing| *standing.borrow_mut() = Standing::Inside);
+        // A fall is measured afresh from where the feet stand again.
+        STOOD.with(|slot| *slot.borrow_mut() = f64::NEG_INFINITY);
         point
     })
 }
