@@ -92,6 +92,9 @@ export function plainDressOf(look: Look): Dress {
   return { ...plain, body: look.body, outfit: { ...plain.outfit, hair: look.hair } };
 }
 
+/** A dress with nothing in the hands: the player wakes on the wreck without their sword and shield. */
+export const unarmed = (dress: Dress): Dress => ({ ...dress, outfit: { ...dress.outfit, right: null, left: null } });
+
 /** The prologue's dress: steel armour but no helm, so the face shows, the sword sheathed and the kite shield slung. */
 export function armouredDress(look: Look): Dress {
   const plain = plainDressOf(look);

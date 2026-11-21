@@ -253,7 +253,7 @@ impl Room {
         let fighter = player(self.stand(spawn), BARE_HANDS);
         let mut joined = Player::new(fighter, self.clock, self.is_test_ground());
         if self.story {
-            story::arm_for_story(&mut joined.character);
+            story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
         Some(id)

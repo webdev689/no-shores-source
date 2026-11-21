@@ -506,9 +506,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (way?.happening && playing.flow.mode === 'foot') travel(way.happening, () => goFoot(way.node, way.facing));
   };
   hud.onPassage(goThrough);
-  const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);
+  // The story keeps gear only on the wreck, where it teaches the menu; elsewhere in it the menu rests.
+  const storyMode = () => playing.flow.mode === 'story';
+  const gearHere = () =>
+    playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
   const fighting = () => footView.shown.fight;
-  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, () => playing.flow.mode === 'story'));
+  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, () => storyMode() && !story?.gear));
   addEventListener(
     'keyup',
     (event) => void (playing.flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)),

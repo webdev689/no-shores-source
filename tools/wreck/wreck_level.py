@@ -3,8 +3,8 @@ the zones along it with their checkpoints and waves, and Thule's place; and the 
 zone and foe reached from the last, and none past a heap that still stands.
 
 A wave's foes are of the roster by type and rank, as content/prologue/wreck.json numbers them (the Grey Tithe's deck
-crews 7 to 12, the pirates' 13 to 17): Tithe and pirates fight each other as well as the player. A facing is degrees
-clockwise from north.
+crews 7 to 12, the pirates' 13 to 17): Tithe and pirates board as one side against the player and the Brig's crew. A
+facing is degrees clockwise from north.
 """
 
 # Where the player wakes, by the Brig's wheel, and the way they face (degrees clockwise from north): down the way on.
@@ -19,7 +19,7 @@ PATH = (
 )
 
 # Each zone: its name; the box (west, south, east, north) that, entered, reaches it; its checkpoint; its wave, in pairs
-# of a Grey Tithe crewman and a pirate fighting each other, with any odd one out after them, standing well on from
+# of a Grey Tithe crewman and a pirate side by side, with any odd one out after them, standing well on from
 # where the zone is entered; and where three of the Brig's crew stand fighting them. The first is the quiet deck the
 # player wakes on, with no wave; the last is the arena.
 ZONES = (
@@ -42,7 +42,7 @@ ZONES = (
               (14, 1, (-16.4, -10.0), 270), (9, 2, (0.2, -3.5), 180)),
      'crew': ((-19.8, -8.0), (-13.8, -8.0), (-16.2, -3.8))},
     {'name': "the Frigate's gun deck", 'area': (-19.5, -28.4, 4.6, -22.0), 'checkpoint': (0.1, -25.2),
-     'wave': ((10, 1, (-13.0, -27.0), 180), (13, 1, (-13.0, -28.6), 0), (12, 1, (-10.6, -31.5), 270)),
+     'wave': ((10, 1, (-13.0, -27.0), 180), (13, 1, (-13.0, -28.6), 0), (11, 1, (-10.6, -31.5), 270)),
      'crew': ((-15.6, -27.8), (-10.4, -27.8), (-13.0, -24.8))},
     {'name': "the Frigate's quarterdeck", 'area': (-4.9, -41.0, 4.9, -30.7), 'checkpoint': (1.6, -33.2),
      'wave': (), 'crew': ()},
