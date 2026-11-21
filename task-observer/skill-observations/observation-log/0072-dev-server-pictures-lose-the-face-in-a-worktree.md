@@ -1,5 +1,5 @@
 ---
-id: 71
+id: 72
 title: "In a worktree whose node_modules is linked, the dev server refuses the face's fonts: every picture falls back to monospace"
 status: open
 type: internal
