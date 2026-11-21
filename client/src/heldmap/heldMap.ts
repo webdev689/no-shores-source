@@ -265,10 +265,11 @@ export class HeldMap {
     this.mapView = zoomAt(this.mapView, x - this.ink.x, y - this.ink.y, factor, this.ink, WORLD);
   }
 
-  /** Sets sail for the destination chosen, if it has a course. */
+  /** Sets sail for the destination chosen, if it has a course, at the hardest difficulty open up to the one picked: a
+   *  shut one never sails, as the sea's room would refuse it. */
   setSail(): void {
     if (!this.choice?.course.ok) return;
-    this.difficulty = this.picked;
+    this.difficulty = seasChoices(this.picked, this.shut).picked;
     this.close(this.choice.at);
   }
 

@@ -123,8 +123,9 @@ pub fn restore_character(player: PlayerId, bytes: &[u8]) -> bool {
 }
 
 /// Why the open room's gate shuts to a player's character kept as JSON's bytes, in its words (`gear::gate`), with the
-/// story they already hold in the room carried forward (`Room::shut_to`); empty bytes are a new character's. Empty when
-/// it may enter, at sea, or when the bytes are no character, which the restore refuses.
+/// story they already hold in the room carried forward (`Room::shut_to`), or at sea the sea's tier (`Sea::shut`); empty
+/// bytes are a new character's. Empty when it may enter, in a fleet, or when the bytes are no character, which the
+/// restore refuses.
 #[must_use]
 pub fn shut(player: PlayerId, bytes: &[u8]) -> String {
     let character = if bytes.is_empty() {
@@ -135,7 +136,8 @@ pub fn shut(player: PlayerId, bytes: &[u8]) -> String {
     let Some(character) = character else { return String::new() };
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.shut_to(player, &character).map(gear::gate::Shut::reason),
-        Opened::Sea(_) | Opened::Fleet(_) => None,
+        Opened::Sea(sea) => sea.shut(&character).map(gear::gate::Shut::reason),
+        Opened::Fleet(_) => None,
     })
     .flatten()
     .unwrap_or_default()

@@ -107,7 +107,8 @@ they play in holds it while they are there.
 - **Gated.** Before giving a character, the room asks its gate ([[Activities]]). It judges the character with the
   story the player already holds in the room carried forward, since the page may tell the room the prologue is done
   before the accounts answer; the story only moves forward. One the gate shuts, or a new one where the prologue is
-  needed, is let go untouched, and the player is sent away with the reason.
+  needed, is let go untouched, and the player is sent away with the reason. At sea and on a sea island the gate is
+  the seas' tier alone.
 - **A run keeps to its company.** A run's room ([[Activities]]) gives a character to the first to come, then only
   to one it let in before or a companion of someone it let in, for as long as it lives: one of their company's
   members (`companions(account, room)`, longest there first, or the player alone), or one the run was found for with

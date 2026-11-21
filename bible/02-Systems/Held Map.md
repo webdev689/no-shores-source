@@ -138,7 +138,8 @@ war, and a click on it sets the ship's destination.
   Elite and Abyss. The presses stand after a "Seas" label. A difficulty the player's level shuts rests, titled with
   its gate's reason, and the first reason stands in a line under the row ("Elite seas open at level 10."), read from
   the rules by the last word of the character a room sent ([[Activities]]); before any word none is shut. A pick the
-  level shuts, kept from an earlier voyage or another character, falls to the hardest difficulty open below it.
+  level shuts, kept from an earlier voyage or another character, falls to the hardest difficulty open below it, and
+  Set sail takes that one, so no voyage sails for a sea room whose gate would turn the player away.
 - **Turning back.** Escape on the way down to the helm turns the view back before the map is raised.
 - **Lowering.** Over 0.36 s, from wherever the painting is; then the view flies back up to the sea's, and a
   destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation

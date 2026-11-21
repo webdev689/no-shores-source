@@ -125,7 +125,8 @@ export interface RoomDoor {
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
   restoreCharacter(player: number, kept: string): boolean;
   /** Why the open room's gate shuts to a player's kept character (JSON), or to a new one (null), in its words, with
-   *  the story they already hold in the room carried forward; empty when it may enter, at sea, or for no character. */
+   *  the story they already hold in the room carried forward, or at sea the sea's tier; empty when it may enter, in a
+   *  fleet, or for no character. */
   shut(player: number, kept: string | null): string;
   /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
   own(player: number, account: string): boolean;

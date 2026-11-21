@@ -18,7 +18,7 @@ pub enum Place {
     EliteDungeon,
     /// The week's Elite or Abyss Dungeon's run.
     Week(Weekly),
-    /// A mission's or a boss's node, or a sea island's dungeon.
+    /// A mission's or a boss's node, the sea, a sea island, or a sea island's dungeon: shut by its seas alone.
     Node,
 }
 

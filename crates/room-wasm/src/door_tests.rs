@@ -651,3 +651,14 @@ fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_t
     assert_eq!(seen_at_sea(near), (vec![one, near], vec![2]), "40 km off, within the page's farthest view");
     assert_eq!(seen_at_sea(far), (vec![far], vec![]), "250 km off, they see no one");
 }
+
+#[test]
+fn the_sea_says_why_its_tier_shuts_to_a_kept_character_or_a_new_one() {
+    small_sea();
+    assert_eq!(shut(0, b""), "", "the Normal sea is open to anyone");
+    assert!(set_difficulty(2));
+    assert_eq!(shut(0, b""), "Abyss seas open at level 20.");
+    let mut seasoned = gear::Character::starting();
+    seasoned.xp = gear::power::xp_for_level(20);
+    assert_eq!(shut(0, seasoned.to_json().as_bytes()), "", "a character of level 20 sails it");
+}

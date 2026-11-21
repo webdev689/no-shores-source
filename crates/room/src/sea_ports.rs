@@ -325,13 +325,24 @@ impl Sea {
         self.harbour.characters.get(&player)
     }
 
-    /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea
-    /// or the text is not a character. Their ship lies where the room last kept it, wherever the page first put it to
-    /// sea: a fight they met from the page's spawn is over for them. With nowhere kept, the course held for them sails.
+    /// Why the sea's gate shuts to a character: the level its tier opens at, as on land (`gear::gate`); never at
+    /// Normal.
+    #[must_use]
+    pub fn shut(&self, character: &gear::Character) -> Option<gear::gate::Shut> {
+        gear::gate::shut(character, gear::gate::Place::Node, self.pirates.difficulty)
+    }
+
+    /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea,
+    /// the text is not a character, or the sea's gate shuts to it (`shut`). Their ship lies where the room last kept
+    /// it, wherever the page first put it to sea: a fight they met from the page's spawn is over for them. With nowhere
+    /// kept, the course held for them sails.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
         };
+        if self.shut(&character).is_some() {
+            return false;
+        }
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
         if at.is_some() && self.fights.fighting(player) {

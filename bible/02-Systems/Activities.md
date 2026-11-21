@@ -244,7 +244,10 @@ One engine counts both, since the owner's side quests and the board's bounties a
   else. A room asks it before it gives a player their kept character, with the story they already hold in the room
   carried forward (`Story::merged`, which never goes back), and a new one is judged as it starts. The reasons read
   "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "Elite seas open at level 10."
-  and "Abyss seas open at level 20.". A sea island's dungeon is gated by its seas alone. The screens show what is
+  and "Abyss seas open at level 20.". The sea's room, a sea island's room and a sea island's dungeon are gated by
+  their seas alone: the sea's tier is its room's name's (`sea--elite`, `sea--abyss`), and an island's is its sea's
+  (`Sea::shut`, an island's room `Place::Node`), so the server keeps a character below the tier's level off those
+  seas, and the voyage's card never sets sail at a tier it shuts. The screens show what is
   shut and why: the Journal's timers, an entrance's card and the voyage's card. The page reads every gate's reason for a level
   from the rules (`room_gates`), so it never judges a gate itself.
 

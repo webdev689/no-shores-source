@@ -274,3 +274,17 @@ fn a_disconnect_on_a_captains_deck_saves_the_deck_rooms_character_with_their_hur
     assert_eq!(last.ship[0], 5_000);
     assert_eq!(last.ship_at, Some([60_000, 50_000]), "nearest port");
 }
+
+#[test]
+fn a_sea_of_a_harder_tier_shuts_to_a_character_below_its_level_and_keeps_none() {
+    let mut sea = sea();
+    sea.set_difficulty(gear::Difficulty::Elite);
+    let player = sea.join();
+    let low = gear::Character::starting();
+    assert_eq!(sea.shut(&low).map(gear::gate::Shut::reason).as_deref(), Some("Elite seas open at level 10."));
+    assert!(!sea.restore_character(player, &low.to_json()), "never given");
+    assert!(!sea.harbour.characters.contains_key(&player), "nor held");
+    sea.set_difficulty(gear::Difficulty::Normal);
+    assert_eq!(sea.shut(&low), None, "the Normal sea is open to anyone");
+    assert!(sea.restore_character(player, &low.to_json()));
+}
