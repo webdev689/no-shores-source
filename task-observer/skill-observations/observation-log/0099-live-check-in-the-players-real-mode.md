@@ -1,5 +1,5 @@
 ---
-id: 98
+id: 99
 title: "A live check in the player's real mode (no account) caught a gating bug every test missed; and malformed id-claim markers break new-observation.sh's floor"
 status: open
 type: open-source
