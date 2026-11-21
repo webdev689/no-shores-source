@@ -76,6 +76,8 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @lo
 // A figure in a shadow keeps what the land's ambient light gives an upright face: at a clear noon about half its
 // sunlit colour.
 const SHADED = 0.55;
+// The least light a Lattice figure's crystal shows at.
+const CRYSTAL_FLOOR = 0.8;
 
 @fragment fn card_fragment(in: Out) -> @location(0) vec4f {
   let root = root_texel();
@@ -95,7 +97,12 @@ const SHADED = 0.55;
   // The card faces the eye: a lamp before it lights it, one behind it hardly.
   let facing = normalize(vec3f(-in.from_eye.xy, 0.0) + vec3f(1e-4, 0.0, 0.0));
   let lamps = sky_lamps(in.from_eye, facing);
-  let light = mix(shaded_light, shaded_light + sky_state.key_light.rgb * (1.0 - SHADED), sun) + lamps;
+  var light = mix(shaded_light, shaded_light + sky_state.key_light.rgb * (1.0 - SHADED), sun) + lamps;
+  // A Lattice figure's crystal (its bright, strongly hued texels) glows of itself: never lit below a floor.
+  let brightest = max(texel.r, max(texel.g, texel.b));
+  if (card.size.z > 0.5 && brightest > 0.45 && brightest - min(texel.r, min(texel.g, texel.b)) > 0.3) {
+    light = max(light, vec3f(CRYSTAL_FLOOR));
+  }
   // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.
   let shown = card_shade(card.status, card.look, card.tint, picture, at, texel.rgb * light, root);
   if (shown.a < 0.5) { discard; }
@@ -292,7 +299,7 @@ export class FigureView implements CardMaker {
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) * metres;
       const cardValues = new Float32Array([
         ...[x - eye[0] + Math.cos(yaw) * across, y - eye[1] + Math.sin(yaw) * across, z - eye[2] + up, flip ? 1 : 0],
-        ...[card.width * metres, card.height * metres, 0, 0],
+        ...[card.width * metres, card.height * metres, shown.crystal ? 1 : 0, 0],
         ...[rootX, card.root[1] * metres, 0, 0],
         ...cardLookValues(shown, time, !!smear),
       ]);

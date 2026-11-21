@@ -17,6 +17,10 @@ export interface Banner {
   readonly title: string;
   readonly place: string;
   readonly clock: string;
+  /** The event's last minute: its clock red and pulsing. */
+  readonly urgent?: boolean;
+  /** What runs or comes next elsewhere on the island, between events. */
+  readonly elsewhere?: string;
   readonly objective: string;
   readonly bar: { readonly share: number; readonly label: string } | null;
   readonly heroic: { readonly text: string; readonly clock: string; readonly met: boolean } | null;
@@ -24,15 +28,21 @@ export interface Banner {
 }
 
 /** A beat of the event the banner slides in afresh for. */
-export type BannerBeat = 'begun' | 'stage' | 'heroic' | 'missed' | 'won' | 'failed';
+export type BannerBeat = 'begun' | 'stage' | 'heroic' | 'missed' | 'won' | 'failed' | 'chance' | 'soon';
 
 /** What the display shows of the zone's public event this frame: its banner and the beat it slides in for, the
- *  places the compass marks, and each store's health over it while a raid runs. */
+ *  places the compass marks, each store's health over it while a raid runs (struck: under attack), and the least
+ *  mood it holds the music to. */
 export interface PublicShown {
   readonly banner: Banner | null;
   readonly beat: BannerBeat | null;
   readonly places: readonly PlaceMark[];
-  readonly stores: readonly { readonly at: readonly [number, number, number]; readonly share: number }[];
+  readonly stores: readonly {
+    readonly at: readonly [number, number, number];
+    readonly share: number;
+    readonly struck?: boolean;
+  }[];
+  readonly mood?: 'tension' | 'peak' | null;
 }
 
 /** How high over a store's foot its bar stands, metres: over its stack and tarp (1.6 m), as a plate over a head. */
@@ -62,14 +72,19 @@ export class PublicBanner {
   private readonly heroicText: HTMLElement;
   private readonly heroicClock: HTMLElement;
   private readonly bonus: HTMLElement;
+  private readonly elsewhere: HTMLElement;
+  /** A line a screen reader reads at each beat, unseen: the banner's own words change too often to be read out. */
+  private readonly said: HTMLElement;
 
   constructor(parent: HTMLElement) {
     this.root = element('section', 'public-banner', parent);
     this.root.setAttribute('role', 'status');
     this.root.setAttribute('aria-label', 'Public event');
+    this.root.setAttribute('aria-atomic', 'false');
     const head = element('div', 'pb-head', this.root);
     this.kicker = element('span', 'pb-kicker', head);
     this.clock = element('span', 'pb-clock', head);
+    this.clock.setAttribute('aria-hidden', 'true');
     const name = element('div', 'pb-name', this.root);
     this.title = element('span', 'pb-title', name);
     this.place = element('span', 'pb-place', name);
@@ -81,7 +96,10 @@ export class PublicBanner {
     element('i', 'pb-heroic-mark', this.heroic);
     this.heroicText = element('span', 'pb-heroic-text', this.heroic);
     this.heroicClock = element('span', 'pb-heroic-clock', this.heroic);
+    this.heroicClock.setAttribute('aria-hidden', 'true');
     this.bonus = element('div', 'pb-bonus', this.root);
+    this.elsewhere = element('div', 'pb-elsewhere', this.root);
+    this.said = element('span', 'pb-said', this.root);
     this.root.hidden = true;
   }
 
@@ -90,6 +108,7 @@ export class PublicBanner {
     showNode(this.root, !!banner);
     if (!banner) return;
     this.root.dataset.tone = banner.tone;
+    this.root.classList.toggle('urgent', !!banner.urgent);
     setStyle(this.root, '--tone', TONE_COLOURS[banner.tone]);
     say(this.kicker, banner.kicker);
     say(this.clock, banner.clock);
@@ -108,12 +127,17 @@ export class PublicBanner {
       say(this.heroicText, banner.heroic.text);
       say(this.heroicClock, banner.heroic.clock);
     }
+    showNode(this.elsewhere, !!banner.elsewhere);
+    say(this.elsewhere, banner.elsewhere ?? '');
     showNode(this.bonus, !!banner.bonus);
     if (banner.bonus) {
       say(this.bonus, banner.bonus.text);
       this.bonus.dataset.state = banner.bonus.state;
     }
     if (beat) {
+      const objective =
+        beat === 'heroic' || beat === 'missed' || beat === 'chance' ? banner.heroic?.text : banner.objective;
+      say(this.said, `${banner.kicker}: ${banner.title}${objective ? `. ${objective}` : ''}`);
       // Taken off and put back, so the slide plays again for each beat.
       this.root.dataset.beat = beat;
       this.root.classList.remove('beat');
@@ -149,6 +173,7 @@ export class StoreBars {
       if (!store || !spot) return;
       setStyle(bar.root, 'transform', `translate(${spot.x}px, ${spot.y}px)`);
       bar.root.classList.toggle('fallen', store.share <= 0);
+      bar.root.classList.toggle('struck', !!store.struck);
       bar.meter.set(store.share, seconds);
     });
   }
@@ -169,6 +194,8 @@ export function publicBannerCss(): string {
   box-shadow: 0 0 0 1px ${TONES.outline}; color: ${TONES.word}; text-shadow: ${HALO}; font-size: 11px;
   line-height: 14px; font-variant-numeric: tabular-nums; pointer-events: none; }
 .fight-hud .public-banner[hidden], .fight-hud .public-banner [hidden] { display: none; }
+.fight-hud .public-banner .pb-said { position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; }
 .fight-hud .public-banner .pb-head { display: flex; align-items: baseline; gap: 12px; }
 .fight-hud .public-banner .pb-kicker { color: var(--tone); letter-spacing: 0.16em; text-transform: uppercase; }
 .fight-hud .public-banner .pb-clock { margin-left: auto; font-size: 22px; line-height: 22px; white-space: nowrap; }
@@ -200,19 +227,31 @@ export function publicBannerCss(): string {
 .fight-hud .public-banner[data-tone='won'] .pb-title, .fight-hud .public-banner[data-tone='failed'] .pb-title {
   color: var(--tone); }
 .fight-hud .public-banner.beat { animation: pb-slide 0.45s cubic-bezier(0.2, 0.8, 0.3, 1); }
-.fight-hud .public-banner.beat[data-beat='heroic'], .fight-hud .public-banner.beat[data-beat='won'] {
+.fight-hud .public-banner.beat[data-beat='heroic'], .fight-hud .public-banner.beat[data-beat='won'],
+.fight-hud .public-banner.beat[data-beat='soon'] {
   animation: pb-slide 0.45s cubic-bezier(0.2, 0.8, 0.3, 1), pb-flare 1.2s ease-out; }
+/* The heroic chance opens: an orange flare, whatever the tone. */
+.fight-hud .public-banner.beat[data-beat='chance'] {
+  animation: pb-slide 0.45s cubic-bezier(0.2, 0.8, 0.3, 1), pb-chance 1.6s ease-out; }
+/* The last minute: the clock red, pulsing. */
+.fight-hud .public-banner.urgent .pb-clock { color: #e0483c; animation: pb-pulse 1s steps(2, end) infinite; }
+/* Between events, what runs elsewhere on the island, under the next event's line. */
+.fight-hud .public-banner .pb-elsewhere { flex-basis: 100%; order: 4; color: ${TONES.wordDim}; }
 @keyframes pb-slide { from { translate: 0 -10px; opacity: 0; clip-path: inset(0 100% 0 0); }
   to { translate: 0 0; opacity: 1; clip-path: inset(0 0 0 0); } }
 @keyframes pb-flare { from { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 24px var(--tone); }
+  to { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 0 transparent; } }
+@keyframes pb-chance { from { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 28px #ff7a3d; border-left-color: #ff7a3d; }
   to { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 0 transparent; } }
 @keyframes pb-pulse { 50% { opacity: 0.35; } }
 /* Over each store, its health, as a foe's plate holds its own. */
 .fight-hud .store-bar { position: absolute; left: 0; top: 0; width: 72px; translate: -50% -100%; pointer-events: none; }
 .fight-hud .store-bar .meter.health { --fill: #e9b44c; height: 7px; }
 .fight-hud .store-bar.fallen { opacity: 0.45; }
+.fight-hud .store-bar.struck .meter.health { --fill: #e0483c; animation: pb-pulse 0.4s steps(2, end) infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .fight-hud .public-banner.beat, .fight-hud .public-banner .pb-heroic-mark { animation: none !important; }
+  .fight-hud .public-banner.beat, .fight-hud .public-banner .pb-heroic-mark,
+  .fight-hud .public-banner.urgent .pb-clock, .fight-hud .store-bar.struck .meter.health { animation: none !important; }
 }
 `;
 }

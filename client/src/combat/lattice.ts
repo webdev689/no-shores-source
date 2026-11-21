@@ -232,6 +232,25 @@ export function latticeHidden(body: string, anim: string, frame: number, changed
   return [];
 }
 
+/** The dresses a Lattice foe of `body` is drawn in, each by the layers it hides, with the moves it is drawn in on any
+ *  of their `frames`: as it stands now (`changed` or not) and once changed, for a foe that changes. */
+export function latticeDresses(
+  body: string,
+  changed: boolean,
+  frames: (anim: string) => number,
+): { readonly hidden: readonly string[]; readonly anims: string[] }[] {
+  const dresses = new Map<string, { readonly hidden: readonly string[]; readonly anims: string[] }>();
+  for (const anim of latticeAnims(body))
+    for (const now of new Set([changed, true]))
+      for (let frame = 0; frame < Math.max(1, frames(anim)); frame++) {
+        const hidden = latticeHidden(body, anim, frame, now);
+        const dress = dresses.get(hidden.join(' ')) ?? { hidden, anims: [] };
+        dresses.set(hidden.join(' '), dress);
+        if (!dress.anims.includes(anim)) dress.anims.push(anim);
+      }
+  return [...dresses.values()];
+}
+
 /** Whether a Lattice body blinks where another would hop: the Flicker and the Idol. */
 export const latticeBlinks = (body: string): boolean => !!MOVES[body]?.arrive;
 

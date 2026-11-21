@@ -4,7 +4,8 @@
 // The feed at the right of the screen shows these as Destiny shows what is picked up.
 
 import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };
-import type { GearItem, GearState } from '../network/gearMessages.ts';
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
+import { DROPPED, type GearItem, type GearState } from '../network/gearMessages.ts';
 import { RARITIES, STOCK_NAMES, resourceName } from '../player/gear.ts';
 import { gearName, moduleGlyph } from './shipGear.ts';
 import { cosmeticRamp } from '../forge/cosmetics.ts';
@@ -29,6 +30,8 @@ export interface Gain {
   readonly emblem: number | null;
   /** The picture of what has no glyph of the menu's: Shapes' mark, a cosmetic's colours or its barding's mark. */
   readonly icon: string | null;
+  /** A chest's tier, 1 to 4, shown as pips in place of a count. */
+  readonly pips?: number;
 }
 
 /** Each stock's glyph, in `stocks`' order. */
@@ -71,9 +74,27 @@ function cosmeticGain(number: number): Gain[] {
   return [gain(`cosmetic-${number}`, cosmetic.name, 1, { rarity: rarityNamed(cosmetic.rarity), icon })];
 }
 
-/** What `after` holds that `before` did not: counts grown, and items, Vestiges and emblems new. */
+/** A public event's chest opened between two words (lying in `before`, gone in `after`): its tier, the XP it gave and
+ *  the reputation with the faction the player is pledged to. */
+function chestGains(before: GearState, after: GearState): Gain[] {
+  const chest = before.drops.find(
+    (drop) => drop.kind === DROPPED.chest && !after.drops.some((left) => left.id === drop.id),
+  );
+  if (!chest) return [];
+  const gains = [gain(`chest-${chest.id}`, chest.tier >= 3 ? 'Heroic chest' : 'Chest', 1, { pips: chest.tier })];
+  const earnedXp = Number(after.xp - before.xp);
+  if (earnedXp > 0) gains.push(gain('xp', 'XP', earnedXp));
+  const place = factions.factions.findIndex((faction) => faction.id === after.standing?.pledge);
+  const earned = (after.standing?.reputation[place] ?? 0) - (before.standing?.reputation[place] ?? 0);
+  const name = factions.factions[place]?.name;
+  if (earned > 0 && name) gains.push(gain(`reputation-${place}`, `${name} reputation`, earned));
+  return gains;
+}
+
+/** What `after` holds that `before` did not: counts grown, and items, Vestiges and emblems new; a chest opened, with
+ *  what it gave of XP and reputation. */
 export function gainsOf(before: GearState, after: GearState): Gain[] {
-  const gains: Gain[] = [];
+  const gains: Gain[] = chestGains(before, after);
   if (after.aurem > before.aurem) gains.push(gain('aurem', 'Aurem', after.aurem - before.aurem, { glyph: 'aurem' }));
   const [shapes, shapesBefore] = [after.shapes ?? 0, before.shapes ?? 0];
   if (shapes > shapesBefore) gains.push(gain('shapes', 'Shapes', shapes - shapesBefore, { icon: svgUrl(shapesSvg()) }));

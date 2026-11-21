@@ -11,8 +11,16 @@ import { markRing } from '../combat/marks.ts';
 import type { BannerBeat, PublicShown } from '../combat/publicBanner.ts';
 import { ASKS, DROPPED, type GearAsk, type GearDrop } from '../network/gearMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
-import { MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent, type PublicMark } from '../network/publicMessages.ts';
-import { bannerOf, compassOf, questOf, ringOf } from './publicLaw.ts';
+import {
+  HEROIC,
+  MARK,
+  PUBLIC_KIND,
+  PUBLIC_PHASE,
+  type PublicEvent,
+  type PublicMark,
+} from '../network/publicMessages.ts';
+import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, elsewhereOf, questOf, ringOf } from './publicLaw.ts';
+import { type Moments, PublicMoments } from './publicMoments.ts';
 import type { Shot } from './camera.ts';
 import type { Quest } from './tasks.ts';
 import { chime as rarityChime, play } from './uiSounds.ts';
@@ -40,12 +48,18 @@ const HAND_FIRST = { forward: 0.55, left: 0.3, down: 0.42 } as const;
 /** How near a chest the player stands to open it (crates/room/src/public/chest.rs CHEST_REACH, CHEST_HEIGHT). */
 const CHEST_REACH_M = 2.5;
 const CHEST_HEIGHT_M = 2;
-/** How long an opened chest stands, its lid up, after the room has taken it off the ground, seconds. */
+/** How long a chest asked to open stands with its lid up, seconds: once the room has taken it off the ground, or,
+ *  if the room still leaves it lying (it refuses one a step out of reach), until it closes and E may ask again. */
 const CHEST_KEPT_S = 6;
-/** How long an asked chest waits on the room before E may ask again: the room refuses one a step out of reach. */
-const CHEST_RETRY_S = 1.5;
+/** A gap between frames this long, seconds, is a hidden tab come back: the beats kept meanwhile are not played. */
+const STALE_S = 2;
 /** The player's own shard taken chimes as a Vestige of this rarity does coming to rest. */
 const SHARD_CHIME = 3;
+/** The room's ticks a second, and an event's last minute in them. */
+const TICKS_PER_SECOND = 60;
+const LAST_MINUTE_TICKS = 60 * TICKS_PER_SECOND;
+/** The ring's colour once the heroic task is met. */
+const RING_HEROIC = [1, 0.48, 0.24] as const;
 
 /** The beats a public event's events make, by their kind. */
 const BEATS: Readonly<Record<number, BannerBeat>> = {
@@ -118,15 +132,27 @@ export class PublicView {
   } | null = null;
   /** The chests the player asked to open, when, and as they last lay. */
   private readonly opened = new Map<number, { readonly at: number; readonly chest: ChestLike }>();
+  /** The last frame's clock, and whether the room's event was there: with none (its room lost), no chest is shown. */
+  private last: number | null = null;
+  private present = true;
 
-  constructor(zone: string) {
+  /** The page's own moments round the event; the room's word on the next event's start, and when it came, so its
+   *  last minute is counted on to the second; the last event's kind, for the chest it leaves. */
+  private readonly moments = new PublicMoments();
+  private nextWord: { readonly ticks: number; readonly at: number } | null = null;
+  private lastKind: number = PUBLIC_KIND.none;
+  /** Shakes the player's view (0 to 1), as the ground trembles. */
+  private readonly tremor: (trauma: number) => void;
+
+  constructor(zone: string, tremor: (trauma: number) => void = () => undefined) {
     this.zone = zone;
+    this.tremor = tremor;
   }
 
   /** One frame at `clock` (the page's seconds): the room's `event` and its `events` since the last, the player's
    *  `drops` (their chests among them), the bodies as drawn, the land's height, and the marks laid into `marks`. */
   frame(
-    event: PublicEvent | null,
+    word: PublicEvent | null,
     events: readonly FightEvent[],
     drops: readonly GearDrop[],
     bodies: PublicBodies,
@@ -134,10 +160,21 @@ export class PublicView {
     marks: number[],
     floor: (x: number, y: number) => number,
   ): PublicFrame {
-    const beat = events.reduce<BannerBeat | null>((last, each) => BEATS[each.kind] ?? last, null);
-    const sounds = this.sounds(event, events, bodies, clock);
+    const event = this.counted(word, clock);
+    if (event && event.kind !== PUBLIC_KIND.none) this.lastKind = event.kind;
+    // Back from a hidden tab, the last beat shows; what was heard meanwhile is long over.
+    const stale = this.last !== null && clock - this.last > STALE_S;
+    this.last = clock;
+    this.present = event !== null;
+    const chests = this.chests(this.present ? drops : [], clock);
+    const moments = this.moments.frame(event, stale ? [] : events, bodies.feet, bodies.where, chests, clock);
+    const beat = events.reduce<BannerBeat | null>((last, each) => BEATS[each.kind] ?? last, null) ?? moments.beat;
+    const sounds = stale ? [] : [...this.sounds(event, events, bodies, clock), ...moments.sounds];
+    if (!stale && moments.chime !== null) rarityChime(moments.chime);
+    if (!stale && moments.tick) play('tab');
+    if (!stale && moments.tremor > 0) this.tremor(moments.tremor);
     this.lay(event, marks, floor, clock, bodies.shot.eye);
-    const chests = this.chests(drops, clock);
+    this.moments.lay(event, moments, chests, bodies.player, bodies.feet, marks, clock, bodies.shot.eye);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));
     const age = this.clock.ager(clock);
     const props = eventProps(
@@ -145,44 +182,87 @@ export class PublicView {
       chests,
       age,
       clock,
+      moments.props,
     );
-    this.clock.done();
+    props.push(...moments.flights);
+    // A frame with no event (the room lost a while) forgets nothing: on its return no beat is played again.
+    if (event) this.clock.done(true);
     const ownShard = events.some((each) => each.kind === EVENT.shardTaken && each.striker === bodies.player);
-    const chime = events.some((each) => each.kind === EVENT.heroicMissed)
-      ? 'refused'
-      : events.some((each) => each.kind === EVENT.chestOpened && each.striker === bodies.player)
-        ? 'open'
-        : ownShard
-          ? 'shard'
-          : null;
+    const chime = stale
+      ? null
+      : events.some((each) => each.kind === EVENT.heroicMissed)
+        ? 'refused'
+        : events.some((each) => each.kind === EVENT.chestOpened && each.striker === bodies.player)
+          ? 'open'
+          : ownShard
+            ? 'shard'
+            : null;
     if (chime === 'shard') rarityChime(SHARD_CHIME);
     else if (chime) play(chime);
     const raiding = event?.kind === PUBLIC_KIND.raid && event.phase === PUBLIC_PHASE.running;
     const stores = raiding
-      ? event.marks.filter((mark) => mark.kind === MARK.store).map((mark) => ({ at: mark.at, share: mark.health }))
+      ? event.marks
+          .filter((mark) => mark.kind === MARK.store)
+          .map((mark) => ({ at: mark.at, share: mark.health, struck: moments.struck.has(mark.id) }))
       : [];
+    const waiting = chests.filter((chest) => chest.opened === null);
     const shown: PublicShown | null = event && {
-      banner: bannerOf(event, this.zone, chests.length > 0),
+      banner: this.bannerOf(event, chests.length > 0, bodies, moments),
       beat,
-      places: compassOf(event),
+      places: [
+        ...compassOf(event),
+        ...waiting.map((chest) => ({ x: chest.at[0], y: chest.at[1], kind: 'chest' as const })),
+        ...stores
+          .filter((store) => store.struck)
+          .map((store) => ({ x: store.at[0], y: store.at[1], kind: 'store' as const })),
+      ],
       stores,
+      mood: moodOf(event, bodies.feet),
     };
+    const left = Math.min(...waiting.map((chest) => moments.chestsLeft.get(chest.id) ?? CHEST_LIES_S));
     return {
       shown,
-      quest: questOf(event, this.zone),
+      quest: questOf(event, this.zone) ?? (waiting.length > 0 ? chestQuestOf(left, this.zone, this.lastKind) : null),
       props,
       sounds,
-      sting: beat ? (STINGS[beat] ?? null) : null,
+      sting: beat && !stale ? (STINGS[beat] ?? null) : null,
       chime,
     };
   }
 
-  /** What E does at the player's feet: opens their chest in reach, if one is. */
+  /** The event with its next one's start counted on from the room's last word, to the second: the room tells it to the
+   *  minute. */
+  private counted(event: PublicEvent | null, clock: number): PublicEvent | null {
+    if (!event) return null;
+    if (this.nextWord?.ticks !== event.nextTicks) this.nextWord = { ticks: event.nextTicks, at: clock };
+    const gone = Math.round((clock - this.nextWord.at) * TICKS_PER_SECOND);
+    return gone > 0 ? { ...event, nextTicks: Math.max(0, event.nextTicks - gone) } : event;
+  }
+
+  /** The banner, as the law words it, with the page's own lines: the heroic chance's call as it opens, a carried
+   *  shard's errand, a store under attack, and what runs elsewhere on the island between events. */
+  private bannerOf(event: PublicEvent, hasChest: boolean, bodies: PublicBodies, moments: Moments) {
+    const banner = bannerOf(event, this.zone, hasChest, [bodies.feet[0], bodies.feet[1]]);
+    if (!banner) return null;
+    const carrying = event.marks.some((mark) => mark.kind === MARK.carried && mark.id === bodies.player);
+    const objective = carrying
+      ? 'Carrying a shard: take it to the fissure'
+      : moments.struck.size > 0
+        ? `Store under attack · ${banner.objective}`
+        : banner.objective;
+    const heroic = banner.heroic && moments.call ? { ...banner.heroic, text: moments.call } : banner.heroic;
+    const elsewhere = banner.tone === 'next' ? elsewhereOf(event, this.zone) : '';
+    return { ...banner, objective, heroic, elsewhere };
+  }
+
+  /** What E does at the player's feet: opens their chest in reach not yet asked, if one is. */
   use(drops: readonly GearDrop[], feet: Point, ask: (asked: GearAsk) => void, clock: number) {
+    if (!this.present) return null;
     const chest = drops.find(
       (drop) =>
         drop.kind === DROPPED.chest &&
         drop.flying === 0 &&
+        !this.opened.has(drop.id) &&
         Math.hypot(drop.at[0] - feet[0], drop.at[1] - feet[1]) <= CHEST_REACH_M &&
         Math.abs(drop.at[2] - feet[2]) <= CHEST_HEIGHT_M,
     );
@@ -190,28 +270,25 @@ export class PublicView {
     return {
       words: chest.tier >= 3 ? 'Open the heroic chest' : 'Open the chest',
       run: () => {
-        const asked = this.opened.get(chest.id);
-        if (asked && clock - asked.at < CHEST_RETRY_S) return;
+        if (this.opened.has(chest.id)) return;
         this.opened.set(chest.id, { at: clock, chest: { id: chest.id, at: chest.at, tier: chest.tier, opened: 0 } });
         ask({ kind: ASKS.openChest, item: chest.id });
       },
     };
   }
 
-  /** The chests to draw: each lying for the player, its lid swinging from when they opened it; one the room has
-   *  taken off the ground once opened stands open a little longer. */
+  /** The chests to draw: each lying for the player, its lid swinging from when they asked to open it; one asked
+   *  stands open CHEST_KEPT_S, lying or taken off the ground, and one the room still leaves lying then (refused)
+   *  closes again. */
   private chests(drops: readonly GearDrop[], clock: number): ChestLike[] {
+    for (const [id, { at }] of this.opened) if (clock - at > CHEST_KEPT_S) this.opened.delete(id);
     const lying = drops.filter((drop) => drop.kind === DROPPED.chest);
     const shown: ChestLike[] = lying.map((drop) => {
-      // One the room still leaves lying a while after it was asked was refused: its lid closes again.
-      if (clock - (this.opened.get(drop.id)?.at ?? clock) > CHEST_RETRY_S) this.opened.delete(drop.id);
       const opened = this.opened.get(drop.id);
       return { id: drop.id, at: drop.at, tier: drop.tier, opened: opened ? clock - opened.at : null };
     });
-    for (const [id, { at, chest }] of this.opened) {
-      if (clock - at > CHEST_KEPT_S && !lying.some((drop) => drop.id === id)) this.opened.delete(id);
-      else if (!lying.some((drop) => drop.id === id)) shown.push({ ...chest, opened: clock - at });
-    }
+    for (const [id, { at, chest }] of this.opened)
+      if (!lying.some((drop) => drop.id === id)) shown.push({ ...chest, opened: clock - at });
     return shown;
   }
 
@@ -257,12 +334,13 @@ export class PublicView {
       const under = this.ringLand?.z ?? [];
       for (let arc = 0; arc < RING.arcs; arc += 1) {
         const z = under[arc] ?? 0;
+        const colour = event?.heroic === HEROIC.met ? RING_HEROIC : RING.colour;
         markRing(
           marks,
           [x, y, z],
           ring.radius - RING.widthM,
           ring.radius,
-          [...RING.colour, alpha],
+          [...colour, alpha],
           [arc * step, (arc + 1) * step],
         );
       }
@@ -296,7 +374,14 @@ export class PublicView {
           heard.push({ cue: fissureEvent ? 'story.deep' : 'foe.alert', at: fissureEvent ? fissure : event.ground });
           break;
         case EVENT.publicStage:
-          heard.push({ cue: 'foe.alert', at: event.ground });
+          // The Fissure's stage is the ground splitting again, and the Warden climbing out with a crash; the raid's, the
+          // Tithe sighted.
+          if (!fissureEvent) heard.push({ cue: 'foe.alert', at: event.ground });
+          else
+            heard.push(
+              { cue: 'story.deep', at: fissure },
+              ...(event.stage >= 2 ? [{ cue: 'story.crash', at: fissure }] : []),
+            );
           break;
         case EVENT.shardTaken:
           heard.push({ cue: 'element.cosmic', at: placeOf(each.striker) });
@@ -304,9 +389,13 @@ export class PublicView {
         case EVENT.shardSet:
           heard.push({ cue: 'finish.cosmic', at: fissure });
           break;
-        case EVENT.heroicMet:
-          heard.push({ cue: fissureEvent ? 'shield.break' : 'kill', at: placeOf(each.defender) });
+        case EVENT.heroicMet: {
+          const target = event.marks.find(
+            (mark) => (mark.kind === MARK.growth || mark.kind === MARK.titheTaker) && mark.id === each.defender,
+          );
+          heard.push({ cue: fissureEvent ? 'shield.break' : 'kill', at: target?.at ?? placeOf(each.defender) });
           break;
+        }
         case EVENT.publicWon:
           if (fissureEvent) {
             heard.push({ cue: 'story.crash', at: fissure });
@@ -329,4 +418,12 @@ export class PublicView {
     }
     return heard;
   }
+}
+
+/** The least mood a running event holds a player on its ground to: tension, and the peak in its last minute and
+ *  once its heroic task is met; none off it, or between events. */
+function moodOf(event: PublicEvent, feet: Point): 'tension' | 'peak' | null {
+  if (event.kind === PUBLIC_KIND.none || event.phase !== PUBLIC_PHASE.running) return null;
+  if (Math.hypot(feet[0] - event.ground[0], feet[1] - event.ground[1]) > event.radius) return null;
+  return event.ticksLeft <= LAST_MINUTE_TICKS || event.heroic === HEROIC.met ? 'peak' : 'tension';
 }

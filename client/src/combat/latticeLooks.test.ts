@@ -47,6 +47,16 @@ test('the wave is drawn once its frames have come, scaled, and gone when it is o
   assert.equal(asked[0], wavePath(0));
   assert.ok(waveReady());
   assert.ok(laid(0.1) > 0, 'its frame drawn');
+  const layOf = (backward: boolean, fine: boolean, clock: number) => {
+    const played = new LatticeWaves();
+    played.burst([0, 0, 0], 'red', 4, 0, backward, fine);
+    const out: number[] = [];
+    played.lay(out, EYE, clock);
+    return out;
+  };
+  const end = (WAVE.frames - 0.5) * WAVE.frameS;
+  assert.deepEqual(layOf(true, false, 0), layOf(false, false, end), 'played back, its last frame first');
+  assert.ok(layOf(false, true, 0).length > layOf(false, false, 0).length, 'the fine wave in more, smaller cells');
   const big = new LatticeWaves();
   big.burst([0, 0, 0], 'red', 4, 0);
   const bigOut: number[] = [];
@@ -83,4 +93,10 @@ test('the game draws what the pictures cannot: the lens and beam, the core’s f
   assert.ok(looks('bulwark_discharge', 7) > 0, 'its burst');
   assert.equal(looks('ravager_hurl', 3), 0, 'wound up, nothing thrown');
   assert.ok(looks('ravager_hurl', 4) > 0, 'its first shard flies');
+});
+
+test('a move with no frames draws no glow, and throws nothing', () => {
+  const out: number[] = [];
+  assert.doesNotThrow(() => layLatticeLooks(out, { ...shown('idol_charge', 0), frames: 0 }, EYE));
+  assert.equal(out.length, 0);
 });

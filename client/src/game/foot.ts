@@ -191,7 +191,7 @@ export class Foot {
       },
     };
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, floor) : null;
-    this.publicView = new PublicView(node.id);
+    this.publicView = new PublicView(node.id, (trauma) => this.feel.tremor(trauma));
   }
 
   /** Lands the player in a node at its first spawn, facing `facing`, keeping how they hold the camera, and joins its

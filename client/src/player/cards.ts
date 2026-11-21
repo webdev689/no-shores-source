@@ -50,6 +50,8 @@ export interface CardAt {
     readonly colour: readonly [number, number, number];
   } | null;
   readonly surge?: number;
+  /** A Lattice figure: its crystal glows of itself, never darker than a floor, so it reads at night. */
+  readonly crystal?: boolean;
 }
 
 /** Whatever turns a composed picture into a card it can draw, and an outline's field into a texture: the Test

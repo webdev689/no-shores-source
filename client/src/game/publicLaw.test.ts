@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
-import { askedPublic, bannerOf, clockOf, compassOf, minuteShift, questOf, ringOf } from './publicLaw.ts';
+import {
+  askedPublic,
+  bannerOf,
+  chestQuestOf,
+  clockOf,
+  compassOf,
+  elsewhereOf,
+  minuteShift,
+  questOf,
+  ringOf,
+} from './publicLaw.ts';
 
 const fissure = (more: Partial<PublicEvent> = {}): PublicEvent => ({
   kind: PUBLIC_KIND.fissure,
@@ -39,7 +49,7 @@ test('the Fissure running: its name, place, countdown, shards, bonus; the growth
   assert.equal(shown.clock, '7:42');
   assert.deepEqual(shown.bar, { share: 5 / 14, label: '5 / 14 shards' });
   assert.equal(shown.heroic, null);
-  assert.deepEqual(shown.bonus, { text: 'Bonus: seal it with half the time left', state: 'holds' });
+  assert.deepEqual(shown.bonus, { text: 'Bonus: seal it before 4:00', state: 'holds' });
   const offered = bannerOf(fissure({ heroic: HEROIC.offered, heroicTicks: 30 * 60 }), 'saltgrass-downs');
   assert.deepEqual(offered?.heroic, { text: 'Break the growth', clock: '0:30', met: false });
   const warden = bannerOf(fissure({ stage: 2, heroic: HEROIC.met }), 'saltgrass-downs');
@@ -86,7 +96,8 @@ test('the result: won with its chest tier, or failed and why; the next event onc
   assert.equal(next?.title, 'The Grey Tithe Raid');
   assert.equal(next?.place, 'Gullwing');
   assert.equal(next?.clock, 'in 5 min');
-  assert.equal(bannerOf(fissure({ kind: 0, phase: 0, nextTicks: 30 * 60 }), 'gullwing-vale')?.clock, 'in 1 min');
+  assert.equal(bannerOf(fissure({ kind: 0, phase: 0, nextTicks: 90 * 60 }), 'gullwing-vale')?.clock, 'in 2 min');
+  assert.equal(bannerOf(fissure({ kind: 0, phase: 0, nextTicks: 30 * 60 }), 'gullwing-vale')?.clock, '0:30');
   assert.equal(bannerOf(fissure({ kind: 0, phase: 0, nextKind: 0 }), 'gullwing-vale'), null);
 });
 
@@ -136,4 +147,37 @@ test('the dev address asks for an event, and the minute that starts it at once i
   assert.equal(minuteShift('gullwing-vale', 'raid', 5), 0);
   assert.equal(minuteShift('gullwing-vale', 'fissure', 5), 15);
   assert.equal(minuteShift('overlook-social', 'raid', 5), null);
+});
+
+test('the last minute: the clock urgent; starting soon, counted to the second, and how far off it is', () => {
+  assert.equal(bannerOf(fissure({ ticksLeft: 59 * 60 }), 'saltgrass-downs')?.urgent, true);
+  assert.equal(bannerOf(fissure({ ticksLeft: 61 * 60 }), 'saltgrass-downs')?.urgent, false);
+  const waiting = fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextTicks: 45 * 60 });
+  const soon = bannerOf(waiting, 'gullwing-vale', false, [400, 380]);
+  assert.equal(soon?.clock, '0:45');
+  assert.equal(soon?.place, 'Gullwing · 120 m');
+  assert.equal(bannerOf(fissure(), 'saltgrass-downs', false, [100, 210])?.place, 'The High Downs', 'on its ground');
+  assert.equal(bannerOf(fissure(), 'saltgrass-downs', false, [100, 300])?.place, 'The High Downs · 100 m');
+});
+
+test('elsewhere on Saltmere: what runs, or else what comes next, in the other zones, from the same schedule', () => {
+  const when = (nextKind: number, minutes: number) =>
+    fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextKind, nextTicks: minutes * 3600 });
+  assert.equal(
+    elsewhereOf(when(PUBLIC_KIND.raid, 4), 'saltgrass-downs'),
+    'Elsewhere on Saltmere: the Fissure at the Gorse Moor, under way',
+  );
+  assert.equal(
+    elsewhereOf(when(PUBLIC_KIND.fissure, 11), 'saltgrass-downs'),
+    'Elsewhere on Saltmere: the Fissure at the Water Meadows in 1 min',
+  );
+  assert.equal(elsewhereOf(when(PUBLIC_KIND.fissure, 11), 'nowhere'), '');
+});
+
+test('a chest waiting is a step of its own, with the time it still lies', () => {
+  assert.deepEqual(chestQuestOf(108, 'saltgrass-downs', PUBLIC_KIND.raid), {
+    name: 'The Grey Tithe Raid',
+    task: 'Saltgrass',
+    steps: [{ text: 'Open your chest (1:48)' }],
+  });
 });

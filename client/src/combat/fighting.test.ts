@@ -472,4 +472,20 @@ test('a public event’s beats are kept apart from the fight’s events, and its
   );
   assert.equal(fighting.takePublicEvents().length, 0, 'handed over once');
   assert.equal(fighting.public, word);
+  fighting.receive({
+    kind: 'snapshot',
+    tick: 2n,
+    players: [],
+    dressed: [],
+    foes: [],
+    events: [event(15)],
+    shots: [],
+    spells: [],
+    public: word,
+  } as unknown as Snapshot);
+  (link as { rejoining: boolean }).rejoining = true;
+  assert.equal(fighting.public, null, 'a room lost leaves no event on the screen');
+  assert.deepEqual(fighting.takePublicEvents(), [], 'nor its beats');
+  (link as { rejoining: boolean }).rejoining = false;
+  assert.equal(fighting.public, word, 'back once it holds again');
 });

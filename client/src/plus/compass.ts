@@ -88,7 +88,7 @@ export function markPlace(
 export interface PlaceMark {
   readonly x: number;
   readonly y: number;
-  readonly kind: 'event' | 'heroic';
+  readonly kind: 'event' | 'heroic' | 'chest' | 'store';
 }
 
 /** The ships the compass marks of `ships` round a player at `from`: those within their range. */
@@ -185,7 +185,12 @@ export function compassCss(): string {
 .compass-place[data-kind='heroic'] { background: #ff7a3d; box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 6px #ff7a3d;
   animation: compass-pulse 0.8s steps(2, end) infinite; }
 @keyframes compass-pulse { 50% { opacity: 0.4; } }
-@media (prefers-reduced-motion: reduce) { .compass-place[data-kind='heroic'] { animation: none; } }
+/* A chest waiting, a smaller gold one; a store under attack, a red one, pulsing. */
+.compass-place[data-kind='chest'] { width: 7px; height: 7px; margin-left: -4px; bottom: -5px; }
+.compass-place[data-kind='store'] { background: #e0483c; box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 6px #e0483c;
+  animation: compass-pulse 0.5s steps(2, end) infinite; }
+@media (prefers-reduced-motion: reduce) { .compass-place[data-kind='heroic'], .compass-place[data-kind='store'] {
+  animation: none; } }
 .compass-ship { position: absolute; top: 0; width: 0; height: 0; margin-left: -4px; border-left: 4px solid transparent;
   border-right: 4px solid transparent; border-bottom: 5px solid; filter: drop-shadow(0 0 1px rgba(0,0,0,0.9)); }
 `;

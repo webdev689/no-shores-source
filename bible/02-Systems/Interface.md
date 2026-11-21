@@ -190,7 +190,8 @@ should be ([[HTML Is Avoided Where It Can Be]]).
   captain who is not hostile, Overlook's blue (`#2f5d9a`) for a friendly ship of the traffic, and grey once its colours
   are down; one going down has no mark. On foot in a zone that holds public events it marks the event's ground on its
   foot with a gold diamond (the next one's between events), held at the nearer end while off the strip as a ship is,
-  and the growth or the tithe-taker with an orange one, blinking, while the heroic window is open. The compass hides
+  and the growth or the tithe-taker with an orange one, blinking, while the heroic window is open; a chest of the
+  player's waiting there with a smaller gold one, and a store under attack with a red one, pulsing. The compass hides
   with the view while the held map is up at the helm.
 - **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
   over stamina over poise, each in a fine stone frame whose ends come to a point at a brass tip (`plus/barFrame.ts`),

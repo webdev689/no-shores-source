@@ -4,7 +4,7 @@
 // the Ravager throws. Drawn as the fight's effects are, cell by cell in four stops. Drawing only: the rules are the
 // room's.
 import { type Texels, spriteOfTexels } from './forgedBirds.ts';
-import { layLine, layUpright, ringSprite } from './impactPixels.ts';
+import { cached, layLine, layUpright, ringSprite } from './impactPixels.ts';
 import { HURL_FIRST_THROW, type Strain } from './lattice.ts';
 import { type Ramp, rampOf } from './markSprites.ts';
 import { BODY, CELL_M, CLEAR, DARK, HOT, LIGHT, type Sprite, sprite } from './spellPixels.ts';
@@ -47,6 +47,7 @@ export function halved(texels: Texels): Texels {
 }
 
 const waveFrames = new Map<number, Sprite>();
+const fineFrames = new Map<number, Sprite>();
 
 /** Fetches the wave's frames from the forge's published pictures through `strip`; until all have come no wave is
  *  drawn, and a Lattice foe killed only fades. */
@@ -54,7 +55,9 @@ export function loadLatticeWave(strip: (path: string) => Promise<Texels | null>)
   for (let frame = 0; frame < WAVE.frames; frame++)
     strip(wavePath(frame))
       .then((texels) => {
-        if (texels) waveFrames.set(frame, spriteOfTexels(halved(texels)));
+        if (!texels) return;
+        waveFrames.set(frame, spriteOfTexels(halved(texels)));
+        fineFrames.set(frame, spriteOfTexels(texels));
       })
       .catch(() => undefined);
 }
@@ -64,12 +67,21 @@ export const waveReady = (): boolean => waveFrames.size === WAVE.frames;
 
 /** Lays wave frame `frame` at `feet`, `scale` times a man's size, in `ramp`, seen from `eye`; nothing before its
  *  frames have come. */
-export function layWave(out: number[], frame: number, feet: Point, scale: number, ramp: Ramp, eye: Point): void {
-  const picture = waveReady() ? waveFrames.get(frame) : undefined;
+export function layWave(
+  out: number[],
+  frame: number,
+  feet: Point,
+  scale: number,
+  ramp: Ramp,
+  eye: Point,
+  fine = false,
+): void {
+  const picture = waveReady() ? (fine ? fineFrames : waveFrames).get(frame) : undefined;
   if (!picture) return;
-  const cell = CELL_M * scale;
+  // A fine wave keeps the picture's own texels, each half a halved one's: drawn large, it holds its detail.
+  const cell = (CELL_M * scale) / (fine ? 2 : 1);
   // The picture is laid about its middle: raised so its root, the feet, lands on them.
-  const up = (WAVE.root[1] / 2 - picture.height / 2) * cell;
+  const up = ((fine ? WAVE.root[1] : WAVE.root[1] / 2) - picture.height / 2) * cell;
   layUpright(out, picture, ramp, [feet[0], feet[1], feet[2] + up], eye, cell);
 }
 
@@ -78,23 +90,28 @@ interface Burst {
   readonly ramp: Ramp;
   readonly scale: number;
   readonly start: number;
+  /** Played back, a foe climbing out of it; in the picture's own texels. */
+  readonly backward: boolean;
+  readonly fine: boolean;
 }
 
 /** The waves playing: each foe of the Lattice killed, and the fissure sealed. */
 export class LatticeWaves {
   private bursts: Burst[] = [];
 
-  /** A wave bursts from `from` at page time `clock`, in `strain`'s crystal, `scale` times a man's size. */
-  burst(from: Point, strain: Strain, scale: number, clock: number): void {
-    this.bursts.push({ from, ramp: CRYSTAL[strain], scale, start: clock });
+  /** A wave bursts from `from` at page time `clock`, in `strain`'s crystal, `scale` times a man's size; `backward`,
+   *  played back as a foe comes out of it; `fine`, in the picture's own texels. */
+  burst(from: Point, strain: Strain, scale: number, clock: number, backward = false, fine = false): void {
+    this.bursts.push({ from, ramp: CRYSTAL[strain], scale, start: clock, backward, fine });
   }
 
   /** Every wave still playing at `clock`, seen from `eye`; the finished are let go. */
   lay(out: number[], eye: Point, clock: number): void {
     this.bursts = this.bursts.filter((burst) => clock - burst.start < WAVE.frames * WAVE.frameS);
     for (const burst of this.bursts) {
-      const frame = Math.floor((clock - burst.start) / WAVE.frameS);
-      if (frame >= 0) layWave(out, frame, burst.from, burst.scale, burst.ramp, eye);
+      const played = Math.floor((clock - burst.start) / WAVE.frameS);
+      const frame = burst.backward ? WAVE.frames - 1 - played : played;
+      if (played >= 0) layWave(out, frame, burst.from, burst.scale, burst.ramp, eye, burst.fine);
     }
   }
 }
@@ -102,9 +119,10 @@ export class LatticeWaves {
 /** Every page's waves, drawn with the foes' marks (FoeFigures `overheads`). */
 export const latticeWaves = new LatticeWaves();
 
-/** The wave the fissure's closing bursts in, from `from`, at page time `clock`: the Lattice's own, four times a man's. */
+/** The wave the fissure's closing bursts in, from `from`, at page time `clock`: the Lattice's own, four times a man's,
+ *  in its picture's own texels so it holds its detail that large. */
 export function sealWave(from: Point, clock: number): void {
-  latticeWaves.burst(from, 'red', SEAL_SCALE, clock);
+  latticeWaves.burst(from, 'red', SEAL_SCALE, clock, false, true);
 }
 
 /** How far a dying Lattice foe's figure has faded, `seconds` after it fell: 0 whole to 1 gone. */
@@ -127,10 +145,12 @@ export interface LatticeShown {
 /** A disc of `radius` cells: its heart white-hot, its body light, its edge its body's stop. */
 function orb(radius: number): Sprite {
   const reach = Math.max(1, Math.round(radius));
-  return sprite(reach * 2 + 1, reach * 2 + 1, (across, up) => {
-    const out = Math.hypot(across, up) / reach;
-    return out > 1 ? CLEAR : out < 0.4 ? HOT : out < 0.75 ? LIGHT : BODY;
-  });
+  return cached(`orb:${reach}`, () =>
+    sprite(reach * 2 + 1, reach * 2 + 1, (across, up) => {
+      const out = Math.hypot(across, up) / reach;
+      return out > 1 ? CLEAR : out < 0.4 ? HOT : out < 0.75 ? LIGHT : BODY;
+    }),
+  );
 }
 
 /** The Idol's beam and the Bulwark's flare reach this far when nothing is aimed at (metres); a beam is this wide, its
@@ -156,7 +176,7 @@ export function layLatticeLooks(out: number[], shown: LatticeShown, eye: Point):
   const aimed = (from: Point): Point =>
     shown.target ?? [from[0] + ahead[0] * LOOKS.reach, from[1] + ahead[1] * LOOKS.reach, from[2]];
   const cell = CELL_M * scale;
-  if (shown.anim === 'idol_charge') {
+  if (shown.anim === 'idol_charge' && shown.frames > 0) {
     // The lens's glow grows through the charge.
     layUpright(out, orb(1 + (3 * (frame + 1)) / shown.frames), ramp, place(SPOTS.lens), eye, cell);
   } else if (shown.anim === 'idol_fire' && frame < FRAMES.beam) {

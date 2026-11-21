@@ -113,15 +113,23 @@ const LAMPS = {
   chestReachM: 5,
 } as const;
 const CHEST_LIGHT = [0.6, 0.42, 0.2] as const;
+/** A raid's banner's lamp: warm, at its head, this far. */
+const BANNER_LAMP = { light: [0.5, 0.34, 0.16] as const, high: 2.6, reachM: 6 } as const;
+
+/** What the page's own moments do to the props: a flare of the fissure's glow (0 none), the fissure's width as the
+ *  page eases it (null: as the room sends it), and how far a raid won has toppled its banners (0 to 1). */
+export type PropMoments = { readonly flare: number; readonly open: number | null; readonly topple: number };
 
 /** Seconds a mark has been in its state, by its kind, id and state: StateClock keeps them for the page. */
 export type Ager = (kind: number, id: number, state: number) => number;
 
-/** When each mark came into the state it is in, so a prop's motion runs from there. A mark not seen for a frame is
- *  forgotten. */
+/** When each mark came into the state it is in, so a prop's motion runs from there. The marks already there on the
+ *  first frame the room's event is seen came before the page did: they stand as long done, so no beat is played
+ *  again. A mark not seen for a frame is forgotten. */
 export class StateClock {
   private readonly since = new Map<string, { state: number; at: number }>();
   private seen = new Set<string>();
+  private begun = false;
 
   /** The clock for one frame at `seconds`: call `age` for each mark drawn, then `done`. */
   ager(seconds: number): Ager {
@@ -130,14 +138,15 @@ export class StateClock {
       this.seen.add(key);
       const known = this.since.get(key);
       if (known?.state === state) return seconds - known.at;
-      this.since.set(key, { state, at: seconds });
-      return 0;
+      this.since.set(key, { state, at: this.begun ? seconds : -Infinity });
+      return this.begun ? 0 : Infinity;
     };
   }
 
-  /** Forgets the marks this frame did not ask after. */
-  done(): void {
+  /** Forgets the marks this frame did not ask after; `seen` says the room's event was there (by default, any mark). */
+  done(seen = this.seen.size > 0): void {
     for (const key of this.since.keys()) if (!this.seen.has(key)) this.since.delete(key);
+    this.begun ||= seen;
     this.seen = new Set();
   }
 }
@@ -147,6 +156,9 @@ export function turnOf(id: number): number {
   const mixed = Math.imul(id ^ 0x9e3779b9, 0x85ebca6b) >>> 0;
   return (mixed / 2 ** 32) * Math.PI * 2;
 }
+
+/** A turn brought into one turn, so a float on the GPU keeps its precision however long the page has run. */
+const wrapped = (turn: number): number => ((turn % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
 const ease = (share: number): number => {
   const clamped = Math.min(1, Math.max(0, share));
@@ -195,6 +207,7 @@ export function eventProps(
   chests: readonly ChestLike[],
   age: Ager,
   seconds: number,
+  moments: PropMoments = { flare: 0, open: null, topple: 0 },
 ): EventProp[] {
   const props: EventProp[] = [];
   const over = event !== null && (event.phase === PHASE.won || event.phase === PHASE.failed);
@@ -203,7 +216,7 @@ export function eventProps(
     const since = age(mark.kind, mark.id, mark.state);
     switch (mark.kind) {
       case MARK.fissure: {
-        const breathing = 1 + MOTION.breathe * Math.sin(seconds * 2.1 + mark.id);
+        const breathing = (1 + MOTION.breathe * Math.sin(seconds * 2.1 + mark.id)) * (1 + moments.flare);
         // Timed by the room's own ticks, so it tears open as the event begins, not as a page arrives, at any speed.
         const ticks = (over ? TICKS.result : TICKS.countdown) - (event?.ticksLeft ?? 0);
         const beenS = ticks / TICKS.perSecond;
@@ -211,10 +224,13 @@ export function eventProps(
           const shut = ease(beenS / MOTION.fissureShutS);
           const open = MOTION.fissureLeastOpen * (1 - shut);
           if (open > 0.01) props.push(prop('lattice-fissure', mark.at, turn, { rise: open, glow: open * breathing }));
-          props.push(prop('lattice-fissure-sealed', mark.at, turn, { rise: shut, glow: 1 - shut }));
+          // Sealed, its scar rises; failed, it closes into the plain turf.
+          if (event?.phase === PHASE.won)
+            props.push(prop('lattice-fissure-sealed', mark.at, turn, { rise: shut, glow: 1 - shut }));
           break;
         }
-        const open = Math.min(ease(beenS / MOTION.fissureOpenS), Math.max(MOTION.fissureLeastOpen, mark.health));
+        const health = moments.open ?? mark.health;
+        const open = Math.min(ease(beenS / MOTION.fissureOpenS), Math.max(MOTION.fissureLeastOpen, health));
         if (open > 0.01)
           props.push(prop('lattice-fissure', mark.at, turn, { rise: open, glow: (0.5 + 0.5 * open) * breathing }));
         break;
@@ -243,9 +259,14 @@ export function eventProps(
         const blink = fading ? 0.5 + 0.5 * Math.sign(Math.sin(seconds * (6 + 10 * (1 - mark.health)))) : 1;
         const bob = MOTION.shardBobM * (1 + Math.sin(seconds * 2.3 + mark.id));
         props.push(
-          prop('lattice-shard', [mark.at[0], mark.at[1], mark.at[2] + bob], turn + seconds * MOTION.shardTurnRadS, {
-            glow: 1.2 * blink,
-          }),
+          prop(
+            'lattice-shard',
+            [mark.at[0], mark.at[1], mark.at[2] + bob],
+            wrapped(turn + seconds * MOTION.shardTurnRadS),
+            {
+              glow: 1.2 * blink,
+            },
+          ),
         );
         break;
       }
@@ -258,7 +279,12 @@ export function eventProps(
         );
         break;
       case MARK.banner:
-        props.push(prop('tithe-banner', mark.at, turn, { rise: ease(since / MOTION.bannerPlantS) }));
+        props.push(
+          prop('tithe-banner', mark.at, turn, {
+            rise: ease(since / MOTION.bannerPlantS),
+            lid: ease(moments.topple) * (Math.PI / 2),
+          }),
+        );
         break;
       default:
     }
@@ -284,6 +310,13 @@ export function propLamps(props: readonly EventProp[]): LampPlace[] {
       lamps.push({ at: place([0, 0, 2.5]), reachM: LAMPS.growthReachM, light: red(strength), seed });
     else if (each.module === 'lattice-shard')
       lamps.push({ at: place([0, 0, 0.3]), reachM: LAMPS.shardReachM * each.scale, light: red(strength * 0.7), seed });
+    else if (each.module === 'tithe-banner')
+      lamps.push({
+        at: place([0, 0, BANNER_LAMP.high]),
+        reachM: BANNER_LAMP.reachM * each.rise,
+        light: BANNER_LAMP.light,
+        seed,
+      });
     else if (each.module === 'event-chest-heroic-lid' && each.lid > 0)
       lamps.push({ at: place([0, 0.3, 0.3]), reachM: LAMPS.chestReachM, light: red(strength * 0.4), seed });
     else if (each.module === 'event-chest-lid' && each.lid > 0)

@@ -51,3 +51,17 @@ test('a store’s bar stands over it while on the screen, and hides off it', () 
     assert.equal(shown?.style.transform, 'translate(100px, 50px)');
     assert.equal(off?.hidden, true);
   }));
+
+test('the banner reads out its beats on a line of their own, and never its ticking clocks', () =>
+  onFakePage((root) => {
+    const banner = new PublicBanner(root);
+    banner.update(shown, 0.016, 'begun');
+    const attributes = (node: unknown) => (node as { attributes: Record<string, string> }).attributes;
+    assert.equal(attributes(banner.root)['aria-atomic'], 'false');
+    for (const name of ['pb-clock', 'pb-heroic-clock'])
+      assert.equal(attributes(findAll(root, name)[0])['aria-hidden'], 'true', name);
+    const said = findAll(root, 'pb-said')[0];
+    assert.equal(said?.textContent, 'Public event: The Fissure. Carry shards to the fissure to seal it');
+    banner.update({ ...shown, clock: '0:59' }, 0.016);
+    assert.equal(said?.textContent, 'Public event: The Fissure. Carry shards to the fissure to seal it', 'kept');
+  }));

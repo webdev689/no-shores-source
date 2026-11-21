@@ -48,13 +48,15 @@ export function installQaViews(target: object, search: string, offline: boolean,
     return true;
   };
   // Turns the camera to a view without arriving again, so the room (and an event it runs) plays on; the body stays.
-  (target as { __qaLook?: (view: QaView) => boolean }).__qaLook = (view) => {
-    const node = host.node();
-    const look = node && qaLook(node.ring, view);
-    if (!look) return false;
-    host.walker.player = { ...host.walker.player, yaw: look.yaw, view: look.view, pitch: look.pitch };
-    return true;
-  };
+  // A development build's alone.
+  if (import.meta.env?.DEV)
+    (target as { __qaLook?: (view: QaView) => boolean }).__qaLook = (view) => {
+      const node = host.node();
+      const look = node && qaLook(node.ring, view);
+      if (!look) return false;
+      host.walker.player = { ...host.walker.player, yaw: look.yaw, view: look.view, pitch: look.pitch };
+      return true;
+    };
   hook.__qaWhere = () => {
     const { body } = host.walker.player;
     return { x: body.x, y: body.y, dead: Boolean(document.querySelector('canvas.dead')) };
