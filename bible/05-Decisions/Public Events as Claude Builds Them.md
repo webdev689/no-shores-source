@@ -16,7 +16,8 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 |---|---|---|
 | What it stands on | The Lattice's work (#77) and `main` | The Fissure pours out the Lattice, which #77 draws |
 | The Lattice's skin | The ashen grey-green of the dead: each share of a man's skin light on the weights 0.80 red, 0.90 green, 0.78 blue, every human tone alike | Left to Claude; no living tone, and it reads apart from the red crystal |
-| How the Lattice is rendered | Its own workflow, run by hand: a job a move (all five views, since the forge sets a move's cell from all of them) and one for the wave, then one job lays them in and publishes | A move is the finest a job can take; the Heart fits too, so it is rendered |
+| How the Lattice is rendered | Its own workflow, run by a push that changes `tools/lattice/render-request.txt` (or by hand once it is on `main`): a job a move (all five views, since the forge sets a move's cell from all of them) and one for the wave, then one job lays them in and publishes | A move is the finest a job can take; a hand-run workflow starts only from the default branch |
+| The first render | The five foes the events use; the Heart waits | Every render spends the repository's Actions minutes, and the Heart, the dearest, is in no event |
 | The Bulwark's change | In its second phase, or at half its health; the change plays once, then it sweeps and slams its maul | The rules carry no change of their own |
 | The Flicker's and the Idol's blink | The rules' dodge: out through its landing backwards and in through it, dissolved in the purple at the middle | Both "never walk, they blink" |
 | A Lattice death | Its wave at once (no fall first), at 15 frames a second, tinted in its crystal and scaled to it; the figure fades in 0.3 s | The wave is its death, for all |

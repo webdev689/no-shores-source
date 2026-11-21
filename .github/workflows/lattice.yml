@@ -3,13 +3,18 @@ name: lattice
 # Renders the Lattice's foes, every move from all five views, and its death wave (tools/lattice/), and publishes them
 # to R2 beside the forge's published renders with the repository's Cloudflare token, only when a run is asked for. A
 # job a move renders in parallel; one job lays them all in and publishes, and its log ends with the forge's manifest
-# on one line, which a commit then takes into content/forge/renders.json.
+# on one line, which a commit then takes into content/forge/renders.json. A run is asked for by a push that changes
+# tools/lattice/render-request.txt (a manual run starts only a workflow on the default branch); it names the foes on
+# its first line.
 on:
+  push:
+    paths:
+      - tools/lattice/render-request.txt
   workflow_dispatch:
     inputs:
       foes:
         description: 'The foes to render, by name, comma-separated'
-        default: 'husk,flicker,idol,ravager,bulwark,heart'
+        default: 'husk,flicker,idol,ravager,bulwark'
       samples:
         description: 'Cycles samples a pixel'
         default: '32'
@@ -31,7 +36,9 @@ jobs:
         id: plan
         env:
           FOES: ${{ inputs.foes }}
-        run: echo "jobs=$(python3 -I tools/lattice/jobs.py "$FOES")" >> "$GITHUB_OUTPUT"
+        run: |
+          foes=${FOES:-$(head -n 1 tools/lattice/render-request.txt)}
+          echo "jobs=$(python3 -I tools/lattice/jobs.py "$foes")" >> "$GITHUB_OUTPUT"
 
   # No token here: the renders read only the forge's public tables.
   render:
@@ -62,7 +69,7 @@ jobs:
         env:
           FOE: ${{ matrix.foe }}
           MOVE: ${{ matrix.move }}
-          SAMPLES: ${{ inputs.samples }}
+          SAMPLES: ${{ inputs.samples || '32' }}
         run: |
           start=$(date +%s)
           if [ "$FOE" = wave ]; then

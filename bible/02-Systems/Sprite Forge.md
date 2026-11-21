@@ -109,11 +109,13 @@ A strip whose inputs did not change is kept; `fanout.py` splits a large render i
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
 The `forge` workflow renders the Arts' birds and adds them to what is published with the repository's Cloudflare token
 whenever `artbirds.py` or its pinned packages change on main, or when a run is asked for on a branch; its log ends with
-the manifest, which a commit takes into `content/forge/renders.json`. The `lattice` workflow runs only when asked: a
-job plans one render job for each move of each foe asked for and one for the wave (`tools/lattice/jobs.py`), they
-render in parallel without the token, and one job pulls the tables, lays them all in (`lattice`), adds them to what
-is published and ends its log with the manifest. Both share one queue, as both publish the same tables. It installs only the exact wheels
-`artbirds-requirements.txt` names by their hashes, and its checkout keeps no git credential.
+the manifest, which a commit takes into `content/forge/renders.json`. The `lattice` workflow runs only when asked: by a
+push that changes `tools/lattice/render-request.txt`, whose first line names the foes, or by hand once it is on
+`main`. A job plans one render job for each move of each foe asked for and one for the wave (`tools/lattice/jobs.py`),
+they render in parallel without the token, and one job pulls the tables, lays them all in (`lattice`), adds them to
+what is published and ends its log with the manifest. Both share one queue, as both publish the same tables. It
+installs only the exact wheels `artbirds-requirements.txt` names by their hashes, and its checkout keeps no git
+credential.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the
 doll and class-look tools need Daggerfall's files and DFO's game code, so they do not run here.
