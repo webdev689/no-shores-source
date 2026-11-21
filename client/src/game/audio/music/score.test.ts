@@ -352,3 +352,12 @@ test('no drum rings: a struck tone over 1.5 kHz dies within a tenth of a second,
       );
     }
 });
+
+test('no family fight sweeps a pitched swell: its risers and gusts are noise', () => {
+  for (const family of Object.values(families))
+    for (const song of Object.values(family))
+      assert.ok(
+        song.tracks.every((track) => track.program !== 119),
+        `${song.name} has no reverse-cymbal sweep`,
+      );
+});

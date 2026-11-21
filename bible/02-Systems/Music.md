@@ -40,8 +40,8 @@ The game's music: DFO's own FM synthesiser playing scores written as notes in co
 at sea, in the social space and on the islands, with minutes of silence between pieces
 ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]); music comes as danger nears, grows into the
 fight a layer at a time on the bar line, and falls back to silence when it ends. Nothing in it rings or whines: no
-note sounds over B5, no note's partials reach past 6 kHz, and no struck tone over 1.5 kHz lasts past a tenth of a
-second.
+note sounds over B5, no note's partials reach past 6 kHz, no struck tone over 1.5 kHz lasts past a tenth of a
+second, and no fight sweeps a pitched swell: its risers and gusts are noise.
 
 ## How it works
 
@@ -184,8 +184,8 @@ on, and the sky over it.
 - **Green**, the coast, the highland and the woodland: E Dorian in 6/8 at a dotted quarter of 104, a war jig. A
   fiddle's tune runs over the cellos' gallop, a horn's counter-line under it, a bodhran and a big drum; then the
   horn's own broad tune under the fiddle's descant, and a break of horn calls. Its tension is strings gated in
-  sixteenths over a heartbeat; its peak puts the whistle an octave over the tune, the choir and the low brass's
-  stabs under it. The cadence turns the tune's hemiola home, the victory ends in E major, the defeat lets the call
+  sixteenths over a heartbeat; its peak sets the choir and the low brass's stabs under the tune, and noise swells
+  into each section. The cadence turns the tune's hemiola home, the victory ends in E major, the defeat lets the call
   fall to the low strings. 80 bars, 92 s round.
 - **Dry**, the desert, the savanna and the steppe: A Phrygian with its major third, in 7/8 (two, two, three) at 150.
   An oboe's tune over an oud's ostinato and a darbuka's doum and tek, the strings' counter-line slow under it; then
@@ -194,16 +194,16 @@ on, and the sky over it.
   the bar. The cadence falls D, C, B flat, A; the victory rises F, G, A into A major; the defeat leaves the oboe
   alone. 64 bars, 90 s round.
 - **Wet**, the rainforest and the swamp: F sharp Aeolian in 4/4 at 104, the sixteenths grouped three, three, three,
-  three and four. A pan flute's tune over a marimba in that grouping, a clarinet's counter-line low under it,
-  congas, log drums and a deep drum; then the clarinet's own tune under the flute's long notes. Its tension is a
-  kalimba dripping in dotted eighths, a log drum's heartbeat, insects in a shaker and a bassoon creeping a half
-  step; its peak sets the strings an octave over the tune, the voices' oohs and the horns swelling. The cadence
-  turns G, C sharp, F sharp minor; the victory rises into F sharp major; the defeat sinks on the clarinet. 48 bars,
-  111 s round.
+  three and four. A low clarinet's tune over a marimba in that grouping, a second clarinet's counter-line under it,
+  congas, log drums and a deep drum; then the second clarinet's own tune under the first's long notes. Its tension is
+  a kalimba dripping in dotted eighths, a log drum's heartbeat, insects in a shaker and a bassoon creeping a half
+  step; its peak sets the strings an octave over the tune, the voices' oohs and the horns swelling. The cadence turns
+  G, C sharp, F sharp minor; the victory rises into F sharp major; the defeat sinks on the clarinet. 48 bars, 111 s
+  round.
 - **Cold**, the tundra: B Aeolian with its flat second borrowed, in 5/4 (three and two) at 120. A horn calls the tune
   over the low strings' ostinato and a taiko, a fiddle's counter-line above, the harmony spaced wide: a low bass and
-  open fifths high. Then the fiddle's own tune over the horns. Its tension is high strings shivering in fifths,
-  gusts of wind, the strings' wood ticking and the taiko's slow heart; its peak doubles the horn with the brass and
+  open fifths high. Then the fiddle's own tune over the horns. Its tension is strings shivering in fifths, gusts
+  of noise as wind, the strings' wood ticking and the taiko's slow heart; its peak doubles the horn with the brass and
   sets the choir high. The cadence closes on the low B, the victory rises into B major, the defeat falls through C.
   40 bars, 100 s round.
 - **The story's songs**, one theme told through six songs ([[Prologue]]) for strings, harp, flute, fiddle, horns, low
