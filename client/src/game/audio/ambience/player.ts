@@ -269,9 +269,10 @@ export class ScapePlayer {
     if (!this.recorded('step.wood', point, heard, shape)) this.call('step', point, heard, shape);
   }
 
-  /** One of the sea fight's sounds where it happens (seaFight.ts): its recording once picked, else nothing. */
-  fight(cue: string, point: Point3, heard: Heard): void {
-    this.recorded(cue, point, heard, { gain: 1, pitch: between(this.random, [0.95, 1.05]), near: FIGHT_NEAR_M });
+  /** One of the sea fight's sounds where it happens (seaFight.ts), `gain` times as loud: its recording once picked,
+   *  else nothing. */
+  fight(cue: string, point: Point3, heard: Heard, gain = 1): void {
+    this.recorded(cue, point, heard, { gain, pitch: between(this.random, [0.95, 1.05]), near: FIGHT_NEAR_M });
   }
 
   /** A bed's emitters made once its buffer has come, placed, and given their gains. */

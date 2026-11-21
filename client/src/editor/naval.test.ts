@@ -21,6 +21,7 @@ const vessel: FightVessel = {
   state: 'afloat',
   fires: 0,
   guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
+  boost: [0, 1],
 };
 const captain: FightCaptain = {
   ...vessel,
@@ -48,7 +49,7 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 const failed = (error: unknown) => {
   throw error;
 };
-const IDLE = { held: new Set<string>(), press: undefined, look: null, fire: false, loadSteps: 0 };
+const IDLE = { held: new Set<string>(), press: undefined, look: null, fire: false, loadSteps: 0, boost: false };
 const drawer = { drawInto: () => undefined };
 
 /** A fight whose begins and steps wait until let go, keeping what it was asked. */

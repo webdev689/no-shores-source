@@ -37,9 +37,9 @@ pub enum BoardRefused {
     NoneAlongside,
 }
 
-/// Orders for a fight just begun: the helm amidships, no lay, nothing fired, braced or loaded.
+/// Orders for a fight just begun: the helm amidships, no lay, nothing fired, braced or loaded, and no burst.
 pub const QUIET: Orders =
-    Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: false, load: None };
+    Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: false, load: None, boost: false };
 
 /// Who joined a fight under way: a player, or a hostile ship of a commission.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -421,8 +421,8 @@ impl Fights {
     }
 
     /// One tick: each fight over last tick lets its players go; each other steps by its players' orders (the climb,
-    /// the fire and the load acting once); a player whose ship went down leaves it; and a fight with no player left
-    /// ends. Answers what became of each player, and each captain's ship that sank.
+    /// the fire, the load and the burst acting once); a player whose ship went down leaves it; and a fight with no
+    /// player left ends. Answers what became of each player, and each captain's ship that sank.
     pub(crate) fn step(&mut self, coasts: &[Coast], time: f64) -> (Vec<Outcome>, Vec<Sank>) {
         let mut outcomes = Vec::new();
         for fought in self.list.iter().filter(|fought| fought.fight.over().is_some()) {
@@ -447,9 +447,9 @@ impl Fights {
             fought.events = std::mem::take(&mut fought.pending);
             fought.events.extend(stepped);
             for crew in fought.crews.values_mut() {
-                // The climb, the fire and the load are presses: they act once.
+                // The climb, the fire, the load and the burst are presses: they act once.
                 let helm = Helm { climb: 0, ..crew.orders.helm };
-                crew.orders = Orders { helm, fire: false, load: None, ..crew.orders };
+                crew.orders = Orders { helm, fire: false, load: None, boost: false, ..crew.orders };
             }
             for event in &fought.events {
                 let Event::Gone { ship, end: End::Sunk } = *event else { continue };

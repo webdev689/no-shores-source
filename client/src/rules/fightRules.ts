@@ -18,17 +18,22 @@ export interface FightLook {
 }
 
 /** What the player orders for a step (crates/naval/src/fight.rs Orders): their helm, the look they lay, a release,
- *  the brace and a load; the climb, release and load act on the first tick alone. */
+ *  the brace, a load and a tap for a burst of speed; the climb, release, load and tap act on the first tick alone. */
 export interface FightOrders {
   readonly helm: Helm;
   readonly aim: FightLook | null;
   readonly fire: boolean;
   readonly brace: boolean;
   readonly load: ShotName | null;
+  readonly boost: boolean;
 }
 
-/** A ship in the fight: its numbers and pose, its hurts and its guns (port, then starboard), and its hull (0 the
- *  Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate) where the rules name it. */
+/** A ship's burst of speed (crates/naval/src/boost.rs): the share of its burst still to run, and the share of its
+ *  recharge done, 1 once it may burst again. */
+export type FightBoost = readonly [burst: number, charged: number];
+
+/** A ship in the fight: its numbers and pose, its hurts, its guns (port, then starboard), its burst, and its hull (0
+ *  the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate) where the rules name it. */
 export interface FightVessel {
   readonly hull_kind?: number;
   readonly ship: readonly number[];
@@ -47,6 +52,7 @@ export interface FightVessel {
     readonly load: ShotName;
     readonly braced: boolean;
   };
+  readonly boost: FightBoost;
 }
 
 /** A captain's ship in a fight: its name, its faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),

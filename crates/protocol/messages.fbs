@@ -125,7 +125,7 @@ table Told {
 }
 
 // A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: the ship's helm (the rudder from -1, to
-// port, to 1, to starboard; whether its oars pull it sideways; a rung up the ladder, 1, or down, -1, for one tick); the
+// port, to 1, to starboard; a rung up the ladder, 1, or down, -1, for one tick); the
 // player's look while they aim (its bearing off the bow in degrees and how far out it meets the water in metres, then
 // its ray: the aim eye and the way it looks, east, south and up; none while they do not aim); whether the ship fires
 // and whether it braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where it puts to sea (x, y and
@@ -135,7 +135,6 @@ table Told {
 table Orders {
   sequence: uint;
   steer: double;
-  crab: bool;
   climb: byte;
   aim: [double];
   fire: bool;

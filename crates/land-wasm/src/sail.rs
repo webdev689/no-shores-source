@@ -18,11 +18,12 @@ use std::f64::consts::TAU;
 pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 3;
 /// The most ticks one request may step: a second's.
 pub const MOST_TICKS: f64 = 60.0;
-/// What no ship's numbers pass: a place a million kilometres out; a way (or its canvas's share of it) of 10 m/s, twice
-/// what any rig makes in the strongest sea wind; a swing of 45 degrees a second, twice its oars'; a world time past
-/// 30 years, where the swell's phases lose their bits.
+/// What no ship's numbers pass: a place a million kilometres out; a way (or its canvas's share of it) of 20 m/s, past
+/// the 14.4 a ship bursting in a fight makes in the strongest sea wind, as a fight hands its ship back to sailing; a
+/// swing of 45 degrees a second, past its oars' 40 in a fight; a world time past 30 years, where the swell's phases
+/// lose their bits.
 const MOST_PLACE_M: f64 = 1e9;
-pub(crate) const MOST_WAY: f64 = 10.0;
+pub(crate) const MOST_WAY: f64 = 20.0;
 const MOST_TURN_DEG: f64 = 45.0;
 const MOST_TIME_S: f64 = 1e9;
 
@@ -50,12 +51,12 @@ pub(crate) fn ship_from(numbers: &[f64]) -> Result<Ship, String> {
     Ok(Ship { x, y, heading, ahead, abeam, turn, sail_way, rung: rung as i8 })
 }
 
-/// A helm's numbers, checked: a rudder within its throw, a crab or none, and a whole climb of one rung at most.
-pub(crate) fn helm_from(steer: f64, crab: f64, climb: f64) -> Result<Helm, String> {
-    if !(-1.0..=1.0).contains(&steer) || !(crab == 0.0 || crab == 1.0) || ![-1.0, 0.0, 1.0].contains(&climb) {
-        return Err("its helm steers from -1 to 1, crabs or not, and climbs one rung at most".into());
+/// A helm's numbers, checked: a rudder within its throw, and a whole climb of one rung at most.
+pub(crate) fn helm_from(steer: f64, climb: f64) -> Result<Helm, String> {
+    if !(-1.0..=1.0).contains(&steer) || ![-1.0, 0.0, 1.0].contains(&climb) {
+        return Err("its helm steers from -1 to 1 and climbs one rung at most".into());
     }
-    Ok(Helm { steer, crab: crab == 1.0, climb: climb as i8 })
+    Ok(Helm { steer, climb: climb as i8 })
 }
 
 /// A step's time and ticks, checked: a time within the world's, and a whole number of ticks up to a second's.
@@ -80,8 +81,7 @@ fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32, f64, HullKind), String>
     if !numbers.iter().all(|number| number.is_finite()) {
         return Err(format!("a sail request is {REQUEST_FLOATS} finite numbers"));
     }
-    let Some((&[steer, crab, climb, time, ticks, world], hull)) = numbers[SHIP_FLOATS..].split_first_chunk::<6>()
-    else {
+    let Some((&[steer, climb, time, ticks, world], hull)) = numbers[SHIP_FLOATS..].split_first_chunk::<5>() else {
         return Err(format!("a sail request is {REQUEST_FLOATS} numbers"));
     };
     let hull = match hull {
@@ -93,7 +93,7 @@ fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32, f64, HullKind), String>
         _ => return Err(format!("a sail request is {REQUEST_FLOATS} numbers")),
     };
     let ship = ship_from(&numbers[..SHIP_FLOATS])?;
-    let helm = helm_from(steer, crab, climb)?;
+    let helm = helm_from(steer, climb)?;
     let (time, ticks) = ticks_from(time, ticks)?;
     let (world, _) = ticks_from(world, 0.0)?;
     Ok((ship, helm, time, ticks, world, hull))

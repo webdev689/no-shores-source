@@ -17,7 +17,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 |---|---|---|
 | The foe at the end | Captain Brannoc Thule, the Grey Tithe's Boss on deck, already in the roster ([[Enemies]]) | A foe the world already has, with three phases of his own; "your foe" needed a name the story could strike on a plate |
 | The ship that rams | Thule's ship is the Frigate, at her own size, under sail in the shade the fight's captains wear; in the wreck she lies with her bow driven into the Brig's middle | [[Hulls]] gives the Frigate to Boss ships and a sea strike's flagship, and she is published; the Tithe Ram the roster names is not built |
-| The ships that attack first | Three pirate Sloops of Major rank | Pirates attack ships at sea already; the wreck's factions then fight each other, as factions do |
+| The ships that attack first | Three pirate Sloops of Major rank | Pirates attack ships at sea already; on the wreck they board beside the Tithe ([[The Wreck's Boarders Are One Side]]) |
 | Where the story happens | A storm 24 km out past Saltmere's harbour, in open deep water | "deep into the ocean"; Saltmere is the island the story wakes on |
 | The intro's islands | None since the owner's [[The Intro Goes Straight to Saltmere]]: first light over the cloud, then Saltmere | The owner found the flight between islands too slow |
 | The title | "Overlook", "Press any key to begin" ("Tap to begin" on a touch screen); Space begins too | Plain words |
@@ -37,7 +37,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The first cries | Two seconds into the sighting, once the camera looks down her deck | Every cry is heard with its speaker on screen |
 | The interrupt | The Lookout's "Ship to starboard!" cuts the First Mate off in her last line | "One crew member interrupts" |
 | The beaten ships in the calm | Where the fight left them, each from the pose the fight left her in; the camera looks out over the Lookout to the nearest while he asks whether to board what is left, and the First Mate says to leave them | The crew talk of what is shown, as they do |
-| The way through the wreck | A heap of debris across the way on from each zone, cleared when that zone's wave falls; climbing a closed heap brings the player back to the last checkpoint | "fighting through the linear wreckage, killing foes" |
+| The way through the wreck | A heap of debris across the way on from each zone, cleared when that zone's wave falls; no one climbs on the wreck ([[Climbing Is Off in the Prologue]]) | "fighting through the linear wreckage, killing foes" |
 | A death in the wreck | "Fallen", and the player rises at the last checkpoint by themselves | The room raises them there; there is nothing to press |
 | The wreck's cries | Two lines in the wake's flight from a pair on screen; "Survivor! Get that one!" from the first Tithe hand seen in the fight | Every line heard once, from a speaker on screen |
 | Thule struck | "Your debt grows." | The Tithe is a debt Thule collects; a stock line is not his |

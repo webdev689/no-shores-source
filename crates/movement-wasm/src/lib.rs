@@ -42,6 +42,10 @@ impl Terrain for OnLand {
     fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
         matches!(self, OnLand::Deck(deck) if deck.walled(from, to))
     }
+
+    fn climbs(&self) -> bool {
+        !matches!(self, OnLand::Deck(deck) if !deck.climbs())
+    }
 }
 
 /// The numbers in little-endian bytes.

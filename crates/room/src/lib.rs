@@ -36,6 +36,7 @@ pub mod ship_power;
 pub mod sighting;
 mod spells;
 mod statuses;
+mod story;
 pub mod threat;
 pub mod winds;
 
@@ -100,6 +101,8 @@ pub struct Room {
     takes_foe_asks: bool,
     /// Whether players' Arts work here: everywhere but the prologue's wreck, where the player has none yet.
     arts: bool,
+    /// Whether it plays the prologue's wreck (`story.rs`).
+    story: bool,
     pub(crate) clock: u64,
     next_fighter: FighterId,
     /// How many players have joined: the next stands at the spawn this many turns on.
@@ -176,6 +179,7 @@ impl Room {
             spawn_points,
             takes_foe_asks: section.is_none(),
             arts: true,
+            story: false,
             section,
             clock: 0,
             next_fighter: 1,
@@ -247,7 +251,11 @@ impl Room {
         self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
         let fighter = player(self.stand(spawn), BARE_HANDS);
-        self.players.insert(id, Player::new(fighter, self.clock, self.is_test_ground()));
+        let mut joined = Player::new(fighter, self.clock, self.is_test_ground());
+        if self.story {
+            story::arm_for_story(&mut joined.character);
+        }
+        self.players.insert(id, joined);
         Some(id)
     }
 

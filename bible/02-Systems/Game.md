@@ -240,6 +240,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
     is set again once under 5 km of it is left. Where a coast stops it short, or less than 200 m lies clear, the ship comes
     to rest facing the coast, and the voyage's line says "Land lies ahead."
   - S heaves the ship to, as Stop does.
+  - Shift gives no burst at sea: only a fight's helm has one ([[Naval Combat]], "How it works").
   - Straight on, the voyage's line says "Sailing straight on"; resumed, the ship sails on straight along its heading.
 - **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]), a window of the [[Interface]]
   at the foot of the screen in three groups, Navigation, Pace and Ship, holds Map (N), which takes the

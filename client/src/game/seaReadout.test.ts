@@ -16,6 +16,7 @@ const MODEL: SeaFightModel = {
     crew: 1,
     fire: false,
     braced: true,
+    boost: { state: 'charging', share: 0.25 },
     port: side,
     starboard: side,
     blow: null,
@@ -61,6 +62,20 @@ test("the ship's plate is the vitals' thin bars: Hull over Sails over Crew, each
     assert.equal(findAll(root, 'label').length, 0, 'no words inside the bars, as on foot');
     assert.ok(rows[0]?.classList.contains('low'), "the hull's frame flashes low as health's does");
     assert.ok(!findAll(root, 'plus-chip', 'brace')[0]?.hidden, "Braced is the kit's chip");
+  });
+});
+
+test("the boost ring under the ship's bars is lit as far as its burst has recharged, and says so to a reader", () => {
+  onFakePage((root) => {
+    const readout = new SeaFightReadout(root);
+    readout.update(MODEL);
+    const [ring] = findAll(root, 'seafight-boost');
+    assert.deepEqual([ring?.dataset['state'], ring?.style['--lit']], ['charging', '90deg']);
+    assert.equal((ring as unknown as Record<string, string>)['ariaLabel'], 'Boost recharging');
+    if (!MODEL.ship) return;
+    readout.update({ ...MODEL, ship: { ...MODEL.ship, boost: { state: 'ready', share: 1 } } });
+    assert.deepEqual([ring?.dataset['state'], ring?.style['--lit']], ['ready', '360deg']);
+    assert.equal((ring as unknown as Record<string, string>)['ariaLabel'], 'Boost ready');
   });
 });
 

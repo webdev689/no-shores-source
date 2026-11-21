@@ -12,6 +12,12 @@ pub trait Terrain {
     fn walled(&self, _from: (f64, f64), _to: (f64, f64)) -> bool {
         false
     }
+
+    /// Whether a body here may climb: take hold of a wall, hang from a lip, or go over one higher than a vault. Where
+    /// it may not, it only vaults or mantles a lip within `TUNING.vault` of the floor under it.
+    fn climbs(&self) -> bool {
+        true
+    }
 }
 
 /// Open ground, level at 0 m everywhere.

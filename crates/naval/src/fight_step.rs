@@ -3,8 +3,8 @@
 //! captains who leave.
 
 use super::{
-    DESPAWN_BEYOND, End, Event, FIGHT_PACE, Fight, HOSTILE_NEAR_M, Hurts, Orders, Part, STRUCK_GRACE_S, STRUCK_HOLD_S,
-    Sailor, carry_of, floats, own_of, sail_hurt, sighting_of, sink_depth,
+    DESPAWN_BEYOND, End, Event, FIGHT_PACE, FIGHT_TURN, Fight, HOSTILE_NEAR_M, Hurts, Orders, Part, STRUCK_GRACE_S,
+    STRUCK_HOLD_S, Sailor, carry_of, floats, own_of, sail_hurt, sighting_of, sink_depth,
 };
 use crate::arms::{LARGE_BOAT, Side, arms_of, unposed};
 use crate::captain::course::distance;
@@ -41,6 +41,7 @@ impl Fight {
         self.rams(&mut events);
         for vessel in self.ships.values_mut().filter(|vessel| vessel.in_fight()) {
             vessel.guns.step(seconds);
+            vessel.boost.step(seconds);
         }
         for id in self.ids(true) {
             self.captain_fires(id, wind_at, &mut events);
@@ -96,8 +97,9 @@ impl Fight {
         }
     }
 
-    /// Each player's orders in turn: their brace and load, their sails refused a wreck or bare yards, and their step
-    /// held back by their hurts. A player with no orders this tick rides the swell where they lie.
+    /// Each player's orders in turn: their brace and load, their burst (none for a wreck), their sails refused a wreck
+    /// or bare yards, and their step held back by their hurts. A player with no orders this tick rides the swell where
+    /// they lie.
     fn sail_players(
         &mut self,
         orders: &[(ShipId, Orders)],
@@ -117,8 +119,12 @@ impl Fight {
             {
                 events.push(Event::Load { ship: *id, shot });
             }
+            if order.boost && player.damage.state != State::Wrecked {
+                player.boost.tap();
+            }
             let wind = wind_at([player.ship.x, player.ship.y]);
-            let hurts = Hurts::of(&player.damage).fitted(self.fittings.get(id));
+            let hurts =
+                Hurts { drive: player.boost.drive(), ..Hurts::of(&player.damage).fitted(self.fittings.get(id)) };
             let (ship, refused) = sail_hurt(&player.ship, player.hull.hull(), order.helm, hurts, waters, wind, time);
             if let Some(wrecked) = refused {
                 events.push(Event::NoSail { ship: *id, wrecked });
@@ -155,12 +161,12 @@ impl Fight {
         let hull = vessel.hull.hull();
         let is_water = |x, y| floats(waters, hull, x, y, time);
         let helm = command.mind.steer(&own, (&sightings, &traffic), TICK_SECONDS, &is_water);
-        // Its rank's way pulls its sails and its oars alike, half again in a fight.
+        // Its rank's way pulls its sails and its oars alike, at a fight's pace; it swings at a fight's too.
         let way = command.mind.commission.rank.scale().way;
         let pull = sailing::ship::Pull {
             sail: vessel.damage.way_share() * way * FIGHT_PACE,
             oars: way * FIGHT_PACE,
-            turn: 1.0,
+            turn: FIGHT_TURN,
         };
         vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull);
         let afloat = pose_of(&vessel.ship, hull, waters, time);
