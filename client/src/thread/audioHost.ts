@@ -1,6 +1,7 @@
 // The page's side of the game's sound: its one audio context, made and woken by the player's first press or key, and
 // every call the game's worker sends (`audioAway.ts`) carried out on it, each number held for what it stands for
 // until the worker lets it go.
+import { channelsOf, measuredOf } from '../soundMeasure.ts';
 import {
   type AudioOp,
   type AudioReply,
@@ -83,7 +84,8 @@ export class AudioHost {
   /** What the game waits on, answered with no context to make it on: a sound's end, a recording's decoding. */
   private unanswered(told: AudioOp): void {
     if (told[0] === 'ended') this.reply({ kind: 'ended', id: told[1] });
-    else if (told[0] === 'decode') this.reply({ kind: 'decoded', id: told[1], error: 'the page plays no sound' });
+    else if (told[0] === 'decode' || told[0] === 'measure')
+      this.reply({ kind: 'decoded', id: told[1], error: 'the page plays no sound' });
   }
 
   private one(audio: AudioContext, told: AudioOp): void {
@@ -145,6 +147,20 @@ export class AudioHost {
             );
             const transfer = channels.map((each) => each.buffer);
             this.reply({ kind: 'decoded', id, channels, sampleRate: buffer.sampleRate }, transfer);
+          },
+          (error: unknown) => this.reply({ kind: 'decoded', id, error: String(error) }),
+        );
+        return;
+      }
+      case 'measure': {
+        // Kept here alone: the game is told only the buffer's shape and how it measures, never its samples.
+        const [, id, data] = told;
+        audio.decodeAudioData(data).then(
+          (buffer) => {
+            this.held.set(id, buffer);
+            const { length, numberOfChannels, sampleRate } = buffer;
+            const measured = measuredOf(channelsOf(buffer), sampleRate);
+            this.reply({ kind: 'measured', id, length, numberOfChannels, sampleRate, measured });
           },
           (error: unknown) => this.reply({ kind: 'decoded', id, error: String(error) }),
         );
