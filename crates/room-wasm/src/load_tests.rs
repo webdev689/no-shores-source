@@ -1,7 +1,8 @@
 //! The sea room under load, measured as the host drives it: each tick, then every player's snapshot cut for them, at
-//! 1, 8 and 16 players at sea among hostile ships, in one fight, and on boarded decks; and a patrol's room opening with
-//! and without its places' meshes, from the bake's files. Run by hand, in release, to print the numbers (median, p99
-//! and slowest milliseconds a tick, and bytes a player a tick; milliseconds an opening):
+//! 1, 8 and 16 players at sea among hostile ships, in one fight, and on boarded decks; and each road's group standing
+//! in its patrol's room for the first time, its place's mesh baked then, from the bake's files. Run by hand, in
+//! release, to print the numbers (median, p99 and slowest milliseconds a tick, and bytes a player a tick; milliseconds
+//! an opening and a standing):
 //! `cargo test -p room-wasm --release load -- --ignored --nocapture`.
 
 use super::*;
@@ -161,23 +162,43 @@ fn load_on_decks() {
 #[ignore = "a measurement, run by hand in release, after `npm run bake`"]
 // The wall clock is what this measures; the rules themselves never read it.
 #[allow(clippy::disallowed_methods)]
-fn load_of_a_patrols_places_meshes() {
-    for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors"] {
-        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/nodes/").to_owned() + id + ".json";
-        let mut node: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-        let timed = |text: String| {
-            let start = Instant::now();
-            assert!(open_node(text.as_bytes()));
-            start.elapsed().as_secs_f64() * 1000.0
-        };
-        let with = timed(node.to_string());
-        let squares = with_open(|opened| match opened {
-            Opened::Land { room, .. } => room.place_grounds(),
-            _ => 0,
-        });
-        node["places"] = serde_json::json!([]);
-        let without = timed(node.to_string());
-        let each = (with - without) / squares.unwrap_or(1).max(1) as f64;
-        eprintln!("OPEN {id}: {without:.1} ms without its places, {with:.1} ms with; {each:.1} ms a square");
+fn load_of_a_roads_groups_standing() {
+    use gear::quests::{GoalKind, quests};
+    for (quest, def) in quests().quests.iter().enumerate() {
+        for (task, goals) in def.tasks.iter().map(|task| &task.goals).enumerate() {
+            for goal in goals.iter().filter(|goal| goal.kind == GoalKind::Kill && !goal.spawn.is_empty()) {
+                let id = goal.node.as_deref().unwrap();
+                let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/nodes/").to_owned() + id + ".json";
+                let text = std::fs::read_to_string(path).unwrap();
+                let start = Instant::now();
+                assert!(open_node(text.as_bytes()));
+                let opening = start.elapsed().as_secs_f64() * 1000.0;
+                let mut character = gear::Character::starting();
+                character.allegiance.pledge = def.faction;
+                character.quests.roads[quest].task = u8::try_from(task).unwrap();
+                let place = goal.place.as_deref().unwrap();
+                let ticks = with_open(|opened| {
+                    let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+                    let player = room.join().unwrap();
+                    assert!(room.restore_character(player, &character.to_json()));
+                    let node: serde_json::Value = serde_json::from_str(&text).unwrap();
+                    let at = node["places"].as_array().unwrap().iter().find(|it| it["name"] == place).unwrap();
+                    let [x, y] = [at["at"][0].as_f64().unwrap(), at["at"][1].as_f64().unwrap()];
+                    assert!(room.put_player(player, x, y + 140.0));
+                    let timed = |room: &mut room::Room| {
+                        let start = Instant::now();
+                        room.tick();
+                        start.elapsed().as_secs_f64() * 1000.0
+                    };
+                    let standing = timed(room);
+                    assert_eq!(room.place_grounds(), 1, "its place's mesh, baked as it first stands");
+                    (standing, timed(room))
+                });
+                let (standing, after) = ticks.unwrap();
+                eprintln!(
+                    "STAND {id} '{place}': opens in {opening:.1} ms; stands in {standing:.1} ms; then {after:.2} ms a tick"
+                );
+            }
+        }
     }
 }

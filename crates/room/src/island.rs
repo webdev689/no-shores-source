@@ -154,12 +154,16 @@ impl Room {
         true
     }
 
-    /// The sea's word that an account's ship lies at this island's anchorage: its players may scavenge. Whether this
-    /// is an island's room.
+    /// The sea's word that an account's ship lies at this island's anchorage: its players may scavenge, and their
+    /// quest logs are told they landed. Whether this is an island's room.
     pub fn land(&mut self, account: &str) -> bool {
         let Some(isle) = self.isle.as_mut() else { return false };
         if let Some(landed) = isle.landed.as_mut() {
             landed.insert(account.to_owned());
+        }
+        let owned = self.players.iter().filter(|(_, found)| found.owner.as_deref() == Some(account));
+        for player in owned.map(|(id, _)| *id).collect::<Vec<_>>() {
+            self.tell_landed(player);
         }
         true
     }

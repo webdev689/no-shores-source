@@ -56,12 +56,14 @@ pub struct Place {
 /// How far a run's place reaches round its mouth, metres.
 pub const RUN_REACH_M: f64 = 25.0;
 
-/// A layout's places: its areas, then its runs at their mouths.
+/// A layout's places: its areas, then its runs at their mouths, but a run named as one of its areas is, whose name
+/// names that area alone.
 #[must_use]
 pub fn places_of(layout: &layout::Layout) -> Vec<Place> {
     let areas = layout.areas.iter().map(|area| Place { name: area.name.clone(), at: area.at, radius: area.radius });
-    let runs = layout.runs.iter().map(|run| Place { name: run.name.clone(), at: run.mouth, radius: RUN_REACH_M });
-    areas.chain(runs).collect()
+    let named = |name: &str| layout.areas.iter().any(|area| area.name == name);
+    let runs = layout.runs.iter().filter(|run| !named(&run.name));
+    areas.chain(runs.map(|run| Place { name: run.name.clone(), at: run.mouth, radius: RUN_REACH_M })).collect()
 }
 
 /// A counter of a social space: its station, and its middle.
@@ -302,6 +304,18 @@ mod tests {
         let [west, north, east, south] = node.bounds;
         assert!((west..east).contains(&camp.at[0]) && (north..south).contains(&camp.at[1]), "within its window");
         assert!(serde_json::to_string(&node).unwrap().contains(r#""places":[{"name":"The Camp","at":["#));
+    }
+
+    #[test]
+    fn a_run_named_as_an_area_is_no_place_of_its_own() {
+        let layout = world::layout::parse(SQUARE).unwrap();
+        let brief = r#"{ "glade": { "theme": "", "areas": [{ "kind": "keep", "name": "The Keep" }],
+            "runs": [{ "name": "The Keep", "kind": "gorge", "place": "rock" }, { "name": "The Cut", "kind": "gorge", "place": "rock" }] } }"#;
+        let builders = Builders { briefs: Briefs::parse(brief).unwrap(), ..Builders::default() };
+        let edits = land::edits::parse(GLADE).unwrap();
+        let node = nodes_of(&layout.continents[0], edits, &Blocks::default(), &builders).unwrap().remove(0);
+        let named = |name: &str| node.places.iter().filter(|place| place.name == name).count();
+        assert_eq!((named("The Keep"), named("The Cut")), (1, 1), "the area alone, and the run of its own name");
     }
 
     #[test]

@@ -21,13 +21,13 @@ impl Room {
         if self.quests.square.as_ref().is_none_or(holds) {
             return 0;
         }
-        self.quests.grounds.iter().position(|(bounds, _)| holds(bounds)).map_or(0, |at| at + 1)
+        self.quests.grounds.iter().position(|(_, bounds, _)| holds(bounds)).map_or(0, |at| at + 1)
     }
 
     /// The mesh that holds a point.
     pub(crate) fn mesh_at(&self, point: [f64; 3]) -> &NavMesh {
         let at = self.mesh_index([point[0], point[1]]).checked_sub(1);
-        at.and_then(|at| self.quests.grounds.get(at)).map_or(&self.nav, |(_, mesh)| mesh)
+        at.and_then(|at| self.quests.grounds.get(at)).map_or(&self.nav, |(_, _, mesh)| mesh)
     }
 
     /// The mesh a foe thinks on: the one that holds its post, or with none, where it stands.
@@ -43,7 +43,7 @@ impl Room {
     pub(crate) fn think_foes(&mut self, noticed: &[(FighterId, Fighter)]) -> Vec<(FighterId, (Brain, combat::Intent))> {
         let on: Vec<(FighterId, usize)> = self.foes.keys().map(|id| (*id, self.mesh_of(*id))).collect();
         let meshes: Vec<&NavMesh> =
-            core::iter::once(&self.nav).chain(self.quests.grounds.iter().map(|(_, mesh)| mesh)).collect();
+            core::iter::once(&self.nav).chain(self.quests.grounds.iter().map(|(_, _, mesh)| mesh)).collect();
         let mut ways = std::mem::take(&mut self.ways);
         let mut split = vec![BTreeMap::new(); meshes.len()];
         for &(id, mesh) in &on {

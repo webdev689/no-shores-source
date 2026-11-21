@@ -3,7 +3,7 @@
 //! the quest they walk, the events the rooms tell it, each goal met by them, and the rewards its tasks give: the
 //! house's Art worn at once, its Tenets, and fragments to choose.
 
-use crate::arts::{EARNED_ART, EARNED_TENET_ONE, EARNED_TENET_TWO, arts};
+use crate::arts::{EARNED_ART, EARNED_TENET_ONE, EARNED_TENET_TWO, FRAGMENTS, arts};
 use crate::asks::{Done, Here, Refusal};
 use crate::character::{Character, UnknownKeys};
 use crate::factions::factions;
@@ -418,7 +418,8 @@ impl Character {
         true
     }
 
-    /// A task's reward, of its house's Art: the Art earned and worn at once, a Tenet earned, fragments to choose.
+    /// A task's reward, of its house's Art: the Art earned and worn at once, a Tenet earned, fragments to choose. A
+    /// fragment beyond those the Art has left unowned and unchosen is its price at the counter in Aurem instead.
     fn reward(&mut self, faction: u8, reward: RewardDef) {
         let Some(art) = factions().faction(faction).map(|found| found.art) else { return };
         let Some(at) = arts().arts.iter().position(|found| found.id == art) else { return };
@@ -435,8 +436,13 @@ impl Character {
         if reward.art {
             self.arts.worn = art;
         }
-        if let Some(choices) = self.quests.choices.get_mut(at) {
-            *choices = choices.saturating_add(reward.fragments);
+        let places = 0..u8::try_from(FRAGMENTS).unwrap_or(u8::MAX);
+        let unowned = places.filter(|place| !self.owns_fragment(art, *place)).count();
+        for _ in 0..reward.fragments {
+            match self.quests.choices.get_mut(at) {
+                Some(choices) if usize::from(*choices) < unowned => *choices += 1,
+                _ => self.materials.add_aurem(factions().fragment_aurem),
+            }
         }
     }
 

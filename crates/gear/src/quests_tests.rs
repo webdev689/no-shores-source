@@ -314,3 +314,22 @@ fn a_fragment_choice_owns_one_fragment_not_owned_anywhere_and_is_spent() {
     character.quests.choices[1] = 1;
     assert_eq!(character.ask(choose(1), AFIELD, &DICE), Err(Refusal::Owned));
 }
+
+#[test]
+fn a_fragment_the_art_has_none_left_to_give_is_its_counters_price_in_aurem() {
+    let places = every_place();
+    let mut character = Character::starting();
+    assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
+    character.quests.roads[1].task = 6;
+    character.arts.owned = Some(vec![0b01_1111, 0, 0]);
+    character.quests = std::mem::take(&mut character.quests).kept();
+    meet_task(&mut character, &places);
+    assert_eq!((character.fragment_choices(1), character.materials.aurem), (1, 0), "one left unowned: a choice");
+    for task in 7..9 {
+        assert_eq!(character.quest_now(), Some((1, task)));
+        meet_task(&mut character, &places);
+    }
+    let price = crate::factions::factions().fragment_aurem;
+    assert_eq!((character.fragment_choices(1), character.materials.aurem), (1, price), "none left beyond the choice");
+    assert_eq!(price, 7_500);
+}

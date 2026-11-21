@@ -10,6 +10,8 @@ code:
   - crates/gear/src/arts.rs#WornArts
   - crates/room/src/quests.rs#QuestGround
   - crates/room/src/quests.rs#set_places
+  - crates/room/src/quests.rs#ground_of
+  - crates/room/src/quests.rs#held_near
   - crates/protocol/src/quest_wire.rs#quests_of
   - crates/bake/src/lib.rs#places_of
   - client/src/game/quests/questBook.ts#trackedOf
@@ -119,4 +121,9 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   kept character is given back to the room.
 - **The sea**: a ship counts as struck if its captain struck before it went down, a won deck as boarded, and a boarded
   ship later scuttled as struck for everyone who fought it.
+- **A road's group stands again 120 s** (the garrison's stand-again) after it fell, while its goal is unmet. Where its
+  place's middle stands off the mesh (inside a building or a heap of stones), it stands round the nearest point within
+  the place's reach that the mesh holds. **Land** is told only once the sea says the player's ship lies at the island,
+  and an isle's kills count for its goals only after that. A fragment a road gives past those its Art has left to
+  choose is its price at the counter in Aurem (7,500).
 - **A character made before** that reaches its road's third task wears the road's Art from then, as every player does.

@@ -140,9 +140,13 @@ fn a_kill_goals_group_stands_for_a_player_on_it_within_150_m_and_each_kill_they_
     assert_eq!(now(&room, player).1, [4, 0], "each kill counts, the gathering waits");
     shoot_dead(&mut room, bystander, group[4]);
     assert_eq!(now(&room, player).1, [4, 0], "one they never struck");
-    run(&mut room, 1);
+    let fell = room.clock();
+    while living(&room).is_empty() && room.clock() < fell + crate::garrison::STAND_AGAIN + 60 {
+        run(&mut room, 1);
+    }
+    assert_eq!(room.clock() - fell, crate::garrison::STAND_AGAIN, "the goal unmet, it stands again two minutes on");
     let again = living(&room);
-    assert_eq!(again.len(), 5, "the goal unmet and none standing, it stands again");
+    assert_eq!(again.len(), 5);
     assert!(again.iter().all(|id| !group.contains(id)));
     shoot_dead(&mut room, player, again[0]);
     assert_eq!(now(&room, player).1, [5, 0]);
@@ -256,12 +260,13 @@ fn homes(room: &Room, group: &[FighterId]) -> Vec<([f64; 3], [f64; 3], ::foes::A
 fn a_group_300_m_from_the_spawn_stands_on_its_places_own_mesh_fights_there_and_walks_back_to_its_post() {
     let mut room =
         node_room("saltgrass-downs", &[("Tithe Camp", [0.0, -120.0], 48.0), ("Saltgrass", [0.0, 0.0], 70.0)]);
-    assert_eq!(room.quests.grounds.len(), 1, "a mesh round the camp alone, where a group stands");
+    assert_eq!(room.quests.grounds.len(), 0, "no mesh is baked before a group must stand");
     let player = joined(&mut room, &on_road(1, 1), [0.0, 25.0]);
     run(&mut room, 1);
     let group = living(&room);
+    assert_eq!(room.quests.grounds.len(), 1, "a mesh round the camp alone, where a group stands");
     assert_eq!(group.len(), 5);
-    let camp = &room.quests.grounds[0].1;
+    let camp = &room.quests.grounds[0].2;
     for (feet, home, alert) in homes(&room, &group) {
         assert_eq!((room.mesh_index([feet[0], feet[1]]), alert), (1, ::foes::Alertness::Idle), "idle on the camp's");
         let near = camp.nearest_point(feet).expect("the camp's mesh");
@@ -294,11 +299,15 @@ fn a_group_300_m_from_the_spawn_stands_on_its_places_own_mesh_fights_there_and_w
 #[test]
 fn a_patrols_own_garrison_stands_and_fights_the_same_whatever_meshes_its_places_add() {
     let fought = |places: Vec<Place>| {
+        let baked = places.first().cloned();
         let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
         let section = Section { ring, spawns: vec![[0.0, 180.0]], falls_kill: false };
         let id = ("saltgrass-downs", None);
         let mut room = Room::garrisoned(Floor::Flat, Vec::new(), section, NodeKind::Patrol, id);
         room.set_places(places);
+        if let Some(place) = baked {
+            room.ground_of(&place);
+        }
         let player = room.join().expect("a room with space");
         let post = room.garrison[0].at;
         stand_at(&mut room, player, [post[0] + 6.0, post[1]]);
@@ -314,4 +323,22 @@ fn a_patrols_own_garrison_stands_and_fights_the_same_whatever_meshes_its_places_
     assert_eq!((without.0, with.0), (0, 1));
     assert!(with.1 > 0, "its garrison fights the player");
     assert_eq!((without.1, without.2), (with.1, with.2), "every blow, and every fighter where it was, as it was");
+}
+
+#[test]
+fn where_the_sea_checks_landings_a_player_lands_and_counts_the_isles_kills_only_once_it_says_so() {
+    let seed = (0..).find(|&seed| Kind::of(seed) == Kind::Ruin).unwrap_or(0);
+    let plan = Plan::new(seed, "woodland").expect("woodland dresses islands");
+    let mut isle = Room::island(&plan, [612_345.5, 287_654.25], Some(::foes::factions::GREY_TITHE), Some((5, 9)));
+    assert!(isle.check_landings());
+    let player = joined(&mut isle, &on_road(3, 6), [0.0, 0.0]);
+    assert!(isle.own(player, "account-a"));
+    assert_eq!(now(&isle, player).1, [0, 0], "given back and owned, not yet landed");
+    let reeve = isle.foes.iter().find(|(_, foe)| foe.brain.foe_type.name == "Reeve").map(|(id, _)| *id);
+    shoot_dead(&mut isle, player, reeve.expect("the isle's leader"));
+    assert_eq!(now(&isle, player).1, [0, 0], "its leader's fall before they landed");
+    assert!(isle.land("account-b"));
+    assert_eq!(now(&isle, player).1, [0, 0], "another account's word");
+    assert!(isle.land("account-a"));
+    assert_eq!(now(&isle, player).1, [1, 0], "the sea's word for theirs");
 }

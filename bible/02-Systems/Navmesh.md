@@ -139,9 +139,8 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 
 - A node's room bakes a 70 m square of its [[Land]] (its first spawn 15 m inside the edge toward the middle of its
   section), and a 70 m square round each place a kill goal stands a group at, each with only the boxes that reach into
-  it. Elsewhere a node has no mesh, so a foe leashed there gives up its fights. Each extra square costs about 150 to
-  250 ms of a room's opening natively (a patrol zone's three bring it from about 140 ms to 610 to 850 ms); WebAssembly's
-  cost is unmeasured. A larger square would hold more of a node, at a bake's cost.
+  it. Elsewhere a node has no mesh, so a foe leashed there gives up its fights. Each place's square is baked the first time its group stands and
+  kept, at about 150 to 270 ms in that one tick natively; WebAssembly's cost is unmeasured. A larger square would hold more of a node, at a bake's cost.
 - An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
   stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
