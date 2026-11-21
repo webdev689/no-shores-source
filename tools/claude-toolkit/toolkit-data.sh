@@ -23,8 +23,9 @@ renumber() {
   top=$((10#${top:-0})); [ -z "$floor" ] || [ "$((10#$floor))" -le "$top" ] || top=$((10#$floor))
   while IFS= read -r file; do
     number=$(basename "$file" | cut -c1-4)
-    [[ $number =~ ^[0-9]{4}$ ]] || continue
-    git -C "$wt" ls-tree -r --name-only "$tip" -- "$OBS" | grep -q "/$number-" || continue
+    # Only an observation moves, on another observation's number: a claim marker (`.id-claims/0004`) is neither.
+    [[ $(basename "$file") =~ ^[0-9]{4}-.+\.md$ ]] || continue
+    git -C "$wt" ls-tree -r --name-only "$tip" -- "$OBS" | grep -qE "/$number-[^/]+\.md$" || continue
     top=$((top + 1)); name="$(dirname "$file")/$(printf '%04d' "$top")-$(basename "$file" | cut -c6-)"
     git -C "$wt" mv "$file" "$name"
     sed "s/^id: 0*$((10#$number))\$/id: $top/" "$wt/$name" > "$wt/$name.new" && mv "$wt/$name.new" "$wt/$name"
