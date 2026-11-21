@@ -24,3 +24,12 @@ status: in force
 - Memory, hitching and performance are part of the work: the game as it stands uses too much memory and hitches.
 - Marking the files already on R2 writes to R2, which is a deploy step: it waits on the owner's yes, as every deploy
   does ([[Rules]]).
+
+## Claude's calls
+
+Under "Whatever is most detailed", the owner's to change:
+
+- Recordings ([[Interface]], "How recordings load"): the short sounds of play fetched as the sound wakes, the
+  ambience's and the story's as each is first asked for; a long recording fetched in chunks of 1 MB (about a minute),
+  two held at most; the page alone keeping the samples; 192 MB of samples held before the least lately played are let
+  go, never one played in the last two minutes nor a sound of play; every file kept in the browser's own storage.

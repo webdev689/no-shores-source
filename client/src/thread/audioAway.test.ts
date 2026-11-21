@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { soundAway } from './audioAway.ts';
 import { AudioHost } from './audioHost.ts';
 import type { AudioOp, AudioReply } from './audioOps.ts';
+import type { Measured } from '../soundMeasure.ts';
 
 /** A page's audio, enough of it to see what was made, set and called on it. */
 class FakeParam {
@@ -40,6 +41,9 @@ class FakeBuffer {
   }
   get numberOfChannels() {
     return this.data.length;
+  }
+  get length() {
+    return this.data[0]?.length ?? 0;
   }
   getChannelData(channel: number) {
     return this.data[channel] ?? new Float32Array();
@@ -151,6 +155,18 @@ test('a sound decoded by the page is held there and its samples read in the work
   assert.equal(decoded.numberOfChannels, 2);
   assert.equal(decoded.sampleRate, 22_050);
   assert.deepEqual(decoded.getChannelData(1), Float32Array.from([0.5, 0.25, 0]));
+});
+
+test('a recording measured by the page is kept there alone: the worker holds its shape and measure, not its samples', async () => {
+  joined();
+  await settled();
+  const audio = new AudioContext() as unknown as {
+    decodeMeasured(data: ArrayBuffer): Promise<{ buffer: AudioBuffer; measured: Measured }>;
+  };
+  const { buffer, measured } = await audio.decodeMeasured(new ArrayBuffer(8));
+  assert.deepEqual([buffer.length, buffer.numberOfChannels, buffer.sampleRate], [3, 2, 22_050]);
+  assert.equal(measured.measures['Infinity']?.peak, 0.5);
+  assert.throws(() => buffer.getChannelData(0), /kept on the page/);
 });
 
 test('the context the game makes is an AudioContext, as the sound code asks before it plays a recording', async () => {

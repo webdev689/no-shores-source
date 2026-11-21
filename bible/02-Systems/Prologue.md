@@ -251,8 +251,10 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   torn deck up onto its bow half, from its fore deck onto the raft beside it and down from it onto the Sloop's side,
   off the Sloop onto the wreckage it drifted into and up from it into the Frigate's stove-in waist, out over its
   port bow, down into its gun deck, up through its quarterdeck's broken front, and out of its gun deck onto the
-  wreckage off its port quarter. Splintered timber stands along every break. Wreckage is strewn on the decks and the
-  rafts' edges, kept off the way through, and flotsam floats all round.
+  wreckage off its port quarter. Splintered timber stands along every break, but where a ramp meets a deck or a raft:
+  each ramp's way, 1.3 m either side of its line and 1 m past its ends, is cleared of every piece no longer than 2 m
+  (splinters, the stubs of beams, fittings) that a body would stand against (`clear_ways`). Wreckage is strewn on the
+  decks and the rafts' edges, kept off the way through, and flotsam floats all round.
 - **The ground** is measured from the model (`wreck_course.py`), as a ship's deck is. A face looking up is ground
   where it is hull or deck, or timber laid as a way. What is solid in the room a body takes over the ground stands as
   a wall 3.2 m over it: past a jump from the deck, a quarterdeck or a rail beside it. Splinters and the heaps that
@@ -265,8 +267,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   with.
 - **The layout** is `content/prologue/wreck.json`, written by the export: the mesh's and the light's keys on R2, the
   ground's blocks, each heap's block, the fires, where the sea is not drawn (`dry`), where the player wakes, the
-  path, the zones with their waves and the Brig's crew, the arena and Thule's place. It also holds the masts still
-  standing and a camera's way back over the wreck, which the page no longer reads. Figures stand at the middle of their square of ground, never on the edge between
+  path, the zones with their waves and the Brig's crew, the arena and Thule's place. Figures stand at the middle of their square of ground, never on the edge between
   two blocks.
 - **The path** runs from the Brig's quarterdeck, where the player wakes by its wheel, down through its thrown-down
   breast rail into its waist, along its port gangway past the fallen waist, off its broken end across the wreckage of
@@ -294,15 +295,21 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   boarders fight them and they fight back; they can fall. Neither the music nor a foe's growl on noticing the player
   takes one of them for a foe. The wreck's room holds 24 foes alive, as a node's; no more than 18 of the crew live at
   once, so the boarders always have room. A zone is cleared once its boarders are down, whatever became of its crew.
+  As the player reaches each zone after the first, but the arena, the crew still standing from the zones before it
+  regroup there ([[The Crew Still Standing Regroup Ahead]]): each is posted round its checkpoint, 1.8 m out and a step apart on its deck, facing
+  its wave, walks there by the room's routes (`Room::story_post`) and joins its fight. None comes into the arena:
+  Thule's fight is one on one.
 - **Heaps across the way.** Each zone but the first and the arena has a heap of wreckage across the way on from it,
   piled 2.9 m over its deck and out over the bulwarks (the arena's 3.7 m, past a jump from its quarterdeck), standing
   from the start. It is cleared once its zone's wave has stood whole and
   fallen. The Frigate's gangways beside its gun deck are closed for good by heaps on cores of stacked crates, higher
   than its rails. A player found past a heap still standing is brought back to their last checkpoint.
 - **The level's check.** The export refuses a level its own ground does not hold, measured twice, the second half a
-  square across and along: every zone, checkpoint, foe and crewman reached in order, each with a body's room round
-  it; no standing heap walked, or climbed as high as a jump reaches (1.05 m), round; a wave and three crew in every
-  zone but the first and the arena; and at least 2,000 m2 of ground walked.
+  square across and along: every zone, checkpoint, foe and crewman reached in order, walked with a body's width (into
+  a square only where nothing higher than it steps or climbs stands within 0.35 m of its middle, as a body's radius
+  is), each with a body's room round it; no standing heap walked, or climbed as high as a jump reaches (1.05 m),
+  round; a wave and three crew in every zone but the first and the arena; and at least 2,000 m2 of ground its feet
+  could reach.
 - **Nothing falls off.** The room over the sea holds a rim round the wreck's ground, a grid of 0.3 m cells, open
   where a block covers a cell and a wall everywhere else, as a ship's deck holds its crew ([[Movement]]): a body
   walks, jumps and vaults anywhere over the decks and the rafts and is held at their edge, its rails and open breaks

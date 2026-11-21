@@ -1,5 +1,6 @@
 // What the game's worker says to the page's audio, and what the page says back (`audioAway.ts`, `audioHost.ts`): each
 // context, node, parameter and buffer is a number, the context, its destination and its listener the first three.
+import type { Measured } from '../soundMeasure.ts';
 
 export const CONTEXT = 0;
 export const DESTINATION = 1;
@@ -67,6 +68,8 @@ export type AudioOp =
   | readonly ['buffer', id: number, channels: readonly Float32Array[], sampleRate: number]
   /** A file's bytes to decode into a buffer. */
   | readonly ['decode', id: number, data: ArrayBuffer]
+  /** A file's bytes to decode into a buffer the page alone keeps, said back only as it measures. */
+  | readonly ['measure', id: number, data: ArrayBuffer]
   /** Said back when it ends. */
   | readonly ['ended', id: number]
   /** Let go: the game holds it no more. */
@@ -85,4 +88,13 @@ export type AudioReply =
     }
   | { readonly kind: 'ended'; readonly id: number }
   | { readonly kind: 'decoded'; readonly id: number; readonly channels: Float32Array[]; readonly sampleRate: number }
-  | { readonly kind: 'decoded'; readonly id: number; readonly error: string };
+  | { readonly kind: 'decoded'; readonly id: number; readonly error: string }
+  /** A buffer the page keeps: its shape, and how its samples measure (`soundMeasure.ts`). */
+  | {
+      readonly kind: 'measured';
+      readonly id: number;
+      readonly length: number;
+      readonly numberOfChannels: number;
+      readonly sampleRate: number;
+      readonly measured: Measured;
+    };
