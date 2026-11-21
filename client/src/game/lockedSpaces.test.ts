@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { poseOf } from '../overworld/overworldCamera.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
 import { LOCKED_WORDS, OPEN_SOCIAL_SPACES, socialLocked } from './nodes.ts';
-import { islandMarks, landable, landingChoice, seaMarks } from './seaMarks.ts';
+import { islandMarksOf, landable, landingChoice, seaMarks } from './seaMarks.ts';
 import { type WorldData, arrivalAt } from './worldData.ts';
 
 test('only the listed cities’ social spaces open: Overlook’s; the rest of every island is open', () => {
@@ -69,7 +69,7 @@ test('a social space still locked is a locked mark, which says it opens later wh
     { id: 'sunspire-social', kind: 'social', name: 'Sunspire', ...where },
     { id: 'sunspire-patrol', kind: 'patrol', name: 'Dunes', ...where },
   ] as const;
-  const marks = islandMarks({ nodes, plan: null, heightAt: () => 0 });
+  const marks = islandMarksOf({ nodes, plan: null, heightAt: () => 0 });
   assert.deepEqual(
     marks.map((mark) => mark.locked),
     [true, false],

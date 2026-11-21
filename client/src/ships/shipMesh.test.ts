@@ -61,7 +61,7 @@ test('a mesh without a waterline, or with counts that are not whole, is refused'
   assert.throws(() => readShipMesh(header(half)), /whole/);
 });
 
-test("the Brig's sails are her two staysails, six square sails each on its four corners, and her gaff", () => {
+test("the Brig's sails are its two staysails, six square sails each on its four corners, and its gaff", () => {
   const sails = shipSails('brig');
   assert.deepEqual(
     sails.map((sail) => sail.kind),

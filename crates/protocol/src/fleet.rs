@@ -9,7 +9,7 @@ use naval::fight::{Aim, End, Event, Fight, Orders, Refusal};
 use naval::guns::Shot;
 use naval::ranks::{Commission, PIRATES, Rank};
 use naval::shots::{ShipId, ShotEvent};
-use room::fleet::{Call, Input};
+use room::fleet::{Call, Input, Levels};
 use sailing::ship::Helm;
 
 /// A load as the messages number it: 0 none, then the cycle's order from 1.
@@ -38,6 +38,11 @@ fn commission_of(faction: u8, rank: u8) -> Result<Commission, String> {
     Commission::of(faction, rank).ok_or(format!("no captain sails for faction {faction}"))
 }
 
+/// A level a call names: 0 for none, else 1 to the highest a ship or a captain reaches.
+fn level_of(level: u8) -> Result<u8, String> {
+    if level <= gear::power::LEVEL_MOST { Ok(level) } else { Err(format!("no level is {level}")) }
+}
+
 /// The orders an orders' bytes hold, or why they do not read: a look of 0, 2 or 8 numbers, a load the cycle
 /// numbers, three numbers or none to put to sea, a call the messages number, of a faction and rank they number. The
 /// bytes come from a player's machine, so the verifier passes them first; the room checks the numbers.
@@ -61,7 +66,10 @@ pub fn read_orders(bytes: &[u8]) -> Result<Input, String> {
     };
     let call = match orders.call() {
         0 => Call::None,
-        CALL_CAPTAIN => Call::Captain(commission_of(orders.call_faction(), orders.call_rank())?),
+        CALL_CAPTAIN => {
+            let levels = Levels { captain: level_of(orders.call_level())?, ship: level_of(orders.ship_level())? };
+            Call::Captain(commission_of(orders.call_faction(), orders.call_rank())?, levels)
+        }
         CALL_SEND_OFF => Call::SendOff,
         other => return Err(format!("no call is numbered {other}")),
     };
@@ -81,10 +89,10 @@ pub fn orders_bytes(input: &Input) -> Vec<u8> {
     let aim = Some(builder.create_vector(&look));
     let put = input.put_to_sea.map_or_else(Vec::new, |put| put.to_vec());
     let put_to_sea = Some(builder.create_vector(&put));
-    let (call, call_faction, call_rank) = match input.call {
-        Call::None => (0, 0, 0),
-        Call::Captain(commission) => (CALL_CAPTAIN, commission.faction, commission.rank.number()),
-        Call::SendOff => (CALL_SEND_OFF, 0, 0),
+    let (call, call_faction, call_rank, levels) = match input.call {
+        Call::None => (0, 0, 0, Levels::default()),
+        Call::Captain(commission, levels) => (CALL_CAPTAIN, commission.faction, commission.rank.number(), levels),
+        Call::SendOff => (CALL_SEND_OFF, 0, 0, Levels::default()),
     };
     let helm = input.orders.helm;
     let args = messages::OrdersArgs {
@@ -100,6 +108,8 @@ pub fn orders_bytes(input: &Input) -> Vec<u8> {
         call,
         call_faction,
         call_rank,
+        call_level: levels.captain,
+        ship_level: levels.ship,
     };
     let orders = messages::Orders::create(&mut builder, &args);
     builder.finish(orders, None);
@@ -152,6 +162,17 @@ pub const NO_SAIL: u8 = 8;
 pub const LOAD: u8 = 9;
 pub const GONE: u8 = 10;
 pub const RAM: u8 = 11;
+/// The sea's own events, for the fight's feel: where on it a ball struck (its frame's point, the part as detail), a
+/// sail torn away and a mast fallen (its number as detail), its colours struck, its going down, what floats laid (its
+/// number as the ship, its kind as detail, where as the point) and gathered (by whom), and players gone aboard it.
+pub const STRUCK_AT: u8 = 12;
+pub const SAIL_LOST: u8 = 13;
+pub const MAST_FELL: u8 = 14;
+pub const STRUCK: u8 = 15;
+pub const SINKING: u8 = 16;
+pub const FLOTSAM: u8 = 17;
+pub const GATHERED: u8 = 18;
+pub const BOARDING: u8 = 19;
 
 /// An event's numbers as the messages carry them: kind, ship, who fired, detail, side, point, launch, seconds left.
 type NavalParts = (u8, ShipId, ShipId, u8, u8, [f64; 3], [f64; 3], f64);
@@ -181,14 +202,29 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
         Event::Load { ship, shot } => (LOAD, ship, 0, load_code(Some(shot)), 0, none, none, 0.0),
         Event::Gone { ship, end } => (GONE, ship, 0, u8::from(end == End::Gone), 0, none, none, 0.0),
         Event::Ram { ship, by, point, dealt } => (RAM, ship, by, 0, 0, point, none, dealt),
+        Event::Hit { ship, at, part } => (STRUCK_AT, ship, 0, part.number(), 0, at, none, 0.0),
+        Event::SailLost { ship, sail } => {
+            (SAIL_LOST, ship, 0, u8::try_from(sail).unwrap_or(u8::MAX), 0, none, none, 0.0)
+        }
+        Event::MastFell { ship, mast } => {
+            (MAST_FELL, ship, 0, u8::try_from(mast).unwrap_or(u8::MAX), 0, none, none, 0.0)
+        }
+        Event::Struck { ship } => (STRUCK, ship, 0, 0, 0, none, none, 0.0),
+        Event::Sinking { ship } => (SINKING, ship, 0, 0, 0, none, none, 0.0),
+        Event::Flotsam { id, at, kind } => (FLOTSAM, id, 0, kind.number(), 0, [at[0], at[1], 0.0], none, 0.0),
+        Event::Gathered { id, by } => (GATHERED, id, by, 0, 0, none, none, 0.0),
+        Event::Boarding { ship } => (BOARDING, ship, 0, 0, 0, none, none, 0.0),
+        // A ball's splash is told with its shot's.
+        Event::Splash { .. } => return None,
     })
 }
 
-/// Every ship in a fleet room after its tick `tick`, each player's ship with the number of her last orders taken
-/// (`acknowledged`), the balls aloft, what happened in the fight since the last snapshot, and the fight's clock.
+/// Every ship in a fleet room after its tick `tick`, each player's ship with the number of their last orders taken
+/// (`acknowledged`), the balls aloft, what happened in the fight since the last snapshot, the fight's clock, and the
+/// world time the room's clock started at (`world_start`), which sets its weather.
 #[must_use]
 pub fn fleet_snapshot_bytes(
-    tick: u64,
+    (tick, world_start): (u64, f64),
     fight: &Fight,
     acknowledged: &impl Fn(ShipId) -> Option<u32>,
     happened: &[(u64, Event)],
@@ -214,7 +250,7 @@ pub fn fleet_snapshot_bytes(
             let run_out = command.map_or(0, |command| {
                 Side::BOTH
                     .iter()
-                    .filter(|side| command.her.run.out(**side).is_some())
+                    .filter(|side| command.mind.run.out(**side).is_some())
                     .fold(0, |sides, side| sides | (1 << side.index()))
             });
             let args = messages::VesselArgs {
@@ -228,12 +264,13 @@ pub fn fleet_snapshot_bytes(
                 guns: guns_numbers,
                 load: load_code(Some(guns.load)),
                 braced: guns.braced,
-                mode: command.map_or(0, |command| mode_code(command.her.mode)),
-                target: command.and_then(|command| command.her.target()).unwrap_or(0),
+                mode: command.map_or(0, |command| mode_code(command.mind.mode)),
+                target: command.and_then(|command| command.mind.target()).unwrap_or(0),
                 run_out,
                 acknowledged: acknowledged(id).unwrap_or(0),
                 faction: vessel.flag().number(),
-                rank: command.map_or(0, |command| command.her.commission.rank.number()),
+                rank: command.map_or(0, |command| command.mind.commission.rank.number()),
+                hull: vessel.hull.number(),
             };
             messages::Vessel::create(&mut builder, &args)
         })
@@ -267,6 +304,7 @@ pub fn fleet_snapshot_bytes(
         balls,
         naval,
         fight_clock: fight.clock,
+        world_start,
         ..messages::SnapshotArgs::default()
     };
     super::finish_snapshot(builder, &args)

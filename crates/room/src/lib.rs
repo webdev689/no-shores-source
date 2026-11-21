@@ -6,18 +6,26 @@
 
 mod arts;
 pub mod asks;
+pub mod battle;
+pub mod boarding_hands;
+pub mod chart;
 pub mod clash;
+mod companions;
 mod course;
+pub mod crew;
 pub mod deck;
+mod deck_fight;
 mod drops;
 pub mod dungeon_ground;
 mod dungeon_room;
 mod entrances;
-mod fallen;
 pub mod fleet;
 mod floor;
+pub mod flotsam;
 mod foes;
 mod garrison;
+pub mod harbour;
+pub mod island;
 mod judging;
 pub mod patrol;
 mod perks;
@@ -25,6 +33,9 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+pub mod sea_weather;
+pub mod ship_power;
+pub mod sighting;
 mod spells;
 mod statuses;
 pub mod threat;
@@ -32,6 +43,7 @@ pub mod winds;
 
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
+pub use companions::Companion;
 pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
 pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
@@ -142,6 +154,8 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
+    pub(crate) ashore: companions::Ashore,
+    pub(crate) isle: Option<island::Isle>,
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
@@ -151,24 +165,14 @@ pub struct Room {
 }
 
 impl Room {
-    /// An empty room on a course of blocks on open ground, where players stand at `spawn` (x, y) when they join. Its
-    /// navmesh is baked over the course and open ground around it.
-    #[must_use]
-    pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        Self::on(Floor::Flat, blocks, vec![spawn], None)
-    }
-
-    /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
-    /// turn and come back to.
-    #[must_use]
-    pub fn node(floor: Floor, blocks: Vec<Block>, section: Section) -> Self {
-        let spawns = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
-        Self::on(floor, blocks, spawns, Some(section))
-    }
-
-    fn on(floor: Floor, blocks: Vec<Block>, spawn_points: Vec<(f64, f64)>, section: Option<Section>) -> Self {
-        let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        let nav = garrison::baked(&floor, &blocks, first, section.as_ref());
+    /// An empty room on its floor and navmesh (`garrison.rs` bakes it), its blocks, its spawns and its section.
+    pub(crate) fn on(
+        floor: Floor,
+        blocks: Vec<Block>,
+        spawn_points: Vec<(f64, f64)>,
+        section: Option<Section>,
+        nav: navmesh::NavMesh,
+    ) -> Self {
         Room {
             blocks: blocks.into(),
             floor,
@@ -209,8 +213,10 @@ impl Room {
             resource_nodes: Vec::new(),
             drops: Vec::new(),
             spells: spells::Spells::default(),
-            difficulty: gear::Difficulty::Calm,
+            difficulty: gear::Difficulty::Normal,
             patrol: None,
+            ashore: companions::Ashore::default(),
+            isle: None,
             facing: core::f64::consts::PI,
             cache: None,
             minute: 0,
@@ -232,7 +238,7 @@ impl Room {
     }
 
     /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
-    fn stand_again(&self, x: f64, y: f64) -> Body {
+    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
         let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
@@ -303,6 +309,7 @@ impl Room {
         self.step_players();
         self.spawn_asked();
         self.keep_patrol();
+        self.keep_companions();
         self.step_foes();
         self.keep_on_course();
         self.fly_shots();
@@ -509,6 +516,8 @@ mod foe_tests;
 mod gear_tests;
 #[cfg(test)]
 mod loadout_tests;
+#[cfg(test)]
+mod measure_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]

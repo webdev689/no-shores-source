@@ -11,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 gear = { path = "../gear" }
+isle = { path = "../isle" }
 combat = { path = "../combat" }
 dungeon = { path = "../dungeon" }
 foes = { path = "../foes" }

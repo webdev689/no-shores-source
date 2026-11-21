@@ -141,6 +141,18 @@ test('in a crowd, a plate shows for the foe nearest the crosshair, the locked an
     );
   }));
 
+test('the crosshair rests on the foe whose body it is on, never on an ally of the players', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const spotOf = (view: FighterView) => ({ x: 400 + view.x * 10, y: 300, depth: view.y });
+    const ahead = placed(1, 0, 10);
+    bars.update([ahead], null, spotOf, LOOKING_NORTH, 1 / 60);
+    assert.equal(bars.under, 1);
+    const ally = { ...ahead, view: { ...ahead.view, side: 'players' as const } };
+    bars.update([ally], null, spotOf, LOOKING_NORTH, 1 / 60);
+    assert.equal(bars.under, null, 'a companion or a boarding hand');
+  }));
+
 test('a foe fought shows wherever it is, fading as the fight lets it go', () =>
   onFakePage((root) => {
     const bars = new FoeBars(root, root, root);
@@ -286,6 +298,30 @@ test('a plate leaving the cone fades out over a quarter of a second, then is gon
     const fallen = thule(1, 0, { rank: 2 }, { y: 10, action: { kind: 'dead', elapsed: 0 } });
     bars.update([fallen], null, spotOf, viewing, 1 / 60);
     assert.equal(findAll(root, 'overhead').length, 0);
+  }));
+
+test("a companion's plate is drawn in the players' colour, by their own name", () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const viewing: PlateViewing = {
+      camera: { eye: [0, 0, 1.8], forward: [0, 1, 0], focal: 1 / Math.tan(Math.PI / 6) },
+      blocked: () => false,
+      // Both fought lately, so both plates show.
+      fought: () => 1,
+      locked: null,
+    };
+    const mate = thule(1, 0, { name: 'Cass Brine', rank: 2, ally: true }, { y: 5, side: 'players' });
+    const brute = thule(2, 0, { name: 'Brute', rank: 2 }, { y: 6 });
+    for (let frame = 0; frame < 12; frame++)
+      bars.update([mate, brute], null, () => ({ x: 400, y: 300, depth: 5 }), viewing, 1 / 60);
+    const bands = findAll(root, 'overhead').map((plate) => [
+      findAll(plate as unknown as HTMLElement, 'name')[0]?.textContent,
+      (plate as unknown as HTMLElement).dataset['band'],
+    ]);
+    assert.deepEqual(bands.sort(), [
+      ['Brute', 'orange'],
+      ['Cass Brine', 'ally'],
+    ]);
   }));
 
 test('the crosshair on a near foe takes the plate from one behind it on the line, and the next lifts nothing', () =>

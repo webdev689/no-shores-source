@@ -24,11 +24,11 @@ test("the wreck's ground holds its pieces at their heights: the Brig's halves, t
     assert.ok(Math.abs(topAt(course, x, y) - height) < 0.5, `${name} ${topAt(course, x, y).toFixed(2)} m up`);
   // In the game's frame: x east, y south.
   near(-28.9, -7.6, 3.0, "the Brig's quarterdeck");
-  near(-22.6, -9.0, 2.0, "the Brig's waist along her port side");
+  near(-22.6, -9.0, 2.0, "the Brig's waist along its port side");
   near(-6.0, -7.9, 1.95, "the wreckage of the Brig's waist");
   near(8.0, -8.6, 1.95, 'the torn deck over the gap');
   near(20.4, -7.0, 2.2, "the Brig's fore deck");
-  near(28.4, 1.6, 2.2, 'the raft beside her fore deck');
+  near(28.4, 1.6, 2.2, 'the raft beside its fore deck');
   near(25.7, 13.0, 2.4, "the Sloop's side");
   near(13.5, 16.5, 1.9, 'the wreckage the Sloop drifted into');
   near(2.5, 15.0, 2.7, "the Frigate's waist");
@@ -36,7 +36,7 @@ test("the wreck's ground holds its pieces at their heights: the Brig's halves, t
   near(-1.6, 27.0, 1.0, "the Frigate's gun deck");
   near(-13.0, 29.2, 1.8, 'the wreckage off her port quarter');
   near(2.0, 35.0, 3.3, "the Frigate's quarterdeck");
-  // The Brig's waist on the side the Frigate struck fell into her hold: the sea under it.
+  // The Brig's waist on the side the Frigate struck fell into its hold: the sea under it.
   assert.equal(topAt(course, -21.6, -4.2), 0, "the Brig's fallen waist");
 });
 

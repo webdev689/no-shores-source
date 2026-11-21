@@ -1,5 +1,5 @@
-// A port city's plan as the city crate serialises it, and the climate its pictures are drawn in. The land worker hands
-// the plan over as JSON; this layer only reads it.
+// A city's plan as the city crate serialises it, a port city's or a ruin's, and the climate its pictures are drawn
+// in. The land worker hands the plan over as JSON; this layer only reads it.
 import type { RockShape } from '../rules/rockMesh.ts';
 import { FIRELIGHT, type LampPlace } from '../sky/lamps.ts';
 import type { Climate, Season } from '../textures/picture.ts';
@@ -48,6 +48,15 @@ export type PlanCell = {
 
 export type Pad = { readonly bounds: readonly [number, number, number, number]; readonly level: number };
 
+/** A wreck settled in a ruin's harbour (the city crate's `Wreck`): which ship, where it lies, its heading clockwise
+ *  from north and its heel to starboard, radians. */
+export type Wreck = {
+  readonly ship: 'sloop' | 'schooner';
+  readonly at: readonly [number, number];
+  readonly heading: number;
+  readonly heel: number;
+};
+
 /** A forged model already placed in the world: its id, whether it is a building, its origin (east, south, up) and
  *  its yaw in degrees clockwise from north. */
 export type Piece = {
@@ -86,6 +95,9 @@ export type CityPlan = {
     readonly solids: readonly Solid[];
   };
   readonly pads: readonly Pad[];
+  /** Whether the city is a ruin, desolate and destroyed (the city crate's `ruins`); a port city's plan says false. */
+  readonly ruined?: boolean;
+  readonly wrecks?: readonly Wreck[];
   /** Models placed in the world and pictures laid on the land, beside the blocks the cells stand. */
   readonly pieces?: readonly Piece[];
   readonly decals?: readonly Decal[];

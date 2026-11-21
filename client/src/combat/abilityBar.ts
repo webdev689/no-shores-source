@@ -8,7 +8,7 @@ import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { ARMS_SIZES, DIAMOND_CELLS, RING_CELLS } from './hudLayout.ts';
-import { element } from './meter.ts';
+import { element } from '../plus/meter.ts';
 
 /** The keys that cast the Anima and the two Tenets. */
 export const ABILITY_KEYS = ['R', 'Q', 'G'] as const;

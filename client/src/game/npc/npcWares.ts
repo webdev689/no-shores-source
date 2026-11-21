@@ -10,7 +10,7 @@ import type { KeeperKind } from '../keepers.ts';
 import { KEEPERS } from '../keepers.ts';
 import { emblemOf } from '../emblemArt.ts';
 import { CRATES_MOST, type Card, cardOf } from '../gearCards.ts';
-import { vendorsOf } from '../gearScreen.ts';
+import { WARES, vendorsOf } from '../gearScreen.ts';
 import { factionRows } from './factionRows.ts';
 
 /** What a ware's tile shows: an item's own picture, a Vestige, the Ammo crate, a dye's or a coat's colours, an
@@ -207,7 +207,7 @@ function crateWare(gear: GearState): Ware {
 
 function smithRow(gear: GearState, vendor: number, heading: string): Row {
   const wares = (vendorsOf(gear)[vendor]?.wares ?? []).map((ware, place) => {
-    const item = gear.wares[(gear.wares.length / 2) * vendor + place];
+    const item = gear.wares[WARES * vendor + place];
     const price = { amount: ware.price, currency: 'aurem' as const };
     return item ? [itemWare(`buy-${vendor}-${place}`, item, price, !ware.affordable, ware.press.ask)] : [];
   });

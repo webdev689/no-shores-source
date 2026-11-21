@@ -129,6 +129,10 @@ fn a_dress_is_passed_on_once_each_time_it_changes_and_to_everyone_who_joins_late
     assert_eq!(room.take_dress_changes(), vec![(first, "blue".to_owned())]);
     assert_eq!(room.dresses().collect::<Vec<_>>(), vec![(first, "blue")]);
     assert!(room.dresses().all(|(player, _)| player != second));
+    // A boarder come over a ship's side has no welcome to bring the dresses aboard: every one is passed on once more.
+    room.announce_dresses();
+    assert_eq!(room.take_dress_changes(), vec![(first, "blue".to_owned())]);
+    assert_eq!(room.take_dress_changes(), vec![]);
 }
 
 #[test]

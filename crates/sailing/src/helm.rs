@@ -1,8 +1,8 @@
 //! The helm's laws: Come Sail Away's handling and sail curves, under DFO's responsive helm (its way and turn eased at
-//! rates a fifth again, her sails drawing on every heading by the point of sail, her steerage read off her way).
+//! rates a fifth again, its sails drawing on every heading by the point of sail, its steerage read off its way).
 //! Degrees where the mod keeps degrees.
 
-use crate::{Hull, SailKind, SailSize};
+use crate::{Hull, SLOOP, SailKind, SailSize};
 
 /// Come Sail Away's handling: way (m/s) and its rate (m/s²), turn (degrees a second) and its rate, under oars and sail.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -28,17 +28,17 @@ pub const HANDLING: Handling = Handling {
     turn_accel_sail: 5.0,
 };
 
-/// The responsive helm's rates: her way under sail and her coast, and her swing under sail, each times the mod's.
+/// The responsive helm's rates: its way under sail and its coast, and its swing under sail, each times the mod's.
 pub const SAIL_ACCEL: f64 = 3.5;
 pub const COAST: f64 = 3.0;
 pub const TURN_ACCEL_SAIL: f64 = 2.4;
-/// Her steerage, degrees a second: its floor at no way, its peak and the way it peaks at (m/s).
+/// Its steerage, degrees a second: its floor at no way, its peak and the way it peaks at (m/s).
 pub const STEER_FLOOR: f64 = 3.0;
 pub const STEER_PEAK: f64 = 14.0;
 pub const STEER_PEAK_WAY: f64 = 4.5;
-/// Her way under sail a fifth again: the mod's speeds were set for a time dial the online game does not have.
+/// Its way under sail a fifth again: the mod's speeds were set for a time dial the online game does not have.
 pub const PACE: f64 = 1.2;
-/// The point of sail's share of her best way: running dead before the wind, on the quarter, in the wind's eye.
+/// The point of sail's share of its best way: running dead before the wind, on the quarter, in the wind's eye.
 pub const RUN: f64 = 0.9;
 pub const QUARTER_DEG: f64 = 45.0;
 pub const HEAD: f64 = 0.55;
@@ -48,7 +48,7 @@ pub const WIND_SHARE: [f64; 2] = [0.3, 2.0];
 /// The degrees between the wind and a lateen, gaff or staysail at which it pulls its most.
 pub const SAIL_CREST_DEG: f64 = 135.0;
 
-/// The point of sail's share of her best way, `off_run` degrees between her heading and where the wind blows to.
+/// The point of sail's share of its best way, `off_run` degrees between its heading and where the wind blows to.
 #[must_use]
 pub fn point_of_sail(off_run_deg: f64) -> f64 {
     let off = off_run_deg.abs().min(180.0);
@@ -58,14 +58,14 @@ pub fn point_of_sail(off_run_deg: f64) -> f64 {
     HEAD + (1.0 - HEAD) * (1.0 + libm::cos(std::f64::consts::PI * (off - QUARTER_DEG) / (180.0 - QUARTER_DEG))) / 2.0
 }
 
-/// How fast her rudder can swing her at `way` m/s, degrees a second: a little at none, most at a brisk way.
+/// How fast its rudder can swing it at `way` m/s, degrees a second: a little at none, most at a brisk way.
 #[must_use]
 pub fn steerage(way: f64) -> f64 {
     let share = way.max(0.0) / STEER_PEAK_WAY;
     STEER_FLOOR + (STEER_PEAK - STEER_FLOOR) * share * libm::exp(1.0 - share)
 }
 
-/// The wind she sails in: none in a calm, else her rated wind's share, held between its bounds.
+/// The wind it sails in: none in a calm, else its rated wind's share, held between its bounds.
 #[must_use]
 pub fn sea_wind(wind: f64) -> f64 {
     if wind > 0.0 { WIND_RATED * (wind / WIND_RATED).clamp(WIND_SHARE[0], WIND_SHARE[1]) } else { 0.0 }
@@ -110,7 +110,7 @@ pub fn sail_power(kind: SailKind, size: SailSize, angle_deg: f64) -> f64 {
     }
 }
 
-/// Her canvas: every sail she carries asked at the crest of its own curve, as the responsive helm sails her.
+/// Its canvas: every sail it carries asked at the crest of its own curve, as the responsive helm sails it.
 #[must_use]
 pub fn canvas(hull: &Hull) -> f64 {
     hull.sails
@@ -122,10 +122,19 @@ pub fn canvas(hull: &Hull) -> f64 {
         .sum()
 }
 
+/// Its canvas as it drives the ship: the Sloop's, whatever its rig, so no hull sails faster than the Sloop (its rank's
+/// way, not its hull, sets its speed); 0 with no sails. Under the responsive helm each sail draws at its crest and the
+/// point of sail alone takes its heading, so its sails' kinds shape only how they are drawn and trimmed; its gain still
+/// sets how its way comes and goes.
+#[must_use]
+pub fn canvas_drive(hull: &Hull) -> f64 {
+    if hull.sails.is_empty() { 0.0 } else { canvas(&SLOOP) }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SLOOP, SailKind, SailSize};
+    use crate::{SailKind, SailSize};
 
     #[test]
     fn the_point_of_sail_is_best_on_the_quarter_and_about_half_in_the_winds_eye() {
@@ -175,7 +184,7 @@ mod tests {
     }
 
     #[test]
-    fn the_sloops_canvas_is_her_small_gaff_and_small_staysail_at_their_crests() {
+    fn the_sloops_canvas_is_its_small_gaff_and_small_staysail_at_their_crests() {
         assert!((canvas(&SLOOP) - 0.74).abs() < 1e-12);
     }
 }

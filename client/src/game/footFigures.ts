@@ -1,5 +1,5 @@
 // The figures on foot that are neither the player's nor the foes': other players, gliding to where the room last saw
-// them, and a social space's people, each keeping a step of its own.
+// them, and a social space's people (`folkCards`).
 import type { DrawnFigure } from '../combat/attackFeel.ts';
 import type { FightEffects } from '../combat/fightEffects.ts';
 import type { Fighting } from '../combat/fighting.ts';
@@ -9,13 +9,9 @@ import type { CardAt, Cards } from '../player/cards.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import type { Glides } from '../player/glide.ts';
 import type { OtherPlayers } from '../player/others.ts';
-import { PlacedLoop } from '../player/playerMoves.ts';
+import type { PlacedLoop } from '../player/playerMoves.ts';
 import type { FighterView } from '../rules/fighters.ts';
-
-/** Other players' figures loop a move at this many frames a second where their screen gave no frame. */
-const OTHERS_FPS = 6;
-/** How far apart in time two figures' steps are, by their numbers, in seconds: a crowd never walks in step. */
-const STRIDE_APART_S = 0.37;
+import { OTHERS_FPS, folkCards } from './footRoom.ts';
 
 /** Who stands on foot beside the player, and what draws them. */
 export interface FootFolk {
@@ -31,7 +27,8 @@ export interface FootFolk {
 
 /** Every other player's figure, gliding toward where the room last saw them, drawn off it by the attack `feel` (and
  *  kept as drawn there), flashing as it is struck, faint while Veiled, and its cast's spark in its Art's colour; then
- *  a social space's people. Each is seen from the eye at (`eyeX`, `eyeY`). */
+ *  a social space's people. Each is seen from the eye at (`eyeX`, `eyeY`), and another player's figure no nearer than
+ *  `feel.nearest`. */
 export function otherCards(
   folk: FootFolk,
   [eyeX, eyeY]: readonly [number, number],
@@ -41,6 +38,7 @@ export function otherCards(
     shift: (id: number, view: FighterView | null) => Vector;
     drawnAt: Map<number, DrawnFigure>;
     otherViews: ReadonlyMap<number, FighterView>;
+    nearest: number;
   },
 ): CardAt[] {
   const { forge, fight, effects, otherGlides } = folk;
@@ -60,19 +58,10 @@ export function otherCards(
     const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
     const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
     feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
-    if (card) cards.push({ card, ...cardStand(atFeet[0], atFeet[1], eyeX, eyeY), z: atFeet[2], flip, flash, veiled });
+    const stand = cardStand(atFeet[0], atFeet[1], eyeX, eyeY, feel.nearest);
+    if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled });
   }
   otherGlides.keep(new Set(folk.otherPlayers.placed.keys()));
-  // Each keeps a step of its own, their walk's frames at the pace they walk.
   const seconds = frameTicks * folk.tickSeconds;
-  for (const one of folk.folk) {
-    const { view, flip } = viewOf(one.facing, one.x, one.y, eyeX, eyeY);
-    const frames = forge.frames(one.dress.body, one.anim);
-    const loop = folk.folkLoops.get(one) ?? new PlacedLoop();
-    folk.folkLoops.set(one, loop);
-    const frame = loop.frame(one, frames, seconds, clock + one.id * STRIDE_APART_S, OTHERS_FPS);
-    const card = forge.card(one.id, one.dress, one.anim, view, frame, flip);
-    if (card) cards.push({ card, ...cardStand(one.x, one.y, eyeX, eyeY), z: one.z, flip });
-  }
-  return cards;
+  return [...cards, ...folkCards(folk.folk, folk.folkLoops, forge, [eyeX, eyeY], clock, seconds)];
 }

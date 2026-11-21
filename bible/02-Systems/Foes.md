@@ -234,10 +234,11 @@ phases) is [[Enemies]].
   inside the ring with a block behind it, it steps toward the nearest place round the ring, by twelfths of a turn,
   that is open to it.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
-  health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
-  the foe's level grows its health by, so a matched player heats the fight alike at any level, and by the players'
-  `PLAYER_HARM`), and 0.09 for each foe they kill, falls 0.006 for each point a player loses, counted before the foes'
-  `FOE_HARM` (three times as fast), and eases back to rest with a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
+  health the players' side (players and their companions) takes from foes, and of what a foe's shield takes, counted
+  as combat is tuned for (divided by what the foe's level grows its health by, so a matched player heats the fight
+  alike at any level, and by the players' `PLAYER_HARM`), and 0.09 for each foe they kill, falls 0.006 for each point
+  a player or companion loses, counted before the foes' `FOE_HARM` (three times as fast), and eases back to rest with
+  a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
   hand and one shooting, from 0.25 two and two, from 0.6 three and two, from 0.85 three and three; a holder keeps its
   turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay, the beat and
   the ring's gap by its share. A dominating player meets more foes at once; one being beaten, fewer.

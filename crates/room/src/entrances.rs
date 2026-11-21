@@ -118,7 +118,7 @@ impl Entrance {
 pub(crate) fn dry(floor: &Floor, x: f64, y: f64) -> bool {
     match floor {
         Floor::Land(ground) => ground.water_at(x, y) == WaterAt::Dry,
-        Floor::Flat | Floor::Dungeon(_) => floor.height_at(x, y) >= 0.0,
+        Floor::Flat | Floor::Deck(_) | Floor::Island(_) | Floor::Dungeon(_) => floor.height_at(x, y) >= 0.0,
         // The open sea under a course is water everywhere.
         Floor::Sea(_) => false,
     }

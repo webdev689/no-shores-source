@@ -25,17 +25,17 @@ pub fn island_levels(continent: &str) -> Option<(u8, u8)> {
     ISLANDS.iter().find(|(id, ..)| *id == continent).map(|&(_, low, high)| (low, high))
 }
 
-/// The difficulty a voyage sets out at: calm seas, rough or a storm.
+/// The difficulty a voyage sets out at: Normal, Elite or Abyss. Elite here is a voyage's tier, not a foe's rank.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Difficulty {
     #[default]
-    Calm,
-    Rough,
-    Storm,
+    Normal,
+    Elite,
+    Abyss,
 }
 
 impl Difficulty {
-    pub const ALL: [Difficulty; 3] = [Difficulty::Calm, Difficulty::Rough, Difficulty::Storm];
+    pub const ALL: [Difficulty; 3] = [Difficulty::Normal, Difficulty::Elite, Difficulty::Abyss];
 
     /// A difficulty by its name, as a room's name carries it.
     #[must_use]
@@ -46,9 +46,9 @@ impl Difficulty {
     #[must_use]
     pub fn name(self) -> &'static str {
         match self {
-            Difficulty::Calm => "calm",
-            Difficulty::Rough => "rough",
-            Difficulty::Storm => "storm",
+            Difficulty::Normal => "normal",
+            Difficulty::Elite => "elite",
+            Difficulty::Abyss => "abyss",
         }
     }
 
@@ -57,9 +57,9 @@ impl Difficulty {
     #[must_use]
     pub fn levels(self) -> u8 {
         match self {
-            Difficulty::Calm => 0,
-            Difficulty::Rough => 2,
-            Difficulty::Storm => 3,
+            Difficulty::Normal => 0,
+            Difficulty::Elite => 2,
+            Difficulty::Abyss => 3,
         }
     }
 
@@ -67,9 +67,9 @@ impl Difficulty {
     #[must_use]
     pub fn reward(self) -> f64 {
         match self {
-            Difficulty::Calm => 1.0,
-            Difficulty::Rough => 1.5,
-            Difficulty::Storm => 2.0,
+            Difficulty::Normal => 1.0,
+            Difficulty::Elite => 1.5,
+            Difficulty::Abyss => 2.0,
         }
     }
 

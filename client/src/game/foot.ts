@@ -12,13 +12,13 @@ import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { GearState } from '../network/gearMessages.ts';
+import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
-import type { Placed } from '../player/figures.ts';
+import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
@@ -26,9 +26,9 @@ import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
 import { AIM } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
-import { OtherPlayers, type Others } from '../player/others.ts';
+import type { OtherPlayers, Others } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
-import { FIGHT_TICKS } from '../player/fightMoves.ts';
+import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { FoeType } from '../rules/roster.ts';
@@ -54,10 +54,10 @@ import {
   type Held,
   nodeText,
   type Opened,
-  rulesOf,
   stand,
   standOn,
 } from './footPlace.ts';
+import { hearing, nextOtherId, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -66,9 +66,9 @@ import type { NodeInfo } from './worldData.ts';
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 /** How far over the ground the third-person camera is held. */
 const CAMERA_CLEARANCE_M = 0.3;
-/** Other players' figures are numbered from here, clear of the player's own, and never twice in the page's life: the
- *  forge keeps each figure's last card by its number, so a number used again would first show another node's figure. */
-let nextOtherId = 100;
+
+/** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
+export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;
 
 /** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
  *  tells of that). */
@@ -135,6 +135,8 @@ export class Foot {
   readonly folk: Placed[];
   private readonly prompt: UsePrompt | null;
   private using: Use | null = null;
+  /** What E does on a sea island where the player stands: a wreck scavenged, the dungeon's door. */
+  private uses: Uses | null = null;
 
   private constructor(
     context: FootContext,
@@ -164,7 +166,7 @@ export class Foot {
     const floor = (x: number, y: number) => context.movement.standing(x, y).z;
     const placing: Others = {
       place: (dress, x, y, facing) => {
-        const one = { id: nextOtherId++, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
+        const one = { id: nextOtherId(), x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
         this.folk.push(one);
         return one;
       },
@@ -183,10 +185,11 @@ export class Foot {
     context: FootContext,
     node: NodeInfo,
     facing: number,
-    seas: Difficulty = 'calm',
+    seas: Difficulty = 'normal',
     arriving?: AtEntrance,
   ): Promise<Foot> {
-    const { module, rules } = await rulesOf(context);
+    const rules = await rulesOf(context);
+    const module = await context.roomModule;
     let rect = windowRect(node.ring);
     let { boxes, ground } = await standOn(context, rules.combat, rect);
     const [x, y] = arriving ? [arriving.x, arriving.y] : (node.spawns[0] ?? node.centre);
@@ -220,9 +223,10 @@ export class Foot {
     patrol: { readonly node: NodeInfo; readonly text: string },
     number: number,
     layout: DungeonLayout,
-    seas: Difficulty = 'calm',
+    seas: Difficulty = 'normal',
   ): Promise<Foot> {
-    const { module, rules } = await rulesOf(context);
+    const rules = await rulesOf(context);
+    const module = await context.roomModule;
     standInDungeon(context.movement, rules.combat, patrol.node, number);
     stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
     const address = context.rooms?.(dungeonRoom(patrol.node, seas, number));
@@ -245,32 +249,14 @@ export class Foot {
     rules: { combat: CombatRules; roster: readonly FoeType[] },
     open: (heard: Heard, session: string | null) => Promise<Opened>,
   ): Promise<Foot> {
-    const { forge } = context;
-    const players = new OtherPlayers({
-      place: (dress, x, y, facing) => ({
-        id: nextOtherId++,
-        x,
-        y,
-        z: 0,
-        facing,
-        dress,
-        anim: 'idle',
-        frame: null,
-        spin: false,
-      }),
-      remove: () => undefined,
-    });
-    let fight: Fighting | null = null;
+    const { players, heard: hearer, received } = hearing(context.forge);
     const held: Held = { gear: null, entrances: new Entrances(), cache: null };
     const online = context.rooms !== null;
     const asked = online ? [] : context.foesAsked;
     const heard: Heard = {
       snapshot: (snapshot: Snapshot) => {
-        players.takeDresses(snapshot.dressed);
-        fight?.receive(snapshot);
+        received(snapshot);
         held.cache = cacheOf(snapshot.cache);
-        // Before the fight stands there is no own number to tell the player from the others.
-        if (fight) players.seen(snapshot.players, fight.player, forge);
       },
       // Offline the room's word on the gear tells only of the patrol's entrances; the figure keeps its own dress.
       gear: (sent: GearState) => {
@@ -280,7 +266,8 @@ export class Foot {
       asks: asked.length > 0,
     };
     const opened = await open(heard, await context.session());
-    fight = new Fighting(rules.combat, opened.link);
+    const fight = new Fighting(rules.combat, opened.link);
+    hearer.fight = fight;
     if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
     // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
@@ -292,6 +279,44 @@ export class Foot {
       { link: opened.link, fight, ...rules },
       { otherPlayers: players, held, folk: [], module: await context.roomModule },
     );
+  }
+
+  /** The player on a grid of heights with no ground of the land: boarding a struck ship, on `node` its deck in its own
+   *  frame (`deckFloats`) at the spot its deck room stands a boarder, facing its bow; or landed on a sea island, its
+   *  ground and its modules' boxes in the world's metres, facing inland, E using what lies near (`place`). The room
+   *  is reached through the link `open` makes, which hands on each of its snapshots. */
+  static async onDeck(
+    context: FootContext,
+    node: NodeInfo,
+    grid: readonly number[],
+    open: (received: (snapshot: Snapshot) => void) => RoomLink,
+    place: {
+      readonly boxes?: readonly Block[];
+      readonly facing?: number;
+      readonly uses?: Uses;
+      readonly gear?: { gear: GearState | null };
+    } = {},
+  ): Promise<Foot> {
+    const { movement } = context;
+    const rules = await rulesOf(context);
+    const boxes = place.boxes ?? [];
+    movement.setCourse(boxes);
+    rules.combat.setCourse(boxes);
+    if (!movement.setHeights(grid) || !rules.combat.setHeights(grid)) throw new Error('the ground did not load');
+    const [x, y] = node.spawns[0] ?? node.centre;
+    stand(context, x, y, place.facing ?? 0, false);
+    const { players, heard, received } = hearing(context.forge);
+    const link = open(received);
+    const fight = new Fighting(rules.combat, link);
+    heard.fight = fight;
+    players.takeDresses(link.dressed);
+    // The place's own holder of the gear, which its room's word fills, is the one the figure is dressed from.
+    const held: Held = Object.assign(place.gear ?? { gear: null }, { entrances: new Entrances(), cache: null });
+    const opened: Opened = { link, boxes, text: '', dungeon: null, seas: 'normal' };
+    const people = { otherPlayers: players, held, folk: [], module: await context.roomModule };
+    const foot = new Foot(context, node, opened, { link, fight, ...rules }, people);
+    foot.uses = place.uses ?? null;
+    return foot;
   }
 
   /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
@@ -369,7 +394,8 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
-    const aimed = () => playerCamera(walker.player, movement, this.boxes, AIM, groundAt, this.roof);
+    const blocks = [...this.boxes, ...(this.context.cameraBlocks ?? [])];
+    const aimed = () => playerCamera(walker.player, movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
@@ -391,6 +417,8 @@ export class Foot {
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
+    // Through the player's own eyes no other figure stands so near that it fills the view.
+    const nearest = firstPerson ? CARD_NEAREST_M : 0;
     const frameTicks = seconds / movement.tickSeconds;
     // Each figure drawn off where it stands by the attack feel, and kept as drawn, which its blow's arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, shot.yaw);
@@ -413,11 +441,10 @@ export class Foot {
     const { tickSeconds } = movement;
     const { otherPlayers, otherGlides, folk, folkLoops } = this;
     const people = { forge, fight, effects, otherPlayers, otherGlides, folk, folkLoops, tickSeconds };
-    figures.push(...otherCards(people, [eyeX, eyeY], clock, frameTicks, { shift, drawnAt, otherViews }));
+    figures.push(...otherCards(people, [eyeX, eyeY], clock, frameTicks, { shift, drawnAt, otherViews, nearest }));
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
-    figures.push(
-      ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, tickSeconds, effects.flashes, foeFeel),
-    );
+    const eye = { x: eyeX, y: eyeY, nearest };
+    figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const dropped = this.dropMarks(clock, shot.eye, [
@@ -428,10 +455,8 @@ export class Foot {
       eye: shot.eye,
       blocks: this.boxes,
       bodies,
-      muzzleOf: (fired) =>
-        muzzle
-          ? screenMuzzle(kicked, aspect, muzzle)
-          : figureMuzzle([body.x, body.y, body.z], Math.atan2(fired.velocity[0], -fired.velocity[1])),
+      muzzleOf: () =>
+        muzzle ? screenMuzzle(kicked, aspect, muzzle) : figureMuzzle([body.x, body.y, body.z], walker.you.facing),
       origin: shot.eye,
       groundAt,
       drawn: { foes: foes.placed, others: this.otherPlayers.placed },
@@ -488,8 +513,10 @@ export class Foot {
       entrances: this.held.entrances,
       module: this.module,
     };
+    const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     this.using = able
-      ? (useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked)) ??
+      ? (placeUse ??
+        useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked)) ??
         tripAt(x, y, here, this.context.trips))
       : null;
     this.prompt?.show(this.using?.words ?? null);
@@ -499,7 +526,6 @@ export class Foot {
       const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const drawing = walker.shownDress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;
@@ -518,9 +544,7 @@ export class Foot {
       ammo: sights ? (ownView?.ammo ?? null) : null,
       ammoMost: held?.ammoMost ?? null,
       ammoFull: !!ownView && this.drops.ammoFull(held?.drops ?? [], [ownView.x, ownView.y, ownView.z], full),
-      crosshair: sights
-        ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
-        : null,
+      crosshair: crosshairOf(shown.reticle, sights, ownView, fight.reach),
       arms: {
         gear: this.gear?.gear ?? null,
         loadout: walker.player.loadout,
@@ -549,9 +573,10 @@ export class Foot {
     return standingOf(standing.kind, standing.ticks);
   }
 
-  /** Asks the room to stand the player again at the section's spawn nearest where they died, once it offers it. */
+  /** Asks the room to stand the player again at the section's spawn nearest where they died, while it offers it. */
   respawn(): void {
-    this.fight.askRespawn();
+    const { standing } = this;
+    if (standing.kind === 'dead' && standing.canRespawn) this.fight.askRespawn();
   }
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */

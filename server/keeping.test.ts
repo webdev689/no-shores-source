@@ -283,3 +283,23 @@ test('a change that changed nothing is not saved again, and a leaving save waits
   assert.deepEqual(saved, ['{"xp":1}', '{"xp":2}', 'release {"xp":3}']);
   assert.equal((await kept.claim(token, 'room-b:1'))?.body, '{"xp":3}', 'the newest lands last');
 });
+
+test('a new account’s character is the one the room holds, given back to the room so it keeps it', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const given: string[] = [];
+  const restore = room.restoreCharacter;
+  room.restoreCharacter = (player, body) => (given.push(body), restore(player, body));
+  const keeper = new Keeper(kept, room, 'sea', () => undefined);
+  assert.equal(
+    await keeper.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  assert.deepEqual(given, ['{"starting":true}'], 'no kept character yet: the room’s own, given back');
+});

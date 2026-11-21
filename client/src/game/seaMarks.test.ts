@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
 import { eyeFor, poseOf, TILT } from '../overworld/overworldCamera.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
-import { islandMarks, landingChoice, seaMarks } from './seaMarks.ts';
+import { islandMarksOf, landingChoice, seaMarks } from './seaMarks.ts';
 import type { NodeKind } from './worldData.ts';
 
 const viewport = { width: 1600, height: 900 };
@@ -18,7 +18,7 @@ test("an island's locked node is marked locked, and over its side its mark says 
     node('downs', 'patrol', 'The Downs', [ship[0], ship[1] - 300], false),
     node('mill', 'mission', 'The Burned Mill', [ship[0] + 60, ship[1] - 300], true),
   ];
-  const marks = islandMarks({ nodes, plan: null, heightAt: () => 5 });
+  const marks = islandMarksOf({ nodes, plan: null, heightAt: () => 5 });
   assert.deepEqual(
     marks.map((mark) => [mark.id, mark.locked]),
     [

@@ -1,0 +1,1713 @@
+{
+ "parts": [
+  "rock",
+  "rockAlt",
+  "sand",
+  "earth",
+  "grass",
+  "bark",
+  "leaf",
+  "leafAlt",
+  "wood",
+  "plank",
+  "rope",
+  "iron",
+  "stone",
+  "stoneAlt",
+  "moss",
+  "snow",
+  "cloth",
+  "ember"
+ ],
+ "kits": [
+  "temperate",
+  "arid",
+  "tropical",
+  "frozen",
+  "common"
+ ],
+ "modules": {
+  "temperate.shore.rock.a": {
+   "role": "shore",
+   "size": [
+    3.0,
+    2.4,
+    1.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.1
+    ]
+   ]
+  },
+  "temperate.shore.rock.b": {
+   "role": "shore",
+   "size": [
+    2.0,
+    1.6,
+    1.1
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.7
+    ]
+   ]
+  },
+  "temperate.shore.rock.c": {
+   "role": "shore",
+   "size": [
+    4.5,
+    3.0,
+    2.2
+   ],
+   "solids": [
+    [
+     -0.9,
+     0.0,
+     1.2
+    ],
+    [
+     0.9,
+     0.0,
+     1.2
+    ]
+   ]
+  },
+  "temperate.shore.drift": {
+   "role": "drift",
+   "size": [
+    5.0,
+    1.2,
+    0.8
+   ],
+   "solids": []
+  },
+  "temperate.cliff.a": {
+   "role": "cliff",
+   "size": [
+    10.0,
+    5.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -3.2,
+     0.5,
+     1.8
+    ],
+    [
+     0.0,
+     0.5,
+     1.8
+    ],
+    [
+     3.2,
+     0.5,
+     1.8
+    ]
+   ]
+  },
+  "temperate.cliff.b": {
+   "role": "cliff",
+   "size": [
+    10.0,
+    5.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -3.2,
+     0.5,
+     1.8
+    ],
+    [
+     0.0,
+     0.5,
+     1.8
+    ],
+    [
+     3.2,
+     0.5,
+     1.8
+    ]
+   ]
+  },
+  "temperate.stack": {
+   "role": "stack",
+   "size": [
+    7.0,
+    7.0,
+    16.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     3.0
+    ]
+   ]
+  },
+  "temperate.boulder.a": {
+   "role": "boulder",
+   "size": [
+    2.2,
+    2.0,
+    1.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.9
+    ]
+   ]
+  },
+  "temperate.boulder.b": {
+   "role": "boulder",
+   "size": [
+    3.5,
+    3.0,
+    2.4
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.4
+    ]
+   ]
+  },
+  "temperate.boulder.c": {
+   "role": "boulder",
+   "size": [
+    1.2,
+    1.1,
+    0.9
+   ],
+   "solids": []
+  },
+  "temperate.outcrop": {
+   "role": "outcrop",
+   "size": [
+    8.0,
+    6.0,
+    4.0
+   ],
+   "solids": [
+    [
+     -1.8,
+     0.0,
+     2.2
+    ],
+    [
+     1.8,
+     0.0,
+     2.2
+    ]
+   ]
+  },
+  "temperate.tree.a": {
+   "role": "tree",
+   "size": [
+    6.0,
+    6.0,
+    11.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.35
+    ]
+   ]
+  },
+  "temperate.tree.b": {
+   "role": "tree",
+   "size": [
+    5.0,
+    5.0,
+    9.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.3
+    ]
+   ]
+  },
+  "temperate.tree.c": {
+   "role": "tree",
+   "size": [
+    7.0,
+    7.0,
+    13.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.45
+    ]
+   ]
+  },
+  "temperate.tree.dead": {
+   "role": "tree",
+   "size": [
+    4.0,
+    4.0,
+    8.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.3
+    ]
+   ]
+  },
+  "temperate.shrub.a": {
+   "role": "shrub",
+   "size": [
+    1.8,
+    1.8,
+    1.4
+   ],
+   "solids": []
+  },
+  "temperate.shrub.b": {
+   "role": "shrub",
+   "size": [
+    1.2,
+    1.2,
+    0.9
+   ],
+   "solids": []
+  },
+  "temperate.grass": {
+   "role": "grass",
+   "size": [
+    1.4,
+    1.4,
+    0.6
+   ],
+   "solids": []
+  },
+  "arid.shore.rock.a": {
+   "role": "shore",
+   "size": [
+    3.0,
+    2.4,
+    1.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.1
+    ]
+   ]
+  },
+  "arid.shore.rock.b": {
+   "role": "shore",
+   "size": [
+    2.0,
+    1.6,
+    1.1
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.7
+    ]
+   ]
+  },
+  "arid.shore.rock.c": {
+   "role": "shore",
+   "size": [
+    4.5,
+    3.0,
+    2.2
+   ],
+   "solids": [
+    [
+     -0.9,
+     0.0,
+     1.2
+    ],
+    [
+     0.9,
+     0.0,
+     1.2
+    ]
+   ]
+  },
+  "arid.shore.drift": {
+   "role": "drift",
+   "size": [
+    5.0,
+    1.2,
+    0.8
+   ],
+   "solids": []
+  },
+  "arid.cliff.a": {
+   "role": "cliff",
+   "size": [
+    10.0,
+    5.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -3.2,
+     0.5,
+     1.8
+    ],
+    [
+     0.0,
+     0.5,
+     1.8
+    ],
+    [
+     3.2,
+     0.5,
+     1.8
+    ]
+   ]
+  },
+  "arid.cliff.b": {
+   "role": "cliff",
+   "size": [
+    10.0,
+    5.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -3.2,
+     0.5,
+     1.8
+    ],
+    [
+     0.0,
+     0.5,
+     1.8
+    ],
+    [
+     3.2,
+     0.5,
+     1.8
+    ]
+   ]
+  },
+  "arid.stack": {
+   "role": "stack",
+   "size": [
+    7.0,
+    7.0,
+    16.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     3.0
+    ]
+   ]
+  },
+  "arid.boulder.a": {
+   "role": "boulder",
+   "size": [
+    2.2,
+    2.0,
+    1.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.9
+    ]
+   ]
+  },
+  "arid.boulder.b": {
+   "role": "boulder",
+   "size": [
+    3.5,
+    3.0,
+    2.4
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.4
+    ]
+   ]
+  },
+  "arid.boulder.c": {
+   "role": "boulder",
+   "size": [
+    1.2,
+    1.1,
+    0.9
+   ],
+   "solids": []
+  },
+  "arid.outcrop": {
+   "role": "outcrop",
+   "size": [
+    8.0,
+    6.0,
+    4.0
+   ],
+   "solids": [
+    [
+     -1.8,
+     0.0,
+     2.2
+    ],
+    [
+     1.8,
+     0.0,
+     2.2
+    ]
+   ]
+  },
+  "arid.tree.a": {
+   "role": "tree",
+   "size": [
+    6.0,
+    6.0,
+    11.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.35
+    ]
+   ]
+  },
+  "arid.tree.b": {
+   "role": "tree",
+   "size": [
+    5.0,
+    5.0,
+    9.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.3
+    ]
+   ]
+  },
+  "arid.tree.c": {
+   "role": "tree",
+   "size": [
+    7.0,
+    7.0,
+    13.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.45
+    ]
+   ]
+  },
+  "arid.tree.dead": {
+   "role": "tree",
+   "size": [
+    4.0,
+    4.0,
+    8.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.3
+    ]
+   ]
+  },
+  "arid.shrub.a": {
+   "role": "shrub",
+   "size": [
+    1.8,
+    1.8,
+    1.4
+   ],
+   "solids": []
+  },
+  "arid.shrub.b": {
+   "role": "shrub",
+   "size": [
+    1.2,
+    1.2,
+    0.9
+   ],
+   "solids": []
+  },
+  "arid.grass": {
+   "role": "grass",
+   "size": [
+    1.4,
+    1.4,
+    0.6
+   ],
+   "solids": []
+  },
+  "tropical.shore.rock.a": {
+   "role": "shore",
+   "size": [
+    3.0,
+    2.4,
+    1.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.1
+    ]
+   ]
+  },
+  "tropical.shore.rock.b": {
+   "role": "shore",
+   "size": [
+    2.0,
+    1.6,
+    1.1
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.7
+    ]
+   ]
+  },
+  "tropical.shore.rock.c": {
+   "role": "shore",
+   "size": [
+    4.5,
+    3.0,
+    2.2
+   ],
+   "solids": [
+    [
+     -0.9,
+     0.0,
+     1.2
+    ],
+    [
+     0.9,
+     0.0,
+     1.2
+    ]
+   ]
+  },
+  "tropical.shore.drift": {
+   "role": "drift",
+   "size": [
+    5.0,
+    1.2,
+    0.8
+   ],
+   "solids": []
+  },
+  "tropical.cliff.a": {
+   "role": "cliff",
+   "size": [
+    10.0,
+    5.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -3.2,
+     0.5,
+     1.8
+    ],
+    [
+     0.0,
+     0.5,
+     1.8
+    ],
+    [
+     3.2,
+     0.5,
+     1.8
+    ]
+   ]
+  },
+  "tropical.cliff.b": {
+   "role": "cliff",
+   "size": [
+    10.0,
+    5.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -3.2,
+     0.5,
+     1.8
+    ],
+    [
+     0.0,
+     0.5,
+     1.8
+    ],
+    [
+     3.2,
+     0.5,
+     1.8
+    ]
+   ]
+  },
+  "tropical.stack": {
+   "role": "stack",
+   "size": [
+    7.0,
+    7.0,
+    16.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     3.0
+    ]
+   ]
+  },
+  "tropical.boulder.a": {
+   "role": "boulder",
+   "size": [
+    2.2,
+    2.0,
+    1.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.9
+    ]
+   ]
+  },
+  "tropical.boulder.b": {
+   "role": "boulder",
+   "size": [
+    3.5,
+    3.0,
+    2.4
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.4
+    ]
+   ]
+  },
+  "tropical.boulder.c": {
+   "role": "boulder",
+   "size": [
+    1.2,
+    1.1,
+    0.9
+   ],
+   "solids": []
+  },
+  "tropical.outcrop": {
+   "role": "outcrop",
+   "size": [
+    8.0,
+    6.0,
+    4.0
+   ],
+   "solids": [
+    [
+     -1.8,
+     0.0,
+     2.2
+    ],
+    [
+     1.8,
+     0.0,
+     2.2
+    ]
+   ]
+  },
+  "tropical.tree.a": {
+   "role": "tree",
+   "size": [
+    6.0,
+    6.0,
+    11.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.35
+    ]
+   ]
+  },
+  "tropical.tree.b": {
+   "role": "tree",
+   "size": [
+    5.0,
+    5.0,
+    9.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.3
+    ]
+   ]
+  },
+  "tropical.tree.c": {
+   "role": "tree",
+   "size": [
+    7.0,
+    7.0,
+    13.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.45
+    ]
+   ]
+  },
+  "tropical.tree.dead": {
+   "role": "tree",
+   "size": [
+    4.0,
+    4.0,
+    8.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.3
+    ]
+   ]
+  },
+  "tropical.shrub.a": {
+   "role": "shrub",
+   "size": [
+    1.8,
+    1.8,
+    1.4
+   ],
+   "solids": []
+  },
+  "tropical.shrub.b": {
+   "role": "shrub",
+   "size": [
+    1.2,
+    1.2,
+    0.9
+   ],
+   "solids": []
+  },
+  "tropical.grass": {
+   "role": "grass",
+   "size": [
+    1.4,
+    1.4,
+    0.6
+   ],
+   "solids": []
+  },
+  "frozen.shore.rock.a": {
+   "role": "shore",
+   "size": [
+    3.0,
+    2.4,
+    1.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.1
+    ]
+   ]
+  },
+  "frozen.shore.rock.b": {
+   "role": "shore",
+   "size": [
+    2.0,
+    1.6,
+    1.1
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.7
+    ]
+   ]
+  },
+  "frozen.shore.rock.c": {
+   "role": "shore",
+   "size": [
+    4.5,
+    3.0,
+    2.2
+   ],
+   "solids": [
+    [
+     -0.9,
+     0.0,
+     1.2
+    ],
+    [
+     0.9,
+     0.0,
+     1.2
+    ]
+   ]
+  },
+  "frozen.shore.drift": {
+   "role": "drift",
+   "size": [
+    5.0,
+    1.2,
+    0.8
+   ],
+   "solids": []
+  },
+  "frozen.cliff.a": {
+   "role": "cliff",
+   "size": [
+    10.0,
+    5.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -3.2,
+     0.5,
+     1.8
+    ],
+    [
+     0.0,
+     0.5,
+     1.8
+    ],
+    [
+     3.2,
+     0.5,
+     1.8
+    ]
+   ]
+  },
+  "frozen.cliff.b": {
+   "role": "cliff",
+   "size": [
+    10.0,
+    5.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -3.2,
+     0.5,
+     1.8
+    ],
+    [
+     0.0,
+     0.5,
+     1.8
+    ],
+    [
+     3.2,
+     0.5,
+     1.8
+    ]
+   ]
+  },
+  "frozen.stack": {
+   "role": "stack",
+   "size": [
+    7.0,
+    7.0,
+    16.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     3.0
+    ]
+   ]
+  },
+  "frozen.boulder.a": {
+   "role": "boulder",
+   "size": [
+    2.2,
+    2.0,
+    1.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.9
+    ]
+   ]
+  },
+  "frozen.boulder.b": {
+   "role": "boulder",
+   "size": [
+    3.5,
+    3.0,
+    2.4
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.4
+    ]
+   ]
+  },
+  "frozen.boulder.c": {
+   "role": "boulder",
+   "size": [
+    1.2,
+    1.1,
+    0.9
+   ],
+   "solids": []
+  },
+  "frozen.outcrop": {
+   "role": "outcrop",
+   "size": [
+    8.0,
+    6.0,
+    4.0
+   ],
+   "solids": [
+    [
+     -1.8,
+     0.0,
+     2.2
+    ],
+    [
+     1.8,
+     0.0,
+     2.2
+    ]
+   ]
+  },
+  "frozen.tree.a": {
+   "role": "tree",
+   "size": [
+    6.0,
+    6.0,
+    11.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.35
+    ]
+   ]
+  },
+  "frozen.tree.b": {
+   "role": "tree",
+   "size": [
+    5.0,
+    5.0,
+    9.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.3
+    ]
+   ]
+  },
+  "frozen.tree.c": {
+   "role": "tree",
+   "size": [
+    7.0,
+    7.0,
+    13.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.45
+    ]
+   ]
+  },
+  "frozen.tree.dead": {
+   "role": "tree",
+   "size": [
+    4.0,
+    4.0,
+    8.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.3
+    ]
+   ]
+  },
+  "frozen.shrub.a": {
+   "role": "shrub",
+   "size": [
+    1.8,
+    1.8,
+    1.4
+   ],
+   "solids": []
+  },
+  "frozen.shrub.b": {
+   "role": "shrub",
+   "size": [
+    1.2,
+    1.2,
+    0.9
+   ],
+   "solids": []
+  },
+  "frozen.grass": {
+   "role": "grass",
+   "size": [
+    1.4,
+    1.4,
+    0.6
+   ],
+   "solids": []
+  },
+  "common.wreck.bow": {
+   "role": "wreck",
+   "size": [
+    5.0,
+    9.0,
+    5.0
+   ],
+   "solids": [
+    [
+     0.0,
+     -2.5,
+     1.6
+    ],
+    [
+     0.0,
+     0.5,
+     2.0
+    ],
+    [
+     0.0,
+     2.5,
+     2.0
+    ]
+   ]
+  },
+  "common.wreck.stern": {
+   "role": "wreck",
+   "size": [
+    5.0,
+    8.0,
+    6.0
+   ],
+   "solids": [
+    [
+     0.0,
+     -2.0,
+     2.0
+    ],
+    [
+     0.0,
+     0.5,
+     2.0
+    ],
+    [
+     0.0,
+     2.0,
+     2.0
+    ]
+   ]
+  },
+  "common.wreck.ribs": {
+   "role": "wreck",
+   "size": [
+    5.0,
+    12.0,
+    3.5
+   ],
+   "solids": [
+    [
+     0.0,
+     -4.4,
+     1.6
+    ],
+    [
+     0.0,
+     -1.5,
+     2.0
+    ],
+    [
+     0.0,
+     1.5,
+     2.0
+    ],
+    [
+     0.0,
+     4.4,
+     1.6
+    ]
+   ]
+  },
+  "common.wreck.mast": {
+   "role": "wreckBit",
+   "size": [
+    1.2,
+    14.0,
+    1.2
+   ],
+   "solids": []
+  },
+  "common.wreck.crate": {
+   "role": "wreckBit",
+   "size": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.5
+    ]
+   ]
+  },
+  "common.wreck.barrel": {
+   "role": "wreckBit",
+   "size": [
+    0.8,
+    0.8,
+    1.1
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.4
+    ]
+   ]
+  },
+  "common.wreck.planks": {
+   "role": "wreckBit",
+   "size": [
+    3.0,
+    2.0,
+    0.4
+   ],
+   "solids": []
+  },
+  "common.wreck.cannon": {
+   "role": "wreckBit",
+   "size": [
+    0.8,
+    2.6,
+    0.8
+   ],
+   "solids": []
+  },
+  "common.ruin.column": {
+   "role": "ruin",
+   "size": [
+    1.4,
+    1.4,
+    6.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     0.7
+    ]
+   ]
+  },
+  "common.ruin.fallen": {
+   "role": "ruin",
+   "size": [
+    1.4,
+    6.0,
+    1.4
+   ],
+   "solids": [
+    [
+     0.0,
+     -2.0,
+     0.7
+    ],
+    [
+     0.0,
+     0.0,
+     0.7
+    ],
+    [
+     0.0,
+     2.0,
+     0.7
+    ]
+   ]
+  },
+  "common.ruin.wall": {
+   "role": "ruin",
+   "size": [
+    6.0,
+    1.2,
+    3.5
+   ],
+   "solids": [
+    [
+     -2.4,
+     0.0,
+     0.6
+    ],
+    [
+     -1.25,
+     0.0,
+     0.6
+    ],
+    [
+     0.0,
+     0.0,
+     0.6
+    ],
+    [
+     1.25,
+     0.0,
+     0.6
+    ],
+    [
+     2.4,
+     0.0,
+     0.6
+    ]
+   ]
+  },
+  "common.ruin.arch": {
+   "role": "ruin",
+   "size": [
+    5.0,
+    1.4,
+    5.5
+   ],
+   "solids": [
+    [
+     -1.8,
+     0.0,
+     0.7
+    ],
+    [
+     1.8,
+     0.0,
+     0.7
+    ]
+   ]
+  },
+  "common.ruin.stair": {
+   "role": "ruin",
+   "size": [
+    4.0,
+    5.0,
+    2.4
+   ],
+   "solids": []
+  },
+  "common.ruin.statue": {
+   "role": "ruin",
+   "size": [
+    2.0,
+    2.0,
+    4.5
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.0
+    ]
+   ]
+  },
+  "common.door.caverns": {
+   "role": "door",
+   "size": [
+    7.0,
+    5.0,
+    6.0
+   ],
+   "solids": [
+    [
+     -2.3,
+     1.0,
+     1.2
+    ],
+    [
+     2.3,
+     1.0,
+     1.2
+    ],
+    [
+     0.0,
+     1.1,
+     1.4
+    ]
+   ]
+  },
+  "common.door.crypt": {
+   "role": "door",
+   "size": [
+    5.0,
+    6.0,
+    4.0
+   ],
+   "solids": [
+    [
+     -1.9,
+     1.0,
+     0.6
+    ],
+    [
+     1.9,
+     1.0,
+     0.6
+    ],
+    [
+     0.0,
+     2.1,
+     0.9
+    ]
+   ]
+  },
+  "common.door.mines": {
+   "role": "door",
+   "size": [
+    5.0,
+    5.0,
+    4.5
+   ],
+   "solids": [
+    [
+     -1.9,
+     1.0,
+     0.6
+    ],
+    [
+     1.9,
+     1.0,
+     0.6
+    ],
+    [
+     0.0,
+     1.5,
+     1.0
+    ]
+   ]
+  },
+  "common.landmark.tower": {
+   "role": "landmark",
+   "size": [
+    10.0,
+    10.0,
+    22.0
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     4.6
+    ]
+   ]
+  },
+  "common.landmark.temple": {
+   "role": "landmark",
+   "size": [
+    24.0,
+    16.0,
+    10.0
+   ],
+   "solids": [
+    [
+     -10.0,
+     -6.0,
+     0.9
+    ],
+    [
+     -5.0,
+     -6.0,
+     0.9
+    ],
+    [
+     0.0,
+     -6.0,
+     0.9
+    ],
+    [
+     5.0,
+     -6.0,
+     0.9
+    ],
+    [
+     10.0,
+     -6.0,
+     0.9
+    ],
+    [
+     -10.0,
+     6.0,
+     0.9
+    ],
+    [
+     -5.0,
+     6.0,
+     0.9
+    ],
+    [
+     0.0,
+     6.0,
+     0.9
+    ],
+    [
+     5.0,
+     6.0,
+     0.9
+    ],
+    [
+     10.0,
+     6.0,
+     0.9
+    ],
+    [
+     0.0,
+     2.0,
+     3.0
+    ]
+   ]
+  },
+  "common.landmark.quarry": {
+   "role": "landmark",
+   "size": [
+    14.0,
+    10.0,
+    12.0
+   ],
+   "solids": [
+    [
+     -4.0,
+     0.0,
+     1.5
+    ],
+    [
+     3.0,
+     1.0,
+     2.5
+    ]
+   ]
+  },
+  "common.camp.tent": {
+   "role": "camp",
+   "size": [
+    4.0,
+    4.0,
+    2.6
+   ],
+   "solids": [
+    [
+     0.0,
+     0.0,
+     1.8
+    ]
+   ]
+  },
+  "common.camp.palisade": {
+   "role": "camp",
+   "size": [
+    8.0,
+    1.0,
+    3.0
+   ],
+   "solids": [
+    [
+     -3.5,
+     0.0,
+     0.5
+    ],
+    [
+     -1.75,
+     0.0,
+     0.5
+    ],
+    [
+     0.0,
+     0.0,
+     0.5
+    ],
+    [
+     1.75,
+     0.0,
+     0.5
+    ],
+    [
+     3.5,
+     0.0,
+     0.5
+    ]
+   ]
+  },
+  "common.camp.fire": {
+   "role": "camp",
+   "size": [
+    1.6,
+    1.6,
+    0.8
+   ],
+   "solids": []
+  }
+ },
+ "climates": {
+  "woodland": {
+   "kit": "temperate",
+   "relief": 1.0,
+   "cliffs": 0.35,
+   "trees": 0.0028,
+   "shrubs": 0.006,
+   "boulders": 0.0006,
+   "tree": [
+    "temperate.tree.a",
+    "temperate.tree.a",
+    "temperate.tree.b",
+    "temperate.tree.c",
+    "temperate.tree.dead"
+   ]
+  },
+  "highland": {
+   "kit": "temperate",
+   "relief": 1.35,
+   "cliffs": 0.7,
+   "trees": 0.0011,
+   "shrubs": 0.008,
+   "boulders": 0.0016,
+   "tree": [
+    "temperate.tree.c",
+    "temperate.tree.c",
+    "temperate.tree.c",
+    "temperate.tree.dead"
+   ]
+  },
+  "desert": {
+   "kit": "arid",
+   "relief": 0.85,
+   "cliffs": 0.5,
+   "trees": 0.0004,
+   "shrubs": 0.0018,
+   "boulders": 0.0009,
+   "tree": [
+    "arid.tree.a",
+    "arid.tree.a",
+    "arid.tree.dead"
+   ]
+  },
+  "savanna": {
+   "kit": "arid",
+   "relief": 0.8,
+   "cliffs": 0.25,
+   "trees": 0.001,
+   "shrubs": 0.0045,
+   "boulders": 0.0006,
+   "tree": [
+    "arid.tree.b",
+    "arid.tree.b",
+    "arid.tree.a",
+    "arid.tree.dead"
+   ]
+  },
+  "steppe": {
+   "kit": "arid",
+   "relief": 1.0,
+   "cliffs": 0.4,
+   "trees": 0.0004,
+   "shrubs": 0.008,
+   "boulders": 0.0011,
+   "tree": [
+    "arid.tree.c",
+    "arid.tree.dead"
+   ]
+  },
+  "rainforest": {
+   "kit": "tropical",
+   "relief": 1.1,
+   "cliffs": 0.3,
+   "trees": 0.0036,
+   "shrubs": 0.008,
+   "boulders": 0.0005,
+   "tree": [
+    "tropical.tree.a",
+    "tropical.tree.b",
+    "tropical.tree.b",
+    "tropical.tree.c"
+   ]
+  },
+  "swamp": {
+   "kit": "tropical",
+   "relief": 0.45,
+   "cliffs": 0.05,
+   "trees": 0.0022,
+   "shrubs": 0.01,
+   "boulders": 0.0003,
+   "tree": [
+    "tropical.tree.b",
+    "tropical.tree.c",
+    "tropical.tree.dead",
+    "tropical.tree.dead"
+   ]
+  },
+  "tundra": {
+   "kit": "frozen",
+   "relief": 1.15,
+   "cliffs": 0.6,
+   "trees": 0.0009,
+   "shrubs": 0.003,
+   "boulders": 0.0016,
+   "tree": [
+    "frozen.tree.a",
+    "frozen.tree.a",
+    "frozen.tree.b",
+    "frozen.tree.dead"
+   ]
+  }
+ }
+}

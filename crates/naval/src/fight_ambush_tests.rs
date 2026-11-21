@@ -20,7 +20,7 @@ fn sloop_at(x: f64, y: f64, heading: f64) -> Ship {
     Ship { x, y, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }
 }
 
-/// The story's ambush: three pirate Majors set round the player's Sloop, each heading for her.
+/// The story's ambush: three pirate Majors set round the player's Sloop, each heading for it.
 fn story_ambush() -> Fight {
     let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
     let captains = [
@@ -43,14 +43,14 @@ fn an_ambush_left_unfought_is_never_won_her_never_wrecked_and_no_captain_sails_o
         events.extend(fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS));
     }
     let player = &fight.ships[&PLAYER];
-    assert_ne!(player.damage.state, State::Wrecked, "the captains' balls never wreck her");
-    assert!(player.damage.hull >= 1.0, "a ball or a fire leaves her a point of hull: {}", player.damage.hull);
-    assert!(player.damage.hull < player.damage.max_hull * 0.5, "she was fought hard: {}", player.damage.hull);
+    assert_ne!(player.damage.state, State::Wrecked, "the captains' balls never wreck it");
+    assert!(player.damage.hull >= 1.0, "a ball or a fire leaves it a point of hull: {}", player.damage.hull);
+    assert!(player.damage.hull < player.damage.max_hull * 0.5, "it was fought hard: {}", player.damage.hull);
     let wrecked = events.iter().any(|event| matches!(event, Event::State { ship: PLAYER, state: State::Wrecked }));
     assert!(!wrecked, "no wreck is ever told");
     assert!(!events.iter().any(|event| matches!(event, Event::Gone { .. })), "no captain leaves an unsunk ambush");
     assert_eq!(fight.over(), None);
-    assert!(!fight.beaten(), "an ambush is won only by beating her captains");
+    assert!(!fight.beaten(), "an ambush is won only by beating its captains");
 }
 
 #[test]
@@ -73,12 +73,14 @@ fn an_ambush_is_beaten_once_every_captain_has_struck_or_gone_down() {
 
 #[test]
 fn a_fight_that_is_no_ambush_is_never_beaten_and_its_captains_still_sail_off() {
-    let mut fight = Fight::begin(sloop_at(0.0, 0.0, 0.0), 5, &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    let mut fight = Fight::begin(sloop_at(0.0, 0.0, 0.0), Commission::default(), 5, &Open, 0.0)
+        .unwrap_or_else(|error| panic!("{error}"));
     let id = captain_ids(&fight)[0];
     fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}")).damage.state = State::Struck;
-    assert!(!fight.beaten(), "only an ambush is won by her captains striking");
-    // A struck captain far from every foe leaves a fight that is no ambush.
-    fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}")).ship = sloop_at(5000.0, 0.0, 0.0);
+    assert!(!fight.beaten(), "only an ambush is won by its captains striking");
+    // A captain afloat far from every foe leaves a fight that is no ambush; one struck lies hove to for boarders.
+    let vessel = fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}"));
+    (vessel.damage.state, vessel.ship) = (State::Afloat, sloop_at(5000.0, 0.0, 0.0));
     let events = fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, 0.0);
     assert!(events.iter().any(|event| matches!(event, Event::Gone { end: End::Gone, .. })), "{events:?}");
 }

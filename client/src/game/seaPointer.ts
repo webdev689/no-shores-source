@@ -45,7 +45,8 @@ export function seaPointer(
     forgetPresses();
   });
   canvas.addEventListener('pointercancel', forgetPresses);
-  fightControls(canvas, () => sea()?.fight ?? null);
+  // On a struck ship's deck the keys and the pointer are the fight's on foot.
+  fightControls(canvas, () => (sea()?.boarding.onDeck ? null : (sea()?.fight ?? null)));
   canvas.addEventListener('wheel', (event) => {
     if (!atSea()) return;
     if (mapUp()) map()?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);

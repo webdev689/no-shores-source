@@ -173,6 +173,10 @@ Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its
 pictures are composed ahead and kept on the GPU, and so are the other loadout's weapon's, so a swap shows it at once;
 the figure's are composed ahead in the glow the other weapon will show once drawn.
 
+Another figure is never drawn nearer the eye than a metre in first person, on land and on a struck ship's deck alike
+(`cardStand`): a foe in a melee stands that far off along the same line, so it never fills the view. In third person
+no figure is moved off the eye, so the player's own stays where they stand when the camera pulls in by a wall.
+
 ### Climbing
 
 A climb lowers what is held out of the bottom of the screen and brings both hands up onto the wall from under it, the

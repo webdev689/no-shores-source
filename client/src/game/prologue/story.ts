@@ -1,4 +1,4 @@
-// What the story's beats share: the stage they draw on, the ships they sail, the Brig and her crew, the storm's
+// What the story's beats share: the stage they draw on, the ships they sail, the Brig and its crew, the storm's
 // lightning, where it all happens, the player as they have made themselves, and the game's own parts the playable
 // beats run on.
 import type { Lightning } from '../../cinema/lightning.ts';

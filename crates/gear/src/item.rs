@@ -108,7 +108,7 @@ impl Item {
     /// Its columns of nodes; a cloak has none.
     #[must_use]
     pub fn columns(&self) -> &'static [Column] {
-        if self.kind == Kind::Cloak { &[] } else { columns(self.rarity, self.kind.weapon()) }
+        if self.kind == Kind::Cloak { &[] } else { columns(self.rarity, self.kind.weapon_grid()) }
     }
 
     /// The XP that unlocks its last column; it earns no more.
@@ -191,11 +191,11 @@ impl Item {
         (0..layout.len()).map(|column| u32::from(self.cost_of(column).essence) * bought(column) as u32).sum()
     }
 
-    /// Its Attack, if it is a weapon: a Legendary 248 to 300, an Atheric 260 to 300, a lesser one 15 times its level
-    /// times its rarity's share at its most and 0.85 of that before its upgrades.
+    /// Its Attack, if it is a weapon or a ship's guns: a Legendary 248 to 300, an Atheric 260 to 300, a lesser one 15
+    /// times its level times its rarity's share at its most and 0.85 of that before its upgrades.
     #[must_use]
     pub fn attack(&self) -> Option<u32> {
-        if !self.kind.weapon() {
+        if !self.kind.weapon_grid() {
             return None;
         }
         let (start, most) = match self.rarity {
@@ -206,11 +206,11 @@ impl Item {
         Some(self.stepped(start, most))
     }
 
-    /// Its Prestige, if it is armour of level 20: a Rare 13 to 15, a Legendary 18 to 27 (a Breach's to 30), an
-    /// Atheric 21 to 30.
+    /// Its Prestige, if it is armour or a ship's module of level 20: a Rare 13 to 15, a Legendary 18 to 27 (a
+    /// Breach's to 30), an Atheric 21 to 30.
     #[must_use]
     pub fn prestige(&self) -> u32 {
-        if !self.kind.armour() {
+        if !self.kind.carries_prestige() {
             return 0;
         }
         let (bought, _) = self.upgrades();
@@ -222,11 +222,12 @@ impl Item {
         }
     }
 
-    /// Its Defense, if it is armour: 45 times its slot's share times its defense level, which is 20 plus a
-    /// third of its Prestige when it carries some, and otherwise rises as a lesser weapon's Attack does.
+    /// Its Defense, if it is armour or a ship's hull, sails or rigging: 45 times its slot's share times its defense
+    /// level, which is 20 plus a third of its Prestige when it carries some, and otherwise rises as a lesser weapon's
+    /// Attack does.
     #[must_use]
     pub fn defense(&self) -> Option<u32> {
-        if !self.kind.armour() {
+        if !self.kind.defends() {
             return None;
         }
         let full = 45.0 * self.kind.defense_share();

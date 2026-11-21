@@ -1,27 +1,28 @@
-//! One tick of a fight: each player's ship by her orders, each captain by her own lights, the guns' clocks, the
+//! One tick of a fight: each player's ship by its orders, each captain by its own lights, the guns' clocks, the
 //! captains' volleys and then the players', the balls and what they strike, fire and sinking, mending, and the
 //! captains who leave.
 
 use super::{
-    DESPAWN_BEYOND, End, Event, FIGHT_PACE, Fight, HOSTILE_NEAR_M, Hurts, Orders, STRUCK_GRACE_S, Sailor, carry_of,
-    floats, her_of, sail_hurt, sighting_of,
+    DESPAWN_BEYOND, End, Event, FIGHT_PACE, Fight, HOSTILE_NEAR_M, Hurts, Orders, Part, STRUCK_GRACE_S, STRUCK_HOLD_S,
+    Sailor, carry_of, floats, own_of, sail_hurt, sighting_of, sink_depth,
 };
-use crate::arms::LARGE_BOAT;
-use crate::captain::Mode;
+use crate::arms::{LARGE_BOAT, Side, arms_of, unposed};
 use crate::captain::course::distance;
+use crate::captain::{CHASE_GIVE_UP_S, Mode};
 use crate::damage::{PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, State, Zone, founder, shot_harm};
-use crate::gunnery::{Lay, volley};
+use crate::gunnery::{Lay, RELOAD_SINGLEHANDED, lay, volley};
 use crate::guns::{fire_chance, rig_fire, shot_reach};
+use crate::rigging::Torn;
 use crate::shots::{Flag, ShipId, ShotEvent, step_balls};
+use sailing::TICK_SECONDS;
 use sailing::pose::{Pose, pose_of};
 use sailing::waters::Waters;
-use sailing::{SLOOP, TICK_SECONDS};
 
 impl Fight {
-    /// One tick. `orders` are the players' in the order they are taken: each steps her ship once, so a player whose
-    /// orders are late is caught up by several in one tick, and one with none this tick lies as she was, riding the
+    /// One tick. `orders` are the players' in the order they are taken: each steps their ship once, so a player whose
+    /// orders are late is caught up by several in one tick, and one with none this tick lies as before, riding the
     /// swell. Then the captains, the guns, the volleys, the balls, the hurts, mending, and the captains who leave.
-    /// Each ship sails in the wind where she is, `wind_at` her place (m/s, east and south).
+    /// Each ship sails in the wind where it is, `wind_at` its place (m/s, east and south).
     pub fn step(
         &mut self,
         orders: &[(ShipId, Orders)],
@@ -47,6 +48,9 @@ impl Fight {
         for (id, order) in orders.iter().filter(|(_, order)| order.fire) {
             self.player_fires(*id, order, &mut events);
         }
+        for (id, order) in orders {
+            self.gunner_fires(*id, order);
+        }
         let targets = self.targets();
         let mut balls = std::mem::take(&mut self.balls);
         for event in step_balls(&mut balls, self.clock, &targets, waters, time) {
@@ -64,13 +68,36 @@ impl Fight {
                 }
             }
         }
+        self.patch(seconds);
         self.mend(wind_at, &mut events);
+        self.scuttle_unboarded(&mut events);
         self.see_off(&mut events);
+        told(&mut events);
         events
     }
 
-    /// Each player's orders in turn: her brace and load, her sails refused a wreck or bare yards, and her step held
-    /// back by her hurts. A player with no orders this tick rides the swell where she lies.
+    /// Each captain who struck `STRUCK_HOLD_S` ago with no one aboard it is scuttled.
+    fn scuttle_unboarded(&mut self, events: &mut Vec<Event>) {
+        let clock = self.clock;
+        let due: Vec<ShipId> = self
+            .ships
+            .iter()
+            .filter(|(_, vessel)| vessel.damage.state == State::Struck)
+            .filter(|(_, vessel)| {
+                vessel.command().is_some_and(|command| {
+                    !command.boarded && command.struck_at.is_some_and(|at| clock - at >= STRUCK_HOLD_S - 1e-9)
+                })
+            })
+            .map(|(id, _)| *id)
+            .collect();
+        for id in due {
+            // Its state and its going down are told with the tick's others.
+            events.extend(self.scuttle(id).into_iter().filter(|event| matches!(event, Event::State { .. })));
+        }
+    }
+
+    /// Each player's orders in turn: their brace and load, their sails refused a wreck or bare yards, and their step
+    /// held back by their hurts. A player with no orders this tick rides the swell where they lie.
     fn sail_players(
         &mut self,
         orders: &[(ShipId, Orders)],
@@ -80,7 +107,10 @@ impl Fight {
         events: &mut Vec<Event>,
     ) {
         for (id, order) in orders {
-            let Some(player) = self.ships.get_mut(id).filter(|vessel| vessel.command().is_none()) else { continue };
+            let afloat = |vessel: &&mut super::Vessel| !matches!(vessel.damage.state, State::Sinking | State::Sunk);
+            let Some(player) = self.ships.get_mut(id).filter(|vessel| vessel.command().is_none()).filter(afloat) else {
+                continue;
+            };
             player.guns.braced = order.brace;
             if let Some(shot) = order.load
                 && player.guns.set_load(shot, 1.0, false)
@@ -88,56 +118,74 @@ impl Fight {
                 events.push(Event::Load { ship: *id, shot });
             }
             let wind = wind_at([player.ship.x, player.ship.y]);
-            let (ship, refused) = sail_hurt(&player.ship, order.helm, Hurts::of(&player.damage), waters, wind, time);
+            let hurts = Hurts::of(&player.damage).fitted(self.fittings.get(id));
+            let (ship, refused) = sail_hurt(&player.ship, player.hull.hull(), order.helm, hurts, waters, wind, time);
             if let Some(wrecked) = refused {
                 events.push(Event::NoSail { ship: *id, wrecked });
             }
             player.ship = ship;
-            player.pose = pose_of(&player.ship, &SLOOP, waters, time);
+            player.pose = pose_of(&player.ship, player.hull.hull(), waters, time);
         }
         let ordered = |id: &ShipId| orders.iter().any(|(given, _)| given == id);
-        for (_, player) in self.ships.iter_mut().filter(|(id, vessel)| vessel.command().is_none() && !ordered(id)) {
-            player.pose = pose_of(&player.ship, &SLOOP, waters, time);
+        for (id, player) in self.ships.iter_mut().filter(|(_, vessel)| vessel.command().is_none()) {
+            let afloat = pose_of(&player.ship, player.hull.hull(), waters, time);
+            if matches!(player.damage.state, State::Sinking | State::Sunk) {
+                // It founders as a captain does, to the side and end a seed of none says.
+                let (drop, pitch, roll) = founder(&player.damage, 0, sink_depth(0, arms_of(player.hull)));
+                player.pose = Pose {
+                    heave: afloat.heave - drop,
+                    pitch: afloat.pitch + pitch,
+                    roll: afloat.roll + roll,
+                    ..afloat
+                };
+            } else if !ordered(id) {
+                player.pose = afloat;
+            }
         }
     }
 
-    /// A captain's tick: her helm among the ships she may fight, her step held back by her canvas, and her pose as
-    /// she lists and founders.
+    /// A captain's tick: its helm among the ships it may fight, its step held back by its canvas, and its pose as
+    /// it lists and founders.
     fn sail_captain(&mut self, id: ShipId, waters: &impl Waters, wind_at: &impl Fn([f64; 2]) -> [f64; 2], time: f64) {
         let (sightings, traffic) = (self.sightings(id), self.traffic(id));
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
         let wind = wind_at([vessel.ship.x, vessel.ship.y]);
-        let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
-        let is_water = |x, y| floats(waters, x, y, time);
-        let helm = command.her.steer(&her, (&sightings, &traffic), TICK_SECONDS, &is_water);
-        // Her rank's way pulls her sails and her oars alike.
-        let way = command.her.commission.rank.scale().way;
-        let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way * FIGHT_PACE, oars: way * FIGHT_PACE };
-        vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, &SLOOP, wind, waters, time, TICK_SECONDS, pull);
-        let afloat = pose_of(&vessel.ship, &SLOOP, waters, time);
-        let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
+        let own = own_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+        let hull = vessel.hull.hull();
+        let is_water = |x, y| floats(waters, hull, x, y, time);
+        let helm = command.mind.steer(&own, (&sightings, &traffic), TICK_SECONDS, &is_water);
+        // Its rank's way pulls its sails and its oars alike, half again in a fight.
+        let way = command.mind.commission.rank.scale().way;
+        let pull = sailing::ship::Pull {
+            sail: vessel.damage.way_share() * way * FIGHT_PACE,
+            oars: way * FIGHT_PACE,
+            turn: 1.0,
+        };
+        vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull);
+        let afloat = pose_of(&vessel.ship, hull, waters, time);
+        let (drop, pitch, roll) = founder(&vessel.damage, command.mind.seed, command.under);
         vessel.pose =
             Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat };
     }
 
-    /// A captain's guns after her step: run out at her enemy, and fired as her rank arms and paces them.
+    /// A captain's guns after its step: run out at its enemy, and fired as its rank arms and paces them.
     fn captain_fires(&mut self, id: ShipId, wind_at: &impl Fn([f64; 2]) -> [f64; 2], events: &mut Vec<Event>) {
         let sightings = self.sightings(id);
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
-        let enemy = command.her.target().and_then(|target| sightings.iter().find(|seen| seen.id == target));
+        let enemy = command.mind.target().and_then(|target| sightings.iter().find(|seen| seen.id == target));
         let wind = wind_at([vessel.ship.x, vessel.ship.y]);
-        let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
-        let battery = command.her.aim(&her, enemy, &mut self.draws);
+        let own = own_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+        let battery = command.mind.aim(&own, enemy, &mut self.draws);
         if let Some(side) = battery.run_out {
             events.push(Event::RunOut { ship: id, side });
         }
         if let Some(laid) = battery.fire {
             let seed = self.draws.seed();
-            let commission = command.her.commission;
-            let laid = Lay { gun: commission.armed(laid.gun), ..laid };
-            let (skill, carry) = (command.her.build.skill, carry_of(&vessel.ship));
+            let commission = command.mind.commission;
+            let laid = Lay { gun: commission.armed(laid.gun, command.mind.strength), ..laid };
+            let (skill, carry) = (command.mind.build.skill, carry_of(&vessel.ship));
             let flag = Flag::Faction(commission.faction);
             self.balls.extend(volley(&laid, carry, skill, seed, self.clock, (id, flag)));
             vessel.guns.fired(laid.side, vessel.damage.crew_share(), true);
@@ -145,27 +193,53 @@ impl Fight {
         }
     }
 
-    /// A player's release: her lay fired, or why her guns would not.
+    /// A player's release: their lay fired, or why their guns would not.
     fn player_fires(&mut self, id: ShipId, order: &Orders, events: &mut Vec<Event>) {
         match self.fire_order(id, order.aim.as_ref()) {
-            Ok(laid) => {
-                let seed = self.draws.seed();
-                let Some(player) = self.ships.get_mut(&id) else { return };
-                let carry = carry_of(&player.ship);
-                self.balls.extend(volley(&laid, carry, LARGE_BOAT.skill, seed, self.clock, (id, Flag::Player)));
-                player.guns.fired(laid.side, 1.0, false);
-            }
+            Ok(laid) => self.player_volley(id, laid),
             Err(refusal) => events.push(Event::Refused { ship: id, refusal }),
         }
     }
 
+    /// A player's laid side fired: its scatter and its reload as its fitting trims them.
+    fn player_volley(&mut self, id: ShipId, laid: Lay) {
+        let trim = self.fittings.get(&id).map(|fitted| fitted.trim).unwrap_or_default();
+        let scatter = |spread: f64| spread * trim.scatter;
+        let gun = crate::guns::Gun {
+            yaw_spread_deg: scatter(laid.gun.yaw_spread_deg),
+            pitch_spread_deg: scatter(laid.gun.pitch_spread_deg),
+            ..laid.gun
+        };
+        let laid = Lay { gun, ..laid };
+        let seed = self.draws.seed();
+        let Some(player) = self.ships.get_mut(&id) else { return };
+        let carry = carry_of(&player.ship);
+        self.balls.extend(volley(&laid, carry, LARGE_BOAT.skill, seed, self.clock, (id, Flag::Player)));
+        // Its hands work its guns: whole, at the pace one player alone always loaded them; thinned, slower.
+        player.guns.fired(laid.side, player.damage.crew_share(), true);
+        player.guns.pace_reload(laid.side, RELOAD_SINGLEHANDED * trim.reload);
+    }
+
+    /// Its Gunner's broadside, when he has one to fire: the side its own lay this tick does not take.
+    fn gunner_fires(&mut self, id: ShipId, order: &Orders) {
+        let own = order.aim.as_ref().and_then(|aim| self.laid(id, aim)).map(|laid| laid.side);
+        let afloat = self.ships.get(&id).is_some_and(|vessel| vessel.damage.fighting() && !vessel.guns.braced);
+        if let Some(laid) = self.gunners_lay(id, own).filter(|_| afloat) {
+            self.player_volley(id, laid);
+        }
+    }
+
     /// A ball's strike: its harm by zone (grape's men by its flight), rolled; the struck grace for the rest of the
-    /// volley that made a captain strike; and a captain struck by a ship in the fight is provoked by her.
+    /// volley that made a captain strike; and a captain struck by a ship in the fight is provoked by it.
     pub(super) fn strike(&mut self, hit: &ShotEvent, events: &mut Vec<Event>) {
-        let ShotEvent::Hit { shooter, target, zone, flight, gun, shot, .. } = *hit else {
+        let ShotEvent::Hit { shooter, target, zone, point, flight, gun, shot, sail } = *hit else {
+            if let ShotEvent::Splash { point, .. } = *hit {
+                events.push(Event::Splash { at: [point[0], point[1]] });
+            }
             return;
         };
         let gun = crate::guns::Gun { crew: gun.crew * shot_reach(shot, flight), ..gun };
+        let gun = self.fitted_gun(gun, shooter, target, zone);
         let clock = self.clock;
         // A ball strikes only another flag, so whoever fired it, a player or another faction's captain, is a foe.
         let shooter_in_fight = self.ships.contains_key(&shooter);
@@ -180,14 +254,36 @@ impl Fight {
         let roll = self.draws.draw();
         let mut hurt = shot_harm(&gun, zone, braced, roll, tough);
         let burns = zone == Zone::Hull || (zone == Zone::Rig && rig_fire(shot));
-        hurt.fire = burns && self.draws.draw() < fire_chance(shot);
+        // A ball of a side of many guns takes its share of a Sloop's ball's harm and of its chance to set it alight.
+        hurt.fire = burns && self.draws.draw() < fire_chance(shot) * gun.share;
+        let hurt = vessel.damage.shared(hurt, gun.share);
         let state = vessel.damage.apply(hurt, clock, floor);
+        if let Some(fitted) = self.fittings.get_mut(&target) {
+            fitted.owe(&hurt);
+        }
+        let rig = sail.filter(|_| zone == Zone::Rig);
+        let part = match rig {
+            None => Part::Hull,
+            Some(sail) if vessel.rigging.lost(sail) => Part::Rig,
+            Some(_) => Part::Sail,
+        };
+        events.push(Event::Hit { ship: target, at: unposed(&vessel.ship, &vessel.pose, point), part });
+        match rig.and_then(|sail| vessel.rigging.struck(sail, hurt.sail, vessel.damage.max_sail)) {
+            Some(Torn::Sail(sail)) => {
+                // Its drive loses the torn sail's share: its canvas holds no more than its standing sails give.
+                vessel.damage.sail =
+                    vessel.damage.sail.min((vessel.damage.max_sail * vessel.rigging.standing()).floor());
+                events.push(Event::SailLost { ship: target, sail });
+            }
+            Some(Torn::Mast(mast)) => events.push(Event::MastFell { ship: target, mast }),
+            None => {}
+        }
         if let Sailor::Captain(command) = &mut vessel.sailor {
             if state == Some(State::Struck) {
                 command.struck_at = Some(clock);
             }
             if shooter_in_fight {
-                command.her.provoke(shooter);
+                command.mind.provoke(shooter);
             }
         }
         if let Some(state) = state {
@@ -195,7 +291,7 @@ impl Fight {
         }
     }
 
-    /// Each player's hands mend her if nothing hurt her lately and no captain who would take her lies near.
+    /// Each player's hands mend their ship if nothing hurt it lately and no captain who would take it lies near.
     fn mend(&mut self, wind_at: &impl Fn([f64; 2]) -> [f64; 2], events: &mut Vec<Event>) {
         let captains = self.ids(true);
         for id in self.ids(false) {
@@ -204,39 +300,60 @@ impl Fight {
                 let Some(vessel) = self.ships.get(captain) else { return false };
                 let Some(command) = vessel.command() else { return false };
                 let wind = wind_at([vessel.ship.x, vessel.ship.y]);
-                let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
-                let would = command.her.would_take(&her, &sighting);
+                let own = own_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
+                let would = command.mind.would_take(&own, &sighting);
                 would && distance([vessel.ship.x, vessel.ship.y], [sighting.ship.x, sighting.ship.y]) < HOSTILE_NEAR_M
             });
             let clock = self.clock;
             let Some(player) = self.ships.get_mut(&id) else { continue };
             let wrecked = player.damage.state == State::Wrecked;
             player.damage.mend(TICK_SECONDS, clock, hostile_near, false);
+            player.damage.sail = player.damage.sail.min((player.damage.max_sail * player.rigging.standing()).floor());
             if wrecked && player.damage.state == State::Afloat {
                 events.push(Event::State { ship: id, state: State::Afloat });
             }
         }
     }
 
-    /// A captain who has sunk leaves the fight, as does one past every ship she may fight (each player's, and each
-    /// afloat captain's of another faction) and not fighting; an ambush's captains leave it only by sinking.
+    /// A captain who has sunk leaves the fight, as does one not fighting who is past every ship it may fight (each
+    /// player's, and each afloat captain's of another faction), or, engaged by no captain, has been out of all their
+    /// guns' reach for its give-up time, `CHASE_GIVE_UP_S`. One struck or going down never leaves but by sinking, and
+    /// an ambush's captains leave it only by sinking.
     fn see_off(&mut self, events: &mut Vec<Event>) {
-        let foes: Vec<(Flag, [f64; 2])> = self
+        let foes: Vec<(Flag, [f64; 2], f64)> = self
             .ships
             .values()
-            .filter(|vessel| vessel.command().is_none_or(|_| vessel.in_fight() && vessel.damage.fighting()))
-            .map(|vessel| (vessel.flag(), [vessel.ship.x, vessel.ship.y]))
+            .filter(|vessel| vessel.in_fight() && vessel.damage.fighting())
+            .map(|vessel| {
+                let reach =
+                    lay(&vessel.ship, &vessel.pose, arms_of(vessel.hull), Side::Starboard, vessel.guns.load, 0.0, None);
+                (vessel.flag(), [vessel.ship.x, vessel.ship.y], reach.reach)
+            })
             .collect();
+        // The ships a captain engages: one of them stays in its fight however far it is out of reach.
+        let hunted: Vec<ShipId> = (self.ships.values().filter_map(|vessel| vessel.command()))
+            .filter(|command| command.gone.is_none() && command.mind.mode == Mode::Engage)
+            .filter_map(|command| command.mind.target())
+            .collect();
+        let clock = self.clock;
         for id in self.ids(true) {
             let Some(vessel) = self.ships.get_mut(&id) else { continue };
             let (at, own) = ([vessel.ship.x, vessel.ship.y], vessel.flag());
-            let apart = foes.iter().filter(|(flag, _)| *flag != own).map(|(_, foe)| distance(at, *foe));
-            let nearest = apart.fold(f64::INFINITY, f64::min);
-            let sunk = vessel.damage.state == State::Sunk;
+            let others = || foes.iter().filter(|(flag, ..)| *flag != own);
+            let nearest = others().map(|(_, foe, _)| distance(at, *foe)).fold(f64::INFINITY, f64::min);
+            let out_of_reach = !hunted.contains(&id) && others().all(|(_, foe, reach)| distance(at, *foe) > *reach);
+            let (sunk, struck) =
+                (vessel.damage.state == State::Sunk, matches!(vessel.damage.state, State::Struck | State::Sinking));
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
+            let engaging = command.mind.mode == Mode::Engage;
+            // Out of every foe's guns and not engaging: it breaks off once that has lasted its give-up time.
+            command.out_of_reach_since =
+                if out_of_reach && !engaging && !struck { command.out_of_reach_since.or(Some(clock)) } else { None };
+            let broke_off = command.out_of_reach_since.is_some_and(|since| clock - since >= CHASE_GIVE_UP_S);
             let end = if sunk {
                 Some(End::Sunk)
-            } else if !self.ambush && nearest > DESPAWN_BEYOND && command.her.mode != Mode::Engage {
+            } else if !self.ambush && (nearest > DESPAWN_BEYOND || broke_off) && !engaging && !struck {
+                // One who struck lies hove to for boarders until it is scuttled.
                 Some(End::Gone)
             } else {
                 None
@@ -247,4 +364,17 @@ impl Fight {
             }
         }
     }
+}
+
+/// Each colours struck and each going down of the tick told again as its own event, after the rest.
+fn told(events: &mut Vec<Event>) {
+    let again: Vec<Event> = events
+        .iter()
+        .filter_map(|event| match *event {
+            Event::State { ship, state: State::Struck } => Some(Event::Struck { ship }),
+            Event::State { ship, state: State::Sinking } => Some(Event::Sinking { ship }),
+            _ => None,
+        })
+        .collect();
+    events.extend(again);
 }

@@ -24,8 +24,13 @@ test('the Mage holds each Vestige carried to open it, and shows what one opened 
   assert.equal(rowsOf('mage', state({}))[0]?.empty, 'Bring your Vestiges from the sea.');
 });
 
-test('the smiths sell their halves of the day’s wares, red when short; the Weaponsmith sells the Ammo crate too', () => {
-  const wares = [item({ id: 0, kind: 13, rarity: 2, price: 2_000 }), item({ id: 0, kind: 2, rarity: 2, price: 600 })];
+test('the smiths sell their six of the day’s wares, red when short; the Weaponsmith sells the Ammo crate too', () => {
+  // The message lists each vendor's six in turn: the Armorsmith's, the Weaponsmith's, then the Shipwright's.
+  const six = (each: Parameters<typeof item>[0]) => Array.from({ length: 6 }, () => item(each));
+  const wares = [
+    ...six({ id: 0, kind: 13, rarity: 2, price: 2_000 }),
+    ...six({ id: 0, kind: 2, rarity: 2, price: 600 }),
+  ];
   const gear = state({ wares, aurem: 1_000, cratePrice: 300, crates: 5 });
   const [armour] = rowsOf('armorsmith', gear);
   assert.deepEqual(headings(rowsOf('armorsmith', gear)), ['Armour']);

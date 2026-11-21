@@ -44,10 +44,10 @@ const BEAT_STREAM: u64 = 0x6265_6174;
 
 /// A group as the seed draws it: its foes by type and rank, the first standing in its middle when it leads, and
 /// whether its post is the one farthest from the spawns.
-struct Group {
-    members: Vec<(u8, Rank)>,
-    leads: bool,
-    farthest: bool,
+pub(crate) struct Group {
+    pub members: Vec<(u8, Rank)>,
+    pub leads: bool,
+    pub farthest: bool,
 }
 
 /// One of a garrison's groups at its post: where the post is, each foe's type, rank, place and facing there, and its
@@ -75,7 +75,7 @@ pub(crate) struct Post {
 /// A garrison foe's level, drawn evenly from its island's band (0 with none), and its shield's element if it stands
 /// with one, as `gear::element::Shield::rolled` draws for any foe: one in five, of an element drawn evenly. Each is the
 /// `nth` foe's draw from the node's seed, apart from every other draw of the garrison.
-fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>) -> (u8, Option<gear::Element>) {
+pub(crate) fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>) -> (u8, Option<gear::Element>) {
     let dice = Dice { seed, tick: 0, player: nth };
     let level = levels.map_or(0, |(low, high)| {
         let band = usize::from(high.saturating_sub(low)) + 1;
@@ -157,6 +157,25 @@ fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
     }
 }
 
+impl Room {
+    /// An empty room on a course of blocks on open ground, where players stand at `spawn` (x, y) when they join. Its
+    /// navmesh is baked over the course and open ground around it.
+    #[must_use]
+    pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
+        let nav = baked(&Floor::Flat, &blocks, spawn, None);
+        Self::on(Floor::Flat, blocks, vec![spawn], None, nav)
+    }
+
+    /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
+    /// turn and come back to.
+    #[must_use]
+    pub fn node(floor: Floor, blocks: Vec<Block>, section: Section) -> Self {
+        let spawns: Vec<(f64, f64)> = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
+        let nav = baked(&floor, &blocks, spawns.first().copied().unwrap_or((0.0, 0.0)), Some(&section));
+        Self::on(floor, blocks, spawns, Some(section), nav)
+    }
+}
+
 /// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, among its
 /// layout's boxes inside that square, and never over its whole section, which would cost more time and memory than a
 /// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone;
@@ -178,11 +197,31 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
         }
         None => (blocks.to_vec(), ground_around(blocks, first, GROUND_AROUND)),
     };
-    match floor {
-        Floor::Flat => NavMesh::bake(&walked, bounds, &navmesh::AGENT),
-        Floor::Sea(_) => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
-        Floor::Land(_) | Floor::Dungeon(_) => NavMesh::bake_on(&walked, floor, bounds, &navmesh::AGENT),
+    match (floor, section) {
+        (Floor::Flat, _) => NavMesh::bake(&walked, bounds, &navmesh::AGENT),
+        (Floor::Sea(_), _) => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
+        // A deck's mesh covers its ring alone: its planks and the walls round them.
+        (Floor::Deck(_), Some(section)) => {
+            NavMesh::bake_on(&walked, floor, ring_bounds(&section.ring), &navmesh::AGENT)
+        }
+        _ => NavMesh::bake_on(&walked, floor, bounds, &navmesh::AGENT),
     }
+}
+
+/// The bounds of a ring.
+fn ring_bounds(ring: &[[f64; 2]]) -> navmesh::Bounds {
+    let start = navmesh::Bounds {
+        min_x: f64::INFINITY,
+        min_y: f64::INFINITY,
+        max_x: f64::NEG_INFINITY,
+        max_y: f64::NEG_INFINITY,
+    };
+    ring.iter().fold(start, |bounds, &[x, y]| navmesh::Bounds {
+        min_x: bounds.min_x.min(x),
+        min_y: bounds.min_y.min(y),
+        max_x: bounds.max_x.max(x),
+        max_y: bounds.max_y.max(y),
+    })
 }
 
 /// Open ground a course's navmesh covers beyond its blocks and its spawn, each way.
@@ -304,7 +343,7 @@ impl Room {
     /// middle facing the nearest spawn and the rest round it facing outward; one that walks a beat drawn from the
     /// `lattice` in its places at the beat's first point. None when the mesh does not reach the point, or a place falls
     /// outside the section or within SPAWN_CLEAR of a spawn.
-    fn post_at(
+    pub(crate) fn post_at(
         &self,
         group: &Group,
         (x, y): (f64, f64),
@@ -356,7 +395,7 @@ impl Room {
 
     /// Stands every foe of a post's group at its place, idle, facing as it was posted, leashed to it, at its level
     /// raised by the seas and with its shield whole, if it has one.
-    fn stand_post(&mut self, post: usize) {
+    pub(crate) fn stand_post(&mut self, post: usize) {
         let (members, girds) = (self.garrison[post].members.clone(), self.garrison[post].girds.clone());
         let standing: Vec<FighterId> = members
             .iter()

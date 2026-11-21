@@ -94,9 +94,14 @@ they play in holds it while they are there.
 - **Moving between rooms.** A claim waits up to three seconds for the room the player left to let go, then takes the
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room.
+- **At sea.** The sea room claims and keeps the character too, for its ship's hurts (`ship`: its hull, canvas and men
+  in ten-thousandths of whole), where the sea last kept it (`ship_at`, a player who leaves mid-fight kept at the
+  port city it would wash up at, as the fight has it), and what floats gathered into it; a deck boarded fights with it, and gives it back
+  as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
+  character whose ship has the hurts it keeps.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
-  that is not kept. The Test Ground's room grants gear to try it, and the sea holds none, so neither keeps
-  characters; nor does a page with no session, playing alone, or on a local room server with no `?accounts=`.
+  that is not kept. The Test Ground's room grants gear to try it, so it keeps no characters, nor does a fleet room;
+  nor does a page with no session, playing alone, or on a local room server with no `?accounts=`.
 
 ## The Roster
 

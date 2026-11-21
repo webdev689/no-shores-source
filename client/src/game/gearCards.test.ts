@@ -137,7 +137,16 @@ test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from
   const vault = vaultOf(
     state({
       atMage: true,
-      items: [item({ id: 5, at: 1 }), item({ id: 6, at: 1, kind: 14 }), item({ id: 7, at: 0 }), item({ id: 8, at: 2 })],
+      items: [
+        item({ id: 5, at: 1 }),
+        item({ id: 6, at: 1, kind: 14 }),
+        item({ id: 7, at: 0 }),
+        item({ id: 8, at: 2 }),
+        // A module carried stands on the ship's tab; one already vaulted shows, to be taken out.
+        item({ id: 10, at: 0, kind: 25, bucket: 8 }),
+        item({ id: 11, at: 2 + 7, kind: 24, bucket: 7 }),
+        item({ id: 12, at: 1, kind: 27, bucket: 10 }),
+      ],
       vestiges: [{ id: 9, rarity: 3, slot: 3, level: 20, vaulted: true }],
     }),
   );
@@ -145,7 +154,7 @@ test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from
     vault.kept.map((shelf) => [shelf.name, shelf.held, shelf.most]),
     [
       ['Weapons', 1, 20],
-      ['Armour', 1, 20],
+      ['Armour', 2, 20],
       ['Vestiges', 1, 20],
     ],
   );

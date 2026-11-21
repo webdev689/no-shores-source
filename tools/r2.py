@@ -3,8 +3,10 @@ changes and is cached for good. Uploads use CLOUDFLARE_API_TOKEN when it is set;
 the token itself. The publishers import this; it does nothing run alone.
 """
 import hashlib
+import http.client
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -23,13 +25,17 @@ def fetch(method, url, data=None, kind='application/octet-stream', signed=False)
     if signed and token:
         request.add_header('authorization', f'Bearer {token}')
     try:
-        with urllib.request.urlopen(request, timeout=900) as answer:
+        # The wait is each read's or write's, not the whole upload's: a slow line still finishes.
+        with urllib.request.urlopen(request, timeout=120) as answer:
             return answer.status, answer.read()
     except urllib.error.HTTPError as error:
         return error.code, error.read()
     except urllib.error.URLError as error:
         # No answer at all (no network, a bad host): status 0, and the reason, for the caller's refusal.
         return 0, str(error.reason).encode()
+    except (OSError, http.client.HTTPException) as error:
+        # A line dropped or timed out while the answer came (urlopen wraps only the sending): no answer either.
+        return 0, repr(error).encode()
 
 
 def put(data, folder, extension, kind):
@@ -37,7 +43,14 @@ def put(data, folder, extension, kind):
     key = f'{folder}/{hashlib.sha256(data).hexdigest()}.{extension}'
     if fetch('HEAD', PUBLIC + key)[0] == 200:
         return key
-    status, body = fetch('PUT', API + key, data, kind, signed=True)
+    # Cloudflare answers a passing fault of its own with a 5xx, and too many uploads with a 429, each asking to try
+    # again, as a dropped line answers none.
+    for wait in (5, 20, 60, None):
+        status, body = fetch('PUT', API + key, data, kind, signed=True)
+        if status == 200 or not (status in (0, 429) or status >= 500) or wait is None:
+            break
+        print(f'upload of {key} answered {status}; trying again in {wait} s', flush=True)
+        time.sleep(wait)
     if status != 200:
         sys.exit(f'upload of {key} refused ({status}): {body[:300]!r}')
     print(f'uploaded {key} ({len(data) / 2 ** 20:.1f} MiB)', flush=True)

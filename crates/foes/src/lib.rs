@@ -10,6 +10,7 @@ mod awareness;
 pub mod board;
 pub mod brain;
 mod cover;
+pub mod crews;
 mod dice;
 pub mod director;
 pub mod factions;
