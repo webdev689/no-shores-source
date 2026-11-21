@@ -184,7 +184,7 @@ impl Room {
         for (killer, foe, at) in self.killed_now(running) {
             if Some(foe) == fissure.growth {
                 self.inert.remove(&foe);
-                if running.heroic == Heroic::Offered {
+                if running.heroic == Heroic::Offered && self.by_players(killer) {
                     running.heroic = Heroic::Met;
                     running.heroic_ticks = 0;
                     running.stages = 2;
@@ -209,7 +209,7 @@ impl Room {
         let clock = self.clock;
         fissure.shards.retain(|shard| shard.until > clock);
         for (player, last) in core::mem::take(&mut fissure.carried) {
-            let standing = self.players.get(&player).filter(|found| !found.fighter.dead());
+            let standing = self.players.get(&player).filter(|found| found.living());
             if let Some(found) = standing {
                 let body = found.fighter.body;
                 fissure.carried.insert(player, [body.x, body.y, body.z]);
@@ -222,7 +222,7 @@ impl Room {
         let walkers: Vec<(PlayerId, [f64; 3])> = self
             .players
             .iter()
-            .filter(|(_, found)| !found.fighter.dead())
+            .filter(|(_, found)| found.living())
             .map(|(id, found)| (*id, [found.fighter.body.x, found.fighter.body.y, found.fighter.body.z]))
             .collect();
         for (player, at) in walkers {

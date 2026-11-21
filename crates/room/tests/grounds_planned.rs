@@ -2,20 +2,26 @@
 //! houses, off the ways, never under a building, each a box a body runs into; its raiders' approach and banners; each
 //! wilds' growth spot; and only Saltmere's three zones' node files carry grounds, which the room's events read.
 
+use layout::brief::AreaKind;
 use layout::field::{distance, ring_holds};
 use layout::sites::SiteKind;
 use std::path::Path;
 
 /// Continent 1's layouts as the bake settles them.
 fn continent_one() -> Vec<layout::Layout> {
+    continent("continent-1")
+}
+
+/// A continent's layouts as the bake settles them.
+fn continent(id: &str) -> Vec<layout::Layout> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
-    let continent = world.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
-    let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
+    let continent = world.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
+    let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
     let builders = bake::builders(&root).expect("the builders read");
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
-    let mut landmass = land::landmass::generate(&continent, edits).expect("continent-1 generates");
+    let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
     city::settle(&mut landmass, &city).expect("its city settles");
     layout::settle::settle(&mut landmass, &builders.book, &builders.briefs)
 }
@@ -60,8 +66,63 @@ fn saltmeres_zones_have_their_stores_approaches_banners_and_growths_and_only_the
     }
     let others = layouts.iter().filter(|layout| !bake::EVENT_ZONES.contains(&layout.id.as_str()));
     assert!(others.clone().count() > 0 && others.clone().all(|other| bake::grounds_of(other).is_none()));
-    for other in others.filter(|other| other.areas.iter().any(|area| area.kind == layout::brief::AreaKind::Hamlet)) {
-        assert!(other.sites.iter().any(|site| site.kind == SiteKind::Store), "{}: every hamlet stores", other.id);
+}
+
+/// The kinds of site only an event's ground is marked with.
+const EVENT_SITES: [SiteKind; 5] =
+    [SiteKind::Store, SiteKind::Approach, SiteKind::Banner, SiteKind::Fissure, SiteKind::Growth];
+
+#[test]
+fn only_the_grounds_an_event_is_fought_on_are_marked_so_no_other_hamlet_has_a_store_a_body_runs_into() {
+    // Saltmere is continent 1's only island with hamlets; continent 2's highlands have their own.
+    let (layouts, highlands) = (continent_one(), continent("continent-2"));
+    let hamlets = |laid: &layout::Layout| laid.areas.iter().filter(|area| area.kind == AreaKind::Hamlet).count();
+    let elsewhere: Vec<&layout::Layout> = layouts
+        .iter()
+        .chain(&highlands)
+        .filter(|laid| !bake::EVENT_ZONES.contains(&laid.id.as_str()) && hamlets(laid) > 0)
+        .collect();
+    assert!(!elsewhere.is_empty(), "hamlets outside the event zones");
+    for laid in elsewhere {
+        let marked = laid.sites.iter().find(|site| EVENT_SITES.contains(&site.kind));
+        assert!(marked.is_none(), "{}: no event's site off the event zones, found {marked:?}", laid.id);
+    }
+    for id in bake::EVENT_ZONES {
+        let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
+        let grounds = bake::grounds_of(laid).expect("an event zone has grounds");
+        let (raid, fissure) = (grounds.raid.expect("a raid"), grounds.fissure.expect("a fissure"));
+        let of = |kind: SiteKind| laid.sites.iter().filter(move |site| site.kind == kind).map(|site| site.at);
+        // Every store marked is one of the raid's, so every store boxed is one the page draws.
+        assert_eq!(of(SiteKind::Store).collect::<Vec<_>>(), raid.stores, "{id}: only the raid's hamlet stores");
+        assert_eq!(of(SiteKind::Banner).collect::<Vec<_>>(), raid.banners, "{id}: only the raid's banners");
+        assert_eq!(of(SiteKind::Approach).collect::<Vec<_>>(), vec![raid.approach], "{id}: one approach");
+        assert_eq!(of(SiteKind::Fissure).collect::<Vec<_>>(), vec![fissure.at], "{id}: one fissure");
+        assert_eq!(of(SiteKind::Growth).collect::<Vec<_>>(), vec![fissure.growth], "{id}: one growth's spot");
+    }
+}
+
+#[test]
+fn each_stores_box_covers_the_stack_it_is_drawn_as_and_the_plundered_one_it_turns_into() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let text = std::fs::read_to_string(root.join("content/modules/modules.json")).expect("the modules' manifest");
+    let manifest: serde_json::Value = serde_json::from_str(&text).expect("the manifest parses");
+    let size = |name: &str| -> [f64; 3] {
+        let modules = manifest["modules"].as_array().expect("its modules");
+        let module = modules.iter().find(|module| module["name"] == name).expect("the store's module");
+        let size = module["size"].as_array().expect("its size");
+        [0, 1, 2].map(|axis| size[axis].as_f64().expect("a size is a number"))
+    };
+    let plundered = size("tithe-stores-plundered");
+    for (stack, name) in ["tithe-stores-a", "tithe-stores-b", "tithe-stores-c"].iter().enumerate() {
+        let ([half_x, half_y], tall) = layout::grounds::STORE_STACKS[stack];
+        for drawn in [size(name), plundered] {
+            // The manifest rounds each size to the millimetre.
+            let covers = half_x * 2.0 >= drawn[0] - 1e-3 && half_y * 2.0 >= drawn[1] - 1e-3 && tall >= drawn[2] - 1e-3;
+            assert!(covers, "{name}'s box {half_x} x {half_y} x {tall} covers {drawn:?}");
+        }
+        for (axis, half) in [half_x, half_y].into_iter().enumerate() {
+            assert!(half <= layout::grounds::STORE_HALF[axis], "{name}: laid out within a store's room");
+        }
     }
 }
 
@@ -98,6 +159,31 @@ fn saltmeres_stores_banners_and_growths_keep_clear_of_its_beacons_and_resource_m
         for (at, half, clear, what) in kept.chain([(fissure.growth, [2.5, 2.5], 1.0, "growth")]) {
             let hit = solids.iter().find(|solid| overlaps(at, half, clear, **solid));
             assert!(hit.is_none(), "{id}: the {what} at {at:?} stands on a mark's solid {hit:?}");
+        }
+    }
+}
+
+/// The grounds are marked before the layout stands its later pieces (beacons and resource marks, climbs, cliff
+/// stairs, retaining walls, footbridges, talus, graves): each store, banner, growth's spot and fissure stays clear of
+/// everything a body runs into in the layout as it is finished, but the stores' own boxes.
+#[test]
+fn saltmeres_grounds_keep_clear_of_everything_the_finished_layout_stands() {
+    let layouts = continent_one();
+    for id in bake::EVENT_ZONES {
+        let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
+        let grounds = bake::grounds_of(laid).expect("an event zone has grounds");
+        let (raid, fissure) = (grounds.raid.expect("a raid"), grounds.fissure.expect("a fissure"));
+        let stores = layout::grounds::store_boxes(&laid.sites, &|_, _| 0.0);
+        let own =
+            |found: &[f64; 6]| stores.iter().any(|store| (0..4).all(|side| (store[side] - found[side]).abs() < 1e-9));
+        let others: Vec<[f64; 6]> = laid.boxes.iter().filter(|found| !own(found)).copied().collect();
+        let kept = raid.stores.iter().map(|at| (*at, layout::grounds::STORE_HALF, "store"));
+        let kept = kept.chain(raid.banners.iter().map(|at| (*at, [0.5, 0.5], "banner")));
+        let kept = kept
+            .chain([(fissure.growth, [2.5, 2.5], "growth"), (fissure.at, layout::grounds::FISSURE_HALF, "fissure")]);
+        for (at, half, what) in kept {
+            let hit = others.iter().find(|found| overlaps(at, half, 0.0, **found));
+            assert!(hit.is_none(), "{id}: the {what} at {at:?} stands in a box {hit:?}");
         }
     }
 }

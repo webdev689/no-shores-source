@@ -62,11 +62,11 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
 }
 
 /// Whether a foe may fight a fighter where it stands: a garrison foe only within its leash (LEASH, or its own) of its
-/// place, on ground the room's routes cover.
+/// place, on ground the room's routes cover from that place.
 pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
     let feet = [other.body.x, other.body.y, other.body.z];
     brain.home.is_none_or(|home| {
-        apart([home.at[0], home.at[1]], [feet[0], feet[1]]) <= brain.leash && here.world.routes.walkable(feet)
+        apart([home.at[0], home.at[1]], [feet[0], feet[1]]) <= brain.leash && here.world.routes.walkable(home.at, feet)
     })
 }
 

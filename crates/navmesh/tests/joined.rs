@@ -35,3 +35,16 @@ fn a_joined_mesh_paths_within_each_part_as_it_did_alone_and_never_between_them()
     let spots = joined.spots_near([100.0, 0.0, 0.0], 15.0).count();
     assert_eq!(spots, apart.spots_near([100.0, 0.0, 0.0], 15.0).count());
 }
+
+#[test]
+fn a_point_is_placed_from_a_body_only_on_the_part_the_body_stands_on() {
+    let home = NavMesh::bake(&[wall(0.0)], square(0.0, 0.0), &AGENT);
+    let apart = NavMesh::bake(&[wall(100.0)], square(100.0, 0.0), &AGENT);
+    let mut joined = home.clone();
+    joined.join(vec![apart.clone()]);
+    let (at_home, far) = ([-5.0, 0.0, 0.0], [95.0, 0.0, 0.0]);
+    assert_eq!(joined.nearest_point_from(at_home, [-3.0, 11.0, 0.0]), home.nearest_point([-3.0, 11.0, 0.0]));
+    assert_eq!(joined.nearest_point_from(far, far), apart.nearest_point(far), "from the far part, on it");
+    assert_eq!(joined.nearest_point_from(at_home, far), None, "the far part is no ground a body at home walks to");
+    assert_eq!(joined.nearest_point_from([50.0, 0.0, 0.0], at_home), None, "a body on neither part reaches neither");
+}

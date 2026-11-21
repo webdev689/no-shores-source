@@ -26,7 +26,7 @@ impl Room {
     /// A player opens their chest by its number: paid at once, the answer 0; out of reach (too far, dead, or no such
     /// chest of theirs) otherwise.
     pub(crate) fn open_chest(&mut self, player: PlayerId, chest: u32) -> u8 {
-        let Some(found) = self.players.get(&player).filter(|found| !found.fighter.dead()) else { return OUT_OF_REACH };
+        let Some(found) = self.players.get(&player).filter(|found| found.living()) else { return OUT_OF_REACH };
         let body = found.fighter.body;
         let theirs = |drop: &crate::Drop| {
             drop.player == player && drop.id == chest && matches!(drop.what, Dropped::Chest { .. })

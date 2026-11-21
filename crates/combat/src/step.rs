@@ -174,6 +174,21 @@ fn rest(next: &mut Fighter) {
     }
 }
 
+/// A tick of a fighter its room moves itself, never stepped: its statuses wear off and it rests as a stepped fighter
+/// does, and a flinch, a stagger, a fall or an overreach runs out to Idle, so none holds it for ever.
+pub fn wear(fighter: &mut Fighter) {
+    fighter.statuses = fighter.statuses.ticked(&fighter.action);
+    rest(fighter);
+    let left = |left: u32, then: Action| if left > 1 { then } else { Action::Idle };
+    fighter.action = match fighter.action {
+        Action::Flinch { left: was } => left(was, Action::Flinch { left: was.saturating_sub(1) }),
+        Action::Staggered { left: was, cause } => left(was, Action::Staggered { left: was.saturating_sub(1), cause }),
+        Action::Down { left: was } => left(was, Action::Down { left: was.saturating_sub(1) }),
+        Action::Overreach { left: was } => left(was, Action::Overreach { left: was.saturating_sub(1) }),
+        action => action,
+    };
+}
+
 fn spend(next: &mut Fighter, stamina: f64) {
     next.stamina = (next.stamina - stamina).max(0.0);
     next.stamina_rest = 0;

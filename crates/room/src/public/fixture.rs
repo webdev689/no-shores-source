@@ -94,3 +94,24 @@ pub(crate) fn ticks(room: &mut Room, count: u64) {
 pub(crate) fn told(room: &mut Room, kind: crate::EventKind) -> Vec<crate::Event> {
     room.take_events().into_iter().filter(|event| event.kind == kind).collect()
 }
+
+/// A foe the room moves itself, staggered with its poise half full, comes out of it as a stepped foe does: its stagger
+/// runs out, its poise drains and its immunity to another ends, so it takes no more from a blow than before.
+pub(crate) fn recovers_from_a_stagger(room: &mut Room, foe: FighterId) {
+    let found = room.foes.get_mut(&foe).expect("the foe");
+    let fighter = &mut found.fighter;
+    fighter.action = combat::fighter::Action::Staggered { left: 30, cause: combat::fighter::Cause::Poise };
+    (fighter.poise, fighter.poise_immune, fighter.poise_rest) = (fighter.poise_max / 2.0, 90, 0);
+    ticks(room, 6 * 60);
+    let fighter = &room.foes[&foe].fighter;
+    assert_eq!(fighter.action, combat::fighter::Action::Idle, "its stagger ran out");
+    assert!(!fighter.staggered(), "so a blow takes no more of it");
+    assert_eq!((fighter.poise, fighter.poise_immune), (0.0, 0), "its poise drained and its immunity ended");
+}
+
+/// A foe of the event killed by another foe (a garrison's, as one fights it), as the room tells a kill.
+pub(crate) fn killed_by_a_foe(room: &mut Room, foe: FighterId, killer: FighterId) {
+    let found = room.foes.get_mut(&foe).expect("the foe");
+    (found.fighter.health, found.fighter.action) = (0.0, combat::fighter::Action::Dead { elapsed: 0 });
+    room.tell(crate::EventKind::Killed, None, killer, foe, 0.0);
+}

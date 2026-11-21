@@ -116,6 +116,20 @@ impl NavMesh {
         self.parts().filter_map(near).reduce(|best, found| if apart(&found) < apart(&best) { found } else { best })
     }
 
+    /// The point nearest `point` of the part a body at `from` stands on (the part with a point nearest it), as
+    /// `nearest_point` places it: none when no part places the body, or that part places no point there. A joined
+    /// mesh walks no way between its parts, so a point another part places is no ground the body reaches.
+    #[must_use]
+    pub fn nearest_point_from(&self, from: [f64; 3], point: [f64; 3]) -> Option<[f64; 3]> {
+        let near = |part: &NavMesh, at: [f64; 3]| {
+            part.mesh_point_near(at, ISLAND_REACH).or_else(|| part.mesh_point_near(at, GOAL_REACH))
+        };
+        let apart = |found: [f64; 3]| (0..3).map(|axis| (found[axis] - from[axis]) * (found[axis] - from[axis])).sum::<f64>();
+        let placed = self.parts().filter_map(|part| Some((part, apart(near(part, from)?))));
+        let (part, _) = placed.reduce(|best, found| if found.1 < best.1 { found } else { best })?;
+        near(part, point)
+    }
+
     /// Only the polys the locate's index files within reach are read, and of those only the ones whose bounds come
     /// within reach; a hair is added to the reach in grid units, so rounding between the grid and the world never
     /// leaves out a poly a full scan would answer.
