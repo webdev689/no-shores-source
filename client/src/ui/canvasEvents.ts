@@ -3,6 +3,7 @@
 // `EditContext` where it has one (Chromium), so composition and its keyboards work on the canvas; elsewhere, and for a
 // hidden field (whose words are never handed to the browser), through keys and paste. What the interface is typing in is handed back each frame (`sync`), so the browser's typing starts
 // from the same words, caret and place.
+import { GAUNTLET_CURSOR, gauntletCss } from './gauntlet.ts';
 import type { Typing, UiEvent } from './uiEvent.ts';
 
 type PadButton = 'up' | 'down' | 'left' | 'right' | 'accept' | 'back' | 'previous' | 'next';
@@ -76,6 +77,10 @@ export class CanvasEvents implements PageEvents {
   private typing: Typing | null = null;
   private readonly padHeld = new Map<PadButton, number>();
   private last = performance.now();
+  /** The look the interface asked for, whether a mouse button is down over the canvas, and the look worn. */
+  private asked = '';
+  private pressing = false;
+  private worn = '';
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas as EditingCanvas;
@@ -108,6 +113,9 @@ export class CanvasEvents implements PageEvents {
           const touch = event.pointerType === 'touch' || event.pointerType === 'pen';
           const where = (this.pointer = placed(event));
           this.events.push({ kind: 'down', ...where, button: event.button, touch, shift: event.shiftKey });
+          // The gauntlet's press shows at once, with no frame of the game between.
+          this.pressing = !touch;
+          this.wear();
         }
       },
       first,
@@ -116,6 +124,8 @@ export class CanvasEvents implements PageEvents {
       'pointerup',
       (event) => {
         if (!locked()) this.events.push({ kind: 'up', ...placed(event), button: event.button });
+        this.pressing = false;
+        this.wear();
       },
       first,
     );
@@ -202,8 +212,8 @@ export class CanvasEvents implements PageEvents {
   /** Hands the page what the interface is typing in, the pointer's look, and where on the page the canvas is. */
   sync(typing: Typing | null, cursor: string): void {
     this.typing = typing;
-    if (document.pointerLockElement !== this.canvas && this.canvas.style.cursor !== cursor)
-      this.canvas.style.cursor = cursor;
+    this.asked = cursor;
+    this.wear();
     const context = this.context;
     if (!context) return;
     // The drawn keys type for a touch or the pad, and a hidden field's words stay out of the browser: its own typing,
@@ -224,6 +234,18 @@ export class CanvasEvents implements PageEvents {
     const box = new DOMRect(rect.left + typing.box.x, rect.top + typing.box.y, typing.box.width, typing.box.height);
     context.updateControlBounds(box);
     context.updateSelectionBounds(box);
+  }
+
+  /** The pointer's look on the canvas, unless it is locked: the gauntlet as asked, pressed while a mouse button is
+   *  down, its plain picture first for a browser that cannot choose one by the screen's ratio. */
+  private wear(): void {
+    if (document.pointerLockElement === this.canvas) return;
+    const [plain, sharp] =
+      this.asked === GAUNTLET_CURSOR ? gauntletCss(this.pressing ? 'press' : 'point') : [this.asked, this.asked];
+    if (sharp === this.worn) return;
+    this.worn = sharp;
+    this.canvas.style.cursor = plain;
+    this.canvas.style.cursor = sharp;
   }
 
   private readPad(seconds: number): void {

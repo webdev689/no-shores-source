@@ -1,9 +1,11 @@
 // The Test Ground's page as the interface draws it: the canvas's events heard each frame (the canvas sized to the page
 // first), its layers drawn over the whole canvas, and what it types in and the pointer's look handed back to the page.
-// The view between the panels is the world's: a click there locks the pointer, and the pointer looks a crosshair.
+// The view between the panels is the world's: a click there locks the pointer. The pointer wears the gauntlet, as in
+// the game.
 import { canvasSize } from '../canvasSize.ts';
 import type { Gpu } from '../gpu.ts';
 import { CanvasEvents } from '../ui/canvasEvents.ts';
+import { gauntletOver } from '../ui/gauntlet.ts';
 import { Stack } from '../ui/stack.ts';
 import type { Face } from '../ui/text.ts';
 import { Interface } from '../ui/ui.ts';
@@ -66,6 +68,6 @@ export class PagePanels {
     if (!ui) return;
     ui.draw(this.stack.node(ui));
     ui.renderer.present(this.canvas.width, this.canvas.height);
-    this.events.sync(ui.typing, ui.takesPointer ? ui.cursor : 'crosshair');
+    this.events.sync(ui.typing, gauntletOver(ui.cursor));
   }
 }

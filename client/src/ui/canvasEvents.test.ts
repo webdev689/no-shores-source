@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { CanvasEvents } from './canvasEvents.ts';
+import { gauntletCss, gauntletOver } from './gauntlet.ts';
 
 test('the interface hears the pointer as it goes down to the canvas, before a world handler there can stop it', () => {
   const page = globalThis as unknown as Record<string, unknown>;
@@ -133,6 +134,49 @@ test('the pad walks a window: its cross or left stick move the focus and repeat,
   held.buttons = new Set([1, 5]);
   assert.deepEqual(take(), ['back', 'next']);
   performance.now = now;
+  delete page['addEventListener'];
+  delete page['document'];
+});
+
+test('the canvas wears the gauntlet asked for, pressed while a mouse button is down, never while the pointer is locked', () => {
+  const page = globalThis as unknown as Record<string, unknown>;
+  const listeners = new Map<string, (event: unknown) => void>();
+  const listen = (kind: string, run: (event: unknown) => void) => listeners.set(kind, run);
+  const lock = { pointerLockElement: null as unknown };
+  Object.assign(page, { addEventListener: listen, document: lock });
+  const worn: string[] = [];
+  const style = {
+    set cursor(value: string) {
+      worn.push(value);
+    },
+  };
+  const canvas = { tabIndex: 0, addEventListener: listen, style, getBoundingClientRect: () => ({ left: 0, top: 0 }) };
+  const events = new CanvasEvents(canvas as unknown as HTMLCanvasElement);
+  const [plain, sharp] = gauntletCss('point');
+  events.sync(null, gauntletOver('pointer'));
+  assert.deepEqual(worn, [plain, sharp], 'the plain picture first, for a browser that cannot choose by the ratio');
+  assert.match(
+    sharp,
+    /^image-set\(url\("data:image\/svg\+xml,[^"]+"\) 1x, url\("data:image\/svg\+xml,[^"]+"\) 2x\) 0 0, auto$/,
+  );
+  events.sync(null, gauntletOver('default'));
+  assert.equal(worn.length, 2, 'the same look is not worn again');
+  const press = (pointerType: string) =>
+    listeners.get('pointerdown')?.({ pointerType, button: 0, shiftKey: false, clientX: 1, clientY: 1 });
+  press('mouse');
+  assert.equal(worn.at(-1), gauntletCss('press')[1], 'pressed at once, with no frame between');
+  listeners.get('pointerup')?.({ button: 0, clientX: 1, clientY: 1 });
+  assert.equal(worn.at(-1), sharp);
+  press('touch');
+  assert.equal(worn.at(-1), sharp, 'a touch shows no press');
+  events.sync(null, gauntletOver('text'));
+  assert.equal(worn.at(-1), 'text', 'a field keeps the caret');
+  events.sync(null, gauntletOver('none'));
+  assert.equal(worn.at(-1), 'none', 'the pad’s cursor drawn instead');
+  lock.pointerLockElement = canvas;
+  const before = worn.length;
+  events.sync(null, gauntletOver('default'));
+  assert.equal(worn.length, before, 'locked, the pointer has no look to wear');
   delete page['addEventListener'];
   delete page['document'];
 });
