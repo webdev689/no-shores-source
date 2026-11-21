@@ -220,10 +220,7 @@ export function itemPage(
       gap: 8,
       alignY: 'end',
       padding: [8, 0, 6, 0],
-      children: [
-        words(String(main.value), 5, INK.word),
-        { padding: [0, 0, 12, 0], children: [label(main.label, size)] },
-      ],
+      children: [words(String(main.value), 5, INK.word), { padding: [0, 0, 12, 0], children: [label(main.label, 1)] }],
     },
     main?.most ? bar(context, main.label, main.value / main.most) : null,
     item.prestige ? bar(context, 'Prestige', item.prestige / PRESTIGE_MOST, String(item.prestige)) : null,
