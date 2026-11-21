@@ -1,24 +1,41 @@
-// The houses' roads as the page reads them (content/quests/quests.json): what the tracker shows of the quest walked,
-// the talk goal a counter answers, the goal the HUD marks and the nodes the held map marks, and the scenes each step
-// of a road says. The rules judge every goal and give every reward; the page only shows.
+// The houses' roads as the page reads them (content/quests/quests.json): what the tracker shows of the quest walked
+// (with a running clock, and a puzzle's points lit), the talk goal a counter answers, the goal the HUD marks and the
+// nodes the held map marks, a varied step's goal (a puzzle's, a ward's, an ambush's), and the scenes each step of a
+// road says. The rules judge every goal and give every reward; the page only shows.
 import book from '../../../../content/quests/quests.json' with { type: 'json' };
-import type { QuestState } from '../../network/gearMessages.ts';
+import type { QuestState } from '../../network/questMessages.ts';
 import type { Quest as Tracked, Step } from '../tasks.ts';
 
 /** A goal as the file writes it: its tracker words, its count (1 when left out), its kind, and what its kind names:
- *  the counter a `talk` goal speaks at and its scene, the node and place a `reach`, `kill` or `enter` goal names. */
+ *  the counter a `talk` goal speaks at (`to`) and its scene, the node and place a goal stands at, the places an
+ *  `escort` or a `tail` walks between (`from`, `to`) and its figure (`who` a speaker, `foe` a roster type), a
+ *  `defend` goal's ward, a `puzzle`'s points, a `race`'s checkpoints, the line said as it fails (`lost`, `late`,
+ *  `seen`, `noticed`, `wrong`) and an escort's `shout` as an ambush springs. The rest the rules read alone. */
 export interface Goal {
   readonly kind: string;
   readonly text: string;
   readonly count?: number;
   readonly to?: string;
+  readonly from?: string;
   readonly scene?: string;
   readonly node?: string;
   readonly place?: string;
+  readonly who?: string;
+  readonly foe?: string;
+  readonly ward?: string;
+  readonly points?: readonly { readonly name: string }[];
+  readonly checkpoints?: readonly string[];
+  readonly lost?: string;
+  readonly late?: string;
+  readonly seen?: string;
+  readonly noticed?: string;
+  readonly wrong?: string;
+  readonly shout?: string;
 }
 
-/** A task: its tracker words, the scenes said as it begins and as it is done, and its goals. */
+/** A task: its id, its tracker words, the scenes said as it begins and as it is done, and its goals. */
 export interface Task {
+  readonly id: string;
   readonly task: string;
   readonly start?: string;
   readonly end?: string;
@@ -65,17 +82,67 @@ function walked(state: QuestState | null | undefined): { quest: QuestLine; task:
 /** Whether the goal at `index` of the task now is met. */
 const met = (goal: Goal, count: number): boolean => count >= most(goal);
 
+/** The kinds whose goal runs the task's clock: a race's time left, or the wait before a failed step is tried again. */
+const CLOCKED: ReadonlySet<string> = new Set(['race', 'defend', 'escort', 'unseen']);
+
+/** Seconds as a clock reads them, m:ss, a part second counted as whole: "2:05". */
+export const clockWords = (seconds: number): string => {
+  const whole = Math.max(0, Math.ceil(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+};
+
 /** What the tracker shows of the quest walked: its name, its task, and each goal's words with what is left of its
- *  count, ticked once met; none while no quest is walked. */
+ *  count, ticked once met; the clock running beside the first unmet goal that runs it, and a puzzle's points lit of
+ *  all of them. None while no quest is walked. */
 export function trackedOf(state: QuestState | null | undefined): Tracked | null {
   const now = walked(state);
-  if (!now) return null;
+  if (!state || !now) return null;
+  const clocked = now.task.goals.findIndex(
+    (goal, index) => CLOCKED.has(goal.kind) && !met(goal, now.counts[index] ?? 0),
+  );
+  const points = state.points ?? [];
   const steps = now.task.goals.map((goal, index): Step => {
     const left = Math.max(0, most(goal) - (now.counts[index] ?? 0));
-    return { text: goal.text, done: left === 0, ...(most(goal) > 1 && left > 0 ? { count: left } : {}) };
+    const lit = `${points.filter((point) => point.lit).length}/${points.length}`;
+    const count =
+      left === 0
+        ? undefined
+        : index === clocked && state.clock !== undefined && state.clock !== null
+          ? clockWords(state.clock)
+          : goal.kind === 'puzzle' && points.length > 0
+            ? lit
+            : most(goal) > 1
+              ? left
+              : undefined;
+    return { text: goal.text, done: left === 0, ...(count === undefined ? {} : { count }) };
   });
   return { name: now.quest.name, task: now.task.task, steps };
 }
+
+/** The task's first goal of `kind`, if it has one. */
+export function goalOf(state: QuestState | null | undefined, kind: string): Goal | null {
+  return walked(state)?.task.goals.find((goal) => goal.kind === kind) ?? null;
+}
+
+/** A puzzle's point as the page shows it: its name, its place among its goal's points, where it stands and whether
+ *  it is lit. */
+export interface PuzzlePoint {
+  readonly name: string;
+  readonly index: number;
+  readonly x: number;
+  readonly y: number;
+  readonly lit: boolean;
+}
+
+/** The task's puzzle's points where the room stands them, each named by its goal; none where none stand. */
+export function puzzlePoints(state: QuestState | null | undefined): PuzzlePoint[] {
+  const named = goalOf(state, 'puzzle')?.points ?? [];
+  return (state?.points ?? []).map((point, index) => ({ name: named[index]?.name ?? 'the point', index, ...point }));
+}
+
+/** The line a goal says as it fails: a ward lost, a race late, seen, noticed, a wrong point. */
+export const failLine = (goal: Goal): string | undefined =>
+  goal.lost ?? goal.late ?? goal.seen ?? goal.noticed ?? goal.wrong;
 
 /** The unmet `talk` goal of the task now that the counter `counter` (a station's kind) answers, if one does. */
 export function talkAt(state: QuestState | null | undefined, counter: string): Goal | null {
@@ -85,10 +152,15 @@ export function talkAt(state: QuestState | null | undefined, counter: string): G
   return now?.task.goals.find(open) ?? null;
 }
 
-/** The goal the HUD's mark stands for: the task's first unmet goal with a place, as the room finds `quest_at`. */
+/** Whether a goal stands somewhere the room may mark: at a place, along a walk between two, or at checkpoints. */
+const placed = (goal: Goal): boolean =>
+  goal.place !== undefined || goal.from !== undefined || goal.checkpoints !== undefined;
+
+/** The goal the HUD's mark stands for: the task's first unmet goal standing somewhere, as the room finds `quest_at`
+ *  (the place, the figure walked with, the next checkpoint). */
 export function markedGoal(state: QuestState | null | undefined): Goal | null {
   const now = walked(state);
-  return now?.task.goals.find((goal, index) => goal.place !== undefined && !met(goal, now.counts[index] ?? 0)) ?? null;
+  return now?.task.goals.find((goal, index) => placed(goal) && !met(goal, now.counts[index] ?? 0)) ?? null;
 }
 
 /** The nodes the task's goals name, each once, which the held map marks. */

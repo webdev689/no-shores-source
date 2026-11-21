@@ -9,13 +9,23 @@ import { BEGUN_KEY, QuestWatch, SETTLE_MS } from './questWatch.ts';
 function gear(
   quest: number,
   task: number,
-  more: { counts?: number[]; pledge?: number; done?: number[]; earned?: number[]; choices?: number[] } = {},
+  more: {
+    counts?: number[];
+    pledge?: number;
+    done?: number[];
+    earned?: number[];
+    choices?: number[];
+    fails?: number[];
+    figures?: number[];
+  } = {},
 ): GearState {
   const { counts = [], pledge = 0, done = [0, 0, 0, 0], earned = [0, 0, 0], choices = [0, 0, 0] } = more;
+  const { fails = [], figures = [] } = more;
+  const walking = figures.map((figureState) => ({ look: 22, x: 0, y: 0, z: 0, facing: 0, state: figureState }));
   return state({
     standing: standing({ pledge }),
     arts: { art: 0, cores: [], anima: 0, tenets: [0, 0], earned },
-    quest: { quest, task, counts, done, choices, at: null },
+    quest: { quest, task, counts, done, choices, at: null, fails, figures: walking },
   });
 }
 
@@ -35,11 +45,12 @@ function settled(first: GearState): { watch: QuestWatch; now: number } {
 
 const STORM = 2;
 const LAMP = 3;
+const VEIL = 4;
 
 test('a task done says its end, then the next task’s start, in order', () => {
   const { watch, now } = settled(gear(STORM, 1, { pledge: 1 }));
   assert.deepEqual(watch.look(gear(STORM, 1, { pledge: 1 }), true, now).scenes, [], 'unchanged, nothing');
-  assert.deepEqual(watch.look(gear(STORM, 2, { pledge: 1 }), true, now).scenes, ['stormGlass']);
+  assert.deepEqual(watch.look(gear(STORM, 2, { pledge: 1 }), true, now).scenes, ['stormGlass', 'stormHold']);
   assert.deepEqual(watch.look(gear(STORM, 5, { pledge: 1 }), true, now).scenes, [
     'stormCalled',
     'stormMill',
@@ -160,4 +171,27 @@ test('what a road gives is toasted: its Art, each Tenet, and a fragment to choos
     [],
     'a choice spent is no gift',
   );
+});
+
+test("a goal's own line is said as its failures rise; an escort's shout as an ambush holds it; neither on the first word", () => {
+  // The Stormcallers holding the storm-glass on the High Downs (task 2), the glass broken twice.
+  const holding = (fails: number[]) => gear(STORM, 2, { pledge: 1, fails });
+  const first = new QuestWatch();
+  first.look(holding([1]), true, 0);
+  assert.deepEqual(first.look(holding([2]), true, 500).scenes, [], 'settling: where it stands');
+  assert.deepEqual(first.look(holding([2]), true, SETTLE_MS + 1).scenes, [], 'nor on the first settled word');
+  assert.deepEqual(first.look(holding([3]), true, SETTLE_MS + 2).scenes, ['stormLost'], 'broken again');
+  assert.deepEqual(first.look(holding([3]), true, SETTLE_MS + 3).scenes, [], 'once');
+  assert.deepEqual(first.look(gear(STORM, 3, { pledge: 1 }), true, SETTLE_MS + 4).scenes, ['stormCalled'], 'held');
+  // Tobin on the Moors (the Lamplighters' task 2): wreckers spring, then he walks on, then a second ambush.
+  const tobin = (figure: number, fails: number[] = []) => gear(LAMP, 2, { pledge: 2, figures: [figure], fails });
+  const { watch, now } = settled(tobin(1));
+  assert.deepEqual(watch.look(tobin(4), true, now).scenes, ['lampAmbush']);
+  assert.deepEqual(watch.look(tobin(4), true, now).scenes, [], 'still held');
+  watch.look(tobin(1), true, now);
+  assert.deepEqual(watch.look(tobin(4), true, now).scenes, ['lampAmbush'], 'held again');
+  // Seen under Valeguard, the Veiled's task 2.
+  const valeguard = settled(gear(VEIL, 2, { pledge: 3 }));
+  const seen = valeguard.watch.look(gear(VEIL, 2, { pledge: 3, fails: [1] }), true, valeguard.now);
+  assert.deepEqual(seen.scenes, ['veilSeen']);
 });

@@ -6,12 +6,16 @@
 // is found while the story or the welcome holds the screen waits for it to pass.
 import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import type { GearState } from '../../network/gearMessages.ts';
-import { QUESTS, type Walked, beginOf, linesBetween } from './questBook.ts';
+import { FIGURE_STATES } from '../../network/questMessages.ts';
+import { QUESTS, type Walked, beginOf, failLine, linesBetween } from './questBook.ts';
 
-/** What the page keeps of a character to tell what is new: where they walk and the task's counts, their pledge, what
- *  each Art's road has earned and each Art's fragment choices waiting, in the Arts' order. */
+/** What the page keeps of a character to tell what is new: where they walk, the task's counts and each goal's
+ *  failures, whether an ambush holds a figure, their pledge, what each Art's road has earned and each Art's fragment
+ *  choices waiting, in the Arts' order. */
 export interface Kept extends Walked {
   readonly counts: readonly number[];
+  readonly fails: readonly number[];
+  readonly ambushed: boolean;
   readonly pledge: number;
   readonly earned: readonly number[];
   readonly choices: readonly number[];
@@ -21,11 +25,13 @@ export interface Kept extends Walked {
 export function keptOf(gear: GearState | null): Kept | null {
   const quest = gear?.quest;
   if (!gear || !quest) return null;
-  const { done, choices, counts } = quest;
+  const { done, choices, counts, fails = [], figures = [] } = quest;
   return {
     quest: quest.quest,
     task: quest.task,
     counts,
+    fails,
+    ambushed: figures.some((figure) => figure.state === FIGURE_STATES.ambushed),
     done,
     pledge: gear.standing?.pledge ?? 0,
     earned: gear.arts?.earned ?? [],
@@ -44,6 +50,16 @@ export function behind(before: Kept, after: Kept): boolean {
     lost(before.earned, after.earned) ||
     (before.quest === after.quest && after.task < before.task)
   );
+}
+
+/** The lines a task says as it goes on between `before` and `after`: each goal's own line as its failures rise, and
+ *  an escort's shout as an ambush stops its figure. */
+export function failsBetween(before: Kept, after: Kept): string[] {
+  const task = QUESTS[after.quest - 1]?.tasks[after.task];
+  if (!task || before.quest !== after.quest || before.task !== after.task) return [];
+  const failed = task.goals.filter((_goal, index) => (after.fails[index] ?? 0) > (before.fails[index] ?? 0));
+  const shout = after.ambushed && !before.ambushed ? task.goals.find((goal) => goal.shout)?.shout : undefined;
+  return [...failed.map(failLine), shout].filter((scene) => scene !== undefined);
 }
 
 /** The toasts for what a road gave between `before` and `after`: each Art, Tenet and fragment choice. */
@@ -104,7 +120,7 @@ export class QuestWatch {
     } else if (after && before && !behind(before, after)) {
       this.kept = after;
       toasts = giftsBetween(before, after);
-      this.hold(linesBetween(before, after), 0);
+      this.hold([...failsBetween(before, after), ...linesBetween(before, after)], 0);
       // A quest walked anew begins at its first task; on the first settled word, only with nothing counted yet.
       const anew = before.quest !== after.quest;
       const untouched = after.counts.every((count) => count === 0);

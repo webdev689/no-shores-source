@@ -4,6 +4,7 @@ import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import { standing, state } from '../../network/gearForTests.ts';
+import type { Cards } from '../../player/cards.ts';
 import { type Line, castOf, scenesOf } from '../../speech/cast.ts';
 import type { Shot } from '../camera.ts';
 import { useAt } from '../footGear.ts';
@@ -44,8 +45,10 @@ function roads() {
     frame: () => undefined,
   };
   const keeping = { getItem: (key: string) => kept.get(key) ?? null, setItem: kept.set.bind(kept) };
+  // A forge whose every figure has a card, named for its move.
+  const forge = { frames: () => 4, card: (id: number, _dress: unknown, anim: string) => ({ id, anim }) };
   const quests = new Quests(
-    { cast: CAST, scenes: SCENES, kept: keeping, account: () => 'arlo-fan' },
+    { cast: CAST, scenes: SCENES, kept: keeping, account: () => 'arlo-fan', forge: forge as unknown as Cards },
     () => voice,
     () => now,
   );
@@ -198,4 +201,48 @@ test("a road's gift is toasted for a while", async () => {
   clock(SETTLE_MS + 5000);
   await frame();
   assert.deepEqual(quests.toasts, []);
+});
+
+test("a step's figures and its ward stand in the room the player is in, none from a room that has not said them", async () => {
+  const { quests, frame } = roads();
+  const wren = 23;
+  const walking = (figureState: number) =>
+    state({
+      ...gear(4, 0, { pledge: 3 }),
+      quest: {
+        ...gear(4, 0).quest!,
+        figures: [{ look: wren, x: 3, y: 4, z: 1, facing: 0, state: figureState }],
+      },
+    });
+  quests.hear(walking(1));
+  await frame();
+  const cards = quests.cards([0, 0, 2], 0, () => 0);
+  assert.deepEqual(
+    cards.map((each) => (each.card as unknown as { anim: string }).anim),
+    ['walk'],
+    'Wren walks',
+  );
+  quests.hear(walking(3));
+  assert.deepEqual(
+    quests.cards([0, 0, 2], 0, () => 0).map((each) => (each.card as unknown as { anim: string }).anim),
+    ['idle'],
+    'arrived',
+  );
+  quests.hear(null);
+  assert.deepEqual(
+    quests.cards([0, 0, 2], 0, () => 0),
+    [],
+    'a room just joined',
+  );
+  const holding = state({
+    ...gear(2, 2, { pledge: 1 }),
+    quest: { ...gear(2, 2).quest!, ward: { x: 1, y: 2, health: 0.5 } },
+  });
+  quests.hear(holding);
+  assert.equal(quests.wardPlate(() => 0)?.name, 'The storm-glass');
+  quests.hear(null);
+  assert.equal(
+    quests.wardPlate(() => 0),
+    null,
+  );
 });

@@ -9,11 +9,12 @@ import type { Node } from '../ui/node.ts';
 import { edged } from '../combat/barDraw.ts';
 import { header, keycap } from './hudParts.ts';
 
-/** One step of a task: its words, the keys that do it (each on a keycap), what is left of it, and whether it is met. */
+/** One step of a task: its words, the keys that do it (each on a keycap), what is left of it (a count, or in words: a
+ *  clock's time, points lit of all), and whether it is met. */
 export interface Step {
   readonly text: string;
   readonly keys?: readonly string[];
-  readonly count?: number;
+  readonly count?: number | string;
   readonly done?: boolean;
 }
 

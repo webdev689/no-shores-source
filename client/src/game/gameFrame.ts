@@ -166,7 +166,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const { quests } = playing;
     quests.hear(here.gear?.gear);
     quests.frame(seconds, playing.after.past, paused);
-    const questShown = { ...shown, fight: { ...shown.fight, questAt: quests.goalAt } };
+    // The roads' next goal on the compass, and the ward a step defends among the plates, as a companion's.
+    const ward = quests.wardPlate(parts.groundAt);
+    const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: parts.groundAt });
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
@@ -191,7 +194,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       drain: drain.share,
     };
     const ships = [...moored.ships, ...fleet.ships];
-    scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), more);
+    const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
+    scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met, ...walking], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     // As E's other use, a gate takes no one while a menu is up or the player is down.

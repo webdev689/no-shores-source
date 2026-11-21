@@ -1,13 +1,16 @@
 // The houses' roads in the browser: once the story and Elder Maren Hale's welcome are past, the tracker shows the
 // quest walked; its lines are said in the dialogue box one scene after another (questWatch.ts); a counter that a talk
 // goal of the task names offers to speak with its keeper; the HUD marks where the task's next goal stands and the
-// held map the nodes its goals name; and what a road gives is toasted. Each is the room's word read, never a
-// judgement of the page's own.
+// held map the nodes its goals name; a varied step's figures and ward stand in the world (questFigures.ts); and what
+// a road gives is toasted. Each is the room's word read, never a judgement of the page's own.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };
+import type { MarkedFoe } from '../../combat/foePlate.ts';
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
 import { placeMarks } from '../../overworld/overworldMarks.ts';
+import type { CardAt, Cards } from '../../player/cards.ts';
+import type { FoeType } from '../../rules/roster.ts';
 import { type Cast, type Line, castOf, scenesOf } from '../../speech/cast.ts';
 import { DialogueBox } from '../../speech/dialogue.ts';
 import type { Stack } from '../../ui/stack.ts';
@@ -16,9 +19,12 @@ import type { Use } from '../footGear.ts';
 import type { ScreenMark } from '../hudMarks.ts';
 import { distanceText } from '../hudLaw.ts';
 import { HARBOURMASTER, keeperOf } from '../keepers.ts';
+import { rosterFor } from '../footRoom.ts';
+import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
 import { COUNTERS, goalNodes, markedGoal, talkAt, trackedOf } from './questBook.ts';
+import { questActors, wardPlate } from './questFigures.ts';
 import { QuestWatch } from './questWatch.ts';
 
 /** What the lines are said in: the dialogue box, as the welcome's (welcome.ts WelcomeVoice). */
@@ -51,6 +57,9 @@ export class Quests {
   private toasted: { readonly text: string; readonly until: number }[] = [];
   /** The talk goals asked of the room and said, by quest, task and goal, so a second press says them no more. */
   private readonly asked = new Set<string>();
+  /** The forge the figures are drawn by, and the rules' roster their looks are read from, once it has come. */
+  private readonly forge: Cards | null;
+  roster: readonly FoeType[] = [];
 
   /** The roads with their lines (`parts`), the browser's keeping of the begins said for the account `parts.account`
    *  names, a dialogue box made when first wanted, and a clock in milliseconds. */
@@ -60,12 +69,31 @@ export class Quests {
       readonly scenes: Readonly<Record<string, readonly Line[]>>;
       readonly kept?: Pick<Storage, 'getItem' | 'setItem'>;
       readonly account?: () => string | null;
+      readonly forge?: Cards;
     },
     voice: () => QuestVoice,
     now: () => number = () => performance.now(),
   ) {
     [this.cast, this.scenes, this.voice, this.now] = [parts.cast, parts.scenes, voice, now];
     this.watch = new QuestWatch(parts.kept ?? null, parts.account);
+    this.forge = parts.forge ?? null;
+  }
+
+  /** The step's figures and its ward's figure in the room the player is in, as cards for an eye at `eye` at `clock`
+   *  (seconds), standing on `groundAt`'s ground. */
+  cards(
+    eye: readonly [number, number, number],
+    clock: number,
+    groundAt: (x: number, y: number) => number | null,
+  ): CardAt[] {
+    const actors = questActors(this.here?.quest, this.roster, groundAt);
+    return this.forge ? actorCards(actors, this.forge, eye, clock) : [];
+  }
+
+  /** The plate over the ward the step defends in the room the player is in, as the fight's display draws a
+   *  companion's; none without one. */
+  wardPlate(groundAt: (x: number, y: number) => number | null): MarkedFoe | null {
+    return wardPlate(this.here?.quest, this.cast, groundAt);
   }
 
   /** The room's word on the player's gear, wherever they are: none, as a room just joined has given, keeps the last
@@ -176,9 +204,20 @@ export class Quests {
 }
 
 /** The roads on the game's page: their lines read from content/story/, said in a dialogue box of their own, their
- *  begins said kept in the browser for the account `account` names. */
-export function questsOn(stack: Stack, account: () => string | null): Quests {
+ *  begins said kept in the browser for the account `account` names, their figures drawn by `forge` in the looks of the
+ *  roster `module`'s rules hold. */
+export function questsOn(
+  stack: Stack,
+  account: () => string | null,
+  forge: Cards,
+  module: Promise<WebAssembly.Module>,
+): Quests {
   const read = castOf(cast);
-  const parts = { cast: read, scenes: scenesOf(houses, read), kept: localStorage, account };
-  return new Quests(parts, () => new DialogueBox(stack, worldOutput));
+  const parts = { cast: read, scenes: scenesOf(houses, read), kept: localStorage, account, forge };
+  const quests = new Quests(parts, () => new DialogueBox(stack, worldOutput));
+  rosterFor(module).then(
+    (roster) => (quests.roster = roster),
+    (error: unknown) => console.error('the roads have no roster to dress their figures by:', error),
+  );
+  return quests;
 }

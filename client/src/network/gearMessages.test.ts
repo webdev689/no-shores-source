@@ -5,6 +5,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Gear, GearColumn, GearOfficer, GearShip, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { earnedOf } from './artMessages.ts';
 import { ASKS, DROPPED, gearOf } from './gearMessages.ts';
+import { FIGURE_STATES } from './questMessages.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
 
 const written = async (name: string) =>
@@ -245,6 +246,7 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
     done: [1, 0, 0, 0],
     choices: [1, 0, 0],
     at: [120.5, -40, 30],
+    ...{ clock: null, fails: [], points: [], figures: [], ward: null },
   });
   assert.deepEqual(read.arts?.earned, [0b011, 0, 0]);
   assert.deepEqual(
@@ -256,15 +258,63 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
   Gear.startGear(bare);
   bare.finish(Gear.endGear(bare));
   const none = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array())));
-  assert.deepEqual(none.quest, { quest: 0, task: 0, counts: [], done: [], choices: [], at: null }, 'none walked');
+  assert.deepEqual(
+    none.quest,
+    {
+      quest: 0,
+      task: 0,
+      counts: [],
+      done: [],
+      choices: [],
+      at: null,
+      clock: null,
+      fails: [],
+      points: [],
+      figures: [],
+      ward: null,
+    },
+    'none walked',
+  );
   assert.equal(earnedOf(none.arts, 3), 0b111, 'a room that says nothing of it locks nothing');
+});
+
+test("a varied step reads back: its clock, each goal's failures, a puzzle's points, the figures walking and the ward", () => {
+  const builder = new flatbuffers.Builder(256);
+  const fails = Gear.createQuestFailsVector(builder, [0, 2]);
+  const points = Gear.createQuestPointsVector(builder, [10, 0, 1, 0, -10, 0, 99]);
+  const figures = Gear.createQuestFiguresVector(builder, [22, 5, 6, 7, 1.5, 4, 107, 1, 2, 3, 0, 1]);
+  const ward = Gear.createQuestWardVector(builder, [40, -2, 0.25]);
+  Gear.startGear(builder);
+  Gear.addQuest(builder, 3);
+  Gear.addQuestClock(builder, 83.5);
+  Gear.addQuestFails(builder, fails);
+  Gear.addQuestPoints(builder, points);
+  Gear.addQuestFigures(builder, figures);
+  Gear.addQuestWard(builder, ward);
+  builder.finish(Gear.endGear(builder));
+  const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array()))).quest;
+  assert.equal(read?.clock, 83.5);
+  assert.deepEqual(read?.fails, [0, 2]);
+  assert.deepEqual(
+    read?.points,
+    [
+      { x: 10, y: 0, lit: true },
+      { x: 0, y: -10, lit: false },
+    ],
+    'whole points only, a stray number left',
+  );
+  assert.deepEqual(read?.figures, [
+    { look: 22, x: 5, y: 6, z: 7, facing: 1.5, state: FIGURE_STATES.ambushed },
+    { look: 107, x: 1, y: 2, z: 3, facing: 0, state: FIGURE_STATES.walking },
+  ]);
+  assert.deepEqual(read?.ward, { x: 40, y: -2, health: 0.25 });
 });
 
 test("the roads' asks carry the numbers the protocol reads them by, with the keeper and the fragment they name", async () => {
   const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment], [number('SPEAK'), number('CHOOSE_FRAGMENT')]);
-  assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment], [64, 65]);
+  assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment, ASKS.usePoint], [64, 65, 66]);
   const bytes = inputBytes(6, {
     intent: new Float64Array(17),
     look: { anim: 'idle', frame: 0, facing: 0 },

@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
-import { NODE_REACH_M, groundRings, useAt } from './footGear.ts';
+import type { QuestState } from '../network/questMessages.ts';
+import { NODE_REACH_M, POINT_REACH_M, groundRings, useAt } from './footGear.ts';
+import { QUESTS } from './quests/questBook.ts';
 import { OPEN_AT } from './gearScreen.ts';
 import { SERVED_M } from './plazaLife.ts';
 import { awayFromCounters } from './townsfolk.ts';
@@ -92,4 +94,66 @@ test("Shape's offer is within a counter's reach of his week's spot, ringed there
   );
   const counter = groundRings(null, here, () => 0, 0).length;
   assert.equal(groundRings(shape, here, () => 0, 0).length, counter * 2, 'a ring of his own');
+});
+
+/** The Stormcallers' road at the task `id`, with the varied fields `more`. */
+function storm(id: string, more: Partial<QuestState> = {}): QuestState {
+  const task = QUESTS[1]?.tasks.findIndex((each) => each.id === id) ?? -1;
+  return { quest: 2, task, counts: [], done: [0, 0, 0, 0], choices: [0, 0, 0], at: null, ...more };
+}
+
+/** The colours of each vertex of `marks`, as `r g b` to two places. */
+const coloursOf = (marks: readonly number[]) =>
+  new Set(
+    Array.from({ length: marks.length / MARK_FLOATS }, (_unused, vertex) =>
+      marks
+        .slice(vertex * MARK_FLOATS + 3, vertex * MARK_FLOATS + 6)
+        .map((value) => value.toFixed(2))
+        .join(' '),
+    ),
+  );
+
+test("a puzzle's points stand ringed under beams, gold once lit; E uses the one within reach, asking 66", () => {
+  const points = [
+    { x: 50, y: 0, lit: false },
+    { x: 60, y: 0, lit: true },
+  ];
+  const rods = { ...lying, nodes: [], quest: storm('ground-stolen-storm', { points }) } as GearState;
+  const used: GearAsk[] = [];
+  const near = useAt(50 + POINT_REACH_M - 0.1, 0, {}, rods, (each) => used.push(each));
+  assert.equal(near?.words, 'Use the west rod');
+  near?.run();
+  assert.deepEqual(used, [{ kind: ASKS.usePoint, column: 0 }]);
+  assert.equal(useAt(60, 0.5, {}, rods, () => undefined)?.words, 'Use the north rod', 'lit, it may be used again');
+  assert.equal(
+    useAt(50 + POINT_REACH_M + 0.1, 0, {}, rods, () => undefined),
+    null,
+    'out of reach',
+  );
+  const one = groundRings({ ...rods, quest: storm('ground-stolen-storm', { points: [points[0]!] }) }, {}, () => 0, 0);
+  const both = groundRings(rods, {}, () => 0, 0);
+  assert.ok(one.length > 0 && both.length === one.length * 2, 'each point its rings and beam');
+  const lit = groundRings({ ...rods, quest: storm('ground-stolen-storm', { points: [points[1]!] }) }, {}, () => 0, 0);
+  assert.notDeepEqual(coloursOf(lit), coloursOf(one), 'lit, it glows another colour');
+  assert.deepEqual(
+    groundRings({ ...rods, quest: storm('ground-stolen-storm') }, {}, () => 0, 0),
+    [],
+    'none here',
+  );
+});
+
+test('a ward a quest defends by name is ringed under a beam where it stands', () => {
+  const glass = {
+    ...lying,
+    nodes: [],
+    quest: storm('hold-glass-high', { ward: { x: 5, y: 5, health: 1 } }),
+  } as GearState;
+  const marks = groundRings(glass, {}, () => 2, 0);
+  assert.ok(marks.length > 0);
+  assert.ok(Math.abs((marks[2] ?? 0) - 2) < 0.1, 'on the floor');
+  assert.deepEqual(
+    groundRings({ ...glass, quest: storm('hold-glass-high') }, {}, () => 2, 0),
+    [],
+    'not in this room',
+  );
 });

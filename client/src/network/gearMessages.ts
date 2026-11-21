@@ -5,6 +5,7 @@ import type { GearItem as GearItemTable } from '../../../generated/messages/ts/o
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
 import type { GearShip as GearShipTable } from '../../../generated/messages/ts/overlook/wire/gear-ship.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
+import { type QuestState, questOf } from './questMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -79,6 +80,8 @@ export const ASKS = {
    *  (`column` the Art, `node` the fragment's place in its Art's list). */
   speakWith: 64,
   chooseFragment: 65,
+  /** A puzzle's point used, by its place among its goal's points in `column`. */
+  usePoint: 66,
 } as const;
 
 /** Shape's place while he is away. */
@@ -238,19 +241,6 @@ export interface GearState {
   readonly day?: number;
   /** Where they stand on the houses' roads; none from a room that sends none. */
   readonly quest?: QuestState;
-}
-
-/** Where a player stands on the houses' roads (content/quests/quests.json): the quest walked by its place counted
- *  from 1 (0 for none), its task, that task's goals' counts in its order, each quest done (1) or not by place, each
- *  Art's fragment choices waiting in the Arts' order, and where the task's first unmet goal with a place stands in the
- *  player's room (x, y and its reach), null where none is here. */
-export interface QuestState {
-  readonly quest: number;
-  readonly task: number;
-  readonly counts: readonly number[];
-  readonly done: readonly number[];
-  readonly choices: readonly number[];
-  readonly at: readonly [number, number, number] | null;
 }
 
 /** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
@@ -450,19 +440,6 @@ export function gearOf(gear: Gear): GearState {
     factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
     day: gear.day(),
     quest: questOf(gear),
-  };
-}
-
-/** The roads as a message holds them. */
-function questOf(gear: Gear): QuestState {
-  const [x, y, reach] = Array.from(gear.questAtArray() ?? []);
-  return {
-    quest: gear.quest(),
-    task: gear.questTask(),
-    counts: Array.from(gear.questCountsArray() ?? []),
-    done: Array.from(gear.questsDoneArray() ?? []),
-    choices: Array.from(gear.fragmentChoicesArray() ?? []),
-    at: x === undefined || y === undefined || reach === undefined ? null : [x, y, reach],
   };
 }
 
