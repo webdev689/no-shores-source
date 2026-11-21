@@ -1527,3 +1527,27 @@ img.gear-glyph-fine {
     zoom: 2;
   }
 }
+
+/* On a phone the tabs keep their words' size and the row scrolls sideways, rather than squeezing seven into its width;
+   the banner keeps its name on one line, its purse saying the coin and the number alone. */
+@media (max-width: 599.98px) {
+  .gear-tabs-top {
+    justify-content: flex-start;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #hud .gear-tab {
+    flex: 0 0 auto;
+    padding: 0 11px;
+  }
+  .gear-banner {
+    padding-right: 18px;
+  }
+  .gear-who strong {
+    white-space: nowrap;
+  }
+  .gear-purse .gear-hint {
+    display: none;
+  }
+}

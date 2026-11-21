@@ -342,7 +342,9 @@ weight, and made into a font in the page when it opens (`trueType.ts`), so nothi
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
 the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
-whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit);
+whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit; on a
+phone, under 600 px, the row keeps their size and scrolls sideways, bringing the open tab into it, and the banner keeps
+the name on one line, its purse the coin and the number);
 keys on keycaps where the menu is wide enough; Journal
 and Guild marked Later, each a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
 between tabs. At the top line's right stands the account's mark, after DFO's
@@ -578,7 +580,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   smiths, the Tailor and the Tack, or "Leaves in" and the time left for Shape, by the world's clock to Sunday 21:00 UTC.
   The footer: Hold (Buy; Open at the Mage's), I (Open Character), Esc (Dismiss); while a fragment is chosen it says Esc
   (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter presses, Escape steps
-  back, and the focus goes back where it came from.
+  back, and the focus goes back where it came from. On a phone (under 600 px) the keeper stands over the rest as a band
+  of their glow with their mark and title, and the vault's two sides stand one under the other.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
   The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
   many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's

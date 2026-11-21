@@ -60,7 +60,9 @@ are in [[Crew]].
   colours, three materials of 4 to 8 and two Heartwood. A module's colour is never past what its level could drop, as
   a Vestige's is ([[Gear]], "Vestiges").
 - **The Shipwright** sells six modules a day, three Rare and three Magic, at the buyer's ship's level, at the
-  Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third).
+  Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third), each a row on his screen: its
+  tile, its name, kind and level, what it adds, and its price, held to buy, in the loss's colour with "Not enough
+  Aurem" when short.
 
 ## At sea
 

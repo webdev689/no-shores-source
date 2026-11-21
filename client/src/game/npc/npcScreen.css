@@ -335,3 +335,14 @@
 .npc-rows > .gear-vault .gear-grid {
   grid-template-columns: repeat(auto-fill, 64px);
 }
+/* On a phone a keeper stands over their wares rather than beside them: a band of their glow with their name, and the
+   words, purse, speech and wares the screen's whole width under it. */
+@media (max-width: 599.98px) {
+  .npc-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 88px minmax(0, 1fr);
+  }
+  .npc-stage > :not(.npc-title) {
+    display: none;
+  }
+}

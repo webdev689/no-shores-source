@@ -346,6 +346,8 @@ export function startGearWindow(
         const chosen = node.dataset['tab'] === view;
         node.classList.toggle('gear-chosen', chosen);
         node.setAttribute('aria-selected', String(chosen));
+        // A row too narrow for every tab scrolls, so the open tab is brought into it.
+        if (chosen) node.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
         // One tab is a stop for Tab; the arrows move between them.
         node.tabIndex = chosen || (station !== null && node === tabs[0]) ? 0 : -1;
       }

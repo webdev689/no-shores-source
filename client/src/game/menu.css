@@ -79,6 +79,12 @@
   gap: 18px;
   padding: 14px 18px;
 }
+/* On a phone what the vault keeps stands over what the player carries. */
+@media (max-width: 599.98px) {
+  .gear-vault {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .gear-vault-side {
   border-width: 2px;
   border-style: solid;

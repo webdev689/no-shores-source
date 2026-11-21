@@ -211,3 +211,46 @@
   gap: 12px;
   padding: 6px 0;
 }
+
+/* The Shipwright's wares at the harbourmaster's counter, a row each: its tile, its name, kind and level, what it adds,
+   and its price, held to buy; a price not met in the loss's colour. */
+.ship-harbour .gear-wares {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+  gap: 11px;
+  padding: 0 18px;
+}
+#hud .ship-harbour .gear-ware {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 11px;
+  height: auto;
+  padding: 8px 11px;
+  text-align: left;
+}
+.ship-harbour .gear-ware .gear-cell {
+  flex: none;
+}
+.ship-harbour .gear-ware-words {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ship-harbour .gear-ware-power {
+  color: var(--gain);
+}
+.ship-harbour .gear-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  color: var(--brass-lit);
+}
+.ship-harbour .gear-price.gear-short,
+.ship-harbour .gear-price.gear-short .gear-hint {
+  color: var(--loss);
+}
