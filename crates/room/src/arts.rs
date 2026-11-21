@@ -103,11 +103,13 @@ pub(crate) fn spell_power(character: &Character) -> (u32, Slot) {
         .unwrap_or((0, Slot::Melee))
 }
 
-/// Whether a player may act on a cast: neither dead (nor dead past the section's edge), staggered nor Charged.
+/// Whether a player may act on a cast: neither dead (nor dead past the section's edge), staggered, Charged nor
+/// drinking.
 fn able(found: &Player) -> bool {
     let fighter = &found.fighter;
     let fallen = matches!(found.standing, Standing::Dead { .. });
-    !fallen && !fighter.dead() && !fighter.staggered() && !fighter.statuses.has(Status::Charge)
+    let drinking = matches!(fighter.action, combat::Action::Drink { .. });
+    !fallen && !fighter.dead() && !fighter.staggered() && !fighter.statuses.has(Status::Charge) && !drinking
 }
 
 impl Room {

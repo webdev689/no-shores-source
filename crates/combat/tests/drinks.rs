@@ -1,18 +1,21 @@
 //! Healing charges: a drink pressed from rest on the ground heals 40% of the player's most health as it ends, never
-//! past the most, spending its charge; none without a charge, at full health, on horseback or in the air, and never a
-//! foe's. It walks, never runs. A blow that lands cuts it short with the charge kept; a dodge does not leave it, but
-//! one pressed in its last ticks hops as it ends. And the meter: each whole one filled is a charge, none past three.
+//! past the most, spending its charge; none without a charge, at full health, on horseback, in the air or in a loadout
+//! swap, and never a foe's. It walks, never runs, as fast as Haste carries it. A blow that lands, a knockdown or a
+//! Charge's hold cuts it short with the charge kept, and leaving the ground puts it down; a dodge does not leave it,
+//! and one pressed in a swing's or a dodge's last ticks begins as it ends. And the meter: each whole one filled is a
+//! charge, none past three, and one earned while drinking with three held is kept as the drink spends one.
 
 mod common;
 
+use combat::arms::{Arms, OffHand, Ranged, WeaponClass, swing_ticks};
 use combat::drink::recharged;
-use combat::fighter::{Action, Attack, Swing};
+use combat::fighter::{Action, Attack, Cause, Swing};
 use combat::judge::{suffer, swing_blow};
-use combat::tuning::{CHARGES, DRINK_TICKS};
-use combat::{CombatInput, Fighter, Happening, Intent, Stroke, judge};
-use common::{foe_at, idle, player_at, run, script};
+use combat::tuning::{CHARGES, DODGE_ATTACK, DODGE_TICKS, DRINK_TICKS, SWAP_TICKS};
+use combat::{CombatInput, Fighter, Happening, Intent, Status, Stroke, judge};
+use common::{foe_at, idle, player_at, run, run_on, script};
 use core::f64::consts::PI;
-use movement::{Controls, Mode};
+use movement::{Block, Body, Controls, Mode, standing};
 
 const HEAL: CombatInput = CombatInput {
     attack: None,
@@ -116,7 +119,7 @@ fn a_dodge_does_not_leave_a_drink_but_one_pressed_in_its_last_ticks_hops_as_it_e
 }
 
 #[test]
-fn a_full_meter_is_a_charge_and_none_comes_past_three() {
+fn a_full_meter_is_a_charge_none_comes_past_three_and_a_new_player_holds_all_three() {
     let player = Fighter { charges: 1, meter: 0.5, ..player_at(0.0, 0.0) };
     let filled = recharged(&player, 0.75);
     assert_eq!((filled.charges, filled.meter), (2, 0.25));
@@ -124,15 +127,11 @@ fn a_full_meter_is_a_charge_and_none_comes_past_three() {
     assert_eq!((topped.charges, topped.meter), (CHARGES, 0.0), "three at most, and the meter stops");
     assert_eq!(recharged(&topped, 0.5), topped, "a full set takes nothing more");
     assert_eq!(recharged(&filled, f64::NAN), filled, "nonsense gives nothing");
-    assert_eq!(
-        combat::fighter::player(movement::standing(0.0, 0.0), common::SWORD).charges,
-        CHARGES,
-        "a player stands full"
-    );
+    assert_eq!(combat::fighter::player(standing(0.0, 0.0), common::SWORD).charges, CHARGES, "a player stands full");
 }
 
 #[test]
-fn a_drink_is_put_down_in_the_saddle_or_at_full_health_and_keeps_its_charge() {
+fn a_drink_is_put_down_in_the_saddle_at_full_health_or_with_no_charge_and_heals_nothing() {
     let begun = drinking(wounded(50.0), 10).0;
     assert!(matches!(begun.action, Action::Drink { .. }));
     let saddled = Intent { controls: Controls { mounted: true, ..Controls::default() }, ..idle(0.0) };
@@ -145,14 +144,106 @@ fn a_drink_is_put_down_in_the_saddle_or_at_full_health_and_keeps_its_charge() {
     let (ended, happenings) = script(topped, &vec![idle(0.0); rest]);
     assert!(matches!(ended.action, Action::Idle) && happenings.is_empty(), "{happenings:?}");
     assert_eq!(ended.charges, CHARGES, "no charge spent for nothing");
+    let (dry, happenings) = script(Fighter { charges: 0, ..begun }, &vec![idle(0.0); rest]);
+    assert!(happenings.is_empty() && dry.health == 50.0, "no charge left, no heal: {happenings:?}");
 }
 
 #[test]
-fn a_drink_pressed_in_a_dodge_never_frees_it_early() {
+fn a_drink_is_put_down_as_its_drinker_walks_off_a_ledge_or_into_a_wall_they_climb() {
+    let ahead = Controls { forward: 1.0, ..Controls::default() };
+    let walked = |fighter: Fighter, blocks: &[Block]| {
+        let (begun, _) = run_on(fighter, Intent { controls: ahead, combat: HEAL }, 1, None, blocks);
+        assert!(matches!(begun.action, Action::Drink { .. }), "it drinks: {:?}", begun.action);
+        let (after, happenings) = run_on(begun, Intent { controls: ahead, ..idle(0.0) }, DRINK_TICKS, None, blocks);
+        assert!(happenings.is_empty(), "no heal comes: {happenings:?}");
+        assert_eq!((after.health, after.charges), (50.0, CHARGES), "the charge is kept");
+        after
+    };
+    let ledge = Block { min_x: -2.0, min_y: -1.0, max_x: 2.0, max_y: 2.0, top: 1.0, bottom: 0.0 };
+    let on_the_ledge = Fighter { body: Body { z: 1.0, ..wounded(50.0).body }, ..wounded(50.0) };
+    let fallen = walked(on_the_ledge, &[ledge]);
+    assert!(fallen.body.y < -1.0 && fallen.body.z < 1.0, "it walked off and fell: {:?}", fallen.body);
+    let tower = Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 4.0, bottom: 0.0 };
+    let climbing = walked(wounded(50.0), &[tower]);
+    assert!(climbing.body.mode != Mode::Ground, "it climbs: {:?}", climbing.body);
+}
+
+#[test]
+fn a_knockdown_and_a_charges_hold_cut_a_drink_short_and_keep_its_charge() {
+    let (under_way, _) = drinking(wounded(50.0), 30);
+    let foe = foe_at(0.0, -1.5, PI);
+    let chop = Attack { stroke: Stroke::Down, elapsed: 24, strike: 24, end: 60, swing: Swing::Plain, left_hand: false };
+    let slam = combat::Blow { knocks_down: true, ..swing_blow(2, &foe, &chop, 1) };
+    let knocked = suffer(&under_way, &slam, &judge(&slam, &under_way));
+    assert!(matches!(knocked.action, Action::Down { .. }), "knocked down: {:?}", knocked.action);
+    let held = combat::give(&under_way, Status::Charge, 60, Some(2)).expect("a Charge takes");
+    assert!(matches!(held.action, Action::Staggered { cause: Cause::Charged, .. }), "{:?}", held.action);
+    for cut in [knocked, held] {
+        let (after, happenings) = run(cut, idle(0.0), DRINK_TICKS * 2, None);
+        assert!(happenings.is_empty(), "no heal comes: {happenings:?}");
+        assert_eq!((after.health, after.charges), (cut.health, CHARGES), "the charge is kept");
+    }
+}
+
+#[test]
+fn haste_quickens_a_drinks_walk() {
+    let ahead = |fighter: Fighter| {
+        let controls = Controls { forward: 1.0, run: true, ..Controls::default() };
+        run(fighter, Intent { controls, combat: HEAL }, 30, None).0
+    };
+    let hasted = combat::give(&wounded(50.0), Status::Haste, 120, None).expect("Haste takes");
+    let (quick, plain) = (ahead(hasted), ahead(wounded(50.0)));
+    assert!(matches!(quick.action, Action::Drink { .. }) && matches!(plain.action, Action::Drink { .. }));
+    assert!(quick.body.y < plain.body.y - 0.5, "Haste carried it further: {} against {}", quick.body.y, plain.body.y);
+}
+
+/// A wounded player's action after `first`, then `ticks` more at rest, with a drink pressed on tick `pressed`.
+fn pressed_after(first: Intent, pressed: usize, ticks: usize) -> Action {
+    let mut intents = vec![first];
+    intents.extend((1..=ticks).map(|tick| if tick == pressed { common::asking(0.0, HEAL) } else { idle(0.0) }));
+    script(wounded(50.0), &intents).0.action
+}
+
+#[test]
+fn a_drink_pressed_in_a_swings_last_ticks_begins_as_it_ends() {
+    let end = usize::try_from(swing_ticks(WeaponClass::Sword).1).unwrap();
+    let swing = common::swinging(0.0, Stroke::Down);
+    let before = pressed_after(swing, end - 4, end - 1);
+    assert!(matches!(before, Action::Attack(_)), "the swing runs on: {before:?}");
+    let after = pressed_after(swing, end - 4, end);
+    assert!(matches!(after, Action::Drink { elapsed: 0 }), "it begins as the swing ends: {after:?}");
+}
+
+#[test]
+fn a_drink_pressed_in_a_dodges_last_ticks_never_frees_it_early_and_begins_as_it_ends() {
     let dodge = common::dodging(0.0, 0.0, 1.0);
-    let attack = usize::try_from(combat::tuning::DODGE_ATTACK).unwrap();
-    let mut intents = vec![dodge];
-    intents.extend((1..=attack + 1).map(|tick| if tick == attack { common::asking(0.0, HEAL) } else { idle(0.0) }));
-    let (rolling, _) = script(player_at(0.0, 0.0), &intents);
-    assert!(matches!(rolling.action, Action::Dodge { .. }), "at full health, refused: {:?}", rolling.action);
+    let (pressed, last) = (usize::try_from(DODGE_ATTACK).unwrap() + 1, usize::try_from(DODGE_TICKS).unwrap());
+    let before = pressed_after(dodge, pressed, last - 1);
+    assert!(matches!(before, Action::Dodge { .. }), "a drink pressed never frees the dodge early: {before:?}");
+    let after = pressed_after(dodge, pressed, last);
+    assert!(matches!(after, Action::Drink { elapsed: 0 }), "it begins as the dodge ends: {after:?}");
+}
+
+#[test]
+fn no_drink_begins_in_a_loadout_swap() {
+    let bow = Arms { melee: WeaponClass::Fists, ranged: Some(Ranged::Bow), off_hand: OffHand::Empty };
+    let swapping = wounded(50.0).holding(bow);
+    assert_eq!(swapping.swap, SWAP_TICKS, "a new weapon taken up is a swap");
+    let (after, _) = run(swapping, common::asking(0.0, HEAL), 10, None);
+    assert!(!matches!(after.action, Action::Drink { .. }), "refused in the swap: {:?}", after.action);
+}
+
+#[test]
+fn a_charge_earned_while_drinking_with_three_held_is_kept_as_the_drink_spends_one() {
+    let (under_way, _) = drinking(wounded(50.0), 30);
+    let earned = recharged(&under_way, 1.4);
+    assert_eq!((earned.charges, earned.meter), (CHARGES, 1.0), "the meter fills to one whole, no more");
+    let (drunk, happenings) = run(earned, idle(0.0), DRINK_TICKS, None);
+    assert_eq!(happenings.len(), 1, "it drank: {happenings:?}");
+    assert_eq!(
+        (drunk.health, drunk.charges, drunk.meter),
+        (90.0, CHARGES, 0.0),
+        "spent, and the full meter took its place"
+    );
+    assert_eq!(recharged(&wounded(50.0), 0.5).meter, 0.0, "at rest with all three, nothing is banked");
 }

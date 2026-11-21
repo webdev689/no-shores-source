@@ -61,6 +61,9 @@ fn kept_of(held: u32, drinks: u32) -> Kept {
     Kept { attack: nibble(4), stroke, guard: nibble(8), dodge: nibble(12), shoot: nibble(26), heal }
 }
 
+// The charges cross in the drinks' number's low two bits.
+const _: () = assert!(crate::tuning::CHARGES <= 3, "the charges outgrow their two bits");
+
 /// The drinks' number: the charges held in its low two bits, the drink's press kept in the next four, then whether it
 /// is held.
 fn drinks_of(fighter: &Fighter) -> f64 {

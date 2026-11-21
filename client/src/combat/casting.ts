@@ -20,8 +20,9 @@ export const DAGGERS = 1;
  *  another Art worn; past this long (seconds) the keys open again all the same, as a cast the room let fall sends no
  *  word. */
 export const CAST_LOCKOUT_MOST_S = 2;
-/** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down, dead. */
-export const UNABLE: ReadonlySet<string> = new Set(['staggered', 'down', 'dead']);
+/** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down,
+ *  drinking, dead. */
+export const UNABLE: ReadonlySet<string> = new Set(['staggered', 'down', 'drink', 'dead']);
 
 /** Dusk Daggers aimed: the middle of the ring where they will whirl, its radius, and its Art's element. */
 export interface AimRing {

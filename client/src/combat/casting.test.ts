@@ -85,16 +85,18 @@ test('a press casts its ability only when it is ready, then waits for the roomâ€
     { spell: SPELLS.dawnflare, aim: null },
     'Art changed',
   );
-  const staggered = new CastKeys().frame(keys(['anima']), 0, {
-    hands: true,
-    state: state(1),
-    abilities: abilitiesAt(state(1), 0, 0),
-    own: own('staggered'),
-    yaw: 0,
-    markOf: () => null,
-    floorAt,
-  });
-  assert.equal(staggered.cast, null, 'staggered, nothing is cast');
+  for (const kind of ['staggered', 'drink']) {
+    const unable = new CastKeys().frame(keys(['anima']), 0, {
+      hands: true,
+      state: state(1),
+      abilities: abilitiesAt(state(1), 0, 0),
+      own: own(kind),
+      yaw: 0,
+      markOf: () => null,
+      floorAt,
+    });
+    assert.equal(unable.cast, null, `${kind}: nothing is cast`);
+  }
 });
 
 test('after a cast the keys wait for the roomâ€™s word that it was spent, however long it takes, up to a limit', () => {

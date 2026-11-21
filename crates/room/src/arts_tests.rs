@@ -1,6 +1,6 @@
 //! The Arts in the room: a new room's Anima empty and Tenets ready, each charging over its recharge; a cast taken
-//! only when ready, of the worn Art, with its caster able, and released 18 ticks after; kills and a crit out of
-//! Vanish giving charge back; and the asks that wear an Art and set its Core, and the Test Ground's grant.
+//! only when ready, of the worn Art, with its caster able (never drinking), and released 18 ticks after; kills and a
+//! crit out of Vanish giving charge back; and the asks that wear an Art and set its Core, and the Test Ground's grant.
 
 use crate::arts::Cast;
 use crate::asks::{Asked, Grant};
@@ -132,6 +132,26 @@ fn a_cast_is_refused_unless_charged_of_the_worn_art_and_its_caster_able() {
     }
     assert_eq!(casting(&room, player).tenets[0], 1.0, "Charged before it released: it cost nothing");
     assert!(!room.fighter(player).expect("in").statuses.has(Status::Haste));
+}
+
+#[test]
+fn a_cast_is_refused_while_drinking_and_one_whose_caster_drinks_before_its_release_costs_nothing() {
+    let (mut room, player) = room_with_player();
+    let drinking = |room: &mut Room| {
+        let fighter = &mut room.players.get_mut(&player).expect("in").fighter;
+        (fighter.health, fighter.action) = (50.0, combat::Action::Drink { elapsed: 0 });
+    };
+    drinking(&mut room);
+    room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
+    assert_eq!(casting(&room, player).releasing, None, "drinking");
+    let (mut room, player) = room_with_player();
+    room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
+    assert!(casting(&room, player).releasing.is_some());
+    drinking(&mut room);
+    for _ in 0..19 {
+        room.tick();
+    }
+    assert_eq!(casting(&room, player).tenets[0], 1.0, "drinking as it released: it cost nothing");
 }
 
 #[test]
