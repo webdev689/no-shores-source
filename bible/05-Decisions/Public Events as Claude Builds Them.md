@@ -28,20 +28,28 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The clock | Every 15 minutes a zone, alternating its two; the zones 5 minutes apart, neighbours on different events | One begins somewhere on Saltmere every 5 minutes, as D1's patrols felt |
 | The countdown, the result | 8 minutes to win; the result shows 12 seconds | Long enough for a heroic run, short enough to keep the clock |
 | A room opened mid-event | Starts it with what its start minute leaves; keeps none across its closing | A room holds no state between players |
-| The stores | Three per hamlet, within 35 m of the plaza beside its houses, 8 m apart, square to the grid, 2.4 x 1.6 x 1.6 m | Near enough to defend together; a box the page and room share |
+| The stores | Three per hamlet, within 35 m of the plaza beside its houses, 8 m apart, square to the grid, each a box covering its stack and the plundered one (2.604 x 2.049 x 1.73, 2.5 x 2.224 x 1.27 or 2.6 x 2.049 x 0.9 m), laid out in 2.604 x 2.224 m | Near enough to defend together; the box a body meets is the stack drawn |
 | The raiders' approach and banners | 36 m out toward the nearest camp, or from the shore; banners 28 m out, 6 m either side | The Tithe come from where they hold ground |
 | The grounds' sizes | The Fissure 25 m round; the raid 10 m past its farthest store, 20 m at least | Each ground's mesh is baked at open; a larger one cost too much |
-| Where the fissure opens | Beside its wilds' middle, 12 m (or 9, or 15) out, on ground 14 m across clear of the obelisk and ruins the wilds' battlefield stands there | The crack opened through the obelisk; the old stone now stands over it, a landmark |
-| The navmesh for events | A rectangle round each ground (and the approach), 4 m further, joined to the garrison's | Its cost measured: the open grows by 150 to 250 ms |
-| The room's foes | 32 at most in a room that holds events, any other node's still 24 | A garrison and an event's foes at once |
+| Where the fissure opens | Beside its wilds' middle, 12 m (or 9, or 15) out, on ground 15.4 x 9.8 m clear of the obelisk and ruins the wilds' battlefield stands there | The crack opened through the obelisk; the old stone now stands over it, a landmark |
+| The fissure's turn | Square to the grid, its long side east and west, in the room and on the page | Its clear ground is its own mesh's, so it never reaches the obelisk or the ruins |
+| The fissure's spires | Its four crystal spires (the module's parts, sunk 0.3 m) block bodies while it stands open; its mouth is open ground; the growth, chests and banners are walked through | A box round the growth would stop every blow at it |
+| The navmesh for events | A rectangle round each ground (and the approach and where the waves form), 16 m further, joined to the garrison's | A player shooting from past the ground is still fought; its cost measured: both grounds bake in about 0.5 s natively |
+| The event foes' leash | The event's reach from its middle and 16 m more, from each foe's own place, on the room's mesh | Its foes fight whoever fights them from round its ground, the raiders from where they form |
+| The room's foes | 40 at most in a room that holds events, 16 of them kept for its event; its garrison, calls and arrivals while the foes not of the event stay within 24, as in any node | The event's fullest moment always has room |
+| The great foes' health | The growth, the Warden and Marrow half their health more for each player beyond the first | A full party no longer fells them in seconds; two scripted players still win heroic in time |
 | The Fissure's waves | 3 foes and 1 per extra player (6 at most), when 2 or fewer stand but 30 s after the last at the soonest, or every 40 s, under 10 standing | The shards' pace sets the event's: scripted players at Saltmere's levels seal it in 2.5 to 3 minutes, heroic in 3 to 4.5 |
 | Shards | 16 needed, 6 more for each player beyond the first, 40 at most; 1 from a foe, 2 from an Elite or greater; taken within 1.5 m, set within 6 m; the needed never falls when players leave | Leaving never makes it easier |
-| The growth | An Idol's Elite at its spot, never moving or striking, 45 s with 2 s to rise and sink | Struck like a foe, as the spec asks |
-| The raid's waves | Five foes each, Collectors in every wave, Elites in the third, one Runner per extra player (3 at most), a rank lower for a party of two or fewer; the next 30 s after one is broken | The stores need guarding all the while; at level 4, scripted players hold it in 2 to 3 minutes, heroic in 3.5 to 5.5 |
+| The growth | An Idol's Elite at its spot, never moving or striking, 45 s, rising over 2.4 s and sinking over 3 s | Struck like a foe, as the spec asks; the room's times are the page's |
+| The raid's waves | Five foes each, Collectors in every wave, Elites in the third, one Runner per extra player (3 at most), a rank lower for a party of two or fewer (the heroic third's two more too); formed 14 m beyond the approach, out of sight, marching in; the next 30 s after one is broken | The stores need guarding all the while; at level 4, scripted players hold it in 2 to 3 minutes, heroic in 3.5 to 5.5 |
 | Plundering | A Collector within 2.5 m of its store plunders it in 20 s alone | A store held is a store kept |
-| The tithe-taker | Never strikes; his round paced to take 50 s; gone wherever he stands when his time is up; the raid waits for him | He counts and leaves, as the owner put it |
-| Withdrawing | Foes walk to the crack or the approach at 4 m/s and are gone within 8 s | Seen to leave, not vanish |
-| Taking part | 30 s on the ground, or a blow on one of its foes, or a shard set | As the spec |
+| The tithe-taker | Never strikes; at the event's level; from where the waves form, his round paced to take 50 s; gone wherever he stands when his time is up; tried each tick from the second wave until the room has room for him; the raid waits for him | He counts and leaves, as the owner put it |
+| Withdrawing | Foes walk to the crack or to where the waves form at 4 m/s and are gone within 8 s | Seen to leave, not vanish |
+| Taking part | 30 s on the ground, or a blow on one of its foes, or a shard set; kept by account | As the spec; a reconnect loses nothing |
+| The seal once complete | Holds: players coming later never raise what it needed | The bonus and the HUD's progress hold |
+| A chest's level and pay | The event's level raised by the voyage's seas; XP and Aurem times the seas' reward | As a kill's |
+| The next wave on the wire | `next_wave_ticks`, the ticks until a raid's next wave (0 while none comes) | The page can count it down |
+| The marks on the wire | Each a 24-byte struct, its place in f32; every mark in every snapshot | Measured: a busy Fissure's event 808 bytes a snapshot; a land snapshot is one for everyone, so the welcome and the page would both have to keep the still ones |
 | The chests' pay | XP 1,500 to 4,500 by tier at level 5, and as much faction reputation (the pledged faction's, its cape worn, as a kill's), Aurem 120 to 360, Fragments 2 to 7, Essence in the heroic tiers, 3 to 8 of the island's resource, a Vestige always | A share of what eight minutes of fighting pays, more with each tier |
 | A chest's Vestige | A foe's colours plain, a Boss's heroic; the bonus rolls twice and keeps the better | Each tier better than the last |
 | A leaver's chest | Opened for them before the server keeps their character; a Vestige the ten cannot hold goes to the vault | Never lost |

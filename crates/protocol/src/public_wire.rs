@@ -9,14 +9,13 @@ pub(crate) fn public_offset<'built>(
     builder: &mut FlatBufferBuilder<'built>,
     seen: &PublicSeen,
 ) -> WIPOffset<messages::PublicEvent<'built>> {
+    // A mark's place to the centimetre and better anywhere on a continent: f32 is enough.
     let marks: Vec<_> = seen
         .marks
         .iter()
         .map(|mark| {
-            let at = Some(builder.create_vector(&mark.at));
-            let args =
-                messages::PublicMarkArgs { kind: mark.kind, id: mark.id, at, health: mark.health, state: mark.state };
-            messages::PublicMark::create(builder, &args)
+            let [x, y, z] = mark.at.map(|axis| axis as f32);
+            messages::PublicMark::new(x, y, z, mark.health, mark.id, mark.kind, mark.state)
         })
         .collect();
     let marks = Some(builder.create_vector(&marks));
@@ -39,6 +38,7 @@ pub(crate) fn public_offset<'built>(
         heroic_ticks: seen.heroic_ticks,
         bonus: seen.bonus,
         marks,
+        next_wave_ticks: seen.next_wave_ticks,
     };
     messages::PublicEvent::create(builder, &args)
 }

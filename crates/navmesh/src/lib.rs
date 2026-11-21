@@ -383,7 +383,7 @@ impl NavMesh {
     pub fn find_path_kept(&self, way: &mut Way, from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
         let (place, part) = self.holding(from, to)?;
         if place != 0 {
-            let mut kept = if way.part == place { Way { part: 0, ..way.clone() } } else { Way::default() };
+            let mut kept = if way.part == place { Way { part: 0, ..core::mem::take(way) } } else { Way::default() };
             let points = part.find_path_kept(&mut kept, from, to);
             *way = Way { part: place, ..kept };
             return points;

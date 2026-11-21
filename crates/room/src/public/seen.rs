@@ -41,7 +41,7 @@ pub struct PublicMark {
 /// A zone's events as a snapshot carries them: the one running or showing its result (kind 0 for none), its phase
 /// (0 waiting), its ground's middle and radius and its time left; the next's kind, ground and ticks until it starts;
 /// its stage of how many; its progress toward what it needs; its heroic task and its window's time left; whether its
-/// bonus holds; and its marks.
+/// bonus holds; its marks; and the ticks until a raid's next wave comes in (0 while none is on its way).
 #[derive(Clone, Debug, PartialEq)]
 pub struct PublicSeen {
     pub kind: u8,
@@ -60,6 +60,7 @@ pub struct PublicSeen {
     pub heroic_ticks: u32,
     pub bonus: bool,
     pub marks: Vec<PublicMark>,
+    pub next_wave_ticks: u32,
 }
 
 fn ticks(count: u64) -> u32 {
@@ -94,6 +95,7 @@ impl Room {
             heroic_ticks: running.map_or(0, |running| ticks(running.heroic_ticks)),
             bonus: running.is_some_and(|running| running.bonus),
             marks: Vec::new(),
+            next_wave_ticks: 0,
         };
         // The running event's ground, or, while none runs, the next's.
         let (middle, radius) = self.ground_of(public, running.map_or(next_kind, |running| running.kind));
@@ -122,8 +124,8 @@ impl Room {
                 if let Some(id) = fissure.growth {
                     let state = match running.heroic {
                         Heroic::Met => BROKEN,
-                        _ if self.clock < fissure.growth_at + super::fissure::GROWTH_EASE => RISING,
-                        _ if running.heroic_ticks <= super::fissure::GROWTH_EASE => SINKING,
+                        _ if self.clock < fissure.growth_at + super::fissure::GROWTH_RISE => RISING,
+                        _ if running.heroic_ticks <= super::fissure::GROWTH_SINK => SINKING,
                         _ => STANDING,
                     };
                     let (at, health) = self.foes.get(&id).map_or((fissure.growth_spot, 0.0), |foe| {
@@ -142,6 +144,8 @@ impl Room {
             }
             Play::Raid(raid) => {
                 (seen.progress, seen.needed) = (raid.left(), 1000);
+                let coming = raid.next_wave.filter(|_| live).map(|tick| tick.saturating_sub(self.clock));
+                seen.next_wave_ticks = ticks(coming.unwrap_or(0));
                 for (at, (store, health)) in raid.stores.iter().enumerate() {
                     let state = if *health > 0.0 { WHOLE } else { PLUNDERED };
                     seen.marks.push(mark(STORE, at as u32 + 1, *store, *health as f32, state));

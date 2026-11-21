@@ -433,6 +433,7 @@ impl Room {
         }
         found.gear_changed = true;
         self.give_casting_back(player, owner);
+        self.own_part(player);
         true
     }
 

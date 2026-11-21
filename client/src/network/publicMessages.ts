@@ -34,7 +34,8 @@ export interface PublicMark {
  *  none), its phase, its ground's middle and radius and its countdown in ticks (its result's time left once won or
  *  failed); the next's kind, ground and ticks until it starts; its stage of how many; its progress toward what it
  *  needs (shards set of shards needed, or the stores' health left per mille of 1000); its heroic task (`HEROIC`) and
- *  its window's ticks left; whether its bonus holds; and its marks. */
+ *  its window's ticks left; whether its bonus holds; its marks; and the ticks until a raid's next wave comes in (0
+ *  while none is on its way). */
 export interface PublicEvent {
   readonly kind: number;
   readonly phase: number;
@@ -52,6 +53,7 @@ export interface PublicEvent {
   readonly heroicTicks: number;
   readonly bonus: boolean;
   readonly marks: readonly PublicMark[];
+  readonly nextWaveTicks: number;
 }
 
 /** A snapshot's public events; null in a room whose zone holds none. */
@@ -61,7 +63,8 @@ export function publicOf(snapshot: Snapshot): PublicEvent | null {
   const marks = Array.from({ length: event.marksLength() }, (unused, index): PublicMark => {
     const mark = event.marks(index);
     if (!mark) throw new Error(`public mark ${index} is missing`);
-    return { kind: mark.kind(), id: mark.id(), at: point(mark.atArray()), health: mark.health(), state: mark.state() };
+    const place: [number, number, number] = [mark.x(), mark.y(), mark.z()];
+    return { kind: mark.kind(), id: mark.id(), at: place, health: mark.health(), state: mark.state() };
   });
   return {
     kind: event.kind(),
@@ -80,5 +83,6 @@ export function publicOf(snapshot: Snapshot): PublicEvent | null {
     heroicTicks: event.heroicTicks(),
     bonus: event.bonus(),
     marks,
+    nextWaveTicks: event.nextWaveTicks(),
   };
 }

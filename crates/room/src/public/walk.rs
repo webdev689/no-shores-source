@@ -28,7 +28,8 @@ impl Room {
             }
             return true;
         }
-        let next = self.nav.find_path(from, to).and_then(|path| path.get(1).copied()).unwrap_or(to);
+        let way = self.inert_ways.entry(id).or_default();
+        let next = self.nav.find_path_kept(way, from, to).and_then(|path| path.get(1).copied()).unwrap_or(to);
         let leg = apart([from[0], from[1]], [next[0], next[1]]).max(1e-9);
         let share = (pace * TICK_SECONDS / leg).min(1.0);
         let (x, y) = (from[0] + (next[0] - from[0]) * share, from[1] + (next[1] - from[1]) * share);
@@ -81,8 +82,11 @@ impl Room {
         self.names.remove(&id);
     }
 
-    /// The foes the room moves itself are never stepped, so their statuses run down here, as a stepped foe's do.
+    /// The foes the room moves itself are never stepped, so their statuses run down here, as a stepped foe's do; and
+    /// the ways of those it no longer moves are let go.
     pub(crate) fn wear_inert(&mut self) {
+        let inert = &self.inert;
+        self.inert_ways.retain(|id, _| inert.contains(id));
         for id in &self.inert {
             if let Some(foe) = self.foes.get_mut(id) {
                 foe.fighter.statuses = foe.fighter.statuses.ticked(&foe.fighter.action);

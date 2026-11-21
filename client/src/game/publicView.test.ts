@@ -22,6 +22,7 @@ const raid = (marks: PublicEvent['marks'], phase = 1): PublicEvent => ({
   heroicTicks: 0,
   bonus: true,
   marks,
+  nextWaveTicks: 0,
 });
 const bodies = (more: Partial<PublicBodies> = {}): PublicBodies => ({
   player: 1,

@@ -311,7 +311,7 @@ impl Room {
         let behind = if call.place == Place::Behind { CALLED_BEHIND } else { 0.0 };
         let (from_x, from_y) = (at.body.x + back_sin * behind, at.body.y - back_cos * behind);
         for index in 0..call.count {
-            if self.living_foes() >= self.foes_most {
+            if self.living_foes() >= self.others_most() {
                 return;
             }
             let side = if index % 2 == 0 { -1.0 } else { 1.0 };

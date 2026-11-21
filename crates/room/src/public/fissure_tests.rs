@@ -57,6 +57,7 @@ fn chests(room: &Room, player: PlayerId) -> Vec<u8> {
 fn felled_foes_drop_shards_and_a_player_sealing_them_quickly_wins_the_bonus_chest_and_shatters_the_rest() {
     let (mut room, players) = room_at(FISSURE_MINUTE, 1);
     let player = players[0];
+    let blocks = room.blocks.len();
     room.tick();
     assert_eq!(told(&mut room, EventKind::PublicBegun).len(), 1);
     assert_eq!(fissure(&room).needed(), SHARDS_FIRST, "alone, eight");
@@ -68,6 +69,7 @@ fn felled_foes_drop_shards_and_a_player_sealing_them_quickly_wins_the_bonus_ches
     assert!(running(&room).bonus, "sealed with more than half the countdown left");
     assert_eq!(chests(&room, player), [2], "a won chest with the bonus");
     assert!(standing(&room).is_empty(), "every foe of it shattered");
+    assert_eq!(room.blocks.len(), blocks, "sealed, its spires gone");
     let events = room.take_events();
     assert_eq!(events.iter().filter(|event| event.kind == EventKind::ShardSet).count(), usize::from(SHARDS_FIRST));
     assert!(events.iter().any(|event| event.kind == EventKind::PublicWon));
@@ -296,4 +298,206 @@ fn a_named_foe_gone_from_the_room_takes_its_name_with_it() {
     ticks(&mut room, u64::from(combat::tuning::FOE_GONE) + 2);
     assert!(!room.foes.contains_key(&foe), "its body gone");
     assert!(!room.names.contains_key(&foe), "and its name");
+}
+
+#[test]
+fn once_sealed_the_seal_holds_though_more_players_come_while_the_warden_stands() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 3);
+    let player = players[0];
+    for late in &players[1..] {
+        place(&mut room, *late, [0.0, 150.0]);
+    }
+    room.tick();
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, player);
+    }
+    let growth = fissure(&room).growth.unwrap();
+    strike(&mut room, player, growth, 1.0e6);
+    room.tick();
+    while fissure(&room).warden.is_none() {
+        seal_one(&mut room, player);
+    }
+    let needed = fissure(&room).needed();
+    for (nth, late) in players[1..].iter().enumerate() {
+        place(&mut room, *late, [FISSURE_AT[0] + 10.0 + nth as f64, FISSURE_AT[1]]);
+    }
+    running_mut(&mut room).ticks_left = COUNTDOWN_TICKS / 2 - 10;
+    ticks(&mut room, 20);
+    assert_eq!(fissure(&room).needed(), needed, "the seal needs no more once it is complete");
+    let seen = room.public_seen().unwrap();
+    assert_eq!((seen.progress, seen.needed), (needed, needed), "its progress stays full");
+    assert!(running(&room).bonus, "the bonus earned when it sealed holds");
+    assert!(fissure(&room).warden.is_some() && running(&room).phase == Phase::Running);
+}
+
+#[test]
+fn on_harder_seas_the_growth_stands_at_the_events_raised_level_and_its_chest_is_of_that_level() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    room.public.as_mut().unwrap().level = 5;
+    room.difficulty = gear::Difficulty::Abyss;
+    let raised = gear::Difficulty::Abyss.raise(5);
+    room.tick();
+    assert!(lesser(&room).iter().all(|id| room.foes[id].level == raised), "its waves at the raised level");
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, players[0]);
+    }
+    let growth = fissure(&room).growth.unwrap();
+    assert_eq!(room.foes[&growth].level, raised, "the growth too");
+    running_mut(&mut room).heroic = Heroic::Missed;
+    while running(&room).phase == Phase::Running {
+        seal_one(&mut room, players[0]);
+    }
+    let level = |drop: &crate::Drop| if let Dropped::Chest { level, .. } = drop.what { Some(level) } else { None };
+    assert_eq!(room.drops_for(players[0]).filter_map(level).collect::<Vec<_>>(), [raised], "its chest too");
+}
+
+#[test]
+fn the_growth_left_standing_sinks_for_as_long_as_the_page_sinks_it_before_it_is_gone() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    room.tick();
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, players[0]);
+    }
+    let growth = fissure(&room).growth.unwrap();
+    let state = |room: &Room| {
+        let marks = room.public_seen().unwrap().marks;
+        marks.iter().find(|mark| mark.kind == super::seen::GROWTH).map(|mark| mark.state)
+    };
+    assert_eq!(state(&room), Some(super::seen::RISING));
+    ticks(&mut room, super::fissure::GROWTH_RISE);
+    assert_eq!(state(&room), Some(super::seen::STANDING), "risen as the page raises it, 2.4 s");
+    let left = running(&room).heroic_ticks;
+    ticks(&mut room, left - super::fissure::GROWTH_SINK);
+    assert_eq!(state(&room), Some(super::seen::SINKING));
+    ticks(&mut room, super::fissure::GROWTH_SINK - 1);
+    assert!(room.foes.contains_key(&growth), "still sinking");
+    room.tick();
+    assert!(!room.foes.contains_key(&growth), "gone once sunk, 3 s after it began");
+}
+
+#[test]
+fn its_foes_fight_a_player_shooting_from_past_its_ground_without_giving_them_up() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    // Fifteen metres past the edge of its ground, as a player shoots into the fight from.
+    place(&mut room, players[0], [FISSURE_AT[0] + 45.0, FISSURE_AT[1]]);
+    room.tick();
+    let foes = lesser(&room);
+    ticks(&mut room, 60);
+    for foe in foes {
+        let brain = &room.foes[&foe].brain;
+        assert!(!brain.returning(), "{foe} gave up on them");
+        assert_eq!(brain.target(), Some(players[0]), "{foe} hunts them");
+    }
+}
+
+#[test]
+fn a_player_who_leaves_and_comes_back_keeps_their_part_by_their_account() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 2);
+    let (sealer, back) = (players[0], players[1]);
+    let hardy = |room: &mut Room, player: PlayerId| {
+        let fighter = &mut room.players.get_mut(&player).expect("the player").fighter;
+        (fighter.health, fighter.health_max) = (1.0e9, 1.0e9);
+    };
+    let aside = [FISSURE_AT[0] - 25.0, FISSURE_AT[1]];
+    let stint = u64::from(super::PRESENT_TICKS) / 2 + 1;
+    assert!(room.own(back, "returning-account"));
+    place(&mut room, back, aside);
+    hardy(&mut room, back);
+    place(&mut room, sealer, [0.0, 150.0]);
+    ticks(&mut room, stint);
+    room.leave(back);
+    let again = room.join().expect("room to come back");
+    assert!(room.own(again, "returning-account"));
+    place(&mut room, again, aside);
+    hardy(&mut room, again);
+    ticks(&mut room, stint);
+    let present = running(&room).parts[&super::Who::Account("returning-account".to_owned())].present;
+    assert!(present >= super::PRESENT_TICKS, "both stints count as one part: {present}");
+    place(&mut room, again, [0.0, 150.0]);
+    while running(&room).phase == Phase::Running {
+        seal_one(&mut room, sealer);
+    }
+    assert_eq!(chests(&room, again).len(), 1, "they took part");
+}
+
+#[test]
+fn its_growth_and_warden_stand_more_health_for_more_players_at_it() {
+    let great = |count: usize| {
+        let (mut room, players) = room_at(FISSURE_MINUTE, count);
+        for (nth, player) in players.iter().enumerate().skip(1) {
+            place(&mut room, *player, [FISSURE_AT[0] - 20.0, FISSURE_AT[1] + nth as f64]);
+            let fighter = &mut room.players.get_mut(player).unwrap().fighter;
+            (fighter.health, fighter.health_max) = (1.0e9, 1.0e9);
+        }
+        room.tick();
+        while running(&room).heroic == Heroic::NotYet {
+            seal_one(&mut room, players[0]);
+        }
+        let growth = fissure(&room).growth.unwrap();
+        let health = room.foes[&growth].fighter.health_max;
+        strike(&mut room, players[0], growth, 1.0e9);
+        room.tick();
+        fissure_mut(&mut room).set = fissure(&room).needed() - 1;
+        seal_one(&mut room, players[0]);
+        let warden = fissure(&room).warden.expect("the Warden");
+        (health, room.foes[&warden].fighter.health_max)
+    };
+    let (alone, three) = (great(1), great(3));
+    assert!((three.0 / alone.0 - 2.0).abs() < 1e-9, "the growth: {alone:?} {three:?}");
+    assert!((three.1 / alone.1 - 2.0).abs() < 1e-9, "the Warden: {alone:?} {three:?}");
+}
+
+#[test]
+fn every_foe_that_pours_out_has_its_arrival_told_for_the_page_to_raise_it_out_of_the_crack() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    room.tick();
+    let spawned: Vec<FighterId> = told(&mut room, EventKind::Spawned).iter().map(|event| event.defender).collect();
+    assert_eq!(spawned, running(&room).foes, "each of the first wave told as it stands");
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, players[0]);
+    }
+    let growth = fissure(&room).growth.unwrap();
+    let all: Vec<FighterId> = running(&room).foes.clone();
+    let told_now: Vec<FighterId> = room
+        .take_events()
+        .iter()
+        .filter(|event| event.kind == EventKind::Spawned)
+        .map(|event| event.defender)
+        .collect();
+    assert!(told_now.contains(&growth), "the growth's rising told");
+    assert!(all.iter().all(|id| spawned.contains(id) || told_now.contains(id)), "every foe of it told");
+}
+
+#[test]
+fn its_spires_stand_as_tools_modules_draws_them_and_a_body_runs_into_them_while_it_stands_open() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let read = std::fs::read_to_string(root.join("content/modules/modules.json")).expect("the modules' manifest");
+    let manifest: serde_json::Value = serde_json::from_str(&read).expect("it parses");
+    let modules = manifest["modules"].as_array().expect("its modules");
+    let fissure_module = modules.iter().find(|module| module["name"] == "lattice-fissure").expect("lattice-fissure");
+    let parts: Vec<[f64; 6]> = serde_json::from_value(fissure_module["parts"].clone()).expect("its parts");
+    assert_eq!(parts, super::fissure::SPIRES, "the room's spires are the module's parts");
+
+    let (mut room, _) = room_at(FISSURE_MINUTE, 1);
+    let before = room.blocks.len();
+    room.tick();
+    assert_eq!(room.blocks.len(), before + 4, "its spires stand");
+    // Nothing passes through a spire, a body or a blow.
+    let spire = super::fissure::SPIRES[2];
+    let at = [FISSURE_AT[0] + spire[3], FISSURE_AT[1] + spire[1], 0.0];
+    assert!(!combat::sight::clear_line(&room.blocks, [at[0] + 2.0, at[1] + 0.2, 1.0], [at[0] - 2.0, at[1] + 0.2, 1.0]));
+    running_mut(&mut room).ticks_left = 1;
+    room.tick();
+    assert_eq!(room.blocks.len(), before, "failed, the fissure closing: its spires gone");
+}
+
+#[test]
+fn a_part_taken_before_the_host_tells_a_players_account_is_kept_as_their_accounts() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    place(&mut room, players[0], [FISSURE_AT[0] - 25.0, FISSURE_AT[1]]);
+    ticks(&mut room, 10);
+    assert!(room.own(players[0], "late-told"));
+    let parts = &running(&room).parts;
+    assert!(!parts.contains_key(&super::Who::Player(players[0])));
+    assert_eq!(parts[&super::Who::Account("late-told".to_owned())].present, 10);
 }

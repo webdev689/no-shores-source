@@ -45,28 +45,36 @@ seconds, and the next is shown from then.
 ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of every building, set piece and prop and 2 m
 off every way; the point its raiders come in from, 36 m out toward the zone's nearest camp (the Vale has none: from the
 shore); their two banners, 28 m out, 6 m either side; and in each wilds where its fissure opens, 12 m (or 9, or 15)
-from its middle beside the obelisk its battlefield stands there, on ground 14 m across clear of the obelisk, the ruins
-and everything standing, and the spot its crystal growth rises, 14 to 20 m from the fissure. A store stands 2.4 m east and west, 1.6 m north and south and 1.6 m high, square to the grid, and is
-a box a body runs into on the page and in the room alike. The bake writes a zone's grounds into its node file, for
+from its middle beside the obelisk its battlefield stands there, on ground 15.4 m east and west and 9.8 m north and
+south (the fissure's own mesh, square to the grid, its long side east and west) clear of the obelisk, the ruins and
+everything standing, and the spot its crystal growth rises, 14 to 20 m from the fissure. A store stands square to the
+grid as one of three stacks (the page draws store `n` as the stack after its own), and its box, which a body runs
+into on the page and in the room alike, covers that stack and the plundered one it turns into: 2.604 by 2.049 by 1.73
+m high, 2.5 by 2.224 by 1.27 m, or 2.6 by 2.049 by 0.9 m; each is laid out in 2.604 by 2.224 m, room for any of
+them. The bake writes a zone's grounds into its node file, for
 Saltmere's three zones only: the Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the
 middle of its stores, reaching 10 m past the farthest (20 m at least), with its stores, approach and banners.
 
 **The navmesh.** A node's room bakes its mesh round its garrison only ([[Navmesh]]). As a zone's room opens, it bakes a
-rectangle round each ground (the Fissure's circle and its growth's spot; the raid's circle and its approach) 4 m
-further, and joins them to the garrison's as parts of one mesh, with no way between them. Opening Saltmere's real node
-files, measured once, best of three:
+rectangle round each ground (the Fissure's circle and its growth's spot; the raid's circle, its approach and where its
+waves form) 16 m further, as far as a player shoots into the fight from, and joins them to the garrison's as parts of
+one mesh, with no way between them. Baking both grounds as Saltmere's real node files open, natively in a release
+build, measured once: 466 ms for Saltgrass Downs, 497 ms for Gullwing Vale, 550 ms for Driftwood Moors. In
+WebAssembly it is not measured.
 
-| Zone | Natively, before | After | In WebAssembly, before | After |
-|---|---|---|---|---|
-| Saltgrass Downs | 130 ms | 277 ms | 170 ms | 345 ms |
-| Gullwing Vale | 110 ms | 264 ms | 208 ms | 449 ms |
-| Driftwood Moors | 99 ms | 345 ms | 147 ms | 444 ms |
-
-**Its foes** stand at the top of the island's band and the voyage's seas, at home round the event's ground, hunting
-the nearest player there; they never leash back to a garrison's post. They count toward the 32 foes alive a zone's room that holds events stands (24 in any other node's). The
-Fissure's growth and the raid's tithe-taker the room moves itself: their brains are left be, so neither moves on its
-own nor strikes, and each walks the navmesh at its own pace; their statuses still wear off. A raid's approach and its
-raiders' home (the stores' middle) are put on the navmesh as it begins, at its nearest point.
+**Its foes**, its growth and its tithe-taker among them, stand at the top of the island's band raised by the voyage's
+seas, at home round the event's ground, hunting the nearest player there. Each fights a player within a leash of the
+event's reach (its ground's radius, or its farthest point from its middle past it: the growth's spot, the approach,
+where the raid's waves form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post
+at its store), on ground the room's mesh covers; past that it gives them up and walks back. A zone's room that holds
+events stands 40 foes alive at most and keeps 16 of them for its event (the most it stands at once: a Fissure's
+living foes short of a wave, its fullest wave and its growth or Warden); its garrison stands again, calls and arrives
+only while the foes not of the event stay within 24, as in any other node. The growth, the Warden and Marrow stand half their health more for
+each player at the event beyond the first (the most seen at the Fissure; those on the raid's ground as Marrow comes).
+The Fissure's growth and the raid's tithe-taker the room moves itself: their brains are left be, so neither moves on
+its own nor strikes, and each walks the navmesh at its own pace, keeping its way from tick to tick; their statuses
+still wear off. A raid's approach, where its waves form and its raiders' home (the stores' middle) are put on the
+navmesh as it begins, at its nearest point.
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle: three foes and one more for
 each player seen at it beyond the first (six at most), drawn from Husks, Flickers, an Idol and a Ravager. Another
@@ -75,14 +83,18 @@ last, while fewer than ten stand: the shards come at a pace a group must keep up
 foes felled drops a crystal shard where it fell, an Elite or greater two. A player walks within 1.5 m of a shard to
 take it, carries one at a time and sets it within 6 m of the middle. A shard lies 30 seconds; a carrier who falls or
 leaves drops theirs where they last stood. It needs 16 shards and 6 more for each player seen at it at once
-beyond the first, 40 at most. Sealed, it closes: every foe of it still standing shatters, sharing no kill, and it is won.
+beyond the first, 40 at most; once sealed, more players coming never raise it. Its four crystal spires (the module's
+parts) are boxes a body runs into while it stands open; its mouth is open ground. Sealed, it closes: every foe of it
+still standing shatters, sharing no kill, and it is won.
 - **Heroic.** At 40% of the seal a crystal growth (an Idol's Elite health, named "Crystal Growth") rises at its spot
-  for 45 seconds, 2 rising and 2 sinking, then sinks back. Broken in time, the event turns heroic: half of the shards
+  for 45 seconds, rising over its first 2.4 and sinking over its last 3, as the page draws it, then is gone. A body
+  walks through it: a box round it would stop every blow and shot at it. Broken in time, the event turns heroic: half of the shards
   still needed are added, every wave after holds an Elite (a Bulwark or a Ravager by turns), and the seal complete
   brings out the Warden (a Bulwark Miniboss, "The Warden of the Fissure"), who must fall to win; then the rest shatter.
 - **Bonus:** sealed with at least half of the 8 minutes left; a Warden falling later keeps it.
 
-**The raid.** Its banners are planted and its first wave comes in round its approach: two Collectors, two Runners and a
+**The raid.** Its banners are planted and its first wave forms out of sight, 14 m beyond its approach, away from the
+hamlet, and marches in: two Collectors, two Runners and a
 Crossbowman, the Runners and the Crossbowman Minors. The second brings two Collectors, an Enforcer, a Crossbowman and a
 Runner; the third two Collectors, an Enforcer, and a Marksman and a Reeve, both Elite; every other foe is a Major. One
 Runner more comes in each for each player on the ground beyond the first (three at most). A party of two or fewer on the ground meets each wave a rank
@@ -92,24 +104,27 @@ room has no room for it. Each Collector is sent to the standing store nearest it
 middle on the side the raiders come from; one standing within 2.5 m of its store plunders it, alone in 20 seconds.
 A store plundered sends its Collectors to the next and loses the bonus. Every store plundered, the raid fails; the
 last wave broken with a store standing, the Tithe give up and march out, and it is won.
-- **Heroic.** With the second wave comes the Tithe-Taker, an Elite who never strikes. He walks from the approach to
+- **Heroic.** With the second wave comes the Tithe-Taker, an Elite who never strikes, or as soon after it as the room
+  has room for him. He walks from where the waves form to
   each standing store, nearest first, counts it for 10 seconds, and walks back out, at the pace that makes his round
   50 seconds (1.2 to 3.5 m a second); his time up, he is gone wherever he stands. Killed before then, the event turns
-  heroic: the third wave holds an Enforcer Elite and a Marksman Elite more (they come at once if it is already in),
+  heroic: the third wave holds an Enforcer Elite and a Marksman Elite more (they come at once if it is already in,
+  eased for a small party as the wave is),
   and a fourth comes, led by Reeve Ancel
   Marrow, the Tithe's Hand (a Reeve Miniboss), with two Collectors and an Enforcer Elite; a raid waits for him to go
   before it can be won.
 - **Bonus:** no store lost.
 
 **Failing** by time or by stores leaves nothing lasting. Its foes withdraw, the room moving them: the Lattice into the
-crack, the Tithe out the way they came, at 4 m a second, each gone once it gets there or within 8 seconds.
+crack, the Tithe back to where they formed, at 4 m a second, each gone once it gets there or within 8 seconds.
 
 **Taking part, and the chests.** A player took part who stood on the ground for 30 seconds of the event, or struck one
-of its foes, or set a shard. On a win each of them gets a chest of their own, 3 m from the ground's middle on their
+of its foes, or set a shard; their part is kept by their account, so leaving and coming back loses none of it. On a win each of them gets a chest of their own, 3 m from the ground's middle on their
 side, seen by them alone: tier 1 won, 2 won with the bonus, 3 heroic, 4 heroic with the bonus. They open it within 2.5
 m (`Asked::OpenChest`, ask 21 by the chest's number among their drops); it pays at once and is gone, so it never pays
 twice. One not opened is opened for its player as its 2 minutes run out, or as they leave the room: the server opens
-a leaver's chests (`room_parting`) before it keeps their character. A chest holds, at level 5 and growing with the
+a leaver's chests (`room_parting`) before it keeps their character. A chest is of the event's level, raised by the voyage's seas,
+and its XP and Aurem are the seas' reward times as much, as a kill's are. It holds, at level 5 and growing with the
 event's level as a kill's worth does: 1,500, 2,200, 3,200 and 4,500 XP by tier, which grow the worn Art and the faction
 pledged while its cape is worn as a kill's XP does; 120 to 360 Aurem; 2 to 7 of each Fragment; Essence from the heroic
 tiers (1, 2); 3 to 8 of the island's resource; and a Vestige always, a foe's colours from a plain chest and a Boss's
@@ -121,7 +136,8 @@ to the vault however full, since the ground they leave would lose it.
 result (kind 1 the Fissure, 2 the raid, 0 none) and its phase (0 waiting, 1 running, 2 won, 3 failed), its ground and
 radius, its countdown in ticks; the next's kind, ground and ticks until it starts; its stage of how many; its progress
 toward what it needs (shards set of shards needed, or the stores' health left per mille); its heroic task (0 not yet,
-1 offered, 2 met, 3 missed) and its window's ticks; whether its bonus holds; and its marks: the fissure (how far open),
+1 offered, 2 met, 3 missed) and its window's ticks; whether its bonus holds; the ticks until a raid's next wave comes
+in (0 while none is on its way); and its marks, each a 24-byte struct, its place in f32: the fissure (how far open),
 the growth (rising, standing, sinking, broken), each store (whole, plundered; always, even waiting), each shard lying
 (its life left) and carried (by whom), the tithe-taker (arriving, counting, leaving), each banner and the approach.
 New fight events: 14 begun, 15 next stage, 16 a shard taken, 17 a shard set, 18 heroic met, 19 heroic missed, 20 won,
@@ -219,3 +235,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
   behind it.
 - A chest's two minutes in the tracker run from when the page first saw it: a page come later counts the whole two.
+- A store's box covers both its whole and its plundered stack, so a body meets it as the larger of the two.
+- The fissure's spires are not in the navmesh: a Lattice foe's way may run into one.
+- The marks that never move (the stores, the banners, the approach) go in every snapshot: a land room's snapshot is
+  one for every player, so sending them only when they change would need the welcome to carry them and the page to
+  keep them; packed, they are 24 bytes each.

@@ -2,8 +2,8 @@
 //! sacks and barrels under a tarp, on clear ground beside its houses near its plaza, off the ways), the point its
 //! raiders come in from (toward the zone's camp, or from the shore where it has none) and the two banners they plant
 //! at its edge; and in each wilds, where its fissure opens (beside the battlefield's obelisk, clear of its ruins) and
-//! the spot its crystal growth rises at. A store stands square to the grid, its long
-//! side east and west, and a body runs into it on the page and in the room alike.
+//! the spot its crystal growth rises at. A store and a fissure stand square to the grid, a fissure's long side east and
+//! west, and a body runs into a store on the page and in the room alike.
 
 use crate::areas::Area;
 use crate::brief::AreaKind;
@@ -14,9 +14,13 @@ use crate::seat::Seating;
 use crate::sites::{Site, SiteKind};
 use std::f64::consts::TAU;
 
-/// A store's half-width east and west and half-depth north and south, and its height, metres.
-pub const STORE_HALF: [f64; 2] = [1.2, 0.8];
-pub const STORE_HEIGHT: f64 = 1.6;
+/// The box of each of the three stacks a store is drawn as (tools/modules: tithe-stores-a, -b and -c), grown to cover
+/// the plundered stack it turns into too (2.5 x 2.049 x 0.90 m): its half-width east and west, its half-depth north and
+/// south, and its height, metres. A hamlet's store `nth` (its mark's number less one) is drawn as the stack after its
+/// own, as the page picks it (client/src/city/eventProps.ts).
+pub const STORE_STACKS: [([f64; 2], f64); 3] = [([1.302, 1.0245], 1.73), ([1.25, 1.112], 1.27), ([1.3, 1.0245], 0.9)];
+/// The room a store is laid out in: wide and deep enough for any of the stacks.
+pub const STORE_HALF: [f64; 2] = [1.302, 1.112];
 /// How far below the ground its box reaches, so a slope never leaves a gap under it.
 const STORE_SUNK: f64 = 0.3;
 /// The stores stand within this of the plaza, this far from each other, and this far clear of every building, set
@@ -33,9 +37,10 @@ const BANNERS_APART: f64 = 6.0;
 const GROWTH_M: [f64; 3] = [17.0, 14.0, 20.0];
 /// How far from the wilds' middle its fissure opens, the nearest of these that is clear: off the obelisk the
 /// battlefield stands at its middle, and inside the ring of ruins and rocks round it. The crack's ground, half of it
-/// each way, and how far it keeps clear of everything standing.
+/// east and west and north and south (tools/modules' lattice-fissure, end crusts and all, drawn unturned), and how
+/// far it keeps clear of everything standing.
 const FISSURE_M: [f64; 3] = [12.0, 9.0, 15.0];
-pub const FISSURE_HALF: f64 = 7.0;
+pub const FISSURE_HALF: [f64; 2] = [7.7, 4.9];
 const FISSURE_CLEAR: f64 = 1.0;
 
 /// What a box covers, west, north, east and south.
@@ -138,12 +143,12 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating) ->
         }
     }
     for area in areas.iter().filter(|area| area.kind == AreaKind::Wilds) {
-        let half = [FISSURE_HALF, FISSURE_HALF];
-        let Some(fissure) = nearest_clear(area.at, &FISSURE_M, |at| open(field, around, at, half, FISSURE_CLEAR))
+        let Some(fissure) =
+            nearest_clear(area.at, &FISSURE_M, |at| open(field, around, at, FISSURE_HALF, FISSURE_CLEAR))
         else {
             continue;
         };
-        sites.push(site(SiteKind::Fissure, fissure, FISSURE_HALF, &area.name));
+        sites.push(site(SiteKind::Fissure, fissure, FISSURE_HALF[0], &area.name));
         if let Some(at) = nearest_clear(fissure, &GROWTH_M, |at| open(field, around, at, [2.5, 2.5], 1.0)) {
             sites.push(site(SiteKind::Growth, at, 2.5, &area.name));
         }
@@ -164,16 +169,26 @@ fn nearest_clear(from: [f64; 2], rings: &[f64], clear: impl Fn([f64; 2]) -> bool
     tries.iter().copied().find(|&at| clear(at)).or(tries.first().copied())
 }
 
-/// The box a body runs into at each store, standing on the ground as `height` has it.
+/// The stack a hamlet's store `nth` is drawn as, as its parts' box: its half across each way and its height.
+#[must_use]
+pub fn store_stack(nth: usize) -> ([f64; 2], f64) {
+    STORE_STACKS[(nth + 1) % STORE_STACKS.len()]
+}
+
+/// The box a body runs into at each store, its stack's own, standing on the ground as `height` has it.
 #[must_use]
 pub fn store_boxes(sites: &[Site], height: &dyn Fn(f64, f64) -> f64) -> Vec<Box3> {
-    let stores = sites.iter().filter(|site| site.kind == SiteKind::Store);
+    let stores: Vec<&Site> = sites.iter().filter(|site| site.kind == SiteKind::Store).collect();
     stores
-        .map(|site| {
+        .iter()
+        .enumerate()
+        .map(|(at, site)| {
+            // Its place among its own hamlet's stores.
+            let nth = stores[..at].iter().filter(|other| other.holds == site.holds).count();
+            let ([half_x, half_y], tall) = store_stack(nth);
             let [x, y] = site.at;
             let ground = height(x, y);
-            let [half_x, half_y] = STORE_HALF;
-            [x - half_x, y - half_y, x + half_x, y + half_y, ground + STORE_HEIGHT, ground - STORE_SUNK]
+            [x - half_x, y - half_y, x + half_x, y + half_y, ground + tall, ground - STORE_SUNK]
         })
         .collect()
 }

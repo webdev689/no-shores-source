@@ -489,7 +489,7 @@ impl Room {
         let mut draws = draws_of(self.world_seed ^ WAVE_STREAM ^ u64::from(called));
         let size = 2 + index(&mut draws, 3);
         let members: Vec<(u8, Rank)> = (0..size).map(|_| PATROL[index(&mut draws, PATROL.len())]).collect();
-        if self.living_foes() + members.len() > self.foes_most {
+        if self.living_foes() + members.len() > self.others_most() {
             return;
         }
         // Only a player standing and seen is hunted, or counted: with none, no wave comes.

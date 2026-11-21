@@ -369,12 +369,15 @@ table Spell {
 // ground, 5 a shard carried, its id its carrier's, 6 the tithe-taker, its id his foe's, 7 a banner, 8 the raiders'
 // approach), its number, where it is (x, y, z), its health 0 to 1 (the growth's and a store's; the fissure's how far
 // open; a shard's life left; the tithe-taker's), and its state (the growth: 1 rising, 2 standing, 3 sinking, 4
-// broken; a store: 1 whole, 2 plundered; the tithe-taker: 1 arriving, 2 counting, 3 leaving).
-table PublicMark {
-  kind: ubyte;
-  id: uint;
-  at: [double];
+// broken; a store: 1 whole, 2 plundered; the tithe-taker: 1 arriving, 2 counting, 3 leaving). A struct, laid in its
+// list as it is, each in 24 bytes: a snapshot carries dozens of them sixty times a second.
+struct PublicMark {
+  x: float;
+  y: float;
+  z: float;
   health: float;
+  id: uint;
+  kind: ubyte;
   state: ubyte;
 }
 
@@ -384,7 +387,7 @@ table PublicMark {
 // the minute; its stage of how many (the Fissure: 1 sealing, 2 the Warden; the raid: its wave); its progress toward
 // what it needs (the Fissure: shards set of shards needed; the raid: the stores' health left per mille of 1000); its
 // heroic task (0 not yet offered, 1 offered, 2 met, 3 missed) and the ticks left of its window; whether its bonus
-// still holds or was met; and its marks.
+// still holds or was met; its marks; and the ticks until a raid's next wave comes in (0 while none is on its way).
 table PublicEvent {
   kind: ubyte;
   phase: ubyte;
@@ -402,6 +405,7 @@ table PublicEvent {
   heroic_ticks: uint;
   bonus: bool;
   marks: [PublicMark];
+  next_wave_ticks: uint;
 }
 
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what

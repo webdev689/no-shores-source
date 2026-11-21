@@ -164,6 +164,8 @@ pub struct Room {
     pub(crate) public: Option<public::Public>,
     pub(crate) inert: BTreeSet<FighterId>,
     pub(crate) names: BTreeMap<FighterId, &'static str>,
+    /// The way each foe the room moves itself walks, kept from tick to tick.
+    pub(crate) inert_ways: BTreeMap<FighterId, navmesh::Way>,
 }
 
 impl Room {
@@ -223,6 +225,7 @@ impl Room {
             shape_spots: Vec::new(),
             public: None,
             inert: BTreeSet::new(),
+            inert_ways: BTreeMap::new(),
             names: BTreeMap::new(),
         }
     }

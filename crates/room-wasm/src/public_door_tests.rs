@@ -33,8 +33,8 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 8 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "a1cff10c";
-pub const RAID_HASH: &str = "2a5776f0";
+pub const FISSURE_HASH: &str = "94ee4dc0";
+pub const RAID_HASH: &str = "979709e9";
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
@@ -87,10 +87,11 @@ fn read(bytes: &[u8]) -> Read {
         (foe.id(), foe.faction(), foe.type_(), [glance.get(0), glance.get(1)])
     });
     let event = seen.public_event().unwrap();
-    let marks = event.marks().unwrap().iter().map(|mark| {
-        let at = mark.at().unwrap();
-        (mark.kind(), mark.id(), [at.get(0), at.get(1)], mark.state())
-    });
+    let marks = event
+        .marks()
+        .unwrap()
+        .iter()
+        .map(|mark| (mark.kind(), mark.id(), [f64::from(mark.x()), f64::from(mark.y())], mark.state()));
     let ground = event.ground().unwrap();
     Read {
         players: players.collect(),

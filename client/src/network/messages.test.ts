@@ -82,8 +82,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [PUBLIC_KIND.fissure, PUBLIC_PHASE.running, 12_000, PUBLIC_KIND.raid, 25_200, [10, -20.5, 3.25]],
   );
   assert.deepEqual(
-    [event?.stage, event?.stages, event?.progress, event?.needed, event?.heroic, event?.bonus],
-    [2, 2, 11, 14, HEROIC.met, true],
+    [event?.stage, event?.stages, event?.progress, event?.needed, event?.heroic, event?.bonus, event?.nextWaveTicks],
+    [2, 2, 11, 14, HEROIC.met, true, 1_500],
   );
   assert.deepEqual(event?.marks, [
     { kind: MARK.fissure, id: 0, at: [10, -20.5, 3.25], health: 0.25, state: 0 },
