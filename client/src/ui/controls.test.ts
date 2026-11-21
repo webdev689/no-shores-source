@@ -148,3 +148,18 @@ test("a choice's long list scrolls inside a height of its own, so every option c
   const last = ui.boxOf('many:o59');
   assert.ok(last && last.y + last.height <= list.y + list.height + 1, 'the last option scrolled into sight');
 });
+
+test('a slider whose low end has more decimals than its step can still stand at its low end', () => {
+  const ui = new Interface(renderer());
+  let value = 1;
+  const build = (): Node => {
+    const made = slider(ui, 'low', value, { low: 0.25, high: 2.5, step: 0.1, width: 100 });
+    value = made.value;
+    return made.node;
+  };
+  ui.frame(VIEW, [], 0.016);
+  ui.draw(build());
+  ui.frame(VIEW, click(0, 5), 0.016);
+  ui.draw(build());
+  assert.equal(value, 0.25);
+});
