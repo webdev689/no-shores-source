@@ -390,7 +390,7 @@ export const swatch = (colour: string, mark: string): Node => ({
   alignX: 'center',
   alignY: 'center',
   draw: rounded(colour, null, 4),
-  children: [words(mark, '#000000', { text: { words: mark, colour: '#000000', wrap: false } })],
+  children: [{ text: { words: mark, colour: '#000000', wrap: false } }],
 });
 
 /** The interface: what the mode lays over its view, under the panel at the left, which scrolls. */

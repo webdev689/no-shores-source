@@ -138,7 +138,7 @@ export function continentsPanel(
     : [bulleted(paragraph('None.', INK.words))];
   return stacked([
     {
-      node: words('World Editor', INK.words, { text: { words: 'World Editor', colour: INK.words, size: 2 } }),
+      node: { text: { words: 'World Editor', colour: INK.words, size: 2 } },
       bottom: 4,
     },
     said(hint),
