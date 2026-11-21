@@ -77,43 +77,24 @@ def market_stall_flowers(module):
 
 
 def court_tree(module):
-    # A broad tree standing in a raised ring bed of cut stone, grass and flowers round its trunk.
+    # A raised ring bed of cut stone round its lawn, for a tree and bushes: the world's own plants stand in it
+    # (crates/city/src/hub/plants.rs), as the land's nature draws them.
     shapes.lathe(module, (0.0, 0.0, 0.0), [(2.3, 0.0), (2.3, 0.5), (2.4, 0.55), (2.4, 0.62), (2.05, 0.62),
                                            (2.05, 0.45)], 'stone', sides=20, smooth=False)
     module.part((-2.3, -2.3, 0.0), (2.3, 2.3, 0.62))
     shapes.lathe(module, (0.0, 0.0, 0.0), [(2.06, 0.0), (2.06, 0.5)], 'verdant', sides=20)
-    for flower in range(14):
-        angle = math.tau * flower / 14 + module.draw(-0.1, 0.1)
-        shapes.ball(module, (math.cos(angle) * 1.6, math.sin(angle) * 1.6, 0.55), 0.12,
-                    ('crimson', 'lamplighter_gold', 'linen')[flower % 3], detail=0)
-    shapes.rod(module, (0.0, 0.0, 0.4), (0.15, 0.1, 3.4), 0.28, 'timber', sides=8, end_radius=0.18)
-    for bough in range(5):
-        angle = math.tau * bough / 5 + 0.4
-        shapes.rod(module, (0.12, 0.08, 2.8), (math.cos(angle) * 1.8, math.sin(angle) * 1.8, 4.6), 0.12, 'timber',
-                   sides=6, end_radius=0.05)
-    for leaf in range(26):
-        angle = math.tau * leaf / 26
-        reach = module.draw(0.6, 2.9)
-        shapes.ball(module, (math.cos(angle) * reach, math.sin(angle) * reach, module.draw(4.3, 6.6)),
-                    module.draw(0.9, 1.4), 'verdant', detail=1)
-    shapes.ball(module, (0.0, 0.0, 6.8), 1.5, 'verdant', detail=1)
     module.socket('front', (0.0, -2.3, 0.0), (0, -1))
 
 
 def lawn_bed(module):
-    # A long raised bed: a kerb of cut stone, its lawn, a low hedge at its back and flowers along its front.
+    # A long raised bed: a kerb of cut stone round its lawn, for a row of bushes at its back and smaller ones at its
+    # front, the world's own plants (crates/city/src/hub/plants.rs).
     long, deep = 7.6, 2.8
     for x, y, size in ((0.0, -deep / 2, (long, 0.3, 0.45)), (0.0, deep / 2, (long, 0.3, 0.45)),
                        (-long / 2, 0.0, (0.3, deep, 0.45)), (long / 2, 0.0, (0.3, deep, 0.45))):
         kit.block(module, (x, y, 0.0), size, 'trim', bevel=0.03, wear=0.02, part=False)
     module.part((-long / 2 - 0.15, -deep / 2 - 0.15, 0.0), (long / 2 + 0.15, deep / 2 + 0.15, 0.45))
     shapes.slab(module, (0.0, 0.0, 0.38), (long - 0.3, deep - 0.3, 0.08), 'verdant')
-    for shrub in range(10):
-        shapes.ball(module, (-long / 2 + 0.6 + shrub * 0.71, deep / 2 - 0.55, 0.62), module.draw(0.3, 0.42),
-                    'verdant', detail=1, scale=(1.2, 0.8, 0.9))
-    for flower in range(22):
-        shapes.ball(module, (-long / 2 + 0.4 + flower * 0.33, -deep / 2 + 0.5 + module.draw(-0.15, 0.25), 0.5),
-                    0.09, ('crimson', 'lamplighter_gold', 'linen', 'veiled_dusk')[flower % 4], detail=0)
     module.socket('front', (0.0, -deep / 2 - 0.15, 0.0), (0, -1))
 
 

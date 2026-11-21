@@ -278,35 +278,20 @@ SIGNS = {'mage': ('black', sign_mage), 'vault': ('crimson', sign_vault), 'weapon
          'harbourmaster': ('verdant', sign_harbourmaster), 'chandler': ('timber', sign_chandler)}
 
 
-def flowers(module, west, east, y, z, deep=0.4):
-    """A bed of shrubs and flowers from `west` to `east` at `z`."""
-    for shrub in range(int((east - west) / 0.25)):
-        x = west + 0.13 + shrub * 0.25
-        shapes.ball(module, (x, y + module.draw(-deep / 4, deep / 4), z + 0.12), module.draw(0.18, 0.26), 'verdant',
-                    detail=1, scale=(1.0, 1.0, 0.8))
-        shapes.ball(module, (x + module.draw(-0.1, 0.1), y + module.draw(-deep / 3, deep / 3), z + 0.3), 0.06,
-                    ('crimson', 'lamplighter_gold', 'linen')[shrub % 3], detail=1)
-
-
 def planter(module):
+    # A stone box of earth, for two bushes, the world's own plants (crates/city/src/hub/plants.rs).
     kit.block(module, (0.0, 0.0, 0.0), (1.8, 0.7, 0.55), 'stone', bevel=0.04, wear=0.03)
     kit.block(module, (0.0, 0.0, 0.55), (1.9, 0.8, 0.08), 'trim', bevel=0.02, wear=0.0, part=False)
     shapes.slab(module, (0.0, 0.0, 0.6), (1.6, 0.5, 0.06), 'rubble')
-    flowers(module, -0.8, 0.8, 0.0, 0.6)
     module.socket('front', (0.0, -0.4, 0.0), (0, -1))
 
 
 def potted_tree(module):
+    # A glazed pot of earth, for a young tree, one of the world's own (crates/city/src/hub/plants.rs).
     shapes.lathe(module, (0.0, 0.0, 0.0), [(0.42, 0.0), (0.5, 0.1), (0.62, 0.7), (0.68, 0.8), (0.6, 0.82),
                                            (0.6, 0.78)], 'roof', sides=14)
     module.part((-0.6, -0.6, 0.0), (0.6, 0.6, 0.82))
     shapes.lathe(module, (0.0, 0.0, 0.74), [(0.6, 0.0), (0.6, 0.04)], 'rubble', sides=14)
-    shapes.rod(module, (0.0, 0.0, 0.7), (0.05, 0.02, 2.4), 0.07, 'timber', sides=6, end_radius=0.04)
-    for leaf in range(9):
-        angle = math.tau * leaf / 9
-        shapes.ball(module, (math.cos(angle) * 0.45, math.sin(angle) * 0.45, 2.3 + module.draw(-0.2, 0.4)),
-                    module.draw(0.4, 0.55), 'verdant', detail=1)
-    shapes.ball(module, (0.0, 0.0, 2.75), 0.6, 'verdant', detail=1)
     module.socket('front', (0.0, -0.7, 0.0), (0, -1))
 
 

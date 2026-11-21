@@ -102,6 +102,15 @@ export type Piece = {
   readonly yaw: number;
 };
 
+/** A plant a city stands (the city crate's `hub::plants::Plant`): a tree or a bush, where its foot stands (east,
+ *  south, up), its turn and how much its drawn size is scaled. */
+export interface CityPlant {
+  readonly growth: 'tree' | 'bush';
+  readonly at: readonly [number, number, number];
+  readonly turn: number;
+  readonly scale: number;
+}
+
 /** A ground picture laid on the land: four corners in world metres (north-west, north-east, south-east, south-west,
  *  on the ground), each corner's UV in pictures, and the ground record whose picture it wears. */
 export type Decal = {
@@ -127,6 +136,8 @@ export type CityPlan = {
     readonly ring: readonly (readonly [number, number])[];
     readonly spawns: readonly (readonly [number, number])[];
     readonly solids: readonly Solid[];
+    /** The trees and bushes its beds, pots and planters stand, drawn as the land's own plants. */
+    readonly plants?: readonly CityPlant[];
   };
   readonly pads: readonly Pad[];
   /** The ramps and switchbacks joining each avenue's terraces and climbing to the platform: their pads are among

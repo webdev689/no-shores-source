@@ -15,6 +15,7 @@ code:
   - client/src/nature/natureShader.ts#NATURE_SHADER
   - client/src/nature/cull.ts#tilesInView
   - client/src/nature/slots.ts#SlotStore
+  - client/src/game/cityPlants.ts#cityPlantings
 ---
 # Nature
 
@@ -71,7 +72,9 @@ What the caller plants (a layout's orchards, hedgerows and thickets, [[Layouts]]
 kind's own layer, on dry ground whatever its growth or clearings say; its form, turn, size, tint and rank are drawn
 from its point as a slot's are from its place. A planting may carry its own foot's height, turn and scale: it then
 stands on that foot, whatever the land under it, turned so and its drawn size scaled so; a sea island's trees,
-shrubs and grass are planted so, each where the island grew it ([[Islands]]). A ground that does not grow
+shrubs and grass are planted so, each where the island grew it ([[Islands]]), and so are a city's trees and bushes
+(Overlook's hub's beds, pots and planters, [[Cities]]): a tree as its climate's commonest tree, a bush as its
+commonest shrub (`client/src/game/cityPlants.ts`). A ground that does not grow
 (`grows: false`) stands only what is planted.
 
 ## The ground

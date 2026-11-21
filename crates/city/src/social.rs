@@ -39,6 +39,9 @@ pub struct Social {
     /// Where ships lie moored beside its pier, if it reaches one: each one's middle (east, south) and the bearing her
     /// bow points along (radians clockwise from north), drawn while a player walks it (`hub::harbour`).
     pub moorings: Vec<[f64; 3]>,
+    /// The trees and bushes its beds, pots and planters stand, drawn as the world's own plants (`hub::plants`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub plants: Vec<crate::hub::plants::Plant>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -121,5 +124,17 @@ pub fn plaza(
     solids.extend(stalls);
     let visitor_spots = visitor_spots(&frame);
     let (ways, posts) = townsfolk_life(&frame, &stations);
-    Social { bounds, level, ring, spawns, solids, stations, visitor_spots, ways, posts, moorings: Vec::new() }
+    Social {
+        bounds,
+        level,
+        ring,
+        spawns,
+        solids,
+        stations,
+        visitor_spots,
+        ways,
+        posts,
+        moorings: Vec::new(),
+        plants: Vec::new(),
+    }
 }

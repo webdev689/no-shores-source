@@ -11,9 +11,11 @@ mod adorn;
 mod courts;
 mod dress;
 mod folk;
+mod ground;
 mod hall;
 mod harbour;
 mod placing;
+pub mod plants;
 mod ring;
 mod walks;
 
@@ -121,17 +123,19 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
     let ring = ring::ring(frame);
     // The ways are laid as walks, the courts' scenes set clear of them and of the posts as they stand, then the posts
     // are laid again, with the market stalls' keepers and a walker's place at each piece set.
-    dress::walks(frame, &mut laid);
-    dress::grounds(frame, &mut laid, &ring);
+    ground::walks(frame, &mut laid);
+    ground::grounds(frame, &mut laid, &ring);
     let (first_ways, first_posts) = folk::life(frame, &laid);
     let dressed = dress::dress(frame, &mut laid, &first_ways, &first_posts, &spawns, &ring);
     let (ways, mut posts) = folk::life(frame, &laid);
     posts.extend(dress::walkers_places(&dressed, &laid, &ways, frame.level));
+    let plants = plants::plants(&laid.solids);
     Social {
         bounds,
         level: frame.level,
         ring,
         spawns,
+        plants,
         solids: laid.solids,
         stations: laid.stations,
         visitor_spots: laid.spots,
