@@ -49,8 +49,9 @@ from its middle beside the obelisk its battlefield stands there, on ground 15.4 
 south (the fissure's own mesh, square to the grid, its long side east and west) clear of the obelisk, the ruins and
 everything standing, and the spot its crystal growth rises, 14 to 20 m from the fissure. A store stands square to the
 grid as one of three stacks (the page draws store `n` as the stack after its own), and its box, which a body runs
-into on the page and in the room alike, is that stack's own: 2.6 by 1.9 by 1.6 m high, 2.2 by 2.1 by 1.4 m, or 2.4 by
-1.8 by 1.0 m; each is laid out in 2.6 by 2.1 m, room for any of them. The bake writes a zone's grounds into its node file, for
+into on the page and in the room alike, covers that stack and the plundered one it turns into: 2.604 by 2.049 by 1.73
+m high, 2.5 by 2.224 by 1.27 m, or 2.6 by 2.049 by 0.9 m; each is laid out in 2.604 by 2.224 m, room for any of
+them. The bake writes a zone's grounds into its node file, for
 Saltmere's three zones only: the Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the
 middle of its stores, reaching 10 m past the farthest (20 m at least), with its stores, approach and banners.
 
@@ -203,7 +204,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   so they could meet; `crates/room/tests/grounds_planned.rs` holds Saltmere's three layouts clear of them, and each
   fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
-- A plundered store keeps its whole stack's box, though the page draws it lower.
+- A store's box covers both its whole and its plundered stack, so a body meets it as the larger of the two.
 - The fissure's spires are not in the navmesh: a Lattice foe's way may run into one.
 - The marks that never move (the stores, the banners, the approach) go in every snapshot: a land room's snapshot is
   one for every player, so sending them only when they change would need the welcome to carry them and the page to

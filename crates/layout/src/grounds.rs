@@ -14,12 +14,13 @@ use crate::seat::Seating;
 use crate::sites::{Site, SiteKind};
 use std::f64::consts::TAU;
 
-/// Each of the three stacks a store is drawn as (tools/modules: tithe-stores-a, -b and -c), as the box of its parts:
-/// its half-width east and west, its half-depth north and south, and its height, metres. A hamlet's store `nth` (its
-/// mark's number less one) is drawn as the stack after its own, as the page picks it (client/src/city/eventProps.ts).
-pub const STORE_STACKS: [([f64; 2], f64); 3] = [([1.3, 0.95], 1.6), ([1.1, 1.05], 1.4), ([1.2, 0.9], 1.0)];
+/// The box of each of the three stacks a store is drawn as (tools/modules: tithe-stores-a, -b and -c), grown to cover
+/// the plundered stack it turns into too (2.5 x 2.049 x 0.90 m): its half-width east and west, its half-depth north and
+/// south, and its height, metres. A hamlet's store `nth` (its mark's number less one) is drawn as the stack after its
+/// own, as the page picks it (client/src/city/eventProps.ts).
+pub const STORE_STACKS: [([f64; 2], f64); 3] = [([1.302, 1.0245], 1.73), ([1.25, 1.112], 1.27), ([1.3, 1.0245], 0.9)];
 /// The room a store is laid out in: wide and deep enough for any of the stacks.
-pub const STORE_HALF: [f64; 2] = [1.3, 1.05];
+pub const STORE_HALF: [f64; 2] = [1.302, 1.112];
 /// How far below the ground its box reaches, so a slope never leaves a gap under it.
 const STORE_SUNK: f64 = 0.3;
 /// The stores stand within this of the plaza, this far from each other, and this far clear of every building, set
