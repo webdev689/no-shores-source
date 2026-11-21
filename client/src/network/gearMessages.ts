@@ -238,7 +238,7 @@ export interface GearState {
    *  are its, and a smith's ware and a bounty's ask are asked by it, so the room refuses one shown before it turned. */
   readonly day?: number;
   /** In a patrol, its dungeons' entrances, five numbers each: x, y, the ground's height, the model's yaw and which
-   *  of the four entrance models it is. */
+   *  of the six entrance models it is (0 to 5). */
   readonly dungeons?: readonly number[];
   /** Whether they have finished the prologue, as kept with their character. */
   readonly prologueDone?: boolean;

@@ -152,7 +152,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
-    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
+    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
     if (!here.dungeon) {
       scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
