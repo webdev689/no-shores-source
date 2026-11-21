@@ -220,7 +220,9 @@ function shareMain(kids: Item[], room: number, gap: number, side: 'w' | 'h', gro
   const sizeOf = (kid: Item) => (side === 'w' ? kid.node.width : kid.node.height);
   for (const kid of kids) {
     const share = percentOf(sizeOf(kid));
-    if (share !== null) kid[side] = Math.round(share * room);
+    const [low, high] =
+      side === 'w' ? [kid.node.minWidth, kid.node.maxWidth] : [kid.node.minHeight, kid.node.maxHeight];
+    if (share !== null) kid[side] = clamp(Math.round(share * room), low, high);
   }
   const used = kids.reduce((sum, kid) => sum + kid[side], 0) + gap * Math.max(0, kids.length - 1);
   const free = room - used;

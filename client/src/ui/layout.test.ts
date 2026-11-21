@@ -203,3 +203,15 @@ test('a scrolled row moves its children up by its scroll and says how tall the t
   assert.equal(boxOf(laid, 'tall')?.y, -40);
   assert.equal(laid.find((each) => each.node.id === 'row')?.content, 120);
 });
+
+test("a share of a row's room is held to its least and most, as a column's is", () => {
+  const laid = lay({
+    width: 1000,
+    children: [
+      { id: 'capped', width: '76%', maxWidth: 340, height: 10 },
+      { id: 'floored', width: '1%', minWidth: 60, height: 10 },
+    ],
+  });
+  assert.equal(boxOf(laid, 'capped')?.width, 340);
+  assert.equal(boxOf(laid, 'floored')?.width, 60);
+});
