@@ -1,12 +1,12 @@
 {
   "pictures": {
-    "nodes/ore": {"model": "nodeOre", "px": 128, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9100},
-    "nodes/ore-spent": {"model": "nodeOreSpent", "px": 128, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9101},
-    "nodes/herbs": {"model": "nodeHerbs", "px": 128, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9102},
-    "nodes/herbs-spent": {"model": "nodeHerbsSpent", "px": 128, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9103},
-    "nodes/timber": {"model": "nodeTimber", "px": 128, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9104},
-    "nodes/timber-spent": {"model": "nodeTimberSpent", "px": 128, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9105},
-    "nodes/salvage": {"model": "nodeSalvage", "px": 128, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9106},
-    "nodes/salvage-spent": {"model": "nodeSalvageSpent", "px": 128, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9107}
+    "nodes/ore": {"model": "nodeOre", "px": 128, "span": 0.99, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9100},
+    "nodes/ore-spent": {"model": "nodeOreSpent", "px": 128, "span": 0.99, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9101},
+    "nodes/herbs": {"model": "nodeHerbs", "px": 128, "span": 1.15, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9102},
+    "nodes/herbs-spent": {"model": "nodeHerbsSpent", "px": 128, "span": 1.15, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9103},
+    "nodes/timber": {"model": "nodeTimber", "px": 128, "span": 1.35, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9104},
+    "nodes/timber-spent": {"model": "nodeTimberSpent", "px": 128, "span": 1.35, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9105},
+    "nodes/salvage": {"model": "nodeSalvage", "px": 128, "span": 1.24, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9106},
+    "nodes/salvage-spent": {"model": "nodeSalvageSpent", "px": 128, "span": 1.24, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9107}
   }
 }

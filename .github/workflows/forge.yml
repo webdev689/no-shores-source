@@ -1,8 +1,8 @@
 name: forge
 
 # Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds, the
-# weapons drawn large and the material nodes), and publishes them to R2 with the repository's Cloudflare token, whenever their tools change
-# on main or a run is asked for on a branch. R2's objects are named by their hashes, so a run changes nothing already
+# weapons drawn large and the material nodes), and publishes them to R2 with the repository's Cloudflare token,
+# whenever their tools change on main or a run is asked for on a branch. R2's objects are named by their hashes, so a run changes nothing already
 # published; the log ends with the forge's manifest on one line, which a commit then takes into
 # content/forge/renders.json.
 on:
@@ -11,7 +11,9 @@ on:
     paths:
       - tools/forge/tools/sprite-forge/artbirds.py
       - tools/forge/tools/sprite-forge/weaponart.py
-      - tools/forge/tools/sprite-forge/items/nodes.py
+      # The material nodes are laid from the item forge's models, any of which may change them.
+      - tools/forge/tools/sprite-forge/items/**
+      - tools/forge/tools/sprite-forge/itempics.py
       - tools/forge/tools/sprite-forge/specs/pictures/nodes.json
       - tools/forge/tools/sprite-forge/artbirds-requirements.txt
       - .github/workflows/forge.yml
