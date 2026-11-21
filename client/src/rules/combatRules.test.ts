@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { startCombatRules } from './combatRules.ts';
-import { FIGHTER_FLOATS, GLANCE_FLOATS, fighterView } from './fighters.ts';
+import { checkSizes, PAGE_SIZES, roomWasmAt, startCombatRules } from './combatRules.ts';
+import { DRINKS_AT, FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS, fighterView } from './fighters.ts';
+import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
-const FIGHT_HASH = '8d14f8a484a04f85';
+const FIGHT_HASH = '160f825ebf7a6afb';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -17,26 +18,30 @@ const COURSE = [{ minX: -3, minY: -8, maxX: 3, maxY: -7, top: 1.2, bottom: 0 }];
 /** The arms codes of a sword with a shield and of a bow, as the combat crate packs them. */
 const SWORD_AND_SHIELD = 2 | (1 << 16);
 const BOW = 1 << 8;
-/** Ticks, then forward, sideways, yaw, the stroke held, guard, dodge, shoot, aim, and whether the bow is held. */
-type Phase = readonly [number, number, number, number, number, boolean, boolean, boolean, boolean, boolean];
+/** Ticks, then forward, sideways, yaw, the stroke held, guard, dodge, shoot, aim, whether the bow is held, and a drink
+ *  asked on the phase's first tick. */
+type Phase = readonly [number, number, number, number, number, boolean, boolean, boolean, boolean, boolean, boolean];
 const SCRIPT: readonly Phase[] = [
-  [40, 1, 0, 0.1, 0, false, false, false, false, false],
-  [70, 0, 0, 0.1, 6, false, false, false, false, false],
-  [80, -1, 0, 0, 0, true, false, false, false, false],
-  [1, 0, 1, 0, 0, false, true, false, false, false],
-  [40, 0, 0, 0, 0, false, false, false, false, false],
-  [50, 0, 0, -0.2, 0, false, false, false, true, true],
-  [1, 0, 0, -0.2, 0, false, false, true, true, true],
-  [40, 0, 0, -0.2, 0, false, false, false, false, true],
-  [1, 0, 0, -0.2, 0, false, false, true, false, true],
-  [40, 0, 0, -0.2, 0, false, false, false, false, true],
+  [40, 1, 0, 0.1, 0, false, false, false, false, false, false],
+  [70, 0, 0, 0.1, 6, false, false, false, false, false, false],
+  [80, -1, 0, 0, 0, true, false, false, false, false, false],
+  [1, 0, 1, 0, 0, false, true, false, false, false, false],
+  [40, 0, 0, 0, 0, false, false, false, false, false, false],
+  [50, 0, 0, -0.2, 0, false, false, false, true, true, false],
+  [1, 0, 0, -0.2, 0, false, false, true, true, true, false],
+  [40, 0, 0, -0.2, 0, false, false, false, false, true, false],
+  [1, 0, 0, -0.2, 0, false, false, true, false, true, false],
+  [40, 0, 0, -0.2, 0, false, false, false, false, true, false],
+  [70, -1, 0, -0.2, 0, false, false, false, false, true, true],
 ];
 
-/** A fighter's numbers in the combat crate's order: a player standing at (0, 2) facing south with a sword and shield. */
+/** A fighter's numbers in the combat crate's order: a player standing at (0, 2) facing south with a sword and shield,
+ *  wounded to 60 of 100 health, with all three healing charges. */
 function startingPlayer(): Float64Array {
   const fighter = new Float64Array(FIGHTER_FLOATS);
   fighter.set([0, 2, 0, 0, 0, 0, Math.PI, 0, 0, 0, 1]);
-  fighter.set([0, SWORD_AND_SHIELD, 1, 100, 100, 100, 0, 0, 40, 0, 0, Math.PI, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], 22);
+  fighter.set([0, SWORD_AND_SHIELD, 1, 60, 100, 100, 0, 0, 40, 0, 0, Math.PI, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], 22);
+  fighter[DRINKS_AT] = 3;
   return fighter;
 }
 
@@ -62,11 +67,12 @@ function fingerprint(fighters: readonly Float64Array[]): string {
 test('the scripted fight through WebAssembly moves to the same fingerprint as the crate run natively', () => {
   const rules = startCombatRules(compiled);
   rules.setCourse(COURSE);
-  assert.deepEqual(rules.sizes, { fighter: FIGHTER_FLOATS, intent: 16, glance: GLANCE_FLOATS });
+  assert.deepEqual(rules.sizes, { fighter: FIGHTER_FLOATS, intent: INTENT_FLOATS, glance: GLANCE_FLOATS });
+  assert.equal(INTENT_FLOATS, 17);
   const view = [{ id: 2, glance: foeGlance() }];
   let fighter = startingPlayer();
   const fighters: Float64Array[] = [];
-  for (const [ticks, forward, sideways, yaw, stroke, guard, dodge, shoot, aim, bow] of SCRIPT) {
+  for (const [ticks, forward, sideways, yaw, stroke, guard, dodge, shoot, aim, bow, heal] of SCRIPT) {
     for (let tick = 0; tick < ticks; tick += 1) {
       fighter = fighter.slice();
       fighter[23] = bow ? BOW : SWORD_AND_SHIELD;
@@ -87,13 +93,20 @@ test('the scripted fight through WebAssembly moves to the same fingerprint as th
         Number.NaN,
         Number.NaN,
         Number.NaN,
+        +(heal && tick === 0),
       ]);
       fighter = rules.predict(fighter, intent, 1, fighter[23] ?? 0, view).fighter;
       fighters.push(fighter);
     }
   }
   assert.equal(fingerprint(fighters), FIGHT_HASH);
-  assert.equal(fighterView(fighters.at(-1) ?? []).target, 2, 'its lock took the foe');
+  const last = fighterView(fighters.at(-1) ?? []);
+  assert.equal(last.target, 2, 'its lock took the foe');
+  assert.deepEqual([last.health, last.charges], [100, 2], 'the drink healed 40 and spent a charge');
+  assert.ok(
+    fighters.some((each) => fighterView(each).action.kind === 'drink'),
+    'the page reads the drink',
+  );
 });
 
 test('the arms of a forge layer pair read as the combat crate reads them', () => {
@@ -116,4 +129,11 @@ test('a stroke reaches as far as the combat crate says: a sword’s thrust farth
     'the chop, the slants, the sweeps, the thrust',
   );
   assert.equal(rules.strokeArc(0), 0, 'no stroke');
+});
+
+test('rules that lay a fighter, an intent or a glance out otherwise than the page are refused, and their address names the protocol', () => {
+  assert.doesNotThrow(() => checkSizes(PAGE_SIZES));
+  for (const wrong of [{ fighter: FIGHTER_FLOATS - 2 }, { intent: INTENT_FLOATS - 1 }, { glance: GLANCE_FLOATS + 1 }])
+    assert.throws(() => checkSizes({ ...PAGE_SIZES, ...wrong }), /Reload the page/, JSON.stringify(wrong));
+  assert.equal(roomWasmAt('/game/'), `/game/room.wasm?v=${PROTOCOL}`);
 });

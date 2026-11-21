@@ -244,6 +244,7 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         pitch: -0.2,
         aim: true,
         mark: Some([1.0, -2.0, 1.5]),
+        heal: true,
         telegraph: None,
     };
     let sent = Input {

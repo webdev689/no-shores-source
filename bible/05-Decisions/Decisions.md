@@ -212,6 +212,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Wreck's Boarders Are One Side]]
 - [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]
 - [[The Prologue's Camera Flights Stand Clear and Go Slower]]
+- [[Three Healing Charges, Refilled by Blows and Kills]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

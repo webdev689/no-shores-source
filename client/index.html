@@ -150,11 +150,15 @@
         color: var(--ink);
         text-shadow: var(--halo);
       }
-      /* On a screen past 1440p the HUD's words stand at twice their size, as the menu does. */
+      /* On a screen past 1440p the HUD's words stand at twice their size, as the menu does. Zoomed, the strip's width
+         doubles with it, so it is halved to keep it short of the Arts and weapons, doubled too. */
       @media (min-width: 2400px) and (min-height: 1300px) {
         .place,
         .hints {
           zoom: 2;
+        }
+        .hints {
+          max-width: calc(50vw - 480px);
         }
       }
       #hud:has(> .sea-bar:not([hidden])) .hints {

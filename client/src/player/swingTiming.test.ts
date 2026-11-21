@@ -27,7 +27,7 @@ test('the first person’s strike frames land and end each swing on the ticks th
   for (const kind of kinds) {
     const arms = rules.armsCode(`${kind}_iron`, null, true);
     assert.notEqual(arms, 0, `${kind}: a weapon the rules know`);
-    const intent = new Float64Array([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0.1, 0, Number.NaN, Number.NaN, Number.NaN]);
+    const intent = new Float64Array([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0.1, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
     const { action } = fighterView(rules.predict(holding(arms), intent, 1, arms, []).fighter);
     assert.equal(action.kind, 'attack', `${kind}: swinging`);
     if (action.kind !== 'attack') continue;

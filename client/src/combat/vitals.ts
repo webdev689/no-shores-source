@@ -2,15 +2,17 @@
 // health over stamina over poise, each as long as what it holds. Their losses read as DFO's Enhanced HUD read them (a
 // strip holds and drains, a bite breaks off and falls); health's frame flashes blood when it runs low and stamina's
 // white when a swing or a dodge is asked of it with none; poise fills toward a break and says Iron, Staggered or Open
-// beside it. The player's buffs stand in a row under them. Whole and untouched, with no buff and no foe on the target
-// plate, the bars rest out of sight, and the first point lost or spent brings them back at once.
+// beside it. Under them the healing charges stand as three diamonds, the next filling as the player's blows fill it,
+// each brightening as a charge is gained or drunk; then the player's buffs in a row. Whole and untouched, every charge
+// held, with no buff and no foe on the target plate, the bars rest out of sight, and the first point lost or spent
+// brings them back at once.
 import { ROLES } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { poiseTrackOf, type PoiseState } from './foePlate.ts';
-import { VITAL_SIZES } from '../plus/barFrame.ts';
+import { BAR_EDGE, VITAL_SIZES } from '../plus/barFrame.ts';
 import { barLength } from './hudLayout.ts';
-import { element, LOW_SHARE, lowShare, Meter } from '../plus/meter.ts';
+import { element, LOW_SHARE, lowShare, Meter, setStyle } from '../plus/meter.ts';
 import { ownBuffs, StatusRow } from './statusIcons.ts';
 
 /** Health at or under this share of the whole warns (the kit's low law, which a ship's hull keeps too). */
@@ -22,8 +24,9 @@ const VITALS: readonly [VitalName, string][] = [
   ['stamina', 'Stamina'],
   ['poise', 'Poise'],
 ];
-/** The stamina a fighter has in all (crates/combat/src/tuning.rs). */
+/** The stamina a fighter has in all, and the healing charges a player holds at most (crates/combat/src/tuning.rs). */
 const STAMINA_WHOLE = 100;
+export const CHARGES_MOST = 3;
 
 /** A vital as its bar shows it: its share of the whole, and what a screen reader says of it, rounded as a player
  *  reads it, never 0% while anything is left and never more than 100%. */
@@ -42,6 +45,19 @@ export function vitalsOf(own: FighterView | null): Record<VitalName, { share: nu
   };
 }
 
+/** The healing charges as their diamonds show them: each one's fill (a charge held whole, the next filling by the
+ *  meter, the rest empty), how many are held, and what a screen reader says of them. With no fighter yet, all three. */
+export function chargesShown(own: FighterView | null): { fills: number[]; held: number; text: string } {
+  const held = Math.max(0, Math.min(CHARGES_MOST, Math.floor(own?.charges ?? CHARGES_MOST)));
+  const meter = held < CHARGES_MOST ? Math.max(0, Math.min(1, own?.meter ?? 0)) : 0;
+  const fills = Array.from({ length: CHARGES_MOST }, (unused, index) =>
+    index < held ? 1 : index === held ? meter : 0,
+  );
+  const filled = Math.round(meter * 100);
+  const next = held < CHARGES_MOST && filled > 0 ? `, the next ${filled}% filled` : '';
+  return { fills, held, text: `${held} of ${CHARGES_MOST}${next}` };
+}
+
 /** Each vital's most: health's and poise's the fighter's own, stamina's the rules' whole. */
 export function vitalMost(own: FighterView | null): Record<VitalName, number> {
   return { health: own?.healthMax ?? 100, stamina: STAMINA_WHOLE, poise: own?.poiseMax ?? 40 };
@@ -54,9 +70,17 @@ export const healthLow = (own: FighterView | null): boolean =>
 /** How long the vitals stand full and untouched before they rest, in seconds. */
 export const REST_SECONDS = 4;
 
-/** Whether every vital is whole: health and stamina short of no whole point, and no whole point of poise taken. */
+/** Whether every vital is whole: health and stamina short of no whole point, no whole point of poise taken, and
+ *  every healing charge held. */
 export const vitalsWhole = (own: FighterView | null): boolean =>
-  !own || (own.health > own.healthMax - 1 && own.stamina > STAMINA_WHOLE - 1 && own.poise < 1);
+  !own ||
+  (own.health > own.healthMax - 1 &&
+    own.stamina > STAMINA_WHOLE - 1 &&
+    own.poise < 1 &&
+    (own.charges ?? CHARGES_MOST) >= CHARGES_MOST);
+
+/** How long a diamond brightens as a charge is gained or drunk, in seconds: two steps (`hudSheet.ts`). */
+export const CHARGE_FLASH_SECONDS = 0.4;
 
 /** How long the vitals have stood calm, `seconds` after `was`: whole, with no foe on the target plate. */
 export const calmFor = (was: number, whole: boolean, targeted: boolean, seconds: number): number =>
@@ -74,6 +98,13 @@ export class Vitals {
   readonly root: HTMLElement;
   private readonly bars: Record<VitalName, Bar>;
   private readonly poiseWord: HTMLElement;
+  private readonly charges: HTMLElement;
+  private readonly pips: readonly HTMLElement[];
+  /** The charges held as last shown (none before the first), and each diamond's flash's seconds left. */
+  private held: number | null = null;
+  private readonly flashes: number[] = Array.from({ length: CHARGES_MOST }, () => 0);
+  /** Each diamond's flash takes one of two names in turn, so one flashing again starts afresh. */
+  private readonly again: boolean[] = Array.from({ length: CHARGES_MOST }, () => false);
   private readonly buffs: StatusRow;
   private calm = 0;
   private poise: PoiseState | null = null;
@@ -97,6 +128,12 @@ export class Vitals {
     };
     this.bars = Object.fromEntries(VITALS.map(bar)) as Record<VitalName, Bar>;
     this.poiseWord = element('span', 'poise-word', this.bars.poise.node);
+    this.charges = element('div', 'drinks', this.root);
+    this.charges.role = 'meter';
+    this.charges.ariaLabel = 'Healing charges';
+    this.charges.ariaValueMin = '0';
+    this.charges.ariaValueMax = String(CHARGES_MOST);
+    this.pips = Array.from({ length: CHARGES_MOST }, () => element('span', 'drink', this.charges));
     this.buffs = new StatusRow(this.root, 'Your buffs');
     // A meter is a well, not a track, here: the frame gives the bar its edge.
     for (const [name] of VITALS) this.bars[name].meter.root.classList.remove(ROLES.track);
@@ -130,10 +167,36 @@ export class Vitals {
     this.bars.health.node.classList.toggle('low', healthLow(own));
     this.bars.stamina.node.classList.toggle('flash', flashing);
     this.showPoise(track.state, track.word, shown.poise.text);
+    this.showCharges(own, seconds);
     const buffs = ownBuffs(own?.statuses);
     this.buffs.show(0, buffs);
     this.calm = calmFor(this.calm, vitalsWhole(own) && !flashing && buffs.length === 0, targeted, seconds);
     this.root.classList.toggle('rest', this.calm >= REST_SECONDS);
+  }
+
+  /** The healing charges `seconds` on: each diamond whole, filling by its share from the foot in whole pixel rows, or
+   *  empty; each charge gained or drunk flashes its own. */
+  private showCharges(own: FighterView | null, seconds: number): void {
+    const { fills, held, text } = chargesShown(own);
+    const was = this.held ?? held;
+    for (let index = Math.min(was, held); index < Math.max(was, held); index++) {
+      this.flashes[index] = CHARGE_FLASH_SECONDS;
+      this.again[index] = !this.again[index];
+    }
+    this.held = held;
+    const rows = (this.wide ? VITAL_SIZES.wide : VITAL_SIZES.base).drinks - BAR_EDGE * 2;
+    this.pips.forEach((pip, index) => {
+      const fill = fills[index] ?? 0;
+      pip.classList.toggle('full', fill >= 1);
+      setStyle(pip, '--fill', `${Math.round(fill * rows)}px`);
+      const flashing = (this.flashes[index] ?? 0) > 0;
+      pip.classList.toggle('flash', flashing && !this.again[index]);
+      pip.classList.toggle('flash-again', flashing && !!this.again[index]);
+      this.flashes[index] = Math.max(0, (this.flashes[index] ?? 0) - seconds);
+    });
+    const now = String(held);
+    if (this.charges.ariaValueNow !== now) this.charges.ariaValueNow = now;
+    if (this.charges.ariaValueText !== text) this.charges.ariaValueText = text;
   }
 
   /** Poise's state as the foes' poise tracks read it: filling, Iron, Staggered (or Charged) or Open, its word beside

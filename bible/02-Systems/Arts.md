@@ -134,7 +134,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   wedge that sweeps away clockwise from the top in 6-degree steps; with 9 seconds or fewer left, the seconds stand in
   it, rounded up, the icon stepping back so they read. Ready, its ring is lit in the element. Each key (R, Q, G) stands
   on a keycap under its icon. A spell just cast flashes its frame white for 0.5 s; while the player cannot cast
-  (staggered, down or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and up) the
+  (staggered, down, drinking or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and
+  up) the
   diamond is 102 px and a ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and
   each Tenet's recharge, as shares, and each frame writes only what changed. With no Art worn it is not shown.
 
@@ -168,11 +169,11 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   so no recharge runs at another Art's pace.
 - **Casting.** An input names a spell by its number: its Art's number less one, times three, plus its ability (0 the
   Anima, 1 and 2 the Tenets), plus one, so 1 Tempest to 9 Vanish. The room takes it only if it is the worn Art's,
-  its share is full, no other cast is on its way, and the player is on foot and not staggered, Charged, dead or dead
-  past a section's edge. It releases 18 ticks (0.3 s) after the tick that took it. If the player is staggered,
-  Charged, dead or dead past the edge by then, it is lost and costs nothing; else its share empties and the spell is
-  cast. Casting is attacking: any spell but Vanish ends the caster's veil as it is cast, though a spell already out,
-  a raven's bolt or a ring, does not.
+  its share is full, no other cast is on its way, and the player is on foot and not staggered, Charged, drinking
+  ([[Three Healing Charges, Refilled by Blows and Kills]]), dead or dead past a section's edge. It releases 18 ticks
+  (0.3 s) after the tick that took it. If the player is staggered, Charged, drinking, dead or dead past the edge by
+  then, it is lost and costs nothing; else its share empties and the spell is cast. Casting is attacking: any spell
+  but Vanish ends the caster's veil as it is cast, though a spell already out, a raven's bolt or a ring, does not.
 - **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from a
   matching element and half from another. Its damage is weighed by the power of the Melee loadout's Attack (the Ranged
   one's with no Melee worn) against the foe's level, as a weapon's blow is, then by the statuses, as any blow is
@@ -219,9 +220,10 @@ The numbers are an Art's at level 5.
 ## In the browser
 
 - **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows its
-  ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent until the
-  room's word shows that ability spent (its share under full) or another Art worn, 2 s at most (a cast the room lets
-  fall sends no word). Any other word from the room in between leaves the keys waiting. Crouching stays on `C`, and the
+  ability ready, the pointer held and the player on foot, not staggered, down, drinking or dead; then no other is
+  sent until the room's word shows that ability spent (its share under full) or another Art worn, 2 s at most (a cast
+  the room lets fall sends no word). Any other word from the room in between leaves the keys waiting. Crouching stays
+  on `C`, and the
   guard on the left button or `F`, as DFO has them. With the menu open the game takes no keys, so `F` still dismantles a
   piece there.
 - **Dusk Daggers.** Pressed, `Q` aims: the input asks for the crosshair's point as it is, and a faint ring in

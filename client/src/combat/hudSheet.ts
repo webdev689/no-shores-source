@@ -6,9 +6,19 @@ import { wearCompass } from '../plus/compass.ts';
 import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { barSheetCss, thinBarsCss } from '../plus/barSheet.ts';
 import { wearKit } from '../plus/kit.ts';
-import { BAR_EDGE, BAR_TONES, CORNER, tipOf, VITAL_SIZES } from '../plus/barFrame.ts';
+import {
+  BAR_EDGE,
+  BAR_TONES,
+  CORNER,
+  diamondFrameSvg,
+  diamondMaskSvg,
+  svgUrl,
+  tipOf,
+  VITAL_SIZES,
+} from '../plus/barFrame.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
+import { CHARGE_FLASH_SECONDS } from './vitals.ts';
 import { OVERHEAD_SIZES } from './foePlate.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 import { reticleCss } from './reticle.ts';
@@ -21,6 +31,10 @@ const SHEET_ID = 'fight-hud';
 const THIRD_EDGE = `color-mix(in srgb, ${TONES.wordDim} 60%, transparent)`;
 /** Each plate's level square, as large as a ship's emblem square at the same scale, inside a 2 px edge. */
 const SQUARE_SCALE = { overhead: 2, target: 3, boss: 4 } as const;
+/** The meter's fill rising in a healing charge's diamond toward the next: health's red paled toward the words' white,
+ *  so a whole charge is told from one filling by its tone as well as its height. The bars' loss strip is a darker red,
+ *  but a meter that dark stood under 1.7:1 against the diamond's well. */
+const FILLING = `color-mix(in srgb, ${FILLS.health} 55%, ${TONES.word})`;
 const { overhead, boss } = PLATES;
 
 /** The plates' sheet: a level square, a title line and the bars under it, sized for each place a plate stands. */
@@ -140,6 +154,10 @@ function vitalStepCss(scope: string, wide: boolean): string {
   return `${scope} .vital.poise .poise-word { left: calc(100% + ${tipOf(sizes.poise) + (wide ? 10 : 6)}px); }
 ${scope} .vitals { left: ${CORNER.side}px; top: ${CORNER.top}px; gap: ${sizes.gap}px; }
 ${scope} .vitals .poise-word { font-size: ${wide ? 22 : 11}px; line-height: ${wide ? 22 : 12}px; }
+${scope} .vitals .drinks { gap: ${sizes.gap}px; }
+${scope} .vitals .drink { width: ${sizes.drinks}px; height: ${sizes.drinks}px;
+  background-image: ${svgUrl(diamondFrameSvg(sizes.drinks, BAR_TONES.stone))}; }
+${scope} .vitals .drink::after { mask-image: ${svgUrl(diamondMaskSvg(sizes.drinks - BAR_EDGE * 2))}; }
 ${wide ? `${scope} .vitals .poise-word { top: -${BAR_EDGE}px; translate: none; }` : ''}
 ${scope} .vitals > .statuses .status { --size: ${wide ? 36 : 24}px; }`;
 }
@@ -167,6 +185,19 @@ ${thinBarsCss('.fight-hud', VITAL_BARS)}
 .fight-hud .vital.poise-iron .poise-word { color: #ff6a5a; }
 .fight-hud .vital.poise-open .poise-word { color: #f1c04f; }
 .fight-hud .vitals > .statuses { margin-top: 4px; gap: 6px; }
+/* The healing charges under the bars: three diamonds drawn cell by cell as the bars' frames are, the bars' see-through
+   track inside, each charge held whole in health's red, the next filling from its foot by whole pixel rows as the
+   player's blows fill the meter. A charge gained or drunk brightens its diamond in two steps. */
+.fight-hud .drinks { display: flex; }
+.fight-hud .drink { position: relative; flex: none; background: none center / 100% 100% no-repeat; }
+.fight-hud .drink::after { content: ''; position: absolute; inset: ${BAR_EDGE}px;
+  mask-size: 100% 100%; mask-repeat: no-repeat;
+  background: linear-gradient(0deg, ${FILLING} var(--fill, 0px), ${TONES.groundTrack} var(--fill, 0px)); }
+.fight-hud .drink.full::after { background: ${FILLS.health}; }
+.fight-hud .drink.flash::after { animation: fight-drink-flash ${CHARGE_FLASH_SECONDS}s linear; }
+.fight-hud .drink.flash-again::after { animation: fight-drink-flash-again ${CHARGE_FLASH_SECONDS}s linear; }
+@keyframes fight-drink-flash { 0%, 49.9% { background: ${TONES.word}; } 50%, 100% { background: ${FILLING}; } }
+@keyframes fight-drink-flash-again { 0%, 49.9% { background: ${TONES.word}; } 50%, 100% { background: ${FILLING}; } }
 /* Whole and untouched, the vitals rest: they go in six steps, and come back in two at the first change. */
 .fight-hud .vitals { transition: opacity 120ms steps(2, end); }
 .fight-hud .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }
@@ -179,6 +210,7 @@ ${vitalStepCss('.fight-hud.wide', true)}
   .fight-hud .vital.stamina.flash::after { animation: none; }
   .fight-hud .vital.stamina.flash .meter { animation: none; }
   .fight-hud .vital.poise-flash .fill { animation: none; }
+  .fight-hud .drink.flash::after, .fight-hud .drink.flash-again::after { animation: none; }
 }
 `;
 }

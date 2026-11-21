@@ -32,8 +32,18 @@ const BUFFS = 4;
 const meets = (one: Box, other: Box) =>
   Math.max(one[0], other[0]) < Math.min(one[2], other[2]) && Math.max(one[1], other[1]) < Math.min(one[3], other[3]);
 
+/** The gap the sheet lays between two healing charges' diamonds at a step. */
+function drinksGap(wide: boolean): number {
+  const rule = wide
+    ? /\n\.fight-hud\.wide \.vitals \.drinks \{ gap: (\d+)px; \}/
+    : /\n\.fight-hud \.vitals \.drinks \{ gap: (\d+)px; \}/;
+  const found = rule.exec(fightSheetCss());
+  assert.ok(found, 'the sheet lays the diamonds at each step');
+  return Number(found[1]);
+}
+
 /** The vitals' pieces in a view, as the sheet lays them at the layout's step and zoom: each bar (a player's health and
- *  stamina 100, poise 40), poise's word beside it, and the buffs' row under them. */
+ *  stamina 100, poise 40), poise's word beside it, the healing charges' three diamonds and the buffs' row under them. */
 function vitalsOf(width: number, height: number): Record<string, Box> {
   const { wide, zoom, length } = hudLayout(width, height);
   const sizes = wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
@@ -52,6 +62,9 @@ function vitalsOf(width: number, height: number): Record<string, Box> {
   const word: Box = wide
     ? [wordLeft, poise[1], wordLeft + WORD_PX.wide, poise[1] + lineHeight]
     : [wordLeft, middle - lineHeight / 2, wordLeft + WORD_PX.base * zoom, middle + lineHeight / 2];
+  const [pip, pipGap] = [sizes.drinks * zoom, drinksGap(wide) * zoom];
+  const drinks: Box = [left, top, left + 3 * pip + 2 * pipGap, top + pip];
+  top += pip + sizes.gap * zoom;
   const icon = (wide ? 36 : 24) * zoom;
   const buffs: Box = [
     left,
@@ -59,7 +72,7 @@ function vitalsOf(width: number, height: number): Record<string, Box> {
     left + (BUFFS * icon + (BUFFS - 1) * 6 * zoom),
     top + 4 * zoom + icon + 4 * zoom,
   ];
-  return { health, stamina, poise, word, buffs };
+  return { health, stamina, poise, word, drinks, buffs };
 }
 
 /** The compass's strip and the boss bar under it (its plate and its poise's word), as the layout stands them, at its

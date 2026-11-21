@@ -4,11 +4,21 @@ import { test } from 'node:test';
 import course from '../content/testground/course.json' with { type: 'json' };
 // The browser's side of the messages and rules, so these tests send the room exactly the bytes a browser sends and
 // check its bodies with the browser's own steps.
-import { type Look, type SeenPlayer, courseBytes, inputBytes, readFromRoom } from '../client/src/network/messages.ts';
+import { EVENT } from '../client/src/combat/cues.ts';
+import { CHARGES_MOST } from '../client/src/combat/vitals.ts';
+import {
+  type FightEvent,
+  type Look,
+  type SeenPlayer,
+  courseBytes,
+  inputBytes,
+  readFromRoom,
+} from '../client/src/network/messages.ts';
 import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
 import { ASKS } from '../client/src/network/gearMessages.ts';
 import { fightViewOf } from '../client/src/network/seaFight.ts';
 import { startFleetRules } from '../client/src/rules/fleetRules.ts';
+import { chargesOf, fighterView } from '../client/src/rules/fighters.ts';
 import type { Helm } from '../client/src/rules/landRules.ts';
 import { type Controls, floatsOf, floatsOfControls, startMovementRules } from '../client/src/rules/movementRules.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
@@ -20,7 +30,7 @@ const built = (name: string) =>
   });
 const compiled = new WebAssembly.Module(await built('room_wasm'));
 /** Forward at a walk, looking north, no fight's buttons. */
-const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN]);
+const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
 const walking = { anim: 'walk', frame: 2, facing: 0 };
 /** An input as a browser writes it, holding nothing and seeing the start of the room. */
 const asking = (sequence: number, intent: Float64Array, look: Look, dress?: string, respawn = false) =>
@@ -159,6 +169,7 @@ function play(room: RoomDoor, player: number, sequence: number, controls: Contro
     Number.NaN,
     Number.NaN,
     Number.NaN,
+    0,
   ]);
   assert.equal(room.input(player, asking(sequence, intent, walking, undefined, respawn)), 'taken');
   room.tick();
@@ -432,4 +443,67 @@ test('a sea that keeps characters sails a course only once the keeper has answer
   ]);
   assert.ok(room.gear(kept).length > 0, 'their gear, from the character given back');
   assert.equal(room.gear(unkept).length, 0, 'none for a character not kept');
+});
+
+test('a wounded player’s drink through the room heals them, and the page reads the heal as the room tells it', () => {
+  const room = startRoomDoor(compiled);
+  assert.equal(room.open(course.start, course.blocks), true);
+  const player = room.join();
+  let sequence = 0;
+  /** One tick of the player at rest, a drink asked if `heal`: what the page reads of them, and the fight's events. */
+  const step = (heal = false) => {
+    const intent = new Float64Array([
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      Number.NaN,
+      Number.NaN,
+      Number.NaN,
+      heal ? 1 : 0,
+    ]);
+    assert.equal(room.input(player, asking(++sequence, intent, walking)), 'taken');
+    room.tick();
+    const snapshot = readFromRoom(room.snapshot());
+    if (snapshot?.kind !== 'snapshot') throw new Error('no snapshot');
+    const seen = snapshot.players.find((each) => each.player === player);
+    if (!seen?.fighter) throw new Error('the room did not see the player');
+    return { fighter: seen.fighter, events: snapshot.events as readonly FightEvent[] };
+  };
+  const joined = step();
+  assert.equal(chargesOf(joined.fighter).charges, CHARGES_MOST, 'a player joins holding as many as the page shows');
+  // A pirate swordsman beside the player strikes once, then is sent away.
+  const { x, y } = course.start;
+  assert.ok(room.standFoe(14, 2, x, y - 1.5, Math.PI, 0) > 0);
+  let wounded = joined;
+  while (fighterView(wounded.fighter).health >= fighterView(wounded.fighter).healthMax) {
+    wounded = step();
+    assert.ok(sequence < 900, 'the swordsman struck');
+  }
+  assert.equal(room.clearFoes(), true);
+  for (let tick = 0; tick < 60; tick++) wounded = step();
+  const before = fighterView(wounded.fighter);
+  assert.equal(before.action.kind, 'idle');
+  const told: FightEvent[] = [...step(true).events];
+  for (let tick = 0; tick < 61; tick++) told.push(...step().events);
+  const healed = told.filter((event) => event.kind === EVENT.healed);
+  const gave = Math.min(before.healthMax * 0.4, before.healthMax - before.health);
+  assert.equal(healed.length, 1, 'one heal told');
+  assert.deepEqual(
+    [healed[0]?.striker, healed[0]?.defender, healed[0]?.amount],
+    [player, player, gave],
+    'the drinker, and the health it gave back',
+  );
+  const after = step();
+  assert.equal(fighterView(after.fighter).health, before.health + gave);
+  assert.equal(chargesOf(after.fighter).charges, CHARGES_MOST - 1);
 });

@@ -22,6 +22,7 @@ export const HINTS = {
     ['C', 'Crouch'],
     ['Z', 'Weapon'],
     ['1 / 2', 'Loadout'],
+    ['3', 'Heal'],
     ['R', 'Anima'],
     ['Q / G', 'Tenets'],
     ['Wheel', 'Third person'],
