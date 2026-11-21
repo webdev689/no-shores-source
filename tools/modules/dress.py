@@ -56,7 +56,8 @@ def bunch(module, at, colours, high=0.45):
     for stem in range(7):
         angle = math.tau * stem / 7
         top = (at[0] + math.cos(angle) * 0.12, at[1] + math.sin(angle) * 0.12, at[2] + high + module.draw(0.0, 0.12))
-        shapes.rod(module, (at[0], at[1], at[2] + 0.25), top, 0.01, 'verdant', sides=3)
+        # Upright, so no turn: a slanted rod's turn rounds differently on another machine and the bake differs.
+        shapes.rod(module, (top[0], top[1], at[2] + 0.25), top, 0.01, 'verdant', sides=3)
         shapes.ball(module, top, 0.06, colours[stem % len(colours)], detail=0)
 
 
