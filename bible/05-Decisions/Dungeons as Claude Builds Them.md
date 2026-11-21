@@ -5,8 +5,10 @@ status: in force
 ---
 # Dungeons as Claude Builds Them
 
-> Asked in what order Dungeons 2.0 comes over: "3. Take your time and do everything properly"
-> ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]])
+Asked in what order Dungeons 2.0 comes over ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]), the owner
+wrote:
+
+> "3. 3. Take your time and do everything properly"
 
 > "Dont adapt things just to adapt them. It needs to fit into what we are building"
 
@@ -54,7 +56,7 @@ Claude's choices for the variety, each open to change. They replace the rows abo
 
 | Choice | Chosen | Why |
 |---|---|---|
-| Styles | Six: the crypt, the halls, the cells and the sanctum, and two of the Forge's left behind before: the Caverns (its cave: natural rock, rooms bitten irregular, rock standing inside the great ones) and the Mines (its mine: hewn rock and timber, long galleries). A patrol's three take three of the six | The painter now paints the rock they wanted (sets 19 and 20), so the Forge's caves and mines come over |
+| Styles | Six: the crypt, the halls, the cells and the sanctum, and two of the Forge's: the Caverns (its cave: natural rock, rooms bitten irregular, rock standing inside the great ones) and the Mines (its mine: hewn rock and timber, long galleries). A patrol's three take three of the six | The painter paints the rock they want (sets 19 and 20), so the Forge's caves and mines come over |
 | Its size | Two to five blocks, drawn for each dungeon: a quick run or a long delve | No two runs take the same time |
 | The way down changes | In about half the dungeons the last block breaks into the style below: halls into a crypt, a sanctum into its catacombs, cells into mines, a crypt into caverns, mines into caverns, caverns into a crypt. The dungeon keeps its first style's name | The end feels deeper than the start |
 | Room shapes | Rectangles, and by style: Ls and crosses in the halls and the sanctum, octagons in the crypt and the sanctum, alcoves cut a cell into the rock in the crypt (burial niches) and the cells (cells), caves bitten irregular in the caverns and the mines' stopes | A room's outline tells its style |
