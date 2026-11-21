@@ -3,7 +3,8 @@
 //! something the player would have lost, that thing: a Vestige left lying out its time or as they left, a Vestige a
 //! first clear paid while the carried ten and the vault were full or flotsam paid while the carried ten were, or a
 //! module salvaged while its slot carried nine. A mailbox keeps `MAIL_MOST` letters; one more lets go the letter
-//! holding the least, the oldest of those, and the new letter says so. The page words each letter by its source.
+//! holding the least, the oldest of those, and the newest letter kept says so. The page words each letter by its
+//! source.
 
 use crate::asks::{Done, Here, Refusal};
 use crate::character::{At, CARRIED_MOST, Character, UnknownKeys, VAULT_MOST, VESTIGES_MOST, Vestige};
@@ -39,7 +40,8 @@ pub enum Posted {
 }
 
 /// One letter: its number, which no item, Vestige or officer of the character shares, where what it holds came from
-/// (a `Source`'s number, one a later room adds kept as read), whether it came to a full mailbox, and what it holds.
+/// (a `Source`'s number, one a later room adds kept as read), whether it tells of a letter a full mailbox let go, and
+/// what it holds.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Letter {
     pub id: u32,
@@ -68,7 +70,8 @@ impl Letter {
 
 impl Character {
     /// Posts a letter from the game. With the mailbox full the letter holding the least goes, the oldest of those
-    /// and the new one among them, and the new one, kept, says so.
+    /// and the new one among them, and the newest letter kept says so: the new one, or the one before it when the new
+    /// one went. Only the new letter's room is made, so a mailbox a later build kept fuller loses no more.
     pub fn post(&mut self, source: Source, posted: Posted) {
         let (vestige, item) = match posted {
             Posted::Vestige(vestige) => (Some(vestige), None),
@@ -77,11 +80,11 @@ impl Character {
         let id = self.take_id();
         let letter = Letter { id, from: source as u8, crowded: false, vestige, item, unknown: UnknownKeys::new() };
         self.mail.push(letter);
-        while self.mail.len() > MAIL_MOST {
+        if self.mail.len() > MAIL_MOST {
             let least = (0..self.mail.len()).min_by_key(|&at| self.mail[at].worth()).unwrap_or(0);
             self.mail.remove(least);
-            if let Some(new) = self.mail.last_mut().filter(|letter| letter.id == id) {
-                new.crowded = true;
+            if let Some(newest) = self.mail.last_mut() {
+                newest.crowded = true;
             }
         }
     }

@@ -3,8 +3,8 @@ import type { GearItem as GearItemTable } from '../../../generated/messages/ts/o
 import type { GearItem, GearVestige } from './gearMessages.ts';
 
 /** A letter of the game's mail (protocol's `GearLetter`): its number, where what it holds came from (the gear crate's
- *  `mail::Source`, worded by `letterWords`), whether it came to a full mailbox, and what it holds, a Vestige or an
- *  item, or neither. */
+ *  `mail::Source`, worded by `letterWords`), whether it tells of a letter a full mailbox let go, and what it holds, a
+ *  Vestige or an item, or neither. */
 export interface GearLetter {
   readonly id: number;
   readonly from: number;

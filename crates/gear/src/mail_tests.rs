@@ -100,6 +100,34 @@ fn a_full_mailbox_lets_go_the_oldest_letter_holding_the_least_and_the_new_letter
 }
 
 #[test]
+fn a_new_letter_holding_the_least_goes_and_the_newest_letter_kept_says_so() {
+    let mut character = Character::starting();
+    for _ in 0..MAIL_MOST {
+        character.post(Source::Clear, Posted::Vestige(vestige(Rarity::Rare)));
+    }
+    let ids = |mail: &[crate::mail::Letter]| mail.iter().map(|letter| letter.id).collect::<Vec<_>>();
+    let full = ids(&character.mail);
+    character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Normal)));
+    assert_eq!(ids(&character.mail), full, "every letter holding more stays");
+    assert!(character.mail.last().is_some_and(|newest| newest.crowded), "the newest letter kept tells of it");
+}
+
+#[test]
+fn a_mailbox_a_later_build_kept_past_fifty_lets_go_one_letter_a_post() {
+    let mut character = Character::starting();
+    for _ in 0..MAIL_MOST {
+        character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Normal)));
+    }
+    for _ in 0..10 {
+        let id = character.take_id();
+        let letter = crate::mail::Letter { id, ..character.mail[0].clone() };
+        character.mail.push(letter);
+    }
+    character.post(Source::LeftBehind, Posted::Vestige(vestige(Rarity::Rare)));
+    assert_eq!(character.mail.len(), MAIL_MOST + 10, "only the one letter's room is made");
+}
+
+#[test]
 fn a_letter_holding_what_this_room_does_not_know_gives_what_it_knows_and_stays() {
     let mut character = Character::starting();
     character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Rare)));
