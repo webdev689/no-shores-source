@@ -464,7 +464,9 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   to the player's character ([[Activities]]) sends them back to their ship, the veil saying why, as "Abyss seas open
   at level 20. Returning to your ship".
   With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the page
-  makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
+  makes the player a guest or keeps their session, and the node's room keeps their character. A page with no session
+  (the accounts out of reach, or a local server with no `?accounts=`) is sent away by each room that keeps characters
+  five seconds after it joins, as from a shut gate: "Sign in to play online.". Their gear shows in
   the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks. Played
   alone, the room in the page keeps no gear.
 - **A run's room** ([[Activities]]) is its dungeon's room's name and an instance (`runOf`): eight letters or digits

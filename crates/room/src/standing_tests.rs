@@ -447,13 +447,13 @@ fn a_dress_sent_back_within_its_turn_is_the_one_others_see() {
     };
     send(&mut room, 1, "sword_iron");
     room.tick();
-    send(&mut room, 2, "bow_long_iron");
+    send(&mut room, 2, "sword_steel");
     send(&mut room, 3, "sword_iron");
     for _ in 0..200 {
         room.tick();
     }
     let shown = &room.players.get(&player).expect("in").dress;
-    assert!(shown.contains("sword_iron") && !shown.contains("bow_long_iron"), "the sword drawn back is shown: {shown}");
+    assert!(shown.contains("sword_iron") && !shown.contains("sword_steel"), "the sword drawn back is shown: {shown}");
 }
 
 #[test]

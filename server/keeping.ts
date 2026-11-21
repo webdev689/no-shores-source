@@ -2,9 +2,11 @@
  * Each player's character, kept by the accounts while they play in a room on land or at sea. A browser sends its session's
  * token once it has joined; the room claims the character with it, gives it to the player, saves it soon after it
  * changes and now and then besides (which keeps the room's hold), and lets it go with a last save when they leave. A
- * player who sends no token, or whose token is no session, plays a character that is not kept. Should another room
- * take the character (the same player joined elsewhere), this room's next save learns it, and the player is let go.
- * A run's room is kept to one company of four accounts at most (`forCompany`), and keeps no one unkept.
+ * player who sends no token in time, or whose token is no session, is sent away, since one who never signs in would
+ * hold a place in the room for good; one whose claim the accounts do not answer plays a character that is not kept.
+ * Should another room take the character (the same player joined elsewhere), this room's next save learns it, and the
+ * player is let go. A run's room is kept to one company of four accounts at most (`forCompany`), and keeps no one
+ * unkept.
  */
 
 import type { Claimed, Characters as Kept } from './accounts/characters.ts';
@@ -15,7 +17,8 @@ type Characters = Pick<Kept, 'look' | 'claim' | 'save' | 'release' | 'companions
 
 /** Why a run's room sends a player away who is in no company of those kept in it. */
 export const ANOTHER_COMPANY = "This run is another company's.";
-/** Why a run's room sends away a player it cannot keep: their token is no session, or none came in time. */
+/** Why a room sends away a player it cannot keep: their token is no session, or none came in time. */
+export const SIGN_IN = 'Sign in to play online.';
 export const SIGN_IN_FOR_RUN = 'Sign in to enter this run.';
 /** Why a run's room sends a player away while the accounts do not answer: joining again may find them back. */
 export const ACCOUNTS_TROUBLE = 'Something went wrong. Try again.';
@@ -39,7 +42,8 @@ export const SAVE_UNCHANGED_MS = 20_000;
  *  and a joiner plays on unkept. */
 const LEAVE_WAITS_MS = [1_000, 4_000, 15_000, 40_000];
 const CLAIM_WAITS_MS = [1_000, 4_000];
-/** How long a run's room, and Find a Company, wait for a joined socket's token: as long as a claim's own waits. */
+/** How long a room that keeps characters, and Find a Company, wait for a joined socket's token: as long as a claim's
+ *  own waits. */
 export const TOKEN_WAIT_MS = CLAIM_WAITS_MS.reduce((total, millis) => total + millis, 0);
 const sleep = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
 
@@ -117,9 +121,10 @@ export class Keeper {
     }
     const claimed = await this.tried(() => characters.claim(token, holder), here);
     if (!claimed) {
-      // A claim the accounts never answered (undefined) may be answered on a join again; no session never is.
+      // A claim the accounts never answered (undefined) may be answered on a join again, and outside a run the player
+      // plays on unkept meanwhile; no session never is.
       const passing = claimed === undefined;
-      if (this.company && here()) this.lost(player, passing ? ACCOUNTS_TROUBLE : SIGN_IN_FOR_RUN, passing);
+      if ((this.company || !passing) && here()) this.lost(player, passing ? ACCOUNTS_TROUBLE : this.unsigned, passing);
       return false;
     }
     const shut = await this.judged(player, claimed, here);
@@ -192,11 +197,17 @@ export class Keeper {
     return answer;
   }
 
-  /** In a run's room, sends away a player who has sent no token (`signed`) once a claim's own waits have passed. */
+  /** In a room that keeps characters, sends away a player who has sent no token (`signed`) once a claim's own waits
+   *  have passed. */
   async tokenDue(player: number, signed: () => boolean, here: () => boolean): Promise<void> {
-    if (!this.company || !this.characters) return;
+    if (!this.characters) return;
     await this.wait(TOKEN_WAIT_MS);
-    if (here() && !signed()) this.lost(player, SIGN_IN_FOR_RUN, false);
+    if (here() && !signed()) this.lost(player, this.unsigned, false);
+  }
+
+  /** Why this room sends away a player it cannot keep. */
+  private get unsigned(): string {
+    return this.company ? SIGN_IN_FOR_RUN : SIGN_IN;
   }
 
   /** Whether no one was let in yet, or someone among `companions` (a player and their company) was. */

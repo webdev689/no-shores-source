@@ -121,9 +121,10 @@ they play in holds it while they are there.
   as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
   character whose ship has the hurts it keeps.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
-  that is not kept, or in a run, which keeps no one unkept, is sent away. The Test Ground's room grants gear to try
-  it, so it keeps no characters, nor does a fleet room; nor does a page with no session, playing alone, or on a local
-  room server with no `?accounts=`.
+  that is not kept, or in a run, which keeps no one unkept, is sent away. A socket with no session, its token none in
+  five seconds or no session at all, is sent away from any room that keeps characters ([[Server]], "The host"). The
+  Test Ground's room grants gear to try it, so it keeps no characters, nor does a fleet room; nor does a page playing
+  alone. A page on a local room server with no `?accounts=` holds no session, so a node's room there sends it away.
 
 ## The Roster
 

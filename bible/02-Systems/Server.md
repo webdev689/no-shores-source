@@ -82,6 +82,9 @@ on Cloudflare.
   exactly as the browser that predicted it did, so a prediction can only differ where the server knows more
   ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at rest, never in the middle of a
   swing, a guard, a draw or a reload.
+- **Riding:** a player rides wherever they walk, in a node's room, a dungeon, a run or on an island, as the page lets
+  them; on a deck the room walks every body on foot, as the page does. Nothing is fought from the saddle, as the page
+  asks nothing there: a mounted input's swing, guard, shot and aim are dropped, and its cast refused.
 - **Foes:** on a course, a player may ask for a foe by its type and rank, at a level and with a shield (the
   [[Test Ground]]'s panel), one with each input; the room stands it 5 m along the player's aim, which follows their
   look, on its navmesh, facing them, and holds at most twelve. A foe of level 0 has none and fights by combat's own
@@ -368,13 +371,16 @@ field holds (an input's or orders' number, the arms, a foe's type, a load, a cal
 `RangeError`), and one the room takes within a range (a frame, the tick seen, a rank, the rudder, a rung, a look) is
 held within it.
 
-Looks and dresses are each player's own word, passed on and decided nothing about, but for the cosmetics: the room
-puts the dye, coat and barding the character wears into each dress it relays, none for a start piece, and keeps a
-faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another a piece
-it does not keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after the player's gear
-is sent. A look goes out with the tick that
+Looks and dresses are each player's own word, passed on and decided nothing about, but for the gear they show: the
+room keeps in a dress's armour and hands only the pieces the character wears (`layers_of`; a light in the left hand
+is no piece, and stays), puts the dye, coat and barding the character wears into it, none for a start piece, and
+keeps a faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another
+a piece it does not wear or keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after
+the player's gear is sent. A look goes out with the tick that
 takes its input, a dress once each time it changes, and every dress to whoever joins. The room refuses a move name
-that is not lowercase letters, digits and underscores or is over 40 bytes, and a dress over 4 KB. A browser takes
+that is not lowercase letters, digits and underscores or is over 40 bytes, and a dress over 4 KB. A dress that does
+not read, not an object with an outfit, is dropped from its input, which is taken all the same, and others go on
+seeing the last one that did. A browser takes
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
@@ -391,8 +397,9 @@ so every decision is Rust and the shell only carries bytes and time.
   node's room, from its baked file, and `node-<id>--elite` or `--abyss` the same
   node at a voyage's harder difficulty, a room of its own; `node-<patrol>--dungeon-0`, `-1` or `-2` is one of a
   patrol's dungeons, one room shared at Normal, opened from the patrol's baked file; `fleet-<name>` a fleet's place
-  on the open sea; any other name is the Test Ground's course, `content/testground/course.json`, which the client
-  reads too, with its stall and resource nodes laid out. A node with no baked file answers 404, as does a dungeon
+  on the open sea; `test-<name>` is the Test Ground's course, `content/testground/course.json`, which the client
+  reads too, with its stall and resource nodes laid out. Any other name answers 404 (`TEST_GROUND`), so no misspelt
+  room opens a Test Ground. A node with no baked file answers 404, as does a dungeon
   whose node is no patrol. Any other spelling of a node's room is no room, but for the tiers' old names: `--rough`
   and `--storm` are read as `--elite` and `--abyss` (`canonicalRoom`), so a page that still builds them joins its
   room and loads again. A name is 64 characters at most.
@@ -430,14 +437,18 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - A browser's one text message is its session's token. In a node's room, a dungeon's, an island's and at sea the
-  player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. A
+  player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. A socket
+  there that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no
+  session, is closed with 4003 and "Sign in to play online." (in a run, "Sign in to enter this run."), so sockets that
+  never sign in cannot hold a room's places; every page of the game sends one, a guest's included. While the accounts do
+  not answer a claim, the player plays on unkept. The Test Ground's rooms and a fleet's keep nothing and take anyone. A
   character the room's gate shuts ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's
   reason. A save keeps the keys a room does not know, at its top, in its materials, Arts, allegiance and cosmetics, in
   its day's activity and its story, and in each item and Vestige, so a room that knows fewer fields carries the newer
-  ones through; a room built before this keeping drops them, so a rollback to one loses them. A new value of a kind
-  the room knows (a slot, a rarity) reads as a broken save, which is left untouched, and a list longer than the room's
-  Arts or factions is cut to them. At sea the room also tells the accounts the player is there, again every 30
-  seconds, and that they left, for the Roster. A second text message, or any other, closes the socket.
+  ones through; a room built before this keeping drops them, so a rollback to one loses them. A new value of a kind the
+  room knows (a slot, a rarity) reads as a broken save, which is left untouched, and a list longer than the room's Arts
+  or factions is cut to them. At sea the room also tells the accounts the player is there, again every 30 seconds, and
+  that they left, for the Roster. A second text message, or any other, closes the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, or a run's eight, a join is turned
@@ -472,8 +483,8 @@ every other figure drawn on from where the new room has it, though its clock sta
   rect the welcome names from the landmass open in the land's door and stands the movement rules on it, with the
   city's boxes ([[Land]], [[Movement]]). While the room agrees, that is the body already shown, to the bit; where it
   knows better, the body moves to it. A body the room says is dead stays where the room saw it.
-- The [[Test Ground]] joins a room when its address carries `?room=`, and shows every other player where the room
-  last saw them.
+- The [[Test Ground]] joins its room, `test-<name>`, when its address carries `?room=`, and shows every other player
+  where the room last saw them.
 - In a fleet, `FleetSession` sends each tick's orders, numbered, as the page's clock owes them, and keeps its ship as
   the room last gave it with its orders it has not taken stepped on top through `room-wasm` (`fleet_predict`), and
   its look's lay laid among the ships it sees (`fleet_lay`). The [[World Editor]] sails in a fleet when its address
@@ -539,7 +550,6 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - A player's view may lag 24 ticks at most; a screen further behind is judged as it stands. A player could hold a
   claimed lag at the most to gain up to 24 ticks of reaction; nothing checks it.
 - Arrows and bolts are not judged as their shooter saw: they fly in the room's time.
-- Riding is the browser's word: the room takes `mounted` as it is sent.
 - A fleet's sea knows no coast: where a ship is put to sea is the player's word, anywhere in the world's frame, and
   the World Editor asks for open water 15 m deep before it joins. A fleet's lay is judged at the room's tick, not as
   the player's screen showed the ships (a ball's flight is long beside the lag).
@@ -549,9 +559,10 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   section judges them all the same, so the warning's count runs on.
 - Bodies pass through each other; foes of one side keep apart by steering.
 - The browser does not predict the section: it shows a warning, a death or a respawn when the room's snapshot says so.
-- The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
-  the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
-  is told to (`take_foe_asks`).
+- The [[Test Ground]] joins a Test Ground room by name; given a whole address it joins any room, a node's too, but sends
+  no token, so a room that keeps characters sends it away. It predicts on its own course and never asks to respawn; the
+  [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone is
+  told to (`take_foe_asks`).
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: two to five blocks laid in a chain that never
   crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 27 patrols lays all three
   entrances; a dungeon's room opens for its number whether or not its patrol's land found room for its entrance. A

@@ -86,6 +86,9 @@ export function privateRun(room: string): boolean {
   return RUN_ENDING.test(room);
 }
 
+/** The start of a Test Ground room's name, `test-<name>`: the Test Ground opens by no other. */
+export const TEST_GROUND = 'test-';
+
 /** The most a run holds: a company's most (`accounts/companies.ts`), as an Elite Dungeon's run is for. */
 export const RUN_MOST = 4;
 
