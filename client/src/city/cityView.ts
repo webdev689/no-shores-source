@@ -94,7 +94,7 @@ export class CityView implements CityDrawer {
   /** Draws this city from now on, in its climate's pictures; the blocks by name, the forged tables parsed. */
   setCity(plan: CityPlan, climate: CityClimate, blocks: ReadonlyMap<string, RmbBlock>, tables: CityTables): void {
     this.clear();
-    CITY_LAMPS.current = glowLamps(plan);
+    CITY_LAMPS.set(this, glowLamps(plan));
     const started = performance.now();
     const data = buildCity(plan, climate, blocks, tables);
     this.frame.buildMs = performance.now() - started;
@@ -183,7 +183,7 @@ export class CityView implements CityDrawer {
   clear(): void {
     const drawn = this.drawn;
     if (!drawn) return;
-    CITY_LAMPS.current = [];
+    CITY_LAMPS.set(this, []);
     drawn.painter.destroy();
     drawn.tiles.destroy();
     for (const buffer of [...drawn.buffers, ...Object.values(drawn.instances).map((held) => held.buffer)])

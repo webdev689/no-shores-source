@@ -11,8 +11,27 @@ export interface LampPlace {
   readonly seed: number;
 }
 
-/** What the city drawn now lights, set by its view as it is shown and cleared with it. */
-export const CITY_LAMPS: { current: readonly LampPlace[] } = { current: [] };
+/** What the cities drawn now light, each view's lamps kept apart (a landmass draws its city and its layouts in two
+ *  views): a view lights its own as it is shown and lets them go as it is cleared, never another's. */
+export class CityLamps {
+  private readonly byView = new Map<object, readonly LampPlace[]>();
+  private every: readonly LampPlace[] = [];
+
+  /** Lights `view`'s lamps in place of its last; none lets them go. */
+  set(view: object, lamps: readonly LampPlace[]): void {
+    if (lamps.length > 0) this.byView.set(view, lamps);
+    else this.byView.delete(view);
+    this.every = [...this.byView.values()].flat();
+  }
+
+  /** Every view's lamps. */
+  get current(): readonly LampPlace[] {
+    return this.every;
+  }
+}
+
+/** The cities' lamps, as every view lights them. */
+export const CITY_LAMPS = new CityLamps();
 
 /** A fire's light, linear red, green and blue. */
 export const FIRELIGHT = [1.0, 0.62, 0.3] as const;
