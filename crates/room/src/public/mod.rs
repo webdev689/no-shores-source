@@ -139,13 +139,14 @@ pub(crate) struct Running {
 }
 
 /// A zone's events as its room keeps them: the zone, its grounds, the level their foes stand at, the start minute of
-/// the last event it began (or let pass), and the one running.
+/// the last event it began (or let pass), the minute it last saw, and the one running.
 #[derive(Debug)]
 pub(crate) struct Public {
     pub zone: &'static str,
     pub grounds: Grounds,
     pub level: u8,
     pub handled: Option<u64>,
+    pub minute: u64,
     pub running: Option<Running>,
 }
 
@@ -189,13 +190,15 @@ impl Room {
         self.nav.join(squares);
         let level = levels.map_or(0, |(_, high)| high);
         self.foes_most = self.foes_most.max(EVENT_FOES_MOST);
-        self.public = Some(Public { zone, grounds, level, handled: None, running: None });
+        self.public = Some(Public { zone, grounds, level, handled: None, minute: 0, running: None });
     }
 
     /// Each tick, after the garrison: the event due begins; the one running plays, its countdown runs, and its result
     /// shows its time and is gone.
     pub(crate) fn keep_public(&mut self) {
         let Some(mut public) = self.public.take() else { return };
+        self.keep_to_the_clock(&mut public);
+        self.wear_inert();
         if public.running.is_none() {
             public.running = self.begin_due(&mut public);
         }
@@ -215,6 +218,25 @@ impl Room {
             }
         }
         self.public = Some(public);
+    }
+
+    /// A room left empty stops ticking but may stay open, so its running event is held to the clock again whenever
+    /// the minute it is given jumps, or the event's end is two minutes past: past its time, it ends quietly
+    /// (no result, no chests, its foes gone); else it keeps no more than the countdown its start minute leaves.
+    fn keep_to_the_clock(&mut self, public: &mut Public) {
+        let (seen, minute) = (public.minute, self.minute);
+        public.minute = minute;
+        let Some(running) = public.running.as_mut() else { return };
+        let late = minute.saturating_sub(running.start);
+        let jumped = seen != 0 && minute > seen + 1;
+        // A room opened late in a minute runs up to a minute past the end, then shows its result: leave that be.
+        if late > COUNTDOWN_MINUTES + 1 || (jumped && late >= COUNTDOWN_MINUTES) {
+            if let Some(mut ended) = public.running.take() {
+                self.close(&mut ended);
+            }
+        } else if jumped && running.phase == Phase::Running {
+            running.ticks_left = running.ticks_left.min((COUNTDOWN_MINUTES - late) * TICKS_PER_MINUTE);
+        }
     }
 
     /// The event the clock has due, begun: none before the host sets the minute, for one already begun or let pass,
@@ -368,8 +390,10 @@ impl Room {
         naval::random::Mulberry32::new((seed ^ (seed >> 32)) as u32)
     }
 
-    /// Won: every player who took part gets a chest of the tier the event earned, at its ground.
+    /// Won: every player who took part gets a chest of the tier the event earned, at its ground. A heroic window still
+    /// open is told missed first, so the result is the last beat a page takes in its frame.
     pub(crate) fn win(&mut self, public: &Public, running: &mut Running) {
+        self.close_heroic(running);
         running.phase = Phase::Won;
         running.ticks_left = RESULT_TICKS;
         self.tell(EventKind::PublicWon, None, 0, 0, f64::from(running.kind as u8));
@@ -380,16 +404,15 @@ impl Room {
         for player in earned {
             self.lay_chest(player, tier, middle, public.level);
         }
-        self.close_heroic(running);
     }
 
     /// Failed, by its countdown or its stores: its foes withdraw, and it leaves nothing lasting.
     pub(crate) fn fail(&mut self, running: &mut Running) {
+        self.close_heroic(running);
         running.phase = Phase::Failed;
         running.ticks_left = RESULT_TICKS;
         running.bonus = false;
         self.tell(EventKind::PublicFailed, None, 0, 0, f64::from(running.kind as u8));
-        self.close_heroic(running);
         let to = match &running.play {
             Play::Fissure(fissure) => fissure.at,
             Play::Raid(raid) => raid.approach,

@@ -80,4 +80,13 @@ impl Room {
         self.inert.remove(&id);
         self.names.remove(&id);
     }
+
+    /// The foes the room moves itself are never stepped, so their statuses run down here, as a stepped foe's do.
+    pub(crate) fn wear_inert(&mut self) {
+        for id in &self.inert {
+            if let Some(foe) = self.foes.get_mut(id) {
+                foe.fighter.statuses = foe.fighter.statuses.ticked(&foe.fighter.action);
+            }
+        }
+    }
 }

@@ -142,7 +142,7 @@ impl Room {
         }
         self.drops = kept;
         for (player, chest, at) in expired {
-            self.pay_chest(player, chest, at);
+            self.pay_chest(player, chest, at, false);
         }
     }
 

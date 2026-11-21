@@ -73,3 +73,7 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The dev address | `&public=fissure` or `&public=raid` sets a room in the page's clock to that event's start, dev builds only | Every beat can be seen without waiting |
 | The dev play | `&speed=`, `&bots=`, `&heroic=0` on the dev address; bots and the player at level 6, Rare | A slow machine can play an event through and picture each beat |
 | The fissure's tearing and shutting | Tears open over the event's first 3 s, never narrower than 0.3 while it runs, shuts over the result's first 2.5 s as its scar rises; timed by the room's ticks | The opening is seen (not replayed for a page arriving late), and the Warden still comes out of an open crack |
+| The bonus once sealed | Settled as the seal completes: a Warden who falls after half the countdown keeps it | The owner's words: "sealed with at least half of the 8 minutes left" |
+| A room left empty | Its running event held to the clock when its minute jumps: past its end, ended quietly (no result, no chests, its foes gone); else its countdown cut to what its start minute leaves | A room's Durable Object may stay in memory, unticked, and come back late |
+| A leaver's Vestige, ten and vault full | Into the vault over its limit | A leaver's chest is never lost; the ground would lose it, and the gear crate holds nothing else waiting for a player |
+| Heroic missed with a result | Told before the win or the failure | The result is the beat a page keeps |
