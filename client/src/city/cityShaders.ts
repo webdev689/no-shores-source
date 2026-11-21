@@ -55,6 +55,8 @@ const GOLD = ${COLOUR_LAYERS.gold}u;
 const IRON = ${COLOUR_LAYERS.iron}u;
 const BONE = ${COLOUR_LAYERS.bone}u;
 const GLOW = ${COLOUR_LAYERS.glow}u;
+// A plain colour's texels to its uv: the size of the picture it would be (cityBuild lays a plain one as 64 square).
+const PLAIN_TEXELS = 64.0;
 const PAVED = ${PAVED_TILE}u;
 const TIER_ALWAYS = 0u;
 const TIER_WHOLE = 1u;
@@ -91,19 +93,49 @@ fn kept(tier: u32, fades: vec2f, pixel: vec2f) -> bool {
   }
 }
 
-// A plain colour's albedo, or the sampled picture's. Cloth is its dye under a fine weave of threads, faded out where
-// the threads grow finer than a pixel so the far cloth does not shimmer.
-fn colour_of(layer: u32, sampled: vec3f, uv: vec2f) -> vec3f {
+// A texel's own number, the same wherever the texel is drawn.
+fn texel_hash(cell: vec2i) -> f32 {
+  var hash = (u32(cell.x) * 0x8da6b343u) ^ (u32(cell.y) * 0xd8163841u);
+  hash = (hash ^ (hash >> 15u)) * 0x2c1b3c6du;
+  hash = (hash ^ (hash >> 12u)) * 0x297a2d39u;
+  return f32(hash ^ (hash >> 15u)) / 4294967296.0;
+}
+
+// A plain colour's albedo, or the sampled picture's. A plain colour is painted on the texels a picture would have
+// (PLAIN_TEXELS to its uv), so its grain reads as painted, as the pictures' does: wrought iron's hammer marks, pits and
+// rust; gilding burnished and worn through to the bronze; bone's grain and yellowing; cloth its dye under a fine weave
+// of uneven threads, the dye taken unevenly. A picture is lighter or darker in patches some metres wide, so its
+// repeats do not line up across a wall.
+fn colour_of(layer: u32, sampled: vec3f, uv: vec2f, place: vec3f, normal: vec3f) -> vec3f {
+  let texel = floor(uv * PLAIN_TEXELS);
+  let cell = vec2i(texel);
+  let mark = texel_hash(cell) - 0.5;
   let threads = uv * 160.0;
   let fade = clamp(1.5 - 2.0 * max(length(fwidth(threads)), 0.0), 0.0, 1.0);
   let crossing = abs(fract(threads) - 0.5) * 2.0;
-  let weave = 1.0 - 0.1 * fade * max(crossing.x, crossing.y);
+  let slub = texel_hash(vec2i(i32(floor(threads.y)), 7)) - 0.5;
+  let weave = (1.0 - 0.1 * fade * max(crossing.x, crossing.y)) * (1.0 + 0.08 * fade * slub)
+    * (0.95 + 0.1 * sky_noise(texel / 10.0));
   switch layer {
-    case GOLD: { return vec3f(0.86, 0.66, 0.26); }
-    case IRON: { return vec3f(0.24, 0.25, 0.27); }
-    case BONE: { return vec3f(0.86, 0.83, 0.74); }
+    case GOLD: {
+      let worn = smoothstep(0.62, 0.8, sky_noise(texel / 5.0));
+      let glint = select(0.0, 0.16, texel_hash(cell + vec2i(31, 17)) > 0.93);
+      let gilt = vec3f(0.86, 0.66, 0.26) * (1.0 + 0.18 * mark + glint);
+      return mix(gilt, vec3f(0.5, 0.33, 0.14) * (1.0 + 0.2 * mark), worn * 0.8);
+    }
+    case IRON: {
+      let pit = select(1.0, 0.55, texel_hash(cell + vec2i(7919, 1049)) > 0.94);
+      let bloom = smoothstep(0.55, 0.85, sky_noise(texel / 6.0) + 0.25 * max(normal.z, 0.0));
+      let iron = vec3f(0.24, 0.25, 0.27) * (1.0 + 0.22 * mark) * pit;
+      return mix(iron, vec3f(0.35, 0.19, 0.11) * (1.0 + 0.3 * mark), bloom * 0.7);
+    }
+    case BONE: {
+      let grain = sin(texel.y * 0.9 + sky_noise(texel / 9.0) * 9.0) * 0.5 + 0.5;
+      let aged = sky_noise(texel / 12.0);
+      return mix(vec3f(0.88, 0.86, 0.78), vec3f(0.8, 0.72, 0.55), aged * 0.6) * (0.94 + 0.08 * grain + 0.06 * mark);
+    }
 ${CLOTH_CASES}
-    default: { return sampled; }
+    default: { return sampled * (0.93 + 0.14 * sky_noise(place.xy / 7.0)); }
   }
 }
 
@@ -112,7 +144,10 @@ ${CLOTH_CASES}
 // weather wets it. A glowing solid is a flame: brighter when the night round it is dark.
 fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
-    return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w);
+    // Each flame flickers on its own, a few times a second, by where it burns.
+    let place = floor((from_eye + view.eye.xyz) * 2.0);
+    let flicker = 0.86 + 0.16 * sky_noise(vec2f(view.eye.w * 7.0, place.x * 13.0 + place.y * 7.0 + place.z));
+    return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * flicker;
   }
   let facing = normalize(normal);
   // A clear noon's ambient was AMBIENT, more on a wall by the bounce, the sun lighting the rest.
@@ -121,10 +156,12 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0) * sky_dapple(from_eye);
   // Fresh snow lies on the flat stone as on the ground round it, the city standing on the eye's own ground. Flat stone
   // (the plaza, a flat roof) holds puddles where no snow lies; walls and sloping roofs are only darkened and sheened.
+  // Nothing is wet or snowed on under shelter: read a little out from the face, so a wall's outside is not its room.
+  let open = select(1.0, 0.0, sky_sheltered(from_eye + facing * 0.6));
   let rise = sqrt(max(1.0 - facing.z * facing.z, 0.0)) / max(facing.z, 1e-3);
-  let snow = sky_fresh_snow(sky_state.puddle_place.z, rise);
-  let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95) * (1.0 - snow);
-  let wet = max(sky_state.ambient_sky.w * 0.7 * (1.0 - snow), puddle);
+  let snow = sky_fresh_snow(sky_state.puddle_place.z, rise) * open;
+  let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95) * (1.0 - snow) * open;
+  let wet = max(sky_state.ambient_sky.w * 0.7 * (1.0 - snow), puddle) * open;
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
   let surface = sky_soaked(sky_snowed(albedo, snow), wet);
   return surface * (light + sky_lamps(from_eye, facing)) + sky_sheen(facing, from_eye, wet);
@@ -143,7 +180,7 @@ struct Surface {
 @fragment
 fn surface_fragment(surface: Surface) -> @location(0) vec4f {
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
-  let albedo = colour_of(surface.layer, sampled, surface.uv);
+  let albedo = colour_of(surface.layer, sampled, surface.uv, surface.from_eye + view.eye.xyz, surface.normal);
   if !kept(surface.tier, surface.fades, surface.clip.xy) {
     discard;
   }

@@ -213,9 +213,10 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let on_ground = vec3f(surface.offset, bed * view.brush.w - view.eye.z);
   // Fresh snow whitens the flat ground where the weather laid it; rain darkens the dry ground and pools in its
   // hollows, above the swash and under no snow.
-  let snow = sky_fresh_snow(bed, slope);
+  let open = select(1.0, 0.0, sky_sheltered(on_ground + vec3f(0.0, 0.0, 0.6)));
+  let snow = sky_fresh_snow(bed, slope) * open;
   dry = sky_snowed(dry, snow);
-  let open_ground = (1.0 - under) * smoothstep(0.5, 1.5, bed) * (1.0 - snow);
+  let open_ground = (1.0 - under) * smoothstep(0.5, 1.5, bed) * (1.0 - snow) * open;
   let puddle = sky_puddle(on_ground, slope) * open_ground;
   let soaked = max(sky_state.ambient_sky.w * open_ground * 0.8, puddle);
   dry = sky_soaked(dry, soaked);
