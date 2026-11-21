@@ -345,21 +345,21 @@ pub(crate) fn life(frame: &Frame, laid: &Laid) -> (Ways, Vec<Post>) {
             });
         }
     }
-    for (module, from) in [
-        ("market-stall-fish", "fish"),
-        ("market-stall-fruit", "fruit"),
-        ("market-stall-pots", "pots"),
-        ("market-stall-cloth", "fish"),
-        ("market-stall-bread", "fruit"),
-        ("market-stall-flowers", "fish"),
-    ] {
+    // Each market keeper at their stall, reached from the way point nearest it.
+    let stalls = ["fish", "fruit", "pots", "cloth", "bread", "flowers"].map(|goods| format!("market-stall-{goods}"));
+    for module in &stalls {
         for (at, facing) in laid.sockets_of(module, "keeper") {
+            let nearest = ways.points.iter().enumerate().min_by(|(_, one), (_, two)| {
+                let away = |point: [f64; 2]| libm::hypot(point[0] - at[0], point[1] - at[1]);
+                away(one.at).total_cmp(&away(two.at))
+            });
+            let reached_from = nearest.and_then(|(number, _)| u32::try_from(number).ok()).unwrap_or_default();
             posts.push(Post {
                 task: Task::Gesture,
                 at: [at[0], at[1]],
                 facing: bearing_of(facing),
                 keep: Keep::Kept,
-                reached_from: index(from),
+                reached_from,
             });
         }
     }

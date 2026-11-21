@@ -1,10 +1,10 @@
-"""What dresses the hub's walls and corners (crates/city/src/hub/adorn.rs places each), after the owner's "wall
-adornments. Banners and other small things to spruce up ambience".
+"""What dresses the hub's walls and corners, its small things that make a place lived in (crates/city/src/hub/adorn.rs
+places each).
 
 A hung piece (banners, lights, ivy, shields, weapons, the keepers' signs) is fixed by its `wall` socket at its
-fixing, facing out of the wall (-y); a stood one (planters, trees, statues, a well, a rug, a cart, sacks, amphorae)
-by its `front` (-y); the bunting by `end-1`, its line running +x. Each stands on its own foot, z 0 its lowest point,
-so a hung piece's socket is as high over its foot as it reaches below its fixing ([[Modules]] lists them).
+fixing, facing out of the wall (-y); a stood one (planters, pots, statues, a well, a rug, a cart, sacks, amphorae)
+by its `front` (-y); the bunting by `end-1`, its line running +x. Each stands on its own foot, so a hung piece's
+socket is as high over its foot as the piece reaches below its fixing.
 """
 import math
 

@@ -1,7 +1,5 @@
-//! What fills the hub's courts, each piece where it would be and why, after the owner's "It should feel lively, there
-//! shouldnt be so much bare ground. Populate everything", then "Its way too crowded. Like it needs to make sense with
-//! object placement. It needs to tell a story, and the pathway needs to be a different texture from the ground". The
-//! ways are laid as walks (`ground`); each court is a scene of its own (a landing under an
+//! What fills the hub's courts so they feel lived in, each piece where it would be and why, never crowded. The ways
+//! are laid as walks (`ground`); each court is a scene of its own (a landing under an
 //! avenue of trees, a garden round its fountain with the band's drinkers, the smiths' yard, a market lane, the stable's
 //! stores), each piece kept clear of every way, post, arrival and counter, of what already stands and of the ring's
 //! edge, or left out; then a place for the walkers at each bench, table, tree, stall and pile, reached straight from
@@ -15,11 +13,13 @@ use crate::life::{CLEAR_M, Keep, Post, Task, Ways};
 use crate::modules::{all, number_of};
 use crate::solids::Material;
 
-/// How a piece is turned: its front to the way nearest it, or toward a place (metres seaward, across).
+/// How a piece is turned: its front to the way nearest it, or toward a place (metres seaward, across), either square
+/// to the courts (the nearest of their four ways) or straight at it, as a piece set in a ring round it.
 #[derive(Clone, Copy)]
 enum Faces {
     Way,
     Toward(f64, f64),
+    Round(f64, f64),
 }
 
 /// A piece of a scene: its module, where it stands (metres seaward of the plaza's middle, and across it), and how it
@@ -49,7 +49,7 @@ fn ring(name: &'static str, middle: [f64; 2], radius: f64, count: u32, first: f6
     (0..count).map(move |nth| {
         let angle = (first + 360.0 * f64::from(nth) / f64::from(count)).to_radians();
         let [toward, across] = [middle[0] + radius * libm::cos(angle), middle[1] + radius * libm::sin(angle)];
-        at(name, toward, across, Faces::Toward(middle[0], middle[1]))
+        at(name, toward, across, Faces::Round(middle[0], middle[1]))
     })
 }
 
@@ -154,6 +154,8 @@ pub(super) const OVERHEAD_M: f64 = 2.5;
 const OUT_M: f64 = 0.8;
 const REACH_M: f64 = 45.0;
 const WALK_CLEAR_M: f64 = 0.6;
+/// How near its own piece a walker's place may stand, metres: a body's width from it, as a drinker on a table's bench.
+const OWN_CLEAR_M: f64 = 0.4;
 
 /// A piece laid in a court.
 pub(crate) struct Dressed {
@@ -245,7 +247,7 @@ fn faced(frame: &Frame, toward: [f64; 2]) -> [f64; 2] {
         .unwrap_or(frame.seaward)
 }
 
-/// The rectangle a module stood at `at` facing `facing` (square to the world) covers.
+/// The rectangle a module stood at `at` facing `facing` covers, square to the world.
 fn footprint(size: [f64; 3], at: [f64; 2], facing: [f64; 2]) -> Rect {
     let side = [-facing[1], facing[0]];
     let [half_wide, half_deep] = [size[0] / 2.0, size[1] / 2.0];
@@ -291,7 +293,7 @@ pub(crate) fn dress(
         let Some(module) = number_of(placing.name).and_then(|number| all().get(number as usize)) else { continue };
         let at = frame.at(placing.toward, placing.across);
         let toward_of = match placing.faces {
-            Faces::Toward(toward, across) => Some(frame.at(toward, across)),
+            Faces::Toward(toward, across) | Faces::Round(toward, across) => Some(frame.at(toward, across)),
             Faces::Way => lines
                 .iter()
                 .map(|&line| {
@@ -306,7 +308,14 @@ pub(crate) fn dress(
                 }),
         };
         let Some(toward_of) = toward_of else { continue };
-        let facing = faced(frame, [toward_of[0] - at[0], toward_of[1] - at[1]]);
+        let to = [toward_of[0] - at[0], toward_of[1] - at[1]];
+        let facing = match placing.faces {
+            Faces::Round(..) => {
+                let length = libm::hypot(to[0], to[1]).max(1e-9);
+                [to[0] / length, to[1] / length]
+            }
+            _ => faced(frame, to),
+        };
         let rect = footprint(module.size, at, facing);
         let in_ring = corners(rect).iter().all(|&corner| {
             inside(ring, corner)
@@ -379,8 +388,20 @@ pub(crate) fn walkers_places(dressed: &[Dressed], laid: &Laid, ways: &Ways, leve
         .collect();
     let mut found = Vec::new();
     for piece in dressed {
+        let own: Vec<Rect> = piece
+            .stood
+            .solids
+            .iter()
+            .flat_map(into_boxes)
+            .map(|[west, north, east, south, _, _]| [west, north, east, south])
+            .collect();
+        let others: Vec<Rect> = boxes.iter().copied().filter(|rect| !own.contains(rect)).collect();
         for (task, at, facing) in places(piece) {
-            if boxes.iter().any(|&rect| point_to_rect(at, rect) < WALK_CLEAR_M) {
+            let crowded = |line: [[f64; 2]; 2]| {
+                own.iter().any(|&rect| segment_to_rect(line, rect) < OWN_CLEAR_M)
+                    || others.iter().any(|&rect| segment_to_rect(line, rect) < WALK_CLEAR_M)
+            };
+            if crowded([at, at]) {
                 continue;
             }
             let mut near: Vec<(usize, f64)> = ways
@@ -391,10 +412,7 @@ pub(crate) fn walkers_places(dressed: &[Dressed], laid: &Laid, ways: &Ways, leve
                 .filter(|&(_, distance)| distance <= REACH_M)
                 .collect();
             near.sort_by(|one, two| one.1.total_cmp(&two.1));
-            let seen = near.into_iter().find(|&(index, _)| {
-                let line = [ways.points[index].at, at];
-                boxes.iter().all(|&rect| segment_to_rect(line, rect) >= WALK_CLEAR_M)
-            });
+            let seen = near.into_iter().find(|&(index, _)| !crowded([ways.points[index].at, at]));
             let Some((index, _)) = seen else { continue };
             let Ok(reached_from) = u32::try_from(index) else { continue };
             found.push(Post {

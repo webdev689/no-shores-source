@@ -107,7 +107,7 @@ pub(crate) fn parapet(ground: &Ground, from: [f64; 2], to: [f64; 2], outward: [f
     Solid::upright(Shape::Block, [middle[0], middle[1], foot], size, Material::Stone)
 }
 
-/// Overlook's hub on its platform, beside the Beacon reaching `reach` from its middle.
+/// Overlook's hub on its platform beside the Beacon, within `bounds` (west, north, east, south).
 #[must_use]
 pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
     let mut laid = Laid::default();

@@ -1,9 +1,8 @@
-//! What dresses the hub's walls and corners, after the owner's "Dont forget about wall adornments. Banners and other
-//! small things to spruce up ambience": Overlook's banners down the ranges and the Beacon's face, the factions' in the
-//! Hall, sconces and wall braziers, lanterns at every passage, bunting slung over the market lane, a sign at every
-//! stall, planters, potted trees and ivy, statues at the portico and the Harbour Stair, a well, a cart, and the quay's
-//! nets, pots and mooring posts. Each is a handcrafted module (`tools/modules`), fixed by its `wall` socket or stood
-//! by its `front`.
+//! What dresses the hub's walls and corners, the small things that make it lived in: Overlook's banners down the
+//! ranges and the Beacon's face, the factions' in the Hall, sconces and wall braziers, lanterns at every passage,
+//! bunting slung over the market lane, a sign at every stall, planters, potted trees and ivy, statues at the portico
+//! and the Harbour Stair, a well and a cart (the pier's mooring posts are the harbour's). Each is a handcrafted module
+//! (`tools/modules`), fixed by its `wall` socket or stood by its `front`.
 
 use super::courts::{RANGE_ACROSS_M, RANGE_DEEP_M};
 use super::hall::{RUG_FROM_DOOR_M, hall_span};
@@ -145,7 +144,7 @@ fn market(frame: &Frame, laid: &mut Laid, north: [f64; 2]) {
 
 /// A sign at every stall, fixed at the stall's `sign` socket (on the post at its counter's end, standing out across
 /// its front so it reads from along the court), its device the keeper's (`shop-sign-<keeper>`).
-fn signs(laid: &mut Laid) {
+pub(super) fn signs(laid: &mut Laid) {
     let stalls = [
         ("stall-mage", "shop-sign-mage"),
         ("stall-vault", "shop-sign-vault"),

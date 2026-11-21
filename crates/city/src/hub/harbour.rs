@@ -13,7 +13,7 @@ use crate::social::Social;
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::StationKind;
 use crate::terraces::Footing;
-use crate::walls::QUAY_TOP_M;
+use crate::walls::{PIER_M, QUAY_TOP_M};
 
 /// Below this a neighbour stands level with a cell of the way, and no retaining wall guards their edge, metres.
 const LEVEL_WITHIN_M: f64 = 0.3;
@@ -29,6 +29,8 @@ const PIER_HEAD_IN_M: f64 = 6.0;
 /// from its root, as shares of its length, metres.
 const MOORED_OFF_M: f64 = 10.5;
 const MOORED_ALONG: [f64; 2] = [0.45, 0.72];
+/// How far in from the pier's edge a moored ship's mooring posts stand, metres.
+const POSTS_IN_M: f64 = 0.8;
 
 /// What the harbour way is laid from: the city's grid, cells and their uses, the harbour avenue's cells, every ramp,
 /// the works (the pier among them), and the piers' roots on the quay.
@@ -88,6 +90,9 @@ pub fn harbour(social: &mut Social, frame: &Frame, way: &Harboured<'_>) {
                 laid.spots.push(head);
                 pier_line = Some((root, head));
                 social.moorings = moorings(root, head);
+                for (at, facing) in mooring_posts(root, head) {
+                    laid.piece(stand_at("bollards", "front", at, QUAY_TOP_M, facing));
+                }
             }
         }
         offices([top[0], top[1], top[2]], [foot[0] - top[0], foot[1] - top[1]], &mut laid);
@@ -221,6 +226,23 @@ fn moorings(root: [f64; 2], head: [f64; 2]) -> Vec<[f64; 3]> {
         .collect()
 }
 
+/// The mooring posts on the pier's edge beside each moored ship, their ropes out toward her: where each stands and the
+/// way it faces.
+fn mooring_posts(root: [f64; 2], head: [f64; 2]) -> Vec<([f64; 2], [f64; 2])> {
+    let out = [head[0] - root[0], head[1] - root[1]];
+    let length = libm::hypot(out[0], out[1]).max(1e-9);
+    let (along, across) = ([out[0] / length, out[1] / length], [-out[1] / length, out[0] / length]);
+    let from_middle = PIER_M / 2.0 - POSTS_IN_M;
+    [(-1.0, MOORED_ALONG[0]), (1.0, MOORED_ALONG[1])]
+        .into_iter()
+        .map(|(side, share)| {
+            let x = root[0] + along[0] * length * share + across[0] * side * from_middle;
+            let y = root[1] + along[1] * length * share + across[1] * side * from_middle;
+            ([x, y], [across[0] * side, across[1] * side])
+        })
+        .collect()
+}
+
 fn distance(one: [f64; 2], two: [f64; 2]) -> f64 {
     libm::hypot(one[0] - two[0], one[1] - two[1])
 }
@@ -258,6 +280,7 @@ fn offices(top: [f64; 3], down: [f64; 2], laid: &mut Laid) {
     laid.stall(StationKind::Harbourmaster, office);
     let chandlery = stand_at("stall-chandler", "counter", at(beside, back), top[2], toward(beside));
     laid.stall(StationKind::Chandler, chandlery);
+    super::adorn::signs(laid);
     laid.piece(stand_at("crates-barrels", "front", at(-beside, back + 9.0), top[2], seaward));
     for side in [-1.0, 1.0] {
         laid.piece(stand_at("lamp-post", "front", at(side * 8.0, 1.5), top[2], seaward));

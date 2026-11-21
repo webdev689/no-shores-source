@@ -127,3 +127,4 @@ def bollards(module):
     for start, end in zip(points, points[1:]):
         shapes.rod(module, start, end, 0.035, 'linen', sides=5)
     fittings.rope_coil(module, (1.35, -0.85, 0.0), radius=0.28, turns=3)
+    module.socket('front', (0.0, -1.0, 0.0), (0, -1))

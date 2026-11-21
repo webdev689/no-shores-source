@@ -4,6 +4,7 @@
 
 use crate::Plan;
 use crate::solids::{Material, Shape, Solid};
+use land::exact::sin_cos;
 
 /// A box a body runs into: west, north, east and south edges, its top and its underside, metres.
 pub type Box2 = [f64; 6];
@@ -40,6 +41,17 @@ pub(crate) fn into_boxes(solid: &Solid) -> Vec<Box2> {
             own([radius, -half_depth, 0.0, half_width, half_depth, height]),
             own([-radius, -half_depth, crown, radius, half_depth, height]),
         ];
+    }
+    // A round column as three boxes inside its round, crossed, so none reaches past it into its corners.
+    if matches!(solid.shape, Shape::Column { .. }) && solid.lean == 0.0 && solid.roll == 0.0 {
+        let [x, y, z] = solid.at;
+        return [22.5_f64, 45.0, 67.5]
+            .map(|degrees| {
+                let (sine, cosine) = sin_cos(degrees.to_radians());
+                let [across, along] = [half_width * cosine, half_depth * sine];
+                [x - across, y - along, x + across, y + along, z + height, z]
+            })
+            .to_vec();
     }
     // A block turned off the world's axes (a length of quay, a pier) in slices, so its boxes keep to it.
     if solid.shape == Shape::Block && solid.lean == 0.0 && solid.roll == 0.0 {

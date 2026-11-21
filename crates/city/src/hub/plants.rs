@@ -38,11 +38,11 @@ fn planting(name: &str) -> Vec<(Growth, [f64; 3], f64)> {
         "potted-tree" => vec![soil(Growth::Tree, 0.0, 0.0, 0.78, 0.3)],
         // A row of bushes along the bed's back, smaller ones along its front.
         "lawn-bed" => [-3.0, -1.5, 0.0, 1.5, 3.0]
-            .map(|x| soil(Growth::Bush, x, -0.8, 0.46, 0.6))
+            .map(|x| soil(Growth::Bush, x, -0.8, 0.42, 0.6))
             .into_iter()
-            .chain([-2.25, -0.75, 0.75, 2.25].map(|x| soil(Growth::Bush, x, 0.6, 0.46, 0.4)))
+            .chain([-2.25, -0.75, 0.75, 2.25].map(|x| soil(Growth::Bush, x, 0.6, 0.42, 0.4)))
             .collect(),
-        "planter" => vec![soil(Growth::Bush, -0.45, 0.0, 0.66, 0.45), soil(Growth::Bush, 0.45, 0.0, 0.66, 0.45)],
+        "planter" => vec![soil(Growth::Bush, -0.45, 0.0, 0.63, 0.45), soil(Growth::Bush, 0.45, 0.0, 0.63, 0.45)],
         _ => Vec::new(),
     }
 }
@@ -81,7 +81,7 @@ mod tests {
         let bed = crate::modules::solids(number, [100.0, 200.0, 30.0], turn);
         let planted = plants(&bed);
         assert_eq!(planted.len(), 9);
-        assert!(planted.iter().all(|plant| plant.growth == Growth::Bush && (plant.at[2] - 30.46).abs() < 1e-9));
+        assert!(planted.iter().all(|plant| plant.growth == Growth::Bush && (plant.at[2] - 30.42).abs() < 1e-9));
         // Turned a quarter, the bed's length runs south: its plants stand along it, within its reach of the middle.
         assert!(planted.iter().all(|plant| (plant.at[0] - 100.0).abs() <= 0.81 && (plant.at[1] - 200.0).abs() <= 3.01));
         assert!(plants(&crate::modules::solids(number_of("bench").expect("baked"), [0.0; 3], 0.0)).is_empty());

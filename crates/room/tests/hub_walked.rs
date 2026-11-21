@@ -58,6 +58,7 @@ fn hub() -> &'static Hub {
 fn walked(hub: &Hub, from: [f64; 2], waypoints: &[[f64; 2]], seconds: f64) -> (movement::Body, usize) {
     let mut body = standing_on(&hub.floor, &hub.blocks, from[0], from[1]);
     let mut next = 0;
+    let mut stood = body.z;
     for _ in 0..(seconds / TICK_SECONDS) as usize {
         let Some(target) = waypoints.get(next) else { break };
         let (east, south) = (target[0] - body.x, target[1] - body.y);
@@ -67,6 +68,10 @@ fn walked(hub: &Hub, from: [f64; 2], waypoints: &[[f64; 2]], seconds: f64) -> (m
         }
         let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
         body = step_body(&body, &controls, &hub.blocks, &hub.floor, TICK_SECONDS);
+        // The hub's falls kill: no way of it drops a walker that far.
+        let at = reach::Place { x: body.x, y: body.y, z: body.z, aloft: body.mode == movement::Mode::Air };
+        assert!(!at.aloft || stood - at.z < reach::FALL_M, "a fall of {:.1} m at {:?}", stood - at.z, [at.x, at.y]);
+        stood = reach::stood(stood, at);
         if matches!(body.mode, movement::Mode::Climb | movement::Mode::Hang | movement::Mode::Mantle) {
             break;
         }
