@@ -1,5 +1,5 @@
 //! A patrol's dungeon entrances: one for each of its dungeons, laid out from the node's id the same every time, apart
-//! from its resource spots' draw so those stand where they always have. Each is one of the four entrances Daggerfall's
+//! from its resource spots' draw so those stand where they always have. Each is one of the six entrances Daggerfall's
 //! dungeon blocks stand, drawn from its dungeon's seed, turned so its door faces the patrol's middle. A player may join
 //! the patrol's room before an entrance's door, as they come out of its dungeon.
 
