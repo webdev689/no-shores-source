@@ -59,6 +59,20 @@ status: in force
 
 ## Claude's calls
 
+- **The fight, measured** in the room's own rules: a level 1 player with the starting sword, swinging and never
+  guarding, against one level 1 foe at a time; felling it with the player's health held whole, and being felled by it
+  standing still. Each column is the same measure, so they compare as they stand (the earlier note's measure differed).
+
+| Foe | Before the pass (×1, ×1) | The pass (×2, ×0.5) | Now (×1.5, ×0.75) |
+|---|---|---|---|
+| Minor Swordsman | 3 blows, 2.3 s; fells the player in 23 s | 2 blows, 1.3 s; 46 s | 2 blows, 1.3 s; 32 s |
+| Major Hookman | 5 blows, 6.8 s; 12 s | 3 blows, 2.3 s; 24 s | 3 blows, 2.3 s; 15 s |
+| Major Brute | 9 blows, 12.3 s; 7 s | 5 blows, 6.3 s; 16 s | 6 blows, 8.3 s; 13 s |
+| Elite Captain | 23 blows, 36.8 s; 12.5 s | 12 blows, 20.8 s; 23 s | 15 blows, 28.3 s; 15 s |
+
+- A player still fells any Major before it fells them, the Brute with less to spare than under the pass; an Elite
+  beats a player who never guards, as it did before the pass, so guarding and dodging matter again.
+
 - **The colours by rank**, in 1,000, Normal, Magic, Rare, Legendary, Atheric: Minor 720, 230, 45, 5, 0; Major 640,
   280, 70, 10, 0; Elite 520, 320, 130, 28, 2; Miniboss 400, 330, 200, 60, 10; Boss 300, 280, 250, 135, 35. Each row
   falls from Normal to Atheric, and each better colour rises from Minor to Boss. A Boss's sure Vestige is a Normal
