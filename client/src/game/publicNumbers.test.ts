@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { GROWTH, MOTION, STORE } from '../city/eventProps.ts';
 import { EVENT } from '../combat/cues.ts';
-import { CHEST_LIES_S } from '../game/publicLaw.ts';
-import { MARK } from './publicMessages.ts';
+import { CHEST_LIES_S } from './publicLaw.ts';
+import { MARK } from '../network/publicMessages.ts';
 
 /** The room's public events' numbers, read from its own source, so the page's copies cannot drift from them. */
 const source = (path: string) => readFileSync(new URL(`../../../crates/room/src/${path}`, import.meta.url), 'utf8');
