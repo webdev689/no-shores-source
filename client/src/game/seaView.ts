@@ -51,7 +51,7 @@ export class SeaView {
   private where: Where = { kind: 'sail' };
   /** How far the view has come down to the helm, eased: 0 the sea's view, 1 at the helm. */
   helmShare = 0;
-  /** How far the wheel has brought the view in over her, past the Overworld's lowest. */
+  /** How far the wheel has brought the view in over it, past the Overworld's lowest. */
   private readonly close = new CloseZoom();
   /** The landings marked over the island's side in view, the rig over it, and the landing chosen there. */
   private side: readonly Mark[] = [];
@@ -80,17 +80,17 @@ export class SeaView {
     return this.where.kind === 'helm' && this.where.going === 'down' && this.where.at >= 1;
   }
 
-  /** How far the view is brought in close over her, eased: 0 not at all, 1 as close as it goes. */
+  /** How far the view is brought in close over it, eased: 0 not at all, 1 as close as it goes. */
   get closeShare(): number {
     return this.close.eased;
   }
 
-  /** The sea's shot `sea` brought in over her as she `lying` lies, as far as the wheel has brought it. */
+  /** The sea's shot `sea` brought in over it as it `lying` lies, as far as the wheel has brought it. */
   closeShot(sea: Shot, lying: Lying): Shot {
     return this.close.shot(sea, lying, this.camera.yaw, this.camera.tilt);
   }
 
-  /** The sea's shot `sea` brought in over her as close as it goes. */
+  /** The sea's shot `sea` brought in over it as close as it goes. */
   closest(sea: Shot, lying: Lying): Shot {
     return this.close.closest(sea, lying, this.camera.yaw, this.camera.tilt);
   }
@@ -180,7 +180,7 @@ export class SeaView {
     this.helmShare = smooth01(down);
   }
 
-  /** The shot over the ship, the camera stepped `dt` on toward her `feet`; flying, the flight's shot, and over an
+  /** The shot over the ship, the camera stepped `dt` on toward its `feet`; flying, the flight's shot, and over an
    *  island's side, the side's. */
   shot(toward: { readonly feet: Vec3; readonly dt: number; readonly ceiling: number; readonly heightAt: HeightAt }) {
     const stepped = stepCamera(this.camera, toward);
@@ -197,7 +197,7 @@ export class SeaView {
     return this.where.kind === 'landing' && this.sideRig ? shotOf(this.sideRig) : shot;
   }
 
-  /** The helm's view, the eye behind her wheel riding her as she lies, looking along her heading. */
+  /** The helm's view, the eye behind its wheel riding it as it lies, looking along its heading. */
   helmShot(lying: Lying, far: number): Shot {
     return { eye: helmEye(lying), yaw: lying.heading, pitch: HELM.pitch, fov: FIELD_OF_VIEW, near: 0.3, far };
   }

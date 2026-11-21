@@ -14,18 +14,18 @@ status: in force
 The owner's answers to the questions that followed:
 
 > How W, A, S and D sail the Sloop in the Overworld's view, alongside a click: "Helm, as in a fight (Recommended)": A
-> and D turn her while held, W sets her sailing straight ahead at the pace dial, S heaves her to, and she holds the new
+> and D turn it while held, W sets it sailing straight ahead at the pace dial, S heaves it to, and it holds the new
 > heading until stopped or a click sets a voyage.
 >
-> Which of the World Editor's animations she has, zoomed all the way in, the camera about 25 m off her as she eases to
-> her true size: "Ride the real swell", "Heel into turns", "Wake on the water" and "Sails by the wind".
+> Which of the World Editor's animations it has, zoomed all the way in, the camera about 25 m off it as it eases to
+> its true size: "Ride the real swell", "Heel into turns", "Wake on the water" and "Sails by the wind".
 
 ## What it settles
 
 - **The helm's keys at sea.** In the Overworld's view the Sloop is sailed by a click, as before, and by W, A, S and D
-  as the fight's helm has them: A and D turn her while held, W sets her sailing straight ahead at the pace dial, S
-  heaves her to, and she holds her new heading until stopped or a click sets a voyage ([[Game]], "At sea").
-- **Her crew and the player at the helm are seen from any view** ([[Game]]).
+  as the fight's helm has them: A and D turn it while held, W sets it sailing straight ahead at the pace dial, S
+  heaves it to, and it holds its new heading until stopped or a click sets a voyage ([[Game]], "At sea").
+- **Its crew and the player at the helm are seen from any view** ([[Game]]).
 - **Zoomed all the way in**, the ship is seen at full detail ([[Game]]).
-- **She has the World Editor's animations**: riding the real swell, heeling into a turn, her wake on the water and her
+- **It has the World Editor's animations**: riding the real swell, heeling into a turn, its wake on the water and its
   sails by the wind ([[Sailing]]).

@@ -12,7 +12,7 @@ import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { wearFightSheet } from './hudSheet.ts';
-import { element, setStyle, showNode } from './meter.ts';
+import { element, setStyle, showNode } from '../plus/meter.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';

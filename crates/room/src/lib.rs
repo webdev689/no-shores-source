@@ -6,14 +6,23 @@
 
 mod arts;
 pub mod asks;
+pub mod battle;
+pub mod boarding_hands;
+pub mod chart;
 pub mod clash;
+mod companions;
 mod course;
+pub mod crew;
 pub mod deck;
+mod deck_fight;
 mod drops;
 pub mod fleet;
 mod floor;
+pub mod flotsam;
 mod foes;
 mod garrison;
+pub mod harbour;
+pub mod island;
 mod judging;
 pub mod patrol;
 mod perks;
@@ -21,6 +30,9 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+pub mod sea_weather;
+pub mod ship_power;
+pub mod sighting;
 mod spells;
 mod statuses;
 pub mod threat;
@@ -28,6 +40,7 @@ pub mod winds;
 
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
+pub use companions::Companion;
 pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
@@ -41,12 +54,14 @@ pub use power::{allowed_arms, arms_allowed, loadout_arms};
 pub use spells::{BOLT, SpellSeen};
 
 use combat::arms::{Arms, BARE_HANDS};
-use combat::fighter::{Action, FighterId, player};
+use combat::fighter::{FighterId, player};
 use combat::judge::swing_blow;
 use combat::shots::Line;
 use combat::strike::struck;
-use combat::tuning::{FOE_GONE, RESPAWN};
+// The tests reach these through `super::*`, as before the dead were raised in players.rs.
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
+#[cfg(test)]
+use combat::{fighter::Action, tuning::RESPAWN};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
 pub use land::sites::NodeKind;
@@ -138,30 +153,22 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
+    pub(crate) ashore: companions::Ashore,
+    pub(crate) isle: Option<island::Isle>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
 }
 
 impl Room {
-    /// An empty room on a course of blocks on open ground, where players stand at `spawn` (x, y) when they join. Its
-    /// navmesh is baked over the course and open ground around it.
-    #[must_use]
-    pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        Self::on(Floor::Flat, blocks, vec![spawn], None)
-    }
-
-    /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
-    /// turn and come back to.
-    #[must_use]
-    pub fn node(floor: Floor, blocks: Vec<Block>, section: Section) -> Self {
-        let spawns = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
-        Self::on(floor, blocks, spawns, Some(section))
-    }
-
-    fn on(floor: Floor, blocks: Vec<Block>, spawn_points: Vec<(f64, f64)>, section: Option<Section>) -> Self {
-        let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        let nav = garrison::baked(&floor, &blocks, first, section.as_ref());
+    /// An empty room on its floor and navmesh (`garrison.rs` bakes it), its blocks, its spawns and its section.
+    pub(crate) fn on(
+        floor: Floor,
+        blocks: Vec<Block>,
+        spawn_points: Vec<(f64, f64)>,
+        section: Option<Section>,
+        nav: navmesh::NavMesh,
+    ) -> Self {
         Room {
             blocks: blocks.into(),
             floor,
@@ -202,8 +209,10 @@ impl Room {
             resource_nodes: Vec::new(),
             drops: Vec::new(),
             spells: spells::Spells::default(),
-            difficulty: gear::Difficulty::Calm,
+            difficulty: gear::Difficulty::Normal,
             patrol: None,
+            ashore: companions::Ashore::default(),
+            isle: None,
             minute: 0,
             shape_spots: Vec::new(),
         }
@@ -221,7 +230,7 @@ impl Room {
     }
 
     /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
-    fn stand_again(&self, x: f64, y: f64) -> Body {
+    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
         let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
@@ -288,6 +297,7 @@ impl Room {
         self.step_players();
         self.spawn_asked();
         self.keep_patrol();
+        self.keep_companions();
         self.step_foes();
         self.keep_on_course();
         self.fly_shots();
@@ -415,40 +425,6 @@ impl Room {
         }
     }
 
-    /// A player dead long enough stands again at the spawn nearest where they fell, whole; a foe dead long enough is
-    /// gone.
-    fn raise_the_dead(&mut self) {
-        let mut raised = Vec::new();
-        let fallen: Vec<(PlayerId, Fighter)> = self
-            .players
-            .iter()
-            .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
-            .map(|(id, found)| (*id, found.fighter))
-            .collect();
-        for (id, fighter) in fallen {
-            let body = self.stand_again(fighter.body.x, fighter.body.y);
-            let graced = self.clock + GRACE;
-            if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = found.armed(player(body, fighter.arms));
-                found.graced = graced;
-                raised.push(id);
-            }
-        }
-        for id in raised {
-            self.tell(EventKind::Respawned, None, id, id, 0.0);
-        }
-        let gone: Vec<FighterId> = self
-            .foes
-            .iter()
-            .filter(|(_, foe)| matches!(foe.fighter.action, Action::Dead { elapsed } if elapsed >= FOE_GONE))
-            .map(|(id, _)| *id)
-            .collect();
-        for id in gone {
-            self.foes.remove(&id);
-            self.board.forget(id);
-        }
-    }
-
     /// Every fighter now, players then foes, each in the order of their numbers.
     #[must_use]
     pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
@@ -527,6 +503,8 @@ mod foe_tests;
 mod gear_tests;
 #[cfg(test)]
 mod loadout_tests;
+#[cfg(test)]
+mod measure_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]

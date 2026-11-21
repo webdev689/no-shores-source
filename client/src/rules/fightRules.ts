@@ -9,15 +9,15 @@ export type ShipState = 'afloat' | 'struck' | 'sinking' | 'sunk' | 'wrecked';
 export type CaptainMode = 'cruise' | 'engage' | 'flee' | 'struck' | 'sinking';
 export type Point = readonly [number, number, number];
 
-/** The player's look: its bearing off her bow (degrees, to starboard), how far out it meets the water (metres), and
- *  its ray: the aim eye (east, south, up) then the way it looks. A ray that meets the captain lays on her. */
+/** The player's look: its bearing off its bow (degrees, to starboard), how far out it meets the water (metres), and
+ *  its ray: the aim eye (east, south, up) then the way it looks. A ray that meets the captain lays on it. */
 export interface FightLook {
   readonly bearing: number;
   readonly range: number;
   readonly ray?: readonly number[];
 }
 
-/** What the player orders for a step (crates/naval/src/fight.rs Orders): her helm, the look she lays, a release,
+/** What the player orders for a step (crates/naval/src/fight.rs Orders): their helm, the look they lay, a release,
  *  the brace and a load; the climb, release and load act on the first tick alone. */
 export interface FightOrders {
   readonly helm: Helm;
@@ -27,8 +27,10 @@ export interface FightOrders {
   readonly load: ShotName | null;
 }
 
-/** A ship in the fight: her numbers and pose, her hurts and her guns (port, then starboard). */
+/** A ship in the fight: its numbers and pose, its hurts and its guns (port, then starboard), and its hull (0 the
+ *  Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate) where the rules name it. */
 export interface FightVessel {
+  readonly hull_kind?: number;
   readonly ship: readonly number[];
   readonly pose: readonly number[];
   readonly hull: number;
@@ -47,11 +49,11 @@ export interface FightVessel {
   };
 }
 
-/** A captain's Sloop in a fight: her name, her faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),
- *  her mode, whether she is hostile to the player, her sides run out, and, from the land worker's fight, what her
- *  hurts and her going down do to her pose (metres settled, trim and list in radians). */
+/** A captain's ship in a fight: its name, its faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),
+ *  its mode, whether it is hostile to the player, its sides run out, and, from the land worker's fight, what its
+ *  hurts and its going down do to its pose (metres settled, trim and list in radians). */
 export interface FightCaptain extends FightVessel {
-  /** Her number in the fight, as its events name her (`ship`): the first captain 1, each other her own after. */
+  /** Its number in the fight, as its events name it (`ship`): the first captain 1, each other its own after. */
   readonly id: number;
   readonly name: string;
   readonly faction: number;
@@ -60,7 +62,7 @@ export interface FightCaptain extends FightVessel {
   readonly hostile: boolean;
   readonly run_out: readonly SideName[];
   readonly founder?: readonly [number, number, number];
-  /** While she goes down: how she will lie once sunk (as `founder`), and in how many seconds. */
+  /** While it goes down: how it will lie once sunk (as `founder`), and in how many seconds. */
   readonly sunk_founder?: readonly [number, number, number];
   readonly sinks_in?: number;
 }
@@ -90,7 +92,7 @@ export type FightEvent =
   | { readonly kind: 'gone'; readonly ship: number; readonly sunk: boolean };
 
 /** Where a gun's unscattered ball stops (crates/naval/src/shots.rs Stop): seconds after it leaves its gun, the
- *  point, whether in the water, and where it first meets her, if it does. */
+ *  point, whether in the water, and where it first meets it, if it does. */
 export interface FightEnd {
   readonly time: number;
   readonly point: Point;
@@ -99,7 +101,7 @@ export interface FightEnd {
 }
 
 /** The side the look lays: each gun's unscattered launch (its mouth, then its velocity) and where it stops (null:
- *  still aloft), the landing zone's radius (metres), and whether any would strike her. */
+ *  still aloft), the landing zone's radius (metres), and whether any would strike it. */
 export interface FightLay {
   readonly side: SideName;
   readonly launches: readonly (readonly number[])[];
@@ -125,9 +127,9 @@ export interface FightView {
   readonly fingerprint: string;
 }
 
-/** A captain a fight begins with, where she is given (crates/land-wasm/src/fight.rs `captains_of`): world metres
- *  east and south, her heading (radians clockwise from north), her faction (1 the Grey Tithe, 2 pirates) and rank
- *  (1 Minor to 5 Boss), and her way (m/s) if she comes on under sail. */
+/** A captain a fight begins with, where it is given (crates/land-wasm/src/fight.rs `captains_of`): world metres
+ *  east and south, its heading (radians clockwise from north), its faction (1 the Grey Tithe, 2 pirates) and rank
+ *  (1 Minor to 5 Boss), and its way (m/s) if it comes on under sail. */
 export interface CaptainAt {
   readonly x: number;
   readonly y: number;
@@ -137,9 +139,23 @@ export interface CaptainAt {
   readonly way?: number;
 }
 
-/** A fight's begin request: with `captains`, each set upon her where given; without, one called onto the ring. */
-export function beginRequest(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): string {
-  return JSON.stringify({ ship: [...ship], seed, time, ...(captains ? { captains } : {}) });
+/** What a fight begins with besides the player's ship: `captains`, each set upon it where given; without, one called
+ *  onto the ring, a pirate in its rank's hull (a Major's unless `rank` names one). */
+export interface FightBegun {
+  readonly rank?: number;
+  readonly captains?: readonly CaptainAt[];
+}
+
+/** A fight's begin request. */
+export function beginRequest(ship: ShipFloats, seed: number, time: number, begun: FightBegun = {}): string {
+  const { rank, captains } = begun;
+  return JSON.stringify({
+    ship: [...ship],
+    seed,
+    time,
+    ...(rank === undefined ? {} : { rank }),
+    ...(captains ? { captains } : {}),
+  });
 }
 
 /** A fight's step request: its orders, the swell's time, its ticks and the world's time for its wind. */

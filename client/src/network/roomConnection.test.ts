@@ -11,7 +11,7 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
   const part =
     'player' in message
       ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL, 0)
-      : Snapshot.createSnapshot(builder, message.tick, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+      : Snapshot.createSnapshot(builder, message.tick, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
   FromRoom.startFromRoom(builder);
   if ('player' in message) FromRoom.addJoined(builder, part);
   else FromRoom.addSnapshot(builder, part);

@@ -11,7 +11,7 @@ export async function fleetRulesAt(base: string): Promise<FleetRules> {
 
 /**
  * A page's way into a fleet room, with `?room=` in its address: the room's address, its rules compiled once, and the
- * Sloop's session there and its socket while she is at sea.
+ * Sloop's session there and its socket while it is at sea.
  */
 export class FleetBerth {
   readonly url: string;
@@ -26,7 +26,7 @@ export class FleetBerth {
     this.load = load;
   }
 
-  /** The berth the page's address asks for, or null; its rules loaded by `load` when she first joins. */
+  /** The berth the page's address asks for, or null; its rules loaded by `load` when it first joins. */
   static fromPage(search: string, load: () => Promise<FleetRules>): FleetBerth | null {
     const url = fleetAddress(new URLSearchParams(search).get('room'));
     return url === null ? null : new FleetBerth(url, load);
@@ -43,8 +43,8 @@ export class FleetBerth {
     return compiling;
   }
 
-  /** Joins the fleet with the Sloop put to sea at (x, y) heading `heading`: her session once the room has welcomed
-   *  her, or `fail` with why not. */
+  /** Joins the fleet with the Sloop put to sea at (x, y) heading `heading`: its session once the room has welcomed
+   *  it, or `fail` with why not. */
   join(
     start: readonly [number, number, number],
     joined: (session: FleetSession) => void,
@@ -78,7 +78,7 @@ export class FleetBerth {
       });
   }
 
-  /** Brings her in, or lets go of her join: she leaves the fleet. */
+  /** Brings it in, or lets go of its join: it leaves the fleet. */
   leave(): void {
     this.joining = null;
     this.connection?.close();

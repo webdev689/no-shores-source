@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
-import { accountOf, accountsFrom, nodeRoom, roomsFrom } from './rooms.ts';
+import { accountOf, accountsFrom, nodeOfRoom, nodeRoom, roomsFrom, seaRoomName } from './rooms.ts';
 
 test('without ?room= the game plays offline', () => {
   assert.equal(roomsFrom(null), null);
@@ -35,9 +35,25 @@ test('the deployed rooms keep characters on the deployed accounts; a local serve
 });
 
 test('a harder voyage to a patrol is a room of its own; a social space is one for all', () => {
-  assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'calm'), 'node-saltgrass-downs');
-  assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'storm'), 'node-saltgrass-downs--storm');
-  assert.equal(nodeRoom({ id: 'overlook-social', kind: 'social' }, 'storm'), 'node-overlook-social');
+  assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'normal'), 'node-saltgrass-downs');
+  assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'elite'), 'node-saltgrass-downs--elite');
+  assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'abyss'), 'node-saltgrass-downs--abyss');
+  assert.equal(nodeRoom({ id: 'overlook-social', kind: 'social' }, 'abyss'), 'node-overlook-social');
+});
+
+test('a node’s room name reads back as its node and difficulty, the old names as the new tiers', () => {
+  for (const seas of ['normal', 'elite', 'abyss'] as const) {
+    const room = nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, seas);
+    assert.deepEqual(nodeOfRoom(room), { id: 'saltgrass-downs', seas });
+  }
+  // A place the accounts kept under the other names (a presence or a held character) still reads.
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--rough'), { id: 'saltgrass-downs', seas: 'elite' });
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--storm'), { id: 'saltgrass-downs', seas: 'abyss' });
+  assert.equal(nodeOfRoom('sea'), null);
+});
+
+test('a voyage sails in its difficulty’s sea room', () => {
+  assert.deepEqual((['normal', 'elite', 'abyss'] as const).map(seaRoomName), ['sea', 'sea--elite', 'sea--abyss']);
 });
 
 test('the rooms take the session as it stands when they connect, so a sign-in after startup is the one they use', async () => {

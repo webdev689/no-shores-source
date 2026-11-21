@@ -4,7 +4,7 @@ import type { FighterView } from '../rules/fighters.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
 import type { Box } from './hitWords.ts';
-import { element, setStyle, showNode } from './meter.ts';
+import { element, setStyle, showNode } from '../plus/meter.ts';
 import {
   aimedFoe,
   bodyDegrees,

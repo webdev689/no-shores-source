@@ -130,7 +130,7 @@ export const turnBetween = (first: number, second: number) =>
 
 export const FROM: Shot = { eye: [9_950, 20_050, 30], yaw: 0.7, pitch: 0.3, fov: 1.134, near: 0.3, far: 30_000 };
 
-/** A Sloop going down as the rules send her: settled, trimmed and listed to port so far, and how she will lie. */
+/** A Sloop going down as the rules send it: settled, trimmed and listed to port so far, and how it will lie. */
 export const GOING = { founder: [1.5, 0.1, -0.3], sunk_founder: [9, 0.35, -0.56], sinks_in: 10 } as const;
 
 /** The fight's answer with a captain in each of `states`, and `events` since the last. */

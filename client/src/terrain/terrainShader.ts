@@ -222,7 +222,10 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   var colour = mix(dry, wet, under);
   let lit_normal = normalize(mix(normal, vec3f(0.0, 0.0, 1.0), puddle));
   let direct = max(dot(lit_normal, sky_state.key.xyz), 0.0);
-  let sun = select(1.0, sunlit(on_ground, lit_normal), direct > 0.0) * sky_dapple(on_ground);
+  // Under water the sun's shadow fades with the depth it is seen through, scattered by the water above: a ship's
+  // shadow lies on the surface beside it, not on the seabed far from it.
+  let lit = select(1.0, sunlit(on_ground, lit_normal), direct > 0.0) * sky_dapple(on_ground);
+  let sun = mix(lit, 1.0, under * (1.0 - exp(-max(depth, 0.0) / 1.5)));
   colour *= sky_ambient(lit_normal) + sky_direct(lit_normal, sun) + sky_lamps(on_ground, lit_normal);
   colour += sky_sheen(lit_normal, on_ground, soaked * (0.4 + 0.6 * puddle));
   let ring = 1.0 - smoothstep(0.0, ring_width * 1.5, abs(from_brush - view.brush.z));

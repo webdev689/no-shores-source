@@ -9,6 +9,7 @@ const STATIONS = [
   { kind: 'mage', keeper: [960.8, 1946.6], counter: [960.8, 1948.4] },
   { kind: 'chandler', keeper: [1000, 1946.6], counter: [1000, 1948.4] },
   { kind: 'weaponsmith', keeper: [1039.2, 1946.6], counter: [1039.2, 1948.4] },
+  { kind: 'harbourmaster', keeper: [1078.4, 1946.6], counter: [1078.4, 1948.4] },
 ] as const;
 const PLAZA: NodeInfo = {
   id: 'overlook-social',
@@ -32,6 +33,7 @@ const PLAZA: NodeInfo = {
 test('a counter that deals with the player opens its screen; a trader’s, and one out of reach, offer nothing', () => {
   assert.deepEqual(offerAt(STATIONS, 960.8, 1950), { words: 'The Mage', opens: { view: 'mage' } });
   assert.deepEqual(offerAt(STATIONS, 1039.2, 1949)?.opens, { view: 'weaponsmith' });
+  assert.deepEqual(offerAt(STATIONS, 1078.4, 1949)?.opens, { view: 'harbourmaster' }, 'the Shipwright');
   assert.equal(offerAt(STATIONS, 1000, 1949), null, 'the chandler sells nothing a player keeps');
   assert.equal(offerAt(STATIONS, 960.8, 1948.4 + SERVED_M + 0.1), null);
 });
@@ -55,4 +57,19 @@ test('the plaza’s people are placed once, moved each frame on its floor, and t
   assert.ok(placed.some((figure) => figure.anim === 'walk'));
   life.close();
   assert.equal(placed.length, 0);
+});
+
+test('a ruin’s plaza, keeping no station, has no one in it', () => {
+  let placed = 0;
+  const others = {
+    place: (dress: Placed['dress'], x: number, y: number, facing: number) => {
+      placed++;
+      return { id: placed, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false } as Placed;
+    },
+    remove: () => {},
+  };
+  const life = new PlazaLife({ ...PLAZA, name: 'Ruins of Mistfall', stations: [] }, others, () => 30);
+  for (let frame = 0; frame < 20; frame++) life.frame(0.25);
+  assert.equal(placed, 0);
+  assert.equal(offerAt([], 960.8, 1950), null, 'no counter offers anything');
 });

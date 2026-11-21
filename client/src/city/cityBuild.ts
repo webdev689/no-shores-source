@@ -12,6 +12,7 @@ import {
   hullOf,
   keptMasses,
   MASS_FLOATS,
+  MASS_RUIN,
   MASS_TIER_HULLS,
   MASS_TIER_MASSES,
   massShape,
@@ -21,6 +22,7 @@ import { forgedModel, type ModelBuffers, modelBuffers, type ModelKey, modelKeyOf
 import { addPolygon, appendMesh, emptyMesh, type MeshData } from './mesh.ts';
 import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
 import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach } from './plan.ts';
+import { brokenMass, buildingRuin, type BuildingRuin, fallenHeap } from './ruins.ts';
 import { meshSolid } from './solidMesh.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
@@ -41,8 +43,13 @@ export type CityTables = {
   readonly roomkit?: KitTable;
 };
 
-/** A model standing in a near cell: the model's place in the buffers, its origin from the city's middle, its yaw. */
-export type NearInstance = { readonly model: number; readonly at: readonly [number, number, number, number] };
+/** A model standing in a near cell: the model's place in the buffers, its origin from the city's middle, its yaw,
+ *  and in a ruin the height over its origin it is broken off at (0 standing whole). */
+export type NearInstance = {
+  readonly model: number;
+  readonly at: readonly [number, number, number, number];
+  readonly cut: number;
+};
 
 export type Range = { first: number; count: number };
 
@@ -74,6 +81,8 @@ export type CityData = {
   readonly solids: MeshData;
   readonly plates: { readonly tops: Float32Array; readonly tiles: Uint8Array; readonly width: number };
   readonly cleared: (x: number, y: number) => boolean;
+  /** Whether the city is a ruin, its broken buildings open to the sky. */
+  readonly ruined: boolean;
 };
 
 type Placed = {
@@ -82,6 +91,8 @@ type Placed = {
   key: ModelKey;
   at: [number, number, number, number];
   row: readonly number[];
+  /** In a ruin, how a building stands. */
+  ruin?: BuildingRuin;
 };
 
 /** Works out a city's drawing from its plan, climate, blocks and the forged tables. */
@@ -182,16 +193,22 @@ export function buildCity(
     chalky,
   );
 
+  const chunkCount = chunkSide * chunkSide;
+  const { masses, massRanges, hullRanges, tops, heaps } = buildingMassesOf(
+    plan,
+    placedPieces,
+    tables,
+    book,
+    chunkCount,
+  );
   const near = new Map<number, NearInstance[]>();
   for (const piece of placedPieces) {
+    if (piece.ruin?.fallen) continue;
     const list = near.get(piece.cell) ?? [];
-    list.push({ model: modelIndex.get(piece.key) ?? 0, at: piece.at });
+    list.push({ model: modelIndex.get(piece.key) ?? 0, at: piece.at, cut: piece.ruin?.cut ?? 0 });
     near.set(piece.cell, list);
   }
   for (const list of near.values()) list.sort((a, b) => a.model - b.model);
-
-  const chunkCount = chunkSide * chunkSide;
-  const { masses, massRanges, hullRanges, tops } = buildingMassesOf(plan, placedPieces, tables, book, chunkCount);
 
   const chunkMeshes = Array.from({ length: chunkCount }, emptyMesh);
   // each chunk's solids' box, west, north, bottom, then east, south, top, from the city's middle: a solid past the
@@ -204,7 +221,7 @@ export function buildCity(
     -Infinity,
     -Infinity,
   ]);
-  const solids: Solid[] = [...plan.landmark, ...plan.works, ...plan.social.solids];
+  const solids: Solid[] = [...plan.landmark, ...plan.works, ...plan.social.solids, ...heaps];
   for (const solid of solids) {
     const chunk = chunkOf(
       Math.floor((solid.at[0] - plan.grid.west) / CELL_M),
@@ -305,6 +322,7 @@ export function buildCity(
     solids: allSolids,
     plates: groundPlates(plan, blocks, book.ground, book.materials.paving),
     cleared: clearedGround(plan),
+    ruined: plan.ruined === true,
   };
 }
 
@@ -324,14 +342,15 @@ export function retaining(solid: Solid): boolean {
 }
 
 /** Every building's masses (for the middle distance) and hull (for far off), grouped by chunk: all the masses in
- *  chunk order, then all the hulls. */
+ *  chunk order, then all the hulls. In a ruin each building is broken (`ruins.ts`): a fallen one leaves a heap
+ *  among the solids instead, a broken one's masses and hull end at its break, roofless. */
 function buildingMassesOf(
   plan: CityPlan,
   pieces: readonly Placed[],
   tables: CityTables,
   book: PictureBook,
   chunkCount: number,
-): { masses: ArrayBuffer; massRanges: Range[]; hullRanges: Range[]; tops: Float32Array } {
+): { masses: ArrayBuffer; massRanges: Range[]; hullRanges: Range[]; tops: Float32Array; heaps: Solid[] } {
   const known = new Map<number, { kept: Mass[]; hull: Mass | null; wall: number; roof: number }>();
   const shapesOf = (id: number) => {
     const found = known.get(id);
@@ -352,10 +371,35 @@ function buildingMassesOf(
     hulls: [],
   }));
   const tops = new Float32Array(chunkCount).fill(-Infinity);
+  const heaps: Solid[] = [];
+  const placeOf = (piece: Placed) => ({
+    east: piece.at[0] + plan.centre[0],
+    south: piece.at[1] + plan.centre[1],
+    up: piece.at[2],
+    yaw: piece.at[3],
+  });
   for (const piece of pieces) {
     const building = piece.key.startsWith('building:') || piece.key.startsWith('open:');
     if (!building && !(piece.row.length === 7 && tables.props[piece.row[0]])) continue;
     const shapes = shapesOf(piece.row[0]);
+    if (plan.ruined && shapes.hull) {
+      const place = placeOf(piece);
+      // broken under its lowest wing's eaves, so no wing keeps its roof
+      const eaves = Math.min(...shapes.kept.map((mass) => mass.eaves));
+      piece.ruin = buildingRuin(place.east, place.south, { ...shapes.hull, eaves });
+      if (piece.ruin.fallen) {
+        heaps.push(fallenHeap(massShape(shapes.hull, place, plan.centre), plan.centre));
+        continue;
+      }
+      const cut = piece.ruin.cut;
+      for (const mass of shapes.kept) {
+        const broken = brokenMass(mass, cut);
+        if (broken) byChunk[piece.chunk].masses.push([broken, piece]);
+      }
+      const hull = brokenMass(shapes.hull, cut);
+      if (hull) byChunk[piece.chunk].hulls.push([hull, piece]);
+      continue;
+    }
     for (const mass of shapes.kept) byChunk[piece.chunk].masses.push([mass, piece]);
     if (shapes.hull) byChunk[piece.chunk].hulls.push([shapes.hull, piece]);
   }
@@ -363,24 +407,19 @@ function buildingMassesOf(
   const masses = new ArrayBuffer(total * MASS_FLOATS * 4);
   const [floats, whole] = [new Float32Array(masses), new Uint32Array(masses)];
   let next = 0;
+  const scorched = plan.ruined ? MASS_RUIN : 0;
   const lay = (list: [Mass, Placed][], tier: number, chunk: number): Range => {
     const first = next;
     for (const [mass, piece] of list) {
-      const place = {
-        east: piece.at[0] + plan.centre[0],
-        south: piece.at[1] + plan.centre[1],
-        up: piece.at[2],
-        yaw: piece.at[3],
-      };
-      const shape = massShape(mass, place, plan.centre);
+      const shape = massShape(mass, placeOf(piece), plan.centre);
       tops[chunk] = Math.max(tops[chunk], shape.base + shape.wall + shape.rise);
-      writeMass(floats, whole, next++, shape, shapesOf(piece.row[0]), piece.cell, tier);
+      writeMass(floats, whole, next++, shape, shapesOf(piece.row[0]), piece.cell, tier | scorched);
     }
     return { first, count: next - first };
   };
   const massRanges = byChunk.map((chunk, k) => lay(chunk.masses, MASS_TIER_MASSES, k));
   const hullRanges = byChunk.map((chunk, k) => lay(chunk.hulls, MASS_TIER_HULLS, k));
-  return { masses, massRanges, hullRanges, tops };
+  return { masses, massRanges, hullRanges, tops, heaps };
 }
 
 /** Ranges laid end to end in one buffer, joined where one starts as the last ends, so a run of chunks is one draw. */

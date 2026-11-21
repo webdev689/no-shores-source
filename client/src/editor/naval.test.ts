@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, FightLay, FightVessel, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
-import type { FightSource } from './fighting.ts';
+import { aimEye } from './aim.ts';
+import { type FightSource, Fighting } from './fighting.ts';
 import type { Sailed } from '../terrain/landClient.ts';
-import { Naval } from './naval.ts';
-import type { Orbit } from './orbit.ts';
+import { aimOf, Naval } from './naval.ts';
+import { cameraOf, type Orbit } from './orbit.ts';
 import { Sailing, type SailSource } from './sailing.ts';
 
 const vessel: FightVessel = {
@@ -69,7 +70,7 @@ function door(steps: Partial<FightView> = {}) {
       asked.ends++;
     },
   };
-  // The call reaches the door once her helm is still: let the queue settle first.
+  // The call reaches the door once its helm is still: let the queue settle first.
   const letGo = async () => {
     await settle();
     held.splice(0).forEach((resolve) => resolve());
@@ -88,7 +89,7 @@ async function sloop(): Promise<Sailing> {
   return sailing;
 }
 
-test('F calls a captain once her helm is still, and F again sends her off', async () => {
+test('F calls a captain once its helm is still, and F again sends it off', async () => {
   const { source, asked, letGo } = door();
   const naval = new Naval(drawer);
   const sailing = await sloop();
@@ -100,7 +101,7 @@ test('F calls a captain once her helm is still, and F again sends her off', asyn
   assert.deepEqual([naval.fighting, naval.busy, asked.begins, asked.ends], [false, false, 1, 1]);
 });
 
-test('a captain sent off before she comes is never taken up, nor one called before her', async () => {
+test('a captain sent off before it comes is never taken up, nor one called before it', async () => {
   const { source, asked, letGo } = door();
   const naval = new Naval(drawer);
   const sailing = await sloop();
@@ -114,24 +115,24 @@ test('a captain sent off before she comes is never taken up, nor one called befo
   await letGo();
   assert.equal(naval.fighting, true, 'the second call stands');
   assert.equal(asked.begins, 1, 'only the call that stands reaches the door');
-  assert.ok(naval.lines(0).includes('A Pirate Sloop is sighted, 1000 m off.'), naval.lines(0).join(' | '));
+  assert.ok(naval.lines(0).includes('A Pirate Sloop sighted, 1.0 km off.'), naval.lines(0).join(' | '));
 });
 
-test("she takes each answer's numbers for the Sloop, and none from a fight since ended", async () => {
+test("it takes each answer's numbers for the Sloop, and none from a fight since ended", async () => {
   const { source, letGo } = door();
   const naval = new Naval(drawer);
   const sailing = await sloop();
   naval.toggle(source, 'land', sailing, 0, failed);
   await letGo();
   naval.step(0.1, IDLE, 1, sailing, WINDOW, failed);
-  assert.deepEqual([...sailing.floats()], vessel.ship, 'the begun fight is hers');
+  assert.deepEqual([...sailing.floats()], vessel.ship, 'the begun fight is its own');
   naval.end();
   await letGo();
   naval.step(0.1, IDLE, 1.1, sailing, WINDOW, failed);
   assert.deepEqual([...sailing.floats()], vessel.ship);
 });
 
-test('a fight that is over hands her the last answer, ends, and keeps its lines a while', async () => {
+test('a fight that is over hands it the last answer, ends, and keeps its lines a while', async () => {
   const { source, asked, letGo } = door({ over: 'sunk', player: { ...vessel, ship: [9, 9, 0, 0, 0, 0, 0, 1] } });
   const naval = new Naval(drawer);
   const sailing = await sloop();
@@ -152,40 +153,75 @@ test("the look's ray runs from the aim eye along the camera's look", async () =>
   const orbit = { yaw: Math.PI / 2, pitch: 0.2 } as Orbit;
   const look = naval.look(orbit, sailing, WINDOW);
   const [x = 0, y = 0, z = 0, east = 0, south = 0, up = 0] = look.ray ?? [];
-  assert.ok(look.bearing > 89 && look.bearing < 91, 'over her starboard side');
+  assert.ok(look.bearing > 89 && look.bearing < 91, 'over its starboard side');
   assert.ok(x > 5 && Math.abs(y - 3) < 1e-9 && z > 5, 'the starboard aim eye');
   assert.ok(Math.abs(east - Math.cos(0.2)) < 1e-9 && Math.abs(south) < 1e-9 && Math.abs(up + Math.sin(0.2)) < 1e-9);
 });
 
-test('each arc ends where its gun stops: a strike mark on her, a zone where it splashes', () => {
-  const lay: FightLay = {
-    side: 'starboard',
-    launches: [
-      [0, 0, 5, 10, 0, 0],
-      [0, 2, 5, 20, 0, 0],
-    ],
-    elevation: 0,
-    reach: 300,
-    ends: [
-      { time: 0.5, point: [5, 0, 3.77], water: false, strike: [5, 0, 3.77] },
-      { time: 1, point: [20, 2, 0.1], water: true, strike: null },
-    ],
-    radius: 2,
-    on_target: true,
+const LAID: FightLay = {
+  side: 'starboard',
+  launches: [
+    [0, 0, 5, 10, 0, 0],
+    [0, 2, 5, 20, 0, 0],
+  ],
+  elevation: 0,
+  reach: 300,
+  ends: [
+    { time: 0.5, point: [5, 0, 3.77], water: false, strike: [5, 0, 3.77] },
+    { time: 1, point: [20, 2, 0.1], water: true, strike: null },
+  ],
+  radius: 1,
+  on_target: true,
+};
+
+test("the aim shows each gun's flight to where it stops, a strike where it meets the ship, a ring and post where it falls", () => {
+  const aim = aimOf(LAID, vessel, WINDOW, 1);
+  assert.ok(aim);
+  assert.equal(aim.arcs.length, 2);
+  const [struck = [], fell = []] = aim.arcs;
+  assert.deepEqual(struck[0], [0, 0, 5], 'from its gun');
+  assert.deepEqual(struck.at(-1), [5, 0, 5 - 9.81 * 0.125], 'to its side');
+  assert.deepEqual(fell.at(-1)?.slice(0, 2), [20, 2]);
+  assert.ok(struck.length >= 8, 'a smooth curve');
+  assert.deepEqual(aim.strikes, [[5, 0, 3.77]]);
+  assert.deepEqual(aim.zone, [[20, 2, 0.1]], 'the struck gun lays no ring');
+  assert.equal(aim.radius, 1.6, "DFO's least ring");
+});
+
+test("the aim's tone: hot on target while the side can fire, laid off it, not ready while it loads or braces", () => {
+  assert.equal(aimOf(LAID, vessel, WINDOW, 1)?.tone, 'hot');
+  assert.equal(aimOf({ ...LAID, on_target: false }, vessel, WINDOW, 1)?.tone, 'laid');
+  const loading = { ...vessel, guns: { ...vessel.guns, left: [0, 3.2] as const } };
+  assert.equal(aimOf(LAID, loading, WINDOW, 1)?.tone, 'idle', 'its starboard side still loads');
+  const portLoading = { ...vessel, guns: { ...vessel.guns, left: [3.2, 0] as const } };
+  assert.equal(aimOf(LAID, portLoading, WINDOW, 1)?.tone, 'hot', 'its port side is not the one laid');
+  const braced = { ...vessel, guns: { ...vessel.guns, braced: true } };
+  assert.equal(aimOf(LAID, braced, WINDOW, 1)?.tone, 'idle');
+  assert.equal(aimOf(LAID, { ...vessel, state: 'wrecked' }, WINDOW, 1)?.tone, 'idle');
+  assert.equal(aimOf(null, vessel, WINDOW, 1), null);
+});
+
+test("the World Editor's aim eases the eye out to its battery and home again, as the sea's fight does", async () => {
+  const naval = new Naval(drawer);
+  const answering: FightSource = {
+    fightBegin: async () => VIEW,
+    fightStep: async () => VIEW,
+    fightEnd: async () => {},
   };
-  const marks = Naval.arcs({ ...VIEW, lay }, WINDOW, 1);
-  const dots = marks.filter((mark) => mark.radius < 0.1 && mark.z !== 0.1);
-  assert.ok(
-    dots.filter((dot) => dot.y === 0).every((dot) => dot.x <= 5 + 1e-9),
-    'the first arc stops on her side',
-  );
-  assert.ok(
-    dots.filter((dot) => dot.y === 2).every((dot) => dot.x <= 20 + 1e-9),
-    'the second at its splash',
-  );
-  const strikes = marks.filter((mark) => mark.radius >= 0.1 && mark.x === 5 && mark.z === 3.77);
-  assert.equal(strikes.length, 1, 'a strike mark where it meets her');
-  const zone = marks.filter((mark) => Math.abs(Math.hypot(mark.x - 20, mark.y - 2) - 2) < 1e-9 && mark.z === 0.1);
-  assert.ok(zone.length >= 12, 'a ring of the zone radius round the splash');
-  assert.ok(!marks.some((mark) => mark.z === 3.77 && mark.radius < 0.1), 'no zone on her side');
+  naval.join(Fighting.joined(answering, 'land', VIEW, 0));
+  const sailing = await sloop();
+  const orbit: Orbit = { targetX: 0, targetY: 0, targetZ: 6, distance: 40, yaw: Math.PI / 2, pitch: 0.2 };
+  const battery = aimEye({ x: 0, y: 0, heading: 0, heave: 0 }, 1);
+  const off = (seen: Orbit) => {
+    const [x, y, z] = cameraOf(seen).eye;
+    return Math.hypot(x - battery[0], y - battery[1], z - battery[2]);
+  };
+  const home = off(orbit);
+  const first = off(naval.aimCamera(orbit, sailing, WINDOW, 1, true, 1 / 60));
+  assert.ok(first > home * 0.8, `a frame in it has barely left the orbit (${first} of ${home} m)`);
+  let seen = orbit;
+  for (let frame = 0; frame < 120; frame++) seen = naval.aimCamera(orbit, sailing, WINDOW, 1, true, 1 / 60);
+  assert.ok(off(seen) < 0.05, 'two seconds on it stands at the battery');
+  for (let frame = 0; frame < 240; frame++) seen = naval.aimCamera(orbit, sailing, WINDOW, 1, false, 1 / 60);
+  assert.equal(seen, orbit, 'let go, it is home');
 });

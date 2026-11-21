@@ -1026,6 +1026,106 @@
       "picked": 807391
     },
     {
+      "id": "ship.cannon",
+      "use": "A ship's long gun fires near",
+      "query": "cannon shot",
+      "seconds": [
+        0.5,
+        3.0
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.cannon-far",
+      "use": "A broadside heard far across the water",
+      "query": "distant cannon",
+      "seconds": [
+        1.0,
+        4.0
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.swivel",
+      "use": "A swivel gun fires on a rail",
+      "query": "small cannon shot",
+      "seconds": [
+        0.3,
+        1.5
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.hit",
+      "use": "A ball strikes a ship's timbers",
+      "query": "wood impact splinter",
+      "seconds": [
+        0.3,
+        2.0
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.blast",
+      "use": "A ship's magazine blows up",
+      "query": "explosion big",
+      "seconds": [
+        1.0,
+        4.0
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.grapple",
+      "use": "Grapnels bite a rail as boarders haul alongside",
+      "query": "grappling hook",
+      "seconds": [
+        0.5,
+        2.5
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.runout",
+      "use": "A battery runs out its guns, the tell before its broadside",
+      "query": "cannon carriage roll wood",
+      "seconds": [
+        0.6,
+        2.5
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.ready",
+      "use": "A side of its guns is loaded and ready",
+      "query": "wood knock metal tap",
+      "seconds": [
+        0.2,
+        1.0
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.sinking",
+      "use": "A ship goes down, groaning as the sea rushes in",
+      "query": "ship sinking creak water",
+      "seconds": [
+        2.0,
+        8.0
+      ],
+      "dfo": true
+    },
+    {
+      "id": "ship.whistle",
+      "use": "A ball whistles past close by",
+      "query": "whoosh pass by",
+      "seconds": [
+        0.3,
+        1.5
+      ],
+      "dfo": true
+    },
+    {
       "id": "amb.sea.gull",
       "use": "Gulls calling over the sea near a coast, over a harbour and a shore",
       "query": "seagulls calling",

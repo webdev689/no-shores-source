@@ -149,10 +149,10 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     let fired = kinds.iter().filter(|kind| kind.as_str() == r#""muzzle"0"#).count();
     assert_eq!(fired, 6, "two broadsides of three, the third refused braced or loading: {kinds:?}");
     assert_eq!(last["player"]["guns"]["load"], "grape");
-    // Each leg's: the balls aloft at a leg's end are in it, and her captain's commission and strike share.
+    // Each leg's: the balls aloft at a leg's end are in it, and the captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "d2fc521c1ce4f11a 4af906e5d52e9ad0 b04eee21ccbcae11 efa31ce7dc377a70 d6dc40b4bc1d764f d328a1c060b924de 4e2fc938b416de0e a9a11e2712db64a0 62d84f29f5297440"
+        "c260ed1b87a55f96 3e3cf79d73048acd 7ae905e53395710d d3b6730e151bc7cb 2c578c927689607a c3fc57c509c1a593 ea9af6a577483c3e bb46fcf8c1313545 d7dccf29cac36ece"
     );
 }
 
@@ -178,6 +178,82 @@ fn a_look_whose_ray_is_not_six_finite_numbers_is_refused() {
     for bad in [r#"[5, 3, 6, 1, 0, "down"]"#, "[5, 3, 6, 1, 0, null]", "[5, 3, 6, 1, 0]", r#""up""#] {
         assert!(with_ray(bad).get("error").is_some(), "{bad}");
     }
+}
+
+/// The fight `FIGHT_LEGS` fights against a pirate captain of `rank`, in its rank's hull: each leg's fingerprint.
+fn fought_with(rank: u8) -> Vec<String> {
+    opened();
+    let begin = format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#);
+    let begun = answer(&fight_begin_json(begin.as_bytes()));
+    assert!(begun.get("error").is_none(), "{begun}");
+    assert_eq!(begun["captain"]["rank"], rank);
+    let mut time = 1000.0;
+    let mut prints = Vec::new();
+    for leg in FIGHT_LEGS {
+        let last = answer(&fight_step_json(step_request(leg, time).as_bytes()));
+        assert!(last.get("error").is_none(), "{last}");
+        prints.push(last["fingerprint"].as_str().unwrap_or("").to_string());
+        time += leg[7] / 60.0;
+    }
+    prints
+}
+
+/// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
+/// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
+pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
+    [(2, 0, "d7dccf29cac36ece"), (3, 1, "dbaf7398dd05d4aa"), (4, 2, "ae34839cb3c3321f"), (5, 3, "1f4d823141afdd23")];
+
+#[test]
+fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
+    for (rank, hull, print) in HULL_FIGHTS {
+        let prints = fought_with(rank);
+        let begun = answer(&fight_begin_json(
+            format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#)
+                .as_bytes(),
+        ));
+        assert_eq!(begun["captain"]["hull_kind"], hull, "a captain of rank {rank} sails its rank's hull");
+        assert_eq!(begun["player"]["hull_kind"], 0, "the player sails their Sloop");
+        assert_eq!(prints.last().map(String::as_str), Some(print), "rank {rank}: {prints:?}");
+    }
+    let refused = |rank: &str| {
+        let begin =
+            format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#);
+        answer(&fight_begin_json(begin.as_bytes())).get("error").is_some()
+    };
+    assert!(refused("0") && refused("6") && refused("2.5") && refused("\"boss\""));
+}
+
+#[test]
+fn a_balls_hit_tells_where_on_the_ship_it_struck_and_the_sea_fights_own_events_are_told() {
+    use naval::damage::Zone;
+    use naval::fight::{Part, Piece};
+    let gun = naval::guns::SWIVEL;
+    let shot = naval::guns::Shot::Round;
+    let hit = ShotEvent::Hit {
+        shooter: 0,
+        target: 1,
+        zone: Zone::Hull,
+        point: [1.0, 2.0, 3.0],
+        flight: 0.5,
+        gun,
+        shot,
+        sail: None,
+    };
+    let events = [
+        Event::Hit { ship: 1, at: [4.0, -1.0, 2.0], part: Part::Hull },
+        Event::SailLost { ship: 1, sail: 0 },
+        Event::Struck { ship: 1 },
+        Event::Shot(hit),
+        Event::Flotsam { id: 7, at: [5.0, 6.0], kind: Piece::Chest },
+    ];
+    let told = events_json(&events);
+    assert_eq!(told.len(), 4, "its new hit is told with the shot's");
+    // As the fight tells them: its torn sail and its colours between the hit and its ball's.
+    assert_eq!(told[0]["kind"], "SailLost");
+    assert_eq!(told[1]["kind"], "Struck");
+    assert_eq!((told[2]["kind"].as_str(), told[2]["part"].as_str()), (Some("hit"), Some("hull")));
+    assert_eq!(told[2]["at"], serde_json::json!([4.0, -1.0, 2.0]));
+    assert_eq!((told[3]["kind"].as_str(), told[3]["kind_of"].as_str()), (Some("Flotsam"), Some("chest")));
 }
 
 #[test]
@@ -279,12 +355,12 @@ fn a_captain_going_down_shows_how_far_she_has_settled_and_her_trim_and_list() {
 }
 
 #[test]
-fn a_captain_going_down_shows_how_she_will_lie_once_sunk_and_how_soon() {
+fn a_captain_going_down_shows_how_it_will_lie_once_sunk_and_how_soon() {
     let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
     let mut fight =
         Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
-    assert!(view(&fight, &[], None, &Deep, 0.0)["captain"].get("sunk_founder").is_none(), "afloat, she is not going");
+    assert!(view(&fight, &[], None, &Deep, 0.0)["captain"].get("sunk_founder").is_none(), "afloat, it is not going");
     let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain")).damage;
     (damage.state, damage.sink_t) = (State::Sinking, 5.0);
     let shown = view(&fight, &[], None, &Deep, 0.0);
@@ -294,12 +370,12 @@ fn a_captain_going_down_shows_how_she_will_lie_once_sunk_and_how_soon() {
     let (now, sunk) = (triple("founder"), triple("sunk_founder"));
     assert_eq!(sunk.len(), 3, "{shown}");
     assert!(sunk[0] > now[0] && sunk[1].abs() > now[1].abs(), "deeper and trimmed further: {now:?} {sunk:?}");
-    assert_eq!(sunk[2].signum(), now[2].signum(), "listing the side she lists to now");
+    assert_eq!(sunk[2].signum(), now[2].signum(), "listing the side it lists to now");
     assert_eq!(shown["captain"]["sinks_in"], SINK_SECONDS - 5.0);
 }
 
 #[test]
-fn a_captain_given_her_way_comes_on_under_sail_and_one_without_lies_at_rest() {
+fn a_captain_given_its_way_comes_on_under_sail_and_one_without_lies_at_rest() {
     opened();
     let begun = answer(&fight_begin_json(
         br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
@@ -317,7 +393,7 @@ fn a_captain_given_her_way_comes_on_under_sail_and_one_without_lies_at_rest() {
     assert!(refused["error"].as_str().is_some(), "{refused}");
 }
 
-/// How far her ship sails in 10 s, sails set from the start, told `wind` (none for the world's) at the world's `world`.
+/// How far the ship sails in 10 s, sails set from the start, told `wind` (none for the world's) at the world's `world`.
 fn sailed(wind: &str, world: f64) -> f64 {
     opened();
     let begun =
@@ -343,9 +419,9 @@ fn a_told_wind_is_the_wind_sailed_whatever_the_worlds() {
     let gale = sailed("[14, 6]", 0.0);
     assert!((sailed("[14, 6]", 5_000.0) - gale).abs() < 1e-9, "the world's wind plays no part");
     let air = sailed("[1, 0]", 0.0);
-    assert!(gale > air * 2.0, "a gale drives her harder than a breath of air: {gale} against {air}");
+    assert!(gale > air * 2.0, "a gale drives it harder than a breath of air: {gale} against {air}");
     let worlds = [sailed("null", 0.0), sailed("null", 5_000.0)];
-    assert!((worlds[0] - worlds[1]).abs() > 1e-6, "untold, she sails in the world's wind, which changes: {worlds:?}");
+    assert!((worlds[0] - worlds[1]).abs() > 1e-6, "untold, it sails in the world's wind, which changes: {worlds:?}");
 }
 
 #[test]

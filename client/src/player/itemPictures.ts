@@ -6,7 +6,7 @@
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
-import { KINDS, MELEE, WORN } from './gear.ts';
+import { isModule, KINDS, MELEE, WORN } from './gear.ts';
 import { gearOutfit } from './gearLooks.ts';
 import { type Picture, addedBy } from './picture.ts';
 
@@ -65,6 +65,8 @@ export class ItemPictures {
   /** The picture of `item` worn on `body`, or null while it is drawn or where the forge draws nothing of it;
    *  `ready` is called once it is drawn. A picture the forge failed to draw is asked again the next time. */
   pictureOf(item: GearItem, body: Dress, ready: () => void): Picture | null {
+    // A module is no figure's to wear: its glyph stands for it.
+    if (isModule(item.kind)) return null;
     const look = this.lookOf(item, body);
     if (!look) return null;
     const { key, worn, bare, anim, onePiece, alone } = look;

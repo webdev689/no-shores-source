@@ -3,11 +3,14 @@ import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
+import { NoticeStack } from '../plus/notices.ts';
+import { hudLayout } from '../combat/hudLayout.ts';
+import { SeaFightReadout, type SeaFightModel, wearSeaFight } from '../plus/seaFight.ts';
 import { type Hint, hintLine } from './gearDom.ts';
 import './hud.css';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
-import type { Landfall } from './seaLaw.ts';
-import { FightPanel, type ShipReadout } from './seaPanel.ts';
+import type { HostileLook } from './seaHostiles.ts';
+import { type Landfall, landfallWords } from './seaLaw.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { TaskTracker } from './tasks.ts';
 
@@ -29,7 +32,8 @@ function seaGroup(label: string, ...controls: HTMLElement[]): HTMLElement {
   return group;
 }
 
-/** A mark on the screen: a node or a port, where it stands in CSS pixels, its size there, and what it says. */
+/** A mark on the screen: a node, a port or a hostile ship, where it stands in CSS pixels, its size there, and what its
+ *  says. */
 export interface ScreenMark {
   readonly id: string;
   readonly kind: MarkKind;
@@ -43,6 +47,8 @@ export interface ScreenMark {
   readonly named: boolean;
   /** Held at the picture's edge: the way its arrow points, degrees clockwise from up. */
   readonly arrowDegrees: number | null;
+  /** A hostile ship's emblem, rank colour and rank mark. */
+  readonly hostile?: HostileLook;
   /** Its node is locked: greyed, with a lock for its glyph. */
   readonly locked: boolean;
 }
@@ -60,6 +66,7 @@ const GLYPHS: Record<MarkKind, string> = {
   dungeon: '▼',
   boss: '☠',
   port: '⚓\uFE0E',
+  hostile: '',
 };
 /** A locked node's glyph, in the place of its kind's. */
 const LOCK_GLYPH = '🔒\uFE0E';
@@ -71,6 +78,25 @@ interface MarkNode {
   readonly name: HTMLElement;
   readonly note: HTMLElement;
   readonly arrow: HTMLElement;
+  readonly badge: HTMLElement;
+  /** The hostile look the mark was last dressed in ('' for none). */
+  readonly dress: { worn: string };
+}
+
+/** Dresses a mark as a hostile ship, or undresses it: its rank's colour on its ring and arrow, its faction's emblem in
+ *  it, and over it a Miniboss's mark, the plates' own. */
+function dressHostile(shown: MarkNode, look: HostileLook | undefined): void {
+  // A mark keeps its dress from frame to frame: it is laid again only when the ship's look changes.
+  const dress = look ? `${look.colour} ${look.emblem ?? ''} ${look.badge ?? ''}` : '';
+  shown.badge.hidden = !look?.badge;
+  if (shown.dress.worn === dress) return;
+  shown.dress.worn = dress;
+  shown.root.style.setProperty('--kind', look?.colour ?? '');
+  shown.glyph.style.background = look?.emblem
+    ? `url("${look.emblem}") center / 62% no-repeat, rgba(10, 13, 17, 0.6)`
+    : '';
+  shown.glyph.style.imageRendering = look ? 'pixelated' : '';
+  shown.badge.style.background = look?.badge ? `url("${look.badge}") center / contain no-repeat` : '';
 }
 
 /** The most toasts that stand at once, the newest kept. */
@@ -101,10 +127,9 @@ export class Hud {
   private readonly respawn: HTMLButtonElement;
   /** The key strip, which the fight's display keeps its arrows clear of (`FootView`). */
   readonly hintList = make('div', '', 'hints');
-  /** The quest tracker, her ship's panel in a sea fight and the toasts, laid together under the menu and the veil. */
+  /** The quest tracker and the toasts, laid together under the menu and the veil. */
   private readonly quests = make('div', '', 'hud-quests');
   readonly tasks = new TaskTracker(this.quests);
-  private readonly fightPanel = new FightPanel(this.quests);
   private readonly toasts = make('div', '', 'toasts');
   private readonly veilText = make('div', '', 'veil-text');
   private readonly veilNode = make('div', '', 'veil shown');
@@ -112,7 +137,7 @@ export class Hud {
   /** The compass at sea, heading its column at the top; on foot the fight's display stands its own there. */
   private readonly compassColumn = make('div', '', 'compass-column');
   private readonly seaCompass = new Compass(this.compassColumn);
-  /** Each captain's bar over her ship in a fight, drawn afresh each frame. */
+  /** Each captain's bar over its ship in a fight, drawn afresh each frame. */
   private readonly shipLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   private readonly shipPlates = new ShipPlates();
   private readonly marksShown = new Map<string, MarkNode>();
@@ -127,6 +152,10 @@ export class Hud {
   private readonly wheel: HTMLButtonElement;
   private readonly passage: HTMLButtonElement;
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
+  /** The sea fight's readout: the ship's plate and rose, the card and the tally, made in the root. */
+  private readonly fight: SeaFightReadout;
+  /** What happened, as DFO's toasts say it, at the top right. */
+  private readonly noticeStack: NoticeStack;
   /** The shape Manage's panel was last built to, and the place each of its values is written. */
   private panelShape = '';
   private panelValues: HTMLElement[] = [];
@@ -145,6 +174,7 @@ export class Hud {
     root.classList.add('hud');
     wearKit(root.ownerDocument);
     wearCompass(root.ownerDocument);
+    wearSeaFight(root.ownerDocument);
     const place = make('div', '', 'place');
     place.append(this.placeTitle, this.placeKind);
     this.warning.append(make('div', 'Return to the area', 'warning-words'), this.count);
@@ -203,6 +233,13 @@ export class Hud {
       this.death,
       this.veilNode,
     );
+    // Under the menu, the death screen and the veil, which cover it.
+    this.fight = new SeaFightReadout(root);
+    root.insertBefore(this.fight.root, this.menuNode);
+    this.fight.update(null);
+    this.noticeStack = new NoticeStack(root);
+    root.insertBefore(this.noticeStack.root, this.menuNode);
+    this.noticeStack.show([]);
     this.reach({ kind: 'inside' });
     this.menu(null);
     this.seaBar(null);
@@ -245,11 +282,6 @@ export class Hud {
     this.hintList.replaceChildren(...(hints.length > 0 ? [hintLine(hints, 'hints-line')] : []));
   }
 
-  /** Her ship's panel in a sea fight, or none. */
-  seaFight(ship: ShipReadout | null): void {
-    this.fightPanel.show(ship);
-  }
-
   /** The short messages over the middle of the view now, the newest few: the caller says each every frame it holds,
    *  as long as its own clock keeps it, so a toast never outlives what it tells. */
   toast(...texts: string[]): void {
@@ -275,13 +307,29 @@ export class Hud {
     if (view) this.seaCompass.update(view.heading, view.from, view.ships);
   }
 
+  /** Shows the sea fight's readout, or hides it for none. */
+  seaFight(model: SeaFightModel | null): void {
+    // shortcut: a view too narrow for the bars beside the compass (under 908 px) runs them under it; stand the
+    // compass under them, as on foot, if the sea is played that narrow.
+    const { clientWidth, clientHeight } = this.fight.root;
+    if (model && clientWidth > 0 && clientHeight > 0) this.fight.lay(hudLayout(clientWidth, clientHeight));
+    this.fight.update(model);
+    // The ships' plates keep under the card, as under the compass.
+    this.shipPlates.top = this.fight.under;
+  }
+
+  /** The notices standing now (DFO's toasts), the newest last; none for no notice. */
+  notices(lines: readonly string[]): void {
+    this.noticeStack.show(lines);
+  }
+
   /** Covers the view with words while a place loads, or lifts the cover. */
   veil(text: string | null): void {
     this.veilNode.classList.toggle('shown', text !== null);
     if (text !== null) this.veilText.textContent = text;
   }
 
-  /** Each captain's bar over her ship (world metres) as `pose` sees the picture; none out of a fight. */
+  /** Each captain's bar over its ship (world metres) as `pose` sees the picture; none out of a fight. */
   shipBars(bars: readonly ShipBar[], pose: CameraPose): void {
     this.shipLayer.replaceChildren();
     if (bars.length === 0) return;
@@ -304,6 +352,7 @@ export class Hud {
       shown.root.style.zIndex = String(order + 1);
       shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
       shown.glyph.textContent = mark.locked ? LOCK_GLYPH : GLYPHS[mark.kind];
+      dressHostile(shown, mark.hostile);
       shown.name.textContent = mark.name;
       const note = `${KIND_WORDS[mark.kind]} · ${mark.note}`;
       if (shown.note.textContent !== note) shown.note.textContent = note;
@@ -323,12 +372,21 @@ export class Hud {
     root.type = 'button';
     const [glyph, name, note] = [make('span', '', 'glyph'), make('span', '', 'name'), make('span', '', 'note')];
     const arrow = make('span', '▲', 'arrow');
-    root.append(arrow, glyph, name, note);
+    const badge = make('span', '', 'badge');
+    Object.assign(badge.style, {
+      position: 'absolute',
+      left: '-7px',
+      top: 'calc(var(--size) / -2 - 12px)',
+      width: '14px',
+      height: '8px',
+      imageRendering: 'pixelated',
+    });
+    root.append(arrow, glyph, name, note, badge);
     root.addEventListener('click', (event) => {
       event.stopPropagation();
       this.markChosen(id);
     });
-    const shown = { root, glyph, name, note, arrow };
+    const shown = { root, glyph, name, note, arrow, badge, dress: { worn: '' } };
     this.markLayer.append(root);
     this.marksShown.set(id, shown);
     return shown;
@@ -357,7 +415,7 @@ export class Hud {
       readonly sailing: boolean;
       readonly resumable: boolean;
       readonly landfall: Landfall;
-      /** Whether the helm may be left (the ship is in the sea room, out of a fight) and she may be managed (out of
+      /** Whether the helm may be left (the ship is in the sea room, out of a fight) and it may be managed (out of
        *  a fight). */
       readonly canLeave: boolean;
       readonly canManage: boolean;
@@ -373,7 +431,7 @@ export class Hud {
     this.voyage.hidden = !state.sailing && !state.resumable;
     const voyage = state.sailing ? 'Stop  Space' : 'Resume voyage  Space';
     if (this.voyage.textContent !== voyage) this.voyage.textContent = voyage;
-    const offer = state.landfall?.kind === 'dock' ? `Dock at ${state.landfall.port}  Enter` : 'Go ashore  Enter';
+    const offer = state.landfall ? `${landfallWords(state.landfall)}  Enter` : '';
     if (state.landfall && this.landfall.textContent !== offer) this.landfall.textContent = offer;
   }
 
@@ -392,22 +450,18 @@ export class Hud {
     this.voyageWanted = toggle;
   }
 
-  /** Manage's panel over her deck: her name, and each part of it, those still to come marked Later; null hides it.
+  /** Manage's panel over its deck: its name, and each part of it; null hides it.
    *  It is built again only when its shape changes, its values written in place, so a press on it is never lost. */
   shipPanel(panel: ShipPanel | null): void {
     this.panel.hidden = panel === null;
     if (!panel) return;
-    const shape = JSON.stringify([
-      panel.title,
-      panel.parts.map((part) => [part.heading, part.later, part.rows.length]),
-    ]);
+    const shape = JSON.stringify([panel.title, panel.parts.map((part) => [part.heading, part.rows.length])]);
     if (shape !== this.panelShape) {
       this.panelShape = shape;
       this.panelValues = [];
       const parts = panel.parts.map((part) => {
         const node = make('div', '', 'ship-part');
         node.append(make('div', part.heading, `ship-part-heading ${ROLES.rule}`));
-        if (part.later) node.append(make('span', 'Later', `ship-later ${ROLES.chip}`));
         for (const [label] of part.rows) {
           const [row, value] = [make('div', '', 'ship-row'), make('span', '', 'ship-value')];
           row.append(make('span', label, 'ship-label'), value);
@@ -439,7 +493,7 @@ export class Hud {
     this.passageWanted = take;
   }
 
-  /** Offers the helm at her wheel, or takes the offer away. */
+  /** Offers the helm at its wheel, or takes the offer away. */
   wheelOffer(shown: boolean): void {
     this.wheel.hidden = !shown;
   }
@@ -454,7 +508,7 @@ export class Hud {
     this.leaveWanted = leave;
   }
 
-  /** What the offer of the helm at her wheel does. */
+  /** What the offer of the helm at its wheel does. */
   onTakeHelm(take: () => void): void {
     this.wheelWanted = take;
   }

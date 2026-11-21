@@ -4,16 +4,16 @@ import './roster.css';
 import { make } from '../editor/dom.ts';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
-import { RARITIES, answerText, itemName } from '../player/gear.ts';
+import { RARITIES, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
-import { ROLES } from '../plus/kit.ts';
+import { ROLES, wearKit } from '../plus/kit.ts';
 import { ARTS_HINTS, ART_DIAMOND_KEY, type ArtsEntrance, artDiamond, artsPage } from './artsPage.ts';
 import { coresOf, gearAskOf } from './artsCards.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
-import { DISMANTLE_KEY, type Hint, HoverCard, glyphImage, hintLine, letGoHold, pressOf } from './gearDom.ts';
+import { type Hint, HoverCard, glyphImage, hintLine, letGoHold, pressOf } from './gearDom.ts';
 import {
   ACCOUNT_CHANGED,
   type GearHere,
@@ -32,15 +32,18 @@ import { ItemPictures } from '../player/itemPictures.ts';
 
 export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
+import { answerSaid } from './shipGear.ts';
+import { shipTab } from './shipPages.ts';
+import { stationPage, stationTitle } from './stationView.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
-import { KEEPERS } from './keepers.ts';
-import { isKeeperView, keyBeside, npcChoosing, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
+import { isKeeperView, keyBeside, npcChoosing, npcHints, npcOpened } from './npc/npcScreen.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
 import { startAcquiredFeed } from './acquiredFeed.ts';
 import { chime, play } from './uiSounds.ts';
+import { HINTS, SHELF_HINTS } from './gearHints.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -56,38 +59,12 @@ const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: 
 const BANNER_SCALE = 3;
 /** How often the menu looks for new gear while open, in milliseconds. */
 const LOOK_MS = 100;
-/** What the footer says each view's presses and keys do, and an item's page's. */
-const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
-  // A worn piece is not dismantled; a carried one's card in the flyout says how.
-  character: [
-    ['Click', 'Swap'],
-    ['Right-click / X', 'Details'],
-  ],
-  social: [
-    ['Click', 'Choose a player'],
-    ['Esc', 'Close a panel'],
-  ],
-  vault: [
-    ['Click', 'Put in or take out'],
-    ['Right-click / X', 'Details'],
-    [DISMANTLE_KEY, 'Hold to dismantle'],
-  ],
-  item: [
-    ['Hold', 'Buy a node'],
-    ['Click', 'Choose one bought'],
-  ],
-};
-/** What the inventory's shelves' cells show. */
-const SHELF_HINTS: Readonly<Record<string, readonly Hint[]>> = {
-  consumables: [['Hover', 'What it does']],
-  materials: [['Hover', 'Where it is from']],
-};
 /** The inventory's shelf shown first. */
 const FIRST_SHELF = 'consumables';
 
 const isTab = (view: View): view is Tab => (TABS as readonly string[]).includes(view);
 /** The views drawn from the player's gear; the rest need none. */
-const ofGear = (view: View) => view === 'character' || view === 'inventory' || !isTab(view);
+const ofGear = (view: View) => view === 'character' || view === 'inventory' || view === 'ship' || !isTab(view);
 
 /** A tab's press: its name, the key that opens it on a keycap, and Later on one still to come. */
 function tabPress(tab: Tab, open: () => void): HTMLButtonElement {
@@ -120,6 +97,8 @@ export function startGearWindow(
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
 ): void {
+  // The menu wears the kit itself, so every press and panel in it is dressed wherever the menu opens.
+  wearKit(root.ownerDocument);
   const screen = make('div', '', `gear-screen ${ROLES.window}`);
   screen.hidden = true;
   screen.setAttribute('role', 'dialog');
@@ -344,25 +323,22 @@ export function startGearWindow(
 
   /** A page that needs no gear, built again only when what it shows changes. */
   const plainPage = (shown: View): HTMLElement => {
-    const panel = shown === 'ship' ? ship() : null;
-    const key = JSON.stringify([shown, panel]);
+    const key = JSON.stringify([shown]);
     if (plain?.key === key) return plain.page;
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     const page =
       later !== undefined
         ? laterPage(TAB_PRESSES[shown as Tab].label, later)
-        : shown === 'ship'
-          ? shipPage(panel)
-          : shown === 'social'
-            ? rosterPage(link, travel)
-            : settingsPage(link);
+        : shown === 'social'
+          ? rosterPage(link, travel)
+          : settingsPage(link);
     plain = { key, page };
     return page;
   };
 
   function render(): void {
     if (view === null) return;
-    const station = isTab(view) ? null : KEEPERS[view].title;
+    const station = isTab(view) ? null : stationTitle(view);
     // The tabs, title and labels change only with the view, so the menu writes nothing while it stands open.
     if (view !== tabbed) {
       tabbed = view;
@@ -408,7 +384,10 @@ export function startGearWindow(
         });
     }
     // Built again only when the room's word on the gear is new, or the player moved within the menu.
-    const state = JSON.stringify([view, slot, arts, appearance, artSlot, artPending, shelf, inspecting, drawn, !now]);
+    // The ship's papers change at sea, so its tab is built again with them.
+    const papers = view === 'ship' ? ship() : null;
+    const where = [view, slot, arts, appearance, artSlot, artPending, shelf, inspecting, drawn];
+    const state = JSON.stringify([...where, !now, papers]);
     // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
     const holding = pressing || screen.querySelector('.gear-holding') !== null;
     if (holding || (gear === shownGear && state === shownState)) {
@@ -435,7 +414,8 @@ export function startGearWindow(
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
       const why = now ? 'Loading…' : (lost ?? 'Your gear shows here on foot, when playing online.');
-      body.replaceChildren(make('p', why, 'gear-hint gear-empty'));
+      // Its papers show without the room's word on its power and crew.
+      body.replaceChildren(view === 'ship' ? shipPage(papers) : make('p', why, 'gear-hint gear-empty'));
       hinted([]);
       actions.replaceChildren(close);
       return;
@@ -445,7 +425,7 @@ export function startGearWindow(
     // A refusal is heard once, when it comes.
     if (fresh && gear.answer !== 0 && gear.answered !== refusedAt) play('refused');
     if (fresh) refusedAt = gear.answered;
-    answer.textContent = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
+    answer.textContent = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerSaid(gear.answer);
     answer.style.color = opened ? (RARITIES[opened.rarity]?.colour ?? '') : '';
     const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
     const context: PageContext = {
@@ -470,6 +450,8 @@ export function startGearWindow(
       forge: now.forge ?? null,
       dress,
     };
+    // An officer paid off while their page was open leaves no page for Escape to step back from.
+    if (view === 'ship' && !gear.ship?.officers.some((officer) => officer.id === slot)) slot = null;
     const dressing = view === 'character' && appearance;
     const closeLooks = () => ((appearance = false), (returnTo = APPEARANCE_KEY), render());
     const looks = dressing ? appearancePage({ ...context, forge: now.forge ?? null, dress, close: closeLooks }) : null;
@@ -505,9 +487,12 @@ export function startGearWindow(
         )
       : view === 'character'
         ? (looks ?? characterPage(context, slot, (chosen) => ((slot = chosen), render())))
-        : isKeeperView(view)
-          ? npcPage(context, view, now.forge, redraw)
-          : inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()));
+        : view === 'ship'
+          ? // On its tab the officer whose page is open stands in the slot's place, so Escape steps back from it.
+            shipTab(context, papers, [shelf, slot], (part, officer) => (([shelf, slot] = [part, officer]), render()))
+          : !isTab(view)
+            ? stationPage(context, view, now.forge, redraw)
+            : inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()));
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;

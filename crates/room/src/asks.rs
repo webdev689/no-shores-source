@@ -33,6 +33,10 @@ pub enum Asked {
     Gather {
         node: u8,
     },
+    /// Scavenges a sea island's wreck by its place in the island's list.
+    Scavenge {
+        wreck: u8,
+    },
     Grant(Grant),
     /// Wears an Art, or sets a fragment in a slot of one's Core.
     Art(gear::arts::ArtAsk),
@@ -71,6 +75,9 @@ pub enum Grant {
     Ammo(u16),
     /// This many Ammo crates more, up to the five carried.
     Crates(u16),
+    /// A First Mate and a Bosun of this level signed on and sent ashore, as far as the crew has room: to see
+    /// companions fight.
+    Officers(u8),
     /// An Art, by its number, at this level (1 to `gear::arts::LEVEL_MOST`) with no XP toward the next, owning all
     /// its fragments: to try its spells at every level.
     ArtLevel {
@@ -129,9 +136,10 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
                 Seller::Tack => CounterKind::Tack,
             })
         }
-        Ask::Pledge { faction } | Ask::BuyFactionWare { faction, .. } | Ask::CollectPackage { faction } => {
-            Some(CounterKind::Faction(*faction))
-        }
+        Ask::Pledge { faction }
+        | Ask::BuyFactionWare { faction, .. }
+        | Ask::CollectPackage { faction }
+        | Ask::Recruit { faction, .. } => Some(CounterKind::Faction(*faction)),
         Ask::RiseArt { art, .. } | Ask::BuyFragment { art, .. } => art_faction(*art),
         Ask::BuyFromShape { .. } => Some(CounterKind::Shape),
         _ => None,
@@ -164,7 +172,8 @@ impl Room {
             counters.into_iter().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
         let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
-        Here { social, day: self.day(), week: gear::shape::week_of(self.minute) }
+        let (pledge, rank) = self.player(player).map_or((0, 0), |found| crate::crew::pledge_of(&found.character));
+        Here { social, day: self.day(), pledge, rank, week: gear::shape::week_of(self.minute) }
     }
 
     /// Where Shape stands, while he is in this social space: his place of the week among its spots.
@@ -176,9 +185,11 @@ impl Room {
     }
 
     /// Whether a player stands in a social space, or within reach of the stall: where the vendors' wares are shown.
+    /// A ruin's plaza has no counters, and nothing is sold there.
     #[must_use]
     pub fn in_social_space(&self, player: PlayerId) -> bool {
-        self.counters.is_some() || self.here(player, &Ask::Vend { vendor: Vendor::Armorsmith, ware: 0, day: 0 }).social
+        self.counters.as_ref().is_some_and(|counters| !counters.is_empty())
+            || self.here(player, &Ask::Vend { vendor: Vendor::Armorsmith, ware: 0, day: 0 }).social
     }
 
     /// Whether a player stands where a Vestige opens: at the Mage's counter, or the stall.
@@ -235,8 +246,10 @@ impl Room {
         let code = match asked {
             Asked::Gear(ask) => {
                 let here = self.here(player, &ask);
+                let deck = matches!(self.floor, crate::Floor::Deck(_));
                 let Some(found) = self.players.get_mut(&player) else { return };
-                match found.character.ask(ask, here, &dice) {
+                let ship_ask = crate::crew::of_the_ship(&ask, &found.character);
+                match if deck && ship_ask { Err(Refusal::NotHere) } else { found.character.ask(ask, here, &dice) } {
                     Ok(gear::Done::Identified(item)) => {
                         found.identified = item;
                         0
@@ -246,6 +259,7 @@ impl Room {
                 }
             }
             Asked::Gather { node } => self.gather(player, node),
+            Asked::Scavenge { wreck } => self.scavenge(player, wreck),
             Asked::Grant(grant) if self.is_test_ground() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),
@@ -343,6 +357,18 @@ impl Room {
             Grant::Crates(count) => {
                 for _ in 0..count.min(gear::ammo::CRATES_MOST) {
                     character.take_crate();
+                }
+            }
+            Grant::Officers(level) => {
+                use gear::crew::{ASHORE_MOST, Duty, Officer, Post};
+                for post in [Post::FirstMate, Post::Bosun] {
+                    let mut officer = Officer::new(0, post, gear::Rarity::Magic, level);
+                    (officer.given, officer.family) = (post as u8 * 5, post as u8 * 3);
+                    let ashore = character.crew.ashore().count() < ASHORE_MOST;
+                    let signed = character.sign_on(officer).and_then(|id| character.crew.officers.get_mut(&id));
+                    if let Some(signed) = signed.filter(|_| ashore) {
+                        signed.duty = Duty::Ashore;
+                    }
                 }
             }
             Grant::ArtLevel { art, level } => {

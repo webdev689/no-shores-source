@@ -8,6 +8,7 @@ import { FAR_BAND_M, FAR_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
 import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
 import { PAVED_TILE } from './cityGround.ts';
+import { MASS_RUIN } from './cityMasses.ts';
 import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
 
 /** How much nearer in depth (not on screen) the city is drawn than it stands: a few centimetres, and a share of the
@@ -16,6 +17,10 @@ export const PULL_M = 0.05;
 export const PULL_SHARE = 0.012;
 /** How far under its level a plate is drawn. */
 const PLATE_DROP_M = 0.03;
+/** How dark a ruin's walls are scorched at their break: a share of their light taken. */
+const SCORCH = 0.78;
+/** How far under its break a ruin's wall edge falls at most, metres, so the break is ragged. */
+const JAG_M = 3;
 
 const VIEW = /* wgsl */ `
 ${SHARED_WGSL}
@@ -123,15 +128,39 @@ struct Surface {
   @location(3) @interpolate(flat) tier: u32,
   @location(4) @interpolate(flat) fades: vec2f,
   @location(5) from_eye: vec3f,
+  // in a ruin, the height over the building's origin and the height it is broken off at; (0, 0) standing whole
+  @location(6) ruin: vec2f,
 };
 
+// A broken wall's edge: how far under the break it has fallen at a point, 0 to 1, the same over each 1.5 m square.
+fn jagged(point: vec3f) -> f32 {
+  let square = vec2i(floor(point.xy / 1.5));
+  var mixed = (u32(square.x) * 0x9e3779b1u) ^ (u32(square.y) * 0x85ebca77u);
+  mixed = (mixed ^ (mixed >> 15u)) * 0x2c1b3c6du;
+  mixed = mixed ^ (mixed >> 12u);
+  return f32(mixed & 1023u) / 1023.0;
+}
+
 @fragment
-fn surface_fragment(surface: Surface) -> @location(0) vec4f {
+fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
   if !kept(surface.tier, surface.fades, surface.clip.xy) {
     discard;
   }
-  return vec4f(lit(surface.layer, colour_of(surface.layer, sampled), surface.normal, surface.from_eye), 1.0);
+  let broken = surface.ruin.y > 0.0;
+  // above its break a ruin's building is gone, and so are its floors and ceilings in its upper part, which would
+  // otherwise read as a roof from above
+  let slab = abs(normalize(surface.normal).z) > 0.9 && surface.ruin.x > 0.25 * surface.ruin.y;
+  // never more than half its standing height, so a low building keeps its ground floor
+  let jag = min(${JAG_M}.0, 0.5 * surface.ruin.y) * jagged(surface.from_eye + view.eye.xyz);
+  if broken && (surface.ruin.x > surface.ruin.y - jag || slab) {
+    discard;
+  }
+  // a ruin's open shell is drawn from inside too, lit from the side seen
+  let normal = select(-surface.normal, surface.normal, facing);
+  let scorch = select(0.0, ${SCORCH} * pow(clamp(surface.ruin.x / max(surface.ruin.y, 1e-3), 0.0, 1.0), 1.5), broken);
+  let albedo = colour_of(surface.layer, sampled) * (1.0 - scorch);
+  return vec4f(lit(surface.layer, albedo, normal, surface.from_eye), 1.0);
 }
 `;
 
@@ -147,6 +176,8 @@ struct Vertex {
   @location(4) place: vec4f,
   // its cell, and its tier
   @location(5) about: vec2u,
+  // in a ruin, the height over its origin it is broken off at; 0 standing whole
+  @location(6) cut: f32,
 };
 
 // A model's x right and z forward, turned by its yaw clockwise from north, into the world's east and south.
@@ -159,6 +190,13 @@ fn turned(point: vec3f, yaw: f32) -> vec3f {
 fn placed(vertex: Vertex) -> vec3f {
   let solid = vertex.about.y == 0u;
   return select(turned(vertex.position, vertex.place.w), vertex.position, solid) + vertex.place.xyz;
+}
+
+// Placed as drawn, but a broken model's corners above its break brought down to it, so its shadow is the ruin's.
+fn placed_broken(vertex: Vertex) -> vec3f {
+  var broken = vertex;
+  broken.position.y = select(vertex.position.y, min(vertex.position.y, vertex.cut), vertex.cut > 0.0);
+  return placed(broken);
 }
 `;
 
@@ -179,6 +217,7 @@ fn model_vertex(vertex: Vertex) -> Surface {
   surface.layer = vertex.layer;
   surface.tier = vertex.about.y;
   surface.fades = select(fades_of(vertex.about.x), vec2f(0.0), solid);
+  surface.ruin = select(vec2f(0.0), vec2f(vertex.position.y, vertex.cut), vertex.cut > 0.0);
   return surface;
 }
 `;
@@ -267,6 +306,10 @@ fn mass_vertex(@builtin(vertex_index) index: u32, mass: Mass) -> Surface {
   surface.normal = vec3f(normal.x * cosine - normal.y * sine, normal.x * sine + normal.y * cosine, normal.z);
   surface.tier = mass.about.w & 6u;
   surface.fades = fades_of(mass.about.z);
+  // a ruin's mass is cut already: its walls scorched up to their top, which is its break, and its top left open
+  let ruined = (mass.about.w & ${MASS_RUIN}u) != 0u;
+  let open_top = select(vec2f(here.z, mass.size.z + 0.01), vec2f(1.0, 0.5), roofed || face >= 6u);
+  surface.ruin = select(vec2f(0.0), open_top, ruined);
   return surface;
 }
 `;
@@ -322,7 +365,7 @@ ${MODEL_PLACE}
 
 @vertex
 fn model_cast(vertex: Vertex) -> @builtin(position) vec4f {
-  return shadow.from_eye * vec4f(placed(vertex) - view.eye.xyz, 1.0);
+  return shadow.from_eye * vec4f(placed_broken(vertex) - view.eye.xyz, 1.0);
 }
 `;
 

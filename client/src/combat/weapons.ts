@@ -11,8 +11,8 @@ import type { Picture } from '../player/picture.ts';
 import { HALO, TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { ammoWords } from './ammoCounter.ts';
-import { EDGE } from './hudLayout.ts';
-import { element, setStyle, showNode } from './meter.ts';
+import { CORNER } from '../plus/barFrame.ts';
+import { element, setStyle, showNode } from '../plus/meter.ts';
 import { weaponCanvas } from './weaponPicture.ts';
 
 /** How long a swap between loadouts takes, in seconds (crates/combat/src/tuning.rs SWAP_TICKS, at 60 a second). */
@@ -231,7 +231,7 @@ ${scope} .weapon.next .picture { width: ${boxes.next[0]}px; height: ${boxes.next
  *  line, and the weapon put away dimmed. */
 export function weaponsCss(): string {
   return `
-.fight-hud .arms { position: absolute; left: ${EDGE.side}px; bottom: ${EDGE.foot}px; display: flex;
+.fight-hud .arms { position: absolute; left: ${CORNER.side}px; bottom: ${CORNER.foot}px; display: flex;
   align-items: flex-end; gap: 14px; pointer-events: none; }
 .fight-hud.wide .arms { gap: 20px; }
 .fight-hud.double .arms { zoom: 2; }
