@@ -251,7 +251,7 @@ fn saltmeres_grounds_keep_every_distance_the_bake_plans_them_by() {
         let out = distance(raid.approach, hamlet.at);
         assert!(stepped(out, APPROACH_M), "{id}: the approach {out} m out");
         let toward = [(raid.approach[0] - hamlet.at[0]) / out, (raid.approach[1] - hamlet.at[1]) / out];
-        let aside = BANNERS_M.hypot(BANNERS_APART);
+        let aside = libm::hypot(BANNERS_M, BANNERS_APART);
         for banner in &raid.banners {
             let banner_out = distance(*banner, hamlet.at);
             assert!(stepped(banner_out, aside), "{id}: a banner {banner_out} m out");

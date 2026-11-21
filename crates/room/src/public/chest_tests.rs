@@ -124,8 +124,8 @@ fn a_chest_stands_three_metres_out_from_the_grounds_middle_on_its_players_side()
         room.lay_chest(players[0], 1, FISSURE_AT, 5);
         let at = room.drops_for(players[0]).last().expect("the chest").at;
         let out = [at[0] - FISSURE_AT[0], at[1] - FISSURE_AT[1]];
-        assert!((out[0].hypot(out[1]) - 3.0).abs() < 1e-9, "side {side}: 3 m out, {out:?}");
-        let along = (out[0] * offset[0] + out[1] * offset[1]) / (3.0 * offset[0].hypot(offset[1]));
+        assert!((libm::hypot(out[0], out[1]) - 3.0).abs() < 1e-9, "side {side}: 3 m out, {out:?}");
+        let along = (out[0] * offset[0] + out[1] * offset[1]) / (3.0 * libm::hypot(offset[0], offset[1]));
         assert!(along > 1.0 - 1e-9, "side {side}: toward the player, {out:?}");
     }
 }
