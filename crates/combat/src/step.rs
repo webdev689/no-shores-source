@@ -475,8 +475,9 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
     None
 }
 
-/// A shot leaving: one of its ammunition spent, the weapon reloads, its arms pointing the way the shot flies. A double
-/// pistolet's right shot waits only for its firing frames, the left's for the reload of both.
+/// A shot leaving: one of its ammunition spent, the weapon reloads, its arms pointing the way the shot flies (an aimed
+/// one's turned back to the look by `aim`). A double pistolet's right shot waits only for its firing frames, the
+/// left's for the reload of both.
 fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
     next.ammo = next.ammo.map(|left| left.saturating_sub(1));
     next.kept.shoot = 0;
@@ -550,8 +551,8 @@ fn travel<B: Near + ?Sized>(body: &Body, telegraph: &Telegraph, around: &Surroun
 }
 
 /// The arms point where the fighter looks, but a swing's wind-up turns after the soft lock's target in reach and a
-/// guard turns to face it; a blow, once it lands, is locked where it was, and a shot's weapon stays pointed where it
-/// fired while it reloads. A weapon aimed faces the look, its reload too while the aim is held: the camera stands
+/// guard turns to face it; a blow, once it lands, is locked where it was, and a quick shot's weapon stays pointed where
+/// it fired while it reloads. A weapon aimed faces the look, its reload too while the aim is held: the camera stands
 /// over the shoulder, so the bearing to a near mark would turn the fighter aside, and only the shot need reach it.
 fn aim<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_, B>) {
     let (yaw, body) = (intent.controls.yaw, next.body);

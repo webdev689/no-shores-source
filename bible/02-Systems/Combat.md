@@ -188,7 +188,7 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
   pistolet's 1.9, a thunderlock's 2.2. A double pistolet fires its right, then its left once the right's firing frames
   have played (0.5 s, the pistolet's in first person), and only then reloads both, for 2.85 s, half again a
-  pistolet's. While it reloads, the weapon stays pointed where it fired.
+  pistolet's. While a quick shot's weapon reloads it stays pointed where it fired; an aimed shot's faces the look.
 - **Ammunition.** A player's fighter carries the shots its Ranged weapon has left, which their gear keeps ([[Gear]],
   "Ammo"); each shot spends one, a double pistolet's right and left one each, and at none a pull fires nothing, quick
   or aimed, though the weapon is still raised. The room sets the count from the gear before each step and the browser

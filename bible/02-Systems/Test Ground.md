@@ -142,7 +142,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   it for two frames, and leaves five puffs of smoke that rise, drift the shot's way and thin out over 1.2 s; its
   sizes are held to a share of the view, so first person's flash stays small. An arrow or a bolt trails the last
   0.3 s of its falling flight, its tail broken up. The player's own shots draw at once from the
-  weapon as drawn, the first person's muzzle in its firing frame or the figure's along the shot, joining the shot's
+  weapon as drawn, the first person's muzzle in its firing frame or the figure's gun as it faces, joining the shot's
   true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
   comes. Others' come from the room's word, each ball's line from the one snapshot that carries it; a foe's ball, which
   flies, is one tracer whose head keeps its own speed a tick behind the room's word, with one flash at its muzzle,
