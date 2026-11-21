@@ -19,5 +19,5 @@
     "noEmit": true
   },
   "include": ["*.ts", "accounts/*.ts"],
-  "exclude": ["*.test.ts", "accounts/*.test.ts", "accounts/*ForTests.ts"]
+  "exclude": ["*.test.ts", "*ForTests.ts", "accounts/*.test.ts", "accounts/*ForTests.ts"]
 }
