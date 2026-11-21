@@ -13,6 +13,7 @@ import {
   traitOf,
   upgraded,
   wearAsks,
+  weaponLook,
 } from './gear.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
@@ -65,13 +66,14 @@ const WARDROBE: Wardrobe = {
   right: [
     'bow_long_iron',
     'dagger_iron',
-    'pistolet_iron',
+    'pistolet',
+    'pistolet_gilded',
     'sword_iron',
     'sword_steel',
     'sword_ebony',
     'warhammer_iron',
   ],
-  left: ['shield_kite_steel', 'dagger_iron_l', 'pistolet_iron_l', 'torch_l'],
+  left: ['shield_kite_steel', 'dagger_iron_l', 'pistolet_l', 'pistolet_gilded_l', 'torch_l'],
   hairStyles: [],
 };
 
@@ -89,15 +91,17 @@ test('an item is named as the catalogue names it', () => {
     assert.ok(!answerText(code).startsWith('Refused'), `the Arts' refusal ${code} has words`);
 });
 
-test('the hands hold the drawn loadout, in its rarity’s metal where the forge draws it', () => {
+test('the hands hold the drawn loadout in its look, or the nearest metal the forge draws', () => {
   const hands = (right: string | null, left: string | null, grip: 'hilt' | null = null) => ({ right, left, grip });
   const shielded = item({ id: 1, kind: 12, rarity: 1, at: 2 });
   const brace = item({ id: 2, kind: 23, at: 3 });
   const worn = state([shielded, brace]);
   assert.deepEqual(gearHands(worn, WARDROBE), hands('sword_steel', 'shield_kite_steel'), 'Melee, drawn by default');
-  assert.deepEqual(gearHands(worn, WARDROBE, 1), hands('pistolet_iron', 'pistolet_iron_l'), 'Ranged, a pistolet each');
+  assert.deepEqual(gearHands(worn, WARDROBE, 1), hands('pistolet', 'pistolet_l'), 'Ranged, a plain pistolet each');
   const atheric = item({ id: 3, kind: 2, rarity: 4, at: 2 });
-  assert.deepEqual(gearHands(state([atheric]), WARDROBE), hands('sword_ebony', null), 'a sword alone');
+  assert.deepEqual(gearHands(state([atheric]), WARDROBE), hands('sword_ebony', null), 'daedric undrawn: ebony');
+  const gilded = item({ id: 4, kind: 23, rarity: 3, at: 3 });
+  assert.deepEqual(gearHands(state([gilded]), WARDROBE, 1), hands('pistolet_gilded', 'pistolet_gilded_l'), 'gilded');
   const pair = item({ id: 5, kind: 1, at: 2 });
   assert.deepEqual(gearHands(state([pair]), WARDROBE), hands('dagger_iron', 'dagger_iron_l'), 'a pair');
   const greatsword = item({ id: 6, kind: 22, at: 2 });
@@ -140,4 +144,47 @@ test('the drawn loadout glows in its element: both hands for a pair, the right a
   assert.deepEqual(heldElements(state([sword, bow]), 1), [1, 0], 'the Ranged loadout drawn');
   assert.deepEqual(heldElements(state([{ ...sword, at: 0 }]), 0), [0, 0], 'carried, not worn');
   assert.deepEqual(heldElements(null, 0), [0, 0]);
+});
+
+test("a weapon's look: a named piece's as written, a rolled one's by its rarity and name", () => {
+  const look = (fields: Partial<GearItem>) => weaponLook(item({ kind: 2, ...fields }));
+  assert.deepEqual(look({ named: 'seawall', kind: 12, rarity: 3 }), {
+    metal: 'dwarven',
+    shield: 'dwarven',
+    make: 'tower',
+  });
+  assert.deepEqual(look({ named: 'crosscurrent', kind: 19, rarity: 3 }).make, 'short');
+  const faction = { named: 'thunderstring', kind: 8, rarity: 3 };
+  assert.deepEqual(
+    weaponLook(item(faction), 'elven'),
+    { metal: 'elven', shield: 'elven', make: 'long' },
+    'its faction',
+  );
+  assert.deepEqual(
+    [0, 1, 2].map((rarity) => look({ rarity }).metal),
+    ['iron', 'steel', 'silver'],
+  );
+  assert.deepEqual(
+    [0, 1, 2, 3].map((name) => look({ rarity: 2, name }).metal),
+    ['silver', 'elven', 'dwarven', 'silver'],
+  );
+  assert.deepEqual(look({ kind: 12 }), { metal: 'iron', shield: 'plain', make: 'kite' }, 'a Normal shield plain');
+  assert.deepEqual(
+    [0, 1].map((name) => look({ kind: 18, rarity: 1, name }).make),
+    ['buckler', 'round'],
+  );
+  assert.deepEqual(
+    [0, 1].map((name) => look({ kind: 21, rarity: 1, name }).make),
+    ['round', 'kite'],
+  );
+  assert.deepEqual(
+    [0, 1].map((name) => look({ kind: 8, rarity: 1, name }).make),
+    ['long', 'short'],
+  );
+  assert.deepEqual(
+    [2, 3].map((rarity) => look({ kind: 11, rarity }).metal),
+    ['plain', 'gilded'],
+    'a thunderlock',
+  );
+  assert.equal(look({ named: 'signal_pair', kind: 23, rarity: 3 }).metal, 'plain', 'unless it names its own');
 });

@@ -344,13 +344,23 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - **Normal and Magic** pieces are clothes: a shirt (Magic, with a tunic or vest over it), breeches, trousers or a
   skirt, and shoes (Magic, tall boots), dyed in the rarity's plain or brighter dyes. A Magic head or arms piece is
   leather; a Normal one shows nothing.
-- **Rare and finer** pieces are armour sets of the forge: Rare in chain, steel or iron, Legendary in silver, elven,
-  dwarven or the knights' set, Atheric in daedric, ebony, adamantium or mithril, the first the forge draws for every
-  piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots). A faction's armour is its
-  guild's set instead, in the faction's own colour over any dye ([[Factions]], "Its own colour").
+- **Rare and finer** pieces are armour sets of the forge, among those it draws for every piece of the slot (the
+  torso's cuirass and pauldrons, the legs' greaves and boots). A rolled Rare piece is one of chain, iron, steel,
+  silver, elven, the knights' and the thieves' sets by its own number, so the same piece always wears the same set; a
+  smith's ware, with no number until it is bought, takes one by its name. A named piece wears the set written on it
+  in `content/gear/items.json` (`look`). A faction's armour is its guild's set instead, in the faction's own colour
+  over any dye ([[Factions]], "Its own colour").
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
-  cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is. The hands hold the loadout drawn, in the rarity's metal; a faction's
-  weapon in its faction's metal and colour.
+  cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is.
+- **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled weapon is iron at Normal, steel at Magic,
+  and silver, elven or dwarven at Rare by its name; a rolled bow is long or short by its name; a rolled shield is a
+  kite or round shield with a sword, a buckler or round with a dagger, a round or kite with a mace, by its name, plain
+  at Normal and in its weapon's metal above. A rolled pistolet, double pistolet or thunderlock is plain, gilded from
+  Legendary up. A named weapon wears the metal (or a gun's `gilded` or `plain`) and make (a shield's kind, a bow's,
+  `short` for a short sword) written on it; a faction's weapon its faction's metal and colour. A metal the forge does
+  not draw for a kind (a crossbow in ebony) falls to the nearest it does by worth (iron, steel, silver, elven,
+  dwarven, orcish, mithril, adamantium, ebony, daedric). The figure, the other players, first person and the item
+  pictures all draw the same layers.
 - **Cosmetics** ("Cosmetics", above) ride the dress (`Outfit.dye`, `coat`, `barding`), so every player sees them. A
   dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) and snapped once to the
   game's palette where it is made, so the figure, first person, the Appearance tiles and the keepers' swatches draw the
@@ -415,8 +425,13 @@ Officers ashore fight beside their player, as DFO's crew companions did
 - The menu ([[Interface]], "The menu") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
-- A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own
-  but a faction's piece, and a Normal head or arms piece shows nothing over the figure.
+- A look is chosen, not drawn for each item: by a rolled item's rarity and name (a Rare armour piece's number), a
+  named item's written look, or a faction's. A Normal head or arms piece shows nothing over the figure. A smith's
+  Rare armour ware shows the set of its name, and once bought the set of its number, which may differ.
+- Not every weapon and armour layer of the forge is worn (a test names each left out and why): the finest metals
+  (mithril, adamantium, ebony, orcish, daedric) only where a named piece wears one in its kind, no iron shield, no
+  tower shield but Seawall, no short bow in iron, silver or dwarven, no gilded double pistolet, no leather torso or
+  legs, and no chain torso (the forge draws no chain pauldrons).
 - No Breach items exist yet. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
   Vestige never opens to ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them

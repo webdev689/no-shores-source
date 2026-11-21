@@ -264,30 +264,70 @@ export function heldElements(state: GearState | null, loadout: number): readonly
   return [look, KINDS[item?.kind ?? 0]?.startsWith('double_') ? look : 0];
 }
 
-/** The metals a rarity's weapon is drawn in, best liked first, until each item names its own look. */
+/** The metals a rolled weapon is drawn in by rarity, one by its name: Normal iron, Magic steel, Rare silver, elven or
+ *  dwarven. A Legendary or Atheric is named and wears its own look; one without takes its rarity's here. */
 const METALS: readonly (readonly string[])[] = [
   ['iron'],
-  ['steel', 'iron'],
-  ['silver', 'elven', 'dwarven', 'steel'],
-  ['mithril', 'dwarven', 'adamantium', 'elven', 'ebony'],
-  ['daedric', 'ebony', 'adamantium', 'mithril'],
+  ['steel'],
+  ['silver', 'elven', 'dwarven'],
+  ['mithril'],
+  ['daedric'],
 ];
+/** The forge's metals by their worth: a metal the forge does not draw for a kind falls to the nearest one it does. */
+const WORTH = ['iron', 'steel', 'silver', 'elven', 'dwarven', 'orcish', 'mithril', 'adamantium', 'ebony', 'daedric'];
+/** A rolled shield's kinds by the weapon it is carried with, one by its name. */
+const SHIELDS: Readonly<Record<string, readonly string[]>> = {
+  sword_and_shield: ['kite', 'round'],
+  dagger_and_shield: ['buckler', 'round'],
+  mace_and_shield: ['round', 'kite'],
+};
+const BOWS = ['long', 'short'];
+/** Each named item's look and make as `content/gear/items.json` writes them, by its id. */
+const WRITTEN: ReadonlyMap<string, { readonly look?: string; readonly make?: string }> = new Map(
+  items.items.map((each) => [
+    each.id,
+    { ...('look' in each ? { look: each.look } : {}), ...('make' in each ? { make: each.make } : {}) },
+  ]),
+);
+/** A named item's look and make as written on it, if it is named and has them. */
+export const writtenLook = (item: GearItem): { readonly look?: string; readonly make?: string } | undefined =>
+  WRITTEN.get(item.named ?? '');
 
-/** The forge layer a weapon or shield of this kind and rarity is drawn with, among those a hand of the wardrobe takes:
- *  `own` metal first where one is named, then its rarity's where the forge draws one, else the first of its kind. */
-function layerFor(
-  choices: readonly string[],
-  kind: string,
-  rarity: number,
-  left: boolean,
+/** A weapon's look: its metal (a gun's `gilded` or `plain`), its shield's metal, and its make where the forge draws more
+ *  than one (a shield's kind, a bow's, a short sword). A faction's metal (`own`) comes first, then a named item's own
+ *  look, then a rolled one's by its rarity and its name. */
+export function weaponLook(
+  item: GearItem,
   own?: string,
-): string | null {
-  const ofKind = choices.filter((layer) => layer.startsWith(`${kind}_`) && layer.endsWith('_l') === left);
-  for (const metal of [...(own ? [own] : []), ...(METALS[rarity] ?? [])]) {
-    const found = ofKind.find((layer) => layer.includes(`_${metal}`));
-    if (found) return found;
+): { readonly metal: string; readonly shield: string; readonly make: string | null } {
+  const kind = KINDS[item.kind] ?? '';
+  const written = writtenLook(item);
+  const spread = (choices: readonly string[]) => choices[item.name % choices.length] ?? '';
+  const gun = kind === 'pistolet' || kind === 'double_pistolet' || kind === 'thunderlock';
+  const rolled = gun ? (item.rarity >= 3 ? 'gilded' : 'plain') : spread(METALS[item.rarity] ?? []);
+  const metal = own ?? written?.look ?? rolled;
+  const shields = SHIELDS[kind];
+  const make = written?.make ?? (shields ? spread(shields) : kind === 'bow' ? spread(BOWS) : null);
+  return { metal, shield: item.rarity === 0 ? 'plain' : metal, make };
+}
+
+/** The forge layer a weapon or shield of this kind is drawn with, among those a hand of the wardrobe takes: in its make
+ *  and metal, else the nearest metal the forge draws it in, else the first of its kind. */
+function layerFor(choices: readonly string[], kind: string, make: string | null, metal: string, left: boolean) {
+  const worth = WORTH.indexOf(metal);
+  // The metal itself, then the nearest by worth, the lesser first at one distance.
+  const metals =
+    worth < 0
+      ? [metal]
+      : [...WORTH].sort((a, b) => Math.abs(WORTH.indexOf(a) - worth) - Math.abs(WORTH.indexOf(b) - worth));
+  const end = left ? '_l' : '';
+  for (const each of metals) {
+    // The forge names a short sword after its metal (`sword_orcish_short`), a bow's or a shield's make before it.
+    const parts = kind === 'sword' ? [kind, each, make] : [kind, make, each];
+    const layer = parts.filter(Boolean).join('_') + end;
+    if (choices.includes(layer)) return layer;
   }
-  return ofKind[0] ?? null;
+  return choices.find((layer) => layer.startsWith(`${kind}_`) && layer.endsWith('_l') === left) ?? null;
 }
 
 /** The forge's layers each loadout is drawn with: the right hand's weapon file, and the left's, a second of it (a
@@ -317,13 +357,18 @@ export function gearHands(
   if (!item) return { right: null, left: null, grip: null };
   const kind = KINDS[item.kind] ?? '';
   const held = HELD[kind] ?? { right: kind };
-  const right = layerFor(wardrobe.right, held.right, item.rarity, false, metal);
+  const look = weaponLook(item, metal);
+  // A gun's plain look is the forge's bare `pistolet`, its gilded one `pistolet_gilded`.
+  const drawn = look.metal === 'plain' ? '' : look.metal;
+  // A shield's make is the shield's kind, not its weapon's.
+  const make = held.left === 'shield' ? null : look.make;
+  const right = layerFor(wardrobe.right, held.right, make, drawn, false);
   if (held.left === 'hilt') return { right, left: null, grip: 'hilt' };
   const left =
     held.left === 'pair'
-      ? layerFor(wardrobe.left, held.right, item.rarity, true, metal)
+      ? layerFor(wardrobe.left, held.right, make, drawn, true)
       : held.left === 'shield'
-        ? layerFor(wardrobe.left, 'shield', item.rarity, false, metal)
+        ? layerFor(wardrobe.left, 'shield', look.make, look.shield, false)
         : null;
   return { right, left, grip: null };
 }

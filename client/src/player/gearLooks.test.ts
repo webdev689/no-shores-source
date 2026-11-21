@@ -112,8 +112,8 @@ test('a Rare or finer piece is an armour set, the rarer the finer; Magic is tuni
     plain,
   );
   assert.deepEqual(dressed.armour, {
-    cuirass: 'steel',
-    pauldrons: 'steel',
+    cuirass: 'iron',
+    pauldrons: 'iron',
     greaves: 'knights',
     boots: 'knights',
     helm: 'leather',
@@ -124,6 +124,24 @@ test('a Rare or finer piece is an armour set, the rarer the finer; Magic is tuni
   const magic = gearOutfit(state([item({ kind: 14, rarity: 1, at: 5, name: 1 })]), wardrobe, plain);
   assert.deepEqual(magic.garments, ['shirt_long_v', 'vest']);
   assert.equal(magic.dyes['vest'], 'Aquamarine', 'each item keeps its own look by its name');
+});
+
+test('a rolled Rare piece wears a set by its own number, or by its name before it has one; a named piece its own', () => {
+  const torso = (fields: Partial<GearItem>) =>
+    gearOutfit(state([item({ kind: 14, rarity: 2, at: 5, ...fields })]), wardrobe, plain).armour.cuirass;
+  // The wardrobe draws chain, iron, steel and knights of the Rare sets, in the rarity's order.
+  assert.deepEqual(
+    [0, 1, 2, 3, 4].map((id) => torso({ id, name: 2 })),
+    ['steel', 'iron', 'steel', 'knights', 'chain'],
+    "by its number; a smith's ware, numbered 0, by its name",
+  );
+  assert.equal(torso({ id: 7, name: 0 }), torso({ id: 7, name: 1 }), 'the same piece always the same set');
+  const named = gearOutfit(
+    state([item({ kind: 16, rarity: 3, at: 7, named: 'tithebreaker_greaves' })]),
+    { ...wardrobe, sets: { ...wardrobe.sets, greaves: [...sets, 'dwarven'], boots: [...sets, 'dwarven'] } },
+    plain,
+  );
+  assert.deepEqual([named.armour.greaves, named.armour.boots], ['dwarven', 'dwarven'], 'its own look, dwarven');
 });
 
 test('the dye, coat and barding worn ride the outfit; the start pieces are none', () => {
