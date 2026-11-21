@@ -308,7 +308,7 @@ table SeaFight {
 
 // One ship in a fleet room: its number; whether a captain sails it; its helm's numbers in the sailing crate's order
 // (crates/sailing/src/floats.rs) and its pose; its hull, sail and men, each with what it has of it whole; its state
-// (0 afloat, 1 struck, 2 sinking, 3 sunk, 4 wrecked) and the fires aboard; its guns (the seconds each side has left
+// (0 afloat, 1 struck, 2 sinking, 3 sunk) and the fires aboard; its guns (the seconds each side has left
 // to load, port then starboard, then how far each has loaded); its load (as Orders numbers it) and whether it is
 // braced; for a captain, its mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship it fights (0 none) and
 // its sides run out (1 port, 2 starboard, 3 both); for a player's ship, the number of its last orders taken; and the
@@ -351,7 +351,7 @@ table Ball {
 // ship it happened to (for a ball, the one that fired it, for a strike or a ram the one struck) and, for a strike or a
 // ram, who struck; a number saying more (a strike's zone, 0 hull, 1 holed, 2 canvas; a side, 0 port, 1 starboard; a
 // state as Vessel numbers it; why guns refuse, 0 no side bears, 1 silent, 2 braced, 3 loading; a load as Orders numbers
-// it; 1 for a wreck's sails; how a captain left, 0 sunk, 1 sailed off); the side still loading; a point, and a ball's
+// it; how a captain left, 0 sunk, 1 sailed off); the side still loading; a point, and a ball's
 // launch; and the seconds that side has left to load, or the hull a ram took.
 table Naval {
   tick: ulong;

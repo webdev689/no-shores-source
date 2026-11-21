@@ -163,13 +163,13 @@ fn a_bold_captain_runs_out_its_guns_and_fires_on_the_player() {
 }
 
 #[test]
-fn bare_yards_or_a_wreck_set_no_sail() {
+fn bare_yards_set_no_sail() {
     let mut fight = alongside(500.0, Temper::Wary);
     player_mut(&mut fight).damage.apply(Hurt { hull: 0.0, sail: 96.0, crew: 0.0, fire: false }, 0.0, 0.0);
     player_mut(&mut fight).ship.rung = 1;
     let climb = Orders { helm: Helm { climb: 1, ..STILL }, ..IDLE };
     let events = run(&mut fight, &climb, 1);
-    assert!(events.contains(&Event::NoSail { ship: PLAYER, wrecked: false }));
+    assert!(events.contains(&Event::NoSail { ship: PLAYER }));
     assert_eq!(player(&fight).ship.rung, 1);
 }
 
@@ -329,17 +329,6 @@ fn a_captain_sails_round_land_that_lies_between_it_and_the_player() {
         closest = closest.min((ship.x * ship.x + ship.y * ship.y).sqrt());
     }
     assert!(closest < 120.0, "it never came round the headland: {closest}");
-}
-
-#[test]
-fn a_wreck_does_not_mend_while_a_pirate_who_would_take_it_lies_near() {
-    let mut fight = alongside(60.0, Temper::Bold);
-    player_mut(&mut fight).damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
-    run(&mut fight, &IDLE, 60 * 60);
-    let captain_ship = captain(&fight).ship;
-    let apart = (captain_ship.x * captain_ship.x + captain_ship.y * captain_ship.y).sqrt();
-    assert!(apart < HOSTILE_NEAR_M, "{apart}");
-    assert_eq!(player(&fight).damage.hull, 0.0, "a bold pirate within 700 m would take it: its hands stand by");
 }
 
 #[test]

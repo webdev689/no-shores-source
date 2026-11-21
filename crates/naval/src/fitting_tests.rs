@@ -117,7 +117,7 @@ fn the_bosun_keeps_part_of_the_way_torn_canvas_costs_and_the_trim_turns_the_ship
     let bosun = Fitting { trim: Trim { bosun: 1.0, way: 1.1, ..Trim::default() }, ..Fitting::default() };
     assert!((bosun.way_share(0.6) - 0.8 * 1.1).abs() < 1e-12);
     assert!((Fitting::default().way_share(0.6) - 0.6).abs() < 1e-12);
-    let hurts = crate::fight::Hurts::from_numbers(false, 48.0, 96.0);
+    let hurts = crate::fight::Hurts::from_numbers(48.0, 96.0);
     let turned = Fitting { trim: Trim { turn: 1.2, ..Trim::default() }, ..Fitting::default() };
     assert!((hurts.fitted(Some(&turned)).turn - 1.2).abs() < 1e-12);
     assert_eq!(hurts.fitted(None), hurts);
@@ -131,7 +131,7 @@ fn a_fitted_ship_with_no_bosun_keeps_its_torn_canvas_way_to_the_bit_as_its_predi
     let whole = 240.0;
     for tenth_of_a_percent in 0..=1000 {
         let sail = whole * f64::from(tenth_of_a_percent) / 1000.0;
-        let predicted = crate::fight::Hurts::from_numbers(false, sail, whole);
+        let predicted = crate::fight::Hurts::from_numbers(sail, whole);
         let stepped = predicted.fitted(Some(&neutral));
         assert_eq!(stepped.way_share.to_bits(), predicted.way_share.to_bits(), "sail {sail} of {whole}");
     }

@@ -84,8 +84,8 @@ sail the other hulls ([[Hulls]]) by the same laws.
   first-order lag answers it, its time constant 0.02 s a metre of its waterline's length (`lag_of`), so a bigger hull
   answers slower and rides the short waves less. The swell replaces the mod's sine bob over a flat sea. It heels into
   a turn as the mod's boat did, once it makes a wake (0.5 m/s). On a lake or river it floats at its level.
-- **Its hurts.** A ship's damage holds back the way its sails and its oars may ask ([[Naval Combat]]): bare poles
-  leave it 35% of it, and a wreck's oars pull 35%. A sound ship's step is unchanged.
+- **Its hurts.** A ship's damage holds back the way its sails may ask ([[Naval Combat]]): bare poles leave it 35% of
+  it. A sound ship's step is unchanged.
 - **The ground.** Its keel has three points: aft, amidships and forward. A point is aground where the water over the
   bed is shallower than its draught. A step grounds it if it puts a point aground that was afloat, or carries one
   already aground onto higher ground. Then it runs on unswung if only its swing grounds it, or swings clear if only

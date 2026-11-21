@@ -71,7 +71,7 @@ impl Fight {
         }
         self.patch(seconds);
         self.exotics(seconds);
-        self.mend(wind_at, &mut events);
+        self.mend(wind_at);
         self.scuttle_unboarded(&mut events);
         self.see_off(&mut events);
         told(&mut events);
@@ -98,9 +98,9 @@ impl Fight {
         }
     }
 
-    /// Each player's orders in turn: their brace and load, their burst (none for a wreck), their sails refused a wreck
-    /// or bare yards, and their step held back by their hurts. A player with no orders this tick rides the swell where
-    /// they lie.
+    /// Each player's orders in turn, while their ship is afloat: their brace and load, their burst, their sails refused
+    /// bare yards, and their step held back by their hurts. A player with no orders this tick rides the swell where they
+    /// lie.
     fn sail_players(
         &mut self,
         orders: &[(ShipId, Orders)],
@@ -123,7 +123,7 @@ impl Fight {
             {
                 events.push(Event::Load { ship: *id, shot });
             }
-            if order.boost && player.damage.state != State::Wrecked {
+            if order.boost {
                 player.boost.tap();
             }
             let wind = wind_at([player.ship.x, player.ship.y]);
@@ -131,8 +131,8 @@ impl Fight {
                 Hurts { drive: player.boost.drive(), ..Hurts::of(&player.damage).fitted(self.fittings.get(id)) };
             let hurts = Hurts { way_share: hurts.way_share * way, turn: hurts.turn * turn, ..hurts };
             let (ship, refused) = sail_hurt(&player.ship, player.hull.hull(), order.helm, hurts, waters, wind, time);
-            if let Some(wrecked) = refused {
-                events.push(Event::NoSail { ship: *id, wrecked });
+            if refused {
+                events.push(Event::NoSail { ship: *id });
             }
             player.ship = ship;
             player.pose = pose_of(&player.ship, player.hull.hull(), waters, time);
@@ -317,7 +317,7 @@ impl Fight {
     }
 
     /// Each player's hands mend their ship if nothing hurt it lately and no captain who would take it lies near.
-    fn mend(&mut self, wind_at: &impl Fn([f64; 2]) -> [f64; 2], events: &mut Vec<Event>) {
+    fn mend(&mut self, wind_at: &impl Fn([f64; 2]) -> [f64; 2]) {
         let captains = self.ids(true);
         for id in self.ids(false) {
             let Some(sighting) = self.ships.get(&id).map(|player| sighting_of(id, player)) else { continue };
@@ -331,12 +331,8 @@ impl Fight {
             });
             let clock = self.clock;
             let Some(player) = self.ships.get_mut(&id) else { continue };
-            let wrecked = player.damage.state == State::Wrecked;
-            player.damage.mend(TICK_SECONDS, clock, hostile_near, false);
+            player.damage.mend(TICK_SECONDS, clock, hostile_near);
             player.damage.sail = player.damage.sail.min((player.damage.max_sail * player.rigging.standing()).floor());
-            if wrecked && player.damage.state == State::Afloat {
-                events.push(Event::State { ship: id, state: State::Afloat });
-            }
         }
     }
 

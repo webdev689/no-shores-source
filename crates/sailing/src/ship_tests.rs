@@ -363,9 +363,9 @@ fn a_pull_on_its_sails_or_oars_holds_it_to_its_share_of_its_way() {
     }
     assert!((ship.ahead - 0.35 * way_under_sail(90.0)).abs() < 1e-9, "{}", ship.ahead);
     let mut rowed = at_rest(0.0, 1);
-    let wrecked = Pull { sail: 0.0, oars: 0.35, turn: 1.0 };
+    let held = Pull { sail: 0.0, oars: 0.35, turn: 1.0 };
     for tick in 0..600 {
-        rowed = step_pulled(&rowed, &STILL, &SLOOP, EAST, &Flat, f64::from(tick) * TICK_SECONDS, TICK_SECONDS, wrecked);
+        rowed = step_pulled(&rowed, &STILL, &SLOOP, EAST, &Flat, f64::from(tick) * TICK_SECONDS, TICK_SECONDS, held);
     }
     assert!((rowed.ahead - 0.35 * HANDLING.move_speed_oar).abs() < 1e-9, "{}", rowed.ahead);
     let whole = Pull { sail: 1.0, oars: 1.0, turn: 1.0 };

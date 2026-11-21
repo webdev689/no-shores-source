@@ -49,7 +49,7 @@ test('a fleet snapshot the server wrote reads back as its ships and what happene
       [9n, 'run-out', 9, 1],
       [9n, 'state', 9, 1],
       [10n, 'refused', 4, 3],
-      [10n, 'no-sail', 4, 1],
+      [10n, 'no-sail', 4, 0],
       [10n, 'load', 3, 2],
       [11n, 'gone', 9, 0],
       [12n, 'ram', 9, 0],

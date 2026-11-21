@@ -48,7 +48,6 @@ fn state_name(state: State) -> &'static str {
         State::Struck => "struck",
         State::Sinking => "sinking",
         State::Sunk => "sunk",
-        State::Wrecked => "wrecked",
     }
 }
 
@@ -147,7 +146,7 @@ fn event_json(event: &Event) -> Option<Value> {
         Event::Refused { refusal: Refusal::Reloading { side, left }, .. } => {
             json!({ "kind": "refused", "why": "reloading", "side": side_name(side), "left": left })
         }
-        Event::NoSail { wrecked, .. } => json!({ "kind": "no-sail", "wrecked": wrecked }),
+        Event::NoSail { .. } => json!({ "kind": "no-sail" }),
         Event::Load { shot, .. } => json!({ "kind": "load", "shot": shot.name() }),
         Event::Gone { .. } => return None,
         Event::Ram { ship, by, point, dealt } => {
