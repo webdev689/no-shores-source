@@ -34,8 +34,9 @@ code:
 
 The Lattice's six foes drawn by the [[Sprite Forge]], each with its look and its own moves, as pictures the game will
 compose as it composes any figure ([[The Lattice Are the Ruined Ports' People, Overtaken]],
-[[The Lattice as Claude Shapes It]]). The game draws them from their published pictures once the `lattice` workflow
-has run ([[Public Events as Claude Builds Them]]).
+[[The Lattice as Claude Shapes It]]). The game draws them from their published pictures: the `lattice` workflow has
+rendered and published the five foes the [[Public Events]] use and the death wave; the Heart waits
+([[Public Events as Claude Builds Them]]).
 
 ## How it works
 
@@ -78,8 +79,8 @@ has run ([[Public Events as Claude Builds Them]]).
   rock, a crate, a barrel, a cart, a wall, a lamppost, a boat); its own structures (a nest, a pylon, a shrine); and
   what an event leaves (a fissure, a crater). `python -I ../lattice/props.py --out <folder> [--props spire,crate]
   [--strain red]` draws a picture of each.
-- **Its public event**, the Fissure ([[Public Events Run on a Clock, After Destiny 1]]), is being built with the
-  public events.
+- **Its public event**, the Fissure ([[Public Events Run on a Clock, After Destiny 1]], [[Public Events]]): the
+  Lattice pours out of a crack in each of Saltmere's wilds on the clock.
 - **Sizes.** The Bulwark is drawn at 1.2 times a man and the Heart at 3 times, each on a larger work frame. Every
   move has rows under the ground for what it brings down before its feet (a maul's head, an anchor's crown).
 
@@ -115,8 +116,8 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 
 ## Limits
 
-- The pictures reach the game only once the `lattice` workflow has run with the repository's Cloudflare token and a
-  commit has taken its manifest into `content/forge/renders.json`.
+- The Heart's pictures are not published: the first run rendered only the five foes the events use. A push that
+  names it in `tools/lattice/render-request.txt` renders it.
 - Where its foes appear (the Fissure) and their numbers are the rules' ([[Public Events as Claude Builds Them]]).
 - The Lattice's armour is on hold, drawn standing still on the man's and the woman's bodies only; its every move,
   first person and its weapons and shields are not yet drawn, and the game still names Daedric.
