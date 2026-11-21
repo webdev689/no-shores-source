@@ -66,8 +66,11 @@ function drawLine(
   for (const span of spans) colours.push(...Array.from(span.words, () => span.colour || ink.colour));
   const { glyphs } = layLine(ui.face, words, where.size, where.tracking);
   const { x, y, size, scale } = where;
+  // A glyph in a clear colour keeps its room and draws nothing, its edge neither: words still to be typed.
+  const unseen = colours.map((css) => colourOf(css)[3] <= 0);
   const drawn = (offsetX: number, offsetY: number, colourOf: (index: number) => Colour) => {
     for (const laid of glyphs) {
+      if (unseen[laid.index]) continue;
       const texels = ui.glyphTexels(laid.glyph);
       if (!texels) continue;
       const box = {
