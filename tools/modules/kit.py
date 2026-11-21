@@ -307,8 +307,9 @@ def exported(module):
             for loop in triangle.loops:
                 point = mesh.vertices[mesh.loops[loop].vertex_index].co
                 normal = normals[loop]
-                game = (round(point.x, 4), round(-point.y, 4), round(point.z, 4))
-                facing = (round(normal.x, 3), round(-normal.y, 3), round(normal.z, 3))
+                # + 0.0 drops a zero's sign: a coordinate a machine leaves a hair under zero is the same bytes.
+                game = (round(point.x, 4) + 0.0, round(-point.y, 4) + 0.0, round(point.z, 4) + 0.0)
+                facing = (round(normal.x, 3) + 0.0, round(-normal.y, 3) + 0.0, round(normal.z, 3) + 0.0)
                 key = (game, facing)
                 if key not in group['index']:
                     group['index'][key] = len(group['vertices'])
