@@ -1,12 +1,11 @@
-import { GATHER_S } from '../game/footGear.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
 
 /** The most ticks the room in the page runs on in one frame to answer the panels' asks while the fight waits: a
  *  second, time for the four asks it holds at once, answered a fifth of a second apart, and the gear it sends after. */
 export const ANSWER_TICKS_MOST = 60;
-/** A gather's ticks, sixty a second, and a tenth of a second over for the room to tell it done: answered as it begins,
- *  a gather is done only after them. */
-export const GATHER_TICKS_MOST = GATHER_S * 60 + 6;
+/** A gather's two seconds of ticks as the room has them (`GATHER_TICKS`, asks.rs), and a tenth of a second over for the
+ *  room to tell it done: answered as it begins, a gather is done only after them. */
+export const GATHER_TICKS_MOST = 120 + 6;
 
 /** The player's fight, as the panels ask through it. */
 interface Asking {
