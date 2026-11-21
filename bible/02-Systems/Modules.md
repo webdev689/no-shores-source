@@ -126,9 +126,10 @@ bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as f
 
 A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes)
 and glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at
-most 32,000 triangles. The bake makes the same bytes from the same scripts. The `modules` workflow bakes on every
-change to the module tools, fails if the bake does not make the committed manifest, and publishes with the
-repository's Cloudflare token.
+most 32,000 triangles. The bake makes the same bytes from the same scripts, on any machine: the event props write a
+coordinate that rounds to nothing as a plain zero, since a float residue's sign differs between machines (the older
+modules keep the bytes they were published with). The `modules` workflow bakes on every change to the module tools,
+fails if the bake does not make the committed manifest, and publishes with the repository's Cloudflare token.
 
 ## In the game
 
