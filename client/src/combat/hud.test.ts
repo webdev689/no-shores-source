@@ -6,6 +6,7 @@ import { compassNode } from './compassNode.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import type { Node } from '../ui/node.ts';
 import { viewProjection } from '../editor/orbit.ts';
+import type { MarkedFoe } from './foeBars.ts';
 import { blockedBy, clearOf, Hud, type HudFrame, veilOf } from './hud.ts';
 import { vitalsDepth } from './hudLayout.ts';
 import { cameraOf } from './plateSight.ts';
@@ -85,7 +86,11 @@ test('an arrow that would fall on the Arts and weapons stands above them, and on
 test('words over the world carry a hard outline all round, and the display stands under the game’s own windows', () => {
   const hud = new Hud();
   hud.update(
-    bare({ own: { ...standing, action: { kind: 'overreach', left: 20 } }, ammo: 4, crosshair: { charge: null } }),
+    bare({
+      own: { ...standing, action: { kind: 'overreach', left: 20 } },
+      ammo: 4,
+      crosshair: { reticle: 'pistolet', charge: null, reach: null },
+    }),
     1 / 60,
   );
   const root = drawn(hud);
@@ -353,7 +358,7 @@ test('every word the display stands still on the screen is a whole step of the f
       own: { ...standing, statuses, action: { kind: 'overreach', left: 20 } },
       foes: [foeAt(2, 'Ahead', 6, 0), { ...foeAt(4, 'Thule', 30, 2), rank: 5, alert: 2 }],
       ammo: 4,
-      crosshair: { charge: 0.5 },
+      crosshair: { reticle: 'bow', charge: 0.5, reach: null },
     }),
     1 / 60,
   );
@@ -398,4 +403,17 @@ test('a resize across the display’s steps lays its corners again each way, and
     'the Test Ground’s view between its panels: the column under them',
   );
   assert.deepEqual(laid(1280, 720), [333, COMPASS.top], 'and back');
+});
+
+test('the crosshair is drawn at the view’s middle, red while it rests on a foe’s body, and gone with none', () => {
+  const { matrix, foeAt, placeAt } = levelView();
+  const pistolet = { reticle: 'pistolet', charge: null, reach: null } as const;
+  const reticleKey = (foes: readonly MarkedFoe[], crosshair: HudFrame['crosshair']) => {
+    const hud = new Hud();
+    hud.update(bare({ own: { ...standing, ...placeAt(0, 0) }, foes, matrix, crosshair }), 1 / 60);
+    return allOf(drawn(hud)).find((node) => node.picture?.key.startsWith('reticle'))?.picture?.key ?? null;
+  };
+  assert.match(reticleKey([foeAt(2, 'Ahead', 8, 0)], pistolet) ?? '', /^reticle pistolet foe/);
+  assert.match(reticleKey([foeAt(2, 'Aside', 8, 4)], pistolet) ?? '', /^reticle pistolet plain/);
+  assert.equal(reticleKey([], null), null);
 });

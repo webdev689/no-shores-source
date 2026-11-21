@@ -229,7 +229,8 @@ export class Walker {
     const body = shownBody(player);
     const own = fight?.own ?? null;
     const fighting = own !== null && own.action.kind !== 'idle' && own.action.kind !== 'dead';
-    const facing = fighting ? (dodgeFacing(own.action) ?? own.aim) : player.facing;
+    // The aim held faces the look even in the rules' idle ticks (a swap, a reload's end), as it does drawn.
+    const facing = fighting || (own && fight?.aiming) ? (dodgeFacing(own.action) ?? own.aim) : player.facing;
     Object.assign(you, { x: body.x, y: body.y, z: body.z, facing });
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
     const worn = shownDress(you.dress, holding);

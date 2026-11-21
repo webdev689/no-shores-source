@@ -1,0 +1,103 @@
+---
+type: system
+status: live
+code:
+  - crates/gear/src/ship/mod.rs#ShipPower
+  - crates/gear/src/ship/mod.rs#ship_level
+  - crates/gear/src/ship/mod.rs#reward_sinking
+  - crates/gear/src/ship/mod.rs#fit_first_modules
+  - crates/gear/src/ship/materials.rs#ShipMaterial
+  - crates/gear/src/ship/materials.rs#made_of
+  - crates/gear/src/ship/materials.rs#price_of
+  - crates/gear/src/ship/found.rs#salvage
+  - crates/gear/src/ship/found.rs#take_salvage
+  - crates/gear/src/ship/infuse.rs#infuse
+  - crates/gear/src/ship/trim.rs#ShipTrim
+  - crates/gear/src/kinds.rs#Group
+  - crates/gear/src/vendor.rs#for_ship
+  - crates/naval/src/fitting.rs#Fitting
+  - crates/naval/src/fitting.rs#gunners_lay
+  - crates/room/src/ship_power.rs#fitting
+  - crates/room/src/ship_power.rs#pay_sinking
+  - crates/room/src/flotsam.rs#Held
+  - crates/protocol/src/ship_wire.rs#ship_offset
+---
+# Ship Power
+
+A ship's own power, apart from its captain's
+([[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]],
+[[The Ship's Power, Crew and Islands as Claude Shapes Them]]). Ship power decides every fight of ship against ship;
+character power decides everything on foot, a boarded deck included. The two are never summed. Its officers and hands
+are in [[Crew]].
+
+## How it works
+
+- **The same law as the character's** ([[Gear]]). A ship's Attack is its guns', its Defense its hull's, sails' and
+  rigging's, by the gear's own sums: a Legendary's guns carry 248 to 300 Attack, a lesser module 15 times its level
+  times its rarity's share. Its three defending modules share a full set's Defense as the four armour pieces do: hull
+  0.5, sails 0.35, rigging 0.3.
+- **Its level**, 1 to 30 (`Character::ship_level`): to 20 by its own experience, on the player's own curve
+  (190,000 for level 20), then by the Prestige its four modules carry, each as an armour piece carries it from level
+  20 (a Rare 13 to 15, a Legendary 18 to 27, an Atheric 21 to 30), against the player's own Prestige steps. A
+  module is fitted only at the ship's level or below, and one Atheric among the four.
+- **Its modules** are items of four kinds (`Kind::Guns`, `Hull`, `Sails`, `Rigging`), each fitted in its own slot
+  and carried nine to a slot beside it, kept in the vault with the ship's other modules (twenty). Each has a rarity,
+  a level, experience and the gear's grid of nodes (`grid.rs`): its guns a weapon's grid (handling, finish, perks),
+  the other three armour's (perks). Every module fitted earns all the experience the ship earns. Fruit of Dagon feeds no
+  module. A new ship, and one kept from before modules, is fitted once with four level 1 Normal modules.
+- **Its materials** (`ship::materials`): Timber, Canvas, Iron and Heartwood, the rare one, each to 200. A module's
+  nodes cost Aurem and its own two common materials (guns iron and timber, hull timber and iron, sails canvas and
+  timber, rigging canvas and iron) where the gear asks for fragments and a resource, and Heartwood where it asks for
+  Essence. Dismantled, a module gives back Aurem, twice the fragments the gear would in its first material, and its
+  Essence as Heartwood.
+- **Infusion** (`ship::infuse`): a carried module of the same kind and a higher level fed into a kept one raises it
+  to the fed one's level; the kept one keeps its rarity, nodes, choices and experience, the fed one is gone. Each
+  level climbed costs 150 Aurem and 2 of the kept module's first material.
+- **Found** (`ship::found`): each piece of what floats where a ship went down holds one common material (1 to 3), a
+  chance of Heartwood (2% a rank) and of a module (3% and 1% a rank); its chest holds three (2 to 4 each), Heartwood
+  from 30% and a module one time in two, of the better colours. An island's wreckage holds two (2 to 5) and a module one
+  time in ten, an isle's three (3 to 6) and one in five. A sea Breach's hold always holds a module of the better
+  colours, three materials of 4 to 8 and two Heartwood. A module's colour is never past what its level could drop, as
+  a Vestige's is ([[Gear]], "Vestiges").
+- **The Shipwright** sells six modules a day, three Rare and three Magic, at the buyer's ship's level, at the
+  Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third).
+
+## At sea
+
+- **Fitted for a fight.** Each tick the sea fits every fighting player's ship whose character it holds
+  (`room::ship_power::fitting`): its balls on each captain are times `power::by_player` of its Attack, its level and
+  the captain's level; a captain's balls on it are times `power::on_player` of its Defense and the two levels, in place
+  of what the captain's level makes of its guns. A ship matched to the water's level fights a captain as a matched
+  player fights a foe; four levels under, its balls do nothing. A ship with no fitting (the fleet room, the tests) fights
+  as it always has.
+- **Its trim** (`ship::trim`): its fitted modules' chosen perks and its posted officers' posts and perks, as factors on
+  its guns' reload and scatter, its harm on a ship's hull, canvas and men (and on one below a third of its hull), its
+  way and turning in a fight, what its hull, canvas and men take (its hull below a third, below its waterline, its men
+  below half), its ram, its Carpenter's patches and its sight. The words of each perk are in
+  `content/gear/traits.json`; a test holds every module's and officer's perk to a factor the sea reads.
+- **Its hands.** The player's Sloop carries ten men ([[Crew]]): balls cut them down as a captain's are, a thinned crew
+  reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
+  until a port city repairs it ([[Naval Combat]], "How a fight ends").
+- **What a fight pays.** A captain it fought going down pays it that captain's rank's foe's experience at the
+  captain's level (`reward_sinking`), and every officer aboard the same; the player earns none of it. What floats holds
+  ship salvage beside its Vestige and ammunition (`flotsam::Held`).
+
+## In the browser
+
+- The gear message carries the ship's part (`GearShip`): its experience, level, Prestige, Attack and Defense and how
+  far to its next level, its materials, its hands and its whole complement, its officers and the officers offered at
+  the muster, and its trim. Its modules are the gear message's items of kinds 24 to 27, worn in slots 7 to 10.
+- Infusion is ask 17 (the kept module in `item`, the fed one in `count`).
+
+## In the fleet room
+
+The World Editor's fleet room holds no characters, so its panel sets the levels: F calls a captain at the level
+chosen (none by default, as combat's own numbers), its ship raised as a captain's level raises one at sea, and fits the
+caller's ship from then on as a plain ship of the level chosen (`ShipPower::plain`: four Normal modules of that level,
+no officers; unfitted by default). Both cross with the call (`Orders.call_level`, `ship_level`, 30 at most), so a
+browser predicting its ship fits it alike.
+
+## Limits
+
+- Way and turn act in a fight; out of one the sea moves the ship on a course at its own pace. A Lookout's sight
+  lengthens each ship's sight in that player's own sea snapshot.

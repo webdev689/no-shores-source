@@ -1,22 +1,22 @@
 use super::*;
 use movement::Terrain;
 
-/// Forward at a walk, toward her bow (north in her frame).
+/// Forward at a walk, toward the ship's bow (north in its frame).
 const FORWARD: Controls =
     Controls { forward: 1.0, sideways: 0.0, yaw: 0.0, run: false, jump: false, crouch: false, mounted: false };
 
 #[test]
-fn a_player_leaving_the_helm_stands_behind_the_wheel_on_the_deck_facing_her_bow() {
+fn a_player_leaving_the_helm_stands_behind_the_wheel_on_the_deck_facing_its_bow() {
     let deck = test_deck();
     let aboard = Aboard::left_helm(&deck, 10);
     assert_eq!((aboard.body.x, aboard.body.y), (0.0, 2.7));
-    assert!((aboard.body.z - 0.8).abs() < 1e-9, "on her planks, over her waterline");
+    assert!((aboard.body.z - 0.8).abs() < 1e-9, "on its planks, over its waterline");
     assert_eq!(aboard.body.facing, 0.0);
     assert!(aboard.at_wheel(&deck, 10));
 }
 
 #[test]
-fn steps_are_taken_in_order_and_walk_her_deck() {
+fn steps_are_taken_in_order_and_walk_the_deck() {
     let deck = test_deck();
     let mut aboard = Aboard::left_helm(&deck, 0);
     assert_eq!(aboard.walk(2, FORWARD), Err(WalkRefused::OutOfOrder { expected: 1, got: 2 }));
@@ -25,7 +25,7 @@ fn steps_are_taken_in_order_and_walk_her_deck() {
         aboard.tick(&deck, clock);
     }
     assert_eq!(aboard.acknowledged, 30);
-    assert!(aboard.body.y < 2.7 - 1.5, "half a second's walk toward her bow: {}", aboard.body.y);
+    assert!(aboard.body.y < 2.7 - 1.5, "half a second's walk toward the bow: {}", aboard.body.y);
     assert!(!aboard.at_wheel(&deck, 30), "and away from the wheel");
 }
 
@@ -50,7 +50,7 @@ fn steps_come_no_faster_than_the_clock_and_its_slack_so_time_away_is_never_banke
     let taken = u64::from(aboard.acknowledged);
     assert!(taken <= 10 + VIEW_LAG + SLACK_TICKS, "ten ticks on, the ten and the lag and slack: {taken}");
     assert!(taken >= 10, "every tick takes one");
-    assert!(aboard.body.y < still.y, "and the steps walk her deck");
+    assert!(aboard.body.y < still.y, "and the steps walk the deck");
     let mut flooded = Aboard::left_helm(&deck, 100);
     for sequence in 1..=29 {
         flooded.walk(sequence, FORWARD).unwrap();
@@ -62,10 +62,10 @@ fn steps_come_no_faster_than_the_clock_and_its_slack_so_time_away_is_never_banke
 }
 
 #[test]
-fn a_walk_never_leaves_her_deck_nor_passes_her_mast() {
+fn a_walk_never_leaves_the_deck_nor_passes_the_mast() {
     let deck = test_deck();
     let mut aboard = Aboard::left_helm(&deck, 0);
-    // East for four seconds: far past her side.
+    // East for four seconds: far past the ship's side.
     let east = Controls { yaw: std::f64::consts::FRAC_PI_2, ..FORWARD };
     for (clock, sequence) in (1..=240).zip(1..) {
         aboard.walk(sequence, east).unwrap();
@@ -73,7 +73,7 @@ fn a_walk_never_leaves_her_deck_nor_passes_her_mast() {
     }
     assert!(aboard.body.x < 1.0 && deck.heights.stands_at(aboard.body.x, aboard.body.y), "{}", aboard.body.x);
     assert!((aboard.body.z - deck.heights.height_at(aboard.body.x, aboard.body.y)).abs() < 0.01);
-    // From her centre line abaft the mast, forward into it.
+    // From the centre line abaft the mast, forward into it.
     let mut aboard = Aboard { body: deck.heights.standing(0.05, 1.0), ..Aboard::left_helm(&deck, 0) };
     for (clock, sequence) in (1..=120).zip(1..) {
         aboard.walk(sequence, FORWARD).unwrap();
@@ -99,7 +99,7 @@ fn the_wheel_is_judged_where_the_steps_waiting_leave_the_body() {
         aboard.walk(sequence, FORWARD).unwrap();
         aboard.tick(&deck, clock);
     }
-    assert!(!aboard.at_wheel(&deck, 130), "a pace forward of her wheel");
+    assert!(!aboard.at_wheel(&deck, 130), "a pace forward of the wheel");
     let mut honest = aboard.clone();
     // Walking back a step a tick, the last few still on their way when the player asks for the helm.
     for (sequence, clock) in (31..=60).zip(131..) {

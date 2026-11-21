@@ -73,6 +73,9 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
   // The brute Exposed for 200 ticks and immune to a Charge for 90; the second player Veiled for 150 and Hasted for 30.
   assert.deepEqual(foe?.statuses, { expose: 200, charge: 0, chargeImmune: 90 });
+  // A foe is no one's companion; the officer ashore beside player 9 is, named by their names' places.
+  assert.equal(foe?.companion, null);
+  assert.deepEqual(snapshot.foes[1]?.companion, { leader: 9, given: 2, family: 5, post: 4 });
   const own = { crit: 0, expose: 0, charge: 0, haste: 30, linked: 0, veiled: 150, chargeImmune: 0 };
   assert.deepEqual(statusesOf(snapshot.players[1]?.fighter ?? []), own);
   assert.deepEqual(
@@ -119,16 +122,28 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
   assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.ships] : null, [
     77n,
     [
-      // The pace she sailed at, held down near a pirate: 5 where 60 was asked.
+      // The pace it sailed at, held down near a pirate: 5 where 60 was asked.
       { player: 3, x: 50_000, y: 149_880.25, heading: 0, pace: 5 },
       { player: 4, x: 61_000, y: 149_000, heading: Math.PI / 2, pace: 0 },
     ],
   ]);
   assert.deepEqual(sea?.kind === 'snapshot' ? sea.pirates : null, [
-    { id: 4, x: 1_000.5, y: 2_000.25, heading: 1.5, faction: 1, rank: 2 },
+    {
+      id: 4,
+      x: 1_000.5,
+      y: 2_000.25,
+      heading: 1.5,
+      faction: 1,
+      rank: 3,
+      hull: 1,
+      level: 23,
+      sight: 25_920,
+      way: 2.4 * 1.1,
+    },
   ]);
   const fights = sea?.kind === 'snapshot' ? sea.fights : [];
-  assert.deepEqual([fights[0]?.player, fights[0]?.faction, fights[0]?.rank], [2, 1, 4]);
+  assert.deepEqual([fights[0]?.player, fights[0]?.faction, fights[0]?.rank, fights[0]?.hull], [2, 1, 4, 2]);
+  assert.deepEqual([fights[0]?.mayBoard, fights[1]?.mayBoard], [true, false], 'whether each may board, the sea’s word');
   const named = { name: 'Tithe Sloop', faction: fights[0]?.faction ?? 0, rank: fights[0]?.rank ?? 0 };
   const fight = fightViewOf(fights[0]?.view ?? [], named);
   assert.deepEqual([fight.captain.name, fight.captain.faction, fight.captain.rank], ['Tithe Sloop', 1, 4]);
@@ -144,7 +159,7 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
     ['of 2', 2, 3, [400, -700, 0.5], 'cruise'],
     'a pirates’ Elite fights too',
   );
-  // The same fight without her, as a room from before other captains sends any fight: no others, the rest alike.
+  // The same fight without it, as a room from before other captains sends any fight: no others, the rest alike.
   const alone = fightViewOf(fights[1]?.view ?? [], named);
   assert.deepEqual([fights[1]?.player, alone.others], [5, []]);
   assert.deepEqual({ ...alone, others: fight.others }, fight);
@@ -152,7 +167,7 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
   assert.ok((fight.lay?.radius ?? 0) > 0, 'the landing zone has a size');
   assert.ok(
     fight.lay?.ends.every((end) => end !== null && end.water && end.strike === null),
-    'laid 80 m out with her 700 m off, each ball splashes',
+    'laid 80 m out with it 700 m off, each ball splashes',
   );
   assert.deepEqual(fight.events, [
     { kind: 'run-out', side: 'port' },

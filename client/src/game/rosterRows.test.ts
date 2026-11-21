@@ -30,9 +30,12 @@ const roster = (more: Partial<Roster> = {}): Roster => ({
 const labels = (from: Roster, name: string, place: string | null = 'node-overlook-social') =>
   actionsFor(from, person(name, place)).map((action) => action.label);
 
-test('where a player is reads as its place: a node by name and its seas, the sea, or away', () => {
+test('where a player is reads as its place: a node by name and its difficulty, the sea, or away', () => {
   assert.equal(placeWords('node-overlook-social'), 'Overlook');
-  assert.equal(placeWords('node-saltgrass-downs--rough'), 'Saltgrass Downs · Rough seas');
+  assert.equal(placeWords('node-saltgrass-downs--elite'), 'Saltgrass Downs · Elite difficulty');
+  assert.equal(placeWords('node-saltgrass-downs--abyss'), 'Saltgrass Downs · Abyss difficulty');
+  assert.equal(placeWords('node-saltgrass-downs--rough'), 'Saltgrass Downs · Elite difficulty', 'an old name read');
+  assert.equal(placeWords('node-saltgrass-downs--storm'), 'Saltgrass Downs · Abyss difficulty');
   assert.equal(placeWords('sea'), 'At sea');
   assert.equal(placeWords(null), 'Away');
 });

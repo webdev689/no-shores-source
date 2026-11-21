@@ -11,7 +11,7 @@ import { type Box, colourOf } from '../ui/quads.ts';
 import type { PlacedBar } from '../ships/shipBars.ts';
 
 /** The SVG markup an emblem's data URL holds. */
-const svgOf = (url: string) => decodeURIComponent(url.slice(url.indexOf(',') + 1));
+export const svgOf = (url: string) => decodeURIComponent(url.slice(url.indexOf(',') + 1));
 
 /** The cream a bar's losses are lit with, and a colour `share` of the way to it. */
 const CREAM = '#fff6e4';

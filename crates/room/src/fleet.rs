@@ -1,11 +1,11 @@
-//! The fleet room's law: a place at sea at true scale, on the open sea under the swell, where each player sails her
-//! own Sloop by her helm and fights, and captains of each faction called into the room fight whom they choose (the
+//! The fleet room's law: a place at sea at true scale, on the open sea under the swell, where each player sails their
+//! own Sloop by its helm and fights, and captains of each faction called into the room fight whom they choose (the
 //! naval crate's fight). A player's orders are taken as the land room takes inputs: in order, one a tick, never faster
-//! than the room's clock, a few at most to catch up after a stall; a player whose orders stop has her helm stand.
+//! than the room's clock, a few at most to catch up after a stall; a player whose orders stop has their helm stand.
 //! It has no network and no clock: whatever hosts it hands it orders and ticks, and sends out what it sees.
 
 use crate::players::{CATCH_UP, PLAYERS_MOST, SLACK_TICKS, VIEW_LAG, WAITING_LIMIT};
-use crate::winds::epoch_of;
+use crate::sea_weather::open_sea_at;
 use crate::{PlayerId, Refused};
 use land::sea::Swell;
 use naval::fight::{Aim, End, Event, Fight, Orders};
@@ -14,7 +14,6 @@ use naval::shots::ShipId;
 use sailing::TICK_SECONDS;
 use sailing::ship::{Helm, Ship};
 use sailing::waters::OpenSea;
-use sailing::waters::sea_wind_at;
 use std::collections::{BTreeMap, VecDeque};
 use std::f64::consts::TAU;
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
@@ -25,19 +24,30 @@ pub const CAPTAINS_MOST: usize = 4;
 const SEED: u32 = 0x464c_4545;
 /// The farthest a look may lay, metres: past every gun's reach.
 pub const MOST_RANGE_M: f64 = 1e5;
+/// Where a fleet room's open sea lies in the weather: the world frame's middle, metres east and south.
+pub const FLEET_AT: [f64; 2] = [FRAME_WIDTH_M as f64 / 2.0, FRAME_HEIGHT_M as f64 / 2.0];
 
-/// A captain asked for with a player's orders: one of a faction and rank called onto the ring round her ship, or
-/// every one sent off.
+/// A captain asked for with a player's orders: one of a faction and rank called onto the ring round their ship at a
+/// level, their own ship fitted at its level from then on, or every one sent off.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Call {
     #[default]
     None,
-    Captain(Commission),
+    Captain(Commission, Levels),
     SendOff,
 }
 
-/// One tick's orders from a player: their number, her orders at the helm and the guns, where she puts to sea (x, y
-/// and heading, once: a ship at sea is moved only by her helm), and a captain asked for.
+/// The levels a call sets, 0 for none: the captain's, which raises its ship as a captain's level does at sea, and the
+/// caller's ship's, which fits it as a plain ship of that level (`gear::ship::ShipPower::plain`). With no ship level
+/// the ship is unfitted, combat's own numbers.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Levels {
+    pub captain: u8,
+    pub ship: u8,
+}
+
+/// One tick's orders from a player: their number, their orders at the helm and the guns, where they put to sea (x, y
+/// and heading, once: a ship at sea is moved only by its helm), and a captain asked for.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -47,8 +57,8 @@ pub struct Input {
 }
 
 impl Input {
-    /// Whether every number is one, the helm within its throw, the look within her bow's half circle and the guns'
-    /// reach, and where she puts to sea within the world's frame.
+    /// Whether every number is one, the helm within its throw, the look within the bow's half circle and the guns'
+    /// reach, and where the ship puts to sea within the world's frame.
     #[must_use]
     pub fn fits(&self) -> bool {
         let helm = self.orders.helm;
@@ -66,8 +76,8 @@ impl Input {
     }
 }
 
-/// A player as the fleet room keeps her: when she joined, how many of her orders have been taken, the number of the
-/// last received and the last taken, the orders waiting, and whether her ship is at sea.
+/// A player as the fleet room keeps them: when they joined, how many of their orders have been taken, the number of the
+/// last received and the last taken, the orders waiting, and whether their ship is at sea.
 #[derive(Debug)]
 struct Helmsman {
     joined: u64,
@@ -76,6 +86,7 @@ struct Helmsman {
     acknowledged: u32,
     waiting: VecDeque<Input>,
     at_sea: bool,
+    ship_level: u8,
 }
 
 /// A tick's orders taken from the players, for the fight, and the captains they asked for.
@@ -84,17 +95,20 @@ struct Taken {
     calls: Vec<(PlayerId, Call)>,
 }
 
-/// A fleet room: its clock in ticks, world time at its first tick, its swell, its fight, its players, the next number
-/// for a ship, and what happened since it was last asked.
+/// A fleet room: its clock in ticks, its swell and wind, its fight, its players, the next number for a ship, and what
+/// happened since it was last asked.
 #[derive(Debug)]
 pub struct Fleet {
     clock: u64,
-    epoch_s: f64,
     swell: Swell,
+    wind: [f64; 2],
     fight: Fight,
     players: BTreeMap<PlayerId, Helmsman>,
     next_ship: ShipId,
     events: Vec<(u64, Event)>,
+    world_start_s: f64,
+    /// Each captain's level, by ship.
+    captain_levels: BTreeMap<ShipId, u8>,
 }
 
 impl Default for Fleet {
@@ -104,17 +118,34 @@ impl Default for Fleet {
 }
 
 impl Fleet {
-    /// An empty fleet room on the open sea under the world's swell.
+    /// An empty fleet room on the open sea at `FLEET_AT`, under the weather there at world time 0 until its host sets
+    /// the time it opened (`set_world_start`).
     #[must_use]
     pub fn new() -> Self {
+        let (swell, wind) = open_sea_at(FLEET_AT, 0.0);
         let fight = Fight::new(SEED);
-        let swell = Swell::default();
-        Self { clock: 0, epoch_s: 0.0, swell, fight, players: BTreeMap::new(), next_ship: 1, events: Vec::new() }
+        let players = BTreeMap::new();
+        let (events, captain_levels) = (Vec::new(), BTreeMap::new());
+        Self { clock: 0, swell, wind, fight, players, next_ship: 1, events, world_start_s: 0.0, captain_levels }
     }
 
-    /// Sets the wall's time at the room's first tick, milliseconds since 1970.
+    /// Sets the world time the room's clock started at, seconds since the Unix epoch: its sea takes the weather then,
+    /// as a browser predicting it does (`room-wasm`'s fleet door), and keeps it while the room lasts.
+    pub fn set_world_start(&mut self, seconds: f64) {
+        (self.swell, self.wind) = open_sea_at(FLEET_AT, seconds);
+        self.world_start_s = seconds;
+    }
+
+    /// The world time the room's clock started at, seconds since the Unix epoch: a browser predicting it takes the
+    /// same weather by it.
+    #[must_use]
+    pub fn world_start(&self) -> f64 {
+        self.world_start_s
+    }
+
+    /// Sets the wall's time at the room's first tick, milliseconds since 1970: the world time its clock started at.
     pub fn set_epoch(&mut self, unix_ms: f64) {
-        self.epoch_s = epoch_of(unix_ms);
+        self.set_world_start(unix_ms / 1000.0);
     }
 
     /// The room's time, seconds: what the swell rolls by.
@@ -128,10 +159,16 @@ impl Fleet {
         self.clock
     }
 
-    /// The swell the room's ships ride; each sails in the weather's wind where she is.
+    /// The swell the room's ships ride.
     #[must_use]
     pub fn swell(&self) -> &Swell {
         &self.swell
+    }
+
+    /// The swell and the wind the room's ships sail in: the weather where it opened, kept while it lasts.
+    #[must_use]
+    pub fn weather(&self) -> (&Swell, [f64; 2]) {
+        (&self.swell, self.wind)
     }
 
     /// The fight: every ship in the room, the balls aloft.
@@ -140,7 +177,7 @@ impl Fleet {
         &self.fight
     }
 
-    /// A new player, whose ship is not at sea until her orders put her there; none when the room is full.
+    /// A new player, whose ship is not at sea until their orders put it there; none when the room is full.
     pub fn join(&mut self) -> Option<PlayerId> {
         if self.players.len() >= PLAYERS_MOST {
             return None;
@@ -154,18 +191,19 @@ impl Fleet {
             acknowledged: 0,
             waiting: VecDeque::new(),
             at_sea: false,
+            ship_level: 0,
         };
         self.players.insert(id, helmsman);
         Some(id)
     }
 
-    /// The player leaves, and her ship with her.
+    /// The player leaves, and their ship with them.
     pub fn leave(&mut self, player: PlayerId) {
         self.players.remove(&player);
         self.fight.leave(player);
     }
 
-    /// The player's orders, which must follow her last; they wait for the room's next tick.
+    /// The player's orders, which must follow their last; they wait for the room's next tick.
     pub fn input(&mut self, player: PlayerId, input: Input) -> Result<(), Refused> {
         let found = self.players.get_mut(&player).ok_or(Refused::NoSuchPlayer)?;
         let expected = found.received.wrapping_add(1);
@@ -200,9 +238,11 @@ impl Fleet {
         for (player, call) in calls {
             self.answer_call(player, call, time);
         }
+        self.fit();
         let swell = self.swell.clone();
         let waters = OpenSea { swell: &swell };
-        let events = self.fight.step(&orders, &waters, &|at| sea_wind_at(at, self.epoch_s + time), time);
+        let wind = self.wind;
+        let events = self.fight.step(&orders, &waters, &|_| wind, time);
         let gone: Vec<ShipId> = events
             .iter()
             .filter_map(|event| if let Event::Gone { ship, .. } = event { Some(*ship) } else { None })
@@ -210,12 +250,29 @@ impl Fleet {
         self.events.extend(events.into_iter().map(|event| (self.clock, event)));
         for ship in gone {
             self.fight.leave(ship);
+            self.captain_levels.remove(&ship);
+        }
+    }
+
+    /// Fits each player's ship that has a level against every captain in the room by theirs, for the tick to come.
+    fn fit(&mut self) {
+        for (&id, found) in &self.players {
+            if found.ship_level == 0 {
+                self.fight.unfit(id);
+                continue;
+            }
+            let captains = self.fight.ships.iter().filter(|(_, vessel)| vessel.command().is_some());
+            let levels =
+                captains.map(|(captain, _)| (*captain, self.captain_levels.get(captain).copied().unwrap_or(0)));
+            let power = gear::ship::ShipPower::plain(found.ship_level);
+            let fitting = crate::ship_power::fitted(power, naval::fight::fitting::Trim::default(), levels);
+            self.fight.fit(id, fitting);
         }
     }
 
     /// Each player's orders this tick, as many as the clock allows and `CATCH_UP` at most, in order, and none after
-    /// one that fires; her ship put to sea by the first that asks while she is not; and a player a view's lag behind
-    /// with none to take stands a tick, her helm too once she is at sea. Answers the orders for the fight and the
+    /// one that fires; their ship put to sea by the first that asks while it is not; and a player a view's lag behind
+    /// with none to take stands a tick, their helm too once they are at sea. Answers the orders for the fight and the
     /// captains asked for.
     fn take_orders(&mut self, time: f64) -> Taken {
         let (mut orders, mut calls) = (Vec::new(), Vec::new());
@@ -240,13 +297,13 @@ impl Fleet {
                 if input.call != Call::None {
                     calls.push((id, input.call));
                 }
-                // The fight judges a release by her brace and her ship after all her orders of the tick: so the one
-                // that fires is her last.
+                // The fight judges a release by their brace and their ship after all their orders of the tick: so the
+                // one that fires is their last.
                 if input.orders.fire {
                     break;
                 }
             }
-            // She stands from the moment she joins, as on land: time spent in harbour is not banked to catch up on.
+            // They stand from the moment they join, as on land: time spent in harbour is not banked to catch up on.
             if taken == 0 && found.stepped + VIEW_LAG < clock - found.joined {
                 found.stepped += 1;
                 if found.at_sea {
@@ -267,10 +324,14 @@ impl Fleet {
             Call::SendOff => {
                 for captain in captains {
                     self.fight.leave(captain);
+                    self.captain_levels.remove(&captain);
                     self.events.push((self.clock, Event::Gone { ship: captain, end: End::Gone }));
                 }
             }
-            Call::Captain(commission) => {
+            Call::Captain(commission, levels) => {
+                if let Some(found) = self.players.get_mut(&player) {
+                    found.ship_level = levels.ship;
+                }
                 let Some(near) = self.fight.vessel(player).map(|vessel| vessel.ship) else { return };
                 if captains.len() >= CAPTAINS_MOST {
                     return;
@@ -279,6 +340,10 @@ impl Fleet {
                 let waters = OpenSea { swell: &self.swell };
                 if self.fight.call_captain(id, &near, commission, &waters, time).is_ok() {
                     self.next_ship += 1;
+                    if levels.captain > 0 {
+                        self.fight.raise(id, gear::power::foe_health_times(levels.captain));
+                        self.captain_levels.insert(id, levels.captain);
+                    }
                 }
             }
         }

@@ -60,7 +60,7 @@ test("the walk on deck the page predicts is the sea room's, to the bit, step by 
   }
 });
 
-test('a player off the helm walks down her steps to her deck, and takes the helm again only at her wheel', () => {
+test('a player off the helm walks down its steps to its deck, and takes the helm again only at its wheel', () => {
   const { room, last } = atSea();
   room.send(helmBytes(true));
   let sequence = 1;
@@ -74,17 +74,17 @@ test('a player off the helm walks down her steps to her deck, and takes the helm
       heights.push(onDeck()?.body.z ?? NaN);
     }
   };
-  // To port along her quarterdeck, then forward through the gap at its corner and down her port steps.
+  // To port along its quarterdeck, then forward through the gap at its corner and down its port steps.
   walk(12, -Math.PI / 2);
   walk(36, 0);
   const below = onDeck()?.body;
-  assert.ok(below && below.y < 5 && below.z < 1.85, `down on her deck: ${JSON.stringify(below)}`);
+  assert.ok(below && below.y < 5 && below.z < 1.85, `down on its deck: ${JSON.stringify(below)}`);
   const treads = new Set(heights.filter((z) => z > 1.9 && z < 2.4).map((z) => z.toFixed(2)));
-  assert.ok(treads.size >= 4, `down her steps, not off an edge: ${[...treads].join(' ')}`);
+  assert.ok(treads.size >= 4, `down its steps, not off an edge: ${[...treads].join(' ')}`);
   room.send(helmBytes(false));
   room.pump(rules.tickSeconds);
-  assert.ok(onDeck(), 'away from her wheel, still on deck');
-  // Back up her steps, and across to the spot behind her wheel.
+  assert.ok(onDeck(), 'away from its wheel, still on deck');
+  // Back up its steps, and across to the spot behind its wheel.
   walk(36, Math.PI);
   walk(12, Math.PI / 2);
   room.send(helmBytes(false));
@@ -92,7 +92,7 @@ test('a player off the helm walks down her steps to her deck, and takes the helm
   assert.equal(onDeck(), undefined, 'back at the helm');
 });
 
-test('from her wheel a walker or a runner straight to port or to starboard is stopped by her rail', () => {
+test('from its wheel a walker or a runner straight to port or to starboard is stopped by its rail', () => {
   rules.setCourse([]);
   assert.ok(rules.setHeights(deckFloats(SLOOP_DECK)));
   for (const yaw of [-Math.PI / 2, Math.PI / 2]) {
@@ -105,7 +105,7 @@ test('from her wheel a walker or a runner straight to port or to starboard is st
   }
 });
 
-test("the helm's eye stands a standing body's eye over her deck, as the movement crate stands one", () => {
+test("the helm's eye stands a standing body's eye over its deck, as the movement crate stands one", () => {
   assert.equal(rules.eyeHeight(rules.standing(...SLOOP_DECK.helm)), STANDING_EYE_M);
 });
 

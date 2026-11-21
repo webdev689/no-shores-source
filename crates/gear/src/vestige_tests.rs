@@ -151,9 +151,9 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
 #[test]
 fn a_kill_pays_every_player_who_struck_by_the_foes_kind_and_level() {
     let mut character = Character::starting();
-    let reward = character.reward_kill(Foe::Swordsman, 5, Some(Slot::Melee), Difficulty::Calm, &dice(1));
+    let reward = character.reward_kill(Foe::Swordsman, 5, Some(Slot::Melee), Difficulty::Normal, &dice(1));
     assert_eq!((reward.xp, reward.aurem), (90, 8), "a swordsman's worth at level 5");
-    let captain = character.reward_kill(Foe::Captain, 15, None, Difficulty::Calm, &dice(1));
+    let captain = character.reward_kill(Foe::Captain, 15, None, Difficulty::Normal, &dice(1));
     assert_eq!((captain.xp, captain.aurem), (4_000, 240));
     assert!(captain.vestige.is_some(), "a captain always leaves a Vestige");
     assert_eq!(character.xp, 4_090);
@@ -178,15 +178,21 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
     assert_eq!(island_levels("nowhere"), None);
     assert!(ISLANDS.windows(2).all(|pair| pair[0].2 <= pair[1].1), "each island picks up where the last left off");
     assert_eq!(ISLANDS.last().map(|island| island.2), Some(30), "the last island reaches the highest player");
-    assert_eq!(Difficulty::from_name("storm"), Some(Difficulty::Storm));
+    let names = Difficulty::ALL.map(Difficulty::name);
+    assert_eq!(names, ["normal", "elite", "abyss"]);
+    assert_eq!(names.map(Difficulty::from_name), Difficulty::ALL.map(Some));
+    assert_eq!(Difficulty::default(), Difficulty::Normal);
     assert_eq!(Difficulty::from_name("gale"), None);
-    assert_eq!((Difficulty::Rough.raise(10), Difficulty::Storm.raise(10)), (12, 13));
-    assert_eq!(Difficulty::Storm.raise(30), FOE_LEVEL_MOST);
-    let mut calm = Character::starting();
-    let mut storm = Character::starting();
-    let paid = calm.reward_kill(Foe::Swordsman, 5, None, Difficulty::Calm, &dice(1));
-    let stormy = storm.reward_kill(Foe::Swordsman, 5, None, Difficulty::Storm, &dice(1));
-    assert_eq!((stormy.xp, stormy.aurem), (paid.xp * 2, paid.aurem * 2));
+    // Each harder voyage raises a foe more than the one before, and none past the highest level.
+    let raised = Difficulty::ALL.map(|difficulty| difficulty.raise(10));
+    assert!(raised[0] == 10 && raised[0] < raised[1] && raised[1] < raised[2], "{raised:?}");
+    assert_eq!(Difficulty::Abyss.raise(30), FOE_LEVEL_MOST);
+    assert!(Difficulty::ALL.iter().all(|difficulty| difficulty.raise(FOE_LEVEL_MOST) == FOE_LEVEL_MOST));
+    let mut normal = Character::starting();
+    let mut abyss = Character::starting();
+    let paid = normal.reward_kill(Foe::Swordsman, 5, None, Difficulty::Normal, &dice(1));
+    let harder = abyss.reward_kill(Foe::Swordsman, 5, None, Difficulty::Abyss, &dice(1));
+    assert_eq!((harder.xp, harder.aurem), (paid.xp * 2, paid.aurem * 2));
     let drops = |difficulty: Difficulty| {
         (0..2_000)
             .filter(|seed| {
@@ -194,6 +200,9 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
             })
             .count()
     };
-    let (calm_drops, storm_drops) = (drops(Difficulty::Calm), drops(Difficulty::Storm));
-    assert!(storm_drops > calm_drops * 3 / 2, "a storm drops about twice as often: {calm_drops} against {storm_drops}");
+    let (normal_drops, abyss_drops) = (drops(Difficulty::Normal), drops(Difficulty::Abyss));
+    assert!(
+        abyss_drops > normal_drops * 3 / 2,
+        "Abyss drops about twice as often: {normal_drops} against {abyss_drops}"
+    );
 }

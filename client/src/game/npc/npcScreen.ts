@@ -183,7 +183,7 @@ function purseNode(context: MenuContext, kind: KeeperKind, look: KeeperLook): No
             press: true,
             role: 'button',
             label: 'Reputation details',
-            padding: [2, 11],
+            padding: [4, 13],
             children: [words('Reputation details', look.text)],
           },
         ],
@@ -200,7 +200,7 @@ function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: nu
   return {
     role: 'well',
     width,
-    padding: [4, 11],
+    padding: [6, 13],
     gap: 11,
     alignY: 'center',
     children: [
@@ -279,8 +279,9 @@ function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, wid
   };
 }
 
-/** A keeper's screen, drawn each frame from the gear the room last sent. */
-export function npcPage(context: MenuContext, kind: KeeperKind): Node {
+/** A keeper's screen, drawn each frame from the gear the room last sent; `more` stands under the wares (a faction's
+ *  muster of officers, `shipPages.ts`). */
+export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly Child[] = []): Node {
   const { ui, gear, room, sizes } = context;
   // The room's answer to the asks made here: thanks for a ware bought, a word for a price not met.
   const answer = pending ? answeredWith(pending, gear.answered, gear.answer) : undefined;
@@ -351,6 +352,7 @@ export function npcPage(context: MenuContext, kind: KeeperKind): Node {
             gap: 11,
             children: wares,
           },
+          ...more,
           foot,
         ],
       },

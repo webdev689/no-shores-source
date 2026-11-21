@@ -2,9 +2,55 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Stack } from '../ui/stack.ts';
 import { fakeInterface } from '../ui/uiForTests.ts';
-import { HeldMap } from './heldMap.ts';
+import { HeldMap, Kept, layoutKey } from './heldMap.ts';
 
-/** A map up over the view with a place chosen, its GPU drawing left out: what its layer shows and hears alone. */
+const view = { left: 10, top: 20, scale: 0.5 };
+const stage = { ink: { x: 1, y: 2, width: 1313, height: 844 }, sprite: { x: 0, y: 0, width: 1500, height: 1000 } };
+const scene = {
+  ship: [100, 200] as const,
+  heading: 1,
+  places: [{ id: 'overlook', name: 'Overlook', kind: 'port', at: [5, 6] as const, sail: [7, 8] as const }],
+  knownIslands: 3,
+  course: [],
+};
+const keyOf = (changed: Partial<Parameters<typeof layoutKey>[4]> = {}, others: Partial<{ fonts: string }> = {}) =>
+  layoutKey(
+    { ...view },
+    structuredClone(stage),
+    others.fonts ?? 'loaded',
+    1,
+    { ...structuredClone(scene), ...changed },
+    null,
+  );
+
+test('the held map lays out again only when something its layout reads has changed', () => {
+  assert.equal(keyOf(), keyOf(), 'a still frame, its objects made anew, reads the same');
+  const changes = [
+    layoutKey({ ...view, scale: 0.6 }, stage, 'loaded', 1, scene, null),
+    layoutKey(view, { ...stage, ink: { ...stage.ink, width: 900 } }, 'loaded', 1, scene, null),
+    keyOf({}, { fonts: 'loading' }),
+    layoutKey(view, stage, 'loaded', 2, scene, null),
+    keyOf({ ship: [101, 200] }),
+    keyOf({ heading: 2 }),
+    keyOf({ knownIslands: 4 }),
+    keyOf({ places: [] }),
+    layoutKey(view, stage, 'loaded', 1, scene, 'overlook'),
+  ];
+  for (const [index, changed] of changes.entries()) assert.notEqual(changed, keyOf(), `change ${index} lays out again`);
+  assert.equal(keyOf({ course: [[1, 1]] }), keyOf(), 'the course sailed is drawn, not lettered');
+});
+
+test('a frame whose key is unchanged does no layout; a changed one lays out again', () => {
+  const kept = new Kept<string>();
+  let laidOut = 0;
+  const layout = () => `layout ${++laidOut}`;
+  assert.equal(kept.made(keyOf(), layout), 'layout 1');
+  for (let frame = 0; frame < 60; frame++) assert.equal(kept.made(keyOf(), layout), 'layout 1');
+  assert.equal(laidOut, 1, 'sixty still frames, one layout');
+  assert.equal(kept.made(keyOf({ heading: 2 }), layout), 'layout 2');
+});
+
+/** A map up over the view with a place chosen, its GPU drawing left out: what its card shows and hears alone. */
 function mapUp() {
   const map = Object.create(HeldMap.prototype) as HeldMap;
   const place = { id: 'salt', name: 'Saltmere Reach', kind: 'node', at: [100, 100], sail: [90, 90] } as const;
@@ -13,11 +59,10 @@ function mapUp() {
     ink: { x: 200, y: 150, width: 800, height: 450 },
     mapView: { left: 0, top: 0, scale: 1 },
     shownAt: { lift: 1, drop: 0 },
-    shipAt: { x: 300, y: 300, heading: 0 },
     placed: [{ place, x: 400, y: 200 }],
     choice: { at: place.sail, name: place.name, course: { ok: true, points: [] }, place: place.id },
-    difficulty: 'calm',
-    picked: 'calm',
+    difficulty: 'normal',
+    picked: 'normal',
     lowered: () => undefined,
   });
   const stack = new Stack();
@@ -39,18 +84,16 @@ function mapUp() {
 
 test("the card's seas and Set sail take the pointer, and set sail at the seas chosen", () => {
   const { map, press } = mapUp();
-  press('held-seas:storm');
+  press('held-seas:abyss');
   press('held-sail');
-  assert.equal(map.difficulty, 'storm');
+  assert.equal(map.difficulty, 'abyss');
   assert.equal(map.shown, true, 'lowering');
 });
 
-test("the map's names, its ship and the card's ground let a click through to the map", () => {
+test("the card's ground lets a click through to the map", () => {
   const { ui, frame } = mapUp();
   frame();
   const card = ui.boxOf('held-card');
   assert.ok(card);
   assert.equal(ui.takes(card.x + 3, card.y + 3), false, "the card's edge");
-  assert.equal(ui.takes(200 + 400 + 12, 150 + 200 - 2), false, 'a name');
-  assert.equal(ui.takes(200 + 300, 150 + 300), false, 'the ship');
 });

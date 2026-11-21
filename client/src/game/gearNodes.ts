@@ -5,14 +5,14 @@
 
 import type { GearItem } from '../network/gearMessages.ts';
 import { ELEMENTS, RARITIES, fullyUpgraded, upgraded } from '../player/gear.ts';
-import { diagonalFit, drawnBounds, fitIcon } from '../player/iconFit.ts';
+import { diagonalFit, drawnBounds, fitIcon, shrunkCanvas } from '../player/iconFit.ts';
 import type { Picture as Pixels } from '../player/picture.ts';
 import type { Child, Drawing, Node, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
-import { elementSvg } from './elementGlyphs.ts';
+import { elementSvg } from '../player/elementGlyphs.ts';
 import { BAND_CELLS, type Emblem, SIGN_CELLS, type Shape, emblemPixels, plateEnd } from './emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
-import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
+import { fineGlyph, glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
 
 /** What a press or a key does, as a line of keycaps shows it: the key, then its words. */
 export type Hint = readonly [key: string, words: string];
@@ -139,8 +139,14 @@ export function svgNode(key: string, svg: string, size: number, height = size): 
   return { width: size, height, picture: { key, source: { svg } } };
 }
 
-/** A glyph of the menu's, `size` pixels a side. */
-export function glyphNode(glyph: Exclude<Glyph, 'item'>, size = 36, rarity = 0, tint = 0): Node {
+/** A glyph of the menu's, `size` pixels a side: unless said, a gear glyph's 12 cells at three times and a ship
+ *  glyph's 24 at twice, whole pixels either way. */
+export function glyphNode(
+  glyph: Exclude<Glyph, 'item'>,
+  size = fineGlyph(glyph) ? 48 : 36,
+  rarity = 0,
+  tint = 0,
+): Node {
   return svgNode(`glyph ${glyph} ${rarity} ${tint}`, glyphSvg(glyph, rarity, tint), size);
 }
 
@@ -229,7 +235,7 @@ function grownBy(own: OffscreenCanvas, whole: number): OffscreenCanvas {
 /** A picture in a box `box` CSS pixels a side, its clear margin trimmed and fitted as Enhanced Plus fits its icons
  *  (`fitIcon`), never past `cap` to a pixel of its own; an icon long and thin is laid on the box's diagonal, as a
  *  weapon is, unless capped. Drawn at the screen's own pixels: grown by whole pixels, then smoothed down once only
- *  where it must be. */
+ *  where it must be; one larger than its box (a weapon's large picture) shrunk to it by an area average instead. */
 export function pictureNode(picture: Pixels, box: number, ratio: number, cap?: number): Node {
   const [, , width, height] = boundsOf(picture);
   const key = `${nameOf(picture)} ${box} ${ratio} ${cap ?? 'icon'}`;
@@ -244,8 +250,11 @@ export function pictureNode(picture: Pixels, box: number, ratio: number, cap?: n
           draw: (context, across, down) => {
             const own = trimmed(picture);
             if (!own) return;
-            const grown = grownBy(own.canvas, laid.grown);
+            const shrinks = laid.scale < 1;
             const [long, short] = [own.width * laid.scale, own.height * laid.scale];
+            const grown = shrinks
+              ? shrunkCanvas(own.canvas, Math.max(1, Math.round(long)), Math.max(1, Math.round(short)), picture.snap)
+              : grownBy(own.canvas, laid.grown);
             context.imageSmoothingEnabled = true;
             context.imageSmoothingQuality = 'high';
             context.translate(across / 2, down / 2);
@@ -266,8 +275,11 @@ export function pictureNode(picture: Pixels, box: number, ratio: number, cap?: n
         draw: (context, across, down) => {
           const own = trimmed(picture);
           if (!own) return;
-          const grown = grownBy(own.canvas, fit.grown);
-          context.imageSmoothingEnabled = fit.smooth;
+          const shrinks = fit.width < own.width || fit.height < own.height;
+          const grown = shrinks
+            ? shrunkCanvas(own.canvas, fit.width, fit.height, picture.snap)
+            : grownBy(own.canvas, fit.grown);
+          context.imageSmoothingEnabled = fit.smooth && !shrinks;
           context.imageSmoothingQuality = 'high';
           // Set on whole device pixels, so a pixel grown whole stays square.
           const [left, top] = [Math.floor((across - fit.width) / 2), Math.floor((down - fit.height) / 2)];

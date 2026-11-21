@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { FILLS, TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import type { Node } from '../ui/node.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
 import {
   ALERT_MARK_SECONDS,
@@ -12,6 +14,7 @@ import {
   bossBarOf,
   bossInFight,
 } from './foeBars.ts';
+import { allOf, coloursDrawn, wordsIn, written } from './nodes.test.ts';
 
 const standing: FighterView = {
   x: 0,
@@ -137,6 +140,17 @@ test('in a crowd, a plate shows for the foe nearest the crosshair, the locked an
     [112, 140, 140],
     'the words keep clear of the plates drawn, each as wide as it is drawn, and of no other foe',
   );
+});
+
+test('the crosshair rests on the foe whose body it is on, never on an ally of the players', () => {
+  const bars = new FoeBars();
+  const spotOf = (view: FighterView) => ({ x: 400 + view.x * 10, y: 300, depth: view.y });
+  const ahead = placed(1, 0, 10);
+  bars.update([ahead], null, spotOf, LOOKING_NORTH, 1 / 60);
+  assert.equal(bars.under, 1);
+  const ally = { ...ahead, view: { ...ahead.view, side: 'players' as const } };
+  bars.update([ally], null, spotOf, LOOKING_NORTH, 1 / 60);
+  assert.equal(bars.under, null, 'a companion or a boarding hand');
 });
 
 test('a foe fought shows wherever it is, fading as the fight lets it go', () => {
@@ -279,6 +293,26 @@ test('a plate leaving the cone fades out over a quarter of a second, then is gon
   assert.equal(bars.drawn.length, 0);
   bars.update([ahead], null, spotOf, viewing, 1);
   assert.notEqual(bars.drawn[0]?.plate, plate);
+});
+
+test("a companion's plate is drawn in the players' colour, by their own name, with no level square", () => {
+  const bars = new FoeBars();
+  // Both fought lately, so both plates show.
+  const viewing: PlateViewing = { ...LOOKING_NORTH, fought: () => 1 };
+  const mate = thule(1, 0, { name: 'Cass Brine', rank: 2, ally: true, level: 4 }, { y: 5, side: 'players' });
+  const brute = thule(2, 0, { name: 'Brute', rank: 2, level: 4 }, { y: 6 });
+  for (let frame = 0; frame < 12; frame++)
+    bars.update([mate, brute], null, () => ({ x: 400, y: 300, depth: 5 }), viewing, 1 / 60);
+  const plateOf = (name: string) => bars.overheadNodes().find((plate) => wordsIn(plate).includes(name)) ?? null;
+  const [ally, foe] = [plateOf('Cass Brine'), plateOf('Brute')];
+  const named = (plate: Node | null, name: string) => allOf(plate).find((node) => node.text?.words === name);
+  assert.deepEqual(
+    [named(ally, 'Cass Brine')?.text?.colour, named(foe, 'Brute')?.text?.colour],
+    [TONES.ally, TONES.word],
+  );
+  assert.deepEqual([wordsIn(ally).includes('4'), wordsIn(foe).includes('4')], [false, true], 'its level not shown');
+  assert.ok(ally && coloursDrawn(ally).has(written(FILLS.ally)), "its health in the players' blue");
+  assert.ok(foe && coloursDrawn(foe).has(written(FILLS.orange)), "a Major foe's in orange");
 });
 
 test('the crosshair on a near foe takes the plate from one behind it on the line, and the next lifts nothing', () => {

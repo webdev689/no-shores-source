@@ -1,6 +1,6 @@
 // The fight's display's cues over the world, as nodes of the interface the game draws: the struck edge, the soft
-// lock's mark, the crosshair and its charge, a parry ring, an arrow to a threat off the screen, and the veil. Each is
-// set on the screen where the display's frame puts it, in CSS pixels.
+// lock's mark, a parry ring, an arrow to a threat off the screen, and the veil. Each is set on the screen where the
+// display's frame puts it, in CSS pixels. The crosshair is its own (`reticle.ts`).
 import type { Node } from '../ui/node.ts';
 import { paintBox } from './barDraw.ts';
 
@@ -90,77 +90,6 @@ export function lockMarkNode(spot: { readonly x: number; readonly y: number }): 
     `<circle cx="10" cy="10" r="7" fill="none" stroke="#f4e3b0" stroke-opacity="0.25" stroke-width="2"/><circle cx="10" cy="10" r="5" fill="none" stroke="#f4e3b0" stroke-width="2"/>`,
   );
   return centred('lock mark', svg, 20, spot);
-}
-
-/** The crosshair at the screen's middle: a dot and two fine hairs 22 px long, outlined dark; while a bow aims, its
- *  charge as a ring round it, gold as far as it has drawn, glowing once full. */
-export function crosshairNode(charge: number | null): Node {
-  const hairs: Node = {
-    width: 22,
-    height: 22,
-    float: { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
-    draw: (ui, box, scale, clip, fade) => {
-      const pen = { ui, box, scale, clip, fade };
-      const middleX = box.x + 11 * scale;
-      const middleY = box.y + 11 * scale;
-      const line = (across: boolean, width: number, css: string) =>
-        paintBox(
-          pen,
-          across
-            ? { x: box.x, y: middleY - (width * scale) / 2, width: box.width, height: width * scale }
-            : { x: middleX - (width * scale) / 2, y: box.y, width: width * scale, height: box.height },
-          css,
-        );
-      line(true, 3, 'rgba(0,0,0,0.35)');
-      line(false, 3, 'rgba(0,0,0,0.35)');
-      line(true, 1, 'rgba(242,242,242,0.75)');
-      line(false, 1, 'rgba(242,242,242,0.75)');
-      paintBox(
-        pen,
-        { x: middleX - 2 * scale, y: middleY - 2 * scale, width: 4 * scale, height: 4 * scale },
-        'rgba(0,0,0,0.5)',
-      );
-      paintBox(pen, { x: middleX - scale, y: middleY - scale, width: 2 * scale, height: 2 * scale }, '#f2f2f2');
-    },
-  };
-  if (charge === null) return hairs;
-  // Its ring in whole degrees, two at a time, so a bow's draw makes no more than 181 pictures.
-  const degrees = Math.round(Math.min(1, Math.max(0, charge)) * 180) * 2;
-  const full = charge >= 1;
-  return {
-    width: 'grow',
-    height: 'grow',
-    float: { to: 'screen', z: 1 },
-    children: [
-      hairs,
-      {
-        width: 32,
-        height: 32,
-        picture: {
-          key: `charge ${degrees}${full ? ' full' : ''}`,
-          source: {
-            draw: (context, width, height) => {
-              const unit = width / 32;
-              const [middleX, middleY] = [width / 2, height / 2];
-              const arc = (radius: number, from: number, to: number, css: string, thick: number) => {
-                context.strokeStyle = css;
-                context.lineWidth = thick * unit;
-                context.beginPath();
-                context.arc(middleX, middleY, radius * unit, from, to);
-                context.stroke();
-              };
-              const top = -Math.PI / 2;
-              const turned = top + (degrees * Math.PI) / 180;
-              if (full) arc(16.5, 0, 2 * Math.PI, 'rgba(255,217,90,0.35)', 2);
-              arc(14, turned, top + 2 * Math.PI, 'rgba(255,255,255,0.22)', 3);
-              if (degrees > 0) arc(14, top, turned, '#ffd95a', 3);
-            },
-          },
-        },
-        float: { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
-      },
-    ],
-  };
 }
 
 /** A parry ring over a foe at a blow the player can parry: a fixed inner ring 14 px across and one `span` px across

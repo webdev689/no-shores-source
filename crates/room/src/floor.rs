@@ -5,13 +5,16 @@ use movement::blocks::ground_at;
 use movement::{Block, Body, Heights, Terrain, standing};
 
 /// The ground a room's fighters stand on: open ground at 0 m, the open sea under a course laid over it, held round the
-/// course's edge by its rim (`Heights::rim`: no body leaves the blocks for the sea, and no foe walks it), or a node's
-/// window of the land.
+/// course's edge by its rim (`Heights::rim`: no body leaves the blocks for the sea, and no foe walks it), a node's
+/// window of the land, a ship's deck in its own frame (its grid of heights over its waterline, a wall off its planks),
+/// or a sea island's fine ground in its own.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Floor {
     Flat,
     Sea(Box<Heights>),
     Land(Box<Ground>),
+    Deck(Box<movement::Heights>),
+    Island(Box<movement::Heights>),
 }
 
 impl Terrain for Floor {
@@ -21,6 +24,7 @@ impl Terrain for Floor {
             // sea meets the water, not a wall's height.
             Floor::Flat | Floor::Sea(_) => 0.0,
             Floor::Land(ground) => ground.height_at(x, y),
+            Floor::Deck(heights) | Floor::Island(heights) => heights.height_at(x, y),
         }
     }
 

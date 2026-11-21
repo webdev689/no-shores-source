@@ -39,7 +39,7 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
 - **Rails** (`railShot`). A cutscene's camera runs through keys, each a time, an eye, the point it looks at and,
   where it changes, the lens. Eye and look are each carried on a Catmull-Rom curve through the keys, so the camera
   sweeps through them without a corner; it eases out of rest at its first key and into rest at its last unless the
-  rail keeps moving. A rail laid in a ship's own frame is carried into the world each frame as she sails.
+  rail keeps moving. A rail laid in a ship's own frame is carried into the world each frame as it sails.
 - **Moments** (`Cues`). What happens once at given seconds into a cutscene (a line, a sound, a flash) runs in time
   order, exactly once, however long the frames are; a skipped cutscene runs every moment left at once, so the world
   is left as its end would leave it. Holding Space (or a touch anywhere on the view) for a second skips (`HoldToSkip`):
@@ -93,7 +93,7 @@ light at the hour, gold at first light, as the sky's own clouds do. The hour eas
 
 The game's scene reads `scene.weather` every frame. The water is drawn on the swell with every wave's height and
 sideways carry times the weather's `seaGain` (`swellGained`); the waves' speeds and lengths stay the rules', so a ship
-still rides where the server puts her. It is drawing only.
+still rides where the server puts it. It is drawing only.
 
 ### The atmosphere pass
 

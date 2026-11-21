@@ -138,7 +138,7 @@ test('on foot beside the fight’s display the place’s name stands at the righ
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
   hud.place('Overlook', 'Social space');
-  let besides = { fight: false, bossed: false, speaking: false };
+  let besides = { fight: false, bossed: false, speaking: false, map: false };
   hud.onBesides(() => besides);
   const nameBox = () => frame(ui, hud).find((each) => each.node.text?.words === 'Overlook')?.box;
   assert.equal(nameBox()?.x, 28);
@@ -159,12 +159,12 @@ test('the key strip stands over the sea bar and its offer, gives way to speech, 
   const laid = frame(ui, hud);
   assert.equal(hud.hintsBox(ui)?.y, VIEW.height - 148 - (hud.hintsBox(ui)?.height ?? 0));
   assert.ok(words(laid).includes('Dock at Saltmere Enter'));
-  hud.onBesides(() => ({ fight: false, bossed: false, speaking: true }));
+  hud.onBesides(() => ({ fight: false, bossed: false, speaking: true, map: false }));
   frame(ui, hud);
   assert.equal(hud.hintsBox(ui), null);
 });
 
-test('Manage’s panel lists each part, marks those to come Later, and its way back runs Manage', () => {
+test('Manage’s panel lists each part, and its way back runs Manage', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
   let managed = 0;
@@ -172,13 +172,12 @@ test('Manage’s panel lists each part, marks those to come Later, and its way b
   hud.shipPanel({
     title: 'The Sloop',
     parts: [
-      { heading: 'Build', rows: [['Hull', '100']], later: false },
-      { heading: 'Crew', rows: [], later: true },
+      { heading: 'Build', rows: [['Hull', '100']] },
+      { heading: 'Crew', rows: [] },
     ],
   });
   const laid = frame(ui, hud);
-  for (const said of ['The Sloop', 'BUILD', 'Hull', '100', 'CREW', 'Later'])
-    assert.ok(words(laid).includes(said), said);
+  for (const said of ['The Sloop', 'BUILD', 'Hull', '100', 'CREW']) assert.ok(words(laid).includes(said), said);
   clickOn(ui, hud, laid, 'ship:back');
   assert.equal(managed, 1);
 });
@@ -202,4 +201,96 @@ test('a mark growing as the ship nears it reuses its picture across a few pixels
   };
   assert.equal(keyAt(21), keyAt(23));
   assert.notEqual(keyAt(23), keyAt(40));
+});
+
+test('an isle offers its own landfall over the sea bar', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.seaBar({ ...SEA, landfall: { kind: 'isle', id: 4, words: 'the cove' } });
+  assert.ok(words(frame(ui, hud)).includes('Go ashore on the cove Enter'));
+});
+
+test('the notices stand at the top right, 28 px in and 64 down, newest last, sliding in from the right', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.notices(['The Pirate Brig surrenders!', 'No guns bear there.']);
+  frame(ui, hud);
+  const rows = () => frame(ui, hud).filter((each) => each.node.id?.startsWith('notice:'));
+  const [first, last] = rows();
+  assert.ok(first && last);
+  const slid = first.node.offset?.[0] ?? 0;
+  assert.ok(slid > first.box.width, 'just come, it stands off past the right edge');
+  assert.equal(first.box.x + first.box.width - slid, VIEW.width - 28, 'come in, its right edge stands 28 px in');
+  assert.equal(first.box.y, 64);
+  assert.ok(last.box.y > first.box.y, 'the newest under the older');
+  assert.equal(first.node.opacity, 0, 'a notice just come has yet to slide in');
+  hud.notices([]);
+  assert.deepEqual(rows(), []);
+});
+
+test('in a sea fight the place gives way and the status line stands in the top right corner', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.place('At sea', 'The Pale Expanse');
+  hud.note('Under way');
+  const named = (laid: Laid[], said: string) => laid.find((each) => each.node.text?.words === said);
+  let laid = frame(ui, hud);
+  assert.ok(named(laid, 'At sea'));
+  hud.seaFight({ ship: null, card: null, tally: null, warn: null });
+  laid = frame(ui, hud);
+  assert.equal(named(laid, 'At sea'), undefined);
+  const status = named(laid, 'Under way')?.parent?.box;
+  assert.ok(status);
+  assert.equal(status.x + status.width, VIEW.width - 28);
+  assert.equal(status.y, 22);
+});
+
+test('while the held map is up the place’s kind stands as written, and at the larger step the strip clears the Arts', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.place('At the helm', 'Saltmere Reach');
+  let besides = { fight: false, bossed: false, speaking: false, map: false };
+  hud.onBesides(() => besides);
+  assert.ok(words(frame(ui, hud)).includes('SALTMERE REACH'));
+  besides = { ...besides, map: true };
+  assert.ok(words(frame(ui, hud)).includes('Saltmere Reach'));
+  const wide = { width: 1600, height: 900, scale: 1 };
+  hud.hints([['Q', 'Guard']]);
+  besides = { ...besides, map: false, fight: true };
+  ui.frame(wide, [], 1 / 60);
+  ui.draw(hud.node(ui));
+  assert.equal(hud.hintsBox(ui)?.y, wide.height - 200 - (hud.hintsBox(ui)?.height ?? 0));
+});
+
+test('a hostile ship’s mark wears its rank’s colour, its faction’s emblem and a Miniboss’s mark over its ring', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  const look = {
+    emblem: 'data:image/svg+xml,%3Csvg%2F%3E',
+    colour: '#ff0000',
+    badge: 'data:image/svg+xml,%3Csvg%2F%3E',
+  };
+  hud.marks([
+    {
+      id: 'pirate',
+      kind: 'hostile',
+      name: 'Pirate Brig',
+      x: 300,
+      y: 300,
+      sizePx: 28,
+      note: '900 m',
+      chosen: false,
+      named: true,
+      arrowDegrees: null,
+      locked: false,
+      hostile: look,
+    },
+  ]);
+  const laid = frame(ui, hud);
+  const ring = laid.find((each) => each.node.id === 'mark:pirate');
+  assert.match(ring?.node.picture?.key ?? '', /#ff0000/);
+  const emblem = laid.find((each) => each.node.picture?.key.startsWith('mark emblem'));
+  assert.equal(emblem?.box.width, 17, '62% of its ring');
+  const badge = laid.find((each) => each.node.picture?.key.startsWith('mark badge'));
+  assert.ok(badge && badge.box.y < 286, 'over the ring');
 });

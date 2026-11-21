@@ -37,6 +37,8 @@ struct Now {
 
 #[derive(Debug, Default)]
 pub struct Sent {
+    /// The room's middle, which others' numbers are measured from (`pack::middle_of`); the world's for a course.
+    middle: [f64; 2],
     held: VecDeque<Held>,
     now: Option<Now>,
     events: VecDeque<Event>,
@@ -56,9 +58,15 @@ fn look_bytes(seen: &Seen) -> Vec<u8> {
 }
 
 impl Sent {
+    /// None sent yet, for a room whose middle is `middle`.
+    #[must_use]
+    pub fn around(middle: [f64; 2]) -> Self {
+        Self { middle, ..Self::default() }
+    }
+
     /// The room's tick taken in, once whatever asks first: what happened since is kept, and how everyone stands.
-    fn take(&mut self, room: &mut Room, middle: [f64; 2]) {
-        let tick = room.clock();
+    pub fn take(&mut self, room: &mut Room) {
+        let (tick, middle) = (room.clock(), self.middle);
         if self.now.as_ref().is_some_and(|now| now.tick == tick) {
             return;
         }
@@ -93,8 +101,9 @@ impl Sent {
 
     /// `viewer`'s snapshot after the room's last tick: everything changed since the tick their screen last showed, or
     /// everything when that tick is no longer kept; and what happened since it, or since they joined.
-    pub fn snapshot_for(&mut self, room: &mut Room, viewer: PlayerId, middle: [f64; 2]) -> Vec<u8> {
-        self.take(room, middle);
+    pub fn snapshot_for(&mut self, room: &mut Room, viewer: PlayerId) -> Vec<u8> {
+        self.take(room);
+        let middle = self.middle;
         let (Some(now), Some(latest)) = (self.now.as_ref(), self.held.back()) else { return Vec::new() };
         let (shown, joined) = room.heard(viewer).map_or((0, now.tick), |(_, shown, joined)| (shown, joined));
         let base = self.held.iter().find(|held| held.tick == shown && shown < now.tick);

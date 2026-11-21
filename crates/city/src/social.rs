@@ -53,9 +53,16 @@ pub fn plaza_bounds(centre: [f64; 2], seaward: [f64; 2], reach: f64) -> ([f64; 4
 }
 
 /// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
-/// looks out over the city to the sea.
+/// looks out over the city to the sea. A ruined city's plaza is empty: its counters stand bare and keep no station.
 #[must_use]
-pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], landmark: &Landmark) -> Social {
+pub fn plaza(
+    ground: &Ground,
+    centre: [f64; 2],
+    level: f64,
+    seaward: [f64; 2],
+    landmark: &Landmark,
+    ruined: bool,
+) -> Social {
     let (bounds, along_seaward) = plaza_bounds(centre, seaward, landmark.reach);
     let (extent_x, extent_y) = (bounds[2] - bounds[0], bounds[3] - bounds[1]);
     let middle = [(bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0];
@@ -97,7 +104,7 @@ pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], l
     let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
     let frame = Frame { middle, seaward: along_seaward, depth, length, level };
     solids.extend(courtyard(&frame));
-    let (stations, stalls) = stations(&frame);
+    let (stations, stalls) = stations(&frame, ruined);
     solids.extend(stalls);
     let visitor_spots = visitor_spots(&frame);
     Social { bounds, level, ring, spawns, solids, stations, visitor_spots }

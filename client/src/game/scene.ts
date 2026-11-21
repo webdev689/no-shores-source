@@ -13,7 +13,7 @@ import { startSkyLaw } from '../sky/skyLaw.ts';
 import { type SkyLook, skyUniformFor } from '../sky/skyUniform.ts';
 import { cloudBaseOf } from '../overworld/overworldCamera.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
-import type { GroundPatch, LandView } from '../rules/landRules.ts';
+import type { GroundPatch, LandView, Swell } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
 import type { CloseGround } from '../terrain/landClient.ts';
 import type { GroundPaint } from '../terrain/groundColour.ts';
@@ -273,6 +273,8 @@ export class GameScene {
       readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void;
       readonly hulls?: readonly HullMask[];
       readonly focus?: readonly [number, number];
+      /** The swell to draw in place of the land's: the sea by weather. */
+      readonly swell?: Swell;
       readonly atSea?: boolean;
       /** What the player's left hand carries (`torch_l`, `lantern`) and where their feet are (world metres): a light
        *  there lights round them. */
@@ -367,13 +369,15 @@ export class GameScene {
       exaggeration: 1,
       fogM: air.clearM,
       world: [...origin],
-      swell: this.drawnSwell(view),
+      // The sea's own swell, made by its weather, as handed; else the land's, raised by the weather's sea.
+      swell: more.swell ?? this.drawnSwell(view),
       coarse: drawn.cells,
       patch: near?.water ?? null,
       eyeWater,
       eyeAboveM: Math.abs(shot.eye[2] - (eyeWater?.surface ?? ground)),
       focus: more.focus ? [more.focus[0] - origin[0], more.focus[1] - origin[1]] : [local.eye[0], local.eye[1]],
       hulls: (more.hulls ?? []).map((hull) => ({ ...hull, x: hull.x - origin[0], y: hull.y - origin[1] })),
+      shadow: this.shadow,
       drawn: targets,
       target,
     });

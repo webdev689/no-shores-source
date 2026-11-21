@@ -15,13 +15,15 @@ import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
-import { arrowNode, crosshairNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
+import { arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 import { UNABLE } from './casting.ts';
-import { EDGE, type HudLayout, hudLayout } from './hudLayout.ts';
+import { CORNER } from '../plus/barFrame.ts';
+import { type HudLayout, hudLayout } from './hudLayout.ts';
+import { Crosshair, type CrosshairFrame } from './reticle.ts';
 import { Vitals } from './vitals.ts';
 import { type ArmsShown, WeaponRows } from './weapons.ts';
 
@@ -42,8 +44,8 @@ export interface HudFrame {
   readonly pressed: boolean;
   readonly lost: string | null;
   readonly rejoining?: boolean;
-  /** The crosshair, while a ranged weapon aims or is out in first person, with a bow's charge (0 to 1) while it aims. */
-  readonly crosshair?: { readonly charge: number | null } | null;
+  /** The crosshair: a ranged one while it aims or is out in first person, the melee one while a melee weapon is drawn. */
+  readonly crosshair?: CrosshairFrame | null;
   /** The shots left, beside the crosshair, while the Ranged loadout is drawn; null while they are not shown. */
   readonly ammo?: number | null;
   /** The Ranged loadout's capacity, by which few shots left read as low; null unknown. */
@@ -148,6 +150,7 @@ export class Hud {
   private readonly vitals = new Vitals();
   private readonly target = new FoePlate({ poise: true, remembers: 'whole' });
   private readonly foeBars = new FoeBars();
+  private readonly crosshair = new Crosshair();
   private readonly foeTarget = new FoeTarget();
   private readonly words = new Words();
   /** The side the next number with no stroke to follow is thrown to. */
@@ -161,11 +164,9 @@ export class Hud {
   private readonly ironTold = new Set<number>();
   private staminaFlash = 0;
   private hurtFlash = 0;
-  /** What the last frame showed: its view, the veil, the crosshair's charge (undefined for none), the shots, the
-   *  compass's heading, the lock's mark, the target's share shown, the parry rings and the arrows at the edge. */
+  /** What the last frame showed: its view, the veil, the shots, the compass's heading, the lock's mark, the target's share shown, the parry rings and the arrows at the edge. */
   private view = { width: 0, height: 0 };
   private veil: ReturnType<typeof veilOf> = null;
-  private charge: number | null | undefined = undefined;
   private ammo: { readonly ammo: number | null | undefined; readonly most: number | null } = { ammo: null, most: null };
   private heading: number | null = null;
   private lockSpot: { readonly x: number; readonly y: number } | null = null;
@@ -204,7 +205,6 @@ export class Hud {
     this.weapons.lay(this.layout.wide, this.layout.zoom);
     this.flash(frame, seconds);
     this.veil = veilOf(frame);
-    this.charge = frame.crosshair ? (frame.crosshair.charge ?? null) : undefined;
     this.ammo = { ammo: frame.ammo, most: frame.ammoMost ?? null };
     const overHead = (view: FighterView) => {
       const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
@@ -222,6 +222,8 @@ export class Hud {
     };
     this.heading = viewing.camera ? headingOf(viewing.camera.forward) : this.heading;
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
+    const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
+    this.crosshair.update(frame.crosshair ?? null, own, under, frame.events, frame.player, seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
     if (frame.abilities) this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''));
@@ -372,7 +374,7 @@ export class Hud {
         ...this.rings.map((ring) => parryNode(ring, ring.span, ring.kind)),
         ...this.arrows(ui).map(arrowNode),
         ...this.words.nodes(),
-        this.charge !== undefined && crosshairNode(this.charge),
+        this.crosshair.node(),
         ammoNode(this.ammo.ammo, this.ammo.most),
         column,
         this.veil && veilNode(this.veil),
@@ -402,7 +404,7 @@ export class Hud {
       alignY: 'end',
       alignX: 'start',
       gap: (wide ? 20 : 14) * zoom,
-      float: { to: 'screen', at: [0, 1], anchor: [0, 1], x: EDGE.side * zoom, y: -EDGE.foot * zoom, z: 1 },
+      float: { to: 'screen', at: [0, 1], anchor: [0, 1], x: CORNER.side * zoom, y: -CORNER.foot * zoom, z: 1 },
       children: stacked ? [weapons, abilities] : [abilities, weapons],
     };
   }

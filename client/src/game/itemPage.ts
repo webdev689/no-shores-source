@@ -17,6 +17,7 @@ import {
   INK,
   edges,
   focusRing,
+  glyphNode,
   label,
   nodeGlyphNode,
   over,
@@ -29,6 +30,7 @@ import {
 } from './gearNodes.ts';
 import { itemDetailOf } from './gearScreen.ts';
 import type { MenuContext } from './menuPage.ts';
+import { moduleGlyph } from './shipGear.ts';
 
 /** The art's box: what the page's height leaves it, within these, in pixels. */
 const ART_LEAST = 200;
@@ -37,6 +39,8 @@ const ART_AROUND = 110;
 /** The most an item's Attack and Prestige reach, for their meters. */
 const ATTACK_MOST = 300;
 const PRESTIGE_MOST = 30;
+/** A module's glyph on its page, in pixels: its 24 cells at eleven times. */
+const GLYPH_PX = 264;
 /** A node's tile, in pixels. */
 const NODE_TILE = 44;
 /** The id of the item's art, which charges as a hold on its page is held. */
@@ -45,7 +49,7 @@ export const ITEM_ART = 'item-art';
 export const ITEM_NAME = 'item-name';
 
 /** A meter sunk into the page, filled to `share`; with `value`, its label and value beside it. */
-function bar(context: MenuContext, said: string, share: number, value = ''): Node {
+export function bar(context: Pick<MenuContext, 'sizes'>, said: string, share: number, value = ''): Node {
   const size = context.sizes.label;
   const well: Node = {
     width: 'grow',
@@ -97,7 +101,7 @@ function nodeCard(context: MenuContext, node: NodeShown): Node {
  *  locked, its ring grown `share` of the way to it. */
 function nodePress(
   context: MenuContext,
-  item: GearItem,
+  item: Pick<GearItem, 'rarity'>,
   node: NodeShown,
   [kind, share]: readonly [number, number],
   id: string,
@@ -162,8 +166,13 @@ function nodePress(
   };
 }
 
-/** The node grid: each column's nodes, their rings grown as far as the item has from the column before's. */
-function nodeGrid(context: MenuContext, item: GearItem, columns: ReturnType<typeof itemDetailOf>['columns']): Node {
+/** The node grid: each column's nodes, their rings grown as far as the item has from the column before's; an
+ *  officer's too, their service as its XP and their grade as its rarity. */
+export function nodeGrid(
+  context: MenuContext,
+  item: Pick<GearItem, 'columns' | 'xp' | 'rarity'>,
+  columns: ReturnType<typeof itemDetailOf>['columns'],
+): Node {
   return {
     id: 'nodes',
     gap: 14,
@@ -232,7 +241,13 @@ export function itemPage(
   ];
   const box = Math.min(ART_MOST, Math.max(ART_LEAST, room.height - ART_AROUND));
   const picture = context.picture(item);
-  const drawn = picture ? pictureNode(picture, box, sizes.ratio, LARGE_CAP) : words('Drawing…', 1, INK.faint);
+  // A module's glyph stands for its picture, drawn large at eleven times its cells, in the middle of the art's box.
+  const glyph = moduleGlyph(item.kind);
+  const drawn = glyph
+    ? glyphNode(glyph, GLYPH_PX)
+    : picture
+      ? pictureNode(picture, box, sizes.ratio, LARGE_CAP)
+      : words('Drawing…', 1, INK.faint);
   const shaken = quiver(holds.share(ITEM_ART));
   const found = RARITIES[item.rarity];
   const nameColour = item.rarity === 0 ? found?.colour : found?.lit;
@@ -303,7 +318,7 @@ export function itemPage(
             height: 'grow',
             minHeight: box,
             alignX: 'center',
-            alignY: 'end',
+            alignY: glyph ? 'center' : 'end',
             picture: {
               key: `item floor ${rgb}`,
               source: {
@@ -336,7 +351,7 @@ export function itemPage(
             // Stood a tenth of the art's width off its foot, as the sheet pads it, the floor's light under it.
             children: [
               {
-                padding: [0, 0, Math.round((ui.boxOf(ITEM_ART)?.width ?? 0) * 0.1), 0],
+                padding: [0, 0, glyph ? 0 : Math.round((ui.boxOf(ITEM_ART)?.width ?? 0) * 0.1), 0],
                 children: [shaken ? { ...drawn, offset: shaken } : drawn],
               },
             ],

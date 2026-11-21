@@ -1,13 +1,17 @@
-// The marks on the screen at sea (`ScreenMark`): each node or port a ring in its kind's colour round its glyph, its
-// name under it and its kind and distance under that, gold with a glow when chosen, grey with a lock when locked, and
-// an arrow on its ring's edge pointing the way while it is held at the picture's edge. Each is a press: choosing it
-// calls `chosen`.
+// The marks on the screen at sea (`ScreenMark`): each node or port a ring in its kind's colour round its glyph, a
+// hostile ship's in its rank's colour round its faction's emblem, a Miniboss's mark over it; its name under it and its
+// kind and distance under that, gold with a glow when chosen, grey with a lock when locked, and an arrow on its ring's
+// edge pointing the way while it is held at the picture's edge. Each is a press: choosing it calls `chosen`.
+import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { KIND_WORDS, type MarkKind } from './hudLaw.ts';
+import type { HostileLook } from './seaHostiles.ts';
+import { svgOf } from './shipPlates.ts';
 
-/** A mark on the screen: a node or a port, where it stands in CSS pixels, its size there, and what it says. */
+/** A mark on the screen: a node, a port or a hostile ship, where it stands in CSS pixels, its size there, and what it
+ *  says. */
 export interface ScreenMark {
   readonly id: string;
   readonly kind: MarkKind;
@@ -21,6 +25,8 @@ export interface ScreenMark {
   readonly named: boolean;
   /** Held at the picture's edge: the way its arrow points, degrees clockwise from up. */
   readonly arrowDegrees: number | null;
+  /** A hostile ship's emblem, rank colour and rank mark. */
+  readonly hostile?: HostileLook;
   /** Its node is locked: greyed, with a lock for its glyph. */
   readonly locked: boolean;
 }
@@ -32,6 +38,7 @@ const GLYPHS: Record<MarkKind, string> = {
   dungeon: '▼',
   boss: '☠',
   port: '⚓︎',
+  hostile: '',
 };
 /** A locked node's glyph, in the place of its kind's. */
 const LOCK_GLYPH = '🔒︎';
@@ -44,6 +51,8 @@ const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
   dungeon: '#c193e6',
   boss: '#ee7c6e',
   port: '#e8e4d6',
+  // A hostile ship's mark wears its rank's colour; the page's ink stood for none.
+  hostile: TONES.ink,
   locked: '#8a8f96',
 };
 const GOLD = '#f3cf6a';
@@ -102,6 +111,12 @@ function glow(size: number): Picture {
         light.addColorStop(1, 'rgba(243,207,106,0)');
         context.fillStyle = light;
         context.fillRect(0, 0, width, height);
+        // A box's shadow is never drawn under the box, so the ring's own ground stays clear of the glow.
+        context.globalCompositeOperation = 'destination-out';
+        context.beginPath();
+        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.fill();
+        context.globalCompositeOperation = 'source-over';
         context.beginPath();
         context.arc(x, y, radius + 1.5 * unit, 0, Math.PI * 2);
         context.lineWidth = 3 * unit;
@@ -138,7 +153,10 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
     }
     const size = Math.round(mark.sizePx);
     const [x, y] = [Math.round(mark.x), Math.round(mark.y)];
-    const colour = mark.locked ? KIND_COLOURS.locked : KIND_COLOURS[mark.kind];
+    const look = mark.hostile;
+    const colour = mark.locked ? KIND_COLOURS.locked : (look?.colour ?? KIND_COLOURS[mark.kind]);
+    // An emblem's ground stands as it is under the pointer too, as the page's did.
+    const hovered = ui.hovered(id) && !look?.emblem;
     const held = mark.arrowDegrees !== null;
     const glyph = mark.locked ? LOCK_GLYPH : GLYPHS[mark.kind];
     const turn = ((mark.arrowDegrees ?? 0) * Math.PI) / 180;
@@ -162,8 +180,10 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
         width: size,
         height: size,
         float: { to: 'screen', anchor: [0.5, 0.5], x, y },
-        picture: ring(glyph, colour, size, ui.hovered(id), mark.chosen),
+        picture: ring(glyph, colour, size, hovered, mark.chosen),
         children: [
+          look?.emblem ? emblemNode(look.emblem, size) : null,
+          look?.badge ? badgeNode(look.badge) : null,
           held && {
             width: 12,
             height: 12,
@@ -182,4 +202,39 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
     ];
     return shown.filter((node): node is Node => Boolean(node));
   });
+}
+
+/** A hostile ship's emblem in its ring, 62% of it across and its pixels kept hard, as the page drew it. */
+function emblemNode(url: string, size: number): Node {
+  const side = Math.round(0.62 * size);
+  return {
+    width: side,
+    height: side,
+    float: { at: [0.5, 0.5], anchor: [0.5, 0.5] },
+    picture: {
+      key: `mark emblem ${url}`,
+      source: { svg: svgOf(url) },
+      pixel: { width: EMBLEM_PIXELS, height: EMBLEM_PIXELS },
+    },
+  };
+}
+
+/** A Miniboss's mark over the ring, fitted into a box 14 by 8 px whose top stands 12 px above the ring's. */
+function badgeNode(url: string): Node {
+  const { width, height } = markPicture('miniboss');
+  const fit = Math.min(14 / width, 8 / height);
+  return {
+    width: 14,
+    height: 8,
+    alignX: 'center',
+    alignY: 'center',
+    float: { at: [0.5, 0], anchor: [0.5, 0], y: -12 },
+    children: [
+      {
+        width: Math.round(width * fit),
+        height: Math.round(height * fit),
+        picture: { key: `mark badge ${url}`, source: { svg: svgOf(url) }, pixel: { width, height } },
+      },
+    ],
+  };
 }

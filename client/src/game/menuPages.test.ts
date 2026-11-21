@@ -152,7 +152,7 @@ function fakePage() {
   return { page, done };
 }
 
-test('a page to come says so, and the Ship lists her papers or says she is loading', () => {
+test('a page to come says so, and the Ship lists its papers or says it is loading', () => {
   const later = drawn(() => laterPage('Journal', 'Quests and lore.'));
   later.frame();
   assert.equal(later.shows(), 'Journal | Later | Quests and lore.');
@@ -161,15 +161,15 @@ test('a page to come says so, and the Ship lists her papers or says she is loadi
       {
         title: 'Your Sloop',
         parts: [
-          { heading: 'Vessel', rows: [['Hull', '9 / 9']], later: false },
-          { heading: 'Crew', rows: [], later: true },
+          { heading: 'Vessel', rows: [['Hull', '9 / 9']] },
+          { heading: 'Crew', rows: [] },
         ],
       },
       context.sizes,
     ),
   );
   ship.frame();
-  assert.equal(ship.shows(), 'Your Sloop | VESSEL | Hull | 9 / 9 | CREW | LATER');
+  assert.equal(ship.shows(), 'Your Sloop | VESSEL | Hull | 9 / 9 | CREW');
   const loading = drawn((context) => shipPage(null, context.sizes));
   loading.frame();
   assert.equal(loading.shows(), 'Loading your ship…');

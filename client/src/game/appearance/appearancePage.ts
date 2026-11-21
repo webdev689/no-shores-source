@@ -209,7 +209,9 @@ export function appearancePage(context: MenuContext): Node {
         children: [
           {
             role: 'panel',
-            width: DISPLAY_WIDTH,
+            // Its 2 px frame round the display.
+            width: DISPLAY_WIDTH + 4,
+            padding: 2,
             alignX: 'center',
             alignY: 'center',
             children: [

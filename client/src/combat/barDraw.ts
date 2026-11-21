@@ -1,7 +1,9 @@
 // What the fight's bars draw inside their boxes, as quads: a strip's bands (a lit line on top, its colour, a shaded
 // foot), a hatch, the pieces a loss breaks off, and the marks across a bar. Every length is in CSS pixels, drawn at
 // `scale` device pixels each and snapped to whole device pixels; colours are CSS colours the kit writes.
-import { BAR_EDGE, type BarTone, barFrameCells, tipOf } from '../plus/barFrame.ts';
+import { BAR_EDGE, BAR_TONES, type BarTone, barFrameCells, tipOf } from '../plus/barFrame.ts';
+import { pieceAt } from '../plus/barLoss.ts';
+import type { LostLook, Meter } from '../plus/meter.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Box } from '../ui/quads.ts';
 import { colourOf } from '../ui/quads.ts';
@@ -200,6 +202,62 @@ export function barFrame(pen: Pen, height: number, tone: BarTone, name: string):
 
 /** How far inside a vital's box its trough stands: the frame's top and foot, and each point. */
 export const frameInset = (height: number): readonly [number, number] => [BAR_EDGE, tipOf(height)];
+
+/** Draws `meter`'s lost strip, its fill in `fill` and its falling pieces into the trough `pen` holds. */
+export function drawMeter(pen: Pen, meter: Meter, fill: string, lost: LostLook): void {
+  const { share, at } = meter.shown;
+  if (at > share) {
+    const strip = span(pen, 0, at);
+    if (lost === 'faint') bands(pen, strip, { body: faded(fill, 0.35) });
+    else {
+      const cream = '#fff6e4';
+      bands(pen, strip, { top: faded(cream, 0.6), topDeep: 1, body: faded(mix(fill, cream, 0.55), 0.6) });
+    }
+  }
+  kitFill(pen, span(pen, 0, share), fill);
+  for (const each of meter.pieces) {
+    const halves = [pieceAt(each.age, 'left'), pieceAt(each.age, 'right')];
+    if (halves.some(Boolean)) piece(pen, each.left, each.width, halves, fill);
+  }
+}
+
+/** A long thin bar as the kit lays the vitals on foot and a ship's at sea: `length` by `height` CSS pixels at `zoom`,
+ *  its trough on `ground` (the track's own unless said) inside the fine stone frame with its pointed ends, its fill
+ *  drawn by `fill` and its frame flashed to `alert` (keyed by `name`) while one is given. */
+export function thinBarNode(bar: {
+  readonly name: string;
+  readonly label: string;
+  readonly length: number;
+  readonly height: number;
+  readonly zoom: number;
+  readonly fill: (pen: Pen) => void;
+  readonly alert?: BarTone | null;
+  readonly ground?: string;
+  readonly children?: readonly Node[];
+}): Node {
+  const { height, zoom } = bar;
+  return {
+    width: bar.length * zoom,
+    height: height * zoom,
+    label: bar.label,
+    draw: (ui, box, scale, clip, fade) => {
+      const pen = { ui, box, scale: scale * zoom, clip, fade };
+      const [edge, tip] = frameInset(height);
+      const trough = {
+        x: box.x + tip * pen.scale,
+        y: box.y + edge * pen.scale,
+        width: box.width - 2 * tip * pen.scale,
+        height: box.height - 2 * edge * pen.scale,
+      };
+      const inside = { ...pen, box: trough };
+      paintBox(inside, trough, bar.ground ?? TONES.groundTrack);
+      bar.fill(inside);
+      barFrame(pen, height, BAR_TONES.stone, 'stone');
+      if (bar.alert) barFrame(pen, height, bar.alert, bar.name);
+    },
+    children: bar.children ?? [],
+  };
+}
 
 /** A key on a keycap, as the display's keys are drawn: stone lit at its top and left and dark at its right and foot
  *  (two pixels deep there), on a dark ground inside the outline, at least `least` CSS pixels wide and `tall` high. */

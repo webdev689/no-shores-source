@@ -32,7 +32,7 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
 
 - **Where the player is.** Each frame the game tells the ambience where the camera is: on foot in a node, or at sea
   aboard the ship. `placeOf` names the place; each place is one ambience. On foot the listener stands at the eye; at
-  sea it stands on her deck and everything placed rides with her.
+  sea it stands on its deck and everything placed rides with it.
 - **The story.** While the [[Prologue]] plays, its beats at sea and on the wreck are heard as the open sea round the
   Brig or the wreck, and its shore at dawn as Saltmere's coast, under the sky the story tells ([[Sky]]): its rain,
   its wind and the thunder of its strikes. The story's own beds keep only the fire, the deep and its moments.
@@ -52,9 +52,9 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
   most 20 sound at once; thunder is counted apart (below).
 - **Rooms.** Each place answers in its own way: a forest's long, soft tail; a valley's echoes; the plaza's walls; the
   open steppe's short, dry air.
-- **The sea.** The swell rises and falls on three long waves. The wash past her hull grows with her way: none hove
-  to, more at each step of her pace dial. Her timbers, ropes, canvas and blocks are heard fully on her deck and at
-  her helm, and a little off from the raised view. Gulls call only within 3 km of a coast.
+- **The sea.** The swell rises and falls on three long waves. The wash past its hull grows with its way: none hove
+  to, more at each step of its pace dial. Its timbers, ropes, canvas and blocks are heard fully on its deck and at
+  its helm, and a little off from the raised view. Gulls call only within 3 km of a coast.
 - **Saltmere.** From the plaza: the townsfolk's steps where they walk, pigeons and sparrows, the Smith's anvil in
   the arcade, a market crowd and carts and hammers in the city below, and the harbour: water lapping, moored ships
   creaking, halyards, a bell, gulls, the surf along the coast.
@@ -69,7 +69,7 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
   call: near silent in a calm, as made at the usual 6 m/s, up to 2.5 times in a gale, its gusts deeper the wilder they
   blow.
 - **Rain, snow and sand.** Rain is beds of its own: a hiss of many drops all round and a patter near, both louder and
-  brighter the harder it falls; in Saltmere its gutters drip, and at sea it drums on her canvas and planks. Snow makes
+  brighter the harder it falls; in Saltmere its gutters drip, and at sea it drums on its canvas and planks. Snow makes
   no sound of its own but softens every other bed. A sandstorm hisses over the desert and the steppe. Rain or snow
   sends the day's birds and insects to shelter, the recorded parrots and heron with them: in a downpour by day most
   fall silent, while by night the rain silences none.
@@ -78,7 +78,7 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
   level and its top fall with distance. Thunder is the same in every place, its near crack well over the beds (about
   -15 LUFS at its loudest) and never past 0.6 of full scale. At most six rolls sound at once, apart from the calls, so
   a storm never crowds out the birds, the hull and the steps; a near crack always comes through.
-- **Steps on her deck.** Walking the Sloop's deck, each stride is a step on wooden planks.
+- **Steps on its deck.** Walking the Sloop's deck, each stride is a step on wooden planks.
 - **Crossfades.** A new place fades in over 4 s as the last fades out, at equal power. Behind a loading veil the
   game shows no place, so the ambience fades to nothing and comes back with the next place. A hidden page fades out.
 - **Made off the page.** Beds and calls are made in a worker as a place is first heard, a place's whole set in about
@@ -92,7 +92,7 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
   the lapping in Saltmere's harbour are cues on the sheet too ([[The Sea's Sounds Come From Freesound]]): each pick
   plays in place of its synthesised sound, the synthesiser's until it comes. On the islands the rain stays the
   synthesiser's.
-- **The sea fight.** A gun fired, a ball striking a ship, a ball falling in the sea and a ship breaking up as she goes
+- **The sea fight.** A gun fired, a ball striking a ship, a ball falling in the sea and a ship breaking up as it goes
   down are heard where each happens, through the open sea's room, from the fight's own events, in the game's fights
   and the story's. Each plays only once picked; until then the fight is silent, as it always was.
 - **The story's recordings.** The story's wind, waves, timbers, fire and deep, and its crash, splashes and rush

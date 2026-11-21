@@ -39,9 +39,10 @@ pub struct Snapshot<'snapshot> {
 }
 
 /// How many numbers a foe crosses as, packed: its glance, then its role, type, rank, faction, phase, alertness and
-/// level, its shield's element, what it holds and held whole, and the ticks left of its Expose, its Charge and the
-/// immunity a Charge leaves. Everything of a foe is in its packed bytes, so a foe's table holds its number and them.
-pub const FOE_NUMBERS: usize = combat::floats::GLANCE_FLOATS + 13;
+/// level, its shield's element, what it holds and held whole, the ticks left of its Expose, its Charge and the
+/// immunity a Charge leaves, and last, for a companion, its leader, its officer's given and family names and post (0
+/// each for a foe). Everything of a foe is in its packed bytes, so a foe's table holds its number and them.
+pub const FOE_NUMBERS: usize = combat::floats::GLANCE_FLOATS + 17;
 
 /// Values as they cross: whole, or with a base, only those that changed and a bit for each.
 fn changes_of(values: &[u64], base: Option<&Vec<u64>>) -> (Vec<u8>, Vec<u8>) {
@@ -59,6 +60,10 @@ pub fn foe_numbers(foe: &FoeSeen) -> Vec<f64> {
     numbers.push(shield.map_or(0.0, |shield| shield.most));
     numbers
         .extend([statuses.left(Status::Expose), statuses.left(Status::Charge), statuses.charge_immune].map(f64::from));
+    let companion = foe.companion.map_or([0; 4], |companion| {
+        [companion.leader, companion.given.into(), companion.family.into(), (companion.post as u8).into()]
+    });
+    numbers.extend(companion.map(f64::from));
     numbers
 }
 

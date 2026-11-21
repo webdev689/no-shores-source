@@ -2,10 +2,12 @@
 // weapon in hand drawn as its own picture, a Ranged one's shots left large over its capacity ("18 / 24", a 0 and "No
 // ammo" at none) and a Melee one's name in its rarity's colour; under it the other loadout's weapon, smaller, with its
 // key and its own shots. A swap trades the two rows over the swap's time, a reload fills a line under the count, a draw
-// flashes the weapon and one put away dims. The pictures are the forge's, as the gear screens draw them.
+// flashes the weapon and one put away dims. The pictures are the forge's, as the gear screens draw them, outlined, a
+// weapon's element by its glyph at the picture's corner.
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Dress } from '../player/dressing.ts';
-import { itemName, KINDS, kindName, MELEE, RANGED_SLOT, RARITIES, worn } from '../player/gear.ts';
+import { elementSvg } from '../player/elementGlyphs.ts';
+import { ELEMENTS, itemName, KINDS, kindName, MELEE, RANGED_SLOT, RARITIES, worn } from '../player/gear.ts';
 import type { ItemPictures } from '../player/itemPictures.ts';
 import type { Picture } from '../player/picture.ts';
 import { motionReduced } from '../plus/kit.ts';
@@ -14,6 +16,7 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import { filteredSvg } from './abilityBar.ts';
 import { ammoWords } from './ammoCounter.ts';
 import { baselineOf, lineHeight } from '../ui/text.ts';
 import { keycapNode, mix, paintBox, type Pen, ring } from './barDraw.ts';
@@ -86,7 +89,8 @@ export function weaponWords(shown: WeaponShown, inHand: boolean, drawn: boolean)
   const most = shown.most === null ? '' : ` of ${shown.most}`;
   const shots = shown.empty ? ', no ammo' : shown.shots ? `, ${shown.shots}${most} shots` : '';
   const where = inHand ? (drawn ? 'In hand' : 'Put away') : `Press ${shown.key} to draw`;
-  return `${where}: ${shown.name}${shots}`;
+  const element = ELEMENTS[shown.item.element]?.name;
+  return `${where}: ${shown.name}${element ? `, ${element}` : ''}${shots}`;
 }
 
 /** The weapons' rows on the HUD, kept each frame and drawn from what they last kept. */
@@ -270,21 +274,59 @@ export class WeaponRows {
       ...(away ? { opacity: 0.6 } : {}),
       children: [!inHand && keycapNode(shown.key, small, wide ? 28 : 18, wide ? 27 : 17, zoom), count, name],
     };
+    // The glyph greys and flashes with the picture it stands in, as one filter took both.
+    const glyph = elementSvg(shown.item.element);
+    const glyphSide = (inHand ? (wide ? 22 : 16) : wide ? 16 : 12) * zoom;
+    const glyphLook = away ? 'away' : flash;
+    const glyphOf = (tint?: string): Node => ({
+      width: glyphSide,
+      height: glyphSide,
+      picture: {
+        key: `element ${shown.item.element} ${glyphLook}`,
+        source: { svg: filteredSvg(glyph, away ? 0.3 : 1, away ? 1 : flash) },
+        ...(tint ? { tint } : {}),
+      },
+      float: { x: tint ? zoom : 0, y: tint ? zoom : 0, z: 1 },
+    });
+    // The picture stands in its box, its words' room kept as the row's; the weapon's element in the box's corner,
+    // just past its top right in the row's own margin, clear of a blade's point, as a gear tile shows it.
     const pictureNode: Child = fit &&
       drawnPicture && {
-        width: fit.width * zoom,
-        height: fit.height * zoom,
-        ...(away ? { opacity: 0.6 } : {}),
-        ...(this.swapping > 0 && still && inHand ? { outline: { width: 1, colour: TONES.brassHi } } : {}),
-        picture: {
-          key: `weapon ${this.keyOf(drawnPicture)} ${away ? 'away' : flash}`,
-          source: {
-            draw: (context, width, height) => {
-              context.filter = away ? 'grayscale(0.7)' : flash > 1 ? `brightness(${flash})` : 'none';
-              fit.draw(context, width, height);
+        width: boxWidth * zoom,
+        height: boxHeight * zoom,
+        ...(this.swapping > 0 && still && inHand ? { outline: { width: zoom, colour: TONES.brassHi } } : {}),
+        children: [
+          {
+            // A pixel of the outline round it, past its own box, as the sheet's drop shadows laid it.
+            width: (fit.width + 2) * zoom,
+            height: (fit.height + 2) * zoom,
+            ...(away ? { opacity: 0.6 } : {}),
+            float: { anchor: [0, 0.5], at: [0, 0.5], x: -zoom, z: 1 },
+            picture: {
+              key: `weapon ${this.keyOf(drawnPicture)} ${away ? 'away' : flash}`,
+              source: {
+                draw: (context, width, height) => {
+                  const edge = Math.max(1, Math.round(width / (fit.width + 2)));
+                  const [innerWidth, innerHeight] = [width - 2 * edge, height - 2 * edge];
+                  if (innerWidth <= 0 || innerHeight <= 0) return;
+                  const inner = new OffscreenCanvas(innerWidth, innerHeight);
+                  const drawing = inner.getContext('2d');
+                  if (!drawing) return;
+                  drawing.filter = away ? 'grayscale(0.7)' : flash > 1 ? `brightness(${flash})` : 'none';
+                  fit.draw(drawing, innerWidth, innerHeight);
+                  outlined(context, inner, edge);
+                },
+              },
             },
           },
-        },
+          glyph !== '' && {
+            width: glyphSide,
+            height: glyphSide,
+            ...(away ? { opacity: 0.6 } : {}),
+            float: { at: [1, 0], x: 4 * zoom, z: 1 },
+            children: [glyphOf(TONES.outline), glyphOf()],
+          },
+        ],
       };
     const reload: Child = inHand &&
       this.reload > 0 && {
@@ -295,11 +337,13 @@ export class WeaponRows {
         draw: (ui, box, scale, clip, fade) => ring({ ui, box, scale: scale * zoom, clip, fade }, box, TONES.outline),
       };
     // The row's height, for a swap's slide: its picture's or its words', and its padding.
-    const height = Math.max(fit ? fit.height * zoom : 0, ranged ? counted * 11 : lineHeight(small * zoom)) + 6 * zoom;
+    const height = Math.max(fit ? boxHeight * zoom : 0, ranged ? counted * 11 : lineHeight(small * zoom)) + 6 * zoom;
     const from = inHand ? 0.7 : -0.9;
     return {
       direction: 'row',
       alignY: 'center',
+      // Both rows as wide as the wider, as the sheet's grid stretched them.
+      width: 'grow',
       gap: (wide ? 12 : 8) * zoom,
       padding: [3 * zoom, 28 * zoom, 3 * zoom, 6 * zoom],
       label: weaponWords(shown, inHand, arms?.drawn ?? false),
@@ -335,6 +379,23 @@ export class WeaponRows {
 }
 
 let nextKey = 0;
+
+/** Draws `picture` `edge` device pixels in from the corner of `context`, ringed by the outline `edge` pixels wide all
+ *  round (its eight neighbours), as four chained 1 px drop shadows ring it on a page. */
+function outlined(context: OffscreenCanvasRenderingContext2D, picture: OffscreenCanvas, edge: number): void {
+  const shadow = new OffscreenCanvas(picture.width, picture.height);
+  const shading = shadow.getContext('2d');
+  if (shading) {
+    shading.drawImage(picture, 0, 0);
+    shading.globalCompositeOperation = 'source-in';
+    shading.fillStyle = TONES.outline;
+    shading.fillRect(0, 0, shadow.width, shadow.height);
+    for (const across of [0, 1, 2])
+      for (const down of [0, 1, 2])
+        if (across !== 1 || down !== 1) context.drawImage(shadow, across * edge, down * edge);
+  }
+  context.drawImage(picture, edge, edge);
+}
 
 /** A strip across `box` going through `stops` (shares of its width and the colour there), drawn in steps of two
  *  device pixels. */

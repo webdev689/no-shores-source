@@ -7,6 +7,7 @@ import { type Camera, fitFrame, niceLength, pan, screenToWorld, zoomAt } from '.
 import { EditorFrame, type EditorDrawn, type EditorFrameView } from './editorFrame.ts';
 import { continentsPanel, type PanelHandlers, type Tool } from './editorPanel.ts';
 import { startLandEditor, type LandEditor } from './landEditor.ts';
+import { type IsleEditor, startIsleEditor } from './isleEditor.ts';
 import { type CellRect, CELL_M, LandMask } from './landMask.ts';
 import { draftLayout, type Issue, type LayoutContent, slotIdsFor } from './layoutDraft.ts';
 import { MapView } from './mapView.ts';
@@ -34,11 +35,15 @@ function element<T extends Element>(selector: string): T {
   return found;
 }
 
-/** The two modes' presses, over each mode's panel. */
-function modesRow(ui: Interface, mode: 'continents' | 'land', setMode: (next: 'continents' | 'land') => void): Node {
+/** What the editor works on: the coasts, the land made from them, or one island at a time. */
+type Mode = 'continents' | 'land' | 'islands';
+
+/** The modes' presses, over each mode's panel. */
+function modesRow(ui: Interface, mode: Mode, setMode: (next: Mode) => void): Node {
   return row([
     press(ui, 'mode:continents', 'Continents', () => setMode('continents'), { chosen: mode === 'continents' }),
     press(ui, 'mode:land', 'Land', () => setMode('land'), { chosen: mode === 'land' }),
+    press(ui, 'mode:islands', 'Islands', () => setMode('islands'), { chosen: mode === 'islands' }),
   ]);
 }
 
@@ -407,10 +412,12 @@ async function start(): Promise<void> {
   });
 
   // The Land mode works on the layout as drafted now, so a coast painted a moment ago is land there too.
-  let mode: 'continents' | 'land' = 'continents';
+  let mode: Mode = 'continents';
   let landEditor: Promise<LandEditor> | null = null;
+  let isleEditor: Promise<IsleEditor> | null = null;
   let land: LandEditor | null = null;
-  const setMode = async (next: 'continents' | 'land') => {
+  let isles: IsleEditor | null = null;
+  const setMode = async (next: Mode) => {
     mode = next;
     pointer = { ...pointer, inside: false };
     if (next === 'land') {
@@ -419,14 +426,20 @@ async function start(): Promise<void> {
       land = await landEditor;
       if (mode === 'land') land.activate(rules.write(JSON.stringify(draft().layout)));
     } else void landEditor?.then((started) => started.deactivate());
+    if (next === 'islands') {
+      isleEditor ??= startIsleEditor(editor);
+      isles = await isleEditor;
+      if (mode === 'islands') isles.activate();
+    } else void isleEditor?.then((started) => started.deactivate());
     requestFrame();
   };
-  editor.keys = () => mode === 'continents' || (land?.keys() ?? true);
+  editor.keys = () => mode !== 'land' || (land?.keys() ?? true);
   editor.draw = (frame) => {
     if (mode === 'continents') return drawContinents(frame);
     const modes = modesRow(frame.ui, mode, (next) => void setMode(next));
-    if (!land) return { inks: [], over: [], panel: [modes] };
-    const drawn = land.draw(frame);
+    const open = mode === 'land' ? land : isles;
+    if (!open) return { inks: [], over: [], panel: [modes] };
+    const drawn = open.draw(frame);
     return { ...drawn, panel: [modes, ...drawn.panel] };
   };
 
@@ -434,6 +447,8 @@ async function start(): Promise<void> {
   if (!load(loaded.text)) throw new Error(status);
   restoreKept();
   requestFrame();
+  // `?mode=islands` opens on the Islands mode, for pictures.
+  if (new URLSearchParams(location.search).get('mode') === 'islands') void setMode('islands');
 }
 
 start().catch((error: unknown) => {

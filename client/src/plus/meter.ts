@@ -1,10 +1,9 @@
-// A bar of the fight's display: its fill and behind it what it last lost. As DFO's Enhanced HUD did, a strip holds
-// where the bar stood for a moment after a loss and then drains to it, and a real bite breaks off the bar as a piece
-// that falls, so a blow reads as how much it took and not only where it left the bar. The bar keeps these from frame to
-// frame and draws them into the trough its plate lays.
-import { bitten, type Loss, pieceAt, stepLoss } from '../plus/barLoss.ts';
-import { motionReduced } from '../plus/kit.ts';
-import { bands, faded, kitFill, mix, type Pen, piece, span } from './barDraw.ts';
+// A bar of the fight's display, as the kit keeps it: its fill and behind it what it last lost. As DFO's Enhanced HUD
+// did, a strip holds where the bar stood for a moment after a loss and then drains to it, and a real bite breaks off
+// the bar as a piece that falls, so a blow reads as how much it took and not only where it left the bar. The bar keeps
+// these from frame to frame; the display draws them into the trough its plate lays (`combat/barDraw.ts`).
+import { bitten, type Loss, stepLoss } from './barLoss.ts';
+import { motionReduced } from './kit.ts';
 
 /** What a bar shows besides its fill: the strip of what it lost (not on a bar that drains of itself), and the least
  *  share a frame must take for its bite to fall as a piece (none for no pieces). */
@@ -14,7 +13,7 @@ export interface MeterParts {
 }
 
 /** A falling piece: the span it was bitten from, and how long it has fallen. */
-interface Piece {
+export interface Piece {
   left: number;
   width: number;
   age: number;
@@ -63,22 +62,10 @@ export class Meter {
     this.loss = from === null ? null : stepLoss(null, from, 0);
     for (const each of this.pieces) each.age = Infinity;
   }
-
-  /** Draws the lost strip, the fill in `fill` and the falling pieces into the trough `pen` holds. */
-  draw(pen: Pen, fill: string, lost: LostLook): void {
-    const { share, at } = this.shown;
-    if (at > share) {
-      const strip = span(pen, 0, at);
-      if (lost === 'faint') bands(pen, strip, { body: faded(fill, 0.35) });
-      else {
-        const cream = '#fff6e4';
-        bands(pen, strip, { top: faded(cream, 0.6), topDeep: 1, body: faded(mix(fill, cream, 0.55), 0.6) });
-      }
-    }
-    kitFill(pen, span(pen, 0, share), fill);
-    for (const each of this.pieces) {
-      const halves = [pieceAt(each.age, 'left'), pieceAt(each.age, 'right')];
-      if (halves.some(Boolean)) piece(pen, each.left, each.width, halves, fill);
-    }
-  }
 }
+
+/** A bar warns low (the vitals' health, a ship's hull) with some left but no more than this share of it. */
+export const LOW_SHARE = 0.25;
+
+/** Whether a bar at `share` warns low. */
+export const lowShare = (share: number): boolean => share > 0 && share <= LOW_SHARE;

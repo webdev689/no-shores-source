@@ -199,7 +199,7 @@ test("a frame heard at sea or ashore plays the world's own soundscape there, the
     ambience: { handOver: (world: boolean) => heard.push(`story beds ${world ? 'handed over' : 'their own'}`) },
     worldSound: {
       atSea: (land: unknown, ship: readonly number[], ear: unknown, voyage: { deck: boolean }) =>
-        heard.push(`sea at ${ship.join(',')} ${voyage.deck ? 'on deck' : 'over her'}`),
+        heard.push(`sea at ${ship.join(',')} ${voyage.deck ? 'on deck' : 'over it'}`),
       onFoot: (node: { id: string }) => heard.push(`ashore by ${node.id}`),
     },
   } as unknown as StageParts;

@@ -37,6 +37,11 @@ export class Drain {
     this.elapsed = 0;
   }
 
+  /** Whether it drains toward grey: the player was last shown dead. */
+  get dead(): boolean {
+    return this.to === 1;
+  }
+
   /** Moves on `seconds`. */
   step(seconds: number): void {
     this.elapsed += seconds;

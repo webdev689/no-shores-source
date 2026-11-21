@@ -60,8 +60,8 @@ export function speechBand(kind: KeeperKind, glow: string, size: number, width: 
   return {
     role: 'well',
     width,
-    minHeight: 44,
-    padding: [4, 11],
+    minHeight: 48,
+    padding: [6, 13],
     direction: 'column',
     gap: 4,
     children: [

@@ -99,10 +99,10 @@ pub fn bounds_of(ring: &[[f64; 2]]) -> [f64; 4] {
     [west - MARGIN_M, north - MARGIN_M, east + MARGIN_M, south + MARGIN_M]
 }
 
-/// Whether a station answers a player's gear: every one but the Harbourmaster's and the chandler's, whose keepers
-/// make the plaza busy.
+/// Whether a station answers a player's gear: every one but the chandler's, who makes the plaza busy; the
+/// Harbourmaster's counter sells the Shipwright's modules.
 fn answers_gear(kind: StationKind) -> bool {
-    !matches!(kind, StationKind::Harbourmaster | StationKind::Chandler)
+    kind != StationKind::Chandler
 }
 
 /// What a continent's layouts are built with: the RMB blocks' contents and the forged models' boxes, and every

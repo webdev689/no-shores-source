@@ -89,9 +89,9 @@ fn drawn(week: u64, rarity: Rarity, count: usize) -> Vec<(&'static NamedDef, Slo
 #[must_use]
 pub fn found(great: bool, difficulty: Difficulty, dice: &Dice) -> u16 {
     let (chance, sure) = match difficulty {
-        Difficulty::Calm => return 0,
-        Difficulty::Rough => (0.03, 2),
-        Difficulty::Storm => (0.06, 4),
+        Difficulty::Normal => return 0,
+        Difficulty::Elite => (0.03, 2),
+        Difficulty::Abyss => (0.06, 4),
     };
     if great { sure } else { u16::from(dice.roll(Purpose::Shape, 2) < chance) }
 }

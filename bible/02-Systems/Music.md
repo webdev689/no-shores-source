@@ -88,8 +88,8 @@ const song = makeSong(
 
 Each frame it hears where the player is (the social space, an island and its climate, or the sea), the
 player's health, the blows they gave and took, and every foe's rank, alert, distance and health (an ally fighting on
-the players' side is no foe); at sea, the hostile ships within 1,000 m, the fight, whether she lies off a coast to land
-on, and the sky over her.
+the players' side is no foe); at sea, the hostile ships within 1,000 m, the fight, whether it lies off a coast to land
+on, and the sky over it.
 
 | Mood | When | Layers | Level | Ambience |
 |---|---|---|---|---|
@@ -117,7 +117,7 @@ on, and the sky over her.
 - **The sea.** Out of danger a sea song comes now and then, played whole and once through: the sea at night once dusk
   is gone, the still sea in a wind under 4 m/s, the open sea otherwise. After a song 4 to 8 minutes of silence pass
   before another may come, and after any danger or time ashore at least four. None plays in rain or snow, a storm or
-  fog; a sky turning foul fades the one playing. As she comes off a coast where she may dock or go ashore, landfall
+  fog; a sky turning foul fades the one playing. As it comes off a coast where it may dock or go ashore, landfall
   plays once through, whatever the sky or the silence, and not again for four minutes.
 - **Danger at sea.** A hostile ship closing brings in a sea song's tension; the fight, its fight. The song is chosen
   as the encounter begins and kept to its end: the storm for two hostile ships or one of Elite rank or over, else the
@@ -199,7 +199,7 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
 
 - One fight score serves every climate of its family: the coast and the highland share green's.
 - Saltmere's theme begins from its top each time the player comes into the social space.
-- The sea songs out of danger play while she is at sea, whether she is under way or hove to.
+- The sea songs out of danger play while it is at sea, whether it is under way or hove to.
 - A boss's score is chosen by the name over its bar.
 - At its peak a family's fight renders 12 to 15 times faster than it plays in headless Chromium: under a tenth of one
   audio core.

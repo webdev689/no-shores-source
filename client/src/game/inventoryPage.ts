@@ -181,28 +181,26 @@ function currencyNode(glyph: Node, count: number, name: string, size: number): N
   };
 }
 
-/** The inventory page, `shelf` the one shown; `choose` shows another. */
-export function inventoryPage(context: MenuContext, shelf: string, choose: (shelf: string) => void): Node {
-  const { ui, gear, sizes } = context;
-  const inventory = inventoryPageOf(gear);
-  const currencies: Node[] = [
-    ...inventory.currencies.map((each) =>
-      currencyNode(glyphNode(each.glyph === 'item' ? 'empty' : each.glyph, 24), each.count, each.name, sizes.name),
-    ),
-    // Shapes, Shape's own currency, gathered all week and spent only while he is here.
-    currencyNode(svgNode('shapes', shapesSvg(), 24), gear.shapes ?? 0, 'Shapes', sizes.name),
-  ];
-  const vestiges = inventory.vestiges;
-  const shelves = inventory.tabs.map((each) => ({ ...each, held: each.cells.filter(holds).length }));
-  const tabs: Node = {
+/** The shelves to switch between, as the inventory's and the ship tab's parts stand in a well: each its name in
+ *  capitals and its count beside it where it has one, dimmed while it holds nothing, the one shown lit in brass over
+ *  a brass line; press `prefix`-id. */
+export function shelvesNode(
+  { ui, sizes }: Pick<MenuContext, 'ui' | 'sizes'>,
+  shelves: readonly { readonly id: string; readonly name: string; readonly held?: number }[],
+  shown: string,
+  choose: (shelf: string) => void,
+  prefix = 'shelf',
+): Node {
+  return {
     role: 'well',
-    padding: [2, 6],
+    // Its 2 px frame, then the sheet's 2 by 6 px.
+    padding: [4, 8],
     gap: 2,
     wrap: true,
     children: shelves.map((each): Node => {
-      const id = `shelf-${each.id}`;
+      const id = `${prefix}-${each.id}`;
       if (ui.clicked(id)) choose(each.id);
-      const chosen = each.id === shelf;
+      const chosen = each.id === shown;
       const lit = chosen || ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
       const colour = lit ? INK.brassLit : each.held === 0 ? INK.faint : INK.word;
       const big = sizes.name > 1;
@@ -210,13 +208,13 @@ export function inventoryPage(context: MenuContext, shelf: string, choose: (shel
         id,
         press: true,
         // Its name and count are read apart, not run together as one word.
-        label: `${each.name}, ${each.held}`,
+        label: each.held === undefined ? each.name : `${each.name}, ${each.held}`,
         padding: big ? [11, 22] : [7, 12],
         gap: 8,
         alignY: 'center',
         children: [
           words(each.name.toUpperCase(), big ? 2 : 1, colour),
-          words(String(each.held), sizes.label, INK.faint),
+          each.held !== undefined && words(String(each.held), sizes.label, INK.faint),
           chosen && {
             width: 'grow',
             height: 2,
@@ -227,6 +225,22 @@ export function inventoryPage(context: MenuContext, shelf: string, choose: (shel
       };
     }),
   };
+}
+
+/** The inventory page, `shelf` the one shown; `choose` shows another. */
+export function inventoryPage(context: MenuContext, shelf: string, choose: (shelf: string) => void): Node {
+  const { gear, sizes } = context;
+  const inventory = inventoryPageOf(gear);
+  const currencies: Node[] = [
+    ...inventory.currencies.map((each) =>
+      currencyNode(glyphNode(each.glyph === 'item' ? 'empty' : each.glyph, 24), each.count, each.name, sizes.name),
+    ),
+    // Shapes, Shape's own currency, gathered all week and spent only while he is here.
+    currencyNode(svgNode('shapes', shapesSvg(), 24), gear.shapes ?? 0, 'Shapes', sizes.name),
+  ];
+  const vestiges = inventory.vestiges;
+  const shelves = inventory.tabs.map((each) => ({ ...each, held: each.cells.filter(holds).length }));
+  const tabs = shelvesNode(context, shelves, shelf, choose);
   const cells = shelves.find((each) => each.id === shelf)?.cells ?? [];
   const places = Math.max(SHELF_ROW, Math.ceil(cells.length / SHELF_ROW) * SHELF_ROW);
   const shown = [

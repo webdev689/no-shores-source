@@ -105,17 +105,17 @@ fn a_node_opens_on_its_ground_and_welcomes_with_its_id_and_rect() {
 fn every_open_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
     let square = r#"{ "continents": [{ "id": "square", "outline": [[200000, 300000], [320000, 300000], [320000, 420000], [200000, 420000]] }], "isles": [] }"#;
     let edits = r#"{ "strokes": [],
-        "city": { "id": "harbour", "name": "Harbour", "centre": [319000, 360000], "motif": "beacon" },
+        "city": { "id": "sunspire", "name": "Sunspire", "centre": [319000, 360000], "motif": "beacon" },
         "nodes": [{ "id": "glade", "kind": "patrol", "name": "The Glade",
             "ring": [[260000, 360000], [261000, 360000], [261000, 361000], [260000, 361000]], "spawns": [[260500, 360500]] }] }"#;
     let layout = world::layout::parse(square).unwrap();
     let edits = land::edits::parse(edits).unwrap();
     let nodes = bake::nodes_of(&layout.continents[0], edits, &city::rmb::Blocks::default(), &bake::Builders::default())
         .unwrap();
-    assert_eq!(nodes.iter().map(|node| node.id.as_str()).collect::<Vec<_>>(), ["glade", "harbour-social"]);
+    assert_eq!(nodes.iter().map(|node| node.id.as_str()).collect::<Vec<_>>(), ["glade", "sunspire-social"]);
     for mut node in nodes {
         // A social space still locked takes no player, as a locked patrol area does; opened, it stands as any other.
-        let locked = node.id == "harbour-social";
+        let locked = node.id == "sunspire-social";
         assert_eq!(node.locked, locked, "{} is locked: only Overlook's social space is open", node.id);
         assert!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), "{} opens", node.id);
         assert_eq!(room_join() == 0, locked, "{} takes a player only once open", node.id);
@@ -126,8 +126,8 @@ fn every_open_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
         assert_eq!(written.iter().filter_map(counter_of).count(), written.len(), "{}'s counters", node.id);
         assert_eq!(
             written.len(),
-            if locked { 10 } else { 0 },
-            "every keeper but the Harbourmaster's and the chandler's"
+            if locked { 11 } else { 0 },
+            "every keeper but the chandler's, and the Harbourmaster's"
         );
         let player = room_join();
         let welcome = joined(player);
@@ -163,6 +163,17 @@ fn a_node_with_no_spawn_or_text_that_is_no_node_does_not_open() {
 }
 
 #[test]
+fn an_open_sea_holds_the_unix_minute_it_is_set_to() {
+    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 7));
+    assert!(set_minute(29_891_520), "a sea takes the minute as a land room does");
+    with_open(|opened| {
+        let Opened::Sea(sea) = opened else { panic!("a sea is open") };
+        assert_eq!(sea.minute, 29_891_520);
+    });
+}
+
+#[test]
 fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     assert!(!open_sea(b"not a layout", 7));
@@ -173,6 +184,8 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     let off_the_steps = protocol::course_bytes(&[[50_000.0, 150_000.0]], 3);
     assert_eq!(input(second, &off_the_steps), TOO_SOON, "one course each half second, dropped as a flood");
     assert_eq!(input(second, b"no course"), NOT_AN_INPUT);
+    assert_eq!(input(second, &protocol::chase_bytes(3)), TAKEN, "a chase is taken, whoever it is");
+    assert_eq!(input(second, &protocol::chase_bytes(0)), TAKEN, "and let go");
     for _ in 0..room::sea::COURSE_EVERY_TICKS {
         room_tick();
     }
@@ -197,17 +210,42 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     assert!(ships[0].1.y < 150_000.0);
 }
 
+#[test]
+fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
+    let layout = include_str!("../../../content/world/layout.json");
+    let ports: Vec<serde_json::Value> = (1..=9)
+        .map(|n| {
+            let path = format!("{}/../../content/world/land/continent-{n}.json", env!("CARGO_MANIFEST_DIR"));
+            let file: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+            let city = &file["city"];
+            json!({ "id": city["id"], "name": city["name"], "continent": format!("continent-{n}"), "centre": city["centre"] })
+        })
+        .collect();
+    let request = format!(r#"{{"layout":{layout},"ports":{}}}"#, serde_json::Value::Array(ports));
+    assert!(open_sea(request.as_bytes(), 7));
+    assert!(!open_sea(format!(r#"{{"layout":{layout}}}"#).as_bytes(), 7), "a layout wrapped with no ports");
+    assert!(open_sea(layout.as_bytes(), 7), "a layout alone, with no lanes");
+}
+
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "dda792fcf5e3f828";
+pub const SEA_CLASH_HASH: &str = "b58376454aaf5aa9";
+/// The world time the sea opens at, so the weather its fights sail in is the same every run.
+pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
 #[test]
 fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
-    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    assert!(open_sea(layout.as_bytes(), 51));
+    // The second island's waters are contested, so both factions come; on this seed two of them meet about 5 km from
+    // the player by tick 6522, and the player sails there.
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 484));
+    room_world_start(CLASH_START_S);
     let player = room_join();
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);
     for tick in 1..=16_000 {
+        if tick == 6_523 {
+            assert_eq!(input(player, &protocol::course_bytes(&[[53_327.0, 53_450.0]], 10)), TAKEN);
+        }
         room_tick();
         with_open(|opened| {
             if let Opened::Sea(sea) = opened {
@@ -239,7 +277,7 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     let course = [Block::from_floats(&[-5.0, -4.0, 5.0, -1.0, 2.3, 0.0])];
     let (expected, _) = combat::player_tick(1, &fighter.holding(sword), &intent, &[], &course, &Flat);
     let next = floats_of(&predict(&bytes_of(&numbers)));
-    assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected, "at rest, she takes up the sword");
+    assert_eq!(Fighter::from_floats(next.as_slice().try_into().unwrap()), expected, "at rest, they take up the sword");
     let guarding = Fighter { action: combat::Action::Guard { elapsed: 3, window: 0 }, ..fighter };
     let mut asked: Vec<f64> = guarding.to_floats().to_vec();
     asked.extend(intent.to_floats());
@@ -247,7 +285,7 @@ fn a_browser_predicts_a_fighter_exactly_as_the_room_steps_it_and_reads_its_arms(
     let (kept, _) = combat::player_tick(1, &guarding, &intent, &[], &course, &Flat);
     let next = floats_of(&predict(&bytes_of(&asked)));
     let next = Fighter::from_floats(next.as_slice().try_into().unwrap());
-    assert_eq!((next, next.arms.code()), (kept, combat::arms::BARE_HANDS.code()), "on guard, her arms stay");
+    assert_eq!((next, next.arms.code()), (kept, combat::arms::BARE_HANDS.code()), "on guard, their arms stay");
     assert!(predict(&bytes_of(&[1.0, 2.0])).is_empty());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\ndrawn"), sword.code());
     assert_eq!(arms_code(b"sword_iron\nshield_kite_steel\nworn"), combat::arms::BARE_HANDS.code());
@@ -289,9 +327,14 @@ fn a_course_is_furnished_and_each_players_gear_is_theirs_alone() {
     assert!(gear(first).is_empty(), "and not again until it changes");
     let bytes = gear(second);
     let message = messages::root_as_from_room(&bytes).unwrap();
-    assert_eq!(message.gear().unwrap().items().unwrap().len(), 5, "the second player's own starting kit");
+    assert_eq!(
+        message.gear().unwrap().items().unwrap().len(),
+        9,
+        "the second player's own starting kit and its modules"
+    );
     assert!(open_sea(include_bytes!("../../../content/world/layout.json"), 7));
     assert!(gear(first).is_empty(), "the sea keeps no gear");
+    assert!(set_difficulty(1), "a sea takes its tier, as a node's room does");
     assert!(!furnish(&bytes_of(&[7.0, 15.0])));
 }
 
@@ -302,7 +345,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     patrol["ring"] = json!([[-400.0, -400.0], [400.0, -400.0], [400.0, 400.0], [-400.0, 400.0]]);
     patrol["bounds"] = json!([-500.0, -500.0, 500.0, 500.0]);
     assert!(open_node(patrol.to_string().as_bytes()));
-    assert!(set_difficulty(2), "storm");
+    assert!(set_difficulty(2), "Abyss");
     assert!(!set_difficulty(3), "no such seas");
     let player = room_join();
     room_tick();
@@ -312,7 +355,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     for foe in foes {
         let numbers = protocol::pack::unpack(foe.packed().unwrap().bytes(), protocol::land::FOE_NUMBERS, [0.0; 2]);
         let level = numbers.unwrap()[combat::floats::GLANCE_FLOATS + 6];
-        assert!((4.0..=7.0).contains(&level), "the island's 1 to 4, three higher in a storm: {level}");
+        assert!((4.0..=7.0).contains(&level), "the island's 1 to 4, three higher at Abyss: {level}");
     }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
@@ -334,7 +377,7 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem_at_the_vendors_c
     let sent = gear(player);
     let message = messages::root_as_from_room(&sent).unwrap();
     let wares = message.gear().unwrap().wares().unwrap();
-    assert_eq!(wares.len(), 2 * gear::vendor::WARES, "the Armorsmith's and the Weaponsmith's");
+    assert_eq!(wares.len(), 3 * gear::vendor::WARES, "the Armorsmith's, the Weaponsmith's and the Shipwright's");
     assert_eq!((wares.get(0).price(), wares.get(5).price()), (2_000, 600), "Rare, then Magic");
     assert_eq!(message.gear().unwrap().day(), 20_400, "the day the wares are of, which a ware is asked by");
     // Too poor to buy: refused, and the wares stay.
@@ -368,4 +411,147 @@ fn a_browser_predicts_a_fighter_on_a_nodes_ground_as_its_room_steps_it() {
     assert_eq!(stepped(), expected, "on the node's window, the same step as its room's");
     let land = movement::Terrain::height_at(&floor, expected.body.x, expected.body.y);
     assert!(land > 1.0 && (expected.body.z - land).abs() < 1e-6, "walking on the land, well above 0 m");
+}
+
+#[test]
+fn what_the_sea_tells_a_player_goes_to_them_alone() {
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+    let (first, second) = (room_join(), room_join());
+    for player in [first, second] {
+        assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    }
+    room_tick();
+    let mut character = gear::Character::starting();
+    character.ship_at = Some([60_000, 50_000]);
+    assert!(gear_door::restore_character(first, character.to_json().as_bytes()));
+    snapshot_door::prepare();
+    let told = |player| {
+        let bytes = snapshot_door::snapshot_for(player);
+        let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+        snapshot.told().map_or(0, |told| told.len())
+    };
+    assert_eq!((told(first), told(second)), (1, 0), "their ship moored where it was kept is their word alone");
+}
+
+#[test]
+fn the_sea_takes_a_boarding_and_the_boarder_fights_on_its_deck() {
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    assert_eq!(input(player, &protocol::ask_bytes(2)), REFUSED, "no captain has struck");
+    let commission = naval::ranks::Commission { faction: 2, rank: naval::ranks::Rank::Minor };
+    let pirate = room::pirates::Pirate::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            sea.put_to_sea(pirate)
+        }
+    });
+    room_tick();
+    // Its colours come down alongside, and it lies still.
+    with_open(|opened| {
+        let Opened::Sea(sea) = opened else { panic!("a sea is open") };
+        let fought = sea.fight_mut(player).expect("the pirate met their ship");
+        let clock = fought.fight.clock;
+        let vessel = fought.fight.ships.get_mut(&naval::fight::CAPTAIN).unwrap();
+        let hurt = naval::damage::Hurt { hull: vessel.damage.max_hull * 0.8, sail: 0.0, crew: 0.0, fire: false };
+        vessel.damage.apply(hurt, clock, 0.0);
+        vessel.ship.ahead = 0.0;
+        if let naval::fight::Sailor::Captain(command) = &mut vessel.sailor {
+            command.struck_at = Some(clock);
+        }
+    });
+    assert_eq!(input(player, &protocol::ask_bytes(2)), TAKEN, "boarded");
+    // A land input now goes to its deck room, as the page's deck fight sends it.
+    let controls = Controls { forward: 1.0, ..Controls::default() };
+    let intent = combat::Intent { controls, ..combat::Intent::default() };
+    let walk = protocol::input_bytes(&room::Input { sequence: 1, intent, ..room::Input::default() });
+    assert_eq!(input(player, &walk), TAKEN);
+    room_tick();
+    snapshot_door::prepare();
+    let bytes = snapshot_door::snapshot_for(player);
+    let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+    let deck = snapshot.decks().expect("its deck is sent").get(0);
+    assert_eq!(deck.players().unwrap().iter().collect::<Vec<_>>(), vec![player]);
+    assert_eq!(deck.hold_left(), -1, "its crew still fights");
+    let boarder = deck.boarders().unwrap().get(0);
+    let room = messages::root_as_from_room(deck.snapshot().unwrap().bytes()).unwrap().snapshot().unwrap();
+    let seen = room.players().unwrap().iter().find(|seen| seen.player() == boarder).expect("the boarder stands there");
+    assert_eq!(seen.acknowledged(), 1, "its deck room took the boarder's step");
+    assert!(seen.fighter().is_some() && seen.packed().is_none(), "the boarder's own fighter whole, to predict from");
+    let foe = room.foes().unwrap().get(0);
+    assert!(foe.packed().is_some() && foe.changed().is_none(), "its crew packed, each whole");
+    assert_eq!(room.foes().map_or(0, |foes| foes.len()), 3, "a Minor's three hands stand to meet them");
+}
+
+/// A sea round one square continent 100 km a side, its north-west corner 100 km from the frame's.
+fn small_sea() {
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+}
+
+/// The ships and hostile ships a player is sent in the prepared snapshot, by their numbers.
+fn seen_at_sea(player: PlayerId) -> (Vec<PlayerId>, Vec<u32>) {
+    let bytes = snapshot_door::snapshot_for(player);
+    let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+    let ships = snapshot.ships().map_or(Vec::new(), |ships| ships.iter().map(|ship| ship.player()).collect());
+    let pirates = snapshot.pirates().map_or(Vec::new(), |pirates| pirates.iter().map(|pirate| pirate.id()).collect());
+    (ships, pirates)
+}
+
+#[test]
+fn a_sea_that_keeps_characters_holds_a_players_course_until_the_keeper_says_none_is_kept() {
+    small_sea();
+    assert_eq!(gear_door::room_keep_characters(), 1);
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN, "held, not refused");
+    room_tick();
+    snapshot_door::prepare();
+    assert_eq!(seen_at_sea(player).0, Vec::<PlayerId>::new(), "not at sea before the keeper answered");
+    gear_door::room_none_kept(player);
+    room_tick();
+    snapshot_door::prepare();
+    assert_eq!(seen_at_sea(player).0, vec![player]);
+}
+
+#[test]
+fn at_sea_a_players_gear_is_sent_from_the_character_the_sea_keeps_once_it_changes() {
+    small_sea();
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    room_tick();
+    assert!(gear_door::gear(player).is_empty(), "no character held yet");
+    let mut character = gear::Character::starting();
+    character.materials.add_aurem(777);
+    assert!(gear_door::restore_character(player, character.to_json().as_bytes()));
+    let bytes = gear_door::gear(player);
+    let gear = messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear");
+    assert_eq!(gear.aurem(), character.materials.aurem, "the character given back");
+    assert!(gear_door::gear(player).is_empty(), "sent once until it changes again");
+}
+
+#[test]
+fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_the_players_within_60_km() {
+    small_sea();
+    let (one, near, far) = (room_join(), room_join(), room_join());
+    for (player, at) in [(one, [50_000.0, 50_000.0]), (near, [50_000.0, 90_000.0]), (far, [300_000.0, 50_000.0])] {
+        assert_eq!(input(player, &protocol::course_bytes(&[at], 10)), TAKEN);
+    }
+    let commission = naval::ranks::Commission { faction: 2, rank: naval::ranks::Rank::Minor };
+    // Wary Minors that leave a sound Sloop be, each kept at sea by the player within 1.1 times the Minor's 5 km sight
+    // of it: the first player, and the near one.
+    for (id, at) in [(1, [50_000.0, 44_600.0]), (2, [50_000.0, 95_400.0])] {
+        let pirate = room::pirates::Pirate::standing(id, 7, commission, at, 0.0, false);
+        with_open(|opened| {
+            if let Opened::Sea(sea) = opened {
+                sea.put_to_sea(pirate)
+            }
+        });
+    }
+    room_tick();
+    snapshot_door::prepare();
+    assert_eq!(seen_at_sea(one), (vec![one, near], vec![1]));
+    assert_eq!(seen_at_sea(near), (vec![one, near], vec![2]), "40 km off, within the page's farthest view");
+    assert_eq!(seen_at_sea(far), (vec![far], vec![]), "250 km off, they see no one");
 }

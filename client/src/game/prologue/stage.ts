@@ -51,7 +51,7 @@ export interface StoryFrame {
   readonly heads?: ReadonlyMap<string, readonly [number, number, number]>;
   /** Whether the land's own drawers (its city and nature) are drawn: not under the sea's storm far from any coast. */
   readonly land?: boolean;
-  /** Where the world's own soundscape is heard round the frame's focus: at sea (on a ship's deck or over her, under
+  /** Where the world's own soundscape is heard round the frame's focus: at sea (on a ship's deck or over it, under
    *  way or not), or ashore on Saltmere's coast. None: the story's own sounds alone. */
   readonly heard?: WorldHeard;
 }
@@ -99,7 +99,7 @@ export const HUD_VEIL_S = VEIL_S;
 /** How long the story's screen takes to clear its black: `Screen.clear`'s fade. */
 const SCREEN_CLEAR_S = 0.6;
 
-/** The Brig's pace under sail in the storm, as the sea's pace is set (100 her fastest): her wash and her bow's
+/** The Brig's pace under sail in the storm, as the sea's pace is set (100 its fastest): its wash and its bow's
  *  thump. */
 const SAILING_PACE = 70;
 
@@ -270,7 +270,15 @@ export class Stage {
       const slots: Record<Hull, number> = { brig: 0, sloop: 0, frigate: 0 };
       for (const ship of ships) {
         const slot = slots[ship.hull]++;
-        if (slot < SLOTS_A_HULL) hulls[ship.hull].drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig);
+        if (slot < SLOTS_A_HULL)
+          hulls[ship.hull].drawInto(
+            pass,
+            ship.place,
+            camera,
+            slot,
+            { side: ship.hull === 'brig' ? 'player' : 'pirate', shade: ship.shade },
+            ship.rig,
+          );
       }
     };
     const drawers = [...standingDrawers(land, sailed, figures, cards), birds, flames, ...(frame.drawers ?? [])];

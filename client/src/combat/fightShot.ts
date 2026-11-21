@@ -179,7 +179,7 @@ export function fightScene(width: number, height: number, dead = false): { frame
       pressed: true,
       lost: null,
       groundAt: null,
-      crosshair: { charge: 0.6 },
+      crosshair: { reticle: 'bow', charge: 0.6, reach: null },
       ammo: 4,
       ammoMost: 24,
       abilities: { art: 1, animaShare: 0.6, tenets: [0.35, 1] },

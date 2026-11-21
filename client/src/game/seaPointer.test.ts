@@ -13,6 +13,7 @@ test('a press on what the game draws over the sea is the interface’s: the sea 
   const heard: string[] = [];
   const sea = {
     fight: null,
+    boarding: { onDeck: false },
     pointerDown: () => heard.push('down'),
     pointerMove: () => heard.push('move'),
     pointerUp: () => heard.push('up'),

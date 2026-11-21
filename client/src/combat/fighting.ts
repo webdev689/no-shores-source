@@ -275,6 +275,11 @@ export class Fighting {
     return (target === null ? undefined : (this.foes.get(target)?.view ?? this.others.get(target)?.body)) ?? null;
   }
 
+  /** How far apart, centre to centre, a foe may stand for the player's longest stroke to reach it. */
+  get reach(): number {
+    return Math.max(...STROKES.map((stroke) => this.rules.strokeReach(this.arms, stroke, true)));
+  }
+
   /** The strokes that reach the soft lock's target from where the player stands now (all six with none). */
   private reaching(): number[] {
     const own = this.own;

@@ -274,6 +274,7 @@ export class GearPanel {
         press(ui, 'tg:grant:noAmmo', 'No ammo', () => ask({ kind: ASKS.grantAmmo, count: 0 })),
         press(ui, 'tg:grant:crates', '5 Ammo crates', () => ask({ kind: ASKS.grantCrates, count: 5 })),
         press(ui, 'tg:grant:useCrate', 'Use an Ammo crate', () => ask({ kind: ASKS.useCrate })),
+        press(ui, 'tg:grant:officers', 'Two officers ashore', () => ask({ kind: ASKS.grantOfficers, level })),
       ]),
     ];
   }

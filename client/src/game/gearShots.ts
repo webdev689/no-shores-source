@@ -59,10 +59,10 @@ export function sampleGear(): GearState {
       xpMost: 900,
     }),
     sampleItem({ id: 2, kind: 8, rarity: 2, level: 12, at: 3, bucket: 1, attack: 160, prestige: 4 }),
-    sampleItem({ id: 3, kind: 23, rarity: 1, level: 12, at: 4, bucket: 2, defense: 40 }),
+    sampleItem({ id: 3, kind: 13, rarity: 1, level: 12, at: 4, bucket: 2, defense: 40 }),
     sampleItem({
       id: 4,
-      kind: 24,
+      kind: 14,
       rarity: 4,
       level: 14,
       at: 5,
@@ -72,8 +72,8 @@ export function sampleGear(): GearState {
       columns: [perk(3, 10)],
       bought: 1,
     }),
-    sampleItem({ id: 5, kind: 25, rarity: 0, level: 3, at: 6, bucket: 4, defense: 12 }),
-    sampleItem({ id: 6, kind: 26, rarity: 2, level: 10, at: 7, bucket: 5, defense: 50 }),
+    sampleItem({ id: 5, kind: 15, rarity: 0, level: 3, at: 6, bucket: 4, defense: 12 }),
+    sampleItem({ id: 6, kind: 16, rarity: 2, level: 10, at: 7, bucket: 5, defense: 50 }),
     sampleItem({
       id: 7,
       kind: 2,
@@ -87,7 +87,7 @@ export function sampleGear(): GearState {
     }),
     sampleItem({ id: 8, kind: 33, rarity: 4, level: 14, at: 0, bucket: 0, attack: 251, prestige: 14 }),
     sampleItem({ id: 9, kind: 5, rarity: 0, level: 2, at: 0, bucket: 0, attack: 40 }),
-    sampleItem({ id: 10, kind: 23, rarity: 3, level: 14, at: 0, bucket: 2, defense: 70 }),
+    sampleItem({ id: 10, kind: 13, rarity: 3, level: 14, at: 0, bucket: 2, defense: 70 }),
   ];
   return {
     xp: 12_000n,

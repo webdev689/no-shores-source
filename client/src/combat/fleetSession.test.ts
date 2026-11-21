@@ -5,7 +5,8 @@ import { type RoomDoor, startRoomDoor } from '../../../server/roomDoor.ts';
 import { readFromRoom } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { startFleetRules } from '../rules/fleetRules.ts';
-import { FleetSession, type SessionInput } from './fleetSession.ts';
+import { FleetSession, fleetFeel, MOST_FELT, type SessionInput } from './fleetSession.ts';
+import type { NavalEvent } from '../network/fleetMessages.ts';
 
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)).catch(
@@ -85,7 +86,7 @@ const sailing = (steer: number, climb?: number): SessionInput => ({
   climbs: climb === undefined ? [] : [climb],
 });
 
-test('two players put to sea in a fleet, see each other, and each predicts her own ship as the room sails it', () => {
+test('two players put to sea in a fleet, see each other, and each predicts their own ship as the room sails it', () => {
   const fleet = new Fleet(5);
   const first = fleet.join([200_000, 300_000, 0.25]);
   const second = fleet.join([200_080, 300_000, 0]);
@@ -94,15 +95,15 @@ test('two players put to sea in a fleet, see each other, and each predicts her o
   for (let tick = 0; tick < 240; tick++) fleet.tick((play) => (play === first ? sailing(1) : sailing(-1)));
   const seen = second.others().map((vessel) => vessel.id);
   assert.deepEqual(seen, [first.id], 'the second sees the first');
-  // Five ticks of her orders are still on their way: her prediction stands that far ahead of the room's last word.
+  // Five ticks of their orders are still on their way: their prediction stands that far ahead of the room's last word.
   const room = fleet.shipOf(first);
   for (let tick = 0; tick < 10; tick++) fleet.tick();
   assert.deepEqual(
     Array.from(first.shipFloats()),
     fleet.shipOf(first),
-    'once the room has taken all, her ship is its own',
+    'once the room has taken all, their ship is its own',
   );
-  assert.notDeepEqual(room.slice(0, 2), [200_000, 300_000], 'under sail she has moved');
+  assert.notDeepEqual(room.slice(0, 2), [200_000, 300_000], 'under sail it has moved');
   assert.equal(first.shipFloats()[7], 2, 'sails set by two climbs');
 });
 
@@ -125,12 +126,12 @@ test('a captain called by one player is seen by both, of the faction and rank ca
   const lay = first.lay({ bearing: 90, range: 80 }, 1);
   assert.equal(lay?.side, 'starboard');
   assert.equal(lay?.launches.length, 3);
-  assert.ok(first.own(), 'the room shows her own ship');
+  assert.ok(first.own(), 'the room shows their own ship');
   fleet.tick((play) => (play === second ? { ...NOTHING, call: 'send off' } : NOTHING));
   for (let tick = 0; tick < 4; tick++) fleet.tick();
   assert.equal(first.others().filter((vessel) => vessel.captain).length, 0, 'sent off');
   const gone = first.takeEvents().filter((event) => event.kind === 'gone');
-  assert.deepEqual(gone, [{ kind: 'gone', ship: 1, sunk: false }], 'gone from the room, she is still named a captain');
+  assert.deepEqual(gone, [{ kind: 'gone', ship: 1, sunk: false }], 'gone from the room, it is still named a captain');
 });
 
 test('two load presses before the room answers the first step the load twice', () => {
@@ -173,7 +174,7 @@ test("the room's clock holds still for a late snapshot rather than run back", ()
   assert.ok(play.roomTime(0.45) > before, 'and on again');
 });
 
-test('a session whose link joins a new fleet puts her to sea again where she lay, her orders numbered anew', () => {
+test('a session whose link joins a new fleet puts it to sea again where it lay, its orders numbered anew', () => {
   const [before, after] = [startRoomDoor(compiled), startRoomDoor(compiled)];
   for (const door of [before, after]) assert.equal(door.openFleet(), true);
   let door = before;
@@ -200,13 +201,90 @@ test('a session whose link joins a new fleet puts her to sea again where she lay
   tick(sailing(0, 1));
   for (let count = 0; count < 300; count++) tick(sailing(1));
   const [x = 0, y = 0] = play.shipFloats();
-  assert.ok(Math.hypot(x - 200_000, y - 300_000) > 5, `under sail she has moved: ${x}, ${y}`);
-  // A deploy: the fleet starts afresh, and her link joins it as its second player.
+  assert.ok(Math.hypot(x - 200_000, y - 300_000) > 5, `under sail it has moved: ${x}, ${y}`);
+  // A deploy: the fleet starts afresh, and its link joins it as its second player.
   door = after;
   after.join();
   Object.assign(link, { player: door.join(), joins: 2 });
   for (let count = 0; count < 30; count++) tick(NOTHING);
   assert.deepEqual([...answers], ['taken'], 'every order numbered anew, from 1');
   const [atX = 0, atY = 0] = play.own()?.ship ?? [];
-  assert.ok(Math.hypot(atX - x, atY - y) < 5, `the new fleet has her where she lay: ${atX}, ${atY}`);
+  assert.ok(Math.hypot(atX - x, atY - y) < 5, `the new fleet has it where it lay: ${atX}, ${atY}`);
+});
+
+test("a fleet room's events reach the feel by each ship's own number, the sea's kinds by the one mapping", () => {
+  const none = [0, 0, 0] as const;
+  const told = (
+    kind: NavalEvent['kind'],
+    ship: number,
+    detail = 0,
+    point: readonly [number, number, number] = none,
+    striker = 0,
+  ) => ({ tick: 3n, kind, ship, by: striker, detail, side: 0, point, launch: [40, 0, 2], left: 5 }) as NavalEvent;
+  const felt = fleetFeel([
+    told('muzzle', 12, 0, [1, 2, 3]),
+    told('struck-at', 31, 1, [2, -3, 1.5]),
+    told('hit', 31, 2, [9, 9, 1], 12),
+    told('splash', 12, 0, [4, 5, 0]),
+    told('sail-lost', 31, 2),
+    told('mast-fell', 31, 1),
+    told('struck', 31),
+    told('sinking', 31),
+    told('flotsam', 44, 2, [6, 7, 0]),
+    told('gathered', 44, 0, none, 12),
+    told('boarding', 31),
+    told('ram', 31, 0, [7, 8, 1], 12),
+  ]);
+  assert.deepEqual(felt, [
+    { kind: 'muzzle', ship: 12, point: [1, 2, 3], launch: [40, 0, 2] },
+    { kind: 'hit', ship: 31, by: 12, zone: 'rig', point: [9, 9, 1], at: [2, -3, 1.5], part: 'sail' },
+    { kind: 'splash', point: [4, 5, 0] },
+    { kind: 'SailLost', tick: 3, ship: 31, sail: 2 },
+    { kind: 'MastFell', tick: 3, ship: 31, mast: 1 },
+    { kind: 'Struck', tick: 3, ship: 31 },
+    { kind: 'Sinking', tick: 3, ship: 31 },
+    { kind: 'Flotsam', tick: 3, id: 44, at: [6, 7], kind_of: 'chest' },
+    { kind: 'Gathered', tick: 3, id: 44, by: 12 },
+    { kind: 'Boarding', tick: 3, ship: 31 },
+    { kind: 'ram', ship: 31, by: 12, point: [7, 8, 1], dealt: 5 },
+  ]);
+});
+
+test("a session whose feel nobody takes keeps only the latest of the fight's events", () => {
+  const door = startRoomDoor(compiled);
+  door.openFleet();
+  const player = door.join();
+  const link: RoomLink = {
+    player,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: () => undefined,
+    pump: () => undefined,
+  };
+  const play = new FleetSession(link, startFleetRules(compiled), [200_000, 300_000, 0]);
+  door.tick();
+  const snapshot = readFromRoom(door.snapshot(player));
+  if (snapshot?.kind !== 'snapshot') throw new Error('the fleet room answers snapshots');
+  const muzzle = (ship: number): NavalEvent => ({
+    tick: 1n,
+    kind: 'muzzle',
+    ship,
+    by: 0,
+    detail: 0,
+    side: 0,
+    point: [0, 0, 0],
+    launch: [1, 0, 0],
+    left: 0,
+  });
+  const many = Array.from({ length: MOST_FELT + 5 }, (unused, index) => muzzle(index));
+  play.receive({ ...snapshot, naval: many } as Snapshot, 0);
+  const felt = play.takeFeel();
+  assert.equal(felt.length, MOST_FELT);
+  assert.deepEqual(
+    [felt[0], felt.at(-1)].map((event) => event && 'ship' in event && event.ship),
+    [5, MOST_FELT + 4],
+    'the oldest dropped',
+  );
 });

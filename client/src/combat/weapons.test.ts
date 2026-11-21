@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { KINDS, WORN } from '../player/gear.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import { TONES } from '../plus/tones.ts';
+import type { Child } from '../ui/node.ts';
 import { allOf, wordsIn } from './nodes.test.ts';
 import type { Dress } from '../player/dressing.ts';
 import type { ItemPictures } from '../player/itemPictures.ts';
@@ -170,6 +172,24 @@ test('a weapon whose picture never comes still says its name; one pictured lets 
     [2, false],
     'the picture, late, takes its place',
   );
+});
+
+test('a weapon with an element shows its glyph in its picture’s corner and says it; one with none shows none', () => {
+  const rows = new WeaponRows(forge(() => blade));
+  const volt = gear([{ ...item('sword', 0, 2), element: 2 }, item('crossbow', 1)]);
+  rows.update({ ...arms(0, true, volt), dress: {} as Dress }, own, 1 / 60);
+  const [hand, next] = rows.node()?.children ?? [];
+  const glyphs = (row: Child) => allOf(row).filter((node) => node.picture?.key.startsWith('element'));
+  assert.deepEqual(
+    glyphs(hand).map((node) => [node.picture?.key, node.picture?.tint ?? null, node.width]),
+    [
+      ['element 2 1', TONES.outline, 16],
+      ['element 2 1', null, 16],
+    ],
+    'Volt’s glyph in the hand’s picture, 16 px, over its hard shadow',
+  );
+  assert.match(hand ? (hand.label ?? '') : '', /, Volt$/);
+  assert.deepEqual(glyphs(next), [], 'no element, no glyph');
 });
 
 test('a swap pressed during a swap trades the rows again from the start', () => {

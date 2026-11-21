@@ -1,17 +1,19 @@
 // The heads-up display's pieces as nodes, each set against the view as the page's sheet stood it: the place's name,
-// the warning and its count, death's words, the key strip, the status line, the sea bar and the offers over it, her
-// ship's panel and the menu. Each answers its node for a frame, or nothing while it does not show; presses run what
-// they are handed.
+// the warning and its count, death's words, the key strip, the status line, the notices, the sea bar and the offers
+// over it, Manage's panel and the menu. Each answers its node for a frame, or nothing while it does not show; presses
+// run what they are handed.
+import { NOTICE_LOOK, type NoticeRow, slidIn } from '../plus/notices.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { Hint } from './gearNodes.ts';
-import { footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
+import { edges, footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
 /** The view as the display lays itself against it: its size, whether its words take their larger step (1500 by 900
  *  or more) and stand doubled (2400 by 1300 or more), and what else holds the screen: the fight's display on foot and
- *  its boss's bar, the ships' plates in a sea fight, and the dialogue box while someone speaks. */
+ *  its boss's bar, the ships' plates and the sea fight's readout, the dialogue box while someone speaks, and the held
+ *  map while it is up. */
 export interface HudView {
   readonly width: number;
   readonly height: number;
@@ -20,7 +22,9 @@ export interface HudView {
   readonly fight: boolean;
   readonly bossed: boolean;
   readonly plates: boolean;
+  readonly seaFight: boolean;
   readonly speaking: boolean;
+  readonly map: boolean;
 }
 
 export const DIM = 'rgba(242,239,230,0.68)';
@@ -34,10 +38,17 @@ export interface Choice {
 }
 
 /** The place's name and kind at the top left, clear of the compass; at the top right while the fight's display holds
- *  the left, and gone while a boss's bar or the ships' plates hold the top. */
+ *  the left, and gone while a boss's bar, the ships' plates or the sea fight's readout hold the top. While the held
+ *  map is up its kind is set as the map's own words are: as written, a pixel apart, at the map's larger size where
+ *  the words take their larger step. */
 export function placeNode(view: HudView, title: string, kind: string): Node | null {
-  if (view.bossed || view.plates || (title === '' && kind === '')) return null;
+  if (view.bossed || view.plates || view.seaFight || (title === '' && kind === '')) return null;
   const zoom = view.doubled ? 2 : 1;
+  // The page's 16 px at the larger step and the map's 13 px stand at the face's 11, and the map's 20 px at its 22.
+  const kindSize = view.map && view.big && !view.doubled ? 2 : zoom;
+  const kindWords = view.map
+    ? { words: kind, size: kindSize, tracking: 2 / kindSize }
+    : { words: kind.toUpperCase(), size: kindSize, tracking: 3 };
   const right = view.fight;
   const align = right ? 'end' : 'start';
   return {
@@ -55,7 +66,7 @@ export function placeNode(view: HudView, title: string, kind: string): Node | nu
     },
     children: [
       { text: { words: title, size: 2 * zoom, colour: TONES.ink, edge: 'halo', align } },
-      { text: { words: kind.toUpperCase(), size: zoom, colour: TONES.ink, edge: 'halo', align, tracking: 3 } },
+      { text: { ...kindWords, colour: TONES.ink, edge: 'halo', align } },
     ],
   };
 }
@@ -101,12 +112,13 @@ export function deathNode(ui: Interface, canRespawn: boolean, respawn: () => voi
 }
 
 /** The key strip at the bottom right, under the dialogue box's foot, wrapping short of the Arts and weapons; over the
- *  sea bar and the offer over it while they show; gone while someone speaks. */
+ *  sea bar and the offer over it while they show, and over the fight's Arts and weapons at the larger step; gone
+ *  while someone speaks. */
 export function hintsNode(view: HudView, hints: readonly Hint[], seaBar: boolean, offer: boolean): Node | null {
   if (hints.length === 0 || view.speaking) return null;
   const zoom = view.doubled ? 2 : 1;
   const size = view.big ? 2 : 1;
-  const foot = seaBar ? (offer ? 148 : 96) : 22;
+  const foot = view.fight && view.big && !view.doubled ? 200 : seaBar ? (offer ? 148 : 96) : 22;
   return {
     id: 'hud:hints',
     through: true,
@@ -120,9 +132,18 @@ export function hintsNode(view: HudView, hints: readonly Hint[], seaBar: boolean
   };
 }
 
-/** The line of what is happening: under the compass at sea, under the place's name at the top right on foot. */
+/** The line of what is happening: under the compass at sea, under the place's name at the top right on foot, and in
+ *  the top right corner in a sea fight, off the sky the aim looks at. */
 export function statusNode(view: HudView, text: string): Node | null {
   if (text === '') return null;
+  if (view.seaFight)
+    return {
+      role: 'chip',
+      through: true,
+      padding: [8, 16],
+      float: { to: 'screen', at: [1, 0], anchor: [1, 0], x: -28, y: 22 },
+      children: [said(text, { wrap: false })],
+    };
   if (view.fight) {
     const size = view.big ? 2 : 1;
     const top = view.doubled ? (view.bossed ? 232 : 140) : view.bossed ? 128 : 84;
@@ -154,7 +175,7 @@ export interface SeaBarState {
   readonly canManage: boolean;
 }
 
-/** What the presses of the sea bar and her ship's panel do. */
+/** What the presses of the sea bar and Manage's panel do. */
 export interface SeaBarActions {
   readonly map: () => void;
   readonly voyage: () => void;
@@ -163,7 +184,7 @@ export interface SeaBarActions {
   readonly leave: () => void;
 }
 
-/** The navigation panel at sea: the map, stopping or resuming the voyage, the pace dial, and her ship's presses, each
+/** The navigation panel at sea: the map, stopping or resuming the voyage, the pace dial, and the ship's presses, each
  *  group after the first behind an engraved rail. */
 export function seaBarNode(ui: Interface, state: SeaBarState, act: SeaBarActions): Node {
   const label = (words: string): Node => said(words, { colour: DIM, wrap: false, tracking: 3 });
@@ -215,8 +236,7 @@ export function offerNode(ui: Interface, id: string, words: string, take: () => 
   };
 }
 
-/** Manage's panel over her deck at the right: her name, and each part of it, those still to come marked Later, with
- *  the way back at its foot. */
+/** Manage's panel over its deck at the right: its name, and each part of it, with the way back at its foot. */
 export function shipPanelNode(ui: Interface, panel: ShipPanel, back: () => void): Node {
   return {
     role: 'window',
@@ -246,11 +266,6 @@ export function shipPanelNode(ui: Interface, panel: ShipPanel, back: () => void)
             children: [said(part.heading.toUpperCase(), { colour: DIM, tracking: 3 })],
           },
           { height: 6 },
-          part.later && {
-            role: 'chip',
-            padding: [4, 12],
-            children: [said('Later', { colour: DIM, wrap: false, tracking: 3 })],
-          },
           ...part.rows.map(([label, value]): Node => ({
             width: 'grow',
             gap: 12,
@@ -299,5 +314,44 @@ export function menuNode(ui: Interface, title: string, choices: readonly Choice[
         ),
       },
     ],
+  };
+}
+
+/** The notices at the top right under the status line, the newest last (`NOTICE_LOOK`): each a panel hugging its words,
+ *  its left edge in yellow, sliding in from the right as it comes. The page's 14 px words stand at the face's 11. */
+export function noticesNode(
+  ui: Interface,
+  view: HudView,
+  rows: readonly NoticeRow[],
+  clock: number,
+  still: boolean,
+): Node | null {
+  if (rows.length === 0) return null;
+  const look = NOTICE_LOOK;
+  const [top, right, bottom, left] = look.edge;
+  const inside = look.padding;
+  return {
+    direction: 'column',
+    alignX: 'end',
+    gap: look.gap,
+    through: true,
+    float: { to: 'screen', at: [1, 0], anchor: [1, 0], x: -look.right, y: look.top },
+    children: rows.map((row, index): Node => {
+      const id = `notice:${index}:${row.text}`;
+      const come = slidIn(row.since, clock, still);
+      // Slid from 110% of its own width to the right, as last laid, and faded in with it.
+      const width = ui.boxOf(id)?.width ?? 0;
+      return {
+        id,
+        role: 'panel',
+        bevel: 0,
+        maxWidth: Math.min(look.most, look.mostShare * view.width),
+        padding: [top + inside[0], right + inside[1], bottom + inside[2], left + inside[3]],
+        draw: edges({ top: [top, TONES.stoneLit], bottom: [bottom, TONES.stoneDark], left: [left, look.edgeColour] }),
+        offset: [Math.round((1 - come) * 1.1 * width), 0],
+        opacity: come,
+        children: [said(row.text, { colour: look.colour, edge: 'halo' })],
+      };
+    }),
   };
 }

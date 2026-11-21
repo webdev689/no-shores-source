@@ -20,11 +20,11 @@ import { ReliefTiles, tilesWanted } from './reliefTiles.ts';
 import { fitWindow, heightAt, readoutAt, ReliefView } from './reliefView.ts';
 import { groundProjector, siteInks, siteMarks } from './siteDrawing.ts';
 import type { Ink } from './strokes.ts';
-import { type Label, labelNode, onScreen } from './viewMarks.ts';
+import { inView, type Label, labelNode, onScreen } from './viewMarks.ts';
 import { NODE_COLOURS, siteFocus } from './sites.ts';
 import type { TerrainData } from '../terrain/terrainView.ts';
 import { FleetDock } from './fleetDock.ts';
-import { fleetOffered, platesOf } from './fleetLink.ts';
+import { fleetOffered, platesOf, readoutOffered } from './fleetLink.ts';
 
 /** The Land mode: the land the generator makes from the painted coasts, shaped by the owner's brushes. */
 export interface LandEditor {
@@ -33,7 +33,7 @@ export interface LandEditor {
   deactivate(): void;
   /** Draws the land into the view right of the panel; answers its marks, what is laid over it and its panel. */
   draw(frame: EditorFrameView): EditorDrawn;
-  /** Whether the panel may take the keys: not while walking or sailing, whose keys move her. */
+  /** Whether the panel may take the keys: not while walking or sailing, whose keys are the walker's or the Sloop's. */
   keys(): boolean;
 }
 
@@ -288,8 +288,8 @@ export function startLandEditor(
     requestFrame();
   }
 
-  /** Puts the Sloop to sea at the camera's target, or brings her in: the camera stands off her quarter. With a fleet
-   *  room, she joins it first. */
+  /** Puts the Sloop to sea at the camera's target, or brings it in: the camera stands off its quarter. With a fleet
+   *  room, it joins it first. */
   function toggleSail() {
     aim.reset();
     walking = false;
@@ -326,7 +326,7 @@ export function startLandEditor(
     const labels: Label[] = [];
     const over: Node[] = [];
     let again = false;
-    // Brought in, or walking or on the map before the room let her join, she leaves the fleet.
+    // Brought in, or walking or on the map before the room let it join, it leaves the fleet.
     if (fleet && !sailing && (fleet.sloop || (fleet.joining && (walking || viewMode === '2d')))) {
       if (fleet.joining) status = '';
       fleet.leave();
@@ -347,6 +347,7 @@ export function startLandEditor(
           size,
           flat,
           target,
+          readout: readoutOffered(),
           exaggeration,
           brush,
           walking,
@@ -362,7 +363,7 @@ export function startLandEditor(
         }),
       );
       orbit = drawn.orbit;
-      // A refused Sail stands the camera back off, as bringing her in does.
+      // A refused Sail stands the camera back off, as bringing it in does.
       if (sailing && !drawn.sailing) orbit = { ...orbit, distance: 600, pitch: 0.5 };
       sailing = drawn.sailing;
       const shownHeight = shownExaggeration(exaggeration, orbit.distance);
@@ -375,6 +376,8 @@ export function startLandEditor(
       inks.push(...marks.inks);
       labels.push(...marks.labels);
       over.push(...platesOf(drawn.plates).map((plate) => onScreen(plate, PANEL_WIDTH)));
+      const fight = readoutOffered()?.node();
+      if (fight) over.push(inView(fight, PANEL_WIDTH, flat.width, flat.height));
       // The water moves, so the 3D view draws every frame.
       again = true;
     } else {

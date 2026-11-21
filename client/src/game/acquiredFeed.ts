@@ -12,6 +12,7 @@ import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { emblemOf } from './emblemArt.ts';
 import { type Gain, gainsOf } from './gains.ts';
+import { fineGlyph } from './gearGlyphs.ts';
 import {
   INK,
   emblemNode,
@@ -115,7 +116,9 @@ export class AcquiredFeed {
     }
     if (gain.icon !== null) return svgNode(`gain ${gain.key}`, gain.icon, 24);
     if (gain.emblem !== null) return emblemNode(emblemOf(gain.emblem), 'sign', 24, 24, 24);
-    return glyphNode(gain.glyph === 'item' ? 'empty' : gain.glyph, ICON_PX, gain.rarity ?? 0, gain.tint);
+    const glyph = gain.glyph === 'item' ? 'empty' : gain.glyph;
+    // A ship glyph's 24 cells stand at their own size, where the gear's 12 stand at three times.
+    return glyphNode(glyph, fineGlyph(glyph) ? 24 : ICON_PX, gain.rarity ?? 0, gain.tint);
   }
 
   /** The feed this frame at the right of `view`: low over the menu's footer while it is open (`low`). */

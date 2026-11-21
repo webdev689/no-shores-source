@@ -1,6 +1,7 @@
-// The menu's pages that need no gear, drawn by the game: Journal and Guild, still to come and saying so; the Ship, the
-// Sloop's details as Manage shows them; and Settings, which keeps the account and the volumes of the interface and the
-// world. And the parts they share with the Roster: a heading over its rule, a faint hint and an answer.
+// The menu's pages that need no gear, drawn by the game: Journal and Guild, still to come and saying so; the Sloop's
+// papers as Manage shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the
+// account and the volumes of the interface and the world. And the parts they share with the Roster: a heading over
+// its rule, a faint hint and an answer.
 
 import type { Child, Node } from '../ui/node.ts';
 import { PAGE, type Page } from '../ui/page.ts';
@@ -33,8 +34,9 @@ export const RULE: Node = {
   draw: drawings(strip(0, 1, 'rgba(5,6,8,0.6)'), strip(1, 1, 'rgba(163,152,128,0.13)')),
 };
 
-/** A part's heading: its name in faint capitals spaced wide over a rule, and anything beside it at the right. */
-export function headingNode(said: string, beside: Child = null): Node {
+/** A part's heading: its name in faint capitals spaced wide over a rule, at `size`, and anything beside it at the
+ *  right. */
+export function headingNode(said: string, beside: Child = null, size = 1): Node {
   return {
     width: 'grow',
     direction: 'column',
@@ -44,19 +46,12 @@ export function headingNode(said: string, beside: Child = null): Node {
         padding: [0, 0, 4, 0],
         alignY: 'center',
         draw: ruleUnder(),
-        children: [{ width: 'grow', ...words(said.toUpperCase(), 1, INK.faint, { tracking: 3 }) }, beside],
+        children: [{ width: 'grow', ...words(said.toUpperCase(), size, INK.faint, { tracking: 3 }) }, beside],
       },
       { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.13)' },
     ],
   };
 }
-
-/** The menu's chip saying a part is still to come. */
-const laterChip = (): Node => ({
-  role: 'chip',
-  padding: [1, 8],
-  children: [words('LATER', 1, INK.word, { tracking: 3 })],
-});
 
 /** Faint words, wrapped to the room. */
 export const hintNode = (said: string, more: Partial<Node> = {}): Node => ({
@@ -78,9 +73,18 @@ function pagePanel(id: string, most: number, children: readonly Child[]): Node {
     width: 'grow',
     alignX: 'center',
     padding: [24, 0],
-    children: [{ id, role: 'panel', width: 'grow', maxWidth: most, direction: 'column', padding: [18, 22], children }],
+    children: [{ id, ...panelOf(children), maxWidth: most }],
   };
 }
+
+/** The panel a page's parts stand in: its 2 px frame, then the sheet's 18 by 22 px. */
+const panelOf = (children: readonly Child[]): Node => ({
+  role: 'panel',
+  width: 'grow',
+  direction: 'column',
+  padding: [20, 24],
+  children,
+});
 
 /** A page still to come: its name, marked Later, and one line on what it will hold. */
 export function laterPage(name: string, said: string): Node {
@@ -95,38 +99,47 @@ export function laterPage(name: string, said: string): Node {
   ]);
 }
 
-/** The Ship page: her name, then each part of her papers, those still to come marked Later. */
-export function shipPage(panel: ShipPanel | null, sizes: Sizes): Node {
-  if (!panel)
-    return pagePanel('page-ship', 640, [
-      {
-        width: 'grow',
-        alignX: 'center',
-        padding: [48, 0],
-        children: [{ text: { words: 'Loading your ship…', size: sizes.name, colour: INK.faint } }],
-      },
-    ]);
-  return pagePanel('page-ship', 640, [
-    { padding: [0, 0, 10, 0], children: [words(panel.title, 2, INK.word)] },
-    ...panel.parts.map((part, index): Node => ({
-      width: 'grow',
-      direction: 'column',
-      padding: [index === 0 ? 4 : 18, 0, 0, 0],
-      gap: 6,
-      children: [
-        headingNode(part.heading, part.later && laterChip()),
+/** Its papers: its name, then each part of them, then `more` (its materials and hands, on the ship's tab). On the
+ *  tab (`bare`) they fill the column they stand in; alone they stand as the other plain pages do. */
+export function shipPage(panel: ShipPanel | null, sizes: Sizes, more: readonly Child[] = [], bare = false): Node {
+  const parts: readonly Child[] = !panel
+    ? [
         {
           width: 'grow',
-          direction: 'column',
-          children: part.rows.map(([label, value]): Node => ({
-            width: 'grow',
-            padding: [3, 0],
-            children: [{ width: 'grow', ...words(label, 1, INK.faint) }, words(value, 1, INK.word)],
-          })),
+          alignX: 'center',
+          padding: [48, 0],
+          children: [{ text: { words: 'Loading your ship…', size: sizes.name, colour: INK.faint } }],
         },
-      ],
-    })),
-  ]);
+        ...more,
+      ]
+    : [
+        { padding: [0, 0, 10, 0], children: [words(panel.title, 2, INK.word)] },
+        ...panel.parts.map((part, index) => shipPart(part.heading, part.rows, index === 0)),
+        ...more,
+      ];
+  return bare ? { id: 'page-ship', ...panelOf(parts) } : pagePanel('page-ship', 640, parts);
+}
+
+/** One part of the papers: its heading over its rule, then its rows, label and value. */
+export function shipPart(heading: string, rows: readonly (readonly [string, string])[], first = false): Node {
+  return {
+    width: 'grow',
+    direction: 'column',
+    padding: [first ? 4 : 18, 0, 0, 0],
+    gap: 6,
+    children: [
+      headingNode(heading),
+      {
+        width: 'grow',
+        direction: 'column',
+        children: rows.map(([label, value]): Node => ({
+          width: 'grow',
+          padding: [3, 0],
+          children: [{ width: 'grow', ...words(label, 1, INK.faint) }, words(value, 1, INK.word)],
+        })),
+      },
+    ],
+  };
 }
 
 /** The Settings page: the account, or why there is none, the players blocked, and the volumes. */

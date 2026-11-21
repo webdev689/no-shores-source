@@ -104,7 +104,7 @@ test('a crossfade takes its seconds, never overshoots, and two crossing hold the
   assert.equal(stepLevel(0.5, 0, 1), 0.5 - 1 / CROSSFADE_S);
 });
 
-test("a ship's way is none hove to and grows with her pace, and the coast's nearness falls with its distance", () => {
+test("a ship's way is none hove to and grows with its pace, and the coast's nearness falls with its distance", () => {
   assert.equal(wayOf(false, 100), 0);
   assert.ok(wayOf(true, 5) > 0 && wayOf(true, 5) < wayOf(true, 60) && wayOf(true, 60) < wayOf(true, 100));
   assert.equal(wayOf(true, 100), 1);

@@ -4,20 +4,20 @@
 // white when a swing or a dodge is asked of it with none; poise fills toward a break and says Iron, Staggered or Open
 // beside it. The player's buffs stand in a row under them. Whole and untouched, with no buff and no foe on the target
 // plate, the bars rest out of sight, and the first point lost or spent brings them back at once.
-import { BAR_TONES, type BarTone } from '../plus/barFrame.ts';
+import { BAR_TONES, type BarTone, CORNER, VITAL_SIZES } from '../plus/barFrame.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { poiseTrackOf, type PoiseState } from './foePlate.ts';
-import { barFrame, frameInset, hatch, paintBox, type Pen, ring, span } from './barDraw.ts';
-import { barLength, EDGE, VITAL_SIZES } from './hudLayout.ts';
-import { Meter } from './meter.ts';
+import { LOW_SHARE, lowShare, Meter } from '../plus/meter.ts';
+import { drawMeter, hatch, paintBox, type Pen, ring, span, thinBarNode } from './barDraw.ts';
+import { barLength } from './hudLayout.ts';
 import { ownBuffs, StatusRow } from './statusIcons.ts';
 
-/** Health at or under this share of the whole warns. */
-export const LOW_HEALTH = 0.25;
+/** Health at or under this share of the whole warns (the kit's low law, which a ship's hull keeps too). */
+export const LOW_HEALTH = LOW_SHARE;
 
 export type VitalName = 'health' | 'stamina' | 'poise';
 const VITALS: readonly [VitalName, string][] = [
@@ -52,7 +52,7 @@ export function vitalMost(own: FighterView | null): Record<VitalName, number> {
 
 /** Whether the health warns: some left, but no more than `LOW_HEALTH` of it. */
 export const healthLow = (own: FighterView | null): boolean =>
-  !!own && own.health > 0 && own.health / Math.max(1, own.healthMax) <= LOW_HEALTH;
+  !!own && lowShare(own.health / Math.max(1, own.healthMax));
 
 /** How long the vitals stand full and untouched before they rest, in seconds. */
 export const REST_SECONDS = 4;
@@ -180,7 +180,7 @@ export class Vitals {
       direction: 'column',
       gap: sizes.gap * zoom,
       opacity: this.fade.now,
-      float: { to: 'screen', x: EDGE.side * zoom, y: EDGE.top * zoom, z: 1 },
+      float: { to: 'screen', x: CORNER.side * zoom, y: CORNER.top * zoom, z: 1 },
       children: [
         ...VITALS.map(([name, label]) => this.barNode(name, label, sizes[name], zoom)),
         buffs && { padding: [4 * zoom, 0, 0, 0], children: [buffs] },
@@ -203,27 +203,17 @@ export class Vitals {
     const poise = name === 'poise' ? this.poise : null;
     const word = name === 'poise' && this.poiseWord ? this.poiseNode(zoom) : null;
     const percent = this.shown[name].text;
-    return {
-      width: length * zoom,
-      height: height * zoom,
+    return thinBarNode({
+      name,
       label: `${label}: ${name === 'poise' ? this.poiseWord || percent : percent}`,
-      draw: (ui, box, scale, clip, fade) => {
-        const pen = { ui, box, scale: scale * zoom, clip, fade };
-        const [edge, tip] = frameInset(height);
-        const trough = {
-          x: box.x + tip * pen.scale,
-          y: box.y + edge * pen.scale,
-          width: box.width - 2 * tip * pen.scale,
-          height: box.height - 2 * edge * pen.scale,
-        };
-        const inside = { ...pen, box: trough };
-        paintBox(inside, trough, blinkGround ? 'rgba(255,255,255,0.27)' : TONES.groundTrack);
-        this.drawFill(inside, name, poise, still);
-        barFrame(pen, height, BAR_TONES.stone, 'stone');
-        if (alert) barFrame(pen, height, ALERTS[name], name);
-      },
+      length,
+      height,
+      zoom,
+      ground: blinkGround ? 'rgba(255,255,255,0.27)' : undefined,
+      fill: (pen) => this.drawFill(pen, name, poise, still),
+      alert: alert ? ALERTS[name] : null,
       children: word ? [word] : [],
-    };
+    });
   }
 
   /** A bar's lost strip and fill: poise in brass toward a break, an iron blow hatched in red, a stagger white, glowing
@@ -238,7 +228,7 @@ export class Vitals {
         { ...fill, x: fill.x + fill.width - 2 * pen.scale, width: Math.min(fill.width, 2 * pen.scale) },
         'rgba(255,255,255,0.42)',
       );
-    } else meter.draw(pen, poise === 'staggered' ? '#ffffff' : FILLS[name], 'faint');
+    } else drawMeter(pen, meter, poise === 'staggered' ? '#ffffff' : FILLS[name], 'faint');
     if (poise === 'staggered' && !still && this.broke < POISE_FLASH) {
       const left = 1 - this.broke / POISE_FLASH;
       const glow = span(pen, 0, meter.shown.share);

@@ -1,6 +1,6 @@
 import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
-import { RARITIES, answerText, itemName } from '../player/gear.ts';
+import { RARITIES, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
@@ -21,7 +21,8 @@ import { spellKey } from './artsRows.ts';
 import { characterPage } from './characterPage.ts';
 import { CompanyHud } from './companyHud.ts';
 import { emblemOf } from './emblemArt.ts';
-import { DISMANTLE_KEY, Holds } from './gearHold.ts';
+import { HINTS, SHELF_HINTS } from './gearHints.ts';
+import { Holds } from './gearHold.ts';
 import { type Hint, INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import {
   ACCOUNT_CHANGED,
@@ -36,43 +37,19 @@ import {
 import { TAB_PRESSES, bannerNode, footerNode, screenNode, tabId, tabsNode, topNode } from './gearShell.ts';
 import { inventoryPage } from './inventoryPage.ts';
 import { ITEM_NAME, itemPage } from './itemPage.ts';
-import { KEEPERS } from './keepers.ts';
 import type { MenuContext, PlainContext } from './menuPage.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import { hush } from './npc/npcSpeech.ts';
-import { isKeeperView, npcChoosing, npcHints, npcOpened, npcPage, npcStepBack } from './npc/npcScreen.ts';
+import { isKeeperView, npcChoosing, npcHints, npcOpened, npcStepBack } from './npc/npcScreen.ts';
 import { RosterPage, socialPage } from './rosterTab.ts';
+import { answerSaid } from './shipGear.ts';
+import { shipTab } from './shipPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
+import { stationPage, stationTitle } from './stationView.ts';
 import { play } from './uiSounds.ts';
 
 export { gearScreenOpen } from './gearScreen.ts';
 
-/** What the footer says each view's presses and keys do, and an item's page's. */
-const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
-  // A worn piece is not dismantled; a carried one's card in the flyout says how.
-  character: [
-    ['Click', 'Swap'],
-    ['Right-click / X', 'Details'],
-  ],
-  social: [
-    ['Click', 'Choose a player'],
-    ['Esc', 'Close a panel'],
-  ],
-  vault: [
-    ['Click', 'Put in or take out'],
-    ['Right-click / X', 'Details'],
-    [DISMANTLE_KEY, 'Hold to dismantle'],
-  ],
-  item: [
-    ['Hold', 'Buy a node'],
-    ['Click', 'Choose one bought'],
-  ],
-};
-/** What the inventory's shelves' cells show. */
-const SHELF_HINTS: Readonly<Record<string, readonly Hint[]>> = {
-  consumables: [['Hover', 'What it does']],
-  materials: [['Hover', 'Where it is from']],
-};
 /** The inventory's shelf shown first. */
 const FIRST_SHELF = 'consumables';
 /** The layer's own id, whose box is the view. */
@@ -80,7 +57,7 @@ const LAYER = 'gear-layer';
 
 const isTab = (view: View): view is Tab => (TABS as readonly string[]).includes(view);
 /** The views drawn from the player's gear; the rest need none. */
-const ofGear = (view: View) => view === 'character' || view === 'inventory' || !isTab(view);
+const ofGear = (view: View) => view === 'character' || view === 'inventory' || view === 'ship' || !isTab(view);
 
 /**
  * The menu, after Destiny's, in the Enhanced Plus kit, drawn by the game: Character (I), Inventory (O), Journal, Ship,
@@ -198,11 +175,10 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
 
-  /** A page that needs no gear: a page to come, the Ship, Social or Settings. */
+  /** A page that needs no gear: a page to come, Social or Settings. */
   const plainPage = (shown: View, plain: PlainContext): Node => {
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
-    if (shown === 'ship') return shipPage(ship(), plain.sizes);
     if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
     return settingsPage(plain, link ? (accountPanel ??= new AccountPanel(link)) : null);
   };
@@ -229,7 +205,7 @@ export function startGearWindow(
     const sizes = sizesOf(layer.width, layer.height, uiScale(devicePixelRatio));
     const now = here();
     const gear = now?.gear ?? null;
-    const station = isTab(shown) ? null : KEEPERS[shown].title;
+    const station = isTab(shown) ? null : stationTitle(shown);
     figureOf(now);
     if (now?.forge) picturesOf(now.forge);
     // The room's word has come, so no ask of the Art's screen waits any more.
@@ -271,19 +247,23 @@ export function startGearWindow(
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
       const why = now ? 'Loading…' : (lost ?? 'Your gear shows here on foot, when playing online.');
-      page = {
-        width: 'grow',
-        alignX: 'center',
-        padding: [48, 0],
-        children: [{ maxWidth: 420, text: { words: why, size: sizes.name, colour: INK.faint, align: 'center' } }],
-      };
+      // Its papers show without the room's word on its power and crew.
+      page =
+        shown === 'ship'
+          ? shipPage(ship(), sizes)
+          : {
+              width: 'grow',
+              alignX: 'center',
+              padding: [48, 0],
+              children: [{ maxWidth: 420, text: { words: why, size: sizes.name, colour: INK.faint, align: 'center' } }],
+            };
     } else {
       const opened = gear.items.find((each) => each.id === gear.identified);
       const fresh = gear.answered !== heard;
       // A refusal is heard once, when it comes.
       if (fresh && gear.answer !== 0 && gear.answered !== refusedAt) play('refused');
       if (fresh) refusedAt = gear.answered;
-      answer = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
+      answer = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerSaid(gear.answer);
       colour = opened ? (RARITIES[opened.rarity]?.colour ?? INK.answer) : INK.answer;
       const context: MenuContext = {
         ui: frame,
@@ -316,6 +296,8 @@ export function startGearWindow(
         }),
         appearance: () => ((appearance = true), (slot = null)),
       };
+      // An officer paid off while their page was open leaves no page for Escape to step back from.
+      if (shown === 'ship' && !gear.ship?.officers.some((officer) => officer.id === slot)) slot = null;
       // Under an item's page the menu's own page is not laid, so neither the pointer nor the keys reach it.
       const inspected = gear.items.find((each) => each.id === inspecting);
       if (!inspected) inspecting = null;
@@ -337,9 +319,12 @@ export function startGearWindow(
         aside = APPEARANCE_HINTS;
       } else if (shown === 'character') page = characterPage(context, slot, (chosen) => (slot = chosen));
       else if (shown === 'inventory') page = inventoryPage(context, shelf, (chosen) => (shelf = chosen));
-      else if (isKeeperView(shown)) {
-        page = npcPage(context, shown);
-        if (npcChoosing()) aside = npcHints(shown);
+      else if (shown === 'ship')
+        // On its tab the officer whose page is open stands in the slot's place, so Escape steps back from it.
+        page = shipTab(context, ship(), [shelf, slot], (part, officer) => ([shelf, slot] = [part, officer]));
+      else if (!isTab(shown)) {
+        page = stationPage(context, shown);
+        if (isKeeperView(shown) && npcChoosing()) aside = npcHints(shown);
       }
       item = inspected ? itemPage(context, inspected, back) : null;
     }
@@ -368,7 +353,14 @@ export function startGearWindow(
     const head: Child[] = [
       topNode(
         station
-          ? { width: 'grow', children: [words(station, 2, INK.word)] }
+          ? {
+              width: 'grow',
+              height: 48,
+              alignX: 'center',
+              alignY: 'center',
+              // A station's name stands where the tabs do, in brass capitals spaced wide.
+              children: [words(station.toUpperCase(), 2, INK.brassLit, { tracking: 3 })],
+            }
           : tabsNode(frame, shown, (frame.boxOf('gear-top')?.width ?? layer.width - 64) - 36 - 60, layer, sizes.label),
         accountMark(frame, account, figure.picture, () => open('settings'), sizes.ratio),
       ),

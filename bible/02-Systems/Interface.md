@@ -10,7 +10,7 @@ code:
   - client/src/game/prologue/nameplate.ts#Nameplate
   - client/src/game/prologue/objective.ts#Objective
   - client/src/game/prologue/creation.ts#windowNode
-  - client/src/heldmap/heldMap.ts#markNode
+  - client/src/heldmap/heldMap.ts#HeldMap
   - client/src/ui/page.ts#touchesHeld
   - client/src/plus/frame.ts#frameSvg
   - client/src/plus/frame.ts#framePixels
@@ -50,15 +50,19 @@ code:
   - client/src/game/seaPanel.ts#readoutOf
   - client/src/game/seaPanel.ts#seaFightQuest
   - client/src/combat/hud.ts#Hud
-  - client/src/combat/hudCues.ts#crosshairNode
+  - client/src/combat/reticle.ts#Crosshair
+  - client/src/combat/seaReadout.ts#SeaFightReadout
+  - client/src/game/seaSight.ts#SeaSight
+  - client/src/combat/barDraw.ts#thinBarNode
   - client/src/combat/compassNode.ts#compassNode
   - client/src/combat/barDraw.ts#barFrame
-  - client/src/combat/meter.ts#Meter
+  - client/src/plus/meter.ts#Meter
   - client/src/ui/stack.ts#Stack
   - client/src/plus/tones.ts#HALO
   - client/src/plus/compass.ts#compassPlace
   - client/src/plus/compass.ts#markPlace
   - client/src/game/seaHud.ts#seaShipMarks
+  - client/src/game/seaHostiles.ts#hostileLook
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
   - client/src/combat/vitals.ts#Vitals
@@ -68,6 +72,9 @@ code:
   - client/src/combat/weapons.ts#WeaponRows
   - client/src/combat/weapons.ts#weaponsOf
   - client/src/combat/weaponPicture.ts#lengthwise
+  - client/src/player/itemPictures.ts#ItemPictures
+  - client/src/player/picture.ts#overlapped
+  - client/src/player/iconFit.ts#shrunk
   - client/src/combat/statusIcons.ts#StatusRow
   - client/src/combat/foePlate.ts#FoePlate
   - client/src/plus/barLoss.ts#stepLoss
@@ -85,6 +92,9 @@ code:
   - client/src/combat/foePlate.ts#wardOf
   - client/src/plus/kit.ts#motionReduced
   - client/src/ships/shipBars.ts#ShipPlates
+  - client/src/plus/notices.ts#NoticeStack
+  - client/src/game/hudPieces.ts#noticesNode
+  - client/src/game/seaWord.ts#SeaWord
   - client/src/ships/shipBars.ts#HullLosses
   - client/src/game/gearScreen.ts#characterOf
   - client/src/game/gearScreen.ts#itemDetailOf
@@ -94,6 +104,10 @@ code:
   - client/src/game/inventoryPage.ts#inventoryPage
   - client/src/game/acquiredFeed.ts#AcquiredFeed
   - client/src/game/menuPage.ts#MenuContext
+  - client/src/game/shipPages.ts#shipTab
+  - client/src/game/shipPages.ts#harbourPage
+  - client/src/game/shipPages.ts#musterAt
+  - client/src/game/stationView.ts#stationPage
   - client/src/game/gearHold.ts#Holds
   - client/src/game/gearNodes.ts#tileNode
   - client/src/game/gearNodes.ts#pictureNode
@@ -135,13 +149,14 @@ code:
   - client/src/game/npc/factionRows.ts#factionRows
   - content/story/keepers.json
   - client/src/game/gearNodes.ts#ringNode
-  - client/src/game/elementGlyphs.ts#elementSvg
+  - client/src/player/elementGlyphs.ts#elementSvg
   - client/src/face.ts#outlineOf
 ---
 # Interface
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
+Its words call a ship "it" ([[Ships Are It, Not Her]]), and the sea wears it too ([[The Sea's Screens Wear Enhanced Plus]]).
 The game draws every screen itself, and by the owner's word no HTML is laid over the canvas
 ([[The Interface Uses No HTML, Now or Later]]): the game's page is one canvas ("Drawn by the game", below).
 
@@ -216,7 +231,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   texture of its own, the fight's display over it in an interface the view's size, and copied into its place
   (`ViewTexture`); a click there is the world's, and the wheel over a panel scrolls it.
 - **The World Editor's panel** is drawn too: its page is one canvas, the panel at the left in the game's face and the
-  map or the land's view to its right, its overlays' marks drawn on the GPU and their names in the interface.
+  map, the land's view or the Islands mode's island to its right, its overlays' marks drawn on the GPU and their names
+  in the interface; a captain's fight shows the game's own readout over the view.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
 
@@ -242,6 +258,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **Emblems and marks** are our own pictures, drawn pixel for pixel in the palette and shown at whole multiples: the
   Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number, on
   ships' plates (a foe's plate shows its level there instead); an Elite's brass chevron and a Miniboss's two.
+- **A hostile ship's mark at sea** is a port's mark in its own dress (`hostileLook`): the ship's faction's emblem in the
+  ring, the ring and its arrow in the ship's rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a Miniboss's
+  two chevrons over it as the ship's plate bears them, the ship's name under it and under that "Hostile", its level and its
+  distance.
 - **Bars over figures never overlap** (`BarLayout`), but for a plate fading out of the cone, which holds its place for
   its quarter second. Each frame the nearest keeps its place over its figure, in front, and each farther one that would
   cover a bar already placed is lifted just above it. The order changes only when a figure comes 6% nearer, a lifted bar
@@ -249,18 +269,35 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   frame.
 - **Where it is worn.** The sea bar is a window, its groups
   (Navigation, Pace and Ship) parted by rails; the dock or landing offer, Take the helm and Respawn are primaries;
-  the status line is a chip; the menu is a window under a header.
+  the status line is a chip; the menu is a window under a header. At sea, every surface wears its role:
+  - sailing: the sea bar (window, rails), the status line (chip), the place line and the hints (the on-foot words,
+    outlined), the dock or landing offer and Take the helm (primary); a sighting's hostile marks wear its rank's colour
+    and emblem; the status line keeps the state alone ("Under way", "Fighting"), and the sea's word (a ship
+    sighted, other waters entered, who joins, colours struck, boarders away, what floats gathered, washing up) stands
+    as notices, DFO's toasts;
+  - the fight: the player's plate (the vitals' thin bars) and the card (the target plate), the rose's sides (chip), the bars (track and meter), the tally and the
+    broadside warning directly under the card at the top's middle (under the compass while no card shows), never over
+    the sight or the ship aimed at (DFO's `.dfnaval-warn`, its blood edge pulsing in steps), each captain's plate
+    over its masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line, its right edge 28 px in
+    as the chip's, its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
+  - the ship's deck: the place line (the ship's hold's take on its second line) and the hints, as on foot;
+  - washing up: its notice, then the veil's own words; on land the sea's own pieces go (`seaHud.ts` `hideSeaHud`):
+    the ships' plates and the sight, the readout, the sea bar, Manage's panel and the wheel's offer;
+  - Manage's panel: a window under a header, each part's heading ruled, Back to the sea a button on its footer;
+  - what floats: the Acquired feed's rows and the gold marks over the water;
+  - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
   way while they show. On foot the vitals hold the top left, so the place's name and the status line under it stand
   at the top right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
-  and in a sea fight under a Boss ship's plate. On foot the company stands under the vitals, and the prompt for E
-  stands over the Arts and weapons. The key strip stands at the bottom right, under the dialogue box's foot and
-  wrapping short of the Arts and weapons; at sea it rises above the sea bar and the offer to dock or go ashore. The
-  task tracker stands at the right under the place's name, above the Acquired feed, and under the compass's column
-  in a view 900 px wide or less; her ship's panel in a sea fight at the bottom left, over the dialogue box's top in a
-  view 890 px wide or less; the toasts in the middle over the dialogue box's top. The key strip gives way while
-  someone speaks in the dialogue box. The edge's warning stands under the compass's column.
+  and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
+  vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the bottom right, under the
+  dialogue box's foot and wrapping short of the Arts and weapons; at sea it rises above the sea bar and the offer to
+  dock or go ashore. The task tracker stands at the right under the place's name, above the Acquired feed, and under
+  the compass's column in a view 900 px wide or less; the toasts in the middle over the dialogue box's top. The key
+  strip gives way while someone speaks in the dialogue box. The edge's warning stands under the compass's column.
+  Where the hints grow to 22 px on a wide screen, the place line's small words grow with them ([[Game]]), so the
+  water's name and holder are never the smallest words on the screen.
 - **The fight's display** ([[Enemies]], [[Test Ground]]) is drawn by the game, a layer of its interface under the
   game's own windows that lets the pointer through to the world (`combat/hud.ts`); in the [[Game]] the company
   at the top makes way for it while it shows. It stands the compass at
@@ -276,12 +313,13 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
   under its rule, 56 px down: a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px
   long beside the compass stands the whole column under the vitals instead. On foot past 1440p the whole column (the
-  compass, the boss bar and the target's plate) stands at twice its size, as the corners do. At sea it marks each ship
-  within 900 m on its top edge, a bow pointing up, at her bearing on the same quarter turn, so one north-east stands
-  under NE; one off the strip is held at the end on the side to turn toward. She is red while she would take the player
-  (a hostile ship, or a hostile captain in the fight), bone for another player's or a captain who is not hostile, and
-  grey once her colours are down; one going down has no mark. The compass hides with the view while the held map is up
-  at the helm.
+  compass, the boss bar and the target's plate) stands at twice its size, as the corners do. At sea it marks each hostile
+  ship within its own sight (5 km at the helm, farther with the voyage's pace, [[Naval Combat]], "At sea") and every
+  other ship within 900 m on its top edge, a bow pointing up, at its bearing on the same quarter turn, so one
+  north-east stands under NE; one off the strip is held at the end on the side to turn toward. A mark is red while its
+  ship would take the player (a hostile ship, or a hostile captain in the fight), bone for another player's or a
+  captain who is not hostile, Overlook's blue (`#2f5d9a`) for a friendly ship of the traffic, and grey once its colours
+  are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
 - **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
   over stamina over poise, each in a fine stone frame whose ends come to a point at a brass tip (`plus/barFrame.ts`),
   drawn pixel for pixel and never scaled. Health is 12 px tall, stamina 10 and poise 8, 4 px apart (16, 14 and 10, 5
@@ -294,12 +332,15 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the first point lost or spent brings them back in two.
 - **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
   ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
-  picture in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or muzzle to the right
-  (`combat/weaponPicture.ts`), grown by whole pixels at the screen's own ratio where that keeps most of its size. A Ranged weapon's shots stand large
+  picture (see "Pictures" below) in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or
+  muzzle to the right (`combat/weaponPicture.ts`), grown by whole pixels at the screen's own ratio where that keeps
+  most of its size. A Ranged weapon's shots stand large
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
   name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
-  and its own shots. The rows change weapons as the fight's rules take them up, only at rest: one pressed, or put
+  and its own shots. A weapon with an element bears its glyph just past its picture's top right, in the row's
+  margin clear of a blade's point, as a gear tile bears it in its corner, 16 px in hand and 12 under it (22 and 16 at the larger step), and its row's words name the element. The rows
+  change weapons as the fight's rules take them up, only at rest: one pressed, or put
   away, during a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over
   its 0.4 s, and a swap pressed during one trades them again from
   the start; a reload fills a line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys
@@ -392,8 +433,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   26 px over a figure, and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
   wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
-  foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
-  seen starts whole at her bar.
+  foe's health does, and its bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
+  seen starts whole at its bar.
 - **The task tracker** (`TaskTracker`, [[Quests Get a Task Tracker, and the Placeholder Panel Goes]]) is a window naming
   the quest in its header band (11 px, in brass), the task now under it at 22 px, and the task's steps at 11: each a
   box, its words, the keys that do it on keycaps, and a count of what is left at 22 in brass. A step met has its box
@@ -402,19 +443,17 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   any quest uses it with data alone. It reads what the player does, never a press of its own, so keys and touch tick it
   alike, and it writes the page only when its words change. At the larger step its words stand at 22 and it is 396 px
   wide (264 below).
-- **A sea fight's panel** (`FightPanel`) is a window at the bottom left naming her ship in its header band ("Your
-  Brig"), with her hull, sails and crew as bars (each in a track, its numbers beside it), each side's guns (Ready, the
-  seconds left to reload, Laying or On target as the look lays them), the shot loaded in a chip and Braced in another
-  while she braces. While an afloat captain has a side run out at her, a warning in blood stands under the header:
-  Broadside! Brace, with C on its keycap. Each captain's hull stands on her own plate over her; the fight's task in the
-  tracker says to defeat their crews, counts the ships fighting her still afloat and their men, and says they need not
-  be sunk, as the rules strike a ship whose men are gone or whose hull is beaten low. DFO's messages are toasts.
+- **A sea fight's task**: the fight's task in the tracker says to defeat their crews, counts the ships fighting the
+  player still afloat and their men, and says they need not be sunk, as the rules strike a ship whose men are gone
+  or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]);
+  `FightPanel` (`seaPanel.ts`) draws the same as a bottom-left window, and the HUD does not show it. At sea DFO's messages are the
+  notices; in the prologue's fight they are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
   3.5 s), rising in over 0.2 s; one already shown keeps its place.
 - **The key strip** shows the keys of what the player does now, each on a keycap beside its words, wrapping right to
   left. On foot it keeps to the fight's keys and the body's beyond walking, the Arts' only while one is worn.
-- **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
-  still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
+- **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; Back to
+  the sea stands on its footer. It is built again only when what it
   shows changes.
 
 ## The face
@@ -459,13 +498,21 @@ never while a press is held. Each press is an ask the room answers.
 
 - **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
   do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
-- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped;
-  a loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip; one in
-  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is
-  fitted to its place as Enhanced Plus fits its icons; an icon long and thin (a blade, a staff, a gun) is laid on its
-  tile's diagonal, as Destiny lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
+- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped.
+  A loadout is the forge's large picture of what its hands hold
+  ([[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): the right hand's level, its business end to the
+  right, and a shield or a pair's second behind it at its left, at three quarters of its size, its middle on the
+  first's top edge a fifth of the way along it. Each is dyed as the figure's layer is, a faction's colour too, and
+  snapped to the palette; a greatsword shows its metal's sword. Until every piece in hand has a large picture, a
+  loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip, and one in
+  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is fitted to its place as
+  Enhanced Plus fits its icons, and one larger than its place is shrunk by an area average, each screen pixel the mean
+  of the pixels it covers, a weapon's large picture then cut at half cover and snapped to the palette again; an icon long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny
+  lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
   name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
-  is, mostly in its island's colour.
+  is, mostly in its island's colour. The ship's glyphs (its materials, its modules and its officers' posts) are drawn
+  at 24 by 24, as the Arts' emblems are, so a module shows a picture where a piece shows the forge's: shaded lit from
+  the top left, and shown only at whole multiples of their cells (24, 48, 96, 264). `tools/ship-glyphs/` draws them.
 - **Rarity.** Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal piece's frame is the
   kit's plain stone. A tile is Enhanced Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a
   card or page takes its rarity's band; pips mark it.
@@ -545,8 +592,12 @@ never while a press is held. Each press is an ask the room answers.
   toward its end; the tab, the close and the refusal are the synthesiser's own, which also stands in while a recording
   loads. One listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
   browsers ask.
-- **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
-  while she is at sea; her cargo and crew marked Later.
+- **Ship.** Two parts on the inventory's shelf tabs ([[Ship Power]], [[Crew]]). Manage: the ship's papers as Manage
+  shows them at sea (its hull, canvas, guns, loads and measure, its voyage while it is at sea), its materials and its
+  hands, beside its power (its level, a meter to the next, its numbers) and its modules fitted and carried, each a
+  press that opens its page (`shipTab`). Crew: each officer's panel, their duties (the one held lit in brass), their
+  Nodes, and Hold to pay off; an officer's own page shows their perks and their nodes, and Escape steps back from it.
+  With no gear it shows the papers alone.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
   Roster"): three columns, Game, Friends and Guild, each a page of fourteen rows, fewer where the screen is too short
   to show them without scrolling, with arrows between pages; its empty rows kept so each column keeps its length. Game holds invites to a company, then the company (its leader marked with a
@@ -607,6 +658,35 @@ already doing. In the game they play through the interface's engine at the World
 Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
 The Test Ground makes its own sound at full volume on the first click into its view.
 
+## The sea fight's readout
+
+In a sea fight the display shows DFO's helm readout in the Plus kit, drawn by the game (`combat/seaReadout.ts`, its
+words and model in `plus/seaFight.ts`), laid afresh each frame, never pressed, from the fight's first frame to its
+last, at sea (`Hud.seaFight`) and over the World Editor's fight; on a struck ship's deck it gives way to the fight on
+foot's display ([[Naval Combat]]). While it shows, the place's name gives way and the status line stands at the top
+right. The fight's panel leaves the Sloop's own hurts and guns to it:
+
+The plate and the card are the on-foot HUD's own build, so the sea reads as the same HUD: both are the vitals' thin
+bars (`combat/barDraw.ts#thinBarNode`) with the kit's bar (`plus/meter.ts`, with its lost strip and falling pieces).
+
+- **The Sloop's plate**, at the top left, is the vitals' long thin bars, as on foot
+  ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]; `thinBarNode`, the one build both wear): Hull over Sails over Crew (hull red as health and at its height, sails bone, crew green as stamina, both at
+  stamina's height), each as long as the vitals' health is laid for the view, stepping and doubling with the display,
+  with no words inside; a reader hears each by its name and percentage. The hull's frame flashes blood at a quarter or
+  less as health's does. Under them an "On fire" chip while it burns and a "Braced" chip while it braces, the kit's
+  chips, as the buffs stand under the vitals. In a fight the place's name gives way to the plate.
+- **The battery rose** under the chips, as wide as its longest words ("Heated 88s" a side): bow over stern, port and starboard either side. Each side is a chip with its load
+  ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
+  loaded, glowing gold round its edge where the look lays it, flashing twice over 0.7 s as it comes ready. The side a
+  blow came from (bow, stern, port or starboard, by where it struck the Sloop) is outlined red for 1.4 s.
+- **The card**, centred under the compass, is the target's plate (as `combat/foePlate.ts` builds it), light and never a
+  box, on the ship the look is on (while the Sloop's guns are laid, the captain nearest where they fall; else the nearest
+  captain): its faction's emblem framed, its name, one hull bar in its rank's colour (an ally's blue), and as small
+  words its class and how far ("Brig - 70 m") and its state: "Hostile", "Colors struck", "Colors struck - E: board"
+  once it can be boarded, or "Going down". The ships' plates keep under it while it shows, as under the compass.
+- **The tally**, under the middle of the screen, for 4 s once the Sloop's last volley's last ball is down: "3 of 6 balls
+  struck - 1 below the waterline - 2 in the rigging".
+
 ## The social space's counters
 
 Every keeper in the social space who deals with a player, and Shape, keeps a screen, as Destiny's keep theirs in the Tower
@@ -614,6 +694,10 @@ Every keeper in the social space who deals with a player, and Shape, keeps a scr
 window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
 serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
+- **The Harbourmaster's counter** sells the Shipwright's six modules of the day, each held to buy, its hover card
+  beside it, as a keeper's wares are (`harbourPage`).
+- **The muster** stands on the pledged faction's keeper's screen, under its wares: each officer offered, signed on by
+  a hold; one the player cannot afford stands flat and takes no press (`musterAt`).
 - **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and thanks
   in lines of his own: what it keeps on the left and what the player carries on the right, each in weapons, armour and
   Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a right-click shows its
@@ -669,6 +753,15 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
+- The sea fight's readout writes at the face's 11 px where DFO's wrote 10, 12 and 15, and the sight's aim line at 11
+  where DFO's was 13, so the broadside warning stands smaller; the laid side's soft 8 px glow stands in hard rings,
+  and a long ship's name on the card is cut short a little sooner, the face's letters being wider than the page's.
+- The notices write at the face's 11 px, where DFO's wrote 14.
+- The Harbourmaster's wares lay their words on one line under each tile, 6 px apart, where the page's ran together;
+  the muster stays inside the keeper's side on a view 1024 px wide, where the page's ran past it.
+- The World Editor's drop-downs stand a pixel shorter than a browser's. A captain's fight's readout shows over the
+  land's 3D view only; the page's stayed, still, over the 2D map. The Islands mode tells the GPU's errors only for what
+  it makes and draws itself, as the device is shared with the other modes.
 - Drawn by the game: the heads-up display, the toasts, the fight's display, the whole menu, the story's screens and
   the held map's marks. A word's soft shade past its hard outline is not drawn, as a blur has no crisp form, nor a
   chosen mark's or a ship's mark's blur (a chosen mark's glow is a drawn
@@ -714,6 +807,9 @@ button's corner and screen, and the Tailor's wares.
   arrow moves focus into the panels, and the keys stay theirs until the view is clicked. The World Editor's panel is drawn by the game in its own look, its names over the view with a
   halo a pixel wide where the page's stroke stood a pixel and a half out.
 - The vitals always rest when whole: DFO's switch for it waits on a settings screen.
+- At sea the ship's bars stand beside the compass only on a view 908 px wide or more; on a narrower one they run under
+  it, where on foot the compass's column steps down under the vitals. The sea's compass, card and tally do not double
+  past 1440p, as the ship's bars and the display on foot do.
 - A plate keeps its size on any screen; DFO's names also grew with the screen's height.
 - Bars at the top of the screen (the boss bar, the soft lock's, a Boss ship's) stand where they are set; only bars
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.

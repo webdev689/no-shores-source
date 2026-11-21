@@ -42,7 +42,7 @@ export const HINTS = {
     ['M', 'Menu'],
   ],
   manage: [
-    ['Drag', 'Turn round her'],
+    ['Drag', 'Turn round the ship'],
     ['Wheel', 'Zoom'],
     ['B', 'Back to the sea'],
     ['M', 'Menu'],
@@ -52,7 +52,7 @@ export const HINTS = {
     ['W / A / S / D', 'Move'],
     ['Shift', 'Run'],
     ['Space', 'Jump'],
-    ['E', 'Take the helm at her wheel'],
+    ['E', 'Take the helm at the wheel'],
     ['M', 'Menu'],
   ],
   fight: [
@@ -91,7 +91,7 @@ export function footHints(worn: number): readonly Hint[] {
 }
 
 /** What the player is doing at sea, for the keys shown: fighting, choosing a landing, at the helm with the map,
- *  walking her deck, managing her, or sailing. */
+ *  walking its deck, managing it, or sailing. */
 export interface AtSea {
   readonly fighting: boolean;
   readonly landing: boolean;

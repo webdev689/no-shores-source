@@ -48,7 +48,7 @@ export function vaultPage(context: MenuContext, size: number): Node {
     width: 'grow',
     direction: 'column',
     gap: 12,
-    padding: [14, 16],
+    padding: [16, 18],
     children: [words(title, 2, INK.brassLit), ...shelves.map((shelf) => shelfNode(context, shelf, size))],
   });
   return { width: 'grow', gap: 18, children: [side('In the vault', vault.kept), side('Carried', vault.carried)] };

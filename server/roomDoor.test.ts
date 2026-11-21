@@ -284,6 +284,9 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
   assert.ok(Math.abs((ships[0]?.y ?? 0) - (150_000 - 120)) < 1e-6, 'a second north at 10 × 12 m/s');
 });
 
+/** The world time the clash's sea opens at (crates/room-wasm/src/door_tests.rs `CLASH_START_S`). */
+const CLASH_START_S = 1_790_151_200;
+
 test('a sea where rivals clash and a player joins them snapshots to the fingerprint the crate holds natively', () => {
   // crates/room-wasm/src/door_tests.rs runs the same sea natively and holds the same value (SEA_CLASH_HASH).
   const room = startRoomDoor(compiled);
@@ -293,12 +296,15 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     [200_000, 200_000],
     [100_000, 200_000],
   ];
-  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 51), true);
+  // The second island's waters are contested, so both factions come; on this seed two meet near the player.
+  const contested = { continents: [{ id: 'continent-2', outline: square }], isles: [] };
+  assert.equal(room.openSea(JSON.stringify(contested), 484, CLASH_START_S), true);
   const player = room.join();
   assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
   let hash = 0xcbf2_9ce4_8422_2325n;
   let others = 0;
   for (let tick = 1; tick <= 16_000; tick++) {
+    if (tick === 6_523) assert.equal(room.input(player, courseBytes([[53_327, 53_450]], 10)), 'taken');
     room.tick();
     if (tick % 60 !== 0) continue;
     const bytes = room.snapshot(player);
@@ -308,7 +314,7 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), 'dda792fcf5e3f828');
+  assert.equal(hash.toString(16).padStart(16, '0'), 'b58376454aaf5aa9');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
@@ -350,11 +356,11 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   const helms = Array.from({ length: 149 }, (unused, index) => helmAt(index + 2));
   const hurts = { wrecked: false, sail: last?.hurts.sail ?? 0, maxSail: last?.hurts.maxSail ?? 0 };
   const predicted = rules.predict(put?.ship ?? [], hurts, 151 / 60, 0, helms);
-  assert.deepEqual(Array.from(predicted?.ship ?? []), Array.from(last?.ship ?? []), 'her ship, to the bit');
+  assert.deepEqual(Array.from(predicted?.ship ?? []), Array.from(last?.ship ?? []), 'their ship, to the bit');
   assert.equal(room.input(first, orders(151, { call: 'captain' })), 'taken');
   room.tick();
   const called = read();
-  assert.equal(called.vessels.filter((vessel) => vessel.captain).length, 1, 'a captain called round her');
+  assert.equal(called.vessels.filter((vessel) => vessel.captain).length, 1, 'a captain called round it');
 });
 
 /** How often, in ticks, the room sends one player's gear (`room::GEAR_EVERY_TICKS`). */
@@ -381,7 +387,7 @@ test('the Test Ground’s room lays out its stall and nodes, and sends each play
   const gear = readFromRoom(room.gear(first));
   assert.equal(gear?.kind, 'gear', 'sent once on joining');
   if (gear?.kind !== 'gear') return;
-  assert.equal(gear.items.length, 5, 'the starting kit');
+  assert.equal(gear.items.length, 9, 'the starting kit and its four modules');
   assert.equal(room.gear(first).length, 0, 'and not again until it changes');
   const grant = inputBytes(1, {
     intent: walk.map(() => 0),
@@ -427,4 +433,34 @@ test('an input carrying those before it is taken whole after a loss, and what th
   const snapshot = readFromRoom(room.snapshot(player));
   const seen = snapshot?.kind === 'snapshot' ? snapshot.players[0] : undefined;
   assert.equal(seen?.acknowledged, 4, 'all four stepped the player, in order');
+});
+
+test('a sea that keeps characters sails a course only once the keeper has answered, and sends gear at sea', () => {
+  const room = startRoomDoor(compiled);
+  const square = [
+    [100_000, 100_000],
+    [200_000, 100_000],
+    [200_000, 200_000],
+    [100_000, 200_000],
+  ];
+  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 7), true);
+  assert.equal(room.keepCharacters(), true);
+  const [kept, unkept] = [room.join(), room.join()];
+  for (const player of [kept, unkept]) assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
+  room.tick();
+  const ships = () => {
+    const snapshot = readFromRoom(room.snapshot(kept));
+    return snapshot?.kind === 'snapshot' ? snapshot.ships.map((ship) => [ship.player, ship.x, ship.y]) : [];
+  };
+  assert.deepEqual(ships(), [], 'held for the keeper');
+  const character = JSON.parse(room.character(kept) ?? 'null') as { ship_at: [number, number] | null };
+  assert.equal(room.restoreCharacter(kept, JSON.stringify({ ...character, ship_at: [60_000, 40_000] })), true);
+  room.noneKept(unkept);
+  room.tick();
+  assert.deepEqual(ships(), [
+    [kept, 60_000, 40_000],
+    [unkept, 50_000, 50_000],
+  ]);
+  assert.ok(room.gear(kept).length > 0, 'their gear, from the character given back');
+  assert.equal(room.gear(unkept).length, 0, 'none for a character not kept');
 });

@@ -38,6 +38,24 @@ export function labelNode(label: Label, left: number): Node {
   };
 }
 
+/** `node`, whose pieces float against the screen, laid over the view instead, as a page lays them in the view's own
+ *  box: `width` by `height` CSS pixels, `left` CSS pixels in from the screen's edge; the pointer passes it. Its pieces
+ *  stand over what else floats over the view (names, plates), as the page's last layer did. */
+export const inView = (node: Node, left: number, width: number, height: number): Node => ({
+  float: { to: 'screen', x: left },
+  width,
+  height,
+  through: true,
+  children: [
+    {
+      ...node,
+      children: node.children?.map((child) =>
+        child && child.float ? { ...child, float: { ...child.float, to: 'parent', z: undefined } } : child,
+      ),
+    },
+  ],
+});
+
 /** `node`, set against the view's corner, set against the screen's: the view `left` CSS pixels in from its edge. */
 export const onScreen = (node: Node, left: number): Node => ({
   ...node,

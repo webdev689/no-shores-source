@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { FightEvent, FlyingShot, FromRoomMessage, SeenFoe, SeenPlayer } from './messages.ts';
+import { GLANCE_FLOATS } from '../rules/fighters.ts';
+import {
+  type FightEvent,
+  type FlyingShot,
+  type FromRoomMessage,
+  type SeenFoe,
+  type SeenPlayer,
+  foeOf,
+} from './messages.ts';
 import { SnapshotKeeper } from './snapshots.ts';
 
 type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
@@ -94,4 +102,20 @@ test('the player’s own fighter sent as what changed is laid over the one held,
   const fresh = new SnapshotKeeper();
   fresh.whole(snapshot(10n));
   assert.equal(fresh.whole(snapshot(11n, { base: 10n, players: [sent] })), null, 'no fighter held to lay them over');
+});
+
+test('a foe sent as what changed is laid over the numbers held, a companion still the officer it was', () => {
+  const kept = new SnapshotKeeper();
+  const numbers = new Float64Array(GLANCE_FLOATS + 17);
+  // A swordsman of type 14 at level 4, then last its leader, 9, its officer's names and post, the Lookout.
+  numbers.set([2, 14, 3, 0, 1, 2, 4], GLANCE_FLOATS);
+  numbers.set([9, 2, 5, 4], GLANCE_FLOATS + 13);
+  kept.whole(snapshot(10n, { foes: [foeOf(13, numbers)] }));
+  const alertness = GLANCE_FLOATS + 5;
+  const bits = new Uint8Array(Math.ceil(numbers.length / 8));
+  bits[alertness >> 3] = 1 << (alertness & 7);
+  const sent = { ...foeOf(13, new Float64Array(numbers.length)), changes: { bits, numbers: Float64Array.from([3]) } };
+  const whole = kept.whole(snapshot(11n, { base: 10n, foes: [sent] }));
+  assert.deepEqual([whole?.foes[0]?.alert, whole?.foes[0]?.level], [3, 4]);
+  assert.deepEqual(whole?.foes[0]?.companion, { leader: 9, given: 2, family: 5, post: 4 });
 });

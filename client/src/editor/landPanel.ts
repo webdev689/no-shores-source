@@ -1,6 +1,7 @@
 import { RANKS, SHIP_FACTIONS } from '../ships/shipBars.ts';
 import type { Child } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
+import { LEVEL_MOST } from '../rules/fleetRules.ts';
 import { chooseCaptain, chosenCaptain } from './fleetLink.ts';
 import { LAYOUT_LEGEND } from './layoutDrawing.ts';
 import {
@@ -175,8 +176,21 @@ export function landPanel(ui: Interface, view: LandPanelView, handlers: LandPane
     String(captain.rank),
     RANKS.map((name, index) => ({ value: String(index + 1), words: name })),
   );
-  if (faction.chosen !== String(captain.faction) || rank.chosen !== String(captain.rank))
-    chooseCaptain({ faction: Number(faction.chosen), rank: Number(rank.chosen) });
+  const levels = (none: string) => [
+    { value: '0', words: none },
+    ...Array.from({ length: LEVEL_MOST }, (unused, index) => ({
+      value: String(index + 1),
+      words: `level ${index + 1}`,
+    })),
+  ];
+  const level = chooser(ui, 'captain-level', String(captain.level), levels('of no level'));
+  const shipLevel = chooser(ui, 'captain-ship-level', String(captain.shipLevel), levels('unfitted'));
+  const picked = [faction, rank, level, shipLevel].map((made) => Number(made.chosen));
+  const held = [captain.faction, captain.rank, captain.level, captain.shipLevel];
+  if (picked.some((value, index) => value !== held[index])) {
+    const [chosenFaction = 0, chosenRank = 0, chosenLevel = 0, chosenShipLevel = 0] = picked;
+    chooseCaptain({ faction: chosenFaction, rank: chosenRank, level: chosenLevel, shipLevel: chosenShipLevel });
+  }
   const landmasses = view.landmasses.map(({ id, state, unsaved }) =>
     listRow(ui, `landmass:${id}`, id, id === view.selected, () => handlers.select(id), {
       gap: 8,
@@ -281,17 +295,30 @@ export function landPanel(ui: Interface, view: LandPanelView, handlers: LandPane
       view.walking,
     ),
     hint(
-      'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows her sideways, B to stop.',
+      'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows it sideways, B to stop.',
       view.sailing,
     ),
     hint(
-      'F calls a pirate, or sends her off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
+      'F calls a pirate, or sends it off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
         ' A left click holds fire, the wheel changes shot, and C braces. In a fleet (?room= in the address), F calls' +
         ' a captain and X sends them all off.',
       view.sailing,
     ),
     {
-      node: view.sailing && row([spaced(words('In a fleet, F calls')), spaced(faction.node), rank.node], 2),
+      // The captain F calls in a fleet: its faction, rank and level, and the level the ship is fitted at.
+      node:
+        view.sailing &&
+        row(
+          [
+            spaced(words('In a fleet, F calls')),
+            spaced(faction.node),
+            spaced(rank.node),
+            // No space parts the level from the comma after it.
+            { children: [level.node, spaced(words(', the ship'))] },
+            shipLevel.node,
+          ],
+          2,
+        ),
       top: 10,
     },
     ...(view.view === '3d'
@@ -322,7 +349,7 @@ export function landPanel(ui: Interface, view: LandPanelView, handlers: LandPane
     },
     said(view.cursor),
     ...view.fight.map((line) => ({
-      node: paragraph(line, line.startsWith('BROADSIDE') ? INK.warning : INK.dim),
+      node: paragraph(line, line.startsWith('Broadside') ? INK.warning : INK.dim),
       top: 2,
       bottom: 2,
     })),

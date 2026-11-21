@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { tipOf } from '../plus/barFrame.ts';
+import { CORNER, tipOf, VITAL_SIZES } from '../plus/barFrame.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { COMPASS, UNDER_COMPASS } from '../plus/compass.ts';
-import { barLength, compassWidth, EDGE, hudLayout, VITAL_SIZES } from './hudLayout.ts';
+import { barLength, compassWidth, hudLayout } from './hudLayout.ts';
 
 type Box = readonly [left: number, top: number, right: number, bottom: number];
 
@@ -36,8 +36,8 @@ const meets = (one: Box, other: Box) =>
 function vitalsOf(width: number, height: number): Record<string, Box> {
   const { wide, zoom, length } = hudLayout(width, height);
   const sizes = wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
-  const left = EDGE.side * zoom;
-  let top = EDGE.top * zoom;
+  const left = CORNER.side * zoom;
+  let top = CORNER.top * zoom;
   const bar = (name: 'health' | 'stamina' | 'poise', most: number): Box => {
     const tall = sizes[name] * zoom;
     const box: Box = [left, top, left + barLength(length, most, 100, sizes[name]) * zoom, top + tall];
@@ -86,7 +86,7 @@ test('at every screen and in the Test Ground’s view, no vital, buff or poise�
           `${width}×${height}: ${name} ${box.join(',')} meets ${other} ${against.join(',')}`,
         );
     const right = Math.max(...Object.values(vitals).map((box) => box[2]));
-    assert.ok(right <= width - EDGE.side, `${width}×${height}: the vitals stay in the view`);
+    assert.ok(right <= width - CORNER.side, `${width}×${height}: the vitals stay in the view`);
   }
 });
 

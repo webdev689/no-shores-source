@@ -13,7 +13,10 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
     Layer { name: "sky", may_import: &[] },
     Layer { name: "network", may_import: &["rules", "sky"] },
-    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships", "city", "layout", "sky", "ui"] },
+    Layer {
+        name: "editor",
+        may_import: &["rules", "water", "terrain", "ships", "islands", "city", "layout", "sky", "ui"],
+    },
     Layer { name: "terrain", may_import: &["rules", "water", "sky"] },
     Layer {
         name: "game",
@@ -36,6 +39,7 @@ pub const LAYERS: &[Layer] = &[
             "ships",
             "plus",
             "combat",
+            "islands",
             "cinema",
             "speech",
             "sky",
@@ -62,6 +66,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "plus", may_import: &[] },
     Layer { name: "ui", may_import: &["plus"] },
     Layer { name: "thread", may_import: &["ui"] },
+    Layer { name: "islands", may_import: &["rules", "water", "textures", "models", "sky"] },
     Layer { name: "speech", may_import: &["plus", "ui"] },
     Layer { name: "cinema", may_import: &["water", "combat", "plus", "ui"] },
 ];

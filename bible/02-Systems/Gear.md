@@ -53,6 +53,11 @@ code:
   - client/src/player/gear.ts#gearHands
   - client/src/player/gearLooks.ts#gearOutfit
   - client/src/testground/gearPanel.ts#GearPanel
+  - crates/room/src/companions.rs#keep_companions
+  - crates/room/src/companions.rs#companion_times
+  - crates/room/src/companions.rs#type_of
+  - client/src/combat/companions.ts#officerName
+  - client/src/player/foeDress.ts#officerDress
 ---
 # Gear
 
@@ -69,7 +74,8 @@ number is one of [[Gear as Claude Shapes It]].
   offers exists, sits in the right kind of column and fits the item; no item offers a trait twice; each signature
   belongs to one Atheric; every kind of loadout has a Legendary; every slot has a Legendary and an Atheric a Vestige
   can open to; every rolled pool holds enough traits.
-- **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak), a rarity, a level (1 to 20; a
+- **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
+  [[Ship Power]]), a rarity, a level (1 to 20; a
   Legendary or Atheric is 20), its XP and the nodes bought and chosen. A named item copies its traits from the
   catalogue when it is made, so it stays what it was.
 - **Where it is worn.** Each kind in its one slot: a Melee loadout for Melee, a Ranged one for Ranged, each armour
@@ -100,7 +106,9 @@ number is one of [[Gear as Claude Shapes It]].
   now and then above its own, never above what its level could drop (Legendary from 18, Atheric from 20), and to a
   named item of its slot (a Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled,
   never a trait twice.
-- **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault.
+- **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
+  a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
+  ([[Crew]]).
   An ask refused changes nothing and says why. A slot carries nine beside the one worn; the vault, reached in a
   social space, twenty weapons, twenty armour and twenty Vestiges. A slot read past nine from a kept character
   carries what it holds, and takes no more until it is down to nine. Dismantling returns Aurem, fragments and, from a
@@ -118,7 +126,7 @@ number is one of [[Gear as Claude Shapes It]].
 - **Hands.** A player holds only what a loadout they wear puts in their hands, the fists with no Melee worn, or a
   torch beside a loadout that leaves the left hand free; the browser draws the hands from the loadout drawn, in a
   metal its rarity likes.
-- **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the loadout it
+- **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the loadout its
   came from (a shot the Ranged one's, as it was when the shot was loosed; a swing Melee's, or Ranged's while it is
   drawn or no Melee is worn), a foe's on a player by the player's Defense, each by the two levels. On top, at every
   level, a player's blow on a foe strikes twice (`PLAYER_HARM`) and a foe's on a player half (`FOE_HARM`), from
@@ -130,7 +138,7 @@ number is one of [[Gear as Claude Shapes It]].
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
   stamina a kill, a parry or a block gives back, with Last Light's reload, and the verbs ("Verbs", below). A player's
-  perks are the armour's and the drawn loadout's alone: the other loadout's wait until it is drawn, and drawing it
+  perks are the armour's and the drawn loadout's alone: the other loadout's wait until it is drawn, and drawing its
   sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
   touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
@@ -199,10 +207,13 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **What drops.** For each player who earned a kill: their Vestige, if one dropped; an Ammo box by the foe's rank
   (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
   Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
+- **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: each
+  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, what
+  they have no room for lost with it (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
-  section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once it
+  section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once its
   rests.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
@@ -272,8 +283,8 @@ and its art (`gear::emblems`).
   their character; a character kept before emblems reads with the starting one, and one wearing an emblem it does not
   keep wears the starting one.
 - **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
-  (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Storm
-  seas, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of twelve,
+  (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Abyss
+  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of twelve,
   the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks and a
   piece fully upgraded are earned as they happen.
 - **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
@@ -317,10 +328,11 @@ on the wire, each with a kind, a name, a rarity, words, where it comes from and 
 
 - **Each island** has a band of foe levels (`gear::world`), rising with the voyage away from Overlook as Destiny 1's
   worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
-- **The seas** a voyage sets out at raise them: Calm as they are, Rough two levels higher, Storm three, never past
-  level 32; and pay by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
+- **The difficulty** a voyage sets out at raises them: Normal as they are, Elite two levels higher, Abyss three,
+  never past level 32; and pays by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
+  The tier Elite is not the foe rank Elite (`Difficulty::Elite`, `Rank::Elite`).
 - **A garrison's foes** ([[Garrisons Take the Gear Loop's Levels and Shields]], [[Enemies]]) each stand at a level
-  drawn evenly from their island's band, from the node's id, raised by the room's seas; a Boss's called foes at its
+  drawn evenly from their island's band, from the node's id, raised by the room's difficulty; a Boss's called foes at its
   level. The level sets a foe's power against a player's gear, as above; its rank multiplies its health, poise, might
   and defence on top ([[Foes]]). A node with no island stands its foes at level 0.
 
@@ -366,6 +378,33 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   worn, and a dye the player keeps on any (`colours_shown`, `dressed`); a page test holds the room's layer names to
   the page's (`dressLayers.test.ts`).
 - Each rolled item keeps its own look by its name; a named item takes its rarity's first.
+
+## Companions
+
+Officers ashore fight beside their player, as DFO's crew companions did
+([[The Ship's Power, Crew and Islands as Claude Shapes Them]]).
+
+- **Who.** Each officer on duty ashore (two at most) stands as a fighter on the players' side beside a player in a
+  land room (a continent's node, a patrol, the Test Ground), thinking with a foe's own brain: the First Mate a pirate
+  swordsman, the Gunner and the Lookout pirate archers, the Bosun a pirate brute, the Carpenter a pirate skirmisher,
+  each at Major, dressed by their post (below). A boarded deck has none yet.
+- **Following.** Their place is 1.8 m behind the leader, 1.1 m either side when two are ashore; their post moves there
+  each tick, and with no one to fight they walk back once 2.5 m from it (3.7 m for the second). One 40 m from the
+  leader, or 6 m below a leader on the ground, is put back at their place at once.
+- **Power.** They fight at the officer's level as a player matched to it would: a weapon of 15 Attack a level, armour
+  of 45 Defense a level and 15% more again, their health their type's. Weathered gives 15% more health, Brawler
+  10% more harm, Steady Nerve 20% more poise.
+- **Never killed.** No player harms them. A blow that would leave one at 1 health or less holds them at 1: they leave
+  the fight and rest eight minutes of room time, then come ashore again while still on duty ashore. One stationed
+  aboard or at their post, or whose player leaves, goes.
+- **Kills.** A kill a companion had a hand in their leader shares as though they had struck it. On land, every kill a
+  player shares pays its XP to each of their officers ashore too.
+- **Heat.** What a companion deals, kills and takes moves the fight's heat as a player's would ([[Foes]], "The
+  director"): their health is a player's, unraised by level.
+- **Seen.** The snapshot carries them among the foes, with their leader, their names' places in
+  `content/gear/crew.json` and their post; the browser draws them in their post's own clothes in the crew's blue, with
+  their type's weapons (`officerDress`), so no two posts look alike, and names them over their heads in the players'
+  blue. The Test Ground's grants sign on a First Mate and a Bosun and send them ashore.
 
 ## Limits
 

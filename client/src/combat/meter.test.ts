@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { bitten, PIECE_FALL, PIECE_LEAST, pieceAt, stepLoss } from '../plus/barLoss.ts';
 import { BAR_TONES, tipOf } from '../plus/barFrame.ts';
+import { Meter } from '../plus/meter.ts';
 import { barFramePixels } from './barDraw.ts';
-import { Meter } from './meter.ts';
 import { withMotionReduced } from './page.test.ts';
 
 test('a frame’s loss breaks off as a piece only past the least it must take: a blow, never a trickle', () => {

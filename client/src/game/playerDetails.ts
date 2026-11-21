@@ -95,9 +95,9 @@ export function detailsNode({ ui, room, sizes }: PlainContext, found: Details, b
         id: 'roster-details',
         role: 'panel',
         width: 'grow',
-        maxWidth: PAGE_PX,
+        maxWidth: PAGE_PX + 4,
         direction: 'column',
-        padding: [0, 0, 16, 0],
+        padding: [2, 2, 18, 2],
         children: [
           plateNode(emblem, 96, 110, [
             {

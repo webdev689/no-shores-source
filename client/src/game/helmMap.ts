@@ -13,18 +13,21 @@ import type { Stack } from '../ui/stack.ts';
 export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
 
 /** What the map is made with: the GPU, every continent's coast, the forge's art, the interface it draws its marks on, and
- *  the ship at sea, if one is. */
+ *  the ship at sea, if one is; what a destination set does (sails for it, in the sea room of the difficulty the map
+ *  set); and what is handed to the map once it is made (the waters' tint). */
 export interface HelmMapContext {
   readonly gpu: Gpu;
   readonly outlines: readonly (readonly Point2[])[];
   readonly store: ForgeStore;
   readonly stack: Stack;
   readonly sea: () => Sea | null;
+  readonly sail: (to: Point2, seas: Difficulty) => void;
+  readonly made: (map: HeldMap) => void;
 }
 
 /**
  * The held map at the ship's helm: made when first asked for, since its coasts are worked out then; wanted, it is
- * raised once the view stands at the helm. Lowered, the view goes back up, and with a destination set she sets sail.
+ * raised once the view stands at the helm. Lowered, the view goes back up, and with a destination set it sets sail.
  */
 export class HelmMap {
   private map: HeldMap | null = null;
@@ -55,8 +58,9 @@ export class HelmMap {
     );
     made.onLowered((sail) => {
       this.sea()?.view.fromHelm();
-      if (sail) this.sea()?.sailTo(sail);
+      if (sail) this.context.sail(sail, made.difficulty);
     });
+    this.context.made(made);
     this.map = made;
     return made;
   }

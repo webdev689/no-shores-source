@@ -36,6 +36,14 @@ pub enum Purpose {
     Shape = 44,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
     Patrol = 64,
+    /// Whether a source of the ship's salvage holds a module, its colour and its slot (the question added).
+    ShipModule = 1_000,
+    /// How much of each ship material salvage holds (the material added).
+    ShipMaterial = 1_010,
+    /// A port's officers of the day: post, name and traits (the officer's place, times 16, added).
+    Recruit = 1_100,
+    /// Whether a boarded deck's officer joins the winner, and who it is.
+    Taken = 1_900,
 }
 
 /// One player's dice for one tick of one room.

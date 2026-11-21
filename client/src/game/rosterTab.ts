@@ -371,7 +371,7 @@ export class RosterPage {
       width,
       direction: 'column',
       gap: 8,
-      padding: [12, 14, 14, 14],
+      padding: [14, 16, 16, 16],
       children: [
         {
           width: 'grow',
@@ -482,7 +482,7 @@ export class RosterPage {
       width: PANEL_PX,
       direction: 'column',
       gap: 4,
-      padding: [0, 10, 10, 10],
+      padding: [2, 12, 12, 12],
       solid: true,
       label: built.heading.replace('\n', ', '),
       // Measured once laid, it shows from the next frame, where it fits.

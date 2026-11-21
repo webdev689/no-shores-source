@@ -13,14 +13,14 @@ import type { FoeShield, FoeStatuses } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { type RankBand, rankBand, rankMark } from '../rules/roster.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
-import { bands, faded, hatch, markAt, paintBox, type Pen, ring, span } from './barDraw.ts';
-import { Meter } from './meter.ts';
+import { Meter } from '../plus/meter.ts';
+import { bands, drawMeter, faded, hatch, markAt, paintBox, type Pen, ring, span } from './barDraw.ts';
 import { foeDebuffs, StatusRow } from './statusIcons.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
  *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
- *  3 searching); its faction's number; its level (0 for a foe of none, whose square stands empty); its shield, if
- *  it stands with one; and its debuffs. */
+ *  3 searching); its faction's number, which picks its emblem (none without it); its level (0 for a foe of none,
+ *  whose square stands empty); its shield, if it stands with one; its debuffs; and whether it is a companion. */
 export interface MarkedFoe {
   readonly id: number;
   readonly name: string;
@@ -33,6 +33,8 @@ export interface MarkedFoe {
   readonly level?: number;
   readonly shield?: FoeShield | null;
   readonly statuses?: FoeStatuses;
+  /** A companion fighting beside the players, whose plate is drawn in the players' colour. */
+  readonly ally?: boolean;
 }
 
 /** A plate's tier by its foe's rank: a Minor's, a Major's, or an Elite's and up. */
@@ -272,14 +274,17 @@ export class FoePlate {
     const side = Math.round((EMBLEM_PIXELS * SQUARE_SCALE[kind] + 4) * scale);
     const tier = OVERHEAD_SIZES[plateTier(foe.rank)];
     const size = (overhead ? 1 : 2) * zoom;
-    const level: Node = {
-      role: 'chip',
-      width: side,
-      height: side,
-      alignX: 'center',
-      alignY: 'center',
-      children: foe.level ? [{ text: { words: String(foe.level), size, colour: TONES.word, edge: 'halo' } }] : [],
-    };
+    // A companion's plate shows no level square, so its name and bar take the whole plate.
+    const level: Node | null = foe.ally
+      ? null
+      : {
+          role: 'chip',
+          width: side,
+          height: side,
+          alignX: 'center',
+          alignY: 'center',
+          children: foe.level ? [{ text: { words: String(foe.level), size, colour: TONES.word, edge: 'halo' } }] : [],
+        };
     const mark = rankMark(foe.rank);
     const picture = mark ? markPicture(mark) : null;
     const markNode = (tint?: string): Picture | undefined =>
@@ -311,7 +316,7 @@ export class FoePlate {
           text: {
             words: foe.name,
             size: kind === 'boss' ? 2 * zoom : zoom,
-            colour: TONES.word,
+            colour: foe.ally ? TONES.ally : TONES.word,
             edge: 'halo',
             ellipsis: true,
           },
@@ -329,7 +334,7 @@ export class FoePlate {
     };
     const bar = overhead ? Math.round(tier.bar * scale) : kind === 'target' ? 12 * zoom : PLATES.boss.bar * zoom;
     const border = kind === 'boss' ? 2 : 1;
-    const band = plateBand(foe);
+    const band = foe.ally ? 'ally' : plateBand(foe);
     const ward = wardOf(foe);
     const thirds = overhead && plateTier(foe.rank) === 'elite';
     const health: Node = {
@@ -341,7 +346,7 @@ export class FoePlate {
         const pen = { ui, box, scale: unit * zoom, clip, fade };
         const inner = grownBy(box, -border * unit * zoom);
         const trough = { ...pen, box: inner };
-        this.health.draw(trough, FILLS[band], 'pale');
+        drawMeter(trough, this.health, FILLS[band], 'pale');
         if (ward) {
           const element = ELEMENTS[ward.element];
           const [dark = '#000', , lit = '#fff'] = element?.palette ?? [];
@@ -363,7 +368,7 @@ export class FoePlate {
     const spacer: Node = { height: 'grow' };
     const body: Node = {
       direction: 'column',
-      width: overhead ? Math.round((tier.width - PLATES.overhead.height - 5) * scale) : 'grow',
+      width: overhead ? Math.round((tier.width - (level ? PLATES.overhead.height + 5 : 0)) * scale) : 'grow',
       height: overhead ? side : 'grow',
       gap: kind === 'target' ? 3 * zoom : 0,
       children: [

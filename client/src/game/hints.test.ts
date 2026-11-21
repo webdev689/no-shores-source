@@ -14,9 +14,9 @@ test('at sea the keys shown follow what the player is doing, a fight first', () 
   assert.equal(seaHints({ ...SAILING, walking: true, fighting: true }), HINTS.fight);
 });
 
-test("the sea shows the ship's two buttons, and her deck how to take the helm again", () => {
+test("the sea shows the ship's two buttons, and its deck how to take the helm again", () => {
   assert.ok(words(HINTS.sea).includes('B Manage') && words(HINTS.sea).includes('H Leave the helm'));
-  assert.ok(words(HINTS.deck).includes('E Take the helm at her wheel'));
+  assert.ok(words(HINTS.deck).includes('E Take the helm at the wheel'));
 });
 
 test('sailing shows the zoom on the wheel, and landing a second click on a mark', () => {
@@ -38,4 +38,11 @@ test('the keys name how to aim Dusk Daggers only while Shadow is worn', () => {
   assert.ok(!bare.includes('R') && !bare.includes('Q / G'), 'no Art worn, as in the prologue: none of its keys');
   assert.equal(footHints(0).length, HINTS.foot.length - 2, 'and every other key kept');
   assert.deepEqual(footHints(3), [...HINTS.foot, ['Hold Q', 'Aim Dusk Daggers']], 'Shadow');
+});
+
+test('no key hint puts a colon between its key and its action, nor "to" after the wheel', () => {
+  for (const [key, said] of Object.values(HINTS).flat()) {
+    assert.ok(!key.includes(':') && !said.includes(':'), `${key} ${said}`);
+    assert.ok(!(key === 'Wheel' && said.startsWith('to')), `${key} ${said}`);
+  }
 });
