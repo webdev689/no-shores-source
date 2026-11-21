@@ -5,31 +5,35 @@
 // first (the materials' fragments and Essence, then the islands' resources), a stack of none not shown, then empty
 // places to the end of its row of ten. A cell is its glyph in a well of its rarity, its count at its foot and its pips
 // beside it, as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a
-// Vestige opened at the Mage); a right-click its other use.
+// Vestige opened at the Mage), a held one when held; a right press its other use.
 
-import { make } from '../editor/dom.ts';
 import { ASKS } from '../network/gearMessages.ts';
 import { CARRIED, RARITIES } from '../player/gear.ts';
-import { ROLES } from '../plus/kit.ts';
-import type { PageContext } from './characterPage.ts';
-import { shapesSvg, svgUrl } from './npc/npcMarks.ts';
+import type { Child, Node } from '../ui/node.ts';
+import { cardFrame, cardName, cardNode, rarityTone } from './gearCard.ts';
 import { type Cell, cardOf, inventoryPageOf } from './gearCards.ts';
+import { DISMANTLE_KEY, fillNode, quiver, washNode } from './gearHold.ts';
 import {
-  DISMANTLE_KEY,
   type Hint,
-  cardNode,
-  dismantleOnHold,
-  glyphImage,
-  hintLine,
-  holdToAct,
-  itemIcon,
+  INK,
+  focusRing,
+  glyphNode,
+  itemIconNode,
   itemMarks,
-  rarityOf,
+  label,
+  rarityRgb,
+  svgNode,
   tileLabel,
-} from './gearDom.ts';
+  tileNode,
+  words,
+} from './gearNodes.ts';
+import type { MenuContext } from './menuPage.ts';
+import { shapesSvg } from './npc/npcMarks.ts';
 
-/** A cell's picture box, in pixels. */
+/** A cell's tile and its picture box, in pixels, and a shelf's tiles a row. */
+const CELL_TILE = 64;
 const CELL_PX = 48;
+const SHELF_ROW = 10;
 
 /** Whether a cell holds anything: an item, or a count above none. */
 const holds = (cell: Cell): boolean => cell.item !== null || cell.glyph === 'vestige' || (cell.count ?? 0) > 0;
@@ -43,150 +47,209 @@ function hintsOf(cell: Cell): Hint[] {
 }
 
 /** A cell's plain card: its name, how many are held, its words and what its presses do. */
-function cellCard(cell: Cell): HTMLElement {
-  const card = make('div', '', `gear-card ${ROLES.panel}`);
-  rarityOf(card, cell.glyph === 'vestige' ? cell.rarity : null);
-  const head = make('div', '', 'gear-card-head');
+function cellCard(context: MenuContext, cell: Cell): Node {
+  const { sizes } = context;
+  const rarity = cell.glyph === 'vestige' ? cell.rarity : null;
   const meta = cell.count === null ? '' : `${cell.count.toLocaleString()} held`;
-  head.append(make('h3', cell.name), make('p', meta, 'gear-card-meta'));
-  const body = make('div', '', 'gear-card-body');
-  body.append(make('p', cell.words, 'gear-card-words'));
-  card.append(head, body);
-  const hints = hintsOf(cell);
-  if (hints.length > 0) card.append(hintLine(hints, 'gear-card-hint'));
-  return card;
+  return cardFrame(
+    sizes,
+    rarityTone(rarity),
+    [cardName(cell.name, rarity), words(meta, sizes.label, INK.word)],
+    [{ width: 'grow', text: { words: cell.words, size: sizes.label, colour: INK.faint } }],
+    hintsOf(cell),
+  );
+}
+
+/** An empty place, vacant: a Vestige's a dark Vestige, a shelf's bare. */
+export function vacantNode(vestige = false): Node {
+  return tileNode(CELL_TILE, null, 'rest', vestige ? [{ ...glyphNode('vestige'), opacity: 0.35 }] : [], {
+    faded: vestige ? 1 : 0.55,
+  });
 }
 
 /** A cell's tile: its picture in a well of its rarity, its count and pips, its card, and its presses. */
-export function cellTile(context: PageContext, cell: Cell): HTMLElement {
-  const vacant = cell.glyph === 'empty';
-  // A cell a press does nothing to (a stack, a Vestige away from the Mage) is no button: it takes the focus for its
-  // card and reads as a picture with its count, and a click on it makes no press's sound.
-  const pressed = cell.press !== null || cell.other !== null || cell.item !== null;
-  const node = make(pressed && !vacant ? 'button' : 'div', '', `gear-cell ${ROLES.tile}`);
-  if (cell.glyph === 'vestige' || cell.item) rarityOf(node, cell.rarity);
-  node.classList.toggle('gear-none', !vacant && !holds(cell));
-  node.classList.toggle('gear-vacant', vacant);
-  node.append(
-    cell.item
-      ? itemIcon(context.picture(cell.item), cell.name, CELL_PX)
-      : glyphImage(cell.glyph === 'item' ? 'empty' : cell.glyph, cell.rarity, cell.tint),
-  );
-  if (cell.item) itemMarks(node, cell.item);
-  if (cell.count !== null) node.append(make('span', cell.count.toLocaleString(), 'gear-count'));
-  const pips = cell.glyph === 'vestige' || cell.item ? (RARITIES[cell.rarity]?.pips ?? '') : '';
-  if (pips) node.append(make('span', pips, 'gear-pips'));
-  if (vacant) return node;
-  if (!pressed) {
-    node.tabIndex = 0;
-    node.setAttribute('role', 'img');
-  }
+export function cellNode(context: MenuContext, cell: Cell): Node {
+  const { ui, holds: held, sizes } = context;
+  if (cell.glyph === 'empty') return vacantNode();
+  const id = `cell-${cell.key}`;
   const item = cell.item;
-  node.dataset['key'] = `cell-${cell.key}`;
-  const what = cell.count === null ? '' : `${cell.count.toLocaleString()} held`;
-  node.setAttribute('aria-label', tileLabel(cell.name, cell.item ? cell.rarity : null, what));
-  if (item) node.dataset['details'] = '';
+  const rarity = cell.glyph === 'vestige' || item ? cell.rarity : null;
+  const rgb = rarityRgb(rarity);
   // A piece carried is dismantled by holding F over it, wherever its tile stands.
   const carried = item?.at === CARRIED;
-  if (item && carried) dismantleOnHold(node, item.rarity, () => context.ask({ kind: ASKS.dismantle, item: item.id }));
+  const press = cell.press;
+  let charged = 0;
+  if (item && carried)
+    charged = held.dismantle(ui, id, item.rarity, rgb, () => context.ask({ kind: ASKS.dismantle, item: item.id }));
+  if (press?.held)
+    charged = Math.max(
+      charged,
+      held.press(ui, id, () => context.ask(press.ask), { burst: press.burst ?? null, rgb }),
+    );
+  else if (press && ui.clicked(id)) context.ask(press.ask);
+  if (ui.rightClicked(id)) {
+    if (item) context.inspect(item);
+    else if (cell.other) context.ask(cell.other.ask);
+  }
+  if (item) context.details(id, item);
   const hints: Hint[] = [
-    ...(cell.press ? [[cell.press.held ? 'Press' : 'Click', cell.press.label] as const] : []),
+    ...(press ? [[press.held ? 'Press' : 'Click', press.label] as const] : []),
     ['Right-click / X', 'Details'],
     ...(carried ? [[DISMANTLE_KEY, 'Hold to dismantle'] as const] : []),
   ];
-  context.tip.over(node, () => (item ? cardNode(cardOf(item), context.picture(item), hints) : cellCard(cell)));
-  const press = cell.press;
-  if (press?.held) holdToAct(node, () => context.ask(press.ask), { charges: () => node, burst: press.burst ?? null });
-  else
-    node.addEventListener('click', () => {
-      context.tip.hide();
-      if (press) context.ask(press.ask);
-    });
-  node.addEventListener('contextmenu', (event) => {
-    event.preventDefault();
-    context.tip.hide();
-    if (item) context.inspect(item);
-    else if (cell.other) context.ask(cell.other.ask);
+  context.card(id, () =>
+    item ? cardNode(cardOf(item), context.picture(item), hints, sizes) : cellCard(context, cell),
+  );
+  const icon = item
+    ? itemIconNode(context.picture(item), cell.name, CELL_PX, sizes, cell.rarity)
+    : glyphNode(cell.glyph === 'item' ? 'empty' : cell.glyph, 36, cell.rarity, cell.tint);
+  const shaken = quiver(charged);
+  const { marks, gilded } = item ? itemMarks(item) : { marks: [], gilded: false };
+  const pips = rarity !== null ? (RARITIES[rarity]?.pips ?? '') : '';
+  const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
+  const corner = (anchor: readonly [number, number], x: number): Node['float'] => ({
+    to: 'parent',
+    anchor,
+    at: anchor,
+    x,
+    y: -5,
   });
-  return node;
+  const extra: Child[] = [
+    ...marks,
+    cell.count !== null && {
+      text: { words: cell.count.toLocaleString(), colour: INK.word, edge: 'halo', edgeColour: INK.outline },
+      float: corner([1, 1], -4),
+    },
+    pips !== '' && {
+      text: { words: pips, colour: RARITIES[rarity ?? 0]?.colour ?? INK.word, edge: 'shadow' },
+      float: corner([0, 1], 4),
+    },
+    washNode(charged, rgb),
+    press?.held ? fillNode(held.share(id)) : null,
+    ui.focused(id) && ui.keyFocused && focusRing(CELL_TILE, CELL_TILE),
+  ];
+  const what = cell.count === null ? '' : `${cell.count.toLocaleString()} held`;
+  return tileNode(CELL_TILE, rarity, lit ? 'lit' : 'rest', [shaken ? { ...icon, offset: shaken } : icon], {
+    id,
+    // A cell a press does nothing to (a stack, a Vestige away from the Mage) still takes the focus for its card.
+    ...(press || cell.other || item ? { press: true } : { focusable: true }),
+    label: tileLabel(cell.name, item ? cell.rarity : null, what),
+    gilded,
+    marks: extra,
+    faded: holds(cell) ? 1 : 0.6,
+  });
 }
 
-/** A shelf's tiles a row. */
-const SHELF_ROW = 10;
-
-/** An empty place for a Vestige: a dark one stands in it. */
-export function vestigePlace(): HTMLElement {
-  const place = make('div', '', `gear-cell ${ROLES.tile} gear-vacant gear-vestige-place`);
-  place.append(glyphImage('vestige'));
-  return place;
+/** A grid of tiles `across` a row, `gap` apart. */
+export function gridNode(tiles: readonly Node[], across: number): Node {
+  const rows: Node[] = [];
+  for (let start = 0; start < tiles.length; start += across)
+    rows.push({ gap: 6, children: tiles.slice(start, start + across) });
+  return { direction: 'column', gap: 6, children: rows };
 }
 
-/** The Vestiges carried: their name and how many of the ten are held, then a place for each, an empty one a dark
- *  Vestige, as Destiny 2's engrams stand. */
-function vestigeShelf(context: PageContext, vestiges: ReturnType<typeof inventoryPageOf>['vestiges']): HTMLElement {
-  const section = make('section', '', 'gear-vestiges');
-  const heading = make('h3', '', `gear-heading ${ROLES.rule}`);
-  heading.append(make('span', 'Vestiges'), make('span', `${vestiges.held}/${vestiges.most}`));
-  heading.setAttribute('aria-label', `Vestiges, ${vestiges.held} of ${vestiges.most} carried`);
-  const grid = make('div', '', 'gear-vestige-grid');
-  for (const cell of vestiges.cells) {
-    if (cell.glyph !== 'empty') {
-      grid.append(cellTile(context, cell));
-      continue;
-    }
-    grid.append(vestigePlace());
-  }
-  section.append(heading, grid);
-  return section;
+/** A heading with its count at its end, over a rule. */
+function countedHeading(said: string, count: string, size: number, width: number): Node {
+  return {
+    width,
+    direction: 'column',
+    gap: 4,
+    padding: [4, 0, 6, 0],
+    children: [
+      { width: 'grow', children: [{ width: 'grow', children: [label(said, size)] }, words(count, size, INK.faint)] },
+      { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
+    ],
+  };
 }
 
-export function inventoryPage(context: PageContext, tab: string, choose: (tab: string) => void): HTMLElement {
-  const page = make('div', '', 'gear-inventory');
-  const inventory = inventoryPageOf(context.gear);
-  const head = make('div', '', 'gear-currencies');
-  for (const currency of inventory.currencies) {
-    const shown = make('div', '', `gear-currency ${ROLES.chip}`);
-    const count = make('b', currency.count.toLocaleString());
-    const words = make('div', '', 'gear-currency-words');
-    words.append(count, make('span', currency.name, 'gear-currency-name'));
-    shown.append(glyphImage(currency.glyph === 'item' ? 'empty' : currency.glyph), words);
-    head.append(shown);
-  }
-  // Shapes, Shape's own currency, gathered all week and spent only while he is here.
-  const shapes = make('div', '', `gear-currency ${ROLES.chip}`);
-  const mark = make('img', '', 'gear-glyph');
-  [mark.src, mark.alt] = [svgUrl(shapesSvg()), ''];
-  const words = make('div', '', 'gear-currency-words');
-  words.append(make('b', (context.gear.shapes ?? 0).toLocaleString()), make('span', 'Shapes', 'gear-currency-name'));
-  shapes.append(mark, words);
-  head.append(shapes);
-  const shelves = inventory.tabs.map((each) => ({
-    id: each.id,
-    name: each.name,
-    held: each.cells.filter(holds).length,
-  }));
-  const tabs = make('div', '', `gear-shelves ${ROLES.well}`);
-  tabs.setAttribute('role', 'tablist');
-  for (const each of shelves) {
-    const press = make('button', '', 'gear-shelf');
-    press.dataset['key'] = `shelf-${each.id}`;
-    press.setAttribute('role', 'tab');
-    press.setAttribute('aria-selected', String(each.id === tab));
-    press.classList.toggle('gear-chosen', each.id === tab);
-    press.classList.toggle('gear-bare', each.held === 0);
-    press.append(make('span', each.name), make('span', String(each.held), 'gear-tab-count'));
-    // Its name and count are read apart, not run together as one word.
-    press.setAttribute('aria-label', `${each.name}, ${each.held}`);
-    press.addEventListener('click', () => choose(each.id));
-    tabs.append(press);
-  }
-  page.append(head, vestigeShelf(context, inventory.vestiges), tabs);
-  const cells = inventory.tabs.find((each) => each.id === tab)?.cells ?? [];
-  const grid = make('div', '', 'gear-grid');
-  for (const cell of cells) grid.append(cellTile(context, cell));
-  // A grid's empty places stand as vacant tiles to the end of its row of ten, as the vault's do.
-  for (let place = cells.length; place < Math.max(SHELF_ROW, Math.ceil(cells.length / SHELF_ROW) * SHELF_ROW); place++)
-    grid.append(make('div', '', `gear-cell ${ROLES.tile} gear-vacant`));
-  page.append(grid);
-  return page;
+/** A currency's chip: its glyph, its count, and its name under it. */
+function currencyNode(glyph: Node, count: number, name: string, size: number): Node {
+  return {
+    role: 'chip',
+    padding: [5, 12, 5, 8],
+    gap: 8,
+    alignY: 'center',
+    children: [
+      glyph,
+      {
+        direction: 'column',
+        gap: 2,
+        children: [words(count.toLocaleString(), size, INK.word), words(name, 1, INK.faint)],
+      },
+    ],
+  };
+}
+
+/** The inventory page, `shelf` the one shown; `choose` shows another. */
+export function inventoryPage(context: MenuContext, shelf: string, choose: (shelf: string) => void): Node {
+  const { ui, gear, sizes } = context;
+  const inventory = inventoryPageOf(gear);
+  const currencies: Node[] = [
+    ...inventory.currencies.map((each) =>
+      currencyNode(glyphNode(each.glyph === 'item' ? 'empty' : each.glyph, 24), each.count, each.name, sizes.name),
+    ),
+    // Shapes, Shape's own currency, gathered all week and spent only while he is here.
+    currencyNode(svgNode('shapes', shapesSvg(), 24), gear.shapes ?? 0, 'Shapes', sizes.name),
+  ];
+  const vestiges = inventory.vestiges;
+  const shelves = inventory.tabs.map((each) => ({ ...each, held: each.cells.filter(holds).length }));
+  const tabs: Node = {
+    role: 'well',
+    padding: [2, 6],
+    gap: 2,
+    wrap: true,
+    children: shelves.map((each): Node => {
+      const id = `shelf-${each.id}`;
+      if (ui.clicked(id)) choose(each.id);
+      const chosen = each.id === shelf;
+      const lit = chosen || ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
+      const colour = lit ? INK.brassLit : each.held === 0 ? INK.faint : INK.word;
+      const big = sizes.name > 1;
+      return {
+        id,
+        press: true,
+        // Its name and count are read apart, not run together as one word.
+        label: `${each.name}, ${each.held}`,
+        padding: big ? [11, 22] : [7, 12],
+        gap: 8,
+        alignY: 'center',
+        children: [
+          words(each.name.toUpperCase(), big ? 2 : 1, colour),
+          words(String(each.held), sizes.label, INK.faint),
+          chosen && {
+            width: 'grow',
+            height: 2,
+            fill: INK.brassLit,
+            float: { to: 'parent', anchor: [0, 1], at: [0, 1] },
+          },
+        ],
+      };
+    }),
+  };
+  const cells = shelves.find((each) => each.id === shelf)?.cells ?? [];
+  const places = Math.max(SHELF_ROW, Math.ceil(cells.length / SHELF_ROW) * SHELF_ROW);
+  const shown = [
+    ...cells.map((cell) => cellNode(context, cell)),
+    ...Array.from({ length: places - cells.length }, () => vacantNode()),
+  ];
+  return {
+    width: 'grow',
+    direction: 'column',
+    gap: 14,
+    children: [
+      { gap: 8, wrap: true, children: currencies },
+      {
+        direction: 'column',
+        children: [
+          countedHeading('Vestiges', `${vestiges.held}/${vestiges.most}`, sizes.name, 344),
+          gridNode(
+            vestiges.cells.map((cell) => (cell.glyph === 'empty' ? vacantNode(true) : cellNode(context, cell))),
+            5,
+          ),
+        ],
+      },
+      tabs,
+      gridNode(shown, SHELF_ROW),
+    ],
+  };
 }

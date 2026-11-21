@@ -7,7 +7,7 @@ import { WORN } from '../../player/gear.ts';
 import { ROLES } from '../../plus/kit.ts';
 import { bardingTile } from '../appearance/bardingTile.ts';
 import { ARTS, emblemSvg, fragmentSvg } from '../artsCards.ts';
-import type { PageContext } from '../characterPage.ts';
+import type { PageContext } from '../menuPage.ts';
 import { emblemImage, emblemOf } from '../emblemArt.ts';
 import {
   type Hint,

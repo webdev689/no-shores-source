@@ -1,3 +1,6 @@
+// shortcut: the parts of elements the menu's pages still made of them share (the Social and Settings tabs, the Arts,
+// Appearance and keepers' screens, the vault, a player's details); the drawn menu's are gearNodes.ts, gearCard.ts and
+// gearHold.ts. It goes once those pages are drawn.
 // The gear screens' shared parts, in the Enhanced Plus kit: a press in its role, a press held a moment, a picture drawn
 // crisp into a canvas, a cell's icon (an item's own picture or a glyph) and what it shows of the item's growth, a
 // node's ring, and the hover card beside what it describes, its head in the item's rarity, as Enhanced Plus's card is.
@@ -8,7 +11,8 @@ import { ELEMENTS, RARITIES, fullyUpgraded, upgraded } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
-import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
+import type { Hint } from './gearNodes.ts';
+import { glyphSvg, nodeGlyphSvg } from './gearGlyphs.ts';
 import { elementSvg } from './elementGlyphs.ts';
 import { diagonalFit, drawnBounds, fitIcon } from '../player/iconFit.ts';
 import { charge, play } from './uiSounds.ts';
@@ -22,8 +26,7 @@ export const dismantleMs = (rarity: number): number => DISMANTLE_MS[rarity] ?? H
 /** How far the hover card stands from what it describes, and from the screen's edge. */
 const TIP_GAP = 10;
 
-/** What a press or a key does, as a line of keycaps shows it: the key, then its words. */
-export type Hint = readonly [key: string, words: string];
+export type { Hint } from './gearNodes.ts';
 
 /** How much CSS zooms an element where it stands: 2 for the menu on a screen past 1440p, else 1. */
 export function cssZoom(node: Element): number {
@@ -193,14 +196,6 @@ let aimed: HTMLElement | null = null;
 let keyHeld: HTMLElement | null = null;
 let listening = false;
 
-/** Closes an open slot's grid once the mouse is off the slot and the grid, at the owner's word; a touch has no hover
- *  to leave, so a touch, a click and Escape close it as they close any grid. */
-export function closeOffHover(holder: HTMLElement, close: () => void): void {
-  holder.addEventListener('pointerleave', (event) => {
-    if (event.pointerType === 'mouse') close();
-  });
-}
-
 /** Lets `tile`, a carried piece's, be dismantled by holding F while the pointer is over it or it has the focus, as
  *  long as its rarity asks, its picture charging and breaking apart once it acts. */
 export function dismantleOnHold(tile: HTMLElement, rarity: number, dismantle: () => void): void {
@@ -339,16 +334,6 @@ export function nodeGlyph(kind: number): HTMLElement {
   const glyph = make('span', '', 'gear-node-glyph');
   glyph.innerHTML = nodeGlyphSvg(kind);
   return glyph;
-}
-
-/** The dark of a ring's part still to grow. */
-const RING_DARK = '#2a2620';
-
-/** A locked node's ring, grown `share` of the way to it. */
-export function nodeRing(share: number): HTMLElement {
-  const ring = make('span', '', 'gear-node-ring');
-  ring.innerHTML = ringSvg(share, RING_DARK);
-  return ring;
 }
 
 /** An element's glyph, named for a screen reader; nothing for none. */
@@ -504,11 +489,9 @@ export class HoverCard {
     const size = this.tip.getBoundingClientRect();
     const right = near.right + TIP_GAP;
     const left = right + size.width + TIP_GAP > innerWidth ? near.left - TIP_GAP - size.width : right;
-    // It stands above the menu's footer, whose keys and presses stay readable under it.
-    const foot = this.tip.parentElement
-      ?.querySelector('.gear-screen:not([hidden]) .gear-foot')
-      ?.getBoundingClientRect();
-    const floor = foot ? foot.top : innerHeight;
+    // It stands above the menu's footer, under the island the page stands in, whose keys and presses stay readable.
+    const island = this.tip.parentElement?.querySelector('.gear-island:not([hidden])')?.getBoundingClientRect();
+    const floor = island ? island.bottom : innerHeight;
     const top = Math.min(Math.max(TIP_GAP, near.top), floor - size.height - TIP_GAP);
     // Measured on the screen, placed in the card's own pixels, which a zoomed menu doubles.
     const zoom = cssZoom(this.tip);

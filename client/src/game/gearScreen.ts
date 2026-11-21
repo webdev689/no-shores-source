@@ -45,6 +45,13 @@ export const ROSTER_HEARD = 'overlook:roster';
 /** Whether the gear screen is open: while it is, the game's own keys and pointer rest. */
 let screenOpen = false;
 export const gearScreenOpen = (): boolean => screenOpen;
+/** Whether the focus is on a page of elements in the menu, whose keys are its own. */
+let islandFocused = (): boolean => false;
+export function setIslandFocused(focused: () => boolean): void {
+  islandFocused = focused;
+}
+/** Whether the drawn menu takes the keys and the pad: while it is open, unless a page of elements has the focus. */
+export const gearTakesKeys = (): boolean => screenOpen && !islandFocused();
 export function setGearScreenOpen(open: boolean): void {
   screenOpen = open;
 }
