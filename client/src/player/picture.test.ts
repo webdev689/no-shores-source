@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Picture, addedBy } from './picture.ts';
+import { type Picture, addedBy, overlapped } from './picture.ts';
 
 /** A picture `width` × `height` of one colour, with some pixels of another. */
 function picture(width: number, height: number, ground: number[], marked: [number, number, number[]][] = []): Picture {
@@ -53,4 +53,23 @@ test('a piece in one, as a weapon is, keeps its parts near its largest and lets 
   assert.deepEqual([addedBy(worn, picture(18, 17, body))?.width], [14], 'a coat keeps every part');
   const sword = addedBy(worn, picture(18, 17, body), true);
   assert.deepEqual([sword?.width, sword?.height], [2, 15], 'a sword keeps its grip below the blade, not the sheath');
+});
+
+test('a loadout in both hands is one picture: the left hand’s behind the right’s at its left, on its top edge', () => {
+  const [blade, shield] = [
+    [180, 190, 210, 255],
+    [140, 90, 50, 255],
+  ];
+  const both = overlapped(picture(10, 2, blade), picture(4, 4, shield));
+  assert.deepEqual([both.width, both.height, both.level], [10, 4, true], 'the shield reaches up past the blade');
+  const texel = (column: number, row: number) => [
+    ...both.pixels.slice((row * 10 + column) * 4, (row * 10 + column) * 4 + 4),
+  ];
+  assert.deepEqual(texel(1, 0), shield, 'its middle a fifth along, its top half above the blade');
+  assert.deepEqual(texel(1, 2), blade, 'the right hand’s in front');
+  assert.deepEqual(texel(3, 3), blade);
+  assert.deepEqual(texel(8, 0), [0, 0, 0, 0], 'a clear ground round them');
+  const pair = overlapped(picture(4, 2, blade), picture(6, 2, shield));
+  assert.deepEqual([pair.width, pair.height], [6, 3], 'a second longer than the first stands out past its left end');
+  assert.deepEqual([...pair.pixels.slice(0, 4)], shield);
 });

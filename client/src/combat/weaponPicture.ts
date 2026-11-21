@@ -2,8 +2,9 @@
 // level, the end that stood highest (a blade's point, a gun's muzzle) to the right, and fitted to its box by whole
 // pixels where it can be. A quarter turn keeps every pixel square; a picture held slantwise is turned its own way and
 // smoothed once, as the gear screens lay a weapon on its tile's diagonal. One not long and thin (a shield with its
-// blade) stands as it is.
-import { drawnBounds } from '../player/iconFit.ts';
+// blade) stands as it is, and one the forge drew level stays so. One larger than its box is shrunk to it by an area
+// average.
+import { drawnBounds, shrunkCanvas } from '../player/iconFit.ts';
 import type { Picture } from '../player/picture.ts';
 
 /** How much longer than wide (in the spread of its pixels) a picture is before it is turned level. */
@@ -112,28 +113,33 @@ export function weaponCanvas(
   [own.width, own.height] = [width, height];
   const image = new ImageData(new Uint8ClampedArray(picture.pixels), picture.width);
   own.getContext('2d')?.putImageData(image, -west, -north, west, north, width, height);
-  const turn = lengthwise(picture.width, picture.height, picture.pixels);
+  const turn = picture.level ? 0 : lengthwise(picture.width, picture.height, picture.pixels);
   const ratio = screen > 0 ? screen : 1;
   const trimmed = own.getContext('2d')?.getImageData(0, 0, width, height).data ?? [];
   const [leastU, leastV, across, down] = turnedBounds(width, height, trimmed, turn);
   const { scale, crisp } = weaponScale(across, down, boxWidth * ratio, boxHeight * ratio, ratio, square(turn));
-  // Grown by whole pixels first, so a smooth step after never blurs a pixel into its neighbour.
+  // Grown by whole pixels first, so a smooth step after never blurs a pixel into its neighbour; shrunk, it is drawn
+  // as the area average leaves it.
+  const shrinks = scale < 1;
   const grownBy = Math.max(1, crisp ? scale : Math.ceil(scale));
-  const grown = document.createElement('canvas');
-  [grown.width, grown.height] = [width * grownBy, height * grownBy];
-  const growing = grown.getContext('2d');
+  const [grownWidth, grownHeight] = shrinks
+    ? [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))]
+    : [width * grownBy, height * grownBy];
+  const grown = shrinks ? shrunkCanvas(own, grownWidth, grownHeight) : document.createElement('canvas');
+  const growing = shrinks ? null : grown.getContext('2d');
   if (growing) {
+    [grown.width, grown.height] = [grownWidth, grownHeight];
     growing.imageSmoothingEnabled = false;
     growing.drawImage(own, 0, 0, grown.width, grown.height);
   }
   [canvas.width, canvas.height] = [Math.max(1, Math.ceil(across * scale)), Math.max(1, Math.ceil(down * scale))];
   const drawing = canvas.getContext('2d');
   if (drawing) {
-    drawing.imageSmoothingEnabled = !crisp;
+    drawing.imageSmoothingEnabled = !crisp && !(shrinks && square(turn));
     drawing.imageSmoothingQuality = 'high';
     drawing.translate(Math.round(-leastU * scale), Math.round(-leastV * scale));
     drawing.rotate(turn);
-    drawing.drawImage(grown, 0, 0, width * scale, height * scale);
+    drawing.drawImage(grown, 0, 0, shrinks ? grownWidth : width * scale, shrinks ? grownHeight : height * scale);
   }
   canvas.style.width = `${canvas.width / ratio}px`;
   canvas.style.height = `${canvas.height / ratio}px`;

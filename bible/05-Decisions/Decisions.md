@@ -180,6 +180,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Plates as Claude Shows Them]]
 - [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]
 - [[Foe Groups as Claude Builds Them]]
+- [[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

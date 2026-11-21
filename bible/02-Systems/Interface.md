@@ -31,6 +31,9 @@ code:
   - client/src/combat/weapons.ts#WeaponRows
   - client/src/combat/weapons.ts#weaponsOf
   - client/src/combat/weaponPicture.ts#lengthwise
+  - client/src/player/itemPictures.ts#ItemPictures
+  - client/src/player/picture.ts#overlapped
+  - client/src/player/iconFit.ts#shrunk
   - client/src/combat/statusIcons.ts#StatusRow
   - client/src/combat/foePlate.ts#FoePlate
   - client/src/plus/barLoss.ts#stepLoss
@@ -171,8 +174,8 @@ should be ([[HTML Is Avoided Where It Can Be]]).
   the first point lost or spent brings them back in two.
 - **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
   ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
-  picture in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or muzzle to the right
-  (`combat/weaponPicture.ts`), drawn again when the screen's pixel ratio changes. A Ranged weapon's shots stand large
+  picture (see "Pictures" below) in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or
+  muzzle to the right (`combat/weaponPicture.ts`), drawn again when the screen's pixel ratio changes. A Ranged weapon's shots stand large
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
   name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
@@ -335,11 +338,17 @@ never while a press is held. Each press is an ask the room answers.
 
 - **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
   do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
-- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped;
-  a loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip; one in
-  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is
-  fitted to its place as Enhanced Plus fits its icons; an icon long and thin (a blade, a staff, a gun) is laid on its
-  tile's diagonal, as Destiny lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
+- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped.
+  A loadout is the forge's large picture of what its hands hold
+  ([[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): the right hand's level, its business end to the
+  right, and a shield or a pair's second behind it at its left, at three quarters of its size, its middle on the
+  first's top edge a fifth of the way along it. Each is dyed as the figure's layer is, a faction's colour too, and
+  snapped to the palette; a greatsword shows its metal's sword. Until every piece in hand has a large picture, a
+  loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip, and one in
+  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is fitted to its place as
+  Enhanced Plus fits its icons, and one larger than its place is shrunk by an area average, each screen pixel the mean
+  of the pixels it covers; an icon long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny
+  lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
   name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
   is, mostly in its island's colour.
 - **Rarity.** Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal piece's frame is the

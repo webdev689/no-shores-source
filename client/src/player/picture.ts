@@ -9,6 +9,34 @@ export interface Picture {
   readonly pixels: Uint8ClampedArray;
   /** Where the figure's feet stand on it, so two frames of one figure line up; its top left when it has none. */
   readonly root?: readonly [number, number];
+  /** Drawn level by the forge, its business end to the right (a weapon's large picture): never turned to lay it so. */
+  readonly level?: boolean;
+}
+
+/** A loadout in both hands as one picture: the left hand's (a shield or a second weapon) at this share of its size,
+ *  behind the right's, its middle on the right's top edge a fifth of the way along it from its left end. */
+export const SECOND_SHARE = 0.75;
+const SECOND_ALONG = 0.2;
+
+/** `main` level with `second` behind it at its left (`SECOND_SHARE`, `SECOND_ALONG`), on a clear ground just large
+ *  enough for both. */
+export function overlapped(main: Picture, second: Picture): Picture {
+  const [across, down] = [Math.round(main.width * SECOND_ALONG - second.width / 2), Math.round(-second.height / 2)];
+  const [west, north] = [Math.min(0, across), Math.min(0, down)];
+  const width = Math.max(main.width, across + second.width) - west;
+  const height = Math.max(main.height, down + second.height) - north;
+  const pixels = new Uint8ClampedArray(width * height * 4);
+  const lay = (picture: Picture, left: number, top: number) => {
+    for (let row = 0; row < picture.height; row++)
+      for (let column = 0; column < picture.width; column++) {
+        const from = (row * picture.width + column) * 4;
+        if (!picture.pixels[from + 3]) continue;
+        pixels.set(picture.pixels.subarray(from, from + 4), ((top - north + row) * width + left - west + column) * 4);
+      }
+  };
+  lay(second, across, down);
+  lay(main, 0, 0);
+  return { width, height, pixels, level: true };
 }
 
 /** A speck of the figure the piece leaves showing (a collar's skin, a strand of hair) is any part of what differs that
