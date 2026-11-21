@@ -193,9 +193,9 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
   asked with the patrol's id, its name and the entrance's number. Taken, the veil says "Entering" the dungeon; the page
   leaves the patrol's room and joins the dungeon's: online `node-<patrol id>--dungeon-<number>` (`--elite--` or
   `--abyss--` before `dungeon` at a harder difficulty), alone a room opened in the page from the patrol's node file with
-  `room_open_dungeon`. The player stands at its way in, facing into its room. A trip in or out keeps the seas of the
-  room the player stands in, so a company stays together at its seas. "Go to them" for a member in a dungeon goes
-  into that dungeon, at their seas, the veil saying "Joining your company at" its name.
+  `room_open_dungeon`. The player stands at its way in, facing into its room. A trip in or out keeps the difficulty of
+  the room the player stands in, so a company stays together at its difficulty. "Go to them" for a member in a
+  dungeon goes into that dungeon, at their difficulty, the veil saying "Joining your company at" its name.
 - **On foot inside.** The player is predicted on the dungeon's own ground, as its room judges bodies: the fight's door
   is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays
   0.35 m off and cannot climb, with no course; the movement door finds the floor at 0 m. The camera keeps short of the
