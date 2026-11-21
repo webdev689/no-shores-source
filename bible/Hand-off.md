@@ -235,22 +235,17 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **#118, every sound from Freesound and the music's pass** (draft, `ccr-c504a08b-gyns6o`), the owner's words in
-  [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]. On it: 93 Freesound cues for every sound
-  the synthesiser still made, each wired where it plays (the synthesiser's until picked); calm pieces now and then
-  everywhere with each place's silences; fourteen new calm pieces (`calm.ts`); and no note over B5, no FM partial past
-  6 kHz, no ringing drum, held by tests. Tested offline: the full check, and every song rendered and measured headless.
-  Waiting: the owner's picks and verdicts on the sound sheet, https://claude.ai/artifact/PBSynEeW37HPSvX89EYUbA (the
-  music is on it; the sounds' candidates come from the `freesound` workflow's run, about three hours for the whole
-  list, and are loaded with the session scratchpad's `cues.py`). The old sound sheet (YT29RAFbgdPRLByLUVC7nh) could
-  not be opened from this session. Next, once the picks are in: set each cue's `picked` (or `skip` for None of
-  these, with fresh words), let the workflow publish, take its `sounds.json`, then delete the synthesiser behind
-  sound effects and ambience (`beds.ts`, `calls.ts`, `songs.ts`, `noises.ts`, the cinema's voices, `uiSounds`' tones
-  and the voice's buzz) and the fallbacks that call it. The gains and the hold need code to play their picks
-  (`uiSounds` `chime` and `charge`). The owner kept the calm pieces, Landfall, the sea's storm, the Boarding's first
-  phase and the story's storm and deep, and asked for the green, wet and cold fights again for a whine: their pitched
-  swells and the cold's gusts are now noise, their high strings lower and the wet tune on a low clarinet, rendered
-  again on the sheet for the owner's ear (the dry fight's same swell went with them).
+- **#118, every sound from Freesound and the music's pass** (`ccr-c504a08b-gyns6o`), the owner's words in
+  [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]. Done and waiting on the owner's yes to
+  merge. Every sound effect and ambience sound plays the owner's Freesound pick (`content/audio/sounds.json`, 185);
+  the synthesiser behind them is deleted but the four the owner kept (the gains' chimes, a hold's build-up, the
+  menu's refusal, the spoken voice). Each recorded bed and thunder keeps the synthesiser's measured level
+  (`recordings.ts` `BED_LOUD`, `player.ts`). No hyena, no separate wave crash; the ice's creak plays the ice's crack,
+  a ship going down the sea's Breaking wood, the story's rain, gulls and thunder the world's picks. Music: calm pieces
+  now and then everywhere with each place's silences, fourteen new calm pieces (`calm.ts`), no note over B5, no FM
+  partial past 6 kHz, no ringing drum, no pitched swell in a fight, held by tests; the owner kept every piece on the
+  sheet (https://claude.ai/artifact/PBSynEeW37HPSvX89EYUbA). Tested offline: the full check, every song rendered and
+  measured headless, the sheet's players. Not yet: anything heard in a running game or on a real GPU.
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
   first and its findings fixed, which deploys the page and the rooms:** aiming faces straight ahead (#115,
   [[Aiming, the Figure Faces Straight Ahead]]); the crosshair's shapes, reload ring, hit marks and melee reach (#116,
