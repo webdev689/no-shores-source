@@ -32,7 +32,8 @@ authority: the page draws what each snapshot says.
 
 **The clock.** Each of the three zones (`saltgrass-downs`, `gullwing-vale`, `driftwood-moors`) runs one event every 15
 minutes of wall time, the zones 5 minutes apart, so somewhere on Saltmere one begins every 5 minutes. A zone
-alternates its two, and the zone after it runs the other one at the same time. `schedule(zone, minute)` gives the
+alternates its two, and the zone after it, starting 5 minutes later, runs the other one, so the two overlap for its
+last 3. `schedule(zone, minute)` gives the
 event a Unix minute falls in and the minute it starts; it is a pure function, so the room, the page and the tests agree.
 The host sets the room's minute about once a second; an event begins in the first tick its minute comes, and a room
 opened during one starts it with the countdown its start minute leaves, to the minute. A room keeps no event across
@@ -59,22 +60,24 @@ middle of its stores, reaching 10 m past the farthest (20 m at least), with its 
 rectangle round each ground (the Fissure's circle and its growth's spot; the raid's circle, its approach and where its
 waves form) 16 m further, as far as a player shoots into the fight from, and joins them to the garrison's as parts of
 one mesh, with no way between them. Baking both grounds as Saltmere's real node files open, natively in a release
-build, measured once: 466 ms for Saltgrass Downs, 497 ms for Gullwing Vale, 550 ms for Driftwood Moors. In
-WebAssembly it is not measured.
+build, measured once at commit 2b4cb9f1: 466 ms for Saltgrass Downs, 497 ms for Gullwing Vale, 550 ms for Driftwood
+Moors. In WebAssembly it is not measured.
 
-**Its foes**, its growth and its tithe-taker among them, stand at the top of the island's band raised by the voyage's
-seas, at home round the event's ground, hunting the nearest player there. Each fights a player within a leash of the
-event's reach (its ground's radius, or its farthest point from its middle past it: the growth's spot, the approach,
-where the raid's waves form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post
-at its store), on ground the room's mesh covers; past that it gives them up and walks back. A zone's room that holds
-events stands 40 foes alive at most and keeps 16 of them for its event (the most it stands at once: a Fissure's
-living foes short of a wave, its fullest wave and its growth or Warden); its garrison stands again, calls and arrives
-only while the foes not of the event stay within 24, as in any other node. The growth, the Warden and Marrow stand half their health more for
-each player at the event beyond the first (the most seen at the Fissure; those on the raid's ground as Marrow comes).
-The Fissure's growth and the raid's tithe-taker the room moves itself: their brains are left be, so neither moves on
-its own nor strikes, and each walks the navmesh at its own pace, keeping its way from tick to tick; their statuses
-still wear off. A raid's approach, where its waves form and its raiders' home (the stores' middle) are put on the
-navmesh as it begins, at its nearest point.
+**Its foes**, its growth and its tithe-taker among them, stand at the event's level (the top of the island's band,
+raised by the voyage's seas), at home round the event's ground. Each but the growth and the tithe-taker hunts the
+nearest player there, and fights a player within a leash of the event's reach (its ground's radius, or its farthest
+point from its middle past it: the growth's spot, the approach, where the raid's waves form) and 16 m more, measured
+from its own place (the ground's middle, or a Collector's post at its store), on ground the room's mesh covers; past
+that it gives them up and walks back. A zone's room that holds events stands 40 foes alive at most and keeps 16 of them
+for its event (the most it stands at once: a Fissure's living foes short of a wave, its fullest wave and its growth or
+Warden); its garrison stands again, calls and arrives only while the foes not of the event stay within 24, as in any
+other node. The growth, the Warden and Marrow stand half their health more for each player at the event beyond the first
+(the most seen at the Fissure; those on the raid's ground as Marrow comes). The Fissure's growth and the raid's
+tithe-taker the room handles itself: their brains are left be, so neither moves on its own nor strikes; the growth
+stands where it rose, and the tithe-taker walks the navmesh at his own pace, keeping his way from tick to tick; their
+statuses still wear off. A raid's approach, where its waves form and its raiders' home (the stores' middle) are put on
+the navmesh as it begins, at its nearest point.
+
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle: three foes and one more for
 each player seen at it beyond the first (six at most), drawn from Husks, Flickers, an Idol and a Ravager. Another
@@ -111,8 +114,8 @@ last wave broken with a store standing, the Tithe give up and march out, and it 
   heroic: the third wave holds an Enforcer Elite and a Marksman Elite more (they come at once if it is already in,
   eased for a small party as the wave is),
   and a fourth comes, led by Reeve Ancel
-  Marrow, the Tithe's Hand (a Reeve Miniboss), with two Collectors and an Enforcer Elite; a raid waits for him to go
-  before it can be won.
+  Marrow, the Tithe's Hand (a Reeve Miniboss), with two Collectors and an Enforcer Elite. A raid waits for the
+  tithe-taker to go before it can be won.
 - **Bonus:** no store lost.
 
 **Failing** by time or by stores leaves nothing lasting. Its foes withdraw, the room moving them: the Lattice into the
@@ -124,10 +127,11 @@ side, seen by them alone: tier 1 won, 2 won with the bonus, 3 heroic, 4 heroic w
 m (`Asked::OpenChest`, ask 21 by the chest's number among their drops); it pays at once and is gone, so it never pays
 twice. One not opened is opened for its player as its 2 minutes run out, or as they leave the room: the server opens
 a leaver's chests (`room_parting`) before it keeps their character. A chest is of the event's level, raised by the voyage's seas,
-and its XP and Aurem are the seas' reward times as much, as a kill's are. It holds, at level 5 and growing with the
-event's level as a kill's worth does: 1,500, 2,200, 3,200 and 4,500 XP by tier, which grow the worn Art and the faction
-pledged while its cape is worn as a kill's XP does; 120 to 360 Aurem; 2 to 7 of each Fragment; Essence from the heroic
-tiers (1, 2); 3 to 8 of the island's resource; and a Vestige always, a foe's colours from a plain chest and a Boss's
+and its XP and Aurem are the seas' reward times as much, as a kill's are. It holds, by tier: 1,500, 2,200, 3,200 and
+4,500 XP and 120, 180, 260 and 360 Aurem at level 5, each growing with the event's level as a kill's worth does, the
+XP growing the worn Art and the faction pledged while its cape is worn as a kill's XP does; 2, 3, 5 and 7 of each
+Fragment, Essence from the heroic tiers (1, 2) and 3, 4, 6 and 8 of the island's resource, the same at any level;
+and a Vestige always, of the event's level, a foe's colours from a plain chest and a Boss's
 from a heroic one, the bonus's tier rolling twice and keeping the better. A Vestige with no room in the ten goes to
 the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a leaver's goes
 to the vault however full, since the ground they leave would lose it.
@@ -148,8 +152,8 @@ a chest, with its tier. The browser reads it all in `client/src/network/publicMe
 
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their
 snapshots, play a whole Fissure and a whole raid through the room's door and win each, heroic
-(`crates/room-wasm/src/public_door_tests.rs`); the same script, run through WebAssembly by `server/public.test.ts`,
-comes to the same fingerprints ([[Agree to the Bit]]).
+(`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6; the same script, run through
+WebAssembly by `server/public.test.ts`, comes to the same fingerprints ([[Agree to the Bit]]).
 
 ## The page
 
@@ -179,9 +183,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - **The boss bar** shows the climax's Miniboss, the Warden or Marrow, without the phase line; the music takes its
   boss part while one stands. On the ground of a running event the music holds at tension at least, at the peak in
   its last minute and once heroic is met.
-- **The compass** marks the ground (the next one's between events) with a gold diamond, and the growth or the
-  tithe-taker with an orange one, blinking, while the heroic window is open; a chest waiting with a small gold one; a
-  store under attack with a red one.
+- **The compass** marks the ground, the heroic task's target while its window is open, a chest waiting and a store
+  under attack ([[Interface]], "The compass").
 - **Marks**: a ring at the ground's edge while it runs, laid on the land arc by arc, orange once heroic is met; a
   pillar of red light over each shard on the ground, fading with it; an orange one over the growth or the tithe-taker
   while the heroic window is open; a tall gold beacon over the ground for a player outside it, from a minute before it
@@ -203,15 +206,16 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   topples its banners; a failed Fissure closes into the plain turf. A Lattice figure's crystal glows of itself at
   night. The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
   A room lost leaves no event on the screen, and a page come mid-event or back from a hidden tab replays no beat.
-- **Sounds**, all samples the game already holds: the ground splitting (`story.deep`) or the Tithe sighted
-  (`foe.alert`) as one begins and at each stage; a shard taken (`element.cosmic`, and the player's own chimes) and
-  set (`finish.cosmic`); the growth broken (`shield.break`) or the tithe-taker killed (`kill`); the seal's burst
+- **Sounds**, all samples the game already holds: the ground splitting (`story.deep`) or the Tithe sighted (`foe.alert`)
+  as one begins and at each stage; a shard taken (`element.cosmic`, and the player's own chimes) and set
+  (`finish.cosmic`); the growth broken (`shield.break`) or the tithe-taker killed (`kill`); the seal's burst
   (`story.crash`); a store plundered (`sea.ship.break`); a chest opened (`story.creak` and the interface's open); a
   heroic task missed (the interface's refusal); the heroic chance (`cast.charge` at its target); the next a minute off
-  and the start (`drop.land` at the player and a chime); the Warden climbing out (`story.crash`); a chest coming
-  (`drop.land`); the last ten seconds (the interface's tick); a raid won (`amb.social.crowd`) or failed
-  (`story.crash`). A chest opened shows in the reward feed with its tier as four pips, its XP and its reputation. **Stings**, through the music director's `moment`, in the place's own
-  fight score: its cadence as one begins, its victory for heroic met and won, its defeat for failed.
+  and the start (`drop.land` at the player and a chime); the Warden climbing out (`story.deep` and `story.crash`); a
+  chest coming (`drop.land`); the last ten seconds (the interface's tick); a Fissure failed (`story.deep`); a raid won
+  (`amb.social.crowd`) or failed (`story.crash`). A chest opened shows in the reward feed with its tier as four pips,
+  its XP and its reputation. **Stings**, through the music director's `moment`, in the place's own fight score: its
+  cadence as one begins, its victory for heroic met and won, its defeat for failed.
 - **Alone**, the page asks its land worker for the node's grounds (`land_grounds`, from
   `layout::grounds::grounds_of`, which the bake calls too, on the same layouts), so a room in the page runs the
   events the server's does. Under `npm run dev` (or a build made with `NODE_ENV=development`),
@@ -227,8 +231,14 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 
 - A ground's mesh that overlaps the garrison's joins no way across the two; none of Saltmere's three does.
 - A zone's events wait for the host to set the room's minute, and a room never holds an event across its closing.
-- The scripted players stand at level 6 with Rare gear at 6, over Saltmere's band of 1 to 4: two players at its band
-  were not tried against a heroic raid's third wave.
+- The door test's scripted players stand over Saltmere's band of 1 to 4 ("Agreement"). The events'
+  pacing ([[Public Events as Claude Builds Them]], "The Fissure's waves", "The raid's waves") comes from scripted runs
+  at levels 2 and 4 with plain and magic gear, two to four players, made at commit 6a483587: not kept in the
+  repository, and not made against the rules as they stand (the great foes' health, the leash, the heroic third
+  wave's easing).
+- Built and tested but not pictured on the page: a store plundered, the tithe-taker counting and leaving, Marrow, the
+  Tithe giving up, the raid's chest, the growth sinking unbroken, a lid swinging open, the scar risen, the Lattice's
+  glow at night and the seal's wave in its picture's own texels.
 - The Heart is in the roster only: it has no phases of its own and stands in no event.
 - The stores, banners, fissures and growth spots are chosen before the layout stands its beacons and resource marks,
   so they could meet; `crates/room/tests/grounds_planned.rs` holds Saltmere's three layouts clear of them, and each

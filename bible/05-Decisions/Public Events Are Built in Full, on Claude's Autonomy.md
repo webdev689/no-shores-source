@@ -18,6 +18,5 @@ status: in force
   ([[Public Events Run on a Clock, After Destiny 1]]).
 - **Claude decides what the owner has not**, recording each call in [[Public Events as Claude Builds Them]].
 - **Props**: the ones already made are used, and new ones are made with the Blender pipeline.
-- **The bar is very high**: insanely detailed, to wow people; done means whole, not a first pass.
-- **Before they are done**, a comprehensive audit of everything the public events touch and a deep detail pass on how
-  they look and play, every beat seen and every fault found fixed.
+- **The bar is very high**: insanely detailed, to wow people; not done until it is 100%.
+- **A comprehensive audit and a deep detail pass**, to make them perfect.

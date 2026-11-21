@@ -43,15 +43,10 @@ status: in force
 - **Saltmere only, for now**: the events run on the island of Saltmere and its patrol zones, the Saltgrass Downs, the
   Gullwing Vale and the Driftwood Moors ([[Layouts]]).
 - **Two events, each with a mechanic of its own, not overly complicated:**
-  - **The Fissure**: the ground splits and the Lattice pours out
-    ([[The Lattice Are the Ruined Ports' People, Overtaken]]). Felled foes drop crystal shards, which players carry to
-    the fissure to seal it while it keeps spawning foes. Heroic: a crystal growth rises near the fissure for a short
-    time, and breaking it before it sinks back makes the event heroic.
-  - **The Grey Tithe raid**: the Grey Tithe press a hamlet for their tenth
-    ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]). Players hold the hamlet's stores against the Tithe's
-    waves until the Tithe give up. Heroic: a tithe-taker, a Tithe officer, comes to count the stores and leaves soon
-    after, and killing him before he goes makes the event heroic.
-- **Heroic.** Each event has an optional task that, done during it, makes it heroic: harder foes, a tougher end and a
-  better chest, as in D1.
+  - **The Fissure**: a fissure opens, and players seal it with crystal. Heroic: breaking a growth that rises near it
+    for a short time.
+  - **The Grey Tithe raid** ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]): players hold the stores.
+    Heroic: killing the tithe-taker, an officer who counts the stores and leaves soon after.
+- **Heroic.** Each event has an optional task that, done during it, makes it heroic.
 - **The numbers are Claude's**: how often each event comes round, the countdown's length and how much tougher heroic
-  is, set after D1's events and tuned in play; the owner may change any.
+  is ([[Public Events as Claude Builds Them]]); the owner may change any. How they run: [[Public Events]].

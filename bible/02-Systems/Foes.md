@@ -57,8 +57,8 @@ guard, the parry and the dodge of [[Combat]] too ([[Combat Is Soulframe's, With 
 [[Pick - Enhanced AI]]), with project-final's perception, cover, flanking and combat director on top
 ([[project-final's AI Comes Over Onto DFO's]], [[Pick - project-final AI]]). Who the foes are (factions, types, ranks,
 phases) is [[Enemies]], the Lattice's among them. A public event's foes think as any foe, at home on its ground;
-the Fissure's crystal growth and the Grey Tithe's tithe-taker the room moves itself, and they never strike
-([[Public Events]]).
+the Fissure's crystal growth stands where it rose and the Grey Tithe's tithe-taker the room walks itself; neither
+strikes ([[Public Events]]).
 
 ## How it works
 

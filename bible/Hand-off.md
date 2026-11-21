@@ -247,31 +247,38 @@ Where the work stands now, for the next session. Each session rewrites this note
   asked: sixteen across the owner's four kinds, each on its own patch of corrupted ground, drawn as pictures in both
   crystals ([[The Lattice Has Props of Its Own, Made in Blender]], `tools/lattice/props.py`); tested offline, every
   one rendered in red and purple and looked at.
-- **The public events**, on #124 (stacked on #77), not yet merged: built in full on Claude's autonomy
-  ([[Public Events Are Built in Full, on Claude's Autonomy]]) after the owner's decisions
-  ([[Public Events Run on a Clock, After Destiny 1]]), the system in [[Public Events]] and every call of Claude's in
-  [[Public Events as Claude Builds Them]]. On Saltmere's three zones, on a clock: the Fissure in each wilds, beside
-  its battlefield's obelisk, and the Grey Tithe raid in each hamlet, each with its heroic task, a bonus, and a chest
-  for each player who took part (XP, faction reputation, a Vestige, materials). The Lattice is in the rules (faction
-  3, types 39 to 45) and in the game: its five event foes rendered and published by `lattice.yml`, their moves and
-  death wave drawn. Thirteen props made in Blender through the modules pipeline and published by `modules.yml`; a
-  crystal material and chalk, turf and canvas. The page's banner, marks, props, lights and sounds; offline play;
-  dev-only `&public=`, `&speed=`, `&bots=`, `&heroic=0`. Paced by scripted players at Saltmere's levels; one read-only
-  audit, its findings each tested first and fixed. Tested offline: `cargo xtask check`, native and WebAssembly
-  agreeing, both events played through on the built page and pictured; not tested live.
+- **The public events**, on #124 (stacked on #77), not yet merged: built in full on Claude's autonomy ([[Public Events
+  Are Built in Full, on Claude's Autonomy]]) after the owner's decisions ([[Public Events Run on a Clock, After Destiny
+  1]]), the system in [[Public Events]] and every call of Claude's in [[Public Events as Claude Builds Them]]. On
+  Saltmere's three zones, on a clock: the Fissure in each wilds, beside its battlefield's obelisk, and the Grey Tithe
+  raid in each hamlet, each with its heroic task, a bonus, and a chest for each player who took part (XP, faction
+  reputation, a Vestige, materials). The Lattice is in the rules (faction 3, types 39 to 44) beside the Grey Tithe's
+  Tithe-Taker (type 45), and in the game: its five event foes rendered and published by `lattice.yml` and laid into
+  main's forge tables (`content/forge/renders.json`), their moves and death wave drawn. Thirteen new modules made in
+  Blender through the modules pipeline and published by `modules.yml`, four of them (the fissure, its scar, the growth
+  and the shard) built from the Lattice's props' own shards, clusters, crusts and boulders; a crystal material and
+  chalk, turf and canvas. The page's banner, marks, props, lights and sounds; offline play; dev-only `&public=`,
+  `&speed=`, `&bots=`, `&heroic=0`. Paced by scripted players at Saltmere's levels; a first read-only audit, its
+  findings each tested first and fixed. Then the owner's "comprehensive audit and deep detail pass": five read-only
+  audits (the rules and server, the page, the assets and pipelines, the bible's truth, the design's detail), whose
+  rules, page and assets fixes are merged into #124's branch and whose bible fixes are on `ev/bible`; still to come, a
+  picture pass of every beat on a quiet machine. Tested offline: `cargo xtask check`, native and WebAssembly agreeing,
+  both events played through on the built page and pictured; not tested live. The `modules` workflow's bake fails on
+  #124's branch at 140fd053 (run 44909287030): CI's `tithe-stores-a` differs from the committed manifest, which local
+  bakes match.
+
 
 ## Waiting on the owner
 
 - **#124, the public events**: its merge, the owner's yes; it holds #77 beneath it, and #77's merge waits on the
-  owner ("Not yet"), so merging #124 merges both. Its points for the owner are in its description: the Heart not yet
-  rendered; events at the top of Saltmere's band; the Grey Tithe's garrison joining the Fissure's fight; others' numbers
-  crowding an event; the Tithe-Taker without a ledger; a leaver's vault past 20.
+  owner ("Not yet"), so merging #124 merges both. Its points for the owner are in its description and in
+  [[Open Questions]], "The public events".
 - **The Lattice's story**: the talk stops at the rest of [[Open Questions]], "The Lattice's places and events": the
   nine story missions as three acts of three or one chain through the islands, where the Lattice and the Heart come
   in, how near the ninth comes to the Cube; who gives the side quests. Read with them: #82 (the loop, the nine
   missions) and #97 (activities, the quest engine), both open; #97's one clock can replace the events' own schedule.
-- **The Lattice's other props**: thirteen of the events' props are meshes now; the rest of the sixteen sheets wait on
-  where its corrupted areas lie.
+- **The Lattice's other props**: its sixteen props are pictures only; four of the events' modules are built from
+  their parts, and the rest wait on where its corrupted areas lie.
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
   first and its findings fixed, which deploys the page and the rooms:** aiming faces straight ahead (#115,
   [[Aiming, the Figure Faces Straight Ahead]]); the crosshair's shapes, reload ring, hit marks and melee reach (#116,
@@ -395,11 +402,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The public events' last pictures** (#124): a store plundered, the tithe-taker counting and leaving, Marrow, the
-  Tithe giving up, the raid's chest, the growth sinking unbroken, a lid swinging open and the scar risen are built and
-  tested but not pictured; headless frames took 10 to 20 s here. The scripts are the showcase worker's (dev play:
-  `&public=`, `&speed=`, `&bots=`), best run on a quiet machine or a real GPU. Seen and left: the Lattice's figures read
-  nearly black at night, and the seal's wave reads as a blocky band from afar.
+- **The public events' last pictures** (#124): the beats built and tested but not pictured are listed in
+  [[Public Events]], "Limits"; headless frames took 10 to 20 s here. The scripts are the showcase worker's (dev play:
+  `&public=`, `&speed=`, `&bots=`), best run on a quiet machine or a real GPU.
 - **The Lattice's armour and weapons in Daedric's place**, on hold by the owner's word for the Lattice's foes
   ([[The Lattice's Armour and Weapons Take Daedric's Place]]). The armour is built after the owner's reference and
   the owner likes it (`tools/lattice/armoury.py`, drawn standing still on the man's and the woman's bodies). Still to
@@ -408,11 +413,6 @@ Where the work stands now, for the next session. Each session rewrites this note
   and shields; and the game's own names (gear tiers, dyes, outfits, first person's metals, the swing's tint, their
   tests) from Daedric to Lattice. The horse's Daedric barding is left out by the owner and still bears Bethesda's name
   ([[Open Questions]]).
-- **The Lattice's pictures after main's merge**: main's forge index (the weapons forged again) replaced the one
-  that held the Lattice's renders. `tools/lattice/render-request.txt` asks `lattice.yml` to lay run 44851715803's
-  pictures into main's tables without rendering (`publish-from`); the manifest its log prints is then committed to
-  `content/forge/renders.json`. Until then the page draws the Lattice's foes as plain figures. That run's artifacts
-  are kept until 2026-11-28.
 
 - **The islands** ([[Islands]]): the door's trip into its dungeon, once the Dungeons session pushes its
   `sea-dungeon-…` room and trip (the page names the room; until then E at the door says it is not open); the
