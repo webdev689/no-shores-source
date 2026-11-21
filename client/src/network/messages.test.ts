@@ -176,9 +176,9 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
 });
 
 test('a fighting ship’s orders cross as the naval crate’s numbers', () => {
-  const helm = { steer: -0.5, crab: true, climb: 1 } as const;
+  const helm = { steer: -0.5, climb: 1 } as const;
   const aim = { bearing: 85, range: 120, ray: [4, 2.5, 6, 0.2, 1, -0.1] };
-  const orders: FightOrders = { helm, aim, fire: true, brace: false, load: 'chain' };
+  const orders: FightOrders = { helm, aim, fire: true, brace: false, load: 'chain', boost: true };
   assert.deepEqual(ordersNumbers(orders), [-0.5, 1, 1, 1, 85, 120, 1, 4, 2.5, 6, 0.2, 1, -0.1, 1, 0, 3]);
   const rayless = { ...orders, aim: { bearing: 85, range: 120 } };
   assert.deepEqual(ordersNumbers(rayless), [-0.5, 1, 1, 1, 85, 120, 0, 0, 0, 0, 0, 0, 0, 1, 0, 3]);

@@ -3,6 +3,7 @@
 
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import type { Hint } from './gearNodes.ts';
+import type { Standing } from './hudLaw.ts';
 
 /** What the Arts' keys add for an Art whose first Tenet is aimed while its key is held, by the Tenet's key. */
 const AIMED: Readonly<Record<string, Hint>> = { duskDaggers: ['Hold Q', 'Aim Dusk Daggers'] };
@@ -21,6 +22,7 @@ export const HINTS = {
     ['C', 'Crouch'],
     ['Z', 'Weapon'],
     ['1 / 2', 'Loadout'],
+    ['3', 'Heal'],
     ['R', 'Anima'],
     ['Q / G', 'Tenets'],
     ['Wheel', 'Third person'],
@@ -58,6 +60,7 @@ export const HINTS = {
   fight: [
     ['A / D', 'Steer'],
     ['W / S', 'Sails'],
+    ['Shift', 'Boost'],
     ['Drag', 'Look'],
     ['Hold right button', 'Aim, let go to fire'],
     ['Click', 'Hold fire'],
@@ -88,6 +91,13 @@ export function footHints(worn: number): readonly Hint[] {
   if (!art) return HINTS.foot.filter(([key]) => !ART_KEYS.has(key));
   const aimed = AIMED[art.tenets[0]?.key ?? ''];
   return aimed ? [...HINTS.foot, aimed] : HINTS.foot;
+}
+
+/** The keys shown on foot as the player stands with the section: none while a fall plays out (no key does anything
+ *  until Respawn is offered), Respawn's once death is told, and otherwise the foot's with the Art worn. */
+export function keysShown(standing: Standing, worn: number): readonly Hint[] {
+  if (standing.kind !== 'dead') return footHints(worn);
+  return standing.told ? HINTS.dead : [];
 }
 
 /** What the player is doing at sea, for the keys shown: fighting, choosing a landing, at the helm with the map,

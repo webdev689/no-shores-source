@@ -163,6 +163,7 @@ const TONE_COLOURS: Readonly<Record<Tone, string>> = {
   plain: '#bfc8d2',
   warn: '#ffffff',
   shield: '#f2efe6',
+  healed: '#7ee06a',
 };
 const STAMP_GOLD = '#ffd95a';
 const cssOf = ([red, green, blue]: Rgb) =>

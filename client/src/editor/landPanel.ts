@@ -294,14 +294,11 @@ export function landPanel(ui: Interface, view: LandPanelView, handlers: LandPane
       'Walking: W A S D to move, Shift to run, C to dive, Space to rise, drag to look round, G to stop.',
       view.walking,
     ),
-    hint(
-      'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows it sideways, B to stop.',
-      view.sailing,
-    ),
+    hint('Sailing: W and S climb and come down from oars to sails, A and D steer, B to stop.', view.sailing),
     hint(
       'F calls a pirate, or sends it off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
-        ' A left click holds fire, the wheel changes shot, and C braces. In a fleet (?room= in the address), F calls' +
-        ' a captain and X sends them all off.',
+        ' A left click holds fire, the wheel changes shot, C braces, and Shift gives a burst of speed. In a fleet' +
+        ' (?room= in the address), F calls a captain, X sends them all off, and Shift gives no burst.',
       view.sailing,
     ),
     {

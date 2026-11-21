@@ -22,11 +22,12 @@ export const BAR_TONES = {
 /** How far the display's corner pieces stand in from the view's side, top and foot, in CSS pixels at their own size. */
 export const CORNER = { side: 28, top: 14, foot: 22 } as const;
 
-/** Each vital's height, frame and all, the gap between two, and the room kept under them for the buffs' row, at
- *  each step, in CSS pixels: the thin bars' sizes, the vitals' on foot and the ship's at sea. */
+/** Each vital's height, frame and all, the gap between two, the healing charges' diamonds under them on foot, and
+ *  the room kept under those for the buffs' row, at each step, in CSS pixels: the thin bars' sizes, the vitals' on
+ *  foot and the ship's at sea. */
 export const VITAL_SIZES = {
-  base: { health: 12, stamina: 10, poise: 8, gap: 4, buffs: 34 },
-  wide: { health: 16, stamina: 14, poise: 10, gap: 5, buffs: 46 },
+  base: { health: 12, stamina: 10, poise: 8, gap: 4, drinks: 12, buffs: 34 },
+  wide: { health: 16, stamina: 14, poise: 10, gap: 5, drinks: 16, buffs: 46 },
 } as const;
 
 /** How many pixels the frame takes along the bar's top and foot: its outline and its stone line. */
@@ -64,6 +65,31 @@ export function barFrameCells(height: number, tone: BarTone): (string | null)[] 
       else if (along < slope + SLOPE * 2 || y === 1 || y === height - 2)
         paint(x, y, fromMiddle === 0 && along < SLOPE * 2 ? tone.tip : stone);
       else paint(x, y, TONES.groundTrack);
+    }
+  }
+  return cells;
+}
+
+/** A healing charge's diamond `size` pixels across (an even number), row by row, each pixel its colour or null where
+ *  clear, drawn as a bar's frame is: the outline outermost, then the stone line, lit on the upper half and shaded on
+ *  the lower; inside, `inside` up to `rows` whole pixel rows from its foot and `above` over them. */
+export function diamondCells(
+  size: number,
+  tone: BarTone,
+  rows: number,
+  inside: string,
+  above: string,
+): (string | null)[] {
+  const half = size / 2;
+  const cells: (string | null)[] = Array.from({ length: size * size }, () => null);
+  for (let y = 0; y < size; y++) {
+    const fromEdge = y < half ? y : size - 1 - y;
+    const [left, right] = [half - 1 - fromEdge, half + fromEdge];
+    const risen = size - BAR_EDGE - y <= rows;
+    for (let x = left; x <= right; x++) {
+      const inward = Math.min(x - left, right - x);
+      cells[y * size + x] =
+        inward === 0 ? TONES.outline : inward < BAR_EDGE ? (y < half ? tone.lit : tone.shade) : risen ? inside : above;
     }
   }
   return cells;

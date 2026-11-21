@@ -29,7 +29,6 @@ const OTHER = 2;
 /** A tick's worth of what the player does at sea in a fleet (the editor's `FleetInput`). */
 export interface SessionInput {
   readonly steer: number;
-  readonly crab: boolean;
   readonly climbs: readonly number[];
   readonly look: FleetLook | null;
   readonly fire: boolean;
@@ -138,7 +137,7 @@ export class FleetSession {
 
   /** Their ship stepped by one set of orders, by the room's rules. */
   private stepped(ship: ArrayLike<number>, orders: FleetOrders, time: number): ShipFloats {
-    const helm: Helm = { steer: orders.steer, crab: orders.crab, climb: orders.climb as Helm['climb'] };
+    const helm: Helm = { steer: orders.steer, climb: orders.climb as Helm['climb'] };
     const epoch = this.link.epoch ?? 0;
     return new Float64Array(this.rules.predict(ship, this.hurts(), time, epoch, [helm])?.ship ?? Array.from(ship));
   }
@@ -199,7 +198,6 @@ export class FleetSession {
       const { call, captain } = this.calls.shift() ?? { call: 'none' };
       const orders: FleetOrders = {
         steer: input.steer,
-        crab: input.crab,
         climb: this.climbs.shift() ?? 0,
         look: input.look ?? (firing ? this.lastLook : null),
         fire: firing,

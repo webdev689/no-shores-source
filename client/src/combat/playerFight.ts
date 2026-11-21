@@ -48,9 +48,9 @@ export class PlayerFight {
    * One frame: `steps` the fight's movement rules, the room's clock run while `running`, the fight's buttons taken
    * only while `hands` (the pointer held), an aimed shot laid on `markOf`'s point (the crosshair's), and the first
    * person's hands zoomed with the view by `zoomOf` once the player has stepped, moving `handsSeconds` on. The buttons:
-   * a swing or a shot only with the weapon already out, on foot, the hands free; a guard on foot; a dodge whenever
-   * pressed (the rules refuse one in the air or the saddle). A bow, a crossbow or a gun drawn: the swing's button aims
-   * it and the guard's fires it, and no guard rises behind it.
+   * a swing or a shot only with the weapon already out, on foot, the hands free; a guard on foot; a dodge and a drink
+   * whenever pressed (the rules refuse them in the air or the saddle). A bow, a crossbow or a gun drawn: the swing's
+   * button aims it and the guard's fires it, and no guard rises behind it.
    */
   frame(
     controls: InputFrame,
@@ -81,11 +81,16 @@ export class PlayerFight {
     const guards = hands && free && !player.mounted && !ranged;
     // Each press is the fight's even when let go within the frame; one of the guard's two keys pressed while the other
     // is held is a fresh press.
+    const floorAt = (x: number, y: number) => steps.standing(x, y).z;
+    this.castFrame(controls, seconds, hands && free && !player.mounted, { markOf, floorAt });
+    // A cast under way holds off a drink, as the room does: sent, aimed, or its move still playing.
+    const casting = this.castKeys.waiting || walker.player.cast !== null;
     fight.press({
       swing: armed && !shooter && controls.held('swing'),
       shoot: ranged && controls.held('guard'),
       guard: guards && controls.held('guard'),
       dodge: hands && controls.pressed('dodge'),
+      heal: hands && controls.pressed('heal') && !casting,
       pitch: -player.pitch,
       aim: aiming,
       mark: aiming ? markOf() : null,
@@ -93,8 +98,6 @@ export class PlayerFight {
       shootPressed: ranged && controls.pressed('guard'),
       guardPressed: guards && controls.pressed('guard'),
     });
-    const floorAt = (x: number, y: number) => steps.standing(x, y).z;
-    this.castFrame(controls, seconds, hands && free && !player.mounted, { markOf, floorAt });
     const foe = fight.targetAt;
     const toward = foe && Math.atan2(foe.x - player.body.x, -(foe.y - player.body.y));
     walker.step(controls, steps, seconds, toward, aiming);

@@ -15,7 +15,7 @@ use sailing::ship::Helm;
 use sailing::waters::Waters;
 
 pub const ORDERS: usize = 16;
-pub const VESSEL_NUMBERS: usize = 27;
+pub const VESSEL_NUMBERS: usize = 29;
 pub const STOP_NUMBERS: usize = 10;
 /// The farthest a look may lay, metres: past every gun's reach.
 const MOST_RANGE_M: f64 = 1e5;
@@ -35,7 +35,7 @@ pub fn orders_from(numbers: &[f64]) -> Result<Orders, String> {
     if numbers.iter().any(|number| !number.is_finite()) {
         return Err("orders are finite numbers".into());
     }
-    let [steer, crab, climb, laid, bearing_deg, range_m, rayed, eye @ .., fire, brace, load] = numbers;
+    let [steer, boost, climb, laid, bearing_deg, range_m, rayed, eye @ .., fire, brace, load] = numbers;
     let [eye_x, eye_y, eye_z, east, south, up] = eye;
     let flag = |value: f64, name: &str| match value {
         0.0 => Ok(false),
@@ -65,8 +65,8 @@ pub fn orders_from(numbers: &[f64]) -> Result<Orders, String> {
                 .ok_or("a load is 0 or one of the four shots")?,
         ),
     };
-    let helm = Helm { steer, crab: flag(crab, "the crab")?, climb: climb as i8 };
-    Ok(Orders { helm, aim, fire: flag(fire, "the fire")?, brace: flag(brace, "the brace")?, load })
+    let (helm, boost) = (Helm { steer, climb: climb as i8 }, flag(boost, "the boost")?);
+    Ok(Orders { helm, aim, fire: flag(fire, "the fire")?, brace: flag(brace, "the brace")?, load, boost })
 }
 
 fn shot_number(shot: Shot) -> f64 {
@@ -77,7 +77,7 @@ fn shot_number(shot: Shot) -> f64 {
 #[must_use]
 pub fn orders_numbers(orders: &Orders) -> Vec<f64> {
     let flag = |on: bool| f64::from(u8::from(on));
-    let mut numbers = vec![orders.helm.steer, flag(orders.helm.crab), f64::from(orders.helm.climb)];
+    let mut numbers = vec![orders.helm.steer, flag(orders.boost), f64::from(orders.helm.climb)];
     match orders.aim {
         None => numbers.extend([0.0; 10]),
         Some(aim) => {
@@ -113,6 +113,7 @@ fn vessel_numbers(vessel: &Vessel) -> Vec<f64> {
     numbers.extend([guns.left(Side::Port), guns.left(Side::Starboard)]);
     numbers.extend([guns.progress(Side::Port), guns.progress(Side::Starboard)]);
     numbers.extend([shot_number(guns.load), f64::from(u8::from(guns.braced))]);
+    numbers.extend(vessel.boost.shares());
     numbers.push(f64::from(vessel.hull.number()));
     numbers
 }

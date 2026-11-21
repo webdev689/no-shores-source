@@ -23,17 +23,17 @@ const SQUARE = JSON.stringify({
 });
 
 /** The fight the door's own test fights (FIGHT_LEGS): each leg's steer, climb, look's bearing and range (0 none),
- *  fire, brace, load (0 none, 2 grape) and ticks. */
+ *  fire, brace, load (0 none, 2 grape), burst and ticks. */
 const FIGHT_LEGS: readonly (readonly number[])[] = [
-  [0, 1, 0, 0, 0, 0, 0, 60],
-  [0, 1, 0, 0, 0, 0, 0, 60],
-  [1, 0, 0, 0, 0, 0, 0, 60],
-  [0, 0, 90, 120, 1, 0, 0, 60],
-  [0, 0, -90, 60, 1, 0, 0, 60],
-  [0, 0, 0, 0, 0, 0, 2, 60],
-  [-1, 0, 0, 0, 0, 1, 0, 60],
-  [0, 0, 90, 40, 1, 0, 0, 60],
-  [0, -1, 0, 0, 0, 0, 0, 60],
+  [0, 1, 0, 0, 0, 0, 0, 0, 60],
+  [0, 1, 0, 0, 0, 0, 0, 0, 60],
+  [1, 0, 0, 0, 0, 0, 0, 1, 60],
+  [0, 0, 90, 120, 1, 0, 0, 0, 60],
+  [0, 0, -90, 60, 1, 0, 0, 0, 60],
+  [0, 0, 0, 0, 0, 0, 2, 0, 60],
+  [-1, 0, 0, 0, 0, 1, 0, 0, 60],
+  [0, 0, 90, 40, 1, 0, 0, 0, 60],
+  [0, -1, 0, 0, 0, 0, 0, 0, 60],
 ];
 
 async function openSquare() {
@@ -46,14 +46,15 @@ async function openSquare() {
 }
 
 function ordersOf(leg: readonly number[]): FightOrders {
-  const [steer = 0, climb = 0, bearing = 0, range = 0, fire = 0, brace = 0, load = 0] = leg;
+  const [steer = 0, climb = 0, bearing = 0, range = 0, fire = 0, brace = 0, load = 0, boost = 0] = leg;
   const shot: ShotName | null = load === 2 ? 'grape' : null;
   return {
-    helm: { steer, crab: false, climb: climb > 0 ? 1 : climb < 0 ? -1 : 0 },
+    helm: { steer, climb: climb > 0 ? 1 : climb < 0 ? -1 : 0 },
     aim: range > 0 ? { bearing, range } : null,
     fire: fire === 1,
     brace: brace === 1,
     load: shot,
+    boost: boost === 1,
   };
 }
 
@@ -61,28 +62,30 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   const rules = await openSquare();
   let view = rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000);
   let time = 1000;
-  const prints: string[] = [];
+  const [prints, bursts]: [string[], number[]] = [[], []];
   for (const leg of FIGHT_LEGS) {
-    const ticks = leg[7] ?? 0;
+    const ticks = leg[8] ?? 0;
     view = rules.fightStep(ordersOf(leg), time, ticks, 0);
     prints.push(view.fingerprint);
+    bursts.push(view.player.boost[0]);
     time += ticks / 60;
   }
   assert.equal(view.player.guns.load, 'grape');
+  assert.ok(Math.abs((bursts[2] ?? 0) - 0.75) < 0.01 && bursts[6] === 0, `the third leg's burst: ${bursts.join(' ')}`);
   assert.equal(
     prints.join(' '),
-    'c260ed1b87a55f96 3e3cf79d73048acd 7ae905e53395710d d3b6730e151bc7cb 2c578c927689607a c3fc57c509c1a593 ' +
-      'ea9af6a577483c3e bb46fcf8c1313545 d7dccf29cac36ece',
+    '33466b1fcb123f56 a2477d834bd15c4d 462969a46590ee82 a8b27f217c7b8b9e cf2aa3dc71daea1b 315937c8e8ee0110 ' +
+      '9548a648aa7da4b2 d3299f6fff5ec30d 21e0e6f74fd73908',
   );
 });
 
 // Each hull's fight, as crates/land-wasm/src/fight_tests.rs HULL_FIGHTS pins it: its captain's rank, the hull they
 // sail, and the last leg's fingerprint.
 const HULL_FIGHTS = [
-  [2, 0, 'd7dccf29cac36ece'],
-  [3, 1, 'dbaf7398dd05d4aa'],
-  [4, 2, 'ae34839cb3c3321f'],
-  [5, 3, '1f4d823141afdd23'],
+  [2, 0, '21e0e6f74fd73908'],
+  [3, 1, '75099807e3caae06'],
+  [4, 2, '09981a8ca0b1c495'],
+  [5, 3, '2ade8a8521093843'],
 ] as const;
 
 test('a fight against each hull through WebAssembly fights to the same fingerprint as the door natively', async () => {
@@ -92,7 +95,7 @@ test('a fight against each hull through WebAssembly fights to the same fingerpri
     assert.deepEqual([view.captain.rank, view.captain.hull_kind, view.player.hull_kind], [rank, hull, 0]);
     let time = 1000;
     for (const leg of FIGHT_LEGS) {
-      const ticks = leg[7] ?? 0;
+      const ticks = leg[8] ?? 0;
       view = rules.fightStep(ordersOf(leg), time, ticks, 0);
       time += ticks / 60;
     }

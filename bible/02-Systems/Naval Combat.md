@@ -19,6 +19,7 @@ code:
   - crates/naval/src/captain/odds.rs#odds
   - crates/naval/src/fight.rs#Fight
   - crates/naval/src/fight.rs#sail_hurt
+  - crates/naval/src/boost.rs#Boost
   - crates/naval/src/fight_step.rs
   - crates/naval/src/laying.rs#preview
   - crates/naval/src/ram.rs#ram_blow
@@ -141,8 +142,17 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   or its rig where that sail is gone; a sail torn away; a mast fallen; colours struck; a ship going down; a piece of what
   floats laid, and gathered; and players gone aboard a ship.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
-- **The pace** of every ship in a fight is half again its pace at sea, under sail and under oars alike (`FIGHT_PACE`,
-  [[Ships Sail and Hit Half Again Harder in Sea Fights]]).
+- **The pace** of every ship in a fight, a player's or a captain's, is 1.8 times its pace at sea, under sail and under
+  oars alike (`FIGHT_PACE`: half again, [[Ships Sail and Hit Half Again Harder in Sea Fights]], and a fifth on that,
+  [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]),
+  and it swings twice as fast and answers its helm twice as soon (`FIGHT_TURN`): the Sloop makes about 4.8 m/s with
+  the usual breeze on its quarter, swings at up to about 28 degrees a second under sail and 40 on its oars, and from
+  slow its rudder takes hold twice as fast. A captain reckons its own swing at a fight's (`swing_rate`).
+- **The burst** (`boost.rs`, [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]): a tap of Shift drives a player's ship's sails and oars half again for 4 s; once the
+  burst is over it recharges for 12 s, so it may burst again 16 s after the tap. A tap while it bursts or recharges
+  does nothing, and a wreck cannot burst (its burst is kept). Captains never burst. The fight's view carries each
+  ship's burst, the share still to run and the share of its recharge done, which the Sloop's plate shows as a ring
+  ("How it looks", "The readout"). Sailing between ports has no burst: only a fight's helm has one.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
@@ -369,7 +379,7 @@ water floats it, heading across its waters on a slant; `F` again sends the capta
 helm's place. Holding the right mouse aims: the camera eases out to the aim eye past the ports on the side looked at,
 as the game's fight does ("The aim, as DFO's"), the look's bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
 lookReach), unless the look is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
-left click holds fire, the wheel changes shot, and `C` braces.
+left click holds fire, the wheel changes shot, `C` braces, and `Shift` bursts.
 
 The captain's ship is drawn in their hull and their faction's colours ([[Sailing]], "Its look"), and the water cuts its footprint
 as it does the player's. The balls are small lit spheres, the lay is drawn over the water as the game's fight draws
@@ -454,7 +464,7 @@ captain's number comes with them in the view, so one leaving the fight never mov
 - **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
   turning it up to a degree a unit of jar, the jars at once added together.
 - **The readout** (drawn by `combat/seaReadout.ts` from `plus/seaFight.ts`'s words, fed by `ships/fightDisplay.ts`,
-  shown by the HUD at sea and over the World Editor's view): the Sloop's plate at the top left with its battery rose, the card under
+  shown by the HUD at sea and over the World Editor's view): the Sloop's plate at the top left with its boost ring and battery rose, the card under
   the compass on the ship the look is on (the captain nearest where the Sloop's laid guns fall, else the nearest), and its volley's tally under the sight, in every fight from its first frame to its
   last ([[Interface]], "The sea fight's readout"). The panel leaves the Sloop's own hurts and guns to it. While a captain afloat
   stands with their guns run out, DFO's warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at: "Broadside from the Pirate Brig - C: brace". At
@@ -561,8 +571,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
-  let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, and
-  C to brace; the sea's own wait for its end, and the sea bar is hidden. Where the editor's panel lists its lines,
+  let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, C to
+  brace, and Shift to burst; the sea's own wait for its end, and the sea bar is hidden. Where the editor's panel lists its lines,
   the game's HUD shows the fight's readout, its task in the tracker and DFO's messages as notices ([[Interface]]).
   Every captain in it is drawn with their name over a bar of their hull, their plate as far over their highest sail as the
   Sloop's stands over its own (`plateOverM`). Then the view pans back up. Hostile ships at sea
@@ -575,8 +585,11 @@ The owner: the sea fight looks and aims as DFO's does ([[The Sea Fight Looks and
 DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZoom.js`:
 
 - **The eye** (`AimCamera`, in the game's fight) eases out to the aim eye over DFO's 0.22 s, smoothstepped, and home
-  again on the release; swinging the look across the ship's bow carries it to the other battery's eye eased in the ship's own frame,
-  so its way never drags it. On its way out from the ship's ports it stops 1.2 m short of any ship afloat alongside (that ship's
+  again on the release; a look carried onto the other battery carries it to that battery's eye eased in the ship's own
+  frame, so its way never drags it. Once the look lays on a side, it is held there until the aim is let go: no drag
+  and no turn of the ship takes it out of that side's arc, past 35° off the bow and short of 40° off the stern, where
+  the guns bear ([[A Held Aim Keeps the Camera on Its Side]]); an aim taken over the bow holds nothing until the look
+  first lays on a side. On its way out from the ship's ports it stops 1.2 m short of any ship afloat alongside (that ship's
   waterline's box, from its draught to a metre over its upper gun line). A crippled ship's guns are silent: its eye
   never moves. The look's ray runs from the eye drawn, so the crosshair is where it lays.
 - **The reach**: while aiming the look may rise 0.15 rad over the horizon, past the guns' longest throw on the water

@@ -1,6 +1,7 @@
 // What Manage shows of the player's Sloop: what the naval rules say it is, its measure, where its voyage stands and
 // its repair. Its power, modules and crew come with the player's gear (`shipGear.ts`).
 import { sloopBuildText } from '../network/localRoom.ts';
+import { fetchRoomWasm } from '../rules/combatRules.ts';
 import { capital } from '../player/gear.ts';
 
 /** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
@@ -50,13 +51,14 @@ export interface ShipPanel {
 
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 
-/** The room's module fetched from `base` and compiled once, and the Sloop's build as its naval rules hold it, read the
+/** The room's module fetched from `base` (asked again each time, so a new page never runs on an old one) and compiled
+ *  once, and the Sloop's build as its naval rules hold it, read the
  *  first time it is asked once the module has come; null until then, or when it does not read. */
 export function roomModuleFrom(base: string): {
   readonly module: Promise<WebAssembly.Module>;
   readonly sloop: () => SloopBuild | null;
 } {
-  const module = fetch(`${base}room.wasm`)
+  const module = fetchRoomWasm(base)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
     .then((bytes) => WebAssembly.compile(bytes));
   let [compiled, built]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];

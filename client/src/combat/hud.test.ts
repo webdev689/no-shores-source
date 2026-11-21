@@ -7,6 +7,7 @@ import type { Action, FighterView } from '../rules/fighters.ts';
 import type { Node } from '../ui/node.ts';
 import { viewProjection } from '../editor/orbit.ts';
 import type { MarkedFoe } from './foeBars.ts';
+import { EVENT } from './cues.ts';
 import { blockedBy, clearOf, Hud, type HudFrame, veilOf } from './hud.ts';
 import { vitalsDepth } from './hudLayout.ts';
 import { cameraOf } from './plateSight.ts';
@@ -346,6 +347,31 @@ test('the page’s pieces beside the display are read only while an arrow would 
   hud.update(bare({ foes: [runner] }), 1 / 60);
   assert.equal(allOf(drawn(hud)).filter((node) => node.picture?.key === 'threat arrow').length, 1, 'the arrow shows');
   assert.equal(read, 1);
+});
+
+test('the screen’s red edge comes for a blow the player takes, never for their drink’s heal', () => {
+  const hud = new Hud();
+  const frame: HudFrame = {
+    own: { ...standing, health: 60 },
+    foes: [],
+    where: () => [0, 0, 0],
+    matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    width: 1280,
+    height: 720,
+    events: [],
+    player: 1,
+    firstPerson: false,
+    pressed: false,
+    lost: null,
+    groundAt: null,
+  };
+  const told = (kind: number) => ({ tick: 0n, kind, how: 0, striker: 1, defender: 1, amount: 40, stroke: 0 });
+  // The red edge is the one node drawn over the whole screen at the edge's own fade.
+  const edge = () => allOf(drawn(hud)).some((node) => node.width === 'grow' && node.draw && (node.opacity ?? 0) > 0);
+  hud.update({ ...frame, events: [told(EVENT.healed)] }, 1 / 60);
+  assert.equal(edge(), false, 'healed: no red');
+  hud.update({ ...frame, events: [{ ...told(EVENT.hit), striker: 2 }] }, 1 / 60);
+  assert.equal(edge(), true, 'struck: red');
 });
 
 test('every word the display stands still on the screen is a whole step of the face’s 11 px grid, so it draws sharp', () => {

@@ -68,8 +68,9 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
-  /** Takes away every player's Art: the prologue's wreck, where the player has none yet. */
-  forbidArts(): void;
+  /** Plays the prologue's wreck: no Art (the player has none yet), the story's sword and shield, and every boarder on
+   *  one side, held to a Major (`Room::story_wreck`). */
+  storyWreck(): void;
   /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
   /** Why the room takes no player, a locked node's words; null for a room that takes them. */
@@ -162,7 +163,7 @@ interface RoomExports {
   room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
   room_take_foe_asks(): void;
-  room_forbid_arts(): void;
+  room_story_wreck(): void;
   room_join(): number;
   room_refusal(): bigint;
   room_joined(player: number): bigint;
@@ -277,7 +278,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return new Float64Array(bytes.buffer, bytes.byteOffset, bytes.length / 8);
     },
     takeFoeAsks: () => exports.room_take_foe_asks(),
-    forbidArts: () => exports.room_forbid_arts(),
+    storyWreck: () => exports.room_story_wreck(),
     join: () => exports.room_join(),
     refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),

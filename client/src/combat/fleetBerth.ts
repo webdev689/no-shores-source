@@ -1,11 +1,12 @@
 import { fleetAddress } from '../network/roomAddress.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
+import { fetchRoomWasm } from '../rules/combatRules.ts';
 import { type FleetRules, startFleetRules } from '../rules/fleetRules.ts';
 import { FleetSession } from './fleetSession.ts';
 
 /** The room's rules from the `room.wasm` a page serves under `base`, compiled. */
 export async function fleetRulesAt(base: string): Promise<FleetRules> {
-  const bytes = await (await fetch(`${base}room.wasm`)).arrayBuffer();
+  const bytes = await (await fetchRoomWasm(base)).arrayBuffer();
   return startFleetRules(await WebAssembly.compile(bytes));
 }
 

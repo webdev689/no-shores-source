@@ -21,6 +21,7 @@ const vessel: FightVessel = {
   state: 'afloat',
   fires: 0,
   guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
+  boost: [0, 1],
 };
 const captain: FightCaptain = {
   ...vessel,
@@ -193,6 +194,22 @@ function ordered(view: FightView = FIRST) {
 const away = (shot: Shot, from: readonly number[]) =>
   Math.hypot(...shot.eye.map((value, axis) => value - (from[axis] ?? 0)));
 
+test('a tap of Shift asks the room for one burst of speed, however long it is held', async () => {
+  const { fight, orders, frames } = ordered();
+  assert.equal(fight.key('shift', true), true, 'the fight takes Shift');
+  fight.key('shift', true);
+  await frames(4);
+  assert.deepEqual(
+    orders.map((sent) => sent.boost),
+    [true, false, false, false],
+    'held down and repeating, still one burst',
+  );
+  fight.key('shift', false);
+  fight.key('shift', true);
+  await frames(1);
+  assert.equal(orders.at(-1)?.boost, true, 'let go and tapped again, another');
+});
+
 test('pressing aim eases the eye out to its battery, not a cut from the orbit in one frame', async () => {
   const { fight, frames } = ordered();
   const [orbit] = await frames(1);
@@ -228,6 +245,30 @@ test('while aiming the look may rise over the horizon to the longest throw; the 
   fight.drag(0, -1000);
   const [shot] = await frames(1);
   assert.ok(shot && shot.pitch >= 0.05 - 1e-9, `the orbit looks ${shot?.pitch} down`);
+});
+
+test('a held aim keeps its look on the side it laid on: no drag takes it over the bow or the stern', async () => {
+  const { fight, orders, frames } = ordered();
+  const turn = (degrees: number) => fight.drag((degrees * Math.PI) / 180 / 0.005, 0);
+  const bearing = () => orders.at(-1)?.aim?.bearing ?? Number.NaN;
+  // Aimed looking over the bow: nothing is held until the look first lays on a side.
+  fight.aim(true);
+  turn(90);
+  await frames(2);
+  assert.ok(Math.abs(bearing() - 90) < 1, `turned onto the starboard battery it bears ${bearing()}`);
+  turn(100);
+  await frames(2);
+  assert.ok(Math.abs(bearing() - 139) < 1, `dragged past the stern it stops at ${bearing()}`);
+  turn(-200);
+  await frames(2);
+  assert.ok(Math.abs(bearing() - 36) < 1, `dragged across the bow onto port it stops at ${bearing()}`);
+  // Let go, the camera turns as it likes again.
+  fight.aim(false);
+  turn(-36);
+  await frames(2);
+  fight.aim(true);
+  await frames(2);
+  assert.ok(Math.abs(bearing()) < 1, `aimed again over the bow it bears ${bearing()}`);
 });
 
 test('a trackpad burst steps the load once; a notch after a quiet of 0.18 s steps it again', async () => {

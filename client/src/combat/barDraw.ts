@@ -209,8 +209,10 @@ export function markAt(
 }
 
 /** A vital's frame's RGBA pixels, as the interface lays a tile. */
-export function barFramePixels(height: number, tone: BarTone): Uint8Array {
-  const cells = barFrameCells(height, tone);
+export const barFramePixels = (height: number, tone: BarTone): Uint8Array => cellsPixels(barFrameCells(height, tone));
+
+/** Cells, each its colour or null where clear, as RGBA texels. */
+function cellsPixels(cells: readonly (string | null)[]): Uint8Array {
   const pixels = new Uint8Array(cells.length * 4);
   cells.forEach((colour, index) => {
     if (!colour) return;
@@ -238,6 +240,21 @@ export function barFrame(pen: Pen, height: number, tone: BarTone, name: string):
   add(box.x, tip * scale, 0, tip);
   add(box.x + tip * scale, box.width - 2 * tip * scale, tip, 1);
   add(box.x + box.width - tip * scale, tip * scale, tip + 1, tip);
+}
+
+/** A picture `width` by `height` cells, made once by `cells` and kept as `key`, drawn at `pen`'s box's top left, each
+ *  cell a CSS pixel. */
+export function drawCells(
+  pen: Pen,
+  key: string,
+  width: number,
+  height: number,
+  cells: () => readonly (string | null)[],
+): void {
+  const tile = pen.ui.tileTexels(key, width, height, () => cellsPixels(cells()));
+  if (!tile) return;
+  const box = snap({ x: pen.box.x, y: pen.box.y, width: width * pen.scale, height: height * pen.scale });
+  pen.ui.quads.add(box, [1, 1, 1, pen.fade ?? 1], pen.clip, tile);
 }
 
 /** How far inside a vital's box its trough stands: the frame's top and foot, and each point. */

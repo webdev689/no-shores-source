@@ -29,7 +29,7 @@ import type { CellRect } from './landMask.ts';
 import { cameraOf, FIELD_OF_VIEW, type Orbit, PITCH_LIMITS, viewProjection } from './orbit.ts';
 import { heightAt } from './reliefView.ts';
 import { type TerrainData, type TerrainOptions, TerrainView } from '../terrain/terrainView.ts';
-import { helmOf, isRungKey } from '../ships/helmKeys.ts';
+import { BOOST_KEY, helmOf, isRungKey } from '../ships/helmKeys.ts';
 import type { Afloat } from './afloat.ts';
 import type { FightSource } from './fighting.ts';
 import { chosenCaptain, type FleetCall, type Readout } from './fleetLink.ts';
@@ -412,8 +412,10 @@ export class LandScene {
       frame.pressed.length = 0;
       return orbit;
     }
+    let boost = false;
     for (const key of frame.pressed.splice(0)) {
       if (key === 'f') this.naval.toggle(source, id, sailing, time, this.fail);
+      else if (key === BOOST_KEY) boost = true;
       else sailing.press(key);
     }
     if (this.naval.busy) {
@@ -425,6 +427,7 @@ export class LandScene {
         look,
         fire: frame.fires > 0,
         loadSteps: frame.loadSteps,
+        boost,
       };
       for (const splash of this.naval.step(seconds, input, time, sailing, view, this.fail))
         this.water.stir(splash.x, splash.y, splash.radiusM, splash.strength);
@@ -452,9 +455,9 @@ export class LandScene {
       else if (isRungKey(key)) climbs.push(helmOf(new Set(), key).climb);
     }
     const look = frame.aiming ? fleet.look(orbit, view) : null;
-    const { steer, crab } = helmOf(frame.held, undefined);
+    const { steer } = helmOf(frame.held, undefined);
     const brace = frame.held.has('c');
-    const input = { steer, crab, climbs, look, fire: frame.fires > 0, brace, loadSteps: frame.loadSteps, call };
+    const input = { steer, climbs, look, fire: frame.fires > 0, brace, loadSteps: frame.loadSteps, call };
     for (const splash of fleet.step(seconds, { ...input, captain: chosenCaptain() }, now, view))
       this.water.stir(splash.x, splash.y, splash.radiusM, splash.strength);
     const waterline = this.ship?.waterline;

@@ -23,7 +23,8 @@ table Ask {
 // A browser's controls for one tick: forward, sideways, yaw, run, jump, crouch, mounted. Numbered 1, 2, 3 and so on.
 // With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
 // their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
-// 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
+// 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch; a ranged weapon aimed;
+// the point an aimed shot is laid on; a drink asked: combat's intent order), what the hands hold as
 // combat's arms code, the room tick of the last snapshot the screen showed, a foe to stand before the player (0 none;
 // 255 sends every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a
 // shield it stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of
@@ -127,7 +128,7 @@ table Told {
 }
 
 // A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: the ship's helm (the rudder from -1, to
-// port, to 1, to starboard; whether its oars pull it sideways; a rung up the ladder, 1, or down, -1, for one tick); the
+// port, to 1, to starboard; a rung up the ladder, 1, or down, -1, for one tick); the
 // player's look while they aim (its bearing off the bow in degrees and how far out it meets the water in metres, then
 // its ray: the aim eye and the way it looks, east, south and up; none while they do not aim); whether the ship fires
 // and whether it braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where it puts to sea (x, y and
@@ -137,7 +138,6 @@ table Told {
 table Orders {
   sequence: uint;
   steer: double;
-  crab: bool;
   climb: byte;
   aim: [double];
   fire: bool;
@@ -175,8 +175,9 @@ table Joined {
 // it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body and
 // whose statuses (each one's ticks left, a Veiled player's among them) follow its action's numbers, and where they
 // stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks left, 2
-// dead, with the ticks since. A number, not a schema enum, so the TypeScript flatc makes stays erasable. The player
-// the snapshot is for has their fighter whole (`fighter`); everyone else's is `packed` (crates/protocol/src/pack.rs).
+// dead by straying, 3 dead by a fall in a social space, each with the ticks since. A number, not a schema enum, so the
+// TypeScript flatc makes stays erasable. The player the snapshot is for has their fighter whole (`fighter`); everyone
+// else's is `packed` (crates/protocol/src/pack.rs).
 table Seen {
   player: uint;
   acknowledged: uint;

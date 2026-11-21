@@ -65,6 +65,7 @@ code:
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
   - client/src/combat/vitals.ts#Vitals
+  - client/src/combat/vitals.ts#chargesShown
   - client/src/combat/hudLayout.ts#hudLayout
   - client/src/combat/hudLayout.ts#barLength
   - client/src/plus/barFrame.ts#barFrameCells
@@ -359,9 +360,18 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   compass; stamina's and poise's are as long as what they hold beside health's most. No words stand on health or
   stamina; poise says Iron, Staggered or Open beside its bar, and each bar is labelled with its name and its share. Health at
   a quarter or less flashes its frame to blood; stamina's lights white for a swing or a dodge asked with none; poise's
-  turns brass while open. Whole and untouched for 4 s (health and stamina short of no whole point, no poise taken),
-  with no buff and no foe on the target plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s;
-  the first point lost or spent brings them back in two.
+  turns brass while open. Under the bars stand the healing charges ([[Combat]], "Healing charges"):
+  three diamonds 12 px tall (16 at the larger step), as far apart as the bars, each drawn cell by cell as the bars'
+  frames are (`plus/barFrame.ts`), an outline over a stone line lit on its upper half and shaded on its lower, the
+  inside the bars' see-through track. A charge held is whole in health's red, and the next fills from its foot by
+  whole pixel rows in a pale health red as the player's blows fill its meter. A diamond brightens in two steps over
+  0.4 s, near white and then pale red, as a charge is gained or drunk (not under reduced motion). A screen reader
+  reads them as a meter, "Healing charges", with how many of the three are held and how far the next has filled,
+  to a whole percent while the diamond fills in whole pixel rows ([[Three Healing Charges, Refilled by Blows and
+  Kills]]). Whole and untouched for 4 s (health
+  and stamina short of no whole point, no poise taken, all three charges held), with no buff and no foe on the target
+  plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s; the first point lost or spent brings
+  them back in two.
 - **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
   ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
   picture (see "Pictures" below) in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or
@@ -441,7 +451,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   foe within 0.6 s add into one number, which pops again. A number dealt in an element is in its light. What a blow
   did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
   not break it says "Holds". Stepping onto an Ammo box the room leaves lying, the ammunition full, says "Ammo full" on
-  the player in plain grey, once each time ([[Gear]], "Ammo full").
+  the player in plain grey, once each time ([[Gear]], "Ammo full"). A drink's heal says what it gave back ("+40") on
+  the player in green, and in plain grey on another player.
 - **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge
   blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
@@ -481,8 +492,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   notices; in the prologue's fight they are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
   3.5 s), rising in over 0.2 s; one already shown keeps its place.
-- **The key strip** shows the keys of what the player does now, each on a keycap beside its words, wrapping right to
-  left. On foot it keeps to the fight's keys and the body's beyond walking, the Arts' only while one is worn.
+- **The key strip** shows the keys of what the player does now, each on a keycap beside its words, 8 px apart,
+  wrapping right to left. On foot it keeps to the fight's keys and the body's beyond walking, the Arts' only while
+  one is worn; at 1280 by 720 that is two lines, three with Shadow's Dusk Daggers. Past 1440p the strip stands at
+  twice its size and wraps 960 px short of the view's width, so it never runs over the weapons.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; Back to
   the sea stands on its footer. It is built again only when what it
   shows changes.
@@ -684,7 +697,8 @@ Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by p
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
   Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
   they are given (Exposed, Charged and Haste make no sound: [[Exposed, Charged and Haste Make No Sound]]).
-- **The rest.** A drop coming to rest, an Ammo crate used, a foe turning alert, and the player standing again.
+- **The rest.** A drop coming to rest, an Ammo crate used, a foe turning alert, and the player standing again. A
+  drink's heal plays the same sound as standing again, as the health comes: there is no drinking sound.
 
 Each is heard through a panner (equal power, fading with distance past 2 m, none past 40 m), the listener at the eye
 facing its yaw. At most 16 play at once: the farthest gives way to a nearer one. One fighter's cue plays once in
@@ -708,8 +722,11 @@ bars (`combat/barDraw.ts#thinBarNode`) with the kit's bar (`plus/meter.ts`, with
   ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]; `thinBarNode`, the one build both wear): Hull over Sails over Crew (hull red as health and at its height, sails bone, crew green as stamina, both at
   stamina's height), each as long as the vitals' health is laid for the view, stepping and doubling with the display,
   with no words inside; a reader hears each by its name and percentage. The hull's frame flashes blood at a quarter or
-  less as health's does. Under them an "On fire" chip while it burns and a "Braced" chip while it braces, the kit's
-  chips, as the buffs stand under the vitals. In a fight the place's name gives way to the plate.
+  less as health's does. Under them its boost ring, the word Boost beside a small ring lit clockwise from the top:
+  brass once its burst is ready, bright and draining while it bursts, dim and filling as it recharges, in 32 steps
+  ([[Naval Combat]], "How it works"); a reader hears "Boost ready", "Boosting" or "Boost recharging". Beside it an "On
+  fire" chip while it burns and a "Braced" chip while it braces, the kit's chips, as the buffs stand under the vitals.
+  In a fight the place's name gives way to the plate.
 - **The battery rose** under the chips, as wide as its longest words ("Heated 88s" a side): bow over stern, port and starboard either side. Each side is a chip with its load
   ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
   loaded, glowing gold round its edge where the look lays it, flashing twice over 0.7 s as it comes ready. The side a
@@ -791,7 +808,8 @@ button's corner and screen, and the Tailor's wares.
 
 - The sea fight's readout writes at the face's 11 px where DFO's wrote 10, 12 and 15, and the sight's aim line at 11
   where DFO's was 13, so the broadside warning stands smaller; the laid side's soft 8 px glow stands in hard rings,
-  and a long ship's name on the card is cut short a little sooner, the face's letters being wider than the page's.
+  a long ship's name on the card is cut short a little sooner, the face's letters being wider than the page's; and
+  the boost ring's glow once ready is not drawn.
 - The notices write at the face's 11 px, where DFO's wrote 14.
 - The place line's small words stay at the face's 11 px at the larger step, where the page wrote 16, and over the held
   map at 11 (22 at the larger step), where it wrote 13 (20): the face has no step between, and 22 would stand them

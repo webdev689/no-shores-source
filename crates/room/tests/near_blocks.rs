@@ -116,7 +116,7 @@ fn a_node_rooms_bake_among_its_boxes_costs_at_most_twice_its_bake_without() {
         list.iter().filter(|block| (block.min_x - x).abs() < 35.0 && (block.min_y - y).abs() < 35.0).count()
     };
     let thickest = starts(&node).into_iter().max_by_key(|&start| near(start)).expect("the node has starts");
-    let section = reach::Section { ring: node.ring.clone(), spawns: vec![[thickest.0, thickest.1]] };
+    let section = reach::Section { ring: node.ring.clone(), spawns: vec![[thickest.0, thickest.1]], falls_kill: false };
     let time = |blocks: &[Block]| {
         (0..3)
             .map(|_| {

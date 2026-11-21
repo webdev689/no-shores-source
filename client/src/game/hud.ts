@@ -14,7 +14,7 @@ import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { Hint } from './gearNodes.ts';
-import { countdownText, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
+import { countdownText, deathWords, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
 import { Tween } from './hudParts.ts';
 import {
@@ -129,7 +129,8 @@ export class Hud {
     [this.title, this.kind] = [title, kind];
   }
 
-  /** Shows the player's standing against their section's edge: the warning and its count, or death. */
+  /** Shows the player's standing against their section's edge: the warning and its count, or death once it is told,
+   *  saying how they died. */
   reach(standing: Standing): void {
     this.standing = standing;
     this.shade.set(vignette(standing, WARNING_SECONDS), now());
@@ -371,7 +372,9 @@ export class Hud {
       fight,
       noticesNode(ui, view, this.noticeStack.rows, clock, still),
       this.menuShown && menuNode(ui, this.menuShown.title, this.menuShown.choices),
-      standing.kind === 'dead' && deathNode(ui, standing.canRespawn, () => this.respawnWanted()),
+      standing.kind === 'dead' &&
+        standing.told &&
+        deathNode(ui, deathWords(standing.fell), standing.canRespawn, () => this.respawnWanted()),
       this.veilNode(clock, still),
       this.usePrompt.node(view),
       this.seaSight.node(),

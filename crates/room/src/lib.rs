@@ -29,12 +29,14 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+mod recharge;
 pub mod sea;
 pub mod sea_weather;
 pub mod ship_power;
 pub mod sighting;
 mod spells;
 mod statuses;
+mod story;
 pub mod threat;
 pub mod winds;
 
@@ -67,9 +69,9 @@ use judging::{Check, Group, Pending, how_of_swing};
 pub use land::sites::NodeKind;
 #[cfg(test)]
 use movement::standing;
-use movement::{Block, Body};
+use movement::{Block, Body, Mode};
 use players::Player;
-use reach::respawn_point;
+use reach::{Place, respawn_point};
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -99,6 +101,8 @@ pub struct Room {
     takes_foe_asks: bool,
     /// Whether players' Arts work here: everywhere but the prologue's wreck, where the player has none yet.
     arts: bool,
+    /// Whether it plays the prologue's wreck (`story.rs`).
+    story: bool,
     pub(crate) clock: u64,
     next_fighter: FighterId,
     /// How many players have joined: the next stands at the spawn this many turns on.
@@ -175,6 +179,7 @@ impl Room {
             spawn_points,
             takes_foe_asks: section.is_none(),
             arts: true,
+            story: false,
             section,
             clock: 0,
             next_fighter: 1,
@@ -246,7 +251,11 @@ impl Room {
         self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
         let fighter = player(self.stand(spawn), BARE_HANDS);
-        self.players.insert(id, Player::new(fighter, self.clock, self.is_test_ground()));
+        let mut joined = Player::new(fighter, self.clock, self.is_test_ground());
+        if self.story {
+            story::arm_for_story(&mut joined.character);
+        }
+        self.players.insert(id, joined);
         Some(id)
     }
 
@@ -319,8 +328,9 @@ impl Room {
     /// Each player's inputs step their fighter, as many as the clock allows and CATCH_UP at most; a player whose
     /// inputs have stopped coming is stepped standing still once they fall a view's lag behind, so nothing they were
     /// doing (a dodge's safe stretch, a guard's parry window) outlasts its time while they are away. A body the section
-    /// killed lies still: its inputs are taken without moving it, and one asking to respawn, once the section allows,
-    /// stands it at the spawn nearest where it fell. Then each player is judged against the section.
+    /// killed falls under its own weight (`lying_still`): its inputs are taken without steering it, and one asking to
+    /// respawn, once the section allows, stands it at the spawn nearest where it fell. Then each player is judged
+    /// against the section, from the height their feet last stood at.
     fn step_players(&mut self) {
         // The kept views are lent to each input, not copied: they stand aside while the players step.
         let past = std::mem::take(&mut self.past);
@@ -338,19 +348,26 @@ impl Room {
                     self.take_ask(id, asked);
                 }
                 self.ask_cast(id, input.cast.filter(|_| !input.intent.controls.mounted));
+                // A cast under way holds off a drink, so neither is lost to the other; the page holds its press too.
+                if self.players.get(&id).is_some_and(|found| found.casting.releasing.is_some()) {
+                    input.intent.combat.heal = false;
+                }
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
                 if let Standing::Dead { .. } = found.standing {
                     found.shown = input.shown;
                     found.remember(seen);
+                    let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
+                    found.fighter = player_tick(id, &dead, &lying, &view, &self.blocks, &self.floor).0;
                     if input.respawn && found.standing.may_respawn() {
-                        let fallen = found.fighter;
-                        let body = self.stand_again(fallen.body.x, fallen.body.y);
+                        let lain = found.fighter;
+                        let body = self.stand_again(lain.body.x, lain.body.y);
                         let graced = self.clock + GRACE;
                         if let Some(found) = self.players.get_mut(&id) {
-                            found.fighter = found.armed(player(body, fallen.arms));
+                            found.fighter = found.armed(player(body, lain.arms));
                             found.standing = Standing::Inside;
+                            found.stood = body.z;
                             found.graced = graced;
                         }
                     }
@@ -371,15 +388,17 @@ impl Room {
                 self.stand_stalled(id);
             }
             if let (Some(section), Some(found)) = (&self.section, self.players.get_mut(&id)) {
-                let body = found.fighter.body;
-                found.standing = found.standing.tick(section, body.x, body.y);
+                let Body { x, y, z, mode, .. } = found.fighter.body;
+                let at = Place { x, y, z, aloft: mode == Mode::Air };
+                found.standing = found.standing.tick(section, at, found.stood);
+                found.stood = reach::stood(found.stood, at);
             }
         }
         self.past = past;
     }
 
     /// What a fighter's tick set off, among `view`, everyone as it saw them: a blow landing on whoever it reaches, a
-    /// shot leaving, a feint.
+    /// shot leaving, a feint, a drink's heal.
     pub(crate) fn happened(
         &mut self,
         id: FighterId,
@@ -422,6 +441,7 @@ impl Room {
                 }
             }
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
+            Some(Happening::Drank(healed)) => self.tell(EventKind::Healed, None, id, id, healed),
             _ => {}
         }
     }
@@ -521,6 +541,8 @@ mod pace_tests;
 mod patrol_tests;
 #[cfg(test)]
 mod perks_tests;
+#[cfg(test)]
+mod recharge_tests;
 #[cfg(test)]
 mod ring_tests;
 #[cfg(test)]

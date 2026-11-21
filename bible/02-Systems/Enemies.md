@@ -52,7 +52,8 @@ numbers and how the groups do it are Claude's ([[The Enemies as Claude Builds Th
 
 A fighter's side is the players' or a faction's, by its number. Fighters of different sides are enemies: foes of two
 factions fight each other as they fight players, and never their own side. The Brig's crew (number 0 for a faction)
-fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player.
+fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player. On the
+prologue's wreck every boarder fights on the Grey Tithe's side ([[The Wreck's Boarders Are One Side]]).
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|

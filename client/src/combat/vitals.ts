@@ -2,9 +2,11 @@
 // health over stamina over poise, each as long as what it holds. Their losses read as DFO's Enhanced HUD read them (a
 // strip holds and drains, a bite breaks off and falls); health's frame flashes blood when it runs low and stamina's
 // white when a swing or a dodge is asked of it with none; poise fills toward a break and says Iron, Staggered or Open
-// beside it. The player's buffs stand in a row under them. Whole and untouched, with no buff and no foe on the target
-// plate, the bars rest out of sight, and the first point lost or spent brings them back at once.
-import { BAR_TONES, type BarTone, CORNER, VITAL_SIZES } from '../plus/barFrame.ts';
+// beside it. Under them the healing charges stand as three diamonds, the next filling as the player's blows fill it,
+// each brightening as a charge is gained or drunk; then the player's buffs in a row. Whole and untouched, every charge
+// held, with no buff and no foe on the target plate, the bars rest out of sight, and the first point lost or spent
+// brings them back at once.
+import { BAR_EDGE, BAR_TONES, type BarTone, CORNER, diamondCells, VITAL_SIZES } from '../plus/barFrame.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
@@ -12,7 +14,7 @@ import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { poiseTrackOf, type PoiseState } from './foePlate.ts';
 import { LOW_SHARE, lowShare, Meter } from '../plus/meter.ts';
-import { drawMeter, hatch, paintBox, type Pen, ring, span, thinBarNode } from './barDraw.ts';
+import { drawCells, drawMeter, hatch, mix, paintBox, type Pen, ring, span, thinBarNode } from './barDraw.ts';
 import { barLength } from './hudLayout.ts';
 import { ownBuffs, StatusRow } from './statusIcons.ts';
 
@@ -25,8 +27,9 @@ const VITALS: readonly [VitalName, string][] = [
   ['stamina', 'Stamina'],
   ['poise', 'Poise'],
 ];
-/** The stamina a fighter has in all (crates/combat/src/tuning.rs). */
+/** The stamina a fighter has in all, and the healing charges a player holds at most (crates/combat/src/tuning.rs). */
 const STAMINA_WHOLE = 100;
+export const CHARGES_MOST = 3;
 
 /** A vital as its bar shows it: its share of the whole, and what a screen reader says of it, rounded as a player
  *  reads it, never 0% while anything is left and never more than 100%. */
@@ -45,6 +48,19 @@ export function vitalsOf(own: FighterView | null): Record<VitalName, { share: nu
   };
 }
 
+/** The healing charges as their diamonds show them: each one's fill (a charge held whole, the next filling by the
+ *  meter, the rest empty), how many are held, and what a screen reader says of them. With no fighter yet, all three. */
+export function chargesShown(own: FighterView | null): { fills: number[]; held: number; text: string } {
+  const held = Math.max(0, Math.min(CHARGES_MOST, Math.floor(own?.charges ?? CHARGES_MOST)));
+  const meter = held < CHARGES_MOST ? Math.max(0, Math.min(1, own?.meter ?? 0)) : 0;
+  const fills = Array.from({ length: CHARGES_MOST }, (unused, index) =>
+    index < held ? 1 : index === held ? meter : 0,
+  );
+  const filled = Math.round(meter * 100);
+  const next = held < CHARGES_MOST && filled > 0 ? `, the next ${filled}% filled` : '';
+  return { fills, held, text: `${held} of ${CHARGES_MOST}${next}` };
+}
+
 /** Each vital's most: health's and poise's the fighter's own, stamina's the rules' whole. */
 export function vitalMost(own: FighterView | null): Record<VitalName, number> {
   return { health: own?.healthMax ?? 100, stamina: STAMINA_WHOLE, poise: own?.poiseMax ?? 40 };
@@ -57,9 +73,17 @@ export const healthLow = (own: FighterView | null): boolean =>
 /** How long the vitals stand full and untouched before they rest, in seconds. */
 export const REST_SECONDS = 4;
 
-/** Whether every vital is whole: health and stamina short of no whole point, and no whole point of poise taken. */
+/** Whether every vital is whole: health and stamina short of no whole point, no whole point of poise taken, and
+ *  every healing charge held. */
 export const vitalsWhole = (own: FighterView | null): boolean =>
-  !own || (own.health > own.healthMax - 1 && own.stamina > STAMINA_WHOLE - 1 && own.poise < 1);
+  !own ||
+  (own.health > own.healthMax - 1 &&
+    own.stamina > STAMINA_WHOLE - 1 &&
+    own.poise < 1 &&
+    (own.charges ?? CHARGES_MOST) >= CHARGES_MOST);
+
+/** How long a diamond brightens as a charge is gained or drunk, in seconds: two steps. */
+export const CHARGE_FLASH_SECONDS = 0.4;
 
 /** How long the vitals have stood calm, `seconds` after `was`: whole, with no foe on the target plate. */
 export const calmFor = (was: number, whole: boolean, targeted: boolean, seconds: number): number =>
@@ -85,11 +109,17 @@ const FLASH_BLINK = 0.15;
 const POISE_FLASH = 0.45;
 /** How the vitals go to rest (in six steps over 1.2 s) and come back (in two over 0.12 s). */
 const FADE = { out: { seconds: 1.2, steps: 6 }, back: { seconds: 0.12, steps: 2 } } as const;
+/** A healing charge filling toward the next: health's red paled toward the words' white. The bars' loss strip is a
+ *  darker red, but a fill that dark stood under 1.7:1 against the diamond's well. */
+const FILLING = mix(FILLS.health, TONES.word, 0.45);
 
 /** The vitals at the top left. */
 export class Vitals {
   private readonly bars: Record<VitalName, Bar>;
   private readonly buffs = new StatusRow('Your buffs');
+  /** The healing charges as last shown (none held before the first), and each diamond's flash's seconds left. */
+  private charges: { fills: number[]; held: number | null; text: string } = { ...chargesShown(null), held: null };
+  private readonly flashes: number[] = Array.from({ length: CHARGES_MOST }, () => 0);
   private calm = 0;
   private poise: PoiseState | null = null;
   private poiseWord = '';
@@ -138,6 +168,7 @@ export class Vitals {
       this.poise = track.state;
     } else this.broke += seconds;
     this.poiseWord = track.word;
+    this.showCharges(own, seconds);
     const buffs = ownBuffs(own?.statuses);
     this.buffs.show(0, buffs);
     this.calm = calmFor(this.calm, vitalsWhole(own) && !flashing && buffs.length === 0, targeted, seconds);
@@ -183,6 +214,7 @@ export class Vitals {
       float: { to: 'screen', x: CORNER.side * zoom, y: CORNER.top * zoom, z: 1 },
       children: [
         ...VITALS.map(([name, label]) => this.barNode(name, label, sizes[name], zoom)),
+        this.chargesNode(sizes.drinks, sizes.gap, zoom),
         buffs && { padding: [4 * zoom, 0, 0, 0], children: [buffs] },
       ],
     };
@@ -245,6 +277,47 @@ export class Vitals {
           `rgba(255,255,255,${(0.9 * left * left * (4 - step)) / 3})`,
         );
     }
+  }
+
+  /** The healing charges `seconds` on; each charge gained or drunk flashes its own diamond. */
+  private showCharges(own: FighterView | null, seconds: number): void {
+    const shown = chargesShown(own);
+    const was = this.charges.held ?? shown.held;
+    for (let index = 0; index < CHARGES_MOST; index++)
+      this.flashes[index] =
+        index >= Math.min(was, shown.held) && index < Math.max(was, shown.held)
+          ? CHARGE_FLASH_SECONDS
+          : Math.max(0, (this.flashes[index] ?? 0) - seconds);
+    this.charges = shown;
+  }
+
+  /** The healing charges' three diamonds, `size` pixels across: one held whole in health's red, the next filling from
+   *  its foot by whole pixel rows in health's red paled toward the words' white (told from a whole one by its tone as
+   *  well as its height), the rest the bars' track; a flash lights the diamond white, then the filling's tone. */
+  private chargesNode(size: number, gap: number, zoom: number): Node {
+    const still = motionReduced();
+    const rows = size - BAR_EDGE * 2;
+    const diamond = (fill: number, index: number): Node => {
+      const left = still ? 0 : (this.flashes[index] ?? 0);
+      const lit = left > CHARGE_FLASH_SECONDS / 2 ? TONES.word : left > 0 ? FILLING : null;
+      const full = fill >= 1;
+      const risen = lit || full ? rows : Math.round(fill * rows);
+      const inside = lit ?? (full ? FILLS.health : FILLING);
+      return {
+        width: size * zoom,
+        height: size * zoom,
+        draw: (ui, box, scale, clip, fade) =>
+          drawCells({ ui, box, scale: scale * zoom, clip, fade }, `charge ${size} ${risen} ${inside}`, size, size, () =>
+            diamondCells(size, BAR_TONES.stone, risen, inside, TONES.groundTrack),
+          ),
+      };
+    };
+    return {
+      direction: 'row',
+      gap: gap * zoom,
+      label: `Healing charges: ${this.charges.text}`,
+      children: this.charges.fills.map(diamond),
+    };
   }
 
   /** Poise's word beside its bar: Iron in red, Open in brass, the rest in the words' own colour. */

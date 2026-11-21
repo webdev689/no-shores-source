@@ -10,12 +10,19 @@ import { UNDER_COMPASS } from '../plus/compass.ts';
 import { EMBLEM_PIXELS, emblemSvg } from '../plus/emblems.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { lowShare, Meter } from '../plus/meter.ts';
-import { CARD_GAP, type RoseSide, SHIP_BARS, type SeaFightModel, seaFightWords } from '../plus/seaFight.ts';
+import {
+  type BoostRing,
+  CARD_GAP,
+  type RoseSide,
+  SHIP_BARS,
+  type SeaFightModel,
+  seaFightWords,
+} from '../plus/seaFight.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { announce } from '../ui/announce.ts';
 import type { Drawing, Node, Text } from '../ui/node.ts';
 import { lineHeight } from '../ui/text.ts';
-import { drawMeter, edges, faded, grownBy, paintBox, ring, thinBarNode } from './barDraw.ts';
+import { drawCells, drawMeter, edges, faded, grownBy, paintBox, ring, thinBarNode } from './barDraw.ts';
 
 /** The hull's low blink (on for its first half), a side's flash as it comes ready (two of 0.35 s, lit for the second
  *  half of each) and the warning's pulse (its lit look for the second half of each 0.5 s), in seconds. */
@@ -57,6 +64,59 @@ const words = (said: string, colour: string, tracking?: number): Text => ({
   wrap: false,
   ...(tracking ? { tracking } : {}),
 });
+
+/** The boost ring's look in each state, its lit part's ink and its word's colour: brass once ready, the words' white
+ *  while it bursts, dim stone as it recharges. */
+const BOOST_LOOKS = {
+  ready: { ink: TONES.brassHi, word: TONES.brassHi },
+  burst: { ink: TONES.word, word: TONES.word },
+  charging: { ink: TONES.stoneMid, word: TONES.stoneLit },
+} as const;
+/** The ring's size in pixels, outline and all, and the steps its lit part moves in (so few pictures are made). */
+const BOOST_SIZE = 16;
+const BOOST_STEPS = 32;
+
+/** The boost ring's pixels: an outline round a ring lit clockwise from the top as far as `lit` of it, the rest the
+ *  bars' track, round a dark chip with its own outline. */
+export function boostCells(ink: string, lit: number): (string | null)[] {
+  const half = BOOST_SIZE / 2;
+  return Array.from({ length: BOOST_SIZE * BOOST_SIZE }, (unused, index) => {
+    const [across, down] = [(index % BOOST_SIZE) + 0.5 - half, Math.floor(index / BOOST_SIZE) + 0.5 - half];
+    const far = Math.hypot(across, down);
+    if (far > half) return null;
+    if (far > half - 1 || (far > 4 && far <= 5)) return TONES.outline;
+    if (far <= 4) return TONES.groundChip;
+    const turned = (Math.atan2(across, -down) / (2 * Math.PI) + 1) % 1;
+    return turned < lit ? ink : TONES.groundTrack;
+  });
+}
+
+/** The ship's boost ring and its word, said to a reader as its state. */
+function boostNode(boost: BoostRing, said: string, zoom: number): Node {
+  const look = BOOST_LOOKS[boost.state];
+  const lit = Math.round(Math.min(1, Math.max(0, boost.share)) * BOOST_STEPS) / BOOST_STEPS;
+  return {
+    direction: 'row',
+    alignY: 'center',
+    gap: 4 * zoom,
+    label: said,
+    children: [
+      {
+        width: BOOST_SIZE * zoom,
+        height: BOOST_SIZE * zoom,
+        draw: (ui, box, scale, clip, fade) =>
+          drawCells(
+            { ui, box, scale: scale * zoom, clip, fade },
+            `boost ${look.ink} ${lit}`,
+            BOOST_SIZE,
+            BOOST_SIZE,
+            () => boostCells(look.ink, lit),
+          ),
+      },
+      { text: { ...words('Boost', look.word, 1), size: zoom } },
+    ],
+  };
+}
 
 /** The readout: the plate with its rose, the card and the tally, kept from frame to frame and drawn by the interface. */
 export class SeaFightReadout {
@@ -182,7 +242,11 @@ export class SeaFightReadout {
       padding: [zoom, 6 * zoom, zoom, 6 * zoom],
       children: [{ text: { ...words(text, colour), size: zoom } }],
     });
-    const chips = [ship.fire && chip('On fire', INKS.fire), ship.braced && chip('Braced', TONES.word)];
+    const chips = [
+      boostNode(ship.boost, said.boost, zoom),
+      ship.fire && chip('On fire', INKS.fire),
+      ship.braced && chip('Braced', TONES.word),
+    ];
     return {
       label: 'Your ship',
       direction: 'column',
@@ -192,7 +256,7 @@ export class SeaFightReadout {
         bar('hull', 'Hull', FILLS.health),
         bar('sail', 'Sails', FILLS.sails),
         bar('crew', 'Crew', FILLS.stamina),
-        chips.some(Boolean) && { direction: 'row', gap: 6 * zoom, padding: [4 * zoom, 0, 0, 0], children: chips },
+        { direction: 'row', alignY: 'center', gap: 6 * zoom, padding: [4 * zoom, 0, 0, 0], children: chips },
         this.roseNode(ship, said, zoom),
       ],
     };

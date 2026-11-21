@@ -2,8 +2,21 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FighterView } from '../rules/fighters.ts';
 import { LOSS_DRAIN, LOSS_HOLD, LOSS_HOLD_MOST, type Loss, stepLoss } from '../plus/barLoss.ts';
+import { FILLS, TONES } from '../plus/tones.ts';
+import type { Node } from '../ui/node.ts';
 import { allOf, wordsIn } from './nodes.test.ts';
-import { calmFor, healthLow, LOW_HEALTH, REST_SECONDS, Vitals, vitalOf, vitalsOf, vitalsWhole } from './vitals.ts';
+import {
+  calmFor,
+  CHARGE_FLASH_SECONDS,
+  chargesShown,
+  healthLow,
+  LOW_HEALTH,
+  REST_SECONDS,
+  Vitals,
+  vitalOf,
+  vitalsOf,
+  vitalsWhole,
+} from './vitals.ts';
 
 const fighter: FighterView = {
   x: 0,
@@ -81,7 +94,7 @@ test('losses coming every frame still let the strip drain once it has stood its 
   assert.ok(strip.at < 1, `drains under a trickle of harm: ${strip.at}`);
 });
 
-test('the vitals rest once whole and untouched for four seconds with no foe on the target plate, back at the first loss', () => {
+test('the vitals rest once whole and untouched for four seconds, every charge held and no foe on the target plate, back at the first loss', () => {
   assert.equal(REST_SECONDS, 4);
   const whole = { ...fighter, health: 200, stamina: 100, poise: 0 };
   assert.equal(vitalsWhole(whole), true);
@@ -89,6 +102,8 @@ test('the vitals rest once whole and untouched for four seconds with no foe on t
   assert.equal(vitalsWhole({ ...whole, health: 199 }), false);
   assert.equal(vitalsWhole({ ...whole, stamina: 98 }), false, 'a swing spent');
   assert.equal(vitalsWhole({ ...whole, poise: 2 }), false, 'poise taken');
+  assert.equal(vitalsWhole({ ...whole, charges: 2, meter: 0.9 }), false, 'a charge missing: they stay shown');
+  assert.equal(vitalsWhole({ ...whole, charges: 3 }), true);
   assert.equal(calmFor(3, true, false, 0.5), 3.5);
   assert.equal(calmFor(3, true, true, 0.5), 0, 'a foe on the target plate');
   assert.equal(calmFor(3, false, false, 0.5), 0);
@@ -151,4 +166,66 @@ test('health low marks its bar to flash blood, and a press with no stamina marks
   assert.deepEqual([vitals.warnings.low, vitals.warnings.flashing], [true, true]);
   vitals.update(fighter, 1 / 60, false, false);
   assert.deepEqual([vitals.warnings.low, vitals.warnings.flashing], [false, false]);
+});
+
+test('the healing charges show as three diamonds, each held whole and the next filling by whole pixel rows, read as a meter', () => {
+  assert.deepEqual(chargesShown({ ...fighter, charges: 1, meter: 0.4 }), {
+    fills: [1, 0.4, 0],
+    held: 1,
+    text: '1 of 3, the next 40% filled',
+  });
+  assert.equal(chargesShown({ ...fighter, charges: 1, meter: 0.666 }).text, '1 of 3, the next 67% filled', 'rounded');
+  assert.equal(chargesShown({ ...fighter, charges: 2, meter: 0.004 }).text, '2 of 3', 'none filled yet: not said');
+  assert.deepEqual(chargesShown({ ...fighter, charges: 3, meter: 0.7 }), { fills: [1, 1, 1], held: 3, text: '3 of 3' });
+  assert.deepEqual(chargesShown(null).fills, [1, 1, 1], 'before the fighter comes: all three');
+  const vitals = new Vitals();
+  vitals.update({ ...fighter, charges: 2, meter: 0.25 }, 1 / 60, false, false);
+  // A 12 px diamond holds 8 rows inside its frame: a quarter is 2 of them, paler than a charge held whole.
+  const shown = drawnCharges(vitals);
+  assert.deepEqual(
+    shown.diamonds.map(({ rows, inside }) => [rows, inside === FILLS.health]),
+    [
+      [8, true],
+      [8, true],
+      [2, false],
+    ],
+  );
+  assert.equal(shown.label, 'Healing charges: 2 of 3, the next 25% filled', 'a screen reader hears them');
+  vitals.lay(200, true);
+  vitals.update({ ...fighter, charges: 2, meter: 0.25 }, 1 / 60, false, false);
+  assert.equal(drawnCharges(vitals).diamonds[2]?.rows, 3, 'at the larger step, 12 rows');
+});
+
+/** The healing charges' row as drawn: its label, and each diamond's rows risen and the colour inside them. */
+function drawnCharges(vitals: Vitals): { label: string | undefined; diamonds: { rows: number; inside: string }[] } {
+  const row = vitals.node().children?.[3] as Node;
+  const diamonds: { rows: number; inside: string }[] = [];
+  const ui = {
+    tileTexels: (key: string) => {
+      const [, , rows, ...inside] = key.split(' ');
+      diamonds.push({ rows: Number(rows), inside: inside.join(' ') });
+      return null;
+    },
+  };
+  const box = { x: 0, y: 0, width: 16, height: 16 };
+  for (const diamond of row.children ?? []) (diamond as Node).draw?.(ui as never, box, 1, box, 1);
+  return { label: row.label, diamonds };
+}
+
+test('a diamond flashes as its charge is gained or drunk, for a moment, and not before the first word', () => {
+  const vitals = new Vitals();
+  const lit = () => drawnCharges(vitals).diamonds.map(({ inside }) => inside === TONES.word);
+  vitals.update({ ...fighter, charges: 1, meter: 0 }, 1 / 60, false, false);
+  assert.deepEqual(lit(), [false, false, false], 'the first word flashes nothing');
+  vitals.update({ ...fighter, charges: 2, meter: 0 }, 1 / 60, false, false);
+  assert.deepEqual(lit(), [false, true, false], 'gained');
+  vitals.update({ ...fighter, charges: 2, meter: 0 }, CHARGE_FLASH_SECONDS * 0.6, false, false);
+  assert.deepEqual(lit(), [false, false, false], 'its second step');
+  assert.equal(drawnCharges(vitals).diamonds[1]?.rows, 8, 'lit whole in the filling tone');
+  vitals.update({ ...fighter, charges: 1, meter: 0 }, 1 / 60, false, false);
+  assert.deepEqual(lit(), [false, true, false], 'drunk mid-flash: it starts afresh');
+  vitals.update({ ...fighter, charges: 1, meter: 0 }, CHARGE_FLASH_SECONDS, false, false);
+  assert.deepEqual(lit(), [false, false, false], 'over');
+  vitals.update({ ...fighter, charges: 3, meter: 0 }, 1 / 60, false, false);
+  assert.deepEqual(lit(), [false, true, true], 'both a respawn fills');
 });

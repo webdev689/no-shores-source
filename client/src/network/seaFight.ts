@@ -28,13 +28,14 @@ const POSE_NUMBERS = 4;
 /** A look's ray: the aim eye (east, south, up), then the way it looks. */
 const RAY_NUMBERS = 6;
 
-/** A fight's orders as the room takes them: the helm, the look and its ray, the fire, the brace and a load. */
+/** A fight's orders as the room takes them: the rudder, a tap for a burst, the rung, the look and its ray, the fire,
+ *  the brace and a load. */
 export function ordersNumbers(orders: FightOrders): number[] {
   const { helm, aim, load } = orders;
   const ray = aim?.ray?.length === RAY_NUMBERS ? aim.ray : null;
   return [
     helm.steer,
-    helm.crab ? 1 : 0,
+    orders.boost ? 1 : 0,
     helm.climb,
     aim ? 1 : 0,
     aim?.bearing ?? 0,
@@ -49,7 +50,7 @@ export function ordersNumbers(orders: FightOrders): number[] {
 
 /** Where a view's other captains sit (after its clock, its end, the player's Sloop, the captain's ship and its mind:
  *  crates/naval/src/wire.rs OTHERS_AT); each ship's numbers end with its hull. */
-const OTHERS_AT = 2 + 2 * (SHIP_NUMBERS + POSE_NUMBERS + 15) + 4;
+const OTHERS_AT = 2 + 2 * (SHIP_NUMBERS + POSE_NUMBERS + 17) + 4;
 
 /** A fight's numbers as `fightViewOf` reads them, from a room's view and its other captains, which the room sends apart
  *  so a page that knows one captain reads the view whole: their count and each one's numbers, or none. */
@@ -144,6 +145,7 @@ export function fightViewOf(
       load: named<ShotName>(SHOT_CYCLE),
       braced: next() === 1,
     },
+    boost: [next(), next()],
     hull_kind: next(),
   });
   // A captain's Sloop, then its mode, whether it is hostile to the player, and its sides run out.

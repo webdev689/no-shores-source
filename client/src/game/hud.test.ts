@@ -81,12 +81,17 @@ test('the warning counts down, death offers Respawn only once it may, and the vi
   assert.equal(ui.takesPointer, false, 'the darkened edge is not the interface’s');
   let risen = 0;
   hud.onRespawn(() => (risen += 1));
-  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false });
+  // A fall plays out before death is told; then the words say how.
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: true, told: false });
+  assert.ok(!words(frame(ui, hud)).includes('YOU DIED'));
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: true, told: true });
+  assert.ok(words(frame(ui, hud)).includes('You fell.'));
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: false, told: true });
   laid = frame(ui, hud);
-  assert.ok(words(laid).includes('Respawn…'));
+  assert.ok(words(laid).includes('Respawn…') && words(laid).includes('You strayed too far from the area.'));
   laid = clickOn(ui, hud, laid, 'hud:respawn');
   assert.equal(risen, 0);
-  hud.reach({ kind: 'dead', secondsDead: 5, canRespawn: true });
+  hud.reach({ kind: 'dead', secondsDead: 5, canRespawn: true, fell: false, told: true });
   laid = frame(ui, hud);
   clickOn(ui, hud, laid, 'hud:respawn');
   assert.equal(risen, 1);

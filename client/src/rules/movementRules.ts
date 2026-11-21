@@ -79,13 +79,20 @@ export interface MovementRules {
    *  movement crate makes it from the blocks (`Heights::rim`), so it agrees with the room's to the bit. Answers whether
    *  the blocks were taken. */
   setRim(blocks: readonly Block[]): boolean;
-  /** Judges every later `reachTick` against a node's section (its ring and spawns, world metres), by the room's own
-   *  reach rules, the body standing as `standing` says (a room's last word) or inside; null clears it. */
+  /** Judges every later `reachTick` against a node's section (its ring and spawns, world metres, and whether a fall
+   *  kills there, as a social space's does), by the room's own reach rules, the body standing as `standing` says (a
+   *  room's last word) or inside; null clears it. */
   setSection(
-    section: { readonly ring: readonly Point[]; readonly spawns: readonly Point[]; readonly standing?: Reach } | null,
+    section: {
+      readonly ring: readonly Point[];
+      readonly spawns: readonly Point[];
+      readonly fallsKill?: boolean;
+      readonly standing?: Reach;
+    } | null,
   ): void;
-  /** One tick of the body at (x, y) against the section: inside, warned with the ticks left, or dead for so many. */
-  reachTick(x: number, y: number): Reach;
+  /** One tick of the body against the section: inside, warned with the ticks left, or dead for so many, by a fall or
+   *  by straying. */
+  reachTick(body: Body): Reach;
   /** Respawns a body that died at (x, y), once allowed: the spawn it stands at, or null while too soon. */
   respawn(x: number, y: number): Point | null;
   /** The body one tick on under these controls. */
@@ -100,20 +107,21 @@ type Point = readonly [number, number];
 export type Reach =
   | { readonly kind: 'inside' }
   | { readonly kind: 'warned'; readonly ticksLeft: number }
-  | { readonly kind: 'dead'; readonly ticks: number };
+  | { readonly kind: 'dead'; readonly ticks: number; readonly fell: boolean };
 
-/** A standing as the door's one number: its kind in the top two bits, its ticks below. */
+/** A standing as the door's one number: its kind in the top two bits (3 dead by a fall), its ticks below. */
 export function packedOf(reach: Reach): number {
   if (reach.kind === 'inside') return 0;
   const ticks = Math.min(reach.kind === 'warned' ? reach.ticksLeft : reach.ticks, 0x3fffffff);
-  return ((reach.kind === 'warned' ? 1 : 2) * 0x40000000 + ticks) >>> 0;
+  const kind = reach.kind === 'warned' ? 1 : reach.fell ? 3 : 2;
+  return (kind * 0x40000000 + ticks) >>> 0;
 }
 
 /** A standing from the door's one number: its kind in the top two bits, its ticks below. */
 export function reachOf(packed: number): Reach {
   const [kind, ticks] = [packed >>> 30, packed & 0x3fffffff];
   if (kind === 1) return { kind: 'warned', ticksLeft: ticks };
-  return kind === 2 ? { kind: 'dead', ticks } : { kind: 'inside' };
+  return kind >= 2 ? { kind: 'dead', ticks, fell: kind === 3 } : { kind: 'inside' };
 }
 
 interface MovementExports {
@@ -128,7 +136,7 @@ interface MovementExports {
   movement_standing(address: number, length: number): void;
   movement_step(address: number, length: number): void;
   movement_set_section(address: number, length: number): number;
-  movement_reach_tick(x: number, y: number): number;
+  movement_reach_tick(x: number, y: number, z: number, aloft: number): number;
   movement_respawn(x: number, y: number, address: number): number;
 }
 
@@ -292,14 +300,17 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
     },
     setSection: (section) => {
       const standing = section?.standing ? packedOf(section.standing) : 0;
-      const text = section ? JSON.stringify({ ring: section.ring, spawns: section.spawns, standing }) : 'null';
+      const fallsKill = section?.fallsKill ?? false;
+      const text = section
+        ? JSON.stringify({ ring: section.ring, spawns: section.spawns, falls_kill: fallsKill, standing })
+        : 'null';
       const bytes = new TextEncoder().encode(text);
       const address = exports.reserve(bytes.length);
       new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
       exports.movement_set_section(address, bytes.length);
       exports.release(address, bytes.length);
     },
-    reachTick: (x, y) => reachOf(exports.movement_reach_tick(x, y)),
+    reachTick: (body) => reachOf(exports.movement_reach_tick(body.x, body.y, body.z, body.mode === 'air' ? 1 : 0)),
     respawn: (x, y) => {
       const address = exports.reserve(16);
       try {

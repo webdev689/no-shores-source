@@ -16,6 +16,7 @@ const vessel: FightVessel = {
   state: 'afloat',
   fires: 0,
   guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
+  boost: [0, 1],
 };
 /** Heading north, its starboard guns fire east: two guns at its side, laid to fall 112 m out. */
 const LAY: FightLay = {

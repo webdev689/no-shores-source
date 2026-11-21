@@ -16,7 +16,7 @@ impl Waters for Open {
 
 const WIND: [f64; 2] = [1.5, 0.0];
 const IDLE: Orders =
-    Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: false, load: None };
+    Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: false, load: None, boost: false };
 const SECOND: u32 = 7;
 const PIRATE: ShipId = 10;
 
@@ -152,7 +152,7 @@ fn a_hurt_ship_mends_unless_a_captain_who_would_take_it_lies_near_it() {
 #[test]
 fn a_player_with_no_orders_lies_where_they_were_and_one_late_catches_up() {
     let mut fight = fleet(400.0, -400.0, Temper::Wary);
-    let sail = Orders { helm: Helm { steer: 0.0, crab: false, climb: 1 }, ..IDLE };
+    let sail = Orders { helm: Helm { steer: 0.0, climb: 1 }, ..IDLE };
     let rowing = Orders { helm: Helm { climb: 0, ..sail.helm }, ..IDLE };
     run(&mut fight, &[(PLAYER, sail), (SECOND, sail)], 1);
     run(&mut fight, &[(PLAYER, rowing), (SECOND, rowing)], 30);

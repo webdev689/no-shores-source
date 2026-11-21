@@ -10,7 +10,7 @@ import { drawLaid } from '../ui/drawLaid.ts';
 import type { Node } from '../ui/node.ts';
 import { allOf, coloursDrawn, fakeRenderer, laidOf, wordsIn, written } from './nodes.test.ts';
 import { withMotionReduced } from './page.test.ts';
-import { SeaFightReadout } from './seaReadout.ts';
+import { boostCells, SeaFightReadout } from './seaReadout.ts';
 
 const side = (more: Partial<RoseSide> = {}): RoseSide => ({
   fill: 1,
@@ -29,6 +29,7 @@ const MODEL: SeaFightModel = {
     crew: 1,
     fire: false,
     braced: true,
+    boost: { state: 'charging', share: 0.25 },
     port: side(),
     starboard: side(),
     blow: null,
@@ -86,10 +87,23 @@ test("the ship's plate is the vitals' thin bars: Hull over Sails over Crew, each
     ],
   );
   assert.deepEqual(plate?.float && [plate.float.x, plate.float.y], [28, 14], "at the vitals' corner");
-  assert.deepEqual(wordsIn(plate), ['Braced', 'Bow', 'Round', 'Round', 'Stern'], 'no words inside the bars');
+  assert.deepEqual(wordsIn(plate), ['BOOST', 'Braced', 'Bow', 'Round', 'Round', 'Stern'], 'no words inside the bars');
   readout.lay({ length: 333, wide: true, zoom: 1 });
   const wide = labelled(readout.node(), 'Hull');
   assert.deepEqual([wide?.width, wide?.height], [333, VITAL_SIZES.wide.health], 'laid as the vitals are');
+});
+
+test("the boost ring under the ship's bars is lit as far as its burst has recharged, and says so to a reader", () => {
+  const charging = readoutOf(MODEL).node() ?? {};
+  assert.ok(labelled(charging, 'Boost recharging'));
+  assert.ok(tilesDrawn(charging).includes(`boost ${TONES.stoneMid} 0.25`), 'a quarter lit, in dim stone');
+  // Clockwise from the top: a cell just right of the top is lit, one just left of it is not.
+  const cells = boostCells(TONES.stoneMid, 0.25);
+  assert.deepEqual([cells[1 * 16 + 9], cells[1 * 16 + 6]], [TONES.stoneMid, TONES.groundTrack]);
+  if (!MODEL.ship) return;
+  const ready = readoutOf({ ...MODEL, ship: { ...MODEL.ship, boost: { state: 'ready', share: 1 } } }).node() ?? {};
+  assert.ok(labelled(ready, 'Boost ready'));
+  assert.ok(tilesDrawn(ready).includes(`boost ${TONES.brassHi} 1`), 'lit whole in brass');
 });
 
 test("the hull's frame flashes blood low as health's does, on for the first half of each 0.9 s", () => {

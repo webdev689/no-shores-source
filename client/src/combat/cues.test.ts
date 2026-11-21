@@ -112,3 +112,8 @@ test('a shield’s share of a blow is told in its own tone; a blow it held whole
   assert.equal(said(event(EVENT.hit, PLAYER, FOE, 1, 0)), null);
   assert.deepEqual(said(event(EVENT.shieldBroken, PLAYER, FOE)), { text: 'Shield broken', tone: 'great' });
 });
+
+test('a drink’s heal says what it gave back: green over the player who drank, plain over another', () => {
+  assert.deepEqual(said(event(EVENT.healed, PLAYER, PLAYER, 0, 39.6)), { text: '+40', tone: 'healed' });
+  assert.deepEqual(said(event(EVENT.healed, OTHER, OTHER, 0, 20)), { text: '+20', tone: 'plain' });
+});

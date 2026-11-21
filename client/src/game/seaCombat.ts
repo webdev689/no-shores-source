@@ -2,7 +2,7 @@
 // down from the raised sea to their Sloop at true scale, every captain in its own hull and colours, and the sea
 // room's fight is fought there, by the World Editor's own fight (its aim, lay, effects and panel), until every
 // captain sinks or is gone; then it pans back up.
-import { AIM_LOOK_TOP, lookBearing } from '../editor/aim.ts';
+import { AIM_LOOK_TOP, batterySide, lookBearing, yawInBattery } from '../editor/aim.ts';
 import { AimCamera, aimHullOf } from '../editor/aimCamera.ts';
 import { type FightInput, type FightSource, Fighting } from '../editor/fighting.ts';
 import { type MarkDrawer, Naval, type Window } from '../editor/naval.ts';
@@ -19,6 +19,7 @@ import type { ShadowMap } from '../shadow.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { factionSide } from '../ships/dress.ts';
+import { BOOST_KEY } from '../ships/helmKeys.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import type { MarkView } from '../ships/markView.ts';
@@ -100,7 +101,12 @@ export class SeaCombat {
   private readonly held = new Set<string>();
   private readonly presses: string[] = [];
   private aiming = false;
+  /** The side the aim's look has laid on since the aim was taken, or null until it first does: from then until it is
+   *  let go, no drag and no turn of the ship under it takes the look out of that battery's arc. */
+  private aimSide: 1 | -1 | null = null;
   private fire = false;
+  /** Shift tapped since the last frame: a burst of speed asked for. */
+  private boost = false;
   private loadSteps = 0;
   /** When the wheel last turned, seconds, and how far back the fight's camera stands. */
   private wheelAt = -Infinity;
@@ -166,15 +172,17 @@ export class SeaCombat {
     return { x, y, heading };
   }
 
-  /** A key down or up; answers whether the fight takes it: the helm's (A, D, Shift), a rung (W, S), the brace (C),
-   *  and every other key but the menu's, so the sea's own (the map, a voyage, the pace) wait for the fight's end. */
+  /** A key down or up; answers whether the fight takes it: the helm's (A, D), a rung (W, S), a burst (Shift), the
+   *  brace (C), and every other key but the menu's, so the sea's own (the map, a voyage, the pace) wait for the fight's
+   *  end. */
   key(key: string, down: boolean): boolean {
     // The menu's key, and E for the sea's own asks (to board a captain who struck, to leave its won deck).
     if (key === 'm' || key === 'e') return false;
-    if (!['a', 'd', 'w', 's', 'c', 'shift', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key))
+    if (!['a', 'd', 'w', 's', 'c', BOOST_KEY, 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key))
       return true;
     if (down) {
       if (!this.held.has(key) && ['w', 's', 'arrowup', 'arrowdown'].includes(key)) this.presses.push(key);
+      if (!this.held.has(key) && key === BOOST_KEY) this.boost = true;
       this.held.add(key);
     } else this.held.delete(key);
     return true;
@@ -189,6 +197,7 @@ export class SeaCombat {
    *  horizon. */
   drag(right: number, down: number): void {
     this.orbit = { yaw: this.orbit.yaw + right * DRAG_TURN, pitch: this.pitched(this.orbit.pitch + down * DRAG_TURN) };
+    this.holdAimSide();
   }
 
   /** A pitch within the aim's clamp while aiming, else the orbit's. */
@@ -196,16 +205,29 @@ export class SeaCombat {
     return Math.min(PITCH[1], Math.max(this.aiming ? -AIM_LOOK_TOP : PITCH[0], pitch));
   }
 
+  /** While aiming, the look kept on the battery it first laid on; out of the aim, no side is held. */
+  private holdAimSide(): void {
+    if (!this.aiming) {
+      this.aimSide = null;
+      return;
+    }
+    const heading = this.last.player.ship[2] ?? 0;
+    this.aimSide ??= batterySide(this.orbit.yaw, heading);
+    if (this.aimSide !== null) this.orbit = { ...this.orbit, yaw: yawInBattery(this.orbit.yaw, heading, this.aimSide) };
+  }
+
   /** The right button held aims; let go, the lay held fires. A left click while aiming holds fire. */
   aim(held: boolean): void {
     if (this.aiming && !held) this.fire = true;
     this.aiming = held;
     this.orbit = { ...this.orbit, pitch: this.pitched(this.orbit.pitch) };
+    this.holdAimSide();
   }
 
   holdFire(): void {
     this.aiming = false;
     this.orbit = { ...this.orbit, pitch: this.pitched(this.orbit.pitch) };
+    this.holdAimSide();
   }
 
   /** Whether the right button holds the aim. */
@@ -254,6 +276,8 @@ export class SeaCombat {
    *  which the view pans down to from the sea's by `share`. */
   frame(seconds: number, time: number, far: number, fail: (error: unknown) => void, swell?: ShelteredSwell): Shot {
     [this.swell, this.waterTime] = [swell, time];
+    // Nor does the ship turning under a held aim leave the look outside its battery's arc.
+    this.holdAimSide();
     const orbit = this.orbitAt();
     const eye = this.eyeAt(orbit, seconds);
     const look = this.aiming ? this.naval.look(orbit, this.fought, this.window, eye) : null;
@@ -263,8 +287,9 @@ export class SeaCombat {
       look,
       fire: this.fire,
       loadSteps: this.loadSteps,
+      boost: this.boost,
     };
-    [this.fire, this.loadSteps] = [false, 0];
+    [this.fire, this.loadSteps, this.boost] = [false, 0, false];
     const splashes = this.naval.step(seconds, input, time, this.fought, this.window, fail);
     // The water's ripples lie round it, drawn as large as it is.
     for (const splash of splashes)

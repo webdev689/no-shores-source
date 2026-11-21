@@ -88,7 +88,7 @@ export function warningNode(view: HudView, count: string): Node {
 }
 
 /** Death's words over the middle of the view and the press to rise again, waiting while it may not yet. */
-export function deathNode(ui: Interface, canRespawn: boolean, respawn: () => void): Node {
+export function deathNode(ui: Interface, why: string, canRespawn: boolean, respawn: () => void): Node {
   return {
     width: 'grow',
     height: 'grow',
@@ -102,7 +102,7 @@ export function deathNode(ui: Interface, canRespawn: boolean, respawn: () => voi
       {
         padding: [0, 0, 10, 0],
         through: true,
-        children: [said('You strayed too far from the area.', { colour: DIM })],
+        children: [said(why, { colour: DIM })],
       },
       hudPress(ui, 'hud:respawn', canRespawn ? 'Respawn' : 'Respawn…', respawn, {
         role: 'primary',
@@ -123,7 +123,7 @@ export function hintsNode(view: HudView, hints: readonly Hint[], seaBar: boolean
   return {
     id: 'hud:hints',
     through: true,
-    gap: 14 * zoom,
+    gap: 8 * zoom,
     wrap: true,
     alignX: 'end',
     alignY: 'center',

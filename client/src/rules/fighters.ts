@@ -1,4 +1,4 @@
-import { BODY_FLOATS, type Mode } from './movementRules.ts';
+import { BODY_FLOATS, CONTROLS_FLOATS, type Mode } from './movementRules.ts';
 
 /** The combat crate's strokes 1 to 6, as the way each swing goes. */
 export const STROKE_DIRECTIONS = ['down', 'downLeft', 'left', 'right', 'downRight', 'up'] as const;
@@ -44,6 +44,7 @@ export type Action =
   | { readonly kind: 'overreach'; readonly left: number }
   | { readonly kind: 'draw'; readonly elapsed: number }
   | { readonly kind: 'reload'; readonly left: number }
+  | { readonly kind: 'drink'; readonly elapsed: number }
   | { readonly kind: 'dead'; readonly elapsed: number };
 
 /** A fighter as a browser draws and marks it. */
@@ -68,6 +69,10 @@ export interface FighterView {
   readonly statuses?: Statuses;
   /** The shots its Ranged weapon has left, read from a whole fighter's numbers; null for none counted (a foe's). */
   readonly ammo?: number | null;
+  /** The healing charges it holds and how far its meter has filled the next, 0 to 1, read from a whole fighter's
+   *  numbers. */
+  readonly charges?: number;
+  readonly meter?: number;
 }
 
 /** The statuses, in the combat crate's order (crates/combat/src/status.rs). */
@@ -81,13 +86,19 @@ const COMBAT_AT = BODY_FLOATS;
 const ACTION_NUMBERS = 10;
 export const GLANCE_FLOATS = 17 + ACTION_NUMBERS;
 /** A whole fighter: its body, the fight's numbers, its action's, the shots its Ranged weapon has left (+ 1, 0 for none
- *  counted), its statuses (each one's ticks, a Charge's immunity, each one's giver), then its gear's trim (combat's
- *  TRIM_FLOATS). */
+ *  counted), its drinks (the healing charges in the low two bits, the drink's press kept and held above them) and the
+ *  meter toward the next charge, its statuses (each one's ticks, a Charge's immunity, each one's giver), then its
+ *  gear's trim (combat's TRIM_FLOATS). */
 export const TRIM_FLOATS = 29;
 const AMMO_AT = BODY_FLOATS + 24 + ACTION_NUMBERS;
-const STATUSES_AT = AMMO_AT + 1;
+export const DRINKS_AT = AMMO_AT + 1;
+const METER_AT = AMMO_AT + 2;
+const STATUSES_AT = AMMO_AT + 3;
 export const STATUS_FLOATS = 2 * STATUSES.length + 1;
 export const FIGHTER_FLOATS = STATUSES_AT + STATUS_FLOATS + TRIM_FLOATS;
+/** An intent: the controls, then the stroke held, guard, dodge, shoot, pitch, aim, the aim's mark (x, y, z) and a
+ *  drink asked (`fighting.ts` writes them). */
+export const INTENT_FLOATS = CONTROLS_FLOATS + 10;
 /** A fighter as a snapshot carries it: all but its trim, which only its own player has, in their gear. */
 export const UNTRIMMED_FLOATS = FIGHTER_FLOATS - TRIM_FLOATS;
 /** The trim of a fighter whose gear trims nothing (combat's `Trim::PLAIN`): every factor 1, nothing given back. */
@@ -149,6 +160,8 @@ function actionOf(kind: number, numbers: ArrayLike<number>): Action {
       return { kind: 'reload', left: valueAt(0) };
     case 12:
       return { kind: 'dead', elapsed: valueAt(0) };
+    case 13:
+      return { kind: 'drink', elapsed: valueAt(0) };
     default:
       return { kind: 'idle' };
   }
@@ -215,11 +228,22 @@ export function ammoOf(fighter: ArrayLike<number>): number | null {
   return counted >= 1 ? counted - 1 : null;
 }
 
+/** The healing charges a fighter's whole numbers (or a snapshot's) say it holds, and how far its meter has filled the
+ *  next, 0 to 1. */
+export function chargesOf(fighter: ArrayLike<number>): { readonly charges: number; readonly meter: number } {
+  const meter = fighter[METER_AT] ?? 0;
+  return {
+    charges: (fighter[DRINKS_AT] ?? 0) & 3,
+    meter: Number.isFinite(meter) ? Math.min(1, Math.max(0, meter)) : 0,
+  };
+}
+
 /** What a fighter's whole numbers say. */
 export const fighterView = (fighter: ArrayLike<number>): FighterView => ({
   ...glanceView(glanceFrom(fighter)),
   statuses: statusesOf(fighter),
   ammo: ammoOf(fighter),
+  ...chargesOf(fighter),
 });
 
 /** How far through its action a fighter is, 0 to 1, by the action's own clock; 0 for one with none. */

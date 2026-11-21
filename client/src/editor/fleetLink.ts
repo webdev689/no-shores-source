@@ -17,12 +17,11 @@ export interface CaptainChoice {
   readonly shipLevel: number;
 }
 
-/** What the player does in a frame at sea in a fleet: their rudder and crab from the keys held, each rung climbed or
- *  come down in turn (1 or -1), the look they lay while aiming, a release of the guns, the brace, steps of the load,
- *  and a captain asked for, of the faction and rank chosen. */
+/** What the player does in a frame at sea in a fleet: their rudder from the keys held, each rung climbed or come down
+ *  in turn (1 or -1), the look they lay while aiming, a release of the guns, the brace, steps of the load, and a
+ *  captain asked for, of the faction and rank chosen. */
 export interface FleetInput {
   readonly steer: number;
-  readonly crab: boolean;
   readonly climbs: readonly number[];
   readonly look: FleetLook | null;
   readonly fire: boolean;
