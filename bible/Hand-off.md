@@ -239,7 +239,7 @@ The owner's words are in [[Overlook Becomes a Hub of Courts and Ways, After the 
 ... Return when this is 100%"; then wall adornments and banners); every call is in [[Overlook's Hub as Claude Shapes
 It]]. Nothing is audited or seen whole in the page yet.
 
-Built on the branch, `main` merged in (#98, #102, #107):
+Built on the branch, `main` merged in (#98, #102, #107, and main as of 21 November):
 - **The hub** (`crates/city/src/hub/`, Overlook's own social plan; other cities keep the courtyard): the seaward walk
   and spawns, the Watch Court (obelisk, two vault houses, the Mage's study, the notice board's landing
   `hub::BOARD_LANDING_M` for the activities session's board), two stone ranges with arched passages, the West Court
@@ -285,6 +285,11 @@ Forge Yard's as trodden earth (`lawn`, `earth`), and each court set as a scene b
 `hub/dress.rs` (eleven pieces new in `tools/modules/dress.py`), each new stall's keeper at work, a walker's place at
 each piece, up to 48 walkers. A test pins every scene standing (`every_court_is_set_as_a_scene_and_its_ways_are_walks`);
 a test build prints any piece a scene asks for that is left out, and why.
+
+`main` merged in again on 21 November (its ruins, friendly traffic, islands, and the frames moved from `game.ts` to
+`gameFrame.ts`): the pier's two moored ships are now drawn as main draws ships, friendly sloops with their sails
+furled and a still footprint on the water (`moorings.ts` `mooredShips`), with the traffic's. The flowers' stems in
+the bake stand upright: a slanted rod's turn rounded differently on CI's machine, so its meshes differed.
 
 Left to do, in order:
 1. How the page holds some 125 figures and the courts' pieces: a frame's cost on a real GPU is unmeasured.
