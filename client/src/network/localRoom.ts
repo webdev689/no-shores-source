@@ -2,6 +2,7 @@ import { type CourseBlock, type CourseNode, type RoomDoor, startRoomDoor } from 
 import type { ArtState } from './artMessages.ts';
 import { readFromRoom } from './messages.ts';
 import type { GearMessage, RoomLink, Snapshot } from './roomConnection.ts';
+import { SnapshotKeeper } from './snapshots.ts';
 
 /** A course's stall, where a social space's asks are answered, and its resource nodes. */
 export interface Furnishing {
@@ -15,6 +16,8 @@ export class LocalRoom implements RoomLink {
   private readonly door: RoomDoor;
   private readonly snapshot: (snapshot: Snapshot) => void;
   private readonly gear: (gear: GearMessage) => void;
+  /** The snapshots held to make the room's next one whole. */
+  private readonly kept = new SnapshotKeeper();
   private carry = 0;
   /** The world's minute the room was last told, which turns the day's wares and brings Shape and takes him away. */
   private minute = -1;
@@ -163,8 +166,9 @@ export class LocalRoom implements RoomLink {
         if (gear.arts) this.arts = gear.arts;
         this.gear(gear);
       }
-      const message = readFromRoom(this.door.snapshot());
-      if (message?.kind === 'snapshot') this.snapshot(message);
+      const message = readFromRoom(this.door.snapshot(this.player));
+      const whole = message?.kind === 'snapshot' ? this.kept.whole(message) : null;
+      if (whole) this.snapshot(whole);
     }
   }
 }

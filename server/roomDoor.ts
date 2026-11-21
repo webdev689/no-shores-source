@@ -59,9 +59,9 @@ export interface RoomDoor {
    *  their ship's orders in a fleet. */
   input(player: number, bytes: Uint8Array): InputAnswer;
   tick(): void;
-  /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
-   *  bytes. */
-  snapshot(): Uint8Array;
+  /** A player's snapshot after the last tick, as its bytes: on land what changed since the one their screen last
+   *  showed; at sea every ship and their own fight; in a fleet every ship, its balls and what happened. */
+  snapshot(player: number): Uint8Array;
   /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
    *  course open. */
   furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
@@ -124,7 +124,7 @@ interface RoomExports {
   room_leave(player: number): void;
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
-  room_snapshot(): bigint;
+  room_snapshot(player: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
   room_difficulty(seas: number): number;
@@ -193,7 +193,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     input: (player, bytes) =>
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
-    snapshot: () => take(exports.room_snapshot()),
+    snapshot: (player) => take(exports.room_snapshot(player)),
     furnish: (stall, nodes) => {
       const numbers = [
         stall?.x ?? Number.NaN,

@@ -61,7 +61,7 @@ class Fleet {
     this.clock += TICK;
     for (const { play } of this.players) play.advance(TICK, inputs(play), this.clock);
     this.door.tick();
-    const snapshot = readFromRoom(this.door.snapshot());
+    const snapshot = readFromRoom(this.door.snapshot(0));
     if (snapshot?.kind !== 'snapshot') throw new Error('the fleet room answers snapshots');
     for (const player of this.players) {
       player.waiting.push(snapshot);
@@ -71,7 +71,7 @@ class Fleet {
 
   /** The room's word on a player's ship, from its latest snapshot. */
   shipOf(play: FleetSession): number[] {
-    const snapshot = readFromRoom(this.door.snapshot());
+    const snapshot = readFromRoom(this.door.snapshot(0));
     return snapshot?.kind === 'snapshot'
       ? Array.from(snapshot.vessels.find((vessel) => vessel.id === play.id)?.ship ?? [])
       : [];
@@ -160,7 +160,7 @@ test("the room's clock holds still for a late snapshot rather than run back", ()
   const play = new FleetSession(link, startFleetRules(compiled), [200_000, 300_000, 0]);
   const snapshots = [0, 1].map(() => {
     door.tick();
-    const snapshot = readFromRoom(door.snapshot());
+    const snapshot = readFromRoom(door.snapshot(0));
     if (snapshot?.kind !== 'snapshot') throw new Error('the fleet room answers snapshots');
     return snapshot;
   });
@@ -193,7 +193,7 @@ test('a session whose link joins a new fleet puts her to sea again where she lay
     clock += TICK;
     play.advance(TICK, input, clock);
     door.tick();
-    const snapshot = readFromRoom(door.snapshot());
+    const snapshot = readFromRoom(door.snapshot(0));
     if (snapshot?.kind === 'snapshot') play.receive(snapshot, clock);
   };
   tick(sailing(0, 1));

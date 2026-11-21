@@ -49,6 +49,9 @@ table Input {
   spawn_rank: ubyte;
   cast: ubyte;
   cast_aim: [double];
+  // The inputs before it that the room has not yet shown taken, oldest first, so one lost on the way is taken from
+  // the next to arrive; the room takes only those it has not had.
+  earlier: [Input];
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
@@ -113,7 +116,8 @@ table Joined {
 // it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body and
 // whose statuses (each one's ticks left, a Veiled player's among them) follow its action's numbers, and where they
 // stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks left, 2
-// dead, with the ticks since. A number, not a schema enum, so the TypeScript flatc makes stays erasable.
+// dead, with the ticks since. A number, not a schema enum, so the TypeScript flatc makes stays erasable. The player
+// the snapshot is for has their fighter whole (`fighter`); everyone else's is `packed` (crates/protocol/src/pack.rs).
 table Seen {
   player: uint;
   acknowledged: uint;
@@ -124,6 +128,11 @@ table Seen {
   fighter: [double];
   standing: ubyte;
   standing_ticks: uint;
+  packed: [ubyte];
+  // In a snapshot built on another that held this player, only the numbers that changed since go, a bit set here for
+  // each (the first number's the lowest bit of the first byte): whole in `fighter` for the player it is for, packed
+  // in `packed` for everyone else.
+  changed: [ubyte];
 }
 
 // A foe as the room last stepped it: its number, its role (1 skirmisher, 2 swordsman, 3 brute, 4 archer, 5 captain), a
@@ -131,11 +140,12 @@ table Seen {
 // gear crate's numbers, 0 for none), what it holds still and what it held whole. Then its type's number in the roster,
 // its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle,
 // 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
-// leaves after it.
+// leaves after it. All of it crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
+// `foe_packed`); the fields that once carried it are left at their defaults, so they cost nothing.
 table Foe {
   id: uint;
   kind: ubyte;
-  glance: [double];
+  glance: [double] (deprecated);
   level: ubyte;
   shield_element: ubyte;
   shield: double;
@@ -148,6 +158,10 @@ table Foe {
   expose: uint;
   charge: uint;
   charge_immune: uint;
+  packed: [ubyte];
+  // In a snapshot built on another that held this foe, `packed` holds only the numbers that changed since, a bit set
+  // here for each; the rest stand as they stood.
+  changed: [ubyte];
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -176,6 +190,8 @@ table Flying {
   velocity: [double];
   age: ushort;
   muzzle: [double];
+  // The tick a stopped ball stopped, so a page shown it once already passes it over.
+  stopped: ulong;
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it
@@ -305,6 +321,14 @@ table Snapshot {
   naval: [Naval];
   fight_clock: double;
   spells: [Spell];
+  // On land, sent to one player: what changed since the snapshot of tick `base` their screen showed (0 for none, all
+  // of it): the players and foes that changed, those gone since, and what happened since it (each event, dress and
+  // stopped ball once more until a later snapshot is shown). Those that did not change stand as they stood then.
+  base: ulong;
+  gone_players: [uint];
+  gone_foes: [uint];
+  // The room's middle (x, y) that everyone's packed numbers are measured from (crates/protocol/src/pack.rs).
+  middle: [double];
 }
 
 // One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the

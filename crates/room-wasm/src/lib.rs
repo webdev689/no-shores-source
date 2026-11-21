@@ -15,7 +15,8 @@ use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
 use room::winds::epoch_of;
-use room::{Floor, FoeSeen, NodeKind, PlayerId, Refused, Room, Section, Seen};
+use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
+use sent::Sent;
 use serde::Deserialize;
 use std::cell::RefCell;
 
@@ -25,6 +26,7 @@ mod fighter_door;
 mod fleet_door;
 mod gear_door;
 mod roster_door;
+mod sent;
 
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute};
@@ -33,7 +35,7 @@ pub use gear_door::{character, furnish, gear, restore_character, set_difficulty,
 /// player when its node is locked; the sea; or a fleet.
 #[derive(Debug)]
 enum Opened {
-    Land { room: Box<Room>, node: Option<(String, [f64; 4])>, refusal: Option<String> },
+    Land { room: Box<Room>, node: Option<(String, [f64; 4])>, refusal: Option<String>, sent: Box<Sent> },
     Sea(Box<Sea>),
     Fleet(Box<Fleet>),
 }
@@ -133,7 +135,12 @@ fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> boo
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
     let blocks: Vec<Block> = blocks.collect();
     fighter_door::COURSE.with(|course| *course.borrow_mut() = blocks.clone().into());
-    keep(Opened::Land { room: Box::new(room_on(blocks, (spawn[0], spawn[1]))), node: None, refusal: None });
+    keep(Opened::Land {
+        room: Box::new(room_on(blocks, (spawn[0], spawn[1]))),
+        node: None,
+        refusal: None,
+        sent: Box::default(),
+    });
     true
 }
 
@@ -161,7 +168,7 @@ pub fn open_node(text: &[u8]) -> bool {
         room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default());
     }
     let refusal = node.locked.then(|| format!("{} is locked", node.name));
-    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal });
+    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent: Box::default() });
     true
 }
 
@@ -226,14 +233,26 @@ pub fn forbid_arts() {
 /// the helm. One of the answers above.
 pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     let answer = with_open(|opened| match opened {
-        Opened::Land { room, .. } => match protocol::read_input(bytes) {
+        Opened::Land { room, .. } => match protocol::read_inputs(bytes) {
             Err(_) => NOT_AN_INPUT,
-            Ok(input) => match room.input(player, input) {
-                Ok(()) => TAKEN,
-                Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
-                Err(Refused::BadLook) => NOT_AN_INPUT,
-                Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
-            },
+            // Those it carries from before that the room already had are passed over: they were taken.
+            Ok(inputs) => {
+                let had = room.heard(player).map_or(0, |(received, ..)| received);
+                let fresh = inputs.into_iter().filter(|input| input.sequence > had);
+                let mut answer = TAKEN;
+                for input in fresh {
+                    answer = match room.input(player, input) {
+                        Ok(()) => TAKEN,
+                        Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
+                        Err(Refused::BadLook) => NOT_AN_INPUT,
+                        Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
+                    };
+                    if answer != TAKEN {
+                        break;
+                    }
+                }
+                answer
+            }
         },
         Opened::Sea(sea) => {
             let asked = match protocol::read_sea_input(bytes) {
@@ -279,36 +298,18 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     answer.unwrap_or(NO_SUCH_PLAYER)
 }
 
-/// Every player and foe after the room's last tick, the dresses changed and what happened in the fight since the last
-/// snapshot, and the shots in flight with the balls just fired, as a snapshot's bytes; at sea, every ship. Empty with no room open.
+/// The snapshot after the room's last tick, for `player`: on land, what changed since the snapshot their screen
+/// last showed (`sent.rs`); at sea, every ship and their own fight; in a fleet, every ship, the balls aloft and what
+/// happened. Empty with no room open.
 #[must_use]
-pub fn snapshot() -> Vec<u8> {
+pub fn snapshot(player: PlayerId) -> Vec<u8> {
     with_open(|opened| match opened {
-        Opened::Land { room, .. } => {
-            let changed = room.take_dress_changes();
-            let events = room.take_events();
-            let dressed: Vec<(PlayerId, &str)> =
-                changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
-            let players: Vec<Seen> = room.seen().collect();
-            let foes: Vec<FoeSeen> = room.foes_seen().collect();
-            let tick = room.clock();
-            let lines = room.take_lines();
-            let shots: Vec<combat::Shot> = room.shots().copied().collect();
-            let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
-            let snapshot = protocol::Snapshot {
-                tick,
-                players: &players,
-                dressed: &dressed,
-                foes: &foes,
-                events: &events,
-                shots: &shots,
-                lines: &lines,
-                spells: &spells,
-            };
-            protocol::snapshot_bytes(&snapshot)
+        Opened::Land { room, node, sent, .. } => {
+            let middle = protocol::pack::middle_of(node.as_ref().map(|(_, bounds)| *bounds));
+            sent.snapshot_for(room, player, middle)
         }
         Opened::Sea(sea) => {
-            let fights: Vec<_> = sea.fight_views().collect();
+            let fights: Vec<_> = sea.fight_views().filter(|(fighter, ..)| *fighter == player).collect();
             let aboard: Vec<(u32, u32, movement::Body)> =
                 sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
             protocol::sea_snapshot_bytes(
@@ -479,10 +480,10 @@ pub extern "C" fn room_tick() {
     });
 }
 
-/// The snapshot's bytes after the last tick.
+/// The snapshot's bytes after the last tick, for a player.
 #[unsafe(no_mangle)]
-pub extern "C" fn room_snapshot() -> u64 {
-    hand_over(snapshot())
+pub extern "C" fn room_snapshot(player: PlayerId) -> u64 {
+    hand_over(snapshot(player))
 }
 
 /// The Sloop's build as the naval rules hold it, as JSON (`deck_door::sloop_build_json`).
