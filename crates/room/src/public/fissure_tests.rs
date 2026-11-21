@@ -177,3 +177,23 @@ fn the_growth_left_standing_sinks_back_and_the_heroic_task_is_missed_and_late_se
     }
     assert_eq!(chests(&room, players[0]), [1], "won, the bonus lost");
 }
+
+#[test]
+fn the_growth_never_holds_back_a_wave_two_lesser_foes_left_beside_it_bring_the_next() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    let player = players[0];
+    room.tick();
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, player);
+    }
+    assert!(fissure(&room).growth.is_some(), "the growth stands");
+    room.tick();
+    let standing_lesser = lesser(&room);
+    assert!(standing_lesser.len() > 2, "a wave stands to thin: {}", standing_lesser.len());
+    let waves = fissure(&room).waves;
+    for foe in &standing_lesser[2..] {
+        strike(&mut room, player, *foe, 1.0e6);
+    }
+    room.tick();
+    assert_eq!(fissure(&room).waves, waves + 1, "two lesser foes and the growth standing: the next wave comes");
+}
