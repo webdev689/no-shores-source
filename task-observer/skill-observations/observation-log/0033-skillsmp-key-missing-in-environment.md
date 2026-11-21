@@ -17,3 +17,8 @@ check-tools printed "FAIL skillsmp: no SKILLSMP_API_KEY in the environment" and 
 The hand-off already says the kit's keys are network secrets on one of two environments named Default, and a session on
 the other fails these lines. This session runs on the keyless one. A key is the owner's call: nothing was changed.
 Proposal for the owner: say which environment sessions should run on, or add the two keys as network secrets here.
+
+2026-11-20, a later session (same keyless Default): the owner pointed to the repository's GitHub Actions secret
+SKILLSMP_API_KEY. Actions secrets reach only workflow runs, never a cloud session, so it cannot feed the kit. The
+session's environment shows no network secrets; the owner declined the in-session credential form. Proposal stands:
+the key goes on the cloud environment (Network secrets, host skillsmp.com), or the kit treats SkillsMP as optional.
