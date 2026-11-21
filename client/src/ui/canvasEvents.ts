@@ -39,7 +39,29 @@ interface TextUpdate extends Event {
 }
 type EditingCanvas = HTMLCanvasElement & { editContext: EditContextLike | null };
 
-export class CanvasEvents {
+/** What the interface hears the page's input through: on the page, its own listeners on the canvas (`CanvasEvents`);
+ *  in the game's worker, what the page sends it. */
+export interface PageEvents {
+  /** Where the pointer is on the canvas now, CSS pixels; null off it or locked. */
+  readonly pointer: { readonly x: number; readonly y: number } | null;
+  /** The events since the last call. */
+  take(): UiEvent[];
+  /** Hands the page what the interface is typing in, and the pointer's look. */
+  sync(typing: Typing | null, cursor: string): void;
+}
+
+/** The page's input as the game's worker hears it, once it is put in place there. */
+let away: PageEvents | null = null;
+
+/** Puts in place how the interface hears the page's input in a worker, where no page's listeners are. */
+export function hearFromAway(events: PageEvents): void {
+  away = events;
+}
+
+/** How the interface hears the page's input on `canvas`: its own listeners, or the worker's as put in place. */
+export const eventsOn = (canvas: HTMLCanvasElement): PageEvents => away ?? new CanvasEvents(canvas);
+
+export class CanvasEvents implements PageEvents {
   private readonly canvas: EditingCanvas;
   private events: UiEvent[] = [];
   /** Where the pointer is on the canvas now, CSS pixels, as its last event put it; null off it or locked. */
@@ -137,6 +159,11 @@ export class CanvasEvents {
       });
       if (text !== update.text) this.events.push({ kind: 'key', key: 'Enter' });
     });
+  }
+
+  /** Whether words are being typed into the interface, so the keys are the browser's typing's. */
+  get typingHere(): boolean {
+    return this.typing !== null;
   }
 
   /** The events since the last call, with the pad's presses read now. */

@@ -49,6 +49,7 @@ decision, made in the same change as its entry here.
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
 | `client/src/plus/` | The [[Interface]]'s Enhanced Plus kit, which imports nothing: carved stone and brass, each surface painted by the role it plays |
 | `client/src/ui/` | The ui layer, which imports `plus`: the [[Interface]] as the GPU draws it, from the face's cells, the kit's frames and bevels, and one instanced draw a frame |
+| `client/src/thread/` | The thread layer, which imports `ui`: the page and the game's worker joined ([[Game]], "Threads"): the page's stand-ins in the worker, the page's side that hears the player and carries out what the game asks, and the game's sound made on the page's audio |
 | `client/src/layout/` | The layouts in the browser: drawn with the city layer near the eye, the nodes' laid sections, and the ways through gates ([[Layouts]]) |
 | `client/src/speech/` | The speech layer, which imports `plus`: the voice made in the browser for every line, the dialogue box, barks over heads and emotes ([[Speech]]) |
 | `client/src/cinema/` | The cinema layer, which imports `water` and `combat`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |

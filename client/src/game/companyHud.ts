@@ -37,7 +37,7 @@ export class CompanyHud {
     };
     look();
     // Asked for only when the Social tab has not heard it lately.
-    window.setInterval(() => performance.now() - heardAt >= LOOK_MS && look(), LOOK_MS);
+    setInterval(() => performance.now() - heardAt >= LOOK_MS && look(), LOOK_MS);
     addEventListener('overlook:company', look);
     addEventListener(ROSTER_HEARD, (event) => show((event as CustomEvent<Roster | string>).detail));
     addEventListener(ACCOUNT_CHANGED, () => {

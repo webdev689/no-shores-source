@@ -2,7 +2,7 @@
 // then it draws nothing), the canvas's events heard each frame, its tree drawn over the frame, and what it is typing
 // in handed back to the page.
 import type { Gpu } from '../gpu.ts';
-import { CanvasEvents } from '../ui/canvasEvents.ts';
+import { eventsOn, type PageEvents } from '../ui/canvasEvents.ts';
 import { readFace } from '../ui/faceReader.ts';
 import type { Stack } from '../ui/stack.ts';
 import { Interface } from '../ui/ui.ts';
@@ -12,7 +12,7 @@ import { drawnPress, drawnReach } from './uiSounds.ts';
 export class DrawnInterface {
   private ui: Interface | null = null;
   private readonly canvas: HTMLCanvasElement;
-  private readonly events: CanvasEvents;
+  private readonly events: PageEvents;
   /** When this frame's input was heard, so a press sounds unless its own sound played since. */
   private heardAt = 0;
   /** Whether the game's own frames have begun, which end the interface's frames alone. */
@@ -22,7 +22,7 @@ export class DrawnInterface {
    *  begin hearing it. */
   constructor(gpu: Gpu, canvas: HTMLCanvasElement, stack?: Stack) {
     this.canvas = canvas;
-    this.events = new CanvasEvents(canvas);
+    this.events = eventsOn(canvas);
     if (stack) this.alone(stack, performance.now());
     readFace()
       .then((face) => (this.ui = new Interface(new UiRenderer(gpu, face))))

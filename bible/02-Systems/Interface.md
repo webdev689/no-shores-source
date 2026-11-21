@@ -22,6 +22,7 @@ code:
   - client/src/ui/node.ts#Node
   - client/src/ui/ui.ts#Interface
   - client/src/ui/canvasEvents.ts#CanvasEvents
+  - client/src/ui/canvasEvents.ts#eventsOn
   - client/src/ui/controls.ts#slider
   - client/src/testground/panelKit.ts#panels
   - client/src/testground/viewTexture.ts#ViewTexture
@@ -171,8 +172,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   way, or by the pad's cross, A pressing and B going back; the wheel scrolling the list under it, and focus by keys
   scrolling its list to it. A field takes words through the browser's `EditContext` where it has one (Chromium), so
   composition and on-screen keyboards work on the canvas, and through keys and paste elsewhere; copy and cut take
-  its selection. The page's side is `CanvasEvents`; the interface hears plain events, so it can run with the game in
-  a worker. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
+  its selection. The page's side is `CanvasEvents`; the interface hears plain events, and with the game in its worker
+  ([[Game]], "Threads") hears them as the page sends them (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
 - **Controls.** A press with words, a toggle, a slider (dragged, or stepped by its arrows) and a choice from a list
   that opens under it are built once, for every screen (`controls.ts`).
 - **The heads-up display** is a layer of its own (`Hud`): the place's name, the edge's warning and its darkening,

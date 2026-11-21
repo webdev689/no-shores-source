@@ -4,6 +4,11 @@ status: live
 code:
   - client/index.html
   - client/src/main.ts
+  - client/src/gameWorker.ts
+  - client/src/thread/pageHost.ts#PageHost
+  - client/src/thread/pageAway.ts#pageAway
+  - client/src/thread/audioAway.ts#soundAway
+  - client/src/thread/audioHost.ts#AudioHost
   - client/src/game/game.ts#startGame
   - client/src/game/drain.ts#Drain
   - client/src/game/drain.ts#DrainView
@@ -54,6 +59,30 @@ Destiny 1 ([[Overlook Is a Shared World After Destiny 1]], [[Every Island Is See
 player arrives in Overlook, plays on foot in one node at a time, returns to their ship, sails the [[Overworld]]'s sea,
 views an island's side from above and lands at another node. Each way between them passes through a veil while the
 place loads, as Destiny's orbit does.
+
+## Threads
+
+The game runs in a thread of its own, a worker, as the owner asked ([[Work Leaves the Main Thread Where It Can]]): its
+loop, the rules' prediction, the room's connection and every draw, WebGPU drawing on the page's one canvas handed to
+it (`transferControlToOffscreen`). The page keeps what a browser allows nowhere else (`PageHost`): the player's keys,
+pointer, wheel and pad, the pointer's lock and capture, typing through `EditContext`, sound, storage, the address and
+the screen reader's announcements.
+
+- **What the page hears** it sends on as it comes: the interface's input as plain events (`CanvasEvents`), and every
+  key, pointer and wheel event the game's code listens for, made again in the worker on the canvas or the window. The
+  page keeps a key's own work (scroll, find, the focus moving) from every key of the game's unless words are typed,
+  the browser's shortcuts and function keys aside, and a wheel's and a right click's on the canvas always.
+- **What the game finds in the worker** stands in for the page (`pageAway`): storage read there and each change sent
+  to the page's at once; the page's address, its size, its media queries and its document; the canvas, its pointer's
+  lock and capture asked of the page. The game's own code runs unchanged, as on a page.
+- **Sound** is made on the page's audio, its cues sent ahead by the worker (`soundAway`, `AudioHost`): every node,
+  parameter and buffer the game's sound code makes there is a number the page keeps, each call sent with the rest of
+  its task's and carried out on the page; the page's clock is sent back now and then, and the worker runs it on
+  between. The page makes its audio at the player's first press or key, as a browser lets sound start only then.
+- **Measured** headless on SwiftShader at 480 by 270, the world drawn at Overlook's social space for 30 seconds with
+  W pressed every two: the page's thread is busy 0.0 ms a frame at the median and keeps 60 frames a second while the
+  worker draws, with 4 long tasks (0.26 s in all); the worker is busy 25 ms a frame. SwiftShader draws on the CPU, so
+  its frames come seconds apart: only the threads' busy times say anything of a real GPU.
 
 ## The flow
 
@@ -355,6 +384,11 @@ grey to 92%, at 72% of its light and 5% more contrast. The scene draws it last i
 the game draws over the world keeps its colour.
 
 ## Limits
+
+- A save the game makes in the page's very last moment, as the tab closes, may not reach the page's storage: it is
+  sent from the worker, and a closing page may not hear it.
+- A sound's samples the game filled itself are copied to the page, not moved, so they are held twice.
+- A browser that cannot hand its canvas to a worker says so and does not start.
 
 - Until the city's tables and blocks have come, the land shows without its city.
 - A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and the ship

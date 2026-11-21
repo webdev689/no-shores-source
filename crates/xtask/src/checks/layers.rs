@@ -61,6 +61,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "heldmap", may_import: &["editor", "overworld", "forge", "firstperson", "plus", "ui"] },
     Layer { name: "plus", may_import: &[] },
     Layer { name: "ui", may_import: &["plus"] },
+    Layer { name: "thread", may_import: &["ui"] },
     Layer { name: "speech", may_import: &["plus", "ui"] },
     Layer { name: "cinema", may_import: &["water", "combat", "plus", "ui"] },
 ];

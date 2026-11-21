@@ -17,6 +17,14 @@ export const drawSvgInPage: SvgDrawer = async (svg, width, height) => {
   return canvas.transferToImageBitmap();
 };
 
+/** How SVG is drawn where the page does not say otherwise: in the page, or as the game's worker puts in place. */
+let svgDrawer: SvgDrawer = drawSvgInPage;
+
+/** Puts in place how SVG is drawn, for a worker, which cannot decode it, to ask its page. */
+export function useSvgDrawer(drawer: SvgDrawer): void {
+  svgDrawer = drawer;
+}
+
 interface Entry {
   readonly placed: Placed | null;
   ready: boolean;
@@ -31,7 +39,7 @@ export class Pictures {
   private readonly atlas: () => GPUTexture;
   private readonly entries = new Map<string, Entry>();
   /** How SVG is drawn: in the page unless a worker says otherwise. */
-  drawSvg: SvgDrawer = drawSvgInPage;
+  drawSvg: SvgDrawer = svgDrawer;
 
   constructor(device: GPUDevice, room: (width: number, height: number) => Placed | null, atlas: () => GPUTexture) {
     this.device = device;
