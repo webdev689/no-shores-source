@@ -161,7 +161,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         BUY_FRAGMENT => Asked::Gear(Ask::BuyFragment { art: column, fragment: node }),
         WEAR_COSMETIC => Asked::Gear(Ask::WearCosmetic { cosmetic: u16::try_from(item).ok()? }),
         BUY_COSMETIC => Asked::Gear(Ask::BuyCosmetic { cosmetic: u16::try_from(item).ok()? }),
-        BUY_FROM_SHAPE => Asked::Gear(Ask::BuyFromShape { ware: node }),
+        BUY_FROM_SHAPE => Asked::Gear(Ask::BuyFromShape { ware: node, shown: item }),
         _ => return None,
     })
 }
@@ -226,7 +226,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::BuyCosmetic { cosmetic } => {
                 args = messages::AskArgs { kind: BUY_COSMETIC, item: u32::from(cosmetic), ..args };
             }
-            Ask::BuyFromShape { ware } => args = messages::AskArgs { kind: BUY_FROM_SHAPE, node: ware, ..args },
+            Ask::BuyFromShape { ware, shown } => {
+                args = messages::AskArgs { kind: BUY_FROM_SHAPE, node: ware, item: shown, ..args };
+            }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },

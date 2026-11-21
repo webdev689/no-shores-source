@@ -12,6 +12,8 @@ client/public/isle-packs/
 tools/forge/public/
 tools/forge/src/systems/
 tools/forge/packs/
+# A render's lock on its keys (rendercache.py), held only while it runs.
+tools/forge/tools/sprite-forge/keys/*.lock
 __pycache__/
 
 # The toolkit's working folders: the code map it generates and Serena's project data.
