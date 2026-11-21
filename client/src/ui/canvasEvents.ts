@@ -71,17 +71,23 @@ export class CanvasEvents {
     canvas.addEventListener('wheel', (event) => {
       if (!locked()) this.events.push({ kind: 'wheel', ...placed(event), dy: event.deltaY });
     });
-    addEventListener('keydown', (event) => {
-      const typingHere = this.typing !== null;
-      const ctrl = event.ctrlKey || event.metaKey;
-      // Keys the browser's typing does itself; and, without it, a character typed is words.
-      const typed =
-        typingHere && this.context !== null && (event.key.length === 1 || /^(Backspace|Delete)$/.test(event.key));
-      this.events.push({ kind: 'key', key: event.key, shift: event.shiftKey, ctrl, typed });
-      if (typingHere && !this.context && event.key.length === 1 && !ctrl)
-        this.events.push({ kind: 'text', text: event.key });
-      if (typingHere && (event.key === 'Tab' || event.key === 'Backspace' || event.key === ' ')) event.preventDefault();
-    });
+    addEventListener(
+      'keydown',
+      (event) => {
+        const typingHere = this.typing !== null;
+        const ctrl = event.ctrlKey || event.metaKey;
+        // Keys the browser's typing does itself; and, without it, a character typed is words.
+        const typed =
+          typingHere && this.context !== null && (event.key.length === 1 || /^(Backspace|Delete)$/.test(event.key));
+        this.events.push({ kind: 'key', key: event.key, shift: event.shiftKey, ctrl, typed });
+        if (typingHere && !this.context && event.key.length === 1 && !ctrl)
+          this.events.push({ kind: 'text', text: event.key });
+        if (typingHere && (event.key === 'Tab' || event.key === 'Backspace' || event.key === ' '))
+          event.preventDefault();
+        // Heard before any page's own listener, so one that keeps a key from the game keeps it from no drawn screen.
+      },
+      true,
+    );
     addEventListener('paste', (event) => {
       const text = event.clipboardData?.getData('text/plain');
       if (this.typing && text) {
