@@ -1,8 +1,19 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { SIDE, coastDistance } from '../client/src/overworld/islandView.ts';
 import { accounts } from './accounts/accountsForTests.ts';
 import { characters } from './accounts/characters.ts';
-import { FIRST_ROOM, NO_WAY_HERE, type Reach, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
+import {
+  FIRST_ROOM,
+  LANDFALL_M,
+  NO_WAY_HERE,
+  type Reach,
+  arrives,
+  cameOutOf,
+  reachOf,
+  shipOf,
+  toCoast,
+} from './arrival.ts';
 import { Keeper, type KeptRoom } from './keeping.ts';
 
 /** An island 100 km square, its coast at x and y from 1,000 km to 1,100 km. */
@@ -38,6 +49,10 @@ test('a node is landed at from the sea at its seas, its ship lying off the nodeâ
   assert.equal(arrives('node-tidewall', 'sea', OFF_COAST, null), false, 'a node the index does not list');
   assert.equal(arrives('node-sunspire-social', 'sea--abyss', OFF_COAST, reach([], true)), true, 'one room each tier');
   assert.equal(arrives('node-sunspire-social', 'sea', FAR_OFF, reach([], true)), false);
+  // The page's own measure off a coast, and every landfall it offers within the room's reach.
+  for (const ship of [OFF_COAST, FAR_OFF, [1_050_000, 1_050_000], [900_000, 1_250_000]] as const)
+    assert.equal(toCoast(ship, COAST), coastDistance(ship, COAST), String(ship));
+  assert.ok(LANDFALL_M > SIDE.coastReachM);
 });
 
 test('a gate takes a player into a node from a node whose gate leads there, at the same seas', () => {

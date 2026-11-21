@@ -6,7 +6,6 @@
  * node's room. A join to one of the company playing in the room is the keeper's to judge (`keeping.ts`).
  */
 
-import { coastDistance, SIDE } from '../client/src/overworld/islandView.ts';
 import { nodeRoom, seaRoom } from './roomNames.ts';
 
 type Point = readonly [number, number];
@@ -17,8 +16,9 @@ export const FIRST_ROOM = 'node-overlook-social';
 /** Why a room turns away a character that came by no way leading to it. */
 export const NO_WAY_HERE = 'You cannot reach this place from where you were.';
 
-/** How far past a landfall's reach of the coast a kept ship may lie: it heaves to a moment after the page offers it. */
-const LANDFALL_SLACK_M = 2_000;
+/** How far off an island's coast a kept ship may lie to land there: the page offers a landfall within 30 km
+ *  (`SIDE.coastReachM`), and the ship heaves to a moment after it does. */
+export const LANDFALL_M = 32_000;
 
 /** What a node's room knows of where its node lies and what leads into it: whether it is a social space (one room at
  *  every tier), its island's coast, and the nodes whose gates lead into it. */
@@ -87,7 +87,21 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   // Ashore from the sea at the node's seas (a social space's from any), the ship off its island's coast.
   const seas = from ? seaRoom(from) : null;
   if (seas === null || !reach || !ship || (!reach.social && seas !== to.seas)) return false;
-  return coastDistance(ship, reach.coast) <= SIDE.coastReachM + LANDFALL_SLACK_M;
+  return toCoast(ship, reach.coast) <= LANDFALL_M;
+}
+
+/** How far a point lies from a ring's nearest edge, metres, as the page measures a ship off a coast. */
+export function toCoast([x, y]: Point, ring: readonly Point[]): number {
+  let nearest = Number.POSITIVE_INFINITY;
+  ring.forEach(([fromX, fromY], index) => {
+    const [toX, toY] = ring[(index + 1) % ring.length] ?? [fromX, fromY];
+    const [edgeX, edgeY] = [toX - fromX, toY - fromY];
+    const squared = edgeX * edgeX + edgeY * edgeY;
+    const along = squared > 0 ? ((x - fromX) * edgeX + (y - fromY) * edgeY) / squared : 0;
+    const share = Math.max(0, Math.min(1, along));
+    nearest = Math.min(nearest, Math.hypot(fromX + edgeX * share - x, fromY + edgeY * share - y));
+  });
+  return nearest;
 }
 
 /** Whether a character that came from `from` comes out of the dungeon behind entrance `number` of the node's room
