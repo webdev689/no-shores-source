@@ -26,7 +26,8 @@ import {
 } from './heldMapLaw.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
 import { button } from '../ui/controls.ts';
-import type { Child, Node, Picture } from '../ui/node.ts';
+import type { Child, Drawing, Node, Picture } from '../ui/node.ts';
+import { colourOf } from '../ui/quads.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 
@@ -320,7 +321,6 @@ export class HeldMap {
     return {
       width: 'grow',
       height: 'grow',
-      through: true,
       opacity: shown.lift,
       children: [
         ...this.placed.map(({ place, x: left, y: top }) =>
@@ -331,6 +331,7 @@ export class HeldMap {
           height: 16,
           // Turned to the ship's heading about its middle, a pixel from where the sheet turned it.
           picture: { ...SHIP_ARROW, turn: (ship.heading * 180) / Math.PI },
+          through: true,
           float: { to: 'screen', x: Math.round(x + ship.x - 6), y: Math.round(y + ship.y + shown.drop - 9) },
         },
         this.cardNode(ui, shown.drop),
@@ -344,15 +345,14 @@ export class HeldMap {
     if (!choice) return null;
     const ok = choice.course.ok;
     const words = ok ? `Set a course for ${choice.name}` : choice.course.why;
-    const said = (text: string): Node => ({ text: { words: text, colour: TONES.ink, wrap: false } });
+    const said = (text: string): Node => ({ text: { words: text, colour: TONES.ink, wrap: false }, through: true });
     return {
       id: 'held-card',
-      solid: true,
       alignY: 'center',
       gap: 14,
       padding: [8, 14],
-      fill: 'rgba(10, 13, 17, 0.72)',
-      outline: { width: 1, colour: '#f3cf6a' },
+      // Drawn, not filled, so only its presses take the pointer and a click beside them reaches the map.
+      draw: cardGround,
       float: {
         to: 'screen',
         anchor: [0.5, 1],
@@ -376,6 +376,24 @@ export class HeldMap {
     };
   }
 }
+
+/** The card's ground and its gold edge. */
+const cardGround: Drawing = (renderer, box, scale, clip, fade) => {
+  const tone = (css: string) => {
+    const [red, green, blue, alpha] = colourOf(css);
+    return [red, green, blue, alpha * fade] as const;
+  };
+  const { x, y, width, height } = box;
+  renderer.quads.add(box, tone('rgba(10, 13, 17, 0.72)'), clip);
+  const gold = tone('#f3cf6a');
+  for (const edge of [
+    { x, y, width, height: scale },
+    { x, y: y + height - scale, width, height: scale },
+    { x, y, width: scale, height },
+    { x: x + width - scale, y, width: scale, height },
+  ])
+    renderer.quads.add(edge, gold, clip);
+};
 
 /** The ship's arrow on the map: a red point 12 px across and 16 tall. */
 const SHIP_ARROW: Picture = {
@@ -421,6 +439,8 @@ export function markNode(
   const port = place.kind === 'port';
   return {
     gap: 4,
+    // Words on the map: a click on them reaches the map, which picks the place.
+    through: true,
     float: { ...pin, x: pin.x - 4, y: pin.y - 8 },
     children: [
       { padding: [4, 0, 0, 0], children: [{ width: 9, height: 9, picture: markDot(port) }] },
