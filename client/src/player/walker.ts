@@ -198,7 +198,7 @@ export class Walker {
   private workMove(body: Dress['body']): { readonly anim: string; readonly progress: number } | null {
     const working = this.working;
     if (!working) return null;
-    const strikes = (working.holds === 'ore' || working.holds === 'timber') && this.forge.frames(body, 'chop') > 0;
+    const strikes = (working.holds === 'ore' || working.holds === 'timber') && this.forge.draws(body, 'chop', null);
     const progress = (working.seconds % STROKE_S) / STROKE_S;
     return { anim: strikes ? 'chop' : 'crouch_idle', progress };
   }

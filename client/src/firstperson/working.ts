@@ -2,7 +2,7 @@
 // (tools/forge/tools/sprite-forge/fptools.py): the Pick-Axe striking ore, the Wood-Axe cutting timber, the Sickle
 // reaping herbs and the bare hand reaching into salvage. Each stroke's frames share one canvas, laid where the forge's
 // table (its `frames.json`) puts it on the 320 x 200 design screen; the strokes repeat while the node is worked.
-import { type FrameSource, type Picture } from './fpFrames.ts';
+import { type FrameSource, type Picture, paintSet } from './fpFrames.ts';
 import { DESIGN_HEIGHT } from './fpMotion.ts';
 import { hardened } from './heldPictures.ts';
 
@@ -30,8 +30,13 @@ export const STROKES: Readonly<Record<Tool, { record: string; frames: number; re
 /** How long one stroke takes, seconds. */
 export const STROKE_S = 0.5;
 
-/** Where the forge publishes a tool's frame. */
-export const toolPath = (tool: Tool, frame: number) => `@art/tools/${tool}/${STROKES[tool].record}-${frame}.png`;
+/** The tools whose frames are a hand, which the forge renders again in each armour set's gauntlets (fptools.py's
+ *  `ARMOURED`). */
+const ARMOURED: readonly Tool[] = ['gather'];
+
+/** Where the forge publishes a tool's frame, bare or in an armour set's gauntlets. */
+export const toolPath = (tool: Tool, frame: number, set: string | null = null) =>
+  `@art/tools/${tool}/${STROKES[tool].record}-${frame}${set ? `_${set}` : ''}.png`;
 
 /** The stroke's frame `seconds` into working: each stroke from its first frame to its last, again and again. */
 export function strokeFrame(tool: Tool, seconds: number): number {
@@ -40,11 +45,19 @@ export function strokeFrame(tool: Tool, seconds: number): number {
   return Math.min(frames - 1, Math.floor(into * frames));
 }
 
-/** A tool's frame as the forge drew it, its edges hard as the held things' are; null where it has not come. */
-export async function toolPicture(source: FrameSource, tool: Tool, frame: number): Promise<Picture | null> {
-  const strip = await source.strip(toolPath(tool, frame));
+/** A tool's frame as the forge drew it, its edges hard as the held things' are, a hand in the gauntlets worn (`hands`,
+ *  their set) where the forge drew it so; null where it has not come. */
+export async function toolPicture(
+  source: FrameSource,
+  tool: Tool,
+  frame: number,
+  hands: string | null = null,
+): Promise<Picture | null> {
+  const own = hands && ARMOURED.includes(tool) ? await source.strip(toolPath(tool, frame, hands)) : null;
+  const strip = own ?? (await source.strip(toolPath(tool, frame)));
   if (!strip) return null;
-  return { width: strip.width, height: strip.height, pixels: hardened(strip), at: [0, 0] };
+  const pixels = own ? await paintSet(source, own, hands, 'Steel') : hardened(strip);
+  return { width: strip.width, height: strip.height, pixels, at: [0, 0] };
 }
 
 /** Where a tool's frame lies on the design screen as the hands come up to work (`up` 0 below the screen, 1 up). */

@@ -14,3 +14,12 @@ test('the prompt shows the deed within reach on its keycap, low in the middle, a
   prompt.show(null);
   assert.equal(prompt.node(view), null);
 });
+
+test('a deed held fills a ring round its keycap, and none stands while it is not held', () => {
+  const prompt = new UsePrompt();
+  const view = { width: 1280, height: 720 };
+  prompt.show('Hold to gather Brineglass', 0.5);
+  assert.ok(JSON.stringify(prompt.node(view)).includes('"use ring 24"'), 'half full');
+  prompt.show('Hold to gather Brineglass');
+  assert.ok(!JSON.stringify(prompt.node(view)).includes('use ring'));
+});

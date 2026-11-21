@@ -276,7 +276,8 @@ export class FirstPerson {
       if (this.castClock >= CAST_SEQUENCE.length * CAST_STEP) this.castClock = null;
     }
     this.lower = lowerStep(this.lower, Math.max(state.climbing, state.working ? 1 : 0), seconds);
-    this.working = state.working ?? null;
+    // The tool lowers away with the hands once the work ends, its last frame held.
+    this.working = state.working ?? (this.lower > 0.001 ? this.working : null);
     const look = { yaw: state.yaw ?? 0, pitch: state.pitch ?? 0, fov: state.fov ?? 0, aspect: this.aspect };
     this.climbShown = this.climbHands.step(seconds, state.climb ?? null, look, this.lower);
     const free = this.castClock === null && this.lower < 0.5;
@@ -361,8 +362,9 @@ export class FirstPerson {
     const work = this.working;
     if (work && this.lower > 0.001 && !shot) {
       const frame = strokeFrame(work.tool, work.seconds);
-      const ask = () => toolPicture(this.source, work.tool, frame);
-      wanted.push({ key: `work ${toolPath(work.tool, frame)}`, ask, place: () => toolPlace(work.tool, this.lower) });
+      const ask = () => toolPicture(this.source, work.tool, frame, worn.hands);
+      const key = `work ${toolPath(work.tool, frame, worn.hands)}`;
+      wanted.push({ key, ask, place: () => toolPlace(work.tool, this.lower) });
     }
     return wanted;
   }

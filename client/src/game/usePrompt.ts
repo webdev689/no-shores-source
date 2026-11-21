@@ -9,8 +9,27 @@ import { edged } from '../combat/barDraw.ts';
 const BRASS_KEY = ['#f3cf86', '#8a5f17', '#8a5f17', '#f3cf86'];
 const BRASS_KEY_DEPTHS = [1, 1, 3, 1];
 
-/** How long the bar of a deed held is, CSS pixels. */
-const HELD_PX = 132;
+/** How wide the ring a deed held fills round the keycap is, CSS pixels, and in how many steps it fills. */
+const RING_PX = 52;
+const RING_STEPS = 48;
+
+/** The ring round the keycap, `steps` of `RING_STEPS` of it filled clockwise from the top over its faint whole. */
+const ringDrawing =
+  (steps: number) =>
+  (context: OffscreenCanvasRenderingContext2D, width: number, height: number): void => {
+    const [middleX, middleY, unit] = [width / 2, height / 2, width / RING_PX];
+    const radius = Math.min(middleX, middleY) - 2 * unit;
+    context.lineWidth = 3 * unit;
+    for (const [colour, sweep] of [
+      ['rgba(239,232,214,0.22)', 1],
+      [TONES.brassHi, steps / RING_STEPS],
+    ] as const) {
+      context.strokeStyle = colour;
+      context.beginPath();
+      context.arc(middleX, middleY, radius, -Math.PI / 2, -Math.PI / 2 + sweep * 2 * Math.PI);
+      context.stroke();
+    }
+  };
 
 export class UsePrompt {
   private said: string | null = null;
@@ -23,6 +42,16 @@ export class UsePrompt {
     if (deed === this.said) return;
     this.said = deed;
     if (deed !== null) announce(deed);
+  }
+
+  /** The ring a deed held fills round the keycap, `steps` of it filled. */
+  private ring(steps: number): Node {
+    return {
+      width: RING_PX,
+      height: RING_PX,
+      picture: { key: `use ring ${steps}`, source: { draw: ringDrawing(steps) } },
+      float: { at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
+    };
   }
 
   /** The prompt in a view `width` by `height` CSS pixels, standing taller where the fight's display takes its larger
@@ -44,25 +73,12 @@ export class UsePrompt {
           fill: 'rgba(192,138,62,0.15)',
           alignX: 'center',
           draw: edged(BRASS_KEY, BRASS_KEY_DEPTHS),
-          children: [{ text: { words: 'E', colour: TONES.brassHi, wrap: false } }],
-        },
-        {
-          direction: 'column',
-          gap: 4,
           children: [
-            { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
-            ...(this.held === null
-              ? []
-              : [
-                  {
-                    width: HELD_PX,
-                    height: 3,
-                    fill: 'rgba(239,232,214,0.18)',
-                    children: [{ width: Math.round(HELD_PX * this.held), height: 3, fill: TONES.brassHi }],
-                  },
-                ]),
+            { text: { words: 'E', colour: TONES.brassHi, wrap: false } },
+            this.held !== null && this.ring(Math.round(this.held * RING_STEPS)),
           ],
         },
+        { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
       ],
     };
   }
