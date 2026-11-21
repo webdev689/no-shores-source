@@ -44,7 +44,7 @@ pub fn players() -> Vec<Seen> {
 
 /// The foe the client's test expects: a pirate brute (type 15) of the Elite rank, foe 12, in its first phase,
 /// staggered with 40 of its 130 health gone, alert to the player its lock is on, Exposed for 200 ticks and immune to a
-/// Charge for 90.
+/// Charge for 90, standing under a name of its own.
 pub fn foes() -> Vec<FoeSeen> {
     let warhammer = Arms { melee: WeaponClass::Warhammer, ranged: None, off_hand: OffHand::Empty };
     let mut brute = fighter(Side::Faction(2), standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
@@ -64,7 +64,38 @@ pub fn foes() -> Vec<FoeSeen> {
         fighter: brute,
         level: 7,
         shield: Some(gear::element::Shield::whole(gear::Element::Cosmic, 80.0)),
+        name: "The Warden of the Fissure",
     }]
+}
+
+/// The public event the client's test expects: a heroic Fissure in its second stage, eleven of fourteen shards set,
+/// its bonus held, with its fissure and a shard carried by player 9.
+pub fn public() -> room::public::PublicSeen {
+    let mark = |kind: u8, id: u32, at: [f64; 3], health: f32, state: u8| room::public::PublicMark {
+        kind,
+        id,
+        at,
+        health,
+        state,
+    };
+    room::public::PublicSeen {
+        kind: 1,
+        phase: 1,
+        ground: [10.0, -20.5, 3.25],
+        radius: 30.0,
+        ticks_left: 12_000,
+        next_kind: 2,
+        next_ground: [140.0, 60.0, 4.5],
+        next_ticks: 25_200,
+        stage: 2,
+        stages: 2,
+        progress: 11,
+        needed: 14,
+        heroic: 2,
+        heroic_ticks: 0,
+        bonus: true,
+        marks: vec![mark(1, 0, [10.0, -20.5, 3.25], 0.25, 0), mark(5, 9, [12.0, -18.0, 3.5], 1.0, 0)],
+    }
 }
 
 pub const EVENTS: [Event; 2] = [
@@ -187,10 +218,21 @@ const SHIPS: [(PlayerId, Ship); 2] = [
 fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
-    shots: &'snapshot [Shot],
-    lines: &'snapshot [Line],
+    (shots, lines): (&'snapshot [Shot], &'snapshot [Line]),
+    public: &'snapshot room::public::PublicSeen,
 ) -> Snapshot<'snapshot> {
-    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines, spells: &SPELLS }
+    let events = &EVENTS;
+    Snapshot {
+        tick: 1234,
+        players,
+        dressed: &DRESSED,
+        foes,
+        events,
+        shots,
+        lines,
+        spells: &SPELLS,
+        public: Some(public),
+    }
 }
 
 /// The dresses a message holds.
@@ -311,8 +353,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let plain = flatbuffers::root::<messages::FromRoom>(&plain).unwrap().joined().unwrap();
     assert_eq!((plain.node(), plain.bounds().is_none()), (None, true));
 
-    let (players, foes, shots, lines) = (players(), foes(), shots(), lines());
-    let bytes = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
+    let (players, foes, shots, lines, public) = (players(), foes(), shots(), lines(), public());
+    let bytes = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines), &public));
     let read = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     assert_eq!(read.tick(), 1234);
     let fighters: Vec<Fighter> = read
@@ -346,6 +388,15 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
     assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
     assert_eq!((foe.expose(), foe.charge(), foe.charge_immune()), (200, 0, 90), "its debuffs' ticks cross");
+    assert_eq!(foe.name(), Some("The Warden of the Fissure"), "the name it stands under crosses");
+    let event = read.public_event().unwrap();
+    let counts = (event.kind(), event.phase(), event.ticks_left(), event.next_kind(), event.next_ticks());
+    assert_eq!(counts, (1, 1, 12_000, 2, 25_200));
+    let stood = (event.stage(), event.stages(), event.progress(), event.needed(), event.heroic(), event.bonus());
+    assert_eq!(stood, (2, 2, 11, 14, 2, true));
+    assert_eq!(event.ground().unwrap().iter().collect::<Vec<_>>(), public.ground.to_vec());
+    let marks: Vec<_> = event.marks().unwrap().iter().map(|mark| (mark.kind(), mark.id(), mark.health())).collect();
+    assert_eq!(marks, vec![(1, 0, 0.25), (5, 9, 1.0)]);
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);
@@ -459,9 +510,9 @@ fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
 fn the_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
-    let (players, foes, shots, lines) = (players(), foes(), shots(), lines());
+    let (players, foes, shots, lines, public) = (players(), foes(), shots(), lines(), public());
     std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE), 1_234_567.25)).unwrap();
-    let snapshot = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
+    let snapshot = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines), &public));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();

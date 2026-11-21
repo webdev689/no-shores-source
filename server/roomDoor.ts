@@ -55,6 +55,8 @@ export interface RoomDoor {
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
+  /** Opens every public event's chest lying for a player about to leave, before their character is kept. */
+  parting(player: number): void;
   /** A player's input on land; at sea their ship's course or orders, a step of their walk on deck or the helm; or
    *  their ship's orders in a fleet. */
   input(player: number, bytes: Uint8Array): InputAnswer;
@@ -122,6 +124,7 @@ interface RoomExports {
   room_refusal(): bigint;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
+  room_parting(player: number): void;
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
   room_snapshot(): bigint;
@@ -190,6 +193,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),
+    parting: (player) => exports.room_parting(player),
     input: (player, bytes) =>
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),

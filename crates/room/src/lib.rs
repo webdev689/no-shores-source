@@ -20,6 +20,7 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+pub mod public;
 pub mod sea;
 mod spells;
 mod statuses;
@@ -141,6 +142,11 @@ pub struct Room {
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
+    /// A zone's public events (`public/`); the foes the room moves itself, whose brains it leaves be; and the names
+    /// some foes stand under in place of their type's.
+    pub(crate) public: Option<public::Public>,
+    pub(crate) inert: BTreeSet<FighterId>,
+    pub(crate) names: BTreeMap<FighterId, &'static str>,
 }
 
 impl Room {
@@ -206,6 +212,9 @@ impl Room {
             patrol: None,
             minute: 0,
             shape_spots: Vec::new(),
+            public: None,
+            inert: BTreeSet::new(),
+            names: BTreeMap::new(),
         }
     }
 
@@ -243,6 +252,7 @@ impl Room {
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
+        self.open_chests_of(player);
         self.part(player);
         self.drops.retain(|drop| drop.player != player);
         let (gone, kept): (Vec<Pending>, Vec<Pending>) =
@@ -298,6 +308,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_public();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {

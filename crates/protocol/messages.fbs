@@ -131,7 +131,8 @@ table Seen {
 // gear crate's numbers, 0 for none), what it holds still and what it held whole. Then its type's number in the roster,
 // its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle,
 // 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
-// leaves after it.
+// leaves after it. Then the name it stands under in place of its type's (absent for none): a public event's Warden
+// or Marrow, or the Fissure's growth.
 table Foe {
   id: uint;
   kind: ubyte;
@@ -148,6 +149,7 @@ table Foe {
   expose: uint;
   charge: uint;
   charge_immune: uint;
+  name: string;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -285,11 +287,51 @@ table Spell {
   radius: double;
 }
 
+// Something of a zone's public event the page draws: what (1 the fissure, 2 its growth, 3 a store, 4 a shard on the
+// ground, 5 a shard carried, its id its carrier's, 6 the tithe-taker, its id his foe's, 7 a banner, 8 the raiders'
+// approach), its number, where it is (x, y, z), its health 0 to 1 (the growth's and a store's; the fissure's how far
+// open; a shard's life left; the tithe-taker's), and its state (the growth: 1 rising, 2 standing, 3 sinking, 4
+// broken; a store: 1 whole, 2 plundered; the tithe-taker: 1 arriving, 2 counting, 3 leaving).
+table PublicMark {
+  kind: ubyte;
+  id: uint;
+  at: [double];
+  health: float;
+  state: ubyte;
+}
+
+// A zone's public events: the one running or showing its result (1 the Fissure, 2 the Grey Tithe's raid, 0 none),
+// its phase (0 waiting, 1 running, 2 won, 3 failed), its ground's middle (x, y, z) and radius, and its countdown (its
+// result's time left once won or failed), in ticks; the next's kind, ground and the ticks until it starts, good to
+// the minute; its stage of how many (the Fissure: 1 sealing, 2 the Warden; the raid: its wave); its progress toward
+// what it needs (the Fissure: shards set of shards needed; the raid: the stores' health left per mille of 1000); its
+// heroic task (0 not yet offered, 1 offered, 2 met, 3 missed) and the ticks left of its window; whether its bonus
+// still holds or was met; and its marks.
+table PublicEvent {
+  kind: ubyte;
+  phase: ubyte;
+  ground: [double];
+  radius: double;
+  ticks_left: uint;
+  next_kind: ubyte;
+  next_ground: [double];
+  next_ticks: uint;
+  stage: ubyte;
+  stages: ubyte;
+  progress: ushort;
+  needed: ushort;
+  heroic: ubyte;
+  heroic_ticks: uint;
+  bonus: bool;
+  marks: [PublicMark];
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
 // pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on her deck in
 // her own frame (x to her starboard, y to her stern, z over her waterline); in a fleet room, every ship, the balls
-// aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land.
+// aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land,
+// and in a zone that holds them, its public events.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -305,6 +347,7 @@ table Snapshot {
   naval: [Naval];
   fight_clock: double;
   spells: [Spell];
+  public_event: PublicEvent;
 }
 
 // One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the
@@ -360,8 +403,9 @@ table GearVestige {
 }
 
 // A drop lying on the ground for this player alone: their number for it, a Vestige's colour and slot, and where it
-// lies (x, y, z); then what it is (0 a Vestige, 1 an Ammo box, 2 an Ammo crate), where it was thrown from (x, y, z)
-// and how many ticks it has still to fly before it rests.
+// lies (x, y, z); then what it is (0 a Vestige, 1 an Ammo box, 2 an Ammo crate, 3 a public event's chest), where it
+// was thrown from (x, y, z) and how many ticks it has still to fly before it rests; then a chest's tier (1 won, 2 won
+// with the bonus, 3 heroic, 4 heroic with the bonus; 0 for anything else).
 table GearDrop {
   id: uint;
   rarity: ubyte;
@@ -370,6 +414,7 @@ table GearDrop {
   kind: ubyte;
   from: [double];
   flying: ubyte;
+  tier: ubyte;
 }
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,

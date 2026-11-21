@@ -4,7 +4,7 @@
 //! phases. And a new foe of a type, at a rank.
 
 use crate::brain::Brain;
-use crate::factions::{CREW, GREY_TITHE, PIRATES, faction};
+use crate::factions::{CREW, GREY_TITHE, LATTICE, PIRATES, faction};
 use crate::ranks::{CORVANE, Phase, Rank, THULE, phase, phases, ranked};
 use crate::roles::{Numbers, Role, numbers};
 use Domain::{Deck, Land};
@@ -73,10 +73,19 @@ pub const MARKSMAN: u8 = 5;
 pub const REEVE: u8 = 6;
 pub const DECKHAND: u8 = 7;
 pub const HIGH_ASSESSOR: u8 = 18;
+/// The Lattice's types, numbered from 39 so they keep clear of the Bosses' 21 to 38, and the Grey Tithe's tithe-taker.
+pub const HUSK: u8 = 39;
+pub const FLICKER: u8 = 40;
+pub const IDOL: u8 = 41;
+pub const RAVAGER: u8 = 42;
+pub const BULWARK: u8 = 43;
+pub const HEART: u8 = 44;
+pub const TITHE_TAKER: u8 = 45;
 
 /// Every type. The marksman stands off half as far again as an archer; each Boss fights in its own phases. The Brig's
-/// crew fight by a swordsman's and a skirmisher's numbers, as the boarders they fight do.
-pub const ROSTER: [FoeType; 20] = [
+/// crew fight by a swordsman's and a skirmisher's numbers, as the boarders they fight do. The Lattice fight by their
+/// roles' numbers in arms of the same reach; the Heart is a Boss with no phases of its own yet.
+pub const ROSTER: [FoeType; 27] = [
     row(RUNNER, GREY_TITHE, Land, "Runner", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(COLLECTOR, GREY_TITHE, Land, "Collector", Swordsman, "sword_iron", "shield_kite_iron", LOW),
     row(CROSSBOWMAN, GREY_TITHE, Land, "Crossbowman", Archer, "crossbow_iron", "", LOW),
@@ -112,6 +121,13 @@ pub const ROSTER: [FoeType; 20] = [
     },
     row(19, CREW, Deck, "Crew", Swordsman, "sword_iron", "", LOW),
     row(20, CREW, Deck, "Crew", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
+    row(HUSK, LATTICE, Land, "Husk", Swordsman, "sword_iron", "", LOW),
+    row(FLICKER, LATTICE, Land, "Flicker", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
+    row(IDOL, LATTICE, Land, "Idol", Archer, "bow_short_iron", "", HEAVY),
+    row(RAVAGER, LATTICE, Land, "Ravager", Brute, "warhammer_iron", "", HEAVY),
+    row(BULWARK, LATTICE, Land, "Bulwark", Brute, "mace_iron", "shield_kite_iron", LEADER),
+    row(HEART, LATTICE, Land, "Heart", Captain, "flail_iron", "", &[Rank::Boss]),
+    row(TITHE_TAKER, GREY_TITHE, Land, "Tithe-Taker", Captain, "mace_iron", "", &[Rank::Elite]),
 ];
 
 /// The type a number names, or none.

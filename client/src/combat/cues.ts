@@ -15,6 +15,16 @@ export const EVENT = {
   feinted: 10,
   shielded: 12,
   shieldBroken: 13,
+  publicBegun: 14,
+  publicStage: 15,
+  shardTaken: 16,
+  shardSet: 17,
+  heroicMet: 18,
+  heroicMissed: 19,
+  publicWon: 20,
+  publicFailed: 21,
+  storePlundered: 22,
+  chestOpened: 23,
 } as const;
 export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7 } as const;
 

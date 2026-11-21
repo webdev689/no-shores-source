@@ -31,6 +31,19 @@ pub enum EventKind {
     /// A foe's shield took a blow, the amount what it took; and broke under one.
     Shielded = 12,
     ShieldBroken = 13,
+    /// A public event began, went on to its next stage, was won or failed (the amount its kind, or its stage); a
+    /// player took or set a shard; its heroic task was met or missed; a store was plundered; a player opened a chest
+    /// (the amount its tier).
+    PublicBegun = 14,
+    PublicStage = 15,
+    ShardTaken = 16,
+    ShardSet = 17,
+    HeroicMet = 18,
+    HeroicMissed = 19,
+    PublicWon = 20,
+    PublicFailed = 21,
+    StorePlundered = 22,
+    ChestOpened = 23,
 }
 
 /// How a blow was struck, for the words a client shows.

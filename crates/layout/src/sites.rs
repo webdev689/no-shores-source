@@ -30,6 +30,13 @@ pub enum SiteKind {
     Objective,
     /// A run's sealed door, where a mission goes on; the site names the run.
     Door,
+    /// A hamlet's store, which the Grey Tithe's raid plunders and its players hold; the site names the hamlet.
+    Store,
+    /// Where a hamlet's raiders come in from, and where each of their two banners is planted.
+    Approach,
+    Banner,
+    /// Where a wilds' crystal growth rises, 14 to 20 m from its middle; the site names the wilds.
+    Growth,
 }
 
 /// A site: what it is for, where, how much ground it takes, and what it holds or leads to.

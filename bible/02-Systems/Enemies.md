@@ -47,8 +47,8 @@ throws more often than an Elite, a Boss's called foes fall with it and a garriso
 ground, after Bungie's ([[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]); the roster, the
 numbers and how the groups do it are Claude's ([[The Enemies as Claude Builds Them]],
 [[Foe Groups as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
-The Lattice, the next faction, is drawn and not yet built ([[The Lattice Are the Ruined Ports' People, Overtaken]],
-[[Lattice]]).
+The Lattice, the next faction, has its types in the roster and comes out of the Fissure, a public event
+([[Public Events]]); its look is drawn ([[The Lattice Are the Ruined Ports' People, Overtaken]], [[Lattice]]).
 
 ## Factions
 
@@ -60,9 +60,11 @@ fight on the players' side: foes of every faction fight them, and no player stri
 |---|---|---|---|---|---|
 | 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve, High Assessor Corvane | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
 | 2 | Pirates | at sea | | Skirmisher, Swordsman, Brute, Archer, Captain | Pirate Sloop |
+| 3 | The Lattice | on land | Husk, Flicker, Idol, Ravager, Bulwark, Heart | | |
 
 The Grey Tithe holds the land: a garrison of its foes stands in every node but the social spaces, on every continent
-(below). The pirates hold no land.
+(below), and its Tithe-Taker comes only with its raid on a hamlet. The pirates hold no land. The Lattice hold none
+either: they pour out of a Fissure while it is open ([[Public Events]]), and their leaders are never screened.
 
 ## The roster
 
@@ -93,6 +95,18 @@ out among them ([[Foes]]).
 | 18 | High Assessor Corvane | Captain | `flail_iron` | `shield_kite_iron` | Boss |
 | 19 | Crew (the Brig's) | Swordsman | `sword_iron` | | Minor, Major |
 | 20 | Crew (the Brig's) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
+| 39 | Husk (Lattice) | Swordsman | `sword_iron` | | Minor, Major |
+| 40 | Flicker (Lattice) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
+| 41 | Idol (Lattice) | Archer | `bow_short_iron` | | Major, Elite |
+| 42 | Ravager (Lattice) | Brute | `warhammer_iron` | | Major, Elite |
+| 43 | Bulwark (Lattice) | Brute | `mace_iron` | `shield_kite_iron` | Elite, Miniboss |
+| 44 | Heart (Lattice) | Captain | `flail_iron` | | Boss, with no phases of its own yet |
+| 45 | Tithe-Taker | Captain | `mace_iron` | | Elite |
+
+Numbers 21 to 38 are kept for the Bosses still to come. The Lattice's hands are those of the forge's weapons of the
+same reach: the [[Lattice]]'s own blades, emitter, maul and anchor are drawn and dressed over them. A foe may stand
+under a name of its own in place of its type's, sent with it: a public event's Warden and Marrow, and the Fissure's
+crystal growth.
 
 The roles as a Major: Skirmisher 45 health, 18 poise; Swordsman 70, 35; Brute 130, 70; Archer 50, 18; Captain 160,
 60 (with [[Foes]]' other numbers for each).

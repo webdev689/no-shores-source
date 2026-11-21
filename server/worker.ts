@@ -179,7 +179,8 @@ export class RoomHost extends DurableObject<Env> {
     if (!held) return;
     this.players.delete(socket);
     if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => false);
-    // The character's last save reads it now, before the room lets the player go.
+    // Their chests are opened for them, then the character's last save reads it, before the room lets them go.
+    this.guarded(() => this.room.parting(held.player), undefined);
     void this.keeper?.leave(held.player);
     this.guarded(() => this.room.leave(held.player), undefined);
     const others = this.open().filter((each) => each !== socket);
