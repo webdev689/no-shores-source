@@ -75,7 +75,6 @@ test('orders are its helm, its look and its ray, the fire, the brace, a load, wh
   const ray = [200_001.5, 300_002, 6.5, 0.5, -0.25, -0.125];
   const bytes = ordersBytes(41, {
     steer: -0.75,
-    crab: true,
     climb: -1,
     look: { bearing: -97.5, range: 64.25, ray },
     fire: true,
@@ -87,8 +86,8 @@ test('orders are its helm, its look and its ray, the fire, the brace, a load, wh
   });
   const orders = Orders.getRootAsOrders(new flatbuffers.ByteBuffer(bytes));
   assert.deepEqual(
-    [orders.sequence(), orders.steer(), orders.crab(), orders.climb(), orders.fire(), orders.brace(), orders.load()],
-    [41, -0.75, true, -1, true, false, 3],
+    [orders.sequence(), orders.steer(), orders.climb(), orders.fire(), orders.brace(), orders.load()],
+    [41, -0.75, -1, true, false, 3],
   );
   assert.deepEqual(Array.from(orders.aimArray() ?? []), [-97.5, 64.25, ...ray]);
   assert.deepEqual([Array.from(orders.putToSeaArray() ?? []), orders.call()], [[200_000, 300_000, 1.25], 1]);
@@ -98,7 +97,6 @@ test('orders are its helm, its look and its ray, the fire, the brace, a load, wh
     new flatbuffers.ByteBuffer(
       ordersBytes(2, {
         steer: 0,
-        crab: false,
         climb: 0,
         look: null,
         fire: false,
@@ -117,7 +115,6 @@ test('orders are its helm, its look and its ray, the fire, the brace, a load, wh
 test('orders never wrap a number past its field: its number, load and call are refused, and its rudder, rung and look are held within what the room takes', () => {
   const orders = {
     steer: 3,
-    crab: false,
     climb: 255,
     look: { bearing: 400, range: 2e6 },
     fire: false,

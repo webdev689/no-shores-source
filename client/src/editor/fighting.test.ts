@@ -15,6 +15,7 @@ const vessel: FightVessel = {
   state: 'afloat',
   fires: 0,
   guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
+  boost: [0, 1],
 };
 const captain: FightCaptain = {
   ...vessel,
@@ -60,7 +61,7 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 const failed = (error: unknown) => {
   throw error;
 };
-const IDLE = { held: new Set<string>(), press: undefined, look: null, fire: false, loadSteps: 0 };
+const IDLE = { held: new Set<string>(), press: undefined, look: null, fire: false, loadSteps: 0, boost: false };
 
 async function begun(fights: FightSource): Promise<Fighting> {
   const fighting = await Fighting.begin(fights, 'land', new Float64Array(8), 7, 0);
@@ -75,22 +76,24 @@ test('a captain called is sighted on the panel', async () => {
   assert.equal(await Fighting.begin(closed, 'land', new Float64Array(8), 7, 0), 'Open this landmass to fight on it.');
 });
 
-test('a release, a load step, the brace and the helm go to the rules with the next step, once', async () => {
+test('a release, a load step, the brace, a burst and the helm go to the rules with the next step, once', async () => {
   const { fights, asked } = source();
   const fighting = await begun(fights);
   const look = { bearing: 90, range: 80 };
-  fighting.advance(0.1, { held: new Set(['c', 'd']), press: 'w', look, fire: true, loadSteps: 1 }, 1, failed);
+  const pressed = { held: new Set(['c', 'd']), press: 'w', look, fire: true, loadSteps: 1, boost: true };
+  fighting.advance(0.1, pressed, 1, failed);
   await settle();
   fighting.advance(0.1, { ...IDLE, look }, 1.1, failed);
   await settle();
   assert.deepEqual(asked[0], {
-    helm: { steer: 1, crab: false, climb: 1 },
+    helm: { steer: 1, climb: 1 },
     aim: look,
     fire: true,
     brace: true,
     load: 'grape',
+    boost: true,
   });
-  assert.deepEqual([asked[1]?.fire, asked[1]?.load, asked[1]?.helm.climb], [false, null, 0]);
+  assert.deepEqual([asked[1]?.fire, asked[1]?.load, asked[1]?.helm.climb, asked[1]?.boost], [false, null, 0, false]);
 });
 
 test('one step is with the rules at a time', async () => {

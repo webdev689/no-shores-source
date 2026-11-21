@@ -50,6 +50,7 @@ const vessel: FightVessel = {
   state: 'afloat',
   fires: 0,
   guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
+  boost: [0, 1],
 };
 const captainAt = (x: number, state: FightVessel['state'], id = 1): FightCaptain => ({
   ...vessel,

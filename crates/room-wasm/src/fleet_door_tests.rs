@@ -19,10 +19,10 @@ fn input_of(player: PlayerId, bytes: &[u8]) -> i32 {
 
 fn helm_at(sequence: u32) -> Helm {
     match sequence {
-        2 => Helm { steer: 0.0, crab: false, climb: 1 },
-        3 => Helm { steer: 0.0, crab: false, climb: 1 },
-        sequence if sequence % 50 < 20 => Helm { steer: 0.6, crab: false, climb: 0 },
-        _ => Helm { steer: -0.2, crab: false, climb: 0 },
+        2 => Helm { steer: 0.0, climb: 1 },
+        3 => Helm { steer: 0.0, climb: 1 },
+        sequence if sequence % 50 < 20 => Helm { steer: 0.6, climb: 0 },
+        _ => Helm { steer: -0.2, climb: 0 },
     }
 }
 
@@ -94,7 +94,7 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
     request.extend([0.0, sail, max_sail, 200.0 * movement::TICK_SECONDS, 0.0]);
     for sequence in 2..=200 {
         let helm = helm_at(sequence);
-        request.extend([helm.steer, f64::from(u8::from(helm.crab)), f64::from(helm.climb)]);
+        request.extend([helm.steer, f64::from(helm.climb)]);
     }
     let predicted = predict(&request);
     let bits = |numbers: &[f64]| numbers.iter().map(|number| number.to_bits()).collect::<Vec<_>>();
@@ -102,7 +102,7 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
     assert_eq!(bits(&predicted[8..]), bits(&last.pose), "its pose at the room's time");
     assert!(predict(&[1.0, 2.0]).is_empty(), "numbers that are not a ship");
     let mut wild = request.clone();
-    wild.extend([3.0, 0.0, 0.0]);
+    wild.extend([3.0, 0.0]);
     assert!(predict(&wild).is_empty(), "a rudder past its throw");
 }
 

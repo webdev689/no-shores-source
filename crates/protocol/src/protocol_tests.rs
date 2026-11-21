@@ -487,11 +487,12 @@ fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
 #[test]
 fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
     let orders = Orders {
-        helm: sailing::ship::Helm { steer: 0.5, crab: false, climb: -1 },
+        helm: sailing::ship::Helm { steer: 0.5, climb: -1 },
         aim: None,
         fire: true,
         brace: false,
         load: None,
+        boost: true,
     };
     assert_eq!(read_sea_input(&orders_bytes(&orders)), Ok(SeaInput::Orders(orders)));
     assert_eq!(read_sea_input(&course_bytes(&[[1.0, 2.0]], 5)), Ok(SeaInput::Course(vec![[1.0, 2.0]], 5)));

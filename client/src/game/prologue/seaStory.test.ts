@@ -150,6 +150,7 @@ export const viewOf = (
     state: 'afloat',
     fires: 0,
     guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
+    boost: [0, 1],
   } as const;
   const [first, ...rest] = states.map((state, index) => ({
     ...vessel,
