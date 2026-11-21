@@ -7,6 +7,7 @@ frame (x east, y south, z up: Blender's y turned round) for the bake.
 """
 import math
 import random
+from itertools import pairwise
 
 import bpy  # noqa: I001 (Blender's bmesh and mathutils load with bpy)
 import bmesh
@@ -226,11 +227,18 @@ def organic(module, blobs, seed, material='rubble', voxel=0.18, rough=0.35, tria
     bpy.ops.object.modifier_apply(modifier='merge')
     noise = mathutils.noise
     offset = mathutils.Vector((seed * 1.37, seed * 0.71, seed * 0.29))
+    # A steady module's normals are the remeshed surface's, worked out once in doubles: each `co` write marks Blender's
+    # stale, so its next read works them all out again, in single floats, from the points already moved.
+    steady = _double_normals(item.data) if module.steady else None
     for vertex in item.data.vertices:
         point = vertex.co
         bulge = noise.fractal(point * 0.35 + offset, 0.55, 2.0, 3)
         crag = noise.ridged_multi_fractal(point * 1.1 + offset, 0.9, 2.1, 3, 1.0, 2.0) - 0.5
-        vertex.co = point + vertex.normal * rough * (0.7 * bulge + 0.6 * crag)
+        if steady:
+            depth = rough * (0.7 * bulge + 0.6 * crag)
+            vertex.co = [point[axis] + steady[vertex.index][axis] * depth for axis in range(3)]
+        else:
+            vertex.co = point + vertex.normal * rough * (0.7 * bulge + 0.6 * crag)
         if flat_top is not None and vertex.co.z > flat_top:
             vertex.co.z = flat_top + 0.04 * noise.noise(point * 2.0 + offset)
         if vertex.co.z < flat_foot:
@@ -333,6 +341,10 @@ def _rounded(value):
     return round(value, 4) + 0.0
 
 
+# The normal of a point with no face of any area.
+UP = (0.0, 0.0, 1.0)
+
+
 def _steady_normals(mesh, blender):
     """Each corner's normal from the rounded positions alone, in doubles: the area-weighted sum of the faces at its
     point that share its smoothing (Blender's own normals for them nearly equal). Blender works its normals out in
@@ -353,13 +365,42 @@ def _steady_normals(mesh, blender):
                 corners.setdefault(point, []).append(loop)
     steady = {}
     for loops in corners.values():
+        every = {face_of[other] for other in loops}
         for loop in loops:
             mine = blender[loop]
-            smoothed = {face_of[other] for other in loops if mine.dot(blender[other]) > 0.999}
-            total = [sum(faces[face][axis] for face in sorted(smoothed)) for axis in range(3)]
-            length = math.sqrt(sum(value * value for value in total))
-            steady[loop] = mathutils.Vector([value / length for value in total]) if length > 0.0 else mine
+            smoothed = {face_of[other] for other in loops
+                        if sum(a * b for a, b in zip(mine, blender[other])) > 0.999}
+            # Faces of no area smooth with nothing: then every face at the point, and with none of any area, up.
+            steady[loop] = mathutils.Vector(_unit(_summed(faces, smoothed)) or _unit(_summed(faces, every)) or UP)
     return [steady.get(loop, normal) for loop, normal in enumerate(blender)]
+
+
+def _summed(faces, chosen):
+    """The sum of the `chosen` faces' area vectors, in their order, so it adds alike on every machine."""
+    return [sum(faces[face][axis] for face in sorted(chosen)) for axis in range(3)]
+
+
+def _unit(vector):
+    """`vector` made a unit long, or None where it has no length."""
+    length = math.sqrt(sum(value * value for value in vector))
+    return tuple(value / length for value in vector) if length > 0.0 else None
+
+
+def _double_normals(mesh):
+    """Each vertex's normal from its positions alone, in doubles: the area-weighted sum of its faces' normals (each
+    face cut into a fan of triangles from its first corner), or up where it has none of any area."""
+    points = [tuple(vertex.co) for vertex in mesh.vertices]
+    sums = [[0.0, 0.0, 0.0] for _ in points]
+    for polygon in mesh.polygons:
+        a, *rest = (points[index] for index in polygon.vertices)
+        area = [0.0, 0.0, 0.0]
+        for b, c in pairwise(rest):
+            u, v = [b[i] - a[i] for i in range(3)], [c[i] - a[i] for i in range(3)]
+            cross = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+            area = [area[axis] + cross[axis] for axis in range(3)]
+        for index in polygon.vertices:
+            sums[index] = [sums[index][axis] + area[axis] for axis in range(3)]
+    return [_unit(total) or UP for total in sums]
 
 
 def _in_order(group):

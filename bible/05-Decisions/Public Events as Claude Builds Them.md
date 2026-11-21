@@ -132,3 +132,6 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | Where the event modules stand in the catalogue | After the hub's pieces, with their own seeds | A hub solid names its module by its place in the catalogue |
 | What the scripted players read | A whole snapshot cut for no viewer (player 0), the fingerprint over the first player's own | Main's snapshots are cut for each player as changes; both runs read the same whole one |
 | The Lattice's builders beside the hub's tools | Imported with their own folders first, the modules' `props` and `shapes` set aside meanwhile | Main's module tools have files of the same names |
+| The normals the event props' rock is roughed out along | Each vertex's, area-weighted, worked out once in doubles from the remeshed surface | Blender's angle-weighted normals, read as each point moves |
+| Where a Lattice publish starts | The manifest on `main`, read through the API by the publish job | The live index on R2, which nothing names but a manifest in git |
+| The Python the modules bake runs on in CI | 3.13.18 on `ubuntu-24.04`, the patch the wheels were tested with here | The newest 3.13 setup-python offers |

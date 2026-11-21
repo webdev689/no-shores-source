@@ -13,6 +13,7 @@ import argparse
 import io
 import json
 import os
+import re
 import shutil
 import struct
 import subprocess
@@ -109,11 +110,20 @@ def add():
         manifest = json.load(file)
     index = json.loads(published(manifest, manifest['index']))
     write_frames({**json.loads(published(manifest, manifest['tables']['frames'])), **placements()})
-    new = packed()
-    for path, (pack, *rest) in new['pictures'].items():
-        index['pictures'][path] = [len(index['packs']) + pack, *rest]
-    index['packs'] += new['packs']
+    beside(index, packed())
     write_manifest(index)
+
+
+def beside(index, new):
+    """`new`'s packs and pictures laid into `index`: a pack already published (named by its bytes' hash) keeps its one
+    place, and each picture of `new` points at its pack's place."""
+    place = []
+    for key in new['packs']:
+        if key not in index['packs']:
+            index['packs'].append(key)
+        place.append(index['packs'].index(key))
+    for path, (pack, *rest) in new['pictures'].items():
+        index['pictures'][path] = [place[pack], *rest]
 
 
 def write_manifest(index):
@@ -219,7 +229,11 @@ def merge_foe(looks, skins, own):
     """A Lattice render's index (`own`, render.py's forgeLooks.json for one or more of a foe's moves) laid into the
     forge's: each move it drew replacing what was published of that move (its cell, the layers drawn in it and their
     own cells), each Lattice layer's order, cover and under, each layer's dye, and the body's skin made from the man's
-    in the dead's colour. Answers the bodies laid in."""
+    in the dead's colour. Answers the bodies laid in. A body's name becomes a folder's, so one that is not a plain
+    name (a run's artifact is another's upload) stops the run before anything is laid in."""
+    for name in own['bodies']:
+        if not re.fullmatch(r'[a-z_]+', name):
+            sys.exit(f'a Lattice render names a body {name!r}: only lower-case letters and underscores')
     man = skins['bodies']['male']
     for name, body in own['bodies'].items():
         kept = looks['bodies'].setdefault(name, {})
