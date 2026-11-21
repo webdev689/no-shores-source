@@ -16,6 +16,9 @@ impl Room {
     /// Plays the prologue's wreck from now on: no Art (`forbid_arts`), every player waking with no weapon and hurt
     /// (`wake_for_story`), and every foe the page stands (`stand_foe_at`) a boarder (`as_boarder`).
     pub fn story_wreck(&mut self) {
+        if self.story {
+            return;
+        }
         self.forbid_arts();
         self.story = true;
         for player in self.players.values_mut() {
@@ -24,11 +27,12 @@ impl Room {
     }
 
     /// The story's sword and shield taken from the deck into `player`'s pack, unworn, for them to equip; answers
-    /// whether it was given: not twice, nor to a player with no room in their pack for a Melee piece.
+    /// whether it was given: not while one is carried or worn, nor to a player with no room in their pack for a Melee
+    /// piece. One dismantled lies on the deck to be taken again.
     pub fn story_take_arms(&mut self, player: PlayerId) -> bool {
         let Some(found) = self.players.get_mut(&player).filter(|_| self.story) else { return false };
         let character = &mut found.character;
-        let held = character.items.values().any(|(item, _)| item.kind == Kind::SwordAndShield);
+        let held = character.items.values().any(|(item, at)| item.kind == Kind::SwordAndShield && *at != At::Vault);
         if held || character.carried_in(Slot::Melee) >= gear::character::CARRIED_MOST {
             return false;
         }
@@ -38,15 +42,17 @@ impl Room {
         true
     }
 
-    /// A foe the page stood in the story's wreck: on the boarders' one side, the Grey Tithe's, whatever its crew, and
-    /// below a Boss held to a Major's health, poise and defence, its own rank's look and blows kept. The Brig's crew,
-    /// on the players' side, are left as they are.
     /// On the wreck, sends the foe `foe` at `player`, as a foe called to a fight is sent: alert, it comes for them
-    /// where they stand and takes them on once it sees them. False outside the story, or for no such foe or player.
+    /// where they stand and takes them on once it sees them. False outside the story, for no such foe or player, for
+    /// either dead, or for a foe on the players' side.
     pub fn story_hunt(&mut self, foe: FighterId, player: PlayerId) -> bool {
-        let at = self.players.get(&player).filter(|_| self.story).map(|found| found.fighter.body);
+        let standing = |fighter: &combat::Fighter| !fighter.dead();
+        let at = self.players.get(&player).filter(|found| self.story && standing(&found.fighter));
+        let at = at.map(|found| found.fighter.body);
         let clock = self.clock;
-        match (at, self.foes.get_mut(&foe)) {
+        let hostile =
+            self.foes.get_mut(&foe).filter(|found| standing(&found.fighter) && !found.fighter.side.is_players());
+        match (at, hostile) {
             (Some(body), Some(found)) => {
                 found.brain.hunt(player, [body.x, body.y, body.z], clock);
                 true
@@ -55,6 +61,9 @@ impl Room {
         }
     }
 
+    /// A foe the page stood in the story's wreck: on the boarders' one side, the Grey Tithe's, whatever its crew, and
+    /// below a Boss held to a Major's health, poise and defence, its own rank's look and blows kept. The Brig's crew,
+    /// on the players' side, are left as they are.
     pub(crate) fn as_boarder(&mut self, id: FighterId) {
         let story = self.story;
         let Some(foe) = self.foes.get_mut(&id).filter(|foe| story && !foe.fighter.side.is_players()) else { return };

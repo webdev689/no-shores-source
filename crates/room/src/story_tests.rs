@@ -2,7 +2,7 @@ use crate::Room;
 use crate::power::{arms_allowed, loadout_arms};
 use crate::story::WOKE_HEALTH;
 use ::foes::Rank;
-use gear::{Ask, At, Kind, Slot};
+use gear::{Ask, At, Item, Kind, Rarity, Slot};
 use movement::Block;
 
 /// A deck 2.3 m over the sea, from x -6 to 6.
@@ -99,15 +99,43 @@ fn an_elite_boarder_keeps_its_rank_but_is_brought_down_as_a_major_and_thule_is_n
 fn on_the_wreck_a_boarder_sent_at_a_player_comes_for_them_though_it_never_saw_them() {
     let mut room = wreck();
     let player = room.join().expect("a room with space");
-    assert!(!room.story_hunt(1, player), "outside the story, none is sent");
-    room.story_wreck();
     // Behind the player, facing away from them: it neither sees nor hears them.
-    let boarder = room.stand_foe_at(8, 1, (5.0, 0.0), std::f64::consts::FRAC_PI_2, 1).expect("a Tithe hookman");
+    let away = std::f64::consts::FRAC_PI_2;
+    let before = room.stand_foe_at(8, 1, (5.0, 0.0), away, 1).expect("a Tithe hookman");
+    assert!(!room.story_hunt(before, player), "outside the story, none is sent");
+    room.story_wreck();
+    let boarder = room.stand_foe_at(8, 1, (5.0, 1.0), away, 1).expect("a Tithe hookman");
     for _ in 0..60 {
         room.tick();
     }
     assert_eq!(room.foes[&boarder].brain.target(), None, "unaware of the player");
-    assert!(room.story_hunt(boarder, player));
+    let crew = room.stand_foe_at(19, 1, (-5.0, 3.0), away, 1).expect("a hand of the Brig's");
     assert!(!room.story_hunt(boarder, player + 99), "no such player");
+    assert!(!room.story_hunt(crew, player), "the Brig's crew are never sent at a player");
+    assert!(room.story_hunt(boarder, player));
     assert_eq!(room.foes[&boarder].brain.target(), Some(player), "sent at them");
+}
+
+#[test]
+fn the_wreck_takes_only_the_melee_a_player_carries_or_wears_once_and_its_arms_are_the_story_s_alone() {
+    let mut room = wreck();
+    let player = room.join().expect("a room with space");
+    assert!(!room.story_take_arms(player), "outside the story, nothing is given");
+    let character = &mut room.players.get_mut(&player).expect("joined").character;
+    let vaulted = character.take_id();
+    character.items.insert(vaulted, (Item::new(vaulted, Kind::Mace, Rarity::Normal, 1, Slot::Melee), At::Vault));
+    let carried = character.take_id();
+    character.items.insert(carried, (Item::new(carried, Kind::Sword, Rarity::Normal, 1, Slot::Melee), At::Carried));
+    room.story_wreck();
+    let items = &room.players[&player].character.items;
+    assert!(items.contains_key(&vaulted), "the vault's kept");
+    assert!(!items.contains_key(&carried), "what was carried is gone with the ram");
+    assert!(room.story_take_arms(player));
+    let character = &mut room.players.get_mut(&player).expect("joined").character;
+    let (&id, _) = character.items.iter().find(|(_, (item, _))| item.kind == Kind::SwordAndShield).expect("given");
+    let dice = gear::dice::Dice { seed: 0, tick: 0, player };
+    assert!(character.ask(Ask::Wear { item: id, slot: Slot::Melee }, gear::Here::default(), &dice).is_ok());
+    room.story_wreck();
+    let character = &room.players[&player].character;
+    assert!(character.worn(Slot::Melee).is_some(), "a second word of the story strips nothing");
 }

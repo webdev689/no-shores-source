@@ -89,8 +89,10 @@ export class WreckRun {
   private readonly progress: WreckProgress;
   /** The player's gear as the room last sent it. */
   private readonly gearHeld: { value: GearState | null };
-  /** The player's sword and shield lying on the deck, until the room puts them in the pack. */
-  private lying: LyingArms | null;
+  /** The player's sword and shield lying on the deck, drawn while they lie there; and whether the room has been asked
+   *  for them and has not yet sent word of them in the pack. */
+  private readonly lying: LyingArms;
+  private asked = false;
   /** The boarder met one on one, by its number in the room, once one stands. */
   private boarderId = 0;
   /** Thule's number in the room, once he stands. */
@@ -250,21 +252,24 @@ export class WreckRun {
     return this.unseen.has(this.boarderId) || this.boarderView ? 'standing' : 'fallen';
   }
 
+  /** Whether the arms lie on the deck: neither in the pack nor asked for. */
+  private get armsLie(): boolean {
+    return this.arms === 'lying' && !this.asked;
+  }
+
   /** `marks` with the arms lying on the deck laid after them, while they lie. */
   private lyingMarks(marks: number[], clock: number, eye: readonly [number, number, number]): number[] {
-    this.lying?.mark(marks, clock, eye);
+    if (this.armsLie) this.lying.mark(marks, clock, eye);
     return marks;
   }
 
-  /** The arms lying on the deck are taken up once the player walks over them: the room puts them in the pack. */
+  /** The arms lying on the deck are taken up once the player walks over them: the room puts them in the pack. Should
+   *  they leave the pack (dismantled), they lie on the deck again to be taken up. */
   private takeArms(): void {
-    const lying = this.lying;
+    if (this.arms !== 'lying') this.asked = false;
+    if (!this.armsLie) return;
     const { body } = this.context.walker.player;
-    if (!lying || this.arms !== 'lying') {
-      this.lying = null;
-      return;
-    }
-    if (lying.reached([body.x, body.y, body.z]) && this.openRoom.storyTakeArms()) this.lying = null;
+    if (this.lying.reached([body.x, body.y, body.z]) && this.openRoom.storyTakeArms()) this.asked = true;
   }
 
   /** The boss fight begins: the heap closes the way into the arena behind the player, every other foe is sent away,
