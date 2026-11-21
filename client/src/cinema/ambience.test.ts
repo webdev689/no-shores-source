@@ -116,6 +116,25 @@ test('levels are clamped, a bed plays only once it is heard, and each play fades
   assert.equal(fake.played.length, 2, 'the next play comes in before the last ends');
 });
 
+test('a bed whose recording has not come makes no new node each frame while it waits', () => {
+  const fake = fakeAudio();
+  let come = false;
+  const play = ((...args: unknown[]) =>
+    come ? (fake.play as (...all: unknown[]) => unknown)(...args) : null) as unknown as typeof playSample;
+  const ambience = new Ambience(
+    outputOf(fake, () => true),
+    play,
+  );
+  ambience.set({ rain: 1 }, 0);
+  ambience.frame(0.016);
+  const waiting = fake.made.length;
+  for (let frame = 0; frame < 120; frame++) ambience.frame(0.016);
+  assert.equal(fake.made.length, waiting, 'two seconds of waiting made nothing more');
+  come = true;
+  ambience.frame(0.016);
+  assert.deepEqual(cues(fake), ['amb.sea.rain'], 'it plays once it has come');
+});
+
 test('every one-shot plays its recording and lets go of its nodes once it has played', () => {
   const fake = fakeAudio();
   const ambience = ambienceOn(fake);

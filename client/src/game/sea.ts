@@ -82,6 +82,8 @@ export class Sea {
   private roomLost = false;
   private press: Press | null = null;
   private room: SeaRoom | null = null;
+  /** Each join and leave counted, so a join that comes after another, or after the player left, is let go. */
+  private joins = 0;
   /** The picture's pose as last shown, brought in close or not, and its size: clicks and marks are taken on it. */
   private pose: CameraPose | null = null;
   private viewport: Viewport = { width: 1, height: 1 };
@@ -131,12 +133,20 @@ export class Sea {
 
   /** Joins the sea room `open` makes, a server's or the page's own, the ship put to sea where it lies. */
   async enterRoom(open: Parameters<typeof SeaRoom.join>[0]): Promise<void> {
+    const join = ++this.joins;
     // Every hull is made ready behind the veil, so the first of each seen never holds a frame; one that fails to come
     // is drawn as the Sloop, as before.
     const warmed = this.hull.warm?.().catch(() => undefined);
-    [this.room] = await Promise.all([SeaRoom.join(open, this.position, this.passage.pace), warmed]);
-    [this.passage.room, this.roomLost] = [this.room, false];
-    this.sendLie(this.room);
+    const [room] = await Promise.all([SeaRoom.join(open, this.position, this.passage.pace), warmed]);
+    // Left, or joined again, while this join was on its way: its room is closed, never kept open behind the player.
+    if (join !== this.joins) {
+      room.close();
+      return;
+    }
+    this.room?.close();
+    this.room = room;
+    [this.passage.room, this.roomLost] = [room, false];
+    this.sendLie(room);
   }
 
   /** Puts to sea at rest, it is turned as it lies, so the room shows every player its heading; under way, it sails
@@ -158,6 +168,7 @@ export class Sea {
 
   /** Leaves the sea room: the player's ship leaves the sea there. */
   leaveRoom(): void {
+    this.joins++;
     this.room?.close();
     [this.room, this.passage.room] = [null, null];
   }
