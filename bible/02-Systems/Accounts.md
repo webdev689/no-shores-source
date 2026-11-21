@@ -154,14 +154,18 @@ table holds one row an account: what differs from the game's defaults, as JSON, 
 
 - **`GET /v1/binds`** answers the signed-in player's binds, or null where none are kept; a guest is an account, so a
   guest's are kept too.
-- **`PUT /v1/binds`** keeps what is sent as `binds`, in place of what was kept, once it passes the game's own table of
-  controls (`readOverrides`, which the Worker imports from the page's code): known controls only, each with only its
-  keys and its pad buttons, each a list of at most three different names the game knows (a key, a mouse button, a pad
-  button, a button held or two together; a stick's ways only where the control is on them). A body past 8 KB, or
-  anything else, is refused and nothing changes. 120 reads and saves an hour an account.
+- **`PUT /v1/binds`** keeps what is sent as `binds`, in place of what was kept, as the game's own table of controls
+  reads it (`readOverrides`, which the Worker imports from the page's code): a known control's keys and its pad
+  buttons, each a list of at most three different names the game knows (a key, a mouse button for a control that
+  hears one, a pad button, a button held or two together; a stick's ways only where the control is on them). What
+  does not read, as a page of another build may send, is left out and the rest kept. A body past 8 KB, or one that is
+  no object of controls, is refused and nothing changes. 120 reads and saves together an hour an account.
 - **The page** reads them once the account is known and binds them, and reads again when another account signs in
   (that account's, or the defaults where it kept none); each change is sent a moment and a half after the last
-  (`keepBinds`). Where the accounts do not answer, the game plays on with what it has, the defaults at first.
+  (`keepBinds`). It keeps what still reads, and a kept bind that clashes with a default goes back to its own. A save
+  waits on a read that answers, so nothing is kept over binds never read: what the player bound before the read is
+  laid over what the account kept, and that is saved. Where the accounts do not answer, the game plays on with what
+  it has, the defaults at first, and saves nothing until a read answers.
 
 ## Running it here
 

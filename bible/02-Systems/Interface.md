@@ -517,7 +517,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   while the fall plays out. The prompt for Use says what it does, with Use's key or button, so the strip leaves it
   out. At sea: sailing, the click to sail there, the helm's controls and the menu (the sea bar names its own keys); in
   Manage, the drag, the wheel and Manage's key back; on the deck, run, jump and Use to take the helm; at the map and
-  choosing a landing, their clicks, Set sail and Escape; in a fight, the helm, the sails, the burst, the aim and the
+  choosing a landing, their clicks, Set sail and Escape; with the land's held map raised, the drag, the wheel and its
+  key or Escape to close it (the pad's B); in a fight, the helm, the sails, the burst, the aim and the
   brace, and while aiming, letting go to fire (the pad's RT), holding fire, the shot and the drag. Eight entries at
   most ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the strip stands at twice its size
   and wraps 960 px short of the view's width, so it never runs over the weapons; a view under 720 px wide gives it
@@ -538,31 +539,38 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   stays held) and its scrim takes the pointer, so nothing behind it is clicked; the world goes on, as under the menu.
 - **Binding a control** (`rebinding.ts`): a key chosen in the sheet (a click, Enter or the pad's A) is lit and waits;
   on a key's side the next key or mouse button binds it, on the pad's the next button, held past 0.3 s for its hold,
-  or with another for the two together. Escape cancels, as does six seconds with nothing pressed. A key another control
-  acts with in the same place (on foot, dead, in a window, at the helm or in a sea fight; `binds.ts`) is swapped
-  between the two, and the footer says "Swapped with" that control; where the other would be left with nothing, the
-  binding is refused and the footer says that control "needs it". Reset to defaults binds every control as it came. A
-  mouse's gesture (the click to look or to sail there, a drag, the wheel), Tab, Escape, the arrows on the menu's tabs,
-  the pad's sticks and the pad's buttons in a window (the cross and left stick, A, B, the bumpers) are written, not
-  bound. What the player binds is kept with their account ([[Accounts]], "Binds").
+  or with another within 0.12 s for the two together. Escape cancels, as does six seconds with nothing pressed. A
+  mouse button binds only a control that hears one: the menus, the sheet, Use, Respawn and the helm's controls act on
+  a key going down or at the helm, where the pointer is free, so for them the footer says it "takes keys only"; a
+  button past the fifth is no key, and the slot waits on. Every other control acting with the key in the same place
+  (on foot, dead, in a window, at the helm or in a sea fight; `binds.ts`) gives it up, taking the slot's old key
+  where that clashes with nothing it acts with there, and the footer says "Swapped with" them; where one would be
+  left with nothing, the binding is refused and the footer says that control "needs it". No two controls that act
+  in one place ever share a key. Reset to defaults binds every control as it came. A mouse's gesture (the click to
+  look or to sail there, a drag, the wheel), Tab, Escape, the arrows on the menu's tabs, the pad's sticks and their
+  ways and the pad's buttons in a window (the cross and left stick, A, B, the bumpers) are written, not bound, and
+  never given in a swap. What the player binds is kept with their account ([[Accounts]], "Binds").
 - **The pad** (`pad.ts`, `Input`) is read each frame through the browser's Gamepad API, the first pad with the
   standard mapping: a stick at rest inside a 0.2 lean is still, and leant past it moves as far as it leans (the walk,
   the helm, the look); a trigger is pressed past 0.3; a stick's way counts as pressed past half its lean. Its layout is
   Destiny's as the owner chose it ([[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]): on foot the left
   stick moves and its click runs until the stick comes to rest, the right stick turns and looks, RT swings and LT
-  guards or parries (a ranged weapon drawn, RT fires and LT aims), A jumps, B tapped dodges and held crouches, X uses,
+  guards or parries (a ranged weapon drawn, RT fires and LT aims, in every fight on foot: ashore, on a boarded deck
+  and in the story), A jumps, B tapped dodges and held crouches, X uses,
   Y draws or sheathes, LB and RB cast the Tenets and both together the Anima, the cross's left and right draw the
   loadouts, its down drinks and its up mounts, the right stick's click changes the view, Start opens the menu at
   Character, View the sheet and View held the game's menu; dead, A respawns. At the helm the left stick steers, sails on
   and heaves to; A sets sail, lands or docks, X stops or resumes, the cross's left and right slow and speed, its up
-  opens the map and its down repairs, Y manages the ship, B leaves the helm, and at the map or a landing B steps back.
+  opens the map and its down repairs (walking the ship's own deck too), Y manages the ship, B leaves the helm, and at the map or a landing B steps back.
   In a sea fight the left stick steers and sets the sails, its click bursts, LT aims, RT fires, LT let go unfired holds
-  fire, the cross's left and right change the shot, B braces, X boards, and the right stick turns the view. A button
-  with a hold bound waits to be told a tap from a hold, and one of two bound together waits 0.12 s for the other, so
-  one press never does both. In a window (the menu, the game's menu, the sheet, the story's creation) the pad's
-  buttons are the window's: the cross or the left stick moves the focus, A presses, B steps back, LB and RB turn the
-  menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press that changed it
-  acts on nothing more. The story's tap to start takes any of the pad's buttons, and A takes the stranger's hand.
+  fire, the cross's left and right change the shot, B braces as it goes down and while it is held, X boards, and the
+  right stick turns the view; a tap presses and lets go in one frame. A button with a hold bound where the player is
+  (on foot, B's crouch) waits to be told a tap from a hold, and one of two bound together waits 0.12 s for the
+  other, so one press never does both. In a window (the menu, the game's menu, the sheet, the story's creation) the
+  pad's buttons are the window's: the cross or the left stick moves the focus, A presses, B steps back, LB and RB
+  turn the menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press that
+  changed it acts on nothing more, and what it held is let go at once, as is a stick let go under the window, so
+  nothing stays held once it closes. The story's tap to start takes any of the pad's buttons, and A takes the stranger's hand.
 
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; Back to
   the sea stands on its footer. It is built again only when what it
@@ -954,8 +962,9 @@ button's corner and screen, and the Tailor's wares.
   the focused one's outlines are drawn diamonds round their emblems. A fragment not owned and a ware not had stand
   dimmed and tinted grey, not wholly grey. Within the Core's open flyout the arrows reach the screen's other tiles
   too, as they move to the nearest that way anywhere on a drawn page; Escape still closes the flyout first.
-- No touch layer yet, and so none of DFO's narrow-screen places for the compass. The pad has no way to the menu's
-  Details or a hold to dismantle, nor to a press the pointer alone reaches (the sea's marks, the map's places).
+- No touch layer yet, and so none of DFO's narrow-screen places for the compass. The pad has no way to the land's
+  held map until a button is bound to it (the cross's up mounts there), to the menu's Details or a hold to dismantle,
+  nor to a press the pointer alone reaches (the sea's marks, the map's places).
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card
   under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where the
   bar would stand, and at 960 px the bar is as wide as the screen between the place's name and its right edge.
