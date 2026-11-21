@@ -13,6 +13,10 @@ export const CITY_BUFFER_USAGE = { ...BUFFER_USAGE, index: 0x10, storage: 0x80 }
 export type CityPipelines = {
   readonly layout: GPUBindGroupLayout;
   readonly models: GPURenderPipeline;
+  /** The models and the masses as `models` and `masses` draw them, both faces: a ruin's broken buildings are open
+   *  shells. */
+  readonly brokenModels: GPURenderPipeline;
+  readonly brokenMasses: GPURenderPipeline;
   readonly masses: GPURenderPipeline;
   readonly plates: GPURenderPipeline;
   /** The models' and solids' depth along the sun, into the shadow maps. */
@@ -20,6 +24,9 @@ export type CityPipelines = {
   /** The masses' and hulls' depth along the sun, into the far shadow map. */
   readonly massesCast: GPURenderPipeline;
 };
+
+/** Bytes a model instance: where it stands and its yaw, its cell and tier, and the height it is broken off at. */
+export const MODEL_INSTANCE_BYTES = 28;
 
 const made = new WeakMap<GPUDevice, Map<GPUTextureFormat, CityPipelines>>();
 
@@ -68,11 +75,12 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
       ],
     },
     {
-      arrayStride: 24,
+      arrayStride: MODEL_INSTANCE_BYTES,
       stepMode: 'instance',
       attributes: [
         { shaderLocation: 4, offset: 0, format: 'float32x4' },
         { shaderLocation: 5, offset: 16, format: 'uint32x2' },
+        { shaderLocation: 6, offset: 24, format: 'float32' },
       ],
     },
   ];
@@ -100,6 +108,22 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
       vertex: { module: modelModule, entryPoint: 'model_vertex', buffers: modelBuffers },
       fragment: { module: modelModule, entryPoint: 'surface_fragment', targets },
       primitive,
+      depthStencil,
+      multisample,
+    }),
+    brokenModels: device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: { module: modelModule, entryPoint: 'model_vertex', buffers: modelBuffers },
+      fragment: { module: modelModule, entryPoint: 'surface_fragment', targets },
+      primitive: { ...primitive, cullMode: 'none' },
+      depthStencil,
+      multisample,
+    }),
+    brokenMasses: device.createRenderPipeline({
+      layout: pipelineLayout,
+      vertex: { module: massModule, entryPoint: 'mass_vertex', buffers: massBuffers },
+      fragment: { module: massModule, entryPoint: 'surface_fragment', targets },
+      primitive: { ...primitive, cullMode: 'none' },
       depthStencil,
       multisample,
     }),

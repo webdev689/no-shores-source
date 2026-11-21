@@ -1,6 +1,6 @@
 //! Where a ship meets the water: the bed under a point and the water's surface over it at a moment.
 
-use crate::helm::WIND_RATED;
+use crate::helm::{WIND_RATED, sea_wind};
 use land::ground::{Ground, WaterAt};
 use land::sea::Swell;
 use sky::air::Air;
@@ -16,6 +16,13 @@ pub struct Spot {
 /// Water a ship can sail on: the land's, or a test's.
 pub trait Waters {
     fn at(&self, x: f64, y: f64, time: f64) -> Spot;
+
+    /// The spot as a hull of time constant `lag` seconds rides it: the swell answered through its inertia
+    /// (`Swell::lagged_height_at`). Water without a swell is the same however slow it is.
+    fn lagged(&self, x: f64, y: f64, time: f64, lag: f64) -> Spot {
+        let _ = lag;
+        self.at(x, y, time)
+    }
 }
 
 /// A landmass's waters: the sea with the swell on it, and its lakes and rivers at their levels.
@@ -35,6 +42,16 @@ impl Waters for LandWaters<'_> {
         };
         Spot { bed, surface }
     }
+
+    fn lagged(&self, x: f64, y: f64, time: f64, lag: f64) -> Spot {
+        let bed = self.ground.height_at(x, y);
+        let surface = match self.ground.water_at(x, y) {
+            WaterAt::Sea => Some(self.swell.lagged_height_at(x, y, time, -bed, lag)),
+            WaterAt::Lake { surface } | WaterAt::River { surface } => Some(surface),
+            WaterAt::Dry => None,
+        };
+        Spot { bed, surface }
+    }
 }
 
 /// How deep the open sea is, metres: well past where the swell feels the bottom, so it rolls whole everywhere.
@@ -49,22 +66,35 @@ pub struct OpenSea<'sea> {
 
 impl Waters for OpenSea<'_> {
     fn at(&self, x: f64, y: f64, time: f64) -> Spot {
-        Spot { bed: -OPEN_SEA_DEPTH_M, surface: Some(self.swell.height_at(x, y, time, OPEN_SEA_DEPTH_M)) }
+        self.lagged(x, y, time, 0.0)
+    }
+
+    fn lagged(&self, x: f64, y: f64, time: f64, lag: f64) -> Spot {
+        Spot { bed: -OPEN_SEA_DEPTH_M, surface: Some(self.swell.lagged_height_at(x, y, time, OPEN_SEA_DEPTH_M, lag)) }
     }
 }
 
-/// The wind along the swell at a ship's rated strength (m/s, east and south): a still world's, which the rules' tests
-/// sail in where no weather is asked.
+/// The weather's wind a ship is rated for, metres a second: a moderate sea's middle (`world::weather::WIND_M_S`).
+pub const RATED_M_S: f64 = 6.5;
+
+/// The wind a ship sails by under the weather's wind `wind` (metres a second, east and south): blowing the same way,
+/// its strength in the sailing law's units, held inside the law's band (`sea_wind`) so every ship still sails, from a
+/// calm's light air to a storm's gale.
 #[must_use]
-pub fn steady_wind(swell: &Swell) -> [f64; 2] {
-    [WIND_RATED * libm::sin(swell.bearing), -WIND_RATED * libm::cos(swell.bearing)]
+pub fn weather_wind(wind: [f64; 2]) -> [f64; 2] {
+    let strength = (wind[0] * wind[0] + wind[1] * wind[1]).sqrt();
+    if strength <= 0.0 {
+        return [0.0, 0.0];
+    }
+    let held = sea_wind(WIND_RATED * strength / RATED_M_S) / strength;
+    [wind[0] * held, wind[1] * held]
 }
 
 /// The weather's usual wind, m/s: the breeze a ship is rated for.
 pub const USUAL_WIND_M_S: f64 = 6.5;
 
-/// The weather's wind (m/s, east and south) as a ship's sails feel it: scaled so its usual breeze is her rated wind.
-/// The helm holds it within her shares, so a gale drives her at most twice as hard and a near calm still gives way.
+/// The weather's wind (m/s, east and south) as a ship's sails feel it: scaled so its usual breeze is a ship's rated wind.
+/// The helm holds it within its shares, so a gale drives it at most twice as hard and a near calm still gives way.
 #[must_use]
 pub fn sail_wind(weather_wind: [f64; 2]) -> [f64; 2] {
     weather_wind.map(|part| part * WIND_RATED / USUAL_WIND_M_S)

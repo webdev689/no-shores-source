@@ -38,6 +38,7 @@ impl Character {
     pub fn shown(&self) -> Shown {
         let worn = self
             .all_worn()
+            .filter(|(slot, _)| !slot.ship())
             .map(|(slot, item)| ShownPiece {
                 slot: slot as u8,
                 kind: item.kind as u8,

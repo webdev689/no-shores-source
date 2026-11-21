@@ -166,6 +166,13 @@ fn give_back(character: &mut Character, item: &Item, which: impl Fn(usize, u8) -
     }
     let materials = &mut character.materials;
     materials.add_aurem(spent.aurem);
+    if item.kind.module() {
+        let price = crate::ship::materials::price_of(item.kind, spent);
+        for (material, count) in price.0 {
+            materials.ship.add(material, count);
+        }
+        return;
+    }
     materials.add(Stuff::Fragments(stock), spent.fragments);
     materials.add(Stuff::Essence(stock), spent.essence);
     if let Some(resource) = item.resource {

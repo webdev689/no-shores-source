@@ -45,6 +45,16 @@ pub fn set_ground(text: &[u8]) -> bool {
     kept
 }
 
+/// Keeps a ship's deck for predicting a fighter without a room, from its grid's numbers (`Heights::from_floats`), in
+/// place of any ground: its deck room's own floor, to the bit. Numbers that are not a grid keep open ground; answers
+/// whether they were one.
+pub fn set_heights(bytes: &[u8]) -> bool {
+    let deck = movement::Heights::from_floats(&floats_of(bytes));
+    let kept = deck.is_some();
+    FLOOR.with(|floor| *floor.borrow_mut() = deck.map_or(Floor::Flat, |deck| Floor::Deck(Box::new(deck))));
+    kept
+}
+
 /// Keeps the rim round a course laid over the sea for predicting a fighter without a room, from its blocks' numbers,
 /// five each: the floor the sea room holds its bodies by (`Floor::Sea`), so a fighter predicted at its edge is held
 /// as the room holds it. Answers whether the numbers were blocks.
@@ -160,6 +170,16 @@ pub unsafe extern "C" fn fighter_rim(address: *const u8, length: usize) -> u32 {
 pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the deck whose grid's numbers are written at `address` for predicting; 1 if they were a grid, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_heights(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_heights(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Steps the fighter whose numbers are written at `address` a tick, as `predict` says; answers the next fighter's

@@ -8,7 +8,7 @@ import { ELEMENTS, RARITIES, fullyUpgraded, upgraded } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
-import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
+import { fineGlyph, glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
 import { elementSvg } from '../player/elementGlyphs.ts';
 import { diagonalFit, drawnBounds, fitIcon, shrunkCanvas } from '../player/iconFit.ts';
 import { charge, play } from './uiSounds.ts';
@@ -335,7 +335,7 @@ export function itemIcon(picture: Picture | null, name: string, box: number): HT
 
 /** A glyph as an image. */
 export function glyphImage(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): HTMLImageElement {
-  const image = make('img', '', 'gear-glyph');
+  const image = make('img', '', fineGlyph(glyph) ? 'gear-glyph gear-glyph-fine' : 'gear-glyph');
   image.src = `data:image/svg+xml,${encodeURIComponent(glyphSvg(glyph, rarity, tint))}`;
   image.alt = '';
   return image;

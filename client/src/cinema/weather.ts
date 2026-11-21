@@ -111,7 +111,7 @@ export function mixWeather(from: Weather, to: Weather, share: number): Weather {
 }
 
 /** The swell with every wave's height and sideways carry times `gain`, for drawing a storm's sea; its speeds and
- *  lengths are the rules' own, so a ship still rides where the server puts her. */
+ *  lengths are the rules' own, so a ship still rides where the server puts it. */
 export function swellGained(swell: Swell, gain: number): Swell {
   if (gain === 1) return swell;
   return {

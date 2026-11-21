@@ -34,7 +34,7 @@ import {
 } from './weatherLaw.ts';
 
 /** What the ambience hears this frame: where the ear is and faces, the frame's origin (the ship at sea, so all rides
- *  with her), the land, the phases of the hour, the drives, the weather and the share of the day's birds and insects
+ *  with it), the land, the phases of the hour, the drives, the weather and the share of the day's birds and insects
  *  not gone to shelter from it, and a social space's walking people. */
 export interface Heard {
   readonly key: AmbienceKey;

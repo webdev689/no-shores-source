@@ -21,7 +21,7 @@ pub enum Deed {
     OpenedLegendary,
     OpenedAtheric,
     ShieldBroken,
-    StormFoe,
+    AbyssFoe,
     Gathered,
 }
 

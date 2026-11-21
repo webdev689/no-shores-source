@@ -74,6 +74,10 @@ pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bo
 /// keeps to its place, stepping back to it when an ally passing by has moved it; any other looks about.
 pub fn unoccupied(brain: &mut Brain, here: &Here<'_, '_>, was_alert: bool) -> Ask {
     let Some(home) = brain.home else { return look(brain, here) };
+    if let Some(heel) = brain.heel {
+        let far = apart(here.at(), [home.at[0], home.at[1]]) > heel;
+        return if far { walk_home(brain, here, home) } else { look(brain, here) };
+    }
     if brain.returning == Some(Homeward::Searched) && !brain.awareness.alert {
         return walk_home(brain, here, home);
     }
@@ -116,22 +120,29 @@ fn start_home(brain: &mut Brain, why: Homeward) {
 
 /// Its walk back to its place, healing a share of what it lacks each tick by the walk still left, so it is whole as it
 /// arrives; there, it turns to face as it was posted, and is home. While its group walks on and it has nothing to walk
-/// back from, it keeps up with its place instead, the faster the farther behind.
+/// back from, it keeps up with its place instead, the faster the farther behind. A companion runs to keep up with its
+/// leader, heals nothing, and is home once within its heel.
 fn walk_home(brain: &mut Brain, here: &Here<'_, '_>, home: Home) -> Ask {
     brain.awareness.heard.clear();
     let fighter = &here.fighter;
     let missing = fighter.health_max - fighter.health;
     let left = apart(here.at(), [home.at[0], home.at[1]]);
-    if home.marching && brain.returning.is_none() {
+    if home.marching && brain.returning.is_none() && brain.heel.is_none() {
         brain.calls.heal = missing;
         let way = (left > HOME_REACHED).then(|| way_to(here, home.at)).flatten();
         return way.map_or_else(|| Ask::facing(home.facing), |way| Ask::walking(way, (left / KEEP_UP).min(1.0), false));
     }
-    if left > HOME_REACHED
+    if left > brain.heel.unwrap_or(HOME_REACHED)
         && let Some(way) = way_to(here, home.at)
     {
-        brain.calls.heal = missing * (TUNING.walk * TICK_SECONDS / left).min(1.0);
-        return Ask::walking(way, 1.0, false);
+        if brain.heel.is_none() {
+            brain.calls.heal = missing * (TUNING.walk * TICK_SECONDS / left).min(1.0);
+        }
+        return Ask::walking(way, 1.0, brain.heel.is_some());
+    }
+    if brain.heel.is_some() {
+        brain.returning = None;
+        return Ask::facing(brain.heading);
     }
     brain.calls.heal = missing;
     let body = fighter.body.facing;

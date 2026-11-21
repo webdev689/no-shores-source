@@ -1,6 +1,6 @@
 // Ships a cutscene sails by hand: the player's Brig in the storm, ships passing an island, Thule's Frigate that rams
-// her. Each is placed where the story says, posed on the sea as it is drawn (a storm's swell gained), heeled as she
-// turns, her sails filled by the wind or furled, and drawn by her hull's own model.
+// it. Each is placed where the story says, posed on the sea as it is drawn (a storm's swell gained), heeled as it
+// turns, its sails filled by the wind or furled, and drawn by its hull's own model.
 import type { Swell } from '../../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
 import type { Waterline } from '../../ships/shipMesh.ts';
@@ -14,8 +14,8 @@ export type Hull = 'brig' | 'sloop' | 'frigate';
  *  up) and list (radians, to starboard). */
 export type Founder = readonly [number, number, number];
 
-/** A ship as the story has her now: where she lies (world metres), her heading, whether she sails, how many times her
- *  size she is drawn, how light, extra heel and rise the story gives her (a list, a lurch), and her founder. */
+/** A ship as the story has it now: where it lies (world metres), its heading, whether it sails, how many times its
+ *  size it is drawn, how light, extra heel and rise the story gives it (a list, a lurch), and its founder. */
 export interface Sailed {
   readonly who: string;
   readonly hull: Hull;
@@ -30,7 +30,7 @@ export interface Sailed {
   readonly founder?: Founder;
 }
 
-/** A ship ready to draw: her hull, her place, her light and her canvas. */
+/** A ship ready to draw: its hull, its place, its light and its canvas. */
 export interface ShipDraw {
   readonly hull: Hull;
   readonly place: ShipPlace;
@@ -38,7 +38,7 @@ export interface ShipDraw {
   readonly rig: SailRig;
 }
 
-/** Each ship's rig, kept from frame to frame so her sails fill and furl over time. */
+/** Each ship's rig, kept from frame to frame so its sails fill and furl over time. */
 export class Sailing {
   private readonly rigs = new Map<string, SailRig>();
   private readonly hulls: Readonly<
@@ -76,7 +76,7 @@ export class Sailing {
         (waterline.beamM / 2) * scale,
         time,
       );
-      // Settled, trimmed and listed on the swell drawn here, as the fight draws her.
+      // Settled, trimmed and listed on the swell drawn here, as the fight draws it.
       const [settled, trim, list] = ship.founder ?? [0, 0, 0];
       const place: ShipPlace = {
         x: ship.x,
@@ -91,8 +91,8 @@ export class Sailing {
     });
   }
 
-  /** The rig `ship` sails with: the one she was last drawn or kept with, else a new one already filled or furled
-   *  as she sails, the wind blowing toward `windBearing` at `time`. */
+  /** The rig `ship` sails with: the one it was last drawn or kept with, else a new one already filled or furled
+   *  as it sails, the wind blowing toward `windBearing` at `time`. */
   rigOf(ship: Sailed, windBearing: number, time: number): SailRig {
     let rig = this.rigs.get(ship.who);
     if (!rig) {
@@ -103,14 +103,14 @@ export class Sailing {
     return rig;
   }
 
-  /** Keeps `rig` as `who`'s, so the next frame draws her sails on from where another drawing left them. */
+  /** Keeps `rig` as `who`'s, so the next frame draws its sails on from where another drawing left them. */
   keep(who: string, rig: SailRig): void {
     this.rigs.set(who, rig);
   }
 }
 
-/** A point on a ship's deck (her frame: metres to her bow, to starboard, up from her waterline) in the world, as she
- *  is placed. Her pitch raises her bow; her roll lowers her starboard side. */
+/** A point on a ship's deck (its frame: metres to its bow, to starboard, up from its waterline) in the world, as it
+ *  is placed. Its pitch raises its bow; its roll lowers its starboard side. */
 export function onDeck(place: ShipPlace, forward: number, starboard: number, up: number): [number, number, number] {
   const scale = place.scale ?? 1;
   const [along, across, over] = [forward * scale, starboard * scale, up * scale];

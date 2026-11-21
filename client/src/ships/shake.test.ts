@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { SHAKE, Shake } from './shake.ts';
+
+const size = (jar: ReturnType<Shake['jarAt']>) => Math.hypot(jar.east, jar.south, jar.up);
+
+test('with no kick the eye stands still', () => {
+  assert.deepEqual(new Shake(1).jarAt(3), { east: 0, south: 0, up: 0, yaw: 0, pitch: 0 });
+});
+
+test("a kick shakes the eye, swells over DFO's fade-in and dies away over its fade-out", () => {
+  const shake = new Shake(2);
+  shake.kick(1.6, 0);
+  const most = Math.max(...Array.from({ length: 80 }, (unused, step) => size(shake.jarAt(step / 100))));
+  assert.ok(most > 0.02 && most <= 1.6 * SHAKE.metres * Math.sqrt(3) * 0.5 + 1e-9, `${most}`);
+  assert.ok(Math.abs(shake.jarAt(0.4).yaw) + Math.abs(shake.jarAt(0.4).pitch) > 0, 'it turns the eye a little too');
+  assert.deepEqual(shake.jarAt(SHAKE.inS + SHAKE.outS + 0.01), { east: 0, south: 0, up: 0, yaw: 0, pitch: 0 });
+});
+
+test('a harder kick shakes harder, and none past the most', () => {
+  const peak = (magnitude: number) => {
+    const shake = new Shake(3);
+    shake.kick(magnitude, 0);
+    return Math.max(...Array.from({ length: 80 }, (unused, step) => size(shake.jarAt(step / 100))));
+  };
+  assert.ok(peak(2.4) > peak(0.7) * 2);
+  assert.equal(peak(50), peak(SHAKE.most));
+});
+
+test('jars at once add together, but never past the most', () => {
+  const peak = (count: number) => {
+    const shake = new Shake(4);
+    for (let gun = 0; gun < count; gun++) shake.kick(2.5, 0);
+    return Math.max(...Array.from({ length: 80 }, (unused, step) => size(shake.jarAt(step / 100))));
+  };
+  assert.ok(peak(2) > peak(1));
+  assert.ok(peak(12) <= SHAKE.most * SHAKE.metres * Math.sqrt(3) * 0.5 + 1e-9, `${peak(12)}`);
+});

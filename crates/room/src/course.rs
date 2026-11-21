@@ -18,8 +18,9 @@ impl Room {
     /// holds as many foes as a node, for a wreck's boarders and the crew who fight them.
     #[must_use]
     pub fn over_sea(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        let rim = Heights::rim(&blocks, RIM_CELL_M);
-        Self { foes_most: crate::NODE_FOES_MOST, ..Self::on(Floor::Sea(Box::new(rim)), blocks, vec![spawn], None) }
+        let floor = Floor::Sea(Box::new(Heights::rim(&blocks, RIM_CELL_M)));
+        let nav = crate::garrison::baked(&floor, &blocks, spawn, None);
+        Self { foes_most: crate::NODE_FOES_MOST, ..Self::on(floor, blocks, vec![spawn], None, nav) }
     }
 
     /// A foe found off the course laid over the sea, where nothing it walks reaches, stands again at its post, as it

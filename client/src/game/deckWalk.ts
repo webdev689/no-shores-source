@@ -1,6 +1,6 @@
-// The player off the helm, walking their Sloop's deck: their body stepped by the movement crate on her deck's grid of
-// heights, in her own frame, each tick's controls sent to the sea room as a numbered step, and the room's word on the
-// body correcting the prediction, as a node's room corrects a walker on land. The room keeps her course meanwhile.
+// The player off the helm, walking their Sloop's deck: their body stepped by the movement crate on its deck's grid of
+// heights, in its own frame, each tick's controls sent to the sea room as a numbered step, and the room's word on the
+// body correcting the prediction, as a node's room corrects a walker on land. The room keeps its course meanwhile.
 import { Prediction } from '../network/prediction.ts';
 import { newPlayer } from '../player/player.ts';
 import type { Walker } from '../player/walker.ts';
@@ -15,7 +15,7 @@ export interface DeckRoom {
   readonly words: number;
 }
 
-/** The player's walk on a deck, from the spot behind her wheel, facing her bow. */
+/** The player's walk on a deck, from the spot behind its wheel, facing its bow. */
 export class DeckWalk {
   private readonly prediction = new Prediction<Controls>();
   private readonly movement: MovementRules;

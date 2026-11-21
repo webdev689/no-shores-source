@@ -12,8 +12,8 @@ use crate::factions::factions;
 use crate::power::xp_for_level;
 use crate::rarity::Rarity;
 
-const AT_COUNTER: Here = Here { social: true, day: 0, week: 0 };
-const AFIELD: Here = Here { social: false, day: 0, week: 0 };
+const AT_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
+const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0, week: 0 };
 const DICE: Dice = Dice { seed: 13, tick: 4, player: 2 };
 
 /// A character with `ranks` whole ranks with faction 1, the Stormcallers, and much Aurem.
@@ -155,7 +155,7 @@ fn a_cosmetic_is_refused_unknown_never_sold_too_high_and_short() {
 fn shapes_piece_is_refused_with_its_slot_full() {
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(20);
-    let here = Here { social: true, day: 0, week: 5_000 };
+    let here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 5_000 };
     let bucket = crate::shape::wares(here.week)[0].bucket;
     while character.carried_in(bucket) < CARRIED_MOST {
         character.add_shapes(200);
