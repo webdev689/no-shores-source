@@ -208,8 +208,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   foot stands 0.2 m over the crown, 0.32 m across, turned to the eye and hidden by what stands before it, never
   narrower on the screen than 0.017 radians either side so a keeper across the plaza still shows one; it bobs 6 cm
   once a second on a phase of its own, holding still under reduced motion, and fades out over the last fifth of its
-  30 m, the nearest twelve laid. Its colours are laid in layers as a drop's are, the widest first, each a little nearer
-  the eye, so a mark is a few dozen quads; a fading one is laid flat, so no layer shows through another. Each drop
+  30 m, the nearest twelve laid. A whole mark gives the fight's light layer no light, so a sign's brass never lights
+  its own diamond. Its colours are laid in layers as a drop's are, the widest first, each a little nearer the eye, so a
+  mark is a few dozen quads; a fading one is laid flat, so no layer shows through another. Each drop
   lying for them stands as its own picture under its rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by
   walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view

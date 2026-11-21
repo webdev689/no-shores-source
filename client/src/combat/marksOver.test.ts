@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { vestigePicture } from './dropPictures.ts';
-import { MARK_FLOATS } from './marks.ts';
+import { MARK_FLOATS, ditherCode } from './marks.ts';
 import { MIN_RAD, MOST, REACH_M, WIDTH_M, marksSeen } from './marksOver.ts';
 
 /** The widest a laid mark stands across, metres, from its vertices. */
@@ -19,8 +19,8 @@ test('a mark is WIDTH_M across near, never narrower on the screen than MIN_RAD f
   assert.ok(Math.abs(widthOf(seen(far)) - 2 * far * Math.tan(MIN_RAD)) < 0.1, 'wider far off, so it still shows');
   const opacities = (vertices: readonly number[]) => vertices.filter((unused, index) => index % MARK_FLOATS === 6);
   assert.ok(
-    opacities(seen(10)).every((opacity) => opacity === 1),
-    'whole within the reach',
+    opacities(seen(10)).every((opacity) => opacity === ditherCode(1)),
+    'whole within the reach, by the code the light layer gives no light for, so it is never lit by its own brass',
   );
   assert.ok(
     opacities(seen(REACH_M - 1)).every((opacity) => opacity > 0 && opacity < 1),

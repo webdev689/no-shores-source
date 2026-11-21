@@ -6,6 +6,7 @@
 
 import type { PixelPicture } from './dropPictures.ts';
 import { markPicture, PIXEL_M } from './drops.ts';
+import { ditherCode } from './marks.ts';
 import { motionReduced } from '../plus/kit.ts';
 
 type Point = readonly [number, number, number];
@@ -26,6 +27,8 @@ const BOB_M = 0.06;
 const BOB_HZ = 1;
 /** The most marks a frame lays, the nearest, as DFO's. */
 export const MOST = 12;
+/** A whole mark's opacity: solid, lighting nothing. */
+const WHOLE = ditherCode(1);
 
 /** A little over the most a mark rises over its foot (metres): its height at the end of its reach, where MIN_RAD
  *  holds it 2 × REACH_M × tan(MIN_RAD) tall, and its bob. */
@@ -55,7 +58,9 @@ export function marksSeen(marked: readonly Marked[], eye: Point, seconds: number
     const phase = (Math.abs(mark.at[0] * 7.31 + mark.at[1] * 3.17) % 1) * 2 * Math.PI;
     const bob = holding ? 0 : BOB_M * Math.sin(2 * Math.PI * BOB_HZ * seconds + phase);
     const fading = REACH_M * (1 - FADE);
-    const opacity = far <= fading ? 1 : Math.max(0, (REACH_M - far) / (REACH_M - fading));
+    // Whole, it is drawn by the ground's code for a mark kept whole, which gives the light layer no light: the
+    // brightest brass of a keeper's sign would otherwise light the sign itself in blocks over its own colours.
+    const opacity = far <= fading ? WHOLE : Math.max(0, (REACH_M - far) / (REACH_M - fading));
     const bobbing: Point = [mark.at[0], mark.at[1], mark.at[2] + bob];
     markPicture(out, mark.picture, bobbing, eye, width / cells / PIXEL_M, opacity);
   }
