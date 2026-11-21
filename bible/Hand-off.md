@@ -159,9 +159,9 @@ The decisions in [[Open Questions]] are not repeated here.
 
 - **Areas in chunks**, after #139 ([[Areas Load in Chunks With Proper Caching]]): the hitch risks it found (playing
   alone, a room opens on the game's thread; a city is built in one go after each landmass switch and every 1.5 km); a
-  landmass readied before it opens; the hitching measured on a real GPU. Memory to measure: the figure cards' 4000-texture budget (`player/cards.ts`), the scene's
-  full-size targets, about 590 MB at 5120 by 2880, uncapped (`scene.ts`), and the item pictures' cache, uncapped
-  (`player/itemPictures.ts`).
+  landmass readied before it opens; the hitching measured on a real GPU. Memory to measure: the figure cards'
+  4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
+  (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
 - **Browser QA**: `tools/claude-toolkit/webgpu-shot.cjs` reads the page's canvas, so it pictures the Test Ground and
   the World Editor but not the game, which draws in its worker ([[Toolkit]]); time the game's frames through
   Playwright's worker handle. The kit is kept as shipped, so its fix is the co-dev's (observation 0068).
