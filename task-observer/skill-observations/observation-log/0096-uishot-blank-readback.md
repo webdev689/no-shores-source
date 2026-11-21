@@ -1,5 +1,5 @@
 ---
-id: 92
+id: 96
 title: "tools/uiShot.mjs writes a blank picture although the interface lays its quads"
 status: open
 type: open-source
