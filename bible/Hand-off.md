@@ -242,6 +242,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   the fall that kills in a social space, townsfolk on the plan's ways, and the harbour way to the pier with its two
   moored ships. Tested offline with the full check; CI baked its modules byte for byte. Not yet seen on a real GPU.
 
+- **Three healing charges**, on `main` (#120), merged with the owner's yes ("Merge and deploy"), which deploys
+  the page and the rooms ([[Three Healing Charges, Refilled by Blows and Kills]]):
+  built to the owner's picks, then a five-part audit (rules and room, wire and prediction, tests and notes, balance
+  against the roster, a design pass with pictures) and a last verification audit, every finding fixed or named in
+  the decision page. Tested offline with the full check; not yet seen or heard in a browser on a real GPU, nor
+  played in a company. A tab still on the old page reloads once.
+
 ## Waiting on the owner
 
 - **#119, the perk pass, waits on the owner's yes to merge**, which deploys the page and the rooms
@@ -259,17 +266,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   fixed: a shot takes the perks of the bow it was loosed from; rigging hits take the canvas and crew perks; a player
   back in a sea fight keeps a spent Hard to Kill and no ship number is given twice; Shape's purchase names the piece
   shown; a kept rolled perk left in another column is replaced; the figure's left twin and short sword take their
-  metal's grade (`layers.set_of`), their 26 strips being rendered again for both bodies, to publish with `add` and
-  take into `renders.json`. Open for the owner, each a call made in the design
-  note: the Atheric armour pieces keep their one signature; a rolled Rare reaches daedric at level 20; a faction's
+  metal's grade (`layers.set_of`). Their 26 layers were drawn again for both bodies and look right, but are not
+  published: the cloud environment holds no Cloudflare token, and the `forge` workflow draws only the birds and the
+  large weapons. Until they are, the figure draws them ungraded, as before this branch. Main (#120 and the hub) is
+  merged in and the check passes on it. Open for the owner, each a call made in the design note: the Atheric armour pieces keep their one signature; a rolled Rare reaches daedric at level 20; a faction's
   shield and bow keep one make; whether named weapons keep an element of their own (a leap is Volt on any Gullwing);
   a blow on a foe four or more levels above sets off no chain blow, since the blow itself does nothing. Not yet seen
   on a real GPU.
-- **#120, three healing charges, waits on the owner's yes** ([[Three Healing Charges, Refilled by Blows and Kills]]):
-  built to the owner's picks, then a five-part audit (rules and room, wire and prediction, tests and notes, balance
-  against the roster, a design pass with pictures) and a last verification audit, every finding fixed or named in
-  the decision page. Tested offline with the full check; not yet seen or heard in a browser on a real GPU, nor
-  played in a company. Its merge deploys the rooms and the page, and a tab still on the old page reloads once.
 - **Overlook's hub's flora**: whether "any flora like bushes or trees" also covers the wall ivy and the cut flowers
   sold at the flower stall and cart, which are the hub's own (the world grows no climber; cut flowers are goods).
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
