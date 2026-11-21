@@ -83,6 +83,7 @@ export class Interface {
   private focusByKeys = false;
   private keyMoved = false;
   private readonly clicks = new Set<string>();
+  private readonly rightClicks = new Set<string>();
   private readonly keyed = new Map<string, string[]>();
   /** What a component keeps between frames under an id of its own: a list open or shut, a value dragged. */
   readonly store = new Map<string, unknown>();
@@ -117,6 +118,7 @@ export class Interface {
     this.scale = view.scale;
     this.view = { width: view.width / view.scale, height: view.height / view.scale };
     this.clicks.clear();
+    this.rightClicks.clear();
     this.keyed.clear();
     this.dropped = null;
     this.submits.clear();
@@ -146,6 +148,21 @@ export class Interface {
   /** Whether `id` was pressed this frame: clicked, or Enter, Space or the pad's A on it with focus. */
   clicked(id: string): boolean {
     return this.clicks.has(id);
+  }
+
+  /** Whether `id` was pressed with the pointer's right button this frame, for what a context menu would do. */
+  rightClicked(id: string): boolean {
+    return this.rightClicks.has(id);
+  }
+
+  /** What has the focus, if anything. */
+  get focusedId(): string | null {
+    return this.focus;
+  }
+
+  /** Whether the focus is where the keys or the pad moved it, not where a click left it. */
+  get keyFocused(): boolean {
+    return this.focus !== null && this.focusByKeys;
   }
 
   hovered(id: string): boolean {
@@ -299,6 +316,10 @@ export class Interface {
       case 'down':
         this.pointer = { x: event.x, y: event.y };
         if (free && event.button === 0) this.pressAt(event.x, event.y);
+        else if (free && event.button === 2) {
+          const id = this.targetAt(event.x, event.y)?.node.id;
+          if (id) this.rightClicks.add(id);
+        }
         return;
       case 'up':
         if (event.button === 0 && this.held) {

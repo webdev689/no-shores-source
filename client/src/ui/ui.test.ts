@@ -192,3 +192,21 @@ test('a node’s age counts from when it was first laid, and starts again once i
   ui.frame(VIEW, [], 0.5);
   assert.equal(ui.age('toast'), 0);
 });
+
+test('a right press is heard on what it is over, and the focus says whether the keys moved it', () => {
+  const ui = new Interface(renderer());
+  step(ui, presses());
+  step(ui, presses(), [{ kind: 'down', x: 15, y: 15, button: 2 }]);
+  assert.ok(ui.rightClicked('one'));
+  assert.ok(!ui.clicked('one'), 'a right press is no press');
+  step(ui, presses());
+  assert.ok(!ui.rightClicked('one'), 'heard for one frame');
+  step(ui, presses(), [{ kind: 'down', x: 70, y: 15, button: 0 }]);
+  assert.equal(ui.focusedId, 'two');
+  assert.ok(!ui.keyFocused, 'a click gives focus, not the keys');
+  step(ui, presses(), [{ kind: 'key', key: 'Tab' }]);
+  assert.equal(ui.focusedId, 'one');
+  assert.ok(ui.keyFocused);
+  step(ui, presses(), [{ kind: 'down', x: 15, y: 15, button: 2 }], false);
+  assert.ok(!ui.rightClicked('one'), 'nothing is pressed while the pointer looks round');
+});
