@@ -1,8 +1,9 @@
 // The game's sound as its worker makes it. A worker has no Web Audio, so this stands in for it: every context, node,
 // parameter and buffer the game makes is a number the page keeps, and every call on one is sent to the page with the
 // rest of its task's (`AudioHost` carries them out there, in the page's own audio). The game's sound code runs here
-// unchanged. What it reads back is what it last set, the page's clock as last heard, and the samples it filled or the
-// page decoded.
+// unchanged. What it reads back is each parameter where its course stands on the page's clock (run on from what the
+// page last said), the context as the page's (one, an AudioContext), and the samples it filled or the page decoded.
+import { ParamCourse, paramDefault } from './paramCourse.ts';
 import {
   type AudioOp,
   type AudioReply,
@@ -22,7 +23,7 @@ class Link {
   private transfer: Transferable[] = [];
   private next = LISTENER + 1;
   /** The page's clock as it last said, its state, and its rate. */
-  heard = { time: 0, at: 0, state: 'suspended' as AudioContextState, sampleRate: 48_000 };
+  heard = { time: 0, at: 0, state: 'suspended' as AudioContextState, sampleRate: 48_000, listenerParams: true };
   /** Stand-ins waiting on the page: for their end, or for a buffer's decoding. */
   readonly ending = new Map<number, StandIn>();
   readonly decoding = new Map<number, (buffer: StandBuffer | Error) => void>();
@@ -85,39 +86,54 @@ const call = (id: number, method: string, args: readonly unknown[]) =>
   link?.say(['call', id, method, args.filter((arg) => arg !== undefined).map(wrap)]);
 
 class StandParam extends StandIn {
-  private set = 0;
-  get value(): number {
-    return this.set;
+  private readonly course: ParamCourse;
+  private readonly clock: () => number;
+
+  constructor(id: number, start: number, clock: () => number) {
+    super(id);
+    [this.course, this.clock] = [new ParamCourse(start), clock];
   }
+  /** The value the page's parameter holds now, along whatever is scheduled. */
+  get value(): number {
+    return this.course.valueAt(this.clock());
+  }
+  /** As a page's: the value set from now on. */
   set value(value: number) {
-    this.set = value;
+    const now = this.clock();
+    this.course.add({ kind: 'set', time: now, value }, now);
     link?.say(['set', this.id, 'value', value]);
   }
-  /** What was set last is what is read; a ramp's end is taken as its value. */
-  private scheduled(method: string, args: unknown[], value?: number): this {
-    if (value !== undefined) this.set = value;
+  private scheduled(method: string, args: unknown[]): this {
     call(this.id, method, args);
     return this;
   }
   setValueAtTime(value: number, when: number): this {
-    return this.scheduled('setValueAtTime', [value, when], value);
+    this.course.add({ kind: 'set', time: when, value }, this.clock());
+    return this.scheduled('setValueAtTime', [value, when]);
   }
   linearRampToValueAtTime(value: number, when: number): this {
-    return this.scheduled('linearRampToValueAtTime', [value, when], value);
+    this.course.add({ kind: 'linear', time: when, value }, this.clock());
+    return this.scheduled('linearRampToValueAtTime', [value, when]);
   }
   exponentialRampToValueAtTime(value: number, when: number): this {
-    return this.scheduled('exponentialRampToValueAtTime', [value, when], value);
+    this.course.add({ kind: 'exponential', time: when, value }, this.clock());
+    return this.scheduled('exponentialRampToValueAtTime', [value, when]);
   }
   setTargetAtTime(value: number, when: number, constant: number): this {
-    return this.scheduled('setTargetAtTime', [value, when, constant], value);
+    this.course.add({ kind: 'target', time: when, value, constant }, this.clock());
+    return this.scheduled('setTargetAtTime', [value, when, constant]);
   }
   setValueCurveAtTime(curve: Float32Array | number[], when: number, length: number): this {
-    return this.scheduled('setValueCurveAtTime', [Float32Array.from(curve), when, length], curve.at(-1));
+    const values = Float32Array.from(curve);
+    this.course.add({ kind: 'curve', time: when, curve: values, length }, this.clock());
+    return this.scheduled('setValueCurveAtTime', [values, when, length]);
   }
   cancelScheduledValues(when: number): this {
+    this.course.cancel(when);
     return this.scheduled('cancelScheduledValues', [when]);
   }
   cancelAndHoldAtTime(when: number): this {
+    this.course.hold(when);
     return this.scheduled('cancelAndHoldAtTime', [when]);
   }
 }
@@ -125,19 +141,21 @@ class StandParam extends StandIn {
 /** A node: its parameters made as first asked for, every other property kept here and set on the page's. */
 class StandNode extends StandIn {
   readonly context: StandContext;
+  /** What made it (its context's maker, or the listener), which says its parameters' defaults. */
+  readonly maker: string;
   readonly kept = new Map<PropertyKey, unknown>();
   private readonly params = new Map<string, StandParam>();
   private endedAsked = false;
 
-  constructor(id: number, context: StandContext) {
+  constructor(id: number, context: StandContext, maker = '') {
     super(id);
-    this.context = context;
+    [this.context, this.maker] = [context, maker];
   }
 
   param(name: string): StandParam {
     let param = this.params.get(name);
     if (!param) {
-      param = new StandParam(link?.fresh() ?? 0);
+      param = new StandParam(link?.fresh() ?? 0, paramDefault(this.maker, name), () => this.context.currentTime);
       link?.watch(param, param.id);
       link?.say(['param', param.id, this.id, name]);
       this.params.set(name, param);
@@ -197,7 +215,11 @@ class StandNode extends StandIn {
 function nodeOf(node: StandNode): AudioNode {
   return new Proxy(node, {
     get(target, name) {
-      if (typeof name === 'string' && AUDIO_PARAMS.has(name)) return target.param(name);
+      if (typeof name === 'string' && AUDIO_PARAMS.has(name)) {
+        // A page whose listener has no parameters is moved by its older calls, as the game's sound asks first.
+        if (target.id === LISTENER && link?.heard.listenerParams === false) return undefined;
+        return target.param(name);
+      }
       if (name in target) {
         const value: unknown = Reflect.get(target, name, target);
         return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(target) : value;
@@ -262,7 +284,7 @@ class StandContext extends EventTarget {
     super();
     const destination = new StandNode(DESTINATION, this);
     this.destination = nodeOf(destination);
-    this.listener = nodeOf(new StandNode(LISTENER, this)) as unknown as AudioListener;
+    this.listener = nodeOf(new StandNode(LISTENER, this, 'listener')) as unknown as AudioListener;
   }
 
   get sampleRate(): number {
@@ -282,7 +304,7 @@ class StandContext extends EventTarget {
 
   /** A node made on the page by `how`: one of its context's makers, or a node's own constructor. */
   make(how: string, args: readonly unknown[]): AudioNode {
-    const node = new StandNode(link?.fresh() ?? 0, this);
+    const node = new StandNode(link?.fresh() ?? 0, this, how);
     const held = nodeOf(node);
     link?.watch(held, node.id);
     link?.say(['make', node.id, how, args.map(wrap)]);
@@ -375,16 +397,21 @@ const constructed = (maker: string) =>
     return node as unknown as AudioNode;
   } as unknown as new (audio: BaseAudioContext, options?: object) => AudioNode;
 
+/** The page's one context, made as the game first asks for it: `new AudioContext()` answers it each time, and it is
+ *  an `AudioContext` to whoever asks. */
+const OneContext = function made(): StandContext {
+  context ??= new StandContext();
+  return context;
+} as unknown as typeof AudioContext;
+OneContext.prototype = StandContext.prototype as unknown as AudioContext;
+
 /** Puts the stand-ins where a page's Web Audio would be, their calls sent by `send`; answers what to do with what the
  *  page says back. One context only: the page has one. */
 export function soundAway(send: Send): (reply: AudioReply) => void {
   link = new Link(send);
   const away = link;
   Object.assign(globalThis, {
-    AudioContext: function made() {
-      context ??= new StandContext();
-      return context;
-    },
+    AudioContext: OneContext,
     GainNode: constructed('createGain'),
     OscillatorNode: constructed('createOscillator'),
     BiquadFilterNode: constructed('createBiquadFilter'),

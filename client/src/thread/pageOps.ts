@@ -89,8 +89,8 @@ export type ToGame =
   | { readonly kind: 'media'; readonly query: string; readonly matches: boolean }
   | {
       readonly kind: 'event';
-      /** Whether it happened on the canvas, or elsewhere on the page. */
-      readonly on: 'canvas' | 'window';
+      /** Where on the page it happened: on the canvas, elsewhere in the page (the body), or to the window itself. */
+      readonly on: 'canvas' | 'page' | 'window';
       readonly type: string;
       readonly fields: Readonly<Record<string, unknown>>;
       readonly pointer: Pointer;
@@ -117,7 +117,11 @@ export type ToPage =
       /** Null removes the key. */
       readonly value: string | null;
     }
-  | { readonly kind: 'go'; readonly how: 'reload' | 'assign' | 'replace' | 'open'; readonly url: string }
+  | {
+      readonly kind: 'go';
+      readonly how: 'reload' | 'assign' | 'replace' | 'open' | 'replaceState' | 'pushState';
+      readonly url: string;
+    }
   | { readonly kind: 'lock'; readonly locked: boolean }
   | { readonly kind: 'capture'; readonly pointer: number; readonly held: boolean }
   | { readonly kind: 'focus' }
@@ -130,4 +134,6 @@ export type ToPage =
   | { readonly kind: 'qa'; readonly id: number; readonly answer: unknown }
   /** A sign-in to offer the browser to keep, or, with none, the one it keeps asked for. */
   | { readonly kind: 'signIn'; readonly id: number; readonly keep: KeptSignIn | null }
+  /** The game has started: an error after this is the game's to bear, not a reason to stop the page. */
+  | { readonly kind: 'started' }
   | { readonly kind: 'stopped'; readonly message: string };

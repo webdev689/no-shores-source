@@ -8,7 +8,7 @@ import { hearFromAway, type PageEvents } from '../ui/canvasEvents.ts';
 import { type KeptSignIn, useSignIns } from '../ui/page.ts';
 import { useSvgDrawer } from '../ui/pictures.ts';
 import type { Typing, UiEvent } from '../ui/ui.ts';
-import type { Pointer, Start, ToGame, ToPage, View } from './pageOps.ts';
+import { HEARD, type Pointer, type Start, type ToGame, type ToPage, type View } from './pageOps.ts';
 
 type Send = (message: ToPage, transfer?: Transferable[]) => void;
 
@@ -44,23 +44,33 @@ export class KeptStorage {
   }
 }
 
-/** The page's address, read as a page's `location` is; leaving or loading it again is the page's to do. */
-export function addressOf(href: string, send: Send): Location {
-  const url = new URL(href);
-  const leave = (how: 'reload' | 'assign' | 'replace', to = href) =>
-    send({ kind: 'go', how, url: new URL(to, href).href });
-  return {
-    ...Object.fromEntries(
+/** The page's address, read as a page's `location` is, and its history: leaving it or loading it again is the page's to
+ *  do, and an entry replaced or pushed (a fragment taken off) changes the page's address and this one alike. */
+export function addressOf(href: string, send: Send): { readonly location: Location; readonly history: History } {
+  let url = new URL(href);
+  const leave = (how: 'reload' | 'assign' | 'replace', to = url.href) =>
+    send({ kind: 'go', how, url: new URL(to, url).href });
+  const location = Object.defineProperties(
+    {
+      ancestorOrigins: [] as unknown as DOMStringList,
+      reload: () => leave('reload'),
+      assign: (to: string | URL) => leave('assign', String(to)),
+      replace: (to: string | URL) => leave('replace', String(to)),
+      toString: () => url.href,
+    },
+    Object.fromEntries(
       (['href', 'origin', 'protocol', 'host', 'hostname', 'port', 'pathname', 'search', 'hash'] as const).map(
-        (part) => [part, url[part]],
+        (part) => [part, { get: () => url[part], enumerable: true }],
       ),
     ),
-    ancestorOrigins: [] as unknown as DOMStringList,
-    reload: () => leave('reload'),
-    assign: (to: string | URL) => leave('assign', String(to)),
-    replace: (to: string | URL) => leave('replace', String(to)),
-    toString: () => url.href,
-  } as unknown as Location;
+  ) as unknown as Location;
+  const entry = (how: 'replaceState' | 'pushState') => (_state: unknown, _unused: string, to?: string | URL | null) => {
+    if (to === undefined || to === null) return;
+    url = new URL(to, url);
+    send({ kind: 'go', how, url: url.href });
+  };
+  const history = { replaceState: entry('replaceState'), pushState: entry('pushState'), length: 1 };
+  return { location, history: history as unknown as History };
 }
 
 /** The interface's input as the page sends it, heard each frame; what it types in sent back as it changes. */
@@ -152,6 +162,29 @@ function eventOf(type: string, fields: Readonly<Record<string, unknown>>): Event
   return Object.assign(new Event(type, { cancelable: true }), fields);
 }
 
+/** The window's listeners for the page's own events, kept by phase, as a page's window keeps them: one heard in the
+ *  capture phase runs before the event reaches the canvas, and stopping it there keeps it from the plain ones. A
+ *  worker's global has no phases of its own, its own events being at their target. */
+function phasedWindow(): { readonly capture: EventTarget; readonly bubble: EventTarget } {
+  const phases = { capture: new EventTarget(), bubble: new EventTarget() };
+  const heard: ReadonlySet<string> = new Set(HEARD);
+  const scope = globalThis as unknown as EventTarget;
+  const [add, remove] = [scope.addEventListener.bind(scope), scope.removeEventListener.bind(scope)];
+  const phaseOf = (options?: boolean | EventListenerOptions) =>
+    (typeof options === 'boolean' ? options : Boolean(options?.capture)) ? phases.capture : phases.bubble;
+  Object.assign(globalThis, {
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: AddEventListenerOptions) {
+      if (heard.has(type)) phaseOf(options).addEventListener(type, listener, options);
+      else add(type, listener, options);
+    },
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: EventListenerOptions) {
+      if (heard.has(type)) phaseOf(options).removeEventListener(type, listener, options);
+      else remove(type, listener, options);
+    },
+  });
+  return phases;
+}
+
 /** What the worker does with each message the page sends, once the stand-ins are in place. */
 export interface Away {
   readonly canvas: HTMLCanvasElement;
@@ -173,8 +206,10 @@ export function pageAway(start: Start, send: Send): Away {
   };
   sized();
   const global = globalThis as unknown as Record<string, unknown>;
+  const address = addressOf(start.href, send);
   Object.defineProperties(globalThis, {
-    location: { value: addressOf(start.href, send), configurable: true },
+    location: { value: address.location, configurable: true },
+    history: { value: address.history, configurable: true },
     localStorage: { value: new KeptStorage(start.local, 'local', send), configurable: true },
     sessionStorage: { value: new KeptStorage(start.session, 'session', send), configurable: true },
     devicePixelRatio: { get: () => view.ratio, configurable: true },
@@ -193,6 +228,7 @@ export function pageAway(start: Start, send: Send): Away {
     addEventListener: () => undefined,
     removeEventListener: () => undefined,
   });
+  const window = phasedWindow();
   const ticks = ticksOf(send);
   hearFromAway(events);
   // Only a page decodes SVG: the page draws it, and sends the picture.
@@ -232,12 +268,12 @@ export function pageAway(start: Start, send: Send): Away {
           return;
         case 'event': {
           events.pointer = message.pointer;
+          // As on a page: down through the window's capture listeners, to the canvas, and back up through its plain
+          // ones, each stage reached only if no listener before it stopped the event; at the window itself, both.
           const event = eventOf(message.type, message.fields);
-          if (message.on === 'canvas') {
-            canvas.dispatchEvent(event);
-            // As on a page, it goes on up to the window unless a listener on the canvas stopped it there.
-            if (!event.cancelBubble) globalThis.dispatchEvent(eventOf(message.type, message.fields));
-          } else globalThis.dispatchEvent(event);
+          window.capture.dispatchEvent(event);
+          if (message.on === 'canvas' && !event.cancelBubble) canvas.dispatchEvent(event);
+          if (message.on === 'window' || !event.cancelBubble) window.bubble.dispatchEvent(event);
           return;
         }
         case 'ui':

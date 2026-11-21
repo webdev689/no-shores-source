@@ -20,7 +20,9 @@ test('storage reads what the page had and sends each change on at once', () => {
 
 test("the page's address reads as a page's, and leaving it is the page's to do", () => {
   const sent: ToPage[] = [];
-  const address = addressOf('https://example.org/overlook/?at=overlook-social&room=a', (message) => sent.push(message));
+  const { location: address } = addressOf('https://example.org/overlook/?at=overlook-social&room=a', (message) =>
+    sent.push(message),
+  );
   assert.equal(address.search, '?at=overlook-social&room=a');
   assert.equal(address.pathname, '/overlook/');
   address.assign('?at=elsewhere');
@@ -55,9 +57,11 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
       'matchMedia',
       'open',
       'addEventListener',
+      'removeEventListener',
       'dispatchEvent',
       'requestAnimationFrame',
       'cancelAnimationFrame',
+      'history',
     ].map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)] as const),
   );
   const sent: ToPage[] = [];
@@ -65,7 +69,7 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
   const start: Start = {
     kind: 'start',
     canvas,
-    href: 'https://example.org/?at=overlook-social',
+    href: 'https://example.org/?at=overlook-social#discord=done',
     local: [['seen', '1']],
     session: [],
     view: { width: 640, height: 360, left: 0, top: 0, ratio: 2 },
@@ -76,6 +80,7 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
   const scope = new EventTarget();
   Object.assign(globalThis, {
     addEventListener: scope.addEventListener.bind(scope),
+    removeEventListener: scope.removeEventListener.bind(scope),
     dispatchEvent: scope.dispatchEvent.bind(scope),
   });
   try {
@@ -83,13 +88,31 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     assert.deepEqual([canvas.width, canvas.height], [1280, 720], 'drawn at the screen’s pixels');
     assert.equal(localStorage.getItem('seen'), '1');
     assert.equal(location.search, '?at=overlook-social');
+    assert.equal(location.hash, '#discord=done');
     assert.equal(matchMedia('(prefers-reduced-motion: reduce)').matches, true);
     const heard: string[] = [];
     away.canvas.addEventListener('pointerdown', (event) => heard.push(`canvas ${(event as PointerEvent).button}`));
     addEventListener('pointerdown', () => heard.push('window'));
+    addEventListener('pointerdown', () => heard.push('window, first'), true);
     away.heard({ kind: 'event', on: 'canvas', type: 'pointerdown', fields: { button: 2 }, pointer: { x: 1, y: 2 } });
-    assert.deepEqual(heard, ['canvas 2', 'window']);
+    assert.deepEqual(heard, ['window, first', 'canvas 2', 'window'], "as a page's window: capture, target, bubble");
     assert.deepEqual(away.events.pointer, { x: 1, y: 2 });
+    // A capture listener that stops a key keeps it from the plain listeners, as the menu keeps keys from the game.
+    const keys: string[] = [];
+    addEventListener('keydown', (event) => (keys.push('menu'), event.stopPropagation()), true);
+    addEventListener('keydown', () => keys.push('game'));
+    away.heard({ kind: 'event', on: 'page', type: 'keydown', fields: { key: 'm' }, pointer: null });
+    assert.deepEqual(keys, ['menu']);
+    // At the window itself (its blur) every listener hears it, as at a target.
+    const blurred: string[] = [];
+    addEventListener('blur', (event) => (blurred.push('capture'), event.stopPropagation()), true);
+    addEventListener('blur', () => blurred.push('plain'));
+    away.heard({ kind: 'event', on: 'window', type: 'blur', fields: {}, pointer: null });
+    assert.deepEqual(blurred, ['capture', 'plain']);
+    // The address's history is the page's: a fragment taken off is taken off the page's address too.
+    history.replaceState(null, '', '/?at=overlook-social');
+    assert.equal(location.href, 'https://example.org/?at=overlook-social');
+    assert.ok(sent.some((message) => message.kind === 'go' && message.how === 'replaceState'));
     void away.canvas.requestPointerLock();
     assert.equal(document.pointerLockElement, null, 'locked only once the page says so');
     away.heard({ kind: 'lock', locked: true });

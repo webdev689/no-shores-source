@@ -50,7 +50,14 @@ class FakeBuffer {
 }
 class FakeContext extends EventTarget {
   readonly destination = new FakeNode('destination');
-  readonly listener = {};
+  readonly listenerCalls: unknown[][] = [];
+  readonly listener: object;
+  constructor(params = true) {
+    super();
+    const calls = this.listenerCalls;
+    const older = { setPosition: (...args: unknown[]) => calls.push(['setPosition', ...args]) };
+    this.listener = params ? { ...older, positionX: new FakeParam() } : older;
+  }
   readonly made: FakeNode[] = [];
   readonly sampleRate = 44_100;
   currentTime = 2;
@@ -80,8 +87,8 @@ class FakeContext extends EventTarget {
 
 /** The worker's stand-ins and the page's host, each one's words reaching the other after the task they were said in,
  *  as two threads' do. */
-function joined() {
-  const page = new FakeContext();
+function joined(listenerParams = true) {
+  const page = new FakeContext(listenerParams);
   let answer: ((reply: AudioReply) => void) | null = null;
   const host = new AudioHost(
     (reply) => queueMicrotask(() => answer?.(reply)),
@@ -110,7 +117,8 @@ test("the game's sound is made on the page's audio: each node joined, each param
   let ended = 0;
   source.addEventListener('ended', () => ended++);
   source.start(2.5);
-  assert.equal(gain.gain.value, 1, 'a ramp reads as its end');
+  const along = gain.gain.value;
+  assert.ok(along >= 0.5 && along < 1, `a ramp reads where it stands now, not its end: ${along}`);
   await settled();
   const [madeGain, madeSource] = page.made;
   assert.equal(madeGain?.kind, 'gain');
@@ -143,4 +151,46 @@ test('a sound decoded by the page is held there and its samples read in the work
   assert.equal(decoded.numberOfChannels, 2);
   assert.equal(decoded.sampleRate, 22_050);
   assert.deepEqual(decoded.getChannelData(1), Float32Array.from([0.5, 0.25, 0]));
+});
+
+test('the context the game makes is an AudioContext, as the sound code asks before it plays a recording', async () => {
+  joined();
+  await settled();
+  const audio = new AudioContext();
+  assert.ok(audio instanceof AudioContext);
+  assert.equal(new AudioContext(), audio, 'the page has one');
+});
+
+test("a parameter reads its node's default, and its value along a ramp, as a page's does", async () => {
+  const page = joined();
+  await settled();
+  const audio = new AudioContext();
+  const gain = audio.createGain();
+  assert.equal(gain.gain.value, 1, "a gain's default");
+  const now = audio.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(1, now + 10);
+  const along = gain.gain.value;
+  assert.ok(along >= 0 && along < 0.5, `just begun: ${along}`);
+  void page;
+});
+
+test('a page listener without its position parameters is moved by its older calls', async () => {
+  const page = joined(false);
+  await settled();
+  const audio = new AudioContext();
+  assert.equal((audio.listener as unknown as { positionX?: unknown }).positionX, undefined);
+  audio.listener.setPosition(1, 2, 3);
+  await settled();
+  assert.deepEqual(page.listenerCalls, [['setPosition', 1, 2, 3]]);
+});
+
+test('a page without Web Audio lets the press through, silent', () => {
+  const host = new AudioHost(
+    () => undefined,
+    () => {
+      throw new ReferenceError('AudioContext is not defined');
+    },
+  );
+  assert.doesNotThrow(() => host.wake());
 });

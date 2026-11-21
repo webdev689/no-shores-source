@@ -30,7 +30,14 @@ async function begin(start: Start): Promise<void> {
       import('./game/game.ts'),
     ]);
     try {
-      await startGame(await startGpu(away.canvas), away.canvas);
+      const gpu = await startGpu(away.canvas);
+      // A device lost (a driver's reset, the GPU taken away) leaves nothing to draw with: the player is told.
+      void gpu.device.lost.then((lost) => {
+        if (lost.reason !== 'destroyed')
+          send({ kind: 'stopped', message: `The graphics device was lost (${lost.message}). Reload the page.` });
+      });
+      await startGame(gpu, away.canvas);
+      send({ kind: 'started' });
     } catch (error) {
       const why =
         error instanceof GpuUnavailable

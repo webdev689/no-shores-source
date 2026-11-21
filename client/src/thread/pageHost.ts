@@ -17,6 +17,8 @@ export class PageHost {
   private readonly events: CanvasEvents;
   private readonly audio: AudioHost;
   private ticking = false;
+  /** Whether the game has said it started, after which an error it throws is logged, not the page's end. */
+  private started = false;
   private frames = 0;
   private questions = 0;
   /** Each hook's ask of the game, answered when the game answers. */
@@ -51,6 +53,21 @@ export class PageHost {
               this.post({ kind: 'qa', id, hook, args });
             }),
         });
+  }
+
+  /** The page says why the game stopped, and the game's thread goes with it, so nothing plays or listens behind the
+   *  words. */
+  stop(why: string): void {
+    stopped(why);
+    this.worker.terminate();
+  }
+
+  /** An error the game's thread did not catch: before the game has started it is why the game could not start; after,
+   *  one part of it failed, and the game goes on. A script that could not load sends a bare event, with no message. */
+  thrown(error: ErrorEvent | Event): void {
+    const message = error instanceof ErrorEvent ? error.message : '';
+    if (this.started) console.error('the game:', message || error);
+    else this.stop(`The game could not start: ${message || 'its script did not load'}.`);
   }
 
   /** What the game starts from: the canvas to draw on, and the page as it stands. */
@@ -119,7 +136,7 @@ export class PageHost {
         (event as unknown as Record<string, unknown>)[field],
       ]),
     );
-    const where = event.target === this.canvas ? 'canvas' : 'window';
+    const where = event.target === this.canvas ? 'canvas' : event.target === window ? 'window' : 'page';
     this.post({ kind: 'event', on: where, type: event.type, fields, pointer: this.events.pointer });
   }
 
@@ -142,6 +159,8 @@ export class PageHost {
       case 'go':
         if (message.how === 'open') window.open(message.url, '_blank', 'noopener');
         else if (message.how === 'reload') location.reload();
+        else if (message.how === 'replaceState' || message.how === 'pushState')
+          history[message.how](null, '', message.url);
         else location[message.how](message.url);
         return;
       case 'lock':
@@ -187,9 +206,11 @@ export class PageHost {
         this.asking.get(message.id)?.(message.answer);
         this.asking.delete(message.id);
         return;
+      case 'started':
+        this.started = true;
+        return;
       case 'stopped':
-        stopped(message.message);
-        this.worker.terminate();
+        this.stop(message.message);
         return;
     }
   }

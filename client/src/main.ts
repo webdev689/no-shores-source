@@ -10,8 +10,8 @@ if (typeof canvas.transferControlToOffscreen !== 'function') {
   stopped('This browser cannot draw the game from a thread of its own. Try a current Chrome, Edge, Firefox or Safari.');
 } else {
   const worker = new Worker(new URL('./gameWorker.ts', import.meta.url), { type: 'module' });
-  worker.addEventListener('error', (error) => stopped(`The game could not start: ${error.message}`));
   const host = new PageHost(canvas, worker);
+  worker.addEventListener('error', (error) => host.thrown(error));
   const offscreen = canvas.transferControlToOffscreen();
   worker.postMessage(host.start(offscreen), [offscreen]);
 }

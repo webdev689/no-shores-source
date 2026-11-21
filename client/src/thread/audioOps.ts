@@ -80,6 +80,8 @@ export type AudioReply =
       readonly at: number;
       readonly state: AudioContextState;
       readonly sampleRate: number;
+      /** Whether the page's listener has position parameters; without, it is moved by its older calls. */
+      readonly listenerParams: boolean;
     }
   | { readonly kind: 'ended'; readonly id: number }
   | { readonly kind: 'decoded'; readonly id: number; readonly channels: Float32Array[]; readonly sampleRate: number }

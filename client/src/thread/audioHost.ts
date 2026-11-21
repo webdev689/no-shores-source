@@ -16,6 +16,7 @@ type Reply = (reply: AudioReply, transfer?: Transferable[]) => void;
 
 export class AudioHost {
   private audio: AudioContext | null = null;
+  private silent = false;
   private readonly held = new Map<number, unknown>();
   private readonly reply: Reply;
   private readonly made: () => AudioContext;
@@ -28,7 +29,15 @@ export class AudioHost {
    *  later one, should the browser have stopped it; says the clock either way. */
   wake(): void {
     if (!this.audio) {
-      const audio = this.made();
+      let audio: AudioContext;
+      try {
+        audio = this.made();
+      } catch (error) {
+        // A browser without Web Audio plays the game silent: the press that asked still reaches the game.
+        if (!this.silent) console.warn('the game plays without sound:', error);
+        this.silent = true;
+        return;
+      }
       this.audio = audio;
       this.held.set(CONTEXT, audio);
       this.held.set(DESTINATION, audio.destination);
@@ -44,7 +53,14 @@ export class AudioHost {
     const audio = this.audio;
     if (!audio) return;
     const now = performance.timeOrigin + performance.now();
-    this.reply({ kind: 'clock', time: audio.currentTime, at: now, state: audio.state, sampleRate: audio.sampleRate });
+    const listenerParams = 'positionX' in audio.listener;
+    this.reply({
+      kind: 'clock',
+      time: audio.currentTime,
+      at: now,
+      state: audio.state,
+      ...{ sampleRate: audio.sampleRate, listenerParams },
+    });
   }
 
   run(ops: readonly AudioOp[]): void {
