@@ -4,10 +4,12 @@
  * changes and now and then besides (which keeps the room's hold), and lets it go with a last save when they leave. A
  * player who sends no token, or whose token is no session, plays a character that is not kept. Should another room
  * take the character (the same player joined elsewhere), this room's next save learns it, and the player is let go.
- * A run's room is kept to one company of four accounts at most (`forCompany`), and keeps no one unkept.
+ * A run's room is kept to one company of four accounts at most (`forCompany`), and keeps no one unkept. A node's room
+ * judges where each character comes from (`judgingArrivals`).
  */
 
 import type { Claimed, Characters as Kept } from './accounts/characters.ts';
+import { NO_WAY_HERE } from './arrival.ts';
 import { runFull } from './roomNames.ts';
 
 /** What a room keeps characters with: claiming, saving and letting go, and a player's companions. */
@@ -49,6 +51,8 @@ export const TOKEN = /^[0-9a-f]{64}$/;
 interface Held {
   readonly account: string;
   readonly holder: string;
+  /** The room that held the character before this one. */
+  readonly from: string | null;
   changed: boolean;
   savedAt: number;
   saving: boolean;
@@ -68,6 +72,9 @@ export class Keeper {
   private readonly held = new Map<number, Held>();
   private readonly wait: (millis: number) => Promise<void>;
   private company = false;
+  /** Whether a character that came from a room, kept as it was claimed, may arrive here by a way that needs no one
+   *  here (`arrival.ts`); null where the room judges no arrival. */
+  private arrives: ((from: string | null, body: string | null) => boolean) | null = null;
   /** The accounts a run has let in, for as long as it lives: one back after the rest left a while finds it theirs. */
   private readonly admitted = new Set<string>();
 
@@ -91,6 +98,18 @@ export class Keeper {
   forCompany(): this {
     this.company = true;
     return this;
+  }
+
+  /** Judges where each kept character comes from: one that came by no way leading here is let go untouched, its
+   *  player sent away saying so, unless one of their company plays here (the Roster's join brings them in). */
+  judgingArrivals(arrives: (from: string | null, body: string | null) => boolean): this {
+    this.arrives = arrives;
+    return this;
+  }
+
+  /** The room a kept player's character came from; null for one not kept here, or a character no room held before. */
+  cameFrom(player: number): string | null {
+    return this.held.get(player)?.from ?? null;
   }
 
   /** Whether a player's inputs wait, unplayed: in a run, until the room keeps their character. */
@@ -158,6 +177,7 @@ export class Keeper {
     this.held.set(player, {
       account: claimed.account,
       holder,
+      from: claimed.from,
       changed: claimed.body === null,
       savedAt: now(),
       saving: false,
@@ -167,9 +187,14 @@ export class Keeper {
     return true;
   }
 
-  /** Why this room turns a character away ('' when it lets it in): its gate, and in a run its four accounts and its
-   *  company; undefined when the accounts cannot say who the company is. Nothing waits between this and keeping it. */
-  private async judged(player: number, { account, body }: Claimed, here: () => boolean): Promise<string | undefined> {
+  /** Why this room turns a character away ('' when it lets it in): its gate, in a run its four accounts and its
+   *  company, and where it came from; undefined when the accounts cannot say who the company is. Nothing waits
+   *  between this and keeping it. */
+  private async judged(
+    player: number,
+    { account, body, from }: Claimed,
+    here: () => boolean,
+  ): Promise<string | undefined> {
     const characters = this.characters;
     const companions =
       this.company && characters ? await this.tried(() => characters.companions(account, this.name), here) : null;
@@ -177,7 +202,14 @@ export class Keeper {
     // A run is full by the accounts it keeps, so a member's own older socket never counts against them.
     const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
     const full = this.company ? runFull(this.name, others.size + 1) : null;
-    return this.room.shut(player, body) || (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : ''));
+    const shut =
+      this.room.shut(player, body) || (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : ''));
+    if (shut !== '' || !characters || !this.arrives || this.arrives(from, body)) return shut;
+    // Come by no way that leads here, a player may still join one of their company who plays here.
+    const company = companions ?? (await this.tried(() => characters.companions(account, this.name), here));
+    if (company === undefined) return undefined;
+    const playing = new Set([...this.held.values()].map((held) => held.account));
+    return company.some((one) => one !== account && playing.has(one)) ? '' : NO_WAY_HERE;
   }
 
   /** What `ask` answers, asked again after each of a claim's waits while the accounts do not answer and the player is

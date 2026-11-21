@@ -89,6 +89,8 @@ export interface RoomDoor {
   /** A new player's number, standing before the door of the open patrol's entrance numbered `entrance`, facing away
    *  from it; 0 when the room is no patrol, has no such entrance, is full or its node locked. */
   joinAt(entrance: number): number;
+  /** Stands a player who joined before an entrance at the room's next spawn instead, as an ordinary join. */
+  standAtSpawn(player: number): boolean;
   /** Why the room takes no player, a locked node's words; null for a room that takes them. */
   refusal(): string | null;
   /** The welcome's bytes for a player. */
@@ -195,6 +197,7 @@ interface RoomExports {
   room_forbid_arts(): void;
   room_join(): number;
   room_join_at(entrance: number): number;
+  room_stand_at_spawn(player: number): number;
   room_refusal(): bigint;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -324,6 +327,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     forbidArts: () => exports.room_forbid_arts(),
     join: () => exports.room_join(),
     joinAt: (entrance) => exports.room_join_at(entrance >>> 0),
+    standAtSpawn: (player) => exports.room_stand_at_spawn(player) === 1,
     refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),

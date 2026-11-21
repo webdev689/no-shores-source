@@ -261,10 +261,15 @@ impl Room {
         if self.players.len() >= PLAYERS_MOST {
             return None;
         }
+        let body = self.next_spawn();
+        Some(self.join_standing(body))
+    }
+
+    /// A body standing at the next spawn in turn, as each join is stood.
+    pub(crate) fn next_spawn(&mut self) -> Body {
         let turn = self.joins % self.spawn_points.len().max(1);
         self.joins += 1;
-        let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
-        Some(self.join_standing(self.stand(spawn)))
+        self.stand(self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0)))
     }
 
     /// A new player standing as `body` stands, with nothing drawn.

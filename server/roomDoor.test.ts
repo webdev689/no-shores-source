@@ -401,7 +401,7 @@ test('the Test Ground’s room lays out its stall and nodes, and sends each play
   assert.equal(sea.furnish(course.stall, course.resources), false, 'a fleet keeps no gear');
 });
 
-test('a patrol’s dungeon opens from the patrol’s node file, and a patrol’s room is joined before an entrance', () => {
+test('a patrol’s dungeon opens from its patrol’s file; a patrol’s room joins a player before an entrance, or not', () => {
   const room = startRoomDoor(compiled);
   const patrol = JSON.parse(nodeFile().text) as Record<string, unknown>;
   assert.equal(room.openDungeon(JSON.stringify({ ...patrol, kind: 'mission' }), 0), false, 'a mission has none');
@@ -425,6 +425,12 @@ test('a patrol’s dungeon opens from the patrol’s node file, and a patrol’s
   const snapshot = readFromRoom(room.snapshot());
   const seen = snapshot?.kind === 'snapshot' ? snapshot.players.find((each) => each.player === player) : undefined;
   assert.ok(seen, 'standing in the patrol');
+  assert.equal(room.standAtSpawn(player), true, 'not come out of that dungeon after all');
+  room.tick();
+  const stood = readFromRoom(room.snapshot());
+  const body = stood?.kind === 'snapshot' ? stood.players.find((each) => each.player === player)?.body : undefined;
+  assert.ok(body && Math.hypot(body.x, body.y) < 0.01, 'at the first spawn, as an ordinary join stands a player');
+  assert.equal(room.standAtSpawn(player + 1), false, 'no such player');
 });
 
 test('a node’s room says why its gate shuts to a character, and to a new one', () => {
