@@ -59,6 +59,12 @@ class FakeSocket extends EventTarget {
     this.closed(1000);
   }
 
+  /** The socket opens, before the room has said anything. */
+  opens(): void {
+    this.readyState = WebSocket.OPEN;
+    this.dispatchEvent(new Event('open'));
+  }
+
   /** The room says something: its welcome to player `player`, or a snapshot at `tick`. */
   says(message: { readonly player: number } | { readonly tick: bigint }): void {
     this.readyState = WebSocket.OPEN;
@@ -111,6 +117,9 @@ test('a socket a deploy closes is joined again after a second: a new player, wel
   assert.equal(sockets.length, 1, 'no try before the wait is over');
   context.mock.timers.tick(1);
   assert.equal(sockets.length, 2);
+  sockets[1]?.opens();
+  connection.send(new Uint8Array([1]));
+  assert.equal(sockets[1]?.sent.length, 0, 'an input numbered for the last join waits out the welcome');
   sockets[1]?.says({ player: 1 });
   sockets[1]?.says({ tick: 2n });
   assert.deepEqual([connection.player, connection.joins, connection.rejoining, ticks], [1, 2, false, [10n, 2n]]);
@@ -148,6 +157,15 @@ test('a room that sends the player away, or a page that leaves, is never joined 
   left.connection.close();
   context.mock.timers.tick(waitMs(9));
   assert.deepEqual([left.sockets.length, left.connection.lost], [1, null], 'the wait was let go');
+});
+
+test('a player whose character joined another room is let go, not joined again to take it back', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const { connection, sockets } = await joined(3);
+  sockets[0]?.closed(4001, 'your character joined another room');
+  context.mock.timers.tick(waitMs(9));
+  const { rejoining, lost } = connection;
+  assert.deepEqual([sockets.length, rejoining, lost], [1, false, 'your character joined another room']);
 });
 
 test('a locked node’s room turns the player away saying why: a join fails with its words, and no rejoin is tried', async (context: TestContext) => {

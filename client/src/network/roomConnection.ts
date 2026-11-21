@@ -47,8 +47,9 @@ export function rejoinWait(tries: number): number {
 }
 
 /** The codes a room closes a socket with when it sends its player away for not keeping to the messages (too many,
- *  too large, or not one), or because its node is locked (worker.ts): rejoining would only be sent away again. */
-const SENT_AWAY = [1008, 1009, 4003];
+ *  too large, or not one), because the player's character joined another room, or because its node is locked
+ *  (worker.ts): rejoining would only be sent away again, or take the character back from the other room. */
+const SENT_AWAY = [1008, 1009, 4001, 4003];
 
 /** What a socket's messages go to: its welcome, each snapshot, and the player's own gear. */
 interface Heard {
@@ -206,9 +207,10 @@ export class RoomConnection implements RoomLink {
     this.gear(gear);
   }
 
-  /** Sends one tick's input bytes; while the socket is not open, nothing is sent. */
+  /** Sends one tick's input bytes; while the socket is not open, or a rejoin's socket is open but not yet welcomed,
+   *  nothing is sent: an input numbered for the last join would be out of order in the new one. */
   send(bytes: Uint8Array<ArrayBuffer>): void {
-    if (this.socket.readyState === WebSocket.OPEN) this.socket.send(bytes);
+    if (!this.rejoining && this.socket.readyState === WebSocket.OPEN) this.socket.send(bytes);
   }
 
   /** The link's lag and loss as the page measures them. */
