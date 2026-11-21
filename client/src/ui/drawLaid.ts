@@ -45,7 +45,13 @@ const scaled = (box: Box, scale: number): Box => ({
 function drawLine(
   ui: UiRenderer,
   spans: readonly Span[],
-  where: { readonly x: number; readonly y: number; readonly size: number; readonly scale: number },
+  where: {
+    readonly x: number;
+    readonly y: number;
+    readonly size: number;
+    readonly scale: number;
+    readonly tracking?: number;
+  },
   ink: {
     readonly colour: string;
     readonly edge?: 'shadow' | 'halo';
@@ -57,7 +63,7 @@ function drawLine(
   const words = spans.map((span) => span.words).join('');
   const colours: string[] = [];
   for (const span of spans) colours.push(...Array.from(span.words, () => span.colour || ink.colour));
-  const { glyphs } = layLine(ui.face, words, where.size);
+  const { glyphs } = layLine(ui.face, words, where.size, where.tracking);
   const { x, y, size, scale } = where;
   const drawn = (offsetX: number, offsetY: number, colourOf: (index: number) => Colour) => {
     for (const laid of glyphs) {
@@ -144,7 +150,8 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
       const size = node.text.size ?? 1;
       const tall = lineHeight(size);
       each.lines.forEach((line, index) => {
-        const width = layLine(ui.face, line.map((span) => span.words).join(''), size).width;
+        const tracking = node.text?.tracking;
+        const width = layLine(ui.face, line.map((span) => span.words).join(''), size, tracking).width;
         const free = inner.width - width;
         const align = node.text?.align ?? 'start';
         const x = inner.x + (align === 'center' ? Math.floor(free / 2) : align === 'end' ? free : 0);
@@ -152,7 +159,7 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
         drawLine(
           ui,
           line,
-          { x, y: inner.y + index * tall, size, scale },
+          { x, y: inner.y + index * tall, size, scale, tracking },
           { colour, edge: node.text?.edge, edgeColour: node.text?.edgeColour, fade },
           clip,
         );

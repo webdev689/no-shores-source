@@ -33,6 +33,10 @@ export interface Text {
   readonly wrap?: boolean;
   /** Kept to one line, cut short with '...' where it does not fit, as CSS's `text-overflow: ellipsis`. */
   readonly ellipsis?: boolean;
+  /** A letter's spacing in 22nds of the size, 1 unless said, as a sheet's `letter-spacing: calc(3em / 22)` writes 3. */
+  readonly tracking?: number;
+  /** Wrapped lines are evened in length, as CSS's `text-wrap: balance` evens them. */
+  readonly balance?: boolean;
   readonly align?: Align;
 }
 
