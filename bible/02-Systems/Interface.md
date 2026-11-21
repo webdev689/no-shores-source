@@ -179,7 +179,9 @@ should be ([[HTML Is Avoided Where It Can Be]]).
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
   name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
-  and its own shots. The rows change weapons as the fight's rules take them up, only at rest: one pressed, or put
+  and its own shots. A weapon with an element bears its glyph in its picture's top right corner, as a gear tile
+  does, 16 px in hand and 12 under it (22 and 16 at the larger step), and its row's words name the element. The rows
+  change weapons as the fight's rules take them up, only at rest: one pressed, or put
   away, during a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over
   its 0.4 s, and a swap pressed during one trades them again from
   the start; a reload fills a line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys

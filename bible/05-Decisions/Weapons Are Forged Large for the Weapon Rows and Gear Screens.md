@@ -15,6 +15,10 @@ left, a little smaller, as one picture. Asked about the greatsword, which has no
 "Sword's picture for now". Asked whether to snap the pictures to Daggerfall's 256 colours as the figures are, the
 owner chose "Daggerfall palette": a weapon in the row matches the one in hand, with far more pixels.
 
+Shown the large pictures, the owner wrote:
+
+> "Fucking gorgeous. Also if the weapon had an element, include the glyph in its frame"
+
 ## What it settles
 
 - The [[Sprite Forge]] renders every weapon and shield a loadout's hands take, alone, larger than the figure's layer
@@ -23,6 +27,7 @@ owner chose "Daggerfall palette": a weapon in the row matches the one in hand, w
   the left hand's shield or second weapon behind it at its left, a little smaller.
 - A greatsword shows its metal's sword.
 - Each picture is coloured as the figure's layer is and snapped to Daggerfall's palette.
+- A weapon with an element bears its glyph in its frame in the weapon rows, as a gear tile does.
 
 ## Claude's calls
 
