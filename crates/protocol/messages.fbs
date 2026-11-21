@@ -592,6 +592,9 @@ table Gear {
   quest_points: [double];
   quest_figures: [double];
   quest_ward: [double];
+  // Whether this word is on the player's own character, as their account keeps it: false for the starting character a
+  // room holds until the account's is given, which the page shows nothing of.
+  claimed: bool;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),
