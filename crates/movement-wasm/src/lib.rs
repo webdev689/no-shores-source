@@ -53,7 +53,7 @@ fn floats_of(bytes: &[u8]) -> impl Iterator<Item = f64> {
     bytes.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default()))
 }
 
-/// Keeps the course's blocks, five numbers each, with the grid that finds the ones near a body, for every step after;
+/// Keeps the course's blocks, six numbers each, with the grid that finds the ones near a body, for every step after;
 /// answers how many it kept.
 pub fn set_course(bytes: &[u8]) -> usize {
     let floats: Vec<f64> = floats_of(bytes).collect();
@@ -85,7 +85,7 @@ pub fn set_heights(bytes: &[u8]) -> bool {
     kept
 }
 
-/// Keeps the rim round a course laid over the sea, from its blocks' numbers, five each, for every step after, in place
+/// Keeps the rim round a course laid over the sea, from its blocks' numbers, six each, for every step after, in place
 /// of any ground: the rim the sea room holds its bodies by (`Heights::rim`), to the bit. Answers whether the numbers
 /// were blocks.
 pub fn set_rim(bytes: &[u8]) -> bool {
