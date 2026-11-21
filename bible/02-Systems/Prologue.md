@@ -74,8 +74,8 @@ begins. With `?at=<node>` the page goes straight to that node, as before, and pl
 **The director** (`Prologue`) plays the beats in the owner's order, each a module of its own, handing each what the
 last left: the camera's shot, the ships sighted, where the two ships met. A cutscene's beat is skipped by holding
 Space for a second, or a touch held as long anywhere on the view (the dialogue box too: while the story plays no drag
-pans or reloads the page), its remaining moments run at once; "Hold Space to skip" ("Hold to skip" on a touch screen)
-shows faintly whenever there is something to skip, and brightens as the hold fills. A beat the director moves on
+pans or reloads the page), its remaining moments run at once; "Hold Space to skip" ("Hold to skip" on a touch screen,
+the jump's key or button as bound now in place of Space) shows faintly whenever there is something to skip, and brightens as the hold fills. A beat the director moves on
 from, at its end or on a failure, lets go of what it holds (the helm its windows and keys). A
 beat that fails is left for the next with what it said stopped and the view cleared before the next begins; a last
 beat that fails ends the story with its screen kept, so the black lifts only once the game's veil is up under it.
@@ -95,7 +95,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 
 | Beat | What happens | Played or shown |
 |---|---|---|
-| `intro` | First light over the cloud; then down through it to Saltmere, ships under sail off its harbour and gulls over it, the title, "Press any key to begin" ("Tap to begin" on a touch screen; Space begins too) | shown |
+| `intro` | First light over the cloud; then down through it to Saltmere, ships under sail off its harbour and gulls over it, the title, "Press any key to begin" ("Tap to begin" on a touch screen, "Press A to begin" on the pad, A being the jump's button as bound; Space begins too) | shown |
 | `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, then well out along its port side (16 m and more, past its yards and its spanker's swing), its crew at work across its deck, and in over its quarter's rail under the spanker's boom to its helm ([[The Prologue's Camera Flights Stand Clear and Go Slower]]), where it ends in the helm's own shot, riding its deck as the helm's camera does (all its rise and fall, a quarter of its pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
 | `sighted` | From the shot the creation last drew (turned as it was, framed for the screen it was framed for), the camera turns from the player to look down its deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over its stern as three pirate Sloops come out of the dark, and comes down behind it through the fight's own lens | shown |
@@ -115,7 +115,7 @@ boots, which the forge draws in every move she makes (walk, kneel and idle; her 
 the eye looks at her face, 1.15 m over her feet kneeling and 1.63 m standing, the forge's own measures; her words and
 feelings stand 0.25 m over the crown of her head. Once she is down she says her two lines, framed in the
 view; then the screen asks the player to take her hand ("Click or press any key to take her hand", "Tap to take her
-hand" on a touch screen). Only a press, a click or a tap raises them: the view rises to standing over 2.4 s while she
+hand" on a touch screen, "Press A to take her hand" on the pad, A being the jump's button as bound). Only a press, a click or a tap raises them: the view rises to standing over 2.4 s while she
 rises with it, drawn standing from the rise's middle, where the eye climbs fastest (the forge draws nothing between
 kneeling and standing), she says one more line, and the camera goes behind the two as they walk up the shore from where they
 stood, for 6.5 s, into black. If the coast has no strand, or the land's worker cannot answer the search, the player
@@ -344,7 +344,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 - **The teaching** (`Tutorial`), in the tracker under the quest "Prologue"
   ([[Quests Get a Task Tracker, and the Placeholder Panel Goes]]; [[The Wreck Opens by Teaching the Player]]). Each
   task's steps are ticked off once the player does them, read from what their body and fight did, so any input
-  serves; a step done early stays done, and a task stays up 1.5 s once all of it is met, so its last tick is seen. In
+  serves. Each step's keys, and the frozen fight's words, name the controls as bound now on the keys or the pad played
+  last; below are the defaults on the keys. A step done early stays done, and a task stays up 1.5 s once all of it is met, so its last tick is seen. In
   turn:
   - "Find your sword and shield": they lie on the deck 3 m along the path from where the player wakes, below the step
     down from it, drawn as the item itself (`LyingArms`): the forge's picture of it, as the Character page shows it,
