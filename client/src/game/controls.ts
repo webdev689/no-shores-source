@@ -66,7 +66,11 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
   },
   {
     name: 'Arts',
-    controls: [bound('Anima', 'anima'), bound('First Tenet', 'tenetOne'), bound('Second Tenet', 'tenetTwo')],
+    controls: [
+      bound('Anima', 'anima'),
+      bound('First Tenet; hold aims daggers', 'tenetOne'),
+      bound('Second Tenet', 'tenetTwo'),
+    ],
   },
   {
     name: 'Camera',

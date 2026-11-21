@@ -2,8 +2,11 @@
 // parted by " / ", each on its own keycap or drawn as the mouse's button) and what it does, and last the key to the
 // sheet of every control (`controls.ts`).
 
+import { DAGGERS } from '../combat/casting.ts';
 import type { PlayerFightFrame } from '../combat/playerFight.ts';
 import type { Fighting } from '../combat/fighting.ts';
+import { SPELLS, spellNumber } from '../network/artMessages.ts';
+import type { Mode } from '../rules/movementRules.ts';
 import type { Walker } from '../player/walker.ts';
 import type { Hint } from './gearNodes.ts';
 import type { Standing } from './hudLaw.ts';
@@ -13,6 +16,7 @@ export const ALL_CONTROLS: Hint = ['K', 'All controls'];
 /** The click that takes the mouse to look round, shown while the mouse is free. */
 const LOOK: Hint = ['Left button', 'Look round'];
 const MENU: Hint = ['M', 'Menu'];
+const MAP: Hint = ['N', 'Map'];
 
 /** The keys each moment shows, the strip's last entry with them. */
 export const HINTS = {
@@ -75,6 +79,15 @@ const STANCES = {
     ['V', 'Dodge'],
   ],
   daggers: [['Q', 'Release to cast']],
+  hang: [
+    ['W / A / D', 'Climb'],
+    ['C', 'Let go'],
+  ],
+  climb: [
+    ['W / A / S / D', 'Climb'],
+    ['Space', 'Kick off'],
+    ['C', 'Let go'],
+  ],
   mounted: [
     [',', 'Get down'],
     ['Shift', 'Gallop'],
@@ -84,7 +97,8 @@ type Stance = keyof typeof STANCES;
 
 /** What the player is doing on foot, for the keys shown: the Art worn (its id, 0 for none, as in the prologue),
  *  whether a weapon is drawn and is one that shoots, whether it aims, whether Dusk Daggers are being aimed, whether
- *  the player rides, and whether the mouse is free for a click to take it. */
+ *  the player rides, the body's mode (hanging from a ledge or climbing a wall among them), and whether the mouse is
+ *  free for a click to take it. */
 export interface OnFoot {
   readonly worn: number;
   readonly drawn: boolean;
@@ -92,6 +106,7 @@ export interface OnFoot {
   readonly aiming: boolean;
   readonly daggers: boolean;
   readonly mounted: boolean;
+  readonly mode: Mode;
   readonly free: boolean;
 }
 
@@ -110,27 +125,38 @@ export function onFoot(
     aiming: shown.aiming,
     daggers: fight.aimRing !== null,
     mounted: walker.player.mounted,
+    mode: walker.player.body.mode,
     free,
   };
 }
 
 function stanceOf(foot: OnFoot): Stance {
   if (foot.mounted) return 'mounted';
+  // On a wall only the climb's keys act: the fight's and the Arts' wait for the ground.
+  if (foot.mode === 'hang' || foot.mode === 'climb') return foot.mode;
   if (foot.daggers) return 'daggers';
   if (foot.aiming) return 'aiming';
   if (!foot.drawn) return 'away';
   return foot.ranged ? 'ranged' : 'melee';
 }
 
+/** The Arts' keys while one is worn and the hands are free to cast: Shadow's Q held aims Dusk Daggers. */
+const ARTS: readonly Hint[] = [['R / Q / G', 'Arts']];
+const SHADOW: readonly Hint[] = [
+  ['Q', 'Hold to aim daggers'],
+  ['R / G', 'Arts'],
+];
+
 /** The keys shown on foot: the click to look while the mouse is free, the stance's own, the Arts' while one is worn
  *  and nothing else holds the keys, the menu's at rest or riding, and the strip's last. */
 export function footHints(foot: OnFoot): readonly Hint[] {
   const stance = stanceOf(foot);
   const casts = foot.worn !== 0 && (stance === 'away' || stance === 'melee' || stance === 'ranged');
+  const daggersWorn = spellNumber(foot.worn, DAGGERS) === SPELLS.duskDaggers;
   return [
     ...(foot.free ? [LOOK] : []),
     ...STANCES[stance],
-    ...(casts ? [['R / Q / G', 'Arts'] as const] : []),
+    ...(casts ? (daggersWorn ? SHADOW : ARTS) : []),
     ...(stance === 'away' || stance === 'mounted' ? [MENU] : []),
     ALL_CONTROLS,
   ];
@@ -143,10 +169,12 @@ export function keysShown(standing: Standing, foot: OnFoot): readonly Hint[] {
   return standing.told ? HINTS.dead : [];
 }
 
-/** The keys shown on foot where the held map is raised (not in the story, nor on a ship's deck): N beside the
- *  menu's M. */
+/** The keys shown on foot where the held map can be raised (not in the story, nor on a ship's deck, nor down): N
+ *  before the menu's M, or before the strip's last where M is not shown. */
 export function withMapKey(hints: readonly Hint[]): readonly Hint[] {
-  return hints.flatMap((hint): Hint[] => (hint[0] === 'M' ? [['N', 'Map'], hint] : [hint]));
+  const menu = hints.findIndex(([key]) => key === 'M');
+  const place = menu >= 0 ? menu : hints.length - 1;
+  return [...hints.slice(0, place), MAP, ...hints.slice(place)];
 }
 
 /** What the player is doing at sea, for the keys shown: fighting and aiming the guns, choosing a landing, at the helm

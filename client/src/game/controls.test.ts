@@ -31,3 +31,9 @@ test('no group lists a key twice, and each control says what it does in a few wo
   for (const control of CONTROLS) assert.match(control.does, /^[A-Z][^.]*$/, control.keys);
   for (const control of CONTROLS) assert.ok(control.does.split(' ').length <= 5, `${control.keys}: ${control.does}`);
 });
+
+test('the sheet says how Dusk Daggers aim: on the First Tenet’s key, held', () => {
+  const daggers = CONTROLS.find((control) => control.binds.includes('tenetOne'));
+  assert.match(daggers?.does ?? '', /hold/i);
+  assert.match(daggers?.does ?? '', /dagger/i);
+});
