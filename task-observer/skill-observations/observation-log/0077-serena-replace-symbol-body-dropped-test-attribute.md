@@ -1,5 +1,5 @@
 ---
-id: 74
+id: 77
 title: "Serena replace_symbol_body dropped a Rust test's #[test] attribute"
 status: open
 type: internal
