@@ -87,6 +87,7 @@ fn vessel_json(vessel: &Vessel) -> Value {
             "load": guns.load.name(),
             "braced": guns.braced,
         },
+        "boost": vessel.boost.shares(),
     })
 }
 
@@ -378,8 +379,7 @@ struct Step {
 /// The orders a step request holds, each checked.
 fn orders_of(request: &Value) -> Result<Step, String> {
     let helm = &request["helm"];
-    let crab = if helm["crab"].as_bool().ok_or("the helm crabs or not")? { 1.0 } else { 0.0 };
-    let helm = helm_from(number(&helm["steer"], "the rudder")?, crab, number(&helm["climb"], "the climb")?)?;
+    let helm = helm_from(number(&helm["steer"], "the rudder")?, number(&helm["climb"], "the climb")?)?;
     let aim = match &request["aim"] {
         Value::Null => None,
         aim => {
@@ -401,10 +401,11 @@ fn orders_of(request: &Value) -> Result<Step, String> {
     };
     let fire = request["fire"].as_bool().ok_or("the fire is given or not")?;
     let brace = request["brace"].as_bool().ok_or("the brace is held or not")?;
+    let boost = request["boost"].as_bool().ok_or("the boost is tapped or not")?;
     let (time, ticks) = ticks_from(number(&request["time"], "the time")?, number(&request["ticks"], "the ticks")?)?;
     let (world, _) = ticks_from(number(&request["world"], "the world's time")?, 0.0)?;
     let wind = told_wind(&request["wind"])?;
-    Ok(Step { orders: Orders { helm, aim, fire, brace, load }, time, ticks, world, wind })
+    Ok(Step { orders: Orders { helm, aim, fire, brace, load, boost }, time, ticks, world, wind })
 }
 
 fn step(request: &[u8]) -> Result<Value, String> {
@@ -425,11 +426,12 @@ fn step(request: &[u8]) -> Result<Value, String> {
                 if over_name(fight).is_some() {
                     break;
                 }
-                // A climb, a load and a release are presses: they act on the first tick alone.
+                // A climb, a load, a release and a burst are presses: they act on the first tick alone.
                 let now = if tick == 0 {
                     orders
                 } else {
-                    Orders { helm: sailing::ship::Helm { climb: 0, ..orders.helm }, fire: false, load: None, ..orders }
+                    let helm = sailing::ship::Helm { climb: 0, ..orders.helm };
+                    Orders { helm, fire: false, load: None, boost: false, ..orders }
                 };
                 // A story tells the wind its own weather blows; else the ships sail in the world's.
                 let wind_at =

@@ -154,7 +154,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   heals by the share of the Sunwell that gave it, even after its caster leaves. The cards show each number with the
   worn Core folded in, and a fragment's words name its seconds at the level worn. A Test Ground player starts every
   Art at level 5 owning every fragment.
-- **A room without Arts.** A room told to forbid them (`Room::forbid_arts`), as the prologue's wreck is, takes no
+- **A room without Arts.** A room told to forbid them (`Room::forbid_arts`), as the prologue's wreck's is (`Room::story_wreck`), takes no
   cast and charges nothing, a kill's share included; no fragment of a Core works; a blow in an Art's element is no
   more than another; and the player's gear says Art 0, its Anima and Tenets empty.
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.

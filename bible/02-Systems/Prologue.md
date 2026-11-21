@@ -38,6 +38,8 @@ code:
   - client/src/game/flow.ts#next
   - content/story/prologue.json
   - content/prologue/wreck.json
+  - client/src/game/prologue/fightSound.ts#STORY_FIGHT_GAIN
+  - crates/room/src/story.rs#story_wreck
   - client/src/game/prologue/wreckLayout.ts#readWreck
   - client/src/game/prologue/wreckView.ts#WreckView
   - tools/wreck/build_wreck.py
@@ -88,13 +90,13 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | Beat | What happens | Played or shown |
 |---|---|---|
 | `intro` | First light over the cloud; then down through it to Saltmere, ships under sail off its harbour and gulls over it, the title, "Press any key to begin" ("Tap to begin" on a touch screen; Space begins too) | shown |
-| `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along its side, over its working crew to its helm, where it ends in the helm's own shot, riding its deck as the helm's camera does (all its rise and fall, a quarter of its pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
+| `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, then well out along its port side (16 m and more, past its yards and its spanker's swing), its crew at work across its deck, and in over its quarter's rail under the spanker's boom to its helm ([[The Prologue's Camera Flights Stand Clear and Go Slower]]), where it ends in the helm's own shot, riding its deck as the helm's camera does (all its rise and fall, a quarter of its pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
 | `sighted` | From the shot the creation last drew (turned as it was, framed for the screen it was framed for), the camera turns from the player to look down its deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over its stern as three pirate Sloops come out of the dark, and comes down behind it through the fight's own lens | shown |
 | `battle` | The sea's own fight against the three, every ship taken up under the sail and way it was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as its own, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting the player still afloat and "No need to sink them", until every one is beaten, sunk or struck; the fight's readout, its keys and DFO's messages as toasts | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to its deck; the beaten ships lie where and as the fight left them, each in its own settle, trim and list, and its sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them, then pushing in on it until it reads however far off it lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round it; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at its side at 6 m/s (about 12 knots), lightning striking past it at 2.3 s and 4.8 s so its masts and sails stand against it: Captain Brannoc Thule's Frigate at its own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of its stem first touches the Brig's side where its hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
-| `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights, a pair on the view crying out, and back over the player's shoulder, where play begins | shown |
+| `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera flies the length of the wreck past its boarders fighting the Brig's crew, a pair on the view crying out, 7 m over its decks at about 10 m/s, leaning away from each mast still standing, and back out past the Frigate's side and the Brig's broken stern to over the player's shoulder, where play begins 36 s in ([[The Prologue's Camera Flights Stand Clear and Go Slower]]) | shown |
 | `wreck` | Fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
 | `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck | shown |
 | `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the eyes; a flash; a voice; black | shown |
@@ -191,9 +193,14 @@ the clouds and the decks, and its thunder comes as late as its distance makes it
 frame each beat asks for its moment (`music()`): the title, whole, over the intro; the storm's song without its peak
 as the storm comes on, only its floor and tension at the helm, whole as the pirates come; the sea's own fight song once
 the fight is on; the calm's flute; the ram's swell, which the crash cuts off with everything else. The wake is silent
-over the ringing and the heart until the camera rushes the wreck. Then the Boarding's first phase plays, tense, and
+over the ringing and the heart until the camera flies the wreck. Then the Boarding's first phase plays, tense, and
 grows with each fight; Thule's cry wakes his own score, and losing to him plays its end, which rings over the throw.
 The deep's song follows, then the shore's, its layers coming in as she comes, as she speaks and as the two rise.
+
+**The fights' sounds** are heard three times as loud as the open world's, about 10 dB (`STORY_FIGHT_GAIN`), so they
+stand over the storm's wind, rain and thunder at sea and over the wreck's fires on foot: the sea fight's guns, hits,
+splashes and ships breaking up through the fight's own gain, the wreck's blows through a gain of their own on the way
+into the world's sounds ([[The Prologue's Fights Are Heard Louder]]).
 
 **The helm** (`Making`). The account step comes first ([[Accounts]]): create an account, sign in, sign in with
 Discord or play as a guest. A player already signed in is offered "Go on as" their username, or "Go on" for an account
@@ -264,8 +271,10 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   its port bow, its gun deck and the wreckage off its port quarter, and its quarterdeck. Each is an area with a
   checkpoint; entered, its checkpoint is where the next respawn stands the player. The first, where the player
   wakes, is quiet: no wave, nothing across its way on, room to walk, look and swing. Each between it and the arena
-  holds a wave of Grey Tithe crew and pirates, Minor and Major, in pairs fighting each other, stood as the player
-  enters the zone and standing well across it from where they come in, so no foe of a zone fights before the player
+  holds a wave of Grey Tithe crew and pirates, Minor and Major, and the Tithe-Mates and pirate Captains that come only
+  as Elites, all boarding as one side against the player and the Brig's crew ([[The Wreck's Boarders Are One Side]]),
+  each below Thule as hard to bring down as a Major ([[The Prologue's Elites Are as Hard to Bring Down as a Major]]),
+  stood as the player enters the zone and standing well across it from where they come in, so no foe of a zone fights before the player
   reaches it; and three spots near the wave on open deck where the Brig's crew stand (`crew`). At most 6 of the
   wreck's foes are alive at once.
 - **The Brig's crew** fight on in each zone with a wave, two or three of them
@@ -281,16 +290,17 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   piled 2.9 m over its deck and out over the bulwarks (the arena's 3.7 m, past a jump from its quarterdeck), standing
   from the start. It is cleared once its zone's wave has stood whole and
   fallen. The Frigate's gangways beside its gun deck are closed for good by heaps on cores of stacked crates, higher
-  than its rails. A player who climbs over a heap still standing is brought back to their last checkpoint.
+  than its rails. A player found past a heap still standing is brought back to their last checkpoint.
 - **The level's check.** The export refuses a level its own ground does not hold, measured twice, the second half a
   square across and along: every zone, checkpoint, foe and crewman reached in order, each with a body's room round
   it; no standing heap walked, or climbed as high as a jump reaches (1.05 m), round; a wave and three crew in every
   zone but the first and the arena; and at least 2,000 m2 of ground walked.
 - **Nothing falls off.** The room over the sea holds a rim round the wreck's ground, a grid of 0.3 m cells, open
   where a block covers a cell and a wall everywhere else, as a ship's deck holds her crew ([[Movement]]): a body
-  walks, jumps, vaults and climbs anywhere over the decks and the rafts and is held at their edge, its rails and
-  open breaks alike, while what falls or flies over the sea meets it at 0 m. A body hanging on a wall shimmies along
-  it no further than the rim. The page's own steps, its walk and its fight's prediction alike, stand on the same rim,
+  walks, jumps and vaults anywhere over the decks and the rafts and is held at their edge, its rails and open breaks
+  alike, while what falls or flies over the sea meets it at 0 m. No body climbs there
+  ([[Climbing Is Off in the Prologue]]): no wall is taken hold of, no lip hung from, and only a lip within a vault
+  (1.2 m) of the floor is gone over; the foes' navmesh over the sea is baked by the same rule. The page's own steps, its walk and its fight's prediction alike, stand on the same rim,
   made by the rules from the blocks (`setRim`), to the bit. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
   back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, her gun deck and
   the Sloop's side, is never the sea.
@@ -317,7 +327,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   layout's blocks over open sea (`LocalRoom.openOverSea`: its foes' navmesh is the wreck's ground alone, so every wave
   fights and Thule strikes), the fight's marks drawn by the view on foot. It tells the story whether the arena is
   entered, Thule's health, how the fight ended, the points over every head for barks (by crew), and the
-  shot its camera takes of the player standing, where the wake's flight ends. A cutscene holds it still. Its room is
+  shot its camera takes of the player standing, where the wake's flight ends: the player stood on the deck's top under
+  where they wake, as the room stands them, never on the rim's own ground, the sea below it. A cutscene holds it
+  still. Its room is
   let go as the wreck's fight ends. The key strip is foot's, without the menu: the story has none.
 - **The tasks** (`Lessons`), in the tracker under the quest "Prologue"
   ([[Quests Get a Task Tracker, and the Placeholder Panel Goes]]). Waking, the task is "Learn the controls", four steps
@@ -327,8 +339,11 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   foe takes the player as its target, or 1.5 s after all four are met, the task is "Fight your way through the wreck",
   counting the hostile foes standing while any do, and it never goes back. The boss fight's task is "Face Captain
   Brannoc Thule". The tracker hides while a cutscene holds the fight.
-- **No Art.** The player fights the wreck with no Art ([[The Player Has No Art in the Prologue]]): its room is told
-  to forbid them (`Room::forbid_arts`), so no ability bar shows and no cast is taken.
+- **The story's room.** Its room is told to play the story (`Room::story_wreck`): the player has no Art
+  ([[The Player Has No Art in the Prologue]]), so no ability bar shows and no cast is taken; they fight with the sword
+  and shield the story dressed them in, the room's Melee for every player; and every boarder the page stands fights on
+  the Grey Tithe's side, held below Thule to a Major's health, poise and defence (`Brain::held_to`), its own rank's
+  look and blows kept. The Brig's crew stay on the players' side.
 - **Drawn** by `WreckScenery` with `WreckView`, shown by the wake, the fight, the throw overboard and, from below,
   the deep: the one mesh built in Blender, each face in its part's picture as a ship's. Its fires' light is baked into
   it there (`light_wreck.py`), with its shadows and what the timber throws back, flickering through space and time as
@@ -355,8 +370,6 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   bar line, so a moment can fall up to a bar from its music.
 - The decks are boxes half a metre across: a deck's camber and the slope of its sheer are steps of 5 cm, a mast or a
   gun inside its deck is walked through, and its hatches are walked over.
-- Every wall is climbable ([[Movement]]): a player climbs a rail, or a heap still standing, and is held at its top by
-  the wreck's rim, or brought back by the level.
 - The heaps are not in the foes' navmesh: a foe that runs at one stops against it until it clears.
 - The sea fight has no touch controls, like the rest of the game ([[Interface]]: no gamepad or touch layer yet).
 - No figures swim or float in the forge, so no men are drawn in the water by the wrecks; the calm's talk asks only

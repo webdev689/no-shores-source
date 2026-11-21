@@ -148,9 +148,10 @@ export class LocalRoom implements RoomLink {
     this.door.clearFoes();
   }
 
-  /** Takes away the player's Art (`RoomDoor.forbidArts`): no cast is taken and their gear says none is worn. */
-  forbidArts(): void {
-    this.door.forbidArts();
+  /** Plays the prologue's wreck (`RoomDoor.storyWreck`): no Art, the story's sword and shield, and every boarder on
+   *  one side, held to a Major. */
+  storyWreck(): void {
+    this.door.storyWreck();
   }
 
   /** Sets where the next respawn stands the player: a checkpoint. */

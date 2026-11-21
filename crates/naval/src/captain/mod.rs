@@ -12,6 +12,7 @@ pub use odds::wary_takes;
 
 use crate::arms::{Arms, Build, Side, arms_of};
 use crate::damage::{Damage, State};
+use crate::fight::FIGHT_TURN;
 use crate::gunnery::{Guns, lay};
 use crate::random::Mulberry32;
 use crate::ranks::Commission;
@@ -191,10 +192,16 @@ pub fn pace(hull: &Hull, wind: [f64; 2], way_share: f64) -> f64 {
     canvas_drive(hull) * sea_wind(length(wind[0], wind[1])) * PACE * HANDLING.move_speed_sail * way_share
 }
 
-/// The most it swings at its way (degrees a second): its steerage under sail, its oars' swing on them.
+/// The most it swings at its way in a fight (degrees a second): its steerage under sail, its oars' swing on them, at a
+/// fight's swing (`FIGHT_TURN`), as it sails.
 #[must_use]
 pub fn swing_rate(ship: &Ship, hull: &Hull) -> f64 {
-    if ship.rung == SAILS_SET { steerage(length(ship.ahead, ship.abeam) / hull.gain) } else { HANDLING.turn_speed_oar }
+    let rate = if ship.rung == SAILS_SET {
+        steerage(length(ship.ahead, ship.abeam) / hull.gain)
+    } else {
+        HANDLING.turn_speed_oar
+    };
+    rate * FIGHT_TURN
 }
 
 impl Captain {
@@ -551,11 +558,7 @@ impl Captain {
                     if (way - asked).abs() <= best.1 { (rung, (way - asked).abs()) } else { best }
                 })
                 .0;
-        Helm {
-            steer: if most > 0.0 { command / most } else { 0.0 },
-            crab: false,
-            climb: (rung - vessel.ship.rung).signum(),
-        }
+        Helm { steer: if most > 0.0 { command / most } else { 0.0 }, climb: (rung - vessel.ship.rung).signum() }
     }
 
     /// Its guns after its step: against its enemy (`enemy`, the ship it has as its target, as it sees it now)

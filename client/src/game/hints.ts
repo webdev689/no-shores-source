@@ -59,6 +59,7 @@ export const HINTS = {
   fight: [
     ['A / D', 'Steer'],
     ['W / S', 'Sails'],
+    ['Shift', 'Boost'],
     ['Drag', 'Look'],
     ['Hold right button', 'Aim, let go to fire'],
     ['Click', 'Hold fire'],

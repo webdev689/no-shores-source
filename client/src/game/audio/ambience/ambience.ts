@@ -202,7 +202,7 @@ export class Ambience {
     if (heard && live && fought)
       for (const event of fought.events) {
         const sound = seaFightCue(event, fought.view);
-        if (sound) live.fight(sound.cue, sound.at, heard);
+        if (sound) live.fight(sound.cue, sound.at, heard, fought.gain);
       }
     const gone = this.players.filter((player) => player.level === 0 && player.target === 0);
     if (gone.length === 0) return;

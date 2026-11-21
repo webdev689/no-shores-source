@@ -14,7 +14,7 @@ impl Waters for Open {
 
 const WIND: [f64; 2] = [1.5, 0.0];
 const IDLE: Orders =
-    Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: false, load: None };
+    Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: false, load: None, boost: false };
 
 fn sloop_at(x: f64, y: f64, heading: f64) -> Ship {
     Ship { x, y, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }

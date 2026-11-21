@@ -1,14 +1,15 @@
 // Each gear item's own picture, as the forge draws it worn: the player's figure is drawn with the item alone and
 // without it, and what the item adds is kept, cropped round it. A piece in hand is its own layer, drawn by itself in
-// the pose that holds it, so the hand over its grip takes nothing from it. The same picture is a slot's icon and an
-// item page's large drawing. Drawn once each, on the player's own body, from the front.
+// the pose that holds it, so the hand over its grip takes nothing from it. A loadout is the forge's large picture of
+// what its hands hold where it publishes one: the right hand's level, the left's behind it. The same picture is a
+// slot's icon and an item page's large drawing. Drawn once each, on the player's own body, from the front.
 
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
 import { isModule, KINDS, MELEE, WORN } from './gear.ts';
 import { gearOutfit } from './gearLooks.ts';
-import { type Picture, addedBy } from './picture.ts';
+import { type Picture, SECOND_SHARE, addedBy, overlapped } from './picture.ts';
 
 /** The view an item is drawn in, from the front; and the move each loadout is held up in, a melee one on guard, a
  *  pair on its own guard. Armour is drawn standing. */
@@ -73,12 +74,16 @@ export class ItemPictures {
     if (this.kept.has(key)) return this.kept.get(key) ?? null;
     if (!this.asked.has(key)) {
       this.asked.add(key);
-      const drawn = alone
-        ? this.forge.picture(worn, anim, VIEW, 0, alone).then((piece) => piece && addedBy(piece, NOTHING, onePiece))
-        : Promise.all([this.forge.picture(worn, anim, VIEW), this.forge.picture(bare, anim, VIEW)]).then(
-            ([withIt, without]) => (withIt && without ? addedBy(withIt, without, onePiece) : null),
-          );
-      drawn
+      const cutOut = () =>
+        alone
+          ? this.forge.picture(worn, anim, VIEW, 0, alone).then((piece) => piece && addedBy(piece, NOTHING, onePiece))
+          : Promise.all([this.forge.picture(worn, anim, VIEW), this.forge.picture(bare, anim, VIEW)]).then(
+              ([withIt, without]) => (withIt && without ? addedBy(withIt, without, onePiece) : null),
+            );
+      // A large picture that fails to load gives way to the cut-out, as one not published does.
+      const large = onePiece ? this.largeOf(worn).catch(() => null) : Promise.resolve(null);
+      large
+        .then((picture) => picture ?? cutOut())
         .then((picture) => {
           this.kept.set(key, picture);
           ready();
@@ -86,6 +91,19 @@ export class ItemPictures {
         .catch(() => this.asked.delete(key));
     }
     return null;
+  }
+
+  /** A loadout's large picture: its right hand's piece as the forge draws it large (`Cards.weaponArt`), and behind it
+   *  at its left its left hand's, smaller (`overlapped`); null unless the forge draws every piece in hand so. */
+  private async largeOf(worn: Dress): Promise<Picture | null> {
+    const { right, left } = worn.outfit;
+    if (!right) return null;
+    const [main, second] = await Promise.all([
+      this.forge.weaponArt(worn, right),
+      left ? this.forge.weaponArt(worn, left, SECOND_SHARE) : null,
+    ]);
+    if (!main || (left && !second)) return null;
+    return second ? overlapped(main, second) : main;
   }
 
   /** The dresses an item's picture is drawn from: the body wearing it alone, and bare; the pose that holds it; and the

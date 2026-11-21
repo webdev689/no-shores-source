@@ -1,15 +1,16 @@
 // The sea fight's readout in the Plus kit, after DFO's helm readout (navalHud.js), built as the on-foot HUD is: the
 // player's SHIP PLATE at the top left is the vitals' long thin bars (Hull over Sails over Crew, the hull's frame
-// flashing low as health's does; a fire and a brace chip under them; and the BATTERY ROSE of its sides' reloads);
-// the TARGET CARD under the compass is the target's plate (the faction's emblem, its name, one hull bar in its rank's
-// colour, its class, distance and state as small words); the TALLY of the last volley; and the WARNING under the
-// card while a battery is run out at the player's ship. A readout, never a window: made once, updated each frame.
+// flashing low as health's does; its BOOST RING, a fire and a brace chip under them; and the BATTERY ROSE of its
+// sides' reloads); the TARGET CARD under the compass is the target's plate (the faction's emblem, its name, one hull
+// bar in its rank's colour, its class, distance and state as small words); the TALLY of the last volley; and the
+// WARNING under the card while a battery is run out at the player's ship. A readout, never a window: made once,
+// updated each frame.
 import { barSheetCss, thinBarsCss } from './barSheet.ts';
 import { BAR_TONES, CORNER, VITAL_SIZES } from './barFrame.ts';
 import { PIECE_LEAST } from './barLoss.ts';
 import { UNDER_COMPASS } from './compass.ts';
 import { ROLES } from './kit.ts';
-import { element as made, lowShare, Meter } from './meter.ts';
+import { element as made, lowShare, Meter, setStyle } from './meter.ts';
 import { FILLS, HALO, TONES } from './tones.ts';
 
 /** A side of the player's guns as the rose shows it: its share loaded, whether ready, just come ready, laid by the look, its
@@ -23,6 +24,13 @@ export interface RoseSide {
   readonly left: number;
 }
 
+/** The ship's burst of speed as its ring shows it: ready (lit whole), bursting (draining as the burst runs out) or
+ *  charging (filling as it recharges), and the share of the ring lit. */
+export interface BoostRing {
+  readonly state: 'ready' | 'burst' | 'charging';
+  readonly share: number;
+}
+
 /** What the readout shows: the player's ship, the ship the card is on, and its last volley's count; any of them none. */
 export interface SeaFightModel {
   readonly ship: {
@@ -32,6 +40,7 @@ export interface SeaFightModel {
     readonly crew: number;
     readonly fire: boolean;
     readonly braced: boolean;
+    readonly boost: BoostRing;
     readonly port: RoseSide;
     readonly starboard: RoseSide;
     readonly blow: 'bow' | 'stern' | 'port' | 'starboard' | null;
@@ -65,7 +74,11 @@ const CARD_GAP = 8;
 /** A share as a whole percent, held in 0 to 100. */
 const percent = (share: number) => Math.round(Math.min(1, Math.max(0, share)) * 100);
 
-/** The readout's words, as DFO's `navalHudText` says them: a side's chip, the card's state and the tally's line. */
+/** What the boost ring says to a reader in each state. */
+const BOOST_WORDS = { ready: 'Boost ready', burst: 'Boosting', charging: 'Boost recharging' } as const;
+
+/** The readout's words, as DFO's `navalHudText` says them: a side's chip, the card's state and the tally's line; and
+ *  the boost ring's, for a reader. */
 export function seaFightWords(model: SeaFightModel) {
   const side = (rose: RoseSide) => (rose.ready ? rose.load : `${rose.load} ${Math.ceil(rose.left)}s`);
   const card = model.card;
@@ -84,6 +97,7 @@ export function seaFightWords(model: SeaFightModel) {
   return {
     port: model.ship ? side(model.ship.port) : '',
     starboard: model.ship ? side(model.ship.starboard) : '',
+    boost: model.ship ? BOOST_WORDS[model.ship.boost.state] : '',
     state,
     tally: tally
       ? `${tally.hits} of ${tally.balls} ${tally.balls === 1 ? 'ball' : 'balls'} struck` +
@@ -119,7 +133,7 @@ export class SeaFightReadout {
   readonly root: HTMLElement;
   private readonly plate: HTMLElement;
   private readonly bars: Record<'hull' | 'sail' | 'crew', ReturnType<typeof vital>>;
-  private readonly chips: { fire: HTMLElement; brace: HTMLElement };
+  private readonly chips: { boost: HTMLElement; fire: HTMLElement; brace: HTMLElement };
   private readonly rose: Record<'bow' | 'stern' | 'port' | 'starboard', HTMLElement>;
   private readonly card: HTMLElement;
   private readonly emblem: HTMLElement;
@@ -148,7 +162,12 @@ export class SeaFightReadout {
       crew: vital(this.plate, 'crew', 'Crew'),
     };
     const chips = made('div', 'seafight-chips', this.plate);
+    const boost = made('span', 'seafight-boost', chips);
+    boost.role = 'img';
+    made('i', 'ring', boost);
+    made('span', 'word', boost, 'Boost');
     this.chips = {
+      boost,
       fire: made('span', `seafight-chip ${ROLES.chip} fire`, chips, 'On fire'),
       brace: made('span', `seafight-chip ${ROLES.chip} brace`, chips, 'Braced'),
     };
@@ -209,6 +228,10 @@ export class SeaFightReadout {
       this.bars.hull.node.classList.toggle('low', lowShare(ship.hull));
       this.chips.fire.hidden = !ship.fire;
       this.chips.brace.hidden = !ship.braced;
+      const { boost } = this.chips;
+      if (boost.dataset['state'] !== ship.boost.state) boost.dataset['state'] = ship.boost.state;
+      if (boost.ariaLabel !== words.boost) boost.ariaLabel = words.boost;
+      setStyle(boost, '--lit', `${Math.round(Math.min(1, Math.max(0, ship.boost.share)) * 360)}deg`);
       for (const side of ['port', 'starboard'] as const) {
         const rose = ship[side];
         const node = this.rose[side];
@@ -270,7 +293,18 @@ ${step('.seafight.wide', VITAL_SIZES.wide)}
 .seafight .target .state:empty { display: none; }
 .seafight .target .state.struck, .seafight .target .state.board { color: ${TONES.brassHi}; }
 .seafight .target .state.sinking { color: #ee5745; }
-.seafight-chips { display: flex; gap: 6px; margin-top: 4px; }
+.seafight-chips { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+/* The boost ring: lit brass and glowing once ready, bright and draining while it bursts, dim and filling as it
+   recharges, clockwise from the top. */
+.seafight-boost { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: ${TONES.stoneLit}; --ink: ${TONES.stoneMid}; }
+.seafight-boost .ring { position: relative; width: 14px; height: 14px; border-radius: 50%;
+  box-shadow: 0 0 0 1px ${TONES.outline}; background: conic-gradient(var(--ink) var(--lit, 0deg), ${TONES.groundTrack} var(--lit, 0deg)); }
+.seafight-boost .ring::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: ${TONES.groundChip};
+  box-shadow: 0 0 0 1px ${TONES.outline}; }
+.seafight-boost[data-state='ready'] { color: ${TONES.brassHi}; --ink: ${TONES.brassHi}; }
+.seafight-boost[data-state='ready'] .ring { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 6px rgba(243,207,134,0.6); }
+.seafight-boost[data-state='burst'] { color: ${TONES.word}; --ink: ${TONES.word}; }
 .seafight-chip { font-size: 10px; padding: 1px 6px; border-width: 1px; border-style: solid; }
 .seafight-chip.fire { color: #ffb066; }
 .seafight-rose { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: 'bow bow' 'port starboard' 'stern stern';

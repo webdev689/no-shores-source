@@ -22,13 +22,14 @@ export interface FightSource {
 }
 
 /** What the player does in a frame: the keys held (the helm's, and C to brace), a rung press, the look they lay
- *  while aiming, a release of the guns, and steps of the load. */
+ *  while aiming, a release of the guns, steps of the load, and a tap for a burst of speed. */
 export interface FightInput {
   readonly held: ReadonlySet<string>;
   readonly press: string | undefined;
   readonly look: FightLook | null;
   readonly fire: boolean;
   readonly loadSteps: number;
+  readonly boost: boolean;
 }
 
 /** How long a message stays on the panel, seconds. */
@@ -71,8 +72,8 @@ export function wordsFor(event: FightEvent, nameOf: (ship: number) => string): s
 }
 
 /** The owner's fight in the World Editor: the rules' last answer, the ticks the page owes it, the presses waiting
- *  for a step (the release, the load, a rung), the events not yet shown, and the messages on the panel. One step is
- *  with the rules at a time. */
+ *  for a step (the release, the load, a rung, a burst), the events not yet shown, and the messages on the panel. One
+ *  step is with the rules at a time. */
 export class Fighting {
   private readonly source: FightSource;
   private readonly id: string;
@@ -80,6 +81,7 @@ export class Fighting {
   private owed = 0;
   private pending = false;
   private fires = 0;
+  private boosts = 0;
   private loadSteps = 0;
   private readonly presses: string[] = [];
   private events: FightEvent[] = [];
@@ -146,6 +148,7 @@ export class Fighting {
   advance(seconds: number, input: FightInput, time: number, fail: (error: unknown) => void): void {
     if (input.press) this.presses.push(input.press);
     if (input.fire) this.fires++;
+    if (input.boost) this.boosts++;
     if (input.look) this.lastLook = input.look;
     this.loadSteps += input.loadSteps;
     this.owed = Math.min(this.owed + seconds, MOST_TICKS * TICK_SECONDS);
@@ -163,8 +166,10 @@ export class Fighting {
       fire: this.fires > 0,
       brace: input.held.has('c'),
       load,
+      boost: this.boosts > 0,
     };
     this.fires = Math.max(0, this.fires - 1);
+    this.boosts = Math.max(0, this.boosts - 1);
     this.pending = true;
     this.source
       .fightStep(this.id, orders, time - ticks * TICK_SECONDS, ticks)

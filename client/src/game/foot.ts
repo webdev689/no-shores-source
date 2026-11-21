@@ -30,7 +30,7 @@ import type { PlacedLoop } from '../player/playerMoves.ts';
 import type { OtherPlayers, Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
-import { FIGHT_TICKS } from '../player/fightMoves.ts';
+import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { FoeType } from '../rules/roster.ts';
@@ -476,7 +476,6 @@ export class Foot {
       const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const drawing = walker.shownDress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;
@@ -495,9 +494,7 @@ export class Foot {
       ammo: sights ? (ownView?.ammo ?? null) : null,
       ammoMost: held?.ammoMost ?? null,
       ammoFull: !!ownView && this.drops.ammoFull(held?.drops ?? [], [ownView.x, ownView.y, ownView.z], full),
-      crosshair: sights
-        ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
-        : null,
+      crosshair: crosshairOf(shown.reticle, sights, ownView, fight.reach),
       arms: {
         gear: this.gear?.gear ?? null,
         loadout: walker.player.loadout,

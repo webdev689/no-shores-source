@@ -55,18 +55,18 @@ fn a_patch_samples_the_ground_with_its_water_and_marks() {
 /// The square continent the land's own agreement test opens, as the browser's test writes it.
 const SAIL_SQUARE: &str = r#"{ "id": "square", "keep": true, "edits": null, "layout": { "continents": [{ "id": "square", "outline": [[200000, 300000], [320000, 300000], [320000, 420000], [200000, 420000]] }], "isles": [] } }"#;
 
-/// A voyage the browser's test sails too (client/src/rules/sailRules.test.ts): each leg's steer, crab, climb and
-/// ticks, from 20 km off the square's west coast at rest.
-const VOYAGE: [[f64; 4]; 9] = [
-    [0.0, 0.0, 1.0, 30.0],
-    [0.0, 0.0, 1.0, 30.0],
-    [1.0, 0.0, 0.0, 60.0],
-    [1.0, 0.0, 0.0, 60.0],
-    [1.0, 0.0, 0.0, 60.0],
-    [0.0, 0.0, 0.0, 60.0],
-    [-1.0, 0.0, 0.0, 60.0],
-    [0.0, 0.0, -1.0, 60.0],
-    [1.0, 1.0, 0.0, 60.0],
+/// A voyage the browser's test sails too (client/src/rules/sailRules.test.ts): each leg's steer, climb and ticks, from
+/// 20 km off the square's west coast at rest.
+const VOYAGE: [[f64; 3]; 9] = [
+    [0.0, 1.0, 30.0],
+    [0.0, 1.0, 30.0],
+    [1.0, 0.0, 60.0],
+    [1.0, 0.0, 60.0],
+    [1.0, 0.0, 60.0],
+    [0.0, 0.0, 60.0],
+    [-1.0, 0.0, 60.0],
+    [0.0, -1.0, 60.0],
+    [1.0, 0.0, 60.0],
 ];
 
 fn sail_request(ship: &[f64], helm: &[f64], time: f64, ticks: f64) -> Vec<u8> {
@@ -83,8 +83,8 @@ fn a_voyage_steps_to_its_pinned_fingerprint() {
     assert!(header(&open_view(SAIL_SQUARE.as_bytes())).get("error").is_none());
     let mut ship = vec![180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
     let (mut time, mut sailed) = (1000.0, Vec::new());
-    for [steer, crab, climb, ticks] in VOYAGE {
-        let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[steer, crab, climb], time, ticks)));
+    for [steer, climb, ticks] in VOYAGE {
+        let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[steer, climb], time, ticks)));
         assert_eq!(answer.len(), 12, "a ship and its pose");
         ship = answer[..8].to_vec();
         sailed.extend(answer);
@@ -92,7 +92,7 @@ fn a_voyage_steps_to_its_pinned_fingerprint() {
     }
     assert_eq!(ship[7], 1.0, "it ends on its oars");
     assert!(ship[1] < 360_000.0 - 10.0, "it sailed north: {ship:?}");
-    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "8674ae6496b52c9a");
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "abf7572961569df1");
 }
 
 #[test]
@@ -100,14 +100,14 @@ fn a_ship_at_sea_is_afloat_and_one_on_land_aground() {
     assert!(header(&open_view(SAIL_SQUARE.as_bytes())).get("error").is_none());
     let afloat = sail_answer(&sail_bytes(&sail_request(
         &[180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        &[0.0; 3],
+        &[0.0; 2],
         0.0,
         0.0,
     )));
     assert_eq!(afloat[11], 0.0);
     let beached = sail_answer(&sail_bytes(&sail_request(
         &[260_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        &[0.0; 3],
+        &[0.0; 2],
         0.0,
         0.0,
     )));
@@ -121,16 +121,16 @@ fn bad_numbers_through_the_sail_door_are_refused() {
     let refused = |ship: &[f64], helm: &[f64], ticks: f64| {
         header(&sail_bytes(&sail_request(ship, helm, 0.0, ticks))).get("error").is_some()
     };
-    assert!(refused(&[f64::NAN, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], &[0.0; 3], 1.0), "NaN");
-    assert!(refused(&[180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 7.0], &[0.0; 3], 1.0), "rung 7");
-    assert!(refused(&[180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5], &[0.0; 3], 1.0), "half a rung");
-    assert!(refused(&ship, &[0.0; 3], 1e6), "a million ticks");
-    assert!(refused(&ship, &[0.0; 3], 1.5), "half a tick");
-    assert!(refused(&ship, &[2.0, 0.0, 0.0], 1.0), "steer 2");
-    assert!(refused(&ship, &[0.0, 0.0, 2.0], 1.0), "climb 2");
-    assert!(refused(&ship, &[0.0, f64::INFINITY, 0.0], 1.0), "infinite crab");
+    assert!(refused(&[f64::NAN, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], &[0.0; 2], 1.0), "NaN");
+    assert!(refused(&[180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 7.0], &[0.0; 2], 1.0), "rung 7");
+    assert!(refused(&[180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5], &[0.0; 2], 1.0), "half a rung");
+    assert!(refused(&ship, &[0.0; 2], 1e6), "a million ticks");
+    assert!(refused(&ship, &[0.0; 2], 1.5), "half a tick");
+    assert!(refused(&ship, &[2.0, 0.0], 1.0), "steer 2");
+    assert!(refused(&ship, &[0.0, 2.0], 1.0), "climb 2");
+    assert!(refused(&ship, &[0.0, f64::INFINITY], 1.0), "an endless climb");
     assert!(header(&sail_bytes(&[0; 16])).get("error").is_some(), "too few numbers");
-    assert!(!refused(&ship, &[0.0; 3], 60.0), "a second's ticks are fine");
+    assert!(!refused(&ship, &[0.0; 2], 60.0), "a second's ticks are fine");
 }
 
 #[test]
@@ -140,18 +140,18 @@ fn numbers_no_ship_could_have_are_refused_before_they_reach_the_rules() {
     let with = |index: usize, value: f64| {
         let mut changed = ship;
         changed[index] = value;
-        header(&sail_bytes(&sail_request(&changed, &[0.0; 3], 0.0, 1.0))).get("error").is_some()
+        header(&sail_bytes(&sail_request(&changed, &[0.0; 2], 0.0, 1.0))).get("error").is_some()
     };
     assert!(with(0, 1e12), "a thousand million kilometres east");
     assert!(with(2, 7.0) && with(2, -0.1), "a heading outside a turn");
     assert!(with(3, 1e200) && with(4, -1e200), "a way no hull makes");
     assert!(with(5, 1e9), "a swing no rudder gives");
     assert!(with(6, -1.0) && with(6, 1e200), "a canvas share of way no hull makes");
-    assert!(with(3, 11.0) && with(5, 46.0), "faster or swinging harder than any hull with any helm");
-    let at_time = |time: f64| header(&sail_bytes(&sail_request(&ship, &[0.0; 3], time, 1.0))).get("error").is_some();
+    assert!(with(3, 21.0) && with(5, 46.0), "faster or swinging harder than any hull with any helm, even in a fight");
+    let at_time = |time: f64| header(&sail_bytes(&sail_request(&ship, &[0.0; 2], time, 1.0))).get("error").is_some();
     assert!(at_time(1e18) && at_time(-1e18), "a time past the world's");
     assert!(!at_time(1e9));
-    let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[1.0, 0.0, 0.0], 0.0, 60.0)));
+    let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[1.0, 0.0], 0.0, 60.0)));
     assert!(answer.iter().all(|number| number.is_finite()), "{answer:?}");
 }
 
@@ -204,10 +204,10 @@ fn each_hulls_guns_and_boxes_are_where_its_export_measured() {
 
 /// A voyage onto the square's west shore and off it, the browser's test sails too: under sail for two minutes until
 /// it takes the ground, its sails struck, then its oars astern.
-fn shore_voyage() -> Vec<[f64; 4]> {
-    let mut legs = vec![[0.0, 0.0, 0.0, 60.0]; 120];
-    legs.extend([[0.0, 0.0, -1.0, 60.0], [0.0, 0.0, -1.0, 60.0], [0.0, 0.0, -1.0, 60.0]]);
-    legs.extend(vec![[0.0, 0.0, 0.0, 60.0]; 20]);
+fn shore_voyage() -> Vec<[f64; 3]> {
+    let mut legs = vec![[0.0, 0.0, 60.0]; 120];
+    legs.extend([[0.0, -1.0, 60.0], [0.0, -1.0, 60.0], [0.0, -1.0, 60.0]]);
+    legs.extend(vec![[0.0, 0.0, 60.0]; 20]);
     legs
 }
 
@@ -216,8 +216,8 @@ fn a_voyage_onto_the_shore_and_off_it_steps_to_its_pinned_fingerprint() {
     assert!(header(&open_view(SAIL_SQUARE.as_bytes())).get("error").is_none());
     let mut ship = vec![199_750.0, 360_000.0, std::f64::consts::FRAC_PI_2, 0.0, 0.0, 0.0, 0.0, 2.0];
     let (mut time, mut sailed, mut touched, mut furthest) = (0.0, Vec::new(), false, 0.0_f64);
-    for [steer, crab, climb, ticks] in shore_voyage() {
-        let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[steer, crab, climb], time, ticks)));
+    for [steer, climb, ticks] in shore_voyage() {
+        let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[steer, climb], time, ticks)));
         assert_eq!(answer.len(), 12, "{answer:?}");
         ship = answer[..8].to_vec();
         touched |= answer[11] == 1.0;
@@ -235,7 +235,7 @@ fn a_request_naming_its_hull_sails_that_hull_and_one_naming_none_the_sloop() {
     assert!(header(&open_view(SAIL_SQUARE.as_bytes())).get("error").is_none());
     let ship = [180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0];
     let sailed = |hull: Option<f64>| {
-        let mut request = sail_request(&ship, &[0.0; 3], 1000.0, 60.0);
+        let mut request = sail_request(&ship, &[0.0; 2], 1000.0, 60.0);
         request.extend(hull.iter().flat_map(|number| number.to_le_bytes()));
         sail_bytes(&request)
     };
@@ -246,8 +246,8 @@ fn a_request_naming_its_hull_sails_that_hull_and_one_naming_none_the_sloop() {
         assert!(header(&sailed(Some(bad))).get("error").is_some(), "no hull is numbered {bad}");
     }
     // No hull sails faster than the Sloop's best, so the door holds every one to the same way.
-    let fast = [180_000.0, 360_000.0, 0.0, 11.0, 0.0, 0.0, 11.0, 2.0];
-    let request = |hull: f64| [&fast[..], &[0.0; 3], &[1000.0, 1.0, hull]].concat();
+    let fast = [180_000.0, 360_000.0, 0.0, 21.0, 0.0, 0.0, 21.0, 2.0];
+    let request = |hull: f64| [&fast[..], &[0.0; 2], &[1000.0, 1.0, hull]].concat();
     let asked =
         |hull: f64| sail_bytes(&request(hull).iter().flat_map(|number| number.to_le_bytes()).collect::<Vec<u8>>());
     assert!(header(&asked(0.0)).get("error").is_some() && header(&asked(3.0)).get("error").is_some());

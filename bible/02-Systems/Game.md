@@ -136,7 +136,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The attack feel.** The [[Test Ground]]'s four effects over the blows play on foot at their defaults: each blow's
   swing arc where its blade goes, its striker's figure hiding what passes behind it (none through the eyes), with the
   smear its strike leaves behind the striker's card; the hit-stop holding the fighters a blow lands on; the camera's
-  kick (moving the view but never turning it while a crosshair shows); and the lunge driving a striker's figure into its
+  kick (moving the view but never turning it while a ranged crosshair shows); and the lunge driving a striker's figure into its
   blow. Only the drawing moves, never the rules or their clock (`combat/attackFeel.ts`). A player who asks for reduced
   motion keeps a still view: no kick, no shake, no lunge carrying the eye and no Anima push-in; the Anima's edge frame
   still shows. The feel's light is on too: the brightest marks and arcs light what stands round them ("Drawing").
@@ -242,6 +242,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
     is set again once under 5 km of it is left. Where a coast stops it short, or less than 200 m lies clear, the ship comes
     to rest facing the coast, and the voyage's line says "Land lies ahead."
   - S heaves the ship to, as Stop does.
+  - Shift gives no burst at sea: only a fight's helm has one ([[Naval Combat]], "How it works").
   - Straight on, the voyage's line says "Sailing straight on"; resumed, the ship sails on straight along its heading.
 - **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]), a window of the [[Interface]]
   at the foot of the screen in three groups, Navigation, Pace and Ship, holds Map (N), which takes the
