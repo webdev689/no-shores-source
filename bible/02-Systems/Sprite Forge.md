@@ -102,7 +102,7 @@ python -I tools/sprite-forge/forgepoints.py --body male
 
 A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
-The `forge` workflow renders the Arts' birds and adds them to what is published with the repository's Cloudflare token
+The `forge` workflow renders the Arts' birds and adds them to what is published with the repository's `R2_TOKEN`
 whenever `artbirds.py` or its pinned packages change on main, or when a run is asked for on a branch; its log ends with
 the manifest, which a commit takes into `content/forge/renders.json`. It installs only the exact wheels
 `artbirds-requirements.txt` names by their hashes, and its checkout keeps no git credential.
