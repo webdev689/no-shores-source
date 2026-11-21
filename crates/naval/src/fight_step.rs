@@ -249,7 +249,11 @@ impl Fight {
             return;
         };
         let gun = crate::guns::Gun { crew: gun.crew * shot_reach(shot, flight), ..gun };
+        let loaded = gun;
         let gun = self.fitted_gun(gun, shooter, target, zone);
+        // A ball in the rigging cuts down men by a share of its own (`shot_harm`), which the crew perks reach as their
+        // fitting scales the gun's men: so many fewer, or more, as a tougher, or softer, crew would lose.
+        let men = if zone == Zone::Rig && loaded.crew > 0.0 { gun.crew / loaded.crew } else { 1.0 };
         let clock = self.clock;
         // A ball strikes only another flag, so whoever fired it, a player or another faction's captain, is a foe.
         let shooter_in_fight = self.ships.contains_key(&shooter);
@@ -262,7 +266,7 @@ impl Fight {
             Sailor::Player => (PLAYER_CREW_TOUGHNESS, vessel.guns.braced, 0.0),
         };
         let roll = self.draws.draw();
-        let mut hurt = shot_harm(&gun, zone, braced, roll, tough);
+        let mut hurt = shot_harm(&gun, zone, braced, roll, tough / men);
         let burns = zone == Zone::Hull || (zone == Zone::Rig && rig_fire(shot));
         // A ball of a side of many guns takes its share of a Sloop's ball's harm and of its chance to set it alight.
         hurt.fire = burns && self.draws.draw() < fire_chance(shot) * gun.share;

@@ -319,7 +319,9 @@ impl Room {
     fn power_on(&self, player: PlayerId, hand: Slot, foe: FighterId) -> f64 {
         let (Some(found), Some(foe)) = (self.players.get(&player), self.foes.get(&foe)) else { return 0.0 };
         let character = &found.character;
-        let attack = character.attack(hand).unwrap_or(0);
+        // A shot's by the Attack it was loosed with, as its own blow was.
+        let loosed = self.shot_loosed.filter(|_| hand == Slot::Ranged).map(|loosed| loosed.attack);
+        let attack = loosed.or_else(|| character.attack(hand)).unwrap_or(0);
         gear::power::by_player(attack, character.level(), foe.level) * PLAYER_HARM
     }
 

@@ -262,7 +262,8 @@ impl Room {
             element: 0,
             crit: false,
         };
-        let blow = self.empower_as(blow, foe, Some(Loosed { attack, element, trim: Trim::PLAIN, aimed: false }));
+        let blow =
+            self.empower_as(blow, foe, Some(Loosed { attack, element, trim: Trim::PLAIN, aimed: false, item: None }));
         // A dodge passes a spell whole: none of its harm, nor the status it would give.
         if matches!(self.judge_now(&blow, How::Spell, foe, &then, Some(hand)), Verdict::Dodged { .. }) {
             return None;

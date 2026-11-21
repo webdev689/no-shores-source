@@ -165,12 +165,18 @@ pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
         item = follow(character, item, entry);
     }
     let mut pressed: Vec<(usize, u8)> = Vec::new();
-    let trait_columns: Vec<(usize, Column)> =
-        item.columns().iter().copied().enumerate().filter(|(_, kind)| kind.traits()).collect();
+    // A named item's traits are its entry's (`follow`); a rolled one's are those of its columns' pools.
+    let trait_columns: Vec<(usize, Column)> = (item.columns().iter().copied().enumerate())
+        .filter(|(_, kind)| kind.traits() && item.named.is_none())
+        .collect();
     for (place, (index, column)) in trait_columns.into_iter().enumerate() {
         for node in 0..item.layout.get(place).map_or(0, Vec::len) {
             let gone = item.layout[place][node].clone();
-            if content.trait_def(&gone).is_some() {
+            // A trait its column still offers stays; one that no longer fits the item is given back below; one that
+            // has gone, or has moved to another column (Double Shotted, a perk become a finish), is replaced.
+            let offered_here = content.pool(column, item.kind).iter().any(|found| found.id == gone);
+            let misfit = content.trait_def(&gone).is_some() && !content.trait_fits(&gone, item.kind, None);
+            if offered_here || misfit {
                 continue;
             }
             let offered = |id: &str| item.layout.iter().flatten().any(|each| each == id);

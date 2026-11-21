@@ -119,6 +119,8 @@ pub struct Room {
     pub(crate) events: Vec<judging::Event>,
     /// The fighter an Atheric's leap or burst being judged came from, which its events tell (`atheric.rs`).
     pub(crate) chain_from: Option<FighterId>,
+    /// What the shot being judged was loosed with, whose perks it takes (`perk_on`); none outside a shot's judging.
+    pub(crate) shot_loosed: Option<power::Loosed>,
     /// The verdicts (striker, defender) and telegraphed blows ended (foe, found no one, dodged perfectly) since the
     /// foes' brains were last told: one a player's leaving ends between ticks is told at the next.
     pub(crate) verdicts: Vec<(FighterId, FighterId, Verdict)>,
@@ -197,6 +199,7 @@ impl Room {
             next_group: 1,
             events: Vec::new(),
             chain_from: None,
+            shot_loosed: None,
             verdicts: Vec::new(),
             ended_telegraphs: Vec::new(),
             spawns: Vec::new(),

@@ -244,3 +244,29 @@ fn a_ship_fitted_with_none_of_them_fights_the_same_to_the_bit() {
     }
     assert_eq!((plain.ships, plain.balls), (fitted.ships, fitted.balls));
 }
+
+#[test]
+fn a_ball_in_the_rigging_takes_the_canvas_and_crew_perks_and_not_the_hull_ones() {
+    // Canvas lost and men cut down by many balls in the player's rigging, by its trim, made whole after each.
+    let tally = |trim: Trim| {
+        let mut fight = abeam(80.0, Some(trim));
+        let whole = (fight.ships[&PLAYER].damage.sail, fight.ships[&PLAYER].damage.crew);
+        let (mut sail, mut crew) = (0.0, 0.0);
+        for _ in 0..400 {
+            strike(&mut fight, CAPTAIN, PLAYER, Zone::Rig);
+            let damage = &mut fight.ships.get_mut(&PLAYER).expect("in").damage;
+            sail += whole.0 - damage.sail;
+            crew += whole.1 - damage.crew;
+            (damage.sail, damage.crew) = whole;
+        }
+        (sail, crew)
+    };
+    let plain = tally(Trim::default());
+    let canvas = tally(Trim { sail_taken: 0.5, ..Trim::default() });
+    let hull = tally(Trim { hull_taken: 0.5, ..Trim::default() });
+    let men = tally(Trim { crew_taken: 0.5, ..Trim::default() });
+    assert!(plain.0 > 0.0 && plain.1 > 0.0, "rigging hits tear canvas and cut down men: {plain:?}");
+    assert!(canvas.0 < plain.0 * 0.6, "canvas perks reach a rigging hit: {canvas:?} against {plain:?}");
+    assert!((hull.0 - plain.0).abs() < plain.0 * 0.05, "hull perks do not: {hull:?} against {plain:?}");
+    assert!(men.1 < plain.1 * 0.7, "crew perks reach it too: {men:?} against {plain:?}");
+}

@@ -219,8 +219,10 @@ impl Room {
         if !killed {
             return;
         }
+        // A shot's kill gives what the loadout it was loosed from gives, whatever is drawn as it lands.
+        let loosed = self.shot_loosed.map(|loosed| loosed.trim);
         if let Some(found) = self.players.get_mut(&striker) {
-            let trim = found.fighter.trim;
+            let trim = loosed.unwrap_or(found.fighter.trim);
             back(&mut found.fighter, trim.kill_stamina);
             if trim.kill_reload && matches!(found.fighter.action, Action::Reload { .. }) {
                 found.fighter.action = Action::Idle;

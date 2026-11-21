@@ -363,6 +363,7 @@ impl Room {
             match flight {
                 Flight::Flying(next) => self.shots.push((next, loosed)),
                 Flight::Stopped { struck: Some(defender), at } => {
+                    self.shot_loosed = loosed;
                     let blow = combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]);
                     let blow = self.empower_as(blow, defender, loosed);
                     // An arrow or a bolt covered its speed for each whole tick it flew, and in its last only as far as
@@ -380,6 +381,7 @@ impl Room {
                     if let Some(verdict) = verdict.filter(|_| alive && loosed.is_some_and(|loosed| loosed.aimed)) {
                         self.storm_gull(&blow, defender, &verdict);
                     }
+                    self.shot_loosed = None;
                 }
                 Flight::Stopped { struck: None, .. } => {}
             }

@@ -81,10 +81,10 @@ number is one of [[Gear as Claude Shapes It]].
   perk it merged into, else stays where it was if a plain perk stands there (a reworked one, as an Atheric's own);
   one where only a perk that gives and takes stands, or a place another took, is given back for what it cost, so no
   cost is pressed on a player who never chose it. Each choice follows its node. A rolled one offering a trait the
-  catalogue no longer holds offers in its place the perk it merged into where that fits it, else the first plain perk
-  of its column's pool it lacks, bought and chosen as it was; with none left but perks that give and take, the first
-  of those, its node given back (`old_hands::unfit`). A named item of another rarity than its entry keeps its traits
-  and takes no intrinsic.
+  catalogue no longer holds, or holds in another column (Double Shotted, a perk become a finish), offers in its place
+  the perk it merged into where that fits it, else the first plain perk of its column's pool it lacks, bought and
+  chosen as it was; with none left but perks that give and take, the first of those, its node given back
+  (`old_hands::unfit`). A named item of another rarity than its entry keeps its traits and takes no intrinsic.
 - **Where it is worn.** Each kind in its one slot: a Melee loadout for Melee, a Ranged one for Ranged, each armour
   piece and the cloak its own ("Loadouts", below). A player wears an item only at its level or above, and one Atheric
   in the loadouts and one in the armour at a time.
@@ -333,7 +333,8 @@ the factions' counters are in [[Factions]].
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
   "It is not sold here today"), 16 an Ammo crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its
-  place in `node`).
+  place in `node` and the piece shown there, its place in the catalogue's items, in `item`, so a page shown another
+  piece than his week now draws there, as the catalogue grew, is told it is not sold here).
 
 ## Emblems
 
@@ -490,12 +491,11 @@ Officers ashore fight beside their player, as DFO's crew companions did
 
 - A loadout's traits work whichever of its hands strikes, and every trait worn counts once however many pieces give
   it. Until a drawn loadout's new trim reaches the browser, the player's own screen predicts them by the old one.
-- A kill's stamina and Last Light's reload come from the loadout drawn as the kill lands: an arrow that kills after a
-  swap to Melee gives Melee's. So do an Atheric's perks on a shot: an arrow loosed before Gullwing is worn and landing
-  after leaps, and one loosed from Gullwing landing after it is taken off does not.
+- A swing's kill gives the stamina of the loadout drawn as it lands. A shot keeps what it was loosed with: its Attack,
+  element and trim (a kill's stamina, Last Light's reload), and the perks of the item it left, wherever that item is
+  as it lands (`Room::shot_loosed`), so Gullwing's arrow leaps though Gullwing is put away as it flies.
 - A leap, a burst or a bite is a share of its blow as it struck: a blow on a foe four or more levels above its player
   does nothing ([[Gear]], "Kills"), so it sets off none.
-- A rolled guns module kept with Double Shotted in a perk column, from before it became a finish, keeps it there.
 - The menu ([[Interface]], "The menu") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).

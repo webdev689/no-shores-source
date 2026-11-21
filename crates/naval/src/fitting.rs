@@ -168,11 +168,14 @@ impl Fight {
                 .get(&id)
                 .map_or((1.0, 1.0), |other_ship| (other_ship.damage.hull_share(), other_ship.damage.crew_share()))
         };
+        // A ball in the rigging tears canvas by the larger of its canvas and its hull harm (`shot_harm`): there its
+        // hull harm is canvas too, so the canvas perks set it, never the hull's.
+        let rig = zone == Zone::Rig;
         if let Some(fitted) = self.fittings.get(&shooter) {
             let (trim, power) = (fitted.trim, fitted.dealt_to(target));
             let finish = if share(target).0 < CORNERED_AT { trim.finisher } else { 1.0 };
             let holing = if zone == Zone::Holed { trim.holing } else { 1.0 };
-            gun.hull *= power * trim.harm_hull * finish * holing;
+            gun.hull *= power * if rig { trim.harm_sail } else { trim.harm_hull * holing } * finish;
             gun.sail *= power * trim.harm_sail * finish;
             gun.crew *= power * trim.harm_crew * finish;
         }
@@ -182,7 +185,7 @@ impl Fight {
             let cornered = if hull_share < CORNERED_AT { trim.cornered } else { 1.0 };
             let holed = if zone == Zone::Holed { trim.holed_taken } else { 1.0 };
             let rallied = if crew_share < RALLY_AT { trim.rally } else { 1.0 };
-            gun.hull *= power * trim.hull_taken * cornered * holed;
+            gun.hull *= power * if rig { trim.sail_taken } else { trim.hull_taken * cornered * holed };
             gun.sail *= power * trim.sail_taken;
             gun.crew *= power * trim.crew_taken * rallied;
         }

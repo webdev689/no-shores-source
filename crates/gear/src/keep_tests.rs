@@ -161,6 +161,27 @@ fn a_kept_named_item_of_another_rarity_than_its_entry_keeps_its_traits_and_takes
 }
 
 #[test]
+fn a_kept_rolled_module_offering_a_perk_in_a_column_it_has_left_offers_one_of_that_column() {
+    let mut character = Character::starting();
+    let id = character.take_id();
+    let mut guns = Item::new(id, Kind::Guns, Rarity::Magic, 10, Slot::Guns);
+    // Double Shotted was a perk when this was rolled; it is a finish now, and a Magic's guns have no finish.
+    guns.layout = vec![vec!["quick_tackle".to_owned(), "steady_lay".to_owned()], vec!["double_shotted".to_owned()]];
+    guns.xp = guns.xp_most();
+    let perks =
+        guns.columns().iter().position(|column| matches!(column, crate::grid::Column::Perk(_))).expect("a perk");
+    guns.bought |= guns.node_bit(perks, 0).expect("a node");
+    guns.chosen[perks] = 0;
+    character.items.insert(id, (guns, At::Carried));
+    let read = Character::from_json(&character.to_json()).expect("a character");
+    let guns = read.item(id).expect("kept");
+    let offered = guns.traits_of(perks)[0].as_str();
+    let pool = crate::catalogue::catalogue().pool(crate::grid::Column::Perk(1), Kind::Guns);
+    assert!(pool.iter().any(|found| found.id == offered && found.takes.is_none()), "{offered} a plain guns perk");
+    assert!(guns.has(perks, 0) && guns.chosen[perks] == 0, "bought and chosen as it was");
+}
+
+#[test]
 fn a_kept_rolled_item_offering_a_trait_now_gone_offers_another_of_its_pool() {
     let mut character = Character::starting();
     let id = character.take_id();

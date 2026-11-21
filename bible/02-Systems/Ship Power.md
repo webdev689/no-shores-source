@@ -74,7 +74,8 @@ are in [[Crew]].
 - **Its trim** (`ship::trim`): its fitted modules' chosen perks and its posted officers' posts and perks, as factors on
   its guns' reload and scatter, its harm on a ship's hull, canvas and men (and on one below a third of its hull), its
   way and turning in a fight, what its hull, canvas and men take (its hull below a third, below its waterline, its men
-  below half), its ram, its Carpenter's patches and its sight. The words of each perk are in
+  below half), its ram, its Carpenter's patches and its sight. A ball in the rigging, whose harm is all canvas and
+  men, takes the canvas perks and the crew perks, never the hull's. The words of each perk are in
   `content/gear/traits.json`; a test holds every module's and officer's perk to a factor the sea reads.
 - **Its modules' perks** ([[The Perk Pass as Claude Shapes It]]): each thing a module's perk does is done by one perk.
   Guns offer in handling Quick Tackle (reload 10% faster), Steady Lay (scatter 15% less), Heavy Charge and Hot Guns; in
@@ -130,10 +131,9 @@ browser predicting its ship fits it alike.
 
 ## Limits
 
-- A ball in the rigging takes canvas by the larger of its canvas harm and half its hull harm, and men as a flat share,
-  so the canvas and crew perks reach a rigging hit only in part.
-- A player beaten on a boarded deck who washes up and comes back into the same fight comes back as a new ship, its
-  Hard to Kill, Squall and Carpenter's debt begun again.
+- A player beaten on a boarded deck who washes up and comes back into the same fight comes back under a new number
+  (none is given twice, so a ball still flying from their old ship is laid at no one's door), its Squall and
+  Carpenter's debt begun again; a Hard to Kill spent there stays spent.
 - Way and turn act in a fight; out of one the sea moves the ship on a course at its own pace. The fleet room fits a
   plain ship, so no Atheric acts there and a browser's prediction of its ship needs none of them. A Lookout's sight
   lengthens each ship's sight in that player's own sea snapshot.

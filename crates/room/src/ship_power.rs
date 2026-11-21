@@ -75,7 +75,9 @@ impl Fights {
         for fought in &mut self.list {
             for (player, crew) in &fought.crews {
                 if let Some(character) = characters.get(player) {
-                    fought.fight.fit(crew.ship, fitting(character, &fought.hostiles));
+                    // A player back in the fight whose last stand it spent has none again.
+                    let stood = fought.stood.contains(player);
+                    fought.fight.fit(crew.ship, Fitting { stood, ..fitting(character, &fought.hostiles) });
                 }
             }
         }

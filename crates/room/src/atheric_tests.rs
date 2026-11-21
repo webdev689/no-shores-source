@@ -377,6 +377,45 @@ fn an_arrow_on_a_foe_slain_this_tick_leaps_nowhere() {
 }
 
 #[test]
+fn an_arrow_takes_the_perks_of_the_bow_it_was_loosed_from_whatever_is_worn_as_it_lands() {
+    // Gullwing carried, a plain bow worn in its place: answers the plain bow's number.
+    let swap = |room: &mut Room, player: PlayerId| {
+        let character = &mut room.players.get_mut(&player).expect("in").character;
+        let id = character.take_id();
+        if let Some((_, at)) = character.items.get_mut(&WORN) {
+            *at = At::Carried;
+        }
+        character.items.insert(id, (Item::new(id, Kind::Bow, Rarity::Rare, 20, Slot::Ranged), At::Worn(Slot::Ranged)));
+        id
+    };
+    // Loosed from Gullwing, which is taken off as the arrow flies: it leaps.
+    let (mut room, player, _) = room_with("gullwing", false, &[0.0, 6.0]);
+    let held = room.held(player, Slot::Ranged).expect("a player");
+    let shot = combat::shots::loose(player, Ranged::Bow, [0.0, 0.0, 1.0], 0.0, 0.0, 1.2);
+    room.shots.push((shot, Some(crate::power::Loosed { aimed: true, ..held })));
+    swap(&mut room, player);
+    for _ in 0..10 {
+        room.fly_shots();
+    }
+    assert_eq!(told(&room, How::Leap).len(), 1, "Gullwing's arrow leaps though Gullwing is put away");
+    // Loosed from a plain bow, Gullwing worn as it flies: it does not.
+    let (mut room, player, _) = room_with("gullwing", false, &[0.0, 6.0]);
+    let plain = swap(&mut room, player);
+    let held = room.held(player, Slot::Ranged).expect("a player");
+    assert_eq!(held.item, Some(plain));
+    let shot = combat::shots::loose(player, Ranged::Bow, [0.0, 0.0, 1.0], 0.0, 0.0, 1.2);
+    room.shots.push((shot, Some(crate::power::Loosed { aimed: true, ..held })));
+    if let Some(character) = room.players.get_mut(&player).map(|found| &mut found.character) {
+        character.items.get_mut(&plain).expect("held").1 = At::Carried;
+        character.items.get_mut(&WORN).expect("held").1 = At::Worn(Slot::Ranged);
+    }
+    for _ in 0..10 {
+        room.fly_shots();
+    }
+    assert!(told(&room, How::Leap).is_empty(), "a plain bow's arrow, Gullwing worn as it lands");
+}
+
+#[test]
 fn a_shot_loosed_from_the_draw_is_marked_aimed_as_it_leaves() {
     let (mut room, player, _) = room_with("gullwing", false, &[]);
     let fighter = *room.fighter(player).expect("in");
