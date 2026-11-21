@@ -1,14 +1,14 @@
-// Where Elder Maren Hale walks in her welcome, and when she speaks. She starts on the plaza's lanes a way off from the
-// player, out of their view where she can, and comes to them by the lanes, greeting them from the lanes where they
-// stand off them; then she leads them to the plaza's counters, the nearest stop first each time, waiting at each for
-// the player to come within reach before she says its lines. A player who leaves her far behind for a minute ends the
-// walk, and she goes back behind her counter, as she does once every stop is said. She keeps to the townsfolk's lanes
-// (`lanes.ts`) and goes round her counter's end clear of the arcade's columns, so she walks through none of the
-// courtyard's solids, nor Shape. No drawing and no words here: the welcome (`welcome.ts`) draws her where this says
-// and plays the scene it names.
+// Where Elder Maren Hale walks in her welcome, and when she speaks. She starts at a point of the townsfolk's ways a
+// way off from the player, out of their view where she can, and comes to them by the ways, greeting them from the
+// ways where they stand off them; then she leads them to the plaza's counters by the shortest way to each counter's
+// way point, the nearest stop first each time, waiting at each for the player to come within reach before she says
+// its lines. A player who leaves her far behind for a minute ends the walk, and she goes back behind her counter, as
+// she does once every stop is said. She keeps to the middle of the ways (`life/ways.ts`), which keep clear of every
+// solid and of Shape, and goes round her counter's end clear of the arcade's columns. No drawing and no words here:
+// the welcome (`welcome.ts`) draws her where this says and plays the scene it names.
+import type { WayGraph } from '../life/ways.ts';
 import { type StationInfo, bearingTo } from '../nodes.ts';
-import { ACROSS, type PlazaFrame, TOWARD, inPlaza, plazaPoint } from '../townsfolk.ts';
-import { laneNearest, laneWay } from './lanes.ts';
+import { type PlazaFrame, inPlaza } from '../townsfolk.ts';
 
 type Point = readonly [number, number];
 
@@ -61,6 +61,14 @@ export interface Asked {
   readonly lagging: boolean;
 }
 
+/** The plaza she walks: its frame, its ways, its stations and her own. */
+interface Plaza {
+  readonly frame: PlazaFrame;
+  readonly ways: WayGraph;
+  readonly stations: readonly StationInfo[];
+  readonly home: StationInfo;
+}
+
 /** A stop as she walks to it: its scene, and the stations she names there. */
 interface Stop {
   readonly scene: string;
@@ -73,6 +81,7 @@ export class WelcomeWalk {
   readonly maren: Standing;
   phase: 'coming' | 'speaking' | 'leading' | 'waiting' | 'returning' | 'done' = 'coming';
   private readonly frame: PlazaFrame;
+  private readonly ways: WayGraph;
   private readonly stations: readonly StationInfo[];
   private readonly home: StationInfo;
   /** The scenes said, kept as the walk goes, so a walk ended early takes up from them. */
@@ -81,44 +90,38 @@ export class WelcomeWalk {
   private stop: Stop | null = null;
   /** The points still to walk to, in turn. */
   private path: Point[] = [];
-  /** The point of the lanes nearest the player her path to them was found for. */
+  /** The place on the ways nearest the player her path to them was found for. */
   private aim: Point | null = null;
   private lagged = false;
-  /** Whether, coming to the player, she has stood on the lanes nearest them: from then the prompt goes by distance. */
+  /** Whether, coming to the player, she has stood on the ways nearest them: from then the prompt goes by distance. */
   private reached = false;
   /** How long the player has been left far behind her, seconds. */
   private behindS = 0;
 
-  /** Null where the plaza has no counter of hers, or none of a stop's. `said` are the scenes already said in a walk
-   *  ended early. She starts at the lanes' crossing nearest `player` of those at least `START_FAR_M` from them and,
-   *  where one is, of those out of their view (`seen` says whether a point is in it). */
+  /** Null where the plaza has no counter of hers, or none of a stop's, or no ways. `said` are the scenes already
+   *  said in a walk ended early. She starts at the way point nearest `player` of those at least `START_FAR_M` from
+   *  them and, where one is, of those out of their view (`seen` says whether a point is in it). */
   static round(
     stations: readonly StationInfo[],
     frame: PlazaFrame,
+    ways: WayGraph,
     player: Point,
     said: Iterable<string> = [],
     seen: (point: Point) => boolean = () => false,
   ): WelcomeWalk | null {
     const home = stations.find((station) => station.kind === HER_COUNTER);
     if (!home || STOPS.some(({ kinds }) => kinds.some((kind) => !nearestOf(stations, kind, home.counter)))) return null;
-    const crossings = TOWARD.flatMap((toward) => ACROSS.map((across) => plazaPoint(frame, toward, across)));
-    const far = crossings.filter((crossing) => away(crossing, player) >= START_FAR_M);
-    const unseen = far.filter((crossing) => !seen(crossing));
-    const start = [unseen, far, crossings]
+    const points = ways.points;
+    const far = points.filter((point) => away(point, player) >= START_FAR_M);
+    const unseen = far.filter((point) => !seen(point));
+    const start = [unseen, far, points]
       .find((some) => some.length > 0)
       ?.reduce((best, each) => (away(each, player) < away(best, player) ? each : best));
-    return start ? new WelcomeWalk(frame, stations, home, start, player, new Set(said)) : null;
+    return start ? new WelcomeWalk({ frame, ways, stations, home }, start, player, new Set(said)) : null;
   }
 
-  private constructor(
-    frame: PlazaFrame,
-    stations: readonly StationInfo[],
-    home: StationInfo,
-    [x, y]: Point,
-    player: Point,
-    said: Set<string>,
-  ) {
-    [this.frame, this.stations, this.home, this.saidScenes] = [frame, stations, home, said];
+  private constructor({ frame, ways, stations, home }: Plaza, [x, y]: Point, player: Point, said: Set<string>) {
+    [this.frame, this.ways, this.stations, this.home, this.saidScenes] = [frame, ways, stations, home, said];
     this.maren = { x, y, facing: bearingTo([x, y], player), walking: false };
   }
 
@@ -153,7 +156,7 @@ export class WelcomeWalk {
     if (this.phase === 'coming') {
       if (far <= MEET_M + 1e-6) return this.met(player);
       if (!this.comeTo(player, seconds)) return { say: null, lagging };
-      // On the lanes nearest the player: she greets them from there once they are in reach, as at a stop.
+      // On the ways nearest the player: she greets them from there once they are in reach, as at a stop.
       maren.facing = bearingTo(this.where, player);
       if (far <= FOLLOW_M) return this.met(player);
       [this.reached, this.lagged] = [true, true];
@@ -194,35 +197,44 @@ export class WelcomeWalk {
     return { say: scene, lagging: false };
   }
 
-  /** To the nearest stop not yet said, by where its counters stand from her, or home once none is left. */
+  /** To the nearest stop not yet said, by where its counters stand from her, or home once none is left: she stops at
+   *  the place on the ways nearest their way points, between them where a stop names two. */
   private leadOn(): void {
     const here: Point = [this.maren.x, this.maren.y];
     const left = STOPS.filter(({ scene }) => !this.saidScenes.has(scene)).map(({ scene, kinds }) => {
       const named = kinds.map((kind) => nearestOf(this.stations, kind, here) as StationInfo);
-      const outs = named.map((station) => before(station));
-      const spot: Point = [mean(outs.map((out) => out[0])), mean(outs.map((out) => out[1]))];
-      return { scene, named, spot };
+      const outs = named.map((station) => this.counterPoint(station));
+      const middle: Point = [mean(outs.map((out) => out[0])), mean(outs.map((out) => out[1]))];
+      return { scene, named, spot: this.ways.onWays(middle)?.place ?? middle };
     });
     const next = left.sort((one, two) => away(here, one.spot) - away(here, two.spot))[0];
     if (!next) return this.goHome();
     this.stop = { scene: next.scene, named: next.named };
-    this.path = laneWay(this.frame, here, next.spot);
+    this.path = this.ways.between(here, next.spot);
     this.phase = 'leading';
   }
 
-  /** Back by the lanes to before her counter, and round its end to her place behind it. */
+  /** The way point a station's counter is reached from: the counter's own of those named for counters, nearest
+   *  where a customer stands before it. */
+  private counterPoint(station: StationInfo): Point {
+    const { points, names } = this.ways;
+    const named = this.ways.nearestPoint(before(station), (index) => names[index]?.startsWith('counter:') ?? false);
+    return points[named] ?? before(station);
+  }
+
+  /** Back by the ways to before her counter, and round its end to her place behind it. */
   private goHome(): void {
     const here: Point = [this.maren.x, this.maren.y];
     const round = roundCounter(this.home, this.frame);
-    this.path = [...laneWay(this.frame, here, before(this.home)), ...round.reverse().slice(1)];
+    this.path = [...this.ways.between(here, before(this.home)), ...round.reverse().slice(1)];
     [this.stop, this.lagged, this.phase] = [null, false, 'returning'];
   }
 
-  /** A stride toward the player by the lanes, to the point of them nearest the player and no further, so she never
-   *  leaves the lanes; the way is found again only once that point has moved on. Whether she stands there. */
+  /** A stride toward the player by the ways, to the place on them nearest the player and no further, so she never
+   *  leaves the ways; the way is found again only once that place has moved on. Whether she stands there. */
   private comeTo(player: Point, seconds: number): boolean {
-    const aim = laneNearest(this.frame, player);
-    if (!this.aim || away(this.aim, aim) > 2) [this.path, this.aim] = [laneWay(this.frame, this.where, aim), aim];
+    const aim = this.ways.onWays(player)?.place ?? player;
+    if (!this.aim || away(this.aim, aim) > 2) [this.path, this.aim] = [this.ways.between(this.where, aim), aim];
     this.walk(seconds);
     return this.path.length === 0;
   }

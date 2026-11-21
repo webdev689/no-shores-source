@@ -261,7 +261,11 @@ fn the_test_ground_alone_grants_gear() {
     assert!(named.is_some_and(|(item, _)| item.rarity == Rarity::Legendary && item.attack() == Some(248)));
     assert_eq!(ask(&mut room, player, 2, Asked::Grant(Grant::Xp(190_000))), 0);
     assert_eq!(room.player(player).expect("in").character.level(), 20);
-    room.section = Some(Section { ring: vec![[-50.0, -50.0], [50.0, -50.0], [50.0, 50.0]], spawns: vec![[0.0, 0.0]] });
+    room.section = Some(Section {
+        ring: vec![[-50.0, -50.0], [50.0, -50.0], [50.0, 50.0]],
+        spawns: vec![[0.0, 0.0]],
+        falls_kill: false,
+    });
     assert_eq!(ask(&mut room, player, 3, grant), NOT_THE_TEST_GROUND, "a node's room hands nothing out");
 }
 

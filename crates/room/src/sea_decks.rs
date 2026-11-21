@@ -139,8 +139,11 @@ impl Sea {
         self.fights.lose_men(player, f64::from(fallen) / naval::arms::LARGE_BOAT.crew);
         if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             (character.ship, character.ship_at) = (held.ship, held.ship_at);
-            // What only the sea changes while they fight on foot: their ship's experience, materials and crew.
+            // What only the sea changes while they fight on foot: their ship's experience, materials and crew, and
+            // the ships sunk in a fight they sailed in, counted toward their bounties and quests (a deck counts none).
             (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
+            character.activity.clone_from(&held.activity);
+            character.story.clone_from(&held.story);
             // An officer who joined at sea while they fought here took the sea's next id, which an item picked up on
             // the deck may hold too: they sign on again here, under an id of this character's.
             let joined: Vec<_> = held

@@ -40,7 +40,7 @@ impl Waters for Mouth {
 
 const EAST: [f64; 2] = [1.5, 0.0];
 const SOUTH: [f64; 2] = [0.0, 1.5];
-const STILL: Helm = Helm { steer: 0.0, crab: false, climb: 0 };
+const STILL: Helm = Helm { steer: 0.0, climb: 0 };
 
 fn at_rest(heading: f64, rung: i8) -> Ship {
     Ship { x: 0.0, y: 0.0, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung }
@@ -99,13 +99,6 @@ fn backing_water_reverses_the_helm() {
     let ship = sail(at_rest(0.0, -1), Helm { steer: 1.0, ..STILL }, EAST, &Flat, 300);
     assert_eq!(ship.turn, -HANDLING.turn_speed_oar);
     assert!(ship.heading > PI, "it swings to port: {}", ship.heading);
-}
-
-#[test]
-fn shifted_oars_crab_it_sideways_without_a_turn() {
-    let ship = sail(at_rest(0.0, 0), Helm { steer: 1.0, crab: true, climb: 0 }, EAST, &Flat, 300);
-    assert_eq!([ship.ahead, ship.abeam, ship.turn], [0.0, 1.0, 0.0]);
-    assert!((ship.x - 4.5).abs() < 0.01, "it crabs to starboard, east, after a second gathering way: {}", ship.x);
 }
 
 #[test]

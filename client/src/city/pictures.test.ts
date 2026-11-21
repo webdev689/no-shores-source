@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type { PictureUse } from '../textures/picture.ts';
 import { levelCount, levelsOf, plainLevels, resampled } from './layerImage.ts';
 import {
+  CLOTH_COLOURS,
   COLOUR_LAYERS,
   LAYER_SIZE,
   PICTURE_LAYERS,
@@ -51,6 +52,18 @@ test('gold, iron, bone and the glow are plain colours above the pictures', () =>
   assert.equal(book.materials.glow, COLOUR_LAYERS.glow);
   assert.ok(book.materials.stone < PICTURE_LAYERS && book.materials.paving < PICTURE_LAYERS);
   assert.ok(Object.values(COLOUR_LAYERS).every((layer) => layer >= PICTURE_LAYERS));
+});
+
+test("cloth is plain colours of its own past the array, a faction's the middle of its dye", () => {
+  const book = pictureBook(TEMPERATE, [], [2], noUses);
+  const cloths = Object.keys(CLOTH_COLOURS) as (keyof typeof CLOTH_COLOURS)[];
+  assert.equal(cloths.length, 8);
+  assert.equal(new Set(cloths.map((cloth) => book.materials[cloth])).size, cloths.length, 'each its own layer');
+  assert.ok(cloths.every((cloth) => book.materials[cloth] >= PICTURE_LAYERS));
+  // Stormcaller Blue's ramp runs 344557, 447cc0, 93b9f4, dcdcdc: its cloth is the second and third steps' mean.
+  const blue = CLOTH_COLOURS.stormcaller_blue.map((channel) => Math.round(channel * 255 * 2));
+  assert.deepEqual(blue, [0x44 + 0x93, 0x7c + 0xb9, 0xc0 + 0xf4]);
+  assert.ok(CLOTH_COLOURS.veiled_dusk[2] > CLOTH_COLOURS.veiled_dusk[1], 'the Veiled dusk is violet');
 });
 
 test('a city wanting more pictures than the array holds loses only its rarest, which fall back to the first', () => {

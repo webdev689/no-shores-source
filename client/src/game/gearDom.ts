@@ -9,8 +9,8 @@ import type { Picture } from '../player/picture.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
 import { fineGlyph, glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
-import { elementSvg } from './elementGlyphs.ts';
-import { diagonalFit, drawnBounds, fitIcon } from '../player/iconFit.ts';
+import { elementSvg } from '../player/elementGlyphs.ts';
+import { diagonalFit, drawnBounds, fitIcon, shrunkCanvas } from '../player/iconFit.ts';
 import { charge, play } from './uiSounds.ts';
 
 /** How long a held press is held before it acts, in milliseconds: what cannot be undone is held, not tapped. */
@@ -261,19 +261,21 @@ export function pictureCanvas(picture: Picture, box: number, cap?: number): HTML
   own.getContext('2d')?.putImageData(image, -west, -north, west, north, width, height);
   // An icon long and thin is laid on its tile's diagonal, so a weapon reads at the tile's size; a large picture stands.
   const laid = cap === undefined ? diagonalFit(width, height, box, devicePixelRatio) : null;
-  if (laid) return diagonalCanvas(canvas, own, laid, box);
-  // Grown by whole pixels first, so the one smooth step down never blurs a pixel into its neighbour.
-  const grown = document.createElement('canvas');
-  [grown.width, grown.height] = [width * fit.grown, height * fit.grown];
-  const growing = grown.getContext('2d');
+  if (laid) return diagonalCanvas(canvas, own, laid, box, picture.snap);
+  // Grown by whole pixels first, so the one smooth step down never blurs a pixel into its neighbour; one larger than
+  // its box is shrunk to it by an area average, and drawn as that leaves it.
+  const shrinks = fit.width < width || fit.height < height;
+  const grown = shrinks ? shrunkCanvas(own, fit.width, fit.height, picture.snap) : document.createElement('canvas');
+  const growing = shrinks ? null : grown.getContext('2d');
   if (growing) {
+    [grown.width, grown.height] = [width * fit.grown, height * fit.grown];
     growing.imageSmoothingEnabled = false;
     growing.drawImage(own, 0, 0, grown.width, grown.height);
   }
   [canvas.width, canvas.height] = [fit.width, fit.height];
   const drawing = canvas.getContext('2d');
   if (drawing) {
-    drawing.imageSmoothingEnabled = fit.smooth;
+    drawing.imageSmoothingEnabled = fit.smooth && !shrinks;
     drawing.imageSmoothingQuality = 'high';
     drawing.drawImage(grown, 0, 0, fit.width, fit.height);
   }
@@ -283,24 +285,30 @@ export function pictureCanvas(picture: Picture, box: number, cap?: number): HTML
   return canvas;
 }
 
-/** A long thin picture grown by whole pixels, then turned onto the diagonal of a square box and smoothed once. */
+/** A long thin picture grown by whole pixels, or shrunk by an area average (and snapped to `snap`'s palette, where it
+ *  keeps to one), then turned onto the diagonal of a square box and smoothed once. */
 function diagonalCanvas(
   canvas: HTMLCanvasElement,
   own: HTMLCanvasElement,
   laid: NonNullable<ReturnType<typeof diagonalFit>>,
   box: number,
+  snap?: (pixels: Uint8ClampedArray) => void,
 ): HTMLCanvasElement {
-  const grown = document.createElement('canvas');
-  [grown.width, grown.height] = [own.width * laid.grown, own.height * laid.grown];
-  const growing = grown.getContext('2d');
+  const shrinks = laid.scale < 1;
+  const shrunkTo = (side: number) => Math.max(1, Math.round(side * laid.scale));
+  const grown = shrinks
+    ? shrunkCanvas(own, shrunkTo(own.width), shrunkTo(own.height), snap)
+    : document.createElement('canvas');
+  const growing = shrinks ? null : grown.getContext('2d');
   if (growing) {
+    [grown.width, grown.height] = [own.width * laid.grown, own.height * laid.grown];
     growing.imageSmoothingEnabled = false;
     growing.drawImage(own, 0, 0, grown.width, grown.height);
   }
   [canvas.width, canvas.height] = [laid.room, laid.room];
   const drawing = canvas.getContext('2d');
   if (drawing) {
-    const [across, down] = [own.width * laid.scale, own.height * laid.scale];
+    const [across, down] = shrinks ? [grown.width, grown.height] : [own.width * laid.scale, own.height * laid.scale];
     drawing.imageSmoothingEnabled = true;
     drawing.imageSmoothingQuality = 'high';
     drawing.translate(laid.room / 2, laid.room / 2);

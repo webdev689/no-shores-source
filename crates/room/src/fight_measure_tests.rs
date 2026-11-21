@@ -49,7 +49,7 @@ pub(crate) fn plain_orders(fight: &Fight, me: ShipId, tick: u64, close: f64) -> 
         });
     let climb = i8::from(mine.ship.rung < SAILS_SET && tick.is_multiple_of(20));
     let Some(target) = target else {
-        return Orders { helm: Helm { steer: 0.0, crab: false, climb }, ..QUIET };
+        return Orders { helm: Helm { steer: 0.0, climb }, ..QUIET };
     };
     let there = [target.ship.x, target.ship.y];
     let off = wrap(heading_to(at, there) - mine.ship.heading);
@@ -68,7 +68,8 @@ pub(crate) fn plain_orders(fight: &Fight, me: ShipId, tick: u64, close: f64) -> 
     let aim = Aim { bearing_deg: off.to_degrees(), range_m: range, ray: None };
     let laid = fight.laid(me, &aim).is_some();
     let fire = laid && range < 260.0 && tick.is_multiple_of(15);
-    Orders { helm: Helm { steer, crab: false, climb }, aim: Some(aim), fire, brace: !laid && range < 400.0, load: None }
+    let brace = !laid && range < 400.0;
+    Orders { helm: Helm { steer, climb }, aim: Some(aim), fire, brace, load: None, boost: false }
 }
 
 /// How one fight went: whether the player won (the captain struck or went down), was sunk, or neither within

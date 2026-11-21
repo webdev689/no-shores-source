@@ -124,7 +124,7 @@ table Told {
 }
 
 // A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: the ship's helm (the rudder from -1, to
-// port, to 1, to starboard; whether its oars pull it sideways; a rung up the ladder, 1, or down, -1, for one tick); the
+// port, to 1, to starboard; a rung up the ladder, 1, or down, -1, for one tick); the
 // player's look while they aim (its bearing off the bow in degrees and how far out it meets the water in metres, then
 // its ray: the aim eye and the way it looks, east, south and up; none while they do not aim); whether the ship fires
 // and whether it braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where it puts to sea (x, y and
@@ -134,7 +134,6 @@ table Told {
 table Orders {
   sequence: uint;
   steer: double;
-  crab: bool;
   climb: byte;
   aim: [double];
   fire: bool;
@@ -172,7 +171,8 @@ table Joined {
 // it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body and
 // whose statuses (each one's ticks left, a Veiled player's among them) follow its action's numbers, and where they
 // stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks left, 2
-// dead, with the ticks since. A number, not a schema enum, so the TypeScript flatc makes stays erasable.
+// dead by straying, 3 dead by a fall in a social space, each with the ticks since. A number, not a schema enum, so the
+// TypeScript flatc makes stays erasable.
 table Seen {
   player: uint;
   acknowledged: uint;

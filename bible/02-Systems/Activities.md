@@ -197,8 +197,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
   opens again, so one dungeon farms no "Clear 3 dungeons."; a run is a room of its own, so each run counts. A room
   knows its island from its node's file, or from the patrol, the Elite Dungeon or the sea island its dungeon is of
   (`Room::set_island`); a room on no island counts no place.
-- **The bounty board** stands free in Overlook's plaza, seaward of the braziers on the Mage's side and away from
-  the Harbourmaster ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
+- **The bounty board** stands on the notice board's landing in the Watch Court of Overlook's hub, its face to the
+  court ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
   plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is
   no station and has no keeper. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
   places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an
@@ -215,7 +215,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
   that goes down, sunk or taken (a ship taken is scuttled once her boarders leave her), on the character it keeps for
   each player who fought her, once each however often they are listed, by the water she went down in (its
   continent's id, none off every water) and her captain's rank, on the sea's day (`Sea::count_down`,
-  `gear::objectives::count_ship_down`). A count that moves is saved and sent.
+  `gear::objectives::count_ship_down`), one fighting on a captain's deck among them: stepping off, they keep it
+  (`step_off`). A count that moves is saved and sent.
 - **Quests** (side quests, and the story's missions as quests of kind story) use the same objectives, kept until
   done, and are written as data (`content/gear/quests.json`, read by `gear::quests`, none written yet): each its id,
   its kind (story or side), its name, one line of its tale, an optional banner key (else the Journal gives it one of

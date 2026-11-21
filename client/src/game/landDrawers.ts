@@ -15,6 +15,7 @@ import type { ShadowMap } from '../shadow.ts';
 import type { Shot } from './camera.ts';
 import type { Drawer, GameScene } from './scene.ts';
 import { withWrecks } from './wrecks.ts';
+import { cityPlantings } from './cityPlants.ts';
 
 /** The forged models' tables and the RMB blocks read so far, shared by every landmass's city. */
 export interface CityAssets {
@@ -170,6 +171,7 @@ export function landDrawers(
   const cleared = (x: number, y: number) =>
     landmass.cleared(x, y) || (city?.cleared(x, y) ?? false) || (laid?.view.cleared(x, y) ?? false);
   const nature = biome ? new NatureView(gpu) : null;
+  const cityPlanted = cityPlantings(plan?.social.plants ?? [], biome ?? '');
   // Nature is updated once a frame, for its shadow's pass and its own alike.
   let updatedFor: Float32Array | null = null;
   const keepNature = (view: NatureView, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap) => {
@@ -184,7 +186,7 @@ export function landDrawers(
       version,
       sample,
       cleared,
-      planted: (tileX: number, tileY: number) => laid?.planted(tileX, tileY) ?? [],
+      planted: (tileX: number, tileY: number) => [...(laid?.planted(tileX, tileY) ?? []), ...cityPlanted(tileX, tileY)],
       groundColour: land.ground,
     };
     view.update({ fromEye, eye: shot.eye, exaggeration: 1, time }, ground, shadow);

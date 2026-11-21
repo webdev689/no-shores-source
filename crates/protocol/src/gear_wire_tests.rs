@@ -202,7 +202,7 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
 #[test]
 fn a_patrols_players_are_sent_its_entrances_and_no_one_else_is() {
     let ring = vec![[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]];
-    let section = room::Section { ring, spawns: vec![[0.0, 0.0]] };
+    let section = room::Section { ring, spawns: vec![[0.0, 0.0]], falls_kill: false };
     let mut room = Room::node(room::Floor::Flat, Vec::new(), section);
     room.start_patrol("saltgrass-downs", 0);
     let player = room.join().expect("a room with space");

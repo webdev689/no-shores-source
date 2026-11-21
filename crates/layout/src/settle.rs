@@ -299,11 +299,8 @@ mod tests {
         use city::solids::{Material, Shape, Solid};
         // A building's pad 10 m square at 10 m, on a plinth from 8.8 m where the ground falls to 9 m under its middle.
         let plinth = Solid::upright(Shape::Block, [5.0, 5.0, 8.8], [10.3, 10.3, 1.2], Material::Stone);
-        let mut seating = Seating {
-            solids: vec![plinth],
-            pads: vec![Pad { bounds: [0.0, 0.0, 10.0, 10.0], level: 10.0 }],
-            ..Seating::default()
-        };
+        let mut seating =
+            Seating { solids: vec![plinth], pads: vec![Pad::flat([0.0, 0.0, 10.0, 10.0], 10.0)], ..Seating::default() };
         let was = Planned { props: Vec::new(), solids: vec![9.0], bridges: Vec::new() };
         // A road's bed beside it raised the ground under the plinth's middle.
         follow_ground(&mut seating, &|_, _| 9.4, &was);

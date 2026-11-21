@@ -5,7 +5,7 @@ use super::*;
 
 fn node_of(kind: NodeKind, seas: gear::Difficulty) -> (Room, PlayerId) {
     let ring = vec![[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
-    let section = Section { ring, spawns: vec![[0.0, 0.0]] };
+    let section = Section { ring, spawns: vec![[0.0, 0.0]], falls_kill: false };
     let mut room = Room::garrisoned(Floor::Flat, Vec::new(), section, kind, ("saltgrass-downs", None));
     room.set_difficulty(seas);
     let player = room.join().expect("a room with space");
