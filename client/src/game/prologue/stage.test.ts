@@ -192,6 +192,7 @@ test("a frame heard at sea or ashore plays the world's own soundscape there, the
     flames: {},
     overheads: { frame: () => undefined },
     dialogue: { frame: () => undefined },
+    screen: { blurPixels: 0 },
     canvas: { clientWidth: 960, clientHeight: 540 },
     landDrawers: () => null,
     landmass: () => landmass,

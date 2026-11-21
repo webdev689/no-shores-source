@@ -1,48 +1,17 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
+import { Stack } from '../../ui/stack.ts';
+import { fakeInterface, laidOf, wordsOf } from '../../ui/uiForTests.ts';
 import { tapToStart } from './tap.ts';
 
-/** An element as far as the tap to start uses one: its text, classes and listeners. */
-class Element {
-  textContent = '';
-  className = '';
-  tabIndex = -1;
-  readonly children: Element[] = [];
-  readonly heard = new Map<string, () => void>();
-  removed = false;
-  readonly classList = {
-    names: new Set<string>(),
-    add: (name: string) => void this.classList.names.add(name),
-  };
-  append(...more: Element[]): void {
-    this.children.push(...more);
-  }
-  setAttribute(): void {}
-  focus(): void {}
-  remove(): void {
-    this.removed = true;
-  }
-  addEventListener(kind: string, heard: () => void): void {
-    this.heard.set(kind, heard);
-  }
-}
-
-/** A page of fake elements, its window's keys heard as the tap to start listens for them. */
+/** The page's own pointer and keys, heard as the tap to start listens for them. */
 function page() {
-  const keys = new Set<() => void>();
-  const document = {
-    createElement: () => new Element(),
-    getElementById: () => null,
-    head: new Element(),
-  };
+  const heard = new Set<() => void>();
   Object.assign(globalThis, {
-    document,
-    window: globalThis,
-    addEventListener: (_kind: string, heard: () => void) => keys.add(heard),
-    removeEventListener: (_kind: string, heard: () => void) => keys.delete(heard),
+    addEventListener: (_kind: string, listener: () => void) => heard.add(listener),
+    removeEventListener: (_kind: string, listener: () => void) => heard.delete(listener),
   });
-  const root = Object.assign(new Element(), { ownerDocument: document });
-  return { root, keys, screen: () => root.children[0] };
+  return heard;
 }
 
 const settle = async () => {
@@ -52,29 +21,38 @@ const settle = async () => {
 test('the tap to start waits for both the tap and the world, then fades and goes', async () => {
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
-    const { root, keys, screen } = page();
+    const heard = page();
+    const clock = { now: 0 };
+    const stack = new Stack();
+    const { ui } = fakeInterface();
+    const words = () => wordsOf(laidOf(stack.node(ui)));
     let loaded: () => void = () => undefined;
     const ready = new Promise<void>((resolve) => (loaded = resolve));
     let started = false;
-    void tapToStart(root as unknown as HTMLElement, ready).then(() => (started = true));
-    const shown = screen();
-    assert.ok(shown);
-    assert.deepEqual(
-      shown.children.map((child) => child.textContent),
-      ['Overlook', 'Click or press any key to start', ''],
+    void tapToStart(stack, ready, () => clock.now).then(() => (started = true));
+    assert.ok(words().includes('OVERLOOK'));
+    assert.ok(words().includes('CLICK OR PRESS ANY KEY TO START'));
+    assert.equal(
+      laidOf(stack.node(ui)).find((each) => each.node.id === 'story-tap')?.node.solid,
+      true,
+      'it takes the pointer',
     );
-    for (const key of keys) key();
+    for (const listener of heard) listener();
     await settle();
-    assert.equal(keys.size, 0, 'a key is heard once');
-    assert.equal(shown.children[2]?.textContent, 'Loading', 'tapped before the world is ready, it says it loads');
+    assert.equal(heard.size, 0, 'a tap or a key is heard once');
+    assert.ok(words().includes('LOADING'), 'tapped before the world is ready, it says it loads');
     assert.equal(started, false);
     loaded();
     await settle();
     assert.ok(started);
-    assert.ok(shown.classList.names.has('gone'));
+    clock.now = 0.6;
+    const tap = laidOf(stack.node(ui)).find((each) => each.node.id === 'story-tap');
+    assert.ok(tap && (tap.node.opacity ?? 1) < 1, 'fading');
+    assert.equal(tap?.node.through, true, 'and lets the pointer through');
     mock.timers.tick(1300);
-    assert.ok(shown.removed);
+    assert.deepEqual(words(), [], 'gone');
   } finally {
     mock.timers.reset();
+    Object.assign(globalThis, { addEventListener: undefined, removeEventListener: undefined });
   }
 });

@@ -1,69 +1,117 @@
 // A boss's nameplate as the camera finds them: their faction's emblem, their name large across the view, the faction
-// under it, and a rule of iron red between, struck in and held while they cry out, then gone.
-import { make } from '../../editor/dom.ts';
-import { emblemUrl } from '../../plus/emblems.ts';
+// under it, and a rule of iron red between, struck in and held while they cry out, then gone. Drawn by the game as a
+// layer of its interface; a screen reader hears the name and faction as the plate is struck.
+import { dropped, Eased, pageClock, ruleOf } from '../../cinema/cinemaParts.ts';
+import { EMBLEM_PIXELS, emblemUrl } from '../../plus/emblems.ts';
 import { motionReduced } from '../../plus/kit.ts';
+import { announce } from '../../ui/announce.ts';
+import { cubicBezier } from '../../ui/ease.ts';
+import type { Child } from '../../ui/node.ts';
+import type { Stack } from '../../ui/stack.ts';
+import type { Interface } from '../../ui/ui.ts';
 
-const STYLE_ID = 'story-nameplate';
-const CSS = `
-.story-nameplate { position: absolute; left: 0; right: 0; top: 58%; text-align: center; pointer-events: none;
-  opacity: 0; transition: opacity 0.35s; z-index: 26; }
-.story-nameplate.shown { opacity: 1; }
-.story-nameplate img { width: 55px; height: 55px; image-rendering: pixelated; display: block; margin: 0 auto 11px; }
-.story-nameplate-name { font-size: 66px; line-height: 1; letter-spacing: round(up, calc(4em / 22), 1px);
-  text-transform: uppercase; color: #f0e4c4;
-  text-shadow: 0 4px 0 #2a0404, 0 0 22px rgba(120, 10, 4, 0.75), 0 0 6px #000; }
-.story-nameplate-rule { width: 660px; max-width: 80vw; height: 4px; margin: 14px auto 11px;
-  background: linear-gradient(90deg, transparent, #6b1208 15%, #c8341c 50%, #6b1208 85%, transparent);
-  transform: scaleX(0); transition: transform 0.7s cubic-bezier(.2,.9,.2,1) 0.15s; }
-.story-nameplate.shown .story-nameplate-rule { transform: none; }
-.story-nameplate-faction { font-size: 22px; letter-spacing: round(up, calc(6em / 22), 1px); text-transform: uppercase;
-  color: #b9a37a; text-shadow: 0 2px 0 #000; }
-.story-nameplate.struck .story-nameplate-name { animation: story-strike 0.5s cubic-bezier(.2,.9,.2,1); }
-@keyframes story-strike { 0% { transform: scale(1.6); opacity: 0; } 60% { transform: scale(0.97); opacity: 1; } 100% { transform: none; } }
-@media (max-width: 900px) { .story-nameplate-name { font-size: 44px; } }
-`;
+/** Over the HUD and the objective, under the cinema's screen. */
+const NAMEPLATE_Z = 26;
+const STRIKE_S = 0.5;
+const RULE_S = 0.7;
+const RULE_HOLD_S = 0.15;
+const IRON_RULE = ruleOf('nameplate rule', [
+  [0.15, '#6b1208'],
+  [0.5, '#c8341c'],
+  [0.85, '#6b1208'],
+]);
+/** The strike's and the rule's ease, `cubic-bezier(.2,.9,.2,1)`. */
+const struck = (share: number) => cubicBezier(0.2, 0.9, 0.2, 1, share);
 
 export class Nameplate {
-  private readonly plate: HTMLElement;
-  private readonly emblem: HTMLImageElement;
-  private readonly name: HTMLElement;
-  private readonly faction: HTMLElement;
+  private readonly shown = new Eased(0, (share) => share);
+  private readonly clock: () => number;
+  private readonly removeLayer: () => void;
+  private plate: { readonly name: string; readonly faction: string; readonly emblem: string | null } | null = null;
+  private since = 0;
+  private strike = false;
 
-  constructor(root: HTMLElement) {
-    const page = root.ownerDocument;
-    if (!page.getElementById(STYLE_ID)) {
-      const sheet = page.createElement('style');
-      sheet.id = STYLE_ID;
-      sheet.textContent = CSS;
-      page.head.append(sheet);
-    }
-    this.plate = make('div', '', 'story-nameplate');
-    this.emblem = page.createElement('img');
-    this.emblem.alt = '';
-    this.name = make('div', '', 'story-nameplate-name');
-    this.faction = make('div', '', 'story-nameplate-faction');
-    this.plate.append(this.emblem, this.name, make('div', '', 'story-nameplate-rule'), this.faction);
-    this.plate.setAttribute('role', 'status');
-    root.append(this.plate);
+  constructor(stack: Stack, clock: () => number = pageClock) {
+    this.clock = clock;
+    this.removeLayer = stack.add((ui) => this.node(ui));
   }
 
   /** Strikes the plate in: the name, its faction by number and name. */
   show(name: string, faction: number, factionName: string): void {
-    const url = emblemUrl(faction);
-    this.emblem.hidden = !url;
-    if (url) this.emblem.src = url;
-    this.name.textContent = name;
-    this.faction.textContent = factionName;
-    this.plate.classList.toggle('struck', !motionReduced());
-    this.plate.classList.add('shown');
+    this.plate = { name, faction: factionName, emblem: emblemUrl(faction) };
+    this.since = this.clock();
+    this.strike = !motionReduced();
+    this.shown.set(1, 0.35, this.since);
+    announce(`${name}, ${factionName}`);
   }
 
   hide(): void {
-    this.plate.classList.remove('shown', 'struck');
+    this.shown.set(0, 0.35, this.clock());
   }
 
   remove(): void {
-    this.plate.remove();
+    this.removeLayer();
+  }
+
+  /** The plate this frame, while it shows or fades. */
+  node(ui: Interface): Child {
+    const plate = this.plate;
+    const now = this.clock();
+    const shown = this.shown.value(now);
+    if (!plate || shown <= 0) return null;
+    const { width, height } = ui.size;
+    const into = now - this.since;
+    // The name strikes in: its fade, 0 to whole over the first 60% of the strike. Grown and shrunk as the sheet's
+    // `scale` did, it cannot be: the face is drawn in whole steps.
+    const nameShown = this.strike ? Math.min(1, into / (0.6 * STRIKE_S)) : 1;
+    const rule = this.shown.target > 0 ? struck(Math.min(1, Math.max(0, (into - RULE_HOLD_S) / RULE_S))) : 1;
+    const ruleWide = Math.min(660, Math.round(width * 0.8));
+    return {
+      width,
+      direction: 'column',
+      alignX: 'center',
+      through: true,
+      opacity: shown,
+      float: { to: 'screen', y: Math.round(height * 0.58), z: NAMEPLATE_Z },
+      children: [
+        plate.emblem !== null && {
+          width: 55,
+          height: 55,
+          picture: {
+            key: plate.emblem,
+            // The emblem's SVG, drawn by the page: its data URL's own markup.
+            source: { svg: decodeURIComponent(plate.emblem.slice(plate.emblem.indexOf(',') + 1)) },
+            pixel: { width: EMBLEM_PIXELS, height: EMBLEM_PIXELS },
+          },
+        },
+        plate.emblem !== null && { height: 11 },
+        dropped(
+          {
+            words: plate.name.toUpperCase(),
+            size: width <= 900 ? 4 : 6,
+            leading: (width <= 900 ? 4 : 6) * 11,
+            colour: '#f0e4c4',
+            tracking: 4,
+            wrap: false,
+          },
+          '#2a0404',
+          4,
+          { opacity: nameShown },
+        ),
+        { height: 10 },
+        {
+          width: ruleWide,
+          height: 4,
+          alignX: 'center',
+          children: [{ width: Math.round(ruleWide * rule), height: 4, picture: IRON_RULE }],
+        },
+        { height: 11 },
+        dropped(
+          { words: plate.faction.toUpperCase(), size: 2, colour: '#b9a37a', tracking: 6, wrap: false },
+          '#000',
+          2,
+        ),
+      ],
+    };
   }
 }

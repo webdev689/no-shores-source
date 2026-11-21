@@ -9,12 +9,6 @@ import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { drawnPress, drawnReach } from './uiSounds.ts';
 
-/** Whether the dialogue box under `root` holds the screen, which the drawn display gives way to.
- *  shortcut: read from the page while the dialogue box is still an element; it goes once the box is drawn. */
-export function speakingIn(root: ParentNode): boolean {
-  return root.querySelector(':scope > .speech-box:not([hidden])') !== null;
-}
-
 export class DrawnInterface {
   private ui: Interface | null = null;
   private readonly canvas: HTMLCanvasElement;

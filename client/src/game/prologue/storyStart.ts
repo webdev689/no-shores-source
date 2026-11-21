@@ -47,12 +47,14 @@ import { readWreck } from './wreckLayout.ts';
 import type { WreckDrawn } from './wreckScenery.ts';
 import { loadWreck } from './wreckView.ts';
 import { takeOrGiveBack } from './takeOrGiveBack.ts';
+import type { Stack } from '../../ui/stack.ts';
 
 /** What the game hands the story. */
 export interface StoryGame {
   readonly gpu: Gpu;
   readonly canvas: HTMLCanvasElement;
-  readonly hudRoot: HTMLElement;
+  /** The game's interface, which the story's screen, words and windows join as layers of. */
+  readonly stack: Stack;
   readonly hud: Hud;
   readonly scene: GameScene;
   readonly figures: FigureView;
@@ -92,7 +94,7 @@ function onceFetched(): () => Promise<WreckDrawn> {
 }
 
 export async function startStory(game: StoryGame, from: BeatName | null): Promise<Started> {
-  const { gpu, scene, hudRoot } = game;
+  const { gpu, scene, stack } = game;
   const wreckDrawn = onceFetched();
   // The story's own words are read, and refused if they do not hold, before it takes anything from the page.
   const readCast = castOf(cast);
@@ -115,19 +117,19 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     const [birds, flames] = [new Birds(gpu), new Flames(gpu)];
     took(() => birds.destroy());
     took(() => flames.destroy());
-    // The screen takes the page's touches and its canvas's ease for the game until it is removed.
-    const screen = new Screen(hudRoot, game.canvas);
+    // The screen takes the page's touches for the game until it is removed.
+    const screen = new Screen(stack, game.canvas);
     took(() => screen.remove());
-    const dialogue = new DialogueBox(hudRoot, worldOutput);
+    const dialogue = new DialogueBox(stack, worldOutput);
     took(() => dialogue.remove());
-    const overheads = new Overheads(hudRoot, worldOutput);
+    const overheads = new Overheads(stack, worldOutput);
     took(() => overheads.remove());
-    const nameplate = new Nameplate(hudRoot);
+    const nameplate = new Nameplate(stack);
     took(() => nameplate.remove());
     const stage = new Stage({
       gpu,
       canvas: game.canvas,
-      hudRoot,
+      stack,
       hud: game.hud,
       scene,
       figures: game.figures,

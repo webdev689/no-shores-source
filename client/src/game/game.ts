@@ -46,7 +46,9 @@ import { StoryHost } from './prologue/host.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { installInterfaceSounds } from './uiSounds.ts';
 import { Stack } from '../ui/stack.ts';
-import { DrawnInterface, speakingIn } from './drawnInterface.ts';
+import { DrawnInterface } from './drawnInterface.ts';
+import { speaking } from '../speech/dialogue.ts';
+import { creationOpen } from './prologue/creation.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -69,7 +71,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const hud = new Hud();
   stack.add((ui) => hud.node(ui));
   // The HUD gives way to the fight's display and the dialogue box while they hold the screen.
-  hud.onBesides(() => ({ ...footView.shown, speaking: speakingIn(hudRoot) }));
+  hud.onBesides(() => ({ ...footView.shown, speaking: speaking() }));
   // The first tap or key wakes the sound, so the story's intro begins heard.
   installInterfaceSounds(hudRoot);
   const asked = new URLSearchParams(location.search).get('at');
@@ -77,7 +79,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
   // The HUD starts veiled for loading; the story's tap to start stands in front of its loading instead.
   hud.veil(flow.mode === 'loading' ? flow.words : null);
-  const story = flow.mode === 'story' ? new StoryHost(hudRoot, canvas) : null;
+  const story = flow.mode === 'story' ? new StoryHost(stack, canvas) : null;
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
@@ -89,7 +91,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const ui = new DrawnInterface(gpu, canvas);
   const figureView = new FigureView(gpu);
   const { world, landTexts, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
-  const after = afterStoryOn(hudRoot, forge, (x, y) => scene.groundAt(x, y));
+  const after = afterStoryOn(stack, forge, (x, y) => scene.groundAt(x, y));
   const { continents } = world;
   const ambience = new Ambience(world);
   const cityAssets = loadCityAssets(base);
@@ -141,7 +143,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let foot: Foot | null = null;
   let sea: Sea | null = null;
   const outlines = continents.map((each) => each.outline);
-  const helmMap = new HelmMap({ gpu, outlines, store, root: hudRoot, sea: () => sea });
+  const helmMap = new HelmMap({ gpu, outlines, store, stack, sea: () => sea });
   let [ready, waited] = [false, 0];
   let wasDead = false;
   /** Death's grey over the world, drawn under the interface. */
@@ -236,7 +238,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   if (flow.mode === 'loading') arrive();
   if (story) {
-    const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land };
+    const game = { gpu, canvas, stack, hud, scene, figures: figureView, footView, forge, firstPerson, land };
     const more = { movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop, music };
     const lands = { home: { landmass, drawers }, closeSource, ambience };
     story.begin({ ...game, ...more, ...lands }, () => ((flow = arriving(FIRST_NODE, 'Overlook')), arrive()));
@@ -565,7 +567,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in flow && Boolean(flow.menu);
-    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys());
+    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys() || creationOpen());
     const heard = input.frame();
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;

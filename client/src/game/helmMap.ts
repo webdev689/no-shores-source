@@ -7,17 +7,18 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { Viewport } from '../overworld/overworldCamera.ts';
 import type { Discovered } from './discovered.ts';
 import type { Sea } from './sea.ts';
+import type { Stack } from '../ui/stack.ts';
 
 /** What the map at the helm draws over the finished picture. */
 export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
 
-/** What the map is made with: the GPU, every continent's coast, the forge's art, the page it lays its marks on, and
+/** What the map is made with: the GPU, every continent's coast, the forge's art, the interface it draws its marks on, and
  *  the ship at sea, if one is. */
 export interface HelmMapContext {
   readonly gpu: Gpu;
   readonly outlines: readonly (readonly Point2[])[];
   readonly store: ForgeStore;
-  readonly root: HTMLElement;
+  readonly stack: Stack;
   readonly sea: () => Sea | null;
 }
 
@@ -43,9 +44,15 @@ export class HelmMap {
   /** The map, its coasts worked out now if they are not yet. */
   get made(): HeldMap {
     if (this.map) return this.map;
-    const { gpu, outlines, store, root } = this.context;
+    const { gpu, outlines, store, stack } = this.context;
     const field = coastField(outlines, CHART_COLUMNS, CHART_ROWS, CHART_CELL_M);
-    const made = new HeldMap(gpu, field, store, (to) => this.sea()?.planTo(to) ?? { ok: false, why: 'No ship.' }, root);
+    const made = new HeldMap(
+      gpu,
+      field,
+      store,
+      (to) => this.sea()?.planTo(to) ?? { ok: false, why: 'No ship.' },
+      stack,
+    );
     made.onLowered((sail) => {
       this.sea()?.view.fromHelm();
       if (sail) this.sea()?.sailTo(sail);
