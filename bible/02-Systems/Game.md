@@ -17,6 +17,7 @@ code:
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
   - client/src/game/footGear.ts#groundRings
+  - client/src/game/footGround.ts#standOn
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/sea.ts#Sea

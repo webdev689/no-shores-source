@@ -39,11 +39,12 @@ import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
+import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Hint } from './gearDom.ts';
 import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
-import { type Rect, windowRect } from './nodes.ts';
+import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
 import { chime, worldOutput } from './uiSounds.ts';
@@ -105,29 +106,6 @@ export interface FootFrame {
   readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly Hint[];
-}
-
-/** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the
- *  fight's on them as its room stands its bodies. Answers the boxes and the window's text. */
-async function standOn(
-  context: FootContext,
-  combat: CombatRules,
-  rect: Rect,
-): Promise<{ boxes: readonly Block[]; ground: string }> {
-  const [ground, boxes] = await Promise.all([context.land.window(rect), context.land.boxes(rect)]);
-  context.movement.setCourse(boxes);
-  combat.setCourse(boxes);
-  if (!context.movement.setGround(ground) || !combat.setGround(ground))
-    throw new Error('the ground of this place did not load');
-  return { boxes, ground };
-}
-
-/** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
- *  cut there, and its boxes. */
-function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[]): string {
-  const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
-  const { id, kind, continent, ring, spawns } = node;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
 }
 
 /**
