@@ -9,13 +9,11 @@ use gear::dice::Dice;
 use gear::vendor::Vendor;
 use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
 
-/// How near the stall a player must stand for a social space's asks, a counter for its own, and a resource node's
-/// middle for gathering, in metres. A counter's is a metre past where the browser offers it, for a body still walking
-/// up; a node's reaches past its dressing's edge (an outcrop's rubble, a log stack turned across), so it is gathered
-/// from any side a body can stand.
+/// How near the stall a player must stand for a social space's asks, a counter for its own, and a resource node for
+/// gathering, in metres. A counter's is a metre past where the browser offers it, for a body still walking up.
 pub const STALL_REACH: f64 = 4.0;
 pub const COUNTER_REACH: f64 = 4.0;
-pub const NODE_REACH: f64 = 3.5;
+pub const NODE_REACH: f64 = 2.5;
 /// How long a node takes to gather, ticks (two seconds), and how far the body may stir meanwhile, metres.
 pub const GATHER_TICKS: u64 = 120;
 pub const GATHER_STIR_M: f64 = 0.3;

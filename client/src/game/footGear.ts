@@ -1,8 +1,7 @@
-// What a player's gear lays on the ground on foot: each resource node they may still gather, a ring in sea green
-// under a beam of light seen across the patrol, so a route can be planned through them; each station that deals with
-// them, a brass ring at its counter, and Shape's spot while he is here. The drops lying for them stand as their own
-// pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's offer opened, or a node within
-// reach gathered. The room judges every gather; the rings only show where.
+// What a player's gear lays on the ground on foot: each station that deals with them, a brass ring at its counter, and
+// Shape's spot while he is here. The drops lying for them stand as their own pictures (`combat/drops.ts`), and the
+// resource nodes as the forge draws them (`nodeCards.ts`). And what E does where they stand: a station's or Shape's
+// offer opened, or a node within reach gathered while E is held. The room judges every gather.
 
 import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
@@ -13,19 +12,15 @@ import { KEEPERS } from './keepers.ts';
 import { shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** How near a resource node's middle a player stands to gather it, past its dressing's edge; how long E is held to
- *  gather it, and how far the body may stir meanwhile: as the room has them (`asks.rs`). */
-export const NODE_REACH_M = 3.5;
+/** How near a resource node a player stands to gather it; how long E is held to gather it, and how far the body may
+ *  stir meanwhile: as the room has them (`asks.rs`). The most of a resource a player carries, as the gear crate has
+ *  it (`character.rs`): a node of one they are full of is not offered. */
+export const NODE_REACH_M = 2.5;
 export const GATHER_S = 2;
 export const GATHER_STIR_M = 0.3;
-/** A station's ring in brass, a resource node's in sea green, each beating slowly so it is seen across the ground. */
+export const STOCK_MOST = 200;
+/** A station's ring in brass. */
 const BRASS = [0.93, 0.74, 0.32] as const;
-const NODE = [0.35, 0.85, 0.7] as const;
-/** How tall a node's beam stands, and half of how wide it is, metres: it is seen across the patrol, hundreds of metres
- *  off. */
-const NODE_BEAM = { height: 40, half: 0.5 } as const;
-/** How much of its opacity a beam keeps at its top. */
-const BEAM_TOP = 0.2;
 
 /** Shape's offer, opened as a counter's is, within the reach a counter serves. */
 const SHAPE_OFFER = { words: KEEPERS.shape.title, opens: { view: 'shape' } } as const;
@@ -41,20 +36,21 @@ export interface Use {
 }
 
 /** The use within reach of a player at (x, y): a station's offer, then Shape's, before a node, so a counter is never
- *  lost to one. */
+ *  lost to one. A node is not offered on horseback (`mounted`), nor one whose resource the player is full of. */
 export function useAt(
   x: number,
   y: number,
   here: Here,
   gear: GearState | null,
   ask: (asked: GearAsk) => void,
+  mounted = false,
 ): Use | null {
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const near = shape && Math.hypot(shape[0] - x, shape[1] - y) <= SERVED_M;
   const offer = offerAt(here.stations ?? [], x, y) ?? (near ? SHAPE_OFFER : null);
   if (offer) return { words: offer.words, run: () => openGearWindow(offer.opens) };
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
-  if (!node) return null;
+  if (!node || mounted || (gear?.resources[node.resource] ?? 0) >= STOCK_MOST) return null;
   return {
     words: `Hold to gather ${resourceName(node.resource)}`,
     run: () => ask({ kind: ASKS.gather, node: node.index }),
@@ -62,50 +58,13 @@ export function useAt(
   };
 }
 
-/** A beam of light standing `height` over `base`, in two crossed planes so it is seen from every side, fading upward. */
-function markBeam(
-  out: number[],
-  base: readonly number[],
-  { height, half }: { readonly height: number; readonly half: number },
-  colour: readonly number[],
-): void {
-  const [x = 0, y = 0, z = 0] = base;
-  const [red = 1, green = 1, blue = 1, opacity = 1] = colour;
-  const vertex = (east: number, south: number, up: number, alpha: number) =>
-    out.push(x + east, y + south, z + up, red, green, blue, alpha);
-  const top = opacity * BEAM_TOP;
-  for (const [east, south] of [
-    [half, 0],
-    [0, half],
-  ] as const) {
-    vertex(-east, -south, 0, opacity);
-    vertex(east, south, 0, opacity);
-    vertex(east, south, height, top);
-    vertex(-east, -south, 0, opacity);
-    vertex(east, south, height, top);
-    vertex(-east, -south, height, top);
-  }
-}
-
-/** The rings on the ground at `seconds` of the page's clock, each standing on `floor`'s height where it is. */
-export function groundRings(
-  gear: GearState | null,
-  here: Here,
-  floor: (x: number, y: number) => number,
-  seconds: number,
-): number[] {
+/** The rings on the ground, each standing on `floor`'s height where it is. */
+export function groundRings(gear: GearState | null, here: Here, floor: (x: number, y: number) => number): number[] {
   const out: number[] = [];
-  const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
   const stations = here.stations ?? [];
   const counters = stations.filter((station) => offerAt([station], ...station.counter)).map((each) => each.counter);
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   for (const [x, y] of shape ? [...counters, shape] : counters)
     markRing(out, [x, y, floor(x, y)], SERVED_M - 0.12, SERVED_M, [...BRASS, 0.6]);
-  for (const { x, y } of gear?.nodes ?? []) {
-    const base = [x, y, floor(x, y)] as const;
-    markRing(out, base, NODE_REACH_M - 0.1, NODE_REACH_M, [...NODE, 0.5]);
-    markRing(out, base, 0.3, 0.6, [...NODE, beat]);
-    markBeam(out, base, NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
-  }
   return out;
 }

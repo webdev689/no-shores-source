@@ -517,6 +517,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     // E let go: a gather under way is let go of.
     else if (key === 'e') playing.foot?.hold.release();
   });
+  // A key let go of while the page had no focus is never heard: losing it lets a gather go.
+  addEventListener('blur', () => playing.foot?.hold.release());
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat || ui.typing) return;

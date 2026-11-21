@@ -209,10 +209,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       drain: drain.share,
     };
     const ships = [...moored.ships, ...fleet.ships];
-    // Each material node as the forge draws it, standing while the room stands it for the player, else gathered.
-    const standsFor = ([east, south]: readonly [number, number]) =>
-      here.gear?.gear?.nodes.some((node) => Math.hypot(node.x - east, node.y - south) < 0.5) ?? false;
-    const nodes = nodeCardsAt(here.node.resources ?? [], standsFor, (x, y) => parts.groundAt(x, y) ?? body.z);
+    // Each material node as the forge draws it, standing while the room stands it for the player, or gathered.
+    const nodes = nodeCardsAt(
+      here.node.resources ?? [],
+      here.gear?.gear ?? null,
+      (x, y) => parts.groundAt(x, y) ?? body.z,
+    );
     scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met, ...nodes], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));

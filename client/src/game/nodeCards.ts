@@ -1,9 +1,10 @@
 // The material nodes as the forge draws them (tools/forge/tools/sprite-forge/items/nodes.py): each kind's picture as
-// it stands and as it lies gathered, read from the forge's published pictures, stood as a card at each resource place
-// of a patrol's layout beside its ring and beam (`footGear.ts`). A picture not published yet leaves its node to its
-// ring, its beam and the layout's own dressing.
+// it stands and as it lies gathered, read from the forge's published pictures, stood as a card where a patrol's layout
+// stands each node, before its dressing. The picture alone marks a node; one not published yet leaves its place to
+// the layout's own dressing.
 import type { Texels } from '../combat/forgedBirds.ts';
 import type { LaidSite } from '../layout/layouts.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import type { Card, CardAt } from '../player/cards.ts';
 import { PX_PER_M } from '../player/figures.ts';
 
@@ -36,16 +37,19 @@ export function loadNodeCards(
     }
 }
 
-/** The cards of a patrol's resource places: each its kind's picture where it stands on `floor`, standing where the
- *  room stands its node for the player (`standing`), else gathered; none for a place whose picture has not come. */
+/** The cards of a patrol's nodes: each its kind's picture at its place (`places`, numbered as the room numbers its
+ *  nodes) on `floor`, standing where the room stands it for the player (`gear`'s `nodes`), gathered where they gathered
+ *  it this turn (its `spent`); none at a place resting this turn, nor for one whose picture has not come. */
 export function nodeCardsAt(
   places: readonly Pick<LaidSite, 'at' | 'holds'>[],
-  standing: (at: readonly [number, number]) => boolean,
+  gear: Pick<GearState, 'nodes' | 'spent'> | null,
   floor: (x: number, y: number) => number,
 ): CardAt[] {
-  return places.flatMap((place): CardAt[] => {
+  const [standing, spent] = [new Set(gear?.nodes.map((node) => node.index)), new Set(gear?.spent)];
+  return places.flatMap((place, index): CardAt[] => {
     const kind = NODE_KINDS.find((each) => each === place.holds);
-    const card = kind && cards.get(nodePicturePath(kind, !standing(place.at)));
+    const shown = standing.has(index) || spent.has(index);
+    const card = kind && shown && cards.get(nodePicturePath(kind, !standing.has(index)));
     if (!card) return [];
     const [x, y] = place.at;
     return [{ card, x, y, z: floor(x, y), flip: false, scale: (NODE_WIDTH_M * PX_PER_M) / card.width }];
