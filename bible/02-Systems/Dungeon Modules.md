@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: built
 code:
   - content/dungeon/kits.json
   - content/dungeon/landmarks.json

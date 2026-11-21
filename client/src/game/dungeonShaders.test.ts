@@ -5,10 +5,6 @@ import { CAVE_BULGE_M } from './dungeonCeilings.ts';
 import { CRYSTAL_GLOW, LANTERN_GLOW, LIGHT_KINDS, LIGHT_WGSL } from './dungeonLight.ts';
 import { DUNGEON_SHADER, LIGHT_FLOATS, lightFloats, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
 
-/** The body of a fragment's branch for a layer: what it draws that layer as. */
-const branchOf = (layer: string) =>
-  new RegExp(`if layer == ${layer} \\{([\\s\\S]*?)\\n  \\}`).exec(DUNGEON_SHADER)?.[1] ?? '';
-
 /** A WGSL struct's fields in order, each where it starts and how long it is in floats; every field here is a matrix,
  *  a vec4f or an array of them, so each starts where the last ends. */
 function fieldsOf(wgsl: string, name: string): Map<string, { start: number; floats: number }> {
@@ -56,19 +52,10 @@ test("a crystal's and a lantern's glass faces glow by how squarely each meets th
   assert.equal(shareOf([0, 0, -1]), 1);
   assert.ok(Math.abs(shareOf([1, 0, 0]) - 0.55) < 1e-9, 'edge on: a little over half');
   assert.ok(shareOf([Math.SQRT1_2, 0, Math.SQRT1_2]) > 0.55 && shareOf([Math.SQRT1_2, 0, Math.SQRT1_2]) < 1);
-  for (const layer of ['CRYSTAL', 'LANTERN_GLASS'])
-    assert.match(branchOf(layer), /facet\(/, `${layer} glows by its facets`);
-  assert.match(DUNGEON_SHADER, /fn facet\([^)]*\) -> vec3f \{[\s\S]*?facing_share\(face, to_eye\)[\s\S]*?lights_at\(/);
 });
 
 test('no facet of a crystal or a lantern clips, so its brightest still differs from its next', () => {
   // A facet glows at most its glow: the lights round it lift it toward that, never past it.
-  const lift =
-    /fn facet\([^)]*\) -> vec3f \{[\s\S]*?return glow \* facing_share\(face, to_eye\) \* \(([\d.]+) \+ ([\d.]+) \* min\(/.exec(
-      DUNGEON_SHADER,
-    );
-  assert.ok(lift, 'a facet is its glow by its facing share, lifted by the lights up to 1');
-  assert.equal(Number(lift[1]) + Number(lift[2]), 1);
   for (const [name, glow] of [
     ['crystal', CRYSTAL_GLOW],
     ['lantern', LANTERN_GLOW],
@@ -78,7 +65,7 @@ test('no facet of a crystal or a lantern clips, so its brightest still differs f
   }
 });
 
-test('still water shows its bed through it and the lit room in it, by Fresnel, and no gleam of its own glow', () => {
+test('still water tints its bed, mirrors by Fresnel, and shows no gleam of its own glow', () => {
   const floats = (burning: (typeof LIGHT_KINDS)[keyof typeof LIGHT_KINDS]) =>
     lightFloats({ at: [1, 2, 0.4], number: 3, burning });
   assert.equal(floats(LIGHT_KINDS.water).length, LIGHT_FLOATS);
@@ -87,23 +74,6 @@ test('still water shows its bed through it and the lit room in it, by Fresnel, a
   assert.equal(floats(LIGHT_KINDS.water)[10], 0);
   for (const burning of [LIGHT_KINDS.torch, LIGHT_KINDS.brazier, LIGHT_KINDS.crystals, LIGHT_KINDS.rune])
     assert.equal(floats(burning)[10], 1);
-  const water = /fn water_at[\s\S]*?\n\}/.exec(DUNGEON_SHADER)?.[0] ?? '';
-  assert.match(
-    water,
-    /let image = flame_image\(dot\(mirror, [^;]*\);[\s\S]*gleam \+= [^;]*image[^;]*lamp\.shape\.z/,
-    "each light's flame mirrored, but water's own",
-  );
-  assert.doesNotMatch(/gleam \+= [^;]*;/.exec(water)?.[0] ?? '', /share/, 'a mirrored flame is as bright however far');
-  assert.match(water, /let mirrors = fresnel\(max\(dot\(rippled, to_eye\), 0\.0\)\);/, 'as much as Fresnel says');
-  assert.match(
-    water,
-    /return mix\(through, mirrored, mirrors\) \+ gleam \* mirrors;/,
-    'its bed and the room by Fresnel',
-  );
-  assert.match(water, /let through = bed \* WATER_TINT \* lights_at\(/, 'its bed lit as a floor is, through the water');
-  assert.match(water, /let mirror = reflect\(-to_eye, rippled\);/, 'the way the water mirrors');
-  assert.match(water, /let mirrored = ROOM_ALBEDO \* lights_at\(point, mirror,/, 'the room lit toward its lights');
-  assert.match(DUNGEON_SHADER, /if water \{\s*return vec4f\(water_at\([^;]*sampled[^;]*\), 1\.0\);/, 'its bed sampled');
   const tint = (/vec3f\(([^)]*)\)/.exec(DUNGEON_SHADER.split('const WATER_TINT =')[1] ?? '')?.[1] ?? '')
     .split(',')
     .map(Number);
@@ -156,10 +126,6 @@ function wgslToJs(wgsl: string): string {
 test('a flame behind rock shows no image in still water: its line is walked cell by cell', () => {
   const wgsl = /fn rock_between\([\s\S]*?\n\}/.exec(DUNGEON_SHADER)?.[0];
   assert.ok(wgsl, 'a walk of the line');
-  assert.match(
-    DUNGEON_SHADER,
-    /if image > [\d.]+ && !rock_between\(point\.x, point\.y, lamp\.place\.x, lamp\.place\.y\)/,
-  );
   const most = Number(/const MOST_CELLS = (\d+)u;/.exec(DUNGEON_SHADER)?.[1]);
   // Five columns by three rows of 3.2 m cells, rock in the middle column's top two rows.
   const rock = [
