@@ -5,6 +5,7 @@
 //! nearest its middle, its quiet cells first, round its props. Beside the Reeve's post stands the cache, shut while the Reeve stands; when the Reeve falls it
 //! opens and every player then in the room finds a Vestige before it, theirs alone.
 
+use crate::dungeon_ground::clear_of;
 use crate::garrison::{DUNGEON, Post, draws_of, index, node_seed};
 use crate::{Floor, NODE_FOES_MOST, PlayerId, Room};
 use ::foes::Rank::{self, Miniboss};
@@ -15,9 +16,15 @@ use movement::{Block, Terrain};
 use navmesh::NavMesh;
 use reach::Section;
 
-/// How far the cache stands from the Reeve's post, and how far a pillar or a jamb keeps from its middle (m).
+/// How far the cache stands from the Reeve's post (m).
 const CACHE_FROM_POST_M: f64 = 1.6;
-const CACHE_CLEAR_M: f64 = 0.5;
+/// The chest the page draws for the cache (`dungeonChest.ts`): half its width, and how far behind its front, away
+/// from the post, it reaches with its lid thrown back open (m).
+const CHEST_HALF_M: f64 = 0.45;
+const CHEST_BACK_M: f64 = 0.82;
+/// How far the portal's arch spans either side of its middle along its wall (m): the cache keeps out of that span of
+/// the portal's cell, from the wall to the cell's middle, where a body comes to leave.
+const ARCH_HALF_M: f64 = 1.3;
 /// How far before the cache a Vestige lies (m).
 const VESTIGE_BEFORE_M: f64 = 0.8;
 
@@ -179,7 +186,7 @@ impl Room {
             });
         }
         self.gird_and_stand(levels);
-        self.cache = self.cache_by(reeve);
+        self.cache = cache_by(&self.floor, dungeon, reeve);
     }
 
     /// Where `count` foes stand in a room: its free cells nearest its middle, each on the navmesh.
@@ -193,29 +200,6 @@ impl Room {
                 self.nav.nearest_point(place).unwrap_or(place)
             })
             .collect()
-    }
-
-    /// The cache by the Reeve's post: CACHE_FROM_POST_M from it on open floor, nothing between, clear of every jamb
-    /// and pillar, the first of the eight ways round it (north first, clockwise) that is; facing the post.
-    fn cache_by(&self, post: [f64; 3]) -> Option<Cache> {
-        let Floor::Dungeon(ground) = &self.floor else { return None };
-        let diagonal = CACHE_FROM_POST_M * core::f64::consts::FRAC_1_SQRT_2;
-        let ways =
-            [(0.0, -1.0), (1.0, -1.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0), (-1.0, 1.0), (-1.0, 0.0), (-1.0, -1.0)];
-        ways.into_iter().find_map(|(east, south): (f64, f64)| {
-            let across = if east != 0.0 && south != 0.0 { diagonal } else { CACHE_FROM_POST_M };
-            let (x, y) = (post[0] + east * across, post[1] + south * across);
-            // Nothing between the post and the cache, where the Vestiges lie, and the cache clear of every solid.
-            let clear = ground.clear_between([post[0], post[1]], [x, y], 0.0)
-                && ground.clear_between([x, y], [x, y], CACHE_CLEAR_M);
-            let open = !self.floor.walled((post[0], post[1]), (x, y));
-            (clear && open).then(|| Cache {
-                at: [x, y, self.floor.height_at(x, y)],
-                facing: bearing([x, y], [post[0], post[1]]),
-                post: 0,
-                open: false,
-            })
-        })
     }
 
     /// Each tick: the cache opens as its Reeve's post is cleared, a Vestige lying before it for every player in the
@@ -255,6 +239,42 @@ impl Room {
     pub fn cache(&self) -> Option<[f64; 5]> {
         self.cache.map(|cache| [cache.at[0], cache.at[1], cache.at[2], cache.facing, f64::from(u8::from(cache.open))])
     }
+}
+
+/// The cache by the Reeve's post, facing it: the first of the eight ways round it (north first, clockwise),
+/// CACHE_FROM_POST_M from it, that is open floor with nothing between, where the whole chest, its lid open, keeps
+/// clear of rock, of every solid and of the portal's arch; else at the post itself.
+fn cache_by(floor: &Floor, dungeon: &Dungeon, post: [f64; 3]) -> Option<Cache> {
+    let Floor::Dungeon(ground) = floor else { return None };
+    // The arch's span of the portal's cell, from its wall to the cell's middle.
+    let [cell_x, cell_y] = dungeon.centre(dungeon.portal.cell);
+    let [toward_x, toward_y] = dungeon.portal.side.unit();
+    let deep = CELL_M / 4.0;
+    let (middle_x, middle_y) = (cell_x + toward_x * deep, cell_y + toward_y * deep);
+    let (half_x, half_y) = if toward_x == 0.0 { (ARCH_HALF_M, deep) } else { (deep, ARCH_HALF_M) };
+    let arch = [middle_x - half_x, middle_y - half_y, middle_x + half_x, middle_y + half_y];
+    let diagonal = CACHE_FROM_POST_M * core::f64::consts::FRAC_1_SQRT_2;
+    let ways = [(0.0, -1.0), (1.0, -1.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0), (-1.0, 1.0), (-1.0, 0.0), (-1.0, -1.0)];
+    let found = ways.into_iter().find_map(|(east, south): (f64, f64)| {
+        let across = if east != 0.0 && south != 0.0 { diagonal } else { CACHE_FROM_POST_M };
+        let (x, y) = (post[0] + east * across, post[1] + south * across);
+        let reach = CHEST_BACK_M / CACHE_FROM_POST_M;
+        let back = [x + (x - post[0]) * reach, y + (y - post[1]) * reach];
+        // Nothing between the post and the cache, where the Vestiges lie, and the chest clear all round.
+        let fits = ground.clear_between([post[0], post[1]], [x, y], 0.0)
+            && !floor.walled((post[0], post[1]), (x, y))
+            && ground.clear_between([x, y], back, CHEST_HALF_M)
+            && clear_of(arch, [x, y], back, CHEST_HALF_M);
+        fits.then_some((x, y))
+    });
+    // No dungeon the tests lay comes here, but a dungeon without its cache would never open its portal.
+    let (x, y) = found.unwrap_or((post[0], post[1]));
+    Some(Cache {
+        at: [x, y, floor.height_at(x, y)],
+        facing: if found.is_some() { bearing([x, y], [post[0], post[1]]) } else { 0.0 },
+        post: 0,
+        open: false,
+    })
 }
 
 #[cfg(test)]

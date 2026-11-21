@@ -113,28 +113,22 @@ impl DungeonGround {
         (-self.clearance(x, y)).max(0.0)
     }
 
-    /// Whether the straight line between two points passes `keep` metres or more from every jamb and pillar: each box
-    /// grown by `keep` is tested against the line by the slabs between its sides.
+    /// Whether the straight line between two points passes `keep` metres or more from all rock, the grid's edge as
+    /// rock, and every jamb, pillar and prop: each rock cell near it and each solid, grown by `keep`, is tested against
+    /// the line as `clear_of` tests a rectangle.
     #[must_use]
     pub fn clear_between(&self, from: [f64; 2], to: [f64; 2], keep: f64) -> bool {
-        let along = [to[0] - from[0], to[1] - from[1]];
-        self.solids.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
-            let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
-            for (start, step, low, high) in
-                [(from[0], along[0], min_x - keep, max_x + keep), (from[1], along[1], min_y - keep, max_y + keep)]
-            {
-                if step == 0.0 {
-                    if start < low || start > high {
-                        return true;
-                    }
-                } else {
-                    let (first, second) = ((low - start) / step, (high - start) / step);
-                    enter = enter.max(first.min(second));
-                    leave = leave.min(first.max(second));
-                }
-            }
-            enter > leave
-        })
+        let first = |low: f64| ((low - keep) / self.cell).floor() as isize;
+        let last = |high: f64| ((high + keep) / self.cell).floor() as isize;
+        let rock_clear = (first(from[1].min(to[1]))..=last(from[1].max(to[1]))).all(|row| {
+            (first(from[0].min(to[0]))..=last(from[0].max(to[0]))).all(|column| {
+                let inside = column >= 0 && row >= 0 && (column as usize) < self.columns && (row as usize) < self.rows;
+                let (west, north) = (column as f64 * self.cell, row as f64 * self.cell);
+                (inside && self.open[row as usize * self.columns + column as usize])
+                    || clear_of([west, north, west + self.cell, north + self.cell], from, to, keep)
+            })
+        });
+        rock_clear && self.solids.iter().all(|solid| clear_of([solid[0], solid[1], solid[2], solid[3]], from, to, keep))
     }
 
     /// The highest top of the solids standing over a point, if one stands there.
@@ -192,6 +186,28 @@ impl DungeonGround {
         }
         cells.iter().any(|&cell| self.near[cell].iter().any(below))
     }
+}
+
+/// Whether the straight line between two points passes `keep` metres or more from a rectangle (min x, min y, max x,
+/// max y): the rectangle grown by `keep` is tested against the line by the slabs between its sides.
+pub(crate) fn clear_of(rectangle: [f64; 4], from: [f64; 2], to: [f64; 2], keep: f64) -> bool {
+    let [min_x, min_y, max_x, max_y] = rectangle;
+    let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
+    for (start, end, low, high) in
+        [(from[0], to[0], min_x - keep, max_x + keep), (from[1], to[1], min_y - keep, max_y + keep)]
+    {
+        let step = end - start;
+        if step == 0.0 {
+            if start < low || start > high {
+                return true;
+            }
+        } else {
+            let (first, second) = ((low - start) / step, (high - start) / step);
+            enter = enter.max(first.min(second));
+            leave = leave.min(first.max(second));
+        }
+    }
+    enter > leave
 }
 
 /// How far along a segment (0 to 1) it enters a box from `low` to `high` (x, y, z), by the slabs between its faces.

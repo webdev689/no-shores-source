@@ -226,10 +226,12 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   two to four in each other room past the way in's, one foe for each ten of its cells (`posts_for`), on its free cells
   nearest its middle, its quiet cells first, round its props. When the bands and the Reeve would pass the room's 24 foes, the most rooms that
   fit stand one, spread evenly along the walk from the way in to the end.
-- **The cache** stands 1.6 m from the Reeve's post, the first of the eight ways round it, north first, that is open
-  floor clear of every jamb, pillar, prop and fixture, facing the post. Shut while the Reeve stands; when he falls it opens and every
-  player then in the room finds a Vestige 0.8 m before it ([[Gear]]); it shuts when he stands again. Each snapshot
-  carries it.
+- **The cache** stands 1.6 m from the Reeve's post, facing it, the first of the eight ways round it, north first,
+  that is open floor with nothing between where the whole chest the page draws keeps clear: 0.9 m wide and reaching
+  0.82 m behind its front with its lid thrown open, it keeps off rock and every solid, and out of the portal's cell
+  from its wall to its middle within 1.3 m of the arch's middle. Where no way fits, it stands at the post itself, so
+  every dungeon has its cache. Shut while the Reeve stands; when he falls it opens and every player then in the room
+  finds a Vestige 0.8 m before it ([[Gear]]); it shuts when he stands again. Each snapshot carries it.
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for
