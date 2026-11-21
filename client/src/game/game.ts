@@ -82,7 +82,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     module: roomModule,
     intoDungeon: (...into) => goInto(() => Foot.enterDungeon(footContext, ...into)),
     ontoPatrol: (...onto) => goInto(() => Foot.enter(footContext, ...onto)),
-    // Back at the ship: the sea's islands stand no player at their door.
+    // Out of a sea island's dungeon the player is back at their ship, not before the island's door.
     ontoSea: () => goSea(),
     drawers: dungeons,
   });
@@ -353,7 +353,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     discovered.nodes(playing.sea.view.landings);
   };
 
-  /** The dungeon behind an island's door, by its room's name, coming back out before the door. */
+  /** The dungeon behind an island's door, entered by its room's name; the door's place goes with it for the way out. */
   const enterDungeon = ({ room, at: [x, y], facing }: DungeonDoor) => trips.enterSeaDungeon(room, { x, y, facing });
 
   /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. The sea
