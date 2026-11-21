@@ -12,15 +12,15 @@ import { PX_PER_M } from '../player/figures.ts';
  *  picture holds (tools/forge/tools/sprite-forge/specs/pictures/nodes.json), so a node stands about knee high beside a
  *  body. Keyed by the resources' ids (content/gear/resources.json). */
 export const NODE_WIDTH_M: Readonly<Record<string, number>> = {
-  brineglass: 1.2,
-  cairn_iron: 1.2,
-  heartwood_resin: 1.2,
-  sunstone: 1.2,
-  goldgrass_seed: 1.2,
-  mistbloom: 1.2,
-  windthistle: 1.2,
-  bog_pearl: 1.2,
-  rimecrystal: 1.2,
+  brineglass: 1.27,
+  cairn_iron: 1.16,
+  heartwood_resin: 1.22,
+  sunstone: 1.28,
+  goldgrass_seed: 1.48,
+  mistbloom: 1.33,
+  windthistle: 1.27,
+  bog_pearl: 1.31,
+  rimecrystal: 1.22,
 };
 
 /** Where the forge publishes a resource's picture, standing or gathered. */

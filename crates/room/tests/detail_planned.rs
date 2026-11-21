@@ -744,33 +744,21 @@ fn the_wilds_hold_cover_round_their_ring() {
 }
 
 #[test]
-fn a_timber_stacks_logs_lie_side_by_side() {
-    let mut stacks = 0;
+fn each_of_saltmeres_resource_nodes_is_brineglass_before_its_tide_pool() {
     for id in ZONES {
         let laid = zone(id);
-        // Each log rolled onto its side: its middle, half its length along its own x from where it stands.
-        let logs: Vec<([f64; 3], f64)> = laid
-            .seating
-            .solids
-            .iter()
-            .filter(|solid| {
-                solid.material == Material::Timber
-                    && solid.shape == SolidShape::Column { sides: 8, top: 1.0 }
-                    && (solid.roll - std::f64::consts::FRAC_PI_2).abs() < 1e-9
-            })
-            .map(|solid| (solid.place([0.0, 0.0, solid.size[2] / 2.0]), solid.turn))
-            .collect();
-        for (number, &(middle, turn)) in logs.iter().enumerate() {
-            stacks += 1;
-            for &(other, other_turn) in &logs[number + 1..] {
-                let apart = layout::field::distance([middle[0], middle[1]], [other[0], other[1]]);
-                let same_layer = (middle[2] - other[2]).abs() < 0.1 && (turn - other_turn).abs() < 1e-9;
-                assert!(
-                    !same_layer || apart >= 0.5,
-                    "{id}: two logs of one layer {apart:.2} m apart at {middle:?}, not side by side"
-                );
-            }
+        let resources: Vec<_> =
+            laid.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource).collect();
+        assert!(!resources.is_empty(), "{id} lays resource nodes");
+        for site in resources {
+            assert_eq!(site.holds.as_deref(), Some("brineglass"), "{id}: Saltmere's resource");
+            // Its tide pool: still water at the place's middle, its node standing clear before it.
+            let pool = laid.seating.solids.iter().any(|solid| {
+                solid.material == Material::Water && layout::field::distance([solid.at[0], solid.at[1]], site.at) < 0.1
+            });
+            assert!(pool, "{id}: a resource place at {:?} with no tide pool", site.at);
+            let node = site.node.expect("its node on the floor");
+            assert!(layout::field::distance(node, site.at) > 4.0, "{id}: its node clear of the pool");
         }
     }
-    assert!(stacks > 0, "Saltmere stacks timber");
 }
