@@ -4,7 +4,7 @@ import { test } from 'node:test';
 // The browser's side of the messages, so this run sends the room exactly the bytes a browser sends.
 import { inputBytes, readFromRoom } from '../client/src/network/messages.ts';
 import { LocalRoom } from '../client/src/network/localRoom.ts';
-import { BotPlay, decide, type Read, readOf, seasoned } from '../client/src/network/publicBots.ts';
+import { askedPlay, BotPlay, decide, type Read, readOf, seasoned } from '../client/src/network/publicBots.ts';
 import { startRoomDoor } from './roomDoor.ts';
 
 const built = (path: string, how: string) =>
@@ -156,4 +156,11 @@ test("a dev page's bots play its own room's events through, the heroic task take
   assert.deepEqual(playInPage(FISSURE_MINUTE, false), [1, 2, 3], 'the Fissure won, its heroic task missed');
   assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 2, 2], 'the raid held, heroic');
   assert.deepEqual(playInPage(RAID_MINUTE, false), [2, 2, 3], 'the raid held, its heroic task missed');
+});
+
+test("the dev address's play: ticks a frame, bots, and the heroic task left alone only when asked", () => {
+  assert.deepEqual(askedPlay('?at=gullwing-vale&public=raid&speed=12&bots=3'), { speed: 12, bots: 3, heroic: true });
+  assert.deepEqual(askedPlay('?bots=2&heroic=0'), { speed: 0, bots: 2, heroic: false });
+  assert.deepEqual(askedPlay('?speed=999&bots=-4'), { speed: 64, bots: 0, heroic: true });
+  assert.equal(askedPlay('?public=fissure&speed=x'), null);
 });

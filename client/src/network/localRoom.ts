@@ -10,8 +10,8 @@ export interface Furnishing {
 }
 
 /** A dev page's play of its own room (`publicBots.ts` `BotPlay`, behind `&speed=` and `&bots=`), never a built
- *  page's: how many ticks a frame, the players it joins as the room opens, their inputs before each tick, and its
- *  reading of each tick's snapshot, which answers whether the frame's ticks stop there. */
+ *  page's: how many ticks a frame (0 for the page's clock), the players it joins as the room opens, their inputs
+ *  before each tick, and its reading of each tick's snapshot, which answers whether the frame's ticks stop there. */
 export interface RoomPlay {
   readonly speed: number;
   open(door: RoomDoor, player: number): void;
@@ -43,9 +43,6 @@ export class LocalRoom implements RoomLink {
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
   arts: ArtState | null = null;
-  /** Room ticks a drawn frame (`RoomPlay.speed`): 0 ticks by the page's clock. A dev page's pictures change it; once
-   *  its play stops the frame's ticks it drops to 1. */
-  speed = 0;
   private readonly play: RoomPlay | null;
 
   private constructor(
@@ -64,7 +61,6 @@ export class LocalRoom implements RoomLink {
     const welcome = readFromRoom(door.joined(this.player));
     this.epoch = welcome?.kind === 'joined' ? welcome.epoch : 0;
     this.play = play;
-    this.speed = play?.speed ?? 0;
     play?.open(door, this.player);
   }
 
@@ -181,12 +177,13 @@ export class LocalRoom implements RoomLink {
     this.door.takeBlock(block);
   }
 
-  /** Ticks the room as many whole ticks as `seconds` and what was carried make (or `speed` ticks), handing on each
-   *  tick's snapshot. */
+  /** Ticks the room as many whole ticks as `seconds` and what was carried make (or its play's `speed`), handing on
+   *  each tick's snapshot. */
   pump(seconds: number): void {
     this.keepMinute();
+    const speed = this.play?.speed ?? 0;
     // Half a tick over, so rounding never takes one of `speed`'s ticks away.
-    this.carry = this.speed > 0 ? (this.speed + 0.5) * this.door.tickSeconds : this.carry + seconds;
+    this.carry = speed > 0 ? (speed + 0.5) * this.door.tickSeconds : this.carry + seconds;
     while (this.carry >= this.door.tickSeconds) {
       this.carry -= this.door.tickSeconds;
       this.play?.inputs(this.door);
@@ -203,7 +200,7 @@ export class LocalRoom implements RoomLink {
       if (message?.kind !== 'snapshot') continue;
       this.snapshot(message);
       if (this.play?.heard(message)) {
-        [this.speed, this.carry] = [1, 0];
+        this.carry = 0;
         break;
       }
     }

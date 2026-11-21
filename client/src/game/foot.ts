@@ -16,7 +16,7 @@ import type { EventProp } from '../city/eventProps.ts';
 import { DROPPED, type GearState } from '../network/gearMessages.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
-import { BotPlay } from '../network/publicBots.ts';
+import { botPlayOf } from '../network/publicBots.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
@@ -46,7 +46,7 @@ import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { nodeText, standOn } from './footNode.ts';
 import { PlazaLife } from './plazaLife.ts';
-import { askedPlay, askedPublic, minuteShift } from './publicLaw.ts';
+import { askedPublic, minuteShift } from './publicLaw.ts';
 import { PublicView } from './publicView.ts';
 import { nodeRoom } from './rooms.ts';
 import type { Quest } from './tasks.ts';
@@ -260,21 +260,18 @@ export class Foot {
       throw error;
     }
     // Alone, the room is told where the node fights its public events, as the bake tells the server's; under
-    // `npm run dev`, `&public=fissure|raid` sets its clock so that event starts at once.
+    // `npm run dev`, `&public=fissure|raid` sets its clock so that event starts at once, and `&speed=`, `&bots=` and
+    // `&heroic=0` play it through (`botPlayOf`).
     const wanted = import.meta.env.DEV ? askedPublic(location.search) : null;
     const shift = wanted ? (minuteShift(node.id, wanted, Math.floor(Date.now() / 60_000)) ?? 0) : 0;
-    const playAsked = import.meta.env.DEV ? askedPlay(location.search) : null;
-    const play = playAsked && new BotPlay(playAsked);
     const link =
       connection ??
       LocalRoom.openNode(module, nodeText(node, rect, ground, boxes, await context.land.grounds(node.id)), received, {
         foeAsks: asked.length > 0,
         gear: (sent) => (alone.gear = sent),
         minuteShift: shift,
-        // `&speed=`, `&bots=` and `&heroic=0` play its events through faster than a slow machine draws them.
-        play,
+        play: import.meta.env.DEV ? botPlayOf(location.search) : null,
       });
-    if (import.meta.env.DEV && link instanceof LocalRoom) Object.assign(window, { __room: link, __play: play });
     fight = new Fighting(combat, link);
     for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later

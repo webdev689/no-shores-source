@@ -5,7 +5,6 @@
 import { STORE } from '../city/eventProps.ts';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
 import type { Banner } from '../combat/publicBanner.ts';
-import type { PlayAsked } from '../network/publicBots.ts';
 import type { PlaceMark } from '../plus/compass.ts';
 import type { Quest, Step } from './tasks.ts';
 
@@ -177,18 +176,6 @@ export function ringOf(event: PublicEvent | null): { at: readonly [number, numbe
 export function askedPublic(search: string): 'fissure' | 'raid' | null {
   const asked = new URLSearchParams(search).get('public');
   return asked === 'fissure' || asked === 'raid' ? asked : null;
-}
-
-/** The most room ticks a frame, or bots, the dev address may ask for. */
-const PLAY_MOST = 64;
-
-/** The dev address's play of a page room's events: `&speed=<n>` room ticks a drawn frame, `&bots=<n>` scripted players,
- *  `&heroic=0` to leave the heroic task alone; null when it asks for neither. */
-export function askedPlay(search: string): PlayAsked | null {
-  const asked = new URLSearchParams(search);
-  const whole = (name: string) => Math.max(0, Math.min(PLAY_MOST, Math.floor(Number(asked.get(name)) || 0)));
-  const [speed, bots] = [whole('speed'), whole('bots')];
-  return speed > 0 || bots > 0 ? { speed, bots, heroic: asked.get('heroic') !== '0' } : null;
 }
 
 /** How many minutes on from `minute` the room's clock is set for `zone`'s next `kind` to start at once: the

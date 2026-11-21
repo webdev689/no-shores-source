@@ -129,15 +129,38 @@ export interface PlayAsked {
   readonly heroic: boolean;
 }
 
+/** The most room ticks a frame, or bots, the dev address may ask for. */
+const PLAY_MOST = 64;
+
+/** The dev address's play of a page room's events: `&speed=<n>` room ticks a drawn frame, `&bots=<n>` scripted players,
+ *  `&heroic=0` to leave the heroic task alone; null when it asks for neither. */
+export function askedPlay(search: string): PlayAsked | null {
+  const asked = new URLSearchParams(search);
+  const whole = (name: string) => Math.max(0, Math.min(PLAY_MOST, Math.floor(Number(asked.get(name)) || 0)));
+  const [speed, bots] = [whole('speed'), whole('bots')];
+  return speed > 0 || bots > 0 ? { speed, bots, heroic: asked.get('heroic') !== '0' } : null;
+}
+
+/** The play the dev address asks for, if any, put on the window as `__play` for a picture script. */
+export function botPlayOf(search: string): BotPlay | null {
+  const asked = askedPlay(search);
+  const play = asked && new BotPlay(asked);
+  if (play) Object.assign(globalThis, { __play: play });
+  return play;
+}
+
 /** A dev page's play of its room's public events (`LocalRoom`'s `RoomPlay`): its bots joined and raised as the rules'
  *  test raises its players (the page's own player too, so it lives through the beats it stands at), their inputs each
- *  tick, and `until`, a beat a picture script waits for: met by a tick's snapshot, the frame's ticks stop there. */
+ *  tick, and for a picture script: `speed`, `putPlayer`, and `until`, a beat it waits for: met by a tick's snapshot,
+ *  the frame's ticks stop there and `speed` drops to 1. */
 export class BotPlay implements RoomPlay {
-  readonly speed: number;
+  speed: number;
   until: ((read: Read) => boolean) | null = null;
   read: Read | null = null;
+  player = 0;
   private readonly heroic: boolean;
   private readonly count: number;
+  private door: RoomDoor | null = null;
   private bots: readonly number[] = [];
   private ticks = 0;
 
@@ -146,6 +169,7 @@ export class BotPlay implements RoomPlay {
   }
 
   open(door: RoomDoor, player: number): void {
+    [this.door, this.player] = [door, player];
     this.bots = Array.from({ length: this.count }, () => door.join());
     for (const each of [player, ...this.bots]) door.restoreCharacter(each, seasoned(door.character(each) ?? ''));
   }
@@ -163,7 +187,12 @@ export class BotPlay implements RoomPlay {
     if (this.bots.length === 0 && !this.until) return false;
     this.read = readOf(snapshot);
     if (!this.until?.(this.read)) return false;
-    this.until = null;
+    [this.until, this.speed] = [null, 1];
     return true;
+  }
+
+  /** Stands the page's own player at once on the top under (x, y). */
+  putPlayer(x: number, y: number): void {
+    this.door?.putPlayer(this.player, x, y);
   }
 }
