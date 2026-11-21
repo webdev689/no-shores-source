@@ -1,8 +1,7 @@
 {
   "scenes": {
     "houseBegin": [
-      { "who": "maren", "say": "You have seen the houses. Each keeps an Art, and each will ask." },
-      { "who": "maren", "say": "Hear all three before you choose. A pledge is not lightly made." }
+      { "who": "stormcaller", "say": "Three houses keep the Arts. Come and hear us before you choose." }
     ],
     "houseStorm": [
       { "who": "stormcaller", "say": "Arlo Kestrel. We keep the Storm, and the Storm keeps nobody waiting." },
@@ -16,35 +15,38 @@
       { "who": "veiled", "say": "Sable. That is all the name you will get." },
       { "who": "veiled", "say": "We read what the Tithe writes. Pledge here and you read it too." }
     ],
-
     "stormBegin": [
       { "who": "stormcaller", "say": "The Tithe took our storm-glass from the Old Beacon. Pell went after it." },
       { "who": "stormcaller", "say": "Climb to the beacon. I will speak to you on the wind." }
     ],
     "stormBeacon": [
-      { "who": "stormcaller", "say": "Empty racks. Tithe boot prints. They carried it down to their camp." },
-      { "who": "stormcaller", "say": "Pell's knife is in the grass. He was here, and not alone." }
+      { "who": "stormcaller", "say": "Empty racks and Pell's knife. The Tithe carried the glass down to their camp." }
     ],
     "stormCamp": [
       { "who": "stormcaller", "say": "Take back what they carried. And gather Brineglass. It holds a storm." }
     ],
-    "stormGlass": [{ "who": "stormcaller", "say": "That is our glass. Now climb as high as you can." }],
+    "stormGlass": [
+      { "who": "stormcaller", "say": "That is our glass. Now climb as high as you can." }
+    ],
     "stormCalled": [
       { "who": "stormcaller", "say": "Hold the glass up. Let the storm find you. There." },
       { "who": "stormcaller", "say": "The Storm is yours now, and it will answer when you call." }
     ],
-    "stormTrail": [{ "who": "stormcaller", "say": "Pell was seen at Weir Mill. Call the storm as you go." }],
     "stormMill": [
       { "who": "stormcaller", "say": "Pell took the river road with Tithe riders. You will need quicker feet." },
       { "who": "stormcaller", "say": "Let the storm into your legs. We call it Quicken." }
     ],
-    "stormRiders": [{ "who": "stormcaller", "say": "The riders carry the tally to the meadows. Run them down." }],
-    "stormLedger": [{ "who": "stormcaller", "say": "The tally names a ship. Our glass is going to sea." }],
-    "stormSea": [{ "who": "stormcaller", "say": "Take a ship out. Find a Tithe sail and beat it." }],
-    "stormIsle": [{ "who": "stormcaller", "say": "Their crew talked. The glass went ashore on an isle they guard." }],
+    "stormLedger": [
+      { "who": "stormcaller", "say": "The tally names a ship carrying our lightning rods out to sea." }
+    ],
+    "stormSea": [
+      { "who": "stormcaller", "say": "Take a ship out. Find a Tithe sail and beat it." }
+    ],
+    "stormIsle": [
+      { "who": "stormcaller", "say": "Their crew talked. The rods went ashore on an isle they guard." }
+    ],
     "stormRods": [
-      { "who": "stormcaller", "say": "Lightning rods, wrapped in Tithe cloth. They meant to keep the storm themselves." },
-      { "who": "stormcaller", "say": "Take one. Shape the storm as you like it." }
+      { "who": "stormcaller", "say": "Lightning rods in Tithe cloth. Take one, and shape the storm as you like." }
     ],
     "stormPoint": [
       { "who": "stormcaller", "say": "Someone lit Grey Point Light with lightning last night. Only a Stormcaller can." }
@@ -54,7 +56,9 @@
       { "who": "pell", "say": "Corvane is counting the storm. He means to sell it back to us." },
       { "who": "stormcaller", "say": "Come home, Pell. And you, take this. We call it Arc Lash." }
     ],
-    "stormMaw": [{ "who": "stormcaller", "say": "The High Assessor waits in the Maw. End his counting." }],
+    "stormMaw": [
+      { "who": "stormcaller", "say": "The High Assessor waits in the Maw. End his counting." }
+    ],
     "stormCorvane": [
       { "who": "corvane", "say": "Everything is owed. Even the storm." },
       { "who": "stormcaller", "say": "Not anymore. Bring it home." }
@@ -64,7 +68,6 @@
       { "who": "stormcaller", "say": "You climbed before you walked. That is a Stormcaller." },
       { "who": "pell", "say": "Thank you. I will not sell the sky again." }
     ],
-
     "lampBegin": [
       { "who": "maren", "say": "False lights burn on the Driftwood Moors. Ships follow them onto the rocks." },
       { "who": "maren", "say": "Go to the wrecks. Our lamps will let me speak to you there." }
@@ -85,7 +88,7 @@
       { "who": "maren", "say": "Stand still, and let the light rise round you. That is the Sunwell." }
     ],
     "lampHamlet": [
-      { "who": "maren", "say": "Saltgrass took in the other wrecked. Raise the light there, and see them." }
+      { "who": "tobin", "say": "The others from the wreck went to Saltgrass. Will you see to them?" }
     ],
     "lampSaltgrass": [
       { "who": "tobin", "say": "The hamlet says the Tithe came for the dead as well." },
@@ -98,28 +101,32 @@
       { "who": "maren", "say": "Pirate silver in Tithe purses. Someone pays the wreckers." },
       { "who": "maren", "say": "Find their ship. It will be near the coast, waiting for the next." }
     ],
-    "lampSea": [{ "who": "maren", "say": "Take a ship out. Find the wreckers' sail and stop it." }],
-    "lampCove": [{ "who": "maren", "say": "Their captain spoke of a cove. Whatever they took is buried there." }],
+    "lampCove": [
+      { "who": "maren", "say": "Their captain spoke of a cove. Whatever they took is buried there." }
+    ],
     "lampLens": [
-      { "who": "maren", "say": "That lens is ours. It was lit on the Beacon before you were born." },
+      { "who": "maren", "say": "Their hoard, but not our lens. They sold it on already." },
       { "who": "maren", "say": "Choose what the light becomes in your hands." }
     ],
-    "lampStones": [{ "who": "maren", "say": "The buyer meets the Tithe at the Old Stones. Go and see who." }],
+    "lampStones": [
+      { "who": "tobin", "say": "The wreckers sold what they took at the Old Stones. To the Tithe." }
+    ],
     "lampBuyer": [
       { "who": "reeve", "say": "Lamplighters. The Tithe bought your lens fair." },
       { "who": "maren", "say": "Nothing stolen is bought fair. Burn their dark away. That is Dawnflare." }
     ],
-    "lampTomb": [{ "who": "maren", "say": "The Reeve who paid them hides in the Pearl Tomb. Go." }],
+    "lampTomb": [
+      { "who": "maren", "say": "The coin came from the Pearl Tomb. End the one who paid them." }
+    ],
     "lampReeve": [
       { "who": "reeve", "say": "The Tithe will light its own lamps." },
-      { "who": "maren", "say": "Then they will burn without us. Come home." }
+      { "who": "maren", "say": "Then they will burn without us. Bring the lens home." }
     ],
     "lampHome": [
       { "who": "maren", "say": "The lens is back on the Beacon. Every ship tonight will see it." },
       { "who": "tobin", "say": "I watched it light from the quay. I knew it was yours." },
       { "who": "maren", "say": "You light the way now, as we do." }
     ],
-
     "veilBegin": [
       { "who": "veiled", "say": "The Tithe wrote your name before you washed ashore. We want the page." },
       { "who": "veiled", "say": "Go to the Hollow in the Vale. A whisper will find you there." }
@@ -128,7 +135,9 @@
       { "who": "wren", "say": "You are the one Thule could not drown. The Tithe still counts you." },
       { "who": "veiled", "say": "Wren will show you the collectors. Take their tallies. They will not give them." }
     ],
-    "veilFarm": [{ "who": "wren", "say": "The collectors rest at Orchard Farm. Their tallies are on their belts." }],
+    "veilFarm": [
+      { "who": "wren", "say": "The collectors rest at Orchard Farm. Their tallies are on their belts." }
+    ],
     "veilTallies": [
       { "who": "wren", "say": "Every tally has your name in it. And a sum." },
       { "who": "veiled", "say": "Wait under Valeguard after dark. I will meet you there." }
@@ -137,31 +146,43 @@
       { "who": "veiled", "say": "You walked here unseen. Good. Now let the dark take wing." },
       { "who": "veiled", "say": "The raven is yours. It hunts what you mark." }
     ],
-    "veilChalk": [{ "who": "wren", "say": "The tallies go to the chalk pits on the Downs. Send the raven ahead." }],
+    "veilChalk": [
+      { "who": "wren", "say": "The tallies go to the chalk pits on the Downs. Send the raven ahead." }
+    ],
     "veilRuin": [
       { "who": "wren", "say": "Guards in the Adit. Too many to walk past." },
       { "who": "veiled", "say": "Then do not walk. Throw. We call them Dusk Daggers." }
     ],
-    "veilAdit": [{ "who": "veiled", "say": "Empty the Chalk Adit. Leave nothing that can count." }],
+    "veilAdit": [
+      { "who": "veiled", "say": "Empty the Chalk Adit. Leave nothing that can count." }
+    ],
     "veilShip": [
       { "who": "wren", "say": "The book went out this morning, on a Tithe ship." },
       { "who": "veiled", "say": "Then you will board it." }
     ],
-    "veilSea": [{ "who": "veiled", "say": "Find a Tithe ship and take its deck. The book will be aboard." }],
-    "veilIsle": [{ "who": "wren", "say": "Only a page was aboard. The reckoner keeps the rest on an isle." }],
+    "veilSea": [
+      { "who": "veiled", "say": "Find a Tithe ship and take its deck. The book will be aboard." }
+    ],
+    "veilIsle": [
+      { "who": "wren", "say": "Only a page was aboard. The reckoner keeps the rest on an isle." }
+    ],
     "veilPage": [
-      { "who": "veiled", "say": "Your page. Read the sum if you like." },
-      { "who": "veiled", "say": "Then choose what the dark becomes in your hands." }
+      { "who": "veiled", "say": "Your page, torn from the book. The book itself has moved on." },
+      { "who": "veiled", "say": "Choose what the dark becomes in your hands." }
     ],
-    "veilMoorhold": [{ "who": "wren", "say": "A Reeve on the Moors holds the book now. Moorhold." }],
+    "veilMoorhold": [
+      { "who": "wren", "say": "A Reeve carried the book to Moorhold on the Moors." }
+    ],
     "veilPaid": [
-      { "who": "reeve", "say": "Half your debt is paid already. Someone in Overlook paid it." },
-      { "who": "veiled", "say": "Interesting. Leave him. You will want to vanish now. Like this." }
+      { "who": "reeve", "say": "Half your debt is paid. Someone in Overlook paid it." },
+      { "who": "veiled", "say": "Interesting. Vanish now, and follow the book. Like this." }
     ],
-    "veilGrotto": [{ "who": "veiled", "say": "The book itself is in Kraken's Grotto. Its keeper never leaves." }],
+    "veilGrotto": [
+      { "who": "wren", "say": "The book went down into Kraken's Grotto. Its keeper never leaves." }
+    ],
     "veilBook": [
-      { "who": "wren", "say": "The book. Your name. The sum. And a mark beside it, paid." },
-      { "who": "veiled", "say": "Bring it to me unread." }
+      { "who": "wren", "say": "The book. Your name is in it. I have read no further." },
+      { "who": "veiled", "say": "Good. Bring it to me." }
     ],
     "veilHome": [
       { "who": "veiled", "say": "I burned your page. The Tithe will have to remember you unwritten." },

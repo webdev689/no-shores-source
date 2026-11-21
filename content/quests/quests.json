@@ -44,7 +44,7 @@
               "spawn": [["Collector", "Minor"], ["Collector", "Minor"], ["Crossbowman", "Minor"], ["Runner", "Minor"], ["Enforcer", "Major"]],
               "text": "Tithe at Tithe Camp"
             },
-            { "kind": "gather", "count": 3, "text": "Brineglass gathered" }
+            { "kind": "gather", "count": 3, "text": "Brineglass to gather" }
           ],
           "end": "stormGlass"
         },
@@ -56,7 +56,6 @@
         },
         {
           "task": "Find Pell's trail",
-          "start": "stormTrail",
           "goals": [
             { "kind": "cast", "spell": "Tempest", "text": "Call the storm" },
             { "kind": "reach", "node": "gullwing-vale", "place": "Weir Mill", "text": "Weir Mill, in the Gullwing Vale" }
@@ -66,7 +65,6 @@
         },
         {
           "task": "Run down the tally riders",
-          "start": "stormRiders",
           "goals": [
             {
               "kind": "kill",
@@ -90,7 +88,7 @@
           "start": "stormIsle",
           "goals": [
             { "kind": "land", "island": "isle", "text": "Land on a guarded isle" },
-            { "kind": "scavenge", "count": 2, "text": "Wrecks searched" }
+            { "kind": "scavenge", "count": 2, "text": "Wrecks to search" }
           ],
           "reward": { "fragments": 1 },
           "end": "stormRods"
@@ -154,7 +152,7 @@
               "spawn": [["Skirmisher", "Minor"], ["Skirmisher", "Minor"], ["Archer", "Minor"], ["Archer", "Minor"], ["Brute", "Major"]],
               "text": "Wreckers at Drowned Men's Graves"
             },
-            { "kind": "gather", "count": 2, "text": "Brineglass for a lens" }
+            { "kind": "gather", "count": 2, "text": "Brineglass to gather for a lens" }
           ],
           "end": "lampDoused"
         },
@@ -192,7 +190,6 @@
         },
         {
           "task": "Find the wreckers' ship",
-          "start": "lampSea",
           "goals": [{ "kind": "sea", "side": "pirates", "text": "A pirate ship beaten" }]
         },
         {
@@ -200,7 +197,7 @@
           "start": "lampCove",
           "goals": [
             { "kind": "land", "island": "cove", "text": "Land in a cove" },
-            { "kind": "scavenge", "count": 3, "text": "Wrecks searched" }
+            { "kind": "scavenge", "count": 3, "text": "Wrecks to search" }
           ],
           "reward": { "fragments": 1 },
           "end": "lampLens"
