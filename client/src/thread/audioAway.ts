@@ -3,6 +3,7 @@
 // rest of its task's (`AudioHost` carries them out there, in the page's own audio). The game's sound code runs here
 // unchanged. What it reads back is each parameter where its course stands on the page's clock (run on from what the
 // page last said), the context as the page's (one, an AudioContext), and the samples it filled or the page decoded.
+import type { Measured } from '../soundMeasure.ts';
 import { ParamCourse, paramDefault } from './paramCourse.ts';
 import {
   type AudioOp,
@@ -27,6 +28,8 @@ class Link {
   /** Stand-ins waiting on the page: for their end, or for a buffer's decoding. */
   readonly ending = new Map<number, StandIn>();
   readonly decoding = new Map<number, (buffer: StandBuffer | Error) => void>();
+  /** Recordings the page is decoding to keep there, each waiting on how it measures. */
+  readonly measuring = new Map<number, (kept: { buffer: AudioBuffer; measured: Measured } | Error) => void>();
   private readonly forgotten = new FinalizationRegistry<number>((id) => this.say(['forget', id]));
   private readonly send: Send;
 
@@ -274,6 +277,24 @@ class StandBuffer extends StandIn {
   }
 }
 
+/** A buffer whose samples only the page keeps: its shape, to play it by, and nothing to read. */
+class PageBuffer extends StandIn {
+  readonly length: number;
+  readonly numberOfChannels: number;
+  readonly sampleRate: number;
+
+  constructor(id: number, length: number, numberOfChannels: number, sampleRate: number) {
+    super(id);
+    [this.length, this.numberOfChannels, this.sampleRate] = [length, numberOfChannels, sampleRate];
+  }
+  get duration(): number {
+    return this.length / this.sampleRate;
+  }
+  getChannelData(): Float32Array {
+    throw new Error('its samples are kept on the page');
+  }
+}
+
 class StandContext extends EventTarget {
   readonly id = CONTEXT;
   readonly destination: AudioNode;
@@ -375,6 +396,17 @@ class StandContext extends EventTarget {
       away.say(['decode', id, data], [data]);
     });
   }
+
+  /** Decoded by the page, which keeps the samples and says only how they measure, so they are held once. */
+  decodeMeasured(data: ArrayBuffer): Promise<{ buffer: AudioBuffer; measured: Measured }> {
+    const away = link;
+    if (!away) return Promise.reject(new Error('no page to decode the sound'));
+    const id = away.fresh();
+    return new Promise((resolve, reject) => {
+      away.measuring.set(id, (kept) => (kept instanceof Error ? reject(kept) : resolve(kept)));
+      away.say(['measure', id, data], [data]);
+    });
+  }
 }
 
 function bufferOf(channels: Float32Array[], sampleRate: number, shipped = false, id = link?.fresh() ?? 0): AudioBuffer {
@@ -427,11 +459,21 @@ export function soundAway(send: Send): (reply: AudioReply) => void {
       const node = away.ending.get(reply.id);
       away.ending.delete(reply.id);
       if (node instanceof StandNode) node.ended();
+    } else if (reply.kind === 'measured') {
+      const done = away.measuring.get(reply.id);
+      away.measuring.delete(reply.id);
+      const buffer = new PageBuffer(reply.id, reply.length, reply.numberOfChannels, reply.sampleRate);
+      away.watch(buffer, reply.id);
+      done?.({ buffer: buffer as unknown as AudioBuffer, measured: reply.measured });
     } else {
       const done = away.decoding.get(reply.id);
       away.decoding.delete(reply.id);
-      if ('error' in reply) done?.(new Error(reply.error));
-      else done?.(bufferOf(reply.channels, reply.sampleRate, true, reply.id) as unknown as StandBuffer);
+      const measuring = away.measuring.get(reply.id);
+      away.measuring.delete(reply.id);
+      if ('error' in reply) {
+        done?.(new Error(reply.error));
+        measuring?.(new Error(reply.error));
+      } else done?.(bufferOf(reply.channels, reply.sampleRate, true, reply.id) as unknown as StandBuffer);
     }
   };
 }

@@ -11,6 +11,8 @@ from wreck_course import CELL_M, SQUARE_CELLS
 STEP_M = 0.5
 CLIMB_M = 1.05
 SIZE_M = CELL_M * SQUARE_CELLS
+# A body's radius (crates/movement's body): it walks only where nothing higher than it climbs stands within it.
+BODY_M = 0.35
 
 
 class Reach:
@@ -37,10 +39,11 @@ class Reach:
             return self.squares[row][column]
         return None
 
-    def flood(self, start, closed=(), climb=STEP_M):
+    def flood(self, start, closed=(), climb=STEP_M, roomy=True):
         """Every square reached from the game's point `start`, never into a box of `closed` (minX, minY, maxX,
-        maxY): the gates still standing. A body goes up no more than `climb` from a square to the next, down any drop:
-        a step by default, a jump's climb to find every way round a gate."""
+        maxY): the gates still standing. A body goes up no more than `climb` from a square to the next, down any drop,
+        and, with `roomy`, only into a square with room for it (`roomy`): a step by default, a jump's climb to find every
+        way round a gate. Without it, every square of ground its feet could reach, for the ground's size."""
         first = self.square_of(*start)
         if self.height(*first) is None:
             return set()
@@ -59,9 +62,27 @@ class Reach:
                 there = self.height(*near)
                 if there is None or near in reached or shut(*near) or there - here > climb:
                     continue
+                if roomy and not self.roomy(*near, climb):
+                    continue
                 reached.add(near)
                 queue.append(near)
         return reached
+
+    def roomy(self, row, column, climb=STEP_M):
+        """Whether a body stands in a square with room for it: nothing higher than `climb` over the square within
+        BODY_M of its middle, as a wall or a splinter stands against it. An edge beside it leaves it room."""
+        own = self.height(row, column)
+        span = int(BODY_M // SIZE_M) + 1
+        middle = self.middle(row, column)
+        for near_row in range(row - span, row + span + 1):
+            for near_column in range(column - span, column + span + 1):
+                x, y = self.middle(near_row, near_column)
+                if (x - middle[0]) ** 2 + (y - middle[1]) ** 2 > BODY_M * BODY_M:
+                    continue
+                there = self.height(near_row, near_column)
+                if there is not None and own is not None and there - own > climb:
+                    return False
+        return True
 
     def reaches(self, reached, point):
         """Whether the game's `point` stands in a square reached."""
