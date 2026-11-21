@@ -103,6 +103,8 @@ export class Vitals {
   /** The charges held as last shown (none before the first), and each diamond's flash's seconds left. */
   private held: number | null = null;
   private readonly flashes: number[] = Array.from({ length: CHARGES_MOST }, () => 0);
+  /** Each diamond's flash takes one of two names in turn, so one flashing again starts afresh. */
+  private readonly again: boolean[] = Array.from({ length: CHARGES_MOST }, () => false);
   private readonly buffs: StatusRow;
   private calm = 0;
   private poise: PoiseState | null = null;
@@ -177,15 +179,19 @@ export class Vitals {
   private showCharges(own: FighterView | null, seconds: number): void {
     const { fills, held, text } = chargesShown(own);
     const was = this.held ?? held;
-    for (let index = Math.min(was, held); index < Math.max(was, held); index++)
+    for (let index = Math.min(was, held); index < Math.max(was, held); index++) {
       this.flashes[index] = CHARGE_FLASH_SECONDS;
+      this.again[index] = !this.again[index];
+    }
     this.held = held;
     const rows = (this.wide ? VITAL_SIZES.wide : VITAL_SIZES.base).drinks - BAR_EDGE * 2;
     this.pips.forEach((pip, index) => {
       const fill = fills[index] ?? 0;
       pip.classList.toggle('full', fill >= 1);
       setStyle(pip, '--fill', `${Math.round(fill * rows)}px`);
-      pip.classList.toggle('flash', (this.flashes[index] ?? 0) > 0);
+      const flashing = (this.flashes[index] ?? 0) > 0;
+      pip.classList.toggle('flash', flashing && !this.again[index]);
+      pip.classList.toggle('flash-again', flashing && !!this.again[index]);
       this.flashes[index] = Math.max(0, (this.flashes[index] ?? 0) - seconds);
     });
     const now = String(held);

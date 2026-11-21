@@ -235,6 +235,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#120, three healing charges, waits on the owner's yes** ([[Three Healing Charges, Refilled by Blows and Kills]]):
+  built to the owner's picks, then a five-part audit (rules and room, wire and prediction, tests and notes, balance
+  against the roster, a design pass with pictures) and a last verification audit, every finding fixed or named in
+  the decision page. Tested offline with the full check; not yet seen or heard in a browser on a real GPU, nor
+  played in a company. Its merge deploys the rooms and the page, and a tab still on the old page reloads once.
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
   first and its findings fixed, which deploys the page and the rooms:** aiming faces straight ahead (#115,
   [[Aiming, the Figure Faces Straight Ahead]]); the crosshair's shapes, reload ring, hit marks and melee reach (#116,

@@ -346,6 +346,10 @@ impl Room {
                     self.take_ask(id, asked);
                 }
                 self.ask_cast(id, input.cast.filter(|_| !input.intent.controls.mounted));
+                // A cast under way holds off a drink, so neither is lost to the other; the page holds its press too.
+                if self.players.get(&id).is_some_and(|found| found.casting.releasing.is_some()) {
+                    input.intent.combat.heal = false;
+                }
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };

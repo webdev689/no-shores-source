@@ -5,6 +5,9 @@ import { type Block, blockFloats } from './movementRules.ts';
 /** The address of the room's rules a page serves under `base`. It names the protocol, which hashes the fight's
  *  layouts, so a cache never hands a new page an old `room.wasm`. */
 export const roomWasmAt = (base: string): string => `${base}room.wasm?v=${PROTOCOL}`;
+/** The room's rules fetched from `roomWasmAt`, asked of the server again each time (a "not modified" costs little), as
+ *  a change to the rules alone leaves the layouts and so the address as they were. */
+export const fetchRoomWasm = (base: string): Promise<Response> => fetch(roomWasmAt(base), { cache: 'no-cache' });
 
 /** A fired shot's numbers after a predicted fighter's: its weapon, where it left, its velocity. */
 const FIRED_FLOATS = 7;

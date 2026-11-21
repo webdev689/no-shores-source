@@ -25,6 +25,8 @@ Then the owner chose from Claude's options:
 Asked whether a player can cast an Art while drinking, the owner chose "No casting while drinking"; whether foes
 should treat a drink as an opening, "No, foes ignore it"; and who gets a kill's share in a company, "Everyone who
 struck it". Asked about the display, the owner chose "Stay shown while one's missing" and "Flash on gain or drink".
+Asked whether a companion's blows and kills should fill its player's meter, as XP already credits them, the owner
+chose "Yes, as XP does".
 
 ## What it settles
 
@@ -39,6 +41,7 @@ struck it". Asked about the display, the owner chose "Stay shown while one's mis
 - No Art is cast while drinking ([[Arts]]).
 - Foes ignore a drink: it is no opening to them.
 - A kill's share goes to everyone who struck the foe.
+- A companion's blows and kills fill its player's meter, as its XP is theirs.
 - The vitals stay shown while a charge is missing, and a diamond flashes when a charge is gained and when one is
   drunk ([[Interface]]).
 
@@ -58,9 +61,11 @@ struck it". Asked about the display, the owner chose "Stay shown while one's mis
 | The aims | About half a charge for a Minor, about two over a Boss fight | Claude's, for the owner's "damage dealt + kills" |
 | What that gives | A Minor fought whole: a sixth from its blows and a third from its kill, half a charge. An Elite: a whole charge. A Boss: half a charge over its health and a whole one at its end. Played alone, Corvane's world-boss node with its four Major escorts gives 4.5 charges before he falls and 5.5 in all; the prologue's Captain Thule never falls, and his fight gives at most a third of a charge | The rate, measured against the roster |
 | Level and difficulty | As a share of the foe's own health, the rate is the same at every level and difficulty; a foe above the player's level costs them more health for each charge it gives | A blow is weighed against the foe's own most health, so its level and the difficulty cancel out |
-| What counts | A swing, a shot or a spell, to the foe's health or its shield; never a companion's blow | "Every hit the player lands"; a shield is the foe's to break |
+| What counts | A swing, a shot or a spell, to the foe's health or its shield, the player's own or a companion's or boarding hand's for its leader | "Every hit the player lands", and the owner's "Yes, as XP does"; a shield is the foe's to break |
 | A foe walking home | A blow on a foe walking back to its post, its fight given up, fills nothing | Shot from past its leash or off its ground, it heals as it walks and never fights back: the meter would fill without a fight |
-| Who struck it | Every player whose own blow landed on the foe in its last 10 s, once each; a companion's blow counts no one | The window a kill's XP and drops are shared by; never a companion's blow, as for the meter |
+| Who struck it | Every player whose blow, or whose companion's or boarding hand's, landed on the foe in its last 10 s while it fought (not as it walked home), once each | The window a kill's XP and drops are shared by |
+| A cast and a drink | A cast under way (asked and not yet gone off) holds off a drink press, in the room and on the page alike | Neither is lost to the other: a cast asked with a drink once played on the page and never went off |
+| Old rules in a cache | The page asks the server again for the room's rules each time it loads (a "not modified" costs little), and its address names the protocol | A change to the rules alone leaves the address as it was, and a cached old copy would mispredict |
 | Past three | The meter stands empty while all three are full; while a drink is under way the charge it drinks counts as spent, so the meter fills to one whole and becomes a charge as the drink spends one | No charge past three, nothing banked; a charge earned in a drink's last moments is not thrown away |
 | Saving | The charges are never saved; a player stands in every room with all three | "Coming into a room fills every charge" |
 | The look | The weapon is put away while the drink lasts, in the figure and the first person's hands, and back as it ends; another player's figure puts it away as soon as their snapshot shows the drink | The forge has no drinking pose; a dress change crosses at most once a second |

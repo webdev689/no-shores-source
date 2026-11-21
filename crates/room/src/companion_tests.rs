@@ -327,7 +327,7 @@ fn the_fights_heat_counts_what_a_companion_deals_kills_and_takes_as_a_players() 
 }
 
 #[test]
-fn a_companions_blows_and_kill_fill_no_ones_healing_meter() {
+fn a_companions_blows_and_kill_fill_their_leaders_healing_meter_as_their_xp_is_shared() {
     let mut room = room();
     let (player, ids) = with_officers(&mut room, &[Post::FirstMate], 1);
     let found = room.players.get_mut(&player).unwrap();
@@ -336,6 +336,8 @@ fn a_companions_blows_and_kill_fill_no_ones_healing_meter() {
     let (companion, _) = companions(&room)[&ids[0]];
     let foe = tithe(&mut room, 1, -30.0);
     let left = room.foes[&foe].fighter.health;
+    let rank = room.foes[&foe].brain.rank;
+    let most = room.foes[&foe].fighter.health_max + room.foes[&foe].shield.map_or(0.0, |shield| shield.most);
     let blow = Blow {
         striker: companion,
         kind: BlowKind::Swing(Stroke::Down),
@@ -356,5 +358,8 @@ fn a_companions_blows_and_kill_fill_no_ones_healing_meter() {
     }
     assert!(room.foes[&foe].fighter.dead(), "the companion fells the foe");
     let fighter = room.players[&player].fighter;
-    assert_eq!((fighter.charges, fighter.meter), (0, 0.0), "their leader's meter stands empty");
+    let share = crate::recharge::kill_share(rank);
+    let expected = share * crate::recharge::DEALT_SHARE * left / most + share;
+    let got = f64::from(fighter.charges) + fighter.meter;
+    assert!((got - expected).abs() < 1e-9, "their leader's meter, by the blows and the kill: {got} against {expected}");
 }

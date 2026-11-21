@@ -1,8 +1,8 @@
 //! A player's blows fill their meter toward the next healing charge as the room settles them: each by the share it
 //! took of its foe's most health and most shield together, weighed by the foe's rank; and a kill gives its rank's
-//! share to every player whose own blow landed on it in its last ten seconds, the window its XP is shared by. A blow on
-//! a foe walking home, its fight given up, gives nothing: shot from where it will not follow, it would fill the meter
-//! with no fight. The rules spend the charges (`combat::drink`); here they come back. They are never saved: a player
+//! share to every player whose blow, or whose companion's or boarding hand's, landed on it in its last ten seconds
+//! while it fought, as its XP is shared. A blow on a foe walking home, its fight given up, gives nothing and counts
+//! toward no kill: shot from where it will not follow, it would fill the meter with no fight. The rules spend the charges (`combat::drink`); here they come back. They are never saved: a player
 //! stands in every room, and again after death, with all three.
 
 use crate::Room;
@@ -27,14 +27,21 @@ pub fn kill_share(rank: Rank) -> f64 {
 pub const DEALT_SHARE: f64 = 0.5;
 
 impl Room {
-    /// A player's blow that took `dealt` from a foe (its health and its shield) fills their meter by that share of the
-    /// foe's most health and most shield, weighed by its rank, and marks the foe struck by them.
+    /// A blow that took `dealt` from a foe (its health and its shield) fills its player's meter (a companion's or a
+    /// boarding hand's, their leader's) by that share of the foe's most health and most shield, weighed by its rank,
+    /// and marks the foe struck by them.
     pub(crate) fn recharge(&mut self, striker: FighterId, defender: FighterId, dealt: f64) {
         let Some(foe) = self.foes.get(&defender) else { return };
         let took = dealt > 0.0;
         if !took || foe.brain.returning() {
             return;
         }
+        let striker = if self.players.contains_key(&striker) {
+            striker
+        } else {
+            let Some((leader, _)) = self.credited(striker, None) else { return };
+            leader
+        };
         let most = foe.fighter.health_max + foe.shield.map_or(0.0, |shield| shield.most);
         let gain = kill_share(foe.brain.rank) * DEALT_SHARE * dealt / most.max(1.0);
         let clock = self.clock;

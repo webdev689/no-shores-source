@@ -214,7 +214,9 @@ test('the healing charges show as three diamonds, each held whole and the next f
 test('a diamond flashes as its charge is gained or drunk, for a moment, and not before the first word', () => {
   onFakePage((root) => {
     const vitals = new Vitals(root);
-    const lit = () => findAll(root, 'drink').map((pip) => pip.classList.contains('flash'));
+    const named = (pip: { classList: { contains(name: string): boolean } }) =>
+      pip.classList.contains('flash') ? 'flash' : pip.classList.contains('flash-again') ? 'again' : null;
+    const lit = () => findAll(root, 'drink').map((pip) => named(pip) !== null);
     vitals.update({ ...fighter, charges: 1, meter: 0 }, 1 / 60, false, false);
     assert.deepEqual(lit(), [false, false, false], 'the first word flashes nothing');
     vitals.update({ ...fighter, charges: 2, meter: 0 }, 1 / 60, false, false);
@@ -226,5 +228,9 @@ test('a diamond flashes as its charge is gained or drunk, for a moment, and not 
     assert.deepEqual(lit(), [false, true, false], 'drunk');
     vitals.update({ ...fighter, charges: 3, meter: 0 }, 1 / 60, false, false);
     assert.deepEqual(lit(), [false, true, true], 'both a respawn fills');
+    const second = () => named(findAll(root, 'drink')[1] as never);
+    const first = second();
+    vitals.update({ ...fighter, charges: 1, meter: 0 }, 1 / 60, false, false);
+    assert.notEqual(second(), first, 'drunk again mid-flash: the flash starts afresh under its other name');
   });
 });

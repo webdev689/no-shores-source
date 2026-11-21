@@ -5,7 +5,7 @@ import type { Gpu } from '../gpu.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { sloopBuildText } from '../network/localRoom.ts';
-import { roomWasmAt } from '../rules/combatRules.ts';
+import { fetchRoomWasm } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { mainPortsOf } from '../rules/roster.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
@@ -48,7 +48,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTM
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
   // The sea room's own module, for playing alone; fetched now, compiled once.
-  const roomModule = fetch(roomWasmAt(base))
+  const roomModule = fetchRoomWasm(base)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
     .then((bytes) => WebAssembly.compile(bytes));
   // The Sloop's build as the naval rules hold it, for Manage's panel: read once when first opened, however it reads.

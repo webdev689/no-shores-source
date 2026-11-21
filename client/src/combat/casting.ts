@@ -148,6 +148,11 @@ export class CastKeys {
     return { cast: { spell, aim: null }, ring: null };
   }
 
+  /** Whether a cast is under way: sent and not yet answered, or Dusk Daggers aimed. A drink waits for it. */
+  get waiting(): boolean {
+    return this.sent !== null || this.aiming;
+  }
+
   /** Runs the wait after a cast on by `seconds`, and ends it once the room's word shows the cast spent (its ability's
    *  share in `abilities` under full) or another Art worn, or the longest wait is over. Any other word the room sends
    *  meanwhile (a gear change, a kill's charge) leaves it waiting. */

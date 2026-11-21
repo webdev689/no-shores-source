@@ -81,12 +81,16 @@ export class PlayerFight {
     const guards = hands && free && !player.mounted && !ranged;
     // Each press is the fight's even when let go within the frame; one of the guard's two keys pressed while the other
     // is held is a fresh press.
+    const floorAt = (x: number, y: number) => steps.standing(x, y).z;
+    this.castFrame(controls, seconds, hands && free && !player.mounted, { markOf, floorAt });
+    // A cast under way holds off a drink, as the room does: sent, aimed, or its move still playing.
+    const casting = this.castKeys.waiting || walker.player.cast !== null;
     fight.press({
       swing: armed && !shooter && controls.held('swing'),
       shoot: ranged && controls.held('guard'),
       guard: guards && controls.held('guard'),
       dodge: hands && controls.pressed('dodge'),
-      heal: hands && controls.pressed('heal'),
+      heal: hands && controls.pressed('heal') && !casting,
       pitch: -player.pitch,
       aim: aiming,
       mark: aiming ? markOf() : null,
@@ -94,8 +98,6 @@ export class PlayerFight {
       shootPressed: ranged && controls.pressed('guard'),
       guardPressed: guards && controls.pressed('guard'),
     });
-    const floorAt = (x: number, y: number) => steps.standing(x, y).z;
-    this.castFrame(controls, seconds, hands && free && !player.mounted, { markOf, floorAt });
     const foe = fight.targetAt;
     const toward = foe && Math.atan2(foe.x - player.body.x, -(foe.y - player.body.y));
     walker.step(controls, steps, seconds, toward, aiming);

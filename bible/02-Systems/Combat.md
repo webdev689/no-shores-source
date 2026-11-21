@@ -263,14 +263,15 @@ A foe never drinks.
   dodge never frees it early. Foes take no notice of a drink.
 - **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
   their meter toward the next charge by the share it took of the foe's most health and most shield together, times
-  half the share its rank's kill gives. A kill adds the kill's share whole to every player whose own blow landed on
-  the foe in its last 10 s, as its XP and drops are shared: a third of a charge for a Minor or a Major, two thirds for
+  half the share its rank's kill gives; a companion's or a boarding hand's blow fills its leader's, as its XP is
+  theirs. A kill adds the kill's share whole to every player whose blow, or whose companion's, landed on the foe in
+  its last 10 s while it fought, as its XP and drops are shared: a third of a charge for a Minor or a Major, two thirds for
   an Elite or a Miniboss, a whole one for a Boss. So a Minor fought whole gives half a charge, an Elite a whole one,
   and a Boss half a charge over its health and a whole one at its end, besides its adds'. A full meter is a charge;
   none come past three, and the meter stands empty while all three are full, but while a drink is under way the
   charge it drinks counts as spent: the meter fills to one whole and becomes a charge as the drink spends one. As a
-  share of the foe's own health it is the same at every level and difficulty. A companion's blows fill no one's, and
-  a blow on a foe walking home to its post, its fight given up, fills nothing.
+  share of the foe's own health it is the same at every level and difficulty. A blow on a foe walking home to its
+  post, its fight given up, fills nothing and counts toward no kill. A cast under way holds off a drink press.
 - **Full again.** A player comes into every room, Overlook and the town included, with all three, and stands again
   after death with all three. The charges are never saved ([[Server]]).
 - **On the wire.** The charges, the meter and the drink's press kept and held cross in the fighter's numbers after its

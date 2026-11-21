@@ -155,6 +155,27 @@ fn a_cast_is_refused_while_drinking_and_one_whose_caster_drinks_before_its_relea
 }
 
 #[test]
+fn a_cast_asked_with_a_drink_goes_off_and_holds_the_drink_off() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 2, &[]);
+    let mut hurt = *room.fighter(player).expect("in");
+    hurt.health = 30.0;
+    room.set_fighter(player, hurt);
+    let cast = Some(Cast { spell: MEND, aim: None });
+    let heal = combat::CombatInput { heal: true, ..combat::CombatInput::default() };
+    let intent = combat::Intent { combat: heal, ..combat::Intent::default() };
+    room.input(player, Input { sequence: 1, cast, intent, seen: room.clock(), ..Input::default() }).expect("in order");
+    room.tick();
+    let fighter = *room.fighter(player).expect("in");
+    assert!(!matches!(fighter.action, combat::Action::Drink { .. }), "no drink under the cast: {:?}", fighter.action);
+    for _ in 0..18 {
+        room.tick();
+    }
+    let fighter = *room.fighter(player).expect("in");
+    assert_eq!((fighter.health, fighter.charges), (70.0, combat::tuning::CHARGES), "Mend heals, no charge spent");
+}
+
+#[test]
 fn a_room_without_arts_takes_no_cast_and_charges_nothing() {
     let (mut room, player) = room_with_player();
     room.forbid_arts();

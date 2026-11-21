@@ -195,7 +195,9 @@ ${thinBarsCss('.fight-hud', VITAL_BARS)}
   background: linear-gradient(0deg, ${FILLING} var(--fill, 0px), ${TONES.groundTrack} var(--fill, 0px)); }
 .fight-hud .drink.full::after { background: ${FILLS.health}; }
 .fight-hud .drink.flash::after { animation: fight-drink-flash ${CHARGE_FLASH_SECONDS}s linear; }
+.fight-hud .drink.flash-again::after { animation: fight-drink-flash-again ${CHARGE_FLASH_SECONDS}s linear; }
 @keyframes fight-drink-flash { 0%, 49.9% { background: ${TONES.word}; } 50%, 100% { background: ${FILLING}; } }
+@keyframes fight-drink-flash-again { 0%, 49.9% { background: ${TONES.word}; } 50%, 100% { background: ${FILLING}; } }
 /* Whole and untouched, the vitals rest: they go in six steps, and come back in two at the first change. */
 .fight-hud .vitals { transition: opacity 120ms steps(2, end); }
 .fight-hud .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }
@@ -208,7 +210,7 @@ ${vitalStepCss('.fight-hud.wide', true)}
   .fight-hud .vital.stamina.flash::after { animation: none; }
   .fight-hud .vital.stamina.flash .meter { animation: none; }
   .fight-hud .vital.poise-flash .fill { animation: none; }
-  .fight-hud .drink.flash::after { animation: none; }
+  .fight-hud .drink.flash::after, .fight-hud .drink.flash-again::after { animation: none; }
 }
 `;
 }

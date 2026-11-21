@@ -203,7 +203,8 @@ should be ([[HTML Is Avoided Where It Can Be]]).
   whole pixel rows in a pale health red as the player's blows fill its meter. A diamond brightens in two steps over
   0.4 s, near white and then pale red, as a charge is gained or drunk (not under reduced motion). A screen reader
   reads them as a meter, "Healing charges", with how many of the three are held and how far the next has filled,
-  rounded as the fill is ([[Three Healing Charges, Refilled by Blows and Kills]]). Whole and untouched for 4 s (health
+  to a whole percent while the diamond fills in whole pixel rows ([[Three Healing Charges, Refilled by Blows and
+  Kills]]). Whole and untouched for 4 s (health
   and stamina short of no whole point, no poise taken, all three charges held), with no buff and no foe on the target
   plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s; the first point lost or spent brings
   them back in two.
