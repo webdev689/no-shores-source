@@ -73,6 +73,10 @@ came from, a bite as a flash on its striker.
 | Conduit's cut | Tells the page as a Tenet comes ready, not at every blow | The gear message carries every item |
 | Snare | Slows a ship at its oars too | A ship rowing is no freer of the web |
 | On the item page | Both an Atheric's perks under "Atheric", its own dimmed until chosen; a trade-off's cost on its own line in the colour of a loss; its intrinsic first on its card | Destiny's exotic pages show both perks; a cost should read as a cost |
+| A shot's perks | The item it was loosed from gives them, wherever it is as the shot lands, with the Attack and trim it was loosed with | A weapon changed while a shot flies changes nothing of it |
+| A ball in the rigging | Takes the canvas and crew perks, never the hull's | Its harm there is all canvas and men |
+| A player back in a sea fight | Keeps a spent Hard to Kill; no ship number is given twice | "Once a fight" is the player's, and a ball in flight is no newcomer's |
+| A purchase from Shape | Names the piece shown, refused as not sold here when his week now draws another there | As a smith's ware of another day |
 | A Legendary's sails and rigging | Six perks each, Backed Sails, Boarding Ladders and Preventer Stays among them, so no module offers a perk twice | The merged pools had too few for a Legendary's six nodes |
 
 ### The Atheric ship modules

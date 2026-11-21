@@ -109,7 +109,8 @@ python -I tools/sprite-forge/layers.py --body male --anims walk,idle --layers he
 python -I tools/sprite-forge/forgepoints.py --body male
 ```
 
-A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
+A layer takes its set's or metal's own grades by its name (`layers.set_of`), a pair's left twin (`_l`) and a short
+sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
 The `forge` workflow renders the Arts' birds and the weapons drawn large and adds them to what is published with the
 repository's Cloudflare token whenever `artbirds.py`, `weaponart.py` or their pinned packages change on main, or when
