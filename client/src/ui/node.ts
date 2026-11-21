@@ -80,8 +80,9 @@ export interface Field {
 }
 
 /** Draws inside a node's box, for what boxes and words cannot say: a bar's strips, a dial's ticks. `box` is in device
- *  pixels, at `scale` device pixels a CSS pixel. */
-export type Drawing = (ui: UiRenderer, box: Box, scale: number, clip: Box) => void;
+ *  pixels, at `scale` device pixels a CSS pixel; `fade` is how faded the node stands with its parents' opacity, which
+ *  what it draws takes on. */
+export type Drawing = (ui: UiRenderer, box: Box, scale: number, clip: Box, fade: number) => void;
 
 /** One node of the interface. */
 export interface Node {

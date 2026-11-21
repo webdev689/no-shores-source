@@ -161,7 +161,7 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
       });
     }
     if (node.field && node.id) drawField(ui, each, inner, scale, clip, state, inkOf(each));
-    node.draw?.(ui, device, scale, clip);
+    node.draw?.(ui, device, scale, clip, fade);
   }
 }
 

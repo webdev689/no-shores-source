@@ -228,3 +228,11 @@ test('words drawn with a wider edge stand their halo that many pixels out all ro
   assert.equal(leftmost(3), plain - 2, 'three pixels out where one stood one out');
   assert.equal(leftmost(1), plain);
 });
+
+test('a node’s own drawing is told how faded it stands, its parents’ opacity and its own', () => {
+  const ui = new Interface(renderer());
+  ui.frame(VIEW, [], 1 / 60);
+  const told: number[] = [];
+  ui.draw({ opacity: 0.5, children: [{ opacity: 0.5, width: 10, height: 10, draw: (...args) => told.push(args[4]) }] });
+  assert.deepEqual(told, [0.25]);
+});
