@@ -8,6 +8,7 @@ import { ROLES } from '../plus/kit.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { type BountyRow, bountyWords, payOf } from './bountyBoard.ts';
 import { bountyCard, bountyTile, chooseTile, moveAmongTiles } from './bountyTiles.ts';
+import { iconImage } from './journalIcons.ts';
 import { pressOf } from './gearDom.ts';
 import { STEP_BACK } from './gearScreen.ts';
 import { timersPanel } from './journalTimers.ts';
@@ -49,7 +50,7 @@ function questCard(card: QuestCard): HTMLElement {
   [name.title, tale.title] = [card.name, card.tale];
   const step = make('p', '', 'journal-card-step');
   step.append(make('span', String(card.step), 'journal-step-number'), make('span', card.stepName));
-  if (card.done) step.append(make('span', 'Done', `gear-chip ${ROLES.chip}`));
+  if (card.done) step.append(iconImage('taken', 'Done', 24));
   words.append(name, tale, step);
   item.append(banner, words);
   return item;
@@ -131,20 +132,29 @@ export function startJournal(source: JournalSource | null, now: () => number = (
       quests.append(empty);
       return;
     }
-    head.append(make('span', `Page ${pageAt + 1} / ${count}`, 'journal-page-at'));
-    head.append(make('span', `${cards.length} held`, `gear-chip ${ROLES.chip}`));
-    for (const [glyph, step, key, words, none] of [
-      ['◂', -1, 'back', 'the page before', pageAt === 0],
-      ['▸', 1, 'next', 'the next page', pageAt >= count - 1],
-    ] as const) {
+    // How many are held, beside the title as the bounties' count is; the pages to turn, together at the right.
+    const held = make('span', String(cards.length), `gear-chip ${ROLES.chip}`);
+    held.setAttribute('aria-label', `${cards.length} held`);
+    head.append(held);
+    const pager = make('div', '', 'journal-pager');
+    const [back, next] = (
+      [
+        ['◂', -1, 'back', 'the page before', pageAt === 0],
+        ['▸', 1, 'next', 'the next page', pageAt >= count - 1],
+      ] as const
+    ).map(([glyph, step, key, words, none]) => {
       const turn = () => ((pageAt = Math.max(0, Math.min(count - 1, pageAt + step))), journal.page());
       const arrow = keep(pressOf(glyph, turn), `quests-${key}`);
       arrow.setAttribute('aria-label', `Quests: ${words}`);
       arrow.setAttribute('aria-disabled', String(none));
       // One page has no other to turn to, so its arrows are not stops for Tab.
       if (count === 1) arrow.tabIndex = -1;
-      head.append(arrow);
-    }
+      return arrow;
+    });
+    const pageWords = make('span', `${pageAt + 1} / ${count}`, 'journal-page-at');
+    pageWords.setAttribute('aria-label', `Page ${pageAt + 1} of ${count}`);
+    pager.append(...(back ? [back] : []), pageWords, ...(next ? [next] : []));
+    head.append(pager);
     const list = make('ol', '', 'journal-cards');
     list.append(...cards.slice(pageAt * CARDS_A_PAGE, (pageAt + 1) * CARDS_A_PAGE).map(questCard));
     quests.append(list);
@@ -165,18 +175,19 @@ export function startJournal(source: JournalSource | null, now: () => number = (
     const show = (row: BountyRow) => {
       chosen = row.place;
       chooseTile(tiles, row.place);
-      const word = row.state === 'held' ? null : make('p', bountyWords(row), 'bounty-card-state');
+      const word = row.state === 'held' ? null : make('p', '', 'bounty-card-state');
+      word?.append(iconImage('taken', '', 24), make('span', bountyWords(row)));
       said.replaceChildren(bountyCard(row, pay, word));
     };
     for (const row of column.taken) {
-      const tile = keep(bountyTile(row, 64), `bounty-${row.place}`);
+      const tile = keep(bountyTile(row), `bounty-${row.place}`);
       for (const choosing of ['pointerenter', 'focus', 'click']) tile.addEventListener(choosing, () => show(row));
       tiles.push(tile);
       grid.append(tile);
     }
     for (let slot = column.taken.length; slot < column.slots; slot += 1)
       grid.append(make('span', '', `journal-slot ${ROLES.well}`));
-    grid.addEventListener('keydown', (event) => moveAmongTiles(tiles, event as KeyboardEvent));
+    grid.addEventListener('keydown', (event) => moveAmongTiles(tiles, event as KeyboardEvent, 3));
     bounties.replaceChildren(head, grid, said);
     const first = column.taken.find((row) => row.place === chosen) ?? column.taken[0];
     if (first) show(first);

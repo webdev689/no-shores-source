@@ -29,27 +29,29 @@ async function opened() {
   return { root, panel };
 }
 
-test('the timers stand under Today, This week and Later, each row its icon, its name and its countdown', async () => {
+const classed = (root: FakeElement, name: string) => root.all().filter((node) => node.classList.contains(name));
+
+test('Today and This week each carry their reset’s icon and its one countdown; every row its icon and its name', async () => {
   const { root } = await opened();
-  for (const words of ['Timers', 'Today', 'This week', 'Later', 'Daily reset', 'Dungeon of the day', 'Bounties'])
+  for (const words of ['Timers', 'Today', 'This week', 'Later', 'Dungeon of the day', 'Bounties'])
     assert.ok(root.find(words), words);
-  for (const words of ['Weekly reset', 'forsaken-cistern', 'saltworm-warrens', 'Abyss boon', 'Breaches'])
+  for (const words of ['forsaken-cistern', 'saltworm-warrens', 'Abyss boon', 'Breaches'])
     assert.ok(root.find(words), words);
-  const wells = root.all().filter((node) => node.classList.contains('journal-timer-well'));
-  assert.equal(wells.length, 8, 'a well a row');
-  assert.ok(
-    wells.every((well) => well.all().some((node) => node.tagName === 'IMG')),
-    'each led by its icon',
-  );
   assert.deepEqual(
-    ['timer-day-reset', 'timer-day', 'timer-week-reset'].map((key) => keyed(root, key)?.textContent),
-    ['23:59:59', '23:59:59', '3d 23h'],
+    ['timer-day-reset', 'timer-week-reset'].map((key) => keyed(root, key)?.textContent),
+    ['23:59:59', '3d 23h'],
   );
-  assert.equal(
-    root.all().filter((node) => node.textContent === 'Now').length,
-    5,
-    'the day’s dungeon, the bounties, the week’s two and the boon',
+  const heads = classed(root, 'journal-timers-group');
+  assert.deepEqual(
+    heads.map((head) => head.all().filter((node) => node.tagName === 'IMG').length),
+    [1, 1, 0],
+    'the sun over Today, the page of the week over This week, nothing over Later',
   );
+  const wells = classed(root, 'journal-timer-well');
+  assert.equal(wells.length, 6, 'a well a row: the day’s dungeon, the bounties, the week’s two, the boon, Breaches');
+  assert.ok(wells.every((well) => well.all().some((node) => node.tagName === 'IMG')));
+  assert.equal(classed(root, 'journal-timer-count').length, 2, 'one countdown a reset, written once');
+  assert.equal(root.find('Now'), undefined, 'every row is under way, so none says it');
   assert.equal(root.find('This Week'), undefined, 'no title but the panel’s own');
 });
 
@@ -58,41 +60,49 @@ test('what each row stands for is drawn, not written: the seas and how they stan
   const labels = labelled(root);
   for (const words of ['Normal seas: Not taken', 'Elite seas: Taken', 'Abyss seas: Not taken'])
     assert.ok(labels.includes(words), words);
-  assert.ok(
-    labels.includes(
-      'At Elite and Abyss seas, Burn (Shadow): Shadow spells deal double damage. Wearing Shadow, you take double.',
-    ),
-  );
-  assert.ok(root.find('Burn (Shadow)'), 'a modifier keeps its name beside its icon');
+  const burn =
+    'At Elite and Abyss seas, Burn (Shadow): Shadow spells deal double damage. Wearing Shadow, you take double.';
+  assert.equal(labels.filter((label) => label === burn).length, 2, 'the day’s flame on the Elite and the Abyss seas');
   for (const words of ['Pays once: a Vestige.', 'Pays once: a richer cache.', 'Pays once: a Legendary Vestige.'])
     assert.ok(labels.includes(words), words);
   assert.ok(labels.includes('5 revives for the company.') && labels.includes('A wipe starts the run over.'));
-  assert.ok(root.find('Lv 26') && root.find('Lv 30') && root.find('5'), 'the levels and the revives as numbers');
+  const six = 'Six a day, from the board in Overlook’s plaza: two on land, two at sea, two in dungeons.';
+  assert.equal(labels.filter((label) => label === six).length, 3, 'the bounties by kind, two of each');
+  assert.ok(root.find('+25%'), 'the boon by XP’s glyph and what it adds');
+  assert.deepEqual(
+    classed(root, 'journal-level').map((level) => level.textContent),
+    ['Lv26', 'Lv30'],
+    'each level as its number',
+  );
+  assert.ok(root.find('Burn') && root.find('Lightswitch'), 'a week’s modifier keeps its short name beside its icon');
   for (const sentence of [
     'Once a day at each tier, on any island: a Vestige and a richer cache.',
     'Once a week: a Legendary Vestige and Essence.',
     '5 revives for the company. A wipe starts the run over.',
     'Elite Dungeon of the week · Level 26',
+    'Burn (Shadow)',
   ])
     assert.equal(root.find(sentence), undefined, `${sentence} is not written on the row`);
 });
 
-test('the foot says in words whatever is pointed at or focused, then the panel’s own line again', async () => {
+test('the foot says in words whatever is pointed at or focused, and is empty at rest', async () => {
   const { root, panel } = await opened();
   const foot = () => keyed(root, 'timers-said')?.textContent;
-  assert.equal(foot(), 'Times are shown in your local time.');
-  const burn = root.all().find((node) => node.getAttribute('aria-label')?.startsWith('At Elite and Abyss seas'));
-  burn?.dispatchEvent(new FakeEvent('pointerenter'));
+  assert.equal(foot(), '');
+  const flame = root.all().find((node) => node.classList.contains('journal-on-seas'));
+  flame?.dispatchEvent(new FakeEvent('pointerenter'));
   assert.equal(
     foot(),
     'At Elite and Abyss seas, Burn (Shadow): Shadow spells deal double damage. Wearing Shadow, you take double.',
   );
   (panel.list as unknown as FakeElement).dispatchEvent(new FakeEvent('pointerleave'));
-  assert.equal(foot(), 'Times are shown in your local time.');
-  const rows = root.all().filter((node) => node.classList.contains('journal-timer-row'));
+  assert.equal(foot(), '');
+  classed(root, 'journal-timers-clock')[0]?.dispatchEvent(new FakeEvent('pointerenter'));
+  assert.equal(foot(), 'The day turns at this time, in your local time.');
+  const rows = classed(root, 'journal-timer-row');
   assert.deepEqual(
     rows.map((row) => row.tabIndex),
-    [0, -1, -1, -1, -1, -1, -1, -1],
+    [0, -1, -1, -1, -1, -1],
     'one row a stop for Tab',
   );
   rows[0]?.focus();
@@ -100,7 +110,7 @@ test('the foot says in words whatever is pointed at or focused, then the panel�
   (panel.list as unknown as FakeElement).dispatchEvent(down);
   assert.equal(document.activeElement, rows[1], 'the arrows step between the rows');
   assert.deepEqual([rows[0]?.tabIndex, rows[1]?.tabIndex, down.defaultPrevented], [-1, 0, true]);
-  rows[1]?.dispatchEvent(new FakeEvent('focus'));
+  rows[0]?.dispatchEvent(new FakeEvent('focus'));
   assert.match(foot() ?? '', /^Dungeon of the day\. Once a day at each tier/);
 });
 

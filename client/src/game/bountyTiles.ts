@@ -21,13 +21,12 @@ function gauge(count: number, target: number): HTMLElement {
   return track;
 }
 
-/** A bounty's tile, `size` pixels square: its mark, and its state: open plain, taken with a gauge of its count, done
- *  with a gold edge, turned in dimmed with a check. */
-export function bountyTile(row: BountyRow, size: number): HTMLButtonElement {
+/** A bounty's tile, sized by where it stands: its mark, and its state: open plain, taken with a gauge of its count,
+ *  done with a gold edge, turned in dimmed with a tick. */
+export function bountyTile(row: BountyRow): HTMLButtonElement {
   const tile = make('button', '', `bounty-tile bounty-tile-${row.state} bounty-pool-${row.pool} ${ROLES.tile}`);
   tile.type = 'button';
   tile.dataset['key'] = `bounty-${row.place}`;
-  tile.style.setProperty('--bounty-tile', `${size}px`);
   tile.style.backgroundColor = POOL_GROUNDS[row.pool] ?? '';
   const said = { open: 'Not taken', held: row.progress, done: 'Done', paid: 'Turned in' }[row.state];
   tile.setAttribute('aria-label', `${row.name}: ${row.words} ${said}`);
@@ -48,19 +47,26 @@ export function bountyTile(row: BountyRow, size: number): HTMLButtonElement {
 export function bountyCard(row: BountyRow, pay: Pay, foot: HTMLElement | null): HTMLElement {
   const card = make('div', '', `bounty-card ${ROLES.panel}`);
   card.dataset['key'] = 'bounty-card';
+  card.classList.add(`bounty-card-${row.state}`);
   const kind = make('span', '', 'bounty-card-kind');
   kind.append(iconImage(KIND_MARKS[row.pool] ?? 'land', '', 24), make('span', BOUNTY_KINDS[row.pool] ?? ''));
   card.append(make('b', row.name, 'bounty-card-name'), kind, make('p', row.words, 'bounty-card-words'));
   const counted = make('div', '', 'bounty-card-count');
   counted.append(gauge(row.state === 'paid' ? row.target : row.count, row.target));
   counted.append(make('span', `${row.state === 'paid' ? row.target : row.count} / ${row.target}`));
+  // What it pays, each by its glyph: XP by its letters, Aurem by its coin.
   const paid = make('p', '', 'bounty-card-pay');
   const aurem = glyphImage('aurem');
   [aurem.width, aurem.height, aurem.alt] = [24, 24, 'Aurem'];
   aurem.classList.add('journal-icon');
-  const aurems = make('span', '', 'bounty-card-aurem');
-  aurems.append(aurem, make('span', `+${pay.aurem.toLocaleString()}`));
-  paid.append(make('span', `+${pay.xp.toLocaleString()} XP`), aurems);
+  for (const [image, amount] of [
+    [iconImage('xp', 'XP', 24), pay.xp],
+    [aurem, pay.aurem],
+  ] as const) {
+    const part = make('span', '', 'bounty-card-earn');
+    part.append(image, make('span', `+${amount.toLocaleString()}`));
+    paid.append(part);
+  }
   card.append(counted, paid);
   if (foot) card.append(foot);
   return card;
@@ -71,11 +77,11 @@ export function chooseTile(tiles: readonly HTMLElement[], place: number): void {
   for (const tile of tiles) tile.classList.toggle('bounty-tile-chosen', tile.dataset['key'] === `bounty-${place}`);
 }
 
-/** The arrows move the focus among tiles laid two a row; E presses the one focused. */
-export function moveAmongTiles(tiles: readonly HTMLElement[], event: KeyboardEvent): void {
+/** The arrows move the focus among tiles laid `perRow` a row; E presses the one focused. */
+export function moveAmongTiles(tiles: readonly HTMLElement[], event: KeyboardEvent, perRow = 2): void {
   const focused = tiles.findIndex((tile) => tile === document.activeElement);
   if (focused < 0) return;
-  const step = { arrowleft: -1, arrowright: 1, arrowup: -2, arrowdown: 2 }[event.key.toLowerCase()];
+  const step = { arrowleft: -1, arrowright: 1, arrowup: -perRow, arrowdown: perRow }[event.key.toLowerCase()];
   if (event.key.toLowerCase() === 'e' && !event.repeat) tiles[focused]?.click();
   else if (step !== undefined) tiles[Math.min(tiles.length - 1, Math.max(0, focused + step))]?.focus();
   else return;

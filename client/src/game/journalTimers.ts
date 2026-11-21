@@ -1,8 +1,8 @@
-// The timers panel that drops from the Journal's top, after DFO's timers window, led by icons: the day's and the
-// week's resets and what is on, grouped Today, This week and Later. Each row is its icon, its name, its marks (the seas
-// of each tier and how this character stands with them, the modifiers, what a run pays, the Abyss's rules) and its
-// countdown in the player's own clock. The words a mark stands for are its alt text, and the panel's foot says them
-// for whatever is pointed at or focused.
+// The timers panel that drops from the Journal's top, after DFO's timers window, led by icons: Today and This week,
+// each head its icon and the one countdown to its reset in the player's own clock, then Later. Each row is its icon,
+// its name and its marks (the seas of each tier and how this character stands with them, the modifiers, what a run
+// pays, the Abyss's rules). The words a mark stands for are read to a screen reader, and the panel's foot says them
+// for whatever is pointed at or focused; nothing is written twice.
 import { make } from '../editor/dom.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { KeyedModifier, Reward, Standing, ThisWeek, WeekDungeon, WeekRow } from './activityWords.ts';
@@ -22,33 +22,36 @@ export interface TimersPanel {
   show(week: ThisWeek | null, now: number): void;
 }
 
-/** A row's countdown: its cells, when it ends, and whether it is a reset ("at") or a row under way ("ends"). */
+/** A reset's countdown: its cells, and when it comes. */
 interface Count {
   readonly count: HTMLElement;
   readonly when: HTMLElement;
   readonly endsAt: number;
-  readonly reset: boolean;
 }
 
-/** A row of the panel: its id, kind, icon and name, its marks and the words it stands for, and when it ends (none
- *  for a row still to come). */
+/** A row of the panel: its id, icon and name, its marks, and the words it stands for. */
 interface Timer {
   readonly id: string;
-  readonly kind: 'reset' | 'day' | 'week' | 'later';
   readonly icon: IconName;
   readonly name: string;
   readonly marks: readonly HTMLElement[];
   readonly words: string;
-  readonly endsAt: number | null;
+}
+
+/** A group of rows: its id, name, the icon and reset its head shows (none for Later), and its rows. */
+interface Group {
+  readonly id: string;
+  readonly name: string;
+  readonly reset: { readonly icon: IconName; readonly endsAt: number; readonly words: string } | null;
+  readonly rows: readonly Timer[];
 }
 
 /** A row's icon's size, and a mark's: three times and twice the icons' twelve. */
 const ROW_ICON = 36;
 const MARK_ICON = 24;
-/** What the panel's foot says while nothing is pointed at or focused. */
-const RESTING = 'Times are shown in your local time.';
 const SEAS: readonly IconName[] = ['seas-normal', 'seas-elite', 'seas-abyss'];
-const STANDINGS: Readonly<Record<Exclude<Standing, null>, IconName>> = { taken: 'taken', open: 'open', shut: 'locked' };
+/** The mark of how a line stands; a line open to this character and not yet taken needs none. */
+const STANDINGS: Readonly<Partial<Record<Exclude<Standing, null>, IconName>>> = { taken: 'taken', shut: 'locked' };
 const REWARD_WORDS: Readonly<Record<Reward, string>> = {
   vestige: 'a Vestige',
   'legendary-vestige': 'a Legendary Vestige',
@@ -70,14 +73,14 @@ const within = (element: HTMLElement): HTMLElement[] => [
   ...[...(element.children as unknown as Iterable<HTMLElement>)].flatMap(within),
 ];
 
-/** Something with words of its own to say at the panel's foot. */
+/** Something with words of its own to say at the panel's foot, and to a reader. */
 const saying = <Sayer extends HTMLElement>(element: Sayer, words: string): Sayer => {
   element.dataset['say'] = words;
   return element;
 };
 
 /** A mark: its icon (or a gear glyph), a few words or a number beside it where it has them, and what it stands for in
- *  full, said at the foot and to a reader. */
+ *  full. */
 function mark(icon: HTMLImageElement, words: string, short = ''): HTMLElement {
   const chip = saying(make('span', '', 'journal-mark'), words);
   chip.setAttribute('role', 'img');
@@ -95,14 +98,6 @@ function glyph(image: HTMLImageElement): HTMLImageElement {
   return image;
 }
 
-/** What a run pays, a mark each, held together apart from its rules. */
-const rewardMarks = (rewards: readonly Reward[]): HTMLElement[] => {
-  if (rewards.length === 0) return [];
-  const group = make('span', '', 'journal-rewards');
-  group.append(...rewards.map(rewardMark));
-  return [group];
-};
-
 /** One thing a run pays: its Vestige in its rarity, its Essence, its cache or the boon. */
 const rewardMark = (reward: Reward): HTMLElement => {
   const rarity = VESTIGE_RARITY[reward];
@@ -115,22 +110,50 @@ const rewardMark = (reward: Reward): HTMLElement => {
   return mark(image, `Pays once: ${REWARD_WORDS[reward]}.`);
 };
 
-/** A modifier: its icon and its name, what it does said in full. */
-function modifierMark(modifier: KeyedModifier, where = ''): HTMLElement {
+/** What a run pays, a mark each, held together after its rules. */
+const rewardMarks = (rewards: readonly Reward[]): HTMLElement[] => {
+  if (rewards.length === 0) return [];
+  const group = make('span', '', 'journal-rewards');
+  group.append(...rewards.map(rewardMark));
+  return [group];
+};
+
+/** A modifier's icon, Burn's flame in its Art's colours. */
+function modifierImage(modifier: KeyedModifier): HTMLImageElement {
   const drawn = modifierIcon(modifier.key);
-  const icon = iconImage(drawn?.name ?? 'breach', '', MARK_ICON, drawn?.tones);
-  const chip = mark(icon, `${where}${modifier.name}: ${modifier.words}`, modifier.name);
+  return iconImage(drawn?.name ?? 'breach', '', MARK_ICON, drawn?.tones);
+}
+
+/** A modifier: its icon and its name, the Art a Burn is of left to its flame's colours. */
+function modifierMark(modifier: KeyedModifier): HTMLElement {
+  const chip = mark(
+    modifierImage(modifier),
+    `${modifier.name}: ${modifier.words}`,
+    modifier.name.replace(/ \(.+\)$/, ''),
+  );
   chip.classList.add('journal-modifier');
   return chip;
 }
 
-/** How this character stands with a line, as its mark beside the seas it is of; none where it has neither. */
-function standingMark(row: WeekRow, seas?: IconName): HTMLElement[] {
-  if (row.standing === null && !seas) return [];
+/** How this character stands with a line, as its mark, beside the seas it is of and any modifier on them; none where
+ *  it has nothing to show. */
+function standingMark(row: WeekRow, seas?: IconName, modifier?: KeyedModifier | null): HTMLElement[] {
+  const shown = row.standing ? STANDINGS[row.standing] : undefined;
+  if (!seas && !shown) return [];
   const words = row.state ? `${row.name}: ${row.state}` : row.name;
-  const chip = mark(iconImage(seas ?? STANDINGS[row.standing ?? 'open'], '', MARK_ICON), words);
+  const chip = mark(iconImage(seas ?? shown ?? 'locked', '', MARK_ICON), words);
   chip.classList.add('journal-standing', `journal-${row.standing ?? 'unknown'}`);
-  if (seas && row.standing) chip.append(iconImage(STANDINGS[row.standing], '', MARK_ICON));
+  if (seas && shown) chip.append(iconImage(shown, '', MARK_ICON));
+  if (modifier) {
+    const flame = saying(
+      make('span', '', 'journal-on-seas'),
+      `At Elite and Abyss seas, ${modifier.name}: ${modifier.words}`,
+    );
+    flame.setAttribute('role', 'img');
+    flame.setAttribute('aria-label', flame.dataset['say'] ?? '');
+    flame.append(modifierImage(modifier));
+    chip.append(flame);
+  }
   return [chip];
 }
 
@@ -142,16 +165,10 @@ function marksLine(...marks: HTMLElement[]): HTMLElement[] {
   return [line];
 }
 
-/** The dungeon of the day's marks: each tier's seas and this character's word on it; the modifier at Elite and Abyss
- *  seas, and what it pays; and each island's dungeon with its levels. */
+/** The dungeon of the day's marks: each tier's seas and this character's word on it, the day's modifier on the Elite
+ *  and Abyss seas, what it pays, and each island's dungeon with its levels. */
 function dayMarks(today: ThisWeek['today']): HTMLElement[] {
-  const tiers = today.tiers.flatMap((row, tier) => standingMark(row, SEAS[tier]));
-  const modifier = today.modifier ? [modifierMark(today.modifier, 'At Elite and Abyss seas, ')] : [];
-  for (const seas of today.modifier ? SEAS.slice(1).reverse() : []) {
-    const shown = iconImage(seas, '', MARK_ICON);
-    shown.classList.add('journal-modifier-seas');
-    modifier[0]?.prepend(shown);
-  }
+  const tiers = today.tiers.flatMap((row, tier) => standingMark(row, SEAS[tier], tier > 0 ? today.modifier : null));
   const isles = make('ul', '', 'journal-isles');
   for (const row of today.dungeons) {
     const isle = saying(make('li', '', 'journal-isle'), `${row.name}: ${row.about}`);
@@ -159,17 +176,14 @@ function dayMarks(today: ThisWeek['today']): HTMLElement[] {
     if (row.band) isle.append(make('span', `${row.band[0]}–${row.band[1]}`, 'journal-isle-band'));
     isles.append(isle);
   }
-  return [
-    ...marksLine(...tiers),
-    ...marksLine(...modifier, ...rewardMarks(today.rewards)),
-    ...(today.dungeons.length > 0 ? [isles] : []),
-  ];
+  return [...marksLine(...tiers, ...rewardMarks(today.rewards)), ...(today.dungeons.length > 0 ? [isles] : [])];
 }
 
 /** One of the week's two's marks: its level and this character's word on it, the Abyss's revives and wipe, its
  *  modifiers, and what it pays. */
 function weekMarks(dungeon: WeekDungeon): HTMLElement[] {
-  const level = saying(make('span', `Lv ${dungeon.level}`, 'journal-mark journal-level'), dungeon.about);
+  const level = saying(make('span', '', 'journal-mark journal-level'), dungeon.about);
+  level.append(make('span', 'Lv', 'journal-level-words'), make('b', String(dungeon.level)));
   const abyss =
     dungeon.revives === null
       ? []
@@ -179,7 +193,7 @@ function weekMarks(dungeon: WeekDungeon): HTMLElement[] {
         ];
   return [
     ...marksLine(level, ...standingMark(dungeon)),
-    ...marksLine(...abyss, ...dungeon.modifiers.map((one) => modifierMark(one)), ...rewardMarks(dungeon.rewards)),
+    ...marksLine(...abyss, ...dungeon.modifiers.map(modifierMark), ...rewardMarks(dungeon.rewards)),
   ];
 }
 
@@ -190,86 +204,61 @@ const weekWords = (dungeon: WeekDungeon): string =>
     .filter(Boolean)
     .join(' ');
 
-/** The panel's rows by group, from the rules' word on the day and the week. */
-function groupsOf(week: ThisWeek): readonly (readonly [string, readonly Timer[]])[] {
+/** The panel's groups, from the rules' word on the day and the week. */
+function groupsOf(week: ThisWeek): readonly Group[] {
   const { today } = week;
   const weekly = week.week.dungeons.map((dungeon): Timer => ({
     id: `week-${dungeon.kind}`,
-    kind: 'week',
     icon: dungeon.kind === 'elite' ? 'elite-dungeon' : 'abyss-dungeon',
     name: dungeon.name,
     marks: weekMarks(dungeon),
     words: weekWords(dungeon),
-    endsAt: week.week.endsAt,
   }));
   const modifier = today.modifier ? ` At Elite and Abyss seas, ${today.modifier.name}: ${today.modifier.words}` : '';
+  const boonMark = mark(iconImage('xp', '', MARK_ICON), week.week.boon ?? '', '+25%');
   const boon: Timer[] = week.week.boon
-    ? [
-        {
-          id: 'boon',
-          kind: 'week',
-          icon: 'boon',
-          name: 'Abyss boon',
-          marks: [],
-          words: week.week.boon,
-          endsAt: week.week.endsAt,
-        },
-      ]
+    ? [{ id: 'boon', icon: 'boon', name: 'Abyss boon', marks: marksLine(boonMark), words: week.week.boon }]
     : [];
-  const bounties = 'Six a day, from the board in Overlook’s plaza.';
+  // The board's six by where they count, two of each kind.
+  const sixWords = 'Six a day, from the board in Overlook’s plaza: two on land, two at sea, two in dungeons.';
+  const kinds = (['land', 'sea', 'dungeon'] as const).map((kind) =>
+    mark(iconImage(kind, '', MARK_ICON), sixWords, '2'),
+  );
+  const local = 'in your local time.';
   return [
-    [
-      'Today',
-      [
-        {
-          id: 'day-reset',
-          kind: 'reset',
-          icon: 'dawn',
-          name: 'Daily reset',
-          marks: [],
-          words: '',
-          endsAt: today.endsAt,
-        },
+    {
+      id: 'day',
+      name: 'Today',
+      reset: { icon: 'dawn', endsAt: today.endsAt, words: `The day turns at this time, ${local}` },
+      rows: [
         {
           id: 'day',
-          kind: 'day',
           icon: 'dungeon',
           name: 'Dungeon of the day',
           marks: dayMarks(today),
           words: `${today.pays}${modifier}`,
-          endsAt: today.endsAt,
         },
         {
           id: 'bounties',
-          kind: 'day',
           icon: 'bounty',
           name: 'Bounties',
-          marks: [],
-          words: bounties,
-          endsAt: today.endsAt,
+          marks: marksLine(...kinds),
+          words: sixWords,
         },
       ],
-    ],
-    [
-      'This week',
-      [
-        {
-          id: 'week-reset',
-          kind: 'reset',
-          icon: 'week',
-          name: 'Weekly reset',
-          marks: [],
-          words: '',
-          endsAt: week.week.endsAt,
-        },
-        ...weekly,
-        ...boon,
-      ],
-    ],
-    [
-      'Later',
-      [{ id: 'breaches', kind: 'later', icon: 'breach', name: 'Breaches', marks: [], words: '', endsAt: null }],
-    ],
+    },
+    {
+      id: 'week',
+      name: 'This week',
+      reset: { icon: 'week', endsAt: week.week.endsAt, words: `The week turns at this time, ${local}` },
+      rows: [...weekly, ...boon],
+    },
+    {
+      id: 'later',
+      name: 'Later',
+      reset: null,
+      rows: [{ id: 'breaches', icon: 'breach', name: 'Breaches', marks: [], words: 'Breaches come later.' }],
+    },
   ];
 }
 
@@ -289,21 +278,37 @@ export function timersPanel(close: () => void): TimersPanel {
   head.append(title, closer);
   const list = make('div', '', 'journal-timers-list');
   list.tabIndex = 0;
-  const said = make('p', RESTING, 'journal-timers-said');
+  const said = make('p', '', 'journal-timers-said');
   said.dataset['key'] = 'timers-said';
   said.setAttribute('aria-live', 'polite');
   node.append(head, list, said);
-  list.addEventListener('pointerleave', () => (said.textContent = RESTING));
+  list.addEventListener('pointerleave', () => (said.textContent = ''));
   let [word, counts, rows] = [null as string | null, [] as Count[], [] as HTMLElement[]];
   /** Says `sayer`'s words at the foot whenever it is pointed at or focused. */
   const heard = (sayer: HTMLElement) => {
     for (const event of ['pointerenter', 'focus'])
-      sayer.addEventListener(event, () => (said.textContent = sayer.dataset['say'] || RESTING));
+      sayer.addEventListener(event, () => (said.textContent = sayer.dataset['say'] ?? ''));
   };
-  const rowOf = ({ id, kind, icon, name, marks, words, endsAt }: Timer): HTMLElement => {
-    const live = kind === 'day' || kind === 'week';
-    const row = make('div', '', `journal-timer-row journal-timer-${kind}${live ? ' journal-timer-live' : ''}`);
-    saying(row, words ? `${name}. ${words}` : name);
+  const headOf = ({ id, name, reset }: Group): HTMLElement => {
+    const heading = make('h4', '', `journal-timers-group ${ROLES.rule}`);
+    heading.dataset['key'] = `timers-group-${id}`;
+    if (!reset) {
+      heading.append(make('span', name, 'journal-timers-group-name'));
+      return heading;
+    }
+    heading.append(iconImage(reset.icon, '', MARK_ICON), make('span', name, 'journal-timers-group-name'));
+    const clock = saying(make('span', '', 'journal-timers-clock'), reset.words);
+    const count = make('span', '', 'journal-timer-count');
+    count.dataset['key'] = `timer-${id}-reset`;
+    const when = make('span', '', 'journal-timer-when');
+    clock.append(count, when);
+    heard(clock);
+    heading.append(clock);
+    counts.push({ count, when, endsAt: reset.endsAt });
+    return heading;
+  };
+  const rowOf = ({ id, icon, name, marks, words }: Timer): HTMLElement => {
+    const row = saying(make('div', '', `journal-timer-row journal-timer-${id}`), `${name}. ${words}`);
     row.dataset['key'] = `timer-row-${id}`;
     row.tabIndex = rows.length === 0 ? 0 : -1;
     rows.push(row);
@@ -311,19 +316,8 @@ export function timersPanel(close: () => void): TimersPanel {
     well.append(iconImage(icon, '', ROW_ICON));
     const text = make('div', '', 'journal-timer-text');
     text.append(make('b', name, 'journal-timer-name'), ...marks);
-    for (const sayer of marks.flatMap(within)) if (sayer.dataset['say']) heard(sayer);
-    heard(row);
-    const clock = make('div', '', 'journal-timer-clock');
-    if (endsAt === null) clock.append(make('span', 'Later', `gear-chip ${ROLES.chip}`));
-    else {
-      if (live) clock.append(make('span', 'Now', 'journal-timer-now'));
-      const count = make('span', '', 'journal-timer-count');
-      count.dataset['key'] = `timer-${id}`;
-      const when = make('span', '', 'journal-timer-when');
-      clock.append(count, when);
-      counts.push({ count, when, endsAt, reset: kind === 'reset' });
-    }
-    row.append(well, text, clock);
+    for (const sayer of [row, ...marks.flatMap(within)]) if (sayer.dataset['say']) heard(sayer);
+    row.append(well, text);
     return row;
   };
   const build = (week: ThisWeek | null) => {
@@ -332,12 +326,7 @@ export function timersPanel(close: () => void): TimersPanel {
       list.replaceChildren(make('p', 'Loading…', 'gear-hint gear-empty'));
       return;
     }
-    list.replaceChildren(
-      ...groupsOf(week).flatMap(([group, timers]) => [
-        make('h4', group, `journal-timers-group ${ROLES.rule}`),
-        ...timers.map(rowOf),
-      ]),
-    );
+    list.replaceChildren(...groupsOf(week).flatMap((group) => [headOf(group), ...group.rows.map(rowOf)]));
   };
   // The arrows step between the rows, each a stop, so the keys hear every row's words; Tab rests on one of them.
   list.addEventListener('keydown', (event) => {
@@ -360,9 +349,9 @@ export function timersPanel(close: () => void): TimersPanel {
       const next = JSON.stringify(week);
       if (next !== word) build(week);
       word = next;
-      for (const { count, when, endsAt, reset } of counts) {
+      for (const { count, when, endsAt } of counts) {
         write(count, countdownWords(endsAt - now));
-        write(when, `${reset ? 'at' : 'ends'} ${whenWords(endsAt, now)}`);
+        write(when, whenWords(endsAt, now));
       }
     },
   };

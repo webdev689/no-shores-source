@@ -120,14 +120,15 @@ test('the board is the day’s six as tiles, a row a kind, with no words on a ti
     ),
     ['open', 'held', 'done', 'paid', 'open', 'open'],
   );
-  assert.ok(root.find('New bounties in 1:00:00'));
+  assert.ok(root.find('1:00:00'), 'the time to the next board by the rising sun');
+  assert.ok(root.all().some((node) => node.getAttribute('aria-label') === 'New bounties in 1:00:00'));
   done();
 });
 
 test('the chosen tile’s card says its name, kind, words, count and pay, and E or a click takes or turns it in', () => {
   const { root, asked, done } = boardOf(sixOnTheBoard);
   const card = () => keyed(root, 'bounty-card');
-  for (const words of ['Tithe Collector', 'Land bounty', 'Defeat 30 Grey Tithe foes.', '0 / 30', '+3,500 XP', '+210'])
+  for (const words of ['Tithe Collector', 'Land bounty', 'Defeat 30 Grey Tithe foes.', '0 / 30', '+3,500', '+210'])
     assert.ok(card()?.find(words), words);
   assert.ok(
     card()

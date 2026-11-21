@@ -27,8 +27,9 @@ export const TONES = {
   /** Stone gone to blood, as `BEVELS.blood` lights and shades it. */
   blood: '#b83a2e',
   bloodDark: '#5a130f',
-  /** Deep water, the ground of what is done at sea. */
+  /** Deep water, the ground of what is done at sea; and old blood, of what is done in a dungeon, as dim as it. */
   sea: '#1d2a33',
+  bloodDeep: '#3e1814',
 } as const;
 
 /** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a soft

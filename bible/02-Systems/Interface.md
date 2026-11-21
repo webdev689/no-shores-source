@@ -433,32 +433,34 @@ never while a press is held. Each press is an ask the room answers.
   browsers ask.
 - **Journal** ([[Activities]], [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]):
   - **The quests**: cards six a page in two columns (one under 900 px), story missions first, then side quests, then
-    kinds to come, with Page n / m, how many are held, and arrows. Each card shows its banner (a story mission's
-    swallowtail in blood and brass; a side quest's stone shield, which a kind to come wears too), its name, a line of
-    its tale in italics and its step's number and name, and is marked Done once every step is. A name or tale too
-    long for its card is cut short there and kept whole in its title. With none held, it says why, the two banners resting over the line.
-  - The bounties**: six slots in two columns of three under "Bounties", with how many are taken. A tile is marked by
-    where it counts (two peaks, a wave, an arched door) on its kind's ground, with no words on it: a gauge of its count
-    while held, a gilded edge once done, its mark dimmed with a drawn tick once turned in. A slot not taken is an empty
-    frame. The hovered, focused or pressed tile's card stands under the grid: its name, its kind by its mark, its words,
-    its count, and what it pays (its XP, and its Aurem by the Aurem glyph). Bounties are taken and turned in at the
+    kinds to come; how many are held stands beside the title, and the page among its arrows at the head's right. Each
+    card shows its banner (a story mission's swallowtail in blood and brass; a side quest's stone shield, which a kind
+    to come wears too), its name, a line of its tale and its step's number in a brass badge with its name, and a
+    brass tick once every step is done. A name or tale too long for its card is cut short there and kept whole in its
+    title. With none held, it says why, the two banners resting over the line.
+  - **The bounties**: six slots three to a row under "Bounties", with how many are taken. A tile is marked by where
+    it counts (two peaks, a wave, an arched door) on its kind's ground, with no words on it: a gauge of its count
+    while held, a gilded edge once done, its mark dimmed with a drawn tick once turned in. A slot not taken is an
+    empty frame. The hovered, focused or pressed tile's card stands under the grid: its name, its kind by its mark,
+    its words, its count, and what it pays, XP and Aurem each by its glyph. Bounties are taken and turned in at the
     board alone. The column stands at the right wherever it fits beside the quests, as wide as its head; on a phone
     (under 600 px) it stands under them.
-  - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and say little in words.
-    Each row is its icon in a sunk well, its name, its marks, and its countdown, the number that leads at its right.
-    Under Today: the daily reset (the sun rising); the dungeon of the day (an arched door), its marks each tier's
-    seas (calm water, a rearing wave, a maelstrom) with this character's tick, ring or padlock, the day's modifier by
-    its icon and name with the two seas it is on, what it pays (the Vestige glyph and a chest), and each island's
-    dungeon with its levels; and the bounties (a sealed notice). Under This week: the weekly reset (a page of the
-    week); the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a burning eye),
-    each its level, its tick or padlock, the Abyss's five revives (a heart) and its wipe (a skull), its modifiers
-    (Burn's flame in its Art's colours, Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield,
-    Trickle's drop, Juggler's crate struck through, Exposure's broken heart) and its pay (the Vestige in its rarity,
-    Essence, the boon's star); and the Abyss boon while held. Under Later, Breaches (a rift). The panel's foot says in
-    words whatever the pointer or the focus rests on, and each mark's words are read to a screen reader; the arrows
-    step between the rows. Each reset counts down to its moment in the player's own time; a row under way says Now
-    over its countdown and when it ends, rewritten as each second turns. Escape, Close or the hourglass takes the
-    panel up, and it goes up as the Journal is left; the page under it rests, dimmed.
+  - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
+    Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
+    time; This week's, a page of the week and the countdown to the weekly reset; Later's, its name alone. Each row
+    is its icon in a sunk well, its name and its marks. Under Today: the dungeon of the day (an arched door), each
+    tier's seas (calm water, a rearing wave, a maelstrom) with this character's tick or padlock, the day's modifier's
+    icon on the Elite and the Abyss seas it is on, what it pays (the Vestige glyph and a chest), and each island's
+    dungeon with its levels, read down its columns; and the bounties (a sealed notice), two of each kind by its mark.
+    Under This week: the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a
+    burning eye), each its level, its tick or padlock, the Abyss's five revives (a heart) and its wipe (a skull), its
+    modifiers by icon and name (Burn's flame in its Art's colours, Brawler's fist, Marksman's target, Lightswitch's
+    claws, Ironclad's shield, Trickle's drop, Juggler's three balls, Exposure's broken heart) and its pay (the Vestige
+    in its rarity, Essence, the boon's star); and the Abyss boon while held, by XP's glyph. Under Later, Breaches (a
+    rift). The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
+    to a screen reader; the arrows step between the rows. Each countdown is rewritten as each second turns. The panel
+    drops from under the hourglass on its own ground, bevelled and ruled in brass; Escape, Close or the hourglass
+    takes it up, and it goes up as the Journal is left; the page under it rests, dimmed.
   - It reads the rules and the last word of the character a room sent, so it reads the same at sea.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
@@ -596,12 +598,13 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
 - **The bounty board** in Overlook's plaza, which no keeper keeps ([[Activities]], "Quests and bounties"), after
   Destiny's Bounty Tracker ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): one
   line, "Bounties for XP and Aurem, posted each day."; the day's six as tiles, a row to each kind (land on stone, the
-  sea on deep water, dungeons on blood), each marked by where it counts and showing its state with no words; a bar
-  under them filling as the day goes, "New bounties in" its countdown to the daily reset; and beside them the chosen
-  tile's card: its name, its kind, its words, a gauge with its count, what it pays the player now, and its press,
-  Take on one not held or Turn in on one done, with E on its keycap, each asked with the day of the board shown. The
-  arrows move between tiles; E or a click takes or turns one in. Before the prologue the tiles are grey and the card
-  says "The bounty board opens after the prologue."
+  sea on deep water, dungeons on old blood), each marked by where it counts and showing its state with no words; under
+  them the rising sun and the time to the next board, over a bar filling as the day goes; and beside them the chosen
+  tile's card: its name, its kind by its mark, its words, a gauge with its count, what it pays the player now (XP and
+  Aurem each by its glyph, resting once paid), and its press, Take on one not held or Turn in on one done, with E on
+  its keycap, each asked with the day of the board shown. The arrows move between tiles; E or a click takes or turns
+  one in. Before the prologue the tiles, the time and its bar rest grey, and the card holds the padlock and "The
+  bounty board opens after the prologue."
 
 ## Emblems
 

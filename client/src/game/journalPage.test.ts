@@ -73,7 +73,8 @@ test('the quests held are cards six a page, story missions first, each at its st
   const held = written.map(({ id }, index) => ({ id, step: index % 2, done: id === 'd' }));
   const { root } = journalOf({ week: () => null, kept: () => geared(held), written });
   const cards = () => classed(root, 'journal-card');
-  assert.ok(root.find('Page 1 / 2') && root.find('8 held'));
+  assert.ok(root.find('1 / 2') && root.find('8'), 'the page among its arrows, and how many are held by the title');
+  assert.ok(root.all().some((node) => node.getAttribute('aria-label') === '8 held'));
   assert.deepEqual(
     cards().map((card) => card.dataset['key']),
     ['quest-b', 'quest-d', 'quest-f', 'quest-a', 'quest-c', 'quest-e'],
@@ -81,10 +82,15 @@ test('the quests held are cards six a page, story missions first, each at its st
   const first = cards()[0];
   assert.equal(first?.all().find((node) => node.tagName === 'IMG')?.['src' as never], bannerUrl('story'));
   assert.ok(first?.find('2') && first.find('Sample second step'), 'its step’s number, from one, and its name');
-  assert.ok(cards()[1]?.find('Done'), 'every step done, waiting to be finished');
+  assert.ok(
+    cards()[1]
+      ?.all()
+      .some((node) => node.tagName === 'IMG' && node['alt' as never] === 'Done'),
+    'every step done, waiting to be finished: its tick',
+  );
   assert.equal(keyed(root, 'quests-back')?.getAttribute('aria-disabled'), 'true');
   keyed(root, 'quests-next')?.click();
-  assert.ok(root.find('Page 2 / 2'));
+  assert.ok(root.find('2 / 2'));
   assert.deepEqual(
     cards().map((card) => card.dataset['key']),
     ['quest-h', 'quest-g'],
@@ -131,7 +137,7 @@ test('each bounty taken is a tile marked where it counts, its state its look; th
   assert.ok(root.find('3 / 6'));
   const said = () => keyed(root, 'bounty-said');
   assert.ok(said()?.find('Defeat 2 foes of Miniboss rank or higher.') && said()?.find('1 / 2'), 'the first at first');
-  assert.ok(said()?.find('Land bounty') && said()?.find('+3,500 XP'));
+  assert.ok(said()?.find('Land bounty') && said()?.find('+3,500'), 'its kind, and its XP by its glyph');
   tiles[1]?.dispatchEvent(new FakeEvent('pointerenter'));
   assert.ok(said()?.find('Sink or take 3 ships.') && said()?.find('Done. Turn it in at the bounty board.'));
   tiles[2]?.dispatchEvent(new FakeEvent('focus'));

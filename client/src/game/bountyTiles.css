@@ -82,6 +82,9 @@ img.bounty-tile-check {
   margin: 2px 0 0;
   color: var(--faint);
 }
+.bounty-card-shut .bounty-card-state {
+  margin: 0;
+}
 .bounty-card-count {
   display: flex;
   align-items: center;
@@ -101,10 +104,19 @@ img.bounty-tile-check {
   color: var(--gain);
   font-variant-numeric: tabular-nums;
 }
-.bounty-card-aurem {
+.bounty-card-earn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+/* Once turned in, what it paid rests. */
+.bounty-card-paid .bounty-card-pay {
+  color: var(--faint);
+}
+.bounty-card-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .bounty-card > .plus-button,
 .bounty-card > .plus-primary {
@@ -142,9 +154,25 @@ img.bounty-tile-check {
   display: flex;
   gap: 8px;
 }
-.gear-board-shut .bounty-tile {
+.gear-board-row .bounty-tile {
+  --bounty-tile: 72px;
+}
+/* Before the prologue the tiles, the time and its bar all rest. */
+.gear-board-shut .bounty-tile,
+.gear-board-shut .gear-board-next,
+.gear-board-shut .gear-board-bar {
   filter: grayscale(1);
   opacity: 0.5;
+}
+/* The next board: the rising sun and the time left, over the bar filling as the day goes. */
+.gear-board-next {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: var(--type-m);
+  color: var(--brass-lit);
+  font-variant-numeric: tabular-nums;
 }
 .gear-board-bar {
   height: 8px;
@@ -152,10 +180,6 @@ img.bounty-tile-check {
 .gear-board-bar .plus-meter {
   height: 100%;
   background-color: #7a5424;
-}
-.gear-board-left {
-  font-size: var(--type-xs);
-  font-variant-numeric: tabular-nums;
 }
 @media (max-width: 560px) {
   .gear-board {

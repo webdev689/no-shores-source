@@ -162,7 +162,7 @@ const ICONS = {
       '.aeeeaaeeea.',
       '.aeccccccea.',
       '.aeeeeeeeea.',
-      '.aecccccea.a',
+      '.aeccccceaea',
       '.aeeeeeeeea.',
       '.aecccaaaa..',
       '.aeeearrrra.',
@@ -212,16 +212,16 @@ const ICONS = {
     rows: [
       '............',
       '............',
-      '............',
-      '............',
-      '..aaa...aaa.',
-      '.acccaaaccca',
-      'acbbbccbbbca',
-      'abbddbbbddba',
+      '..aaaa......',
+      '.acccca.aaa.',
+      'acbbbbcaccca',
+      'abbddbbbbbca',
+      'abdaadbbddba',
+      'aaa..aaaaaaa',
+      'acccaaacccca',
+      'abbbbbbbbbba',
       'adddddddddda',
-      '.aaaaaaaaaa.',
-      '............',
-      '............',
+      'aaaaaaaaaaaa',
     ],
     tones: { a: OUTLINE, b: '#4f7d96', c: '#a9d3e0', d: '#26465a' },
   },
@@ -279,24 +279,6 @@ const ICONS = {
     ],
     tones: { a: OUTLINE, b: '#c08a3e', c: '#f3cf86' },
   },
-  /** Open: a ring not yet filled. */
-  'open': {
-    rows: [
-      '............',
-      '....aaaa....',
-      '...adddda...',
-      '..ad....da..',
-      '..ad....da..',
-      '..ad....da..',
-      '..ad....da..',
-      '...adddda...',
-      '....aaaa....',
-      '............',
-      '............',
-      '............',
-    ],
-    tones: { a: OUTLINE, d: '#7a7260' },
-  },
   /** Shut: a padlock. */
   'locked': {
     rows: [
@@ -332,6 +314,24 @@ const ICONS = {
       '............',
     ],
     tones: { a: OUTLINE, b: '#8a5a2b', c: '#c08a3e', d: '#5a3a1a', f: '#f3cf86' },
+  },
+  /** XP: its two letters. */
+  'xp': {
+    rows: [
+      '............',
+      'aaa.aaaaaaa.',
+      'aha.ahahhhaa',
+      'agaaagagaaha',
+      'aahahaagaaga',
+      '.aahaaaghhaa',
+      '.aagaaagaaa.',
+      'aahahaaga...',
+      'ahaaahaga...',
+      'aga.agaga...',
+      'aaa.aaaaa...',
+      '............',
+    ],
+    tones: { a: OUTLINE, g: '#74d9a0', h: '#c8f5da' },
   },
   /** Revives: a heart. */
   'revive': {
@@ -423,20 +423,20 @@ const ICONS = {
     ],
     tones: { a: OUTLINE, b: '#e2dccd', c: '#b83a2e', f: '#f3cf86' },
   },
-  /** Lightswitch: claw marks, a foe's blow. */
+  /** Lightswitch: three claw marks, a foe's blow. */
   'lightswitch': {
     rows: [
       '............',
-      '.a...a...a..',
-      'aca.aca.aca.',
-      'aba.aba.aba.',
-      '.aba.aba.aba',
-      '.aba.aba.aba',
-      '..aba.aba.aa',
-      '..aba.aba.ab',
-      '...aba.aba.a',
-      '...ada.ada..',
-      '....a...a...',
+      '.a..a..a....',
+      'acaacaaca...',
+      'abaabaaba...',
+      '.abaabaaba..',
+      '.abaabaaba..',
+      '..abaabaaba.',
+      '..abaabaaba.',
+      '...adaadaada',
+      '....a..a..a.',
+      '............',
       '............',
     ],
     tones: { a: OUTLINE, b: '#c8382f', c: '#ff8a76', d: '#7a1d16' },
@@ -477,23 +477,37 @@ const ICONS = {
     ],
     tones: { a: OUTLINE, b: '#46beff', c: '#dcf6ff', d: '#0b2a44', e: '#ffffff' },
   },
-  /** Juggler: an ammunition crate struck through. */
+  /** Juggler: three balls in the air. */
   'juggler': {
     rows: [
+      '.....aaa....',
+      '....aecba...',
+      '....acbba...',
+      '....abbda...',
+      '.....aaa....',
       '............',
-      '.aaaaaaaa...',
-      'acccccccda..',
-      'abbbbbbbdaa.',
-      'aaaaaaaaaarr',
-      'acbbbbbbbrra',
-      'abbbffbbrrda',
-      'abbbffbrrbda',
-      'abbbbbrrbbda',
-      'addddrrdddda',
-      'aaaarraaaaaa',
-      '...rr.......',
+      '.aaa....aaa.',
+      'afgha..ajkla',
+      'aghha..aklla',
+      'ahhia..allma',
+      '.aaa....aaa.',
+      '............',
     ],
-    tones: { a: OUTLINE, b: '#8a5a2b', c: '#c08a3e', d: '#5a3a1a', f: '#f3cf86', r: '#e0584a' },
+    tones: {
+      a: OUTLINE,
+      b: '#c8382f',
+      c: '#ff8a76',
+      d: '#7a1d16',
+      e: '#ffd8cc',
+      f: '#fff1c4',
+      g: '#f3cf86',
+      h: '#c08a3e',
+      i: '#7a5424',
+      j: '#dcf6ff',
+      k: '#8fd8ff',
+      l: '#46beff',
+      m: '#0b2a44',
+    },
   },
   /** Exposure: a heart broken. */
   'exposure': {
@@ -548,7 +562,7 @@ export function poolMarkUrl(pool: number): string | null {
 }
 
 /** The ground each pool's tiles stand on: stone for land, deep water for the sea, blood for dungeons. */
-export const POOL_GROUNDS: readonly string[] = [TONES.stoneDim, TONES.sea, TONES.bloodDark];
+export const POOL_GROUNDS: readonly string[] = [TONES.stoneDim, TONES.sea, TONES.bloodDeep];
 
 /** The modifiers drawn under their own keys. */
 const MODIFIERS: readonly IconName[] = [

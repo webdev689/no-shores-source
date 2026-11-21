@@ -8,6 +8,7 @@ import { ROLES } from '../plus/kit.ts';
 import { bountyCard, bountyTile, chooseTile, moveAmongTiles } from './bountyTiles.ts';
 import type { PageContext } from './characterPage.ts';
 import { pressOf } from './gearDom.ts';
+import { iconImage } from './journalIcons.ts';
 import { countdownWords } from './journalWords.ts';
 
 const SHUT = 'The bounty board opens after the prologue.';
@@ -65,6 +66,15 @@ export function bountyWords(row: BountyRow): string {
   return row.state === 'held' ? row.progress : said[row.state];
 }
 
+/** The board's card before the prologue: its padlock, and why. */
+function shutCard(): HTMLElement {
+  const card = make('div', '', `bounty-card bounty-card-shut ${ROLES.panel}`);
+  const said = make('p', '', 'bounty-card-state');
+  said.append(iconImage('locked', '', 24), make('span', SHUT));
+  card.append(said);
+  return card;
+}
+
 /** The tile last chosen on the board, kept as the screen is built again for the room's word. */
 let chosenPlace = 0;
 
@@ -76,12 +86,16 @@ export function boardPage(context: PageContext, resetAt: () => number | null, no
   const rows = bountyRows(gear);
   const shut = gear.prologueDone === false;
   page.append(make('p', 'Bounties for XP and Aurem, posted each day.', 'gear-hint gear-board-line'));
-  const grid = make('div', '', `gear-board-grid${shut ? ' gear-board-shut' : ''}`);
+  const grid = make('div', '', 'gear-board-grid');
   const card = make('div', '', 'gear-board-card');
   card.setAttribute('aria-live', 'polite');
   const pay = payOf(gear);
   const footOf = (row: BountyRow): HTMLElement => {
-    if (!row.press) return make('p', row.state === 'paid' ? 'Turned in' : '', 'bounty-card-state');
+    if (!row.press) {
+      const state = make('p', '', 'bounty-card-state');
+      if (row.state === 'paid') state.append(iconImage('taken', '', 24), make('span', 'Turned in'));
+      return state;
+    }
     const { ask, label } = row.press;
     const press = pressOf(label, () => context.ask(ask), label === 'Turn in' ? 'primary' : 'button', 'E');
     press.setAttribute('aria-label', `${label}: ${row.name}`);
@@ -90,13 +104,13 @@ export function boardPage(context: PageContext, resetAt: () => number | null, no
   const show = (row: BountyRow) => {
     chosenPlace = row.place;
     chooseTile(tiles, row.place);
-    card.replaceChildren(shut ? make('p', SHUT, 'gear-hint') : bountyCard(row, pay, footOf(row)));
+    card.replaceChildren(shut ? shutCard() : bountyCard(row, pay, footOf(row)));
   };
   const tiles: HTMLElement[] = [];
   for (const pool of [0, 1, 2]) {
     const line = make('div', '', `gear-board-row bounty-pool-${pool}`);
     for (const row of rows.filter((one) => one.pool === pool)) {
-      const tile = bountyTile(row, 72);
+      const tile = bountyTile(row);
       if (shut) tile.setAttribute('aria-disabled', 'true');
       tile.addEventListener('click', () => {
         show(row);
@@ -109,20 +123,28 @@ export function boardPage(context: PageContext, resetAt: () => number | null, no
     grid.append(line);
   }
   grid.addEventListener('keydown', (event) => moveAmongTiles(tiles, event as KeyboardEvent));
+  // The next board: the rising sun and the time left, the bar under them filling as the day goes.
   const bar = make('div', '', `gear-board-bar ${ROLES.track}`);
   const fill = make('div', '', ROLES.meter);
-  const left = make('span', '', 'gear-board-left');
   bar.append(fill);
+  const left = make('span', '', 'gear-board-time');
+  const next = make('div', '', 'gear-board-next');
+  next.setAttribute('role', 'timer');
+  next.append(iconImage('dawn', '', 24), left);
   const write = () => {
     const reset = resetAt();
     const until = reset === null ? null : reset - now();
-    left.textContent = until === null ? 'New bounties at the daily reset' : `New bounties in ${countdownWords(until)}`;
+    left.textContent = until === null ? '' : countdownWords(until);
+    next.setAttribute(
+      'aria-label',
+      until === null ? 'New bounties at the daily reset' : `New bounties in ${left.textContent}`,
+    );
     fill.style.width = until === null ? '0%' : `${Math.round(100 * Math.min(1, Math.max(0, 1 - until / DAY_MS)))}%`;
   };
   write();
   const timer = setInterval(() => (page.isConnected ? write() : clearInterval(timer)), 1_000);
-  const side = make('div', '', 'gear-board-side');
-  side.append(grid, bar, left);
+  const side = make('div', '', `gear-board-side${shut ? ' gear-board-shut' : ''}`);
+  side.append(grid, next, bar);
   page.append(side, card);
   const first = rows.find((row) => row.place === chosenPlace) ?? rows[0];
   if (first) show(first);
