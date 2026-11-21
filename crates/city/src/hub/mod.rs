@@ -122,6 +122,7 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
     // The ways are laid as walks, the courts' scenes set clear of them and of the posts as they stand, then the posts
     // are laid again, with the market stalls' keepers and a walker's place at each piece set.
     dress::walks(frame, &mut laid);
+    dress::grounds(frame, &mut laid, &ring);
     let (first_ways, first_posts) = folk::life(frame, &laid);
     let dressed = dress::dress(frame, &mut laid, &first_ways, &first_posts, &spawns, &ring);
     let (ways, mut posts) = folk::life(frame, &laid);

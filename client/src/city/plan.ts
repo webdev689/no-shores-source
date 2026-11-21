@@ -28,6 +28,8 @@ export type SolidMaterial =
   | 'plaster'
   | 'paving'
   | 'path'
+  | 'lawn'
+  | 'earth'
   | 'gold'
   | 'iron'
   | 'bone'

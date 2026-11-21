@@ -280,7 +280,7 @@ pub(crate) fn dress(
     let standing: Vec<Rect> = laid
         .solids
         .iter()
-        .filter(|solid| !matches!(solid.material, Material::Paving | Material::Path))
+        .filter(|solid| !matches!(solid.material, Material::Paving | Material::Path | Material::Lawn | Material::Earth))
         .map(crate::solids::Solid::bounds)
         .filter(|&[_, _, _, _, bottom, top]| bottom < frame.level + OVERHEAD_M && top > frame.level + 0.05)
         .map(|[west, north, east, south, _, _]| [west, north, east, south])
@@ -375,6 +375,68 @@ pub(crate) fn walks(frame: &Frame, laid: &mut Laid) {
             [WALK_WIDE_M, WALK_WIDE_M, WALK_HIGH_M],
             Material::Path,
         ));
+    }
+}
+
+/// The courts whose open ground is laid over: the gardens as lawn, the smiths' yard as trodden earth, each its ground
+/// (metres seaward from and to, and across from and to).
+const GROUNDS: [([f64; 2], [f64; 2], Material); 3] = [
+    ([-50.0, 44.0], [-50.0, 50.0], Material::Lawn),
+    ([-52.0, 46.0], [-128.0, -66.0], Material::Lawn),
+    ([-52.0, 46.0], [66.0, 128.0], Material::Earth),
+];
+/// The ground's cells' side, how far a cell keeps from a walk's edge and from what stands, and how thick it is laid.
+const CELL_M: f64 = 2.0;
+const OFF_WALK_M: f64 = 0.4;
+const OFF_STANDING_M: f64 = 0.3;
+const GROUND_HIGH_M: f64 = 0.03;
+
+/// Lays each court's open ground: every cell clear of the walks, of what stands (a stall, a plinth, a band of inlaid
+/// stone) and of the ring's edge, the cells of a row run together into one length.
+pub(crate) fn grounds(frame: &Frame, laid: &mut Laid, ring: &[[f64; 2]]) {
+    let walks: Vec<[[f64; 2]; 2]> = super::folk::platform_links()
+        .into_iter()
+        .map(|[from, to]| [frame.at(from[0], from[1]), frame.at(to[0], to[1])])
+        .collect();
+    let standing: Vec<Rect> = laid
+        .solids
+        .iter()
+        .filter(|solid| !matches!(solid.material, Material::Paving | Material::Path | Material::Lawn | Material::Earth))
+        .map(crate::solids::Solid::bounds)
+        .filter(|&[_, _, _, _, bottom, _]| bottom < frame.level + OVERHEAD_M)
+        .map(|[west, north, east, south, _, _]| [west, north, east, south])
+        .collect();
+    let mut runs = Vec::new();
+    for (toward_span, across_span, material) in GROUNDS {
+        let rows = ((toward_span[1] - toward_span[0]) / CELL_M).floor() as usize;
+        let columns = ((across_span[1] - across_span[0]) / CELL_M).floor() as usize;
+        for row in 0..rows {
+            let toward = toward_span[0] + (row as f64 + 0.5) * CELL_M;
+            let mut run: Option<(f64, f64)> = None;
+            for column in 0..=columns {
+                let across = across_span[0] + (column as f64 + 0.5) * CELL_M;
+                let middle = frame.at(toward, across);
+                let half = CELL_M / 2.0;
+                let rect = [middle[0] - half, middle[1] - half, middle[0] + half, middle[1] + half];
+                let kept = column < columns
+                    && corners(rect).iter().all(|&corner| inside(ring, corner))
+                    && walks.iter().all(|&walk| segment_to_rect(walk, rect) >= WALK_WIDE_M / 2.0 + OFF_WALK_M)
+                    && standing.iter().all(|&other| rect_gap(rect, other) >= OFF_STANDING_M);
+                run = match (run, kept) {
+                    (None, true) => Some((across, across)),
+                    (Some((first, _)), true) => Some((first, across)),
+                    (Some((first, last)), false) => {
+                        runs.push((toward, first, last, material));
+                        None
+                    }
+                    (None, false) => None,
+                };
+            }
+        }
+    }
+    for (toward, first, last, material) in runs {
+        let wide = last - first + CELL_M;
+        laid.solids.push(frame.block(toward, (first + last) / 2.0, 0.0, [wide, CELL_M, GROUND_HIGH_M], material));
     }
 }
 

@@ -111,6 +111,9 @@ fn every_court_is_set_as_a_scene_and_its_ways_are_walks() {
     };
     let walks = social.solids.iter().filter(|solid| solid.material == crate::solids::Material::Path).count();
     assert!(walks >= 100, "{walks} lengths of walk");
+    let ground = |material| social.solids.iter().filter(|solid| solid.material == material).count();
+    let (lawn, earth) = (ground(crate::solids::Material::Lawn), ground(crate::solids::Material::Earth));
+    assert!(lawn >= 40 && earth >= 20, "{lawn} lengths of lawn and {earth} of earth");
     for (names, least) in [
         (&["market-stall-cloth", "market-stall-bread", "market-stall-flowers"][..], 6),
         (&["court-tree"][..], 8),
