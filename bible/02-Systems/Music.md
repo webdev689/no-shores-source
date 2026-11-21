@@ -160,7 +160,8 @@ on, and the sky over it.
   - Saltmere's: its own theme, the climb G, A, B flat, D in a dotted step leaning on the sixth, now G Dorian in 3/4 at
     76 on the cello then the fiddle over a harp and a pulsing bass; Lamplight, a nocturne in D minor at 62, a low
     flute over the piano, the horn answering; the Tithe, E Phrygian at 70, low strings ticking E against F under a
-    bassoon and a far taiko, the levy's weight.
+    bassoon and a far taiko, the levy's weight. The plaza's band (`band.ts`, `bandScore.ts`) plays where it stands,
+    through the silences between pieces as through a piece, and a piece gives way to it near it.
   - The islands', two to a family: green, Moorlight (E Aeolian in 6/8, a low whistle over a rolling harp) and Cairn
     (E Dorian, horn calls over a pulsing piano); dry, Sunscorch (A Phrygian dominant, an oud's ostinato under the
     oboe) and Dust Road (F sharp Phrygian, a lone cello over a sparse harp); wet, Mistwrack (F sharp Aeolian, a low

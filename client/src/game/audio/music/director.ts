@@ -217,7 +217,9 @@ export class MusicDirector {
     if (bus.out !== this.bus?.out) this.wire(bus);
     const now = this.clockOf(bus.audio);
     const social = verdict.cue.kind === 'social';
-    const nearBand = this.band.frame(social ? band : null, seconds, now);
+    // The band plays where it stands in the social space, through its silences between pieces as through a piece.
+    const calmHere = hearing.place.kind === 'social' && (social || verdict.cue.kind === 'none');
+    const nearBand = this.band.frame(calmHere ? band : null, seconds, now);
     const { scores } = this;
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
     if (verdict.sting) this.sting(stingOf(scores, verdict.sting), verdict.sting.kind === 'wake', now);
