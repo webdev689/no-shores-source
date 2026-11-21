@@ -18,6 +18,7 @@ import {
   moodOf,
   type Phase,
   swellAt,
+  walkedOn,
 } from './law.ts';
 import { type Lay, type Point3, cityPoint, placeCall, riverNear, shorePoints } from './places.ts';
 import { type BedLayer, type Drive, SCAPES, type Scape, type Voice } from './scapes.ts';
@@ -545,7 +546,7 @@ export class ScapePlayer {
         this.walked.set(person.id, { x: person.x, y: person.y, since: 0 });
         continue;
       }
-      kept.since += Math.hypot(person.x - kept.x, person.y - kept.y);
+      kept.since = walkedOn(kept.since, Math.hypot(person.x - kept.x, person.y - kept.y));
       [kept.x, kept.y] = [person.x, person.y];
       if (kept.since < STRIDE_M) continue;
       kept.since -= STRIDE_M;

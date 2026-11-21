@@ -589,6 +589,8 @@ export class Foot {
     this.plaza?.close();
     this.prompt?.remove();
     this.falling.close();
+    // The figure stands again wherever the walker goes next, at sea as on foot.
+    this.context.walker.fall = null;
     // An Anima's edge frame cast just before leaving must not stay over the next place.
     showAnimaEdge(QUIET);
   }
