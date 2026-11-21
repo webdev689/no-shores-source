@@ -291,13 +291,17 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
-- **The houses' roads, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full check) and live headless
-  against a local rooms server (the opening's task shown)**: after the intro the player pledges to a house, and each
-  house's road of ten tasks gives its Art early, then its two Tenets, then three fragments of their choosing
-  ([[Each House Has Its Own Road to Its Art]], [[The Houses' Roads as Claude Shapes Them]], [[Quests]]). The rules
-  judge every goal and keep the road in the character; a new character wears no Art until its road gives one; a road's
-  foes stand at their place on a navmesh baked there. Two audits' findings are fixed with tests. Needs the owner's yes
-  to merge (it deploys the page and the rooms). The Stormcallers' keeper is named Arlo Kestrel and the Veiled's Sable.
+- **The houses' roads and the varied missions, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full
+  check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
+  account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
+  tasks gives its Art early, then its two Tenets, then three fragments of their choosing
+  ([[Each House Has Its Own Road to Its Art]], [[The Houses' Roads as Claude Shapes Them]], [[Quests]]). The owner's
+  second ask ([[Missions Are Varied, Not Only Simple Tasks]]) added six step kinds any later mission can use: escort,
+  tail, defend, puzzle, unseen and race, each judged by the rooms. Each road goes round the island once (about 2,370
+  km of sailing, so a road runs past the 45 to 60 minutes asked). Every task has an id and the save keeps roads and
+  tasks by id. A comprehensive audit (rules, client, story) is fixed with tests. Not yet walked end to end by a
+  person or on a real GPU. Needs the owner's yes to merge (it deploys the page and the rooms, and adds `content/quests`
+  and `content/story/cast.json` to the rooms' code list).
 - **The whole plan of the owner's four points, on `main` (#127)**, merged with the owner's yes ("Merge and deploy"),
   which deploys the page and the rooms; checked on the deployed page headless (the game in its worker, the menu holding
   the keys). Asked of the owner: whether to close #112, which #127 holds. No HTML

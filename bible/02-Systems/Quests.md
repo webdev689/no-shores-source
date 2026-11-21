@@ -108,7 +108,8 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), answered only within reach of that counter;
   65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
 - **Whose word**: the gear message says whether its character is the player's own as their account keeps it
-  (`claimed`).
+  (`claimed`). A player who sends an input before any token keeps no character, so the one the room holds is theirs
+  from then on (`none_kept`), on land as at sea.
 - **The gear message** carries, at the end of its table: the quest walked (`quest`, its place in the file counted
   from 1, 0 for none), its task (`quest_task`), that task's goals' counts (`quest_counts`), each quest done
   (`quests_done`, 1 or 0 by place), each Art's earned bits (`arts_earned`: 1 the Art, 2 its first Tenet, 4 its
