@@ -172,9 +172,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   Beside it, `&speed=<n>` runs n room ticks a drawn frame, `&bots=<n>` joins n scripted players that play the event
   as the rules' test plays it (`network/publicBots.ts`, the same `decide`; the browser's test proves they reach the
   rules' fingerprints), and `&heroic=0` leaves the heroic task alone. The bots and the page's own player stand at the
-  test's level 6 with Rare gear. The page puts `__room` on the window, whose `speed` and `until` (a test of each
-  tick's snapshot that stops the frame's ticks once met) a picture script drives, and `__qaLook` turns the camera
-  without arriving again, so the room plays on.
+  test's level 6 with Rare gear. The page puts `__room` (its `speed`) and `__play` (its `until`, a test of each tick's
+  snapshot that stops the frame's ticks once met, and `read`) on the window for a picture script, and `__qaLook` turns
+  the camera without arriving again, so the room plays on. None of it is in a production build.
 
 ## Limits
 
