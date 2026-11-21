@@ -1,6 +1,21 @@
 ---
 type: system
-status: building
+status: live
+code:
+  - content/quests/quests.json
+  - content/story/houses.json
+  - crates/gear/src/quests.rs#QuestsDef
+  - crates/gear/src/quests.rs#QuestLog
+  - crates/gear/src/quests.rs#Event
+  - crates/gear/src/arts.rs#WornArts
+  - crates/room/src/quests.rs#QuestGround
+  - crates/protocol/src/quest_wire.rs#quests_of
+  - crates/bake/src/lib.rs#places_of
+  - client/src/game/quests/questBook.ts#trackedOf
+  - client/src/game/quests/questBook.ts#linesBetween
+  - client/src/game/quests/questWatch.ts#QuestWatch
+  - client/src/game/quests/quests.ts#Quests
+  - client/src/player/factionNames.ts#earnedOn
 ---
 # Quests
 
@@ -80,3 +95,20 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 - **Marks**: `quest_at` stands a mark at its place, and the held map marks the nodes the task's goals name.
 - **Locks**: the Art's screen and the ability bar show an Art, a Tenet or a Core fragment not earned locked, saying
   which road earns it; a fragment choice waiting is offered on the Art's screen, its unowned fragments to choose from.
+
+## Limits
+
+- **Online only.** A page playing alone (no `?room=`) keeps no character, so it walks no road, as it keeps no gear.
+- **Quests are kept by their place in the file**, so a new quest goes at its end.
+- **News waits for the page to settle**: the first 10 s of a page's word on a character are where it stands, so a goal
+  met in them says no lines; a word that goes back (a room's starting character, before the player's own is given) is
+  never news.
+- **The tracker and the marks show on foot**; at sea the tracker keeps a sea fight's task. The held map rings only
+  nodes the player has found.
+- **A keeper's lines are said on the press**, before the room answers; speaking with a keeper no goal asks for is
+  refused ("They have nothing more to say to you now").
+- **"Within 150 m"** is measured from the place's middle. **Enter** and **Land** are told on joining and again when the
+  kept character is given back to the room.
+- **The sea**: a ship counts as struck if its captain struck before it went down, a won deck as boarded, and a boarded
+  ship later scuttled as struck for everyone who fought it.
+- **A character made before** that reaches its road's third task wears the road's Art from then, as every player does.

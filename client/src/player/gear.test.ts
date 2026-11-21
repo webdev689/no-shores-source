@@ -85,8 +85,11 @@ test('an item is named as the catalogue names it', () => {
   for (let code = 1; code <= 24; code++)
     assert.ok(!answerText(code).startsWith('Refused'), `the gear crate's refusal ${code} has words`);
   assert.equal(answerText(120), 'Wear a Ranged weapon first.', 'a crate used with no Ranged weapon worn');
-  for (let code = 110; code <= 113; code++)
+  for (let code = 110; code <= 115; code++)
     assert.ok(!answerText(code).startsWith('Refused'), `the Arts' refusal ${code} has words`);
+  // A keeper the asks name, nothing to say, and no fragment choice waiting: the gear crate's 135 to 137, sent plus one.
+  for (let code = 136; code <= 138; code++)
+    assert.ok(!answerText(code).startsWith('Refused'), `the roads' refusal ${code} has words`);
 });
 
 test('the hands hold the drawn loadout, in its rarity’s metal where the forge draws it', () => {

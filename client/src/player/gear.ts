@@ -129,7 +129,11 @@ const REFUSALS: Readonly<Record<number, string>> = {
   112: 'There is no such fragment.',
   113: 'That fragment is set in another slot.',
   114: 'You do not own that fragment yet.',
+  115: 'That Art is not yours yet.',
   120: 'Wear a Ranged weapon first.',
+  136: 'There is no such keeper.',
+  137: 'They have nothing more to say to you now.',
+  138: 'No fragment of that Art waits to be chosen.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */
