@@ -95,10 +95,9 @@ impl Room {
             bonus: running.is_some_and(|running| running.bonus),
             marks: Vec::new(),
         };
-        if let Some(running) = running {
-            let (middle, radius) = self.ground_of(public, running.kind);
-            (seen.ground, seen.radius) = (self.on_ground(middle), radius);
-        }
+        // The running event's ground, or, while none runs, the next's.
+        let (middle, radius) = self.ground_of(public, running.map_or(next_kind, |running| running.kind));
+        (seen.ground, seen.radius) = (self.on_ground(middle), radius);
         self.public_marks(public, running, &mut seen);
         Some(seen)
     }

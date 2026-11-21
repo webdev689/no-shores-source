@@ -49,3 +49,17 @@ fn a_chest_left_unopened_is_opened_for_its_player_as_it_goes_and_as_they_leave()
     let paid = room.take_events().iter().any(|event| event.kind == EventKind::ChestOpened && event.striker == player);
     assert!(paid, "opened for them as they left");
 }
+
+#[test]
+fn a_leavers_chest_vestige_with_their_ten_full_goes_to_their_vault() {
+    let (mut room, player, chest) = chested();
+    let character = &mut room.players.get_mut(&player).unwrap().character;
+    for _ in 0..gear::character::VESTIGES_MOST {
+        let id = character.take_id();
+        assert!(character.pick_up(gear::Vestige::new(id, gear::Rarity::Normal, gear::Slot::Head, 1)));
+    }
+    room.open_chests_of(player);
+    let character = &room.players[&player].character;
+    assert_eq!((character.vestiges_held(false), character.vestiges_held(true)), (10, 1), "kept in the vault");
+    assert!(room.drops_for(player).all(|drop| drop.id != chest), "and the chest is gone");
+}

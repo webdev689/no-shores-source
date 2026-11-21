@@ -34,7 +34,7 @@ pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 8 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
 pub const FISSURE_HASH: &str = "89000314";
-pub const RAID_HASH: &str = "3e8d18cc";
+pub const RAID_HASH: &str = "b9bce62f";
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;

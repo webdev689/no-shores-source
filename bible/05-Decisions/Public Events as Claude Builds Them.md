@@ -33,7 +33,7 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | Taking part | 30 s on the ground, or a blow on one of its foes, or a shard set | As the spec |
 | The chests' pay | XP 1,500 to 4,500 by tier at level 5, Aurem 120 to 360, Fragments 2 to 7, Essence in the heroic tiers, 3 to 8 of the island's resource, a Vestige always | A share of what eight minutes of fighting pays, more with each tier |
 | A chest's Vestige | A foe's colours plain, a Boss's heroic; the bonus rolls twice and keeps the better | Each tier better than the last |
-| A leaver's chest | Opened for them before the server keeps their character | Never lost |
+| A leaver's chest | Opened for them before the server keeps their character; a Vestige the ten cannot hold goes to the vault | Never lost |
 | The Lattice's arms | The forge's weapons of the same reach (Husk a sword, Flicker two daggers, Idol a bow, Ravager a warhammer, Bulwark a mace and shield, Heart a flail) | Combat needs a weapon class; the Lattice's own parts are dressed over them |
 | The wire's field | `public_event` on the snapshot, read into `public` on the page | `public` is a TypeScript keyword: flatc names its reader `public_` |
 | The scripted players | Level 6, Rare gear at 6, guarding between swings and varying their strokes | Two level-1 players never broke a heroic raid's third wave |

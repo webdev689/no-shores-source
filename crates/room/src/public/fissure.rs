@@ -122,7 +122,13 @@ impl Room {
         if sealed && running.heroic == Heroic::Met && fissure.warden.is_none() {
             self.raise_warden(public, running, &mut fissure);
         } else if fissure.warden.is_none() && !sealed {
-            let living = running.foes.iter().filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead()));
+            // The growth stands apart from the fight: it never counts toward a wave.
+            let fighting = |id: &&FighterId| Some(**id) != fissure.growth;
+            let living = running
+                .foes
+                .iter()
+                .filter(fighting)
+                .filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead()));
             let living = living.count();
             let due = living <= WAVE_LOW || self.clock >= fissure.last_wave + WAVE_EVERY;
             if due && living < LIVING_MOST {

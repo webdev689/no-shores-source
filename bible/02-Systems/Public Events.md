@@ -80,14 +80,15 @@ first, 30 at most. Sealed, it closes: every foe of it still standing shatters, s
 Crossbowman, the Runners and the Crossbowman Minors. The second brings two Collectors, an Enforcer, a Crossbowman and a
 Runner; the third two Collectors, an Enforcer, and a Marksman and a Reeve, both Elite; every other foe is a Major. One
 Runner more comes in each for each player on the ground beyond the first (three at most). A wave is broken when its foes have all fallen; the next comes 10 seconds
-later. Each Collector is sent to the standing store nearest it, to defend its ground there, 1.9 m from the store's
+later, or 10 seconds after that while the room has no room for it. Each Collector is sent to the standing store nearest it, to defend its ground there, 1.9 m from the store's
 middle on the side the raiders come from; one standing within 2.5 m of its store plunders it, alone in 20 seconds.
 A store plundered sends its Collectors to the next and loses the bonus. Every store plundered, the raid fails; the
 last wave broken with a store standing, the Tithe give up and march out, and it is won.
 - **Heroic.** With the second wave comes the Tithe-Taker, an Elite who never strikes. He walks from the approach to
   each standing store, nearest first, counts it for 10 seconds, and walks back out, at the pace that makes his round
   50 seconds (1.2 to 3.5 m a second); his time up, he is gone wherever he stands. Killed before then, the event turns
-  heroic: the third wave holds an Enforcer Elite and a Marksman Elite more, and a fourth comes, led by Reeve Ancel
+  heroic: the third wave holds an Enforcer Elite and a Marksman Elite more (they come at once if it is already in),
+  and a fourth comes, led by Reeve Ancel
   Marrow, the Tithe's Hand (a Reeve Miniboss), with two Collectors and an Enforcer Elite; a raid waits for him to go
   before it can be won.
 - **Bonus:** no store lost.
@@ -104,8 +105,8 @@ a leaver's chests (`room_parting`) before it keeps their character. A chest hold
 event's level as a kill's worth does: 1,500, 2,200, 3,200 and 4,500 XP by tier, which grow the worn Art and the faction
 pledged while its cape is worn as a kill's XP does; 120 to 360 Aurem; 2 to 7 of each Fragment; Essence from the heroic
 tiers (1, 2); 3 to 8 of the island's resource; and a Vestige always, a foe's colours from a plain chest and a Boss's
-from a heroic one, the bonus's tier rolling twice and keeping the better. A Vestige with no room in the ten lies on
-the ground where the chest stood, as any drop does.
+from a heroic one, the bonus's tier rolling twice and keeping the better. A Vestige with no room in the ten goes to
+the vault, and with no room there either lies on the ground where the chest stood, as any drop does.
 
 **The wire.** Each snapshot of a zone's room carries `public_event` ([[Server]]): the event running or showing its
 result (kind 1 the Fissure, 2 the raid, 0 none) and its phase (0 waiting, 1 running, 2 won, 3 failed), its ground and

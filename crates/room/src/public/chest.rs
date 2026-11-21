@@ -44,16 +44,23 @@ impl Room {
         0
     }
 
-    /// Pays a chest to its player: what it holds goes to their gear, its Vestige to their ten, or onto the ground
-    /// where the chest stood when those are full.
+    /// Pays a chest to its player: what it holds goes to their gear, its Vestige to their ten, else to their vault,
+    /// else onto the ground where the chest stood when both are full.
     pub(crate) fn pay_chest(&mut self, player: PlayerId, (tier, level): (u8, u8), at: [f64; 3]) {
         let dice = self.dice(player);
         let resource = self.resource_nodes.first().map(|node| usize::from(node.resource));
         let Some(found) = self.players.get_mut(&player) else { return };
         let Some(paid) = found.character.open_chest(tier, level, resource, &dice) else { return };
         found.gear_changed = true;
-        if !found.character.pick_up(paid.vestige.clone()) {
-            self.lay_drop(player, Dropped::Vestige(paid.vestige), at);
+        let character = &mut found.character;
+        // A leaver's chest is paid as they go, so the vault keeps what the ten cannot: the ground would lose it.
+        let vaulted = character.vestiges_held(true) < gear::character::VAULT_MOST;
+        if !character.pick_up(paid.vestige.clone()) {
+            if vaulted {
+                character.vestiges.insert(paid.vestige.id, (paid.vestige, true));
+            } else {
+                self.lay_drop(player, Dropped::Vestige(paid.vestige), at);
+            }
         }
         self.tell(EventKind::ChestOpened, None, player, player, f64::from(tier));
     }

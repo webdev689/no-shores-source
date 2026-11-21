@@ -47,7 +47,9 @@ impl Room {
     pub(crate) fn withdraw(&mut self, running: &mut Running, to: [f64; 3]) {
         let until = self.clock + WITHDRAW_TICKS;
         for id in running.foes.clone() {
-            if self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead()) {
+            if let Some(foe) = self.foes.get_mut(&id).filter(|foe| !foe.fighter.dead()) {
+                // Whatever it was doing ends: it walks away.
+                foe.fighter.action = combat::fighter::Action::Idle;
                 self.inert.insert(id);
                 running.withdrawing.push((id, to, until));
             }

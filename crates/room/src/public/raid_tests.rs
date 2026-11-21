@@ -134,3 +134,26 @@ impl super::Running {
         raid
     }
 }
+
+#[test]
+fn a_wave_the_room_has_no_room_for_waits_and_one_killed_late_still_brings_the_third_waves_heroic_strength() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.foes_most = 0;
+    room.tick();
+    assert_eq!((raid(&room).wave, raid(&room).wave_foes.len()), (0, 0), "no room: no wave");
+    room.foes_most = 32;
+    ticks(&mut room, WAVE_GAP);
+    assert_eq!(raid(&room).wave, 1, "it came once there was room");
+    break_wave(&mut room, players[0]);
+    let found = taker(&room).expect("the tithe-taker");
+    for foe in raid(&room).wave_foes.clone() {
+        strike(&mut room, players[0], foe, 1.0e7);
+    }
+    room.tick();
+    ticks(&mut room, WAVE_GAP);
+    assert_eq!((raid(&room).wave, raid(&room).wave_foes.len()), (3, 5), "the third wave, plain");
+    strike(&mut room, players[0], found, 1.0e7);
+    room.tick();
+    assert_eq!((running(&room).heroic, raid(&room).wave_foes.len()), (Heroic::Met, 7), "its heroic two came");
+}
