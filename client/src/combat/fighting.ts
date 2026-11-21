@@ -3,12 +3,14 @@ import type { ArtState, CastAsk } from '../network/artMessages.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
+import type { PublicEvent } from '../network/publicMessages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { CombatRules, Fired, Glanced } from '../rules/combatRules.ts';
 import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls } from '../rules/movementRules.ts';
 import { type FighterView, fighterView, glanceFrom, glanceView, trimmed } from '../rules/fighters.ts';
 import type { AbilityState } from './abilityBar.ts';
 import { type AimRing, abilitiesAt } from './casting.ts';
+import { EVENT } from './cues.ts';
 import { SpellEffects } from './spellEffects.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
@@ -146,6 +148,10 @@ export class Fighting {
   readonly foes = new Map<number, KeptFoe>();
   readonly others = new Map<number, SeenPlayer>();
   events: FightEvent[] = [];
+  /** The zone's public events as the room last sent them, and their events (begun, a shard set, won...) since the
+   *  page last asked: kept apart from the fight's, which read every event as a blow. */
+  public: PublicEvent | null = null;
+  publicEvents: FightEvent[] = [];
   shots: readonly FlyingShot[] = [];
   /** Every spell in the room, as its snapshots send them, for a drawer to draw. */
   readonly spells = new SpellEffects();
@@ -403,7 +409,10 @@ export class Fighting {
     this.shots = snapshot.shots;
     // Kept only so many: a hidden tab draws no frame to take them, and on its return the newest are enough.
     this.shotsReceived = [...this.shotsReceived, ...snapshot.shots].slice(-QUEUED_MOST);
-    this.events = [...this.events, ...snapshot.events].slice(-QUEUED_MOST);
+    const isPublic = (event: FightEvent) => event.kind >= EVENT.publicBegun;
+    this.events = [...this.events, ...snapshot.events.filter((event) => !isPublic(event))].slice(-QUEUED_MOST);
+    this.publicEvents = [...this.publicEvents, ...snapshot.events.filter(isPublic)].slice(-QUEUED_MOST);
+    this.public = snapshot.public ?? null;
   }
 
   /** Lets the room's clock run, for a room in the page. */
@@ -417,6 +426,13 @@ export class Fighting {
     const shots = this.shotsReceived;
     this.shotsReceived = [];
     return shots;
+  }
+
+  /** The public events' events since the page last asked, handed over once. */
+  takePublicEvents(): FightEvent[] {
+    const events = this.publicEvents;
+    this.publicEvents = [];
+    return events;
   }
 
   /** The events since the page last asked, handed over once. */

@@ -18,6 +18,9 @@ export class LocalRoom implements RoomLink {
   private carry = 0;
   /** The world's minute the room was last told, which turns the day's wares and brings Shape and takes him away. */
   private minute = -1;
+  /** Minutes the room's clock stands ahead of the world's: none but for the dev address that starts a public event at
+   *  once (`&public=`). */
+  private readonly minuteShift: number;
   readonly player: number;
   readonly dressed = [];
   /** A room in the page is joined once and never lost. */
@@ -31,10 +34,16 @@ export class LocalRoom implements RoomLink {
   arms: readonly number[] | null = null;
   arts: ArtState | null = null;
 
-  private constructor(door: RoomDoor, snapshot: (snapshot: Snapshot) => void, gear: (gear: GearMessage) => void) {
+  private constructor(
+    door: RoomDoor,
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void,
+    minuteShift = 0,
+  ) {
     this.door = door;
     this.snapshot = snapshot;
     this.gear = gear;
+    this.minuteShift = minuteShift;
     this.keepMinute();
     this.player = door.join();
     const welcome = readFromRoom(door.joined(this.player));
@@ -43,7 +52,7 @@ export class LocalRoom implements RoomLink {
 
   /** Tells the room the world's minute whenever it has turned, as the servers' rooms are told it. */
   private keepMinute(): void {
-    const minute = Math.floor(Date.now() / 60_000);
+    const minute = Math.floor(Date.now() / 60_000) + this.minuteShift;
     if (minute === this.minute) return;
     this.minute = minute;
     this.door.minute(minute);
@@ -81,18 +90,23 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
-   *  joined at its first spawn. With `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
+   *  joined at its first spawn; the player's gear goes to `gear`. With `foeAsks` the player may ask it for foes, to try
+   *  a fight on the node's land; with `minuteShift` its clock stands that many minutes ahead (`minuteShift`). */
   static openNode(
     module: WebAssembly.Module,
     nodeText: string,
     snapshot: (snapshot: Snapshot) => void,
-    foeAsks = false,
+    {
+      foeAsks = false,
+      gear = () => undefined,
+      minuteShift = 0,
+    }: { foeAsks?: boolean; gear?: (gear: GearMessage) => void; minuteShift?: number } = {},
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
     door.epoch(Date.now());
     if (foeAsks) door.takeFoeAsks();
-    return new LocalRoom(door, snapshot, () => undefined);
+    return new LocalRoom(door, snapshot, gear, minuteShift);
   }
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player

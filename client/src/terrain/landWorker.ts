@@ -55,6 +55,10 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
     scope.postMessage({ ticket, text: rules.window(...request.rect) }, []);
     return;
   }
+  if (request.kind === 'grounds') {
+    scope.postMessage({ ticket, text: rules.grounds(request.id) }, []);
+    return;
+  }
   if (request.kind === 'boxes') {
     scope.postMessage({ ticket, boxes: rules.boxes(...request.rect) }, []);
     return;

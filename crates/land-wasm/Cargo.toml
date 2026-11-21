@@ -10,6 +10,7 @@ description = "The land for the browser: the land crate behind a small WebAssemb
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+bake = { path = "../bake" }
 city = { path = "../city" }
 land = { path = "../land" }
 layout = { path = "../layout" }

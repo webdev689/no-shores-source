@@ -11,6 +11,7 @@ import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
+import { PublicBanner, type PublicShown, StoreBars } from './publicBanner.ts';
 import { wearFightSheet } from './hudSheet.ts';
 import { element, setStyle, showNode } from './meter.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
@@ -58,6 +59,8 @@ export interface HudFrame {
   readonly ammoFull?: boolean;
   /** The loadouts as the weapons' rows show them; none hides them. */
   readonly arms?: ArmsShown | null;
+  /** The zone's public event as the display shows it; none where the zone holds none. */
+  readonly public?: PublicShown | null;
 }
 
 /** A foe winding up an iron blow this near is told to be dodged. */
@@ -144,6 +147,8 @@ export class Hud {
   private readonly root: HTMLElement;
   private readonly vitals: Vitals;
   private readonly compass: Compass;
+  private readonly banner: PublicBanner;
+  private readonly stores: StoreBars;
   private readonly target: FoePlate;
   private readonly mark: HTMLElement;
   private readonly over: HTMLElement;
@@ -201,6 +206,9 @@ export class Hud {
     this.ammo = new AmmoCounter(root);
     this.column = element('div', 'compass-column', root);
     this.compass = new Compass(this.column);
+    // Under the compass, over the boss bar and the target's plate, so neither ever stands on it.
+    this.banner = new PublicBanner(this.column);
+    this.stores = new StoreBars(this.over);
     this.foeBars = new FoeBars(root, this.over, this.column);
     this.target = new FoePlate(this.column, 'target', { poise: true, remembers: 'whole' });
     this.words = new Words(this.over);
@@ -259,7 +267,15 @@ export class Hud {
       fought: (id) => this.foeTarget.foughtShare(id),
       locked: lock,
     };
-    if (viewing.camera) this.compass.update(headingOf(viewing.camera.forward));
+    const shown = frame.public ?? null;
+    const from = [own?.x ?? 0, own?.y ?? 0] as const;
+    if (viewing.camera) this.compass.update(headingOf(viewing.camera.forward), from, [], shown?.places ?? []);
+    this.banner.update(shown?.banner ?? null, seconds, shown?.beat ?? null);
+    this.stores.update(
+      shown?.stores ?? [],
+      (point) => project(frame.matrix, point, frame.width, frame.height),
+      seconds,
+    );
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);

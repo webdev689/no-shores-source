@@ -12,7 +12,8 @@ import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { GearState } from '../network/gearMessages.ts';
+import type { EventProp } from '../city/eventProps.ts';
+import { DROPPED, type GearDrop, type GearState } from '../network/gearMessages.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
@@ -43,8 +44,11 @@ import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
+import { askedPublic, minuteShift } from './publicLaw.ts';
+import { PublicView } from './publicView.ts';
 import { nodeRoom } from './rooms.ts';
-import { chime, worldOutput } from './uiSounds.ts';
+import type { Quest } from './tasks.ts';
+import { chime, play, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -98,7 +102,8 @@ export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
- *  of its blows, in world metres; and what its display shows), and the keys listed. */
+ *  of its blows, in world metres; and what its display shows), the keys listed, and the zone's public event: its
+ *  props, the tracker's quest and the music's moment for a beat this frame. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
@@ -107,6 +112,9 @@ export interface FootFrame {
   readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly Hint[];
+  readonly props?: readonly EventProp[];
+  readonly quest?: Quest | null;
+  readonly sting?: 'cadence' | 'victory' | 'defeat' | null;
 }
 
 /** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the
@@ -125,11 +133,12 @@ async function standOn(
 }
 
 /** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
- *  cut there, and its boxes. */
-function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[]): string {
+ *  cut there, its boxes, and where it fights its public events (the land's `grounds`, JSON; `null` for none). */
+function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[], grounds = 'null'): string {
   const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
   const { id, kind, continent, ring, spawns } = node;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
+  const fought = grounds === 'null' ? '' : `,"grounds":${grounds}`;
+  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}${fought}}`;
 }
 
 /**
@@ -168,6 +177,8 @@ export class Foot {
   readonly folk: Placed[];
   private readonly prompt: UsePrompt | null;
   private using: Use | null = null;
+  /** The zone's public events as the page plays them. */
+  private readonly publicView: PublicView;
 
   private constructor(
     context: FootContext,
@@ -201,6 +212,7 @@ export class Foot {
       },
     };
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, floor) : null;
+    this.publicView = new PublicView(node.id);
   }
 
   /** Lands the player in a node at its first spawn, facing `facing`, keeping how they hold the camera, and joins its
@@ -255,8 +267,17 @@ export class Foot {
       connection?.close();
       throw error;
     }
+    // Alone, the room is told where the node fights its public events, as the bake tells the server's; under
+    // `npm run dev`, `&public=fissure|raid` sets its clock so that event starts at once.
+    const wanted = import.meta.env.DEV ? askedPublic(location.search) : null;
+    const shift = wanted ? (minuteShift(node.id, wanted, Math.floor(Date.now() / 60_000)) ?? 0) : 0;
     const link =
-      connection ?? LocalRoom.openNode(module, nodeText(node, rect, ground, boxes), received, asked.length > 0);
+      connection ??
+      LocalRoom.openNode(module, nodeText(node, rect, ground, boxes, await context.land.grounds(node.id)), received, {
+        foeAsks: asked.length > 0,
+        gear: (sent) => (gear.gear = sent),
+        minuteShift: shift,
+      });
     fight = new Fighting(combat, link);
     for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
@@ -346,6 +367,7 @@ export class Foot {
     walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
+    const publicEvents = fight.takePublicEvents();
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
     feel.frame(events, fight.own, fight.player, seconds, new Set(fight.others.keys()));
@@ -383,10 +405,40 @@ export class Foot {
     );
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
-    const dropped = this.dropMarks(clock, shot.eye, [
-      ...groundRings(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z, clock),
-      ...foes.overheads(shot.eye, clock),
-    ]);
+    const floor = (x: number, y: number) => movement.standing(x, y).z;
+    // The room's word on the player's drops, alone as online: a public event's chest is drawn as a prop of its own.
+    const drops = this.gearHeld.gear?.drops ?? [];
+    const dropped = this.dropMarks(
+      clock,
+      shot.eye,
+      [...groundRings(this.gear?.gear ?? null, this.node, floor, clock), ...foes.overheads(shot.eye, clock)],
+      drops.filter((drop) => drop.kind !== DROPPED.chest),
+    );
+    const ownView = fight.own;
+    const where = (id: number): readonly [number, number, number] | null => {
+      if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
+      const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
+      return figure ? [figure.x, figure.y, figure.z] : null;
+    };
+    const feet = [body.x, body.y, body.z] as const;
+    const shownPublic = this.publicView.frame(
+      fight.public,
+      publicEvents,
+      drops,
+      {
+        player: fight.player,
+        feet,
+        yaw: walker.player.facing,
+        firstPerson: firstPerson ? { eye: shot.eye, yaw: shot.yaw, pitch: shot.pitch } : null,
+        others: this.otherPlayers.placed,
+        where,
+      },
+      clock,
+      dropped.marks,
+      floor,
+    );
+    if (shownPublic.chime === 'shard') chime(3);
+    else if (shownPublic.chime) play(shownPublic.chime);
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
       blocks: this.boxes,
@@ -421,6 +473,7 @@ export class Foot {
       ground: { blocks: this.boxes, groundAt },
       landed: dropped.landed,
       crates: this.gearHeld.gear?.crates ?? null,
+      heard: shownPublic.sounds,
     });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (dress: Dress | null | undefined) => ({
@@ -444,14 +497,9 @@ export class Foot {
     const able = !paused && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
-    this.using = able ? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked)) : null;
+    const chest = this.publicView.use(drops, feet, (asked) => fight.askGear(asked), clock);
+    this.using = able ? (chest ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked))) : null;
     this.prompt?.show(this.using?.words ?? null);
-    const ownView = fight.own;
-    const where = (id: number): readonly [number, number, number] | null => {
-      if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
-      const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
-      return figure ? [figure.x, figure.y, figure.z] : null;
-    };
     const drawing = walker.shownDress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
@@ -480,16 +528,18 @@ export class Foot {
         drawn: walker.you.dress.outfit.drawn,
         dress: walker.you.dress,
       },
+      public: shownPublic.shown,
     };
     const edge = this.standing;
     const hints = edge.kind === 'dead' ? HINTS.dead : footHints(fight.arts?.art ?? 0);
-    return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
+    const { props, quest, sting } = shownPublic;
+    return { shot, figures, standing: edge, marks, swings, fight: fought, hints, props, quest, sting };
   }
 
   /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where
    *  each came to rest this frame; a Rare or finer chimes as it comes to rest. */
-  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]) {
-    const shown = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye, out);
+  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[], drops: readonly GearDrop[]) {
+    const shown = this.drops.frame(drops, clock, eye, out);
     const rarest = Math.max(-1, ...shown.rested);
     if (rarest >= 2) chime(rarest);
     return shown;

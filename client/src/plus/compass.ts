@@ -80,6 +80,14 @@ export function markPlace(
   return Math.min(1, Math.max(0, apart / span + 0.5));
 }
 
+/** A place the compass marks beside the ships: a public event's ground, or its heroic task's mark (the growth, the
+ *  tithe-taker), at its bearing as a ship's is, held at the end nearer it while off the strip. */
+export interface PlaceMark {
+  readonly x: number;
+  readonly y: number;
+  readonly kind: 'event' | 'heroic';
+}
+
 /** The ships the compass marks of `ships` round a player at `from`: those within `SHIP_MARK_RANGE_M`. */
 export function shipsMarked(ships: readonly ShipMark[], from: readonly [number, number]): ShipMark[] {
   return ships.filter((ship) => Math.hypot(ship.x - from[0], ship.y - from[1]) <= SHIP_MARK_RANGE_M);
@@ -101,6 +109,7 @@ export class Compass {
   readonly root: HTMLElement;
   private readonly points: readonly { readonly node: HTMLElement; readonly bearing: number }[];
   private readonly ships: HTMLElement[] = [];
+  private readonly places: HTMLElement[] = [];
 
   constructor(parent: HTMLElement) {
     this.root = made('div', 'compass', parent);
@@ -114,8 +123,21 @@ export class Compass {
     made('i', 'compass-needle', this.root);
   }
 
-  /** Turns the strip to `heading` (turns from north) and marks `ships` round a player at `from`. */
-  update(heading: number, from: readonly [number, number] = [0, 0], ships: readonly ShipMark[] = []): void {
+  /** Turns the strip to `heading` (turns from north) and marks `ships` and `places` round a player at `from`. */
+  update(
+    heading: number,
+    from: readonly [number, number] = [0, 0],
+    ships: readonly ShipMark[] = [],
+    places: readonly PlaceMark[] = [],
+  ): void {
+    while (this.places.length < places.length) this.places.push(made('i', 'compass-place', this.root));
+    this.places.forEach((node, index) => {
+      const place = places[index];
+      node.hidden = !place;
+      if (!place) return;
+      node.style.left = percent(markPlace([place.x, place.y], from, heading));
+      node.dataset.kind = place.kind;
+    });
     for (const { node, bearing } of this.points) {
       const place = compassPlace(bearing, heading);
       node.hidden = place === null;
@@ -134,7 +156,8 @@ export class Compass {
 }
 
 /** The compass's sheet: the column it heads at the top of the screen, the strip, its points, the needle under its
- *  middle and the ships' marks on its top edge, a bow pointing up. Nothing on it moves but by the view, so reduced motion asks nothing of it. */
+ *  middle and the ships' marks on its top edge, a bow pointing up; a public event's places on its foot, the heroic mark
+ *  blinking, which reduced motion holds still. */
 export function compassCss(): string {
   const { top, width, share, height, rule, gap } = COMPASS;
   return `
@@ -153,6 +176,13 @@ export function compassCss(): string {
 .compass-point.cardinal { top: 2px; font-size: 22px; line-height: 22px; color: ${TONES.word}; }
 .compass-needle { position: absolute; left: 50%; bottom: -${rule}px; width: 2px; height: 8px; translate: -50% 0;
   background: ${TONES.brass}; box-shadow: 0 0 0 1px ${TONES.outline}; }
+/* A public event's ground, a gold diamond on the strip's foot; its heroic task's mark, an orange one, pulsing. */
+.compass-place { position: absolute; bottom: -6px; width: 9px; height: 9px; margin-left: -5px; rotate: 45deg;
+  background: #e9b44c; box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 5px rgba(233,180,76,0.8); }
+.compass-place[data-kind='heroic'] { background: #ff7a3d; box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 6px #ff7a3d;
+  animation: compass-pulse 0.8s steps(2, end) infinite; }
+@keyframes compass-pulse { 50% { opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) { .compass-place[data-kind='heroic'] { animation: none; } }
 .compass-ship { position: absolute; top: 0; width: 0; height: 0; margin-left: -4px; border-left: 4px solid transparent;
   border-right: 4px solid transparent; border-bottom: 5px solid; filter: drop-shadow(0 0 1px rgba(0,0,0,0.9)); }
 `;

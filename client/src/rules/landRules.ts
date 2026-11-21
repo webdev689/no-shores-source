@@ -169,6 +169,9 @@ export interface LandRules {
   window(west: number, north: number, east: number, south: number): string;
   /** The boxes of the open landmass's city a body runs into within a rect, as the movement rules take blocks. */
   boxes(west: number, north: number, east: number, south: number): Block[];
+  /** Where the open landmass's node `id` fights its public events, as the bake writes them in its file (JSON), or
+   *  `null` for a node that holds none. */
+  grounds(id: string): string;
   /** The open landmass's city's plan, as JSON, for the drawing; null with no city. */
   cityPlan(): string | null;
   /** The open landmass's nodes' layouts, as a JSON list. */
@@ -207,6 +210,7 @@ interface LandExports {
   land_boxes(address: number, length: number): bigint;
   land_city_plan(): bigint;
   land_layouts(): bigint;
+  land_grounds(address: number, length: number): bigint;
   land_sail(address: number, length: number): bigint;
   land_fight_begin(address: number, length: number): bigint;
   land_fight_step(address: number, length: number): bigint;
@@ -415,6 +419,7 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
       }));
     },
     layouts: () => takeText(exports, exports.land_layouts()),
+    grounds: (id) => takeText(exports, send(exports.land_grounds, id)),
     cityPlan: () => {
       const text = takeText(exports, exports.land_city_plan());
       return text === 'null' ? null : text;

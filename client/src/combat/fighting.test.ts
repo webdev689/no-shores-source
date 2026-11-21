@@ -438,3 +438,32 @@ test('a respawn asked goes with the next input only', () => {
   for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
   assert.deepEqual(asked, [true, false, false]);
 });
+
+test('a public event’s beats are kept apart from the fight’s events, and its latest word is kept', () => {
+  const link = { player: 1, dressed: [], joins: 1, rejoining: false, lost: null, send: () => undefined } as unknown;
+  const fighting = new Fighting(startCombatRules(compiled), link as RoomLink);
+  const event = (kind: number) => ({ tick: 1n, kind, how: 0, striker: 1, defender: 1, amount: 3, stroke: 0 });
+  const word = { kind: 2, phase: 1, marks: [] } as unknown as Snapshot['public'];
+  fighting.receive({
+    kind: 'snapshot',
+    tick: 1n,
+    players: [],
+    dressed: [],
+    foes: [],
+    events: [event(1), event(23), event(14)],
+    shots: [],
+    spells: [],
+    public: word,
+  } as unknown as Snapshot);
+  assert.deepEqual(
+    fighting.takeEvents().map((each) => each.kind),
+    [1],
+    'a chest opened is no blow on the player',
+  );
+  assert.deepEqual(
+    fighting.takePublicEvents().map((each) => each.kind),
+    [23, 14],
+  );
+  assert.equal(fighting.takePublicEvents().length, 0, 'handed over once');
+  assert.equal(fighting.public, word);
+});

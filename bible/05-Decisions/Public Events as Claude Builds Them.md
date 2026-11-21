@@ -58,3 +58,16 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | Which stack a store is | One of three by its id | Three stores in a hamlet, each different |
 | A shard on the ground | Turning, bobbing, blinking once a third of its life is left | Seen from afar, and its fading seen |
 | A chest's lid | Swinging open over 0.6 s to 112 degrees about its hinge | The lid swings, light spills (the spec) |
+| Where the banner stands | In the compass's column, under the compass and over the boss bar | The column already stacks what comes under the compass, so nothing covers it |
+| The events' names on the banner | "The Fissure", "The Grey Tithe Raid"; the place by the zone's wilds or hamlet | Destiny names an event and its place |
+| The banner's tones | Gold running, orange heroic, green won, red failed, stone for the next line | Read at a glance, said in words too |
+| The heroic task's words | "Break the growth", "Kill the tithe-taker"; then "Heroic" | The brief's words |
+| The next event's line | One line: what, where, in how many minutes (rounded up) | The room tells the next start to the minute |
+| The stings | The place's fight score: cadence on begin, victory on heroic met and on won, defeat on failed | No new music; the scores already hold these moments |
+| The sounds | Samples already held: `story.deep`, `foe.alert`, `element.cosmic`, `finish.cosmic`, `shield.break`, `kill`, `story.crash`, `sea.ship.break`, `story.creak` | No new samples (the brief) |
+| A carried shard | At the off hand, 0.32 m left and 0.16 m forward; first person, 0.55 m ahead, 0.3 m left, 0.42 m under the eye | Seen in the hand from either view |
+| A store's bar | 72 px wide, 2.3 m over its foot, while a raid runs | Like a plate over a figure |
+| The ring at the edge | Gold, 0.35 m wide, 72 arcs each on the land, breathing | Seen on a slope, never buried |
+| A shard's pillar | Red, 7 m tall, fading with the shard | Seen from across the ground |
+| An opened chest | Stands open 6 s after the room takes it | The lid's swing is seen whole |
+| The dev address | `&public=fissure` or `&public=raid` sets a room in the page's clock to that event's start, dev builds only | Every beat can be seen without waiting |
