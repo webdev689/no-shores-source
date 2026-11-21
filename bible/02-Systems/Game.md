@@ -135,7 +135,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The attack feel.** The [[Test Ground]]'s four effects over the blows play on foot at their defaults: each blow's
   swing arc where its blade goes, its striker's figure hiding what passes behind it (none through the eyes), with the
   smear its strike leaves behind the striker's card; the hit-stop holding the fighters a blow lands on; the camera's
-  kick (moving the view but never turning it while a crosshair shows); and the lunge driving a striker's figure into its
+  kick (moving the view but never turning it while a ranged crosshair shows); and the lunge driving a striker's figure into its
   blow. Only the drawing moves, never the rules or their clock (`combat/attackFeel.ts`). A player who asks for reduced
   motion keeps a still view: no kick, no shake, no lunge carrying the eye and no Anima push-in; the Anima's edge frame
   still shows. The feel's light is on too: the brightest marks and arcs light what stands round them ("Drawing").

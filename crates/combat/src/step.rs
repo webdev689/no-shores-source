@@ -324,7 +324,7 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
     }
     if next.arms.ranged.is_some() && input.aim && next.swap == 0 {
         next.action = Action::Draw { elapsed: 0 };
-        next.aim = aimed_bearing(next, intent);
+        next.aim = intent.controls.yaw;
         return None;
     }
     // The trigger shoots at once, at the soft lock's target if it holds one the look is toward (turned away from it,
@@ -443,7 +443,7 @@ fn wind_up<B: Near + ?Sized>(
     None
 }
 
-/// The bearing a weapon aimed points along: at the aim's mark, or along the look without one or with one inside the
+/// The bearing an aimed shot flies along: at the aim's mark, or along the look without one or with one inside the
 /// fighter's own round across the ground (straight below or above, it has no bearing of its own).
 fn aimed_bearing(next: &Fighter, intent: &Intent) -> f64 {
     let at = [next.body.x, next.body.y];
@@ -475,8 +475,9 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
     None
 }
 
-/// A shot leaving: one of its ammunition spent, the weapon reloads, its arms pointing the way the shot flies. A double
-/// pistolet's right shot waits only for its firing frames, the left's for the reload of both.
+/// A shot leaving: one of its ammunition spent, the weapon reloads, its arms pointing the way the shot flies (an aimed
+/// one's turned back to the look by `aim`). A double pistolet's right shot waits only for its firing frames, the
+/// left's for the reload of both.
 fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
     next.ammo = next.ammo.map(|left| left.saturating_sub(1));
     next.kept.shoot = 0;
@@ -549,9 +550,10 @@ fn travel<B: Near + ?Sized>(body: &Body, telegraph: &Telegraph, around: &Surroun
     Some(Body { x, y, z: feet(x, y), vx: 0.0, vy: 0.0, vz: 0.0, facing, moving: true, ..*body })
 }
 
-/// The arms point where the fighter looks, but a swing's wind-up turns after the soft lock's target in reach, a
-/// guard turns to face it, and a weapon aimed points along its aim; a blow, once it lands, is locked where it was,
-/// and a shot's weapon stays pointed where it fired while it reloads.
+/// The arms point where the fighter looks, but a swing's wind-up turns after the soft lock's target in reach and a
+/// guard turns to face it; a blow, once it lands, is locked where it was, and a quick shot's weapon stays pointed where
+/// it fired while it reloads. A weapon aimed faces the look, its reload too while the aim is held: the camera stands
+/// over the shoulder, so the bearing to a near mark would turn the fighter aside, and only the shot need reach it.
 fn aim<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_, B>) {
     let (yaw, body) = (intent.controls.yaw, next.body);
     // The lock steers a swing or a guard only at a target the look is toward: turned to face another, the guard
@@ -574,8 +576,8 @@ fn aim<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroundi
         Action::Guard { .. } | Action::Parry { .. } => {
             turned(next.aim, target.map_or(yaw, |(toward, _)| toward), GUARD_TURN)
         }
-        Action::Draw { .. } => aimed_bearing(next, intent),
-        Action::Idle | Action::Flinch { .. } => yaw,
+        Action::Draw { .. } | Action::Idle | Action::Flinch { .. } => yaw,
+        Action::Reload { .. } if intent.combat.aim => yaw,
         _ => next.aim,
     };
 }

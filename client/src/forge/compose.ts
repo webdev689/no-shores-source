@@ -66,6 +66,19 @@ export function ordersMeet(first: number, second: number): boolean {
   return false;
 }
 
+/** A texel's colour on its layer's ramp, or null where it keeps its own. A ramp lies on a layer's greys, as the forge
+ *  draws them for it; one that covers the layer lies on every texel by its light, laid by its set's (`coverSteps`). */
+export function onRamp(
+  rgb: ArrayLike<number>,
+  ramp: readonly Rgb[] | null,
+  steps: CoverSteps | null,
+): Rgb | null | undefined {
+  if (!ramp) return null;
+  if (steps) return ramp[steps[lightOf(rgb)] ?? 0];
+  const grey = rgb[0] === rgb[1] && rgb[1] === rgb[2];
+  return grey ? ramp[Math.max(0, Math.min(15, ((rgb[0] ?? 0) * 16) >> 8))] : null;
+}
+
 /**
  * One frame of a figure, composed as the forge's game draws it: each layer's cell (a row a view, a column a frame)
  * laid on the figure's cell by its root; at each pixel the nearest texel, a layer drawn nearer by its order where it
@@ -189,16 +202,7 @@ export async function composeFrame(
         rgb[2] = colour.data[source + 2] ?? 0;
         skin?.(rgb);
         if (coat) hideShade(rgb, coat);
-        const grey = rgb[0] === rgb[1] && rgb[1] === rgb[2];
-        // A ramp lies on a layer's greys, as the forge draws them for it; one that covers the layer lies on every texel
-        // by its light, laid by its set's (`coverSteps`).
-        const dyed = !ramp
-          ? null
-          : steps
-            ? ramp[steps[lightOf(rgb)] ?? 0]
-            : grey
-              ? ramp[Math.max(0, Math.min(15, ((rgb[0] ?? 0) * 16) >> 8))]
-              : null;
+        const dyed = onRamp(rgb, ramp, steps);
         const out = spot * 4;
         pixels[out] = dyed?.[0] ?? rgb[0] ?? 0;
         pixels[out + 1] = dyed?.[1] ?? rgb[1] ?? 0;
