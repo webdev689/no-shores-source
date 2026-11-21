@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: live
 code:
   - content/world/layout.json
   - content/world/open.json
@@ -18,7 +18,7 @@ code:
 The world's structure, as [[The World Map]] decides it: one ocean the size of Tamriel's frame, nine hand-placed
 continents, thousands of static isles, and discoveries that come and go. This note says how it is built. Built so far:
 the layout file, the rules it keeps, the [[World Editor]] that paints it, the [[Land]] generated from it, and the
-sea's waters and friendly traffic as rules and doors (nothing draws them yet).
+sea's waters and friendly traffic as rules and doors, which the [[Game]] and the [[Held Map]] draw.
 
 ## The layers
 
@@ -28,7 +28,7 @@ Each layer reads the one above it and owns its own data ([[Generated Files Stay 
 |---|---|---|---|
 | The layout | The ocean frame, each continent's position and outline, each static isle's place and seed | Us, in the World Editor | In git, as a small authored file |
 | The land | Terrain, rivers, soil and biomes for each continent and isle, and the seabed around them | The land crate: relief, erosion, rivers and lakes from the layout, the climate and the owner's edits, the same on any machine ([[Land]]) | The owner's edits in git, in `content/world/land/`; baking to R2 by region is planned |
-| The settlements | Towns, ports, roads and buildings | Towns, ports, roads and carved rivers: drawn by the owner in the World Editor's Land mode. Buildings, and World 2.0's settlement generator, come later | In each landmass's edits file |
+| The settlements | Towns, ports, roads and buildings | Towns, ports, roads and carved rivers: drawn by the owner in the World Editor's Land mode. Port cities: planned by the city crate on World 2.0's stages ([[Cities]]) | In each landmass's edits file |
 | The persistent state | Who first discovered each isle; what players own and change | The server | Cloudflare D1 ([[Accounts Start as Guests, on Cloudflare D1]]) |
 | The passing state | Discoveries, weather, sea state | The shared Rust rules, from seeds and world time | Nowhere: regenerated identically from the seed |
 
@@ -193,8 +193,8 @@ source of each.
   moment it gives the wind's way and strength and the sea state, 0 (calm) to 1 (storm), in four bands: calm under
   0.2, moderate to 0.5, rough to 0.8 and storm above. Over days at many points the sea is calm about 15% of the time,
   moderate 50%, rough 25% and in a storm 10%; the field's measured quantiles set those shares.
-- The wind veers smoothly across a system about the prevailing westerlies; its strength follows the sea state, from a
-  calm's 2 m/s through 4, 9 and 15 m/s at the bands' meetings to a storm's 25 m/s.
+- The wind veers smoothly across a system about the prevailing westerlies (the swell's; ships sail by the sky's,
+  [[Weather]]); its strength follows the sea state, from a calm's 2 m/s through 4, 9 and 15 m/s at the bands' meetings to a storm's 25 m/s.
 - The open water shelters the sea: the fetch, the open water upwind of a point out to 60 km (marched by the
   clearance to the nearest coast, in steps of 500 m at least), leaves the swell a quarter of its height at under 2 km
   and all of it at 60 km, the share taken as the mean over five rays, the wind's and 10 and 20 degrees either side.
@@ -208,4 +208,5 @@ source of each.
 ## Limits
 
 - No isles are placed yet; the nine continents are drawn and each has its biome ([[The Continents' Biomes]]).
-- The weather drives the sea and the wind alone: no clouds, rain or fog are drawn from it yet.
+- This weather drives the swell alone: the wind ships sail by, and the clouds, rain and fog drawn, are the sky's
+  ([[Weather]]).

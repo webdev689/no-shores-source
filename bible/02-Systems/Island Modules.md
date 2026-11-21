@@ -1,6 +1,6 @@
 ---
 type: system
-status: built
+status: live
 code:
   - tools/islands/build.py#build_kit
   - tools/islands/catalog.py#required

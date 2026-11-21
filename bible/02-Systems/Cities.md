@@ -78,8 +78,8 @@ A continent's edits file names its city: an id, a name, the landmark's site with
 
 ## The plan
 
-World 2.0's settlement stages, at a city's scale (`city::plan`), on the ground as generated and shaped, before any
-city stands on it:
+World 2.0's settlement stages ([[Pick - World 2.0 Settlements]]), at a city's scale (`city::plan`), on the ground as
+generated and shaped, before any city stands on it:
 
 1. **The footprint.** 48 rays out from the landmark, 25 m a step, until the sea, a lake, ground steeper than 0.45, or
    the city's radius of 3,456 m (half DFO's Imperial City). Each ray's reach is smoothed with its neighbours'.

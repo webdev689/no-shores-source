@@ -64,8 +64,7 @@ painter gives: the tests pin 78 of them.
 ## Limits
 
 - Painting is on the thread that asks: about 20 ms for a 64 by 64 wall, 30 ms for a 64 by 128 one and 40 ms for a
-  ground tile, warm, in Node. There is no cache and no worker yet; a renderer should paint on demand and keep what
-  it painted.
+  ground tile, warm, in Node, so the city paints them off the page's thread, in up to four workers ([[Cities]]).
 - Pictures are fully opaque; the glass mask is the only extra layer. Nothing here uploads to the GPU.
 - Two painters do not wrap at the edge, so their pictures show a seam when repeated: the ploughed field (ground
   record 54), whose furrows are 6 or 7 texels apart, and the diagonal and crossed board floors, 9 texels a board.

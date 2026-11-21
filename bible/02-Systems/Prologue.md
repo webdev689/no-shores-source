@@ -145,9 +145,8 @@ player is within 6 m, then says its lines in the dialogue box, some of the keepe
 over a head ([[Speech Blurbs Show Their Text Without Glyphs]]); the HUD says "Follow" over her name past 6 m and clears
 it inside 5 m. The player walks freely the whole time: it is no cutscene. What she says (`content/story/welcome.json`)
 is the state of the world as Overlook's people know it and what the plaza offers: the Grey Tithe's tenth and the ships
-taken whole, Overlook paying the Tithe nothing (the owner's "The Grey Tithe Take a Tenth, and Overlook Does Not Pay", on
-pull request #77), three ports standing and ruins no one agrees about (the owner's three port cities, on pull request
-#75), and the town's memory (three people name four builders of the beacon). It is due from the story's end until its
+taken whole, Overlook paying the Tithe nothing, three ports standing and ruins no one agrees about
+([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]), and the town's memory (three people name four builders of the beacon). It is due from the story's end until its
 last scene is said: the browser keeps the scenes said (`overlook.welcome.said`), so a reload or a leaving takes it up
 from there on the next arrival in Overlook's social space, without the greeting; leaving before the stranger has gone
 forgoes it. A browser that has played the story and holds no mark of the welcome is welcomed on its next arrival there.
@@ -266,8 +265,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 - **The layout** is `content/prologue/wreck.json`, written by the export: the mesh's and the light's keys on R2, the
   ground's blocks, each heap's block, the fires, where the sea is not drawn (`dry`), where the player wakes, the
   path, the zones with their waves and the Brig's crew, the arena and Thule's place. It also holds the masts still
-  standing and a camera's way back over the wreck, which the page no longer reads. Figures stand at the middle of their square of ground, never on the edge between
-  two blocks.
+  standing and a camera's way back over the wreck, which the page does not read. Figures stand at the middle of
+  their square of ground, never on the edge between two blocks.
 - **The path** runs from the Brig's quarterdeck, where the player wakes by its wheel, down through its thrown-down
   breast rail into its waist, along its port gangway past the fallen waist, off its broken end across the wreckage of
   its waist and its torn deck, up onto its fore deck, out onto the raft beside it, down onto the Sloop's side, along
@@ -412,6 +411,6 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 - The decks are boxes half a metre across: a deck's camber and the slope of its sheer are steps of 5 cm, a mast or a
   gun inside its deck is walked through, and its hatches are walked over.
 - The heaps are not in the foes' navmesh: a foe that runs at one stops against it until it clears.
-- The sea fight has no touch controls, like the rest of the game ([[Interface]]: no gamepad or touch layer yet).
+- The sea fight has no touch controls.
 - No figures swim or float in the forge, so no men are drawn in the water by the wrecks; the calm's talk asks only
   about the wrecks the camera shows.

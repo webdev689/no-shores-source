@@ -1,6 +1,6 @@
 ---
 type: system
-status: built
+status: live
 code:
   - crates/isle/src/lib.rs#Plan
   - crates/isle/src/shape.rs#Shape

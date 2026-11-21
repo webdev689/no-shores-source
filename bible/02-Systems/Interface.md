@@ -991,7 +991,7 @@ button's corner and screen, and the Tailor's wares.
   the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
-- The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
+- The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.
 - The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
 - The Art's, Appearance and keepers' screens draw no soft glow: the Art's emblem opens without the glow that swelled
