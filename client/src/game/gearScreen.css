@@ -93,17 +93,6 @@ kbd.gear-key {
   color: var(--word);
   text-transform: none;
 }
-.gear-answer {
-  color: #f0b545;
-}
-/* Empty, the answer stays in the page as a live region, so its first words are read out; it takes no room. */
-.gear-answer:empty {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-}
 .gear-hints {
   display: flex;
   flex-wrap: wrap;
@@ -125,12 +114,6 @@ kbd.gear-key {
   color: var(--faint);
   font-size: var(--type-s);
 }
-.gear-empty {
-  margin: 48px auto;
-  max-width: 420px;
-  text-align: center;
-  font-size: var(--type-m);
-}
 .gear-heading {
   margin: 4px 0 10px;
   padding-bottom: 4px;
@@ -151,14 +134,6 @@ canvas.gear-picture.gear-picture-fitted {
 img.gear-glyph {
   width: 36px;
   height: 36px;
-}
-.gear-chip {
-  display: inline-block;
-  padding: 1px 8px;
-  border: 1px solid;
-  border-color: var(--stone-hi) var(--stone-lo) var(--stone-lo) var(--stone-hi);
-  font-size: var(--type-xs);
-  color: var(--word);
 }
 /* A press the player cannot use now still takes the focus, so its card says why; it reads as resting. */
 #hud .plus-button[aria-disabled='true'],
@@ -705,44 +680,6 @@ img.gear-glyph {
   height: 36px;
   filter: grayscale(1) brightness(0.6);
   opacity: 0.35;
-}
-
-/* The account. */
-.gear-account {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-/* Its fields keep to a form's width; its rule runs the panel's, as the sections' do. */
-.gear-account .gear-field {
-  max-width: 520px;
-}
-.gear-field {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.gear-field input {
-  pointer-events: auto;
-  flex: 1;
-  max-width: 280px;
-  padding: 6px 8px;
-  font: inherit;
-  color: var(--word);
-  background: var(--well);
-  border: 2px solid transparent;
-  caret-color: var(--brass-lit);
-}
-.gear-presses {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-}
-.gear-label {
-  color: var(--faint);
-  font-size: var(--type-s);
-  min-width: 72px;
 }
 
 /* What moves, moves in steps, as Enhanced Plus's sigils breathe; with less motion asked for, nothing does but the
