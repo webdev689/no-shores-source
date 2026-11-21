@@ -27,8 +27,7 @@
 .gear-ship-part + .gear-ship-part {
   margin-top: 14px;
 }
-.gear-ship-part .gear-heading,
-.gear-vault-shelf .gear-heading {
+.gear-ship-part .gear-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -40,34 +39,6 @@
 }
 .gear-ship-row b {
   font-weight: 500;
-}
-
-/* The vault, after Destiny 1's: what it keeps beside what the player carries, each in weapons, armour and Vestiges. */
-.gear-vault {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  padding: 14px 18px;
-}
-.gear-vault-side {
-  padding: 14px 16px;
-  min-width: 0;
-}
-.gear-vault-title {
-  margin: 0 0 11px;
-  font-size: var(--type-l);
-  font-weight: 500;
-  letter-spacing: round(up, calc(1em / 22), 1px);
-  text-transform: none;
-  color: var(--brass-lit);
-}
-.gear-vault-shelf + .gear-vault-shelf {
-  margin-top: 12px;
-}
-.gear-vault-shelf .gear-empty {
-  margin: 4px 0;
-  text-align: left;
-  font-size: var(--type-s);
 }
 
 /* The players blocked, under the account: a name and its press on each line. */

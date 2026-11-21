@@ -1,31 +1,19 @@
-// shortcut: the parts of elements the menu's pages still made of them share (the Social and Settings tabs, the Arts,
-// Appearance and keepers' screens, the vault, a player's details); the drawn menu's are gearNodes.ts, gearCard.ts and
-// gearHold.ts. It goes once those pages are drawn.
+// shortcut: the parts of elements the menu's pages still made of them share (the Social and Settings tabs, a player's
+// details, the story's creation); the drawn menu's are gearNodes.ts, gearCard.ts and gearHold.ts. It goes once those
+// pages are drawn.
 // The gear screens' shared parts, in the Enhanced Plus kit: a press in its role, a press held a moment, a picture drawn
-// crisp into a canvas, a cell's icon (an item's own picture or a glyph) and what it shows of the item's growth, a
-// node's ring, and the hover card beside what it describes, its head in the item's rarity, as Enhanced Plus's card is.
+// crisp into a canvas, an item's icon, an element's glyph, and a surface marked with a rarity.
 
 import { button, make } from '../editor/dom.ts';
-import type { GearItem } from '../network/gearMessages.ts';
-import { ELEMENTS, RARITIES, fullyUpgraded, upgraded } from '../player/gear.ts';
+import { ELEMENTS, RARITIES } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
-import type { Card, Glyph, Trait } from './gearCards.ts';
-import type { Hint } from './gearNodes.ts';
-import { glyphSvg, nodeGlyphSvg } from './gearGlyphs.ts';
 import { elementSvg } from './elementGlyphs.ts';
 import { diagonalFit, drawnBounds, fitIcon } from '../player/iconFit.ts';
 import { charge, play } from './uiSounds.ts';
 
 /** How long a held press is held before it acts, in milliseconds: what cannot be undone is held, not tapped. */
 export const HOLD_MS = 800;
-/** How long a piece is held to dismantle it, by its rarity: the rarer the longer, as Destiny's are, so the rarest is
- *  never lost to a slip. */
-const DISMANTLE_MS = [600, 700, 900, 1200, 1800];
-export const dismantleMs = (rarity: number): number => DISMANTLE_MS[rarity] ?? HOLD_MS;
-/** How far the hover card stands from what it describes, and from the screen's edge. */
-const TIP_GAP = 10;
-
 export type { Hint } from './gearNodes.ts';
 
 /** How much CSS zooms an element where it stands: 2 for the menu on a screen past 1440p, else 1. */
@@ -39,19 +27,6 @@ export function pressOf(text: string, run: () => void, role: Role = 'button', ke
   node.classList.add(ROLES[role]);
   if (key) node.append(make('kbd', key, 'gear-key'));
   return node;
-}
-
-/** A line of what the presses and keys do, each key on a keycap. */
-export function hintLine(hints: readonly Hint[], className = 'gear-hints'): HTMLElement {
-  const line = make('p', '', className);
-  for (const [key, words] of hints) {
-    const hint = make('span', '', 'gear-hint-pair');
-    // Keys that do the same are joined by a slash, each on its own keycap.
-    for (const one of key.split(' / ')) hint.append(make('kbd', one, 'gear-key'));
-    hint.append(make('span', words));
-    line.append(hint);
-  }
-  return line;
 }
 
 /** How a hold ends once it acts: the item breaking apart, the item taking something in, or nothing more. */
@@ -186,61 +161,6 @@ export function holdToAct(
   });
 }
 
-/** The key held on a carried piece's tile to dismantle it, as Destiny's is on a computer. */
-export const DISMANTLE_KEY = 'F';
-/** Each tile F dismantles, and what dismantling it asks. */
-const dismantles = new WeakMap<HTMLElement, { readonly rarity: number; readonly run: () => void }>();
-/** The tile last pointed at or focused, which F dismantles: whichever the player turned to last. */
-let aimed: HTMLElement | null = null;
-/** The tile whose hold F began, which only F's release lets go. */
-let keyHeld: HTMLElement | null = null;
-let listening = false;
-
-/** Lets `tile`, a carried piece's, be dismantled by holding F while the pointer is over it or it has the focus, as
- *  long as its rarity asks, its picture charging and breaking apart once it acts. */
-export function dismantleOnHold(tile: HTMLElement, rarity: number, dismantle: () => void): void {
-  dismantles.set(tile, { rarity, run: dismantle });
-  tile.setAttribute('aria-keyshortcuts', DISMANTLE_KEY);
-  const aim = () => (aimed = tile);
-  tile.addEventListener('pointerenter', aim);
-  tile.addEventListener('focus', aim);
-  // The pointer moved off: what F held there is let go, as Destiny's is.
-  tile.addEventListener('pointerleave', () => {
-    if (aimed === tile) aimed = null;
-    if (keyHeld === tile) letGoHold(tile);
-  });
-  tile.addEventListener('pointercancel', () => letGoHold(tile));
-  if (listening) return;
-  listening = true;
-  const isKey = (event: KeyboardEvent) => event.key.toUpperCase() === DISMANTLE_KEY;
-  // Heard before the menu keeps its keys to itself; a key typed into a field is the field's, and Ctrl, Cmd or Alt with
-  // F is the browser's or the system's, whose release may never be heard.
-  addEventListener(
-    'keydown',
-    (event) => {
-      const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
-      const chord = event.ctrlKey || event.metaKey || event.altKey;
-      if (!isKey(event) || event.repeat || typing || chord) return;
-      const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      const tile = aimed?.isConnected ? aimed : focused && dismantles.has(focused) ? focused : null;
-      const found = tile ? dismantles.get(tile) : undefined;
-      if (!tile || !found) return;
-      event.preventDefault();
-      keyHeld = tile;
-      holdOn(tile, found.run, { charges: tile, burst: 'shatter', holdMs: dismantleMs(found.rarity) });
-    },
-    true,
-  );
-  const release = () => {
-    if (keyHeld) letGoHold(keyHeld);
-    keyHeld = null;
-  };
-  addEventListener('keyup', (event) => isKey(event) && release(), true);
-  // A window left mid-hold never hears F let go there, so leaving it lets go.
-  addEventListener('blur', release);
-  document.addEventListener('visibilitychange', release);
-}
-
 /** A canvas showing a picture in a box of `box` CSS pixels, its clear margin trimmed, fitted as Enhanced Plus fits
  *  its icons (`fitIcon`) and drawn at the screen's own pixel ratio. */
 export function pictureCanvas(picture: Picture, box: number, cap?: number): HTMLCanvasElement {
@@ -321,21 +241,6 @@ export function itemIcon(picture: Picture | null, name: string, box: number): HT
   return shown;
 }
 
-/** A glyph as an image. */
-export function glyphImage(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): HTMLImageElement {
-  const image = make('img', '', 'gear-glyph');
-  image.src = `data:image/svg+xml,${encodeURIComponent(glyphSvg(glyph, rarity, tint))}`;
-  image.alt = '';
-  return image;
-}
-
-/** A node's kind's glyph, in the colour of the text around it. */
-export function nodeGlyph(kind: number): HTMLElement {
-  const glyph = make('span', '', 'gear-node-glyph');
-  glyph.innerHTML = nodeGlyphSvg(kind);
-  return glyph;
-}
-
 /** An element's glyph, named for a screen reader; nothing for none. */
 export function elementGlyph(element: number, className = 'gear-element'): HTMLElement | null {
   const found = ELEMENTS[element];
@@ -345,24 +250,6 @@ export function elementGlyph(element: number, className = 'gear-element'): HTMLE
   glyph.setAttribute('role', 'img');
   glyph.setAttribute('aria-label', found.name);
   return glyph;
-}
-
-/** What an item's icon shows of it beyond its picture: a weapon's element as a glyph in its corner; and, after
- *  Destiny 1, a gauge along its foot that fills as its nodes are bought, until, fully upgraded, its frame is gilded
- *  and the gauge goes. */
-export function itemMarks(tile: HTMLElement, item: GearItem): void {
-  const element = elementGlyph(item.element);
-  if (element) tile.append(element);
-  const share = upgraded(item);
-  const gilded = fullyUpgraded(item);
-  tile.classList.toggle('gear-gilded', gilded);
-  if (share === null || gilded) return;
-  const gauge = make('span', '', 'gear-gauge');
-  gauge.setAttribute('aria-hidden', 'true');
-  const fill = make('span', '', 'gear-gauge-fill');
-  fill.style.width = `${Math.round(share * 100)}%`;
-  gauge.append(fill);
-  tile.append(gauge);
 }
 
 /** Marks a surface with a rarity, which its frame and glow take their colours from. */
@@ -384,135 +271,4 @@ export function tileLabel(name: string, rarity: number | null, what = ''): strin
   const tier = rarity === null ? '' : (RARITIES[rarity]?.name ?? '');
   const said = [tier, what].filter(Boolean).join(' ');
   return said ? `${name}, ${said}` : name;
-}
-
-/** How far each number's meter reaches, for what a piece changes over the one it would replace. */
-const MOST: Readonly<Record<string, number>> = { Attack: 300, Defense: 450, Prestige: 30 };
-
-/** What a piece changes over the one it would replace, as Destiny's card shows it: each number's meter at the lesser
- *  of the two, the rest of the greater a segment gained or lost, and the new number with the change beside it. */
-export function compareNode(compare: NonNullable<Card['compare']>): HTMLElement {
-  const block = make('div', '', 'gear-compare');
-  block.append(make('p', `Replaces ${compare.replaces}`, 'gear-card-meta'));
-  for (const row of compare.rows) {
-    const change = row.to - row.from;
-    const most = Math.max(MOST[row.label] ?? 0, row.from, row.to, 1);
-    const line = make('div', '', `gear-compare-row ${change > 0 ? 'up' : change < 0 ? 'down' : 'same'}`);
-    const well = make('div', '', `gear-compare-well ${ROLES.well}`);
-    const kept = make('div', '', 'gear-compare-kept');
-    kept.style.width = `${(Math.min(row.from, row.to) / most) * 100}%`;
-    const moved = make('div', '', 'gear-compare-moved');
-    moved.style.width = `${(Math.abs(change) / most) * 100}%`;
-    well.append(kept, moved);
-    const sign = change > 0 ? '+' : change < 0 ? '−' : '';
-    const value = make('span', String(row.to), 'gear-compare-value');
-    if (change !== 0) value.append(make('small', ` ${sign}${Math.abs(change)}`));
-    line.append(make('span', row.label, 'gear-compare-label'), well, value);
-    block.append(line);
-  }
-  return block;
-}
-
-/** A trait as a card or a page lists it: its column's glyph, its name and its words. */
-export function traitNode(trait: Trait): HTMLElement {
-  const line = make('div', '', 'gear-card-trait');
-  const words = make('div', '', 'gear-trait-words');
-  words.append(make('b', trait.name), make('span', trait.words));
-  line.append(nodeGlyph(trait.kind), words);
-  return line;
-}
-
-/** An item's hover card: its name on a band of its rarity, its kind and pips, its picture large, its main number, its
- *  rows, its traits and words, what it changes over the piece it would replace, and what may be done with it. */
-export function cardNode(card: Card, picture: Picture | null, hints: readonly Hint[]): HTMLElement {
-  const node = make('div', '', `gear-card ${ROLES.panel}`);
-  rarityOf(node, card.rarity);
-  const head = make('div', '', 'gear-card-head');
-  const meta = make('p', card.kind, 'gear-card-meta');
-  const pips = RARITIES[card.rarity]?.pips ?? '';
-  if (pips) meta.append(make('span', pips, 'gear-card-pips'));
-  const element = elementGlyph(card.element, 'gear-element-inline');
-  if (element) {
-    const named = make('span', ELEMENTS[card.element]?.name ?? '', 'gear-element-name');
-    named.style.color = ELEMENTS[card.element]?.colour ?? '';
-    meta.append(element, named);
-  }
-  head.append(make('h3', card.name), meta);
-  node.append(head);
-  const body = make('div', '', 'gear-card-body');
-  if (picture) {
-    const icon = make('div', '', 'gear-card-icon');
-    icon.append(pictureCanvas(picture, 96));
-    body.append(icon);
-  }
-  if (card.big) {
-    const big = make('div', '', 'gear-card-big');
-    big.append(make('strong', String(card.big.value)), make('span', card.big.label));
-    body.append(big);
-  }
-  const stats = make('dl', '', 'gear-card-stats');
-  for (const [label, value] of card.rows) stats.append(make('dt', label), make('dd', value));
-  body.append(stats, ...card.traits.map(traitNode));
-  if (card.words) body.append(make('p', card.words, 'gear-card-words'));
-  if (card.compare) body.append(compareNode(card.compare));
-  node.append(body);
-  if (hints.length > 0) node.append(hintLine(hints, 'gear-card-hint'));
-  return node;
-}
-
-/** The one hover card of a page, shown beside what it describes and kept on the screen; on pointer hover and on
- *  keyboard focus alike. */
-export class HoverCard {
-  private readonly tip: HTMLElement;
-  /** The card's own element, which stays in reach while the screen it serves is open. */
-  get node(): HTMLElement {
-    return this.tip;
-  }
-  /** What the pointer or the focus showed the card for, which may stand beside another (its row, its flyout). */
-  private source: HTMLElement | null = null;
-
-  constructor(root: HTMLElement) {
-    this.tip = make('div', '', 'gear-tip');
-    this.tip.setAttribute('role', 'tooltip');
-    this.tip.id = 'gear-tip';
-    this.tip.hidden = true;
-    root.append(this.tip);
-  }
-
-  show(anchor: HTMLElement, content: HTMLElement, source: HTMLElement = anchor): void {
-    this.source = source;
-    this.tip.replaceChildren(content);
-    this.tip.hidden = false;
-    const near = anchor.getBoundingClientRect();
-    const size = this.tip.getBoundingClientRect();
-    const right = near.right + TIP_GAP;
-    const left = right + size.width + TIP_GAP > innerWidth ? near.left - TIP_GAP - size.width : right;
-    // It stands above the menu's footer, under the island the page stands in, whose keys and presses stay readable.
-    const island = this.tip.parentElement?.querySelector('.gear-island:not([hidden])')?.getBoundingClientRect();
-    const floor = island ? island.bottom : innerHeight;
-    const top = Math.min(Math.max(TIP_GAP, near.top), floor - size.height - TIP_GAP);
-    // Measured on the screen, placed in the card's own pixels, which a zoomed menu doubles.
-    const zoom = cssZoom(this.tip);
-    this.tip.style.left = `${Math.max(TIP_GAP, left) / zoom}px`;
-    this.tip.style.top = `${Math.max(TIP_GAP, top) / zoom}px`;
-  }
-
-  hide(): void {
-    this.source = null;
-    this.tip.hidden = true;
-  }
-
-  /** Shows `content()` while the pointer is over `anchor` or it holds the focus, beside `beside` (the anchor itself
-   *  unless given). */
-  over(anchor: HTMLElement, content: () => HTMLElement, beside = anchor): void {
-    // An open slot's flyout stands where its card would, so the card waits until it closes.
-    const show = () => anchor.getAttribute('aria-expanded') !== 'true' && this.show(beside, content(), anchor);
-    anchor.setAttribute('aria-describedby', 'gear-tip');
-    // Only a pointer that moves shows it: a page built anew under a resting pointer opens no card over the focus.
-    anchor.addEventListener('pointermove', () => this.source !== anchor && show());
-    anchor.addEventListener('pointerleave', () => this.hide());
-    // A focus the keys moved shows it; one a click or a page built anew left there does not.
-    anchor.addEventListener('focus', () => anchor.matches(':focus-visible') && show());
-    anchor.addEventListener('blur', () => this.hide());
-  }
 }
