@@ -361,9 +361,22 @@ impl Room {
         }
     }
 
-    /// The most living foes the room stands for anything but its event: all of them in a room that holds none.
+    /// The most living foes the room stands while it stands more for anything but its event: all of them in a room that
+    /// holds none; else a node's own, with the event's living foes (as many as it keeps places for) besides.
     pub(crate) fn others_most(&self) -> usize {
-        self.foes_most.saturating_sub(if self.public.is_some() { EVENT_ROOM } else { 0 })
+        let Some(public) = self.public.as_ref() else { return self.foes_most };
+        let living = |id: &&FighterId| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead());
+        let event = public.running.as_ref().map_or(0, |running| running.foes.iter().filter(living).count());
+        self.foes_most.saturating_sub(EVENT_ROOM) + event.min(EVENT_ROOM)
+    }
+
+    /// A player's account told: the part they took under their number until then is their account's.
+    pub(crate) fn own_part(&mut self, player: PlayerId) {
+        let who = self.who(player);
+        let Some(running) = self.public.as_mut().and_then(|public| public.running.as_mut()) else { return };
+        let Some(before) = running.parts.remove(&Who::Player(player)) else { return };
+        let part = running.parts.entry(who).or_default();
+        (part.present, part.did) = (part.present + before.present, part.did || before.did);
     }
 
     /// The living players on the ground an event of `kind` is fought on.

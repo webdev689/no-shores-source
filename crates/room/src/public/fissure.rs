@@ -41,8 +41,9 @@ const LIVING_MOST: usize = 10;
 const WAVE_SIZE: usize = 3;
 const WAVE_MOST: usize = 6;
 const POUR_OUT: f64 = 4.0;
-// Its most foes at once fit the room the zone keeps for its event: the living short of a wave, a full one, the growth.
-const _: () = assert!(LIVING_MOST - 1 + WAVE_MOST + 1 <= super::EVENT_ROOM);
+// Its most foes at once fit the room the zone keeps for its event: one fewer living than LIVING_MOST, a full wave,
+// and the growth or the Warden.
+const _: () = assert!(LIVING_MOST + WAVE_MOST <= super::EVENT_ROOM);
 const WAVE: [(u8, Rank); 6] =
     [(HUSK, Minor), (HUSK, Major), (FLICKER, Minor), (FLICKER, Major), (IDOL, Major), (RAVAGER, Major)];
 /// The heroic task's growth, the Warden and their names over their bars.
@@ -69,9 +70,9 @@ pub(crate) struct Shard {
     pub until: u64,
 }
 
-/// A Fissure as it plays: its middle and its growth's spot, its spires standing, the shards set and the most players seen at it at once,
-/// the shards added by its heroic turn, those lying and those carried (by whom, and where they last stood), its
-/// growth and the tick it rose, its Warden, and its waves so far and the tick of the last.
+/// A Fissure as it plays: its middle and its growth's spot, its spires standing, the shards set and the most players
+/// seen at it at once, the shards added by its heroic turn, those lying and those carried (by whom, and where they
+/// last stood), its growth and the tick it rose, its Warden, and its waves so far and the tick of the last.
 #[derive(Debug)]
 pub(crate) struct Fissure {
     pub at: [f64; 3],

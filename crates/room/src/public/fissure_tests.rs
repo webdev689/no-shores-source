@@ -57,6 +57,7 @@ fn chests(room: &Room, player: PlayerId) -> Vec<u8> {
 fn felled_foes_drop_shards_and_a_player_sealing_them_quickly_wins_the_bonus_chest_and_shatters_the_rest() {
     let (mut room, players) = room_at(FISSURE_MINUTE, 1);
     let player = players[0];
+    let blocks = room.blocks.len();
     room.tick();
     assert_eq!(told(&mut room, EventKind::PublicBegun).len(), 1);
     assert_eq!(fissure(&room).needed(), SHARDS_FIRST, "alone, eight");
@@ -68,6 +69,7 @@ fn felled_foes_drop_shards_and_a_player_sealing_them_quickly_wins_the_bonus_ches
     assert!(running(&room).bonus, "sealed with more than half the countdown left");
     assert_eq!(chests(&room, player), [2], "a won chest with the bonus");
     assert!(standing(&room).is_empty(), "every foe of it shattered");
+    assert_eq!(room.blocks.len(), blocks, "sealed, its spires gone");
     let events = room.take_events();
     assert_eq!(events.iter().filter(|event| event.kind == EventKind::ShardSet).count(), usize::from(SHARDS_FIRST));
     assert!(events.iter().any(|event| event.kind == EventKind::PublicWon));
@@ -456,8 +458,12 @@ fn every_foe_that_pours_out_has_its_arrival_told_for_the_page_to_raise_it_out_of
     }
     let growth = fissure(&room).growth.unwrap();
     let all: Vec<FighterId> = running(&room).foes.clone();
-    let told_now: Vec<FighterId> =
-        room.take_events().iter().filter(|e| e.kind == EventKind::Spawned).map(|e| e.defender).collect();
+    let told_now: Vec<FighterId> = room
+        .take_events()
+        .iter()
+        .filter(|event| event.kind == EventKind::Spawned)
+        .map(|event| event.defender)
+        .collect();
     assert!(told_now.contains(&growth), "the growth's rising told");
     assert!(all.iter().all(|id| spawned.contains(id) || told_now.contains(id)), "every foe of it told");
 }
@@ -483,4 +489,15 @@ fn its_spires_stand_as_tools_modules_draws_them_and_a_body_runs_into_them_while_
     running_mut(&mut room).ticks_left = 1;
     room.tick();
     assert_eq!(room.blocks.len(), before, "failed, the fissure closing: its spires gone");
+}
+
+#[test]
+fn a_part_taken_before_the_host_tells_a_players_account_is_kept_as_their_accounts() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    place(&mut room, players[0], [FISSURE_AT[0] - 25.0, FISSURE_AT[1]]);
+    ticks(&mut room, 10);
+    assert!(room.own(players[0], "late-told"));
+    let parts = &running(&room).parts;
+    assert!(!parts.contains_key(&super::Who::Player(players[0])));
+    assert_eq!(parts[&super::Who::Account("late-told".to_owned())].present, 10);
 }

@@ -337,3 +337,13 @@ fn the_tithe_taker_keeps_his_way_from_tick_to_tick_and_lets_it_go_once_killed() 
     ticks(&mut room, 2);
     assert!(!room.inert_ways.contains_key(&found), "let go");
 }
+
+#[test]
+fn the_garrison_keeps_a_nodes_own_places_beside_the_events_living_foes() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    let event = standing(&room).len();
+    assert!(event > 0);
+    assert_eq!(room.others_most(), crate::NODE_FOES_MOST + event, "the event's own never count against the garrison");
+}

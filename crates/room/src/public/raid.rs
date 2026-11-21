@@ -53,8 +53,8 @@ const THIRD: &[(u8, Rank)] =
     &[(COLLECTOR, Major), (COLLECTOR, Major), (ENFORCER, Major), (MARKSMAN, Elite), (REEVE, Elite)];
 const HEROIC_MORE: &[(u8, Rank)] = &[(ENFORCER, Elite), (MARKSMAN, Elite)];
 const FOURTH: &[(u8, Rank)] = &[(REEVE, Miniboss), (COLLECTOR, Major), (COLLECTOR, Major), (ENFORCER, Elite)];
-// Its fullest wave, with its Runners more and the tithe-taker, fits the room the zone keeps for its event.
-const _: () = assert!(THIRD.len() + HEROIC_MORE.len() + MORE_MOST + 1 <= super::EVENT_ROOM);
+// Its fullest wave, with its Runners more, leaves the tithe-taker a place in the room the zone keeps for its event.
+const _: () = assert!(THIRD.len() + HEROIC_MORE.len() + MORE_MOST < super::EVENT_ROOM);
 
 /// The tithe-taker on his round: where he goes in turn (each a store's place, or the approach last), whether each is
 /// a store he counts, how far along he is, the tick his count ends, and his pace.
@@ -68,8 +68,9 @@ pub(crate) struct Taker {
 }
 
 /// A raid as it plays: each store's middle and health (0 to 1), where a Collector stands at each, the approach, where
-/// its waves form out of sight beyond it, the raiders' home (the stores' middle; all three on the navmesh), the banners, the wave and how many come, the foes of the
-/// wave standing, the tick the next comes, each Collector's store, and the tithe-taker.
+/// its waves form out of sight beyond it, the raiders' home (the stores' middle; all three on the navmesh), the
+/// banners, the wave and how many come, the foes of the wave standing, the tick the next comes, each Collector's store,
+/// and the tithe-taker.
 #[derive(Debug)]
 pub(crate) struct Raid {
     pub stores: Vec<([f64; 3], f64)>,

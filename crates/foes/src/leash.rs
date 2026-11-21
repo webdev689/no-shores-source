@@ -1,7 +1,8 @@
 //! A garrison foe's walks home to its post. Once its target stands past its leash from its place at its post (LEASH,
 //! or one of its own), or off the ground the room's routes cover, it gives its fight up: its target, the blow it saw
-//! coming, its hunt and its search. Once a search finds no one, it lets go. Either way it goes back to its first phase, and walks back to its place, healing as
-//! it goes so it is whole as it arrives, turns to face as it was posted, and stands idle. Leashed, it heeds nothing it
+//! coming, its hunt and its search. Once a search finds no one, it lets go. Either way it goes back to its first phase,
+//! and walks back to its place, healing as it goes so it is whole as it arrives, turns to face as it was posted, and
+//! stands idle. Leashed, it heeds nothing it
 //! sees or hears on the way, so the one it gave up on cannot draw it out again at once; only a blow brings it back.
 //! After a search it heeds them as ever, and turns back to the fight only once they alert it. Falling back as its group
 //! gives ground, it runs to its new place, its target and its awareness kept, and fights again from there.

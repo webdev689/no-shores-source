@@ -58,16 +58,17 @@ middle of its stores, reaching 10 m past the farthest (20 m at least), with its 
 rectangle round each ground (the Fissure's circle and its growth's spot; the raid's circle, its approach and where its
 waves form) 16 m further, as far as a player shoots into the fight from, and joins them to the garrison's as parts of
 one mesh, with no way between them. Baking both grounds as Saltmere's real node files open, natively in a release
-build, measured once: 466 ms for Saltgrass Downs, 497 ms for Gullwing Vale, 550 ms for Driftwood Moors (240 to 263 ms
-with the rectangles 4 m further). In WebAssembly it is not measured.
+build, measured once: 466 ms for Saltgrass Downs, 497 ms for Gullwing Vale, 550 ms for Driftwood Moors. In
+WebAssembly it is not measured.
 
 **Its foes**, its growth and its tithe-taker among them, stand at the top of the island's band raised by the voyage's
-seas, at home round the event's ground, hunting the nearest player there. Each fights a player within the event's
-reach from its home (its ground's radius, or its farthest point past it: the growth's spot, the approach, where the
-raid's waves form) and 16 m more, on its mesh; past that it gives them up and walks home. A zone's room that holds
+seas, at home round the event's ground, hunting the nearest player there. Each fights a player within a leash of the
+event's reach (its ground's radius, or its farthest point from its middle past it: the growth's spot, the approach,
+where the raid's waves form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post
+at its store), on ground the room's mesh covers; past that it gives them up and walks back. A zone's room that holds
 events stands 40 foes alive at most and keeps 16 of them for its event (the most it stands at once: a Fissure's
 living foes short of a wave, its fullest wave and its growth or Warden); its garrison stands again, calls and arrives
-only within the other 24, as in any other node. The growth, the Warden and Marrow stand half their health more for
+only while the foes not of the event stay within 24, as in any other node. The growth, the Warden and Marrow stand half their health more for
 each player at the event beyond the first (the most seen at the Fissure; those on the raid's ground as Marrow comes).
 The Fissure's growth and the raid's tithe-taker the room moves itself: their brains are left be, so neither moves on
 its own nor strikes, and each walks the navmesh at its own pace, keeping its way from tick to tick; their statuses
@@ -203,6 +204,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
 - A plundered store keeps its whole stack's box, though the page draws it lower.
+- The fissure's spires are not in the navmesh: a Lattice foe's way may run into one.
 - The marks that never move (the stores, the banners, the approach) go in every snapshot: a land room's snapshot is
   one for every player, so sending them only when they change would need the welcome to carry them and the page to
   keep them; packed, they are 24 bytes each.
