@@ -171,8 +171,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     head) only outlined, dashed, so a passage through a range reads open. Its trees and bushes are green crowns.
   - **A patrol area's plan**: its layout's tracks cased and footpaths dashed, at their widths (4.5 m and 2.6 m), its
     buildings and pieces as a social space's, its plantings' trees and shrubs.
-  - **Places by name**, under their middles, else over them, where clear of the glyphs, the names before them and the
-    gauntlets (the hub's: the Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of
+  - **Places by name**, a glyph's width under their middles, else over them, else twice as far, where clear of the
+    glyphs, the names before them and the gauntlets (the hub's: the Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of
     the Arts, the Stair Yard and the Quay).
   - **The glyphs.** Each keeper is a coin in their sign's board colour carrying their sign's device: a star for the
     Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a

@@ -29,9 +29,11 @@ const SHEET: LandSheet = {
   ],
   places: [
     { name: 'Watch Court', at: [200, 120] },
-    // Two places whose names would fall on the court's: the first stands over its middle, the second has no room.
+    // Places whose names would fall on the court's: each takes the next room round its middle, the last has none.
     { name: 'Fountain', at: [205, 120] },
     { name: 'Well', at: [195, 121] },
+    { name: 'Pump', at: [200, 119] },
+    { name: 'Cistern', at: [201, 120] },
   ],
   marks: [
     { glyph: 'mage', at: [100, 100], word: 'The Mage' },
@@ -68,13 +70,17 @@ test('the plan says no keeper by name: each is a glyph, and the table says what 
   );
 });
 
-test("a place's name that would fall on one before it stands over its middle instead, else is left off", () => {
+test("a place's name that would fall on one before it stands over its middle, else farther off, else is left off", () => {
   const words = paint().texts();
-  assert.ok(words.includes('Fountain') && !words.includes('Well'));
+  assert.ok(
+    ['Fountain', 'Well', 'Pump'].every((name) => words.includes(name)),
+    `${words.join(', ')}`,
+  );
+  assert.ok(!words.includes('Cistern'));
 });
 
 test("a place's name keeps clear of the gauntlets: under a thumb it stands over its middle instead", () => {
-  // Watch Court's middle is at (400, 240): its name stands 12 below it, or 12 above.
+  // Watch Court's middle is at (400, 240): its name stands 18 below it, or 18 above.
   const thumb: Rect = { x: 300, y: 245, width: 200, height: 20 };
   const { calls } = paint({ covers: [thumb] });
   const court = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === 'Watch Court');
@@ -82,7 +88,7 @@ test("a place's name keeps clear of the gauntlets: under a thumb it stands over 
     .slice(0, court)
     .filter((call) => call.name === 'translate')
     .at(-1);
-  assert.deepEqual(placed?.args, [400, 228]);
+  assert.deepEqual(placed?.args, [400, 222]);
 });
 
 test('the table stands in a corner clear of the gauntlets, and keeps its corner while it is clear', () => {

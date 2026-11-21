@@ -49,8 +49,9 @@ const OVERHEAD = 'rgba(58, 40, 22, 0.55)';
 /** A tree's crown and a bush's, metres across, and the least, units. */
 const CROWN_M = { tree: 5, bush: 2.4 } as const;
 const LEAST_CROWN = 1.4;
-/** How far a place's name stands from its middle, units: under it, else over it. */
-const NAME_OFF = 12;
+/** How far a place's name stands from its middle, units, clear of a glyph standing there: under it, else over it,
+ *  else twice as far under or over. */
+const NAME_OFF = GLYPH_HALF + PORT_PX * 0.6 + 1;
 
 const overlaps = (one: Rect, two: Rect) =>
   one.x < two.x + two.width && two.x < one.x + one.width && one.y < two.y + two.height && two.y < one.y + one.height;
@@ -167,7 +168,8 @@ export function paintLand(
   for (const place of sheet.places) {
     const [x, y] = onMap(place.at);
     const [width, height] = [painter.measureText(place.name).width * scale, PORT_PX * 1.2 * scale];
-    const spot = [y + NAME_OFF * scale, y - NAME_OFF * scale]
+    const spot = [1, -1, 2, -2]
+      .map((away) => y + away * NAME_OFF * scale)
       .map((middle) => ({ middle, box: { x: x - width / 2, y: middle - height / 2, width, height } }))
       .find(({ box }) => ![...taken, ...painting.covers].some((other) => overlaps(box, other)));
     if (!spot) continue;
