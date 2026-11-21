@@ -85,7 +85,12 @@ export function pagePanel(id: string, most: number, children: readonly Child[]):
 /** A page still to come: its name, marked Later, and one line on what it will hold. */
 export function laterPage(name: string, said: string): Node {
   return pagePanel('page-later', 640, [
-    { gap: 12, alignY: 'center', padding: [0, 0, 10, 0], children: [words(name, 2, INK.word), laterChip()] },
+    {
+      gap: 12,
+      alignY: 'center',
+      padding: [0, 0, 10, 0],
+      children: [words(name, 2, INK.word), { role: 'chip', padding: [1, 8], children: [words('Later', 1, INK.word)] }],
+    },
     hintNode(said),
   ]);
 }
@@ -93,12 +98,14 @@ export function laterPage(name: string, said: string): Node {
 /** The Ship page: her name, then each part of her papers, those still to come marked Later. */
 export function shipPage(panel: ShipPanel | null, sizes: Sizes): Node {
   if (!panel)
-    return {
-      width: 'grow',
-      alignX: 'center',
-      padding: [48, 0],
-      children: [{ text: { words: 'Loading your ship…', size: sizes.name, colour: INK.faint } }],
-    };
+    return pagePanel('page-ship', 640, [
+      {
+        width: 'grow',
+        alignX: 'center',
+        padding: [48, 0],
+        children: [{ text: { words: 'Loading your ship…', size: sizes.name, colour: INK.faint } }],
+      },
+    ]);
   return pagePanel('page-ship', 640, [
     { padding: [0, 0, 10, 0], children: [words(panel.title, 2, INK.word)] },
     ...panel.parts.map((part, index): Node => ({
@@ -211,17 +218,24 @@ function creditsList(context: PlainContext, page: Page): Node {
         // Its licence by its full name and version, as the licence's own page gives it: CC BY 4.0, CC0 1.0.
         const version = /(\d\.\d)\/$/.exec(credit.licenceUrl)?.[1] ?? '';
         const licence = `${credit.licence.replace('-', ' ')} ${version}`.trim();
+        // The bullet stands apart, so the lines its words wrap onto start under them, as a list's do.
         return {
           width: 'grow',
-          wrap: true,
-          padding: [0, 0, 0, 18],
-          alignY: 'end',
+          padding: [0, 0, 0, 8],
           children: [
-            ...plain(`• "${credit.name}" by ${credit.author}, `),
-            linkNode(context, `credit-${index}-licence`, licence, credit.licenceUrl, page),
-            ...plain(', from '),
-            linkNode(context, `credit-${index}-source`, 'Freesound', credit.page, page),
-            ...plain(`. ${credit.changes}`),
+            { width: 10, children: [words('•', 1, INK.faint)] },
+            {
+              width: 'grow',
+              wrap: true,
+              alignY: 'end',
+              children: [
+                ...plain(`"${credit.name}" by ${credit.author}, `),
+                linkNode(context, `credit-${index}-licence`, licence, credit.licenceUrl, page),
+                ...plain(', from '),
+                linkNode(context, `credit-${index}-source`, 'Freesound', credit.page, page),
+                ...plain(`. ${credit.changes}`),
+              ],
+            },
           ],
         };
       }),
