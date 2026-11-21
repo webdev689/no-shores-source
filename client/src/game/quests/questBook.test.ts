@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { QuestState } from '../../network/gearMessages.ts';
-import { COUNTERS, QUESTS, goalNodes, linesBetween, markedGoal, talkAt, trackedOf } from './questBook.ts';
+import castFile from '../../../../content/story/cast.json' with { type: 'json' };
+import houses from '../../../../content/story/houses.json' with { type: 'json' };
+import welcome from '../../../../content/story/welcome.json' with { type: 'json' };
+import { castOf, scenesOf } from '../../speech/cast.ts';
+import { COUNTERS, QUESTS, beginOf, goalNodes, linesBetween, markedGoal, talkAt, trackedOf } from './questBook.ts';
 
 /** A player on quest `quest` (counted from 1) at task `task`, its goals' counts `counts`. */
 const onTask = (quest: number, task: number, counts: number[] = []): QuestState => ({
@@ -22,7 +26,7 @@ test('the tracker shows the quest walked: its name, its task, and each goal with
     task: 'Take back the storm-glass',
     steps: [
       { text: 'Tithe at Tithe Camp', done: false, count: 3 },
-      { text: 'Brineglass gathered', done: true },
+      { text: 'Brineglass to gather', done: true },
     ],
   });
   assert.deepEqual(trackedOf(onTask(1, 0, [1]))?.steps, [
@@ -63,13 +67,35 @@ test("the HUD marks the task's first unmet goal with a place; the held map the n
   assert.deepEqual(goalNodes(onTask(1, 0)), [], 'the opening names none');
 });
 
-test('a step says its scenes in order: a task done, then the next begun; a road begun; a road finished', () => {
+test('a step says its scenes in order: each task done, then the task now begun; a road finished; never a begin', () => {
   const walk = (quest: number, task: number, done: number[] = [0, 0, 0, 0]) => ({ quest, task, done });
   assert.deepEqual(linesBetween(walk(STORM, 0), walk(STORM, 1)), ['stormBeacon', 'stormCamp']);
   assert.deepEqual(linesBetween(walk(STORM, 0), walk(STORM, 2)), ['stormBeacon', 'stormGlass'], 'two at once');
   assert.deepEqual(linesBetween(walk(STORM, 2), walk(STORM, 2)), [], 'a count alone says nothing');
-  assert.deepEqual(linesBetween(walk(1, 1), walk(STORM, 0, [1, 0, 0, 0])), ['stormBegin'], 'pledged at the chapel');
+  assert.deepEqual(linesBetween(walk(1, 1), walk(STORM, 0, [1, 0, 0, 0])), [], 'pledged: the begin is the watch’s');
   assert.deepEqual(linesBetween(walk(STORM, 9), walk(0, 0, [1, 1, 0, 0])), ['stormHome'], 'the road done');
   assert.deepEqual(linesBetween(walk(3, 2), walk(STORM, 5)), [], 'a switch back to a road part walked');
-  assert.deepEqual(linesBetween(walk(STORM, 5), walk(3, 0)), ['lampBegin'], 'a switch to a road unwalked');
+  const back = linesBetween(walk(3, 1, [1, 0, 0, 0]), walk(STORM, 0, [1, 0, 0, 0]));
+  assert.deepEqual(back, [], 'a switch back to a road still on its first task');
+  assert.deepEqual(beginOf(QUESTS[STORM - 1]!), ['stormBegin']);
+});
+
+test('no speaker says more than two lines in a row where one scene follows another (Dialogue rule 2)', () => {
+  const cast = castOf(castFile);
+  const scenes = { ...scenesOf(welcome, cast), ...scenesOf(houses, cast) };
+  const joined = (names: readonly (string | undefined)[]) =>
+    names.flatMap((name) => (name === undefined ? [] : (scenes[name] ?? assert.fail(`${name} is not a scene`))));
+  const joins: (readonly (string | undefined)[])[] = [['welcomeLamplighters', 'houseBegin']];
+  for (const quest of QUESTS) {
+    joins.push(beginOf(quest));
+    quest.tasks.forEach((task, index) => joins.push([task.end, quest.tasks[index + 1]?.start]));
+  }
+  for (const names of joins) {
+    let [run, last] = [0, ''];
+    for (const line of joined(names)) {
+      run = line.who === last ? run + 1 : 1;
+      last = line.who;
+      assert.ok(run <= 2, `${names.filter(Boolean).join(' then ')}: ${line.who} says ${run} lines in a row`);
+    }
+  }
 });

@@ -10,7 +10,7 @@ import { useAt } from '../footGear.ts';
 import { OPEN_AT } from '../gearScreen.ts';
 import type { StationInfo } from '../nodes.ts';
 import { Quests } from './quests.ts';
-import { SETTLE_MS } from './questWatch.ts';
+import { BEGUN_KEY, SETTLE_MS } from './questWatch.ts';
 
 const CAST = castOf(cast);
 const SCENES = scenesOf(houses, CAST);
@@ -33,6 +33,7 @@ function gear(
 /** The roads with a dialogue box that says each scene's first line and holds it until `finish`, on a clock `now`. */
 function roads() {
   const said: string[] = [];
+  const kept = new Map<string, string>();
   let finish: () => void = () => undefined;
   let now = 0;
   const voice = {
@@ -42,8 +43,9 @@ function roads() {
     },
     frame: () => undefined,
   };
+  const keeping = { getItem: (key: string) => kept.get(key) ?? null, setItem: kept.set.bind(kept) };
   const quests = new Quests(
-    { cast: CAST, scenes: SCENES },
+    { cast: CAST, scenes: SCENES, kept: keeping, account: () => 'arlo-fan' },
     () => voice,
     () => now,
   );
@@ -52,7 +54,7 @@ function roads() {
     quests.frame(0.1, past, held);
     await Promise.resolve();
   };
-  return { quests, said, frame, finish: () => finish(), clock: (millis: number) => (now = millis) };
+  return { quests, said, kept, frame, finish: () => finish(), clock: (millis: number) => (now = millis) };
 }
 
 /** The first line of `scene`, as the box says it. */
@@ -121,14 +123,16 @@ test("lines are said one scene after another: a keeper's scene, then what the ro
   assert.deepEqual(said, [opening('houseVeil'), opening('stormBegin')]);
 });
 
-test('no scene starts while a screen holds the view', async () => {
-  const { quests, said, frame } = roads();
+test('no scene starts while a screen holds the view; a begin said is kept in the browser for the account', async () => {
+  const { quests, said, frame, clock, kept } = roads();
   quests.hear(gear(1, 0));
   await frame(false);
+  clock(SETTLE_MS + 1);
   await frame(true, true);
   assert.deepEqual(said, [], 'the welcome given, but the menu is up');
   await frame();
   assert.deepEqual(said, [opening('houseBegin')]);
+  assert.equal(kept.get(`${BEGUN_KEY}.arlo-fan`), 'house');
 });
 
 test('nothing shows until the story and the welcome are past: no tracker, offer, mark or node', async () => {

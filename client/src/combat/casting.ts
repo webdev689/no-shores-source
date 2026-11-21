@@ -1,6 +1,7 @@
-// Casting from the keyboard: the Anima on R, the Tenets on Q and G, each cast only once the room's word says it is
-// ready and the player may act; Dusk Daggers aimed while its key is held, a ring on the ground where it will whirl,
-// and cast as the key is let go. The room decides: a cast it refuses costs nothing, and the bar shows its word.
+// Casting from the keyboard: the Anima on R, the Tenets on Q and G, each cast only once its road has earned it, the
+// room's word says it is ready and the player may act; Dusk Daggers aimed while its key is held, a ring on the ground
+// where it will whirl, and cast as the key is let go. The room decides: a cast it refuses costs nothing, and the bar
+// shows its word.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import type { GlowElement } from '../elementGlow.ts';
 import { type ArtState, type CastAsk, SPELLS, earnedOf, spellNumber } from '../network/artMessages.ts';
@@ -139,7 +140,11 @@ export class CastKeys {
     const aimed = { state, own, yaw, mark: markOf(), element, floorAt };
     if (this.aiming) return this.aim(controls, aimed);
     const shares = [abilities.animaShare, ...abilities.tenets];
-    const ability = ABILITY_ACTIONS.findIndex((action, index) => controls.pressed(action) && (shares[index] ?? 0) >= 1);
+    // An ability its road has not earned is neither sent nor aimed: the room would refuse it.
+    const earned = (index: number) => ((abilities.earned ?? 0b111) & (1 << index)) !== 0;
+    const ability = ABILITY_ACTIONS.findIndex(
+      (action, index) => controls.pressed(action) && (shares[index] ?? 0) >= 1 && earned(index),
+    );
     if (ability < 0 || this.sent) return { cast: null, ring: null };
     const spell = spellNumber(art.id, ability);
     if (spell === SPELLS.duskDaggers) {

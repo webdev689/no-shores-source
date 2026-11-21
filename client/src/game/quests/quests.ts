@@ -36,7 +36,7 @@ const MARK_PX = 28;
 const MARK_EDGES = { top: 96, foot: 160 } as const;
 
 export class Quests {
-  private readonly watch = new QuestWatch();
+  private readonly watch: QuestWatch;
   private readonly voice: () => QuestVoice;
   private readonly cast: Cast;
   private readonly scenes: Readonly<Record<string, readonly Line[]>>;
@@ -52,12 +52,20 @@ export class Quests {
   /** The talk goals asked of the room and said, by quest, task and goal, so a second press says them no more. */
   private readonly asked = new Set<string>();
 
+  /** The roads with their lines (`parts`), the browser's keeping of the begins said for the account `parts.account`
+   *  names, a dialogue box made when first wanted, and a clock in milliseconds. */
   constructor(
-    parts: { readonly cast: Cast; readonly scenes: Readonly<Record<string, readonly Line[]>> },
+    parts: {
+      readonly cast: Cast;
+      readonly scenes: Readonly<Record<string, readonly Line[]>>;
+      readonly kept?: Pick<Storage, 'getItem' | 'setItem'>;
+      readonly account?: () => string | null;
+    },
     voice: () => QuestVoice,
     now: () => number = () => performance.now(),
   ) {
     [this.cast, this.scenes, this.voice, this.now] = [parts.cast, parts.scenes, voice, now];
+    this.watch = new QuestWatch(parts.kept ?? null, parts.account);
   }
 
   /** The room's word on the player's gear, wherever they are: none, as a room just joined has given, keeps the last
@@ -167,8 +175,10 @@ export class Quests {
   }
 }
 
-/** The roads on the game's page: their lines read from content/story/, said in a dialogue box of their own. */
-export function questsOn(stack: Stack): Quests {
+/** The roads on the game's page: their lines read from content/story/, said in a dialogue box of their own, their
+ *  begins said kept in the browser for the account `account` names. */
+export function questsOn(stack: Stack, account: () => string | null): Quests {
   const read = castOf(cast);
-  return new Quests({ cast: read, scenes: scenesOf(houses, read) }, () => new DialogueBox(stack, worldOutput));
+  const parts = { cast: read, scenes: scenesOf(houses, read), kept: localStorage, account };
+  return new Quests(parts, () => new DialogueBox(stack, worldOutput));
 }

@@ -92,13 +92,12 @@ export interface NodePlace {
 /** How far a run's place reaches round its mouth, metres, as the bake has it. */
 export const RUN_REACH_M = 25;
 
-/** A layout's places, as its node file names them for the rules: each area within its radius, each run within
- *  `RUN_REACH_M` of its mouth. */
+/** A layout's places, as its node file names them for the rules: each area within its radius, then each run within
+ *  `RUN_REACH_M` of its mouth, but a run whose name an area has already (Moorhold is both), which the area keeps. */
 export function placesOf(layout: Pick<NodeLayout, 'areas' | 'runs'>): NodePlace[] {
-  return [
-    ...layout.areas.map(({ name, at, radius }) => ({ name, at, radius })),
-    ...(layout.runs ?? []).map(({ name, mouth }) => ({ name, at: mouth, radius: RUN_REACH_M })),
-  ];
+  const areas = layout.areas.map(({ name, at, radius }) => ({ name, at, radius }));
+  const runs = (layout.runs ?? []).filter((run) => !areas.some((area) => area.name === run.name));
+  return [...areas, ...runs.map(({ name, mouth }) => ({ name, at: mouth, radius: RUN_REACH_M }))];
 }
 
 /** A node as the game holds it: its id, its section, its spawns, its section's middle and its places. */

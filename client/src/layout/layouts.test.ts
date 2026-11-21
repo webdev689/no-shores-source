@@ -75,3 +75,18 @@ test("a layout's places are its areas at their reach and its runs at their mouth
   assert.deepEqual(laidNodes([drawn], [laid])[0]?.places, places);
   assert.equal(laidNodes([{ ...drawn, id: 'unlaid' }], [laid])[0]?.places, undefined, 'a node not laid names none');
 });
+
+test('a run whose name an area has already is left to the area, as the bake leaves it (Moorhold is both)', () => {
+  const moors: NodeLayout = {
+    ...square('driftwood-moors', 0, 0),
+    areas: [{ kind: 'keep', name: 'Moorhold', at: [10, 10], radius: 40 }],
+    runs: [
+      { name: 'Moorhold', kind: 'keep', place: 'beyond', mouth: [60, 10], line: [], beats: [], door: [90, 10] },
+      { name: 'The Wreck Stair', kind: 'ledge', place: 'rock', mouth: [-30, 0], line: [], beats: [], door: [-60, 0] },
+    ],
+  };
+  assert.deepEqual(placesOf(moors), [
+    { name: 'Moorhold', at: [10, 10], radius: 40 },
+    { name: 'The Wreck Stair', at: [-30, 0], radius: RUN_REACH_M },
+  ]);
+});

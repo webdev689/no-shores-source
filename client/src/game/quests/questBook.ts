@@ -106,9 +106,8 @@ export interface Walked {
 }
 
 /** The scenes said as a character goes from `before` to `after`, in order: on the same quest, the end of each task
- *  done and the start of the task now; on another, the end of the last task of the one finished, and the new one's
- *  `begin` and first task's start where it is walked from its beginning. A switch back to a road part walked says
- *  nothing: it was said before. */
+ *  done and the start of the task now; on another, the end of the last task of the one finished. A quest's `begin` is
+ *  never among them: whether it was said before is the browser's to know (questWatch.ts). */
 export function linesBetween(before: Walked, after: Walked): string[] {
   const quest = QUESTS[after.quest - 1];
   if (before.quest === after.quest) {
@@ -118,10 +117,10 @@ export function linesBetween(before: Walked, after: Walked): string[] {
   }
   const left = QUESTS[before.quest - 1];
   const finished = left && after.done[before.quest - 1] === 1 && before.done[before.quest - 1] !== 1;
-  const ended = finished ? [left.tasks[before.task]?.end] : [];
-  const begun = quest && after.task === 0 ? [quest.begin, quest.tasks[0]?.start] : [];
-  return [...ended, ...begun].filter((scene) => scene !== undefined);
+  return finished ? [left.tasks[before.task]?.end].filter((scene) => scene !== undefined) : [];
 }
 
-/** The opening's place in the file, counted from 1: it begins once the welcome is past. */
-export const OPENING = 1;
+/** The scenes a quest begins with: its `begin`, then its first task's start. */
+export function beginOf(quest: QuestLine): string[] {
+  return [quest.begin, quest.tasks[0]?.start].filter((scene) => scene !== undefined);
+}

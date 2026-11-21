@@ -2,37 +2,51 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearState } from '../../network/gearMessages.ts';
 import { standing, state } from '../../network/gearForTests.ts';
-import { QuestWatch, SETTLE_MS } from './questWatch.ts';
+import { BEGUN_KEY, QuestWatch, SETTLE_MS } from './questWatch.ts';
 
-/** A character's gear on quest `quest` at task `task`: pledged to `pledge`, each quest done by `done`, each Art's road
- *  earned by `earned` and its fragment choices waiting by `choices`. */
+/** A character's gear on quest `quest` at task `task`: that task's counts, pledged to `pledge`, each quest done by
+ *  `done`, each Art's road earned by `earned` and its fragment choices waiting by `choices`. */
 function gear(
   quest: number,
   task: number,
-  more: { pledge?: number; done?: number[]; earned?: number[]; choices?: number[] } = {},
+  more: { counts?: number[]; pledge?: number; done?: number[]; earned?: number[]; choices?: number[] } = {},
 ): GearState {
-  const { pledge = 0, done = [0, 0, 0, 0], earned = [0, 0, 0], choices = [0, 0, 0] } = more;
+  const { counts = [], pledge = 0, done = [0, 0, 0, 0], earned = [0, 0, 0], choices = [0, 0, 0] } = more;
   return state({
     standing: standing({ pledge }),
     arts: { art: 0, cores: [], anima: 0, tenets: [0, 0], earned },
-    quest: { quest, task, counts: [], done, choices, at: null },
+    quest: { quest, task, counts, done, choices, at: null },
   });
 }
 
-/** A watch past its first word, which was `first`, at `now` milliseconds. */
+/** A browser's keeping, as a map. */
+function browser() {
+  const kept = new Map<string, string>();
+  return { kept, keeping: { getItem: (key: string) => kept.get(key) ?? null, setItem: kept.set.bind(kept) } };
+}
+
+/** A watch past its first word and its first settled word, both `first`, at `now` milliseconds. */
 function settled(first: GearState): { watch: QuestWatch; now: number } {
   const watch = new QuestWatch();
   watch.look(first, true, 0);
-  return { watch, now: SETTLE_MS + 1 };
+  watch.look(first, true, SETTLE_MS + 1);
+  return { watch, now: SETTLE_MS + 2 };
 }
 
 const STORM = 2;
+const LAMP = 3;
 
 test('a task done says its end, then the next task’s start, in order', () => {
-  const { watch, now } = settled(gear(STORM, 0, { pledge: 1 }));
-  assert.deepEqual(watch.look(gear(STORM, 0, { pledge: 1 }), true, now).scenes, [], 'unchanged, nothing');
-  assert.deepEqual(watch.look(gear(STORM, 1, { pledge: 1 }), true, now).scenes, ['stormBeacon', 'stormCamp']);
-  assert.deepEqual(watch.look(gear(STORM, 1, { pledge: 1 }), true, now + 1).scenes, [], 'said once');
+  const { watch, now } = settled(gear(STORM, 1, { pledge: 1 }));
+  assert.deepEqual(watch.look(gear(STORM, 1, { pledge: 1 }), true, now).scenes, [], 'unchanged, nothing');
+  assert.deepEqual(watch.look(gear(STORM, 2, { pledge: 1 }), true, now).scenes, ['stormGlass']);
+  assert.deepEqual(watch.look(gear(STORM, 5, { pledge: 1 }), true, now).scenes, [
+    'stormCalled',
+    'stormMill',
+    'stormLedger',
+    'stormSea',
+  ]);
+  assert.deepEqual(watch.look(gear(STORM, 5, { pledge: 1 }), true, now + 1).scenes, [], 'said once');
 });
 
 test('a page that loads mid-road says nothing it said before: its first word, and what settles after it', () => {
@@ -55,25 +69,79 @@ test("a room joined later, holding its starting character first, says nothing of
   const { watch, now } = settled(own);
   assert.deepEqual(watch.look(gear(1, 0), true, now), { scenes: [], toasts: [] }, 'behind: no pledge, nothing earned');
   assert.deepEqual(watch.look(own, true, now + 10), { scenes: [], toasts: [] }, 'the same as before it');
-  // A new character's placeholder is the same as theirs, and on the opening's first task the same task alone moves.
-  const fresh = settled(gear(1, 1));
-  assert.deepEqual(fresh.watch.look(gear(1, 0), true, fresh.now).scenes, [], 'a task gone back');
-  assert.deepEqual(fresh.watch.look(gear(1, 1), true, fresh.now).scenes, []);
+  const choosing = settled(gear(1, 1));
+  assert.deepEqual(choosing.watch.look(gear(1, 0), true, choosing.now).scenes, [], 'a task gone back');
+  assert.deepEqual(choosing.watch.look(gear(1, 1), true, choosing.now).scenes, []);
 });
 
-test('the opening begins as the welcome passes, on its first task; never while the story or the welcome holds', () => {
+test('a road begins as it is pledged to, once; a switch back to a road on its first task says nothing again', () => {
+  const { watch, now } = settled(gear(1, 1));
+  const pledged = (pledge: number, quest: number) => gear(quest, 0, { pledge, done: [1, 0, 0, 0] });
+  assert.deepEqual(watch.look(pledged(1, STORM), true, now).scenes, ['stormBegin'], 'pledged at the chapel');
+  assert.deepEqual(watch.look(pledged(2, LAMP), true, now).scenes, ['lampBegin'], 'a road not walked');
+  assert.deepEqual(watch.look(pledged(1, STORM), true, now).scenes, [], 'back to the Stormcallers, still on task 0');
+});
+
+test('the opening begins once the welcome passes; never while the story or the welcome holds', () => {
   const watch = new QuestWatch();
   assert.deepEqual(watch.look(gear(1, 0), false, 0).scenes, [], 'the welcome plays');
-  assert.deepEqual(watch.look(gear(1, 0), false, SETTLE_MS + 1).scenes, []);
+  assert.deepEqual(watch.look(gear(1, 0), false, SETTLE_MS + 1).scenes, [], 'settled, held');
   assert.deepEqual(watch.look(gear(1, 0), true, SETTLE_MS + 2).scenes, ['houseBegin'], 'the welcome given');
   assert.deepEqual(watch.look(gear(1, 0), true, SETTLE_MS + 3).scenes, [], 'once');
-  const loaded = new QuestWatch();
-  assert.deepEqual(loaded.look(gear(1, 0), true, 0).scenes, [], 'loaded with the welcome past: said before');
   const pledged = new QuestWatch();
   pledged.look(gear(STORM, 2, { pledge: 1 }), false, 0);
-  assert.deepEqual(pledged.look(gear(STORM, 2, { pledge: 1 }), true, 1).scenes, [], 'on a road already');
-  const held = settled(gear(STORM, 0, { pledge: 1 }));
-  assert.deepEqual(held.watch.look(gear(STORM, 1, { pledge: 1 }), false, held.now).scenes, [], 'unsaid while it holds');
+  pledged.look(gear(STORM, 2, { pledge: 1 }), false, SETTLE_MS + 1);
+  assert.deepEqual(pledged.look(gear(STORM, 2, { pledge: 1 }), true, SETTLE_MS + 2).scenes, [], 'on a road already');
+});
+
+test('a pledge made during the welcome is said once it passes, and the opening it left never is', () => {
+  const watch = new QuestWatch();
+  watch.look(gear(1, 0), false, 0);
+  watch.look(gear(1, 0), false, 20_000);
+  // Pledged at the Stormcallers' stop of the welcome, their counter open.
+  const pledged = gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0] });
+  assert.deepEqual(watch.look(pledged, false, 30_000).scenes, [], 'held while the welcome holds');
+  assert.deepEqual(watch.look(pledged, true, 40_000).scenes, ['stormBegin'], 'said as it ends');
+  assert.deepEqual(watch.look(pledged, true, 40_001).scenes, []);
+  // A task done during the welcome waits the same way.
+  const { watch: walking, now } = settled(gear(STORM, 0, { pledge: 1 }));
+  walking.look(gear(STORM, 1, { pledge: 1 }), false, now);
+  assert.deepEqual(walking.look(gear(STORM, 1, { pledge: 1 }), true, now + 1).scenes, ['stormBeacon', 'stormCamp']);
+});
+
+test('a character from before the roads hears its road begin once for its account, on task 0 with nothing counted', () => {
+  const { kept, keeping } = browser();
+  let account: string | null = 'arlo-fan';
+  const first = (look: GearState) => {
+    const watch = new QuestWatch(keeping, () => account);
+    watch.look(look, true, 0);
+    return watch.look(look, true, SETTLE_MS + 1).scenes;
+  };
+  const pledged = gear(STORM, 0, { pledge: 1 });
+  assert.deepEqual(first(pledged), ['stormBegin'], 'pledged before the roads, on their first task');
+  assert.equal(kept.get(`${BEGUN_KEY}.arlo-fan`), 'stormcallers', 'kept for the account');
+  assert.deepEqual(first(pledged), [], 'a page loaded again says it no more');
+  account = 'another';
+  assert.deepEqual(first(pledged), ['stormBegin'], 'another account in the same browser hears its own');
+  assert.deepEqual(first(gear(1, 0)), ['houseBegin'], 'unpledged, the opening');
+  assert.equal(kept.get(`${BEGUN_KEY}.another`), 'stormcallers,house');
+  account = 'third';
+  assert.deepEqual(first(gear(STORM, 0, { pledge: 1, counts: [1] })), [], 'something counted: begun already');
+  assert.deepEqual(first(gear(STORM, 1, { pledge: 1 })), [], 'past its first task');
+});
+
+test('a browser that keeps nothing says a begin once in the page', () => {
+  const refuse = () => {
+    throw new Error('this browser keeps nothing');
+  };
+  const watch = new QuestWatch({ getItem: refuse, setItem: refuse }, () => 'arlo-fan');
+  const now = SETTLE_MS + 1;
+  watch.look(gear(1, 1), true, 0);
+  watch.look(gear(1, 1), true, now);
+  const pledged = gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0] });
+  assert.deepEqual(watch.look(pledged, true, now).scenes, ['stormBegin']);
+  assert.deepEqual(watch.look(gear(LAMP, 0, { pledge: 2, done: [1, 0, 0, 0] }), true, now).scenes, ['lampBegin']);
+  assert.deepEqual(watch.look(pledged, true, now).scenes, [], 'kept in the page');
 });
 
 test('what a road gives is toasted: its Art, each Tenet, and a fragment to choose', () => {

@@ -76,7 +76,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     return isle === null ? land : land === null ? isle : Math.max(isle, land);
   };
   /** The houses' roads: their tracker, lines, marks and offers at the keepers' counters. */
-  const quests = questsOn(stack);
+  const quests = questsOn(stack, () => link?.account?.id ?? null);
   const footContext: FootContext = {
     movement,
     land,
