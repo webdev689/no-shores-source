@@ -68,6 +68,34 @@
           "start": "stormCamp",
           "goals": [
             {
+              "kind": "puzzle",
+              "node": "saltgrass-downs",
+              "place": "The Tithe Barns",
+              "points": [
+                {
+                  "name": "The hay barn",
+                  "bearing": 65,
+                  "at": 12
+                },
+                {
+                  "name": "The long barn",
+                  "bearing": 125,
+                  "at": 13
+                },
+                {
+                  "name": "The cart shed",
+                  "bearing": 185,
+                  "at": 11
+                },
+                {
+                  "name": "The threshing floor",
+                  "bearing": 240,
+                  "at": 13
+                }
+              ],
+              "text": "Search the Tithe Barns"
+            },
+            {
               "kind": "kill",
               "node": "saltgrass-downs",
               "place": "Tithe Camp",
@@ -131,7 +159,7 @@
                 ],
                 [
                   [
-                    "Collector",
+                    "Crossbowman",
                     "Minor"
                   ],
                   [
@@ -156,6 +184,7 @@
         {
           "id": "pell-trail",
           "task": "Find Pell's trail",
+          "start": "stormTrail",
           "goals": [
             {
               "kind": "cast",
@@ -164,36 +193,27 @@
             },
             {
               "kind": "reach",
-              "node": "gullwing-vale",
-              "place": "Weir Mill",
-              "text": "Weir Mill, in the Gullwing Vale"
+              "node": "driftwood-moors",
+              "place": "Grey Point Light",
+              "text": "Grey Point Light, on the Driftwood Moors"
             }
           ],
           "reward": {
             "tenet": 1
           },
-          "end": "stormMill"
+          "end": "stormQuicken"
         },
         {
-          "id": "catch-tally-riders",
-          "task": "Catch the tally riders",
+          "id": "run-down-moor-camp",
+          "was": [
+            "catch-tally-riders"
+          ],
+          "task": "Run down the Tithe on the Moors",
           "goals": [
             {
-              "kind": "race",
-              "node": "gullwing-vale",
-              "checkpoints": [
-                "Weir Mill",
-                "Gullwing",
-                "The Water Meadows"
-              ],
-              "seconds": 270,
-              "late": "stormSlow",
-              "text": "Run the river road before they are gone"
-            },
-            {
               "kind": "kill",
-              "node": "gullwing-vale",
-              "place": "The Water Meadows",
+              "node": "driftwood-moors",
+              "place": "Tithe Camp",
               "count": 5,
               "spawn": [
                 [
@@ -205,19 +225,19 @@
                   "Minor"
                 ],
                 [
-                  "Runner",
+                  "Collector",
                   "Minor"
-                ],
-                [
-                  "Runner",
-                  "Major"
                 ],
                 [
                   "Crossbowman",
                   "Minor"
+                ],
+                [
+                  "Enforcer",
+                  "Major"
                 ]
               ],
-              "text": "Riders at the Water Meadows"
+              "text": "Tithe at the camp on the Moors"
             },
             {
               "kind": "cast",
@@ -262,40 +282,53 @@
           "end": "stormRods"
         },
         {
-          "id": "light-grey-point",
-          "task": "Light at Grey Point",
-          "start": "stormPoint",
+          "id": "race-river-road",
+          "was": [
+            "light-grey-point"
+          ],
+          "task": "Catch the tally riders",
+          "start": "stormRiders",
           "goals": [
             {
-              "kind": "reach",
-              "node": "driftwood-moors",
-              "place": "Grey Point Light",
-              "text": "Grey Point Light, on the Driftwood Moors"
+              "kind": "race",
+              "node": "gullwing-vale",
+              "checkpoints": [
+                "Weir Mill",
+                "Gullwing",
+                "The Water Meadows"
+              ],
+              "seconds": 270,
+              "late": "stormSlow",
+              "text": "Run the river road from Weir Mill"
             },
             {
               "kind": "kill",
-              "node": "driftwood-moors",
-              "place": "Grey Point Light",
-              "count": 4,
+              "node": "gullwing-vale",
+              "place": "The Water Meadows",
+              "count": 5,
               "spawn": [
                 [
-                  "Marksman",
-                  "Elite"
+                  "Runner",
+                  "Minor"
                 ],
                 [
-                  "Enforcer",
+                  "Runner",
+                  "Minor"
+                ],
+                [
+                  "Runner",
+                  "Minor"
+                ],
+                [
+                  "Runner",
                   "Major"
                 ],
                 [
-                  "Collector",
-                  "Minor"
-                ],
-                [
-                  "Collector",
+                  "Crossbowman",
                   "Minor"
                 ]
               ],
-              "text": "Pell's guards"
+              "text": "Riders at the Water Meadows"
             }
           ],
           "reward": {
@@ -310,14 +343,9 @@
           "goals": [
             {
               "kind": "puzzle",
-              "node": "driftwood-moors",
-              "place": "Grey Point Light",
+              "node": "gullwing-vale",
+              "place": "The Old Stones",
               "points": [
-                {
-                  "name": "The west rod",
-                  "bearing": 270,
-                  "at": 10
-                },
                 {
                   "name": "The north rod",
                   "bearing": 0,
@@ -332,13 +360,18 @@
                   "name": "The south rod",
                   "bearing": 180,
                   "at": 10
+                },
+                {
+                  "name": "The west rod",
+                  "bearing": 270,
+                  "at": 10
                 }
               ],
               "order": [
+                3,
                 0,
                 1,
-                2,
-                3
+                2
               ],
               "wrong": "stormWrong",
               "text": "Strike the rods as the storm walks"
@@ -368,6 +401,7 @@
               "types": [
                 "High Assessor Corvane"
               ],
+              "scene": "stormFalls",
               "text": "High Assessor Corvane"
             }
           ],
@@ -401,26 +435,99 @@
       "tasks": [
         {
           "id": "walk-strand",
-          "task": "Walk the strand",
+          "task": "Walk the shingle",
           "goals": [
             {
               "kind": "reach",
-              "node": "driftwood-moors",
-              "place": "The Saltbreaker Hulks",
-              "text": "The Saltbreaker Hulks, on the Driftwood Moors"
+              "node": "saltgrass-downs",
+              "place": "Shingle Landing",
+              "text": "Shingle Landing, on the Saltgrass Downs"
             }
           ],
-          "end": "lampHulks"
+          "end": "lampShingle"
         },
         {
-          "id": "put-out-false",
-          "task": "Put out the false lights",
-          "start": "lampGraves",
+          "id": "bring-tobin-fold",
+          "was": [
+            "put-out-false"
+          ],
+          "task": "Bring Tobin to Ewe Fold",
+          "start": "lampFold",
           "goals": [
             {
+              "kind": "escort",
+              "node": "saltgrass-downs",
+              "from": "Shingle Landing",
+              "to": "Ewe Fold",
+              "who": "tobin",
+              "near": 15,
+              "greet": "lampWalk",
+              "ambush": [
+                [
+                  "Skirmisher",
+                  "Minor"
+                ],
+                [
+                  "Skirmisher",
+                  "Minor"
+                ],
+                [
+                  "Archer",
+                  "Minor"
+                ]
+              ],
+              "shout": "lampAmbush",
+              "text": "Keep Tobin close as he walks"
+            },
+            {
+              "kind": "reach",
+              "node": "saltgrass-downs",
+              "place": "The Barrow Field",
+              "scene": "lampBarrows",
+              "text": "The Barrow Field, on the way"
+            }
+          ],
+          "end": "lampSafe"
+        },
+        {
+          "id": "douse-false-lights",
+          "was": [
+            "bring-tobin-moorend"
+          ],
+          "task": "Douse the false lights",
+          "goals": [
+            {
+              "kind": "puzzle",
+              "node": "saltgrass-downs",
+              "place": "The Barrow Field",
+              "points": [
+                {
+                  "name": "A lantern on the long barrow",
+                  "bearing": 35,
+                  "at": 14
+                },
+                {
+                  "name": "A lantern on the round barrow",
+                  "bearing": 150,
+                  "at": 12
+                },
+                {
+                  "name": "A lantern on the stone row",
+                  "bearing": 250,
+                  "at": 16
+                },
+                {
+                  "name": "A lantern on the old cairn",
+                  "bearing": 320,
+                  "at": 11
+                }
+              ],
+              "text": "Douse every false light"
+            },
+            {
               "kind": "kill",
-              "node": "driftwood-moors",
-              "place": "Drowned Men's Graves",
+              "node": "saltgrass-downs",
+              "place": "The Barrow Field",
               "count": 5,
               "spawn": [
                 [
@@ -444,43 +551,7 @@
                   "Major"
                 ]
               ],
-              "text": "Wreckers at Drowned Men's Graves"
-            },
-            {
-              "kind": "gather",
-              "count": 2,
-              "text": "Brineglass to gather for a lens"
-            }
-          ],
-          "end": "lampDoused"
-        },
-        {
-          "id": "bring-tobin-moorend",
-          "task": "Bring Tobin to Moorend",
-          "goals": [
-            {
-              "kind": "escort",
-              "node": "driftwood-moors",
-              "from": "Drowned Men's Graves",
-              "to": "Moorend",
-              "who": "tobin",
-              "near": 15,
-              "ambush": [
-                [
-                  "Skirmisher",
-                  "Minor"
-                ],
-                [
-                  "Skirmisher",
-                  "Minor"
-                ],
-                [
-                  "Archer",
-                  "Minor"
-                ]
-              ],
-              "shout": "lampAmbush",
-              "text": "Keep Tobin close as he walks"
+              "text": "Wreckers at the Barrow Field"
             }
           ],
           "reward": {
@@ -489,9 +560,11 @@
           "end": "lampSunwell"
         },
         {
-          "id": "mend-hamlet",
-          "task": "Mend the hamlet",
-          "start": "lampHamlet",
+          "id": "carry-light-vale",
+          "was": [
+            "mend-hamlet"
+          ],
+          "task": "Carry the light to the Vale",
           "goals": [
             {
               "kind": "cast",
@@ -500,25 +573,27 @@
             },
             {
               "kind": "reach",
-              "node": "saltgrass-downs",
-              "place": "Saltgrass",
-              "text": "Saltgrass, on the Saltgrass Downs"
+              "node": "gullwing-vale",
+              "place": "Gullwing",
+              "text": "Gullwing, in the Gullwing Vale"
             }
           ],
           "reward": {
             "tenet": 1
           },
-          "end": "lampSaltgrass"
+          "end": "lampMend"
         },
         {
-          "id": "hold-saltgrass",
-          "task": "Hold Saltgrass",
-          "start": "lampBarrows",
+          "id": "hold-gullwing",
+          "was": [
+            "hold-saltgrass"
+          ],
+          "task": "Hold Gullwing",
           "goals": [
             {
               "kind": "defend",
-              "node": "saltgrass-downs",
-              "place": "Saltgrass",
+              "node": "gullwing-vale",
+              "place": "Gullwing",
               "ward": "The wounded",
               "waves": [
                 [
@@ -537,16 +612,16 @@
                 ],
                 [
                   [
-                    "Collector",
-                    "Minor"
-                  ],
-                  [
-                    "Crossbowman",
-                    "Minor"
-                  ],
-                  [
                     "Enforcer",
                     "Major"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
                   ]
                 ]
               ],
@@ -557,10 +632,10 @@
               "kind": "cast",
               "spell": "Mend",
               "count": 2,
-              "text": "Mend the wounded"
+              "text": "Mend your wounds"
             }
           ],
-          "end": "lampCoin"
+          "end": "lampPay"
         },
         {
           "id": "find-wreckers-ship",
@@ -595,20 +670,24 @@
           "end": "lampLens"
         },
         {
-          "id": "free-old-stones",
-          "task": "Free the Old Stones",
-          "start": "lampStones",
+          "id": "find-lens-buyer",
+          "was": [
+            "free-old-stones"
+          ],
+          "task": "Find the lens's buyer",
+          "start": "lampHulks",
           "goals": [
             {
               "kind": "reach",
-              "node": "gullwing-vale",
-              "place": "The Old Stones",
-              "text": "The Old Stones, in the Gullwing Vale"
+              "node": "driftwood-moors",
+              "place": "The Saltbreaker Hulks",
+              "scene": "lampBuyer",
+              "text": "The Saltbreaker Hulks, on the Driftwood Moors"
             },
             {
               "kind": "kill",
-              "node": "gullwing-vale",
-              "place": "The Old Stones",
+              "node": "driftwood-moors",
+              "place": "The Saltbreaker Hulks",
               "count": 4,
               "spawn": [
                 [
@@ -628,53 +707,56 @@
                   "Minor"
                 ]
               ],
-              "text": "Tithe at the Old Stones"
+              "text": "The Reeve and his guard"
             }
           ],
           "reward": {
             "tenet": 2
           },
-          "end": "lampBuyer"
+          "end": "lampDawn"
         },
         {
-          "id": "light-old-stones",
-          "task": "Light the Old Stones",
-          "start": "lampLight",
+          "id": "set-grey-point",
+          "was": [
+            "light-old-stones"
+          ],
+          "task": "Set Grey Point true",
+          "start": "lampGrey",
           "goals": [
             {
               "kind": "puzzle",
-              "node": "gullwing-vale",
-              "place": "The Old Stones",
+              "node": "driftwood-moors",
+              "place": "Grey Point Light",
               "points": [
                 {
-                  "name": "The east stone",
-                  "bearing": 90,
-                  "at": 10
+                  "name": "The gold lamp",
+                  "bearing": 45,
+                  "at": 12
                 },
                 {
-                  "name": "The south stone",
-                  "bearing": 180,
-                  "at": 10
+                  "name": "The red lamp",
+                  "bearing": 135,
+                  "at": 12
                 },
                 {
-                  "name": "The west stone",
-                  "bearing": 270,
-                  "at": 10
+                  "name": "The green lamp",
+                  "bearing": 225,
+                  "at": 12
                 },
                 {
-                  "name": "The north stone",
-                  "bearing": 0,
-                  "at": 10
+                  "name": "The white lamp",
+                  "bearing": 315,
+                  "at": 12
                 }
               ],
               "order": [
-                0,
                 1,
+                3,
                 2,
-                3
+                0
               ],
               "wrong": "lampWrong",
-              "text": "Light the stones as dawn comes"
+              "text": "Light the lamps in their order"
             }
           ],
           "end": "lampLit"
@@ -702,7 +784,8 @@
                 "Reeve"
               ],
               "rank": "Miniboss",
-              "text": "The Reeve of the Tomb"
+              "scene": "lampFalls",
+              "text": "The Reeve's master"
             }
           ],
           "reward": {
@@ -734,86 +817,12 @@
       "begin": "veilBegin",
       "tasks": [
         {
-          "id": "meet-wren-follow",
-          "task": "Meet Wren and follow her",
-          "start": "veilWren",
-          "goals": [
-            {
-              "kind": "escort",
-              "node": "gullwing-vale",
-              "from": "Vale Mouth",
-              "to": "Hollow Coven",
-              "who": "wren",
-              "near": 15,
-              "text": "Keep up with Wren"
-            }
+          "id": "tail-collector",
+          "was": [
+            "meet-wren-follow"
           ],
-          "end": "veilHollow"
-        },
-        {
-          "id": "lift-collectors-tallies",
-          "task": "Lift the collectors' tallies",
-          "start": "veilFarm",
+          "task": "Tail a collector",
           "goals": [
-            {
-              "kind": "kill",
-              "node": "gullwing-vale",
-              "place": "Orchard Farm",
-              "count": 5,
-              "spawn": [
-                [
-                  "Collector",
-                  "Minor"
-                ],
-                [
-                  "Collector",
-                  "Minor"
-                ],
-                [
-                  "Collector",
-                  "Major"
-                ],
-                [
-                  "Runner",
-                  "Minor"
-                ],
-                [
-                  "Runner",
-                  "Minor"
-                ]
-              ],
-              "text": "Collectors at Orchard Farm"
-            }
-          ],
-          "end": "veilTallies"
-        },
-        {
-          "id": "wait-under-valeguard",
-          "task": "Wait under Valeguard, unseen",
-          "goals": [
-            {
-              "kind": "unseen",
-              "node": "gullwing-vale",
-              "place": "Valeguard",
-              "seen": "veilSeen",
-              "text": "Valeguard, with no one seeing you"
-            }
-          ],
-          "reward": {
-            "art": true
-          },
-          "end": "veilRaven"
-        },
-        {
-          "id": "tail-tally-chalk",
-          "task": "Tail the tally to the chalk",
-          "start": "veilChalk",
-          "goals": [
-            {
-              "kind": "cast",
-              "spell": "Duskraven",
-              "text": "Loose the raven"
-            },
             {
               "kind": "tail",
               "node": "saltgrass-downs",
@@ -822,24 +831,113 @@
               "foe": "Collector",
               "far": 10,
               "near": 40,
+              "greet": "veilTail",
               "noticed": "veilNoticed",
               "text": "Follow the collector, not too close"
+            }
+          ],
+          "end": "veilRuin"
+        },
+        {
+          "id": "lift-collectors-tallies",
+          "task": "Lift the collectors' tallies",
+          "goals": [
+            {
+              "kind": "puzzle",
+              "node": "saltgrass-downs",
+              "place": "Chalkpit Ruin",
+              "points": [
+                {
+                  "name": "The tally by the hearth",
+                  "bearing": 60,
+                  "at": 9
+                },
+                {
+                  "name": "The tally in the satchel",
+                  "bearing": 170,
+                  "at": 13
+                },
+                {
+                  "name": "The tally under a stone",
+                  "bearing": 285,
+                  "at": 11
+                }
+              ],
+              "text": "Lift every tally in the ruin"
+            }
+          ],
+          "end": "veilTallies"
+        },
+        {
+          "id": "adit-unseen",
+          "was": [
+            "wait-under-valeguard"
+          ],
+          "task": "Into the Chalk Adit, unseen",
+          "start": "veilAdit",
+          "goals": [
+            {
+              "kind": "unseen",
+              "node": "saltgrass-downs",
+              "place": "The Chalk Adit",
+              "spawn": [
+                [
+                  "Collector",
+                  "Minor"
+                ],
+                [
+                  "Runner",
+                  "Minor"
+                ],
+                [
+                  "Enforcer",
+                  "Major"
+                ]
+              ],
+              "seen": "veilSeen",
+              "text": "The Chalk Adit, with no one seeing you"
+            }
+          ],
+          "reward": {
+            "art": true
+          },
+          "end": "veilRaven"
+        },
+        {
+          "id": "follow-reckoner",
+          "was": [
+            "tail-tally-chalk"
+          ],
+          "task": "Follow the reckoner",
+          "goals": [
+            {
+              "kind": "cast",
+              "spell": "Duskraven",
+              "text": "Loose the raven"
+            },
+            {
+              "kind": "reach",
+              "node": "driftwood-moors",
+              "place": "Moorhold",
+              "text": "Moorhold, on the Driftwood Moors"
             }
           ],
           "reward": {
             "tenet": 1
           },
-          "end": "veilRuin"
+          "end": "veilDaggers"
         },
         {
-          "id": "empty-chalk-adit",
-          "task": "Empty the Chalk Adit",
-          "start": "veilAdit",
+          "id": "empty-moorhold",
+          "was": [
+            "empty-chalk-adit"
+          ],
+          "task": "Empty Moorhold",
           "goals": [
             {
               "kind": "kill",
-              "node": "saltgrass-downs",
-              "place": "The Chalk Adit",
+              "node": "driftwood-moors",
+              "place": "Moorhold",
               "count": 4,
               "spawn": [
                 [
@@ -859,7 +957,7 @@
                   "Major"
                 ]
               ],
-              "text": "Guards at the Chalk Adit"
+              "text": "Guards at Moorhold"
             },
             {
               "kind": "cast",
@@ -907,49 +1005,37 @@
           "reward": {
             "fragments": 1
           },
-          "end": "veilPage"
+          "end": "veilLedger"
         },
         {
-          "id": "climb-moorhold",
-          "task": "Climb Moorhold",
-          "start": "veilMoorhold",
+          "id": "follow-wren-coven",
+          "was": [
+            "climb-moorhold"
+          ],
+          "task": "Meet Wren and follow her",
           "goals": [
             {
-              "kind": "reach",
-              "node": "driftwood-moors",
-              "place": "Moorhold",
-              "text": "Moorhold, on the Driftwood Moors"
+              "kind": "escort",
+              "node": "gullwing-vale",
+              "from": "Vale Mouth",
+              "to": "Hollow Coven",
+              "who": "wren",
+              "near": 15,
+              "greet": "veilWren",
+              "text": "Keep up with Wren"
             },
             {
-              "kind": "kill",
-              "node": "driftwood-moors",
-              "place": "Moorhold",
-              "count": 4,
-              "spawn": [
-                [
-                  "Reeve",
-                  "Elite"
-                ],
-                [
-                  "Collector",
-                  "Minor"
-                ],
-                [
-                  "Collector",
-                  "Minor"
-                ],
-                [
-                  "Runner",
-                  "Minor"
-                ]
-              ],
-              "text": "The Reeve's watch"
+              "kind": "reach",
+              "node": "gullwing-vale",
+              "place": "Orchard Farm",
+              "scene": "veilOrchard",
+              "text": "Orchard Farm, on the way"
             }
           ],
           "reward": {
             "tenet": 2
           },
-          "end": "veilPaid"
+          "end": "veilHalf"
         },
         {
           "id": "reckoner-chest",
@@ -958,35 +1044,35 @@
           "goals": [
             {
               "kind": "puzzle",
-              "node": "driftwood-moors",
-              "place": "Moorhold",
+              "node": "gullwing-vale",
+              "place": "Valeguard",
               "points": [
                 {
-                  "name": "The tithe mark",
-                  "bearing": 0,
-                  "at": 8
-                },
-                {
                   "name": "The debt mark",
-                  "bearing": 90,
-                  "at": 8
-                },
-                {
-                  "name": "The interest mark",
-                  "bearing": 180,
+                  "bearing": 30,
                   "at": 8
                 },
                 {
                   "name": "The fee mark",
-                  "bearing": 270,
+                  "bearing": 120,
+                  "at": 8
+                },
+                {
+                  "name": "The tithe mark",
+                  "bearing": 210,
+                  "at": 8
+                },
+                {
+                  "name": "The interest mark",
+                  "bearing": 300,
                   "at": 8
                 }
               ],
               "order": [
-                0,
-                1,
                 2,
-                3
+                0,
+                3,
+                1
               ],
               "wrong": "veilWrong",
               "text": "Touch the marks as the reckoner counts"
@@ -1017,7 +1103,8 @@
                 "Reeve"
               ],
               "rank": "Miniboss",
-              "text": "The Reeve of the Grotto"
+              "scene": "veilKeeper",
+              "text": "The book's keeper"
             }
           ],
           "reward": {
