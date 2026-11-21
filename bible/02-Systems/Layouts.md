@@ -224,7 +224,8 @@ from the sea, fresh water and the claim's edge), then:
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), each beacon and resource
    5 m clear of every way's edge, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
-   nearest point. Each beacon and resource is a place before its activity comes (`marks`): a beacon's brazier glowing
+   nearest point. A patrol's material nodes stand at the resource places, a third at a time ([[Server]]). Each beacon and
+   resource is a place before its activity comes (`marks`): a beacon's brazier glowing
    on a stone plinth in a ring of standing stones; ore as a broken outcrop seamed with metal and its spoil; salvage as
    broken timbers and spilt stores; herbs by a gatherer's drying rack hung with bundles; timber as felled logs stacked
    by a stump with its axe, the logs side by side on the lowest ground under the stack.

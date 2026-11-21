@@ -93,9 +93,10 @@ on Cloudflare.
   each foe the noises made and its allies' shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
-- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at twelve
-  spots laid out from the node's name, the same every time, 60 m apart; a third of them hold a node at once, the next
-  third every three minutes, and each player may gather each node once while it stands. A kill, in any node, pays by
+- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at its layout's
+  resource places ([[Layouts]], "The sites"), which the bake writes into the node's file (`resources`); a third of
+  them hold a node at once, the next third every three minutes, and each player may gather each node once while it
+  stands. A kill, in any node, pays by
   the room's seas ([[Gear]], "Where foes stand").
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
   screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
@@ -119,7 +120,9 @@ on Cloudflare.
   opened at the Mage's, the vault at a vault's, a ware at its own smith's, an emblem or a dye at
   the Tailor's, a coat or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
   at his place of the week while he is there ([[Factions]], [[Gear]]); the Test Ground's course serves them all within
-  4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
+  4 m of its stall. A resource node is gathered by a player alive within 3.5 m of it
+  who holds E two seconds: the gather ask begins it, and the room gathers it two seconds on unless they let go first
+  (the stop-gather ask), stirred 0.3 m, were hurt or fell, or it stopped standing for them. It is then
   spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
   nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their

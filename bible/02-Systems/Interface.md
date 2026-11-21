@@ -624,7 +624,11 @@ never while a press is held. Each press is an ask the room answers.
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
-  used is spent, not gained.
+  used is spent, not gained. Currency, XP, Prestige, each faction's reputation and an Art's XP stand as short lines
+  over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon, with no
+  band; an Art's level, a fragment of its Core, the ship's materials and a module gained are rows. What a piece
+  gathered at sea held (a Vestige, an Ammo box or crate, the ship's materials, a module) comes in as the sea tells
+  it, there being no gear shown at sea to count it from.
 - **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair whenever
   that shows (aiming, or in first person, the pointer held or not), counted as the fight's rules count them on the
   player's own fighter, so a shot takes one at once: 22 px with the HUD's outline, in brass at a fifth of the capacity
@@ -880,7 +884,7 @@ button's corner and screen, and the Tailor's wares.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.
-- The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
+- The Acquired feed shows no level of the player's own gained, only an Art's.
 - The Art's, Appearance and keepers' screens draw no soft glow: the Art's emblem opens without the glow that swelled
   round it, the Anima breathes as a ring, a fragment just set flares as a white ring and wash, and the worn Art's and
   the focused one's outlines are drawn diamonds round their emblems. A fragment not owned and a ware not had stand

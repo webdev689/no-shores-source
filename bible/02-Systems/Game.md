@@ -198,11 +198,17 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   only once they have walked a step. The fight never takes them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
   player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
-  patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
+  patrol, so a route can be planned through them. At a patrol's resource places each node also stands as the
+  forge's picture of its kind (`nodeCards`, [[Sprite Forge]]): an outcrop of ore, a patch of herbs, felled timber or
+  piled salvage, 3.2 m across, and once gathered as it looks spent until its turn comes round. Each drop lying for them stands as its own picture under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
-  ([[Interface]], "The social space's counters"); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
+  ([[Interface]], "The social space's counters"); within 3.5 m of a node it reads "Hold to gather" and its
+  resource, and held it asks the room to gather it (`GatherHold`): a bar under the deed fills over the two seconds
+  with the menus' build-up sound, the figure works the node, and in first person the hands work it with its tool
+  (`firstperson/working.ts`: the Pick-Axe on ore, the Wood-Axe on timber, the Sickle on herbs, the bare hand in
+  salvage). Letting go of E asks the room to stop; a step or a blow stops it there. Neither is offered while a
   menu is up or the player lies dead, past the edge or felled by a foe.
 
 ## The edge
@@ -333,8 +339,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **The sea's word** (`seaWord.ts`, [[Naval Combat]], "How a fight ends"). Each line stands as a notice (DFO's toast, `plus/notices.ts`)
   for 6 s, several at once: who joins the fight ("Player 4 joined the fight.", "The Pirate Schooner joined the fight.", its hull as the
   room tells it), a captain's colours struck ("The Tithe Brig's colours are down: …"), the boarding ("Boarders away:
-  the Tithe Brig's crew stands to meet them."), each piece of what floats gathered and what it held ("Gathered a chest:
-  a Rare Vestige, an Ammo box.", "an Atheric Vestige"; what found no room, "nothing you had room for"), and washing up
+  the Tithe Brig's crew stands to meet them."), a piece of what floats gathered that gave nothing ("Gathered a chest:
+  nothing you had room for."; what one held goes to the Acquired feed, [[Interface]]), and washing up
   ("Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.", or "Beaten aboard the ship: …").
   Washed up, the fight's view goes back up, the ship lies where the room moored it, and once the landmass of that
   port city is open the player walks into its social space behind the veil, in the same words ("You washed up at
