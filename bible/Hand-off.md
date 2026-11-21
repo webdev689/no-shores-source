@@ -264,6 +264,18 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **The balance pass halfway back, and loot in Destiny 1's order**, on branch `ccr-1e1aa6da-yox2v1` and its pull
+  request, tested offline (the full check), waiting on the owner's yes to merge, which deploys the page and the rooms
+  ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]): on land a player's blow ×1.5 and a
+  foe's ×0.75; a Vestige by the foe's rank (Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always), its
+  colours falling from Normal to Atheric at every rank and each colour or better rising with rank, opening to its own
+  colour three times in four; a sunk ship drops as one foe of its rank, its hold as one a rank higher; XP and Aurem by
+  rank, a higher rank paying more at every level and tier; deck kills and sinkings paid by the sea's tier; an Atheric
+  dismantled to 3 Essence. Claude's calls the owner may want to see: a Boss's sure Vestige is a Normal three times in
+  ten; a chest's or a Breach's module can now be Normal; Corvane pays 840 XP at level 5 where every Captain paid 2,000;
+  any foe may leave an Atheric, about one Minor kill in 50,000 from level 20. Not yet played by hand, nor in a deployed
+  room. This session's environment had no `SKILLSMP_API_KEY` and Context7's anonymous quota was spent, so check-tools
+  failed both.
 - **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
   after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
   and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three
