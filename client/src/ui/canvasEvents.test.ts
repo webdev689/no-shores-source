@@ -102,7 +102,7 @@ test("a hidden field's words are never handed to the browser's typing; its keys 
   done();
 });
 
-test('the pad walks a window: its cross or left stick move the focus and repeat, A presses, B backs out, the bumpers turn once', () => {
+test('the pad in a window: its cross repeats, A, B, X, Y and the bumpers act once, A is let go, the sticks are sent as they lean and once at rest', () => {
   const page = globalThis as unknown as Record<string, unknown>;
   Object.assign(page, { addEventListener: () => undefined, document: { pointerLockElement: null } });
   const held = { buttons: new Set<number>(), axes: [0, 0, 0, 0] };
@@ -118,21 +118,32 @@ test('the pad walks a window: its cross or left stick move the focus and repeat,
   const events = new CanvasEvents({ tabIndex: 0, addEventListener: () => undefined } as unknown as HTMLCanvasElement);
   const take = (seconds = 1 / 60) => {
     clock += seconds * 1000;
-    return events.take().map((event) => (event.kind === 'pad' ? event.button : event.kind));
+    return events
+      .take()
+      .map((event) => (event.kind === 'pad' ? `${event.button}${event.up ? ' let go' : ''}` : JSON.stringify(event)));
   };
   held.buttons = new Set([13]);
   assert.deepEqual(take(), ['down']);
   assert.deepEqual(take(0.3), [], 'a moment before it repeats');
   assert.deepEqual(take(0.3), ['down'], 'then it repeats');
   held.buttons = new Set();
-  held.axes = [0, -0.9, 0, 0];
-  assert.deepEqual(take(), ['up'], 'the left stick leant up');
+  held.axes = [0, -0.9, 0, 0.1];
+  const leant = JSON.stringify({ kind: 'stick', x: 0, y: -0.9, scroll: 0.1 });
+  assert.deepEqual(take(), [leant], 'the left stick is the cursor’s, not the cross');
+  assert.deepEqual(take(), [leant], 'and is sent each frame it leans');
+  held.axes = [0.1, 0, 0, 0];
+  assert.deepEqual(take(), [JSON.stringify({ kind: 'stick', x: 0, y: 0, scroll: 0 })], 'once at rest');
+  assert.deepEqual(take(), [], 'then no more');
+  held.axes = [0, 0, 0, -0.5];
+  assert.deepEqual(take(), [JSON.stringify({ kind: 'stick', x: 0, y: 0, scroll: -0.5 })], 'the right stick scrolls');
   held.axes = [0, 0, 0, 0];
+  take();
   held.buttons = new Set([0, 4]);
   assert.deepEqual(take(), ['accept', 'previous']);
   assert.deepEqual(take(1), [], 'neither repeats however long it is held');
-  held.buttons = new Set([1, 5]);
-  assert.deepEqual(take(), ['back', 'next']);
+  held.buttons = new Set([1, 2, 3, 5]);
+  assert.deepEqual(take(), ['accept let go', 'back', 'quick', 'secondary', 'next']);
+  assert.deepEqual(take(1), [], 'none repeats');
   performance.now = now;
   delete page['addEventListener'];
   delete page['document'];
@@ -177,6 +188,37 @@ test('the canvas wears the gauntlet asked for, pressed while a mouse button is d
   const before = worn.length;
   events.sync(null, gauntletOver('default'));
   assert.equal(worn.length, before, 'locked, the pointer has no look to wear');
+  delete page['addEventListener'];
+  delete page['document'];
+});
+
+test('a move of the pointer that went nowhere, or within 0.3 s of a lock or its letting go, is not the mouse moving', () => {
+  const page = globalThis as unknown as Record<string, unknown>;
+  const listeners = new Map<string, (event: unknown) => void>();
+  const listen = (kind: string, run: (event: unknown) => void) => listeners.set(kind, run);
+  const lock = { pointerLockElement: null as unknown };
+  Object.assign(page, { addEventListener: listen, document: lock });
+  const now = performance.now;
+  let clock = 10_000;
+  performance.now = () => clock;
+  const canvas = { tabIndex: 0, addEventListener: listen, getBoundingClientRect: () => ({ left: 0, top: 0 }) };
+  const events = new CanvasEvents(canvas as unknown as HTMLCanvasElement);
+  const move = (movementX: number) => {
+    listeners.get('pointermove')?.({ clientX: 5, clientY: 5, movementX, movementY: 0 });
+    return events.take().flatMap((event) => (event.kind === 'pointer' ? [Boolean(event.still)] : []));
+  };
+  assert.deepEqual(move(3), [false]);
+  assert.deepEqual(move(0), [true], 'it went nowhere');
+  lock.pointerLockElement = canvas;
+  events.take();
+  lock.pointerLockElement = null;
+  clock += 100;
+  events.take();
+  clock += 200;
+  assert.deepEqual(move(40), [true], 'the jump as the pointer is let go');
+  clock += 150;
+  assert.deepEqual(move(4), [false]);
+  performance.now = now;
   delete page['addEventListener'];
   delete page['document'];
 });

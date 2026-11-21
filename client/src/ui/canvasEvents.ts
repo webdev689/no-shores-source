@@ -4,11 +4,10 @@
 // hidden field (whose words are never handed to the browser), through keys and paste. What the interface is typing in is handed back each frame (`sync`), so the browser's typing starts
 // from the same words, caret and place.
 import { GAUNTLET_CURSOR, gauntletCss } from './gauntlet.ts';
-import type { Typing, UiEvent } from './uiEvent.ts';
+import { PAD_CURSOR, STICK_REST } from './padCursor.ts';
+import type { PadButton, Typing, UiEvent } from './uiEvent.ts';
 
-type PadButton = 'up' | 'down' | 'left' | 'right' | 'accept' | 'back' | 'previous' | 'next';
-
-/** The standard pad's buttons: the cross, A, B and the bumpers. */
+/** The standard pad's buttons: the cross, A, B, X, Y and the bumpers. */
 const PAD: readonly (readonly [number, PadButton])[] = [
   [12, 'up'],
   [13, 'down'],
@@ -16,13 +15,15 @@ const PAD: readonly (readonly [number, PadButton])[] = [
   [15, 'right'],
   [0, 'accept'],
   [1, 'back'],
+  [2, 'quick'],
+  [3, 'secondary'],
   [4, 'previous'],
   [5, 'next'],
 ];
-/** The left stick leant this far is the cross pressed that way. */
-const STICK_LEAN = 0.5;
 /** Presses that act once however long they are held. */
-const ONCE: ReadonlySet<PadButton> = new Set(['accept', 'back', 'previous', 'next']);
+const ONCE: ReadonlySet<PadButton> = new Set(['accept', 'back', 'quick', 'secondary', 'previous', 'next']);
+/** How long after the pointer is locked or let go a move of it is the page's own, not the mouse's, seconds. */
+const LOCK_GRACE_S = 0.3;
 /** A held pad button acts again after this long, then this often, seconds. */
 const PAD_DELAY = 0.4;
 const PAD_REPEAT = 0.12;
@@ -76,7 +77,12 @@ export class CanvasEvents implements PageEvents {
   private readonly context: EditContextLike | null;
   private typing: Typing | null = null;
   private readonly padHeld = new Map<PadButton, number>();
+  /** Whether either stick leant past its rest last frame. */
+  private leant = false;
   private last = performance.now();
+  /** When the pointer was last locked or let go, and whether it is locked now. */
+  private lockedAt = Number.NEGATIVE_INFINITY;
+  private wasLocked = false;
   /** The look the interface asked for, whether a mouse button is down over the canvas, and the look worn. */
   private asked = '';
   private pressing = false;
@@ -98,7 +104,10 @@ export class CanvasEvents implements PageEvents {
     canvas.addEventListener(
       'pointermove',
       (event) => {
-        if (!locked()) this.events.push({ kind: 'pointer', ...(this.pointer = placed(event)) });
+        if (locked()) return;
+        const nowhere = event.movementX === 0 && event.movementY === 0;
+        const still = nowhere || (performance.now() - this.lockedAt) / 1000 < LOCK_GRACE_S;
+        this.events.push({ kind: 'pointer', ...(this.pointer = placed(event)), ...(still && { still }) });
       },
       first,
     );
@@ -203,6 +212,8 @@ export class CanvasEvents implements PageEvents {
     const now = performance.now();
     const seconds = (now - this.last) / 1000;
     this.last = now;
+    const locked = document.pointerLockElement === this.canvas;
+    if (locked !== this.wasLocked) [this.lockedAt, this.wasLocked] = [now, locked];
     this.readPad(seconds);
     const taken = this.events;
     this.events = [];
@@ -251,17 +262,17 @@ export class CanvasEvents implements PageEvents {
   private readPad(seconds: number): void {
     const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
     const pad = pads.find((each) => each?.mapping === 'standard') ?? pads.find((each) => each);
-    const [across = 0, along = 0] = pad?.axes ?? [];
-    const leant: Partial<Record<PadButton, boolean>> = {
-      up: along <= -STICK_LEAN,
-      down: along >= STICK_LEAN,
-      left: across <= -STICK_LEAN,
-      right: across >= STICK_LEAN,
-    };
+    // The sticks while either leans past its rest, and once more as both come back to it.
+    const [x = 0, y = 0, , scroll = 0] = pad?.axes ?? [];
+    const leant = Math.hypot(x, y) > STICK_REST || Math.abs(scroll) > PAD_CURSOR.SCROLL_LEAN;
+    if (leant || this.leant)
+      this.events.push(leant ? { kind: 'stick', x, y, scroll } : { kind: 'stick', x: 0, y: 0, scroll: 0 });
+    this.leant = leant;
     for (const [index, button] of PAD) {
-      const down = Boolean(pad?.buttons[index]?.pressed) || Boolean(leant[button]);
+      const down = Boolean(pad?.buttons[index]?.pressed);
       const held = this.padHeld.get(button);
       if (!down) {
+        if (held !== undefined && button === 'accept') this.events.push({ kind: 'pad', button, up: true });
         this.padHeld.delete(button);
         continue;
       }
