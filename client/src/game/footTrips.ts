@@ -9,7 +9,8 @@ import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrance
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
-import type { Use } from './footGear.ts';
+import { type Use, useAt } from './footGear.ts';
+import type { GearHere } from './gearScreen.ts';
 import type { Heard } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -155,4 +156,18 @@ export function tripAt(
   if (number === null) return null;
   const name = here.entrances.nameOf(here.module, here.patrol, number);
   return { words: `Enter ${name}`, run: () => trips.enter(number, name) };
+}
+
+/** What E does at (x, y) on foot: the place's own use, else a counter's within reach (the board's among them), else
+ *  a way in or out of a dungeon. */
+export function useOnFoot(
+  x: number,
+  y: number,
+  place: Use | null,
+  counters: Parameters<typeof useAt>[2],
+  gear: GearHere | null,
+  here: Parameters<typeof tripAt>[2],
+  trips: Trips,
+): Use | null {
+  return place ?? useAt(x, y, counters, gear?.gear ?? null, (asked) => gear?.ask(asked)) ?? tripAt(x, y, here, trips);
 }

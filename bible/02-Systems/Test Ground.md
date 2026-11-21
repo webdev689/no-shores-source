@@ -299,7 +299,7 @@ the player there, looking that way, to picture a rock from in front of it or und
 
 With `?room=` and a name in the page's address (`?room=playtest`), the Test Ground joins that name's Test Ground
 room, `test-<name>`, on the deployed [[Server]]: everyone who uses the same name is in the same room. A name is
-letters, digits and hyphens, in any case, 59 at most. A whole address joins another server's room instead: locally,
+letters, digits and hyphens, in any case, 59 at most, as the room judges ([[The Server Is the Authority Over Everything]]). A whole address joins another server's room instead: locally,
 under `npm run server`, `?room=ws://127.0.0.1:8787/room/test-<name>`. The player plays as before, predicted here: each
 tick's controls and fight's buttons also go to the room, and the room's word on the player's fighter corrects it. Foes
 are the room's, the same for everyone in it, and fight whoever is near. Every other player in the

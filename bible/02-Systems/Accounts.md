@@ -105,7 +105,7 @@ they play in holds it while they are there.
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room (4001),
   and that page joins no more ([[Server]], "Joining again"). Each claim keeps the room that claims it (`room`, from
-  its holder's name) and answers the room that held it before (`came_from`, null before any did), and a look answers
+  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]), and a look answers
   the room that last held it; a room that lets a character go untouched (its gate shut, or it never gave it) was never
   where it was, so the room before is its last again. The rooms judge where a character comes from by these alone
   ([[Server]], "Where a character comes from").

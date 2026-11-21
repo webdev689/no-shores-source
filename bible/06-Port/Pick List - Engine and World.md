@@ -177,9 +177,11 @@ renderer can key it as `archive_record`.
     markers, people and riddles.
   - The plan and its print (`world/dungeon/plan/`): **Clean**, not needed: one Rust crate lays the same dungeon
     everywhere.
-  - The engine's parts (`scenes/dungeon/`, `systems/dungeon/`): the heart **Cut**, Rust rebuild; traps, last fire,
-    moods and dressing **Cut**, left behind, as they lean on DFU's stats, rest, light table and sprites; landmarks
-    and the director **Clean**, left behind, as the Game and the garrison do not ask for them.
+  - The engine's parts (`scenes/dungeon/`, `systems/dungeon/`): the heart **Cut**, Rust rebuild; traps and last fire
+    **Cut**, left behind, as they lean on DFU's stats, rest and light table; moods and dressing **Cut**, their law
+    rebuilt (a style's own faint light, a room's dressing and lights by its purpose, the forged props in place of
+    DFU's sprites); landmarks **Clean**, their law rebuilt (a room named for its purpose as it is first entered); the
+    director **Clean**, left behind, as the garrison does what it would.
 - **`pve-fixed-levels`**: no change in these paths.
 - **`ccr-d314ccd0-3nwvjt`**: field fixes to `interior/interiorLights` and `road/roadPainter`. Both files are Can't.
 

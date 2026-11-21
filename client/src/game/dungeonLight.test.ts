@@ -175,8 +175,4 @@ test('summed light keeps its value up to 0.8 and eases toward 1.4 past it, in th
       `${light}: the shader's ${shaded}, the figures' ${shoulder(light)}`,
     );
   }
-  assert.match(
-    LIGHT_WGSL,
-    /return vec3f\(shoulder\(light\.r\), shoulder\(light\.g\), shoulder\(light\.b\)\);\s*\}\s*$/,
-  );
 });

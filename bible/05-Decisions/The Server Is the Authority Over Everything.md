@@ -25,5 +25,6 @@ can stay the page's word until the prologue pays something, the owner wrote:
 - Nothing a room keeps, pays or opens rests on the page's word: where a player stands, where they came from and
   what they fought.
 - The prologue's end stays the page's word while the prologue pays nothing: its wreck fight is played in the page,
-  and a room keeps only that it was played ([[Prologue]]). Should it come to pay, it is fought on the server.
+  and a room keeps only the page's word that the story is behind the player, played or passed over
+  ([[Prologue]]). Should it come to pay, it is fought on the server.
 - It holds [[Server-Authoritative Multiplayer]] to every system, the sea's and the story's among them.
