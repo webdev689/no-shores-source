@@ -9,7 +9,7 @@ use crate::factions::factions;
 use crate::rewards::Foe;
 use crate::world::Difficulty;
 
-const AT_COUNTER: Here = Here { social: true, day: 0, week: 0 };
+const AT_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
 const DICE: Dice = Dice { seed: 3, tick: 2, player: 1 };
 
 fn stocked() -> Character {

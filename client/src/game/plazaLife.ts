@@ -1,12 +1,12 @@
 // A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, moved each
 // frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in, the
-// bounty board's among them.
+// bounty board's among them. A ruin's plaza keeps no station (the city crate's `ruins`), and no one lives there.
 
 import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
 import type { Opening } from './gearScreen.ts';
-import { KEEPERS, KEEPER_KINDS } from './keepers.ts';
+import { HARBOURMASTER, KEEPERS, KEEPER_KINDS } from './keepers.ts';
 import type { StationInfo } from './nodes.ts';
 import { Townsfolk, awayFromCounters, plazaOf, shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -20,8 +20,9 @@ export interface Offer {
   readonly opens: Opening;
 }
 
-/** What each station that deals with a player offers: its keeper's screen, named by its keeper's title, and the
- *  bounty board's, which no keeper keeps. Shape keeps no station; his prompt is the plaza's own. */
+/** What each station that deals with a player offers: its keeper's screen, named by its keeper's title, the
+ *  Harbourmaster's, and the bounty board's, which no keeper keeps. Shape keeps no station; his prompt is the plaza's
+ *  own. */
 const OFFERS: Readonly<Record<string, Offer>> = {
   ...Object.fromEntries(
     KEEPER_KINDS.filter((kind) => kind !== 'shape').map((kind) => [
@@ -29,6 +30,7 @@ const OFFERS: Readonly<Record<string, Offer>> = {
       { words: KEEPERS[kind].title, opens: { view: kind } },
     ]),
   ),
+  harbourmaster: { words: HARBOURMASTER, opens: { view: 'harbourmaster' } },
   board: { words: 'The Bounty Board: bounties for XP and Aurem', opens: { view: 'board' } },
 };
 
@@ -56,7 +58,7 @@ const FLOOR_STEP_M = 0.5;
 
 /** The figures of a social space's people, kept among those drawn while the player is there. */
 export class PlazaLife {
-  private readonly folk: Townsfolk;
+  private readonly folk: Townsfolk | null;
   private readonly figures = new Map<number, Placed>();
   /** Where each person's floor was last found: it is found again only once they have walked a step from there. */
   private readonly floored = new Map<number, readonly [number, number]>();
@@ -67,7 +69,8 @@ export class PlazaLife {
   constructor(node: NodeInfo, others: Others, floor: (x: number, y: number) => number | null) {
     const plaza = plazaOf(node);
     // Seeded by the plaza, so its people walk the same each visit.
-    this.folk = new Townsfolk(plaza, Math.round(plaza.bounds[0] * 31 + plaza.bounds[1]));
+    // A ruin's plaza keeps no station, and no one lives there.
+    this.folk = node.stations?.length ? new Townsfolk(plaza, Math.round(plaza.bounds[0] * 31 + plaza.bounds[1])) : null;
     this.visitorSpots = plaza.visitorSpots ?? [];
     this.others = others;
     this.floor = floor;
@@ -78,7 +81,7 @@ export class PlazaLife {
   frame(seconds: number, gear: GearState | null = null): void {
     const shape = shapeSpot(gear?.shape, this.visitorSpots);
     const here = new Set<number>();
-    for (const person of this.folk.step(seconds, { away: awayFromCounters, shape })) {
+    for (const person of this.folk?.step(seconds, { away: awayFromCounters, shape }) ?? []) {
       here.add(person.id);
       const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
       this.figures.set(person.id, placed);

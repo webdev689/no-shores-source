@@ -63,3 +63,19 @@ fn the_sea_over_the_square_swells_to_its_fingerprint() {
     assert!(points.iter().all(|&(x, y)| land::sea::sea_surface(&landmass.surface, &swell, x, y, 1234.567).is_some()));
     assert_eq!(format!("{:016x}", land::sea::sea_hash(&landmass.surface, &swell, &points, 1234.567)), SQUARE_SEA_HASH);
 }
+
+/// The deep sea under the weather round an island, at points from its lee to the open sea and a roadstead, at a moment
+/// of 2026 (watersRules.test.ts asks the room's door for the same).
+pub const WEATHER_SEA_HASH: &str = "1fa1c6d8cb981b0e";
+
+#[test]
+fn the_sea_under_the_weather_swells_to_its_fingerprint() {
+    let text = r#"{ "continents": [{ "id": "square", "outline": [[1000000, 1000000], [1100000, 1000000], [1100000, 1100000], [1000000, 1100000]] }], "isles": [] }"#;
+    let waters = world::waters::Waters::new(&world::layout::parse(text).unwrap());
+    let roadsteads = [world::geometry::Point { x: 1_103_000, y: 1_050_000 }];
+    let points: Vec<(f64, f64)> = (0..40)
+        .map(|step| (1_100_500.25 + 1_700.5 * f64::from(step), 1_000_000.75 + 2_600.125 * f64::from(step)))
+        .collect();
+    let hash = land::sea::weather_sea_hash(&waters, &roadsteads, &points, 1_790_000_123.25);
+    assert_eq!(format!("{hash:016x}"), WEATHER_SEA_HASH);
+}

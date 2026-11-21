@@ -2,10 +2,11 @@
 //! of the room it was seeing, and a foe to stand before it), the checks an input must pass, the turn each input and
 //! dress is taken in, and what the room keeps of each to judge blows on it as it saw them.
 
-use crate::Room;
 use crate::asks::Asked;
+use crate::{EventKind, Room};
 use combat::Fighter;
-use combat::fighter::FighterId;
+use combat::fighter::{Action, FighterId, player};
+use combat::tuning::{FOE_GONE, RESPAWN};
 use gear::Character;
 use reach::Standing;
 use std::collections::VecDeque;
@@ -150,9 +151,10 @@ pub struct Player {
     /// Their gear, and whether it changed since it was last sent to them.
     pub character: Character,
     pub gear_changed: bool,
-    /// Where they stood as their gear was last sent: at the Mage, and in a social space. Both ride the gear
+    /// Where they stood as their gear was last sent: at the Mage, in a social space, and at the counter that signs their
+    /// officers on. All ride the gear
     /// message and change as they walk, so a change sends it again.
-    pub placed_sent: (bool, bool),
+    pub placed_sent: (bool, bool, bool),
     /// The tick their gear was last sent, and their last ask taken: a room sends one player's gear, and takes their
     /// asks, only so often.
     pub gear_sent: Option<u64>,
@@ -165,7 +167,7 @@ pub struct Player {
     pub answer: u8,
     pub identified: u32,
     pub answered: u32,
-    /// The room's resource nodes they have gathered from this turn, spent for them.
+    /// The room's resource nodes they have gathered from this turn, spent for them; on a sea island, the wrecks.
     pub spent: Vec<u8>,
     /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
     pub owner: Option<String>,
@@ -207,7 +209,7 @@ impl Player {
             dressed_at: None,
             character,
             gear_changed: true,
-            placed_sent: (false, false),
+            placed_sent: (false, false, false),
             gear_sent: None,
             asked_at: None,
             asks: VecDeque::new(),
@@ -288,6 +290,48 @@ impl Player {
 }
 
 impl Room {
+    /// A player dead long enough stands again at the spawn nearest where they fell, whole, if an Abyss run has a revive
+    /// left for them (`abyss.rs`); a foe dead long enough is gone. An Abyss run whose players are all down starts over
+    /// instead.
+    pub(crate) fn raise_the_dead(&mut self) {
+        if self.wiped() {
+            self.start_over();
+            return;
+        }
+        let mut raised = Vec::new();
+        let fallen: Vec<(PlayerId, Fighter)> = self
+            .players
+            .iter()
+            .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
+            .map(|(id, found)| (*id, found.fighter))
+            .collect();
+        for (id, fighter) in fallen {
+            if !self.revive() {
+                continue;
+            }
+            let body = self.stand_again(fighter.body.x, fighter.body.y);
+            let graced = self.clock + GRACE;
+            if let Some(found) = self.players.get_mut(&id) {
+                found.fighter = found.armed(player(body, fighter.arms));
+                found.graced = graced;
+                raised.push(id);
+            }
+        }
+        for id in raised {
+            self.tell(EventKind::Respawned, None, id, id, 0.0);
+        }
+        let gone: Vec<FighterId> = self
+            .foes
+            .iter()
+            .filter(|(_, foe)| matches!(foe.fighter.action, Action::Dead { elapsed } if elapsed >= FOE_GONE))
+            .map(|(id, _)| *id)
+            .collect();
+        for id in gone {
+            self.foes.remove(&id);
+            self.board.forget(id);
+        }
+    }
+
     /// Whether this is the Test Ground: a course's room on open ground with no section. A wreck laid over the sea has
     /// no section either, but it is a story level, played at the player's own levels.
     pub(crate) fn is_test_ground(&self) -> bool {
@@ -300,6 +344,14 @@ impl Room {
             .iter()
             .filter(|(_, found)| !found.dress.is_empty())
             .map(|(&player, found)| (player, found.dress.as_str()))
+    }
+
+    /// Every player's dress is sent to everyone once more with the next changes, for one who joined with no welcome
+    /// to carry them (a boarder come over a ship's side).
+    pub fn announce_dresses(&mut self) {
+        for found in self.players.values_mut().filter(|found| !found.dress.is_empty()) {
+            found.dress_changed = true;
+        }
     }
 
     /// The dresses that changed since this was last asked, to send to everyone once.
@@ -318,7 +370,8 @@ impl Room {
     /// changes how they fight.
     pub fn take_gear_change(&mut self, player: PlayerId) -> bool {
         let clock = self.clock;
-        let placed = (self.at_mage(player), self.in_social_space(player));
+        // Coming within reach of the muster sends its offers.
+        let placed = (self.at_mage(player), self.in_social_space(player), self.recruiting_at(player).is_some());
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.gear_changed |= placed != found.placed_sent;
         let waiting = found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS);
@@ -397,15 +450,17 @@ impl Room {
     }
 
     /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
-    /// spent for them again, however often they rejoin; the Arts' charge the room kept for it is theirs again; and in a
-    /// run that counts revives, the body it left with. False, noting nothing, for an account another player in the
-    /// room already has: one account is one player in a room.
+    /// spent for them again, however often they rejoin, as on a sea island are the wrecks it scavenged; the Arts' charge
+    /// the room kept for it is theirs again; and in a run that counts revives, the body it left with. False, noting
+    /// nothing, for an account another player in the room already has: one account is one player in a room.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
         if self.players.iter().any(|(id, found)| *id != player && found.owner.as_deref() == Some(owner)) {
             return false;
         }
-        let gathered = self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
+        let mut gathered =
+            self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
         let Some(found) = self.players.get_mut(&player) else { return false };
+        gathered.extend(self.isle.as_ref().map_or(&[][..], |isle| found.character.scavenged_on(isle.seed)));
         found.owner = Some(owner.to_owned());
         for node in gathered {
             if !found.spent.contains(&node) {

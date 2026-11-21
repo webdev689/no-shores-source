@@ -94,9 +94,16 @@ export const SIDE_STEPS: readonly (readonly [number, number])[] = [
 const ROCK_TOP_M = 12;
 
 /** Each room module's door, kept, and the dungeons it has laid: the prompt names a dungeon before the trip lays it,
- *  and a patrol has three, so each is laid once. */
+ *  and a patrol has three, so each is laid once by each module, whose rules may lay it otherwise. */
 const doors = new WeakMap<WebAssembly.Module, ReturnType<typeof startRoomDoor>>();
-const laid = new Map<string, DungeonLayout>();
+const laidBy = new WeakMap<WebAssembly.Module, Map<string, DungeonLayout>>();
+
+/** The dungeons a room module has laid, by their ask. */
+function laidOf(module: WebAssembly.Module): Map<string, DungeonLayout> {
+  const laid = laidBy.get(module) ?? new Map<string, DungeonLayout>();
+  laidBy.set(module, laid);
+  return laid;
+}
 
 /** Which dungeon, as the room module's `room_dungeon` and `fighter_dungeon` read it: a patrol's by its number, an
  *  Elite Dungeon by its place, or one laid by a seed and a style (a sea island's); each with its place's name. */
@@ -108,6 +115,7 @@ export type DungeonAsk =
 /** The dungeon an ask names, laid by the room module's own rules; an ask it does not answer throws. */
 export function askLayout(module: WebAssembly.Module, ask: DungeonAsk): DungeonLayout {
   const key = JSON.stringify(ask);
+  const laid = laidOf(module);
   const known = laid.get(key);
   if (known) return known;
   const door = doors.get(module) ?? startRoomDoor(module);

@@ -4,7 +4,6 @@
 //! or the portal, nor on a torch's cell, and the room's other cells stay one walk and as many as its band. The room
 //! takes the landmark's role and name, and its purpose furnishes it round the piece.
 
-use crate::landmark_table::LANDMARKS;
 use crate::lane::Lane;
 use crate::props::posts_for;
 use crate::{CELL_M, Cell, Dungeon, PILLAR_HALF_M, SIDES, Side};
@@ -24,6 +23,10 @@ pub struct Landmark {
     pub solids: &'static [[f64; 5]],
     pub glows: &'static [[f64; 4]],
 }
+
+/// The landmarks as `content/dungeon/landmarks.json` lists them, in its order: the crate's `build.rs` writes them from
+/// it as the crate builds.
+pub const LANDMARKS: &[Landmark] = include!(concat!(env!("OUT_DIR"), "/landmarks.rs"));
 
 /// A landmark placed: its room, the cells it covers (row by row), the north-west corner of its turned footprint (m),
 /// its quarter turns clockwise, and its solids and glows in the dungeon's frame.

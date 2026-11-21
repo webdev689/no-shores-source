@@ -577,3 +577,23 @@ test('a run sends away a player whose kept body it cannot read, since it keeps n
   assert.deepEqual(sent, [[1, ACCOUNTS_TROUBLE, false]]);
   assert.equal((await kept.claim(token, 'node-b:1'))?.body, 'not readable', 'let go untouched');
 });
+
+test('a new account’s character is the one the room holds, given back to the room so it keeps it', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const given: string[] = [];
+  const restore = room.restoreCharacter;
+  room.restoreCharacter = (player, body) => (given.push(body), restore(player, body));
+  const keeper = new Keeper(kept, room, 'sea', () => undefined);
+  assert.equal(
+    await keeper.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  assert.deepEqual(given, ['{"starting":true}'], 'no kept character yet: the room’s own, given back');
+});

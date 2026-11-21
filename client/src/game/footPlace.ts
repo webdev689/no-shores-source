@@ -1,5 +1,5 @@
-// Where a player stands on foot and the room they join there: the node's ground, its file for a room in the page, the
-// fight's rules on the room's module, and what the page hears of the room.
+// Where a player stands on foot and the room they join there: the node's ground, its file for a room in the page, and
+// what the page hears of the room. The fight's rules on the room's module are made in `footRoom.ts`.
 import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearState } from '../network/gearMessages.ts';
@@ -9,9 +9,8 @@ import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
 import type { Walker } from '../player/walker.ts';
-import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
+import type { CombatRules } from '../rules/combatRules.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
-import { type FoeType, rosterOf } from '../rules/roster.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import type { InDungeon } from './footTrips.ts';
 import type { Rect } from './nodes.ts';
@@ -32,14 +31,13 @@ export interface FootContext {
   readonly foesAsked: readonly FoeAsk[];
   readonly session: () => Promise<string | null>;
   readonly trips: Trips;
+  /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
+  readonly cameraBlocks?: readonly Block[];
 }
 
 /** How far down a player arriving in a social space looks, radians: over the parapet onto the city, as the Tower's
  *  arrival looks out over the City. */
 const OVER_THE_PARAPET = 0.3;
-
-/** The fight's rules and roster on the room's module, made once. */
-const fightRules = new WeakMap<WebAssembly.Module, { combat: CombatRules; roster: readonly FoeType[] }>();
 
 /** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the
  *  fight's on them as its room stands its bodies. Answers the boxes and the window's text. */
@@ -62,14 +60,6 @@ export function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: read
   const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
   const { id, kind, continent, ring, spawns } = node;
   return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
-}
-
-/** The fight's rules and roster on the context's room module, made once, and the module. */
-export async function rulesOf(context: FootContext) {
-  const module = await context.roomModule;
-  const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
-  fightRules.set(module, rules);
-  return { module, rules };
 }
 
 /** Stands the player's body at (x, y) facing `facing`, keeping how they hold the camera; in a social space looking

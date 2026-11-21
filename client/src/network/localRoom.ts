@@ -2,6 +2,7 @@ import { type CourseBlock, type CourseNode, type RoomDoor, startRoomDoor } from 
 import type { ArtState } from './artMessages.ts';
 import { readFromRoom } from './messages.ts';
 import type { GearMessage, RoomLink, Snapshot } from './roomConnection.ts';
+import type { PortInfo } from '../rules/watersRules.ts';
 
 /** A course's stall, where a social space's asks are answered, and its resource nodes. */
 export interface Furnishing {
@@ -134,17 +135,41 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
-   *  joined, their ship not yet at sea; its pirates come as `seed` draws them, a new sea each time by default. */
+   *  joined, their ship not yet at sea; its pirates come as `seed` draws them, a new sea each time by default, and the
+   *  Grey Tithe patrols the lanes between those of `ports` that are port cities (none with none); its ships come at
+   *  the difficulty `seas` raises them to (0 Normal, 1 Elite, 2 Abyss). */
   static openSea(
     module: WebAssembly.Module,
     layoutText: string,
     snapshot: (snapshot: Snapshot) => void,
     seed = Math.floor(Math.random() * 2 ** 32),
+    ports: readonly PortInfo[] = [],
+    seas = 0,
   ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!door.openSea(layoutText, seed)) throw new Error('the world’s layout is not one the sea can open round');
+    const text = ports.length > 0 ? `{"layout":${layoutText},"ports":${JSON.stringify(ports)}}` : layoutText;
+    if (!door.openSea(text, seed, Date.now() / 1000) || !door.difficulty(seas))
+      throw new Error('the world’s layout is not one the sea can open round');
     door.epoch(Date.now());
     return new LocalRoom(door, snapshot, () => undefined);
+  }
+
+  /** Opens a sea island's room from the compiled `room-wasm` module on the sea's word on it (`isleWord`) at the sea's
+   *  difficulty (`seas`, 0 Normal to 2 Abyss), its player joined at the first of its beach's spawns. */
+  static openIsland(
+    module: WebAssembly.Module,
+    word: string,
+    snapshot: (snapshot: Snapshot) => void,
+    seas = 0,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.openIsland(word) || !door.difficulty(seas)) throw new Error('the island is not one a room can stand on');
+    return new LocalRoom(door, snapshot, () => undefined);
+  }
+
+  /** The word on its island `id` of the sea this room is, as an island's room opens on it; empty if none stands. */
+  isleWord(id: number): string {
+    return this.door.seaIsland(id);
   }
 
   send(bytes: Uint8Array<ArrayBuffer>): void {

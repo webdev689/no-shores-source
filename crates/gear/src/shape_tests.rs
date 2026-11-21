@@ -72,7 +72,7 @@ fn no_week_sells_one_piece_twice() {
 fn a_piece_is_bought_with_shapes_at_his_place() {
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(20);
-    let here = Here { social: true, day: 0, week: 5_000 };
+    let here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 5_000 };
     assert_eq!(character.ask(Ask::BuyFromShape { ware: 4 }, here, &DICE), Err(Refusal::Short));
     character.add_shapes(500);
     assert_eq!(character.materials.shapes, 200, "held to the most");

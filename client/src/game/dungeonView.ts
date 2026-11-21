@@ -92,6 +92,8 @@ type Drawn = {
   readonly floor: Buffers;
   chest: Buffers | null;
   shown: Cache | null;
+  /** The lights the walls were last drawn by, the nearest the eye: the figures are lit by the same. */
+  nearest: readonly Light[] | null;
 };
 
 export class DungeonView {
@@ -208,6 +210,7 @@ export class DungeonView {
       floor,
       chest: null,
       shown: null,
+      nearest: null,
     };
   }
 
@@ -224,8 +227,8 @@ export class DungeonView {
     drawn.chest = cache ? this.buffersOf(chestMesh(cache, drawn.wood), drawn.book) : null;
   }
 
-  /** The light a figure standing at a point is lit by at `time`, as the walls round it are: its lights and the mood
-   *  of the cell it stands in. */
+  /** The light a figure standing at a point is lit by at `time`, as the walls round it are: the lights they were last
+   *  drawn by and the mood of the cell it stands in. */
   lightAt(point: readonly [number, number, number], time: number): [number, number, number] {
     const drawn = this.drawn;
     if (!drawn) return [1, 1, 1];
@@ -233,7 +236,7 @@ export class DungeonView {
     const [column, row] = [Math.floor(point[0] / layout.cell), Math.floor(point[1] / layout.cell)];
     const inside = column >= 0 && row >= 0 && column < layout.columns && row < layout.rows;
     const look = layout.looks[Math.max(0, inside ? (layout.cellLooks[row * layout.columns + column] ?? 0) : 0)];
-    return lightAt(this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
+    return lightAt(drawn.nearest ?? this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
   }
 
   /** The torches and the fixtures, and the portal while it stands open, which is while the cache does. */
@@ -254,6 +257,7 @@ export class DungeonView {
     // Nearest by how far each reaches past the eye, so a brazier's wide light outranks a candle's at one distance.
     const away = ({ at: [x, y, z], burning }: Light) => Math.hypot(x - eye[0], y - eye[1], z - eye[2]) - burning.reach;
     const nearest = [...this.lights(drawn)].sort((a, b) => away(a) - away(b)).slice(0, MOST_LIGHTS);
+    drawn.nearest = nearest;
     const lights = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
     nearest.forEach((light, index) => lights.set(lightFloats(light), index * LIGHT_FLOATS));
     device.queue.writeBuffer(drawn.lights, 0, lights);

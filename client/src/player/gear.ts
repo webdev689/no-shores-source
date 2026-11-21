@@ -332,3 +332,14 @@ export function gearHands(
         : null;
   return { right, left, grip: null };
 }
+
+/** The ship's modules by the gear crate's kind numbers, each fitted in its own slot (`kinds.rs`). */
+export const MODULES = [
+  { kind: 24, key: 'guns', name: 'Guns', slot: 7 },
+  { kind: 25, key: 'hull', name: 'Hull', slot: 8 },
+  { kind: 26, key: 'sails', name: 'Sails', slot: 9 },
+  { kind: 27, key: 'rigging', name: 'Rigging', slot: 10 },
+] as const;
+export type ModuleKey = (typeof MODULES)[number]['key'];
+export const moduleOf = (kind: number) => MODULES.find((each) => each.kind === kind);
+export const isModule = (kind: number): boolean => moduleOf(kind) !== undefined;

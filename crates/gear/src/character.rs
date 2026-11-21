@@ -5,7 +5,7 @@
 
 use crate::catalogue::catalogue;
 use crate::item::Item;
-use crate::kinds::{Kind, Slot, Stock};
+use crate::kinds::{Group, Kind, Slot, Stock};
 use crate::power;
 use crate::rarity::Rarity;
 use serde::{Deserialize, Serialize};
@@ -67,6 +67,9 @@ pub struct Materials {
     /// Ammo crates carried (`ammo.rs`).
     #[serde(default)]
     pub crates: u16,
+    /// The ship's own materials (`ship::materials`).
+    #[serde(default)]
+    pub ship: crate::ship::materials::ShipStock,
     /// Shapes, which only Shape takes (`shape.rs`).
     #[serde(default)]
     pub shapes: u16,
@@ -82,6 +85,7 @@ impl Materials {
         match stock {
             Stock::Weapon => self.weapon_fragments,
             Stock::Armor => self.armor_fragments,
+            Stock::Ship => 0,
         }
     }
 
@@ -90,6 +94,7 @@ impl Materials {
         match stock {
             Stock::Weapon => self.weapon_essence,
             Stock::Armor => self.armor_essence,
+            Stock::Ship => 0,
         }
     }
 
@@ -110,6 +115,8 @@ impl Materials {
             Stuff::Fragments(Stock::Armor) => &mut self.armor_fragments,
             Stuff::Essence(Stock::Weapon) => &mut self.weapon_essence,
             Stuff::Essence(Stock::Armor) => &mut self.armor_essence,
+            // A ship's materials are its own stock's.
+            Stuff::Fragments(Stock::Ship) | Stuff::Essence(Stock::Ship) => return 0,
             Stuff::Fruit => &mut self.fruit,
             Stuff::Resource(index) => {
                 if self.resources.len() <= index {
@@ -165,6 +172,26 @@ pub struct Character {
     /// How far they are through the story (`story.rs`).
     #[serde(default = "crate::story::Story::kept_before")]
     pub story: crate::story::Story,
+    /// Their ship's hull, canvas and men, each in ten-thousandths of whole, kept until it is repaired (the sea
+    /// room's).
+    #[serde(default = "whole_ship")]
+    pub ship: [u16; 3],
+    /// Where the sea last kept their ship, to the whole metre; none before it first put to sea.
+    #[serde(default)]
+    pub ship_at: Option<[i64; 2]>,
+    /// The experience the ship has earned in sea fights, which raises it to level 20 (`ship.rs`).
+    #[serde(default)]
+    pub ship_xp: u64,
+    /// Whether the ship has been fitted with its first modules; a ship never fitted is, as it is read.
+    #[serde(default)]
+    pub ship_fitted: bool,
+    /// Its named officers (`crew.rs`).
+    #[serde(default)]
+    pub crew: crate::crew::Crew,
+    /// The sea islands' wrecks they have scavenged: each island by its seed with its wrecks' numbers, the latest
+    /// `SCAVENGED_KEPT` islands kept, so an island's room opened again pays them nothing again.
+    #[serde(default)]
+    pub scavenged: Vec<(u64, Vec<u8>)>,
     /// The faction pledged to, and the reputation earned with each (`factions.rs`).
     #[serde(default)]
     pub allegiance: crate::factions::Allegiance,
@@ -177,7 +204,39 @@ pub struct Character {
     pub unknown: crate::character::UnknownKeys,
 }
 
+/// How many islands' scavenged wrecks a character keeps: far more than stand round one ship before they fade.
+pub const SCAVENGED_KEPT: usize = 16;
+
+/// A ship's hull, canvas or men whole, in ten-thousandths.
+pub const SHIP_WHOLE: u16 = 10_000;
+
+/// A ship as sound as it was built.
+fn whole_ship() -> [u16; 3] {
+    [SHIP_WHOLE; 3]
+}
+
 impl Character {
+    /// The wrecks they have scavenged on the island of `seed`.
+    #[must_use]
+    pub fn scavenged_on(&self, seed: u64) -> &[u8] {
+        self.scavenged.iter().find(|(island, _)| *island == seed).map_or(&[], |(_, wrecks)| wrecks.as_slice())
+    }
+
+    /// Notes a wreck of the island of `seed` scavenged; that island becomes the latest kept.
+    pub fn scavenge(&mut self, seed: u64, wreck: u8) {
+        let mut wrecks = match self.scavenged.iter().position(|(island, _)| *island == seed) {
+            Some(at) => self.scavenged.remove(at).1,
+            None => Vec::new(),
+        };
+        if !wrecks.contains(&wreck) {
+            wrecks.push(wreck);
+        }
+        self.scavenged.push((seed, wrecks));
+        if self.scavenged.len() > SCAVENGED_KEPT {
+            self.scavenged.remove(0);
+        }
+    }
+
     /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword for Melee and level 1 Normal armour.
     #[must_use]
     pub fn starting() -> Self {
@@ -194,6 +253,12 @@ impl Character {
             ammo: crate::ammo::AMMO_FULL,
             activity: crate::activity::Activity::default(),
             story: crate::story::Story::default(),
+            ship: whole_ship(),
+            ship_at: None,
+            ship_xp: 0,
+            ship_fitted: false,
+            crew: crate::crew::Crew::default(),
+            scavenged: Vec::new(),
             allegiance: crate::factions::Allegiance::default().kept(),
             cosmetics: crate::cosmetics::Cosmetics::default(),
             unknown: UnknownKeys::new(),
@@ -208,6 +273,7 @@ impl Character {
             let id = character.take_id();
             character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }
+        character.fit_first_modules();
         character.earn_due();
         character
     }
@@ -255,7 +321,9 @@ impl Character {
             *stock = (*stock).min(STOCK_MOST);
         }
         materials.crates = materials.crates.min(crate::ammo::CRATES_MOST);
+        materials.ship = materials.ship.kept();
         character.ammo = character.ammo.min(crate::ammo::AMMO_FULL);
+        character.ship = character.ship.map(|share| share.min(SHIP_WHOLE));
         let mut worn = Vec::new();
         for (id, (item, at)) in std::mem::take(&mut character.items) {
             let item = crate::old_hands::unfit(&mut character, item.kept(id, resources));
@@ -270,10 +338,13 @@ impl Character {
             character.items.insert(id, (item, at));
         }
         shields.settle(&mut character);
-        let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
+        let held = character.items.keys().chain(character.vestiges.keys()).chain(character.crew.officers.keys());
+        let highest = held.max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         character.arts = std::mem::take(&mut character.arts).kept();
         character.activity = std::mem::take(&mut character.activity).kept();
+        character.crew = std::mem::take(&mut character.crew).kept();
+        character.fit_first_modules();
         character.allegiance = std::mem::take(&mut character.allegiance).kept();
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         character.earn_due();
@@ -285,10 +356,19 @@ impl Character {
         loop {
             let id = self.next_id;
             self.next_id = self.next_id.wrapping_add(1).max(1);
-            if !self.items.contains_key(&id) && !self.vestiges.contains_key(&id) {
+            if !self.items.contains_key(&id)
+                && !self.vestiges.contains_key(&id)
+                && !self.crew.officers.contains_key(&id)
+            {
                 return id;
             }
         }
+    }
+
+    /// Whether the next number taken would be clear of these.
+    #[cfg(test)]
+    pub(crate) fn take_id_clear_of(&self, ids: &[u32]) -> bool {
+        !ids.contains(&self.clone().take_id())
     }
 
     #[must_use]
@@ -336,7 +416,7 @@ impl Character {
     /// The Prestige of the armour worn.
     #[must_use]
     pub fn prestige(&self) -> u32 {
-        self.all_worn().map(|(_, item)| item.prestige()).sum()
+        self.all_worn().filter(|(slot, _)| !slot.ship()).map(|(_, item)| item.prestige()).sum()
     }
 
     /// The player's level, 1 to 30.
@@ -349,14 +429,7 @@ impl Character {
     /// it; at the highest, full and nothing.
     #[must_use]
     pub fn to_next(&self) -> (f64, u32) {
-        let level = self.level();
-        if level < power::XP_LEVEL_MOST {
-            let (from, to) = (power::xp_for_level(level), power::xp_for_level(level + 1));
-            let share = self.xp.saturating_sub(from) as f64 / (to - from) as f64;
-            return (share.min(1.0), u32::try_from(to.saturating_sub(self.xp)).unwrap_or(u32::MAX));
-        }
-        let Some(needed) = power::PRESTIGE_FOR.get(usize::from(level - power::XP_LEVEL_MOST)) else { return (1.0, 0) };
-        (f64::from(self.prestige()) / f64::from(*needed), needed.saturating_sub(self.prestige()))
+        power::to_next(self.xp, self.prestige())
     }
 
     /// How far the next Fruit of Dagon has grown, 0 to 1; none until the player's XP reaches level 20's.
@@ -369,7 +442,7 @@ impl Character {
     /// The Defense of everything worn: the four armour pieces.
     #[must_use]
     pub fn defense(&self) -> u32 {
-        self.all_worn().filter_map(|(_, item)| item.defense()).sum()
+        self.all_worn().filter(|(slot, _)| !slot.ship()).filter_map(|(_, item)| item.defense()).sum()
     }
 
     /// The Attack of the loadout worn in a slot, if one is.
@@ -398,12 +471,15 @@ impl Character {
     /// Whether the armour worn gives a trait, whichever loadout is drawn.
     #[must_use]
     pub fn has_trait(&self, id: &str) -> bool {
-        self.all_worn().any(|(slot, item)| !slot.loadout() && item.active_traits().any(|active| active == id))
+        self.all_worn()
+            .any(|(slot, item)| slot.group() == Group::Armour && item.active_traits().any(|active| active == id))
     }
 
-    /// Everything worn that gives its traits while a loadout is drawn: all but the other loadout.
+    /// Everything worn that gives its traits while a loadout is drawn: the armour and that loadout; never the ship's
+    /// modules, whose traits are the ship's (`ship_traits`).
     fn drawing(&self, drawn: Slot) -> impl Iterator<Item = &Item> {
-        self.all_worn().filter(move |(slot, _)| !slot.loadout() || *slot == drawn).map(|(_, item)| item)
+        let gives = move |slot: &Slot| slot.group() == Group::Armour || *slot == drawn;
+        self.all_worn().filter(move |(slot, _)| gives(slot)).map(|(_, item)| item)
     }
 
     /// Adds XP to the player and to the items that earn it, a tenth more with Scholar worn. Past level 20 every

@@ -161,7 +161,8 @@ fn touches(at: [f64; 3], fighter: &Fighter) -> bool {
         && (body.z - STRIKE_REACH..=body.z + BODY_HEIGHT + STRIKE_REACH).contains(&at[2])
 }
 
-fn feet_of(fighter: &Fighter) -> [f64; 3] {
+/// Where a fighter's feet stand: its body's x, y and z.
+pub(crate) fn feet_of(fighter: &Fighter) -> [f64; 3] {
     [fighter.body.x, fighter.body.y, fighter.body.z]
 }
 

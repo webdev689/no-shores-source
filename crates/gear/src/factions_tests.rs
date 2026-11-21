@@ -13,8 +13,8 @@ use crate::rarity::Rarity;
 use crate::rewards::Foe;
 use crate::world::Difficulty;
 
-const AT_COUNTER: Here = Here { social: true, day: 0, week: 0 };
-const AFIELD: Here = Here { social: false, day: 0, week: 0 };
+const AT_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
+const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0, week: 0 };
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
 /// The cape's place among a faction's wares.
 const CAPE: u8 = 0;

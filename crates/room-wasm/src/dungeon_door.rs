@@ -170,6 +170,17 @@ pub fn open_dungeon(text: &[u8], number: usize) -> bool {
     true
 }
 
+/// A dungeon as JSON (`dungeon_json`), asked for by the JSON written at `address`, `length` bytes long: its patrol's
+/// id and name and its number, an Elite Dungeon's place and name, or a seed, a style and a name.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_dungeon(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    crate::hand_over(dungeon_json(unsafe { std::slice::from_raw_parts(address, length) }).into_bytes())
+}
+
 /// Opens a patrol's dungeon's room from the patrol's node file's text written at `address`, `length` bytes long, by
 /// its number; 1 if it opened, 0 if not.
 ///
@@ -215,13 +226,16 @@ mod tests {
     }
 
     /// The asks the browser's agreement test makes too (client/src/rules/dungeonRules.test.ts), and the FNV-1a hash of
-    /// their answers' text, one after another: a dungeon laid anywhere is these bytes.
-    const AGREED_ASKS: [&[u8]; 3] = [
+    /// their answers' text, one after another: a dungeon laid anywhere is these bytes. The fourth lays five blocks, its
+    /// last a style deeper, and the fifth is laid by a seed and a style where no patrol lays it.
+    const AGREED_ASKS: [&[u8]; 5] = [
         br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":0}"#,
         br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
         br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
+        br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
+        br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0xadf4_ea5d_8e28_95f3;
+    const AGREED_HASH: u64 = 0x77bb_f751_6bd7_1735;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {

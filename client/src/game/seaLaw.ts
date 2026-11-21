@@ -1,6 +1,6 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
-import { alongNear, type Pace, SHIP_SPEED, sailSpeed, type Voyage } from '../overworld/voyage.ts';
+import { alongNear, PACE_STEPS, type Pace, SHIP_SPEED, type Voyage } from '../overworld/voyage.ts';
 import { cellHeight, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
 import type { Landmass } from './landmass.ts';
@@ -45,8 +45,8 @@ export function offshore(heightAt: HeightAt, from: Point2, through: Point2): Poi
 /** A standing body's eye over its feet, metres (crates/movement/src/body.rs `TUNING.eye`). */
 export const STANDING_EYE_M = 1.7;
 
-/** The helm's view, behind the Sloop's wheel on her quarterdeck (her deck's helm spot): how high over the water the
- *  eye stands there at her true scale, a standing eye over her deck, and how far down it looks. */
+/** The helm's view, behind the Sloop's wheel on its quarterdeck (its deck's helm spot): how high over the water the
+ *  eye stands there at its true scale, a standing eye over its deck, and how far down it looks. */
 export const HELM = {
   eyeM: (cellHeight(SLOOP_DECK, ...SLOOP_DECK.helm) ?? 0) + STANDING_EYE_M,
   pitch: 0.1,
@@ -58,27 +58,29 @@ export function pictureAt(shot: Shot, point: readonly [number, number, number]):
   return 2 * away * Math.tan(shot.fov / 2);
 }
 
-/** How tall the picture stands at her (`pictureAt`), metres: on the sea's view, which draws ships `overworldScale`
- *  times their size; on the view shown; and on the view near her (the close view, the helm's, Manage's or the walk's)
+/** How tall the picture stands at a ship (`pictureAt`), metres: on the sea's view, which draws ships `overworldScale`
+ *  times their size; on the view shown; and on the view near it (the close view, the helm's, Manage's or the walk's)
  *  it comes down to, `share` of the way there (0 to 1). */
-export interface PictureAtHer {
+export interface PictureAtShip {
   readonly seaM: number;
   readonly shownM: number;
   readonly nearM: number;
   readonly share: number;
 }
 
-/** The scale ships are drawn at: as large as holds the Sloop on the screen at the size the sea's view shows her, or
- *  the near view shows her at her own size where that is smaller, and never under her own size. The eye coming in,
- *  she never shrinks on the screen, never looms larger than her own size once that shows her as large, and on the
- *  near view she and every ship round her are their own size. */
-export function shownScale(overworldScale: number, picture: PictureAtHer): number {
+/** The scale ships are drawn at: its share of the picture eased from the size the sea's view shows it to its own
+ *  size on the near view, by the same ratio each step of `share`, and never under its own size. Held at the sea's
+ *  size until its own shows it as large, it would stand still most of the way in, then treble in its last steps,
+ *  where the eye's distance falls fastest. The eye coming in, it grows a steady step a notch, and on the near view
+ *  it and every ship round it are their own size. */
+export function shownScale(overworldScale: number, picture: PictureAtShip): number {
+  const share = Math.min(1, Math.max(0, picture.share));
   const held = overworldScale * (picture.shownM / picture.seaM);
-  const near = Math.min(held, picture.shownM / picture.nearM);
-  return Math.max(1, (1 - picture.share) * held + picture.share * near);
+  const own = picture.shownM / picture.nearM;
+  return Math.max(1, held ** (1 - share) * own ** share);
 }
 
-/** Where the eye stands at the helm of a ship as she lies, at the size she lies at. */
+/** Where the eye stands at the helm of a ship as it lies, at the size it lies at. */
 export function helmEye(lying: Lying): readonly [number, number, number] {
   const [helmX, helmY] = SLOOP_DECK.helm;
   return deckToWorld(lying, helmX, helmY, HELM.eyeM);
@@ -90,8 +92,19 @@ export const PORT_SEEN_M = 60_000;
 /** Within this of a harbour the ship is offered to dock there; elsewhere off a coast, to go ashore. */
 export const DOCK_REACH_M = 20_000;
 
-/** What a ship is offered off an island: to dock at its port, to go ashore on its coast, or nothing out of reach. */
-export type Landfall = { readonly kind: 'dock'; readonly port: string } | { readonly kind: 'ashore' } | null;
+/** What a ship is offered off an island: to dock at its port, to go ashore on its coast, to anchor off one of the
+ *  sea's islands and go ashore there (its number and its name in words), or nothing out of reach. */
+export type Landfall =
+  | { readonly kind: 'dock'; readonly port: string }
+  | { readonly kind: 'ashore' }
+  | { readonly kind: 'isle'; readonly id: number; readonly words: string }
+  | null;
+
+/** A landfall's offer in words, as its button and the menu say it. */
+export function landfallWords(landfall: NonNullable<Landfall>): string {
+  if (landfall.kind === 'dock') return `Dock at ${landfall.port}`;
+  return landfall.kind === 'isle' ? `Go ashore on ${landfall.words}` : 'Go ashore';
+}
 
 /** The landfall offered a ship that lies off an island's coast (`offCoast`), whose port, if it has one, has its harbour
  *  at `harbour`. */
@@ -183,36 +196,80 @@ export function timeText(seconds: number): string {
   return `${Math.round(seconds / 60)} min`;
 }
 
-/** How fast the page draws its ship toward where the room has her, a share a second, and how far along her voyage it
+/** How fast the page draws its ship toward where the room has it, a share a second, and how far along its voyage it
  *  looks for that place either side of its own, metres. */
 const FOLLOW = { perSecond: 4, windowM: 3_000 } as const;
 
-/** The room's word on the player's ship: where it has her and the pace it sailed her at, held down near a pirate. */
+/** The room's word on the player's ship: where it has it and the pace it sailed it at, held down near a pirate. */
 export interface RoomWord {
   readonly x: number;
   readonly y: number;
   readonly pace: number;
 }
 
-/** How far along her voyage the ship is `dt` seconds on: at the pace the room last sailed her at and drawn toward where
- *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the dial's pace, held
- *  to the pace it last sailed her at (`held`) while she was under way. */
+/** How far along its voyage the ship is `dt` seconds on: at the pace the room last sailed it at and drawn toward where
+ *  it has it, the room being the law; while it has not taken its course yet (`room` null), at the pace it last sailed
+ *  it at (`held`) while it was under way, else at the pace it is sailed at (`sailed`). Each by `way`, the share of
+ *  its pace the canvas it keeps leaves it, as the room sails it (crates/room/src/sea.rs). */
 export function followed(
   voyage: Voyage,
   travelledM: number,
   dt: number,
-  dial: Pace,
+  sailed: SailedPace,
   room: RoomWord | null,
   held: number | null = null,
+  way = 1,
 ): number {
   const seconds = Math.max(0, dt);
-  const asked = held !== null && held > 0 ? Math.min(sailSpeed(dial), SHIP_SPEED * held) : sailSpeed(dial);
+  // The room sails it at its last pace until it takes the course: matching it, the ship stays where the room has it.
+  const asked = SHIP_SPEED * way * (held !== null && held > 0 ? held : sailed);
   if (!room) return travelledM + asked * seconds;
-  const ahead = travelledM + SHIP_SPEED * room.pace * seconds;
+  const ahead = travelledM + SHIP_SPEED * way * room.pace * seconds;
   const there = alongNear(voyage, [room.x, room.y], ahead, FOLLOW.windowM);
   return there === null ? ahead : ahead + (there - ahead) * Math.min(1, seconds * FOLLOW.perSecond);
 }
 
-/** What the voyage's line adds while the room holds her under the dial's pace: a pirate near. */
-export const heldNote = (dial: Pace, room: RoomWord | null): string =>
-  room && room.pace > 0 && room.pace < dial ? ` · Held to ×${room.pace}: a pirate near` : '';
+/** What the voyage's line adds while the room holds it under the pace it is sailed at: a pirate near. */
+export const heldNote = (sailed: SailedPace, room: RoomWord | null): string =>
+  room && room.pace > 0 && room.pace < sailed ? ` · Held to ×${room.pace}: a pirate near` : '';
+
+/** The world's own time, a pace of 1 (crates/room/src/sea.rs `WORLD_PACE`): a ship is sailed at it while watched close,
+ *  so it is seen at its true speed. */
+export const WORLD_PACE = 1;
+/** The pace a ship is sailed at: its dial's step, or the world's own time while the view is close on it. */
+export type SailedPace = Pace | typeof WORLD_PACE;
+/** The ladder the sailed pace eases along, DFO's steps down to the world's own time, and the seconds a step takes. */
+const EASED_LADDER: readonly SailedPace[] = [WORLD_PACE, ...PACE_STEPS];
+export const PACE_EASE_S = 0.15;
+
+/** The next step of the sailed pace eased toward the view's: down the ladder to the world's own time while the view is
+ *  close on it (`watched`), back up to the dial's step while it is not. */
+export function easedPace(sailed: SailedPace, dial: Pace, watched: boolean): SailedPace {
+  const [from, to] = [EASED_LADDER.indexOf(sailed), EASED_LADDER.indexOf(watched ? WORLD_PACE : dial)];
+  return EASED_LADDER[from + Math.sign(to - from)] ?? dial;
+}
+
+/** Whether the room's word on its pace (`room`) disagrees with the pace it is sailed at, so the page asks it again:
+ *  a step the room refused. A slower word with a hostile ship within `holdReachM` (the rules' furthest hold,
+ *  crates/room/src/threat.rs `hold_reach_m`) is the room holding it, not a refusal; no word yet, or at rest, says
+ *  nothing. */
+export function paceToAskAgain(
+  sailed: SailedPace,
+  room: RoomWord | null,
+  hostiles: readonly { readonly x: number; readonly y: number }[],
+  holdReachM: number,
+): boolean {
+  if (!room || room.pace === 0 || room.pace === sailed) return false;
+  const near = hostiles.some((ship) => Math.hypot(ship.x - room.x, ship.y - room.y) <= holdReachM);
+  return room.pace > sailed || !near;
+}
+
+/** What the voyage's line adds while the pace is eased under the dial's for the view. */
+export const easedNote = (sailed: SailedPace, dial: Pace): string =>
+  sailed < dial ? ' · Sailing at true speed while you watch close.' : '';
+
+/** What the sea's note says of its room: only a link lost, or a room being joined again; nothing while all is well. */
+export function roomWords(room: { readonly rejoining: boolean } | null, lost: boolean): string {
+  if (room) return room.rejoining ? ' · Reconnecting…' : '';
+  return lost ? ' · The sea room was lost: sailing on alone' : '';
+}

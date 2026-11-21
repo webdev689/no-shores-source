@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
-import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
-import { ASKS, DROPPED } from './gearMessages.ts';
+import { Gear, GearColumn, GearOfficer, GearShip, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { ASKS, DROPPED, gearOf } from './gearMessages.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
 
 const written = async (name: string) =>
@@ -52,7 +52,7 @@ test('a players own gear the server wrote reads back whole, every column spelled
   // Each stock its own count there: Weapon and Armor Fragments, Weapon and Armor Essence, then Fruit of Dagon, the
   // order the inventory names them in (STOCK_NAMES).
   assert.deepEqual(gear.stocks, [11, 12, 13, 14, 2]);
-  assert.equal(gear.items.length, 6);
+  assert.equal(gear.items.length, 10, 'six pieces and the four modules every ship is built with');
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);
   assert.deepEqual([sword.at, sword.attack, sword.rarity, sword.level, sword.xpMost], [2, 248, 3, 20, 90_000]);
@@ -148,4 +148,99 @@ test('an ask crosses into an input with every field it names', () => {
     ),
   );
   assert.equal(none.ask(), null, 'an input that asks nothing carries no ask');
+});
+
+test("the ship's part of the gear message reads back: its power, materials, hands, officers and offers", () => {
+  const builder = new flatbuffers.Builder(256);
+  const traits = GearColumn.createTraitsVector(builder, [builder.createString('steady_hand')]);
+  const column = GearColumn.createGearColumn(builder, 3, traits, 400, 900, 0, 2, 0);
+  const officer = (id: number, duty: number, wage: number) =>
+    GearOfficer.createGearOfficer(
+      builder,
+      id,
+      1,
+      2,
+      3,
+      4,
+      duty,
+      12,
+      0.5,
+      300,
+      2_000,
+      0.8,
+      1,
+      GearOfficer.createChosenVector(builder, [0]),
+      GearOfficer.createColumnsVector(builder, [column]),
+      wage,
+    );
+  const officers = GearShip.createOfficersVector(builder, [officer(5, 1, 0)]);
+  const offers = GearShip.createOffersVector(builder, [officer(0, 0, 4_000)]);
+  const ship = GearShip.createGearShip(
+    builder,
+    9_000n,
+    6,
+    12,
+    80,
+    140,
+    0.25,
+    1_200,
+    GearShip.createStocksVector(builder, [10, 20, 30, 4]),
+    18,
+    24,
+    officers,
+    offers,
+    GearShip.createTrimVector(builder, [1, 2]),
+    2,
+  );
+  Gear.startGear(builder);
+  Gear.addShip(builder, ship);
+  builder.finish(Gear.endGear(builder));
+  const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array()))).ship;
+  assert.ok(read);
+  assert.deepEqual(
+    [read.xp, read.level, read.prestige, read.attack, read.defense, read.toNext, read.toNextNeeds],
+    [9_000n, 6, 12, 80, 140, 0.25, 1_200],
+  );
+  assert.deepEqual(
+    [read.stocks, read.hands, read.handsMost, read.trim, read.pledge],
+    [[10, 20, 30, 4], 18, 24, [1, 2], 2],
+  );
+  const [kept] = read.officers;
+  assert.deepEqual(
+    [kept?.id, kept?.post, kept?.grade, kept?.given, kept?.family, kept?.duty, kept?.level, kept?.toNext],
+    [5, 1, 2, 3, 4, 1, 12, 0.5],
+  );
+  assert.deepEqual(
+    [kept?.trained, kept?.trainedMost, kept?.strength, kept?.bought, kept?.chosen],
+    [300, 2_000, 0.8, 1, [0]],
+  );
+  assert.deepEqual(kept?.columns, [
+    { kind: 3, traits: ['steady_hand'], xp: 400, aurem: 900, fragments: 0, essence: 2, resource: 0 },
+  ]);
+  assert.deepEqual(
+    read.offers.map((each) => [each.id, each.wage]),
+    [[0, 4_000]],
+  );
+  const bare = new flatbuffers.Builder(16);
+  Gear.startGear(bare);
+  bare.finish(Gear.endGear(bare));
+  assert.equal(gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array()))).ship, null, 'none sent');
+});
+
+test("the ship's and crew's asks carry the numbers the protocol reads them by", async () => {
+  const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
+  const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  assert.deepEqual(
+    [
+      ASKS.infuse,
+      ASKS.recruit,
+      ASKS.station,
+      ASKS.dismiss,
+      ASKS.train,
+      ASKS.chooseOfficer,
+      ASKS.grantOfficers,
+      ASKS.scavenge,
+    ],
+    ['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'].map(number),
+  );
 });

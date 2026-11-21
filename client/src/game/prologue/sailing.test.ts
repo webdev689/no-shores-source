@@ -9,7 +9,7 @@ import { onDeck } from './sailing.ts';
 const near = (actual: number, expected: number, within = 1e-9) =>
   assert.ok(Math.abs(actual - expected) <= within, `${actual} is not ${expected}`);
 
-test('a point on her deck lies forward along her heading and to starboard at her right', () => {
+test('a point on its deck lies forward along its heading and to starboard at its right', () => {
   const place = { x: 100, y: 200, z: 0.5, heading: Math.PI / 2, pitch: 0, roll: 0 };
   const bow = onDeck(place, 10, 0, 2);
   near(bow[0], 110);
@@ -19,28 +19,28 @@ test('a point on her deck lies forward along her heading and to starboard at her
   near(starboard[0], 100);
   near(starboard[1], 203, 1e-9);
   const heeled = onDeck({ ...place, roll: 0.2 }, 0, 3, 0);
-  assert.ok(heeled[2] < place.z, 'heeled to starboard, her starboard side goes down');
-  assert.ok(onDeck({ ...place, pitch: 0.1 }, 10, 0, 0)[2] > place.z, 'her bow rises');
+  assert.ok(heeled[2] < place.z, 'heeled to starboard, its starboard side goes down');
+  assert.ok(onDeck({ ...place, pitch: 0.1 }, 10, 0, 0)[2] > place.z, 'its bow rises');
   near(onDeck({ ...place, scale: 2 }, 5, 0, 0)[0], 110);
 });
 
-test('every hand of her crew stands on her deck, and the helm is behind her wheel aft', () => {
+test('every hand of its crew stands on its deck, and the helm is behind its wheel aft', () => {
   const brig = new Brig([0, 0], 0);
   const place = { x: 0, y: 0, z: 0, heading: 0, pitch: 0, roll: 0 };
   const crew = brig.crew(place, 0);
   assert.equal(crew.length, 7);
   for (const hand of crew) {
-    // Heading north, her deck's x is east and y south: the deck under each hand has a height.
+    // Heading north, its deck's x is east and y south: the deck under each hand has a height.
     assert.notEqual(cellHeight(BRIG_DECK, hand.x, hand.y), null, `${hand.anim} at ${hand.x}, ${hand.y}`);
   }
   const [, helmY, helmZ] = helmSpot();
   assert.ok(helmY > 8, 'the helm is aft');
-  assert.ok(helmZ > 2.8, 'on her quarterdeck');
+  assert.ok(helmZ > 2.8, 'on its quarterdeck');
   assert.deepEqual(deckPoint(place, 1, 2, 3), [1, 2, 3]);
   assert.deepEqual([...brig.heads(place).keys()].sort(), ['bosun', 'gunner', 'lookout', 'mate']);
 });
 
-test('she sails along her heading at her storm way, and stops when the story stops her', () => {
+test('it sails along its heading at its storm way, and stops when the story stops it', () => {
   const brig = new Brig([0, 0], Math.PI / 2);
   brig.step(10);
   near(brig.x, 32, 1e-9);
@@ -53,8 +53,8 @@ test('she sails along her heading at her storm way, and stops when the story sto
 test('the creation camera stands in front of the player and looks to their side, so they stand left', () => {
   const [forward, starboard] = helmInShip();
   const { eye, look } = creationEye(0);
-  assert.ok(eye[0] > forward + 3, 'in front of them, toward her bow');
-  // Looking aft from in front, the camera's right is her port side: the look goes to port of the player.
+  assert.ok(eye[0] > forward + 3, 'in front of them, toward its bow');
+  // Looking aft from in front, the camera's right is its port side: the look goes to port of the player.
   assert.ok(look[1] < starboard, 'the look to their side');
   const turned = creationEye(Math.PI / 2).eye;
   assert.ok(turned[1] > starboard + 3, 'a quarter turn round them stands to starboard');

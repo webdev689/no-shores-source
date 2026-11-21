@@ -1,6 +1,6 @@
 // What the music hears of the game: on foot, the fight the frame showed (the player's own fighter, every foe marked
 // with its rank, alert and health, and the blows since the last frame); at sea, the sea room's hostile ships and the
-// fight it began, the coast she may land on and the sky over her. Pure readings of what the game already has, for the
+// fight it began, the coast it may land on and the sky over it. Pure readings of what the game already has, for the
 // director's law.
 
 import type { MarkedFoe } from '../../../combat/foePlate.ts';
@@ -20,8 +20,8 @@ export interface FootHeard {
   readonly foes: readonly MarkedFoe[];
 }
 
-/** The sea, as far as the music reads it: where the ship lies, the hostile ships round her, her fight, and the
- *  landfall she is offered off a coast. */
+/** The sea, as far as the music reads it: where the ship lies, the hostile ships round it, its fight, and the
+ *  landfall it is offered off a coast. */
 export interface SeaHeard {
   readonly position: readonly [number, number];
   readonly landfall?: Landfall;
@@ -85,7 +85,7 @@ export const heardSky = (reading: SkyReading | null): HeardSky | null =>
     night: reading.daylight <= 0,
   };
 
-/** The music's hearing at sea, from the ship's sea: the fight on screen, the hostile ships round her, the coast she
+/** The music's hearing at sea, from the ship's sea: the fight on screen, the hostile ships round it, the coast it
  *  may land on, and the sky. */
 export function hearSea(sea: SeaHeard, sky: HeardSky | null = null): Hearing {
   const [x, y] = sea.position;

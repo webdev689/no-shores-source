@@ -5,7 +5,8 @@
 
 import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };
 import type { GearItem, GearState } from '../network/gearMessages.ts';
-import { RARITIES, STOCK_NAMES, itemName, resourceName } from '../player/gear.ts';
+import { RARITIES, STOCK_NAMES, resourceName } from '../player/gear.ts';
+import { gearName, moduleGlyph } from './shipGear.ts';
 import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { GAME_PALETTE } from './appearance/gamePalette.ts';
 import { EMBLEMS } from './emblemArt.ts';
@@ -94,9 +95,13 @@ export function gainsOf(before: GearState, after: GearState): Gain[] {
   if (crates > cratesBefore)
     gains.push(gain('ammo-crate', 'Ammo crate', crates - cratesBefore, { glyph: 'ammo-crate' }));
   const had = new Set(before.items.map((item) => item.id));
-  for (const item of after.items)
-    if (!had.has(item.id))
-      gains.push(gain(`item-${item.id}`, itemName(item), 1, { rarity: item.rarity, glyph: 'item', item }));
+  for (const item of after.items) {
+    if (had.has(item.id)) continue;
+    // A module shows its glyph: the forge draws only what a figure wears.
+    const glyph = moduleGlyph(item.kind);
+    const shown = glyph ? { rarity: item.rarity, glyph } : { rarity: item.rarity, glyph: 'item' as const, item };
+    gains.push(gain(`item-${item.id}`, gearName(item), 1, shown));
+  }
   const kept = new Set(before.vestiges.map((vestige) => vestige.id));
   for (const vestige of after.vestiges)
     if (!kept.has(vestige.id))

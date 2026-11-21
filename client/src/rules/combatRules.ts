@@ -36,6 +36,9 @@ export interface CombatRules {
    *  place, a seed and a style) as the ground every later prediction stands on, its jambs and pillars its own walls
    *  and the course empty, as the dungeon's room judges bodies; false if there is none. */
   setDungeon(ask: Readonly<Record<string, string | number>>): boolean;
+  /** Keeps a ship's deck, as its grid's numbers (`deckFloats`), for every later prediction to stand on in place of any
+   *  ground; false if the numbers are not a grid. */
+  setHeights(grid: readonly number[]): boolean;
   /** Stands every later prediction on the rim round a course laid over the sea, as the sea room holds its bodies
    *  (`Floor::Sea`), made from these blocks by the rules; false if they are not blocks. */
   setRim(blocks: readonly Block[]): boolean;
@@ -64,6 +67,7 @@ interface FightExports {
   fighter_course(address: number, length: number): number;
   fighter_ground(address: number, length: number): number;
   fighter_dungeon(address: number, length: number): number;
+  fighter_heights(address: number, length: number): number;
   fighter_rim(address: number, length: number): number;
   fighter_predict(address: number, length: number): bigint;
   fighter_arms(address: number, length: number): number;
@@ -110,6 +114,10 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
     setDungeon: (ask) => {
       const text = new TextEncoder().encode(JSON.stringify(ask));
       return lend(text, (address) => exports.fighter_dungeon(address, text.length)) === 1;
+    },
+    setHeights: (grid) => {
+      const floats = new Float64Array(grid);
+      return lend(floatBytes(floats), (address) => exports.fighter_heights(address, floats.byteLength)) === 1;
     },
     predict: (fighter, intent, id, arms, view) => {
       const floats = new Float64Array(sizes.fighter + sizes.intent + 2 + view.length * (sizes.glance + 1));

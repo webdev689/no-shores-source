@@ -9,7 +9,7 @@ use crate::{Input, standing_on};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
 use combat::{FighterId, Intent};
-use dungeon::{DOORWAY_HALF_M, SIDES, Side};
+use dungeon::{Cell, DOORWAY_HALF_M, SIDES, Side};
 use movement::{Controls, Mode, TUNING};
 
 const PATROLS: [&str; 3] = ["saltgrass-downs", "thunderhoof-grasslands", "whitewind-tundra"];
@@ -262,9 +262,6 @@ fn the_cache_opens_with_a_vestige_for_each_player_in_when_the_reeve_falls_and_sh
     assert!((apart([x, y], [post[0], post[1]]) - CACHE_FROM_POST_M).abs() < 1e-9 && open == 0.0, "shut by the Reeve");
     assert!((facing - bearing([x, y], [post[0], post[1]])).abs() < 1e-12, "facing the Reeve's post");
     let Floor::Dungeon(ground) = &room.floor else { panic!("a dungeon's ground") };
-    assert!(ground.solids().iter().all(|&[min_x, min_y, max_x, max_y, _]| {
-        apart([x, y], [x.clamp(min_x, max_x), y.clamp(min_y, max_y)]) >= CACHE_CLEAR_M
-    }));
     assert!(ground.clear_between([post[0], post[1]], [x, y], 0.0), "nothing between the Reeve and the cache");
     let players: Vec<PlayerId> = (0..2).map(|_| room.join().expect("room")).collect();
     run(&mut room, 1);
@@ -294,6 +291,43 @@ fn the_cache_opens_with_a_vestige_for_each_player_in_when_the_reeve_falls_and_sh
     run(&mut room, STAND_AGAIN);
     assert!(room.garrison[0].cleared_at.is_none(), "the Reeve stands again");
     assert_eq!(room.cache().map(|cache| cache[4]), Some(0.0), "shut");
+}
+
+#[test]
+fn every_dungeons_cache_stands_by_its_reeve_its_open_chest_off_rock_every_solid_and_the_portals_arch() {
+    for seed in 0..150 {
+        for style in dungeon::STYLES {
+            let dungeon = Dungeon::forge(seed, style);
+            let floor = Floor::of_dungeon(&dungeon).expect("a dungeon's ground");
+            let [post_x, post_y] = dungeon.centre(dungeon.nearest_middle(dungeon.end(), 1)[0]);
+            let cache = cache_by(&floor, &dungeon, [post_x, post_y, 0.0]).expect("its cache");
+            let [x, y, _] = cache.at;
+            let (key, Floor::Dungeon(ground)) = (style.key, &floor) else { panic!("a dungeon's ground") };
+            assert!((apart([x, y], [post_x, post_y]) - CACHE_FROM_POST_M).abs() < 1e-9, "{seed} {key}: by the Reeve");
+            let [toward_x, toward_y] = dungeon.portal.side.unit();
+            let [portal_x, portal_y] = dungeon.centre(dungeon.portal.cell);
+            // Every 2 cm of the chest, from its lock in front to its open lid behind, across its width.
+            let (back_x, back_y) = (-libm::sin(cache.facing), libm::cos(cache.facing));
+            for step_across in 0..=45 {
+                for step_back in 0..=42 {
+                    let (across, back) = (f64::from(step_across) * 0.02 - 0.45, f64::from(step_back) * 0.02 - 0.03);
+                    let (at_x, at_y) = (x - back_y * across + back_x * back, y + back_x * across + back_y * back);
+                    let (column, row) = ((at_x / CELL_M).floor(), (at_y / CELL_M).floor());
+                    let cell = (column >= 0.0 && row >= 0.0).then(|| row as usize * dungeon.columns + column as usize);
+                    let open = cell.and_then(|cell| dungeon.cells.get(cell)).is_some_and(|&kind| kind != Cell::Rock);
+                    assert!(open, "{seed} {key}: the chest in rock");
+                    let in_solid = ground.solids().iter().any(|&[min_x, min_y, max_x, max_y, _]| {
+                        (min_x..=max_x).contains(&at_x) && (min_y..=max_y).contains(&at_y)
+                    });
+                    assert!(!in_solid, "{seed} {key}: the chest in a solid");
+                    let out = (portal_x - at_x) * toward_x + (portal_y - at_y) * toward_y + CELL_M / 2.0;
+                    let along = (at_x - portal_x) * toward_y - (at_y - portal_y) * toward_x;
+                    let before_arch = (0.0..=CELL_M / 2.0).contains(&out) && along.abs() <= ARCH_HALF_M;
+                    assert!(!before_arch, "{seed} {key}: the chest before the portal's arch");
+                }
+            }
+        }
+    }
 }
 
 #[test]

@@ -11,7 +11,7 @@ const LOOP_FPS = 6;
 export const ACTOR_IDS = 900_000;
 
 /** One figure as a cutscene places it: world metres, the bearing it faces, its move, and how many times life size
- *  (a figure aboard a ship drawn larger is drawn as large as she is). `since` is when its move began (seconds of the
+ *  (a figure aboard a ship drawn larger is drawn as large as it is). `since` is when its move began (seconds of the
  *  story's clock), so a move that plays once starts at its first frame; `hold` keeps a move on its last frame. */
 export interface Actor {
   readonly id: number;

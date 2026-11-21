@@ -7,6 +7,7 @@ import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.
 import { type CastAsk, type SeenSpell, spellsOf } from './artMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 import { withOthers } from './seaFight.ts';
+import { type HarbourPart, harbourOf } from './seaHarbour.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
 export interface Look {
@@ -26,7 +27,7 @@ const STANDINGS = ['inside', 'warned', 'dead'] as const;
 
 /** One player as a room last stepped them, what their figure showed with it, the number of their last input it took,
  *  their whole fighter in the combat crate's order, and where they stand with its section. In the sea room, a player
- *  off the helm, their body on her deck, in her own frame, with no fighter. */
+ *  off the helm, their body on the ship's deck, in its own frame, with no fighter. */
 export interface SeenPlayer extends Look {
   readonly player: number;
   readonly acknowledged: number;
@@ -51,8 +52,10 @@ export interface SeenShip {
   readonly pace: number;
 }
 
-/** A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
- *  from north, her faction (1 the Grey Tithe, 2 pirates) and her rank (1 Minor to 5 Boss). */
+/** A captain's ship at sea, a pirate's or the Grey Tithe's: its number, where it is, its heading in radians clockwise
+ *  from north, its faction (1 the Grey Tithe, 2 pirates), its rank (1 Minor to 5 Boss), its hull (0 the Sloop to 3
+ *  the Frigate), its level (0 none), the distance it is sighted from, metres (0 from a room that sends none), and its
+ *  way at sea, metres a second at the world's own time. */
 export interface SeenPirate {
   readonly id: number;
   readonly x: number;
@@ -60,15 +63,22 @@ export interface SeenPirate {
   readonly heading: number;
   readonly faction: number;
   readonly rank: number;
+  readonly hull?: number;
+  readonly level?: number;
+  readonly sight?: number;
+  readonly way?: number;
 }
 
 /** A player's fight at sea as the room last stepped it: the naval crate's numbers (crates/naval/src/wire.rs), its other
- *  captains put back in the view (`withOthers`), which `fightViewOf` reads, and her captain's faction and rank. */
+ *  captains put back in the view (`withOthers`), which `fightViewOf` reads, and its captain's faction, rank and hull. */
 export interface SeenSeaFight {
   readonly player: number;
   readonly view: Float64Array;
   readonly faction: number;
   readonly rank: number;
+  readonly hull?: number;
+  /** Whether the player may board a captain of it now, as the sea would take the boarding. */
+  readonly mayBoard?: boolean;
 }
 
 /** A node's room's word on where its player is: the node's id, and the rect (west, north, east, south) its window of
@@ -96,6 +106,17 @@ export interface SeenFoe {
   readonly shield: FoeShield | null;
   /** Its debuffs; none for a foe made by hand. */
   readonly statuses?: FoeStatuses;
+  /** The companion it is, an officer ashore fighting beside their leader; none for a foe. */
+  readonly companion?: Companion | null;
+}
+
+/** A companion: their leader's player number, their officer's given and family names' places in
+ *  `content/gear/crew.json`, and their officer's post (0 First Mate to 4 Lookout), which dresses them. */
+export interface Companion {
+  readonly leader: number;
+  readonly given: number;
+  readonly family: number;
+  readonly post: number;
 }
 
 /** A foe's debuffs as the room keeps them: the ticks left of its Expose and its Charge, and of the immunity a Charge
@@ -182,7 +203,8 @@ export type FromRoomMessage =
       readonly cache: readonly number[];
       /** In an Abyss run, the revives its company has left; -1 in any other room. */
       readonly revives: number;
-    } & FleetPart)
+    } & FleetPart &
+      HarbourPart)
   | ({ readonly kind: 'gear' } & GearState);
 
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
@@ -247,16 +269,16 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
 export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
-/** A ship brought to rest turned to a heading (radians clockwise from north), as its bytes: the helm turned while she
+/** A ship brought to rest turned to a heading (radians clockwise from north), as its bytes: the helm turned while it
  *  lies still. */
 export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(64);
   const facing = Course.createFacingVector(builder, [heading]);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -266,14 +288,30 @@ export function walkBytes(sequence: number, controls: readonly number[]): Uint8A
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createWalkVector(builder, [...controls]);
   const numbered = wholeIn(sequence, 0, 0xffff_ffff, "the step's number");
-  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0, 0));
+  return builder.asUint8Array().slice();
+}
+
+/** A chase of the hostile ship numbered `ship` (null for none), as its bytes, in a course's message. */
+export function chaseBytes(ship: number | null): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(32);
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 3, 0, ship ?? 0, 0));
   return builder.asUint8Array().slice();
 }
 
 /** Leaving the helm (`leave`), or taking it again at the wheel, as its bytes, in a course's message. */
 export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0, 0));
+  return builder.asUint8Array().slice();
+}
+
+/** What a player asks of the sea as its bytes, in a course's message: a repair by a port city, to board a captain
+ *  who struck, or to leave its deck once its crew has fallen. */
+export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(32);
+  const number = { repair: 1, board: 2, 'leave-deck': 3 }[ask];
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, 0, number));
   return builder.asUint8Array().slice();
 }
 
@@ -281,7 +319,7 @@ export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
 export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createOrdersVector(builder, [...orders]);
-  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -339,7 +377,9 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const named = { type: foe.type(), rank: foe.rank(), faction: foe.faction(), phase: foe.phase() };
       const statuses = { expose: foe.expose(), charge: foe.charge(), chargeImmune: foe.chargeImmune() };
       const read = { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
-      return { ...read, statuses };
+      const companion =
+        foe.leader() > 0 ? { leader: foe.leader(), given: foe.given(), family: foe.family(), post: foe.post() } : null;
+      return { ...read, statuses, companion };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);
@@ -375,13 +415,26 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const pirate = snapshot.pirates(index);
       if (!pirate) throw new Error(`snapshot pirate ${index} does not read`);
       const { faction, rank } = commissionOf(pirate.faction(), pirate.rank());
-      return { id: pirate.id(), x: pirate.x(), y: pirate.y(), heading: pirate.heading(), faction, rank };
+      const [hull, level, sight, way] = [pirate.hull(), pirate.level(), pirate.sight(), pirate.way()];
+      return {
+        id: pirate.id(),
+        x: pirate.x(),
+        y: pirate.y(),
+        heading: pirate.heading(),
+        faction,
+        rank,
+        hull,
+        level,
+        sight,
+        way,
+      };
     });
     const fights = Array.from({ length: snapshot.fightsLength() }, (unused, index) => {
       const fight = snapshot.fights(index);
       if (!fight) throw new Error(`snapshot fight ${index} does not read`);
       const { faction, rank } = commissionOf(fight.faction(), fight.rank());
-      return { player: fight.player(), view: withOthers(fight.viewArray() ?? [], fight.othersArray()), faction, rank };
+      const view = withOthers(fight.viewArray() ?? [], fight.othersArray());
+      return { player: fight.player(), view, faction, rank, hull: fight.hull(), mayBoard: fight.mayBoard() };
     });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));
     return {
@@ -399,6 +452,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       cache: Array.from(snapshot.cacheArray() ?? []),
       revives: snapshot.revives(),
       ...fleetOf(snapshot),
+      ...harbourOf(snapshot),
     };
   } catch {
     return null;

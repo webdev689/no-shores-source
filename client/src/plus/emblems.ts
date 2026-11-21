@@ -83,6 +83,11 @@ export function emblemUrl(faction: number): string | null {
   return emblem ? urlOf(emblem) : null;
 }
 
+/** A faction's emblem as its rows and tones, for a picture drawn elsewhere (a ship's flag); null for one with none. */
+export function emblemPixels(faction: number): Pixels | null {
+  return EMBLEMS[faction] ?? null;
+}
+
 /** The factions that have an emblem, by number. */
 export const EMBLEM_FACTIONS: readonly number[] = Object.keys(EMBLEMS).map(Number);
 

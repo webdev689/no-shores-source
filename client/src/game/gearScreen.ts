@@ -2,6 +2,7 @@
 // Prestige, Defense and Attack, and what each slot wears), a slot's choices, an item's detail with its nodes, and the
 // vendors' wares. The page draws these in the Enhanced Plus kit.
 
+import { LEVEL_BY_XP, LEVEL_MOST } from '../rules/fleetRules.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { KeeperKind } from './keepers.ts';
 import type { Cards } from '../player/cards.ts';
@@ -13,18 +14,19 @@ import {
   SLOTS,
   VAULTED,
   WORN,
-  itemName,
+  isModule,
   itemWords,
-  kindName,
   nodeShown,
   wearAsks,
 } from '../player/gear.ts';
+import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts';
 
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
-/** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), and the bounty board. */
-export type Station = KeeperKind | 'board';
+/** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), the Harbourmaster's and
+ *  the bounty board. */
+export type Station = KeeperKind | 'harbourmaster' | 'board';
 /** What the menu shows: a tab, or a station's screen. */
 export type View = Tab | Station;
 /** What a counter or a key opens: a view, and the inventory's shelf to open it at. */
@@ -82,17 +84,13 @@ export interface Tile {
   readonly power: string;
 }
 
-/** The levels XP alone reaches, and the highest. */
-const LEVEL_BY_XP = 20;
-const LEVEL_MOST = 30;
-
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 const colourOf = (rarity: number) => RARITIES[rarity]?.colour ?? '';
 
 export function tileOf(item: GearItem): Tile {
   const power = item.attack || item.defense || item.prestige;
   const word = item.attack ? 'Attack' : item.defense ? 'Defense' : item.prestige ? 'Prestige' : '';
-  return { id: item.id, name: itemName(item), colour: colourOf(item.rarity), power: word ? `${power} ${word}` : '' };
+  return { id: item.id, name: gearName(item), colour: colourOf(item.rarity), power: word ? `${power} ${word}` : '' };
 }
 
 /** The Character tab: the player's level and how far to the next, their power, and each slot's worn item. */
@@ -158,6 +156,26 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
   if (item.defense) numbers.push(['Defense', String(item.defense)]);
   if (item.prestige) numbers.push(['Prestige', String(item.prestige)]);
   numbers.push(['Level', String(item.level)]);
+  // A module is fitted in its slot and infused, and its nodes are priced in the ship's materials.
+  const module = isModule(item.kind);
+  const nodeAt = module ? moduleNode : nodeShown;
+  return {
+    name: gearName(item),
+    colour: colourOf(item.rarity),
+    kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}${item.breach ? ' · from a Breach' : ''}`,
+    numbers,
+    columns: item.columns.map((column, index) => ({
+      nodes: Array.from({ length: Math.max(1, column.traits.length) }, (unused, node) =>
+        nodeAt(item, index, node),
+      ).filter((node): node is NodeShown => node !== null),
+    })),
+    words: itemWords(item),
+    presses: module ? modulePresses(item, state) : gearPresses(item, state, atVault),
+  };
+}
+
+/** What may be done with a piece of the player's own gear from its page. */
+function gearPresses(item: GearItem, state: GearState, atVault: boolean): Press[] {
   const presses: Press[] = [];
   if (item.at >= WORN)
     presses.push({ label: 'Take off', ask: { kind: ASKS.takeOff, slot: item.at - WORN }, role: 'button' });
@@ -182,19 +200,7 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
       held: true,
       burst: 'pulse',
     });
-  return {
-    name: itemName(item),
-    colour: colourOf(item.rarity),
-    kind: `${RARITIES[item.rarity]?.name ?? ''} ${kindName(item.kind)}${item.breach ? ' · from a Breach' : ''}`,
-    numbers,
-    columns: item.columns.map((column, index) => ({
-      nodes: Array.from({ length: Math.max(1, column.traits.length) }, (unused, node) =>
-        nodeShown(item, index, node),
-      ).filter((node): node is NodeShown => node !== null),
-    })),
-    words: itemWords(item),
-    presses,
-  };
+  return presses;
 }
 
 /** A vendor's ware as its stall shows it: the item's tile and kind, and its purchase. */
@@ -207,15 +213,19 @@ export interface Ware {
   readonly press: Press;
 }
 
-/** The smiths' stalls: the Armorsmith's and the Weaponsmith's wares of the day, each bought for its price in Aurem. */
+/** The vendors by the gear crate's numbers (`Vendor::ALL`), and how many wares each sells a day (`vendor::WARES`): the
+ *  message lists them vendor by vendor. */
+const VENDORS = ['The Armorsmith', 'The Weaponsmith', 'The Shipwright'] as const;
+export const WARES = 6;
+
+/** The vendors' stalls: the Armorsmith's, the Weaponsmith's and the Shipwright's wares of the day, each bought for its
+ *  price in Aurem. */
 export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
-  const names = ['The Armorsmith', 'The Weaponsmith'];
-  const half = state.wares.length / 2;
-  return names.map((name, vendor) => ({
+  return VENDORS.map((name, vendor) => ({
     name,
-    wares: state.wares.slice(vendor * half, (vendor + 1) * half).map((item) => ({
+    wares: state.wares.slice(vendor * WARES, (vendor + 1) * WARES).map((item) => ({
       tile: tileOf(item),
-      kind: `${RARITIES[item.rarity]?.name ?? ''} ${kindName(item.kind)}`,
+      kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}`,
       level: item.level,
       price: item.price,
       affordable: state.aurem >= item.price,

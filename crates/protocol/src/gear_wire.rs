@@ -26,6 +26,15 @@ pub const WEAR_EMBLEM: u8 = 13;
 pub const BUY_EMBLEM: u8 = 14;
 pub const USE_CRATE: u8 = 15;
 pub const BUY_CRATE: u8 = 16;
+/// A module fed into another: the kept one in `item`, the fed one in `count`.
+pub const INFUSE: u8 = 17;
+/// The crew's asks: an officer of the day signed on (`column` the faction, `node` the offer), one stationed (`item` the officer, `slot` the
+/// duty: 0 aboard, 1 at their post, 2 ashore), paid off, and their nodes bought and chosen (`column`, `node`).
+pub const RECRUIT: u8 = 58;
+pub const STATION: u8 = 59;
+pub const DISMISS: u8 = 60;
+pub const TRAIN: u8 = 61;
+pub const CHOOSE_OFFICER: u8 = 62;
 pub const FINISH_PROLOGUE: u8 = 17;
 /// A bounty taken or turned in: its place on the board in `node`, the day of the board shown in `item`, as the gear's
 /// `day` sends it.
@@ -51,6 +60,10 @@ pub const GRANT_WORN: u8 = 39;
 /// `slot` and the fragment's place in its Art's list (0 to 5) in `node`.
 pub const WEAR_ART: u8 = 40;
 pub const SET_CORE: u8 = 41;
+/// A First Mate and a Bosun of `level` signed on and sent ashore.
+pub const GRANT_OFFICERS: u8 = 43;
+/// A sea island's wreck scavenged, by its place in the island's list in `node`.
+pub const SCAVENGE: u8 = 63;
 /// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
 pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
@@ -71,6 +84,23 @@ pub const BUY_COSMETIC: u8 = 56;
 pub const BUY_FROM_SHAPE: u8 = 57;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
+
+/// An officer's duty by its number on the wire.
+fn duty_of(number: u8) -> Option<gear::crew::Duty> {
+    use gear::crew::Duty;
+    [Duty::Aboard, Duty::Posted, Duty::Ashore].get(usize::from(number)).copied()
+}
+
+/// An officer's duty's number on the wire.
+#[must_use]
+pub fn duty_code(duty: gear::crew::Duty) -> u8 {
+    use gear::crew::Duty;
+    match duty {
+        Duty::Aboard => 0,
+        Duty::Posted => 1,
+        Duty::Ashore => 2,
+    }
+}
 
 /// An ask as the room takes it, or none for a number or a name it does not know.
 #[must_use]
@@ -98,7 +128,14 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         FINISH_PROLOGUE => Asked::Gear(Ask::FinishPrologue),
         TAKE_BOUNTY => Asked::Gear(Ask::TakeBounty { place: node, day: u64::from(item) }),
         TURN_IN_BOUNTY => Asked::Gear(Ask::TurnInBounty { place: node, day: u64::from(item) }),
+        INFUSE => Asked::Gear(Ask::Infuse { item, fed: ask.count() }),
+        RECRUIT => Asked::Gear(Ask::Recruit { faction: column, offer: node }),
+        STATION => Asked::Gear(Ask::Station { officer: item, duty: duty_of(ask.slot())? }),
+        DISMISS => Asked::Gear(Ask::Dismiss { officer: item }),
+        TRAIN => Asked::Gear(Ask::Train { officer: item, column, node }),
+        CHOOSE_OFFICER => Asked::Gear(Ask::ChooseOfficer { officer: item, column, node }),
         GATHER => Asked::Gather { node },
+        SCAVENGE => Asked::Scavenge { wreck: node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
             slot: slot()?,
@@ -122,6 +159,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SET_CORE => Asked::Art(ArtAsk::SetCore { art: column, slot: ask.slot(), fragment: node }),
         GRANT_AMMO => Asked::Grant(Grant::Ammo(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
         GRANT_CRATES => Asked::Grant(Grant::Crates(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
+        GRANT_OFFICERS => Asked::Grant(Grant::Officers(ask.level())),
         GRANT_WORN => Asked::Grant(Grant::Worn(Kind::from_number(ask.item_kind())?)),
         GRANT_ART_LEVEL => Asked::Grant(Grant::ArtLevel { art: column, level: ask.level() }),
         PLEDGE => Asked::Gear(Ask::Pledge { faction: column }),
@@ -163,6 +201,20 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::BuyEmblem { emblem } => args = messages::AskArgs { kind: BUY_EMBLEM, item: u32::from(emblem), ..args },
             Ask::UseCrate => args = messages::AskArgs { kind: USE_CRATE, ..args },
             Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
+            Ask::Infuse { item, fed } => args = messages::AskArgs { kind: INFUSE, item, count: fed, ..args },
+            Ask::Recruit { faction, offer } => {
+                args = messages::AskArgs { kind: RECRUIT, column: faction, node: offer, ..args }
+            }
+            Ask::Station { officer, duty } => {
+                args = messages::AskArgs { kind: STATION, item: officer, slot: duty_code(duty), ..args };
+            }
+            Ask::Dismiss { officer } => args = messages::AskArgs { kind: DISMISS, item: officer, ..args },
+            Ask::Train { officer, column, node } => {
+                args = messages::AskArgs { kind: TRAIN, item: officer, column, node, ..args };
+            }
+            Ask::ChooseOfficer { officer, column, node } => {
+                args = messages::AskArgs { kind: CHOOSE_OFFICER, item: officer, column, node, ..args };
+            }
             Ask::Pledge { faction } => args = messages::AskArgs { kind: PLEDGE, column: faction, ..args },
             Ask::BuyFactionWare { faction, ware } => {
                 args = messages::AskArgs { kind: BUY_FACTION_WARE, column: faction, node: ware, ..args };
@@ -194,6 +246,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
+        Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -234,6 +287,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Grant(Grant::Crates(count)) => {
             args = messages::AskArgs { kind: GRANT_CRATES, count: u32::from(*count), ..args };
         }
+        Asked::Grant(Grant::Officers(level)) => {
+            args = messages::AskArgs { kind: GRANT_OFFICERS, level: *level, ..args };
+        }
         Asked::Grant(Grant::ArtLevel { art, level }) => {
             args = messages::AskArgs { kind: GRANT_ART_LEVEL, column: *art, level: *level, ..args };
         }
@@ -253,7 +309,7 @@ pub fn at_number(at: At) -> u8 {
 }
 
 /// A column's kind as the gear message numbers it.
-fn column_number(column: gear::grid::Column) -> u8 {
+pub(crate) fn column_number(column: gear::grid::Column) -> u8 {
     match column {
         gear::grid::Column::Upgrade => 0,
         gear::grid::Column::Handling(_) => 1,
@@ -325,14 +381,17 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let held = &character.materials;
     let mut builder = FlatBufferBuilder::new();
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
-    // In a social space, the day's wares, each numbered by its place among its vendor's.
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     // In a social space, the emblems the Tailor sells that day.
     let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day()) } else { Vec::new() };
+    // In a social space, the day's wares, each numbered by its place among its vendor's.
     let wares: Vec<_> = if room.in_social_space(player) {
         gear::vendor::Vendor::ALL
             .into_iter()
-            .flat_map(|vendor| gear::vendor::wares(vendor, room.day(), character.level()))
+            .flat_map(|vendor| {
+                let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
+                gear::vendor::wares(vendor, room.day(), level)
+            })
             .enumerate()
             .map(|(place, mut ware)| {
                 ware.id = u32::try_from(place % gear::vendor::WARES).unwrap_or_default();
@@ -386,6 +445,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let arts = gear::arts::arts().arts.iter();
     let cores: Vec<u8> = arts.flat_map(|art| character.core_of(art.id)).map(|set| set.unwrap_or(NO_FRAGMENT)).collect();
     let casting = found.casting;
+    let ship = Some(crate::ship_wire::ship_offset(&mut builder, character, room.recruiting_at(player)));
     let more = crate::standing_wire::standing_of(&mut builder, room, player, character);
     // In a patrol, its entrances: x, y, the ground's height, the yaw and the model, each.
     let dungeons: Vec<f64> = room
@@ -441,6 +501,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         ammo_share: f64::from(character.ammo) / f64::from(gear::ammo::AMMO_FULL),
         crates: u8::try_from(held.crates).unwrap_or(u8::MAX),
         crate_price: if room.in_social_space(player) { gear::ammo::CRATE_PRICE } else { 0 },
+        ship,
         pledge: character.allegiance.pledge,
         reputation: Some(more.reputation),
         packages: Some(more.packages),

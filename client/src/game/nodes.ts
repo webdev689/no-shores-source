@@ -30,6 +30,8 @@ export interface CityPlan {
     readonly visitor_spots?: readonly Point[];
   };
   readonly pads: readonly Pad[];
+  /** Whether the city is a ruin: no port, no docking, no one in its plaza. */
+  readonly ruined?: boolean;
 }
 
 /** A station in a social space's arcades (the city crate's `Station`): what it is, where its keeper stands, and its
@@ -71,6 +73,12 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
     board: plan.social.board?.front ?? null,
     visitorSpots,
   };
+}
+
+/** A city's port, where a ship docks and the sea marks it: its name and harbour; none for a city with no harbour or
+ *  a ruin, whose harbour is no port. */
+export function portOf(plan: CityPlan | null): { readonly name: string; readonly harbour: Point } | null {
+  return plan?.harbour && !plan.ruined ? { name: plan.name, harbour: plan.harbour } : null;
 }
 
 /** The cities whose social spaces open, by id (`content/world/social.json`, which the city crate reads too): Overlook's

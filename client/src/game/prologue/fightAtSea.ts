@@ -3,6 +3,7 @@
 // sail every ship as a Sloop; the player's is drawn as the Brig, and every ship is posed on the swell the story
 // hands it (a storm's, maybe), for the drawing only.
 import type { FightSource } from '../../editor/fighting.ts';
+import type { SeaFightModel } from '../../plus/seaFight.ts';
 import type { MarkDrawer } from '../../editor/naval.ts';
 import { SAILS_RUNG } from '../../editor/sailing.ts';
 import type { CaptainAt, FightCaptain, FightEvent, FightVessel, FightView, ShipState } from '../../rules/fightRules.ts';
@@ -20,9 +21,9 @@ import type { Shot } from '../camera.ts';
 import { SeaCombat } from '../seaCombat.ts';
 import type { FightReadout } from '../seaPanel.ts';
 
-/** A captain the story sets upon her: her bearing off the player's bow (radians, to starboard), how far off (metres),
- *  her faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss), and her heading (radians clockwise from
- *  north; straight for the player when not given), and her way (m/s) if she comes on under sail. */
+/** A captain the story sets upon the player: its bearing off the player's bow (radians, to starboard), how far off
+ *  (metres), its faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss), and its heading (radians
+ *  clockwise from north; straight for the player when not given), and its way (m/s) if it comes on under sail. */
 export interface Ambusher {
   readonly bearing: number;
   readonly distanceM: number;
@@ -32,25 +33,27 @@ export interface Ambusher {
   readonly way?: number;
 }
 
-/** The rigs a fight's ships begin with, as another drawing left them: hers (else a new one), then each captain's. */
+/** The rigs a fight's ships begin with, as another drawing left them: the player's (else a new one), then each
+ *  captain's. */
 export interface Rigs {
   readonly own?: SailRig;
   readonly captains: readonly SailRig[];
 }
 
-/** A captain's Sloop going down, as the rules last sent her: how she will lie once sunk, and in how many seconds. */
+/** A captain's Sloop going down, as the rules last sent it: how it will lie once sunk, and in how many seconds. */
 export interface Going {
   readonly sunk: Founder;
   readonly inS: number;
 }
 
-/** What the story reacts to: a ball striking her, her ball striking a captain, a captain going down, one sunk. */
+/** What the story reacts to: a ball striking the player's ship, its ball striking a captain, a captain going down,
+ *  one sunk. */
 export type Happening = 'hit-taken' | 'hit-given' | 'sinking' | 'sunk';
 
-/** One frame of the ambush: the camera's shot, every ship as drawn (hers first, the Brig; then each captain's Sloop,
- *  darker) with her state, their footprints, the captains' bars, what the HUD shows of it, what happened since the last
- *  frame, how many captains are still to beat (afloat and fighting), and whether the fight is over: every captain
- *  beaten, sunk or struck. */
+/** One frame of the ambush: the camera's shot, every ship as drawn (the player's first, the Brig; then each captain's
+ *  Sloop, darker) with its state, their footprints, the captains' bars, the fight's readout and what the tracker
+ *  counts of it, what happened since the last frame, how many captains are still to beat (afloat and fighting), and
+ *  whether the fight is over: every captain beaten, sunk or struck. */
 export interface StoryFightFrame {
   readonly shot: Shot;
   readonly ships: readonly {
@@ -65,6 +68,9 @@ export interface StoryFightFrame {
   }[];
   readonly hulls: readonly HullMask[];
   readonly bars: readonly ShipBar[];
+  /** The fight's readout, as the sea's display shows it. */
+  readonly display: SeaFightModel | null;
+  /** What the tracker counts and the toasts say of the fight. */
   readonly readout: FightReadout;
   readonly happened: readonly Happening[];
   readonly over: boolean;
@@ -76,13 +82,13 @@ const TURN = 2 * Math.PI;
 const STORY_SEED = 1;
 /** A captain's ship is drawn darker, as in the World Editor. */
 export const CAPTAIN_SHADE = 0.55;
-/** The way a ship's foam shows round her bow, m/s. */
+/** The way a ship's foam shows round its bow, m/s. */
 const UNDER_WAY = 2;
 /** The player's ship as drawn, and every captain's. */
 const OWN_HULL = 'brig';
 const CAPTAIN_HULL = 'sloop';
 
-/** Where each ambusher is put to sea round the player's ship, as the fight door takes her. */
+/** Where each ambusher is put to sea round the player's ship, as the fight door takes it. */
 export function ambushersAt(
   ship: { readonly x: number; readonly y: number; readonly heading: number },
   ambushers: readonly Ambusher[],
@@ -111,7 +117,7 @@ export function happenedOf(events: readonly FightEvent[]): Happening[] {
 }
 
 /** The ambush: the sea fight on the land worker's door, every event it answers kept for the story, and each ship's
- *  rig, hers the Brig's and each captain's a Sloop's. */
+ *  rig, the player's ship's the Brig's and each captain's a Sloop's. */
 export class StoryFight {
   private readonly land: LandWorker;
   private readonly combat: SeaCombat;
@@ -142,10 +148,10 @@ export class StoryFight {
     this.captainRigs = [...rigs.captains];
   }
 
-  /** Sets `ambushers` upon her `ship` on the land worker's open landmass at `now`, every captain's Sloop drawn with
-   *  `hull`'s sails and the fight's balls and arcs with its marks. A ship coming on with `way` (m/s) comes under
-   *  sail; each ship's sails go on from the rig `rigs` hands her (hers, then each ambusher's), as last drawn. Every
-   *  ship sails in the story's `wind` (m/s east and south), the storm drawn round her, never the world's. */
+  /** Sets `ambushers` upon the player's `ship` on the land worker's open landmass at `now`, every captain's Sloop
+   *  drawn with `hull`'s sails and the fight's balls and arcs with its marks. A ship coming on with `way` (m/s) comes
+   *  under sail; each ship's sails go on from the rig `rigs` hands it (the player's, then each ambusher's), as last
+   *  drawn. Every ship sails in the story's `wind` (m/s east and south), the storm drawn round it, never the world's. */
   static async begin(
     land: LandWorker,
     ship: { x: number; y: number; heading: number; way?: number },
@@ -174,11 +180,11 @@ export class StoryFight {
       },
       fightEnd: () => land.fightEnd(),
     };
-    const combat = new SeaCombat(source, first, hull.marks, hull.sails, now, 'Brig');
+    const combat = new SeaCombat({ source, own: 'Brig' }, first, hull.marks, now);
     return new StoryFight(land, combat, { heard, answered }, hull.sails, rigs);
   }
 
-  /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times her
+  /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times its
    *  size on `swell`. A step the rules refused is thrown here. */
   /** The fight's events this frame and its ships as they lie, as the sea's sounds hear them. */
   get fightHeard(): FightHeard {
@@ -220,8 +226,8 @@ export class StoryFight {
         (beamM / 2) * scale,
         input.time,
       );
-      // Her hurts and her going down settle, trim and list her as the rules have her, on the swell drawn here: the
-      // rules' own pose rides a swell of theirs, so taking it as she goes down would jump her.
+      // Its hurts and its going down settle, trim and list it as the rules have it, on the swell drawn here: the
+      // rules' own pose rides a swell of theirs, so taking it as it goes down would jump it.
       const [settled, trim, list] = 'founder' in vessel && vessel.founder ? vessel.founder : [0, 0, 0];
       const place = {
         x,
@@ -250,13 +256,14 @@ export class StoryFight {
       ships,
       hulls: this.hulls(view.player, captains, scale),
       bars: this.combat.bars(scale),
+      display: this.combat.display(input.time),
       readout: this.combat.readout(input.time),
       happened,
       over: view.over !== null,
     };
   }
 
-  /** Each afloat ship's footprint on the water: hers the Brig's, each captain's a Sloop's. */
+  /** Each afloat ship's footprint on the water: the player's ship's the Brig's, each captain's a Sloop's. */
   private hulls(player: FightVessel, captains: readonly FightVessel[], scale: number): HullMask[] {
     const hull = (vessel: FightVessel, kind: 'own' | 'captain'): HullMask[] => {
       if (vessel.state === 'sinking' || vessel.state === 'sunk') return [];
@@ -286,7 +293,7 @@ export class StoryFight {
   }
 
   wheel(steps: number): void {
-    this.combat.wheel(steps);
+    this.combat.wheel(steps, performance.now() / 1000);
   }
 
   /** The balls aloft, the lay's arcs and the effects, as SeaCombat draws them. */

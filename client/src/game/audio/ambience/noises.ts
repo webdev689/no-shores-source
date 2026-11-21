@@ -65,7 +65,7 @@ const hullSlap: Maker = (rate, random) => {
   return softened(unit(out));
 };
 
-/** A heavier sea against her bow: a boom and its spray. */
+/** A heavier sea against its bow: a boom and its spray. */
 const bowThump: Maker = (rate, random) => {
   const out = length(rate, 2);
   const boom = filtered(noise(Math.round(0.8 * rate), random), [['lowpass', 130, 0.8]], rate);
@@ -423,7 +423,7 @@ const anvilStrike =
     return shaped(unit(out), () => gain);
   };
 
-/** A moored ship's halyard slapping her mast: a tink of metal on wood. */
+/** A moored ship's halyard slapping its mast: a tink of metal on wood. */
 const halyard: Maker = (rate, random) => {
   const pitch = between(random, [2000, 2300]);
   const out = modes(rate, 0.6, [

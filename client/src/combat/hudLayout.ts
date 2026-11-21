@@ -4,20 +4,12 @@
 // two never meet. A view 1500 by 900 or larger takes every piece a step larger; one past 1440p stands them, and the
 // compass's column with the boss bar and the target's plate, at twice their first size, as the rest doubles there.
 import { COMPASS } from '../plus/compass.ts';
-import { tipOf } from '../plus/barFrame.ts';
+import { CORNER, tipOf, VITAL_SIZES } from '../plus/barFrame.ts';
 
-/** How far the corner pieces stand in from the view's side, top and foot, in CSS pixels at their own size. */
-export const EDGE = { side: 28, top: 14, foot: 22 } as const;
 /** The least view that takes the larger step, and the least that doubles the first. */
 export const WIDE = { width: 1500, height: 900 } as const;
 export const DOUBLE = { width: 2400, height: 1300 } as const;
 
-/** Each vital's height, frame and all, the gap between two, and the room kept under them for the buffs' row, at
- *  each step, in CSS pixels. */
-export const VITAL_SIZES = {
-  base: { health: 12, stamina: 10, poise: 8, gap: 4, buffs: 34 },
-  wide: { health: 16, stamina: 14, poise: 10, gap: 5, buffs: 46 },
-} as const;
 /** A bar's length: this share of the view's width, never under `least` nor over `most`, and kept `clear` of the
  *  compass. */
 export const VITAL_LENGTH = { share: 0.26, least: 150, most: 600, clear: 16 } as const;
@@ -49,7 +41,7 @@ export const compassWidth = (width: number, zoom = 1): number => Math.min(COMPAS
 /** How far down the vitals reach, the buffs' row under them, at a step, at their own size. */
 export function vitalsDepth(wide: boolean): number {
   const sizes = wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
-  return EDGE.top + sizes.health + sizes.stamina + sizes.poise + sizes.gap * 3 + sizes.buffs;
+  return CORNER.top + sizes.health + sizes.stamina + sizes.poise + sizes.gap * 3 + sizes.buffs;
 }
 
 /** The layout for a view `width` by `height` CSS pixels. */
@@ -58,13 +50,13 @@ export function hudLayout(width: number, height: number): HudLayout {
   const wide = zoom === 1 && width >= WIDE.width && height >= WIDE.height;
   const { share, least, most, clear } = VITAL_LENGTH;
   // What stands beside the compass is measured in the view's pixels, the compass at its zoom, then laid at the zoom.
-  const beside = (width - compassWidth(width, zoom)) / 2 - (EDGE.side + clear) * zoom;
+  const beside = (width - compassWidth(width, zoom)) / 2 - (CORNER.side + clear) * zoom;
   const wanted = width * share;
   if (beside >= least * zoom) {
     const length = Math.round(Math.min(wanted, beside, most * zoom) / zoom);
     return { wide, zoom, length, stacked: false, compassTop: COMPASS.top * zoom };
   }
-  const length = Math.round(Math.min(Math.max(least, width / 2), width - EDGE.side * 2, most) / zoom);
+  const length = Math.round(Math.min(Math.max(least, width / 2), width - CORNER.side * 2, most) / zoom);
   return { wide, zoom, length, stacked: true, compassTop: vitalsDepth(wide) * zoom };
 }
 

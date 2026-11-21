@@ -40,31 +40,84 @@ pub fn gear(player: PlayerId) -> Vec<u8> {
                 None
             }
         }
-        Opened::Sea(_) | Opened::Fleet(_) => None,
+        // A boarder's gear is their deck room's, which holds their character while they fight on its deck; any other
+        // player's, the character the sea keeps for them, once it changed.
+        Opened::Sea(sea) if sea.on_deck(player) => {
+            sea.deck_gear_change(player).and_then(|(room, boarder)| protocol::gear_wire::gear_bytes(room, boarder))
+        }
+        Opened::Sea(sea) => sea.take_character_change(player).and_then(sea_gear_bytes),
+        Opened::Fleet(_) => None,
     })
     .flatten()
     .unwrap_or_default()
 }
 
-/// A player's character as it is kept between sessions, as JSON's bytes; empty on land with no such player, and at
-/// sea, where no one holds gear.
+thread_local! {
+    /// A room on land holding one player, made once, that writes a player's gear at sea as a land room writes it.
+    static GEAR_ROOM: std::cell::RefCell<Option<(room::Room, PlayerId)>> = const { std::cell::RefCell::new(None) };
+}
+
+/// A player's gear at sea, from the character the sea keeps for them: written by a room that holds them alone, so
+/// with no drops, nodes, wares or casting, none of which the sea has.
+fn sea_gear_bytes(character: &gear::Character) -> Option<Vec<u8>> {
+    GEAR_ROOM.with(|held| {
+        let mut held = held.borrow_mut();
+        if held.is_none() {
+            let mut room = room::Room::new(Vec::new(), (0.0, 0.0));
+            *held = room.join().map(|player| (room, player));
+        }
+        let (room, player) = held.as_mut()?;
+        room.restore_character(*player, &character.to_json()).then(|| protocol::gear_wire::gear_bytes(room, *player))?
+    })
+}
+
+/// The open sea keeps characters from now on (`Sea::keep_characters`): its players' courses wait for the keeper's
+/// word. 1 if a sea is open, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_keep_characters() -> u32 {
+    let kept = with_open(|opened| match opened {
+        Opened::Sea(sea) => {
+            sea.keep_characters();
+            true
+        }
+        Opened::Land { .. } | Opened::Fleet(_) => false,
+    });
+    u32::from(kept == Some(true))
+}
+
+/// The keeper has no character to give a player at sea (none kept, or the page plays unkept): the course held for
+/// them sails (`Sea::none_kept`). Nothing elsewhere.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_none_kept(player: PlayerId) {
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            sea.none_kept(player);
+        }
+    });
+}
+
+/// A player's character as it is kept between sessions, as JSON's bytes, at sea with their ship's hurts in it; empty
+/// with no such player, at sea before the accounts gave it, and in a fleet room.
 #[must_use]
 pub fn character(player: PlayerId) -> Vec<u8> {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.kept_character(player),
-        Opened::Sea(_) | Opened::Fleet(_) => None,
+        Opened::Sea(sea) => sea.kept_character(player),
+        Opened::Fleet(_) => None,
     })
     .flatten()
     .map(String::into_bytes)
     .unwrap_or_default()
 }
 
-/// Gives a player on land the character kept for them, from JSON's bytes; false if it is not one or they are not in.
+/// Gives a player the character kept for them, from JSON's bytes, at sea their ship the hurts kept in it; false if
+/// it is not one or they are not in.
 pub fn restore_character(player: PlayerId, bytes: &[u8]) -> bool {
     let Ok(text) = std::str::from_utf8(bytes) else { return false };
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.restore_character(player, text),
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => sea.restore_character(player, text),
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }
@@ -105,7 +158,8 @@ pub fn own(player: PlayerId, bytes: &[u8]) -> bool {
     let Ok(owner) = std::str::from_utf8(bytes) else { return false };
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.own(player, owner),
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => sea.own(player, owner),
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }
@@ -152,8 +206,8 @@ pub unsafe extern "C" fn room_furnish(address: *const u8, length: usize) -> u32 
     u32::from(furnish(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
-/// Sets the difficulty a node's room's voyage set out at: 0 Normal, 1 Elite, 2 Abyss; false for no such difficulty, or
-/// no room on land.
+/// Sets the difficulty a node's room's voyage set out at, or the sea's tier: 0 Normal, 1 Elite, 2 Abyss; false for no
+/// such difficulty, a fleet, or no room open.
 pub fn set_difficulty(number: u32) -> bool {
     let Some(difficulty) = usize::try_from(number).ok().and_then(|index| gear::Difficulty::ALL.get(index).copied())
     else {
@@ -164,26 +218,34 @@ pub fn set_difficulty(number: u32) -> bool {
             room.set_difficulty(difficulty);
             true
         }
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => {
+            sea.set_difficulty(difficulty);
+            true
+        }
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }
 
-/// Sets a node's room's difficulty (`set_difficulty`); 1 if set, 0 if not.
+/// Sets a node's room's difficulty, or the sea's tier (`set_difficulty`); 1 if set, 0 if not.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_difficulty(number: u32) -> u32 {
     u32::from(set_difficulty(number))
 }
 
 /// Sets the minute, counted from the epoch, whose day sets the wares a room's vendors show and whose week sets when
-/// Shape comes and where he stands; false with no room on land.
+/// Shape comes and where he stands, or the sea's; false in a fleet.
 pub fn set_minute(minute: u32) -> bool {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => {
             room.set_minute(u64::from(minute));
             true
         }
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => {
+            sea.minute = u64::from(minute);
+            true
+        }
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }

@@ -62,6 +62,14 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   const furnished = laid.frames.length * 2 + laid.pillars.length;
   assert.ok(laid.boxes.length >= furnished, 'two jambs a frame, then the pillars, then the props’ solids');
   assert.equal(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0), laid, 'laid once, kept');
+  const again = askDungeon(
+    await WebAssembly.compile(new Uint8Array(bytes)),
+    'saltgrass-downs',
+    'The Saltgrass Downs',
+    0,
+  );
+  assert.ok(again !== laid, 'laid again by another module, whose rules may lay it otherwise');
+  assert.deepEqual(again, laid);
   assert.ok(laid.landmarks.length > 0, 'a landmark stands in it');
   for (const [piece, x, y, turns] of laid.landmarks) {
     assert.match(piece, /^(crypt|halls|cells|sanctum|caverns|mines)\.[a-z-]+$/);

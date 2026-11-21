@@ -65,7 +65,7 @@ fn a_later_builds_keys_and_tiers_are_kept_through_a_rollback_or_left_out_never_f
 #[test]
 fn the_prologue_is_marked_played_by_its_ask_anywhere_and_again_changes_nothing() {
     let mut character = Character::starting();
-    let afield = Here { social: false, day: 0, week: 0 };
+    let afield = Here { social: false, day: 0, week: 0, ..Here::default() };
     let dice = Dice { seed: 3, tick: 1, player: 1 };
     assert_eq!(character.ask(Ask::FinishPrologue, afield, &dice), Ok(Done::Done));
     assert!(character.story.prologue);

@@ -1,5 +1,5 @@
 /**
- * Each player's character, kept by the accounts while they play in a room on land. A browser sends its session's
+ * Each player's character, kept by the accounts while they play in a room on land or at sea. A browser sends its session's
  * token once it has joined; the room claims the character with it, gives it to the player, saves it soon after it
  * changes and now and then besides (which keeps the room's hold), and lets it go with a last save when they leave. A
  * player who sends no token, or whose token is no session, plays a character that is not kept. Should another room
@@ -135,6 +135,9 @@ export class Keeper {
       if (here()) this.lost(player, shut);
       return false;
     }
+    // A new account's character is the one the room holds, given back so the room keeps it as any other.
+    const own = claimed.body === null ? this.room.character(player) : null;
+    if (own !== null) this.room.restoreCharacter(player, own);
     const given = claimed.body === null || this.room.restoreCharacter(player, claimed.body);
     if (!here() || !given || this.held.has(player)) {
       // Gone already, or kept as nothing this room can read: let it go untouched rather than save over it.

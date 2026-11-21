@@ -97,8 +97,9 @@ export class FightEffects {
       readonly drawn?: Drawn;
     },
   ): Float32Array {
+    // A companion's telegraphed blows threaten no player: only foes' are marked.
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
-      kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
+      kept.view.action.kind === 'telegraph' && kept.view.side === 'foes' ? [kept.view.action] : [],
     );
     const { eye, blocks, bodies, muzzleOf, origin, groundAt, more = [], drawn = null } = where;
     const fired = fight.fired.splice(0);

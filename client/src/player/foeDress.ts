@@ -157,3 +157,58 @@ export function foeDress(type: FoeType): Dress | null {
     outfit: { ...own.outfit, right: type.right, left: type.left, drawn: true },
   };
 }
+
+/** What an officer ashore wears by their post (0 First Mate to 4 Lookout), each their own, so no two posts look alike
+ *  however the rules arm them: the ship's crew in blue cloth, the First Mate in mail under a blue surcoat, the Gunner
+ *  in a white shirt and a red sash, the Bosun in iron over a brown vest, the Carpenter in a leather apron's brown, and
+ *  the Lookout under a blue hooded cloak. */
+const OFFICER_CLOTHES: readonly Clothes[] = [
+  clothes(
+    'male',
+    0.3,
+    { cuirass: 'chain', gauntlets: 'chain', boots: 'chain' },
+    { shirt_long_v: 'Blue', breeches: 'DarkBrown', dwynnen_surcoat: 'Blue' },
+    { style: 'tied', colour: 'black' },
+  ),
+  clothes(
+    'male',
+    0.6,
+    { cuirass: 'leather', gauntlets: 'leather', boots: 'leather' },
+    { shirt_short_round: 'White', casual_pants: 'Blue', waist_sash: 'Red' },
+    { style: 'crop', colour: 'brown' },
+  ),
+  clothes(
+    'male',
+    0.75,
+    { pauldrons: 'iron', cuirass: 'iron', boots: 'iron' },
+    { casual_pants: 'Blue', vest: 'DarkBrown' },
+    { style: 'tied', colour: 'brown' },
+  ),
+  clothes(
+    'female',
+    0.45,
+    { cuirass: 'leather', boots: 'leather' },
+    { shirt_long_round: 'LightBrown', breeches: 'Blue', vest: 'DarkBrown' },
+    { style: 'tails', colour: 'black' },
+  ),
+  clothes(
+    'female',
+    0.2,
+    { cuirass: 'leather', gauntlets: 'leather', boots: 'leather' },
+    { shirt_long_deep: 'Blue', breeches: 'Grey', casual_cloak_hooded: 'Blue' },
+    { style: 'long', colour: 'red' },
+  ),
+];
+
+/** An officer ashore's dress: their post's clothes, with the weapons the rules give the type they fight as drawn. Null
+ *  for a post past the Lookout. */
+export function officerDress(type: Pick<FoeType, 'right' | 'left'>, post: number): Dress | null {
+  const own = OFFICER_CLOTHES[post];
+  if (!own) return null;
+  return {
+    body: own.body,
+    race: 'human',
+    tone: own.tone,
+    outfit: { ...own.outfit, right: type.right, left: type.left, drawn: true },
+  };
+}

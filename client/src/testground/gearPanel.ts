@@ -185,6 +185,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       button('No ammo', () => ask({ kind: ASKS.grantAmmo, count: 0 })),
       button('5 Ammo crates', () => ask({ kind: ASKS.grantCrates, count: 5 })),
       button('Use an Ammo crate', () => ask({ kind: ASKS.useCrate })),
+      button('Two officers ashore', () => ask({ kind: ASKS.grantOfficers, level: grant.level })),
     ];
   };
 

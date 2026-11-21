@@ -8,12 +8,13 @@ import { ROLES } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { poiseTrackOf, type PoiseState } from './foePlate.ts';
-import { barLength, VITAL_SIZES } from './hudLayout.ts';
-import { element, Meter } from './meter.ts';
+import { VITAL_SIZES } from '../plus/barFrame.ts';
+import { barLength } from './hudLayout.ts';
+import { element, LOW_SHARE, lowShare, Meter } from '../plus/meter.ts';
 import { ownBuffs, StatusRow } from './statusIcons.ts';
 
-/** Health at or under this share of the whole warns. */
-export const LOW_HEALTH = 0.25;
+/** Health at or under this share of the whole warns (the kit's low law, which a ship's hull keeps too). */
+export const LOW_HEALTH = LOW_SHARE;
 
 export type VitalName = 'health' | 'stamina' | 'poise';
 const VITALS: readonly [VitalName, string][] = [
@@ -48,7 +49,7 @@ export function vitalMost(own: FighterView | null): Record<VitalName, number> {
 
 /** Whether the health warns: some left, but no more than `LOW_HEALTH` of it. */
 export const healthLow = (own: FighterView | null): boolean =>
-  !!own && own.health > 0 && own.health / Math.max(1, own.healthMax) <= LOW_HEALTH;
+  !!own && lowShare(own.health / Math.max(1, own.healthMax));
 
 /** How long the vitals stand full and untouched before they rest, in seconds. */
 export const REST_SECONDS = 4;

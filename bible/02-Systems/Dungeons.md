@@ -16,8 +16,8 @@ code:
   - crates/dungeon/src/furnish.rs#furnish
   - crates/dungeon/src/fixtures.rs#Fixture
   - crates/dungeon/src/landmarks.rs#place_landmarks
-  - crates/dungeon/src/landmark_table.rs#LANDMARKS
-  - tools/dungeon/landmarkTable.ts
+  - crates/dungeon/src/landmarks.rs#LANDMARKS
+  - crates/dungeon/build.rs
   - crates/dungeon/src/props.rs#nearest_middle
   - crates/dungeon/src/torches.rs#Torch
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
@@ -167,7 +167,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   Grove or a Dripping Gallery (the same, 0.5 m high); lanterns 2 m up on the mines' walls and posts; and a fire in
   each hearth. A fixture with a solid stands as a piece does. Every room has a light.
 - **Landmarks** (`place_landmarks`): set pieces a dungeon is remembered by, three a style, each with its solids and
-  glows (`content/dungeon/landmarks.json`, written into the crate by `tools/dungeon/landmarkTable.ts`). A dungeon of
+  glows (`content/dungeon/landmarks.json`, which the crate's `build.rs` reads as it builds). A dungeon of
   two or three blocks stands one, of four or five two, none twice, each in a room of its look's style but never the
   way in's or the end. Rooms are tried from the middle of the walk outward, each style's landmarks in an order drawn
   on the lane `landmark:<seed>`.
@@ -195,8 +195,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw), boxes, landmarks (each its
   module, its turned footprint's north-west corner and its quarter turns clockwise) and glows (each x, y, z and its
   kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number past the patrol's three or a
-  place that is no Elite Dungeon. The room door's `dungeon` and `layout` ask it. Three dungeons' answers are pinned by
-  their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine.
+  place that is no Elite Dungeon. The room door's `dungeon` and `layout` ask it. Five dungeons' answers are pinned by
+  their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine: four patrols', one of
+  five blocks whose last is a style deeper, and one laid by a seed and a style.
 
 ## In the rooms
 
@@ -249,11 +250,13 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   two to four in each other room past the way in's, one foe for each ten of its cells (`posts_for`), on its free cells
   nearest its middle, its quiet cells first, round its props. When the bands and the Reeve would pass the room's 24 foes, the most rooms that
   fit stand one, spread evenly along the walk from the way in to the end.
-- **The cache** stands 1.6 m from the end foe's post, the first of the eight ways round it, north first, that is
-  open floor clear of every jamb, pillar, prop and fixture, facing the post. Shut while the end foe stands; when it
-  falls the cache opens and every player then in the room finds a Vestige 0.8 m before it ([[Gear]]), and, where the
-  run's first clear in its period pays, a second 1.4 m before it (`pay_clear`); it shuts when the end foe stands
-  again. Each snapshot carries it.
+- **The cache** stands 1.6 m from the end foe's post, facing it, the first of the eight ways round it, north first,
+  that is open floor with nothing between where the whole chest the page draws keeps clear: 0.9 m wide and reaching
+  0.82 m behind its front with its lid thrown open, it keeps off rock and every solid, and out of the portal's cell
+  from its wall to its middle within 1.3 m of the arch's middle. Where no way fits, it stands at the post itself, so
+  every dungeon has its cache. Shut while the end foe stands; when it falls the cache opens and every player then in
+  the room finds a Vestige 0.8 m before it ([[Gear]]), and, where the run's first clear in its period pays, a second
+  1.4 m before it (`pay_clear`); it shuts when the end foe stands again. Each snapshot carries it.
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for
@@ -336,7 +339,8 @@ or glows, and is read as standing none (`readDungeon`).
   flicker (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
   glow's spirit, daylight, water and rune. Each look has its own faint light,
   its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
-  lights nearest the eye, and the shader and the figures sum the same light (`lightAt`). Each channel of the sum
+  lights nearest the eye, and the figures are lit by the same 32, so the walls and the figures sum the same light
+  (`lightAt`). Each channel of the sum
   stays as it is up to 0.8 and past that eases toward 1.4 (`shoulder`), so a room lit by many lights at once keeps
   its walls' colour and pictures rather than clipping to flat.
 - **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five

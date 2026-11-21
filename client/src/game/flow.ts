@@ -25,6 +25,8 @@ export type Happening =
   | { readonly kind: 'leave'; readonly node: string; readonly name: string }
   | { readonly kind: 'surface'; readonly name: string; readonly fell: boolean }
   | { readonly kind: 'wiped'; readonly node: string; readonly name: string }
+  | { readonly kind: 'wash-up'; readonly node: string; readonly words: string }
+  | { readonly kind: 'isle'; readonly node: string; readonly words: string }
   | { readonly kind: 'back' }
   | { readonly kind: 'story-ended'; readonly node: string; readonly name: string }
   | { readonly kind: 'shut'; readonly why: string };
@@ -92,6 +94,12 @@ export function next(flow: Flow, happening: Happening): Flow {
       const words = `${happening.fell ? 'Your company fell. ' : ''}Leaving ${happening.name}`;
       return { mode: 'loading', words, then: { mode: 'sea', menu: false } };
     }
+    case 'wash-up':
+    case 'isle':
+      // Washed up from the sea, the player stands in the port city's social space or on an island's beach, the veil
+      // saying why; anchored off an island, they walk ashore on its beach.
+      if (flow.mode !== 'sea') return flow;
+      return { mode: 'loading', words: happening.words, then: { mode: 'foot', node: happening.node, menu: false } };
     case 'story-ended':
       // The story hands the player to the game where it leaves them: Overlook's social space.
       return flow.mode === 'story' ? arriving(happening.node, happening.name) : flow;

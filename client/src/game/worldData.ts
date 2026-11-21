@@ -1,3 +1,4 @@
+import { ruinedName } from '../ruinedName.ts';
 import { type StationInfo, socialLocked } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */
@@ -91,6 +92,27 @@ export function sitesOf(
   return { city, nodes };
 }
 
+/** The ports the sea's waters and its room are opened with: each continent's city, as the waters' door takes them
+ *  (crates/world/src/traffic.rs `Port`). The page and the server read them alike, from the land files. */
+export function portsOf(
+  cities: readonly CityInfo[],
+): { readonly id: string; readonly name: string; readonly continent: string; readonly centre: Point }[] {
+  return cities.map(({ id, name, continent, centre }) => ({ id, name, continent, centre }));
+}
+
+/** A port city as the page knows it: its id (its social space is the node `<id>-social`), name and continent. */
+export interface PortCity {
+  readonly id: string;
+  readonly name: string;
+  readonly continent: string;
+}
+
+/** The port cities among `ports`, in their order, as the sea numbers them: those whose ids are among the rules'
+ *  `mainPorts`. */
+export function portCities(ports: readonly PortCity[], mainPorts: readonly string[]): PortCity[] {
+  return ports.filter((port) => mainPorts.includes(port.id));
+}
+
 /** Loads the world from the pages' `world/` folder. */
 export async function loadWorld(base: string): Promise<WorldData> {
   const text = async (path: string) => {
@@ -121,11 +143,18 @@ export async function loadWorld(base: string): Promise<WorldData> {
 }
 
 /** Where a player arriving at the node `id` lands: its continent, and its id and name; a city's social space is
- *  `<city id>-social`, named for its city. Null for an id the world does not hold. */
-export function arrivalAt(world: WorldData, id: string): { continent: string; node: string; name: string } | null {
+ *  `<city id>-social`, named for its city, "Ruins of" its name where it is not among the port cities' ids
+ *  `mainPorts` (the rules' own; with none known, by its name alone). Null for an id the world does not hold. */
+export function arrivalAt(
+  world: WorldData,
+  id: string,
+  mainPorts: readonly string[] | null = null,
+): { continent: string; node: string; name: string } | null {
   if (socialLocked(id)) return null;
   const node = world.nodes.find((each) => each.id === id);
   if (node) return { continent: node.continent, node: node.id, name: node.name };
   const city = world.cities.find((each) => `${each.id}-social` === id);
-  return city ? { continent: city.continent, node: id, name: city.name } : null;
+  if (!city) return null;
+  const ruined = mainPorts !== null && !mainPorts.includes(city.id);
+  return { continent: city.continent, node: id, name: ruined ? ruinedName(city.name) : city.name };
 }

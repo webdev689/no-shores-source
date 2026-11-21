@@ -76,7 +76,7 @@ mod tests {
             let (board, solids) = board(&frame);
             let standing: Vec<[f64; 6]> = courtyard(&frame)
                 .into_iter()
-                .chain(stations(&frame).1)
+                .chain(stations(&frame, false).1)
                 .filter(|solid| solid.size[2] > 0.1)
                 .map(|solid| solid.bounds())
                 .collect();

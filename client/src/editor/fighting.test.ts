@@ -70,7 +70,7 @@ async function begun(fights: FightSource): Promise<Fighting> {
 
 test('a captain called is sighted on the panel', async () => {
   const fighting = await begun(source().fights);
-  assert.ok(fighting.lines(1).some((line) => line === 'A Pirate Sloop is sighted, 1000 m off.'));
+  assert.ok(fighting.lines(1).some((line) => line === 'A Pirate Sloop sighted, 1.0 km off.'));
   const closed: FightSource = { ...source().fights, fightBegin: async () => null };
   assert.equal(await Fighting.begin(closed, 'land', new Float64Array(8), 7, 0), 'Open this landmass to fight on it.');
 });
@@ -115,20 +115,108 @@ test("the rules' events are the panel's words and the effects' to take", async (
   assert.ok(!fighting.lines(10).includes('The starboard guns are reloading (2.3 s).'), 'a message is shown a while');
 });
 
-test('her run-out battery warns the player to brace', async () => {
+test("the fight's messages are given on their own, apart from the captains' lines, the lay and the warning", async () => {
+  const refused: FightEvent = { kind: 'refused', why: 'reloading', side: 'starboard', left: 2.25 };
+  const fighting = await begun(source({ events: [refused] }).fights);
+  fighting.advance(0.1, IDLE, 1, failed);
+  await settle();
+  assert.deepEqual(fighting.messages(2), [
+    'A Pirate Sloop sighted, 1.0 km off.',
+    'The starboard guns are reloading (2.3 s).',
+  ]);
+  assert.deepEqual(fighting.messages(10), [], 'each is shown a while');
+});
+
+test('a run-out battery warns the player to brace', async () => {
   const fighting = await begun(source({ captain: { ...captain, run_out: ['port'] } }).fights);
   fighting.advance(0.1, IDLE, 1, failed);
   await settle();
-  assert.ok(fighting.lines(1).includes('BROADSIDE! Brace (C).'));
+  assert.ok(fighting.lines(1).includes('Broadside from the Pirate Sloop: C to brace.'));
+});
+
+const brig = (number: number, lies: readonly [number, number], more: Partial<FightCaptain> = {}): FightCaptain => ({
+  ...captain,
+  ship: [lies[0], lies[1], 0, 0, 0, 0, 0, 2],
+  name: 'Pirate Brig',
+  id: number,
+  ...more,
+});
+
+test('any captain running out warns, the nearest named', async () => {
+  const far = { ...captain, ship: [200, 0, 0, 0, 0, 0, 0, 2] };
+  const others = [
+    brig(2, [40, 0], { run_out: ['port'] }),
+    brig(3, [90, 0], { name: 'Tithe Frigate', run_out: ['starboard'] }),
+  ];
+  const fighting = await begun(source({ captain: far, others }).fights);
+  fighting.advance(0.1, IDLE, 1, failed);
+  await settle();
+  const lines = fighting.lines(1);
+  assert.ok(lines.includes('Broadside from the Pirate Brig: C to brace.'), lines.join(' | '));
+  assert.equal(lines.filter((line) => line.startsWith('Broadside')).length, 1);
+});
+
+test('a line for each captain within a few hundred metres, nearest first, in plain mode words', async () => {
+  const others = [
+    brig(2, [40, 0], { mode: 'flee' }),
+    brig(3, [90, 0], { name: 'Tithe Frigate', mode: 'cruise' }),
+    brig(4, [3000, 0], { name: 'Far Sloop' }),
+  ];
+  const fighting = await begun(source({ captain: { ...captain, ship: [200, 0, 0, 0, 0, 0, 0, 2] }, others }).fights);
+  fighting.advance(0.1, IDLE, 1, failed);
+  await settle();
+  const lines = fighting.lines(1);
+  const captains = lines.filter((line) => / m off, /.test(line));
+  assert.deepEqual(
+    captains.map((line) => line.split(':')[0]),
+    ['Pirate Brig, 40 m off, running', 'Tithe Frigate, 90 m off, cruising', 'Pirate Sloop, 200 m off, closing'],
+  );
+  assert.ok(!lines.some((line) => line.includes('Far Sloop')));
+});
+
+test('the panel leaves the ship’s own hurts and guns to the plate and the rose: it has no line of them', async () => {
+  const fighting = await begun(source({}).fights);
+  fighting.advance(0.1, IDLE, 1, failed);
+  await settle();
+  const lines = fighting.lines(1);
+  assert.ok(lines.length > 0 && !lines.some((line) => line.startsWith('Your Sloop')), lines.join(' | '));
+});
+
+test('the lay is said on target only while its side can fire', async () => {
+  const lay = { side: 'port', launches: [], elevation: 0, reach: 300, ends: [], radius: 2, on_target: true } as const;
+  const said = async (left: readonly [number, number]) => {
+    const player = { ...vessel, guns: { ...vessel.guns, left } };
+    const fighting = await begun(source({ lay, player }).fights);
+    fighting.advance(0.1, IDLE, 1, failed);
+    await settle();
+    return fighting.lines(1).find((line) => line.startsWith('Laying'));
+  };
+  assert.equal(await said([0, 0]), 'Laying the port guns: on target.');
+  assert.equal(await said([4.2, 0]), 'Laying the port guns.', 'reloading');
+});
+
+test("every captain's strike and sinking is told by its own name", async () => {
+  const others = [brig(2, [40, 0]), brig(3, [90, 0], { name: 'Tithe Frigate' })];
+  const events: FightEvent[] = [
+    { kind: 'state', ship: 2, state: 'struck' },
+    { kind: 'state', ship: 3, state: 'sinking' },
+  ];
+  const fighting = await begun(source({ others, events }).fights);
+  fighting.advance(0.1, IDLE, 1, failed);
+  await settle();
+  const lines = fighting.lines(1);
+  assert.ok(lines.includes('The Pirate Brig surrenders!'), lines.join(' | '));
+  assert.ok(lines.includes('The Tithe Frigate is going down!'));
 });
 
 test('DFO says a struck captain surrenders and a wrecked Sloop is crippled', () => {
-  assert.equal(wordsFor({ kind: 'state', ship: 1, state: 'struck' }, 'Pirate Sloop'), 'The Pirate Sloop surrenders!');
+  const named = () => 'Pirate Sloop';
+  assert.equal(wordsFor({ kind: 'state', ship: 1, state: 'struck' }, named), 'The Pirate Sloop surrenders!');
   assert.equal(
-    wordsFor({ kind: 'state', ship: 0, state: 'wrecked' }, 'Pirate Sloop'),
+    wordsFor({ kind: 'state', ship: 0, state: 'wrecked' }, named),
     'Your ship is crippled! The sails hang in rags.',
   );
-  assert.equal(wordsFor({ kind: 'run-out', side: 'port' }, 'Pirate Sloop'), null);
+  assert.equal(wordsFor({ kind: 'run-out', side: 'port' }, named), null);
 });
 
 test('a release fires the lay the look last held, as the aim lets go', async () => {
@@ -178,23 +266,26 @@ test('two releases queued behind one step both fire the lay the look held', asyn
   );
 });
 
-test('a joined fight names her own ship, describes every captain afloat and tells of any one striking', async () => {
+test('a joined fight names its own ship, describes every captain afloat in reach and tells of any one striking', async () => {
   const second: FightCaptain = { ...captain, id: 2, name: 'Pirate Brig', ship: [0, 300, 0, 0, 0, 0, 0, 2] };
-  const sunk: FightCaptain = { ...captain, id: 3, name: 'Sunk Sloop', state: 'sunk' };
+  const sunk: FightCaptain = { ...captain, id: 3, name: 'Sunk Sloop', ship: [0, 200, 0, 0, 0, 0, 0, 2], state: 'sunk' };
   const first: FightView = { ...VIEW, others: [second, sunk] };
   const struck: FightEvent = { kind: 'state', ship: 2, state: 'struck' };
   const { fights } = source({ others: [{ ...second, run_out: ['port'] }, sunk], events: [struck] });
   const fighting = Fighting.joined(fights, 'sea', first, 0, 'Brig');
   const lines = fighting.lines(0);
-  assert.ok(lines[0]?.startsWith('Your Brig: hull 240/240'), lines[0]);
-  assert.ok(lines.some((line) => line.startsWith('Pirate Sloop, 1000 m off, engage')));
-  assert.ok(lines.some((line) => line.startsWith('Pirate Brig, 300 m off, engage')));
+  // Its own ship's hurts are the readout's plate, named by its kind; the lines tell of the captains within reach.
+  assert.equal(fighting.own, 'Brig');
+  assert.ok(
+    lines.some((line) => line.startsWith('Pirate Brig, 300 m off, closing')),
+    lines.join(' | '),
+  );
   assert.ok(!lines.some((line) => line.startsWith('Sunk Sloop')), 'a sunk captain is no longer described');
   fighting.advance(1 / 60, IDLE, 1, failed);
   await settle();
   const after = fighting.lines(1);
   assert.ok(after.includes('The Pirate Brig surrenders!'), after.join(' | '));
-  assert.ok(after.includes('BROADSIDE! Brace (C).'), 'any captain running out her guns warns');
+  assert.ok(after.includes('Broadside from the Pirate Brig: C to brace.'), 'any captain running out its guns warns');
 });
 
 test('a fight begun with several captains sights them all, by how many and the nearest', () => {

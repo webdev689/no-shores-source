@@ -8,7 +8,7 @@ const DICE: Dice = Dice { seed: 3, tick: 1, player: 1 };
 const TITHE_FOE: Feat<'static> = Feat::Felled { faction: 1, rank: 1, island: Some("continent-1") };
 
 fn at_board(day: u64) -> Here {
-    Here { social: true, day, week: 2_968 }
+    Here { social: true, day, week: 2_968, ..Here::default() }
 }
 
 #[test]

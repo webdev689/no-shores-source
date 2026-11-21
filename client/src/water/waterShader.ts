@@ -1,6 +1,9 @@
+import { SHADOW_WGSL } from '../shadow.ts';
 import { HULL_WGSL } from './hullMask.ts';
+import { SHELTER_WGSL } from './seaWeather.ts';
 import { SKY_DOME_WGSL } from './skyDome.ts';
 import { SHARED_WGSL, WATER_WGSL } from './waterCommon.ts';
+import { WAKE_WGSL } from './wakes.ts';
 
 /**
  * The water's two draws after the land. The backdrop fills every pixel first: the sky, the land in its haze, or,
@@ -14,6 +17,9 @@ ${SHARED_WGSL}
 ${WATER_WGSL}
 ${SKY_DOME_WGSL}
 ${HULL_WGSL}
+${WAKE_WGSL}
+${SHELTER_WGSL}
+${SHADOW_WGSL}
 
 fn eye_fresh() -> bool {
   return frame.coarse_area.y > 0.5;
@@ -143,6 +149,8 @@ fn surface_vertex(@builtin(vertex_index) index: u32) -> Surface {
     let swell = swell_at(offset, depth, spacing);
     shift = swell.shift;
     height += swell.height + breaker_at(offset, max(depth, 0.0), spacing).height;
+    // Its wake's small waves, where the ships' frame says, drawn once the mesh is fine enough to hold them.
+    height += wake_at(offset + shift).height * (1.0 - smoothstep(2.0, 8.0, spacing)) * reach(depth);
   }
   var surface: Surface;
   surface.offset = offset;
@@ -189,7 +197,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let level = still.x;
   let depth = level - ground.x;
   let thin = level + top - surface.rest - ground.x;
-  // No water inside a ship's waterline: under her deck it is hidden anyway, and in her open hull it is not. Her
+  // No water inside a ship's waterline: under its deck it is hidden anyway, and in its open hull it is not. Its
   // footprint is tested where the water is drawn, a metre or two from its rest place once the swell carries it.
   let cover = wet_share(thin, length(ground.yz) * footprint, still, share) * (1.0 - hull_inside(surface.drawn.xy, footprint));
 
@@ -211,14 +219,26 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   } else {
     let swell = swell_at(surface.offset, depth, footprint);
     breaker = breaker_at(surface.offset, max(depth, 0.0), footprint);
-    let chop = wind_chop();
-    let slope = chop_slope(local, vec2f(0.0), chop, footprint) + breaker.slope;
+    // The wind's chop, calmed where the sea is sheltered (a roadstead's glassy water); the sea's own height here, a
+    // share of a moderate sea's, raises the share of crests that break white.
+    let height_here = frame.sea.x * shelter_at(surface.offset);
+    let rise = clamp((height_here - 0.35) / 2.65, 0.0, 1.0);
+    let chop = wind_chop() * shelter_at(surface.offset);
+    // Held at 1.4: steeper, a storm's glints alias into blocks (each wave's footprint fade alone does not stop it).
+    let slope = chop_slope(local, vec2f(0.0), min(chop, 1.4), footprint) + breaker.slope;
     rough = 0.2 * clamp(sqrt(chop), 0.3, 1.4);
     let rolled = swell_normal(swell);
     normal = normalize(rolled / max(rolled.z, 0.05) + vec3f(-slope, 0.0));
     crest = swell.height;
     let squeeze = (1.0 + swell.stretch.x) * (1.0 + swell.stretch.y) - swell.stretch.z * swell.stretch.z;
-    whitecap = max(1.0 - smoothstep(0.28, 0.6, squeeze), wind_caps(local));
+    // Whitecaps: crests folding, the wind's caps, and, as the sea rises, every crest standing high in the sea round it,
+    // a rough sea's and a storm's breaking white; read from far off as the share of the sea they cover.
+    // How many of the sea's own spreads (its waves' root mean square) a crest stands above still water.
+    let standing = swell.height / max(sqrt(swell.energy * 0.5), 1e-3);
+    // Broken into patches, as wind-blown caps are, never whole crest lines.
+    let broken = smoothstep(0.45, 0.8, value_noise(local * 0.045 + vec2f(frame.eye.w * 0.05, 0.0)));
+    let caps = smoothstep(mix(2.0, 1.1, rise), mix(2.6, 1.7, rise), standing) * smoothstep(0.8, 2.2, height_here) * broken * 0.85;
+    whitecap = max(max(1.0 - smoothstep(0.28, 0.6, squeeze), caps), wind_caps(local));
     drift = breaker.toward_shore * frame.eye.w * 0.45 * breaker.broken;
   }
   // Ripples are centimetres high: their slope is drawn much steeper, so a swimmer's rings read against the chop.
@@ -233,7 +253,9 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let edge = (1.0 - smoothstep(0.0, select(0.14, 0.06, fresh), thin)) * select(0.95, 0.5, fresh)
     * (1.0 - smoothstep(1.0, 6.0, footprint));
   let splashed = smoothstep(0.012, 0.04, abs(ripple.x)) * 0.6;
-  let bow_wave = hull_foam(surface.drawn.xy);
+  // A wake's foam is torn into streaks and patches as it spreads, never a painted line.
+  let torn = 0.45 + 0.55 * smoothstep(0.25, 0.75, value_noise(local * 0.12 + vec2f(frame.eye.w * 0.03, 0.0)));
+  let bow_wave = max(hull_foam(surface.drawn.xy), select(wake_at(surface.drawn.xy).foam * torn, 0.0, fresh));
   let amount = clamp(max(max(whitecap * 0.85, max(breaking, lingering)), max(max(edge, splashed), bow_wave)), 0.0, 1.0);
   // Too far off to hold its lace, foam is drawn as the share of the surface it would cover.
   let foam = mix(foam_cover(local, drift, amount, footprint), amount * 0.55, smoothstep(0.4, 3.0, footprint));
@@ -271,17 +293,22 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let thick = clamp(crest * 0.9 + 0.35, 0.0, 1.0) * select(1.0, 0.25, fresh);
   colour += SEA_GLOW * thick * (0.06 + 0.35 * back_lit) * (0.6 * sky_level() + 0.4 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w);
 
+  // In a shadow (a ship's, beside its waterline) the surface loses the sun's glints and part of the light it scatters
+  // and reflects, as water in shade does.
+  let sun = sunlit(surface.drawn, vec3f(0.0, 0.0, 1.0));
+  colour *= 1.0 - 0.35 * (1.0 - sun);
+
   let facing_eye = max(dot(normal, to_eye), 0.0);
   let shine = smoothstep(0.0, 0.35, through) * (0.02 + 0.98 * pow(1.0 - facing_eye, 5.0));
   let bounced = reflect(-to_eye, normal);
-  colour = mix(colour, sky(vec3f(bounced.xy, max(bounced.z, 0.03)), rough), shine);
+  colour = mix(colour, sky(vec3f(bounced.xy, max(bounced.z, 0.03)), rough) * (0.65 + 0.35 * sun), shine);
   let half_way = normalize(to_eye + key_toward());
   // Far off, where a pixel spans many small waves, the glints blur into the sun's glitter path.
   let sharpness = mix(900.0, 120.0, smoothstep(0.05, 2.0, footprint));
   let glint = pow(max(dot(normal, half_way), 0.0), sharpness) * sharpness / 90.0 + pow(max(dot(normal, half_way), 0.0), 60.0) * 0.3;
-  colour += sky_state.key_light.rgb * glint * (1.0 - foam) * smoothstep(0.0, 0.2, through);
+  colour += sky_state.key_light.rgb * glint * sun * (1.0 - foam) * smoothstep(0.0, 0.2, through);
 
-  let foam_light = FOAM * (0.62 * sky_level() + 0.38 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w) + sky_state.zenith.rgb * 0.06;
+  let foam_light = FOAM * (0.62 * sky_level() + 0.38 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w * sun) + sky_state.zenith.rgb * 0.06;
   colour = mix(colour, foam_light, foam);
   // Past its edge the water gives way to what the backdrop drew there; open water hides it wholly.
   let water = aerial(colour, -to_eye, distance_to);

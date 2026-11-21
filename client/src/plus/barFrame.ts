@@ -19,6 +19,16 @@ export const BAR_TONES = {
   light: { lit: '#ffffff', shade: '#c9c4b6', tip: '#ffffff' },
 } as const satisfies Record<string, BarTone>;
 
+/** How far the display's corner pieces stand in from the view's side, top and foot, in CSS pixels at their own size. */
+export const CORNER = { side: 28, top: 14, foot: 22 } as const;
+
+/** Each vital's height, frame and all, the gap between two, and the room kept under them for the buffs' row, at
+ *  each step, in CSS pixels: the thin bars' sizes, the vitals' on foot and the ship's at sea. */
+export const VITAL_SIZES = {
+  base: { health: 12, stamina: 10, poise: 8, gap: 4, buffs: 34 },
+  wide: { health: 16, stamina: 14, poise: 10, gap: 5, buffs: 46 },
+} as const;
+
 /** How many pixels the frame takes along the bar's top and foot: its outline and its stone line. */
 export const BAR_EDGE = 2;
 /** How many pixels a point's slope runs along the bar for each row it climbs: two, so each end is a slender point. */

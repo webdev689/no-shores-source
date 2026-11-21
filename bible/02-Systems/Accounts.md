@@ -114,9 +114,15 @@ they play in holds it while they are there.
   them by Find a Company (`found_runs`, which admits them for a day after it was found). A group found is no company, and lets its members in together
   to that one run alone. Any other is let go untouched, and the player sent away saying "This run is another
   company's.".
+- **At sea.** The sea room claims and keeps the character too, for its ship's hurts (`ship`: its hull, canvas and men
+  in ten-thousandths of whole), where the sea last kept it (`ship_at`, a player who leaves mid-fight kept at the
+  port city it would wash up at, as the fight has it), and what floats gathered into it; a deck boarded fights with it, and gives it back
+  as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
+  character whose ship has the hurts it keeps.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
-  that is not kept, or in a run, which keeps no one unkept, is sent away. The Test Ground's room grants gear to try it, and the sea holds none, so neither keeps
-  characters; nor does a page with no session, playing alone, or on a local room server with no `?accounts=`.
+  that is not kept, or in a run, which keeps no one unkept, is sent away. The Test Ground's room grants gear to try
+  it, so it keeps no characters, nor does a fleet room; nor does a page with no session, playing alone, or on a local
+  room server with no `?accounts=`.
 
 ## The Roster
 
