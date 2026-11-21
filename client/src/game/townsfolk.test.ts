@@ -123,3 +123,18 @@ test('the plaza frame finds the sea from the spawns and maps its points both way
   assert.deepEqual(point, [980, 1962]);
   assert.deepEqual(inPlaza(frame, point), { toward: -38, across: 20 });
 });
+
+test('a counter standing free on the plaza keeps its keeper, and the townsfolk pass it by', () => {
+  // The mail's counter, 24 m toward the sea and 45 m across, its keeper landward of it.
+  const mail = { kind: 'mail', keeper: [1045, 2022.4] as const, counter: [1045, 2024] as const };
+  const plaza = { ...PLAZA, stations: [...PLAZA.stations, mail] };
+  const folk = new Townsfolk(plaza, 5);
+  const [keeper] = folk.step(0).slice(PLAZA.stations.length, PLAZA.stations.length + 1);
+  assert.deepEqual([keeper?.x, keeper?.y], [1045, 2022.4], 'its keeper behind it');
+  for (let tick = 0; tick < 60 * 600; tick += 15)
+    for (const person of folk.step(0.25).slice(plaza.stations.length)) {
+      const [toward, across] = [person.y - 2000, person.x - 1000];
+      assert.ok(!(toward < -48 && Math.abs(across - 45) < 2), 'no one queues at the arcade for it');
+      assert.ok(Math.hypot(toward - 26, across - 45) > 1, 'no one stands at it');
+    }
+});

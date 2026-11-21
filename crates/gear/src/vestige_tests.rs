@@ -172,18 +172,6 @@ fn a_player_carries_ten_vestiges_and_gathers_three_of_a_resource() {
 }
 
 #[test]
-fn a_vestige_a_clear_pays_is_kept_in_the_carried_ten_then_the_vault_and_refused_only_with_both_full() {
-    let mut character = Character::starting();
-    let paid = || Vestige::new(0, Rarity::Legendary, Slot::Head, 26);
-    for _ in 0..VESTIGES_MOST + crate::character::VAULT_MOST {
-        assert!(character.keep_paid(paid()));
-    }
-    assert_eq!((character.vestiges_held(false), character.vestiges_held(true)), (VESTIGES_MOST, 20));
-    assert!(!character.keep_paid(paid()), "both full: kept nowhere");
-    assert_eq!(character.vestiges.len(), VESTIGES_MOST + 20, "each numbered as it is kept, none overwritten");
-}
-
-#[test]
 fn a_harder_voyage_raises_foes_and_pays_more() {
     use crate::world::{FOE_LEVEL_MOST, ISLANDS, island_levels};
     assert_eq!(island_levels("continent-1"), Some((1, 4)));

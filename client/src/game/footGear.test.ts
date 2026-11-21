@@ -121,3 +121,12 @@ test("Shape's offer is within a counter's reach of his week's spot, ringed there
   const counter = groundRings(null, here, () => 0, 0).length;
   assert.equal(groundRings(shape, here, () => 0, 0).length, counter * 2, 'a ring of his own');
 });
+
+test('the mail counter’s ring beats while letters wait there, and rests while none does', () => {
+  const MAIL: StationInfo = { kind: 'mail', keeper: [0, -2], counter: [0, 0] };
+  const opacity = (gear: GearState, seconds: number) => groundRings(gear, { stations: [MAIL] }, () => 0, seconds)[6];
+  const waiting = { nodes: [], mail: [{ id: 9, words: 'Kept.', vestige: null, item: null }] } as unknown as GearState;
+  const none = { nodes: [], mail: [] } as unknown as GearState;
+  assert.notEqual(opacity(waiting, 0), opacity(waiting, 0.5), 'beating');
+  assert.equal(opacity(none, 0), opacity(none, 0.5), 'still');
+});

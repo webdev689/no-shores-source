@@ -203,7 +203,8 @@ export class Townsfolk {
   constructor(plaza: Plaza, seed: number) {
     this.random = seeded(seed);
     this.frame = plazaFrameOf(plaza);
-    this.stations = plaza.stations;
+    // Walkers stop only at the arcades' counters, landward of their lane; one standing free (the mail's) they pass by.
+    this.stations = plaza.stations.filter((station) => inPlaza(this.frame, station.counter).toward < LANDWARD_LANE);
     this.keepers = plaza.stations.map((station, index) => ({
       kind: station.kind,
       person: {

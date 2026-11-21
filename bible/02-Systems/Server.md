@@ -430,7 +430,10 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - A browser's one text message is its session's token. In a node's room, a dungeon's, an island's and at sea the
-  player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. A
+  player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. As a
+  player leaves, the host first has the room send every Vestige still lying for them to their mail (`mailLying`, at
+  sea from the captain's deck they stand on; [[Gear]], "The mail"), then reads their character for its last save,
+  then lets the room take them out, so the save keeps what they left lying. A
   character the room's gate shuts ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's
   reason. A save keeps the keys a room does not know, at its top, in its materials, Arts, allegiance and cosmetics, in
   its day's activity and its story, and in each item and Vestige, so a room that knows fewer fields carries the newer

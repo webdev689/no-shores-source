@@ -335,3 +335,37 @@
 .npc-rows > .gear-vault .gear-grid {
   grid-template-columns: repeat(auto-fill, 64px);
 }
+
+/* The Postmaster's letters (mailPage.ts) stand where a keeper's rows stand: Take all under their heading, then each
+   letter a well holding the tile of what it holds, its name and words, and its Take press. */
+.npc-mail {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.npc-mail > .npc-take-all {
+  align-self: flex-start;
+}
+.npc-letters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.npc-letter {
+  border-width: 2px;
+  border-style: solid;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 11px;
+}
+.npc-letter-words {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.npc-letter-words p {
+  margin: 0;
+}

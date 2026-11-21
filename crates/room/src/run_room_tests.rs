@@ -231,3 +231,19 @@ fn a_days_clear_pays_only_in_a_run_opened_as_that_days_dungeon_and_cleared_that_
     clear_the_end(&mut late);
     assert_eq!(vestiges_for(&late, player), (1, 0), "cleared after the next reset");
 }
+
+#[test]
+fn a_first_clears_vestige_with_the_carried_ten_full_goes_to_the_mail_and_nothing_more_lies() {
+    let mut character = past_the_prologue();
+    for _ in 0..gear::character::VESTIGES_MOST {
+        assert!(character.pick_up(gear::Vestige::new(0, gear::Rarity::Normal, gear::Slot::Legs, 1)));
+    }
+    let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 0 };
+    let mut room = Room::dungeon_run(&of, gear::Difficulty::Elite, FRIDAY_NINE).expect("the day's dungeon");
+    let player = kept_in(&mut room, &character);
+    clear_the_end(&mut room);
+    let kept = &room.players[&player].character;
+    assert_eq!(vestiges_for(&room, player), (1, gear::character::VESTIGES_MOST), "the cache's alone on the floor");
+    assert_eq!(kept.mail.len(), 1, "the day's in the mail");
+    assert!(kept.mail[0].vestige.is_some());
+}

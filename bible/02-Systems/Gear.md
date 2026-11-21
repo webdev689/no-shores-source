@@ -47,6 +47,9 @@ code:
   - crates/room/src/power.rs#empower
   - crates/room/src/power.rs#pay_kill
   - crates/room/src/drops.rs#drop_spoils
+  - crates/room/src/drops.rs#mail_lying
+  - crates/gear/src/mail.rs#Letter
+  - crates/gear/src/mail.rs#carry_or_post
   - crates/gear/src/ammo.rs#capacity
   - crates/gear/src/ammo.rs#box_chance
   - crates/room/src/asks.rs#answer
@@ -150,9 +153,10 @@ number is one of [[Gear as Claude Shapes It]].
   sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
   touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
-  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]), and a bounty taken
-  or turned in at the bounty board's (`CounterKind::Board`, [[Activities]]); the [[Test Ground]] serves them all
-  within reach of its stall. The Test Ground alone hands out gear.
+  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]), a bounty taken
+  or turned in at the bounty board's (`CounterKind::Board`, [[Activities]]), and a letter taken at the mail's
+  (`CounterKind::Mail`); the [[Test Ground]] serves them all within reach of its stall. The Test Ground alone hands
+  out gear.
 
 ## Loadouts
 
@@ -217,8 +221,9 @@ DFO's spoils ([[Pick - Loot Drops]]).
   (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
   Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
 - **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: each
-  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, what
-  they have no room for lost with it (`room::flotsam`).
+  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, a
+  Vestige they have no room for sent to the mail and any other part they have no room for lost with it
+  (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
@@ -226,7 +231,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
   rests.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
-  the room sends the player's gear again without it, so their page stops showing it.
+  the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
+  to the mail. A Vestige still lying as its player leaves the room goes there too ("The mail").
 - **Ammo full.** A box walked onto at full ammunition stays where it lies. The share kept is the character's own, worn
   Ranged weapon or not: one with only Melee worn and a full share leaves the box, and one whose share is short takes it.
   The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
@@ -236,6 +242,30 @@ DFO's spoils ([[Pick - Loot Drops]]).
   Vestige glyph in its rarity's colours, an Ammo box or an Ammo crate. A thin line rises from its top as it rests:
   Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs
   it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it comes to rest ([[Interface]]).
+
+## The mail
+
+[[A Mail Vendor Keeps Lost Items and the Game's Mail]], in [[Factions and Vendors as Claude Shapes Them]]'s shape
+("The mail"), after Destiny's Postmaster.
+
+- **Letters.** Each character keeps a mailbox (`Character.mail`, `gear::mail`): letters only the game writes, oldest
+  first, each its number, which no item, Vestige or officer of theirs shares, its words, and what it holds, a Vestige
+  or an item, or neither. A letter keeps any key a later build wrote on it, as items and Vestiges do.
+- **What goes there.** What a player owned and would lose: a Vestige drop that lay its two minutes out, or still lay
+  as they left the room ("Drops"); a first clear's Vestige while the carried ten were full ([[Activities]], "Where it
+  is paid"); a Vestige in flotsam gathered while the ten were full; a module salvaged while its slot carried nine
+  ([[Ship Power]]). Each letter says in plain words where its piece came from. Ammo boxes, Ammo crates and materials
+  past their most are not items, and stay as they were.
+- **Fifty letters.** A mailbox keeps 50 (`MAIL_MOST`). One more lets the oldest go, and the new letter says so, so
+  nothing leaves the mail unsaid; 50 is more than the carried ten and the vault's twenty Vestiges together, and keeps
+  a save far under what the [[Accounts]] keep.
+- **Taking.** At the mail counter in Overlook's plaza only ([[Interface]], "The social space's counters"), free: 67
+  takes one letter by its number in `item`, its Vestige into the carried ten or its item into its slot's nine, each
+  numbered anew; refused while there is no room ("You already carry ten Vestiges.", "That slot already carries
+  nine."), and a letter not there is refused as "There is no such letter." 68 takes every letter there is room for,
+  oldest first, leaving the rest, and is refused only when it can take none.
+- **Sent.** The gear message carries the letters, oldest first (`GearLetter`): each its number, its words, and its
+  Vestige or its item with every column of its nodes, as a carried piece's.
 
 ## Ammo
 

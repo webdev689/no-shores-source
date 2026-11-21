@@ -312,3 +312,20 @@ fn a_drop_that_lay_its_time_is_gone_from_its_players_gear_too() {
     assert_eq!(lying(&room, player, Dropped::AmmoBox), 0, "gone after two minutes");
     assert!(room.take_gear_change(player), "told it is gone, so their page no longer shows it lying");
 }
+
+#[test]
+fn a_leaving_players_vestiges_lying_go_to_their_mail_and_their_drops_off_the_ground() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let (player, other) = (room.join().expect("room"), room.join().expect("room"));
+    let vestige = gear::Vestige::new(0, gear::Rarity::Legendary, Slot::Arms, 18);
+    room.lay_drop(player, Dropped::Vestige(vestige.clone()), [0.0, -30.0, 0.0]);
+    room.lay_drop(player, Dropped::AmmoBox, [0.0, -31.0, 0.0]);
+    room.lay_drop(other, Dropped::Vestige(vestige), [0.0, -32.0, 0.0]);
+    room.mail_lying(player);
+    assert_eq!(room.drops_for(player).count(), 0);
+    let mail = &room.player(player).expect("in").character.mail;
+    assert_eq!(mail.len(), 1, "the Vestige alone: an Ammo box is no item");
+    assert_eq!(mail[0].vestige.as_ref().map(|kept| kept.rarity), Some(gear::Rarity::Legendary));
+    assert_eq!(room.drops_for(other).count(), 1, "another's still lies");
+    assert!(room.player(other).expect("in").character.mail.is_empty());
+}

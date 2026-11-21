@@ -1,7 +1,7 @@
 //! What a player asks of their gear, and the rules each ask must pass: wearing and taking off, buying and choosing
 //! nodes, dismantling, feeding an item a Fruit of Dagon, using an Ammo crate, wearing a cosmetic and marking the
-//! prologue played anywhere; identifying a Vestige, the vault, the vendors, the factions and Shape only at their
-//! counters in a social space; and taking and turning in a bounty at the bounty board. An ask refused changes nothing.
+//! prologue played anywhere; identifying a Vestige, the vault, the vendors, the factions, Shape and the mail only at
+//! their counters in a social space; and taking and turning in a bounty at the bounty board. An ask refused changes nothing.
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, VESTIGES_MOST};
 use crate::dice::{Dice, Purpose};
@@ -152,6 +152,11 @@ pub enum Ask {
     BuyFromShape {
         ware: u8,
     },
+    /// Takes a letter's Vestige or item by the letter's number, or every letter there is room for: at the mail counter.
+    TakeLetter {
+        letter: u32,
+    },
+    TakeAllLetters,
 }
 
 /// Why an ask was refused.
@@ -232,6 +237,8 @@ pub enum Refusal {
     AshoreFull = 133,
     /// The officer offered is in the crew already.
     OfficerKept = 134,
+    /// No letter of that number waits in the mail, or none at all: answered as 141.
+    NoSuchLetter = 140,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -295,6 +302,8 @@ impl Character {
             Ask::WearCosmetic { cosmetic } => self.wear_cosmetic(cosmetic),
             Ask::BuyCosmetic { cosmetic } => self.buy_cosmetic(cosmetic, here),
             Ask::BuyFromShape { ware } => self.buy_from_shape(ware, here),
+            Ask::TakeLetter { letter } => self.take_letter(letter, here),
+            Ask::TakeAllLetters => self.take_all_letters(here),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens.

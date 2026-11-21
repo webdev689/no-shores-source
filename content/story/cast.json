@@ -18,7 +18,8 @@
     "tack": { "name": "The Tack", "voice": "tack" },
     "stormcaller": { "name": "Stormcaller", "voice": "stormcaller" },
     "veiled": { "name": "The Veiled", "voice": "veiled" },
-    "shape": { "name": "Shape", "voice": "shape" }
+    "shape": { "name": "Shape", "voice": "shape" },
+    "postmaster": { "name": "The Postmaster", "voice": "postmaster" }
   },
   "voices": {
     "mate": { "pitchHz": 176, "spreadHz": 22, "muffleHz": 1700, "volume": 0.34, "syllableS": 0.1 },
@@ -39,6 +40,7 @@
     "tack": { "pitchHz": 182, "spreadHz": 22, "muffleHz": 1800, "volume": 0.34, "syllableS": 0.09 },
     "stormcaller": { "pitchHz": 128, "spreadHz": 34, "muffleHz": 2100, "volume": 0.36, "syllableS": 0.07 },
     "veiled": { "pitchHz": 150, "spreadHz": 8, "muffleHz": 1100, "volume": 0.28, "syllableS": 0.12 },
-    "shape": { "pitchHz": 86, "spreadHz": 4, "muffleHz": 1000, "volume": 0.3, "syllableS": 0.16 }
+    "shape": { "pitchHz": 86, "spreadHz": 4, "muffleHz": 1000, "volume": 0.3, "syllableS": 0.16 },
+    "postmaster": { "pitchHz": 124, "spreadHz": 12, "muffleHz": 1500, "volume": 0.32, "syllableS": 0.1 }
   }
 }

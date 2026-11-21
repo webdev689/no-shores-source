@@ -1,12 +1,14 @@
 //! What a kill lays on the ground for each player who earned it, seen by them alone for two minutes: their Vestige, an
 //! Ammo box by the foe's rank, and a Miniboss's or a Boss's Ammo crate when they carry five already. Each is thrown out
 //! of the fallen foe in a fan toward the player, comes to rest where the fan puts it, and is taken by walking within
-//! reach once it rests. And the shots a player spends, kept with their gear.
+//! reach once it rests. A Vestige not taken goes to its player's mail as its time runs out or as they leave. And the
+//! shots a player spends, kept with their gear.
 
 use crate::{PlayerId, Room};
 use gear::Vestige;
 use gear::activities::Modifier;
 use gear::dice::{Dice, Purpose};
+use gear::mail::{Posted, Source};
 use movement::TUNING;
 use movement::blocks::ground_at;
 
@@ -107,7 +109,7 @@ impl Room {
     }
 
     /// Takes every drop at rest a player has walked over and has room for, and lets go of those that have lain their
-    /// time, telling their player so their page stops showing them.
+    /// time, a Vestige to their mail, telling their player so their page stops showing them.
     pub(crate) fn pick_up_drops(&mut self) {
         let clock = self.clock;
         let mut kept = Vec::with_capacity(self.drops.len());
@@ -115,6 +117,9 @@ impl Room {
             let Some(found) = self.players.get_mut(&drop.player) else { continue };
             if clock >= drop.until {
                 found.gear_changed = true;
+                if let Dropped::Vestige(vestige) = drop.what {
+                    found.character.post(Source::LeftLying, Posted::Vestige(vestige));
+                }
                 continue;
             }
             let body = found.fighter.body;
@@ -136,6 +141,20 @@ impl Room {
             }
         }
         self.drops = kept;
+    }
+
+    /// Sends every Vestige still lying for a player to their mail and takes all their drops off the ground. Their host
+    /// calls it as they leave, before it reads their character for its last save, so the save keeps the Vestiges.
+    pub fn mail_lying(&mut self, player: PlayerId) {
+        let Some(found) = self.players.get_mut(&player) else { return };
+        let (theirs, others) = std::mem::take(&mut self.drops).into_iter().partition(|drop| drop.player == player);
+        self.drops = others;
+        for drop in theirs {
+            found.gear_changed = true;
+            if let Dropped::Vestige(vestige) = drop.what {
+                found.character.post(Source::LeftBehind, Posted::Vestige(vestige));
+            }
+        }
     }
 
     /// The drops lying for a player.

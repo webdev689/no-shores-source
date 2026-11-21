@@ -443,7 +443,8 @@ never while a press is held. Each press is an ask the room answers.
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
-  used is spent, not gained.
+  used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
+  Postmaster's mark; a letter taken is not a gain, though what it held is.
 - **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair whenever
   that shows (aiming, or in first person, the pointer held or not), counted as the fight's rules count them on the
   player's own fighter, so a shot takes one at once: 22 px with the HUD's outline, in brass at a fifth of the capacity
@@ -612,9 +613,9 @@ falling pieces).
 
 ## The social space's counters
 
-Every keeper in the social space who deals with a player, and Shape, keeps a screen, as Destiny's keep theirs in the Tower
-([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]); E at one opens it in the menu's
-window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
+Every keeper in the social space who deals with a player, the Postmaster and Shape among them, keeps a screen, as
+Destiny's keep theirs in the Tower ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]);
+E at one opens it in the menu's window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
 serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
 - **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and thanks
@@ -654,6 +655,14 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   under a thin bar of the menu's.
 - **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape is away. He comes on
   Fridays."
+- **The Postmaster's** (`mailPage`), in Overlook's plaza alone ([[Gear]], "The mail"): no currencies, as he sells
+  nothing; LETTERS and how many of the 50 wait, then Take all (a primary press) while any waits, or "No letters wait
+  for you."; then each letter oldest first, a sunk well holding the tile of what it holds (an item's own picture, a
+  module's or a Vestige's glyph, framed in its rarity with its pips, its card on hover or focus: an item's as its
+  page's, a Vestige's its slot and level), its name in its rarity's colour, the letter's words, and Take with E on its
+  keycap. A click on the tile or Take, or E on either while it holds the focus, takes that letter; the arrows move
+  among the presses. A letter there is no room for stays, the footer saying why, and he speaks only to thank. The
+  footer: Click / E (Take).
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
   the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
   refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is

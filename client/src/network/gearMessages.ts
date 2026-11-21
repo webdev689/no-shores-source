@@ -5,6 +5,7 @@ import type { GearItem as GearItemTable } from '../../../generated/messages/ts/o
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
 import type { GearShip as GearShipTable } from '../../../generated/messages/ts/overlook/wire/gear-ship.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
+import { type GearLetter, mailOf } from './mailMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -80,6 +81,9 @@ export const ASKS = {
   buyCosmetic: 56,
   /** One of Shape's wares of the week, by its place in `node`. */
   buyFromShape: 57,
+  /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
+  takeLetter: 67,
+  takeAllLetters: 68,
 } as const;
 
 /** Shape's place while he is away. */
@@ -250,6 +254,8 @@ export interface GearState {
   readonly bountyAurem?: number;
   /** The quests they hold that the content still has, in the order written, each at the step it stands at. */
   readonly quests?: readonly GearQuest[];
+  /** The game's letters waiting at the mail counter, oldest first. */
+  readonly mail?: readonly GearLetter[];
 }
 
 /** A bounty of the day's board as it stands for the player (protocol's `GearBounty`). */
@@ -503,6 +509,7 @@ export function gearOf(gear: Gear): GearState {
       const quest = gear.quests(place);
       return { id: quest?.id() ?? '', step: quest?.step() ?? 0, done: quest?.done() ?? false };
     }),
+    mail: mailOf(gear, itemOf),
   };
 }
 

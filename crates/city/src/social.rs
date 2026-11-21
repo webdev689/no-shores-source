@@ -1,11 +1,12 @@
 //! Stage I: the city's social space, the one part of it a player walks, as Destiny 1's Tower is the one part of its
 //! City walked. A plaza the Tower's size beside the landmark on its seaward side, level with the landmark's foot,
-//! walled all round with a parapet and laid out as a courtyard (`courtyard`), with the bounty board in Overlook's alone
-//! (`board`); from it the city below and the harbour are seen whole and never reached.
+//! walled all round with a parapet and laid out as a courtyard (`courtyard`), with the bounty board and the mail counter
+//! in Overlook's alone (`board`, `mail`); from it the city below and the harbour are seen whole and never reached.
 
 use crate::board::{Board, board};
 use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, visitor_spots};
 use crate::landmarks::{Landmark, ahead};
+use crate::mail::mail_counter;
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::{Station, stations};
 use land::ground::Ground;
@@ -57,7 +58,7 @@ pub fn plaza_bounds(centre: [f64; 2], seaward: [f64; 2], reach: f64) -> ([f64; 4
 
 /// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
 /// looks out over the city to the sea. A ruined city's plaza is empty: its counters stand bare and keep no station.
-/// With `with_board`, the bounty board stands in it.
+/// With `with_board`, the bounty board stands in it, and the mail counter.
 #[must_use]
 pub fn plaza(
     ground: &Ground,
@@ -109,13 +110,18 @@ pub fn plaza(
     let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
     let frame = Frame { middle, seaward: along_seaward, depth, length, level };
     solids.extend(courtyard(&frame));
-    let (stations, stalls) = stations(&frame, ruined);
+    let (mut stations, stalls) = stations(&frame, ruined);
     solids.extend(stalls);
     let board = with_board.then(|| {
         let (board, pieces) = board(&frame);
         solids.extend(pieces);
         board
     });
+    if with_board {
+        let (mail, pieces) = mail_counter(&frame);
+        stations.push(mail);
+        solids.extend(pieces);
+    }
     let visitor_spots = visitor_spots(&frame);
     Social { bounds, level, ring, spawns, solids, stations, board, visitor_spots }
 }

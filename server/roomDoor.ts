@@ -120,6 +120,9 @@ export interface RoomDoor {
   /** Draws a room on land's loot, and apart from it its foes and camps, from seeds the host keeps secret, each as two
    *  halves; false if it is none. */
   reseed(seeds: readonly [number, number, number, number]): boolean;
+  /** Sends what still lies for a player to their mail, at sea from the deck they stand on: called as they leave,
+   *  before their character is read for its last save. */
+  mailLying(player: number): void;
   /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
   character(player: number): string | null;
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
@@ -205,6 +208,7 @@ interface RoomExports {
   room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
+  room_mail_lying(player: number): void;
   room_shut(player: number, address: number, length: number): bigint;
   room_difficulty(seas: number): number;
   room_minute(minute: number): number;
@@ -348,6 +352,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     epoch: (unixMs) => exports.room_epoch(unixMs),
     reseed: ([lootLow, lootHigh, worldLow, worldHigh]) =>
       exports.room_reseed(lootLow, lootHigh, worldLow, worldHigh) === 1,
+    mailLying: (player) => exports.room_mail_lying(player),
     character: (player) => {
       const bytes = take(exports.room_character(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);

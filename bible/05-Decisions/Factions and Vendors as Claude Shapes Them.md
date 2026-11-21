@@ -83,6 +83,7 @@ look. The owner said yes to gear of each faction's own, "with its own unique col
 | The Tack | The last alcove on that side | Four horse pieces a day of the ten coats and bardings sold |
 | The three factions | The other side, past the vault: the Stormcallers, the Lamplighters (Elder Maren Hale) between, the Veiled | Pledge, cape, packages, the Art's rise and fragments |
 | Shape | One of eight places on the plaza, by the week | Four Legendary and two Atheric pieces a week, named items at level 20, 7 Shapes for a Legendary and 15 for an Atheric |
+| The Postmaster | A counter of his own in Overlook's plaza (see "The mail") | The game's letters, each a lost Vestige or module, taken free |
 
 The Harbourmaster keeps her alcove, and a chandler's stall stands last on the factions' side, for life; no other stall
 stands in the arcades.
@@ -92,6 +93,24 @@ sold here today"), as a cosmetic of another day is, and none buys the next day's
 
 Replaced in part by Claude's call under [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]: a
 keeper's day is the game's, from 09:00 UTC to 09:00 UTC, so every daily ware turns then ([[Activities]], "The clock").
+
+## The mail
+
+The owner's word is [[A Mail Vendor Keeps Lost Items and the Game's Mail]]: a mailbox for lost items and the game's
+mail, which only the game writes. Destiny's Postmaster in the Tower held a player's lost items, twenty at most, the
+oldest giving way unsaid as more came. Everything below is Claude's.
+
+| Call | Choice |
+|---|---|
+| The keeper | The Postmaster, after Destiny's; his mark a sealed letter in the keepers' brass diamond |
+| His voice | Dry and tidy, a sorter of what others drop: "Nothing posted here goes missing. I would know." No line for being short, as he sells nothing |
+| His counter | One station standing free on the factions' side of Overlook's plaza, 24 m toward the sea from its middle and 45 m across: the bounty board's place mirrored, more than 8 m from every counter, Shape's spots and where the board is read, and off the townsfolk's lanes. A timber counter with two parcels, the keeper behind it, a rack of pigeonholes with letters under a lamp behind him. Overlook's alone, as the board is |
+| What goes to the mail | What a player owned and would lose: a Vestige that lay out its two minutes, or still lay as they left (sent before their last save); a first clear's Vestige with the carried ten full (in place of the vault); a Vestige in flotsam gathered with the ten full; a module salvaged with its slot's nine full. Ammo boxes, Ammo crates and materials past their most are not items and stay as before |
+| A letter | Its words, saying where it came from and why it came by mail, and the Vestige or the item; a module keeps its item, nodes and all |
+| How many | 50 letters, more than the carried ten and the vault's twenty Vestiges together, few enough that a save stays far under the accounts' million characters. A 51st lets the oldest letter go, and the new letter says so ("Your mailbox was full, so its oldest letter was let go."); its row in the Acquired feed tells of it as it comes |
+| Taking | At his counter only, free: Take moves a letter's Vestige into the carried ten or its item into its slot's nine, numbered anew; refused with the game's own words while there is no room. Take all takes, oldest first, every letter there is room for and leaves the rest |
+| His screen | LETTERS and how many of the 50 wait, Take all, then each letter: the tile of what it holds with its card, its name in its rarity's colour, its words, and Take with E on its keycap |
+| The mark | His counter's brass ring beats while letters wait, as a node's does; a letter coming is a row "Sent to the mail" under his mark in the Acquired feed |
 
 ## Shape and Shapes
 
@@ -133,6 +152,7 @@ Sunday 21:00 UTC ([[Activities]], "The clock").
 | Elder Maren Hale | An old human woman, white-haired, in yellow robes and a white formal cloak |
 | The Veiled | A grey-haired felid woman in a hooded grey robe |
 | Shape | An anole in a hooded grey robe, spoken of as he |
+| The Postmaster | A grey-haired felid man in a white shirt, a blue vest, grey breeches and shoes |
 
 ## Locked social spaces
 

@@ -53,6 +53,16 @@ test('a players own gear the server wrote reads back whole, every column spelled
   // order the inventory names them in (STOCK_NAMES).
   assert.deepEqual(gear.stocks, [11, 12, 13, 14, 2]);
   assert.equal(gear.items.length, 10, 'six pieces and the four modules every ship is built with');
+  // Two letters in the mail: a Rare Vestige for the arms at level 9 left lying, and a Magic hull at level 6 salvaged.
+  assert.deepEqual(
+    gear.mail?.map(({ vestige, item }) => [vestige?.rarity, vestige?.slot, vestige?.level, item?.kind, item?.level]),
+    [
+      [2, 4, 9, undefined, undefined],
+      [undefined, undefined, undefined, 25, 6],
+    ],
+  );
+  assert.ok(gear.mail?.every((letter) => letter.words !== '' && letter.id > 0 && !letter.vestige?.vaulted));
+  assert.ok((gear.mail?.[1]?.item?.columns.length ?? 0) > 0, 'its nodes spelled out');
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);
   assert.deepEqual([sword.at, sword.attack, sword.rarity, sword.level, sword.xpMost], [2, 248, 3, 20, 90_000]);

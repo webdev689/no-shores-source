@@ -1,11 +1,11 @@
 // The one screen every keeper of a social space opens, after Destiny 1's vendors: the keeper large at the left over a
 // ground lit in their colour, their mark and title above them; at the right their words, the currencies they deal in
 // (and a faction's rank and its meter), the band they speak in, their wares in rows under engraved headings (the
-// vault keeper's two sides of the vault in their place), and at the foot the time to the next stock, or to Shape's
+// vault keeper's two sides of the vault in their place, the Postmaster's letters in theirs), and at the foot the time to the next stock, or to Shape's
 // leaving. The menu (gearWindow.ts) frames it with its header and footer.
 import './npcScreen.css';
 import { make } from '../../editor/dom.ts';
-import type { GearState } from '../../network/gearMessages.ts';
+import type { GearAsk, GearState } from '../../network/gearMessages.ts';
 import type { Cards } from '../../player/cards.ts';
 import { ELEMENTS } from '../../player/gear.ts';
 import { ROLES } from '../../plus/kit.ts';
@@ -17,6 +17,7 @@ import { KEEPERS, KEEPER_KINDS, type KeeperKind } from '../keepers.ts';
 import { clockWords, countdownsAt } from './npcClock.ts';
 import { factionOf, rankRewards, reputationOf } from './factionRows.ts';
 import { keeperFigure } from './npcFigure.ts';
+import { mailPage } from './mailPage.ts';
 import { keeperMarkSvg, svgUrl } from './npcMarks.ts';
 import { type Asked, answeredWith } from './npcLines.ts';
 import { hush, keeperSays, speechBand } from './npcSpeech.ts';
@@ -45,8 +46,8 @@ const FIGURE_LEAST = 200;
 /** Whether a view of the menu is a keeper's screen: every counter's, the vault's among them. */
 export const isKeeperView = (view: View): view is KeeperKind => (KEEPER_KINDS as readonly string[]).includes(view);
 
-/** What the arrows move among: a keeper's tiles, and at the vault its cells that take the focus. */
-const KEEPER_PRESSES = '.npc-tile, .gear-vault button.gear-cell, .gear-vault .gear-cell[tabindex]';
+/** What the arrows move among: a keeper's tiles, at the vault its cells that take the focus, and the mail's presses. */
+const KEEPER_PRESSES = '.npc-tile, .gear-vault button.gear-cell, .gear-vault .gear-cell[tabindex], .npc-mail button';
 /** Whether the Art's rise waits on its fragment. */
 let choosing = false;
 /** The press to focus once the page is built again: the first fragment as the choice opens, the Rise as it closes. */
@@ -208,8 +209,11 @@ export function npcPage(
     redraw();
   };
   const wares = make('div', '', 'npc-rows');
-  // The vault keeper thanks the player for each thing put in or taken out, as a keeper does for a ware.
-  if (kind === 'vault') wares.append(vaultPage({ ...context, ask: (asked) => (waitFor(), context.ask(asked)) }));
+  // The vault keeper thanks the player for each thing put in or taken out, and the Postmaster for each letter taken,
+  // as a keeper does for a ware.
+  const thanked = { ...context, ask: (asked: GearAsk) => (waitFor(), context.ask(asked)) };
+  if (kind === 'vault') wares.append(vaultPage(thanked));
+  else if (kind === 'mail') wares.append(mailPage(thanked));
   else wares.append(...rowsOf(kind, gear, choosing).map((row) => rowNode(context, row, act, open)));
   side.append(wares, ...more);
   const foot = footNode(kind, gear);

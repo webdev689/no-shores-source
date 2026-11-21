@@ -662,3 +662,20 @@ fn the_sea_says_why_its_tier_shuts_to_a_kept_character_or_a_new_one() {
     seasoned.xp = gear::power::xp_for_level(20);
     assert_eq!(shut(0, seasoned.to_json().as_bytes()), "", "a character of level 20 sails it");
 }
+
+#[test]
+fn a_leaving_players_vestige_still_lying_is_in_their_character_before_the_room_lets_them_go() {
+    assert!(open(&bytes_of(&[0.0, 0.0])));
+    let player = room_join();
+    let vestige = gear::Vestige::new(0, gear::Rarity::Rare, gear::Slot::Legs, 5);
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.lay_drop(player, room::Dropped::Vestige(vestige), [3.0, 0.0, 0.0]),
+        Opened::Sea(_) | Opened::Fleet(_) => unreachable!("a course is on land"),
+    });
+    gear_door::room_mail_lying(player);
+    let kept = String::from_utf8(gear_door::character(player)).expect("text");
+    let character = gear::Character::from_json(&kept).expect("a character");
+    assert_eq!(character.mail.len(), 1, "read for the last save with the Vestige in the mail");
+    assert_eq!(character.mail[0].vestige.as_ref().map(|kept| kept.rarity), Some(gear::Rarity::Rare));
+    room_leave(player);
+}

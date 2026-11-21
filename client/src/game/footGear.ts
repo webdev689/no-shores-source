@@ -1,6 +1,6 @@
 // What a player's gear lays on the ground on foot: each resource node they may still gather, a ring in sea green
 // under a beam of light seen across the patrol, so a route can be planned through them; each station that deals with
-// them, a brass ring at its counter, and Shape's spot while he is here. The drops lying for them stand as their own
+// them, a brass ring at its counter, beating at the mail's while letters wait, and Shape's spot while he is here. The drops lying for them stand as their own
 // pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's offer opened, or a node within
 // reach gathered. The room judges every gather; the rings only show where.
 
@@ -89,10 +89,14 @@ export function groundRings(
   const out: number[] = [];
   const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
   const stations = here.stations ?? [];
-  const counters = stations.filter((station) => offerAt([station], ...station.counter)).map((each) => each.counter);
+  const counters = stations.filter((station) => offerAt([station], ...station.counter));
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
-  for (const [x, y] of shape ? [...counters, shape] : counters)
-    markRing(out, [x, y, floor(x, y)], SERVED_M - 0.12, SERVED_M, [...BRASS, 0.6]);
+  // The mail's ring beats while letters wait there, as a node's does, so it is seen from across the plaza.
+  const waiting = (gear?.mail?.length ?? 0) > 0;
+  for (const { kind, counter } of shape ? [...counters, { kind: 'shape', counter: shape }] : counters) {
+    const [x, y] = counter;
+    markRing(out, [x, y, floor(x, y)], SERVED_M - 0.12, SERVED_M, [...BRASS, waiting && kind === 'mail' ? beat : 0.6]);
+  }
   for (const { x, y } of gear?.nodes ?? []) {
     const base = [x, y, floor(x, y)] as const;
     markRing(out, base, NODE_REACH_M - 0.1, NODE_REACH_M, [...NODE, 0.5]);

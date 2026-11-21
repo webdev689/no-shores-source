@@ -256,7 +256,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   from its wall to its middle within 1.3 m of the arch's middle. Where no way fits, it stands at the post itself, so
   every dungeon has its cache. Shut while the end foe stands; when it falls the cache opens and every player then in
   the room finds a Vestige 0.8 m before it ([[Gear]]), and, where the run's first clear in its period pays, a second
-  1.4 m before it (`pay_clear`); it shuts when the end foe stands again. Each snapshot carries it.
+  kept at once in their carried ten, or else sent to their mail (`pay_clear`); it shuts when the end foe stands again.
+  Each snapshot carries it.
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for

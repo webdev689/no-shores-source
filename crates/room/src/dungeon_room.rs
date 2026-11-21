@@ -250,7 +250,7 @@ impl Room {
                 (gear::objectives::Feat::Cleared { island: self.island, tier: self.difficulty }, self.day());
             for player in players {
                 self.lay_cache_vestige(player, &cache, level);
-                self.pay_clear(player, level, &cache);
+                self.pay_clear(player, level);
                 // Counted as the clear pays, for those the room keeps, once a day each however often the cache opens.
                 let owner = self.players.get(&player).and_then(|found| found.owner.clone());
                 let first =
