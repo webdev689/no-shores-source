@@ -225,12 +225,14 @@ export class SeaCombat {
     else if (down && (id === 'shotBack' || id === 'shotNext')) this.loadSteps += id === 'shotNext' ? 1 : -1;
   }
 
-  /** The pad's part of a frame, `seconds` long: its controls pressed and let go; the aim held on its trigger, fired
-   *  by the other, and held fire as it is let go unfired; and the right stick turning the view as a drag does. */
+  /** The pad's part of a frame, `seconds` long: its controls pressed and let go, a tap both in one frame; the aim
+   *  held on its trigger, fired by the other, and held fire as it is let go unfired; and the right stick turning the
+   *  view as a drag does. */
   padFrame(pad: InputFrame, seconds: number): void {
     for (const id of FIGHT_CONTROLS) {
+      if (pad.pressed(id)) this.act(id, true);
       if (id === 'aim' && pad.released(id)) this.holdFire();
-      else if (pad.pressed(id) || pad.released(id)) this.act(id, pad.pressed(id));
+      else if (pad.released(id)) this.act(id, false);
     }
     const look = PAD_LOOK_PX * seconds;
     const [right, down] = [axis(pad, 'turnLeft', 'turnRight'), axis(pad, 'lookUp', 'lookDown')];

@@ -35,6 +35,7 @@ function padPage() {
   };
   const key = (name: string) => listeners.get('keydown')?.({ key: name, code: '', preventDefault: () => undefined });
   const done = () => {
+    input.context = 'foot';
     performance.now = now;
     delete page['addEventListener'];
     delete page['document'];
@@ -45,14 +46,15 @@ function padPage() {
 const [BUTTON_A, BUTTON_B, BUMPER_L, BUMPER_R, TRIGGER_L, TRIGGER_R, START, STICK_CLICK] = [0, 1, 4, 5, 6, 7, 9, 10];
 
 test('RT swings and LT guards a melee weapon; a ranged one turns them round, RT firing and LT aiming', () => {
-  const { input, pad, frame, done } = padPage();
+  const { pad, frame, done } = padPage();
   pad.held = { [TRIGGER_R]: 1 };
   assert.ok(frame().held('swing'));
-  input.ranged = true;
+  BINDS.ranged = true;
   const ranged = frame();
   assert.ok(ranged.held('guard') && !ranged.held('swing'), 'RT fires, as the left button does');
   pad.held = { [TRIGGER_L]: 0.6 };
   assert.ok(frame().held('swing'), 'LT aims, as the right button does');
+  BINDS.ranged = false;
   done();
 });
 
@@ -140,5 +142,37 @@ test('the pad pressed makes it the one shown, and a key the keyboard', () => {
   assert.equal(BINDS.device, 'pad');
   key('w');
   assert.equal(BINDS.device, 'keys');
+  done();
+});
+
+test('B waits for its hold only where a hold of it is bound: in a sea fight it braces as it goes down, held', () => {
+  const { input, pad, frame, done } = padPage();
+  input.context = 'fight';
+  pad.held = { [BUTTON_B]: 1 };
+  assert.ok(frame().pressed('brace'), 'no crouch at sea to wait for');
+  frame(HOLD_S);
+  assert.ok(input.padAlone.held('brace'), 'held past the hold, still the brace');
+  pad.held = {};
+  assert.ok(frame().released('brace'));
+  input.context = 'foot';
+  pad.held = { [BUTTON_B]: 1 };
+  assert.ok(!frame().pressed('dodge'), 'on foot B waits, to be told from its hold');
+  done();
+});
+
+test('what the pad held is let go as a window takes it, a stick come to rest under the window too', () => {
+  const { input, pad, frame, done } = padPage();
+  input.context = 'fight';
+  pad.axes = [-1, 0, 0, 0];
+  pad.held = { [BUTTON_B]: 1 };
+  const steering = frame();
+  assert.ok(steering.held('fightLeft') && steering.held('brace'));
+  input.window('sheet');
+  const opened = frame();
+  assert.ok(opened.released('brace') && input.padAlone.released('brace'), 'the brace the sheet took is let go');
+  assert.ok(!opened.held('fightLeft'), 'the window has the pad');
+  pad.axes = [0, 0, 0, 0];
+  assert.ok(frame().released('fightLeft'), 'the stick let go under the sheet');
+  assert.ok(input.padAlone.released('fightLeft'));
   done();
 });

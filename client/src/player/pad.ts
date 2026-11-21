@@ -167,7 +167,7 @@ export class PadReader {
 }
 
 /** The pad's next press while a control is being bound: a button tapped, held (`B hold`) or pressed with another
- *  (`LB+RB`); the buttons down as it starts are stale until let go. */
+ *  within `CHORD_S`, as play joins two (`LB+RB`); the buttons down as it starts are stale until let go. */
 export class PadCapture {
   private stale: Set<string>;
   private first: { button: string; since: number } | null = null;
@@ -185,9 +185,11 @@ export class PadCapture {
       if (button) this.first = { button, since: 0 };
       return null;
     }
+    // As in play, a second button joins the first only while the first still waits for it.
+    const joins = first.since < CHORD_S;
     first.since += seconds;
     const other = PAD_BUTTONS.find((each) => each !== first.button && down.has(each) && !this.stale.has(each));
-    if (other) return chordOf(first.button, other);
+    if (other && joins) return chordOf(first.button, other);
     if (!down.has(first.button)) return first.button;
     return first.since >= HOLD_S ? `${first.button} hold` : null;
   }

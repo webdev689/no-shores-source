@@ -128,4 +128,9 @@ test('a key being bound takes a button tapped, held, or pressed with another, ne
   const both = new PadCapture(new Set());
   both.step(new Set(['RB']), 0.016);
   assert.equal(both.step(new Set(['RB', 'LB']), 0.016), 'LB+RB');
+  const late = new PadCapture(new Set());
+  late.step(new Set(['RB']), 0.016);
+  late.step(new Set(['RB']), CHORD_S);
+  assert.equal(late.step(new Set(['RB', 'LB']), 0.016), null, 'a second button past the moment play joins two');
+  assert.equal(late.step(new Set(['LB']), 0.016), 'RB');
 });

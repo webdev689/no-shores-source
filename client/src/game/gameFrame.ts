@@ -4,7 +4,7 @@
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
-import { type Input, type InputFrame, axis } from '../player/input.ts';
+import { IDLE, type Input, type InputFrame, axis } from '../player/input.ts';
 import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
@@ -19,6 +19,7 @@ import { type Flow, type Happening, next } from './flow.ts';
 import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
+import { contextOf } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { HINTS, withMapKey } from './hints.ts';
 import { gearTakesKeys } from './gearScreen.ts';
@@ -159,7 +160,6 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
     const shown = here.frame(controls, seconds, clock, { paused, looking, hands: controls.locked, aspect });
-    input.ranged = shown.ranged;
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
@@ -234,8 +234,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       const steer = axis(controls, 'steerLeft', 'steerRight');
       here.helm(steer, controls.pressed('sailOn'), controls.pressed('heaveTo'), seconds);
     }
-    // The fight's keys and pointer are heard as they come (`fightControls`); its pad, each frame.
-    if (!paused && !here.boarding.onDeck) here.fight?.padFrame(input.padAlone, seconds);
+    // The fight's keys and pointer are heard as they come (`fightControls`); its pad, each frame, and while paused only
+    // what the pad lets go, so nothing it held stays held.
+    const pad = input.padAlone;
+    if (!here.boarding.onDeck) here.fight?.padFrame(paused ? { ...IDLE, released: (id) => pad.released(id) } : pad, seconds);
     const shown = here.frame({
       seconds,
       time: clock,
@@ -338,6 +340,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const tookWheel = ui.hear(seconds, !input.locked, windowUp || hud.controls.takesKeys);
     const top = hud.controls.open ? 'sheet' : gearTakesKeys() ? 'gear' : creationOpen() ? 'creation' : menuUp && 'menu';
     input.window(top || null);
+    input.context = playing.flow.mode === 'story' && parts.story ? parts.story.context : contextOf(playing);
     const heard = input.frame();
     hud.controls.frame(seconds, input.padButtons);
     // The wheel turned over the interface scrolls it, not the camera.

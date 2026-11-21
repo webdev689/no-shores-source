@@ -1,15 +1,19 @@
-import { BIND_IDS, type BindId, type Binds, DEFAULTS, type Device } from './binds.ts';
+import { BIND_IDS, type BindId, type Binds, CONTROLS, type Context, DEFAULTS, type Device } from './binds.ts';
 import { NO_PAD, PadReader, type PadFrame, type PadState, type Waits, padInputs, padOf } from './pad.ts';
 
 /** A control the player binds (`binds.ts`). */
 export type Action = BindId;
 
-/** The binds the game hears now, who hears them change, and which of the keyboard and the pad was used last. */
+/** The binds the game hears now, who hears them change, which of the keyboard and the pad was used last, and whether
+ *  a ranged weapon turns the pad's triggers round. */
 export class LiveBinds {
   private binds: Binds = DEFAULTS;
   private readonly heard = new Set<(binds: Binds, kept: boolean) => void>();
   /** The keys and mouse, or the pad: whichever the player used last, whose keys the strip and the sheet show. */
   device: Device = 'keys';
+  /** Whether a ranged weapon is drawn on foot, which turns the pad's triggers round: RT fires and LT aims. Every
+   *  fight on foot says so each frame (`PlayerFight`). */
+  ranged = false;
 
   get now(): Binds {
     return this.binds;
@@ -25,9 +29,11 @@ export class LiveBinds {
     this.heard.add(listener);
   }
 
-  /** What the pad waits to tell apart: each button with a hold bound, and each two bound together. */
-  waits(): Waits {
-    const names = BIND_IDS.flatMap((id) => this.binds[id].pad);
+  /** What the pad waits to tell apart in `context` (anywhere, without one): each button with a hold bound there, and
+   *  each two bound together, so a button with no hold bound where the player is acts as it goes down. */
+  waits(context?: Context): Waits {
+    const here = BIND_IDS.filter((id) => context === undefined || CONTROLS[id].where.includes(context));
+    const names = here.flatMap((id) => this.binds[id].pad);
     const holds = new Set(names.filter((name) => name.endsWith(' hold')).map((name) => name.slice(0, -' hold'.length)));
     const chords = names.filter((name) => name.includes('+')).map((name) => name.split('+') as [string, string]);
     return { holds, chords };
@@ -88,9 +94,11 @@ export class Input {
   private windowUp: string | null = null;
   /** Whether the pad's run is on: clicked, it runs until the stick comes to rest. */
   private running = false;
+  /** What the pad's buttons acted as when a window took them, let go at the next frame. */
+  private letGo = new Set<string>();
   private readonly padHeard = new Set<(pressed: ReadonlySet<Action>, buttons: ReadonlySet<string>) => void>();
-  /** Whether a ranged weapon is drawn, which turns the pad's triggers round: RT fires and LT aims. */
-  ranged = false;
+  /** Where the player is, whose binds say which of the pad's buttons wait to be told a tap from a hold. */
+  context: Context = 'foot';
   /** The pad's part of the last frame alone, for what hears the keys as they come and the pad each frame. */
   padAlone: InputFrame = IDLE;
 
@@ -153,11 +161,12 @@ export class Input {
   }
 
   /** Says which window is up over the game (`top`, null for none): the pad's buttons are then the window's, and a
-   *  button held as one opens, closes or gives way to another does nothing more until it is let go. */
+   *  button held as one opens, closes or gives way to another does nothing more until it is let go; what it acted as
+   *  is let go at once. */
   window(top: string | null): void {
     if (top === this.windowUp) return;
     this.windowUp = top;
-    this.pad.staleNow();
+    for (const name of this.pad.staleNow()) this.letGo.add(name);
     this.running = false;
   }
 
@@ -177,12 +186,16 @@ export class Input {
     const seconds = Math.min(0.25, (now - this.last) / 1000);
     this.last = now;
     const binds = BINDS.now;
-    const read = this.pad.step(padInputs(padOf(padsNow())), seconds, BINDS.waits());
+    const read = this.pad.step(padInputs(padOf(padsNow())), seconds, BINDS.waits(this.context));
     if (this.pad.touched) BINDS.device = 'pad';
-    const pad: PadFrame = this.windowUp !== null ? NO_PAD : read;
+    // Under a window the pad presses nothing of the game's, but whatever it lets go is let go, a stick's ways too.
+    const released = new Set([...read.released, ...this.letGo]);
+    this.letGo.clear();
+    const pad: PadFrame = this.windowUp !== null ? { ...NO_PAD, released } : { ...read, released };
     // A ranged weapon turns the triggers round: RT, the swing's, fires, as the guard's left button does.
+    const ranged = BINDS.ranged;
     const padNames = (action: Action) => {
-      const turned = this.ranged && action === 'swing' ? 'guard' : this.ranged && action === 'guard' ? 'swing' : action;
+      const turned = ranged && action === 'swing' ? 'guard' : ranged && action === 'guard' ? 'swing' : action;
       return binds[turned].pad;
     };
     const padIn = (action: Action, within: ReadonlySet<string>) => padNames(action).some((name) => within.has(name));
