@@ -302,8 +302,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   Tithe-Mate is in the wreck's own level too (`tools/wreck/wreck_level.py`), rebuilt by the wreck workflow with the
   owner's yes ("Do it"): only its Blender source is new. Open: the fleet room has no burst; and this session's
   toolkit could not be installed (its installer was refused by the session's permission check).
-- **#126, the wreck opened by teaching the player, waits on the owner's yes** to merge
-  ([[The Wreck Opens by Teaching the Player]]): the gun deck's Tithe-Mate in the wreck's level; the waking eyes as an
+- **#126, the wreck opened by teaching the player, is on `main`**, merged with the owner's yes ("Please do that"),
+  which deploys the page and the rooms ([[The Wreck Opens by Teaching the Player]]): the gun deck's Tithe-Mate in the wreck's level; the waking eyes as an
   almond under shaped lids, an uneven fringe of lashes and the fires' light through them, the blur clearing a step at
   each beat; the wake's flight dropped, the camera easing out of the eyes to over the shoulder; and the teaching on
   the quiet deck: the sword and shield found on the deck and equipped from the Character page, the feet found, the
