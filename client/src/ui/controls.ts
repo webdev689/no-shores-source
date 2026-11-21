@@ -4,6 +4,9 @@ import { TONES } from '../plus/tones.ts';
 import type { Node } from './node.ts';
 import type { Interface } from './ui.ts';
 
+/** The tallest a choice's open list stands before it scrolls, CSS pixels. */
+const LIST_HEIGHT = 240;
+
 /** A press with words, in the kit's `role`; `run` when it is pressed. */
 export function button(
   ui: Interface,
@@ -63,7 +66,11 @@ export function slider(
   range: { readonly low: number; readonly high: number; readonly step: number; readonly width?: number },
 ): { node: Node; value: number } {
   const { low, high, step } = range;
-  const kept = (raw: number) => Math.min(high, Math.max(low, low + Math.round((raw - low) / step) * step));
+  // Held to the decimals of the step and the low end, so 0.05's steps read 0.4, not 0.39999999999999997.
+  const places = (value: number) => (`${value}`.split('.')[1] ?? '').length;
+  const decimals = Math.min(20, Math.max(places(step), places(low)));
+  const kept = (raw: number) =>
+    Math.min(high, Math.max(low, Number((low + Math.round((raw - low) / step) * step).toFixed(decimals))));
   let now = value;
   const held = ui.drag(id);
   const box = ui.boxOf(id);
@@ -117,10 +124,14 @@ export function choice(
         { text: { words }, width: 'grow' },
         { text: { words: open ? '^' : 'v' } },
         open && {
+          id: `${id}:list`,
           role: 'panel',
           direction: 'column',
           padding: 2,
           gap: 2,
+          // A long list scrolls inside this height, so every option stays in reach.
+          maxHeight: LIST_HEIGHT,
+          scroll: true,
           float: { at: [0, 1], y: 2, z: 10 },
           children: options.map((option): Node => ({
             id: `${id}:${option.value}`,

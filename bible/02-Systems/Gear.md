@@ -52,7 +52,7 @@ code:
   - crates/protocol/src/gear_wire.rs#gear_bytes
   - client/src/player/gear.ts#gearHands
   - client/src/player/gearLooks.ts#gearOutfit
-  - client/src/testground/gearPanel.ts#startGearPanel
+  - client/src/testground/gearPanel.ts#GearPanel
 ---
 # Gear
 

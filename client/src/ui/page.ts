@@ -1,5 +1,5 @@
 // The page's own services that a screen drawn by the game asks for and cannot draw: opening a link in a new tab, the
-// page's address, loaded again or left for another, and its touches held. Only here, canvasEvents.ts, pictures.ts and
+// page's address, loaded again or left for another, its touches held and its clipboard. Only here, canvasEvents.ts, pictures.ts and
 // announce.ts touch the page, so the interface itself runs anywhere.
 
 /** What a screen asks of the page. */
@@ -26,4 +26,9 @@ export const PAGE: Page = {
  *  held is never cut short. Let go, the surface takes the page's touches again. */
 export function touchesHeld(surface: { readonly style: { touchAction: string } }, held: boolean): void {
   surface.style.touchAction = held ? 'none' : '';
+}
+
+/** Puts `words` on the clipboard where the page lets it; where it does not, nothing happens. */
+export function copyText(words: string): void {
+  globalThis.navigator?.clipboard?.writeText(words).catch(() => undefined);
 }

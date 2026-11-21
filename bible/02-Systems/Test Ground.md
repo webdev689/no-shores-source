@@ -6,11 +6,13 @@ code:
   - client/src/testground/rockRow.ts#ROCK_ROW
   - client/src/testground/testgroundMain.ts
   - client/src/combat/worldSounds.ts#WorldSounds
-  - client/src/testground/aimPanel.ts
-  - client/src/testground/statusPanel.ts#startStatusPanel
-  - client/src/testground/artsPanel.ts#startArtsPanel
+  - client/src/testground/aimPanel.ts#AimPanel
+  - client/src/testground/gearPanel.ts#GearPanel
+  - client/src/testground/panelKit.ts#panels
+  - client/src/testground/statusPanel.ts#statusNodes
+  - client/src/testground/artsPanel.ts#artsNodes
   - client/src/combat/attackFeel.ts#AttackFeel
-  - client/src/testground/feelPanel.ts#startFeelPanel
+  - client/src/testground/feelPanel.ts#FeelPanel
   - client/src/combat/swingArcs.ts#SwingArcs
   - client/src/combat/swingCourse.ts#courseOf
   - client/src/combat/swingMesh.ts#layStreak
@@ -33,7 +35,7 @@ code:
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
   - client/src/combat/fightBlood.ts#FightBlood
-  - client/src/testground/panel.ts#startPanel
+  - client/src/testground/panel.ts#Panel
   - client/src/player/foeDress.ts#foeDress
   - client/src/combat/foeBars.ts#FoeBars
   - client/src/combat/hud.ts#Hud
@@ -55,6 +57,10 @@ it ([[The Player Plays as in DFO]]), the same [[Player]] the [[Game]] plays. It 
 `https://lattymoy.github.io/overlook-source/testground/`. Under `npm run dev`, open `/testground/`.
 
 ## Playing
+
+The page is one canvas: the view, with a panel either side of it drawn by the game ([[Interface]], "Drawn by the
+game"). The panels scroll under the wheel, and while the mouse is free their controls take Tab, the arrows, Enter
+and the pad, and a field takes the keys typed into it.
 
 Click the view to play; Escape frees the mouse. The body moves by the [[Movement]] rules, and the controls are DFO's:
 
@@ -296,7 +302,8 @@ are the room's, the same for everyone in it, and fight whoever is near. Every ot
 room stands where the room last saw them, dressed as they dress themselves, showing the move and frame their own
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
-which player this is. A foe an older room sends with no type is drawn as the pirates' type in its role.
+which player this is, the room's name, and the link's lag (how much it strays) and the share of
+snapshots lost, as the page measures them. A foe an older room sends with no type is drawn as the pirates' type in its role.
 
 When the room's socket closes, for a deploy or a dropped network, the page joins the room again by itself ([[Server]],
 "The browser's side"): a new player there, standing where the room puts them, their dress and what their hands hold

@@ -48,7 +48,7 @@ code:
   - client/src/combat/casting.ts#daggersAim
   - client/src/player/cardLooks.ts#STATUS_WGSL
   - client/src/forge/compose.ts#composeFrame
-  - client/src/testground/artsPanel.ts#startArtsPanel
+  - client/src/testground/artsPanel.ts#artsNodes
 ---
 # Arts
 
