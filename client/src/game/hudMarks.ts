@@ -25,7 +25,7 @@ export interface ScreenMark {
   readonly locked: boolean;
 }
 
-export const GLYPHS: Record<MarkKind, string> = {
+const GLYPHS: Record<MarkKind, string> = {
   social: '⌂',
   patrol: '◇',
   mission: '◆',
@@ -34,10 +34,10 @@ export const GLYPHS: Record<MarkKind, string> = {
   port: '⚓︎',
 };
 /** A locked node's glyph, in the place of its kind's. */
-export const LOCK_GLYPH = '🔒︎';
+const LOCK_GLYPH = '🔒︎';
 
 /** Each kind's colour, and a locked node's. */
-export const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
+const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
   social: '#f3cf6a',
   patrol: '#8ed081',
   mission: '#7fb4ee',
@@ -52,13 +52,19 @@ const DIM = 'rgba(242,239,230,0.68)';
 const GLOW = 18;
 
 /** A glyph's size in a ring `size` across: half of it, down to a whole step of the face's grid, never under one. */
-export const glyphPx = (size: number): number => Math.max(11, Math.floor(size / 2 / 11) * 11);
+const glyphPx = (size: number): number => Math.max(11, Math.floor(size / 2 / 11) * 11);
+
+/** The texels a mark's picture is drawn at for `size` CSS pixels: twice a size rounded up to 8, so a mark growing as
+ *  the ship nears it reuses a few pictures rather than laying a new one in the atlas at every pixel it grows. */
+const texels = (size: number) => Math.ceil(size / 8) * 16;
 
 /** The ring and its glyph, drawn in the page's own face, which holds the glyphs Pixelify lacks. */
 function ring(glyph: string, colour: string, size: number, hovered: boolean, chosen: boolean): Picture {
   const edge = chosen ? GOLD : colour;
+  const side = texels(size);
   return {
-    key: `mark ${glyph} ${colour} ${size} ${hovered} ${chosen}`,
+    key: `mark ${glyph} ${colour} ${side} ${glyphPx(size)} ${hovered} ${chosen}`,
+    pixel: { width: side, height: side },
     source: {
       draw: (context, width, height) => {
         const unit = width / size;
@@ -82,8 +88,10 @@ function ring(glyph: string, colour: string, size: number, hovered: boolean, cho
 
 /** A chosen ring's glow: a gold band 3 pixels round it and a soft light past that. */
 function glow(size: number): Picture {
+  const side = texels(size + 2 * GLOW);
   return {
-    key: `mark glow ${size}`,
+    key: `mark glow ${side}`,
+    pixel: { width: side, height: side },
     source: {
       draw: (context, width, height) => {
         const unit = width / (size + 2 * GLOW);

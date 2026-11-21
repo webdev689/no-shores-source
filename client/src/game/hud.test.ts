@@ -182,3 +182,24 @@ test('Manage’s panel lists each part, marks those to come Later, and its way b
   clickOn(ui, hud, laid, 'ship:back');
   assert.equal(managed, 1);
 });
+
+test('a mark growing as the ship nears it reuses its picture across a few pixels, so the atlas never fills', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  const mark = {
+    id: 'a',
+    kind: 'port',
+    name: 'Saltmere',
+    x: 300,
+    y: 300,
+    note: '',
+    chosen: false,
+    named: false,
+  } as const;
+  const keyAt = (sizePx: number) => {
+    hud.marks([{ ...mark, sizePx, arrowDegrees: null, locked: false }]);
+    return frame(ui, hud).find((each) => each.node.id === 'mark:a')?.node.picture?.key;
+  };
+  assert.equal(keyAt(21), keyAt(23));
+  assert.notEqual(keyAt(23), keyAt(40));
+});
