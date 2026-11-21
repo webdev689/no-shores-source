@@ -8,6 +8,7 @@ use crate::PlayerId;
 use crate::battle::{Outcome, Sank};
 use crate::harbour::{HELD, JOINED, MOORED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
 use crate::players::GEAR_EVERY_TICKS;
+use gear::ship::materials::ShipMaterial;
 use movement::TICK_SECONDS;
 use naval::fight::Event;
 use naval::wire::told_numbers;
@@ -186,7 +187,14 @@ impl Sea {
             self.harbour.told.extend(told_numbers(&event, tick).map(|numbers| (player, numbers)));
             let rarity = held.vestige.map_or(0.0, |vestige| f64::from(vestige.rarity as u8) + 1.0);
             let parts = [f64::from(u8::from(held.ammo_box)), f64::from(u8::from(held.ammo_crate))];
-            self.harbour.told.push((player, vec![HELD, tick, f64::from(id), rarity, parts[0], parts[1]]));
+            let mut numbers = vec![HELD, tick, f64::from(id), rarity, parts[0], parts[1]];
+            let taken = held.salvage;
+            numbers.extend(ShipMaterial::ALL.map(|material| f64::from(taken.materials.of(material))));
+            let module = taken.module.and_then(|item| self.harbour.characters.get(&player)?.item(item));
+            numbers.extend(module.map_or([0.0; 4], |item| {
+                [1.0, f64::from(item.kind as u8), f64::from(item.rarity as u8), f64::from(item.name)]
+            }));
+            self.harbour.told.push((player, numbers));
         }
     }
 

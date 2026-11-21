@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
 import { layout } from '../ui/layout.ts';
 import { glyphDrawn } from '../ui/glyphs.ts';
-import type { Node } from '../ui/node.ts';
+import type { Child, Node } from '../ui/node.ts';
 import type { Face } from '../ui/text.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
 import { companyNode } from './companyHud.ts';
@@ -29,8 +29,9 @@ function feed() {
     const node = shown.node(sizes, VIEW, false);
     return node ? (node.children ?? []).length : 0;
   };
-  return { rows, set: (next: GearState) => (gear = next), wait: (span: number) => (now += span) };
+  return { rows, shown, set: (next: GearState) => (gear = next), wait: (span: number) => (now += span) };
 }
+const feedWith = feed;
 
 test('what a room first says, and what changes in the ten seconds after, is not a gain', () => {
   const { rows, set, wait } = feed();
@@ -51,6 +52,42 @@ test('gains show a row each, a gain like one shown adds to its row, and the rows
   assert.equal(rows(), 2, 'more Aurem joins its row; Shapes take one of their own');
   wait(5_000);
   assert.equal(rows(), 0, 'gone after four and a half seconds and their fade');
+});
+
+test("currency, XP and reputation stand as short lines over the items' rows, and the sea's gains are told in", () => {
+  const { set, wait, shown } = feedWith();
+  shown.node(sizes, VIEW, false);
+  wait(11_000);
+  const base = sampleGear();
+  set({
+    ...base,
+    aurem: base.aurem + 10,
+    xp: base.xp + 250n,
+    stocks: base.stocks.map((count, place) => (place === 0 ? count + 3 : count)),
+  });
+  const kidsOf = (node: Child) => (node ? (node.children ?? []) : []);
+  const kinds = kidsOf(shown.node(sizes, VIEW, false)).map((child) =>
+    child && typeof child === 'object' && 'padding' in child && Array.isArray(child.padding) && child.padding[3] === 4
+      ? 'row'
+      : 'line',
+  );
+  assert.deepEqual(kinds, ['line', 'line', 'row'], 'Aurem and XP over the fragments');
+  shown.tell([
+    {
+      key: 'ship-0',
+      name: 'Timber',
+      count: 2,
+      rarity: null,
+      glyph: 'timber',
+      tint: 0,
+      item: null,
+      emblem: null,
+      icon: null,
+      compact: false,
+      word: null,
+    },
+  ]);
+  assert.equal(kidsOf(shown.node(sizes, VIEW, false)).length, 4, 'what floats gathered at sea, told in');
 });
 
 test('the company shows each other member’s nameplate and the first invite, laid 240 by 48', () => {

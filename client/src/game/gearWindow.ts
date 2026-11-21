@@ -13,6 +13,7 @@ import { uiScale } from '../ui/uiRenderer.ts';
 import { MARK, accountMark, markName } from './accountMark.ts';
 import { AccountPanel } from './accountTab.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
+import type { Gain } from './gains.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
 import { artOf, gearAskOf } from './artsCards.ts';
@@ -76,6 +77,7 @@ export function startGearWindow(
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
+  gained: () => readonly Gain[] = () => [],
 ): Layer {
   // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
   let pictures: ItemPictures | null = null;
@@ -425,6 +427,8 @@ export function startGearWindow(
     if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
     const sizes = sizesOf(box.width, box.height, uiScale(devicePixelRatio));
     const shown = view;
+    // What was gathered at sea, where no gear is shown to tell it, comes told.
+    feed.tell(gained());
     const children: Child[] = [
       // The company stands under the fight's vitals while they show.
       company.node(fighting()),

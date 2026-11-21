@@ -120,3 +120,40 @@ test('Shapes gained and a cosmetic newly kept are gains, each with a picture of 
   assert.ok(gains.every((each) => each.icon?.startsWith('<svg')));
   assert.deepEqual(gainsOf(state({ shapes: 6 }), state({ shapes: 1 })), [], 'Shapes spent are no gain');
 });
+
+test('XP, reputation and an Art’s progress are short lines; a level, a fragment and the ship’s materials are rows', () => {
+  const before = state({
+    xp: 1000n,
+    standing: {
+      pledge: 1,
+      reputation: [10, 0, 0],
+      packages: [0, 0, 0],
+      artLevels: [1, 1, 1],
+      artXp: [5, 0, 0],
+      artOwned: [0, 0, 0],
+    },
+    ship: { xp: 50n, stocks: [1, 1, 1, 1] } as unknown as GearState['ship'],
+  });
+  const after = state({
+    xp: 1250n,
+    standing: {
+      pledge: 1,
+      reputation: [35, 0, 0],
+      packages: [0, 0, 0],
+      artLevels: [1, 2, 1],
+      artXp: [45, 0, 0],
+      artOwned: [0, 0, 1],
+    },
+    ship: { xp: 80n, stocks: [3, 1, 1, 1] } as unknown as GearState['ship'],
+  });
+  const shown = gainsOf(before, after).map((gain) => [gain.name, gain.count, gain.compact]);
+  assert.deepEqual(shown, [
+    ['XP', 250, true],
+    ['Stormcallers reputation', 25, true],
+    ['Storm XP', 40, true],
+    ['Divine level 2', 1, false],
+    [shown[4]?.[0], 1, false],
+    ['Timber', 2, false],
+    ['Ship XP', 30, true],
+  ]);
+});

@@ -508,7 +508,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   hud.onPassage(goThrough);
   const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);
   const fighting = () => footView.shown.fight;
-  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, () => playing.flow.mode === 'story'));
+  const inStory = () => playing.flow.mode === 'story';
+  const gathered = () => playing.seaWord?.takeGained() ?? [];
+  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, inStory, gathered));
   addEventListener('keyup', (event) => {
     const key = event.key.toLowerCase();
     if (playing.flow.mode === 'story') story?.key(key, false);
