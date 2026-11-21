@@ -122,7 +122,9 @@ export class PlayerFight {
     const pressed = (armed && !shooter && controls.pressed('swing')) || (hands && controls.pressed('dodge'));
     // The sights (the crosshair and its shots) follow the weapon in hand, which the rules may not have taken up yet.
     const held = walker.shownDress.outfit;
-    const reticle = held.drawn && free && !player.mounted ? reticleOf(held.right ?? null) : null;
+    const drawnReticle = held.drawn && free && !player.mounted ? reticleOf(held.right ?? null) : null;
+    // The melee reticle stands only while the hands are the player's: not over a menu, a cutscene or a freed pointer.
+    const reticle = drawnReticle === 'melee' && !hands ? null : drawnReticle;
     const rangedDrawn = reticle !== null && reticle !== 'melee';
     return { shooter, ranged, rangedDrawn, reticle, aiming, pressed, pulled: ranged && controls.pressed('guard') };
   }

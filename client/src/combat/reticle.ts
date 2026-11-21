@@ -7,7 +7,7 @@ import { FIGHT_TICKS } from '../player/fightMoves.ts';
 import { SHOOTERS } from '../player/walker.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { EVENT, HOW } from './cues.ts';
-import { element, setStyle, showNode } from './meter.ts';
+import { element, setStyle, showNode } from '../plus/meter.ts';
 
 /** Which crosshair a weapon drawn shows: a ranged weapon's by its kind, any other's (bare fists too) the melee one. */
 export type Reticle = 'bow' | 'crossbow' | 'pistolet' | 'thunderlock' | 'melee';
@@ -24,6 +24,10 @@ export interface CrosshairFrame {
 
 /** How long a shot's mark shows as it lands, fading, in seconds. */
 export const MARK_SECONDS = 0.25;
+/** A double pistolet's wait between its barrels, in ticks (crates/combat/src/shots.rs BRACE_GAP): no reload. */
+const BRACE_TICKS = 30;
+/** How far above or below a foe may stand and still be struck, in metres (crates/combat/src/tuning.rs STRIKE_HEIGHT). */
+const STRIKE_HEIGHT_M = 1.4;
 /** The foe's colour on the display, as its alert and the arrows to it are drawn. */
 const FOE_RED = '#ff5a4a';
 
@@ -34,19 +38,19 @@ export function reticleOf(right: string | null): Reticle {
 }
 
 /** The crosshair a frame shows: a ranged one while `sights` (it aims, or is out in first person), a bow's draw ringing
- *  it; else the melee one while a melee weapon is drawn (`reticle`), judged against `reach`; else none. */
+ *  it, the pistolet's plain cross with no ranged weapon drawn (the Test Ground's held aiming view); else the melee one
+ *  while a melee weapon is drawn (`reticle`) on a living fighter, judged against `reach`; else none. */
 export function crosshairOf(
   reticle: Reticle | null,
   sights: boolean,
   own: FighterView | null,
   reach: number,
 ): CrosshairFrame | null {
-  if (reticle === 'melee') return { reticle, charge: null, reach };
-  if (!sights || reticle === null) return null;
+  if (!sights) return reticle === 'melee' && own?.action.kind !== 'dead' ? { reticle, charge: null, reach } : null;
   const action = own?.action;
   const charge =
     reticle === 'bow' && action?.kind === 'draw' ? Math.min(1, action.elapsed / FIGHT_TICKS.drawFull) : null;
-  return { reticle, charge, reach: null };
+  return { reticle: reticle === null || reticle === 'melee' ? 'pistolet' : reticle, charge, reach: null };
 }
 
 /** How the player's shots landed among `events`, the strongest of them: a kill, then a crit, then a hit that harmed. */
@@ -55,7 +59,8 @@ export function landedBy(events: readonly FightEvent[], player: number): Landed 
   for (const event of events) {
     if (event.striker !== player || event.defender === player || event.how !== HOW.shot) continue;
     if (event.kind === EVENT.killed) return 'kill';
-    const harmed = event.amount > 0 && (event.kind === EVENT.hit || event.kind === EVENT.shielded);
+    const struck = event.kind === EVENT.hit || event.kind === EVENT.shielded || event.kind === EVENT.guardBroken;
+    const harmed = event.amount > 0 && struck;
     if (harmed) landed = event.crit || landed === 'crit' ? 'crit' : 'hit';
   }
   return landed;
@@ -67,6 +72,8 @@ export class Crosshair {
   private readonly mark: HTMLElement;
   /** The reload's ticks left as first seen, which its ring fills against; 0 while none runs. */
   private reloadFrom = 0;
+  /** The reload's ticks left last frame, by which a new one is told from the last going on. */
+  private left = 0;
   /** The last shot's landing, and the seconds since. */
   private landed: { readonly kind: Landed; readonly since: number } | null = null;
 
@@ -90,14 +97,19 @@ export class Crosshair {
     const left = own?.action.kind === 'reload' ? own.action.left : 0;
     // shortcut: the reload's length is read from its first tick seen, so its ring may start a frame late; take the
     // rules' own length once the page holds the weapon's trim.
-    this.reloadFrom = left > 0 ? Math.max(this.reloadFrom, left) : 0;
+    this.reloadFrom = left > this.left ? left : left > 0 ? this.reloadFrom : 0;
+    this.left = left;
     const kind = landedBy(events, player);
     this.landed = kind ? { kind, since: 0 } : this.landed && { ...this.landed, since: this.landed.since + seconds };
     showNode(this.node, !!shown);
+    // A shot that lands while no crosshair shows marks none later.
+    if (!shown) this.landed = null;
     if (!shown) return;
     const melee = shown.reticle === 'melee';
-    const reload = !melee && this.reloadFrom > 0 ? 1 - left / this.reloadFrom : null;
-    const apart = own && under ? Math.hypot(under.x - own.x, under.y - own.y) : Infinity;
+    const braced = shown.reticle === 'pistolet' && this.reloadFrom <= BRACE_TICKS;
+    const reload = !melee && !braced && this.reloadFrom > 0 ? 1 - left / this.reloadFrom : null;
+    const level = own && under && Math.abs(under.z - own.z) <= STRIKE_HEIGHT_M;
+    const apart = own && under && level ? Math.hypot(under.x - own.x, under.y - own.y) : Infinity;
     if (this.node.dataset['reticle'] !== shown.reticle) this.node.dataset['reticle'] = shown.reticle;
     this.node.classList.toggle('foe', !melee && !!under);
     this.node.classList.toggle('reach', melee && apart <= (shown.reach ?? -Infinity));
@@ -149,7 +161,7 @@ export function reticleCss(): string {
   background: conic-gradient(var(--fill-ink) var(--fill), #ffffff38 var(--fill)); }
 .fight-hud .crosshair.charging { --fill-ink: #ffd95a; }
 .fight-hud .crosshair.reloading { --fill-ink: #f2f2f2; }
-.fight-hud .crosshair.full { filter: drop-shadow(0 0 4px #ffd95a); }
+.fight-hud .crosshair.full { filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 4px #ffd95a); }
 .fight-hud .crosshair .landed { position: absolute; inset: -4px; color: #f2f2f2; }
 .fight-hud .crosshair .landed[data-landed='crit'] { color: #ffd95a; }
 .fight-hud .crosshair .landed[data-landed='kill'] { color: ${FOE_RED}; }

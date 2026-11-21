@@ -204,7 +204,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     for a kill, a stagger or a guard broken; a blow of theirs stopped by a guard knocks the view back; a blow landing
     on the player jolts it and shakes it as hard as the harm; and the view leans into their own swing as it lands. A
     blow's hit and the kill it made punch once, as does one stroke however many it strikes, as hard as the hardest; a
-    shot kicks nothing; while a crosshair shows, the kick moves the view but never turns it, so the crosshair stays
+    shot kicks nothing; while a ranged crosshair shows, the kick moves the view but never turns it, so the crosshair stays
     where shots land. Its strength is set.
   - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
@@ -222,9 +222,11 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   chevron, a crossbow's brackets, a pistolet's a dot with four ticks, a thunderlock's a circle. It turns red while it
   rests on a foe's body (the foe the plates' cone takes there). A bow aiming rings it with its draw, gold once at full
   power; a reload rings it in white as it runs, the shape dimmed under it. A shot of the player's that lands marks it
-  for a quarter of a second, fading: white for a hit that harms, gold for a crit, red for a kill. With a melee weapon
-  drawn, bare fists too, in either view, a small dot marks the middle, closing into red brackets while the foe under
-  it stands within the weapon's longest stroke (`Fighting.reach`). The shots left stand beside a ranged one while it
+  for a quarter of a second, fading: white for a hit that harms, gold for a crit, red for a kill. A double pistolet's
+  wait between its barrels shows no ring, and the held aiming view with no ranged weapon drawn shows the pistolet's
+  plain cross. With a melee weapon drawn, bare fists too, in either view, while the hands are the player's and the
+  player lives, a small dot marks the middle, closing into red brackets while the foe under it stands within the
+  weapon's longest stroke (`Fighting.reach`) and a stroke's height. A companion or a boarding hand under it is no foe. The shots left stand beside a ranged one while it
   shows ([[Interface]]).
 - **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned with
   the view; health, stamina and poise as long thin pointed bars at the top left, a faint strip holding what a loss took

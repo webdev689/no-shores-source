@@ -46,13 +46,17 @@ test('each weapon has its own reticle, a ranged one only while its sights are up
   const drawing = standing(0, { kind: 'draw', elapsed: 30 });
   assert.deepEqual(crosshairOf('bow', true, drawing, 2), { reticle: 'bow', charge: 0.5, reach: null }, 'its draw');
   assert.deepEqual(crosshairOf('melee', false, null, 2.4), MELEE, 'in either view');
-  assert.equal(crosshairOf(null, true, standing(0), 2), null, 'nothing drawn');
+  assert.equal(crosshairOf('melee', false, standing(0, { kind: 'dead', elapsed: 3 }), 2.4), null, 'none when dead');
+  assert.equal(crosshairOf(null, false, standing(0), 2), null, 'nothing drawn');
+  const held = crosshairOf(null, true, standing(0), 2);
+  assert.equal(held?.reticle, 'pistolet', "the Test Ground's held aiming view with no weapon drawn: the plain cross");
 });
 
 test("a shot's mark is the strongest way the player's shots landed: a kill, a crit, then a hit that harmed", () => {
   assert.equal(landedBy([], PLAYER), null);
   assert.equal(landedBy([shot(EVENT.hit)], PLAYER), 'hit');
   assert.equal(landedBy([shot(EVENT.shielded)], PLAYER), 'hit', 'on a shield');
+  assert.equal(landedBy([shot(EVENT.guardBroken)], PLAYER), 'hit', 'a guard broken, harming');
   assert.equal(landedBy([shot(EVENT.hit, { crit: true }), shot(EVENT.hit)], PLAYER), 'crit');
   assert.equal(landedBy([shot(EVENT.hit), shot(EVENT.killed, { amount: 0 })], PLAYER), 'kill');
   assert.equal(landedBy([shot(EVENT.hit, { amount: 0 })], PLAYER), null, 'harming nothing');
@@ -92,5 +96,31 @@ test('the melee reticle closes into brackets over a foe within its reach, and is
     crosshair.update(MELEE, standing(0), standing(4), [shot(EVENT.hit)], PLAYER, 1 / 60);
     assert.deepEqual([node?.classList.contains('reach'), node?.classList.contains('foe')], [false, false]);
     assert.equal(findAll(root, 'landed')[0]?.hidden, true, 'no shot mark on the melee reticle');
+  });
+});
+
+test("a double pistolet's wait between barrels is no reload, a new reload is read from its start, and a shot landing unseen marks nothing", () => {
+  onFakePage((root) => {
+    const crosshair = new Crosshair(root);
+    const [node] = findAll(root, 'crosshair');
+    const reloading = (left: number) => standing(0, { kind: 'reload', left });
+    crosshair.update(PISTOLET, reloading(30), null, [], PLAYER, 1 / 60);
+    assert.equal(node?.classList.contains('reloading'), false, 'the brace gap');
+    crosshair.update(PISTOLET, reloading(171), null, [], PLAYER, 1 / 60);
+    crosshair.update(PISTOLET, reloading(1), null, [], PLAYER, 1 / 60);
+    crosshair.update(PISTOLET, reloading(100), null, [], PLAYER, 1 / 60);
+    assert.equal(node?.style['--fill'], '0deg', 'the next reload, its idle tick unseen, starts empty');
+    crosshair.update(null, standing(0), null, [shot(EVENT.hit)], PLAYER, 1 / 60);
+    crosshair.update(PISTOLET, standing(0), null, [], PLAYER, 1 / 60);
+    assert.equal(findAll(root, 'landed')[0]?.hidden, true, 'fired with no crosshair: no mark when it shows');
+  });
+});
+
+test('the melee reticle closes on no foe above or below a stroke’s height, as no blow reaches it', () => {
+  onFakePage((root) => {
+    const crosshair = new Crosshair(root);
+    const [node] = findAll(root, 'crosshair');
+    crosshair.update(MELEE, standing(0), { ...standing(2.2), z: 2 }, [], PLAYER, 1 / 60);
+    assert.equal(node?.classList.contains('reach'), false, 'on a ledge 2 m up');
   });
 });

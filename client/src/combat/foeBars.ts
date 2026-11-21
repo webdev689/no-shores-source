@@ -158,7 +158,10 @@ export class FoeBars {
     // A Boss nearest the crosshair takes the cone too, though its bar stands under the compass, not over its head.
     const offs = new Map(seen.map(({ foe, off }) => [foe.id, off]));
     this.aimed = aimedFoe(offs, this.aimed, new Map(seen.map(({ foe, spot }) => [foe.id, spot.depth])));
-    this.under = this.aimed !== null && (offs.get(this.aimed) ?? Infinity) <= 0 ? this.aimed : null;
+    // An ally under the crosshair is none of its foes: the rules never strike their own side.
+    const aimedAt = seen.find(({ foe }) => foe.id === this.aimed)?.foe;
+    const foe = aimedAt && aimedAt.view.side !== 'players' ? aimedAt.id : null;
+    this.under = foe !== null && (offs.get(foe) ?? Infinity) <= 0 ? foe : null;
     const shown: {
       foe: MarkedFoe;
       x: number;

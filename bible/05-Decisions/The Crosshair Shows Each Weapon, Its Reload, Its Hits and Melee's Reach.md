@@ -27,11 +27,13 @@ brackets, a pistolet a dot with four ticks, a thunderlock a circle).
 |---|---|---|
 | The reload ring's colour | White, the bow's draw ring staying gold | Told apart from a draw at a glance |
 | The marks | Only for the player's own shots, a quarter of a second each, fading; the strongest of a frame's (a kill, then a crit, then a hit) | The owner's "when your shot lands"; a melee blow has its own feel |
-| A hit | One that harms, a shield's too; none for a blow blocked or one that harms nothing | A mark says the shot did something |
+| A hit | One that harms, a shield's or a guard broken too; none for a blow blocked or one that harms nothing; none for a shot that lands while no crosshair shows | A mark says the shot did something |
 | The foe's colour | The display's own red, as a foe's alert and the arrows to it are drawn | One red for a foe across the display |
-| On a foe | Where the plates' cone takes a foe under the crosshair, within the plates' 60 m | One answer to "which foe is under it" for the plate and the crosshair |
-| Reach | The longest of the weapon's six strokes, centre to centre, as the rules measure a player's | The bracket says a swing can land |
-| The melee reticle | In either view, bare fists too; never red out of reach, and no marks on it | The owner's "while melee is drawn" |
+| On a foe | Where the plates' cone takes a foe under the crosshair, within the plates' 60 m; never a companion or a boarding hand | One answer to "which foe is under it" for the plate and the crosshair, and the rules never strike their own side |
+| Reach | The longest of the weapon's six strokes, centre to centre, as the rules measure a player's, and no more than a stroke's height (1.4 m) above or below | The bracket says a swing can land |
+| The melee reticle | In either view, bare fists too, while the hands are the player's (not over a menu, a cutscene or a freed pointer) and the player lives; never red out of reach, and no marks on it | The owner's "while melee is drawn" |
+| A reload | Read from its first tick; a double pistolet's half second between its barrels shows no ring | That wait is no reload: the second barrel is loaded |
+| The Test Ground's held aiming view | The pistolet's plain cross where no ranged weapon is drawn | The panel places the view by its crosshair |
 | Sizes | Every reticle in the crosshair's 22 px, lines 2 px, the ring where the draw's stands | The crosshair keeps its place and weight |
 
 Links: [[Test Ground]], [[Interface]], [[Ranged Weapons Aim and Fire]], [[Combat]].
