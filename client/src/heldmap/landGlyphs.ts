@@ -2,7 +2,6 @@
 // device their sign carries (a star for the Mage, a key for the vaults, an anvil, a helm, open shears, a horseshoe, a
 // ship's wheel, candles: tools/modules/adorn.py), each faction's with its banner's emblem, and a mark for each kind of
 // site a layout holds. Each is painted about the origin in units, `GLYPH_HALF` either side.
-import { CLOTH_COLOURS } from '../city/pictures.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { INK } from './mapKey.ts';
 import { LIGHT_INK, type Painter, PARCHMENT, ROUTE } from './mapLetters.ts';
@@ -57,28 +56,31 @@ const RESOURCE_HALF = 5.5;
 const GOLD = '#ecd389';
 const BONE = '#efe6cf';
 
-/** A cloth's colour darkened toward the ink, as a wash of it reads on the parchment. */
-const inked = (cloth: keyof typeof CLOTH_COLOURS, share = 0.3): string => {
-  const ink = [0x3a, 0x28, 0x16];
-  const [red, green, blue] = CLOTH_COLOURS[cloth].map((channel, index) =>
-    Math.round(channel * 255 * (1 - share) + (ink[index] ?? 0) * share),
-  );
-  return `rgb(${red}, ${green}, ${blue})`;
-};
+/** The cloths' colours (city/pictures.ts's CLOTH_COLOURS) a third of the way toward the ink, as a wash of each reads
+ *  on the parchment: crimson, verdant, linen (a sixth), and the factions' dyes (the Lamplighters' gold a third and
+ *  more). shortcut: worked out once, as this layer may not read the city's; work them out again if a cloth changes. */
+const CLOTH = {
+  crimson: '#75201c',
+  verdant: '#35572e',
+  linen: '#b6a98c',
+  stormcallers: '#5d789f',
+  lamplighters: '#ac6e2f',
+  veiled: '#48333a',
+} as const;
 
 /** Each keeper's coin: its sign's board (a faction's, its banner's cloth) and the device's colour on it. */
 const COINS: Readonly<Record<KeeperGlyph, readonly [coin: string, device: string]>> = {
   mage: [INK, GOLD],
-  vault: [inked('crimson'), GOLD],
+  vault: [CLOTH.crimson, GOLD],
   weaponsmith: [INK, GOLD],
-  armorsmith: [inked('crimson'), GOLD],
-  tailor: [inked('verdant'), BONE],
-  tack: [inked('linen', 0.15), INK],
-  harbourmaster: [inked('verdant'), GOLD],
+  armorsmith: [CLOTH.crimson, GOLD],
+  tailor: [CLOTH.verdant, BONE],
+  tack: [CLOTH.linen, INK],
+  harbourmaster: [CLOTH.verdant, GOLD],
   chandler: ['#6e4d2c', BONE],
-  stormcallers: [inked('stormcaller_blue'), BONE],
-  lamplighters: [inked('lamplighter_gold', 0.35), PARCHMENT],
-  veiled: [inked('veiled_dusk'), BONE],
+  stormcallers: [CLOTH.stormcallers, BONE],
+  lamplighters: [CLOTH.lamplighters, PARCHMENT],
+  veiled: [CLOTH.veiled, BONE],
 };
 
 /** An outline from the modules' devices (x across, z up, about a metre high), as units with y down, `units` a metre,

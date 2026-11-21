@@ -2,7 +2,6 @@
 // are lettered at sea (mapLetters.ts): the sea washed and the shore inked, the ground's relief, the plan's grounds
 // hand-coloured, its walks, paths, what stands with its shadow, its trees and bushes, the edge walked; the places by
 // name; every mark as its glyph; the player's arrow; and the table that says what each glyph is (landTable.ts).
-import { PATH_WIDTH_M } from '../layout/layouts.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Rect, View } from './heldMapLaw.ts';
 import { GLYPH_HALF, paintGlyph } from './landGlyphs.ts';
@@ -115,12 +114,14 @@ export function paintLand(
     fills(quads, GROUNDS[kind]);
   }
   fills(sheet.walks, WALK);
-  const paths = (track: boolean) => sheet.paths.filter((path) => path.track === track).map((path) => path.points);
-  const trackWidth = Math.max(1.6 * scale, PATH_WIDTH_M.track * view.scale);
-  lines(paths(true), CASING, trackWidth + 1.4 * scale);
-  lines(paths(true), TRACK, trackWidth);
+  // Every track's casing before any track's way, so where tracks meet their ways run on together; then the
+  // footpaths, dashed, a little narrower than they are laid so they read as trodden.
+  const [tracks, footpaths] = [sheet.paths.filter((path) => path.track), sheet.paths.filter((path) => !path.track)];
+  const across = (path: (typeof tracks)[number], share = 1) => Math.max(1.2 * scale, path.width * share * view.scale);
+  for (const path of tracks) lines([path.points], CASING, across(path) + 1.4 * scale);
+  for (const path of tracks) lines([path.points], TRACK, across(path));
   painter.setLineDash([3 * scale, 2 * scale]);
-  lines(paths(false), FOOTPATH, Math.max(1.1 * scale, PATH_WIDTH_M.footpath * view.scale * 0.6));
+  for (const path of footpaths) lines([path.points], FOOTPATH, across(path, 0.6));
   painter.setLineDash([]);
   fills(sheet.low, LOW);
   fills(sheet.standing, SHADOW, 1.4 * scale);

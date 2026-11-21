@@ -6,7 +6,7 @@ import type { Solid } from '../city/plan.ts';
 import { insideRing } from '../editor/placeDrawing.ts';
 import { isGlyph, type KeeperGlyph, type LandGlyph } from '../heldmap/landGlyphs.ts';
 import { boxPrint, type GroundKind, type LandMark, type LandSheet, type Quad, relief } from '../heldmap/landSheet.ts';
-import { layoutBounds } from '../layout/layouts.ts';
+import { layoutBounds, PATH_WIDTH_M } from '../layout/layouts.ts';
 import { chaikin } from '../nature/ground.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { RiverCourse } from '../rules/landRules.ts';
@@ -168,7 +168,11 @@ export function landSheetOf(
   return {
     ...sheet,
     ...laid,
-    paths: layout.paths.map((path) => ({ track: path.tier === 'track', points: path.points.map(local) })),
+    paths: layout.paths.map((path) => ({
+      track: path.tier === 'track',
+      width: PATH_WIDTH_M[path.tier],
+      points: path.points.map(local),
+    })),
     standing: [
       ...laid.standing,
       ...layout.buildings.map(({ footprint: [left, top, right, bottom] }): Quad => [

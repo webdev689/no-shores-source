@@ -191,8 +191,12 @@ test("a patrol area's sheet is its layout: paths, buildings, plantings, areas by
   const patrol: NodeInfo = { ...SOCIAL, id: 'reach-1', kind: 'patrol', name: 'The Reach', stations: [] };
   const sheet = landSheetOf(patrol, landmass([layout]), flat);
   assert.deepEqual(
-    sheet.paths.map((path) => path.track),
-    [true, false],
+    sheet.paths.map((path) => [path.track, path.width]),
+    [
+      [true, 4.5],
+      [false, 2.6],
+    ],
+    'each as wide as the layout lays it',
   );
   assert.deepEqual(sheet.paths[0]?.points, [
     [40, 90],
