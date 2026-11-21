@@ -322,6 +322,8 @@ async function start(): Promise<void> {
     clock += seconds;
     // The panels hear the page before the game's input is read: what they take is not the world's.
     const tookWheel = page.hear();
+    // The pad is the panels' while they hold the player, as the game's is a window's.
+    input.window(page.takesKeys ? 'panels' : null);
     const heardControls = input.frame();
     const controls = tookWheel ? { ...heardControls, wheel: 0 } : heardControls;
     // The figure wears what the gear wears, and the hands hold it: the room takes no other arms. The left carries the

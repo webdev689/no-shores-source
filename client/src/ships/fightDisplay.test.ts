@@ -45,7 +45,7 @@ const VIEW: FightView = {
 };
 
 test("the plate shows the ship's hurts, fire and brace, and the rose each side's reload, the laid side gold", () => {
-  const model = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
+  const model = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E', braceKey: 'C' });
   assert.deepEqual(
     model.ship && [model.ship.hull, model.ship.sail, model.ship.crew, model.ship.fire, model.ship.braced],
     [0.5, 1, 0.8, true, true],
@@ -62,14 +62,14 @@ test("the plate shows the ship's hurts, fire and brace, and the rose each side's
 });
 
 test('the card is on the nearest captain: its name, class and distance, struck with the board key when it can be boarded', () => {
-  const model = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: true, boardKey: 'E' });
+  const model = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: true, boardKey: 'E', braceKey: 'C' });
   assert.deepEqual(model.card && [model.card.name, model.card.sub, model.card.state, model.card.boardKey], [
     'Tithe Sloop',
     'Brig - 70 m',
     'struck',
     'E',
   ]);
-  const far = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
+  const far = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E', braceKey: 'C' });
   assert.equal(far.card?.boardKey, null);
 });
 
@@ -82,34 +82,44 @@ test("the volley's tally once its last ball is down: how many struck, holed and 
   step([muzzle, muzzle, muzzle] as never[], [[0, 5, 2, 0.07]], 0);
   step([{ kind: 'hit', ship: 1, by: 0, zone: 'holed', point: [0, 60, 1] }] as never[], [[0, 30, 2, 0.07]], 0.3);
   step([{ kind: 'hit', ship: 1, by: 0, zone: 'rig', point: [0, 60, 6] }] as never[], [[0, 40, 2, 0.07]], 0.5);
-  assert.equal(fightDisplay(VIEW, feel, 0.5, { boardable: false, boardKey: 'E' }).tally, null, 'not while aloft');
+  assert.equal(
+    fightDisplay(VIEW, feel, 0.5, { boardable: false, boardKey: 'E', braceKey: 'C' }).tally,
+    null,
+    'not while aloft',
+  );
   step([], [], 0.8);
-  assert.deepEqual(fightDisplay(VIEW, feel, 0.9, { boardable: false, boardKey: 'E' }).tally, {
+  assert.deepEqual(fightDisplay(VIEW, feel, 0.9, { boardable: false, boardKey: 'E', braceKey: 'C' }).tally, {
     balls: 3,
     hits: 2,
     holed: 1,
     rig: 1,
   });
-  assert.equal(fightDisplay(VIEW, feel, 10, { boardable: false, boardKey: 'E' }).tally, null, 'shown a while');
+  assert.equal(
+    fightDisplay(VIEW, feel, 10, { boardable: false, boardKey: 'E', braceKey: 'C' }).tally,
+    null,
+    'shown a while',
+  );
 });
 
 test('while the guns are laid the card is on the captain where they fall, as DFO names the ship the look is on', () => {
   const end = (east: number) => ({ time: 3, point: [east, 0, 0] as const, water: true, strike: null });
   const lay = { ...VIEW.lay!, ends: [end(196), end(204)] };
-  const model = fightDisplay({ ...VIEW, lay }, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
+  const model = fightDisplay({ ...VIEW, lay }, new FightFeel(1), 0, { boardable: false, boardKey: 'E', braceKey: 'C' });
   assert.equal(model.card?.name, 'Pirate Brig', 'the far one laid on, not the nearer Sloop');
 });
 
 test("the broadside warning names the nearest captain running out its guns, as DFO's warning does", () => {
-  const quiet = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
+  const quiet = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E', braceKey: 'C' });
   assert.equal(quiet.warn, null, 'none while no battery is run out');
   const running = {
     ...VIEW,
     captain: captain('Pirate Brig', 200, { run_out: ['port'] }),
     others: [captain('Tithe Sloop', 70, { state: 'struck', run_out: ['port'], id: 2 })],
   };
-  const model = fightDisplay(running, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
+  const model = fightDisplay(running, new FightFeel(1), 0, { boardable: false, boardKey: 'E', braceKey: 'C' });
   assert.equal(model.warn, 'Broadside from the Pirate Brig - C: brace', 'a struck ship runs out no guns at the player');
+  const pad = fightDisplay(running, new FightFeel(1), 0, { boardable: false, boardKey: 'X', braceKey: 'B' });
+  assert.equal(pad.warn, 'Broadside from the Pirate Brig - B: brace', 'the brace as bound, on the pad played last');
 });
 
 test('the boost ring is whole once ready, drains while the ship bursts and fills as it recharges', () => {
@@ -119,6 +129,7 @@ test('the boost ring is whole once ready, drains while the ship bursts and fills
   const model = fightDisplay({ ...VIEW, player: { ...vessel, boost: [0.5, 0] } }, new FightFeel(1), 0, {
     boardable: false,
     boardKey: 'E',
+    braceKey: 'C',
   });
   assert.deepEqual(model.ship?.boost, { state: 'burst', share: 0.5 }, "the player's own burst, from the rules' view");
 });

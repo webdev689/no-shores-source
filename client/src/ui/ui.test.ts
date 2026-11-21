@@ -532,3 +532,16 @@ test('a field takes the mouse as a page’s does: a drag selects, Shift extends,
   ]);
   assert.deepEqual(ui.typing?.state, { text: 'one two three', caret: 13, anchor: 8 }, 'the word clicked twice');
 });
+
+test("the pad's bumpers turn a window's tabs for the frame they are heard, while it takes the pad", () => {
+  const { ui, step } = fakeInterface();
+  const root: Node = { width: 'grow', height: 'grow' };
+  step(root, [{ kind: 'pad', button: 'next' }]);
+  assert.equal(ui.turned, 1);
+  step(root);
+  assert.equal(ui.turned, 0);
+  step(root, [{ kind: 'pad', button: 'previous' }]);
+  assert.equal(ui.turned, -1);
+  ui.frame({ width: 1280, height: 720, scale: 1 }, [{ kind: 'pad', button: 'next' }], 1 / 60, true, false);
+  assert.equal(ui.turned, 0, 'no window, no tabs');
+});

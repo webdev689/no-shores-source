@@ -25,7 +25,7 @@ import type { Block, MovementRules } from '../../rules/movementRules.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { type Shot, shotOfOrbit } from '../camera.ts';
 import { IDLE, type FootFight, type FootFrame } from '../foot.ts';
-import { footHints } from '../hints.ts';
+import { footHints, onFoot } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { GearHere } from '../gearScreen.ts';
 import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
@@ -493,8 +493,18 @@ export class WreckRun {
     // to press, and the story says what happens.
     const dead = ownView?.action.kind === 'dead';
     // The story has no menu, so its keys leave the menu's out.
-    const hints = dead ? [] : footHints(fight.arts?.art ?? 0).filter(([key]) => key !== 'M');
-    return { shot, figures, standing: { kind: 'inside' }, marks, swings, fight: fought, hints };
+    const hints = dead
+      ? []
+      : footHints(onFoot(walker, shown, fight, !controls.locked && !still)).filter(([key]) => key !== 'menu');
+    return {
+      shot,
+      figures,
+      standing: { kind: 'inside' },
+      marks,
+      swings,
+      fight: fought,
+      hints,
+    };
   }
 
   /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, the wreck's rim taken from the page's

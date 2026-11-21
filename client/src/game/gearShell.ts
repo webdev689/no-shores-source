@@ -7,19 +7,20 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { type Emblem, SIGN_CELLS } from './emblemArt.ts';
 import { type Hint, INK, emblemNode, focusRing, glyphNode, hintsNode, keycap, words, type Sizes } from './gearNodes.ts';
+import { boundCap } from './controls.ts';
 import { TABS, type Tab, characterOf } from './gearScreen.ts';
 
-/** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
+/** Each tab's name, the control that opens it, and, for one still to come, what it will hold. */
 export const TAB_PRESSES: Readonly<
-  Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>
+  Record<Tab, { readonly label: string; readonly opens?: 'character' | 'inventory'; readonly later?: string }>
 > = {
-  character: { label: 'Character', key: 'I' },
-  inventory: { label: 'Inventory', key: 'O' },
-  journal: { label: 'Journal', key: '', later: 'Your quests will be kept here.' },
-  ship: { label: 'Ship', key: '' },
-  social: { label: 'Social', key: '' },
-  guild: { label: 'Guild', key: '', later: 'Your guild will gather here.' },
-  settings: { label: 'Settings', key: '' },
+  character: { label: 'Character', opens: 'character' },
+  inventory: { label: 'Inventory', opens: 'inventory' },
+  journal: { label: 'Journal', later: 'Your quests will be kept here.' },
+  ship: { label: 'Ship' },
+  social: { label: 'Social' },
+  guild: { label: 'Guild', later: 'Your guild will gather here.' },
+  settings: { label: 'Settings' },
 };
 /** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
 const BANNER_SCALE = 3;
@@ -50,7 +51,8 @@ export function tabsNode(
     width: 'grow',
     gap: step,
     children: TABS.map((tab): Node => {
-      const { label, key, later } = TAB_PRESSES[tab];
+      const { label, opens, later } = TAB_PRESSES[tab];
+      const key = opens ? boundCap(opens) : '';
       const id = tabId(tab);
       const picked = tab === chosen;
       const name = words(label.toUpperCase(), size, picked ? INK.brassLit : later ? INK.faint : undefined);

@@ -5,7 +5,17 @@ import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { BROWSERS_SIGN_INS, stopped, touchesHeld } from '../ui/page.ts';
 import { drawSvgInPage } from '../ui/pictures.ts';
 import { AudioHost } from './audioHost.ts';
-import { EVENT_FIELDS, HEARD, MEDIA, QA_HOOKS, type Start, type ToGame, type ToPage, type View } from './pageOps.ts';
+import {
+  EVENT_FIELDS,
+  HEARD,
+  MEDIA,
+  type PadRead,
+  QA_HOOKS,
+  type Start,
+  type ToGame,
+  type ToPage,
+  type View,
+} from './pageOps.ts';
 
 /** The keys a browser keeps for itself however the game is played: its own shortcuts, and the function keys. */
 const browsersOwn = (event: KeyboardEvent) =>
@@ -102,6 +112,26 @@ export class PageHost {
     this.worker.postMessage(message, transfer);
   }
 
+  /** The pads read now and sent, while there are any and once as the last goes. */
+  private padsSent = false;
+  private sendPads(): void {
+    const read = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
+    const pads: PadRead[] = read.flatMap((pad) =>
+      pad
+        ? [
+            {
+              mapping: pad.mapping,
+              buttons: pad.buttons.map(({ pressed, value }) => ({ pressed, value })),
+              axes: [...pad.axes],
+            },
+          ]
+        : [],
+    );
+    if (pads.length === 0 && !this.padsSent) return;
+    this.padsSent = pads.length > 0;
+    this.post({ kind: 'pads', pads });
+  }
+
   /** The interface's input since the last send, the pad's read now, before what comes next. */
   private flush(): void {
     const events = this.events.take();
@@ -113,6 +143,7 @@ export class PageHost {
   private frame(): void {
     requestAnimationFrame(() => {
       this.flush();
+      this.sendPads();
       if (this.ticking) this.post({ kind: 'tick' });
       // The sound's clock now and then, so the game's reckoning of it never drifts far.
       if (++this.frames % 60 === 0) this.audio.clock();
