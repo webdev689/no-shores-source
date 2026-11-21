@@ -276,7 +276,11 @@ will take it, by the room's own tick.
   only on the `sea` room's word that the island stands with that seed (a call between the two Durable Objects), and
   while players stand ashore it tells the sea each minute, so the island is held under them. As an account joins it,
   the room asks the sea whether that account is landed on the island (its ship at rest at the island's anchorage) and
-  lets go of one that is not; only landed accounts scavenge.
+  lets go of one that is not; only landed accounts scavenge. An island's dungeon (`sea-dungeon-...`) opens the same
+  way: only when the sea of its tier holds an island whose door leads there, named from that island's seed, water and
+  style (`room_sea_dungeon`, `dungeon_room`), so no page opens one for a seed or a style it names. It holds that
+  island while players are in it, lets go of an account the sea has not landed there (one the sea did not answer
+  for may join again), and plays no one's inputs before the sea's answer.
 
 ## A fleet
 
@@ -407,7 +411,7 @@ so every decision is Rust and the shell only carries bytes and time.
   the week's two. A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
   Normal, with `--elite--run-<i>` or `--abyss--run-<i>` after it a run (`seaDungeonRoom`). No name opens a shared
   Elite or Abyss dungeon, a private Normal one, or a run without its whole instance. A run and a sea island's
-  dungeon open from their name: `runAsk` makes the ask the room module's `open_run` takes, at the minute the first
+  dungeon (on its sea's word, "The sea") open from their name: `runAsk` makes the ask the room module's `open_run` takes, at the minute the first
   player joins, and a patrol's dungeon's run is given its patrol's node file too, so it keeps the patrol's lock. One
   no rule lays, or whose patrol's file is missing, answers 404.
 - **A run keeps to its company** (`Keeper.forCompany`): a character is given to the first to come, then only to one

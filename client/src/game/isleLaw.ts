@@ -171,7 +171,8 @@ export interface DungeonDoor {
 }
 
 /** The room of the dungeon behind an island's door: its water's continent, its style, the island's seed folded to 32
- *  bits in 8 hex digits, and the tier of the sea it was rolled in. */
+ *  bits in 8 hex digits, and the tier of the sea it was rolled in. The sea names it so from the same seed and water
+ *  (crates/room/src/sea_islands.rs `dungeon_room`), and the room opens only for an island the sea holds. */
 export function dungeonRoomName(seed: string, style: string, continent: string, seas: Difficulty = 'normal'): string {
   const whole = BigInt.asUintN(64, BigInt(seed));
   const folded = BigInt.asUintN(32, whole ^ (whole >> 32n));
