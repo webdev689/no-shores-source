@@ -143,7 +143,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   it for two frames, and leaves five puffs of smoke that rise, drift the shot's way and thin out over 1.2 s; its
   sizes are held to a share of the view, so first person's flash stays small. An arrow or a bolt trails the last
   0.3 s of its falling flight, its tail broken up. The player's own shots draw at once from the
-  weapon as drawn, the first person's muzzle in its firing frame or the figure's along the shot, joining the shot's
+  weapon as drawn, the first person's muzzle in its firing frame or the figure's gun as it faces, joining the shot's
   true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
   comes. Others' come from the room's word, each ball's line from the one snapshot that carries it; a foe's ball, which
   flies, is one tracer whose head keeps its own speed a tick behind the room's word, with one flash at its muzzle,
@@ -356,9 +356,10 @@ so a tick the rules hold it still between steps shows no stand. A sword's swing 
 the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
 the soft lock holds a foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting,
 it faces where it runs, and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It
-Sprints]]). Swinging or casting, it turns to face where the camera looks. Dodging, a
-figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
-though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
+Sprints]]). Swinging, casting or aiming a ranged weapon, it turns to face where the camera looks ([[Aiming, the
+Figure Faces Straight Ahead]]). Dodging, a figure (the player's, another player's or a foe's) faces the way its hop
+goes, so its roll is drawn going that way, though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls
+the Way It Goes]]).
 
 ## Dressing
 

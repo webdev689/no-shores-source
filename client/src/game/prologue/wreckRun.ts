@@ -326,10 +326,8 @@ export class WreckRun {
       eye: shot.eye,
       blocks: this.course,
       bodies,
-      muzzleOf: (fired) =>
-        muzzle
-          ? screenMuzzle(kicked, aspect, muzzle)
-          : figureMuzzle([body.x, body.y, body.z], Math.atan2(fired.velocity[0], -fired.velocity[1])),
+      muzzleOf: () =>
+        muzzle ? screenMuzzle(kicked, aspect, muzzle) : figureMuzzle([body.x, body.y, body.z], walker.you.facing),
       origin: shot.eye,
       groundAt,
       drawn: { foes: foes.placed, others: new Map() },
