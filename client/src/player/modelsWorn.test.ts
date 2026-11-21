@@ -33,14 +33,6 @@ const LEFT_OUT: readonly { readonly layers: RegExp; readonly why: string }[] = [
   { layers: /^helm_dark$/, why: "the archer class's helm, of no set" },
   { layers: /^boots_laced$/, why: 'a garment, not armour' },
 ];
-/** A gilded double pistolet's left gun is worn only by a named gilded double pistolet: until the catalogue holds one,
- *  none wears it. */
-const GILDED_PAIR = items.items.some(
-  (each) =>
-    each.kind === 'double_pistolet' &&
-    ('look' in each ? each.look === 'gilded' : each.rarity === 'legendary' || each.rarity === 'atheric'),
-);
-
 /** Every weapon and armour item the game can hold: each named piece, and each rolled kind at each rarity a Vestige or
  *  a smith rolls it at, under each of its names, a spread of numbers and every level. */
 function held() {
@@ -84,9 +76,7 @@ function layersOf(fields: Partial<GearItem> & { readonly kind: number }): string
 test('every weapon and armour layer the forge draws is worn by some item the game can hold', () => {
   const worn = new Set(held().flatMap(layersOf));
   const forge = Object.keys(layers).filter((layer) => WEAPON_OR_ARMOUR.test(layer));
-  const unworn = forge
-    .filter((layer) => !worn.has(layer) && !LEFT_OUT.some((left) => left.layers.test(layer)))
-    .filter((layer) => GILDED_PAIR || layer !== 'pistolet_gilded_l');
+  const unworn = forge.filter((layer) => !worn.has(layer) && !LEFT_OUT.some((left) => left.layers.test(layer)));
   assert.deepEqual(unworn.sort(), [], 'layers no item wears');
 });
 
