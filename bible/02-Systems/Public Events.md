@@ -158,7 +158,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   (`story.crash`); a store plundered (`sea.ship.break`); a chest opened (`story.creak` and the interface's open); a
   heroic task missed (the interface's refusal). **Stings**, through the music director's `moment`, in the place's own
   fight score: its cadence as one begins, its victory for heroic met and won, its defeat for failed.
-- **Alone**, the page asks its land worker for the node's grounds (`land_grounds`, `bake::grounds_of` on the same
+- **Alone**, the page asks its land worker for the node's grounds (`land_grounds`, `layout::grounds::grounds_of`, which the bake calls too, on the same
   layouts), so a room in the page runs the events the server's does. Under `npm run dev` (or a build made with
   `NODE_ENV=development`), `/?at=<zone>&public=fissure|raid` sets the room's clock so that event starts at once.
 

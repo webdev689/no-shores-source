@@ -10,7 +10,6 @@ description = "The land for the browser: the land crate behind a small WebAssemb
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-bake = { path = "../bake" }
 city = { path = "../city" }
 land = { path = "../land" }
 layout = { path = "../layout" }
@@ -19,6 +18,10 @@ sailing = { path = "../sailing" }
 sky = { path = "../sky" }
 world = { path = "../world" }
 serde_json.workspace = true
+
+# Only to test that a node's grounds are the ones the bake writes.
+[dev-dependencies]
+bake = { path = "../bake" }
 
 [lints]
 workspace = true

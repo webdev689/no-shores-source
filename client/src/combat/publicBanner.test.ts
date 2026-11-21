@@ -1,34 +1,25 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { bannerOf } from '../game/publicLaw.ts';
-import type { PublicEvent } from '../network/publicMessages.ts';
 import { findAll, onFakePage } from './page.test.ts';
-import { PublicBanner, StoreBars } from './publicBanner.ts';
+import { type Banner, PublicBanner, StoreBars } from './publicBanner.ts';
 
-const event: PublicEvent = {
-  kind: 1,
-  phase: 1,
-  ground: [0, 0, 0],
-  radius: 25,
-  ticksLeft: 3600,
-  nextKind: 2,
-  nextGround: [0, 0, 0],
-  nextTicks: 0,
-  stage: 1,
-  stages: 2,
-  progress: 3,
-  needed: 12,
-  heroic: 1,
-  heroicTicks: 600,
-  bonus: false,
-  marks: [],
+const shown: Banner = {
+  tone: 'running',
+  kicker: 'Public event',
+  title: 'The Fissure',
+  place: 'The High Downs',
+  clock: '1:00',
+  objective: 'Carry shards to the fissure to seal it',
+  bar: { share: 0.25, label: '3 / 12 shards' },
+  heroic: { text: 'Break the growth', clock: '0:10', met: false },
+  bonus: { text: 'Bonus: seal it with half the time left', state: 'lost' },
 };
 
 test('the banner shows the event’s words, its heroic window and its bonus, in its tone, and slides in at a beat', () =>
   onFakePage((root) => {
     const banner = new PublicBanner(root);
     assert.equal(banner.root.hidden, true, 'hidden with no event');
-    banner.update(bannerOf(event, 'saltgrass-downs'), 0.016, 'begun');
+    banner.update(shown, 0.016, 'begun');
     const text = (name: string) => findAll(root, name)[0]?.textContent;
     assert.equal(banner.root.hidden, false);
     assert.equal(text('pb-title'), 'The Fissure');

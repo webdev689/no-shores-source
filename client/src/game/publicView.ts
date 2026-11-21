@@ -13,7 +13,9 @@ import { ASKS, DROPPED, type GearAsk, type GearDrop } from '../network/gearMessa
 import type { FightEvent } from '../network/messages.ts';
 import { MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent, type PublicMark } from '../network/publicMessages.ts';
 import { bannerOf, compassOf, questOf, ringOf } from './publicLaw.ts';
+import type { Shot } from './camera.ts';
 import type { Quest } from './tasks.ts';
+import { chime as rarityChime, play } from './uiSounds.ts';
 
 type Point = readonly [number, number, number];
 
@@ -41,6 +43,8 @@ const CHEST_HEIGHT_M = 2;
 const CHEST_KEPT_S = 6;
 /** How long an asked chest waits on the room before E may ask again: the room refuses one a step out of reach. */
 const CHEST_RETRY_S = 1.5;
+/** The player's own shard taken chimes as a Vestige of this rarity does coming to rest. */
+const SHARD_CHIME = 3;
 
 /** The beats a public event's events make, by their kind. */
 const BEATS: Readonly<Record<number, BannerBeat>> = {
@@ -65,10 +69,10 @@ const STINGS: Partial<Record<BannerBeat, 'cadence' | 'victory' | 'defeat'>> = {
  *  and any fighter by number. */
 export interface PublicBodies {
   readonly player: number;
-  readonly eye: Point;
+  readonly shot: Pick<Shot, 'eye' | 'yaw' | 'pitch'>;
+  readonly firstPerson: boolean;
   readonly feet: Point;
   readonly yaw: number;
-  readonly firstPerson: { readonly eye: Point; readonly yaw: number; readonly pitch: number } | null;
   readonly others: ReadonlyMap<
     number,
     { readonly x: number; readonly y: number; readonly z: number; readonly facing: number }
@@ -83,7 +87,8 @@ export interface PublicFrame {
   readonly props: EventProp[];
   readonly sounds: readonly { readonly cue: string; readonly at: Point }[];
   readonly sting: 'cadence' | 'victory' | 'defeat' | null;
-  /** The interface's cue for a beat heard by the player alone: a heroic task missed, their own shard taken. */
+  /** The interface's cue for a beat heard by the player alone (played as the frame is worked out): a heroic task
+   *  missed, a chest opened, their own shard taken. */
   readonly chime: 'refused' | 'open' | 'shard' | null;
 }
 
@@ -121,7 +126,7 @@ export class PublicView {
   ): PublicFrame {
     const beat = events.reduce<BannerBeat | null>((last, each) => BEATS[each.kind] ?? last, null);
     const sounds = this.sounds(event, events, bodies, clock);
-    this.lay(event, marks, floor, clock, bodies.eye);
+    this.lay(event, marks, floor, clock, bodies.shot.eye);
     const chests = this.chests(drops, clock);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));
     const age = this.clock.ager(clock);
@@ -135,6 +140,8 @@ export class PublicView {
         : ownShard
           ? 'shard'
           : null;
+    if (chime === 'shard') rarityChime(SHARD_CHIME);
+    else if (chime) play(chime);
     const raiding = event?.kind === PUBLIC_KIND.raid && event.phase === PUBLIC_PHASE.running;
     const stores = raiding
       ? event.marks.filter((mark) => mark.kind === MARK.store).map((mark) => ({ at: mark.at, share: mark.health }))
@@ -199,8 +206,8 @@ export class PublicView {
     if (mark.kind !== MARK.carried) return mark;
     const lift = MOTION.handM;
     if (mark.id === bodies.player) {
-      const first = bodies.firstPerson;
-      if (first) {
+      const first = bodies.shot;
+      if (bodies.firstPerson) {
         const reach = HAND_FIRST.forward * Math.cos(first.pitch);
         return { ...mark, at: along(first.eye, first.yaw, reach, HAND_FIRST.left, -HAND_FIRST.down - lift) };
       }

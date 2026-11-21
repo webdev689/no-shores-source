@@ -25,10 +25,10 @@ const raid = (marks: PublicEvent['marks'], phase = 1): PublicEvent => ({
 });
 const bodies = (more: Partial<PublicBodies> = {}): PublicBodies => ({
   player: 1,
-  eye: [0, 4, 3],
+  shot: { eye: [0, 4, 3], yaw: 0, pitch: 0 },
+  firstPerson: false,
   feet: [0, 0, 0],
   yaw: 0,
-  firstPerson: null,
   others: new Map([[2, { x: 10, y: 10, z: 1, facing: Math.PI / 2 }]]),
   where: () => null,
   ...more,
@@ -55,7 +55,7 @@ test('a carried shard is held at its carrier’s off hand: theirs as drawn, the 
   // Facing north, the off (left) hand is to the west; the other faces east, so theirs is to the north.
   assert.ok(own && own[0] < 0 && Math.abs(own[1] + 0.16) < 1e-9, `own: ${own}`);
   assert.ok(theirs && theirs[1] < 10 && Math.abs(theirs[0] - 10.16) < 1e-9, `theirs: ${theirs}`);
-  const first = bodies({ firstPerson: { eye: [0, 0, 1.6], yaw: 0, pitch: 0 } });
+  const first = bodies({ shot: { eye: [0, 0, 1.6], yaw: 0, pitch: 0 }, firstPerson: true });
   const [held] = shards(view.frame(event, [], [], first, 0, [], () => 0));
   // Drawn just under the eye, ahead and to the left.
   assert.ok(held && held[1] < -0.5 && held[0] < 0 && held[2] < 1.6 && held[2] > 1, `held: ${held}`);

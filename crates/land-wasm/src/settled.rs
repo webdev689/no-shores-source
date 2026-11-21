@@ -163,7 +163,7 @@ pub fn grounds_json(id: &str) -> String {
     CITY.with(|city| {
         let city = city.borrow();
         let laid = city.layouts.iter().find(|layout| layout.id == id && layout.ring.len() >= 3);
-        serde_json::to_string(&laid.and_then(bake::grounds_of)).unwrap_or_else(|_| "null".to_owned())
+        serde_json::to_string(&laid.and_then(layout::grounds::grounds_of)).unwrap_or_else(|_| "null".to_owned())
     })
 }
 

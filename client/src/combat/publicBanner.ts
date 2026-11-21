@@ -2,10 +2,26 @@
 // and the place, the countdown at the right, the objective with its bar, the heroic task with its window's countdown,
 // the bonus and whether it holds; the result for its time once it is over; and the next event's line between them.
 // It slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed).
-import type { Banner } from '../game/publicLaw.ts';
 import type { PlaceMark } from '../plus/compass.ts';
 import { HALO, TONES } from '../plus/tones.ts';
 import { element, Meter, setStyle, showNode } from './meter.ts';
+
+/** The banner's tone: an event running, one turned heroic, its result, or the next event's line between them. */
+export type BannerTone = 'running' | 'heroic' | 'won' | 'failed' | 'next';
+
+/** What the banner shows: a line over the name (what it is), the name, the place, a clock (the countdown, or how long
+ *  until the next), the objective, the bar under it, the heroic task with its window's clock, and the bonus. */
+export interface Banner {
+  readonly tone: BannerTone;
+  readonly kicker: string;
+  readonly title: string;
+  readonly place: string;
+  readonly clock: string;
+  readonly objective: string;
+  readonly bar: { readonly share: number; readonly label: string } | null;
+  readonly heroic: { readonly text: string; readonly clock: string; readonly met: boolean } | null;
+  readonly bonus: { readonly text: string; readonly state: 'holds' | 'met' | 'lost' } | null;
+}
 
 /** A beat of the event the banner slides in afresh for. */
 export type BannerBeat = 'begun' | 'stage' | 'heroic' | 'missed' | 'won' | 'failed';

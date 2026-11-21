@@ -13,7 +13,7 @@ import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { EventProp } from '../city/eventProps.ts';
-import { DROPPED, type GearDrop, type GearState } from '../network/gearMessages.ts';
+import { DROPPED, type GearState } from '../network/gearMessages.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
@@ -42,13 +42,14 @@ import type { GearHere } from './gearScreen.ts';
 import type { Hint } from './gearDom.ts';
 import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
-import { type Rect, windowRect } from './nodes.ts';
+import { windowRect } from './nodes.ts';
+import { nodeText, standOn } from './footNode.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { askedPublic, minuteShift } from './publicLaw.ts';
 import { PublicView } from './publicView.ts';
 import { nodeRoom } from './rooms.ts';
 import type { Quest } from './tasks.ts';
-import { chime, play, worldOutput } from './uiSounds.ts';
+import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -115,30 +116,6 @@ export interface FootFrame {
   readonly props?: readonly EventProp[];
   readonly quest?: Quest | null;
   readonly sting?: 'cadence' | 'victory' | 'defeat' | null;
-}
-
-/** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the
- *  fight's on them as its room stands its bodies. Answers the boxes and the window's text. */
-async function standOn(
-  context: FootContext,
-  combat: CombatRules,
-  rect: Rect,
-): Promise<{ boxes: readonly Block[]; ground: string }> {
-  const [ground, boxes] = await Promise.all([context.land.window(rect), context.land.boxes(rect)]);
-  context.movement.setCourse(boxes);
-  combat.setCourse(boxes);
-  if (!context.movement.setGround(ground) || !combat.setGround(ground))
-    throw new Error('the ground of this place did not load');
-  return { boxes, ground };
-}
-
-/** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
- *  cut there, its boxes, and where it fights its public events (the land's `grounds`, JSON; `null` for none). */
-function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[], grounds = 'null'): string {
-  const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
-  const { id, kind, continent, ring, spawns } = node;
-  const fought = grounds === 'null' ? '' : `,"grounds":${grounds}`;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}${fought}}`;
 }
 
 /**
@@ -420,15 +397,12 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const floor = (x: number, y: number) => movement.standing(x, y).z;
-    // A public event's chest is drawn as a prop of its own, online or alone; the other drops only online.
-    const drops = this.gearHeld.gear?.drops ?? [];
+    const dropped = this.dropMarks(clock, shot.eye, [
+      ...groundRings(this.gear?.gear ?? null, this.node, floor, clock),
+      ...foes.overheads(shot.eye, clock),
+    ]);
+    // A public event's chest is drawn as a prop of its own, online or alone.
     const chests = (this.gearHeld.gear ?? this.alone.gear)?.drops.filter((drop) => drop.kind === DROPPED.chest) ?? [];
-    const dropped = this.dropMarks(
-      clock,
-      shot.eye,
-      [...groundRings(this.gear?.gear ?? null, this.node, floor, clock), ...foes.overheads(shot.eye, clock)],
-      drops.filter((drop) => drop.kind !== DROPPED.chest),
-    );
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
       if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
@@ -436,25 +410,9 @@ export class Foot {
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
     const feet = [body.x, body.y, body.z] as const;
-    const shownPublic = this.publicView.frame(
-      fight.public,
-      publicEvents,
-      chests,
-      {
-        player: fight.player,
-        eye: shot.eye,
-        feet,
-        yaw: walker.player.facing,
-        firstPerson: firstPerson ? { eye: shot.eye, yaw: shot.yaw, pitch: shot.pitch } : null,
-        others: this.otherPlayers.placed,
-        where,
-      },
-      clock,
-      dropped.marks,
-      floor,
-    );
-    if (shownPublic.chime === 'shard') chime(3);
-    else if (shownPublic.chime) play(shownPublic.chime);
+    const others = this.otherPlayers.placed;
+    const seen = { player: fight.player, shot, firstPerson, feet, yaw: walker.player.facing, where, others };
+    const shownPublic = this.publicView.frame(fight.public, publicEvents, chests, seen, clock, dropped.marks, floor);
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
       blocks: this.boxes,
@@ -554,7 +512,8 @@ export class Foot {
 
   /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where
    *  each came to rest this frame; a Rare or finer chimes as it comes to rest. */
-  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[], drops: readonly GearDrop[]) {
+  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]) {
+    const drops = (this.gearHeld.gear?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const shown = this.drops.frame(drops, clock, eye, out);
     const rarest = Math.max(-1, ...shown.rested);
     if (rarest >= 2) chime(rarest);

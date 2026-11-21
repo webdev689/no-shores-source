@@ -4,6 +4,7 @@
 // the room's (crates/room/src/public).
 import { STORE } from '../city/eventProps.ts';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
+import type { Banner } from '../combat/publicBanner.ts';
 import type { PlaceMark } from '../plus/compass.ts';
 import type { Quest, Step } from './tasks.ts';
 
@@ -34,23 +35,6 @@ const BONUS: Readonly<Record<number, string>> = {
   [PUBLIC_KIND.fissure]: 'Bonus: seal it with half the time left',
   [PUBLIC_KIND.raid]: 'Bonus: lose no store',
 };
-
-/** The banner's tone: an event running, one turned heroic, its result, or the next event's line between them. */
-export type BannerTone = 'running' | 'heroic' | 'won' | 'failed' | 'next';
-
-/** What the banner shows: a line over the name (what it is), the name, the place, a clock (the countdown, or how long
- *  until the next), the objective, the bar under it, the heroic task with its window's clock, and the bonus. */
-export interface Banner {
-  readonly tone: BannerTone;
-  readonly kicker: string;
-  readonly title: string;
-  readonly place: string;
-  readonly clock: string;
-  readonly objective: string;
-  readonly bar: { readonly share: number; readonly label: string } | null;
-  readonly heroic: { readonly text: string; readonly clock: string; readonly met: boolean } | null;
-  readonly bonus: { readonly text: string; readonly state: 'holds' | 'met' | 'lost' } | null;
-}
 
 /** `ticks` as minutes and seconds, the seconds rounded up: 7:42. */
 export function clockOf(ticks: number): string {
