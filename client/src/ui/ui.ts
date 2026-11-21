@@ -553,7 +553,8 @@ export class Interface {
    *  right stick scrolling under it. */
   private padFrame(seconds: number, takes: boolean): void {
     if (!takes) return this.padCursor.close();
-    const { scroll, at } = this.padCursor.step(seconds, reachable(this.laid), this.view, this.inward, this.padHome());
+    const pulling = this.padCursor.out ? reachable(this.laid) : [];
+    const { scroll, at } = this.padCursor.step(seconds, pulling, this.view, this.inward, this.padHome());
     if (this.padCursor.out) this.pointer = at;
     if (scroll) this.wheel = scrolledAt(this.laid, at.x, at.y, scroll, this.scrolls) || this.wheel;
   }

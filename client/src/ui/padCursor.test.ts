@@ -56,6 +56,7 @@ test('over a press it slows; light or at rest it is drawn to the middle; a firm 
   const plain = stepPadCursor(free, lean);
   const slowed = stepPadCursor(over, { ...lean, over: true });
   assert.ok(near(slowed.x, plain.x * PAD_CURSOR.FRICTION, 0.05), `slowed over a press: ${slowed.x} of ${plain.x}`);
+  assert.ok(slowed.x < plain.x / 2, 'well under half its speed, so it stops on a press');
   const rest = { x: 0, y: 0, seconds: FRAME_S, speed: SPEED, target: { x: 110, y: 50 }, at: { x: 100, y: 50 } };
   const pulled = stepPadCursor(feel(), rest);
   assert.ok(pulled.x > 0 && pulled.x <= 10 && pulled.y === 0, `at rest it settles toward the middle: ${pulled.x}`);
