@@ -3,22 +3,13 @@
 // as they build this frame's tree, which is then laid out and drawn. Events are plain data, so the interface runs
 // wherever the game does; a page's events reach it through `canvasEvents.ts`.
 import { announce } from './announce.ts';
-import {
-  allSelected,
-  emptyField,
-  erased,
-  type FieldState,
-  moved,
-  placeNear,
-  replaced,
-  typed,
-  wordAt,
-} from './field.ts';
+import { edited, emptyField, type FieldState, keyed, placeNear, typed, wordAt } from './field.ts';
 import { drawLaid } from './drawLaid.ts';
-import { inside, modalOf, reachable, stepped, toward } from './focus.ts';
-import { hitAt, targetAt } from './hit.ts';
+import { ARROWS, inside, modalOf, reachable, scrollToShow, stepped, toward } from './focus.ts';
+import { hitAt, scrolledAt, targetAt } from './hit.ts';
 import { layout } from './layout.ts';
 import type { Laid, Node } from './node.ts';
+import { PadCursor } from './padCursor.ts';
 import type { State } from './paint.ts';
 import type { Box } from './quads.ts';
 import {
@@ -31,17 +22,10 @@ import {
   type ScreenKeys,
   screenKeysNode,
 } from './screenKeys.ts';
-import type { Typing, UiEvent } from './uiEvent.ts';
+import type { PadButton, Typing, UiEvent } from './uiEvent.ts';
 import type { UiRenderer } from './uiRenderer.ts';
 
 export type { Typing, UiEvent } from './uiEvent.ts';
-
-const ARROWS: Record<string, readonly [number, number]> = {
-  arrowup: [0, -1],
-  arrowdown: [0, 1],
-  arrowleft: [-1, 0],
-  arrowright: [1, 0],
-};
 
 /** A second press this close in time (seconds) and place (pixels) to the first makes a double click. */
 const DOUBLE_SECONDS = 0.5;
@@ -83,6 +67,10 @@ export class Interface {
   readonly store = new Map<string, unknown>();
   private readonly submits = new Set<string>();
   private escape = false;
+  /** The pad's bumpers this frame: -1 the left, 1 the right, turning a window's tabs. */
+  private turn = 0;
+  /** The pad's cursor, out in a window once its left stick is thrown (`padCursor.ts`). */
+  private readonly padCursor = new PadCursor();
   private reach = false;
   private wheel = false;
   private readonly scrolls = new Map<string, number>();
@@ -106,14 +94,15 @@ export class Interface {
 
   /** Starts a frame `width` by `height` device pixels at `scale` device pixels an interface pixel, `seconds` after the
    *  last, hearing `events`, whose positions are the page's CSS pixels at the screen's `ratio` of device pixels to
-   *  them (the scale unless said). While the pointer is not `free` (locked to look round) it presses nothing, and
-   *  without `keys` (no menu up, so the keys are the game's) only a field being typed in hears keys and the pad. */
+   *  them (the scale unless said). While the pointer is not `free` (locked to look round) it presses nothing; without
+   *  `keys` (no menu up, the keys the game's), or without `pad`, only a field being typed in hears them. */
   frame(
     view: { readonly width: number; readonly height: number; readonly scale: number; readonly ratio?: number },
     events: readonly UiEvent[],
     seconds: number,
     free = true,
     keys = true,
+    pad = keys,
   ): void {
     this.clock += seconds;
     this.free = free;
@@ -127,13 +116,16 @@ export class Interface {
     this.downs.length = 0;
     this.submits.clear();
     [this.escape, this.wheel, this.keyMoved] = [false, false, false];
+    this.turn = 0;
     const before = this.hover;
     this.reach = false;
     for (const event of events) {
-      const typingNow = this.typing !== null;
-      if ((event.kind === 'key' || event.kind === 'pad') && !keys && !typingNow) continue;
-      this.hear('x' in event ? { ...event, x: event.x * this.inward, y: event.y * this.inward } : event, free);
+      const typing = this.typing !== null;
+      if (event.kind === 'stick') this.padCursor.hear(event, pad || typing, () => this.padHome());
+      else if (!typing && ((event.kind === 'key' && !keys) || (event.kind === 'pad' && !pad))) continue;
+      else this.hear('x' in event ? { ...event, x: event.x * this.inward, y: event.y * this.inward } : event, free);
     }
+    this.padFrame(seconds, pad || this.typing !== null);
     this.screenKeysHeard();
     const over = free && this.pointer ? targetAt(this.laid, this.pointer.x, this.pointer.y) : null;
     this.hover = over?.node.id ?? null;
@@ -225,6 +217,11 @@ export class Interface {
     return this.escape;
   }
 
+  /** Whether the pad's bumpers turned a window's tabs this frame: -1 back, 1 on, 0 neither. */
+  get turned(): number {
+    return this.turn;
+  }
+
   /** Seconds `id` has been laid without a break; 0 for one new this frame. */
   age(id: string): number {
     const born = this.born.get(id);
@@ -292,8 +289,9 @@ export class Interface {
     return this.wheel;
   }
 
-  /** The pointer's look over what it is on. */
-  get cursor(): 'default' | 'pointer' | 'text' {
+  /** The pointer's look over what it is on; none while the pad's cursor is drawn instead. */
+  get cursor(): 'default' | 'pointer' | 'text' | 'none' {
+    if (this.padCursor.out) return 'none';
     const under = this.hover ? this.byId.get(this.hover) : undefined;
     return under?.node.field ? 'text' : under?.node.press ? 'pointer' : 'default';
   }
@@ -303,9 +301,11 @@ export class Interface {
     const view = { x: 0, y: 0, ...this.view };
     const scrollOf = (id: string) => this.scrolls.get(id) ?? 0;
     const keys = this.screen;
-    const shown: Node = keys
+    const withKeys: Node = keys
       ? { children: [root, screenKeysNode(keys, view, this.boxOf(keys.field), this.way === 'pad')] }
       : root;
+    const cursor = this.padCursor.node();
+    const shown = cursor ? { ...withKeys, children: [...(withKeys.children ?? []), cursor] } : withKeys;
     const laid = layout(shown, view, { face: this.renderer.face, scrollOf });
     drawLaid(this.renderer, laid, this.scale, {
       clock: this.clock,
@@ -334,7 +334,8 @@ export class Interface {
     if (!focused || !inside(focused, modal)) this.focus = null;
     if (this.toSpeak !== null && this.toSpeak === this.focus && focused?.node.label) this.speak(focused.node.label);
     this.toSpeak = null;
-    if (this.keyMoved) this.showFocused();
+    // The pad's cursor carried onto the focus goes with it as its list scrolls it into sight.
+    if (this.keyMoved && this.focus && focused) this.padCursor.spot.y += scrollToShow(focused, this.scrolls);
   }
 
   /** What is kept by id lets go of the ids not laid: a press held, a field being selected across, scrolls; a field's
@@ -364,34 +365,29 @@ export class Interface {
   private hear(event: UiEvent, free: boolean): void {
     switch (event.kind) {
       case 'pointer':
+        // The page's own jump as the pointer is let go is no move of the mouse.
+        if (this.padCursor.out && event.still) return;
+        this.padCursor.away();
         this.pointer = { x: event.x, y: event.y };
         if (this.selecting) this.selectTo(this.selecting, event.x);
         return;
       case 'leave':
-        this.pointer = null;
+        if (!this.padCursor.out) this.pointer = null;
         return;
       case 'down':
-        this.pointer = { x: event.x, y: event.y };
+        this.padCursor.away();
         this.way = event.touch ? 'touch' : 'pointer';
-        if (free) this.downs.push(hitAt(this.laid, event.x, event.y));
-        if (free && event.button === 0) this.pressAt(event.x, event.y, Boolean(event.shift));
-        else if (free && event.button === 2) {
-          const id = targetAt(this.laid, event.x, event.y)?.node.id;
-          if (id) this.rightClicks.add(id);
-        }
+        this.down(event.x, event.y, event.button, Boolean(event.shift), free);
         return;
       case 'up':
-        if (event.button === 0) this.selecting = null;
-        if (event.button === 0 && this.held) {
-          this.dropped = { id: this.held, x: event.x, y: event.y };
-          if (free && targetAt(this.laid, event.x, event.y)?.node.id === this.held) this.clicks.add(this.held);
-          this.held = null;
-        }
+        this.up(event.x, event.y, event.button, free);
         return;
       case 'wheel':
-        this.scrollAt(event.x, event.y, event.dy);
+        this.wheel = scrolledAt(this.laid, event.x, event.y, event.dy, this.scrolls) || this.wheel;
         return;
       case 'key':
+        if (this.padCursor.out) this.pointer = null;
+        this.padCursor.away();
         this.way = 'keys';
         this.key(event.key.toLowerCase(), Boolean(event.shift), Boolean(event.ctrl), Boolean(event.typed));
         return;
@@ -399,16 +395,13 @@ export class Interface {
         this.edit((state, most) => typed(state, event.text, most));
         return;
       case 'edit':
-        this.edit((state, most) => {
-          const next = replaced(state, event.from, event.to, event.text, most);
-          // Within the words kept, where the most cut short what the browser typed.
-          const within = (place: number) => Math.max(0, Math.min(next.text.length, place));
-          return { ...next, caret: within(event.caret), anchor: within(event.anchor) };
-        });
+        this.edit((state, most) => edited(state, event, most));
         return;
       case 'pad':
         this.way = 'pad';
-        if (this.screen) this.padOnKeys(event.button);
+        if (this.padAtCursor(event.button, Boolean(event.up), free)) return;
+        if (event.button === 'previous' || event.button === 'next') this.turn = event.button === 'next' ? 1 : -1;
+        else if (this.screen) this.padOnKeys(event.button);
         // A on a field opens the keys again, once B has put them away.
         else if (event.button === 'accept' && this.current?.node.field) this.opening = this.focus;
         else if (event.button === 'accept') this.key('enter', false, false, false);
@@ -421,13 +414,34 @@ export class Interface {
     }
   }
 
+  /** The pointer, or the pad's cursor, goes down at `x`, `y` with `button`: the left presses, the right right-clicks. */
+  private down(x: number, y: number, button: number, shift: boolean, free: boolean): void {
+    this.pointer = { x, y };
+    if (!free) return;
+    this.downs.push(hitAt(this.laid, x, y));
+    if (button === 0) this.pressAt(x, y, shift);
+    const id = button === 2 ? targetAt(this.laid, x, y)?.node.id : undefined;
+    if (id) this.rightClicks.add(id);
+  }
+
+  /** The pointer, or the pad's cursor, lets `button` go at `x`, `y`: what it held is clicked if it is still over it. */
+  private up(x: number, y: number, button: number, free: boolean): void {
+    if (button !== 0) return;
+    this.selecting = null;
+    this.padCursor.pressing = false;
+    if (!this.held) return;
+    this.dropped = { id: this.held, x, y };
+    if (free && targetAt(this.laid, x, y)?.node.id === this.held) this.clicks.add(this.held);
+    this.held = null;
+  }
+
   private pressAt(x: number, y: number, shift: boolean): void {
     const target = targetAt(this.laid, x, y);
     const id = target?.node.id ?? null;
     this.held = target?.node.press ? id : null;
     // A key the game draws types into the field it opened for, which keeps the focus.
     if (id?.startsWith(SCREEN_KEY)) return;
-    if (id && target?.node.field && this.way === 'touch') this.opening = id;
+    if (id && target?.node.field && this.way !== 'pointer') this.opening = id;
     const last = this.lastDown;
     const double =
       last !== null && this.clock - last.at <= DOUBLE_SECONDS && Math.hypot(x - last.x, y - last.y) <= DOUBLE_REACH;
@@ -463,21 +477,6 @@ export class Interface {
     return placeNear(text, units, (place) => this.renderer.measure(shown(place), size));
   }
 
-  private scrollAt(x: number, y: number, rolled: number): void {
-    for (let laid = hitAt(this.laid, x, y); laid; laid = laid.parent) {
-      const id = laid.node.id;
-      if (laid.node.scroll && id) {
-        this.scrolls.set(
-          id,
-          Math.max(0, Math.min((this.scrolls.get(id) ?? 0) + rolled, laid.content - laid.box.height)),
-        );
-        this.wheel = true;
-        return;
-      }
-    }
-    if (hitAt(this.laid, x, y)) this.wheel = true;
-  }
-
   private edit(change: (state: FieldState, most: number) => FieldState): void {
     const field = this.current?.node.field;
     if (!this.focus || !field) return;
@@ -504,18 +503,11 @@ export class Interface {
 
   /** A key in a field: true when the field took it. */
   private fieldKey(id: string, key: string, shift: boolean, ctrl: boolean, typedAlready: boolean): boolean {
-    const state = this.fieldOf(id);
-    const set = (next: FieldState) => this.fields.set(id, next);
+    if (key === 'tab' || key === 'arrowup' || key === 'arrowdown') return false;
     if (key === 'enter') this.submits.add(id);
     else if (key === 'escape') this.focus = null;
-    else if (key === 'tab') return false;
-    else if (key === 'backspace' || key === 'delete') {
-      if (!typedAlready) set(erased(state, key === 'backspace' ? -1 : 1, ctrl));
-    } else if (key === 'arrowleft' || key === 'arrowright')
-      set(moved(state, key === 'arrowleft' ? -1 : 1, shift, ctrl));
-    else if (key === 'home' || key === 'end') set(moved(state, key === 'home' ? 'start' : 'end', shift));
-    else if (ctrl && key === 'a') set(allSelected(state));
-    else if (key === 'arrowup' || key === 'arrowdown') return false;
+    const next = keyed(this.fieldOf(id), key, shift, ctrl, typedAlready);
+    if (next) this.fields.set(id, next);
     return true;
   }
 
@@ -539,7 +531,7 @@ export class Interface {
   }
 
   /** The pad on the keys the game draws: its cross walks them, A presses the one it stands on, B puts them away. */
-  private padOnKeys(button: 'up' | 'down' | 'left' | 'right' | 'accept' | 'back'): void {
+  private padOnKeys(button: PadButton): void {
     const keys = this.screen;
     if (!keys) return;
     if (button === 'back') this.screen = null;
@@ -551,6 +543,44 @@ export class Interface {
     }
   }
 
+  /** Where the pad's cursor comes out and acts while it is away: the focus, else where the pointer was, else the
+   *  view's middle. */
+  private padHome(): Box {
+    const { x, y } = this.pointer ?? { x: this.view.width / 2, y: this.view.height / 2 };
+    return this.current?.box ?? { x, y, width: 0, height: 0 };
+  }
+
+  /** The pad's cursor stepped while the pad is the interface's, the pointer standing on it while it is out, and the
+   *  right stick scrolling under it. */
+  private padFrame(seconds: number, takes: boolean): void {
+    if (!takes) return this.padCursor.close();
+    const pulling = this.padCursor.out ? reachable(this.laid) : [];
+    const { scroll, at } = this.padCursor.step(seconds, pulling, this.view, this.inward, this.padHome());
+    if (this.padCursor.out) this.pointer = at;
+    if (scroll) this.wheel = scrolledAt(this.laid, at.x, at.y, scroll, this.scrolls) || this.wheel;
+  }
+
+  /** A pad's button as the pointer's own at its cursor: A goes down and, let go, up; Y right-clicks and X presses
+   *  with Shift, each bringing the cursor out at the focus; the cross steps from the press under it. Answers whether
+   *  the button is done with. */
+  private padAtCursor(button: PadButton, up: boolean, free: boolean): boolean {
+    const cursor = this.padCursor;
+    if (up && button === 'accept' && cursor.pressing) this.up(cursor.spot.x, cursor.spot.y, 0, free);
+    if (up) return true;
+    if (button === 'secondary' || button === 'quick') cursor.bringOut(this.padHome());
+    if (!cursor.out) return false;
+    const { x, y } = cursor.spot;
+    if (button === 'accept' || button === 'secondary' || button === 'quick') {
+      this.down(x, y, button === 'secondary' ? 2 : 0, button === 'quick', free);
+      if (button === 'quick') this.up(x, y, 0, free);
+      cursor.pressing = button === 'accept';
+      return true;
+    }
+    const under = targetAt(this.laid, x, y);
+    if (!this.screen && under?.node.id && inside(under, modalOf(this.laid))) this.focus = under.node.id;
+    return false;
+  }
+
   /** Focus to the nearest of what the keys reach `across` and `down` from the focused one; the first, with none. */
   private toward(arrow: readonly [number, number]): void {
     const next = toward(reachable(this.laid), this.current, arrow);
@@ -559,30 +589,12 @@ export class Interface {
 
   private moveFocus(laid: Laid | null): void {
     if (!laid?.node.id) return;
+    if (this.padCursor.out) this.padCursor.carry(laid.box);
     this.focus = laid.node.id;
     if (laid.node.field && this.way === 'pad') this.opening = laid.node.id;
     this.focusByKeys = true;
     this.keyMoved = true;
     this.reach = true;
     if (laid.node.label) this.speak(laid.node.label);
-  }
-
-  /** Scrolls each list that holds the focused node, the innermost first, until it is in sight in all of them. */
-  private showFocused(): void {
-    const focused = this.focus ? this.byId.get(this.focus) : undefined;
-    if (!focused) return;
-    let [top, bottom] = [focused.box.y, focused.box.y + focused.box.height];
-    for (let holder = focused.parent; holder; holder = holder.parent) {
-      const id = holder.node.id;
-      if (!holder.node.scroll || !id) continue;
-      const scrolled = this.scrolls.get(id) ?? 0;
-      const above = holder.box.y - top;
-      const below = bottom - (holder.box.y + holder.box.height);
-      const wanted = above > 0 ? scrolled - above : below > 0 ? scrolled + below : scrolled;
-      const next = Math.max(0, Math.min(wanted, holder.content - holder.box.height));
-      this.scrolls.set(id, next);
-      // Scrolled, the node moves within the holders outside this one.
-      [top, bottom] = [top - (next - scrolled), bottom - (next - scrolled)];
-    }
   }
 }

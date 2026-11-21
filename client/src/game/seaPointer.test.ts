@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { HeldMap } from '../heldmap/heldMap.ts';
+import { FakeEvent, fakePage } from './pageForTests.ts';
 import type { Sea } from './sea.ts';
-import { type SeaPointing, seaPointer } from './seaPointer.ts';
+import type { SeaCombat } from './seaCombat.ts';
+import { type SeaPointing, fightControls, seaPointer } from './seaPointer.ts';
 
 /** The sea's pointer on a canvas that keeps its listeners, at sea with no menu up; `fire` runs each kind's listeners
  *  on a press at one spot. */
@@ -67,4 +69,14 @@ test('the held map takes no press, drag or wheel that the interface is over, and
   over = false;
   fire('pointerdown', 'pointermove', 'pointerup', 'wheel');
   assert.deepEqual(heard, ['down', 'move', 'up', 'wheel']);
+});
+
+test('the fight hears a key by the name it is bound by: a digit by its place on the row, Shift held or not', () => {
+  const { window } = fakePage();
+  const heard: string[] = [];
+  const combat = { key: (key: string) => heard.push(key) > 0 } as unknown as SeaCombat;
+  fightControls({ addEventListener: () => undefined } as unknown as HTMLCanvasElement, () => combat);
+  window.dispatchEvent(new FakeEvent('keydown', { key: '@', code: 'Digit2' }));
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'W', code: 'KeyW' }));
+  assert.deepEqual(heard, ['2', 'w']);
 });

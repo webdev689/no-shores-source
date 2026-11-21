@@ -19,13 +19,13 @@ export function boostRing([burst, charged]: FightBoost): BoostRing {
   return charged >= 1 ? { state: 'ready', share: 1 } : { state: 'charging', share: charged };
 }
 
-/** The readout at `now`: whether the card's captain can be boarded now, and the key that boards it; the player's
- *  ship's kind (`own`) its plate names. */
+/** The readout at `now`: whether the card's captain can be boarded now, the key that boards it and the key that
+ *  braces; the player's ship's kind (`own`) its plate names. */
 export function fightDisplay(
   view: FightView,
   feel: Pick<FightFeel, 'blow' | 'readyAt' | 'tally'>,
   now: number,
-  board: { readonly boardable: boolean; readonly boardKey: string },
+  board: { readonly boardable: boolean; readonly boardKey: string; readonly braceKey: string },
   own = 'Sloop',
 ): SeaFightModel {
   const { player, lay } = view;
@@ -87,6 +87,6 @@ export function fightDisplay(
         }
       : null,
     tally: feel.tally(now),
-    warn: warning ? `Broadside from the ${warning.name} - C: brace` : null,
+    warn: warning ? `Broadside from the ${warning.name} - ${board.braceKey}: brace` : null,
   };
 }

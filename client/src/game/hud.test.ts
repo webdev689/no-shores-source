@@ -6,9 +6,9 @@ import type { Laid, Node } from '../ui/node.ts';
 import { QuadList } from '../ui/quads.ts';
 import { type Face, widthOf } from '../ui/text.ts';
 import { Interface, type UiEvent } from '../ui/ui.ts';
+import { BINDS } from '../player/input.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
-import type { Hint } from './gearNodes.ts';
-import { type OnFoot, footHints, withMapKey } from './hints.ts';
+import { type OnFoot, type StripHint, footHints, withMapKey } from './hints.ts';
 import { Hud } from './hud.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
@@ -200,7 +200,7 @@ test('the key strip as shown holds eight entries at most, the key to every contr
   };
   const away = withMapKey(footHints(rest));
   const drawn = withMapKey(footHints({ ...rest, worn: 1, drawn: true }));
-  const boarded: Hint[] = [['E', 'Back aboard your ship · 30 s left'], ...footHints({ ...rest, drawn: true })];
+  const boarded: StripHint[] = [['use', 'Back aboard your ship · 30 s left'], ...footHints({ ...rest, drawn: true })];
   for (const strip of [away, drawn, boarded]) {
     assert.ok(strip.length > 8, 'more than the strip holds');
     hud.hints(strip);
@@ -209,12 +209,20 @@ test('the key strip as shown holds eight entries at most, the key to every contr
     assert.equal(entries.length, 8);
     const said = words(laid.filter((each) => entries.some((entry) => each.parent === entry)));
     assert.equal(said.at(-1), 'All controls');
-    assert.equal(said[strip[0]?.[0] === 'E' ? 1 : 0], 'Look round', 'the click to look round kept');
+    assert.equal(said[strip[0]?.[0] === 'use' ? 1 : 0], 'Look round', 'the click to look round kept');
   }
   hud.hints(away);
   const said = words(frame(ui, hud));
   assert.ok(said.includes('Hold to aim daggers'), 'the Arts kept');
   assert.ok(!said.includes('Menu'), 'the menu’s key gave way');
+  BINDS.device = 'pad';
+  try {
+    const onPad = frame(ui, hud).filter((each) => each.parent?.node.id === 'hud:hints');
+    assert.equal(onPad.length, 8, 'the pad has no way to the click or the map, so the menu’s fits');
+    assert.ok(words(frame(ui, hud)).includes('Menu'));
+  } finally {
+    BINDS.device = 'keys';
+  }
 });
 
 test('the sheet of every control is offered only while the key strip shows', () => {

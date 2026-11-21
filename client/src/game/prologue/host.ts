@@ -2,6 +2,7 @@
 // helm for a player back from Discord who has not played it through; or, if it cannot start, the player sent on to
 // Overlook), its frames, keys, pointer and touches, and its end, which lets the story's own parts go and hands the
 // player to the game with the epilogue to play on foot and their look to dress them.
+import type { Context } from '../../player/binds.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { GearHere } from '../gearScreen.ts';
@@ -64,6 +65,21 @@ export class StoryHost {
 
   key(key: string, down: boolean): void {
     this.story?.prologue.key(key, down);
+  }
+
+  /** Where the player's controls act in the story: in its sea fight while one is on, else on foot. */
+  get context(): Context {
+    return this.story?.prologue.fight ? 'fight' : 'foot';
+  }
+
+  /** The pad's part of a frame, for the story's sea fight while one is on. */
+  padFrame(pad: InputFrame, seconds: number): void {
+    this.story?.prologue.fight?.padFrame(pad, seconds);
+  }
+
+  /** A tap or click, as the pad's A is one: the title's beginning, or the stranger's hand taken. */
+  press(): void {
+    this.story?.prologue.press();
   }
 
   /** The player's gear for the menu, while the story keeps any: on the wreck, as they play it. */

@@ -14,7 +14,10 @@ import { ease, easeInOut } from '../ui/ease.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import type { Interface } from '../ui/ui.ts';
+import { BINDS } from '../player/input.ts';
+import { boundWord } from './controls.ts';
 import type { Hint } from './gearNodes.ts';
+import { type StripHint, hintsFor } from './hints.ts';
 import { countdownText, deathWords, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
 import { Tween } from './hudParts.ts';
@@ -59,6 +62,9 @@ export const VEIL_S = 0.7;
 const BREATH_S = 2.4;
 /** The most entries the key strip holds, the key to every control last among them. */
 const HINTS_MOST = 8;
+/** `hints` cut to the most the strip holds, those just before the last giving way. */
+const atMost = (hints: readonly Hint[]): readonly Hint[] =>
+  hints.length > HINTS_MOST ? [...hints.slice(0, HINTS_MOST - 1), ...hints.slice(-1)] : hints;
 
 /** The screen's edge darkened toward black, as a radial gradient over the whole view clear to 35% of the way out: drawn
  *  small and stretched, its steps too fine to see. */
@@ -101,7 +107,7 @@ export class Hud {
   private kind = '';
   private standing: Standing = { kind: 'inside' };
   private readonly shade = new Tween(0, SHADE_S, ease);
-  private hintsShown: readonly Hint[] = [];
+  private hintsShown: readonly StripHint[] = [];
   /** The toasts said now, which the game draws. */
   private toasts: Toast[] = [];
   private status = '';
@@ -147,9 +153,10 @@ export class Hud {
   }
 
   /** The keys the player can press now, each on its keycap beside what it does, the most needed first; none hides
-   *  the strip. Past eight, those nearest the last give way to it, the key to every control. */
-  hints(hints: readonly Hint[]): void {
-    this.hintsShown = hints.length > HINTS_MOST ? [...hints.slice(0, HINTS_MOST - 1), ...hints.slice(-1)] : hints;
+   *  the strip. Past eight shown on the device played, those nearest the last give way to it, the key to every
+   *  control. */
+  hints(hints: readonly StripHint[]): void {
+    this.hintsShown = hints;
   }
 
   /** Whether the key strip shows keys now, the sheet of every control's among them: it gives way while someone
@@ -355,7 +362,7 @@ export class Hud {
         },
       placeNode(view, this.title, this.kind),
       standing.kind === 'warned' && warningNode(view, countdownText(standing.secondsLeft)),
-      hintsNode(view, this.hintsShown, sea !== null, Boolean(sea?.landfall)),
+      hintsNode(view, atMost(hintsFor(this.hintsShown, BINDS.device, BINDS.now)), sea !== null, Boolean(sea?.landfall)),
       this.tasks.node(view, clock, still),
       {
         width: 'grow',
@@ -376,8 +383,10 @@ export class Hud {
           leave: () => this.leaveWanted(),
         }),
       sea?.landfall &&
-        offerNode(ui, 'sea:landfall', `${landfallWords(sea.landfall)}  Enter`, () => this.landfallWanted()),
-      this.wheel && offerNode(ui, 'hud:wheel', 'Take the helm  E', () => this.wheelWanted()),
+        offerNode(ui, 'sea:landfall', `${landfallWords(sea.landfall)}  ${boundWord('confirm')}`, () =>
+          this.landfallWanted(),
+        ),
+      this.wheel && offerNode(ui, 'hud:wheel', `Take the helm  ${boundWord('use')}`, () => this.wheelWanted()),
       this.passage !== null && offerNode(ui, 'hud:passage', this.passage, () => this.passageWanted()),
       this.panel && shipPanelNode(ui, this.panel, () => this.manageWanted()),
       // Under the menu, death's words and the veil, which cover them.

@@ -6,6 +6,7 @@ import { NOTICE_LOOK, type NoticeRow, slidIn } from '../plus/notices.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
+import { boundWord, withKey } from './controls.ts';
 import type { Hint } from './gearNodes.ts';
 import { edged } from '../combat/barDraw.ts';
 import { footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
@@ -208,23 +209,23 @@ export function seaBarNode(ui: Interface, state: SeaBarState, act: SeaBarActions
       group(
         true,
         label('NAVIGATION'),
-        hudPress(ui, 'sea:map', 'Map  N', act.map),
+        hudPress(ui, 'sea:map', withKey('Map', 'map'), act.map),
         ...(voyage
-          ? [hudPress(ui, 'sea:voyage', state.sailing ? 'Stop  Space' : 'Resume voyage  Space', act.voyage)]
+          ? [hudPress(ui, 'sea:voyage', withKey(state.sailing ? 'Stop' : 'Resume voyage', 'voyage'), act.voyage)]
           : []),
       ),
       group(
         false,
         label('PACE'),
-        hudPress(ui, 'sea:slower', '−  [', () => act.pace(-1)),
+        hudPress(ui, 'sea:slower', withKey('−', 'slower'), () => act.pace(-1)),
         { minWidth: 44, alignX: 'center', children: [said(`×${state.pace}`, { size: 2, wrap: false })] },
-        hudPress(ui, 'sea:faster', ']  +', () => act.pace(1)),
+        hudPress(ui, 'sea:faster', [boundWord('faster'), '+'].filter(Boolean).join('  '), () => act.pace(1)),
       ),
       group(
         false,
         label('SHIP'),
-        hudPress(ui, 'sea:manage', 'Manage  B', act.manage, { disabled: !state.canManage }),
-        hudPress(ui, 'sea:leave', 'Leave the helm  H', act.leave, { disabled: !state.canLeave }),
+        hudPress(ui, 'sea:manage', withKey('Manage', 'manage'), act.manage, { disabled: !state.canManage }),
+        hudPress(ui, 'sea:leave', withKey('Leave the helm', 'leaveHelm'), act.leave, { disabled: !state.canLeave }),
       ),
     ],
   };
@@ -284,7 +285,9 @@ export function shipPanelNode(ui: Interface, panel: ShipPanel, back: () => void)
         width: 'grow',
         padding: [10, 18, 12, 18],
         ...footer(),
-        children: [hudPress(ui, 'ship:back', 'Back to the sea  B', back, { width: 'grow', alignX: 'center' })],
+        children: [
+          hudPress(ui, 'ship:back', withKey('Back to the sea', 'manage'), back, { width: 'grow', alignX: 'center' }),
+        ],
       },
     ],
   };

@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import type { InputFrame } from '../../player/input.ts';
 import type { Landmass } from '../landmass.ts';
 import type { Tick } from './beat.ts';
-import { Intro } from './intro.ts';
+import { beginPrompt, Intro } from './intro.ts';
+import { takeHandPrompt } from './shore.ts';
 import type { Sailing } from './sailing.ts';
 import { Stage, type StageParts } from './stage.ts';
 
@@ -123,4 +124,13 @@ test('played by touch, the title asks for a tap', () => {
   } finally {
     Object.assign(globalThis, { matchMedia: undefined });
   }
+});
+
+test('the story asks for a press by what the player plays with: on the pad, its jump’s button', () => {
+  assert.deepEqual(
+    [beginPrompt(true), beginPrompt(false, false), beginPrompt(false, true)],
+    ['Tap to begin', 'Press any key to begin', 'Press A to begin'],
+  );
+  assert.equal(takeHandPrompt(false, true), 'Press A to take her hand');
+  assert.equal(takeHandPrompt(false, false), 'Click or press any key to take her hand');
 });

@@ -77,8 +77,9 @@ the screen reader's announcements.
   page keeps a key's own work (scroll, find, the focus moving) from every key of the game's unless words are typed,
   the browser's shortcuts and function keys aside, and a wheel's and a right click's on the canvas always.
 - **What the game finds in the worker** stands in for the page (`pageAway`): storage read there and each change sent
-  to the page's at once; the page's address, its size, its media queries and its document; the canvas, its pointer's
-  lock and capture asked of the page. The game's own code runs unchanged: the stand-ins answer as a page's do.
+  to the page's at once; the page's address, its size, its media queries and its document; the pads, as the page read
+  them each frame (`navigator.getGamepads`, which a worker lacks); the canvas, its pointer's lock and capture asked of
+  the page. The game's own code runs unchanged: the stand-ins answer as a page's do.
 - **Sound** is made on the page's audio, its cues sent ahead by the worker (`soundAway`, `AudioHost`): every node,
   parameter and buffer the game's sound code makes there is a number the page keeps, each call sent with the rest of
   its task's and carried out on the page; the page's clock is sent back now and then, and the worker runs it on

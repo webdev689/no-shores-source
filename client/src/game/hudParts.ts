@@ -4,6 +4,7 @@
 import { edged } from '../combat/barDraw.ts';
 import type { Hint } from './gearNodes.ts';
 import { iconNode, isMouse } from './keyIcons.ts';
+import { padIconNode } from './padIcons.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Drawing, Node, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
@@ -52,9 +53,23 @@ export const said = (words: string, more: Omit<Text, 'words'> = {}): Node => ({
   text: { words, colour: TONES.ink, edge: 'shadow', edgeColour: '#000', ...more },
 });
 
+/** The pad's button `name` drawn (`padIcons.ts`): two pressed together side by side with a plus between them, one
+ *  held with the word after it. */
+function padCap(name: string, size: number): Node {
+  const held = name.endsWith(' hold');
+  const button = held ? name.slice(0, -' hold'.length) : name;
+  const words = (text: string): Node => ({ text: { words: text, size, colour: TONES.ink, edge: 'halo', wrap: false } });
+  const parts = button
+    .split('+')
+    .flatMap((one, place) => [...(place > 0 ? [words('+')] : []), padIconNode(one, size) ?? words(one)]);
+  if (parts.length === 1 && !held) return parts[0] ?? words(button);
+  return { gap: 2 * size, alignY: 'center', children: [...parts, ...(held ? [words('hold')] : [])] };
+}
+
 /** A key on its keycap, its words at `size`: square and bevelled as the kit's stone is, its foot deeper; an arrow key
- *  drawn on its cap, and the mouse's button drawn as the mouse, with no cap. */
+ *  drawn on its cap, the mouse's button drawn as the mouse and the pad's as the pad's, with no cap. */
 export function keycap(key: string, size = 1): Node {
+  if (key.startsWith('pad:')) return padCap(key.slice('pad:'.length), size);
   const icon = iconNode(key, size);
   if (icon && isMouse(key)) return icon;
   return {

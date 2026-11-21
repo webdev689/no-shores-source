@@ -1,5 +1,5 @@
 // The mouse's buttons and the arrow keys drawn as small pixel pictures, for the key strip and the sheet of every
-// control: a mouse with the button named lit in brass, and an arrow on its keycap. Each is a map of letters, a row of
+// control: a mouse with the button named lit in brass, and an arrow on its keycap (the pad's are `padIcons.ts`). Each is a map of letters, a row of
 // texels a line, so a picture is read as it looks.
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
@@ -25,6 +25,9 @@ const ARROW_ROWS: Readonly<Record<number, string>> = { 5: '.a...a.', 6: 'aaaaaaa
 const DRAG = MOUSE.map((row, line) => `${row}.${ARROW_ROWS[line] ?? '.......'}`);
 const LEFT_ARROW = ['...a...', '..aa...', '.aaaaaa', 'aaaaaaa', '.aaaaaa', '..aa...', '...a...'];
 const RIGHT_ARROW = LEFT_ARROW.map((row) => [...row].reverse().join(''));
+/** The left arrow turned a quarter: its columns read top down, as the up arrow's rows. */
+const UP_ARROW = LEFT_ARROW.map((unused, column) => LEFT_ARROW.map((row) => row[column] ?? '.').join(''));
+const DOWN_ARROW = [...UP_ARROW].reverse();
 
 /** Each drawn key by the name the strip and the sheet give it: its map, the letters lit in brass, and whether it is a
  *  key (drawn on its keycap) rather than the mouse. */
@@ -37,11 +40,13 @@ const ICONS: Readonly<Record<string, { rows: readonly string[]; lit: string; key
   'Back side button': { rows: MOUSE, lit: 'k' },
   'Left arrow': { rows: LEFT_ARROW, lit: '', key: true },
   'Right arrow': { rows: RIGHT_ARROW, lit: '', key: true },
+  'Up arrow': { rows: UP_ARROW, lit: '', key: true },
+  'Down arrow': { rows: DOWN_ARROW, lit: '', key: true },
 };
 
 /** `rows` a texel larger each way, every clear texel beside a drawn one an `o`: the dark edge a mouse keeps over the
  *  world, as the strip's words keep their halo. */
-function outlined(rows: readonly string[]): string[] {
+export function outlined(rows: readonly string[]): string[] {
   const width = (rows[0]?.length ?? 0) + 2;
   const padded = ['.'.repeat(width), ...rows.map((row) => `.${row}.`), '.'.repeat(width)];
   const drawn = (line: number, column: number) => (padded[line]?.[column] ?? '.') !== '.';

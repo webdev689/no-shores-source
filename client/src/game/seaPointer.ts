@@ -1,7 +1,9 @@
 import type { HeldMap } from '../heldmap/heldMap.ts';
 import { wheelNotches } from '../overworld/overworldInput.ts';
 import type { Sea } from './sea.ts';
-import { fightControls } from './seaCombat.ts';
+import { BINDS, keyNameOf } from '../player/input.ts';
+import { gearScreenOpen } from './gearScreen.ts';
+import { FIGHT_CONTROLS, type SeaCombat } from './seaCombat.ts';
 
 /** What the sea's pointer reaches: whether the player is at sea with no menu up, the sea, the held map (raised at the
  *  helm or on land), and whether the pointer is over the interface the game draws, whose press it is then. */
@@ -55,4 +57,93 @@ export function seaPointer(
     if (mapUp()) map()?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);
     else sea()?.zoom(wheelNotches(event.deltaY, event.deltaMode, canvas.clientHeight));
   });
+}
+
+/** Hands the keys and the pointer to the fight while one is on, ahead of the sea's own controls: its controls as
+ *  bound (the helm, the sails, the burst, the brace, the aim and fire, holding fire), a drag to look, the wheel for
+ *  the load. */
+export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat | null): void {
+  const taken = (event: Event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+  // A key let go still reaches the sea's own controls, so none is held there once the fight is over.
+  const key = (down: boolean) => (event: KeyboardEvent) => {
+    // Under the gear screen the fight takes no key pressed, they are the screen's; a key let go is still the fight's,
+    // so nothing it held stays held.
+    if (down && gearScreenOpen()) return;
+    if (!fight()?.key(keyNameOf(event), down)) return;
+    if (down) taken(event);
+    else event.preventDefault();
+  };
+  addEventListener('keydown', key(true), { capture: true });
+  addEventListener('keyup', key(false), { capture: true });
+  let held = false;
+  canvas.addEventListener(
+    'pointerdown',
+    (event) => {
+      const combat = fight();
+      if (!combat) return;
+      taken(event);
+      holdPointer(canvas, event.pointerId);
+      const button = `mouse${event.button}`;
+      const own = FIGHT_CONTROLS.find((id) => BINDS.now[id].keys.includes(button));
+      // Any other button while aiming holds fire, as the left does.
+      if (own) combat.act(own, true);
+      else if (combat.aimingNow) combat.holdFire();
+      held = true;
+    },
+    { capture: true },
+  );
+  canvas.addEventListener(
+    'pointermove',
+    (event) => {
+      const combat = fight();
+      if (!combat) return;
+      taken(event);
+      if (held) combat.drag(event.movementX, event.movementY);
+    },
+    { capture: true },
+  );
+  canvas.addEventListener(
+    'pointerup',
+    (event) => {
+      const combat = fight();
+      held = false;
+      if (!combat) return;
+      taken(event);
+      const own = FIGHT_CONTROLS.find((id) => BINDS.now[id].keys.includes(`mouse${event.button}`));
+      if (own) combat.act(own, false);
+    },
+    { capture: true },
+  );
+  // A pointer let go without its button coming up on the canvas lets the aim go unfired.
+  canvas.addEventListener('lostpointercapture', () => {
+    held = false;
+    const combat = fight();
+    if (combat?.aimingNow) combat.holdFire();
+  });
+  canvas.addEventListener(
+    'wheel',
+    (event) => {
+      const combat = fight();
+      if (!combat) return;
+      taken(event);
+      combat.wheel(event.deltaY, event.timeStamp / 1000);
+    },
+    { capture: true, passive: false },
+  );
+  canvas.addEventListener('contextmenu', (event) => {
+    if (fight()) event.preventDefault();
+  });
+}
+
+/** Holds the pointer to the canvas, so its button let go off the canvas still comes up there. A locked pointer is
+ *  held already, and the browser refuses to capture it. */
+export function holdPointer(canvas: HTMLCanvasElement, pointerId: number): void {
+  try {
+    canvas.setPointerCapture(pointerId);
+  } catch {
+    // A locked pointer, or one the browser no longer has: nothing to hold.
+  }
 }

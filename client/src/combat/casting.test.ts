@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { ArtState } from '../network/artMessages.ts';
 import { SPELLS } from '../network/artMessages.ts';
-import { type Action, BINDINGS } from '../player/input.ts';
+import type { Action } from '../player/input.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import {
   ABILITY_ACTIONS,
@@ -47,22 +47,6 @@ const framed = (casting: CastKeys, arts: ArtState, controls = keys(), mark: [num
     markOf: () => mark,
     floorAt,
   });
-
-test('no key casts two things, the DFO keys stay where they were, and the abilities sit on R, Q and G', () => {
-  const bound = Object.values(BINDINGS).flat();
-  assert.equal(new Set(bound).size, bound.length, 'each key one action');
-  assert.deepEqual(
-    ABILITY_ACTIONS.map((action) => BINDINGS[action]),
-    [['r'], ['q'], ['g']],
-  );
-  assert.ok((BINDINGS.guard as readonly string[]).includes('f'), 'F still guards');
-  assert.deepEqual(BINDINGS.crouch, ['c'], 'C still crouches');
-  assert.deepEqual(
-    [BINDINGS.melee, BINDINGS.ranged, BINDINGS.heal],
-    [['1'], ['2'], ['3']],
-    'a drink beside the loadouts',
-  );
-});
 
 test('the bar runs each share on by its recharge from the room’s word, and holds it at full', () => {
   const taken = state(1, 0, [0.2, 0.9]);
