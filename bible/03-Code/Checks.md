@@ -3,6 +3,8 @@ type: reference
 code:
   - crates/xtask/src/toolchain.rs#STEPS
   - crates/xtask/src/checks/mod.rs#run_all
+  - crates/xtask/src/checks/html.rs#check_scripts
+  - crates/xtask/src/checks/html.rs#check_pages
   - crates/xtask/src/shaders.rs#problem_in
 ---
 # Checks
@@ -34,6 +36,7 @@ order a failure is cheapest to read:
 | size | source files to 600 lines, tests to 800 | [[Small Files]] |
 | comments | comments to eight lines, with no dates, issue numbers, ticket tags or `bible/` paths; lines in fenced examples are checked too, and so are Python's docstrings and the comments after its code | [[Comments Say Why]] |
 | layers | client imports follow the declared layers; no Node modules in client code; no WebGL. It reads `import` and `export … from` in every form, backtick imports, `new URL(…, import.meta.url)` and `import.meta.glob` | [[Code Map]], [[WebGPU Only]] |
+| html | a client page's body is one canvas and its script, linking no stylesheet; no stylesheet in the client; no client script makes, styles or writes words into an element, or names one but the canvas, save the page's bridge (`main.ts`, and `canvasEvents.ts`, `pictures.ts`, `announce.ts` and `page.ts` in `ui/`) and the tests | [[The Interface Uses No HTML, Now or Later]] |
 | crates | every crate is declared, takes the workspace's lints, and depends only on the crates its rule allows, read by real package name through renames and per-platform tables; any attribute naming `unsafe_code` outside a door crate is refused | [[Code Map]] |
 | assets | no file over 1 MB; media only in `bible/Attachments/`, and no WebAssembly or ship mesh anywhere | [[Generated Files Stay Out of Git]] |
 | vault | every wikilink resolves; every `code:` path exists and holds its symbol | [[Notes Say How It Works Now]] |
