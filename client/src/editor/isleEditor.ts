@@ -3,6 +3,7 @@
 // sea round it, under the editor's orbit camera, close up or from 3 km off.
 import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { type Gpu, startGpu, TEXTURE_USAGE } from '../gpu.ts';
+import { roomWasmAt } from '../rules/combatRules.ts';
 import { ISLE_CLIMATES } from '../islands/isleModules.ts';
 import { islePacksPrefix, ISLE_MANIFEST } from '../islands/isleManifest.ts';
 import { type IsleShown, readIslePlan } from '../islands/islePlan.ts';
@@ -65,7 +66,7 @@ export async function startIsleEditor(canvas: HTMLCanvasElement, panel: HTMLElem
     told = true;
   });
   const base = import.meta.env.BASE_URL;
-  const answer = await fetch(`${base}room.wasm`);
+  const answer = await fetch(roomWasmAt(base));
   if (!answer.ok) throw new Error(`room.wasm: ${answer.status}`);
   const door = startRoomDoor(await WebAssembly.compile(await answer.arrayBuffer()));
   let queued = false;

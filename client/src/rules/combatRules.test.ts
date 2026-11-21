@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { startCombatRules } from './combatRules.ts';
-import { DRINKS_AT, FIGHTER_FLOATS, GLANCE_FLOATS, fighterView } from './fighters.ts';
+import { checkSizes, PAGE_SIZES, roomWasmAt, startCombatRules } from './combatRules.ts';
+import { DRINKS_AT, FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS, fighterView } from './fighters.ts';
+import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
 const FIGHT_HASH = '160f825ebf7a6afb';
@@ -66,7 +67,8 @@ function fingerprint(fighters: readonly Float64Array[]): string {
 test('the scripted fight through WebAssembly moves to the same fingerprint as the crate run natively', () => {
   const rules = startCombatRules(compiled);
   rules.setCourse(COURSE);
-  assert.deepEqual(rules.sizes, { fighter: FIGHTER_FLOATS, intent: 17, glance: GLANCE_FLOATS });
+  assert.deepEqual(rules.sizes, { fighter: FIGHTER_FLOATS, intent: INTENT_FLOATS, glance: GLANCE_FLOATS });
+  assert.equal(INTENT_FLOATS, 17);
   const view = [{ id: 2, glance: foeGlance() }];
   let fighter = startingPlayer();
   const fighters: Float64Array[] = [];
@@ -127,4 +129,11 @@ test('a stroke reaches as far as the combat crate says: a sword’s thrust farth
     'the chop, the slants, the sweeps, the thrust',
   );
   assert.equal(rules.strokeArc(0), 0, 'no stroke');
+});
+
+test('rules that lay a fighter, an intent or a glance out otherwise than the page are refused, and their address names the protocol', () => {
+  assert.doesNotThrow(() => checkSizes(PAGE_SIZES));
+  for (const wrong of [{ fighter: FIGHTER_FLOATS - 2 }, { intent: INTENT_FLOATS - 1 }, { glance: GLANCE_FLOATS + 1 }])
+    assert.throws(() => checkSizes({ ...PAGE_SIZES, ...wrong }), /Reload the page/, JSON.stringify(wrong));
+  assert.equal(roomWasmAt('/game/'), `/game/room.wasm?v=${PROTOCOL}`);
 });

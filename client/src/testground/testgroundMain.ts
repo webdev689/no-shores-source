@@ -25,7 +25,7 @@ import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { type GearMessage, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import { ASKS, type GearState } from '../network/gearMessages.ts';
-import { startCombatRules } from '../rules/combatRules.ts';
+import { roomWasmAt, startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import { type WorldOutput, WorldSounds } from '../combat/worldSounds.ts';
@@ -97,9 +97,7 @@ async function start(): Promise<void> {
   );
   movement.setCourse(STOOD);
   // The fight's rules and a room in the page are the room crate itself, in WebAssembly.
-  const roomModule = await WebAssembly.compile(
-    await (await fetch(`${import.meta.env.BASE_URL}room.wasm`)).arrayBuffer(),
-  );
+  const roomModule = await WebAssembly.compile(await (await fetch(roomWasmAt(import.meta.env.BASE_URL))).arrayBuffer());
   const combatRules = startCombatRules(roomModule);
   combatRules.setCourse(STOOD);
   // Each foe's name and hands are the rules' roster's; its type's dress is made once.

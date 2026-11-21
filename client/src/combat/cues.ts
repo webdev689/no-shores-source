@@ -12,6 +12,7 @@ export const EVENT = {
   perfect: 6,
   staggered: 7,
   killed: 8,
+  respawned: 9,
   feinted: 10,
   shielded: 12,
   shieldBroken: 13,
