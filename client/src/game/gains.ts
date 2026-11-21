@@ -2,7 +2,8 @@
 // faction's reputation, each Art's progress and fragments, fragments, essence and Fruit of Dagon, each island's
 // resource, the ship's materials and XP, ammunition from an Ammo box, Ammo crates, and every item, Vestige, emblem and
 // cosmetic new to them. What they spent or moved is not a gain, nor the ammunition a crate they used gave back.
-// Currency, XP, reputation and an Art's progress are short lines, as Destiny shows them over the items' rows.
+// Currency, XP, reputation and an Art's progress are short lines, as Destiny shows them over the items' rows. Prestige
+// is not a gain: it is what the armour worn is worth.
 // The feed at the right of the screen shows these as Destiny shows what is picked up.
 
 import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };
@@ -75,19 +76,19 @@ const line = (key: string, name: string, count: number, fields: Partial<Gain> = 
 const grown = (before: readonly number[] = [], after: readonly number[] = []) =>
   after.map((count, place) => count - (before[place] ?? 0));
 
-/** XP, Prestige, each faction's reputation, each Art's progress and fragments, and the ship's materials and XP. */
+/** XP, each faction's reputation, each Art's progress and fragments, and the ship's materials and XP. */
 function standingGains(before: GearState, after: GearState): Gain[] {
   const gains: Gain[] = [];
   const earned = Number(after.xp - before.xp);
   if (earned > 0) gains.push(line('xp', 'XP', earned, { glyph: 'xp', word: 'XP' }));
-  if (after.prestige > before.prestige)
-    gains.push(line('prestige', 'Prestige', after.prestige - before.prestige, { glyph: 'xp', word: 'Prestige' }));
   const [was, now] = [before.standing, after.standing];
   grown(was?.reputation, now?.reputation).forEach((count, place) => {
     const faction = FACTIONS[place];
     const art = ARTS.find((each) => each.id === faction?.art);
     if (count > 0 && faction && art)
-      gains.push(line(`rep-${place}`, `${faction.name} reputation`, count, { icon: emblemSvg(art) }));
+      gains.push(
+        line(`rep-${place}`, `${faction.name} reputation`, count, { icon: emblemSvg(art), word: 'Reputation' }),
+      );
   });
   ARTS.forEach((art, place) => {
     const [level, levelBefore] = [now?.artLevels[place] ?? 0, was?.artLevels[place] ?? 0];
@@ -101,10 +102,12 @@ function standingGains(before: GearState, after: GearState): Gain[] {
     for (const fragment of fresh)
       gains.push(gain(`fragment-${place}-${fragment.name}`, fragment.name, 1, { icon: emblemSvg(art) }));
   });
-  grown(before.ship?.stocks, after.ship?.stocks).forEach((count, place) => {
-    const material = SHIP_MATERIALS[place];
-    if (count > 0 && material) gains.push(gain(`ship-${place}`, material.name, count, { glyph: material.glyph }));
-  });
+  // A word on the gear with no ship, then one with it, gained none of its stock.
+  if (before.ship)
+    grown(before.ship.stocks, after.ship?.stocks).forEach((count, place) => {
+      const material = SHIP_MATERIALS[place];
+      if (count > 0 && material) gains.push(gain(`ship-${place}`, material.name, count, { glyph: material.glyph }));
+    });
   const shipXp = Number((after.ship?.xp ?? 0n) - (before.ship?.xp ?? 0n));
   if (before.ship && shipXp > 0) gains.push(line('ship-xp', 'Ship XP', shipXp, { glyph: 'xp', word: 'Ship XP' }));
   return gains;
@@ -174,30 +177,5 @@ export function gainsOf(before: GearState, after: GearState): Gain[] {
     if (!worn.has(emblem)) gains.push(gain(`emblem-${emblem}`, EMBLEMS[emblem]?.name ?? 'Emblem', 1, { emblem }));
   const owned = new Set(before.cosmetics ?? []);
   for (const number of after.cosmetics ?? []) if (!owned.has(number)) gains.push(...cosmeticGain(number));
-  return gains;
-}
-
-/** What a piece gathered at sea held, as the sea tells it (crates/room/src/harbour.rs, `HELD`): its Vestige, an Ammo
- *  box and an Ammo crate, the ship's materials taken and the module taken. */
-export function heldGains(numbers: readonly number[]): Gain[] {
-  const [, , , vestige = 0, box = 0, crate = 0] = numbers;
-  const [moduleTaken = 0, kind = 0, rarity = 0, name = 0] = numbers.slice(10);
-  const gains: Gain[] = [];
-  if (vestige > 0) {
-    const named = `${RARITIES[vestige - 1]?.name ?? ''} Vestige`;
-    gains.push(gain(`vestige-${vestige - 1}`, named, 1, { rarity: vestige - 1, glyph: 'vestige' }));
-  }
-  if (box === 1) gains.push(gain('ammo-box', 'Ammo box', 1, { glyph: 'ammo-box' }));
-  if (crate === 1) gains.push(gain('ammo-crate', 'Ammo crate', 1, { glyph: 'ammo-crate' }));
-  numbers.slice(6, 10).forEach((count, place) => {
-    const material = SHIP_MATERIALS[place];
-    if (count > 0 && material) gains.push(gain(`ship-${place}`, material.name, count, { glyph: material.glyph }));
-  });
-  if (moduleTaken === 1) {
-    const module = { named: null, kind, rarity, name };
-    gains.push(
-      gain(`module-${kind}-${rarity}-${name}`, gearName(module), 1, { rarity, glyph: moduleGlyph(kind) ?? 'item' }),
-    );
-  }
   return gains;
 }

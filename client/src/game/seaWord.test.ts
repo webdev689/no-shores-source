@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { portCities } from './worldData.ts';
-import { heldGains } from './gains.ts';
 import { SeaWord, linesOf, washedUpWords } from './seaWord.ts';
 
 const FACTS = { engageM: 750, holdReachM: 1_642.8, repairReachM: 3_000, shipNames: [] };
@@ -33,26 +32,14 @@ test('the sea’s word becomes the player’s lines: washing up, a piece that ga
   ]);
 });
 
-test('what a piece held at sea goes to the feed, and is not said again', () => {
-  const held = [21, 1, 7, 5, 1, 0, 4, 0, 2, 0, 1, 25, 2, 0];
-  assert.deepEqual(linesOf([held], [], { kinds: new Map(), ports: [], nameOf: () => null }), []);
-  const gains = heldGains(held);
-  assert.deepEqual(
-    gains.map((gain) => [gain.key, gain.name, gain.count]),
-    [
-      ['vestige-4', 'Atheric Vestige', 1],
-      ['ammo-box', 'Ammo box', 1],
-      ['ship-0', 'Timber', 4],
-      ['ship-2', 'Iron', 2],
-      ['module-25-2-0', gains[4]?.name, 1],
-    ],
-  );
-  assert.ok(gains[4]?.glyph !== 'item' && gains[4]?.rarity === 2, 'the module by its own glyph and rarity');
-  const word = new SeaWord([], FACTS);
-  const room = { flotsam: [], takeTold: () => ({ naval: [], told: [held] }), shipNamed: () => null };
-  word.step(room as unknown as Parameters<SeaWord['step']>[0]);
-  assert.equal(word.takeGained().length, 5);
-  assert.equal(word.takeGained().length, 0, 'taken once');
+test('a piece gathered that held anything is left to the feed, which tells it from the gear', () => {
+  const words = { kinds: new Map(), ports: [], nameOf: () => null };
+  for (const held of [
+    [21, 1, 7, 5, 0, 0, 0, 0, 0, 0, 0],
+    [21, 1, 7, 0, 0, 0, 4, 0, 0, 0, 0],
+    [21, 1, 7, 0, 0, 0, 0, 0, 0, 0, 1],
+  ])
+    assert.deepEqual(linesOf([held], [], words), [], `${held.join(',')}`);
 });
 
 test('the ship’s repair reads its time left, whole, or how to have it, by the rules’ reach', () => {

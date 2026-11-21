@@ -190,10 +190,7 @@ impl Sea {
             let mut numbers = vec![HELD, tick, f64::from(id), rarity, parts[0], parts[1]];
             let taken = held.salvage;
             numbers.extend(ShipMaterial::ALL.map(|material| f64::from(taken.materials.of(material))));
-            let module = taken.module.and_then(|item| self.harbour.characters.get(&player)?.item(item));
-            numbers.extend(module.map_or([0.0; 4], |item| {
-                [1.0, f64::from(item.kind as u8), f64::from(item.rarity as u8), f64::from(item.name)]
-            }));
+            numbers.push(f64::from(u8::from(taken.module.is_some())));
             self.harbour.told.push((player, numbers));
         }
     }

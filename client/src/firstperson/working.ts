@@ -18,13 +18,14 @@ export const TOOL_OF: Readonly<Record<string, Tool>> = {
 
 /** Each tool's stroke as the forge rendered it: its record, its frames, and its canvas on the design screen (x, y,
  *  width, height; its corner off the screen where it runs past), from the forge's `frames.json`.
- *  shortcut: copied from a render of fptools.py, whose table is not published with its frames; publish it beside
- *  them and read it if a tool is drawn again. */
+ *  shortcut: copied from renders of fptools.py (the gather hand's with every armour set, as published, which widens
+ *  its canvas), whose table is not published with its frames; publish it beside them and read it if a tool is drawn
+ *  again. */
 export const STROKES: Readonly<Record<Tool, { record: string; frames: number; rect: readonly number[] }>> = {
   pickaxe: { record: 'StrikeDown', frames: 5, rect: [164, -64, 188, 328] },
   woodaxe: { record: 'StrikeDownRight', frames: 5, rect: [-47, 66, 295, 198] },
   sickle: { record: 'Reap', frames: 5, rect: [178, 122, 157, 142] },
-  gather: { record: 'Reach', frames: 5, rect: [-57, 88, 336, 176] },
+  gather: { record: 'Reach', frames: 5, rect: [-57, 84, 339, 180] },
 };
 
 /** How long one stroke takes, seconds. */

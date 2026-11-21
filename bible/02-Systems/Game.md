@@ -197,19 +197,21 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   ways; the walk's frames go at the pace they stroll, each in a step of its own. The floor under each is found again
   only once they have walked a step. The fight never takes them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
-  player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
-  patrol, so a route can be planned through them. At a patrol's resource places each node also stands as the
-  forge's picture of its kind (`nodeCards`, [[Sprite Forge]]): an outcrop of ore, a patch of herbs, felled timber or
-  piled salvage, 3.2 m across, and once gathered as it looks spent until its turn comes round. Each drop lying for them stands as its own picture under its
-  rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
+  player. Each resource node stands as the forge's picture of its kind (`nodeCards`, [[Sprite Forge]]), 3.2 m across,
+  before its place's dressing: an outcrop of ore, a patch of herbs, felled timber or piled salvage, while the room
+  stands it for the player, and as it looks spent once they gathered it, until its turn comes round; a place resting
+  its turn shows only its dressing. The picture alone marks a node: no ring, no beam. Each drop lying for them stands
+  as its own picture under its rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
-  ([[Interface]], "The social space's counters"); within 3.5 m of a node it reads "Hold to gather" and its
-  resource, and held it asks the room to gather it (`GatherHold`): a bar under the deed fills over the two seconds
+  ([[Interface]], "The social space's counters"); within 2.5 m of a node it reads "Hold to gather" and its
+  resource, and held it asks the room to gather it (`GatherHold`): a ring round the keycap fills over the two seconds
   with the menus' build-up sound, the figure works the node, and in first person the hands work it with its tool
   (`firstperson/working.ts`: the Pick-Axe on ore, the Wood-Axe on timber, the Sickle on herbs, the bare hand in
-  salvage). Letting go of E asks the room to stop; a step or a blow stops it there. Neither is offered while a
-  menu is up or the player lies dead, past the edge or felled by a foe.
+  salvage, in the gauntlets worn). Letting go of E before the ring is full asks the room to stop, as does leaving
+  or the page losing its focus; a step or a blow stops it there, and a refusal ends it. A node is not offered on
+  horseback, nor while its resource is full. Neither is offered while a menu is up or the player lies dead, past the
+  edge or felled by a foe.
 
 ## The edge
 

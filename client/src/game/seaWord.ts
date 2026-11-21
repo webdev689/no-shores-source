@@ -7,7 +7,6 @@ import { TOLD } from '../network/seaHarbour.ts';
 import { capital } from '../player/gear.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
 import { shipName } from '../ships/shipBars.ts';
-import { type Gain, heldGains } from './gains.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import type { Kept } from './shipPanel.ts';
 import type { PortCity } from './worldData.ts';
@@ -71,8 +70,8 @@ export function linesOf(told: readonly (readonly number[])[], naval: readonly Na
       const isle = (numbers[4] ?? 0) > 0;
       const place = isle ? 'an island you found' : (words.ports[first] ?? 'the nearest port city');
       lines.push(`${why}: ${washedUpWords(place, isle).replace(/^You/, 'you')}`);
-    } else if (code === TOLD.HELD && heldGains(numbers).length === 0) {
-      // What it held goes to the feed with every other gain; a piece that gave nothing is said here.
+    } else if (code === TOLD.HELD && numbers.slice(3).every((held) => held === 0)) {
+      // What a piece held the feed tells, from the gear; one that gave nothing is said here.
       lines.push(`Gathered a ${words.kinds.get(first) ?? 'crate'}: nothing you had room for.`);
     } else if (code === TOLD.JOINED) {
       lines.push(first > 0 ? `Player ${first} joined the fight.` : `The ${shipName(second, fourth)} joined the fight.`);
@@ -98,8 +97,6 @@ export class SeaWord {
   private washed: number | null = null;
   private washedOn: number | null = null;
   private said: { readonly line: string; readonly at: number }[] = [];
-  /** What the pieces gathered since the feed last took them held. */
-  private gained: Gain[] = [];
 
   /** `ports` the port cities in the sea's order; `facts` the sea's rules as its waters' table gives them. */
   constructor(ports: readonly PortCity[], facts: SeaFacts) {
@@ -112,20 +109,12 @@ export class SeaWord {
     const { naval, told } = room.takeTold();
     for (const event of naval) if (event.kind === 'Flotsam') this.kinds.set(event.id, event.kind_of);
     for (const numbers of told) {
-      if (numbers[0] === TOLD.HELD) this.gained.push(...heldGains(numbers));
       if (numbers[0] !== TOLD.WASHED_UP) continue;
       const isle = numbers[4] ?? 0;
       [this.washed, this.washedOn] = isle > 0 ? [null, isle] : [numbers[2] ?? null, null];
     }
     const ports = this.ports.map((port) => port.name);
     return linesOf(told, naval, { kinds: this.kinds, ports, nameOf: (ship) => room.shipNamed(ship) });
-  }
-
-  /** What the pieces gathered since this was last asked held, for the feed. */
-  takeGained(): Gain[] {
-    const gained = this.gained;
-    this.gained = [];
-    return gained;
   }
 
   /** The notices of the room's word standing at `now`, the newest last: each line for `LINE_S`. */

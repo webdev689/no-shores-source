@@ -278,7 +278,7 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
 - **The stall** stands south-east of the start, ringed in brass on the ground: within 4 m of it a Vestige opens and
   the vault is reached, as in a social space.
 - **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
-  Cairnwatch's Cairn Iron; within 3.5 m one is gathered by holding E two seconds, and dims once spent.
+  Cairnwatch's Cairn Iron; within 2.5 m one is gathered two seconds after its panel's press, the player standing still, and dims once spent.
 - **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and stand as their own
   pictures under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them.
 - **The hands** hold what the gear wears: the room takes no other arms. So the player's own hands in the dress

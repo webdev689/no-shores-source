@@ -31,7 +31,6 @@ function feed() {
   };
   return { rows, shown, set: (next: GearState) => (gear = next), wait: (span: number) => (now += span) };
 }
-const feedWith = feed;
 
 test('what a room first says, and what changes in the ten seconds after, is not a gain', () => {
   const { rows, set, wait } = feed();
@@ -55,7 +54,7 @@ test('gains show a row each, a gain like one shown adds to its row, and the rows
 });
 
 test("currency, XP and reputation stand as short lines over the items' rows, and the sea's gains are told in", () => {
-  const { set, wait, shown } = feedWith();
+  const { set, wait, shown } = feed();
   shown.node(sizes, VIEW, false);
   wait(11_000);
   const base = sampleGear();
@@ -113,4 +112,19 @@ test('the company shows each other member’s nameplate and the first invite, la
   const plates = laid.filter((each) => each.node.width === 240);
   assert.equal(plates.length, 1, 'one plate: the player’s own is left out');
   assert.deepEqual([plates[0]?.box.width, plates[0]?.box.height], [240, 48]);
+});
+
+test("short lines and rows are capped apart: a kill's currency, XP and reputation never push its drops out", () => {
+  const { rows, shown, wait } = feed();
+  rows();
+  const gain = (key: string, compact: boolean) => ({
+    ...{ key, name: key, count: 1, rarity: null, glyph: 'aurem' as const, tint: 0 },
+    ...{ item: null, emblem: null, icon: null, compact, word: null },
+  });
+  shown.tell(['aurem', 'xp', 'rep-0', 'art-0', 'ship-xp'].map((key) => gain(key, true)));
+  shown.tell([0, 1, 2, 3, 4, 5].map((rarity) => gain(`vestige-${rarity}`, false)));
+  assert.equal(rows(), 11, 'five lines over six rows');
+  shown.tell([gain('shapes', true)]);
+  wait(500);
+  assert.equal(rows(), 11, 'a sixth line sends the oldest line, not a row, once it has faded');
 });

@@ -31,12 +31,13 @@ import {
 import type { GearHere } from './gearScreen.ts';
 import { chime } from './uiSounds.ts';
 
-/** How long a row stays, how long it takes to come in and to leave, and how many stand at once, the oldest leaving
- *  first. */
+/** How long a row stays, how long it takes to come in and to leave, and how many rows and short lines stand at once,
+ *  each the oldest leaving first: a kill's currency, XP and reputation never push its drops out. */
 const STAY_MS = 4500;
 const ENTER_MS = 220;
 const LEAVE_MS = 400;
 const ROWS_MOST = 6;
+const LINES_MOST = 5;
 /** How long after a room first gives the player's gear its changes are not gains: a room holds a starting character
  *  until the player's own is claimed, a claim waiting on another room for up to some seconds. */
 const SETTLE_MS = 10_000;
@@ -110,9 +111,10 @@ export class AcquiredFeed {
       return;
     }
     this.rows.push({ gain, key: gain.key, total: gain.count, since: now, bumped: -Infinity, leaves: now + STAY_MS });
-    // The oldest leaves once too many stand.
-    const staying = this.rows.filter((row) => row.leaves > now);
-    for (const old of staying.slice(0, Math.max(0, staying.length - ROWS_MOST))) old.leaves = Math.min(old.leaves, now);
+    // The oldest of its kind leaves once too many stand.
+    const staying = this.rows.filter((row) => row.leaves > now && row.gain.compact === gain.compact);
+    const most = gain.compact ? LINES_MOST : ROWS_MOST;
+    for (const old of staying.slice(0, Math.max(0, staying.length - most))) old.leaves = Math.min(old.leaves, now);
   }
 
   /** A gain's picture, `size` pixels: the item's own once drawn, an emblem's sign, a mark of its own, or its glyph. */

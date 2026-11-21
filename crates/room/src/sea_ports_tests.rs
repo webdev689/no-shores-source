@@ -185,7 +185,7 @@ fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_it_and_their_
     }
     assert_eq!(held.len(), 3, "each piece told: {held:?}");
     let materials = |numbers: &[f64]| numbers[6..10].iter().sum::<f64>();
-    assert!(held.iter().all(|(_, numbers)| numbers.len() == 14 && materials(numbers) > 0.0), "{held:?}");
+    assert!(held.iter().all(|(_, numbers)| numbers.len() == 11 && materials(numbers) > 0.0), "{held:?}");
     let stock = sea.harbour.characters[&player].materials.ship;
     let told: f64 = held.iter().map(|(_, numbers)| materials(numbers)).sum();
     assert_eq!(told, f64::from(stock.timber + stock.canvas + stock.iron + stock.heartwood), "what it took, told");

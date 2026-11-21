@@ -257,12 +257,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   let switching = Promise.resolve();
   const enterSea = async (seas: Difficulty) => {
     seaSeas = seas;
-    const level = (['normal', 'elite', 'abyss'] as const).indexOf(seas);
+    const [level, ports] = [(['normal', 'elite', 'abyss'] as const).indexOf(seas), portsOf(world.cities)];
     await playing.sea?.enterRoom(
       rooms
-        ? async (snapshot) => RoomConnection.open(rooms(seaRoomName(seas)), snapshot, undefined, await session())
-        : async (snapshot) =>
-            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities), level),
+        ? async (snapshot, gear) => RoomConnection.open(rooms(seaRoomName(seas)), snapshot, gear, await session())
+        : async (snapshot, gear) =>
+            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, ports, level, gear),
     );
   };
 
@@ -509,8 +509,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);
   const fighting = () => footView.shown.fight;
   const inStory = () => playing.flow.mode === 'story';
-  const gathered = () => playing.seaWord?.takeGained() ?? [];
-  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, inStory, gathered));
+  const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
+  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, inStory, fed));
   addEventListener('keyup', (event) => {
     const key = event.key.toLowerCase();
     if (playing.flow.mode === 'story') story?.key(key, false);
