@@ -5,7 +5,7 @@
 import { STORE } from '../city/eventProps.ts';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
 import type { Banner } from '../combat/publicBanner.ts';
-import type { DevPlay } from '../network/localRoom.ts';
+import type { PlayAsked } from '../network/publicBots.ts';
 import type { PlaceMark } from '../plus/compass.ts';
 import type { Quest, Step } from './tasks.ts';
 
@@ -181,7 +181,7 @@ export function askedPublic(search: string): 'fissure' | 'raid' | null {
 
 /** The dev address's play of a page room's events: `&speed=<n>` room ticks a drawn frame, `&bots=<n>` scripted players,
  *  `&heroic=0` to leave the heroic task alone; null when it asks for neither. */
-export function askedPlay(search: string): DevPlay | null {
+export function askedPlay(search: string): PlayAsked | null {
   const asked = new URLSearchParams(search);
   const whole = (name: string) => Math.max(0, Math.min(64, Math.floor(Number(asked.get(name)) || 0)));
   const [speed, bots] = [whole('speed'), whole('bots')];

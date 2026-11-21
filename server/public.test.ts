@@ -4,7 +4,7 @@ import { test } from 'node:test';
 // The browser's side of the messages, so this run sends the room exactly the bytes a browser sends.
 import { inputBytes, readFromRoom } from '../client/src/network/messages.ts';
 import { LocalRoom } from '../client/src/network/localRoom.ts';
-import { decide, type Read, readOf, seasoned } from '../client/src/network/publicBots.ts';
+import { BotPlay, decide, type Read, readOf, seasoned } from '../client/src/network/publicBots.ts';
 import { startRoomDoor } from './roomDoor.ts';
 
 const built = (path: string, how: string) =>
@@ -137,7 +137,7 @@ function playInPage(minute: number, heroic: boolean): readonly number[] {
       const event = snapshot.public;
       if (event && event.phase >= 2) ended ??= [event.kind, event.phase, event.heroic];
     },
-    { minuteShift: minute - Math.floor(Date.now() / 60_000), play: { speed: 60, bots: 2, heroic } },
+    { minuteShift: minute - Math.floor(Date.now() / 60_000), play: new BotPlay({ speed: 60, bots: 2, heroic }) },
   );
   for (let frame = 0; frame * 60 < MOST_TICKS && !ended; frame++) room.pump(0);
   return ended ?? [0, 0, 0];

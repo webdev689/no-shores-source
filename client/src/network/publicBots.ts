@@ -1,3 +1,6 @@
+import type { RoomDoor } from '../../../server/roomDoor.ts';
+import type { RoomPlay } from './localRoom.ts';
+import { inputBytes } from './messages.ts';
 import type { PublicEvent } from './publicMessages.ts';
 import type { Snapshot } from './roomConnection.ts';
 
@@ -13,6 +16,8 @@ const NEAR_AXIS = 0.4142135623730951;
 /** The level a scripted player plays at, and its gear's rarity, as the rules' test gives them. */
 const SEASONED = 6;
 const XP_STEP = 1_000;
+/** A sword in the main hand, by combat's arms code: the bots' arms. */
+const SWORD = 2;
 
 type Point = readonly [number, number];
 /** What a scripted player reads of a snapshot. */
@@ -114,4 +119,51 @@ export function seasoned(kept: string): string {
   character.xp = (XP_STEP * (SEASONED - 1) * SEASONED) / 2;
   for (const [item] of Object.values(character.items)) [item.level, item.rarity] = [SEASONED, 'rare'];
   return JSON.stringify(character);
+}
+
+/** What a dev page asks of its room's play: room ticks a drawn frame (0 for the page's clock), scripted players, and
+ *  whether they take on the heroic task. */
+export interface PlayAsked {
+  readonly speed: number;
+  readonly bots: number;
+  readonly heroic: boolean;
+}
+
+/** A dev page's play of its room's public events (`LocalRoom`'s `RoomPlay`): its bots joined and raised as the rules'
+ *  test raises its players (the page's own player too, so it lives through the beats it stands at), their inputs each
+ *  tick, and `until`, a beat a picture script waits for: met by a tick's snapshot, the frame's ticks stop there. */
+export class BotPlay implements RoomPlay {
+  readonly speed: number;
+  until: ((read: Read) => boolean) | null = null;
+  read: Read | null = null;
+  private readonly heroic: boolean;
+  private readonly count: number;
+  private bots: readonly number[] = [];
+  private ticks = 0;
+
+  constructor({ speed, bots, heroic }: PlayAsked) {
+    [this.speed, this.count, this.heroic] = [speed, bots, heroic];
+  }
+
+  open(door: RoomDoor, player: number): void {
+    this.bots = Array.from({ length: this.count }, () => door.join());
+    for (const each of [player, ...this.bots]) door.restoreCharacter(each, seasoned(door.character(each) ?? ''));
+  }
+
+  inputs(door: RoomDoor): void {
+    this.ticks += 1;
+    for (const bot of this.bots) {
+      const intent = decide(this.read, bot, this.ticks, this.heroic);
+      const look = { anim: '', frame: 0, facing: 0 };
+      door.input(bot, inputBytes(this.ticks, { intent, look, arms: SWORD, seen: BigInt(this.ticks - 1) }));
+    }
+  }
+
+  heard(snapshot: Snapshot): boolean {
+    if (this.bots.length === 0 && !this.until) return false;
+    this.read = readOf(snapshot);
+    if (!this.until?.(this.read)) return false;
+    this.until = null;
+    return true;
+  }
 }
