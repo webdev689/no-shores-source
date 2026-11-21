@@ -26,8 +26,13 @@ fn crystal_colour(normal: vec3f, from_eye: vec3f, glow: f32, sun: f32) -> vec3f 
   let facing = normalize(normal);
   let toward_eye = -normalize(from_eye);
   let direct = max(dot(facing, sky_state.key.xyz), 0.0) * sun;
-  // Red in the sun, purple in its shadows; the deep crystal at a shard's root darker than its lit point.
-  let body = mix(${vec(CRYSTAL.shadow)}, ${vec(CRYSTAL.red)}, clamp(direct * 1.8, 0.0, 1.0)) * mix(0.4, 1.0, sqrt(glow));
+  // Red in the sun, purple in its shadows; the deep crystal at a shard's root darker than its lit point. Under a
+  // cover (rain, overcast) the light comes from all round, no face is in shadow, and the whole of it reads red.
+  let luma = vec3f(0.2126, 0.7152, 0.0722);
+  let around = dot(sky_ambient(facing), luma);
+  let diffuse = around / max(around + 0.65 * dot(sky_state.key_light.rgb, luma), 1e-4);
+  let lit = clamp(direct * 1.8 + smoothstep(0.4, 0.75, diffuse), 0.0, 1.0);
+  let body = mix(${vec(CRYSTAL.shadow)}, ${vec(CRYSTAL.red)}, lit) * mix(0.4, 1.0, sqrt(glow));
   let light = sky_ambient(facing) + sky_direct(facing, sun) * 1.6 + sky_lamps(from_eye, facing);
   // Each facet is flat: one turned to mirror the sun to the eye flashes.
   let glint = pow(max(dot(reflect(-toward_eye, facing), sky_state.key.xyz), 0.0), 40.0) * sun;

@@ -130,7 +130,7 @@ export class PublicView {
     const chests = this.chests(drops, clock);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));
     const age = this.clock.ager(clock);
-    const props = eventProps(event && { phase: event.phase, marks: marksHeld }, chests, age, clock);
+    const props = eventProps(event && { phase: event.phase, ticksLeft: event.ticksLeft, marks: marksHeld }, chests, age, clock);
     this.clock.done();
     const ownShard = events.some((each) => each.kind === EVENT.shardTaken && each.striker === bodies.player);
     const chime = events.some((each) => each.kind === EVENT.heroicMissed)

@@ -33,29 +33,33 @@ test('every event prop is a module the manifest names', () => {
   for (const name of PROP_MODULES) assert.ok(moduleNumber(name) >= 0, name);
 });
 
-test('the fissure opens as far as its health says, and once the event is over its scar rises as it closes', () => {
-  const opening = eventProps({ phase: PHASE.running, marks: [mark(MARK.fissure, { health: 0.5 })] }, [], aged(0), 0);
+test('the fissure tears open as its event begins, narrows as its health says but never shuts while it runs, and shuts as its scar rises', () => {
+  const COUNTDOWN = 8 * 3_600;
+  const RESULT = 12 * 60;
+  const fissure = (phase: number, health: number, ticksLeft: number) =>
+    eventProps({ phase, ticksLeft, marks: [mark(MARK.fissure, { health })] }, [], aged(0), 0).map((prop) => [
+      prop.module,
+      prop.rise,
+      prop.glow,
+    ]);
+  assert.deepEqual(fissure(PHASE.running, 1, COUNTDOWN), [], 'a line as it begins');
+  assert.equal(fissure(PHASE.running, 1, COUNTDOWN - MOTION.fissureOpenS * 30)[0]?.[1], 0.5, 'tearing open');
+  assert.equal(fissure(PHASE.running, 0.5, 600)[0]?.[1], 0.5, 'as open as its health, a page come mid-event too');
+  assert.equal(fissure(PHASE.running, 0, 600)[0]?.[1], MOTION.fissureLeastOpen, 'never shut while it runs');
+  const shutting = fissure(PHASE.won, 0, RESULT - MOTION.fissureShutS * 30);
   assert.deepEqual(
-    opening.map((prop) => [prop.module, prop.rise]),
-    [['lattice-fissure', 0.5]],
+    shutting.map(([module, rise]) => [module, rise]),
+    [
+      ['lattice-fissure', MOTION.fissureLeastOpen / 2],
+      ['lattice-fissure-sealed', 0.5],
+    ],
   );
-  const closing = eventProps({ phase: PHASE.won, marks: [mark(MARK.fissure, { health: 0.2 })] }, [], aged(0), 0);
-  assert.deepEqual(
-    closing.map((prop) => prop.module),
-    ['lattice-fissure', 'lattice-fissure-sealed'],
-  );
-  assert.ok((closing[1]?.rise ?? 0) > 0.8, 'the scar has nearly risen');
-  const shut = eventProps({ phase: PHASE.won, marks: [mark(MARK.fissure, { health: 0 })] }, [], aged(0), 0);
-  assert.deepEqual(
-    shut.map((prop) => [prop.module, prop.rise]),
-    [['lattice-fissure-sealed', 1]],
-  );
-  assert.equal(shut[0]?.glow, 0, "the scar's glow has died with the crack");
+  assert.deepEqual(fissure(PHASE.failed, 0, 0), [['lattice-fissure-sealed', 1, 0]], "shut, the scar's glow died");
 });
 
 test('the growth rises over its time, stands, and is gone once it has sunk', () => {
   const growth = (state: number, seconds: number) =>
-    eventProps({ phase: PHASE.running, marks: [mark(MARK.growth, { state })] }, [], aged(seconds), 0);
+    eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [mark(MARK.growth, { state })] }, [], aged(seconds), 0);
   assert.equal(growth(GROWTH.rising, MOTION.growthRiseS / 2)[0]?.rise, 0.5);
   assert.equal(growth(GROWTH.standing, 99)[0]?.rise, 1);
   assert.deepEqual(growth(GROWTH.sinking, MOTION.growthSinkS), []);
@@ -64,7 +68,7 @@ test('the growth rises over its time, stands, and is gone once it has sunk', () 
 
 test('a store stands as one of three stacks by its id, and plundered once plundered', () => {
   const store = (id: number, state: number) =>
-    eventProps({ phase: PHASE.running, marks: [mark(MARK.store, { id, state })] }, [], aged(0), 0)[0]?.module;
+    eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [mark(MARK.store, { id, state })] }, [], aged(0), 0)[0]?.module;
   assert.equal(store(3, STORE.whole), 'tithe-stores-a');
   assert.equal(store(4, STORE.whole), 'tithe-stores-b');
   assert.equal(store(5, STORE.whole), 'tithe-stores-c');
@@ -72,10 +76,10 @@ test('a store stands as one of three stacks by its id, and plundered once plunde
 });
 
 test('a carried shard is held at the hand, and a banner is driven in over its time', () => {
-  const [carried] = eventProps({ phase: PHASE.running, marks: [mark(MARK.carried)] }, [], aged(0), 0);
+  const [carried] = eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [mark(MARK.carried)] }, [], aged(0), 0);
   assert.equal(carried?.at[2], 30 + MOTION.handM);
   assert.equal(carried?.scale, MOTION.carriedScale);
-  const [banner] = eventProps({ phase: PHASE.running, marks: [mark(MARK.banner)] }, [], aged(0), 0);
+  const [banner] = eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [mark(MARK.banner)] }, [], aged(0), 0);
   assert.equal(banner?.rise, 0);
 });
 
@@ -113,8 +117,8 @@ test('the state clock ages a mark from when its state began, and forgets a mark 
 });
 
 test('the crystal lights lamps along the fissure, and a chest only once open', () => {
-  const fissure = eventProps({ phase: PHASE.running, marks: [mark(MARK.fissure)] }, [], aged(0), 0);
-  assert.equal(propLamps(fissure).length, 3);
+  const fissure = eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [mark(MARK.fissure)] }, [], aged(99), 0);
+  assert.equal(propLamps(fissure).length, 4);
   assert.equal(propLamps(eventProps(null, [{ id: 1, at: [0, 0, 0], tier: 1, opened: null }], aged(0), 0)).length, 0);
   assert.equal(propLamps(eventProps(null, [{ id: 1, at: [0, 0, 0], tier: 1, opened: 1 }], aged(0), 0)).length, 1);
 });

@@ -331,7 +331,8 @@ export class FoeFigures {
     return { changed: true, changing: through < 1 ? through : null };
   }
 
-  /** Each foe as the display marks it: its type's name and faction from the roster, where its figure is drawn. */
+  /** Each foe as the display marks it: its own name (a public event's Warden, Marrow or growth) or else its type's, and
+   *  its faction from the roster, where its figure is drawn. */
   marked(fight: Fighting): MarkedFoe[] {
     return [...fight.foes.values()].map((kept) => {
       const figure = this.figures.get(kept.id);
@@ -339,7 +340,7 @@ export class FoeFigures {
       const type = shownType(this.roster, kept);
       return {
         ...kept,
-        name: type?.name ?? 'Foe',
+        name: kept.name || (type?.name ?? 'Foe'),
         faction: type?.factionName ?? '',
         factionNumber: kept.faction || (type?.faction ?? 0),
         view,

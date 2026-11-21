@@ -1,7 +1,11 @@
 import { type CourseBlock, type CourseNode, type RoomDoor, startRoomDoor } from '../../../server/roomDoor.ts';
 import type { ArtState } from './artMessages.ts';
-import { readFromRoom } from './messages.ts';
+import { inputBytes, readFromRoom } from './messages.ts';
+import { decide, type Read, readOf, seasoned } from './publicBots.ts';
 import type { GearMessage, RoomLink, Snapshot } from './roomConnection.ts';
+
+/** A sword in the main hand, by combat's arms code: the bots' arms. */
+const SWORD = 2;
 
 /** A course's stall, where a social space's asks are answered, and its resource nodes. */
 export interface Furnishing {
@@ -11,6 +15,16 @@ export interface Furnishing {
 
 /** A room in the page itself, for playing alone: the same room crate the servers run, in its own WebAssembly, ticked
  *  by the page's clock, its snapshots handed on as a server's would be. */
+/** A dev page's play of its own room's public events (`&speed=`, `&bots=`, `&heroic=0`), never a built page's. */
+export interface DevPlay {
+  /** Room ticks a drawn frame, 0 for the page's clock. */
+  readonly speed: number;
+  /** Scripted players joined to the room, playing its events as the rules' test plays them (`publicBots.ts`). */
+  readonly bots: number;
+  /** Whether the bots take on the heroic task. */
+  readonly heroic: boolean;
+}
+
 export class LocalRoom implements RoomLink {
   private readonly door: RoomDoor;
   private readonly snapshot: (snapshot: Snapshot) => void;
@@ -33,12 +47,21 @@ export class LocalRoom implements RoomLink {
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
   arts: ArtState | null = null;
+  /** Room ticks a drawn frame (`DevPlay.speed`): 0 ticks by the page's clock. A dev page's pictures change it. */
+  speed = 0;
+  /** A dev page's beat to stop at: once a tick's snapshot meets it, the frame's ticks stop and `speed` drops to 1. */
+  until: ((read: Read) => boolean) | null = null;
+  private readonly bots: readonly number[] = [];
+  private readonly heroic: boolean = true;
+  private ticks = 0;
+  private read: Read | null = null;
 
   private constructor(
     door: RoomDoor,
     snapshot: (snapshot: Snapshot) => void,
     gear: (gear: GearMessage) => void,
     minuteShift = 0,
+    play: DevPlay | null = null,
   ) {
     this.door = door;
     this.snapshot = snapshot;
@@ -48,6 +71,13 @@ export class LocalRoom implements RoomLink {
     this.player = door.join();
     const welcome = readFromRoom(door.joined(this.player));
     this.epoch = welcome?.kind === 'joined' ? welcome.epoch : 0;
+    if (play) {
+      this.speed = play.speed;
+      this.heroic = play.heroic;
+      this.bots = Array.from({ length: play.bots }, () => door.join());
+      // The page's own player too, so it lives through the beats it stands at.
+      for (const each of [this.player, ...this.bots]) door.restoreCharacter(each, seasoned(door.character(each) ?? ''));
+    }
   }
 
   /** Tells the room the world's minute whenever it has turned, as the servers' rooms are told it. */
@@ -100,13 +130,14 @@ export class LocalRoom implements RoomLink {
       foeAsks = false,
       gear = () => undefined,
       minuteShift = 0,
-    }: { foeAsks?: boolean; gear?: (gear: GearMessage) => void; minuteShift?: number } = {},
+      play = null,
+    }: { foeAsks?: boolean; gear?: (gear: GearMessage) => void; minuteShift?: number; play?: DevPlay | null } = {},
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
     door.epoch(Date.now());
     if (foeAsks) door.takeFoeAsks();
-    return new LocalRoom(door, snapshot, gear, minuteShift);
+    return new LocalRoom(door, snapshot, gear, minuteShift, play);
   }
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
@@ -162,12 +193,20 @@ export class LocalRoom implements RoomLink {
     this.door.takeBlock(block);
   }
 
-  /** Ticks the room as many whole ticks as `seconds` and what was carried make, handing on each tick's snapshot. */
+  /** Ticks the room as many whole ticks as `seconds` and what was carried make (or `speed` ticks), handing on each
+   *  tick's snapshot. */
   pump(seconds: number): void {
     this.keepMinute();
-    this.carry += seconds;
+    // Half a tick over, so rounding never takes one of `speed`'s ticks away.
+    this.carry = this.speed > 0 ? (this.speed + 0.5) * this.door.tickSeconds : this.carry + seconds;
     while (this.carry >= this.door.tickSeconds) {
       this.carry -= this.door.tickSeconds;
+      this.ticks += 1;
+      for (const bot of this.bots) {
+        const intent = decide(this.read, bot, this.ticks, this.heroic);
+        const look = { anim: '', frame: 0, facing: 0 };
+        this.door.input(bot, inputBytes(this.ticks, { intent, look, arms: SWORD, seen: BigInt(this.ticks - 1) }));
+      }
       this.door.tick();
       // The player's gear before the snapshot, as the servers send it, so a change is predicted from the snapshot on.
       const gear = readFromRoom(this.door.gear(this.player));
@@ -178,7 +217,13 @@ export class LocalRoom implements RoomLink {
         this.gear(gear);
       }
       const message = readFromRoom(this.door.snapshot());
-      if (message?.kind === 'snapshot') this.snapshot(message);
+      if (message?.kind !== 'snapshot') continue;
+      if (this.bots.length > 0 || this.until) this.read = readOf(message);
+      this.snapshot(message);
+      if (this.read && this.until?.(this.read)) {
+        [this.until, this.speed, this.carry] = [null, 1, 0];
+        break;
+      }
     }
   }
 }

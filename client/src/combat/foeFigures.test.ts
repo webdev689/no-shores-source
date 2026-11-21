@@ -62,6 +62,14 @@ test('a foe stands in its type’s dress where the room saw it, flashing once st
   assert.deepEqual([marked?.name, marked?.faction, marked?.view.x], ['Collector', 'The Grey Tithe', 3]);
 });
 
+test('a foe the room names (a Warden, Marrow, the growth) is marked by its own name', () => {
+  const fight = fightWith(3, -4, 10);
+  const kept = fight.foes.get(7);
+  if (kept) fight.foes.set(7, { ...kept, name: 'Reeve Ancel Marrow, the Tithe’s Hand' });
+  const [marked] = new FoeFigures(roster).marked(fight);
+  assert.deepEqual([marked?.name, marked?.faction], ['Reeve Ancel Marrow, the Tithe’s Hand', 'The Grey Tithe']);
+});
+
 test('a foe the room no longer holds is let go', () => {
   const figures = new FoeFigures(roster);
   figures.cards(fightWith(3, -4, 10), forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());

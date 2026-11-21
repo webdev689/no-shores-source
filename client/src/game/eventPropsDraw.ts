@@ -131,7 +131,7 @@ fn noise3(at: vec3f) -> f32 {
 
 // Each material's colour at a point of the module's own frame, worked so a surface reads as what it is: chalk white
 // with grey flint in it, turf mottled green and dry, soil dark, timber weathered grey-brown along its grain, canvas
-// grey and dirtier toward the ground, iron dark with rust, gold, a heap of grain straw-pale.
+// oiled tan with darker stains and dirtier toward the ground, iron dark with rust, gold, a heap of grain straw-pale.
 fn material_colour(material: u32, local: vec3f) -> vec3f {
   let fine = noise3(local * 9.0);
   let broad = noise3(local * 1.3);
@@ -152,8 +152,11 @@ fn material_colour(material: u32, local: vec3f) -> vec3f {
       return mix(vec3f(0.3, 0.25, 0.2), vec3f(0.46, 0.4, 0.33), grain * 0.7 + broad * 0.3);
     }
     case 6u: {
+      // Oiled canvas, tan, weathered darker in broad stains, and dirtier toward the ground.
+      let cloth = mix(vec3f(0.5, 0.4, 0.26), vec3f(0.62, 0.52, 0.35), fine);
+      let stained = smoothstep(0.55, 0.75, noise3(local * 1.7 + vec3f(3.1, 0.0, 1.3))) * 0.45;
       let dirt = 1.0 - smoothstep(0.0, 0.5, local.z);
-      return mix(mix(vec3f(0.46, 0.46, 0.43), vec3f(0.56, 0.56, 0.52), fine), vec3f(0.33, 0.3, 0.25), dirt * 0.5);
+      return mix(mix(cloth, cloth * vec3f(0.6, 0.56, 0.5), stained), vec3f(0.27, 0.22, 0.16), dirt * 0.5);
     }
     case 7u: { return mix(vec3f(0.17, 0.18, 0.2), vec3f(0.34, 0.2, 0.12), smoothstep(0.6, 0.9, fine) * 0.7); }
     case 8u: { return mix(vec3f(0.78, 0.58, 0.2), vec3f(0.92, 0.74, 0.34), fine); }

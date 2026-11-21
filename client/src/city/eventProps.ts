@@ -54,7 +54,15 @@ export type PublicMarkLike = {
 };
 
 /** The event as the room sends it, as far as the props need it: its phase and its marks. */
-export type PublicEventLike = { readonly phase: number; readonly marks: readonly PublicMarkLike[] };
+export type PublicEventLike = {
+  readonly phase: number;
+  /** Its countdown while it runs, its result's time left once over (the room's ticks). */
+  readonly ticksLeft: number;
+  readonly marks: readonly PublicMarkLike[];
+};
+
+/** The room's ticks a second, an event's countdown and how long its result shows (crates/room/src/public/mod.rs). */
+const TICKS = { perSecond: 60, countdown: 8 * 3_600, result: 12 * 60 } as const;
 
 /** A chest of the player's at the event's ground: its tier (1 to 4) and, once opened, the seconds since. */
 export type ChestLike = {
@@ -73,7 +81,9 @@ export const PHASE = { waiting: 0, running: 1, won: 2, failed: 3 } as const;
 /** How the props move, seconds and radians: the growth rising out of the ground, sinking back and shattering; a
  *  banner driven in; a chest's lid swinging open to the angle it rests at; a shard on the ground turning, bobbing
  *  and blinking as it fades, and how much of its life is left when it begins to blink; a carried shard held at the
- *  hand, this high over the carrier's feet, at this scale; the fissure's glow breathing. */
+ *  hand, this high over the carrier's feet, at this scale; the fissure's glow breathing; the fissure tearing open,
+ *  never narrower than its least while the event runs (its Warden still comes out of it), and shutting as its scar
+ *  rises. */
 export const MOTION = {
   growthRiseS: 2.4,
   growthSinkS: 3,
@@ -84,17 +94,21 @@ export const MOTION = {
   shardTurnRadS: 1.1,
   shardBobM: 0.08,
   shardBlinkBelow: 0.3,
-  handM: 1.15,
+  handM: 0.95,
   carriedScale: 0.8,
   breathe: 0.15,
+  fissureOpenS: 3,
+  fissureLeastOpen: 0.3,
+  fissureShutS: 2.5,
 } as const;
 
 /** The lamps the crystal lights at night: along the fissure (its own x, metres), over the growth, at a shard and a
- *  heroic chest, each's reach in metres; a chest opened spills a warm light. */
+ *  heroic chest, each's reach in metres, short so the red stays on the ground by the crystal and never runs off along
+ *  a pale way; a chest opened spills a warm light. */
 const LAMPS = {
-  fissureAlong: [-4, 0, 4],
-  fissureReachM: 16,
-  growthReachM: 14,
+  fissureAlong: [-4.5, -1.5, 1.5, 4.5],
+  fissureReachM: 8,
+  growthReachM: 10,
   shardReachM: 5,
   chestReachM: 5,
 } as const;
@@ -189,11 +203,20 @@ export function eventProps(
     const since = age(mark.kind, mark.id, mark.state);
     switch (mark.kind) {
       case MARK.fissure: {
-        const open = Math.min(1, Math.max(0, mark.health));
         const breathing = 1 + MOTION.breathe * Math.sin(seconds * 2.1 + mark.id);
+        // Timed by the room's own ticks, so it tears open as the event begins, not as a page arrives, at any speed.
+        const ticks = (over ? TICKS.result : TICKS.countdown) - (event?.ticksLeft ?? 0);
+        const beenS = ticks / TICKS.perSecond;
+        if (over) {
+          const shut = ease(beenS / MOTION.fissureShutS);
+          const open = MOTION.fissureLeastOpen * (1 - shut);
+          if (open > 0.01) props.push(prop('lattice-fissure', mark.at, turn, { rise: open, glow: open * breathing }));
+          props.push(prop('lattice-fissure-sealed', mark.at, turn, { rise: shut, glow: 1 - shut }));
+          break;
+        }
+        const open = Math.min(ease(beenS / MOTION.fissureOpenS), Math.max(MOTION.fissureLeastOpen, mark.health));
         if (open > 0.01)
           props.push(prop('lattice-fissure', mark.at, turn, { rise: open, glow: (0.5 + 0.5 * open) * breathing }));
-        if (over) props.push(prop('lattice-fissure-sealed', mark.at, turn, { rise: ease(1 - open), glow: open }));
         break;
       }
       case MARK.growth: {

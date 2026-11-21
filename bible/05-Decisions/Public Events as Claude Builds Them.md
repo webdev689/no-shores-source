@@ -71,3 +71,5 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | A shard's pillar | Red, 7 m tall, fading with the shard | Seen from across the ground |
 | An opened chest | Stands open 6 s after the room takes it | The lid's swing is seen whole |
 | The dev address | `&public=fissure` or `&public=raid` sets a room in the page's clock to that event's start, dev builds only | Every beat can be seen without waiting |
+| The dev play | `&speed=`, `&bots=`, `&heroic=0` on the dev address; bots and the player at level 6, Rare | A slow machine can play an event through and picture each beat |
+| The fissure's tearing and shutting | Tears open over the event's first 3 s, never narrower than 0.3 while it runs, shuts over the result's first 2.5 s as its scar rises; timed by the room's ticks | The opening is seen (not replayed for a page arriving late), and the Warden still comes out of an open crack |

@@ -33,7 +33,7 @@ export interface QaHost {
   readonly walker: { player: Player };
 }
 
-/** Puts `__qaView(view)` and `__qaWhere()` on `target` for the picture driver, when the page plays alone (`offline`)
+/** Puts `__qaView(view)`, `__qaLook(view)` and `__qaWhere()` on `target` for the picture driver, when the page plays alone (`offline`)
  *  and asks for a spawn. A view arrives again in the same node with its point as the spawn, as `&spawn=` does, then
  *  sets the camera; it answers whether it did. */
 export function installQaViews(target: object, search: string, offline: boolean, host: QaHost): void {
@@ -45,6 +45,14 @@ export function installQaViews(target: object, search: string, offline: boolean,
     if (!node || !look) return false;
     await host.arrive({ ...node, spawns: [[view[0], view[1]]] }, look.yaw);
     host.walker.player = { ...host.walker.player, view: look.view, pitch: look.pitch };
+    return true;
+  };
+  // Turns the camera to a view without arriving again, so the room (and an event it runs) plays on; the body stays.
+  (target as { __qaLook?: (view: QaView) => boolean }).__qaLook = (view) => {
+    const node = host.node();
+    const look = node && qaLook(node.ring, view);
+    if (!look) return false;
+    host.walker.player = { ...host.walker.player, yaw: look.yaw, view: look.view, pitch: look.pitch };
     return true;
   };
   hook.__qaWhere = () => {

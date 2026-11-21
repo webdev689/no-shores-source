@@ -45,7 +45,7 @@ import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { nodeText, standOn } from './footNode.ts';
 import { PlazaLife } from './plazaLife.ts';
-import { askedPublic, minuteShift } from './publicLaw.ts';
+import { askedPlay, askedPublic, minuteShift } from './publicLaw.ts';
 import { PublicView } from './publicView.ts';
 import { nodeRoom } from './rooms.ts';
 import type { Quest } from './tasks.ts';
@@ -268,7 +268,10 @@ export class Foot {
         foeAsks: asked.length > 0,
         gear: (sent) => (alone.gear = sent),
         minuteShift: shift,
+        // `&speed=`, `&bots=` and `&heroic=0` play its events through faster than a slow machine draws them.
+        play: import.meta.env.DEV ? askedPlay(location.search) : null,
       });
+    if (import.meta.env.DEV && link instanceof LocalRoom) Object.assign(window, { __room: link });
     fight = new Fighting(combat, link);
     for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later

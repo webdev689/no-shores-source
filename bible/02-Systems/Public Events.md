@@ -162,6 +162,12 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   `layout::grounds::grounds_of`, which the bake calls too, on the same layouts), so a room in the page runs the
   events the server's does. Under `npm run dev` (or a build made with `NODE_ENV=development`),
   `/?at=<zone>&public=fissure|raid` sets the room's clock so that event starts at once.
+  Beside it, `&speed=<n>` runs n room ticks a drawn frame, `&bots=<n>` joins n scripted players that play the event
+  as the rules' test plays it (`network/publicBots.ts`, the same `decide`; the browser's test proves they reach the
+  rules' fingerprints), and `&heroic=0` leaves the heroic task alone. The bots and the page's own player stand at the
+  test's level 6 with Rare gear. The page puts `__room` on the window, whose `speed` and `until` (a test of each
+  tick's snapshot that stops the frame's ticks once met) a picture script drives, and `__qaLook` turns the camera
+  without arriving again, so the room plays on.
 
 ## Limits
 

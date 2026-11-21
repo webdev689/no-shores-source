@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
-import { askedPublic, bannerOf, clockOf, compassOf, minuteShift, questOf, ringOf } from './publicLaw.ts';
+import { askedPlay, askedPublic, bannerOf, clockOf, compassOf, minuteShift, questOf, ringOf } from './publicLaw.ts';
 
 const fissure = (more: Partial<PublicEvent> = {}): PublicEvent => ({
   kind: PUBLIC_KIND.fissure,
@@ -132,4 +132,11 @@ test('the dev address asks for an event, and the minute that starts it at once i
   assert.equal(minuteShift('gullwing-vale', 'raid', 5), 0);
   assert.equal(minuteShift('gullwing-vale', 'fissure', 5), 15);
   assert.equal(minuteShift('overlook-social', 'raid', 5), null);
+});
+
+test("the dev address's play: ticks a frame, bots, and the heroic task left alone only when asked", () => {
+  assert.deepEqual(askedPlay('?at=gullwing-vale&public=raid&speed=12&bots=3'), { speed: 12, bots: 3, heroic: true });
+  assert.deepEqual(askedPlay('?bots=2&heroic=0'), { speed: 0, bots: 2, heroic: false });
+  assert.deepEqual(askedPlay('?speed=999&bots=-4'), { speed: 64, bots: 0, heroic: true });
+  assert.equal(askedPlay('?public=fissure&speed=x'), null);
 });
