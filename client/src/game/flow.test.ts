@@ -100,6 +100,32 @@ test("on foot the player goes into a patrol's dungeon and out again, each behind
   assert.equal(next({ mode: 'sea', menu: false }, out).mode, 'sea', 'only on foot');
 });
 
+test('washed up from the sea, the veil says why and the player stands in the port city’s social space', () => {
+  const words = 'Washed up at Sunspire. Your ship lies at its moorings.';
+  const washUp = { kind: 'wash-up', node: 'sunspire-social', words } as const;
+  assert.deepEqual(next({ mode: 'sea', menu: false }, washUp), {
+    mode: 'loading',
+    words,
+    then: { mode: 'foot', node: 'sunspire-social', menu: false },
+  });
+  assert.deepEqual(next({ mode: 'foot', node: 'glade', menu: false }, washUp), {
+    mode: 'foot',
+    node: 'glade',
+    menu: false,
+  });
+});
+
+test('anchored off an island, the player walks ashore on its beach behind the veil, from the sea alone', () => {
+  const ashore = { kind: 'isle', node: '7', words: 'Going ashore on a cove' } as const;
+  assert.deepEqual(next({ mode: 'sea', menu: false }, ashore), {
+    mode: 'loading',
+    words: 'Going ashore on a cove',
+    then: { mode: 'foot', node: '7', menu: false },
+  });
+  const landing: Flow = { mode: 'landing', chosen: null };
+  assert.equal(next(landing, ashore), landing);
+});
+
 test('the story opens the game and, ended, brings the player through the veil to the social space', () => {
   const story: Flow = { mode: 'story' };
   assert.equal(next(story, { kind: 'menu' }), story, 'no menu over the story');

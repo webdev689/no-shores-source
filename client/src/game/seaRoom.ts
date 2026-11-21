@@ -2,28 +2,34 @@
 // set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, pirate and fight the room
 // last showed, with its word on the player's body on deck.
 import {
+  askBytes,
+  chaseBytes,
   courseBytes,
   faceBytes,
   helmBytes,
   ordersBytes,
+  readFromRoom,
   type SeenPirate,
   type SeenShip,
   walkBytes,
 } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
-import { fightViewOf, ordersNumbers } from '../network/seaFight.ts';
+import { type NavalEvent, fightViewOf, ordersNumbers } from '../network/seaFight.ts';
+import { LocalRoom } from '../network/localRoom.ts';
+import { type SeenDeck, type SeenFlotsam, type SeenIsle, type SeenKept, TOLD } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Pace } from '../overworld/voyage.ts';
 import type { FightEvent, FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Body } from '../rules/movementRules.ts';
 import { shipName } from '../ships/shipBars.ts';
+import type { SailedPace } from './seaLaw.ts';
 
 /** A room link that may be closed: a server's socket is; the room in the page has nothing to close. */
 type Closable = RoomLink & { close?(): void };
 
-/** The ticks between the courses the page sends: the sea takes one each half second (crates/room/src/sea.rs,
+/** The ticks the page leaves between the courses it sends: the sea takes one each half second (crates/room/src/sea.rs,
  *  `COURSE_EVERY_TICKS`), and a quarter second more keeps the network's jitter from bringing two closer than that. */
-const COURSE_EVERY_TICKS = 45;
+const COURSE_SENT_APART_TICKS = 45;
 /** The ticks after a course is sent before the room's word is taken as having taken it: a round trip's allowance, so a
  *  snapshot already on its way with the course before is never read as the room's answer.
  *  shortcut: a round trip over 1 s still reads the old word; the room naming the course it took would end the guess. */
@@ -36,7 +42,7 @@ export class SeaRoom {
   private joined: number;
   private fresh = false;
   private ships: readonly SeenShip[] = [];
-  /** The hostile ships at sea: each sailing, and each in a fight among captains alone where the room has her. */
+  /** The hostile ships at sea: each sailing, and each in a fight among captains alone where the room has it. */
   pirates: readonly SeenPirate[] = [];
   /** The room's last word on the player's body on deck, off the helm (the number of their last step it took), or
    *  null while they hold it; and how many words it has sent, so each is taken once. */
@@ -45,6 +51,21 @@ export class SeaRoom {
   /** The player's own fight as the room last showed it, and its events since they were last taken. */
   private fight: FightView | null = null;
   private events: FightEvent[] = [];
+  /** The sea's events of the player's fight since they were last taken, and what the sea told them beside it. */
+  private naval: NavalEvent[] = [];
+  private told: number[][] = [];
+  /** Whether the sea would take a boarding the player asked now, as its last word said. */
+  mayBoard = false;
+  /** Their ship's kept hurts and repair, what floats for them, and the deck they stand on, as the room last said. */
+  kept: SeenKept | null = null;
+  flotsam: readonly SeenFlotsam[] = [];
+  deck: SeenDeck | null = null;
+  /** The islands the room tells the player of: those in sight of their ship, and those they have found. */
+  islands: readonly SeenIsle[] = [];
+  /** What each snapshot of the deck the player stands on goes to: the page's fight on its deck, once it stands. */
+  hearDeck: ((snapshot: Snapshot) => void) | null = null;
+  /** Where the room moored the player's ship once they washed up (crates/room/src/harbour.rs), until it is taken. */
+  private washedAt: { readonly x: number; readonly y: number; readonly heading: number } | null = null;
   /** The room's tick by its last snapshot (none before the first), the tick the last course was sent at, and a course
    *  waiting to be sent. */
   private tick: number | null = null;
@@ -68,7 +89,7 @@ export class SeaRoom {
   }
 
   /** Whether the player joined the sea again since this was last asked, after its socket closed: their ship is to be
-   *  put to sea again where she lies. */
+   *  put to sea again where it lies. */
   rejoined(): boolean {
     this.follow();
     const fresh = this.fresh;
@@ -105,13 +126,58 @@ export class SeaRoom {
     const walking = snapshot.players.find((seen) => seen.player === this.own);
     this.onDeck = walking ? { acknowledged: walking.acknowledged, body: walking.body } : null;
     this.words += 1;
+    this.kept = snapshot.kept.find((kept) => kept.player === this.own) ?? null;
+    this.flotsam = snapshot.flotsam.filter((piece) => piece.player === this.own);
+    this.islands = snapshot.islands;
+    this.deck = snapshot.decks.find((deck) => deck.aboard.some(([player]) => player === this.own)) ?? null;
+    const onDeck = this.deck && this.hearDeck ? readFromRoom(this.deck.snapshot) : null;
+    if (onDeck?.kind === 'snapshot') this.hearDeck?.(onDeck);
+    this.told.push(...snapshot.told.filter((told) => told.player === this.own).map((told) => [...told.numbers]));
     const own = snapshot.fights.find((fight) => fight.player === this.own);
+    this.mayBoard = own?.mayBoard ?? false;
     if (own) {
-      const who = { name: shipName(own.faction), faction: own.faction, rank: own.rank };
-      this.fight = fightViewOf(own.view, who, shipName);
-      this.events.push(...this.fight.events);
+      const who = { name: shipName(own.faction, own.hull), faction: own.faction, rank: own.rank };
+      const view = fightViewOf(own.view, who, shipName);
+      this.fight = view;
+      this.events.push(...view.events);
+      this.naval.push(...view.naval);
     } else if (this.fight?.over === null) this.fight = null;
     // An ended fight's last view, shown in one snapshot, is kept until it is taken.
+    const told = snapshot.told.filter((each) => each.player === this.own).map((each) => each.numbers[0]);
+    if (told.includes(TOLD.WASHED_UP)) this.washUp(snapshot);
+    else if (told.includes(TOLD.MOORED)) this.moor(snapshot);
+  }
+
+  /** The player washed up: their fight is over for them, and their ship lies where the room moored it. */
+  private washUp(snapshot: Snapshot): void {
+    this.moor(snapshot);
+    if (this.fight?.over === null) this.fight = { ...this.fight, over: 'sunk', events: [] };
+  }
+
+  /** Their ship lies where the room has it now. */
+  private moor(snapshot: Snapshot): void {
+    const moored = snapshot.ships.find((ship) => ship.player === this.own);
+    if (moored) this.washedAt = { x: moored.x, y: moored.y, heading: moored.heading };
+  }
+
+  /** The sea's word on its island `id`, as an island's room opens on it: a sea in the page tells it; a server's sea
+   *  tells the island's own room, so the page is told nothing. */
+  isleWord(id: number): string | null {
+    return this.link instanceof LocalRoom ? this.link.isleWord(id) || null : null;
+  }
+
+  /** Where the room moored the player's ship once they washed up, taken once. */
+  takeWashed(): { readonly x: number; readonly y: number; readonly heading: number } | null {
+    const washed = this.washedAt;
+    this.washedAt = null;
+    return washed;
+  }
+
+  /** The name of a ship of the player's fight, by the number its events give it; null for one not in it. */
+  shipNamed(ship: number): string | null {
+    const view = this.fight;
+    if (!view) return null;
+    return [view.captain, ...(view.others ?? [])].find((captain) => captain.id === ship)?.name ?? null;
   }
 
   /** Every other player's ship. */
@@ -146,6 +212,28 @@ export class SeaRoom {
     return shown;
   }
 
+  /** The sea's events of the player's fight and what the sea told them beside it, each since last taken. */
+  takeTold(): { naval: NavalEvent[]; told: number[][] } {
+    const taken = { naval: this.naval, told: this.told };
+    [this.naval, this.told] = [[], []];
+    return taken;
+  }
+
+  /** Asks the sea for its repair, to board a captain who struck, or to leave its deck. */
+  ask(ask: Parameters<typeof askBytes>[0]): void {
+    this.link.send(askBytes(ask));
+  }
+
+  /** Sends a land room's input on to the deck the player stands on: the sea room hands it to its deck room. */
+  sendDeck(bytes: Uint8Array<ArrayBuffer>): void {
+    this.link.send(bytes);
+  }
+
+  /** The player's gear as the sea's link last heard it: while they board, their deck room's word. */
+  get gear(): Pick<RoomLink, 'trim' | 'arms' | 'arts'> {
+    return this.link;
+  }
+
   /** Whether the player is in a fight, as the room last said. */
   get fighting(): boolean {
     return this.fight !== null && this.fight.over === null;
@@ -153,7 +241,7 @@ export class SeaRoom {
 
   /** Sets the ship's course: the points ahead, at a pace; none brings it to rest. One set sooner after the last than
    *  the sea takes waits for a later snapshot, and a newer course takes its place. */
-  course(points: readonly Point2[], pace: Pace): void {
+  course(points: readonly Point2[], pace: SailedPace): void {
     [this.waitingCourse, this.waitingFacing] = [courseBytes(points, pace), false];
     this.sendCourse();
   }
@@ -168,22 +256,27 @@ export class SeaRoom {
     const waiting = this.waitingCourse;
     if (!waiting) return;
     const sent = this.courseSentAt;
-    if (sent !== null && (this.tick === null || this.tick < sent + COURSE_EVERY_TICKS)) return;
+    if (sent !== null && (this.tick === null || this.tick < sent + COURSE_SENT_APART_TICKS)) return;
     this.link.send(waiting);
     [this.waitingCourse, this.waitingFacing, this.courseSentAt] = [null, false, this.tick ?? 0];
     if (this.leaveWaiting) this.leaveHelm();
   }
 
-  /** The player leaves the helm, to walk her deck while her helmsman keeps her course: a facing still waiting to be
+  /** The player leaves the helm, to walk its deck while its helmsman keeps its course: a facing still waiting to be
    *  sent is let go, since the room turns no ship off the helm, and a course still waiting is sent first, since the
-   *  helmsman takes none that turns her. */
+   *  helmsman takes none that turns it. */
   leaveHelm(): void {
     if (this.waitingFacing) [this.waitingCourse, this.waitingFacing] = [null, false];
     this.leaveWaiting = this.waitingCourse !== null;
     if (!this.leaveWaiting) this.link.send(helmBytes(true));
   }
 
-  /** The player takes the helm again, at her wheel. */
+  /** Tells the room the hostile ship the player chases, by its number, or none. */
+  chase(ship: number | null): void {
+    this.link.send(chaseBytes(ship));
+  }
+
+  /** The player takes the helm again, at its wheel. */
   takeHelm(): void {
     this.leaveWaiting = false;
     this.link.send(helmBytes(false));
@@ -200,7 +293,7 @@ export class SeaRoom {
   }
 
   /** Lets the room's clock run `seconds`, where the room runs in the page. While the link rejoins, the room's word is
-   *  gone with it: no ship of its is shown, and a fight in it is over, she having left it. */
+   *  gone with it: no ship of its is shown, and a fight in it is over, the ship having left it. */
   pump(seconds: number): void {
     if (this.link.rejoining) {
       [this.ships, this.pirates, this.onDeck] = [[], [], null];

@@ -1,5 +1,5 @@
 // The owner's eleventh beat: the screen, faded out on the fight, fades back in on the player thrown over the rammer's
-// rail, Thule and his crew crying out and leaping on her quarterdeck as the body arcs into the sea; a splash, and the
+// rail, Thule and his crew crying out and leaping on its quarterdeck as the body arcs into the sea; a splash, and the
 // fade again.
 import { Cues } from '../../cinema/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';

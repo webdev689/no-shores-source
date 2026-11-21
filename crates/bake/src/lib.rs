@@ -68,10 +68,10 @@ impl From<&NodeFile> for Listed {
 }
 
 /// The longest room name the server's router takes, the prefix of a node's room, and the longest ending one takes: a
-/// patrol's last dungeon's at storm seas.
+/// patrol's last dungeon's at Abyss difficulty.
 pub const ROOM_NAME_LIMIT: usize = 64;
 pub const NODE_ROOM: &str = "node-";
-pub const LONGEST_ENDING: &str = "--storm--dungeon-2";
+pub const LONGEST_ENDING: &str = "--abyss--dungeon-2";
 
 /// Why a world's nodes cannot each have a file and a room of their own: two with one id (an edits file checks its
 /// own ids only), the index's own name, or an id too long for a room's name. None when every node can.
@@ -104,10 +104,10 @@ pub fn bounds_of(ring: &[[f64; 2]]) -> [f64; 4] {
     [west - MARGIN_M, north - MARGIN_M, east + MARGIN_M, south + MARGIN_M]
 }
 
-/// Whether a station answers a player's gear: every one but the Harbourmaster's and the chandler's, whose keepers
-/// make the plaza busy.
+/// Whether a station answers a player's gear: every one but the chandler's, who makes the plaza busy; the
+/// Harbourmaster's counter sells the Shipwright's modules.
 fn answers_gear(kind: StationKind) -> bool {
-    !matches!(kind, StationKind::Harbourmaster | StationKind::Chandler)
+    kind != StationKind::Chandler
 }
 
 /// What a continent's layouts are built with: the RMB blocks' contents and the forged models' boxes, and every
@@ -279,7 +279,7 @@ mod tests {
         assert_eq!(ids_problem(&[called("glade"), called("glen")]), None);
         assert_eq!(ids_problem(&[called("glade"), called("glade")]), Some("two nodes are called glade".to_owned()));
         assert!(ids_problem(&[called("index")]).is_some());
-        assert_eq!(ids_problem(&[called(&"a".repeat(41))]), None, "node-, 41 and --storm--dungeon-2 make 64");
+        assert_eq!(ids_problem(&[called(&"a".repeat(41))]), None, "node-, 41 and --abyss--dungeon-2 make 64");
         assert!(ids_problem(&[called(&"a".repeat(42))]).is_some());
     }
 

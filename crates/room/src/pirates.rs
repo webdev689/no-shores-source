@@ -1,18 +1,24 @@
 //! Hostile ships at sea, pirates and the Grey Tithe's, from DFO's director trimmed to them alone. Each player at sea
-//! rolls for a ship half a minute after reaching the water and then every minute to two and a half; a roll that draws a
-//! hostile ship stands her on the ring round their ship, clear of every player, crossing their waters on a slant. Her
-//! seed is her temper, her faction and her rank. She sails on at a Sloop's way, on the clock of the player she sails by
-//! (their voyage's pace, real time where another player shares those waters), and goes once no player is near. A bold
-//! one that comes within sight of a player who is not fighting takes them on, and one in sight of a ship of another
-//! faction meets her. One stream, seeded as the sea opens, draws every chance in a fixed order, so a sea is the same
-//! given the same seed and courses.
+//! rolls for a ship half a minute after reaching the water and then every minute to two and a half; the water at
+//! their ship decides who a roll that draws a hostile ship sends, at which rank and level (`sighting`). It comes near
+//! its sight's distance ahead of them, clear of every player, a pirate by a coast and a Tithe ship along a lane. Its
+//! commission is drawn as it comes and kept, and its rank picks its hull and its way. It sails on the clock of the
+//! player it sails by (their voyage's pace, real time where another player shares those waters), never into home
+//! waters, and goes once no player is within 1.1 times its sight. A bold one within `ENGAGE_RANGE` of a player or a
+//! rival takes them on. One stream, seeded as the sea opens, draws every chance in a fixed order.
 
 use crate::PlayerId;
+use crate::sea::SHIP_SPEED_M_S;
+use crate::sighting::{
+    AHEAD_ARC_RAD, COME_OUT, Chart, HELM_TURN_RAD_S, KEEP_SHARE, LANE_REACH_M, SIGHT_LEAST_M, SLOW_PACE, WaterHere,
+    along_lane, faction_of, hostile_chance, intercept_heading, level_in, meeting_arc, rank_for, sight_for,
+    turned_toward, way_of,
+};
 use naval::captain::course::heading_to;
 use naval::captain::{ENGAGE_RANGE, Temper, temper_for};
-use naval::fight::{DESPAWN_BEYOND, SPAWN_RING, SPAWN_TRIES};
+use naval::fight::SPAWN_TRIES;
 use naval::random::Mulberry32;
-use naval::ranks::{Commission, GREY_TITHE, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE};
 use std::collections::BTreeMap;
 use std::f64::consts::TAU;
 
@@ -20,37 +26,73 @@ use std::f64::consts::TAU;
 /// (seconds).
 pub const FIRST_ROLL_S: f64 = 30.0;
 pub const ROLL_EVERY_S: [f64; 2] = [60.0, 140.0];
-/// A roll's chance of a ship, and of that ship being hostile (DFO's open sea: 30 of its factions' 100); any other
-/// ship does not sail here.
-pub const SHIP_CHANCE: f64 = 0.8;
-pub const PIRATE_SHARE: f64 = 0.3;
-/// Of the hostile ships, this share are the Grey Tithe's and the rest pirates; and the ranks they come in, by their
-/// shares.
-pub const TITHE_SHARE: f64 = 0.5;
-pub const RANKS_AT_SEA: [(Rank, f64); 3] = [(Rank::Minor, 0.3), (Rank::Major, 0.5), (Rank::Elite, 0.2)];
-const FACTION_SALT: u32 = 0x3c6e_f372;
-const RANK_SALT: u32 = 0xa54f_f53a;
-/// No roll launches while this many pirates sail within `DESPAWN_BEYOND` of the player (DFO's default density).
-pub const DENSITY: usize = 2;
-/// A pirate stands no nearer than this to any player (metres).
+/// No roll launches while this many hostile ships sail within their sight of the player.
+pub const DENSITY: usize = 3;
+/// A hostile ship stands no nearer than this to any player (metres).
 pub const SPAWN_CLEAR_M: f64 = 450.0;
-/// A pirate's way at sea, metres a second: a Sloop's on a beam reach.
+/// A Sloop's way at sea on a beam reach, metres a second; each rank's is a share of it (`sighting::way_of`).
 pub const PIRATE_WAY_M_S: f64 = 2.4;
 /// Waters another player sails within this of are shared, and keep real time (metres).
 pub const SHARE_M: f64 = 1_200.0;
 #[cfg(test)]
 const STREAM_SEED: u32 = 0x5ea_9a7e;
 
-/// A hostile ship at sea, a pirate's or the Grey Tithe's: her number in the room, her seed (her temper, faction and
-/// rank, and every chance of her fight), where she is and her heading (radians clockwise from north).
+/// A hostile ship at sea, a pirate's or the Grey Tithe's: its number in the room, its seed (its temper and every
+/// chance of its fight), its faction and rank, its level, the distance it is sighted from, where it is and its
+/// heading (radians clockwise from north).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Pirate {
     pub id: u32,
     pub seed: u32,
+    pub commission: Commission,
+    pub level: u8,
+    pub sight_m: f64,
     pub x: f64,
     pub y: f64,
     pub heading: f64,
     pub bold: bool,
+    /// The player a bold ship comes for, from its sighting them until it meets or loses them.
+    pub quarry: Option<PlayerId>,
+}
+
+impl Pirate {
+    /// A ship of level 0 seen from the least sight, as tests and doors stand one by hand.
+    #[must_use]
+    pub fn standing(id: u32, seed: u32, commission: Commission, [x, y]: [f64; 2], heading: f64, bold: bool) -> Self {
+        Pirate { id, seed, commission, level: 0, sight_m: SIGHT_LEAST_M, x, y, heading, bold, quarry: None }
+    }
+
+    /// What its level makes of its hull, its men and its guns' harm: as a foe's level raises its health on land.
+    #[must_use]
+    pub fn strength(&self) -> f64 {
+        gear::power::foe_health_times(self.level)
+    }
+
+    /// Whether a point lies within its sight.
+    #[must_use]
+    pub fn sees(&self, at: [f64; 2]) -> bool {
+        apart([self.x, self.y], at) <= self.sight_m
+    }
+
+    /// Whether it stays at sea with a player at `at`: within 1.1 times its sight.
+    #[must_use]
+    pub fn kept_by(&self, at: [f64; 2]) -> bool {
+        apart([self.x, self.y], at) <= KEEP_SHARE * self.sight_m
+    }
+}
+
+/// A player's ship at sea as the hostile ships see it: where it is, its heading, the pace it was set to (0 at
+/// rest), whether it is fighting, the clock its waters run at (its pace as it sails, 1 at rest), and the share of
+/// its hull it keeps, by which a wary ship sizes it up.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Voyager {
+    pub player: PlayerId,
+    pub at: [f64; 2],
+    pub heading: f64,
+    pub pace: u16,
+    pub fighting: bool,
+    pub clock: f64,
+    pub hull: f64,
 }
 
 /// The pirates at sea, each player's wait for their next roll, and each pair of ships that fought and both sailed on,
@@ -62,6 +104,10 @@ pub struct Pirates {
     waits: BTreeMap<PlayerId, f64>,
     pub sailing: Vec<Pirate>,
     parted: Vec<[u32; 2]>,
+    /// The ship each player chases, by its number: met within `ENGAGE_RANGE` whatever its temper.
+    chasing: BTreeMap<PlayerId, u32>,
+    /// The sea's tier, which raises the levels of the ships it sends as it raises foes on land.
+    pub difficulty: gear::Difficulty,
 }
 
 #[cfg(test)]
@@ -71,42 +117,59 @@ impl Default for Pirates {
     }
 }
 
-/// A hostile ship's faction and rank by her seed's own draws, as her temper is by another.
-#[must_use]
-pub fn commission_at_sea(seed: u32) -> Commission {
-    let faction = if Mulberry32::new(seed ^ FACTION_SALT).draw() < TITHE_SHARE { GREY_TITHE } else { PIRATES };
-    let roll = Mulberry32::new(seed ^ RANK_SALT).draw();
-    let mut below = 0.0;
-    let rank = RANKS_AT_SEA.iter().find(|(_, share)| {
-        below += share;
-        roll < below
-    });
-    Commission { faction, rank: rank.map_or(Rank::Elite, |(rank, _)| *rank) }
-}
-
-impl Pirate {
-    /// Her faction and rank (`commission_at_sea`).
-    #[must_use]
-    pub fn commission(&self) -> Commission {
-        commission_at_sea(self.seed)
-    }
-}
-
-fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
+pub(crate) fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
     (east * east + south * south).sqrt()
 }
 
-/// The rate a pirate at `at` sails at: the clock of the player nearest her within `DESPAWN_BEYOND`, but real time where
-/// another player sails within `SHARE_M` of that one, or none is near.
-fn clock_at(at: [f64; 2], ships: &[(PlayerId, [f64; 2], bool, f64)]) -> f64 {
+/// The rate a ship sails at: the clock of the player nearest it that keeps it at sea, but real time where another
+/// player sails within `SHARE_M` of that one, or none is near.
+fn clock_at(pirate: &Pirate, ships: &[Voyager]) -> f64 {
+    let at = [pirate.x, pirate.y];
     let nearest = ships
         .iter()
-        .filter(|&&(_, ship, _, _)| apart(at, ship) <= DESPAWN_BEYOND)
-        .min_by(|one, other| apart(at, one.1).total_cmp(&apart(at, other.1)));
-    let Some(&(player, ship, _, clock)) = nearest else { return 1.0 };
-    let shared = ships.iter().any(|&(other, there, _, _)| other != player && apart(there, ship) <= SHARE_M);
-    if shared { 1.0 } else { clock }
+        .filter(|ship| pirate.kept_by(ship.at))
+        .min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
+    let Some(nearest) = nearest else { return 1.0 };
+    let shared = ships.iter().any(|other| other.player != nearest.player && apart(other.at, nearest.at) <= SHARE_M);
+    if shared { 1.0 } else { nearest.clock }
+}
+
+/// Where a ship blocked on `heading` sails instead: the open heading nearest its last, `last`, a twelfth of a half
+/// turn at a time either way, so it follows a coast round; none open, it goes about.
+fn round_the_coast(
+    at: [f64; 2],
+    (heading, last): (f64, f64),
+    step: f64,
+    chart: &impl Chart,
+) -> (f64, Option<[f64; 2]>) {
+    let ahead = |way: f64| [at[0] + libm::sin(way) * step, at[1] - libm::cos(way) * step];
+    let turns = (1..=12).flat_map(|turn| [f64::from(turn), -f64::from(turn)]).map(|turn| heading + turn * TAU / 24.0);
+    let open = turns.filter(|&way| chart.open(at, ahead(way)));
+    let off = |way: f64| ((way - last + TAU / 2.0).rem_euclid(TAU) - TAU / 2.0).abs();
+    match open.min_by(|one, other| off(*one).total_cmp(&off(*other))) {
+        Some(way) => (way.rem_euclid(TAU), Some(ahead(way))),
+        None => ((heading + TAU / 2.0).rem_euclid(TAU), None),
+    }
+}
+
+/// A ship's heading after `seconds` at its `clock`, and the player it comes for: the one it came for while still in
+/// its sight and not fighting, else the nearest such; it steers to intercept them, at most at the helm's rate. A bold
+/// ship comes for anyone; a wary one only for a Sloop it would take (`wary_takes`, DFO's `takesPrize`). One with no
+/// one to come for keeps its heading.
+fn come_for(pirate: &Pirate, ships: &[Voyager], (seconds, clock): (f64, f64)) -> (f64, Option<PlayerId>) {
+    let at = [pirate.x, pirate.y];
+    let takes =
+        |ship: &Voyager| pirate.bold || naval::captain::wary_takes(pirate.commission, pirate.strength(), ship.hull);
+    let open = |ship: &&Voyager| !ship.fighting && pirate.sees(ship.at) && takes(ship);
+    let kept = ships.iter().filter(open).find(|ship| Some(ship.player) == pirate.quarry);
+    let nearest = || ships.iter().filter(open).min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
+    let Some(ship) = kept.or_else(nearest) else { return (pirate.heading, None) };
+    // Its lead is reckoned in seconds of its clock: the player's own, or real time in shared waters.
+    let way = if ship.pace > 0 { SHIP_SPEED_M_S * ship.clock / clock } else { 0.0 };
+    let velocity = [libm::sin(ship.heading) * way, -libm::cos(ship.heading) * way];
+    let want = intercept_heading(at, way_of(pirate.commission.rank), ship.at, velocity);
+    (turned_toward(pirate.heading, want, HELM_TURN_RAD_S * seconds * clock), Some(ship.player))
 }
 
 impl Pirates {
@@ -119,72 +182,146 @@ impl Pirates {
             waits: BTreeMap::new(),
             sailing: Vec::new(),
             parted: Vec::new(),
+            chasing: BTreeMap::new(),
+            difficulty: gear::Difficulty::Normal,
         }
     }
 
-    /// One tick of `seconds`. `ships` is each player's ship at sea, with whether they are fighting and the clock their
-    /// waters run at (their voyage's pace, 1 at rest); `open` answers whether a ship may sail straight from one point
-    /// to another without touching land. Answers each pirate who came within sight of a player this tick, with that
-    /// player, for their fight; she leaves the sea.
-    pub fn tick(
-        &mut self,
-        seconds: f64,
-        ships: &[(PlayerId, [f64; 2], bool, f64)],
-        open: impl Fn([f64; 2], [f64; 2]) -> bool,
-    ) -> Vec<(PlayerId, Pirate)> {
-        let nearest = |at: [f64; 2]| ships.iter().map(|&(_, ship, _, _)| apart(at, ship)).fold(f64::INFINITY, f64::min);
-        for pirate in &mut self.sailing {
-            let step = PIRATE_WAY_M_S * seconds * clock_at([pirate.x, pirate.y], ships);
-            let ahead = [pirate.x + libm::sin(pirate.heading) * step, pirate.y - libm::cos(pirate.heading) * step];
-            if open([pirate.x, pirate.y], ahead) {
-                [pirate.x, pirate.y] = ahead;
+    /// The player chases the ship numbered `ship`, or none.
+    pub fn chase(&mut self, player: PlayerId, ship: Option<u32>) {
+        match ship {
+            Some(ship) => self.chasing.insert(player, ship),
+            None => self.chasing.remove(&player),
+        };
+    }
+
+    /// The ship the player chases, if any.
+    #[must_use]
+    pub fn chased(&self, player: PlayerId) -> Option<u32> {
+        self.chasing.get(&player).copied()
+    }
+
+    /// One tick of `seconds` on `chart`, each player's ship at sea in `ships`. Each ship takes the sight of the player
+    /// nearest it if it is farther than the ship's, sails on and goes once no player keeps it; then each player's roll
+    /// comes due. Answers each bold ship that came within `ENGAGE_RANGE` of a player this tick, with that player, for
+    /// their fight; it leaves the sea.
+    pub fn tick(&mut self, seconds: f64, ships: &[Voyager], chart: &impl Chart) -> Vec<(PlayerId, Pirate)> {
+        let nearest = |at: [f64; 2]| ships.iter().map(|ship| apart(at, ship.at)).fold(f64::INFINITY, f64::min);
+        for index in 0..self.sailing.len() {
+            let pirate = self.sailing[index];
+            let at = [pirate.x, pirate.y];
+            let closest = ships.iter().min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
+            let sight = closest.map_or(pirate.sight_m, |ship| sight_for(f64::from(ship.pace)).max(pirate.sight_m));
+            let clock = clock_at(&pirate, ships);
+            let (heading, quarry) = come_for(&pirate, ships, (seconds, clock));
+            let step = way_of(pirate.commission.rank) * seconds * clock;
+            let ahead = [pirate.x + libm::sin(heading) * step, pirate.y - libm::cos(heading) * step];
+            let sailed = &mut self.sailing[index];
+            (sailed.sight_m, sailed.heading, sailed.quarry) = (sight, heading, quarry);
+            if chart.open(at, ahead) {
+                [sailed.x, sailed.y] = ahead;
             } else {
-                // Land ahead: she goes about.
-                pirate.heading = (pirate.heading + TAU / 2.0).rem_euclid(TAU);
+                // Land or home water ahead: the ship follows it round, or goes about.
+                let (way, there) = round_the_coast(at, (heading, pirate.heading), step, chart);
+                sailed.heading = way;
+                if let Some([x, y]) = there {
+                    [sailed.x, sailed.y] = [x, y];
+                }
             }
         }
-        self.sailing.retain(|pirate| nearest([pirate.x, pirate.y]) <= DESPAWN_BEYOND);
+        self.sailing.retain(|pirate| ships.iter().any(|ship| pirate.kept_by(ship.at)));
         let mut met = Vec::new();
-        for &(player, ship, fighting, _) in ships {
-            if fighting || met.iter().any(|&(taken, _)| taken == player) {
+        for ship in ships {
+            if ship.fighting || met.iter().any(|&(taken, _)| taken == ship.player) {
                 continue;
             }
-            let sighted =
-                self.sailing.iter().position(|pirate| pirate.bold && apart([pirate.x, pirate.y], ship) <= ENGAGE_RANGE);
+            let chased = self.chasing.get(&ship.player).copied();
+            let meets = |pirate: &Pirate| pirate.bold || chased == Some(pirate.id);
+            let sighted = self
+                .sailing
+                .iter()
+                .position(|pirate| meets(pirate) && apart([pirate.x, pirate.y], ship.at) <= ENGAGE_RANGE);
             if let Some(index) = sighted {
-                met.push((player, self.sailing.remove(index)));
+                met.push((ship.player, self.sailing.remove(index)));
             }
         }
-        self.waits.retain(|player, _| ships.iter().any(|&(at_sea, _, _, _)| at_sea == *player));
-        for &(player, ship, fighting, _) in ships {
-            let wait = self.waits.entry(player).or_insert(FIRST_ROLL_S);
+        self.waits.retain(|player, _| ships.iter().any(|ship| ship.player == *player));
+        let sailing = &self.sailing;
+        self.chasing.retain(|player, ship| {
+            ships.iter().any(|at_sea| at_sea.player == *player) && sailing.iter().any(|pirate| pirate.id == *ship)
+        });
+        for ship in ships {
+            let wait = self.waits.entry(ship.player).or_insert(FIRST_ROLL_S);
             *wait -= seconds;
             // While a player fights, the sea sends no one else.
-            if *wait > 0.0 || fighting {
+            if *wait > 0.0 || ship.fighting {
                 continue;
             }
             *wait = self.draws.between(ROLL_EVERY_S[0], ROLL_EVERY_S[1]);
-            let near = self.sailing.iter().filter(|pirate| apart([pirate.x, pirate.y], ship) <= DESPAWN_BEYOND);
-            if near.count() >= DENSITY || self.draws.draw() >= SHIP_CHANCE || self.draws.draw() >= PIRATE_SHARE {
+            let near = self.sailing.iter().filter(|pirate| pirate.sees(ship.at)).count();
+            // Home waters send no one: the roll is spent. Elsewhere the water's band sets its chance.
+            let Some(water) = chart.water(ship.at) else { continue };
+            if near >= DENSITY || self.draws.draw() >= hostile_chance(water.levels) {
                 continue;
             }
-            let seed = self.draws.seed();
-            for _ in 0..SPAWN_TRIES {
-                let bearing = self.draws.draw() * TAU;
-                let out = self.draws.between(SPAWN_RING[0], SPAWN_RING[1]);
-                let at = [ship[0] + libm::sin(bearing) * out, ship[1] - libm::cos(bearing) * out];
-                if nearest(at) < SPAWN_CLEAR_M || !open(ship, at) {
-                    continue;
-                }
-                let slant = if self.draws.draw() < 0.5 { 1.0 } else { -1.0 } * (0.6 + self.draws.draw() * 0.9);
-                let heading = (heading_to(at, ship) + slant).rem_euclid(TAU);
-                let bold = matches!(temper_for(commission_at_sea(seed), seed), Temper::Bold);
-                self.sailing.push(Pirate { id: self.next_id, seed, x: at[0], y: at[1], heading, bold });
+            if let Some(pirate) = self.come(ship, water, chart, &nearest) {
+                self.sailing.push(pirate);
                 self.next_id += 1;
-                break;
             }
         }
         met
+    }
+
+    /// The ship a roll in `water` sends `ship`, if any: its commission and level drawn, then its place, of the tries
+    /// that fit (clear of every player, open water from the player, out of home waters), the one nearest a coast for a
+    /// pirate and nearest a lane for a Tithe ship, who then heads along it.
+    fn come(
+        &mut self,
+        ship: &Voyager,
+        water: WaterHere,
+        chart: &impl Chart,
+        nearest: &impl Fn([f64; 2]) -> f64,
+    ) -> Option<Pirate> {
+        let faction = faction_of(water.holder, self.draws.draw())?;
+        let low = water.levels.map_or(0, |(low, _)| low);
+        let commission = Commission { faction, rank: rank_for(low, self.draws.draw()) };
+        // As a garrison's: a water with no band (level 0) stays none.
+        let level = match level_in(water.levels, self.draws.draw()) {
+            0 => 0,
+            level => self.difficulty.raise(level),
+        };
+        let seed = self.draws.seed();
+        let sight_m = sight_for(f64::from(ship.pace));
+        let bold = matches!(temper_for(commission, seed), Temper::Bold);
+        // A bold ship comes where it can meet a voyage that holds its course; at the helm's slow paces, near and slow
+        // under 5 km of sight, it comes anywhere ahead as a wary one does.
+        let arc = if bold && ship.pace > SLOW_PACE { meeting_arc(commission.rank) } else { AHEAD_ARC_RAD };
+        let mut fits = Vec::new();
+        for _ in 0..SPAWN_TRIES {
+            let bearing = if ship.pace > 0 {
+                ship.heading + (self.draws.draw() * 2.0 - 1.0) * arc
+            } else {
+                self.draws.draw() * TAU
+            };
+            let out = self.draws.between(COME_OUT[0], COME_OUT[1]) * sight_m;
+            let at = [ship.at[0] + libm::sin(bearing) * out, ship.at[1] - libm::cos(bearing) * out];
+            if nearest(at) >= SPAWN_CLEAR_M && chart.open(ship.at, at) {
+                fits.push(at);
+            }
+        }
+        let lane = (faction == GREY_TITHE)
+            .then(|| {
+                let lanes = fits.iter().filter_map(|&at| Some((at, chart.lane(at)?)));
+                lanes.filter(|(_, (off, _))| *off <= LANE_REACH_M).min_by(|one, other| one.1.0.total_cmp(&other.1.0))
+            })
+            .flatten();
+        let by_coast = || fits.iter().copied().min_by(|one, other| chart.coast(*one).total_cmp(&chart.coast(*other)));
+        let at = lane.map(|(at, _)| at).or_else(by_coast)?;
+        let slant = if self.draws.draw() < 0.5 { 1.0 } else { -1.0 } * (0.6 + self.draws.draw() * 0.9);
+        let slanted = (heading_to(at, ship.at) + slant).rem_euclid(TAU);
+        let heading = lane.map_or(slanted, |(_, (_, way))| along_lane(way, slanted));
+        let [x, y] = at;
+        Some(Pirate { id: self.next_id, seed, commission, level, sight_m, x, y, heading, bold, quarry: None })
     }
 
     /// Ships back at sea from a fight among them, where it left them: any two of them have parted.
@@ -195,9 +332,9 @@ impl Pirates {
         self.sailing.extend(ships);
     }
 
-    /// Each bold ship in turn meets the nearest ship of another faction within her sight, neither met already: both
-    /// leave the sea for their fight, the bold one first. Ships of one faction never meet, nor two that parted until
-    /// they have been out of each other's sight.
+    /// Each bold ship in turn meets the nearest ship of another faction within `ENGAGE_RANGE`, neither met already:
+    /// both leave the sea for their fight, the bold one first. Ships of one faction never meet, nor two that parted
+    /// until they have been that far apart.
     pub fn meet_rivals(&mut self) -> Vec<[Pirate; 2]> {
         let at = |id: u32| self.sailing.iter().find(|pirate| pirate.id == id).map(|pirate| [pirate.x, pirate.y]);
         let in_sight = |[one, other]: [u32; 2]| {
@@ -211,11 +348,11 @@ impl Pirates {
             if taken(one.id) {
                 continue;
             }
-            let faction = one.commission().faction;
+            let faction = one.commission.faction;
             let rival = self
                 .sailing
                 .iter()
-                .filter(|other| !taken(other.id) && other.commission().faction != faction)
+                .filter(|other| !taken(other.id) && other.commission.faction != faction)
                 .filter(|other| !self.parted.iter().any(|pair| pair.contains(&one.id) && pair.contains(&other.id)))
                 .map(|other| (other.id, apart([one.x, one.y], [other.x, other.y])))
                 .filter(|&(_, off)| off <= ENGAGE_RANGE)

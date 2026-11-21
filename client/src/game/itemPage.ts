@@ -20,6 +20,7 @@ import {
   heldPress,
   nodeGlyph,
   nodeRing,
+  glyphImage,
   pictureCanvas,
   pressOf,
   rarityOf,
@@ -27,6 +28,7 @@ import {
 } from './gearDom.ts';
 import { itemDetailOf } from './gearScreen.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
+import { moduleGlyph } from './shipGear.ts';
 
 /** The art's box: what the page's height leaves it, within these, in pixels. */
 const ART_LEAST = 200;
@@ -37,7 +39,7 @@ const ATTACK_MOST = 300;
 const PRESTIGE_MOST = 30;
 
 /** A meter sunk into the page, filled to `share`; with `value`, its label and value beside it. */
-function bar(label: string, share: number, value = ''): HTMLElement {
+export function bar(label: string, share: number, value = ''): HTMLElement {
   const row = make('div', '', value ? 'gear-bar' : 'gear-bar gear-bar-bare');
   const well = make('div', '', `gear-meter ${ROLES.well}`);
   well.setAttribute('role', 'meter');
@@ -95,10 +97,11 @@ function nodePress(
   return press;
 }
 
-/** The node grid: each column's nodes, their rings grown as far as the item has from the column before's. */
-function nodeGrid(
+/** The node grid: each column's nodes, their rings grown as far as the item has from the column before's; an
+ *  officer's too, their service as its XP. */
+export function nodeGrid(
   context: PageContext,
-  item: GearItem,
+  item: Pick<GearItem, 'columns' | 'xp'>,
   columns: ReturnType<typeof itemDetailOf>['columns'],
 ): HTMLElement {
   const grid = make('div', '', 'gear-nodes');
@@ -166,7 +169,11 @@ export function itemPage(
   const art = make('div', '', 'gear-item-art');
   const picture = context.picture(item);
   const box = Math.min(ART_MOST, Math.max(ART_LEAST, context.room - ART_AROUND));
-  art.append(picture ? pictureCanvas(picture, box, LARGE_CAP) : make('span', 'Drawing…', 'gear-hint'));
+  // A module's glyph stands for its picture, drawn large.
+  const glyph = moduleGlyph(item.kind);
+  const drawn = picture ? pictureCanvas(picture, box, LARGE_CAP) : make('span', 'Drawing…', 'gear-hint');
+  art.append(glyph ? glyphImage(glyph) : drawn);
+  if (glyph) art.classList.add('gear-item-art-glyph');
   const presses = make('div', '', 'gear-item-presses');
   const leave = pressOf('Back', back, 'button', 'Esc');
   leave.dataset['key'] = 'press-back';

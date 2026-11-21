@@ -40,6 +40,10 @@
   width: 36px;
   height: 36px;
 }
+.acquired-icon img.gear-glyph-fine {
+  width: 24px;
+  height: 24px;
+}
 /* An emblem's sign at its own 24 cells, as a glyph's 12 stand at three times: whole pixels either way. */
 .acquired-emblem {
   width: 24px;

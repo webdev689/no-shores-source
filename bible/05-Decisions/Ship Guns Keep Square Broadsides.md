@@ -12,7 +12,7 @@ Asked how the guns should fire (traverse to the look, fire all round, or keep sq
 
 ## What it settles
 
-- A broadside still fires square to the hull and the look sets only its range; no battery bears near her bow or her
+- A broadside still fires square to the hull and the look sets only its range; no battery bears near its bow or its
   stern ([[Naval Combat]]).
 - The aim shows where the balls will go as DFO's does after its own aim audit: a look on a ship lays the guns on
   that point, each gun's arc ends where it stops, and the landing zone is as wide as the scatter.

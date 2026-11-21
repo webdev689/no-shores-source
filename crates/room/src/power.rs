@@ -53,6 +53,7 @@ pub fn loadout_arms(kind: Kind) -> Arms {
         Kind::DoublePistolet => (Fists, Some(Ranged::DoublePistolet), OffHand::Empty),
         Kind::Thunderlock => (Fists, Some(Ranged::Thunderlock), OffHand::Empty),
         Kind::Head | Kind::Torso | Kind::Arms | Kind::Legs | Kind::Cloak => return BARE_HANDS,
+        Kind::Guns | Kind::Hull | Kind::Sails | Kind::Rigging => return BARE_HANDS,
     };
     Arms { melee, ranged, off_hand }
 }
@@ -151,7 +152,7 @@ impl Room {
                     let character = &player.character;
                     gear::power::on_player(character.defense(), character.level(), foe.level) * FOE_HARM
                 }
-                _ => 1.0,
+                _ => self.companion_times(blow.striker, defender).unwrap_or(1.0),
             },
         };
         let element = held.and_then(|held| held.element).map_or(0, |element| element as u8);
@@ -172,12 +173,14 @@ impl Room {
         }
     }
 
-    /// Pays a foe's kill to every player who struck it within its last ten seconds, with the Shapes the Elite and
-    /// Abyss seas give, throwing out what it drops for each.
+    /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, with the
+    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each; on land its XP pays their officers
+    /// ashore too.
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
         let at = [fighter.body.x, fighter.body.y, fighter.body.z];
+        let deck = matches!(self.floor, crate::Floor::Deck(_));
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
@@ -185,6 +188,9 @@ impl Room {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
+            if !deck {
+                found.character.earn_officer_xp(reward.xp, false);
+            }
             let great = brain.rank as u8 >= foes::Rank::Miniboss as u8;
             found.character.add_shapes(gear::shape::found(great, self.difficulty, &dice));
             found.gear_changed = true;

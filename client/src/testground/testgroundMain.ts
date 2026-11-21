@@ -4,7 +4,7 @@ import { FirstPerson } from '../firstperson/firstPerson.ts';
 import { GpuUnavailable, startGpu } from '../gpu.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
-import { FIGHT_TICKS } from '../player/fightMoves.ts';
+import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
 import { rosterOf } from '../rules/roster.ts';
 import type { Vector } from '../combat/swingArcs.ts';
@@ -387,17 +387,15 @@ async function start(): Promise<void> {
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn, smear };
     const { tickSeconds } = movement;
     drawn.push(...foes.cards(fighting, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
-    // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
+    // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's gun as it faces.
     const fpMuzzle = inFirstPerson ? firstPerson.muzzle : null;
     const dropped = dropsShown.frame(gear?.drops ?? [], clock, cameraOf(camera).eye);
     const marks = effects.marks(fighting, running ? seconds : 0, {
       eye: cameraOf(camera).eye,
       blocks: STOOD,
       bodies,
-      muzzleOf: (shot) =>
-        fpMuzzle
-          ? screenMuzzle(camera, aspect, fpMuzzle)
-          : figureMuzzle([body.x, body.y, body.z], Math.atan2(shot.velocity[0], -shot.velocity[1])),
+      muzzleOf: () =>
+        fpMuzzle ? screenMuzzle(camera, aspect, fpMuzzle) : figureMuzzle([body.x, body.y, body.z], you.facing),
       more: [
         ...gearRings(STALL, RESOURCE_NODES, gear, clock),
         ...dropped.marks,
@@ -456,7 +454,6 @@ async function start(): Promise<void> {
       const figure = foes.placed.get(id) ?? others.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const bow = player.shownDress.outfit.right?.startsWith('bow') && own?.action.kind === 'draw';
     hud.update(
       {
         own,
@@ -480,7 +477,7 @@ async function start(): Promise<void> {
         ammo: sights && shown.rangedDrawn ? (own?.ammo ?? null) : null,
         ammoMost: gear?.ammoMost ?? null,
         ammoFull: !!own && dropsShown.ammoFull(gear?.drops ?? [], [own.x, own.y, own.z], (gear?.ammoShare ?? 1) >= 1),
-        crosshair: sights ? { charge: bow ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull) : null } : null,
+        crosshair: crosshairOf(shown.reticle, sights, own, fighting.reach),
         arms: { gear, loadout: player.player.loadout, drawn: you.dress.outfit.drawn, dress: you.dress },
       },
       seconds,

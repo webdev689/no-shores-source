@@ -19,7 +19,7 @@ const ISLAND: readonly Point2[][] = [
 const [LEFT, TOP] = place(-100_000, -100_000);
 const MASK = maskFromOutlines(ISLAND, { leftM: LEFT, topM: TOP, widthM: 200_000, heightM: 200_000 });
 
-/** A sea room for a passage: what the passage asks of it, kept in the order asked, and its word on her ship, as set. */
+/** A sea room for a passage: what the passage asks of it, kept in the order asked, and its word on its ship, as set. */
 function fakeRoom(): {
   room: SeaRoom;
   asked: string[];
@@ -42,7 +42,7 @@ function fakeRoom(): {
   return { room, asked, word };
 }
 
-test('W sets her sailing straight on short of the coast, A and D turn her onto a new course, S heaves her to', () => {
+test('W sets it sailing straight on short of the coast, A and D turn it onto a new course, S heaves it to', () => {
   const passage = new Passage(ISLAND, () => MASK, place(15_000, 0), Math.PI / 2);
   const { room, asked } = fakeRoom();
   passage.room = room;
@@ -57,12 +57,12 @@ test('W sets her sailing straight on short of the coast, A and D turn her onto a
   assert.equal(passage.sailing, false);
   assert.equal(passage.stoppedShort, true, 'hove to, to be resumed');
   passage.steer(1, 1);
-  assert.match(asked.at(-1) ?? '', /^face /, 'at rest she turns where she lies');
+  assert.match(asked.at(-1) ?? '', /^face /, 'at rest it turns where it lies');
   passage.resume();
-  assert.equal(passage.note, 'Sailing straight on', 'resumed straight on, along her heading now');
+  assert.equal(passage.note, 'Sailing straight on', 'resumed straight on, along its heading now');
 });
 
-test('turned toward a coast too near, she comes to rest facing it and the voyage line says why', () => {
+test('turned toward a coast too near, it comes to rest facing it and the voyage line says why', () => {
   const passage = new Passage(ISLAND, () => MASK, place(29_700, 0), 0);
   const { room, asked } = fakeRoom();
   passage.room = room;
@@ -73,7 +73,7 @@ test('turned toward a coast too near, she comes to rest facing it and the voyage
   assert.match(asked.at(-1) ?? '', /^face /);
 });
 
-test('straight on toward a coast, she comes to rest short of it and the voyage line says why', () => {
+test('straight on toward a coast, it comes to rest short of it and the voyage line says why', () => {
   const passage = new Passage(ISLAND, () => MASK, place(25_000, 0), Math.PI / 2);
   passage.room = fakeRoom().room;
   passage.straightOn();
@@ -83,18 +83,18 @@ test('straight on toward a coast, she comes to rest short of it and the voyage l
   assert.equal(passage.note, 'Land lies ahead.');
 });
 
-test('her course straight on is set again as she nears its end, while the sea lies open', () => {
+test('its course straight on is set again as it nears its end, while the sea lies open', () => {
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, asked } = fakeRoom();
   passage.room = room;
   passage.straightOn();
   for (let second = 0; second < 40 && asked.length < 2; second++) passage.advance(1);
-  assert.equal(asked.length, 2, 'set again before she reaches its end');
+  assert.equal(asked.length, 2, 'set again before it reaches its end');
   assert.ok(passage.ship.y < place(0, -(AHEAD.reachM - AHEAD.renewM))[1] + 1, `${passage.ship.y}`);
   assert.equal(passage.sailing, true);
 });
 
-test('while the room has not yet taken her new course, she sails at the pace it last held her to', () => {
+test('while the room has not yet taken its new course, it sails at the pace it last held it to', () => {
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, word } = fakeRoom();
   passage.room = room;
@@ -104,7 +104,7 @@ test('while the room has not yet taken her new course, she sails at the pace it 
   assert.ok(Math.abs(passage.ship.y - (place(0, 0)[1] - 12)) < 1e-6, `held to ×1, 12 m: ${passage.ship.y}`);
 });
 
-test("the room's word sets her right: at rest where it has her, or laid there when she drifts off her course", () => {
+test("the room's word sets it right: at rest where it has it, or laid there when it drifts off its course", () => {
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, asked, word } = fakeRoom();
   passage.room = room;
@@ -112,11 +112,11 @@ test("the room's word sets her right: at rest where it has her, or laid there wh
   const [x, y] = place(80, -500);
   word.settledShip = { player: 1, x, y, heading: 0, pace: 60 };
   passage.advance(0);
-  assert.deepEqual([passage.ship.x, passage.ship.y], [x, y], '80 m off her line: laid where the room has her');
-  assert.equal(asked.length, 2, 'and her course set again from there');
+  assert.deepEqual([passage.ship.x, passage.ship.y], [x, y], '80 m off its line: laid where the room has it');
+  assert.equal(asked.length, 2, 'and its course set again from there');
   word.settledShip = { player: 1, x, y: y - 300, heading: 0, pace: 0 };
   passage.advance(1);
-  assert.equal(passage.sailing, false, 'the room has her at rest short of the end: she rests');
+  assert.equal(passage.sailing, false, 'the room has it at rest short of the end: it rests');
   assert.equal(passage.stoppedShort, true, 'hove to, to be resumed');
   assert.deepEqual([passage.ship.x, passage.ship.y], [x, y - 300]);
 });
@@ -126,7 +126,7 @@ const built = (name: string) =>
 const roomModule = await WebAssembly.compile(await built('room_wasm.wasm'));
 const layoutText = await readFile(new URL('../../../content/world/layout.json', import.meta.url), 'utf8');
 
-test('the sea room turns her at rest to the heading the helm faces her, and holds her where she lies', () => {
+test('the sea room turns it at rest to the heading the helm faces it, and holds it where it lies', () => {
   let last: Snapshot | null = null;
   const room = LocalRoom.openSea(roomModule, layoutText, (snapshot) => (last = snapshot), 7);
   const layout = JSON.parse(layoutText) as { continents: { outline: [number, number][] }[] };
@@ -140,6 +140,60 @@ test('the sea room turns her at rest to the heading the helm faces her, and hold
   assert.deepEqual(
     [own()?.x, own()?.y, own()?.heading, own()?.pace],
     [before?.x, before?.y, 2.5, 0],
-    'turned, at rest, where she lay',
+    'turned, at rest, where it lay',
   );
+});
+
+test("watched close it eases down the ladder to the world's own time a step each 0.15 s, and back up to the dial", () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  const { room, asked, word } = fakeRoom();
+  passage.room = room;
+  passage.straightOn();
+  const paces = () => asked.map((said) => Number(said.split('×')[1]));
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
+  assert.deepEqual(paces(), [60, 40, 30, 20, 10, 5, 1], "the dial's x60, then down each step to the world's own time");
+  assert.equal(passage.pace, 60, 'the dial itself is not changed');
+  assert.equal(passage.note, 'Sailing straight on', 'said only once the room has it');
+  const before = passage.ship.y;
+  passage.advance(1, true);
+  assert.ok(Math.abs(before - passage.ship.y - 12) < 1e-6, `its true speed, 12 m a second: ${before - passage.ship.y}`);
+  word.settledShip = { player: 1, x: passage.ship.x, y: passage.ship.y, heading: 0, pace: 1 };
+  assert.equal(passage.note, 'Sailing straight on · Sailing at true speed while you watch close.');
+  word.settledShip = null;
+  asked.length = 0;
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, false);
+  assert.deepEqual(paces(), [5, 10, 20, 30, 40, 60], 'the view risen, back up the ladder to the dial');
+  assert.equal(passage.note, 'Sailing straight on');
+});
+
+test('the dial stepped while the view is close is kept for when it rises; stepped at the dial, it sails at it', () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  const { room, asked } = fakeRoom();
+  passage.room = room;
+  passage.straightOn();
+  passage.stepPace(1);
+  assert.match(asked.at(-1) ?? '', /×100$/, 'at the dial, a step up sails at once');
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
+  passage.stepPace(-1);
+  assert.match(asked.at(-1) ?? '', /×1$/, "watched close, still the world's own time");
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, false);
+  assert.match(asked.at(-1) ?? '', /×60$/, 'back up to the dial as it is now');
+});
+
+test('a pace step the room refused is asked again once its word comes, until the two agree', () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  const { room, asked, word } = fakeRoom();
+  passage.room = room;
+  passage.straightOn();
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
+  asked.length = 0;
+  // The room still sails it at x5: the last step down was refused.
+  word.settledShip = { player: 1, x: passage.ship.x, y: passage.ship.y, heading: 0, pace: 5 };
+  passage.advance(0.05, true);
+  assert.match(asked.at(-1) ?? '', /×1$/, 'the world’s own time asked again');
+  assert.equal(passage.note, 'Sailing straight on', 'not said while the room has it at another pace');
+  word.settledShip = { ...word.settledShip, pace: 1 };
+  asked.length = 0;
+  passage.advance(0.05, true);
+  assert.deepEqual(asked, [], 'once they agree, nothing more is sent');
 });

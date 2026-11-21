@@ -1,4 +1,4 @@
-//! A ship and her pose as plain 64-bit numbers in one fixed order: how they cross into a browser, and what a
+//! A ship and its pose as plain 64-bit numbers in one fixed order: how they cross into a browser, and what a
 //! fingerprint of a voyage is taken over (land::exact::fingerprint). Every number crosses with its bits intact.
 
 use crate::pose::Pose;
@@ -30,7 +30,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_ship_and_her_pose_cross_as_numbers_in_their_order() {
+    fn a_ship_and_its_pose_cross_as_numbers_in_their_order() {
         let ship = Ship {
             x: 1.0e5 + 0.1,
             y: -3.3,

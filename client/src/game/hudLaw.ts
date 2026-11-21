@@ -1,3 +1,6 @@
+import { ruinedName } from '../ruinedName.ts';
+import type { NodeInfo } from './worldData.ts';
+
 /** Where a player stands against their section's edge, as the room judges it (the reach rules in Rust). */
 export type Standing =
   | { readonly kind: 'inside' }
@@ -42,28 +45,28 @@ export const KIND_WORDS = {
   dungeon: 'Dungeon',
   boss: 'World boss',
   port: 'Port',
+  hostile: 'Hostile',
 } as const;
 
 export type MarkKind = keyof typeof KIND_WORDS;
-
-/** The islands' names the owner has given, by continent. */
-export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
-/** The region every island lies in. */
-export const REGION = 'The Pale Expanse';
-
-/** The words under a place's name: the room of a dungeon the player stands in, the place's kind, and its island's
- *  name where it has one. */
-export function placeWords(
-  place: { readonly kind: MarkKind; readonly continent: string },
-  room?: string | null,
-): string {
-  const island = ISLANDS[place.continent];
-  const named = room ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${KIND_WORDS[place.kind]}` : KIND_WORDS[place.kind];
-  return island ? `${named} · ${island}` : named;
-}
 
 /** A distance as a mark shows it: metres near, kilometres past one. */
 export function distanceText(metres: number): string {
   if (metres < 1000) return `${Math.round(metres / 10) * 10} m`;
   return metres < 20_000 ? `${(metres / 1000).toFixed(1)} km` : `${Math.round(metres / 1000)} km`;
+}
+
+/** The islands' names the owner has given, by continent. */
+export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
+
+/** The words under a place's name: the room of a dungeon the player stands in, the place's kind, and its island's
+ *  name where it has one. A ruined city's place is no social space: it says only that it lies in ruins. */
+export function placeWords(
+  node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string },
+  room?: string | null,
+): string {
+  const island = ISLANDS[node.continent];
+  const kind = node.name?.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
+  const named = room ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${kind}` : kind;
+  return island ? `${named} · ${island}` : named;
 }

@@ -82,6 +82,9 @@ Work that fans out goes to headless workers, each in its own git worktree.
   A read-only reviewer sub-agent in a worktree of its own links `node_modules`, `generated/`, `target/` and
   `client/public/` from the main checkout instead.
 - Every brief starts from `tools/claude-toolkit/workers/brief-common-template.md`.
+- A run that ends without its final reply's OBSERVATIONS line (and its INBOX line, where the brief asks for one), or
+  with tracked work left uncommitted, is resumed once with the finish steps; still unfinished, its log says
+  `WORKER <name> UNFINISHED`.
 - A late change goes in the worker's inbox (`~/wt/reports/inbox-<name>.md`, under a `## <short heading>` line), not a
   stop and `--resume`. A fresh run of a worker's name starts an empty inbox, keeping an earlier worker's aside. A worker
   that ends with its edits uncommitted is resumed once, told to commit them.

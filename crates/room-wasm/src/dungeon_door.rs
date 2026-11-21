@@ -163,6 +163,17 @@ pub fn open_dungeon(text: &[u8], number: usize) -> bool {
     true
 }
 
+/// A patrol's dungeon as JSON (`dungeon_json`), asked for by the JSON written at `address`, `length`
+/// bytes long: its patrol's id and name and its number.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_dungeon(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    crate::hand_over(dungeon_json(unsafe { std::slice::from_raw_parts(address, length) }).into_bytes())
+}
+
 /// Opens a patrol's dungeon's room from the patrol's node file's text written at `address`, `length` bytes long, by
 /// its number; 1 if it opened, 0 if not.
 ///

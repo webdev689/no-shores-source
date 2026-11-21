@@ -46,7 +46,8 @@ pub enum Material {
     Gold,
     Iron,
     Bone,
-    /// Rough natural stone, as the terraces' rubble: boulders, outcrops and the rock of cliffs.
+    /// Rough stone, as the terraces' rubble: boulders, outcrops, the rock of cliffs, and the broken stone heaped in a
+    /// ruined city (a breach's fall, the rubble along its ways).
     Rubble,
     /// Glows at night: a beacon's fire, a lantern.
     Glow,

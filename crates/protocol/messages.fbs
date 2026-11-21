@@ -51,12 +51,14 @@ table Input {
   cast_aim: [double];
 }
 
-// A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
-// of the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest,
-// turned to `facing` when it holds one heading (radians clockwise from north).
-// In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the
-// helm, a step of the player's walk on her deck instead: its controls in the movement crate's order and its number,
-// 1, 2, 3 and so on from the helm left. Or the helm left (1), or taken again at the wheel (2).
+// A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one of
+// the steps of a ship's speed. A ship not yet at sea puts to sea at the first point; no points brings it to rest,
+// turned to `facing` when it holds one heading (radians clockwise from north). In a fight, the ship's orders instead,
+// in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the helm, a step of the player's walk on
+// its deck instead: its controls in the movement crate's order and its number, 1, 2, 3 and so on from the helm left. Or
+// the helm left (1), or taken again at the wheel (2), or a chase (3): the hostile ship it chases by that ship's number,
+// `chase`, 0 for none. Or an ask: its repair by a port city (1), to board a captain who struck (2), or to leave the
+// captain's deck once its crew has fallen (3).
 table Course {
   points: [double];
   pace: ushort;
@@ -65,15 +67,70 @@ table Course {
   walk_sequence: uint;
   helm: ubyte;
   facing: [double];
+  chase: uint;
+  ask: ubyte;
 }
 
-// A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: her helm (the rudder from -1, to port,
-// to 1, to starboard; whether her oars pull her sideways; a rung up the ladder, 1, or down, -1, for one tick); her look
-// while she aims (its bearing off her bow in degrees and how far out it meets the water in metres, then its ray: the
-// aim eye and the way it looks, east, south and up; none while she does not aim); whether she fires and whether she
-// braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where she puts to sea (x, y and heading,
-// heeded once); a captain asked for (0 none, 1 one called round her, 255 every one sent off); and the faction (1 the
-// Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the pirates.
+// A piece of what floats at sea, kept for one player: theirs, its number, where it floats (x, y in metres) and what it
+// looks like (0 a crate, 1 a barrel, 2 a chest).
+table Flotsam {
+  player: uint;
+  id: uint;
+  x: double;
+  y: double;
+  kind: ubyte;
+}
+
+// A sea island a player sees from their ship or has found: its number, its seed, where its middle is (x, y in metres),
+// its kind (0 a cove, 1 a ruin, 2 a quarry), the index in the layout of the continent whose water it lies in, and
+// whether that player has found it.
+table Isle {
+  id: uint;
+  seed: ulong;
+  x: double;
+  y: double;
+  kind: ubyte;
+  continent: ubyte;
+  found: bool;
+}
+
+// A player's ship's hurts as the sea keeps them: the shares of its hull, canvas and men it has, and the seconds its
+// repair has left (0 with none under way).
+table Kept {
+  player: uint;
+  hull: double;
+  sail: double;
+  crew: double;
+  repair_left: double;
+}
+
+// A captain's deck that players boarded: each boarder's number at sea and in turn their number on its deck, its hull
+// (as Pirate numbers it), its deck room's own snapshot (a FromRoom message of a room on land, in its own frame), and
+// the sea's ticks its won deck holds its boarders yet (-1 while its crew still fights).
+table Deck {
+  players: [uint];
+  boarders: [uint];
+  hull: ubyte;
+  snapshot: [ubyte];
+  hold_left: short = -1;
+}
+
+// What the sea tells one player this tick beside their fight's view: one event in the naval crate's numbers
+// (crates/naval/src/wire.rs: what floats laid, gathered, a boarding), or the sea's own (crates/room/src/harbour.rs:
+// washed up, what a piece held).
+table Told {
+  player: uint;
+  numbers: [double];
+}
+
+// A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: the ship's helm (the rudder from -1, to
+// port, to 1, to starboard; whether its oars pull it sideways; a rung up the ladder, 1, or down, -1, for one tick); the
+// player's look while they aim (its bearing off the bow in degrees and how far out it meets the water in metres, then
+// its ray: the aim eye and the way it looks, east, south and up; none while they do not aim); whether the ship fires
+// and whether it braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where it puts to sea (x, y and
+// heading, heeded once); a captain asked for (0 none, 1 one called round the ship, 255 every one sent off); the faction
+// (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the pirates; and with a
+// call, the captain's level and the caller's ship's level (0 for none: a ship unfitted).
 table Orders {
   sequence: uint;
   steer: double;
@@ -87,6 +144,8 @@ table Orders {
   call: ubyte;
   call_faction: ubyte;
   call_rank: ubyte;
+  call_level: ubyte;
+  ship_level: ubyte;
 }
 
 // A player's dress, passed on as their browser wrote it.
@@ -131,7 +190,9 @@ table Seen {
 // gear crate's numbers, 0 for none), what it holds still and what it held whole. Then its type's number in the roster,
 // its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle,
 // 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
-// leaves after it.
+// leaves after it. Last, for a companion (an officer ashore), its leader's number (0 for a foe), its officer's given
+// and family names' places in content/gear/crew.json, and its officer's post (0 First Mate to 4 Lookout), which it is
+// dressed by.
 table Foe {
   id: uint;
   kind: ubyte;
@@ -148,6 +209,10 @@ table Foe {
   expose: uint;
   charge: uint;
   charge_immune: uint;
+  leader: uint;
+  given: ubyte;
+  family: ubyte;
+  post: ubyte;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -188,8 +253,11 @@ table Ship {
   pace: ushort;
 }
 
-// A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
-// from north, her faction (1 the Grey Tithe, 2 pirates) and her rank (1 Minor to 5 Boss).
+// A captain's ship at sea, a pirate's or the Grey Tithe's: its number, where it is, its heading in radians clockwise
+// from north, its faction (1 the Grey Tithe, 2 pirates), its rank (1 Minor to 5 Boss) and the hull its rank sails (0
+// the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate; a reader that knows none reads the Sloop); then its level (0
+// none), the distance it is sighted from, metres (0 from a room that sends none), and its way at sea, metres a second
+// at the world's own time (0 from a room that sends none).
 table Pirate {
   id: uint;
   x: double;
@@ -197,26 +265,35 @@ table Pirate {
   heading: double;
   faction: ubyte;
   rank: ubyte;
+  hull: ubyte;
+  level: ubyte;
+  sight: double;
+  way: double;
 }
 
 // A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and
-// her captain's faction and rank, as Pirate numbers them. Then the other captains in the fight, their count and each
-// one's numbers (none when there are none), which the view leaves out so a page that knows one captain reads it whole.
+// its captain's faction, rank and hull, as Pirate numbers them. Then the other captains in the fight, their count and
+// each one's numbers (the number its events name it by, its faction and rank, its ship and its mind; none when
+// there are none), which the view leaves out so a page that knows one captain reads it whole. Last, whether the player
+// may board a captain of it now: the sea would take the boarding they asked (crates/room/src/battle.rs `alongside`).
 table SeaFight {
   player: uint;
   view: [double];
   faction: ubyte;
   rank: ubyte;
   others: [double];
+  hull: ubyte;
+  may_board: bool;
 }
 
-// One ship in a fleet room: her number; whether a captain sails her; her helm's numbers in the sailing crate's order
-// (crates/sailing/src/floats.rs) and her pose; her hull, sail and men, each with what she has of it whole; her state
-// (0 afloat, 1 struck, 2 sinking, 3 sunk, 4 wrecked) and the fires aboard; her guns (the seconds each side has left
-// to load, port then starboard, then how far each has loaded); her load (as Orders numbers it) and whether she is
-// braced; for a captain, her mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship she fights (0 none) and
-// her sides run out (1 port, 2 starboard, 3 both); for a player's ship, the number of her last orders taken; and the
-// faction she sails for (0 a player's, else as Pirate numbers them) and a captain's rank (1 Minor to 5 Boss, 0 none).
+// One ship in a fleet room: its number; whether a captain sails it; its helm's numbers in the sailing crate's order
+// (crates/sailing/src/floats.rs) and its pose; its hull, sail and men, each with what it has of it whole; its state
+// (0 afloat, 1 struck, 2 sinking, 3 sunk, 4 wrecked) and the fires aboard; its guns (the seconds each side has left
+// to load, port then starboard, then how far each has loaded); its load (as Orders numbers it) and whether it is
+// braced; for a captain, its mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship it fights (0 none) and
+// its sides run out (1 port, 2 starboard, 3 both); for a player's ship, the number of its last orders taken; and the
+// faction it sails for (0 a player's, else as Pirate numbers them), a captain's rank (1 Minor to 5 Boss, 0 none), and
+// its hull, as Pirate numbers them.
 table Vessel {
   id: uint;
   captain: bool;
@@ -234,6 +311,7 @@ table Vessel {
   acknowledged: uint;
   faction: ubyte;
   rank: ubyte;
+  hull: ubyte;
 }
 
 // A ball aloft in a fleet room: the ship that fired it, where it leaves its gun and when (seconds of the fight's
@@ -248,12 +326,12 @@ table Ball {
 }
 
 // Something that happened in a fleet room's fight, with its tick: what (1 a ball leaves its gun, 2 a ball strikes a
-// ship, 3 splashes, 4 lands, 5 a captain runs out a side, 6 a ship's state changes, 7 a player's guns refuse, 8 her
-// sails will not set, 9 she takes a load, 10 a captain leaves the fight, 11 a player's stem rams a ship); the ship it
-// happened to (for a ball, the one that fired it, for a strike or a ram the one struck) and, for a strike or a ram,
-// who struck; a number saying more (a strike's zone, 0 hull, 1 holed, 2 canvas; a side, 0 port, 1 starboard; a state
-// as Vessel numbers it; why guns refuse, 0 no side bears, 1 silent, 2 braced, 3 loading; a load as Orders numbers it;
-// 1 for a wreck's sails; how a captain left, 0 sunk, 1 sailed off); the side still loading; a point, and a ball's
+// ship, 3 splashes, 4 lands, 5 a captain runs out a side, 6 a ship's state changes, 7 a player's guns refuse, 8 a
+// ship's sails will not set, 9 a ship takes a load, 10 a captain leaves the fight, 11 a player's stem rams a ship); the
+// ship it happened to (for a ball, the one that fired it, for a strike or a ram the one struck) and, for a strike or a
+// ram, who struck; a number saying more (a strike's zone, 0 hull, 1 holed, 2 canvas; a side, 0 port, 1 starboard; a
+// state as Vessel numbers it; why guns refuse, 0 no side bears, 1 silent, 2 braced, 3 loading; a load as Orders numbers
+// it; 1 for a wreck's sails; how a captain left, 0 sunk, 1 sailed off); the side still loading; a point, and a ball's
 // launch; and the seconds that side has left to load, or the hull a ram took.
 table Naval {
   tick: ulong;
@@ -287,9 +365,12 @@ table Spell {
 
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
-// pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on her deck in
-// her own frame (x to her starboard, y to her stern, z over her waterline); in a fleet room, every ship, the balls
-// aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land.
+// pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on their ship's
+// deck in its own frame (x to its starboard, y to its stern, z over its waterline); in a fleet room, every ship, the
+// balls aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on
+// land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
+// and each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which
+// sets its weather. Then, at sea, the islands the player sees or has found.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -305,6 +386,12 @@ table Snapshot {
   naval: [Naval];
   fight_clock: double;
   spells: [Spell];
+  flotsam: [Flotsam];
+  kept: [Kept];
+  told: [Told];
+  decks: [Deck];
+  world_start: double;
+  islands: [Isle];
   // In a dungeon's room, its cache beside the farthest post: x, y, z, the way it faces (radians clockwise from
   // north), and 1 while it stands open or 0 while it is shut. Empty in any other room.
   cache: [double];
@@ -377,12 +464,12 @@ table GearDrop {
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
 // then their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in
-// the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent;
-// whether they stand where a Vestige opens (the Mage's counter, or the stall); and the answer to their last ask (0 done, then the
-// gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
+// the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent (on
+// a sea island, the wrecks they have scavenged); whether they stand where a Vestige opens (the Mage's counter, or the
+// stall); and the answer to their last ask (0 done, then the gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
 // answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
-// island's resource; and in a social space, the smiths' wares of the day, the Armorsmith's then the Weaponsmith's,
-// each numbered by its place among its vendor's and priced in Aurem.
+// island's resource; and in a social space, the vendors' wares of the day, the Armorsmith's, the Weaponsmith's then
+// the Shipwright's, each numbered by its place among its vendor's and priced in Aurem.
 table Gear {
   xp: ulong;
   level: ubyte;
@@ -432,6 +519,7 @@ table Gear {
   ammo_share: double;
   crates: ubyte;
   crate_price: uint;
+  ship: GearShip;
   // Where they stand with the factions: the one pledged to (0 none), and for each faction in content/gear/factions.json's
   // order the reputation earned with it and the packages it holds for them.
   pledge: ubyte;
@@ -463,6 +551,49 @@ table Gear {
   // there, the model's yaw (radians clockwise from north, turning its +z as an RMB block's yaw does), and which of
   // the four entrance models it is (0 to 3).
   dungeons: [double];
+}
+
+// A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),
+// names by their places in content/gear/crew.json, duty (0 aboard, 1 at their post, 2 ashore), level and how far to
+// the next, service and its most, how well they hold their post, their nodes as an item's (each column's XP their
+// service's), and an offer's wage.
+table GearOfficer {
+  id: uint;
+  post: ubyte;
+  grade: ubyte;
+  given: ubyte;
+  family: ubyte;
+  duty: ubyte;
+  level: ubyte;
+  to_next: double;
+  trained: uint;
+  trained_most: uint;
+  strength: double;
+  bought: uint;
+  chosen: [ubyte];
+  columns: [GearColumn];
+  wage: uint;
+}
+
+// The ship's own power and crew: its experience, level, Prestige, Attack and Defense and how far to its next level;
+// Timber, Canvas, Iron and Heartwood; its hands and its complement; its officers, and at a pledged faction's counter
+// the officers of the day; its trim at sea (the gear crate's ShipTrim, in its order); and the pledge.
+table GearShip {
+  xp: ulong;
+  level: ubyte;
+  prestige: uint;
+  attack: uint;
+  defense: uint;
+  to_next: double;
+  to_next_needs: uint;
+  stocks: [ushort];
+  hands: ushort;
+  hands_most: ushort;
+  officers: [GearOfficer];
+  offers: [GearOfficer];
+  trim: [double];
+  // The faction the player is pledged to (0 none), whose counter signs officers on.
+  pledge: ubyte;
 }
 
 // What a room sends: exactly one of these is present.

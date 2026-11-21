@@ -8,13 +8,13 @@ import type { FoeShield, FoeStatuses } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { type RankBand, rankBand, rankMark } from '../rules/roster.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
-import { element, Meter, setStyle, showNode } from './meter.ts';
+import { element, Meter, setStyle, showNode } from '../plus/meter.ts';
 import { foeDebuffs, StatusRow } from './statusIcons.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
  *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
- *  3 searching); its faction's number; its level (0 for a foe of none, whose square stands empty); its shield, if
- *  it stands with one; and its debuffs. */
+ *  3 searching); its faction's number, which picks its emblem (none without it); its level (0 for a foe of none,
+ *  whose square stands empty); its shield, if it stands with one; its debuffs; and whether it is a companion. */
 export interface MarkedFoe {
   readonly id: number;
   readonly name: string;
@@ -27,6 +27,8 @@ export interface MarkedFoe {
   readonly level?: number;
   readonly shield?: FoeShield | null;
   readonly statuses?: FoeStatuses;
+  /** A companion fighting beside the players, whose plate is drawn in the players' colour. */
+  readonly ally?: boolean;
 }
 
 /** A plate's tier by its foe's rank: a Minor's, a Major's, or an Elite's and up. */
@@ -169,7 +171,7 @@ export class FoePlate {
       this.health.forget(this.seen?.get(foe.id) ?? this.firstSeen);
     }
     const { dataset } = this.root;
-    const band = plateBand(foe);
+    const band = foe.ally ? 'ally' : plateBand(foe);
     if (dataset['band'] !== band) dataset['band'] = band;
     if (dataset['tier'] !== plateTier(foe.rank)) dataset['tier'] = plateTier(foe.rank);
     const level = foe.level ? String(foe.level) : '';

@@ -1,28 +1,41 @@
-//! The engagement course, as DFO's: far off she steers to intercept; a quarry running from her she runs down astern
-//! and then sheers out to its beam; else she brings the side that costs least to bear on where her balls will meet
-//! it, bent off the beam to open or close her range, and once presented keeps station with sail.
+//! The engagement course, as DFO's: far off it steers to intercept; a quarry running from it the captain runs down
+//! astern and then sheers out to its beam; else it brings the side that costs least to bear on where its balls will
+//! meet it, bent off the beam to open or close its range, and once presented keeps station with sail.
 
 use super::*;
 
 impl Captain {
     pub(super) fn engage(
         &mut self,
-        her: &Her,
+        vessel: &Own,
         enemy: &Sighting,
         apart: f64,
         is_water: &impl Fn(f64, f64) -> bool,
     ) -> Plan {
-        let ship = her.ship;
+        let ship = vessel.ship;
         let range = self.build.range_m.max(self.dead_zone);
-        let reach = lay(ship, her.pose, her.arms, Side::Starboard, her.guns.load, 0.0, None).reach;
+        let [beam, depth] = aim::hull_span(
+            [ship.x, ship.y],
+            [enemy.ship.x, enemy.ship.y],
+            Some(enemy.ship.heading),
+            vessel.arms,
+            arms_of(enemy.hull),
+        );
+        let reach =
+            lay(ship, vessel.pose, vessel.arms, Side::Starboard, vessel.guns.load, 0.0, None).reach + beam + depth;
         let vel = self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship));
-        let own = pace(her.hull, her.wind, self.way_share(her));
+        let own = pace(vessel.hull, vessel.wind, self.way_share(vessel));
         let (me, them) = ([ship.x, ship.y], [enemy.ship.x, enemy.ship.y]);
-        if apart > (range * CLOSE_FROM).max(reach) {
+        let my = velocity_of(ship);
+        let rate = swing_rate(ship, vessel.hull).max(1.0) * DEG;
+        // Its own way toward the enemy, and the range a turn of `turn` (radians) closes: its turning circle's advance
+        // and its helm's ease, so it comes round to its broadside as the range comes to its reach, not after it.
+        let toward = ((my[0] * (them[0] - me[0]) + my[1] * (them[1] - me[1])) / apart.max(1e-6)).max(0.0);
+        let closes = |turn: f64| toward * (libm::sin(turn.abs().min(90.0 * DEG)) / rate + 4.0 * TURN_TAU);
+        if apart - closes(90.0 * DEG) > (range * CLOSE_FROM).max(reach) {
             self.present = None;
             return Plan { want: intercept(me, own, them, vel).1, sails: 1.0, track: false };
         }
-        let my = velocity_of(ship);
         let rel = [vel[0] - my[0], vel[1] - my[1]];
         let away = (vel[0] * (them[0] - me[0]) + vel[1] * (them[1] - me[1])) / apart.max(1e-6);
         if length(vel[0], vel[1]) > 0.3 {
@@ -38,17 +51,17 @@ impl Captain {
                 return Plan { want: intercept(me, own, berth, vel).1, sails: 1.0, track: false };
             }
         }
-        let lead = lead_point(me, them, rel, her.guns.gun().speed);
-        let rate = swing_rate(ship, her.hull).max(1.0) * DEG;
+        let lead = lead_point(me, them, rel, vessel.guns.gun().speed);
         let reach_held = reach * aim::RUN_OUT_REACH;
+        let abeam_of = |side: Side| wrap(heading_to(me, lead) - side.sign() * 90.0 * DEG);
         let holds_lead = |present: Option<Present>, side: Side| {
             let lead_d = distance(me, lead);
             if present.is_some_and(|held| held.side == side && held.lays) {
                 return lead_d <= reach_held;
             }
-            let abeam = wrap(heading_to(me, lead) - side.sign() * 90.0 * DEG);
-            let round = wrap(abeam - ship.heading).abs() / rate + 4.0 * TURN_TAU + aim::RUN_OUT_S;
-            lead_d + away.max(0.0) * round <= reach_held
+            let turn = wrap(abeam_of(side) - ship.heading);
+            let round = turn.abs() / rate + 4.0 * TURN_TAU + aim::RUN_OUT_S;
+            lead_d - closes(turn) + away.max(0.0) * round <= reach_held
         };
         let close_in = if away > 0.0 {
             libm::asin(((away + CHASE_MARGIN * own) / length_of(ship).max(0.5)).clamp(0.0, 1.0))
@@ -57,8 +70,9 @@ impl Captain {
         };
         let dead = self.dead_zone;
         let bend = |present: Option<Present>, side: Side| {
-            let in_reach = apart <= reach * PRESENT_WITHIN && apart >= (range * POINT_BLANK).max(dead);
-            if her.guns.ready(side) && in_reach && holds_lead(present, side) {
+            let coming = apart - closes(wrap(abeam_of(side) - ship.heading));
+            let in_reach = coming <= reach && apart >= (range * POINT_BLANK).max(dead);
+            if vessel.guns.ready(side) && in_reach && holds_lead(present, side) {
                 return 0.0;
             }
             if apart < dead {
@@ -71,13 +85,13 @@ impl Captain {
             wrap(heading_to(me, lead) - side.sign() * (90.0 * DEG - bend(present, side)))
         };
         if self.present.is_none_or(|held| self.clock - held.at >= NAV_EVERY_S) {
-            let look = self.lookout(her);
+            let look = self.lookout(vessel);
             let near = land::Lookout { near: f64::INFINITY, ..look };
             let cost = |side: Side| {
                 let heading = heading_for(self.present, side);
                 let turn = wrap(heading - ship.heading).abs() / rate;
                 let foul = if course_clear(me, heading, look.near, is_water, &near) { 0.0 } else { 1e4 };
-                turn.max(her.guns.left(side)) + foul
+                turn.max(vessel.guns.left(side)) + foul
             };
             let held = self.present.map(|present| present.side);
             let weighed =
@@ -93,8 +107,8 @@ impl Captain {
         };
         let want = heading_for(Some(present), present.side);
         self.present = Some(Present { lays: bend(Some(present), present.side) == 0.0, ..present });
-        let window = fire_window(me, lead, Some(enemy.ship.heading), her.arms, self.build.skill);
-        let presented = her.guns.ready(present.side)
+        let window = fire_window(me, lead, Some(enemy.ship.heading), arms_of(enemy.hull), self.build.skill);
+        let presented = vessel.guns.ready(present.side)
             && apart <= reach * PRESENT_WITHIN
             && wrap(want - ship.heading).abs() < 30.0 * DEG
             && window >= 0.0;
@@ -105,7 +119,7 @@ impl Captain {
         let wanted = vel[0] * forward[0]
             + vel[1] * forward[1]
             + PRESENT_GAIN * ((lead[0] - me[0]) * forward[0] + (lead[1] - me[1]) * forward[1]);
-        let best = (own * point_of_sail(off_run_deg(forward, her.wind))).max(0.5);
+        let best = (own * point_of_sail(off_run_deg(forward, vessel.wind))).max(0.5);
         Plan { want, sails: (wanted / best).clamp(PRESENT_SAILS, 1.0), track: true }
     }
 }

@@ -6,7 +6,8 @@ import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
 import type { Cards } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { fromEyeMatrix, shifted, shiftedExactly } from './camera.ts';
+import { fromEyeMatrix, type Shot, shifted, shiftedExactly } from './camera.ts';
+import { times } from './deckFight.ts';
 import type { Foot, FootFrame } from './foot.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { Drawer } from './scene.ts';
@@ -64,7 +65,8 @@ export class FootView {
    * One frame of the fight on foot: its blood run on by `seconds`, its marks taken, and its display shown over a canvas
    * `viewport` CSS pixels big, drawn `size` device pixels. Answers the drawers that lie under the figures (the blood)
    * and over them (the marks; the arcs and the see-through marks over the water; and the light of marks and arcs while
-   * the attack feel's light is on and there are any).
+   * the attack feel's light is on and there are any). On a struck ship's deck (`onBoarded`), the fight is in its own frame
+   * and drawn through the world's `shot` as its deck's `turn` lays it into the world.
    */
   frame(
     foot: FootShown,
@@ -74,15 +76,22 @@ export class FootView {
       size,
       viewport,
       groundAt,
+      onBoarded,
     }: {
       size: { readonly width: number; readonly height: number };
       viewport: { readonly width: number; readonly height: number };
       groundAt: (x: number, y: number) => number | null;
+      onBoarded?: { readonly shot: Shot; readonly turn: Float32Array };
     },
   ): { under: Drawer; over: Drawer } {
     this.root.hidden = false;
     const { shot, fight } = shown;
-    const fromEye = fromEyeMatrix(shot, size.width / Math.max(1, size.height));
+    const aspect = size.width / Math.max(1, size.height);
+    const fromEye = onBoarded
+      ? times(fromEyeMatrix(onBoarded.shot, aspect), onBoarded.turn)
+      : fromEyeMatrix(shot, aspect);
+    // The scene's matrices take the world's steps from its eye; its deck's steps are turned into the world's first.
+    const own = (eyeMatrix: Float32Array) => (onBoarded ? times(eyeMatrix, onBoarded.turn) : eyeMatrix);
     const [eyeX, eyeY, eyeZ] = shot.eye;
     const blood = this.bloodOf(foot, groundAt);
     const [originX, originY, originZ] = blood.origin;
@@ -111,11 +120,11 @@ export class FootView {
     );
     const drawn = blood.drawn;
     const marks = this.marks;
-    const raised = (eyeMatrix: Float32Array) => shifted(eyeMatrix, [0, 0, OVER_THE_LAND_M]);
+    const raised = (eyeMatrix: Float32Array) => shifted(own(eyeMatrix), [0, 0, OVER_THE_LAND_M]);
     const lit = FEEL.light && (shown.marks.length > 0 || shown.swings.length > 0);
     const lightInto = (pass: GPURenderPassEncoder, eyeMatrix: Float32Array) => {
       marks.drawLight(pass, raised(eyeMatrix));
-      this.swings.drawLight(pass, eyeMatrix);
+      this.swings.drawLight(pass, own(eyeMatrix));
     };
     return {
       under: { drawInto: (pass) => drawn.draw(pass) },
@@ -124,7 +133,7 @@ export class FootView {
       over: {
         drawInto: (pass, eyeMatrix) => marks.drawSolid(pass, raised(eyeMatrix)),
         overWater: (encoder, target, eyeMatrix, depth) => {
-          this.swings.drawOver(encoder, target, depth, eyeMatrix);
+          this.swings.drawOver(encoder, target, depth, own(eyeMatrix));
           marks.drawClearOver(encoder, target, depth, raised(eyeMatrix));
         },
         ...(lit ? { lightInto } : {}),

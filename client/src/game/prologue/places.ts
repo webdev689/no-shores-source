@@ -1,6 +1,6 @@
 // Where the story's storm is: out past Saltmere's harbour, far enough that no coast shows through the storm, in open
 // water deep enough for the wreck to sink in and for every ship of the ambush to float; and the Brig's heading across
-// the swell, so she rolls and pitches both.
+// the swell, so it rolls and pitches both.
 import type { Landmass } from '../landmass.ts';
 import { islandFrame } from './introShots.ts';
 import type { Places } from './story.ts';

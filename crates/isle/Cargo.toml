@@ -1,0 +1,20 @@
+[package]
+name = "isle"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "The sea's procedural islands, the same on the server and in every browser: an island's fine ground, its dressing of modules, its wreckage, its dungeon's door, its landing and its section, all from its seed and climate."
+
+[dependencies]
+movement = { path = "../movement" }
+serde.workspace = true
+serde_json.workspace = true
+libm.workspace = true
+
+[lints]
+workspace = true
+
+# Only to check a landed player stands inside the section the room judges.
+[dev-dependencies]
+reach = { path = "../reach" }

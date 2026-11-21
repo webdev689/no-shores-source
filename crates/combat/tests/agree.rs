@@ -8,7 +8,7 @@ use combat::{CombatInput, Fighter, Intent, Stroke, player_tick};
 use movement::{Block, Controls, standing};
 
 /// Both tests hold this value; a change to the fight changes it in both, on purpose.
-pub const FIGHT_HASH: &str = "2bd58896a95c9e0f";
+pub const FIGHT_HASH: &str = "8d14f8a484a04f85";
 
 const COURSE: [Block; 1] = [Block { min_x: -3.0, min_y: -8.0, max_x: 3.0, max_y: -7.0, top: 1.2, bottom: 0.0 }];
 
@@ -103,7 +103,7 @@ fn the_scripted_fight_moves_to_the_fingerprint_both_tests_hold() {
 /// A look turned past half a turn steps the body as the room's player tick steps it, to the bit: the browser predicts a
 /// walker by the movement rules alone, and the room by the fight's.
 #[test]
-fn a_walker_turned_past_half_a_turn_steps_as_the_room_steps_her() {
+fn a_walker_turned_past_half_a_turn_steps_as_the_room_steps_them() {
     let open = Arms { melee: WeaponClass::Fists, ranged: None, off_hand: OffHand::Empty };
     for yaw in [3.5, 4.0, 7.0, -4.0, 10.0, -100.0] {
         let mut walker = fighter(Side::Players, standing(0.0, 0.0), open, Weight::Medium, 100.0, 50.0);

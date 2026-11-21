@@ -5,6 +5,7 @@ import { type Camera, fitFrame, niceLength, pan, screenToWorld, zoomAt } from '.
 import { buildPanel, type Tool } from './editorPanel.ts';
 import { button, downloadJson } from './dom.ts';
 import { startLandEditor, type LandEditor } from './landEditor.ts';
+import { type IsleEditor, startIsleEditor } from './isleEditor.ts';
 import { type CellRect, CELL_M, LandMask } from './landMask.ts';
 import { draftLayout, type Issue, type LayoutContent, slotIdsFor } from './layoutDraft.ts';
 import { MapView } from './mapView.ts';
@@ -376,21 +377,27 @@ async function start(): Promise<void> {
   new ResizeObserver(requestFrame).observe(canvas);
 
   // The Land mode works on the layout as drafted now, so a coast painted a moment ago is land there too.
-  let mode: 'continents' | 'land' = 'continents';
+  let mode: 'continents' | 'land' | 'islands' = 'continents';
   let landEditor: Promise<LandEditor> | null = null;
+  let isleEditor: Promise<IsleEditor> | null = null;
   const landCanvas = element<HTMLCanvasElement>('#land');
+  const islesCanvas = element<HTMLCanvasElement>('#isles');
   const continentsButton = button('Continents', () => void setMode('continents'));
   const landButton = button('Land', () => void setMode('land'));
-  element<HTMLElement>('#modes').append(continentsButton, landButton);
-  const setMode = async (next: 'continents' | 'land') => {
+  const islandsButton = button('Islands', () => void setMode('islands'));
+  element<HTMLElement>('#modes').append(continentsButton, landButton, islandsButton);
+  const setMode = async (next: 'continents' | 'land' | 'islands') => {
     mode = next;
     continentsButton.classList.toggle('active', next === 'continents');
     landButton.classList.toggle('active', next === 'land');
+    islandsButton.classList.toggle('active', next === 'islands');
     element<HTMLElement>('#continents-panel').hidden = next !== 'continents';
     element<HTMLElement>('#land-panel').hidden = next !== 'land';
+    element<HTMLElement>('#isles-panel').hidden = next !== 'islands';
     canvas.hidden = next !== 'continents';
     svg.toggleAttribute('hidden', next !== 'continents');
     landCanvas.hidden = next !== 'land';
+    islesCanvas.hidden = next !== 'islands';
     element('#land-overlay').toggleAttribute('hidden', next !== 'land');
     if (next === 'land') {
       // One Land editor for the page: a second click while it starts waits for the same one.
@@ -406,6 +413,11 @@ async function start(): Promise<void> {
       const land = await landEditor;
       if (mode === 'land') land.activate(rules.write(JSON.stringify(draft().layout)));
     } else void landEditor?.then((land) => land.deactivate());
+    if (next === 'islands') {
+      isleEditor ??= startIsleEditor(islesCanvas, element<HTMLElement>('#isles-panel'));
+      const isles = await isleEditor;
+      if (mode === 'islands') isles.activate();
+    } else void isleEditor?.then((isles) => isles.deactivate());
     requestFrame();
   };
   continentsButton.classList.add('active');
@@ -414,6 +426,8 @@ async function start(): Promise<void> {
   if (!load(loaded.text)) throw new Error(status);
   restoreKept();
   requestFrame();
+  // `?mode=islands` opens on the Islands mode, for pictures.
+  if (new URLSearchParams(location.search).get('mode') === 'islands') void setMode('islands');
 }
 
 start().catch((error: unknown) => {

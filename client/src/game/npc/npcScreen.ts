@@ -167,8 +167,15 @@ function arrowsAmong(page: HTMLElement): void {
   });
 }
 
-/** A keeper's screen, built anew each time the gear changes; `redraw` asks the menu to build it again. */
-export function npcPage(context: PageContext, kind: KeeperKind, forge: Cards | null, redraw: () => void): HTMLElement {
+/** A keeper's screen, built anew each time the gear changes; `redraw` asks the menu to build it again; `more` stands
+ *  under the wares (a faction's muster of officers, `shipPages.ts`). */
+export function npcPage(
+  context: PageContext,
+  kind: KeeperKind,
+  forge: Cards | null,
+  redraw: () => void,
+  more: readonly HTMLElement[] = [],
+): HTMLElement {
   const { gear } = context;
   // The room's answer to the asks made here: thanks for a ware bought, a word for a price not met.
   const answer = pending ? answeredWith(pending, gear.answered, gear.answer) : undefined;
@@ -204,7 +211,7 @@ export function npcPage(context: PageContext, kind: KeeperKind, forge: Cards | n
   // The vault keeper thanks the player for each thing put in or taken out, as a keeper does for a ware.
   if (kind === 'vault') wares.append(vaultPage({ ...context, ask: (asked) => (waitFor(), context.ask(asked)) }));
   else wares.append(...rowsOf(kind, gear, choosing).map((row) => rowNode(context, row, act, open)));
-  side.append(wares);
+  side.append(wares, ...more);
   const foot = footNode(kind, gear);
   if (foot) side.append(foot);
   page.append(stage, side);
