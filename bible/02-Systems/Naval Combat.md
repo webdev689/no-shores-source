@@ -150,8 +150,8 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
 - **The burst** (`boost.rs`): a tap of Shift drives a player's ship's sails and oars half again for 4 s; once the
   burst is over it recharges for 12 s, so it may burst again 16 s after the tap. A tap while it bursts or recharges
   does nothing, and a wreck cannot burst (its burst is kept). Captains never burst. The fight's view carries each
-  ship's burst, the share still to run and the share of its recharge done. Sailing between ports has no burst: only a
-  fight's helm has one.
+  ship's burst, the share still to run and the share of its recharge done, which the Sloop's plate shows as a ring
+  ("How it looks", "The readout"). Sailing between ports has no burst: only a fight's helm has one.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
@@ -463,7 +463,7 @@ captain's number comes with them in the view, so one leaving the fight never mov
 - **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
   turning it up to a degree a unit of jar, the jars at once added together.
 - **The readout** (`plus/seaFight.ts`, fed by `ships/fightDisplay.ts`, shown by the HUD at sea and by
-  `ships/fightOverlay.ts` in the World Editor): the Sloop's plate at the top left with its battery rose, the card under
+  `ships/fightOverlay.ts` in the World Editor): the Sloop's plate at the top left with its boost ring and battery rose, the card under
   the compass on the ship the look is on (the captain nearest where the Sloop's laid guns fall, else the nearest), and its volley's tally under the sight, in every fight from its first frame to its
   last ([[Interface]], "The sea fight's readout"). The panel leaves the Sloop's own hurts and guns to it. While a captain afloat
   stands with their guns run out, DFO's warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at: "Broadside from the Pirate Brig - C: brace". At
