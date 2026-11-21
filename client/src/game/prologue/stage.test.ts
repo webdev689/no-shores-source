@@ -219,3 +219,14 @@ test("a frame heard at sea or ashore plays the world's own soundscape there, the
     'story beds their own',
   ]);
 });
+
+test("every step of the stage lets the figures' frames past the most kept go, as cutscenes ask for frames too", () => {
+  let pumped = 0;
+  const parts = {
+    forge: { pump: () => pumped++ },
+    ambience: { frame: () => undefined },
+  } as unknown as StageParts;
+  const stage = new Stage(parts);
+  for (let frame = 0; frame < 3; frame++) stage.step(0.016);
+  assert.equal(pumped, 3);
+});

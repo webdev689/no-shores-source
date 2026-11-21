@@ -80,6 +80,8 @@ export class WreckFight implements Beat {
   private ending: number | null = null;
   /** The fight as the music last heard it. */
   private heard: Hearing | null = null;
+  /** Whether the beat has been left, after which a run that opens late is let go. */
+  private left = false;
   done = false;
 
   constructor(story: Story, layout: WreckLayout, scenery: WreckScenery, run: Promise<WreckRun>, nameplate: Nameplate) {
@@ -90,7 +92,11 @@ export class WreckFight implements Beat {
     setAblaze(story, layout);
     story.stage.parts.ambience.heartbeat(false);
     void run.then(
-      (opened) => (this.run = opened),
+      (opened) => {
+        // Opened after the beat was left: it is let go at once, or its edges, arms and heights would stay set.
+        if (this.left) opened.leave();
+        else this.run = opened;
+      },
       (error: unknown) => (this.failure = error ?? new Error('the wreck did not open')),
     );
   }
@@ -441,5 +447,6 @@ export class WreckFight implements Beat {
     if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
     this.run?.leave();
     this.run = null;
+    this.left = true;
   }
 }

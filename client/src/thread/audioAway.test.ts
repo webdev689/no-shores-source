@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { soundAway } from './audioAway.ts';
 import { AudioHost } from './audioHost.ts';
-import type { AudioReply } from './audioOps.ts';
+import type { AudioOp, AudioReply } from './audioOps.ts';
 
 /** A page's audio, enough of it to see what was made, set and called on it. */
 class FakeParam {
@@ -193,4 +193,18 @@ test('a page without Web Audio lets the press through, silent', () => {
     },
   );
   assert.doesNotThrow(() => host.wake());
+});
+
+test('a page with no audio answers what the game waits on at once, so the game holds nothing for it', () => {
+  const replies: unknown[] = [];
+  const host = new AudioHost((reply) => replies.push(reply));
+  const data = new ArrayBuffer(8);
+  host.run([
+    ['ended', 41],
+    ['decode', 42, data],
+  ] as unknown as AudioOp[]);
+  assert.deepEqual(replies, [
+    { kind: 'ended', id: 41 },
+    { kind: 'decoded', id: 42, error: 'the page plays no sound' },
+  ]);
 });
