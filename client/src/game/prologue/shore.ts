@@ -6,7 +6,9 @@ import { playedByTouch } from '../../cinema/screen.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { groundUnder } from '../../editor/closeUp.ts';
 import { type Dress, plainDress } from '../../player/dressing.ts';
+import { BINDS } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
+import { boundWord } from '../controls.ts';
 import type { Landmass } from '../landmass.ts';
 import { type Actor, ACTOR_IDS } from './actors.ts';
 import { type Beach, findBeach } from './beach.ts';
@@ -71,9 +73,13 @@ type Phase = 'searching' | 'waking' | 'talking' | 'asking' | 'rising' | 'leaning
 /** Keys pressed on the way to another window or to let the pointer go, never to take her hand. */
 const AWAY_KEYS = new Set(['alt', 'tab', 'escape', 'meta', 'control', 'shift', 'os']);
 
-/** The prompt that asks the player to take her hand, by whatever they play with. */
-export const takeHandPrompt = (touched: boolean) =>
-  touched ? 'Tap to take her hand' : 'Click or press any key to take her hand';
+/** The prompt that asks the player to take her hand, by whatever they play with: on the pad, its jump's button. */
+export const takeHandPrompt = (touched: boolean, pad = BINDS.device === 'pad') =>
+  touched
+    ? 'Tap to take her hand'
+    : pad
+      ? `Press ${boundWord('jump', 'pad')} to take her hand`
+      : 'Click or press any key to take her hand';
 
 export class Shore implements Beat {
   readonly name = 'shore';

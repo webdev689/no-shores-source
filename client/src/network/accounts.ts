@@ -257,6 +257,19 @@ export class AccountLink {
     return typeof answer === 'string' ? answer : null;
   }
 
+  /** The controls the player bound, as kept with their account (null for none kept yet), or why not; read as the
+   *  page reads them (`client/src/player/binds.ts`). */
+  async binds(): Promise<{ readonly binds: unknown } | string> {
+    const answer = await this.call('GET', '/v1/binds');
+    return typeof answer === 'string' ? answer : { binds: answer['binds'] ?? null };
+  }
+
+  /** Keeps the controls the player bound with their account; why not, if it cannot. */
+  async keepBinds(binds: unknown): Promise<string | null> {
+    const answer = await this.call('PUT', '/v1/binds', { binds });
+    return typeof answer === 'string' ? answer : null;
+  }
+
   /** Where to send the player to sign in or link with Discord, coming back to `back`; the tab keeps a nonce for the
    *  code that comes back. */
   async discord(back: string): Promise<string> {

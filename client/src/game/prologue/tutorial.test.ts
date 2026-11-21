@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { DEFAULTS, rebind } from '../../player/binds.ts';
+import { BINDS } from '../../player/input.ts';
 import type { Action, FighterView } from '../../rules/fighters.ts';
 import { justMet } from '../tasks.ts';
-import { type Done, DODGE_AT, Freeze, PARRY_AT, REMINDER, ticksToLand, Tutorial } from './tutorial.ts';
+import { type Done, DODGE_AT, Freeze, PARRY_AT, reminder, ticksToLand, Tutorial } from './tutorial.ts';
 
 const STILL: Done = {
   seconds: 0.1,
@@ -151,7 +153,7 @@ test('the duel: a boarder stands, the parry taught first, then the dodge, then t
   assert.equal(tutorial.reminder, null);
   tutorial.frame({ ...worn, boarder: 'standing', parried: true });
   assert.equal(tutorial.lesson, null);
-  assert.equal(tutorial.reminder, REMINDER, 'both made, whichever came last: the reminder');
+  assert.equal(tutorial.reminder, reminder(), 'both made, whichever came last: the reminder');
   tutorial.frame({ ...worn, boarder: 'standing', seconds: 6 });
   assert.equal(tutorial.reminder, null, 'for a few seconds');
   assert.deepEqual(ticked(tutorial, { ...worn, boarder: 'fallen' }), [
@@ -312,4 +314,33 @@ test('a blow the player could not answer at once passes unfrozen, and the lesson
   assert.ok(frozenFor('dodge', own({ facing: Math.PI })), 'a dodge whichever way they face');
   assert.ok(!frozenFor('parry', own({ facing: Math.PI })), 'a parry with their back to it');
   assert.ok(frozenFor('parry', own({ facing: 0.9 })), 'a parry with the blow off to one side');
+});
+
+test('the steps and the reminder name each control as bound now, on the keys or the pad played last', () => {
+  const jumpJ = rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, 'j').binds ?? DEFAULTS;
+  BINDS.set(rebind(jumpJ, { id: 'guard', device: 'keys', place: 1 }, 'g').binds ?? jumpJ);
+  try {
+    const keysOf = () =>
+      broughtTo('feet')
+        .frame({ ...STILL, arms: 'worn' })
+        .steps.map((step) => [step.text, step.keys]);
+    assert.deepEqual(keysOf(), [
+      ['Move', ['W', 'A', 'S', 'D']],
+      ['Look round', ['Mouse']],
+      ['Run', ['Shift']],
+      ['Jump', ['J']],
+    ]);
+    assert.equal(reminder(), 'G parries a blow as it lands; V dodges it', 'a key before a mouse button');
+    BINDS.device = 'pad';
+    assert.deepEqual(keysOf(), [
+      ['Move', ['pad:Left stick']],
+      ['Look round', ['pad:Right stick']],
+      ['Run', ['pad:LS']],
+      ['Jump', ['pad:A']],
+    ]);
+    assert.equal(reminder(), 'LT parries a blow as it lands; B dodges it');
+  } finally {
+    BINDS.device = 'keys';
+    BINDS.set(DEFAULTS);
+  }
 });

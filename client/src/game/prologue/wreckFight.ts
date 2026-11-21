@@ -8,6 +8,7 @@ import { EVENT } from '../../combat/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
 import type { InputFrame } from '../../player/input.ts';
+import { askedKey } from '../controls.ts';
 import type { FootFight } from '../foot.ts';
 import { gearScreenOpen, type GearHere } from '../gearScreen.ts';
 import { onScreen, type Shot } from '../camera.ts';
@@ -37,8 +38,9 @@ const BACK_S = 5.6;
 const BARK_GAP_S = 9;
 /** How long the screen takes to fade out on the fight's end, seconds. */
 const END_S = 0.6;
-/** What the frozen fight asks of the player. */
-const ANSWER = { parry: 'Press F to parry', dodge: 'Press V to dodge' } as const;
+/** What the frozen fight asks of the player, naming the key as bound now on the keys or the pad. */
+const asked = (lesson: 'parry' | 'dodge'): string =>
+  lesson === 'parry' ? `Press ${askedKey('guard')} to parry` : `Press ${askedKey('dodge')} to dodge`;
 /** While the fight is frozen the world drains this far toward grey under the interface, easing there and back over
  *  this long, so the stop reads as time held. */
 const FROZEN_DRAIN = 0.55;
@@ -80,6 +82,8 @@ export class WreckFight implements Beat {
   private ending: number | null = null;
   /** The fight as the music last heard it. */
   private heard: Hearing | null = null;
+  /** Whether the beat has been left, after which a run that opens late is let go. */
+  private left = false;
   done = false;
 
   constructor(story: Story, layout: WreckLayout, scenery: WreckScenery, run: Promise<WreckRun>, nameplate: Nameplate) {
@@ -90,7 +94,11 @@ export class WreckFight implements Beat {
     setAblaze(story, layout);
     story.stage.parts.ambience.heartbeat(false);
     void run.then(
-      (opened) => (this.run = opened),
+      (opened) => {
+        // Opened after the beat was left: it is let go at once, or its edges, arms and heights would stay set.
+        if (this.left) opened.leave();
+        else this.run = opened;
+      },
       (error: unknown) => (this.failure = error ?? new Error('the wreck did not open')),
     );
   }
@@ -323,7 +331,7 @@ export class WreckFight implements Beat {
       dodge: controls.pressed('dodge'),
     });
     const frozen = !held && this.freeze.frame(run.boarderView, { player, own, lesson, parryOpen }, answer);
-    const prompt = frozen && lesson ? ANSWER[lesson] : null;
+    const prompt = frozen && lesson ? asked(lesson) : null;
     if (prompt !== this.prompting) {
       this.prompting = prompt;
       this.story.stage.parts.screen.showPrompt(prompt);
@@ -441,5 +449,6 @@ export class WreckFight implements Beat {
     if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
     this.run?.leave();
     this.run = null;
+    this.left = true;
   }
 }

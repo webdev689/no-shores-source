@@ -57,12 +57,17 @@ export function tapNode(
 export function tapToStart(stack: Stack, ready: Promise<unknown>, clock: () => number = pageClock): Promise<void> {
   const shown = new Eased(1);
   const words = { press: playedByTouch() ? 'Tap to start' : 'Click or press any key to start', loading: '' };
-  const removeLayer = stack.add((ui) => tapNode(ui, words, shown.value(clock()), clock()));
+  let tap: () => void = () => undefined;
+  const removeLayer = stack.add((ui) => {
+    // A pad's button is a key too; the pad is read as each frame is drawn.
+    if (padPressed()) tap();
+    return tapNode(ui, words, shown.value(clock()), clock());
+  });
   announce(`${TITLE}. ${words.press}`);
   untapped = true;
   return new Promise((resolve) => {
     let tapped = false;
-    const tap = () => {
+    tap = () => {
       if (tapped) return;
       tapped = true;
       untapped = false;
@@ -79,3 +84,8 @@ export function tapToStart(stack: Stack, ready: Promise<unknown>, clock: () => n
     addEventListener('keydown', tap);
   });
 }
+
+/** Whether any pad has a button down now, where the page has pads. */
+const padPressed = (): boolean =>
+  typeof navigator.getGamepads === 'function' &&
+  navigator.getGamepads().some((pad) => pad?.buttons.some((button) => button.pressed));

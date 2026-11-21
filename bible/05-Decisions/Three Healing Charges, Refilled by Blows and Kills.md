@@ -73,7 +73,7 @@ chose "Yes, as XP does".
 | The word | "+40" in green over the player, plain grey over another player | As the fight's words say the rest |
 | The display | Three diamonds under the vitals' bars, above the buffs, drawn cell by cell as the bars' frames are: an outline, a stone line lit above and shaded below, and inside the bars' see-through track. A charge held is whole in health's red; the next fills from its foot by whole pixel rows in a pale health red. A screen reader reads "Healing charges", how many of three and how far the next has filled | In the vitals' stone, by the health they give back; the bars' loss strip is a darker red, but a darker meter measured under 1.7:1 against its well |
 | The flash | A diamond brightens in two steps over 0.4 s, near white and then pale red, as a charge is gained or drunk; none under reduced motion | The owner's "Flash on gain or drink", in steps as the vitals' other changes are |
-| The key strip | "3 Heal", after "1 / 2 Loadout"; its pairs 8 px apart, so at 1280 by 720 it keeps to two lines with an Art worn | The key the owner chose |
+| The key strip | "3 Heal", after "1 / 2 Loadout"; its pairs 8 px apart, so at 1280 by 720 it keeps to two lines with an Art worn. Replaced by the calls of [[The Key Strip Follows the Moment, and K Opens Every Control]] | The key the owner chose |
 
 Links: [[Combat]], [[Interface]], [[Server]], [[Test Ground]], [[Game]], [[Arts]],
 [[Enemies Come in Five Ranks, After Destiny]].

@@ -4,7 +4,7 @@
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
-import type { Action, Input, InputFrame } from '../player/input.ts';
+import { IDLE, type Input, type InputFrame, axis } from '../player/input.ts';
 import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
@@ -16,9 +16,11 @@ import type { Charting } from './charting.ts';
 import type { Discovered } from './discovered.ts';
 import type { FigureView } from './figureView.ts';
 import { type Flow, type Happening, next } from './flow.ts';
+import { FrameGuard } from '../frameGuard.ts';
 import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
+import { contextOf } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { HINTS, withMapKey } from './hints.ts';
 import { gearTakesKeys } from './gearScreen.ts';
@@ -215,7 +217,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.through =
       paused || looking || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    hud.hints(looking ? HINTS.landMap : withMapKey(shown.hints));
+    // N raises the map on foot unless a menu is up or the player has fallen, as `openMap` has it.
+    hud.hints(looking ? HINTS.landMap : paused || here.fallen ? shown.hints : withMapKey(shown.hints));
     hud.marks([]);
     hideSeaHud(hud);
     hud.note(here.roomNote);
@@ -224,20 +227,26 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const { flow, helmMap } = playing;
-    const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
-    // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
-    if (!paused && !helmMap.shown)
-      here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
+    // The helm's controls while the sea's own view is up: the map's and the deck's are their own, and a fight's its.
+    if (!paused && !helmMap.shown) {
+      const steer = axis(controls, 'steerLeft', 'steerRight');
+      here.helm(steer, controls.pressed('sailOn'), controls.pressed('heaveTo'), seconds);
+    }
+    // The fight's keys and pointer are heard as they come (`fightControls`); its pad, each frame, and while paused only
+    // what the pad lets go, so nothing it held stays held.
+    const pad = input.padAlone;
+    if (!here.boarding.onDeck)
+      here.fight?.padFrame(paused ? { ...IDLE, released: (id) => pad.released(id) } : pad, seconds);
     const shown = here.frame({
       seconds,
       time: clock,
       viewport,
-      turn: held('turnRight') - held('turnLeft'),
-      tilt: held('lookDown') - held('lookUp'),
+      turn: axis(controls, 'turnLeft', 'turnRight'),
+      tilt: axis(controls, 'lookUp', 'lookDown'),
       swell,
       controls,
       paused,
@@ -291,6 +300,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       charting: charting.busy,
       friendly: fleet.marks,
       notices,
+      free: !input.locked && !paused,
     });
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
@@ -310,6 +320,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     seconds: number,
     size: { width: number; height: number },
   ) => {
+    host.padFrame(input.padAlone, seconds);
     const left = host.frame(controls, seconds, size);
     if (!left) return;
     playing.after.storyEnded(left.epilogue);
@@ -320,15 +331,30 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   /** The GPU's work for the frame drawn last. */
   let inFlight = Promise.resolve();
+  const guard = new FrameGuard();
   const frame = (now: number) => {
+    guard.run(() => step(now));
+    // At most one frame waits on the GPU while the next is drawn, so a GPU that falls behind slows the frames.
+    const previous = inFlight;
+    inFlight = gpu.device.queue.onSubmittedWorkDone();
+    const again = () => requestAnimationFrame(frame);
+    void previous.then(again, again);
+  };
+  const step = (now: number) => {
     const elapsed = (now - last) / 1000;
     const seconds = Math.min(0.1, elapsed);
     last = now;
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
-    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys() || creationOpen());
+    const windowUp = menuUp || gearTakesKeys() || creationOpen();
+    // The sheet takes the keys and the pad but while it waits for one to bind.
+    const tookWheel = ui.hear(seconds, !input.locked, windowUp || hud.controls.takesKeys);
+    const top = hud.controls.open ? 'sheet' : gearTakesKeys() ? 'gear' : creationOpen() ? 'creation' : menuUp && 'menu';
+    input.window(top || null);
+    input.context = playing.flow.mode === 'story' && parts.story ? parts.story.context : contextOf(playing);
     const heard = input.frame();
+    hud.controls.frame(seconds, input.padButtons);
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;
     const size = { width: canvas.width, height: canvas.height };
@@ -350,10 +376,6 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         parts.syncMenu();
       }
     }
-    // At most one frame waits on the GPU while the next is drawn, so a GPU that falls behind slows the frames.
-    const previous = inFlight;
-    inFlight = gpu.device.queue.onSubmittedWorkDone();
-    void previous.then(() => requestAnimationFrame(frame));
   };
   requestAnimationFrame(frame);
 }

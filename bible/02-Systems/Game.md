@@ -77,8 +77,9 @@ the screen reader's announcements.
   page keeps a key's own work (scroll, find, the focus moving) from every key of the game's unless words are typed,
   the browser's shortcuts and function keys aside, and a wheel's and a right click's on the canvas always.
 - **What the game finds in the worker** stands in for the page (`pageAway`): storage read there and each change sent
-  to the page's at once; the page's address, its size, its media queries and its document; the canvas, its pointer's
-  lock and capture asked of the page. The game's own code runs unchanged: the stand-ins answer as a page's do.
+  to the page's at once; the page's address, its size, its media queries and its document; the pads, as the page read
+  them each frame (`navigator.getGamepads`, which a worker lacks); the canvas, its pointer's lock and capture asked of
+  the page. The game's own code runs unchanged: the stand-ins answer as a page's do.
 - **Sound** is made on the page's audio, its cues sent ahead by the worker (`soundAway`, `AudioHost`): every node,
   parameter and buffer the game's sound code makes there is a number the page keeps, each call sent with the rest of
   its task's and carried out on the page; the page's clock is sent back now and then, and the worker runs it on
@@ -154,9 +155,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   guards, parries or fires, V or Mouse5 dodges, R, Q and G cast the worn Art's spells ([[Arts]]), and the soft lock
   holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The key strip
-  shows the fight's keys and the body's beyond walking, the Arts' (R Anima, Q and G Tenets) only while an Art is worn,
-  and how to aim Dusk Daggers only while Shadow is. Every key hint, on foot and at sea, is a key on its keycap and
-  its action, with no colon. Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), its keys
+  shows only the keys of what the player is doing now, and K opens the sheet of every control ([[Interface]], "The
+  key strip"). Every key hint, on foot and at sea, is a key on its keycap, or its mouse button drawn, and its
+  action, with no colon. Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), its keys
   stand at 22 px, at the bottom right ([[Interface]]), and the place line's small words under its name at the face's 11 px
   (22 over the held map; [[Interface]], "Limits").
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's

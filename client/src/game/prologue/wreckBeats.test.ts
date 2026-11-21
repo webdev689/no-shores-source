@@ -19,7 +19,7 @@ import type { Nameplate } from './nameplate.ts';
 import { Overboard } from './overboard.ts';
 import { headOnView } from './stage.ts';
 import type { Story } from './story.ts';
-import { REMINDER } from './tutorial.ts';
+import { reminder } from './tutorial.ts';
 import { Wake } from './wake.ts';
 import { courseOf, readWreck, topAt } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
@@ -87,6 +87,20 @@ test("leaving the wreck hands the HUD back clean: no death, hints, prompt or fig
       done,
     );
   assert.ok(calls.includes('stage.parts.hud.tasks.show()') && calls.includes('stage.parts.screen.bars(false)'));
+});
+
+test('a wreck run that opens after its beat was left is let go at once, its edges and heights not left set', async () => {
+  const { story } = recorded();
+  let opened: (run: WreckRun) => void = () => undefined;
+  const fight = new WreckFight(story, layout, scenery, new Promise((resolve) => (opened = resolve)), {
+    hide: () => undefined,
+  } as unknown as Nameplate);
+  fight.leave();
+  let left = 0;
+  opened({ leave: () => left++ } as unknown as WreckRun);
+  await Promise.resolve();
+  assert.equal(left, 1);
+  assert.equal(fight.playing, false);
 });
 
 test('the throw overboard begins black, as the fight faded out, and only then fades in', () => {
@@ -491,7 +505,7 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
   state.events = [{ kind: EVENT.perfect, striker: 2, defender: 1 } as FightEvent];
   step();
   step();
-  assert.ok(calls.includes(`stage.parts.hud.toast(${REMINDER})`), 'then the reminder');
+  assert.ok(calls.includes(`stage.parts.hud.toast(${reminder()})`), 'then the reminder');
   state.boarder = 'fallen';
   onFor(2);
   assert.equal(waves.at(-1), false, 'the boarder down, the waves come');
