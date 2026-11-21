@@ -1,6 +1,7 @@
 import type { GlowElement, GlowField, GlowLook } from '../elementGlow.ts';
-import type { Colours } from '../forge/compose.ts';
+import { type Colours, onRamp } from '../forge/compose.ts';
 import { cosmeticRamp } from '../forge/cosmetics.ts';
+import { coversOf } from '../forge/coverLight.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import { type ForgeLooks, HORSE_LAYER, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
@@ -10,6 +11,7 @@ import { stripsOf } from './composeJob.ts';
 import type { Haste } from './composeQueue.ts';
 import { type Composer, PageComposer, WorkerComposer } from './composer.ts';
 import { type Dress, type Wardrobe, figureOf, layerRamps, wardrobeOf } from './dressing.ts';
+import { shrunk } from './iconFit.ts';
 import { onTheMove } from './playerMoves.ts';
 import type { Picture } from './picture.ts';
 
@@ -96,6 +98,10 @@ const WARM_ON_PAGE = { aTick: 2, underWay: 6 } as const;
 const WARM_OFF_PAGE = { aTick: 4, underWay: 12 } as const;
 const WARM_LOOKS = 32;
 
+/** Where the forge's large picture of a layer in hand lies (weaponart.py): a left hand's twin (`dagger_iron_l`) is its
+ *  right hand's. */
+export const weaponArtPath = (layer: string): string => `@art/weapons/${layer.replace(/_l$/, '')}.png`;
+
 /** Each figure's frames, composed from the forge's strips once and kept as textures; while a frame is being composed,
  *  the figure keeps showing the last one it had. */
 export class Cards {
@@ -122,6 +128,8 @@ export class Cards {
   private readonly dyes: DyeTable;
   private readonly limits: KeptCards;
   private readonly composer: Composer;
+  private readonly store: ForgeStore;
+  private readonly snap: PaletteSnap | undefined;
   /** The last strip that failed to load, for the status line. */
   failure = '';
 
@@ -140,6 +148,8 @@ export class Cards {
     this.dyes = dyes;
     this.limits = limits;
     this.composer = composer ?? new PageComposer(looks, colours, (path) => store.strip(path));
+    this.store = store;
+    this.snap = colours.snap;
   }
 
   /** How many frames are being composed. */
@@ -180,6 +190,34 @@ export class Cards {
         }
     const root = flip ? ([width - 1 - composed.root[0], composed.root[1]] as const) : composed.root;
     return { width, height, pixels, root };
+  }
+
+  /** A layer in hand as the forge draws it large and alone (`weaponArtPath`), level with its business end to the
+   *  right: dyed as `dress` dyes the layer in a figure's frame, then, at `share` of its size, shrunk by an area average
+   *  and its cover cut at a half, and snapped to the palette as a frame is. Null where the forge publishes none. */
+  async weaponArt(dress: Dress, layer: string, share = 1): Promise<Picture | null> {
+    const art = await this.store.strip(weaponArtPath(layer));
+    if (!art) return null;
+    const { ramps, whole } = layerRamps([layer], dress.outfit, this.looks, this.dyes);
+    const ramp = this.looks.dye?.includes(layer) ? (ramps[layer] ?? null) : null;
+    const strip = (path: string) => this.store.strip(path);
+    const covers = ramp && whole.includes(layer) ? await coversOf(dress.body, [layer], this.looks, strip) : null;
+    const steps = covers?.get(layer) ?? null;
+    let [width, height, pixels] = [art.width, art.height, new Uint8ClampedArray(art.data)];
+    for (let texel = 0; texel < pixels.length; texel += 4) {
+      const dyed = pixels[texel + 3] ? onRamp(pixels.subarray(texel, texel + 3), ramp, steps) : null;
+      if (dyed) pixels.set(dyed, texel);
+    }
+    if (share < 1) {
+      [width, height] = [Math.max(1, Math.round(width * share)), Math.max(1, Math.round(height * share))];
+      pixels = shrunk(art.width, art.height, pixels, width, height);
+      for (let texel = 0; texel < pixels.length; texel += 4)
+        if ((pixels[texel + 3] ?? 0) < 128) pixels.fill(0, texel, texel + 4);
+        else pixels[texel + 3] = 255;
+    }
+    this.snap?.snap(pixels);
+    const { snap } = this;
+    return { width, height, pixels, level: true, ...(snap ? { snap: (shown) => snap.snap(shown) } : {}) };
   }
 
   /** What a body can wear, as the forge draws it; null for a body it has not. */
