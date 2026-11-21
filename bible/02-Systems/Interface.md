@@ -439,7 +439,8 @@ never while a press is held. Each press is an ask the room answers.
     by where it counts (a peak, waves, an arched door) on its kind's ground, with no words on it: a gauge of its count
     while held, a gilded edge once done, its mark dimmed with a check once turned in. A slot not taken is an empty
     frame. The hovered, focused or pressed tile's card stands under the grid: its name, its kind, its words, its
-    count and what it pays. Bounties are taken and turned in at the board alone.
+    count and what it pays. Bounties are taken and turned in at the board alone. The column stands at the right
+    wherever it fits beside the quests, as wide as its head; on a phone (under 600 px) it stands under them.
   - **The timers**: under Today, the daily reset, the dungeon of the day with its pay, the day's modifier, each
     tier's seas taken or shut, and each island's dungeon with its levels; then the bounties' end. Under This week,
     the weekly reset, the Elite and the Abyss Dungeon of the week with their levels, rules, modifiers and pay, taken

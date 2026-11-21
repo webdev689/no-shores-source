@@ -34,8 +34,11 @@
 .bounty-tile-done .bounty-gauge > .plus-meter {
   background-color: var(--gain);
 }
-.bounty-tile-done {
+/* Done: a gilded edge, as a chosen tab's, over the kit's stone; it stays gilded under the pointer. */
+#hud .bounty-tile-done,
+#hud .bounty-tile-done:hover {
   border-color: #f3cf86 #7a5424 #5c3f1a #c08a3e;
+  box-shadow: inset 0 0 0 1px rgba(243, 207, 134, 0.35);
 }
 .bounty-tile-paid .bounty-tile-mark {
   opacity: 0.45;
@@ -46,18 +49,24 @@
   bottom: 2px;
   color: var(--brass-lit);
 }
-.bounty-tile-chosen {
-  outline: 2px solid var(--brass-lit);
-  outline-offset: 1px;
+/* The tile whose card shows: white, as Destiny marks what is selected and the menu marks its focus. */
+#hud .bounty-tile-chosen {
+  outline: 2px solid #f2efe6;
+  outline-offset: 2px;
+}
+#hud .gear-board-shut .bounty-tile-chosen {
+  outline: none;
 }
 .bounty-card {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 10px 12px;
+  font-size: var(--type-s);
 }
 .bounty-card-name {
   font-size: var(--type-m);
+  font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -88,9 +97,13 @@
 
 .gear-board {
   display: grid;
-  grid-template-columns: auto minmax(0, 260px);
+  grid-template-columns: max-content 260px;
+  justify-content: center;
+  align-items: start;
   gap: 8px 24px;
-  max-width: 640px;
+  width: max-content;
+  max-width: 100%;
+  box-sizing: border-box;
   margin: 24px auto;
   padding: 18px 22px;
 }
@@ -131,5 +144,6 @@
 @media (max-width: 560px) {
   .gear-board {
     grid-template-columns: minmax(0, 1fr);
+    width: auto;
   }
 }

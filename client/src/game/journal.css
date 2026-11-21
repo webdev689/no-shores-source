@@ -27,7 +27,7 @@
 }
 .journal-timers-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--type-l);
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -56,6 +56,11 @@
 .journal-timer-row + .journal-timer-row {
   border-top: 1px solid rgba(163, 152, 128, 0.18);
 }
+.journal-timer-name,
+.journal-timer-week .gear-week-dungeon > .gear-week-row:first-child .gear-week-what b {
+  font-size: var(--type-m);
+  font-weight: 500;
+}
 .journal-timer-name::before {
   content: '◆ ';
   color: var(--brass);
@@ -69,6 +74,7 @@
   text-align: right;
 }
 .journal-timer-count {
+  font-size: var(--type-m);
   color: var(--brass-lit);
   font-variant-numeric: tabular-nums;
 }
@@ -106,35 +112,57 @@
   }
 }
 
-/* The Journal: the quests' cards in its middle, the bounties' column at its right, and the timers over both. */
+/* The Journal: the quests' cards in its middle, the bounties' column at its right, and the timers over both. The
+   column is as wide as its head and its tiles need; the card under them wraps to it and widens it never. */
 .journal {
   position: relative;
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 176px;
+  grid-template-columns: minmax(0, 1fr) minmax(176px, max-content);
+  align-items: start;
   column-gap: 24px;
 }
 .journal-quests {
+  max-height: 100%;
   min-height: 0;
   overflow-y: auto;
+  /* The bounties' panel's edge and inset, so the two titles stand on one line. */
+  padding-top: 14px;
 }
 .journal-quests-head,
 .journal-bounties-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
 }
+.journal-quests-head > .gear-chip,
+.journal-bounties-head > .gear-chip {
+  flex: none;
+  white-space: nowrap;
+}
 .journal-title {
   margin: 0;
   margin-right: auto;
-  font-size: var(--type-m);
-  letter-spacing: 0.12em;
+  font-size: var(--type-l);
+  font-weight: 500;
+  letter-spacing: round(up, calc(5em / 22), 1px);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .journal-page-at {
   font-variant-numeric: tabular-nums;
   color: var(--faint);
+  white-space: nowrap;
+}
+#hud .journal-quests-head .plus-button {
+  width: 33px;
+  height: 33px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: var(--type-l);
 }
 .journal-cards {
   display: grid;
@@ -160,26 +188,15 @@
 }
 .journal-card-words {
   min-width: 0;
+  font-size: var(--type-s);
 }
 .journal-card-name {
   display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-/* The step's name is cut short where it must be; its number and Done always show. */
-.journal-card-step {
-  display: flex;
-  align-items: baseline;
-}
-.journal-card-step > :nth-child(2) {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.journal-card-step > :not(:nth-child(2)) {
-  flex: none;
+  font-size: var(--type-m);
+  font-weight: 500;
 }
 .journal-card-tale {
   margin: 4px 0;
@@ -190,23 +207,36 @@
   -webkit-line-clamp: 2;
   overflow: hidden;
 }
+/* The step's name is cut short where it must be; its number and Done always show. */
 .journal-card-step {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   margin: 0;
 }
-.journal-card-step > * + * {
-  margin-left: 6px;
+.journal-card-step > :nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.journal-card-step > :not(:nth-child(2)) {
+  flex: none;
 }
 .journal-step-number {
   font-variant-numeric: tabular-nums;
   color: var(--brass-lit);
 }
 .journal-bounties {
-  align-self: start;
+  box-sizing: border-box;
+  max-height: 100%;
+  overflow-y: auto;
   padding: 12px;
 }
 .journal-tiles {
   display: grid;
   grid-template-columns: repeat(2, 64px);
+  justify-content: center;
   gap: 8px;
 }
 .journal-slot {
@@ -214,6 +244,8 @@
   height: 64px;
 }
 .journal-bounty-said {
+  width: 0;
+  min-width: 100%;
   margin-top: 10px;
 }
 @media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
@@ -221,19 +253,28 @@
     grid-auto-rows: 128px;
   }
 }
+/* Where two columns of cards do not fit, one; the bounties stay at the right while they fit beside it. */
 @media (max-width: 899px) {
+  .journal-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* On a phone the page is one column and scrolls whole, the bounties under the quests. */
+@media (max-width: 599px) {
   .journal {
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
     row-gap: 16px;
     overflow-y: auto;
   }
-  .journal-quests {
+  .journal-quests,
+  .journal-bounties {
+    max-height: none;
     min-height: auto;
     overflow: visible;
   }
-  .journal-cards {
-    grid-template-columns: minmax(0, 1fr);
+  .journal-quests {
+    padding-top: 0;
   }
 }
 
@@ -272,6 +313,11 @@
 .journal-timer-row > :first-child {
   flex: 1 1 auto;
   min-width: 0;
+}
+/* A week's dungeon is a row as the others are: its name marked and in the names' colour. */
+.journal-timer-week .gear-week-dungeon > .gear-week-row:first-child .gear-week-what b::before {
+  content: '◆ ';
+  color: var(--brass);
 }
 .journal-timer-row .gear-week-row {
   flex-wrap: wrap;
