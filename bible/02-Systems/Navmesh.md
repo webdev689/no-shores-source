@@ -134,6 +134,9 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 
 - A node's room bakes a 70 m square of its [[Land]], its first spawn 15 m inside the square's edge toward the middle
   of its section, and only the boxes that reach into it; a larger square would hold more of a node, at a bake's cost.
+  A zone that holds public events also bakes a rectangle round each of its grounds and joins it to that square as a
+  part of one mesh: a path runs within one part, never from one to another, and a point is placed on whichever part
+  has it nearest ([[Public Events]], with what it adds to the room's open).
 - An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
   stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.

@@ -55,7 +55,8 @@ pub(crate) struct Foe {
 }
 
 /// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
-/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield.
+/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level, its shield, and the name it
+/// stands under in place of its type's (empty for none).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FoeSeen {
     pub foe: FighterId,
@@ -68,6 +69,7 @@ pub struct FoeSeen {
     pub fighter: Fighter,
     pub level: u8,
     pub shield: Option<gear::element::Shield>,
+    pub name: &'static str,
 }
 
 /// A corner nearer a foe's feet than a tick's run is as good as reached, in metres.
@@ -362,7 +364,7 @@ impl Room {
             .filter(|(id, _)| self.players.get(id).is_none_or(|found| found.graced <= clock))
             .copied()
             .collect();
-        let ids: Vec<FighterId> = self.foes.keys().copied().collect();
+        let ids: Vec<FighterId> = self.foes.keys().copied().filter(|id| !self.inert.contains(id)).collect();
         let mut intents = Vec::with_capacity(ids.len());
         let routes = MeshRoutes::new(&self.nav, &self.floor, &self.blocks, std::mem::take(&mut self.ways));
         {
@@ -587,6 +589,7 @@ impl Room {
                 fighter: found.fighter,
                 level: found.level,
                 shield: found.shield,
+                name: self.names.get(&foe).copied().unwrap_or_default(),
             }
         })
     }

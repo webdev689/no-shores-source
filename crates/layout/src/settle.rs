@@ -225,6 +225,7 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
                 .map(|[corner_x, corner_y]| ground.height_at(corner_x, corner_y));
         }
         layout.boxes = boxes_of(layout, book);
+        layout.boxes.extend(crate::grounds::store_boxes(&layout.sites, &|x, y| ground.height_at(x, y)));
     }
     layouts
 }

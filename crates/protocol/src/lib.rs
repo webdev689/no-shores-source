@@ -41,6 +41,7 @@ pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../g
 
 pub mod fleet;
 pub mod gear_wire;
+mod public_wire;
 mod standing_wire;
 
 /// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
@@ -320,6 +321,8 @@ pub struct Snapshot<'snapshot> {
     /// The balls that stopped since the last snapshot, each sent among the shots as its last segment and its muzzle.
     pub lines: &'snapshot [Line],
     pub spells: &'snapshot [SpellSeen],
+    /// A zone's public events; none in a room whose zone holds none.
+    pub public: Option<&'snapshot room::public::PublicSeen>,
 }
 
 /// Every player as the room saw them after its tick, the dresses that changed since the last snapshot, every foe,
@@ -350,6 +353,8 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .iter()
         .map(|foe| {
             let glance = Some(builder.create_vector(&foe.fighter.glance()));
+            // Left out for none, so a foe of its type's name costs nothing more on the wire.
+            let name = (!foe.name.is_empty()).then(|| builder.create_string(foe.name));
             let (shield, statuses) = (foe.shield, foe.fighter.statuses);
             let args = messages::FoeArgs {
                 id: foe.foe,
@@ -367,6 +372,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 expose: statuses.left(Status::Expose),
                 charge: statuses.left(Status::Charge),
                 charge_immune: statuses.charge_immune,
+                name,
             };
             messages::Foe::create(&mut builder, &args)
         })
@@ -408,6 +414,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let shots = Some(builder.create_vector(&shots));
     // Left out when there are none, so a snapshot carries no more than it needs.
     let spells = (!snapshot.spells.is_empty()).then(|| spells_vector(&mut builder, snapshot.spells));
+    let public_event = snapshot.public.map(|seen| public_wire::public_offset(&mut builder, seen));
     let tick = snapshot.tick;
     let args = messages::SnapshotArgs {
         tick,
@@ -417,6 +424,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         events,
         shots,
         spells,
+        public_event,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)

@@ -15,8 +15,9 @@ const roster = rosterOf(
 );
 
 test("every type in the rules' roster is dressed, holding the roster's own weapons drawn, in the forge's dyes", () => {
-  assert.equal(roster.length, 20);
-  for (const type of roster) {
+  assert.equal(roster.length, 27);
+  // The Lattice (faction 3) wear their own crystal layers, dressed apart from the forge's clothes.
+  for (const type of roster.filter((each) => each.faction !== 3)) {
     const dress = foeDress(type);
     assert.ok(dress, `${type.name} is dressed`);
     assert.deepEqual([dress.outfit.right, dress.outfit.left, dress.outfit.drawn], [type.right, type.left, true]);
@@ -42,6 +43,7 @@ test('the panel offers a faction, then only the ranks its chosen type comes in',
   assert.deepEqual(factionsOf(roster), [
     [1, 'The Grey Tithe'],
     [2, 'Pirates'],
+    [3, 'The Lattice'],
   ]);
   const ranksOf = (name: string) => {
     const type = roster.find((each) => each.name === name);

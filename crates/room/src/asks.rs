@@ -36,6 +36,10 @@ pub enum Asked {
     Grant(Grant),
     /// Wears an Art, or sets a fragment in a slot of one's Core.
     Art(gear::arts::ArtAsk),
+    /// Opens one's chest from a public event, by its number among one's drops, within `public::CHEST_REACH`.
+    OpenChest {
+        chest: u32,
+    },
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -249,6 +253,7 @@ impl Room {
             Asked::Grant(grant) if self.is_test_ground() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),
+            Asked::OpenChest { chest } => self.open_chest(player, chest),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;

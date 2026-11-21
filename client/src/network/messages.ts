@@ -7,6 +7,7 @@ import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.
 import { type CastAsk, type SeenSpell, spellsOf } from './artMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 import { withOthers } from './seaFight.ts';
+import { type PublicEvent, publicOf } from './publicMessages.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
 export interface Look {
@@ -96,6 +97,8 @@ export interface SeenFoe {
   readonly shield: FoeShield | null;
   /** Its debuffs; none for a foe made by hand. */
   readonly statuses?: FoeStatuses;
+  /** The name it stands under in place of its type's: a public event's Warden or Marrow, or the Fissure's growth. */
+  readonly name?: string;
 }
 
 /** A foe's debuffs as the room keeps them: the ticks left of its Expose and its Charge, and of the immunity a Charge
@@ -178,6 +181,8 @@ export type FromRoomMessage =
       readonly fights: readonly SeenSeaFight[];
       /** Every spell in a room on land, which every player sees. */
       readonly spells: readonly SeenSpell[];
+      /** A zone's public events; null in a room whose zone holds none. */
+      readonly public: PublicEvent | null;
     } & FleetPart)
   | ({ readonly kind: 'gear' } & GearState);
 
@@ -335,7 +340,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const named = { type: foe.type(), rank: foe.rank(), faction: foe.faction(), phase: foe.phase() };
       const statuses = { expose: foe.expose(), charge: foe.charge(), chargeImmune: foe.chargeImmune() };
       const read = { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
-      return { ...read, statuses };
+      const name = foe.name();
+      return { ...read, statuses, ...(name ? { name } : {}) };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);
@@ -392,6 +398,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       pirates,
       fights,
       spells: spellsOf(snapshot),
+      public: publicOf(snapshot),
       ...fleetOf(snapshot),
     };
   } catch {

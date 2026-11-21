@@ -24,10 +24,12 @@ mod deck_door;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;
+mod public_door;
 mod roster_door;
 
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute};
+pub use public_door::parting;
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's, and why it takes no
 /// player when its node is locked; the sea; or a fleet.
@@ -76,6 +78,8 @@ struct NodeFile {
     counters: Vec<NodeCounter>,
     #[serde(default)]
     shape_spots: Vec<[f64; 2]>,
+    #[serde(default)]
+    grounds: Option<public_door::NodeGrounds>,
 }
 
 /// A social space's counter as the bake writes it: its station, and its middle.
@@ -154,6 +158,9 @@ pub fn open_node(text: &[u8]) -> bool {
     let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
     room.counters = (node.kind == NodeKind::Social).then(|| node.counters.iter().filter_map(counter_of).collect());
     room.shape_spots = node.shape_spots;
+    if let Some(grounds) = node.grounds {
+        room.open_public(&node.id, grounds.into(), levels);
+    }
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource
@@ -295,6 +302,7 @@ pub fn snapshot() -> Vec<u8> {
             let lines = room.take_lines();
             let shots: Vec<combat::Shot> = room.shots().copied().collect();
             let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
+            let public = room.public_seen();
             let snapshot = protocol::Snapshot {
                 tick,
                 players: &players,
@@ -304,6 +312,7 @@ pub fn snapshot() -> Vec<u8> {
                 shots: &shots,
                 lines: &lines,
                 spells: &spells,
+                public: public.as_ref(),
             };
             protocol::snapshot_bytes(&snapshot)
         }
@@ -550,3 +559,6 @@ mod fleet_door_tests;
 #[cfg(test)]
 #[path = "garrison_door_tests.rs"]
 mod garrison_door_tests;
+#[cfg(test)]
+#[path = "public_door_tests.rs"]
+mod public_door_tests;

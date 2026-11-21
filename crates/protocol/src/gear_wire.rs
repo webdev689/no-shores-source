@@ -27,6 +27,8 @@ pub const BUY_EMBLEM: u8 = 14;
 pub const USE_CRATE: u8 = 15;
 pub const BUY_CRATE: u8 = 16;
 pub const GATHER: u8 = 20;
+/// One's chest from a public event opened, by its number among one's drops in `item`.
+pub const OPEN_CHEST: u8 = 21;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
 pub const GRANT_ITEM: u8 = 32;
@@ -91,6 +93,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         USE_CRATE => Asked::Gear(Ask::UseCrate),
         BUY_CRATE => Asked::Gear(Ask::BuyCrate),
         GATHER => Asked::Gather { node },
+        OPEN_CHEST => Asked::OpenChest { chest: item },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
             slot: slot()?,
@@ -177,6 +180,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::BuyFromShape { ware } => args = messages::AskArgs { kind: BUY_FROM_SHAPE, node: ware, ..args },
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
+        Asked::OpenChest { chest } => args = messages::AskArgs { kind: OPEN_CHEST, item: *chest, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -348,13 +352,14 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .iter()
         .map(|drop| {
             let (at, from) = (Some(builder.create_vector(&drop.at)), Some(builder.create_vector(&drop.from)));
-            let (kind, rarity, slot) = match &drop.what {
-                Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8),
-                Dropped::AmmoBox => (1, 0, 0),
-                Dropped::Crate => (2, 0, 0),
+            let (kind, rarity, slot, tier) = match &drop.what {
+                Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8, 0),
+                Dropped::AmmoBox => (1, 0, 0, 0),
+                Dropped::Crate => (2, 0, 0, 0),
+                Dropped::Chest { tier, .. } => (3, 0, 0, *tier),
             };
             let flying = u8::try_from(drop.rests.saturating_sub(room.clock())).unwrap_or(u8::MAX);
-            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying };
+            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying, tier };
             messages::GearDrop::create(&mut builder, &args)
         })
         .collect();

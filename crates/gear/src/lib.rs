@@ -10,6 +10,7 @@ pub mod arts;
 pub mod asks;
 pub mod catalogue;
 pub mod character;
+pub mod chests;
 pub mod cosmetics;
 pub mod dice;
 pub mod element;

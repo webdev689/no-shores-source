@@ -27,6 +27,11 @@ pub enum Dropped {
     Vestige(Vestige),
     AmmoBox,
     Crate,
+    /// A won public event's chest, of its tier (1 to 4), from an event at its level.
+    Chest {
+        tier: u8,
+        level: u8,
+    },
 }
 
 /// A drop lying for one player: their number for it, what it is, where it rests and where it was thrown from, the tick
@@ -93,7 +98,7 @@ impl Room {
         let Some(found) = self.players.get_mut(&player) else { return };
         let id = match &what {
             Dropped::Vestige(vestige) => vestige.id,
-            Dropped::AmmoBox | Dropped::Crate => found.character.take_id(),
+            Dropped::AmmoBox | Dropped::Crate | Dropped::Chest { .. } => found.character.take_id(),
         };
         found.gear_changed = true;
         let (rests, until) = (self.clock + REST_TICKS, self.clock + DROP_TICKS);
@@ -105,10 +110,15 @@ impl Room {
     pub(crate) fn pick_up_drops(&mut self) {
         let clock = self.clock;
         let mut kept = Vec::with_capacity(self.drops.len());
+        let mut expired = Vec::new();
         for drop in std::mem::take(&mut self.drops) {
             let Some(found) = self.players.get_mut(&drop.player) else { continue };
             if clock >= drop.until {
                 found.gear_changed = true;
+                // A chest never goes unopened: it pays its player as it goes.
+                if let Dropped::Chest { tier, level } = drop.what {
+                    expired.push((drop.player, (tier, level), drop.at));
+                }
                 continue;
             }
             let body = found.fighter.body;
@@ -121,6 +131,7 @@ impl Room {
                     Dropped::Vestige(vestige) => character.pick_up(vestige.clone()),
                     Dropped::AmmoBox => character.take_ammo_box(),
                     Dropped::Crate => character.take_crate(),
+                    Dropped::Chest { .. } => false,
                 };
             if taken {
                 found.gear_changed = true;
@@ -130,6 +141,9 @@ impl Room {
             }
         }
         self.drops = kept;
+        for (player, chest, at) in expired {
+            self.pay_chest(player, chest, at);
+        }
     }
 
     /// The drops lying for a player.

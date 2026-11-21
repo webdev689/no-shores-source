@@ -41,6 +41,71 @@ pub struct NodeFile {
     /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
     /// space still locked (`city::social_open`).
     pub locked: bool,
+    /// Where its public events are fought, in a zone that holds them ([`EVENT_ZONES`]).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub grounds: Option<Grounds>,
+}
+
+/// The zones that hold public events: Saltmere's three, for now, at the owner's word.
+pub const EVENT_ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
+/// How far round the fissure its event is fought, metres; and how far past its stores a raid's ground reaches, and
+/// the least it reaches from its middle.
+pub const FISSURE_RADIUS: f64 = 25.0;
+const RAID_PAST: f64 = 10.0;
+const RAID_LEAST: f64 = 20.0;
+
+/// Where a zone's public events are fought.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Grounds {
+    pub fissure: Option<FissureGround>,
+    pub raid: Option<RaidGround>,
+}
+
+/// The Fissure's ground: the middle of its wilds, how far round it the event is fought, and where its growth rises.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct FissureGround {
+    pub at: [f64; 2],
+    pub radius: f64,
+    pub growth: [f64; 2],
+}
+
+/// The raid's ground: the middle of its hamlet's stores and how far round it the raid is fought, the stores, where
+/// the raiders come in from, and where their banners are planted at the hamlet's edge.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct RaidGround {
+    pub at: [f64; 2],
+    pub radius: f64,
+    pub stores: Vec<[f64; 2]>,
+    pub approach: [f64; 2],
+    pub banners: Vec<[f64; 2]>,
+}
+
+/// A zone's grounds from its layout's sites: its first wilds that has a growth's spot, and its first hamlet that has
+/// three stores; none for a zone that holds no events or has neither.
+#[must_use]
+pub fn grounds_of(laid: &layout::Layout) -> Option<Grounds> {
+    use layout::sites::SiteKind;
+    if !EVENT_ZONES.contains(&laid.id.as_str()) {
+        return None;
+    }
+    let of = |kind: SiteKind, place: &str| -> Vec<[f64; 2]> {
+        let marked = laid.sites.iter().filter(|site| site.kind == kind && site.holds.as_deref() == Some(place));
+        marked.map(|site| site.at).collect()
+    };
+    let fissure = laid.areas.iter().filter(|area| area.kind == layout::brief::AreaKind::Wilds).find_map(|area| {
+        let growth = *of(SiteKind::Growth, &area.name).first()?;
+        Some(FissureGround { at: area.at, radius: FISSURE_RADIUS, growth })
+    });
+    let raid = laid.areas.iter().filter(|area| area.kind == layout::brief::AreaKind::Hamlet).find_map(|area| {
+        let (stores, banners) = (of(SiteKind::Store, &area.name), of(SiteKind::Banner, &area.name));
+        let approach = *of(SiteKind::Approach, &area.name).first()?;
+        (stores.len() == 3).then_some(())?;
+        let at = stores.iter().fold([0.0, 0.0], |sum, at| [sum[0] + at[0] / 3.0, sum[1] + at[1] / 3.0]);
+        let reach = stores.iter().map(|&point| layout::field::distance(point, at));
+        let radius = reach.fold(RAID_LEAST - RAID_PAST, f64::max) + RAID_PAST;
+        Some(RaidGround { at, radius, stores, approach, banners })
+    });
+    Some(Grounds { fissure, raid })
 }
 
 /// A counter of a social space: its station, and its middle.
@@ -149,6 +214,7 @@ pub fn nodes_of(
             counters,
             shape_spots,
             locked: false,
+            grounds: None,
         }
     };
     let whole =
@@ -159,7 +225,8 @@ pub fn nodes_of(
             || (whole(&node.ring), whole(&node.spawns)),
             |layout| (layout.ring.clone(), layout.spawns.clone()),
         );
-        cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns)
+        let grounds = laid.and_then(grounds_of);
+        NodeFile { grounds, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);

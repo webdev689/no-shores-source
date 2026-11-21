@@ -106,7 +106,14 @@ impl NavMesh {
     // side; add a ray against the colliders when a course has such walls.
     #[must_use]
     pub fn nearest_point(&self, point: [f64; 3]) -> Option<[f64; 3]> {
-        self.mesh_point_near(point, ISLAND_REACH).or_else(|| self.mesh_point_near(point, GOAL_REACH))
+        let near = |part: &NavMesh| {
+            part.mesh_point_near(point, ISLAND_REACH).or_else(|| part.mesh_point_near(point, GOAL_REACH))
+        };
+        let apart = |found: &[f64; 3]| {
+            (0..3).map(|axis| (found[axis] - point[axis]) * (found[axis] - point[axis])).sum::<f64>()
+        };
+        // Of a joined mesh's parts, the nearest point any has; the first of any as near.
+        self.parts().filter_map(near).reduce(|best, found| if apart(&found) < apart(&best) { found } else { best })
     }
 
     /// Only the polys the locate's index files within reach are read, and of those only the ones whose bounds come

@@ -169,16 +169,21 @@ fn roles_ranks_types_and_factions_read_back_by_number() {
     }
     assert_eq!(Rank::from_number(0), None);
     let numbers: Vec<u8> = ROSTER.iter().map(|foe| foe.number).collect();
-    assert_eq!(numbers, (1..=20).collect::<Vec<u8>>(), "numbered 1 to 20 in order");
+    assert_eq!(numbers, (1..=20).chain(39..=45).collect::<Vec<u8>>(), "numbered 1 to 20, then 39 to 45, in order");
     assert_eq!(foe_type(0), None);
     let tithe = faction(1).unwrap();
     assert_eq!((tithe.name, tithe.side()), ("The Grey Tithe", Side::Faction(1)));
     let land: Vec<&str> = tithe.types(Domain::Land).map(|foe| foe.name).collect();
-    assert_eq!(land, ["Runner", "Collector", "Crossbowman", "Enforcer", "Marksman", "Reeve", "High Assessor Corvane"]);
+    let named = ["Runner", "Collector", "Crossbowman", "Enforcer", "Marksman", "Reeve", "High Assessor Corvane"];
+    assert_eq!(land, [&named[..], &["Tithe-Taker"]].concat());
     assert_eq!(tithe.types(Domain::Deck).last().unwrap().name, "Captain Brannoc Thule");
     let pirates = faction(2).unwrap();
     assert_eq!(pirates.types(Domain::Land).count(), 0, "pirates are met at sea only");
     assert_eq!(pirates.types(Domain::Deck).count(), 5);
-    assert_eq!(FACTIONS.len(), 2);
+    let lattice = faction(3).unwrap();
+    let crystal: Vec<&str> = lattice.types(Domain::Land).map(|foe| foe.name).collect();
+    assert_eq!(crystal, ["Husk", "Flicker", "Idol", "Ravager", "Bulwark", "Heart"]);
+    assert_eq!((lattice.types(Domain::Deck).count(), lattice.screens), (0, false), "on land only, never screened");
+    assert_eq!(FACTIONS.len(), 3);
     assert_eq!(spawn(foe_type(14).unwrap(), Rank::Major, 0.0, 0.0, 0.0).0.weight, Weight::Medium);
 }

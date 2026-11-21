@@ -15,3 +15,25 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | Choice | Chosen | Why |
 |---|---|---|
 | What it stands on | The Lattice's work (#77) and `main` | The Fissure pours out the Lattice, which #77 draws |
+| The clock | Every 15 minutes a zone, alternating its two; the zones 5 minutes apart, neighbours on different events | One begins somewhere on Saltmere every 5 minutes, as D1's patrols felt |
+| The countdown, the result | 8 minutes to win; the result shows 12 seconds | Long enough for a heroic run, short enough to keep the clock |
+| A room opened mid-event | Starts it with what its start minute leaves; keeps none across its closing | A room holds no state between players |
+| The stores | Three per hamlet, within 35 m of the plaza beside its houses, 8 m apart, square to the grid, 2.4 x 1.6 x 1.6 m | Near enough to defend together; a box the page and room share |
+| The raiders' approach and banners | 36 m out toward the nearest camp, or from the shore; banners 28 m out, 6 m either side | The Tithe come from where they hold ground |
+| The grounds' sizes | The Fissure 25 m round; the raid 10 m past its farthest store, 20 m at least | Each ground's mesh is baked at open; a larger one cost too much |
+| The navmesh for events | A rectangle round each ground (and the approach), 4 m further, joined to the garrison's | Its cost measured: the open grows by 150 to 250 ms |
+| The room's foes | 32 at most in a room that holds events, any other node's still 24 | A garrison and an event's foes at once |
+| The Fissure's waves | 3 foes and 1 per extra player (6 at most), when 2 or fewer stand or every 30 s, under 10 standing | Enough foes for the shards needed, never a flood |
+| Shards | 1 from a foe, 2 from an Elite or greater; taken within 1.5 m, set within 6 m; the needed never falls when players leave | Leaving never makes it easier |
+| The growth | An Idol's Elite at its spot, never moving or striking, 45 s with 2 s to rise and sink | Struck like a foe, as the spec asks |
+| The raid's waves | Five foes each, Collectors in every wave, Elites in the third, one Runner per extra player (3 at most) | The stores need guarding all the while |
+| Plundering | A Collector within 2.5 m of its store plunders it in 20 s alone | A store held is a store kept |
+| The tithe-taker | Never strikes; his round paced to take 50 s; gone wherever he stands when his time is up; the raid waits for him | He counts and leaves, as the owner put it |
+| Withdrawing | Foes walk to the crack or the approach at 4 m/s and are gone within 8 s | Seen to leave, not vanish |
+| Taking part | 30 s on the ground, or a blow on one of its foes, or a shard set | As the spec |
+| The chests' pay | XP 1,500 to 4,500 by tier at level 5, Aurem 120 to 360, Fragments 2 to 7, Essence in the heroic tiers, 3 to 8 of the island's resource, a Vestige always | A share of what eight minutes of fighting pays, more with each tier |
+| A chest's Vestige | A foe's colours plain, a Boss's heroic; the bonus rolls twice and keeps the better | Each tier better than the last |
+| A leaver's chest | Opened for them before the server keeps their character | Never lost |
+| The Lattice's arms | The forge's weapons of the same reach (Husk a sword, Flicker two daggers, Idol a bow, Ravager a warhammer, Bulwark a mace and shield, Heart a flail) | Combat needs a weapon class; the Lattice's own parts are dressed over them |
+| The wire's field | `public_event` on the snapshot, read into `public` on the page | `public` is a TypeScript keyword: flatc names its reader `public_` |
+| The scripted players | Level 6, Rare gear at 6, guarding between swings and varying their strokes | Two level-1 players never broke a heroic raid's third wave |
