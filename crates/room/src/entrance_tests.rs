@@ -14,7 +14,7 @@ fn ring() -> Vec<[f64; 2]> {
 const SPAWNS: [[f64; 2]; 2] = [[-700.0, 700.0], [700.0, -700.0]];
 
 fn patrol(floor: Floor) -> Room {
-    let mut room = Room::node(floor, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec() });
+    let mut room = Room::node(floor, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec(), falls_kill: false });
     room.start_patrol("saltgrass-downs", 2);
     room
 }
@@ -57,7 +57,9 @@ fn a_patrol_lays_its_three_entrances_the_same_every_time_keeping_their_distances
     }
     keeps_its_distances(&room);
     assert!(
-        Room::node(Floor::Flat, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec() }).entrances().is_empty()
+        Room::node(Floor::Flat, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec(), falls_kill: false })
+            .entrances()
+            .is_empty()
     );
 }
 
@@ -127,7 +129,8 @@ fn a_player_joins_before_an_entrances_door_facing_away_from_it() {
         assert!((body.facing - facing).abs() < 1e-12, "facing away from the door");
     }
     assert_eq!(room.join_at(dungeon::PER_PATROL), None, "no such entrance");
-    let mut plain = Room::node(Floor::Flat, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec() });
+    let mut plain =
+        Room::node(Floor::Flat, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec(), falls_kill: false });
     assert_eq!(plain.join_at(0), None, "no patrol, no entrance");
 }
 

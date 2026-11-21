@@ -104,7 +104,7 @@ impl Room {
         let ([x, y], [toward_x, toward_y]) = dungeon.arrival();
         let ring = vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]];
         // Its jambs and pillars are its ground's own walls, not blocks a body could climb.
-        let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]] });
+        let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]], falls_kill: false });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
         room.world_seed = node_seed(&format!("{patrol}--dungeon-{number}"));
         room.foes_most = NODE_FOES_MOST;
