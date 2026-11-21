@@ -26,6 +26,7 @@ import { type Shot, shotOfOrbit } from '../camera.ts';
 import { IDLE, type FootFight, type FootFrame } from '../foot.ts';
 import { footHints } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
+import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
 import { WreckCrew } from './wreckCrew.ts';
 import { courseOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
@@ -79,7 +80,7 @@ export class WreckRun {
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
   private readonly feel: AttackFeel;
-  private readonly sounds = new WorldSounds(worldOutput);
+  private readonly sounds = new WorldSounds(louder(worldOutput, STORY_FIGHT_GAIN));
   private readonly scenery: WreckScenery;
   private readonly progress: WreckProgress;
   private readonly level: { value: number };

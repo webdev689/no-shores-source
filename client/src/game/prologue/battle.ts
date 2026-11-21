@@ -14,6 +14,7 @@ import { youAtHelm } from './helm.ts';
 import { SKY_NOW } from '../../sky/skyDriver.ts';
 import type { Hearing } from '../audio/music/directorLaw.ts';
 import { hearSea, heardSky } from '../audio/music/hearing.ts';
+import { STORY_FIGHT_GAIN } from './fightSound.ts';
 import { fought, sung } from './music.ts';
 import type { Founder, Sailed, ShipDraw } from './sailing.ts';
 import { INBOUND_WAY_M_S, STORM_SOUND } from './sighted.ts';
@@ -258,7 +259,7 @@ export class Battle implements Beat {
         },
       ],
       land: false,
-      heard: { at: 'sea', deck: false, sailing: true, fight: fight.fightHeard },
+      heard: { at: 'sea', deck: false, sailing: true, fight: { ...fight.fightHeard, gain: STORY_FIGHT_GAIN } },
       focus: [brig.x, brig.y],
     };
   }
