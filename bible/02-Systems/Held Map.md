@@ -24,12 +24,16 @@ code:
   - client/src/game/discovered.ts#Discovered
   - client/src/overworld/discovery.ts#chartAround
   - client/src/overworld/discovery.ts#sightIslands
+  - client/src/game/landMap.ts#landSheetOf
+  - client/src/heldmap/landSheet.ts#contours
+  - client/src/heldmap/landLetters.ts#paintLand
 ---
 # Held Map
 
 The map the player navigates the sea by, held in their own gauntlets at the ship's helm
 ([[The Sea Is Navigated From the Helm With the Held Map]], [[Pick - Held Map]]). It shows the whole world under fog of
-war, and a click on it sets the ship's destination.
+war, and a click on it sets the ship's destination. On land it is raised anywhere, and shows the land the player stands
+on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
 ## How it works
 
@@ -141,6 +145,28 @@ war, and a click on it sets the ship's destination.
   destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation
   panel.
 
+## On land
+
+- **Raising.** On foot, N anywhere: the view goes into the player's eyes (from third person too), and there the same
+  painting rises in their gauntlets as it does at the helm. The pointer is let go to pan it. The world goes on: the
+  player stands still and hears it, and a fall lowers the map. N or Escape lowers it, and the view goes back as it was;
+  Escape before it is up turns back.
+- **The view** opens on the whole of the land's sheet: its ring and 40 m past it. A drag pans and the wheel zooms, to 8
+  px a metre at most. A click does nothing: the map is only to look at.
+- **What it shows**, painted on the parchment in the map's inks, every frame something on it changes: the land's name at
+  its head; the shore, and the ground's relief every 10 m, read off the ground about 160 times across; the edge of the
+  ground walked, dashed; the player's arrow, where they stand and look.
+  - **A social space**: its plan, from its solids as the city stands them: its paving, lawns and earth faint, its walks
+    a shade darker, and walls, stalls and buildings 1.8 m and taller near solid. Each keeper's counter is marked with a
+    coin and named as their counter offers them ("The Mage"); its places are named under their middles (the hub's: the
+    Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of the Arts, the Stair Yard
+    and the Quay); where players land is marked.
+  - **A patrol area**: its layout's paths (a track 4 m wide, a footpath 2 m), its buildings, its areas by name, and every
+    site marked by kind: a landing, a gate, a public event, a beacon, a resource, foes, an objective, a sealed door.
+  - **Other land** (an island's): its shore, relief, edge and landing.
+- **The key** in the map's top-right corner shows each kind of mark the land holds and what it is; keepers are named
+  by their marks instead.
+
 ## Fog of war
 
 What the player has discovered is kept in this browser (`overlook-discovery`), every 30 s once it changes and as the
@@ -169,3 +195,6 @@ The player starts with the island they arrive on, its port, the place they arriv
 - A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.
 - With every corner and edge place taken by marks, ports' names or the hands the key is left off, as on a screen as
   narrow as a phone's with the whole world in view.
+- On land, nothing is lettered clear of the gauntlets: a name under a thumb is panned out from under it. A keeper's name
+  that would fall on a place's name is left off, its mark kept; marks and places' names may still cross each other.
+- On land the sheet is the land's own, with no fog of war: all of it shows from the first time the map is raised.

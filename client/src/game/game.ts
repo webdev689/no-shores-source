@@ -1,5 +1,6 @@
 import type { Gpu } from '../gpu.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
+import type { LandSheet } from '../heldmap/landSheet.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Placed } from '../player/figures.ts';
 import { Input } from '../player/input.ts';
@@ -35,6 +36,7 @@ import { askedArrival } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
 import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
+import { landSheetOf } from './landMap.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { startGearWindow } from './gearWindow.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
@@ -421,9 +423,26 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     }
   };
 
-  /** Takes the view down to the ship's helm, where the map is raised. */
+  /** The held map's sheet of the land a node stands on, worked out once a node: an island's relief read off the ground
+   *  drawn, the continent's off its landmass. */
+  let sheet: { readonly id: string; readonly sheet: LandSheet } | null = null;
+  const sheetOf = (node: NodeInfo): LandSheet => {
+    const heightAt = node.id.startsWith('isle-')
+      ? (x: number, y: number) => scene.groundAt(x, y)
+      : playing.landmass.heightAt;
+    if (sheet?.id !== node.id) sheet = { id: node.id, sheet: landSheetOf(node, playing.landmass, heightAt) };
+    return sheet.sheet;
+  };
+
+  /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
+   *  pointer let go to pan it. */
   const openMap = () => {
-    if (playing.flow.mode === 'sea' && !playing.flow.menu && playing.sea) playing.helmMap.open(playing.sea);
+    const { flow, sea, foot } = playing;
+    if (flow.mode === 'sea' && !flow.menu && sea) playing.helmMap.open(sea);
+    else if (flow.mode === 'foot' && !flow.menu && foot && !foot.fallen) {
+      playing.helmMap.openLand(sheetOf(foot.node));
+      document.exitPointerLock();
+    }
   };
 
   /** Opens Manage over its deck, or closes it. */
@@ -519,7 +538,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   });
   canvas.addEventListener('click', () => {
     if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
-    if (playing.flow.mode === 'foot' && !playing.flow.menu && playing.foot?.standing.kind !== 'dead' && !input.locked)
+    if (
+      playing.flow.mode === 'foot' &&
+      !playing.flow.menu &&
+      !playing.helmMap.looking &&
+      playing.foot?.standing.kind !== 'dead' &&
+      !input.locked
+    )
       input.lock();
     if (
       playing.flow.mode === 'sea' &&

@@ -10,7 +10,9 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type CoastField } from './coastField.ts';
 import {
+  clampView,
   CLOSE_S,
+  type Extent,
   nearestMark,
   OPEN_S,
   PAN_PX,
@@ -27,6 +29,8 @@ import {
   zoomAt,
 } from './heldMapLaw.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
+import { paintLand } from './landLetters.ts';
+import type { LandSheet } from './landSheet.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
@@ -35,6 +39,10 @@ import type { MapWaters } from './watersWash.ts';
 
 /** The world's frame, metres. */
 const WORLD = { width: WORLD_FRAME.widthM, height: WORLD_FRAME.heightM } as const;
+/** The most the map zooms in on land, screen pixels a metre. */
+const LAND_SCALE_MOST = 8;
+/** On land the world's ink is turned off the sheet, which shows only what is painted on it. */
+const OFF_WORLD = { left: -1e7, top: -1e7, scale: 1 } as const;
 /** The forge's held-map art: the parchment, and the gauntlets' strips of 17 frames, one a set and one bare. */
 const SHEET_PATH = '@art/held-map-forge-sheet.png';
 const HANDS_FRAMES = 17;
@@ -65,7 +73,8 @@ export interface IsleMark {
 export type Course =
   { readonly ok: true; readonly points: readonly Point2[] } | { readonly ok: false; readonly why: string };
 
-/** What the map is asked each frame: where the ship lies and heads, what is discovered, and the course sailed now. */
+/** What the map is asked each frame: where the ship lies and heads (on land, the player, in the world), what is
+ *  discovered, and the course sailed now. */
 export interface HeldMapScene {
   readonly ship: Point2;
   readonly heading: number;
@@ -127,6 +136,9 @@ export class HeldMap {
   private waters: HeldMapWaters | null = null;
   private charted: Uint8Array | null = null;
   private isles: readonly IsleMark[] = [];
+  /** The land the map shows while raised on foot (`openLand`), and what its view is held to: the world at sea. */
+  private land: LandSheet | null = null;
+  private extent: Extent = WORLD;
 
   constructor(gpu: Gpu, field: CoastField, store: ForgeStore, plan: (to: Point2) => Course, root: HTMLElement) {
     this.view = new HeldMapView(gpu, field);
@@ -173,13 +185,35 @@ export class HeldMap {
     charted: Uint8Array,
   ): void {
     if (this.phase.kind !== 'closed') return;
-    if (gauntlets !== this.gauntlets) this.load(gauntlets);
     this.view.setCharted(charted);
     this.charted = charted;
     this.chartings++;
     if (this.waters) this.view.setWash(this.waters.chart(charted));
+    [this.land, this.extent] = [null, WORLD];
+    this.raise(viewport, gauntlets, (ink) => viewOn(ship, ink, WORLD));
+  }
+
+  /** Raises the map on foot, showing the whole of `sheet`, the land the player stands on: only to look at, panned and
+   *  zoomed, never clicked to go anywhere. */
+  openLand(
+    viewport: { readonly width: number; readonly height: number },
+    sheet: LandSheet,
+    gauntlets: string | null,
+  ): void {
+    if (this.phase.kind !== 'closed') return;
+    [this.land, this.extent] = [sheet, { width: sheet.width, height: sheet.height, most: LAND_SCALE_MOST }];
+    this.raise(viewport, gauntlets, (ink) => clampView({ left: 0, top: 0, scale: 0 }, ink, this.extent));
+  }
+
+  /** Lifts the map from its foot in `gauntlets`, its view as `viewed` lays it on the screen's map. */
+  private raise(
+    viewport: { readonly width: number; readonly height: number },
+    gauntlets: string | null,
+    viewed: (ink: Rect) => View,
+  ): void {
+    if (gauntlets !== this.gauntlets) this.load(gauntlets);
     this.ink = stageOf(viewport).ink;
-    this.mapView = viewOn(ship, this.ink, WORLD);
+    this.mapView = viewed(this.ink);
     this.choice = null;
     this.phase = { kind: 'opening', t: 0 };
     this.layer.hidden = false;
@@ -232,14 +266,14 @@ export class HeldMap {
       left: press.view.left - (x - press.x) / press.view.scale,
       top: press.view.top - (y - press.y) / press.view.scale,
     };
-    this.mapView = zoomAt(moved, 0, 0, 1, this.ink, WORLD);
+    this.mapView = zoomAt(moved, 0, 0, 1, this.ink, this.extent);
   }
 
-  /** A press let go: a click picks the nearest discovered place, or the point of the sea under it. */
+  /** A press let go: a click picks the nearest discovered place, or the point of the sea under it; on land, nothing. */
   pointerUp(x: number, y: number): void {
     const press = this.press;
     this.press = null;
-    if (!press || press.panning || this.phase.kind !== 'open') return;
+    if (!press || press.panning || this.phase.kind !== 'open' || this.land) return;
     const [inkX, inkY] = [x - this.ink.x, y - this.ink.y];
     if (inkX < 0 || inkY < 0 || inkX > this.ink.width || inkY > this.ink.height) return;
     const mark = nearestMark(this.placed, inkX, inkY);
@@ -256,7 +290,7 @@ export class HeldMap {
   wheel(x: number, y: number, deltaY: number, deltaMode: number): void {
     if (this.phase.kind !== 'open') return;
     const factor = wheelFactor(deltaY, deltaMode, this.ink.height);
-    this.mapView = zoomAt(this.mapView, x - this.ink.x, y - this.ink.y, factor, this.ink, WORLD);
+    this.mapView = zoomAt(this.mapView, x - this.ink.x, y - this.ink.y, factor, this.ink, this.extent);
   }
 
   /** Sets sail for the destination chosen, if it has a course. */
@@ -290,7 +324,7 @@ export class HeldMap {
     if (lift === null || !this.view.ready) return null;
     const stage = stageOf(viewport);
     if (stage.ink.width !== this.ink.width || stage.ink.height !== this.ink.height)
-      this.mapView = zoomAt(this.mapView, 0, 0, 1, stage.ink, WORLD);
+      this.mapView = zoomAt(this.mapView, 0, 0, 1, stage.ink, this.extent);
     const drop = (1 - lift) * stage.sprite.height;
     this.ink = stage.ink;
     const scaled = (rect: Rect, down: number): Rect => ({
@@ -319,14 +353,10 @@ export class HeldMap {
       this.widths.clear();
     }
     const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
-    const lettering = this.laidOut.made(reads, () => this.layout(scene, stage.sprite));
-    this.layoutCard(drop);
-    const isles = this.isleInks(lettering.scale);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
-    const shape = JSON.stringify([width, height, inkAt, dpr, fonts, lettering, isles]);
-    const letteringChanged = shape !== this.letteredShape;
-    if (letteringChanged) paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
-    this.letteredShape = shape;
+    const letteringChanged = this.letter(reads, scene, stage.sprite, { width, height, inkAt, dpr });
+    this.layoutCard(drop);
+    const land = this.land !== null;
     return {
       parchment: picture,
       lettering: this.lettering,
@@ -334,11 +364,39 @@ export class HeldMap {
       screen: { width: viewport.width * dpr, height: viewport.height * dpr },
       sprite: scaled(stage.sprite, drop),
       ink: scaled(stage.ink, drop),
-      view: { left: this.mapView.left, top: this.mapView.top, scale: this.mapView.scale * dpr },
+      view: land ? OFF_WORLD : { left: this.mapView.left, top: this.mapView.top, scale: this.mapView.scale * dpr },
       handsFrame: this.fidget(),
-      knownIslands: scene.knownIslands,
-      route: routeOf(this.choice?.course.ok ? this.choice.course.points : scene.course, ROUTE_POINTS),
+      knownIslands: land ? 0 : scene.knownIslands,
+      route: routeOf(this.choice?.course.ok ? this.choice.course.points : land ? [] : scene.course, ROUTE_POINTS),
     };
+  }
+
+  /** Paints the parchment's picture, `size` device pixels with the map's top-left at `inkAt` in it, if what `reads`
+   *  has changed: at sea the world's places, waters and islands laid out clear of the gauntlets; on land, the land's
+   *  sheet with the player's arrow. Answers whether it was painted. */
+  private letter(
+    reads: string,
+    scene: HeldMapScene,
+    sprite: Rect,
+    size: { width: number; height: number; inkAt: { x: number; y: number }; dpr: number },
+  ): boolean {
+    const { width, height, inkAt, dpr } = size;
+    const land = this.land;
+    const lettering = land ? null : this.laidOut.made(reads, () => this.layout(scene, sprite));
+    const isles = lettering ? this.isleInks(lettering.scale) : [];
+    const shape = JSON.stringify([width, height, inkAt, dpr, land ? reads : [this.measuredFonts, lettering, isles]]);
+    if (shape === this.letteredShape) return false;
+    this.letteredShape = shape;
+    if (lettering) paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
+    else if (land) {
+      const player = {
+        at: [scene.ship[0] - land.origin[0], scene.ship[1] - land.origin[1]] as const,
+        heading: scene.heading,
+      };
+      const painting = { sheet: land, view: this.mapView, ink: this.ink, scale: letterScale(this.ink), player };
+      paintLand(this.painter, this.lettering, inkAt, dpr, painting);
+    }
+    return true;
   }
 
   /** Draws what `frame` worked out over the finished picture. */

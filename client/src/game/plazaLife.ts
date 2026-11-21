@@ -33,6 +33,9 @@ const OFFERS: Readonly<Record<string, Offer>> = {
   harbourmaster: { words: HARBOURMASTER, opens: { view: 'harbourmaster' } },
 };
 
+/** What a station's keeper is called, as their counter offers them; null for a station that deals with no one. */
+export const stationWords = (kind: string): string | null => OFFERS[kind]?.words ?? null;
+
 /** The offer of the station whose counter a player stands at, if one deals with them. */
 export function offerAt(stations: readonly StationInfo[], x: number, y: number): Offer | null {
   for (const station of stations) {

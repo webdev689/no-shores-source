@@ -109,6 +109,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const { gpu, canvas, hud, input, scene, walker, firstPerson, footView, traffic, discovered, charting } = parts;
   let [last, clock] = [performance.now(), 0];
   let wasWalking = false;
+  /** Whether the view was in the player's eyes before the land's held map took it there; null while it has not. */
+  let eyesBeforeMap: boolean | null = null;
 
   /** The drawers that stand on the open landmass this frame (`standingDrawers`). */
   const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) =>
@@ -135,20 +137,39 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
-    const { flow } = playing;
+    const { flow, helmMap } = playing;
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
-    const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
+    // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
+    const looking = helmMap.looking;
+    if (looking !== (eyesBeforeMap !== null)) {
+      const firstPerson = eyesBeforeMap ?? true;
+      eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
+      walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
+    }
+    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: controls.locked, aspect });
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
     scene.keepMiddle([body.x, body.y], parts.closeSource);
-    const hands = walker.inFirstPerson
-      ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
-      : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
+    const mapDraw = helmMap.footFrame(seconds, {
+      free: !paused && !here.fallen,
+      viewport,
+      dpr: canvas.width / Math.max(1, canvas.clientWidth),
+      hands: walker.you.dress.outfit.armour.gauntlets ?? null,
+      eyes: walker.inFirstPerson,
+      at: [body.x, body.y],
+      heading: walker.player.yaw,
+    });
+    // The held map, or the player's own hands in first person, over the finished picture.
+    const hands =
+      mapDraw ??
+      (walker.inFirstPerson
+        ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
+        : undefined);
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
     const water = parts.waterHere();
