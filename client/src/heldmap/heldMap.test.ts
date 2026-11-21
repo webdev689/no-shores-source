@@ -35,6 +35,7 @@ test('the held map lays out again only when something its layout reads has chang
     keyOf({ knownIslands: 4 }),
     keyOf({ places: [] }),
     layoutKey(view, stage, 'loaded', 1, scene, 'overlook'),
+    keyOf({ quest: ['overlook'] }),
   ];
   for (const [index, changed] of changes.entries()) assert.notEqual(changed, keyOf(), `change ${index} lays out again`);
   assert.equal(keyOf({ course: [[1, 1]] }), keyOf(), 'the course sailed is drawn, not lettered');

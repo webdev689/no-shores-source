@@ -69,13 +69,15 @@ export interface IsleMark {
 export type Course =
   { readonly ok: true; readonly points: readonly Point2[] } | { readonly ok: false; readonly why: string };
 
-/** What the map is asked each frame: where the ship lies and heads, what is discovered, and the course sailed now. */
+/** What the map is asked each frame: where the ship lies and heads, what is discovered, the course sailed now, and the
+ *  places the quest walked names, which it rings. */
 export interface HeldMapScene {
   readonly ship: Point2;
   readonly heading: number;
   readonly places: readonly MapPlace[];
   readonly knownIslands: number;
   readonly course: readonly Point2[];
+  readonly quest?: readonly string[];
 }
 
 type Phase =
@@ -383,7 +385,8 @@ export class HeldMap {
       const [x, y] = toInk(this.mapView, place.at[0], place.at[1]);
       if (!onSheet(x, y)) continue;
       this.placed.push({ place, x, y });
-      places.push({ text: place.name, x, y, kind: place.kind, chosen: this.choice?.place === place.id });
+      const quest = scene.quest?.includes(place.id) === true;
+      places.push({ text: place.name, x, y, kind: place.kind, chosen: this.choice?.place === place.id, quest });
     }
     const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
     const lettering = layOut({
@@ -496,7 +499,8 @@ const cardGround: Drawing = (renderer, box, scale, clip, fade) => {
 };
 
 /** What the map's layout reads, as one string: the map's view, the stage's ink and hands, the face's loading, how often
- *  the charted sea was set, the ship's point and heading, the places and islands known, and the place chosen. */
+ *  the charted sea was set, the ship's point and heading, the places and islands known, the place chosen and the
+ *  places the quest names. */
 export function layoutKey(
   view: View,
   stage: { readonly ink: Rect; readonly sprite: Rect },
@@ -505,8 +509,9 @@ export function layoutKey(
   scene: HeldMapScene,
   chosen: string | null,
 ): string {
-  const { ship, heading, places, knownIslands } = scene;
-  return JSON.stringify([view, stage.ink, stage.sprite, fonts, chartings, ship, heading, places, knownIslands, chosen]);
+  const { ship, heading, places, knownIslands, quest } = scene;
+  const read = [ship, heading, places, knownIslands, chosen, quest];
+  return JSON.stringify([view, stage.ink, stage.sprite, fonts, chartings, ...read]);
 }
 
 /** A value made again only when its key changes: the held map's layout, keyed by `layoutKey`. */

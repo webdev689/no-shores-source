@@ -3,7 +3,7 @@
 // and cast as the key is let go. The room decides: a cast it refuses costs nothing, and the bar shows its word.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import type { GlowElement } from '../elementGlow.ts';
-import { type ArtState, type CastAsk, SPELLS, spellNumber } from '../network/artMessages.ts';
+import { type ArtState, type CastAsk, SPELLS, earnedOf, spellNumber } from '../network/artMessages.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { AbilityState } from './abilityBar.ts';
@@ -43,7 +43,8 @@ export function coreHolds(state: ArtState, key: string): boolean {
 }
 
 /** The Arts as the bar shows them at room tick `tick`: the room's word `taken` at `takenAt`, each share run on by its
- *  recharge since, as the room charges it; null before the room's first word. */
+ *  recharge since, as the room charges it, with what the worn Art's road has earned; null before the room's first
+ *  word. */
 export function abilitiesAt(taken: ArtState | null | undefined, takenAt: number, tick: number): AbilityState | null {
   const art = taken && artOf(taken.art);
   // None worn (the prologue's player has none): no bar to show.
@@ -56,6 +57,7 @@ export function abilitiesAt(taken: ArtState | null | undefined, takenAt: number,
     art: taken.art,
     animaShare: runOn(taken.anima, art.anima.rechargeS),
     tenets: [runOn(taken.tenets[0], first?.rechargeS), runOn(taken.tenets[1], second?.rechargeS)],
+    earned: earnedOf(taken, taken.art),
   };
 }
 

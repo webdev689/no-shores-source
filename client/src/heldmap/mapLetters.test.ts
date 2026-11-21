@@ -176,3 +176,23 @@ test('a found cove is inked a small ring and an isle a wider ring with a tower, 
   const towers = calls.filter((call, index) => call.name === 'fillRect' && index < firstWord);
   assert.equal(towers.length, 4, 'one tower, its body and three merlons, for the one isle');
 });
+
+test('a place the quest names is ringed round its mark', () => {
+  const node = { text: 'Saltgrass Downs', x: 100, y: 100, kind: 'patrol', chosen: false, side: 'right' as const };
+  const arcs = (quest: boolean) => {
+    const { painter, calls } = recorder();
+    const letters = [{ ...node, quest }];
+    paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, {
+      letters,
+      ship: null,
+      key: null,
+      scale: 1,
+    });
+    return calls.filter((call) => call.name === 'arc').map((call) => call.args[2] as number);
+  };
+  const [mark] = arcs(false);
+  assert.equal(arcs(false).length, 1);
+  assert.ok(mark !== undefined);
+  assert.deepEqual(arcs(true).length, 2, 'its mark and the ring');
+  assert.ok((arcs(true)[1] ?? 0) > mark, 'the ring round the mark');
+});

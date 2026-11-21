@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { glyphDrawn } from '../ui/glyphs.ts';
+import type { Child, Node } from '../ui/node.ts';
 import { QuadList } from '../ui/quads.ts';
 import { Stack } from '../ui/stack.ts';
 import { type Face, widthOf } from '../ui/text.ts';
@@ -59,9 +60,17 @@ function menu(gear: GearState) {
   );
   const ui = new Interface(renderer());
   ui.speak = () => undefined;
+  let drawn: Node | null = null;
   const frame = (events: UiEvent[] = []) => {
     ui.frame(VIEW, events, 1 / 60);
-    ui.draw(stack.node(ui));
+    drawn = stack.node(ui);
+    ui.draw(drawn);
+  };
+  /** What the node `id` drawn last says to a screen reader. */
+  const labelOf = (id: string): string | undefined => {
+    const find = (child: Child): Node | undefined =>
+      child ? (child.id === id ? child : (child.children ?? []).map(find).find(Boolean)) : undefined;
+    return find(drawn)?.label;
   };
   const key = (name: string) => {
     const event = new FakeEvent('keydown', { key: name });
@@ -88,7 +97,7 @@ function menu(gear: GearState) {
     frame();
     frame();
   };
-  return { ui, frame, key, click, open, asked, middle, state };
+  return { ui, frame, key, click, open, asked, middle, state, labelOf };
 }
 
 test("the Art's screen opens from its diamond at its Anima, sets a fragment owned, and steps back by Escape", () => {
@@ -250,4 +259,40 @@ test("a faction's rise opens its choice of fragments, and Escape steps out of it
   assert.ok(ui.boxOf('npc-rows'), 'the screen stays');
   key('Escape');
   assert.equal(ui.boxOf('npc-rows'), null, 'then the screen closes');
+});
+
+test("an Art or a Tenet its road has not earned stands locked on the Art's screen, saying which road earns it", () => {
+  const sample = sampleGear();
+  const gear = { ...sample, arts: { ...sample.arts!, earned: [0b011, 0, 0] } };
+  const { click, open, asked, labelOf } = menu(gear);
+  open('character');
+  click('art-diamond');
+  click('art-2');
+  assert.deepEqual(asked, [], 'an Art not earned is refused before any ask');
+  assert.match(labelOf('art-2') ?? '', /not earned\. Earned on the Lamplighters' road\.$/);
+  assert.doesNotMatch(labelOf('art-1') ?? '', /not earned/);
+  assert.match(labelOf('spell-arcLash') ?? '', /not earned\. Earned on the Stormcallers' road\.$/, 'its second Tenet');
+  assert.doesNotMatch(labelOf('spell-quicken') ?? '', /not earned/, 'its first, earned');
+  assert.doesNotMatch(labelOf('spell-tempest') ?? '', /not earned/);
+});
+
+test("a fragment choice waiting is offered on the Art's screen: its fragments not owned, one chosen by a click", () => {
+  const sample = sampleGear();
+  const standing = { ...sample.standing!, artOwned: [0b000011] };
+  const choosing = { quest: 2, task: 7, counts: [], done: [1, 0, 0, 0], choices: [1, 0, 0], at: null };
+  const { ui, click, open, asked } = menu({ ...sample, standing, quest: choosing });
+  open('character');
+  click('art-diamond');
+  assert.ok(ui.boxOf('arts-choice'), 'offered');
+  assert.deepEqual(
+    [0, 1, 2, 3, 4, 5].map((index) => ui.boxOf(`choose-${index}`) !== null),
+    [false, false, true, true, true, true],
+    'the fragments owned are not among them',
+  );
+  click('choose-3');
+  assert.deepEqual(asked, [{ kind: ASKS.chooseFragment, column: 1, node: 3 }]);
+  const none = menu({ ...sample, standing, quest: { ...choosing, choices: [0, 0, 0] } });
+  none.open('character');
+  none.click('art-diamond');
+  assert.equal(none.ui.boxOf('arts-choice'), null, 'none waiting, none offered');
 });

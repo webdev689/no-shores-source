@@ -44,11 +44,12 @@ export const ARTS: readonly Art[] = arts.arts;
 /** The slots of an Art's Core. */
 export const CORE_SLOTS = 3;
 
-/** What the Arts' screen asks of the room: to wear an Art, or to set one of an Art's fragments (its place in the
- *  Art's list) in one of its Core's slots. */
+/** What the Arts' screen asks of the room: to wear an Art, to set one of an Art's fragments (its place in the Art's
+ *  list) in one of its Core's slots, or to choose one not owned while its road's choice waits. */
 export type ArtsAsk =
   | { readonly kind: 'wearArt'; readonly art: number }
-  | { readonly kind: 'setCore'; readonly art: number; readonly slot: number; readonly fragment: number };
+  | { readonly kind: 'setCore'; readonly art: number; readonly slot: number; readonly fragment: number }
+  | { readonly kind: 'chooseFragment'; readonly art: number; readonly fragment: number };
 
 /** Each Art's Core by its id: each slot's fragment, by its place in the Art's list, or null while empty. */
 export type Cores = Readonly<Record<number, readonly (number | null)[]>>;
@@ -62,9 +63,9 @@ export function coresOf(state: ArtState): Cores {
 
 /** The screen's ask as an input carries it to the room. */
 export function gearAskOf(ask: ArtsAsk): GearAsk {
-  return ask.kind === 'wearArt'
-    ? { kind: ASKS.wearArt, column: ask.art }
-    : { kind: ASKS.setCore, column: ask.art, slot: ask.slot, node: ask.fragment };
+  if (ask.kind === 'wearArt') return { kind: ASKS.wearArt, column: ask.art };
+  if (ask.kind === 'chooseFragment') return { kind: ASKS.chooseFragment, column: ask.art, node: ask.fragment };
+  return { kind: ASKS.setCore, column: ask.art, slot: ask.slot, node: ask.fragment };
 }
 
 /** An Art's Core as its slots: three, each a fragment or null, whatever the room sent. */

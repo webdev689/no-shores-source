@@ -4,9 +4,13 @@
 // Core's fragments written out under it (artsRows.ts). Each spell and fragment shows its card beside its row on hover
 // or focus; the arrows move between the tiles, Enter chooses, Escape closes the flyout and then the screen. Every change
 // is an ask the room answers; the screen shows the Art and Core the room last sent. It comes in as it opens, its
-// emblem opening from its middle; another Art worn flashes it in its colour.
+// emblem opening from its middle; another Art worn flashes it in its colour. An Art its road has not earned stands
+// locked, saying which road earns it.
 
+import { earnedOf } from '../network/artMessages.ts';
 import { motionReduced } from '../plus/kit.ts';
+import { LOCK_MAP, mapSvg } from '../player/artGlyphs.ts';
+import { earnedOn } from '../player/factionNames.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import type { Node } from '../ui/node.ts';
 import { artStage, focusOf } from './artStage.ts';
@@ -17,6 +21,7 @@ import { emblemOf } from './emblemArt.ts';
 import { cardNode } from './gearCard.ts';
 import { INK, elementNode, emblemNode, focusRing, svgNode, words } from './gearNodes.ts';
 import type { MenuContext } from './menuPage.ts';
+import { play } from './uiSounds.ts';
 
 export { ARTS_HINTS };
 
@@ -140,7 +145,8 @@ function levelBlock(context: MenuContext, art: Art, look: ArtLook): Node {
   };
 }
 
-/** The three Arts' diamonds, the worn one ringed in brass, each pressed to wear it. */
+/** The three Arts' diamonds, the worn one ringed in brass, each pressed to wear it; one not earned locked, refused
+ *  before any ask. */
 function picksNode(context: MenuContext, art: Art, look: ArtLook, ask: ArtsState['ask']): Node {
   const { ui, sizes, gear } = context;
   const size = look.wide ? 72 : 48;
@@ -153,21 +159,30 @@ function picksNode(context: MenuContext, art: Art, look: ArtLook, ask: ArtsState
       const worn = each.id === art.id;
       const level = levelOf(gear.standing, each.id).level;
       const tone = lookOf(each, look.wide, look.short).tone;
-      if (ui.clicked(id) && !worn) ask({ kind: 'wearArt', art: each.id });
+      const earned = (earnedOf(gear.arts, each.id) & 1) !== 0;
+      const lock = earned ? '' : `${earnedOn(each.id)}.`;
+      if (ui.clicked(id) && !worn) {
+        if (earned) ask({ kind: 'wearArt', art: each.id });
+        else play('refused');
+      }
+      const card = artCard(each, worn, level);
       context.card(
         id,
         () =>
-          cardNode(artCard(each, worn, level), null, worn ? [] : [['Click', 'Wear it']], sizes, {
-            tone,
-            icon: svgNode(`art ${each.id}`, emblemSvg(each), 72),
-          }),
+          cardNode(
+            earned ? card : { ...card, kind: 'Art, not earned', words: `${card.words} ${lock}` },
+            null,
+            worn || !earned ? [] : [['Click', 'Wear it']],
+            sizes,
+            { tone, icon: svgNode(`art ${each.id}`, emblemSvg(each), 72) },
+          ),
         'arts-picks',
       );
-      const lit = worn || ui.hovered(id);
+      const lit = earned && (worn || ui.hovered(id));
       return {
         id,
         press: true,
-        label: `${each.name}, level ${level}${worn ? ', worn' : ''}`,
+        label: `${each.name}, level ${level}${worn ? ', worn' : ''}${earned ? '' : `, not earned. ${lock}`}`,
         direction: 'column',
         alignX: 'center',
         gap: 5,
@@ -178,12 +193,16 @@ function picksNode(context: MenuContext, art: Art, look: ArtLook, ask: ArtsState
             picture: {
               key: `art ${each.id}`,
               source: { svg: emblemSvg(each) },
-              // The others stand a little subdued.
-              ...(!lit && { tint: 'rgb(204,204,204)' }),
+              // The others stand a little subdued, one not earned dark under its padlock.
+              ...(!lit && { tint: earned ? 'rgb(204,204,204)' : 'rgb(110,110,110)' }),
             },
             children: [
               worn && diamondRing(size, INK.brassLit),
               ui.focused(id) && ui.keyFocused && diamondRing(size, '#f2efe6'),
+              !earned && {
+                ...svgNode(`lock ${each.element}`, mapSvg(LOCK_MAP, each.element), 20, 24),
+                float: { to: 'parent', anchor: [0.5, 0.5], at: [0.5, 0.5] },
+              },
             ],
           },
           pipsNode(level, each.element, look.wide ? 7 : 5, look.wide ? 5 : 3),

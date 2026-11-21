@@ -30,6 +30,7 @@ import type { IsleHeld } from './isles.ts';
 import { FootView } from './footView.ts';
 import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
 import { afterStoryOn } from './welcome/afterStory.ts';
+import { questsOn } from './quests/quests.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { askedArrival } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
@@ -74,6 +75,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     const [isle, land] = [islesView.groundAt(x, y), scene.groundAt(x, y)];
     return isle === null ? land : land === null ? isle : Math.max(isle, land);
   };
+  /** The houses' roads: their tracker, lines, marks and offers at the keepers' counters. */
+  const quests = questsOn(stack);
   const footContext: FootContext = {
     movement,
     land,
@@ -86,6 +89,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
     usePrompt: hud.usePrompt,
+    speak: (counter, ask) => quests.speak(counter, ask),
   };
   // The fight's display keeps clear of the HUD's hints, where the interface last laid them.
   const footView = new FootView(gpu, stack, forge, (drawn) => [hud.hintsBox(drawn)].filter((box) => box !== null));
@@ -101,6 +105,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     foot: null,
     sea: null,
     after: afterStoryOn(stack, forge, (x, y) => scene.groundAt(x, y)),
+    quests,
     through: null,
     helmMap: new HelmMap({
       ...{ gpu, store, stack, outlines: continents.map((each) => each.outline) },
@@ -109,6 +114,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       made: (map) => {
         if (opened) map.setWaters(opened.map);
       },
+      quest: () => quests.nodes,
     }),
     seaWord: null,
     landmass,
@@ -257,7 +263,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     const level = (['normal', 'elite', 'abyss'] as const).indexOf(seas);
     await playing.sea?.enterRoom(
       rooms
-        ? async (snapshot) => RoomConnection.open(rooms(seaRoomName(seas)), snapshot, undefined, await session())
+        ? async (snapshot) =>
+            RoomConnection.open(rooms(seaRoomName(seas)), snapshot, (gear) => quests.hear(gear), await session())
         : async (snapshot) =>
             LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities), level),
     );

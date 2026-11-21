@@ -1,8 +1,9 @@
 // What a player's gear lays on the ground on foot: each resource node they may still gather, a ring in sea green
 // under a beam of light seen across the patrol, so a route can be planned through them; each station that deals with
 // them, a brass ring at its counter, and Shape's spot while he is here. The drops lying for them stand as their own
-// pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's offer opened, or a node within
-// reach gathered. The room judges every gather; the rings only show where.
+// pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's offer opened (or its keeper
+// spoken with, while a quest asks it), or a node within reach gathered. The room judges every gather; the rings only
+// show where.
 
 import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
@@ -36,19 +37,24 @@ export interface Use {
   readonly run: () => void;
 }
 
-/** The use within reach of a player at (x, y): a station's offer, then Shape's, before a node, so a counter is never
- *  lost to one. */
+/** What E does at a counter of a kind (its offer's view) besides opening it: speaking with its keeper, while a quest
+ *  asks it (quests/quests.ts). */
+export type Speak = (counter: string, ask: (asked: GearAsk) => void) => Use | null;
+
+/** The use within reach of a player at (x, y): a station's offer (its keeper spoken with where `speak` says so), then
+ *  Shape's, before a node, so a counter is never lost to one. */
 export function useAt(
   x: number,
   y: number,
   here: Here,
   gear: GearState | null,
   ask: (asked: GearAsk) => void,
+  speak: Speak = () => null,
 ): Use | null {
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const near = shape && Math.hypot(shape[0] - x, shape[1] - y) <= SERVED_M;
   const offer = offerAt(here.stations ?? [], x, y) ?? (near ? SHAPE_OFFER : null);
-  if (offer) return { words: offer.words, run: () => openGearWindow(offer.opens) };
+  if (offer) return speak(offer.opens.view, ask) ?? { words: offer.words, run: () => openGearWindow(offer.opens) };
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
   if (!node) return null;
   return { words: `Gather ${resourceName(node.resource)}`, run: () => ask({ kind: ASKS.gather, node: node.index }) };

@@ -74,6 +74,11 @@ export const ASKS = {
   buyCosmetic: 56,
   /** One of Shape's wares of the week, by its place in `node`. */
   buyFromShape: 57,
+  /** The houses' roads: a keeper spoken with (`column` a house's number, or 10 the Mage, 11 the vault, 12 the
+   *  Armorsmith, 13 the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), and a fragment chosen
+   *  (`column` the Art, `node` the fragment's place in its Art's list). */
+  speakWith: 64,
+  chooseFragment: 65,
 } as const;
 
 /** Shape's place while he is away. */
@@ -231,6 +236,21 @@ export interface GearState {
   /** The day, counted from the epoch, whose smiths' wares these are: a smith's ware is asked by it, so the room
    *  refuses one shown before the day turned. */
   readonly day?: number;
+  /** Where they stand on the houses' roads; none from a room that sends none. */
+  readonly quest?: QuestState;
+}
+
+/** Where a player stands on the houses' roads (content/quests/quests.json): the quest walked by its place counted
+ *  from 1 (0 for none), its task, that task's goals' counts in its order, each quest done (1) or not by place, each
+ *  Art's fragment choices waiting in the Arts' order, and where the task's first unmet goal with a place stands in the
+ *  player's room (x, y and its reach), null where none is here. */
+export interface QuestState {
+  readonly quest: number;
+  readonly task: number;
+  readonly counts: readonly number[];
+  readonly done: readonly number[];
+  readonly choices: readonly number[];
+  readonly at: readonly [number, number, number] | null;
 }
 
 /** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
@@ -429,6 +449,20 @@ export function gearOf(gear: Gear): GearState {
           },
     factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
     day: gear.day(),
+    quest: questOf(gear),
+  };
+}
+
+/** The roads as a message holds them. */
+function questOf(gear: Gear): QuestState {
+  const [x, y, reach] = Array.from(gear.questAtArray() ?? []);
+  return {
+    quest: gear.quest(),
+    task: gear.questTask(),
+    counts: Array.from(gear.questCountsArray() ?? []),
+    done: Array.from(gear.questsDoneArray() ?? []),
+    choices: Array.from(gear.fragmentChoicesArray() ?? []),
+    at: x === undefined || y === undefined || reach === undefined ? null : [x, y, reach],
   };
 }
 

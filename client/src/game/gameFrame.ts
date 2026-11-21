@@ -39,6 +39,7 @@ import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { AfterStory } from './welcome/afterStory.ts';
+import type { Quests } from './quests/quests.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import { type GateWay, gateWay } from './gates.ts';
@@ -61,6 +62,8 @@ export interface Playing {
   readonly helmMap: HelmMap;
   /** The story's last moment, played on foot once it has ended, and the elder's welcome after it. */
   readonly after: AfterStory;
+  /** The houses' roads, shown once the story and the welcome are past. */
+  readonly quests: Quests;
   /** The way through the gate the player stands in, if any. */
   through: GateWay | null;
   seaWord: SeaWord | null;
@@ -160,7 +163,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     parts.isleFrame();
-    const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
+    const { quests } = playing;
+    quests.hear(here.gear?.gear);
+    quests.frame(seconds, playing.after.past, paused);
+    const questShown = { ...shown, fight: { ...shown.fight, questAt: quests.goalAt } };
+    const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: parts.groundAt });
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
@@ -191,7 +198,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.through = paused || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
     hud.hints(shown.hints);
-    hud.marks([]);
+    hud.marks(quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt));
+    hud.tasks.show(quests.tracked);
+    hud.toast(...quests.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     return scene.closeReady(body.x, body.y);
@@ -218,6 +227,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       paused,
     });
     playing.shipScale = shown.shipScale;
+    playing.quests.frame(seconds, playing.after.past, paused);
+    hud.toast(...playing.quests.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);

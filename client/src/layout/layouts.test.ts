@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { layoutFollower, type NodeLayout } from './layouts.ts';
+import { RUN_REACH_M, laidNodes, layoutFollower, type NodeLayout, placesOf } from './layouts.ts';
 
 /** A layout whose section is a 100 m square round a point. */
 function square(id: string, x: number, y: number): NodeLayout {
@@ -51,4 +51,27 @@ test('the ground is painted again each time the eye moves on, and the city built
   assert.deepEqual(builds, ['a,b'], 'the same layouts are not built again');
   follow([6000, 0], true);
   assert.deepEqual(builds, ['a,b', 'b,c'], 'built again when the layouts near change');
+});
+
+test("a layout's places are its areas at their reach and its runs at their mouth, and its node takes them", () => {
+  const laid: NodeLayout = {
+    ...square('saltgrass-downs', 0, 0),
+    spawns: [[0, 0]],
+    areas: [{ kind: 'tower', name: 'The Old Beacon', at: [10, -20], radius: 30 }],
+    runs: [{ name: 'The Chalk Adit', kind: 'mine', place: 'rock', mouth: [40, 5], line: [], beats: [], door: [60, 5] }],
+  };
+  const places = [
+    { name: 'The Old Beacon', at: [10, -20], radius: 30 },
+    { name: 'The Chalk Adit', at: [40, 5], radius: RUN_REACH_M },
+  ];
+  assert.deepEqual(placesOf(laid), places);
+  assert.equal(RUN_REACH_M, 25);
+  const drawn: Parameters<typeof laidNodes>[0][number] = {
+    id: 'saltgrass-downs',
+    ring: [],
+    spawns: [],
+    centre: [0, 0],
+  };
+  assert.deepEqual(laidNodes([drawn], [laid])[0]?.places, places);
+  assert.equal(laidNodes([{ ...drawn, id: 'unlaid' }], [laid])[0]?.places, undefined, 'a node not laid names none');
 });
