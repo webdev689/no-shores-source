@@ -77,7 +77,9 @@ number is one of [[Gear as Claude Shapes It]].
 - **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
   [[Ship Power]]), a rarity, a level (1 to 20; a
   Legendary or Atheric is 20), its XP and the nodes bought and chosen. A named item follows its catalogue entry: a
-  kept one whose column's traits changed is given back once what that column's nodes cost, its choice cleared.
+  kept one offers its entry's traits, each node bought and each choice kept, so a reworked perk stands where the old
+  one was bought. A rolled one offering a trait the catalogue no longer holds offers the first of its column's pool it
+  lacks in its place, bought and chosen as it was.
 - **Where it is worn.** Each kind in its one slot: a Melee loadout for Melee, a Ranged one for Ranged, each armour
   piece and the cloak its own ("Loadouts", below). A player wears an item only at its level or above, and one Atheric
   in the loadouts and one in the armour at a time.
@@ -242,8 +244,10 @@ shape.
   against each foe's level, from the blow they came from, and judged as a spell's are: never parried or guarded, a
   dodge passes one whole, a foe's shield takes it by its element. A leap or a burst carries its perk's element, a
   bite the weapon's. Each rides a spell's blow with a number no spell has (`room::atheric::CHAIN`), so it sets off no
-  perk of the weapon's: nothing chains from it, and it leaves its striker's soft lock alone. Its kill charges the
-  Anima as any kill does, and pays and shares as a kill of that loadout's.
+  perk of the weapon's: nothing chains from it, and it leaves its striker's soft lock alone. A burst passes by the
+  foes its own sweep strikes, so one blow strikes a foe once. Its kill charges the Anima as any kill does, counts for
+  the worn Art by the element it carries (Recharge, Zeal, Dread: [[Arts]]), and pays and shares as a kill of that
+  loadout's; the Crit status crits it as it does any blow.
 - **Where they play.** What a trim can hold is in the trim, which the browser predicts: Undertow, Last Light, Tolling,
   Coral Guard's stamina and Riptide's 50%. The rest is the room's alone, as the verbs are (`room::atheric`); what it
   counts (Call and Answer's shot, Swell's kills and their time, The Ninth's swings, and the rows Thousand Cuts shares
@@ -490,7 +494,7 @@ Officers ashore fight beside their player, as DFO's crew companions did
   written look, or a faction's. A test wears every item a player can hold, at every level, and fails on any weapon or
   armour layer of the forge no item wears but a class's own (the class sword, axe, bow and staff, the archer's dark
   helm) and the laced boots, a garment. A gilded double pistolet's left gun is worn only by a named gilded double pistolet,
-  and none wears it until `content/gear/items.json` holds one.
+  Brass Chorus.
 - No Breach items exist yet. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
   Vestige never opens to ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them

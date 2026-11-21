@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { FightEvent } from '../network/messages.ts';
 import { chainMarks, chainVerdict } from './chainLooks.ts';
 import { kicksOf } from './cameraKick.ts';
-import { EVENT, HOW, blowLook, landsAsSpell } from './cues.ts';
+import { EVENT, HOW, blowLook, landsAsSpell, notABlow } from './cues.ts';
 import type { Frame } from './spellPlaces.ts';
 
 const event = (fields: Partial<FightEvent>): FightEvent => ({
@@ -70,9 +70,13 @@ test('only a leap or a burst’s verdict is drawn, once, and burns in its own el
   assert.equal(blowLook(event({ how: HOW.bite, element: 0 }), { player: 1, own: 1 }), 1, 'a bite: the weapon’s');
 });
 
-test('a leap or a burst lands as a spell does, kicking no camera; a bite is a blow of the guard', () => {
+test('a leap or a burst lands as a spell does, kicking no camera; a bite is a blow of the guard, kicking none either', () => {
   assert.equal(landsAsSpell(event({})), true);
   assert.equal(landsAsSpell(event({ how: HOW.burst })), true);
   assert.equal(landsAsSpell(event({ how: HOW.bite })), false);
   assert.deepEqual(kicksOf([event({})], 1), kicksOf([], 1), 'the player’s leap is no swing of theirs');
+  const bite = event({ how: HOW.bite, from: 1, element: 0 });
+  assert.equal(notABlow(bite), true);
+  assert.deepEqual(kicksOf([bite], 1), kicksOf([], 1), 'the Reefwall’s bite kicks no view beside the block’s own');
+  assert.equal(notABlow(event({ how: 1 })), false, 'a swing is a blow');
 });

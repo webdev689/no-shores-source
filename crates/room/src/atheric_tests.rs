@@ -162,14 +162,15 @@ fn storm_gull_leaps_from_foe_to_foe_in_volt_and_squall_line_charges_each() {
 fn an_arrow_loosed_from_the_draw_is_aimed_and_a_quick_one_is_not() {
     let (mut room, player, foes) = room_with("gullwing", false, &[0.0, 6.0]);
     let held = room.held(player, Slot::Ranged).expect("a player");
-    for (power, leaps) in [(1.0, false), (1.2, true)] {
+    // A quick shot, one drawn, and one drawn a moment with Hair Trigger's softer aim.
+    for (power, leaps) in [(1.0, false), (1.2, true), (0.9, true)] {
         let shot = combat::shots::loose(player, Ranged::Bow, [0.0, 0.0, 1.0], 0.0, 0.0, power);
-        let aimed = shot.damage > combat::shots::shot_numbers(Ranged::Bow).1;
-        room.shots.push((shot, Some(crate::power::Loosed { aimed, ..held })));
+        room.shots.push((shot, Some(crate::power::Loosed { aimed: crate::aimed(&shot), ..held })));
+        let before = taken(&room, foes[1]);
         for _ in 0..10 {
             room.fly_shots();
         }
-        assert_eq!(taken(&room, foes[1]) > 0.0, leaps, "power {power}");
+        assert_eq!(taken(&room, foes[1]) > before, leaps, "power {power}");
     }
 }
 
@@ -181,6 +182,17 @@ fn pulled_under_drags_the_foes_round_the_slain_and_exposes_them() {
     assert_eq!(told(&room, How::Burst), vec![(foes[1], Some(foes[0]), Element::Cosmic as u8)]);
     assert!(room.fighter(foes[1]).expect("in").statuses.has(Status::Expose));
     assert_eq!(taken(&room, foes[2]), 0.0, "9 m off");
+}
+
+#[test]
+fn a_burst_passes_by_the_foes_its_own_sweep_strikes_so_one_blow_strikes_a_foe_once() {
+    let (mut room, player, foes) = room_with("the_drowned_oath", true, &[0.0, 3.0, 2.0]);
+    // A sweep strikes the first two: the kill on the first drags under the third alone.
+    room.sweep = vec![foes[0], foes[1]];
+    landed(&mut room, player, SWING, foes[0], KILL);
+    assert_eq!(taken(&room, foes[1]), 0.0, "struck by the sweep itself, never by its burst");
+    assert!(!room.fighter(foes[1]).expect("in").statuses.has(Status::Expose), "nor Exposed before its own blow");
+    assert!(close(taken(&room, foes[2]), 10.0 / 3.0));
 }
 
 #[test]

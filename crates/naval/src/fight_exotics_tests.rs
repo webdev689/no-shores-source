@@ -104,7 +104,7 @@ fn living_bone_mends_a_hundredth_of_its_hull_a_second_afloat_never_past_its_whol
 
 #[test]
 fn hard_to_kill_leaves_it_a_tenth_of_its_hull_once_a_fight() {
-    let mut fight = abeam(80.0, Some(Trim { last_stand: 0.1, ..Trim::default() }));
+    let mut fight = abeam(80.0, Some(Trim { last_stand: 0.1, carpenter: 1.0, ..Trim::default() }));
     let whole = fight.ships[&PLAYER].damage.max_hull;
     if let Some(own) = fight.ships.get_mut(&PLAYER) {
         own.damage.hull = 1.0;
@@ -112,6 +112,10 @@ fn hard_to_kill_leaves_it_a_tenth_of_its_hull_once_a_fight() {
     strike(&mut fight, CAPTAIN, PLAYER, Zone::Hull);
     assert_eq!(fight.ships[&PLAYER].damage.state, State::Afloat);
     assert!((fight.ships[&PLAYER].damage.hull - whole * 0.1).abs() < 1e-9);
+    assert_eq!(
+        fight.fittings[&PLAYER].patching, 0.0,
+        "a ball it stood through took nothing for its Carpenter to patch"
+    );
     // Refitted each tick, it keeps its stand spent.
     fight.fit(PLAYER, Fitting { trim: Trim { last_stand: 0.1, ..Trim::default() }, ..Fitting::default() });
     if let Some(own) = fight.ships.get_mut(&PLAYER) {

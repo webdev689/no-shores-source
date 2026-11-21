@@ -64,7 +64,8 @@ pub struct Event {
     /// screen can mark the one and burn the other.
     pub crit: bool,
     pub element: u8,
-    /// The fighter a leap leapt from or a burst burst from; none for anything else.
+    /// The fighter a chain blow came from: the foe a leap leapt from or a burst burst from, the player a bite came
+    /// from, on every event of that blow (its hit, kill, stagger or shield); none for any other blow.
     pub from: Option<FighterId>,
 }
 

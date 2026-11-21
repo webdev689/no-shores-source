@@ -41,30 +41,28 @@ fn a_bought_node_whose_trait_no_longer_fits_its_piece_is_given_back_once_as_it_i
 }
 
 #[test]
-fn a_kept_named_item_follows_its_catalogue_entry_giving_back_a_changed_column_once() {
+fn a_kept_named_item_follows_its_catalogue_entry_its_nodes_kept() {
     let mut character = Character::starting();
     let id = character.take_id();
     let entry = crate::catalogue::catalogue().named("harpooner").expect("Harpooner");
     let mut bow = crate::vestige::named_item(id, entry, Slot::Ranged);
     bow.xp = bow.xp_most();
-    // Kept from before its perks changed: its first perk column offered other traits, bought and chosen.
+    // Kept from before its perks changed: its first perk column offered other traits, both bought, the second chosen.
     bow.layout[1] = vec!["light_stock".to_owned(), "quick_hands".to_owned()];
     let (handling, perks) = (0, 2);
     for (column, node) in [(handling, 0), (perks, 0), (perks, 1)] {
         bow.bought |= bow.node_bit(column, node).expect("a node");
     }
     bow.chosen[perks] = 1;
-    let cost = bow.cost_of(perks);
     character.items.insert(id, (bow, At::Carried));
     let had = character.materials.clone();
     let read = Character::from_json(&character.to_json()).expect("a character");
     let bow = read.item(id).expect("kept");
     assert_eq!(bow.layout, entry.layout, "its traits are its entry's");
-    assert!(bow.has(handling, 0) && !bow.has(perks, 0) && !bow.has(perks, 1), "the changed column alone given back");
-    assert_eq!(bow.chosen[perks], crate::item::NONE_CHOSEN);
-    assert_eq!(read.materials.aurem, had.aurem + 2 * cost.aurem);
-    let again = Character::from_json(&read.to_json()).expect("a character");
-    assert_eq!(again.materials, read.materials, "given back once");
+    assert!(bow.has(handling, 0) && bow.has(perks, 0) && bow.has(perks, 1), "every node it bought kept");
+    assert_eq!(bow.chosen[perks], 1, "and its choice, now the entry's trait in that place");
+    assert!(bow.active_traits().any(|active| active == entry.layout[1][1]));
+    assert_eq!(read.materials, had, "nothing given back, nothing lost to a stock's cap");
 }
 
 #[test]
@@ -84,11 +82,13 @@ fn a_kept_rolled_item_offering_a_trait_now_gone_offers_another_of_its_pool() {
     let first = helm.layout[0][0].as_str();
     assert!(crate::catalogue::catalogue().trait_fits(first, Kind::Head, None), "{first} fits a helm");
     assert!(!["hardy", "unshaken", "scholar"].contains(&first), "and is offered once");
-    assert!(!helm.has(0, 0) && read.materials.aurem > had, "the node bought on it given back");
+    assert!(helm.has(0, 0) && helm.chosen[0] == 0, "bought and chosen as the trait it stands for was");
+    assert_eq!(read.materials.aurem, had);
+    assert!(helm.active_traits().any(|active| active == first), "and it gives its trait");
 }
 
 #[test]
-fn a_kept_rolled_module_offering_a_merged_perk_gives_it_back_and_offers_its_columns_first_one_it_lacks() {
+fn a_kept_rolled_module_offering_a_merged_perk_offers_its_columns_first_one_it_lacks_bought_as_it_was() {
     let mut character = Character::starting();
     let id = character.take_id();
     let mut sails = Item::new(id, Kind::Sails, Rarity::Rare, 10, Slot::Sails);
@@ -103,9 +103,8 @@ fn a_kept_rolled_module_offering_a_merged_perk_gives_it_back_and_offers_its_colu
     let sails = read.item(id).expect("kept");
     // Storm Canvas, Flying Jib and Lookout Yard it offers already: the pool's next is Crowd of Sail.
     assert_eq!(sails.layout[0], pair("crowd_of_sail", "storm_canvas"));
-    assert!(!sails.has(0, 0) && sails.chosen[0] == crate::item::NONE_CHOSEN && read.materials.aurem > had);
-    let again = Character::from_json(&read.to_json()).expect("a character");
-    assert_eq!(again.materials, read.materials, "given back once");
+    assert!(sails.has(0, 0) && sails.chosen[0] == 0, "its node kept, Crowd of Sail chosen where Topgallants was");
+    assert_eq!(read.materials.aurem, had, "nothing given back, nothing lost");
 }
 
 #[test]

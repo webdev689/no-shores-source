@@ -126,6 +126,8 @@ pub struct Room {
     pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
     /// Shots loosed this tick, by whom.
     pub(crate) loosed: Vec<FighterId>,
+    /// The foes a swing settling now strikes: a burst it sets off passes them by, so one blow strikes a foe once.
+    pub(crate) sweep: Vec<FighterId>,
     /// The balls that stopped since the last snapshot, each as its last segment and the point it left its gun.
     pub(crate) lines: Vec<Line>,
     /// What the foes share, how hot their fight runs, the routes they walk, the most it holds, and a node's garrison;
@@ -196,6 +198,7 @@ impl Room {
             spawns: Vec::new(),
             swings: Vec::new(),
             loosed: Vec::new(),
+            sweep: Vec::new(),
             lines: Vec::new(),
             board: ::foes::Board::default(),
             director: ::foes::Director::default(),
@@ -399,7 +402,8 @@ impl Room {
         match happening {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
-                for defender in struck(id, fighter, &attack, view, &self.blocks) {
+                self.sweep = struck(id, fighter, &attack, view, &self.blocks);
+                for defender in self.sweep.clone() {
                     let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {
@@ -410,6 +414,7 @@ impl Room {
                         self.judge_now(&blow, how, defender, &then, Some(loadout));
                     }
                 }
+                self.sweep.clear();
             }
             Some(Happening::Loosed(shot)) => {
                 let shot = Shot { owner: id, ..shot };
@@ -420,9 +425,8 @@ impl Room {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
-                    // A shot loosed from the draw strikes harder than a quick one (`combat::shots::aimed_power`).
-                    let aimed = shot.damage > combat::shots::shot_numbers(shot.ranged).1;
-                    let loosed = self.held(id, gear::Slot::Ranged).map(|held| power::Loosed { aimed, ..held });
+                    let loosed =
+                        self.held(id, gear::Slot::Ranged).map(|held| power::Loosed { aimed: aimed(&shot), ..held });
                     self.shots.push((shot, loosed));
                 }
             }
@@ -525,3 +529,10 @@ mod ring_tests;
 mod room_tests;
 #[cfg(test)]
 mod spread_tests;
+
+/// Whether a player's shot was loosed from the draw: a quick one strikes at its weapon's own damage to the bit
+/// (`combat::step`'s quick shot, power 1), and one loosed from the draw at its draw's power and the aimed trim, which
+/// may be more or, with Hair Trigger, less.
+pub(crate) fn aimed(shot: &Shot) -> bool {
+    shot.damage != combat::shots::shot_numbers(shot.ranged).1
+}

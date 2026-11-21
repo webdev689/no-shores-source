@@ -260,12 +260,16 @@ impl Fight {
         // A ball of a side of many guns takes its share of a Sloop's ball's harm and of its chance to set it alight.
         hurt.fire = burns && self.draws.draw() < fire_chance(shot) * gun.share;
         let hurt = vessel.damage.shared(hurt, gun.share);
-        let floor = match self.fittings.get_mut(&target) {
-            Some(fitted) => fitted.stand(&mut vessel.damage, &hurt, floor),
-            None => floor,
+        let (floor, stood) = match self.fittings.get_mut(&target) {
+            Some(fitted) => {
+                let was = fitted.stood;
+                (fitted.stand(&mut vessel.damage, &hurt, floor), fitted.stood && !was)
+            }
+            None => (floor, false),
         };
         let state = vessel.damage.apply(hurt, clock, floor);
-        if let Some(fitted) = self.fittings.get_mut(&target) {
+        // A ball it stood through (Hard to Kill) took nothing for its Carpenter to patch.
+        if let Some(fitted) = self.fittings.get_mut(&target).filter(|_| !stood) {
             fitted.owe(&hurt);
         }
         let rig = sail.filter(|_| zone == Zone::Rig);

@@ -24,7 +24,7 @@ them out is [[Gear]] and [[Ship Power]].
 | Its two perks | An **intrinsic**, always on while it is worn, shown at the head of its page; and **its own** node, bought in the column the Atheric already has, for 1,000 Aurem and 1 Essence | Destiny 1's exotics: an exotic perk that is the weapon, and a second one earned in its tree. The grid keeps its shape, so no kept item's nodes move |
 | What they do | Something a number cannot: lightning that leaps, a kill that bursts, a guard that bites back, a count that builds; never only a share more | The owner: "more like exotic weapons from destiny" |
 | Their element | An Atheric's leaps and bursts carry the perk's own element, whatever the weapon rolled | Lightning is Volt on any bow; whether named weapons keep an element of their own is still the owner's |
-| A kept Atheric | Follows its catalogue entry: a column whose traits changed gives back what its nodes cost, once, and its choice is cleared | Destiny's reworked exotics changed every copy. A named item stays what the catalogue says it is |
+| A kept Atheric | Follows its catalogue entry: each node bought and each choice kept, the new perk standing where the old one was bought | Destiny's reworked exotics changed every copy, and nobody bought them again. A node costs the same whatever its perk, so nothing is given back and nothing is lost to a stock's cap |
 | Its look | Its own metal or set, and its own make where the forge has more than one (a shield's kind, a bow's), with its rarity's glow | Destiny's exotics each had a model of their own |
 
 ### The Atheric weapons
@@ -106,8 +106,8 @@ Destiny 1's rolls traded one strength for another; these are offered among their
 ### The ship's perks, merged
 
 Each thing a module's perk does is done by one perk; the officers' perks are their own and stay
-([[Crew]]). A kept rolled module offering a perk that is gone gives back what its node cost, once, and offers the
-first perk of its column's pool it does not offer already.
+([[Crew]]). A kept rolled module offering a perk that is gone offers in its place the
+first perk of its column's pool it does not offer already, bought and chosen as the old one was.
 
 | Module | Column | Perks |
 |---|---|---|

@@ -158,7 +158,8 @@ export interface FightEvent {
    *  say leaves them out. */
   readonly crit?: boolean;
   readonly element?: number;
-  /** The fighter an Atheric's leap leapt from or its burst burst from; 0 or left out for none. */
+  /** The fighter an Atheric's chain blow came from (the foe a leap or burst came from, the player a bite came from),
+   *  on every event of that blow; 0 or left out for none. */
   readonly from?: number;
 }
 

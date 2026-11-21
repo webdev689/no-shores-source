@@ -216,7 +216,8 @@ impl Room {
     }
 
     /// A burst round `centre` for `share` of a player's blow on it, in `element`, on every other living foe within
-    /// `reach`; answers those it landed on.
+    /// `reach` but those the swing settling now strikes (`Room::sweep`), so one blow strikes a foe once; answers those
+    /// it landed on.
     fn burst(
         &mut self,
         blow: &Blow,
@@ -227,7 +228,10 @@ impl Room {
     ) -> Vec<FighterId> {
         let Some(at) = self.fighter(centre).map(feet) else { return Vec::new() };
         let Some(raw) = self.raw_of(blow, centre, hand) else { return Vec::new() };
-        let caught = self.foes_near(at, reach, SPELL_HEIGHT).into_iter().filter(|foe| *foe != centre);
+        let caught = self
+            .foes_near(at, reach, SPELL_HEIGHT)
+            .into_iter()
+            .filter(|foe| *foe != centre && !self.sweep.contains(foe));
         let caught: Vec<FighterId> = caught.collect();
         caught
             .into_iter()
