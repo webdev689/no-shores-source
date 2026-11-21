@@ -1,7 +1,5 @@
-import { canvasSize } from '../canvasSize.ts';
-import { useMendedFace } from '../face.ts';
 import { FirstPerson } from '../firstperson/firstPerson.ts';
-import { GpuUnavailable, startGpu } from '../gpu.ts';
+import { type Gpu, GpuUnavailable, TEXTURE_USAGE, startGpu, stopWhenLost } from '../gpu.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { crosshairOf } from '../combat/reticle.ts';
@@ -20,11 +18,16 @@ import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
+import { readFace } from '../ui/faceReader.ts';
+import { stopped } from '../ui/page.ts';
+import { Interface } from '../ui/ui.ts';
+import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { abilityPictures } from '../player/artGlyphs.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { type GearMessage, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
-import { ASKS, type GearState } from '../network/gearMessages.ts';
+import type { ArtState } from '../network/artMessages.ts';
+import { ASKS, type GearAsk, type GearStanding, type GearState } from '../network/gearMessages.ts';
 import { fetchRoomWasm, startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
@@ -35,7 +38,7 @@ import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { COURSE, RESOURCE_NODES, ROCKS_SHOWN, STALL, START, STOOD, WOODEN } from './course.ts';
 import { rockTriangles } from './rockRow.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
-import { startGearPanel } from './gearPanel.ts';
+import { GearPanel, type GearView } from './gearPanel.ts';
 import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
@@ -47,13 +50,16 @@ import { type Player, newPlayer, playerCamera, shownBody } from '../player/playe
 import { AIM, type AimPlace } from '../player/playerCamera.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { Walker } from '../player/walker.ts';
-import { startAimPanel } from './aimPanel.ts';
+import { AimPanel } from './aimPanel.ts';
 import { withLight } from './dressPanel.ts';
-import { startPanel } from './panel.ts';
-import { startStatusPanel } from './statusPanel.ts';
-import { startArtsPanel } from './artsPanel.ts';
+import { Panel, type PanelState, roomLine } from './panel.ts';
+import { panels, sides } from './panelKit.ts';
+import { statusNodes } from './statusPanel.ts';
+import { artsNodes } from './artsPanel.ts';
 import { SceneView } from './sceneView.ts';
-import { startFeelPanel } from './feelPanel.ts';
+import { ViewTexture } from './viewTexture.ts';
+import { PagePanels } from './pagePanels.ts';
+import { FeelPanel } from './feelPanel.ts';
 
 /** How fast a figure set turning round turns, in radians a second: a full turn in 8 seconds. */
 const SPIN = (2 * Math.PI) / 8;
@@ -84,10 +90,20 @@ function bloodCamera(orbit: Orbit, aspect: number) {
 }
 
 async function start(): Promise<void> {
-  useMendedFace();
   const canvas = element<HTMLCanvasElement>('#ground');
   const gpu = await startGpu(canvas);
-  const scene = new SceneView(gpu);
+  stopWhenLost(gpu.device, stopped);
+  // The view between the panels is drawn into a texture of its own, its display over it, then copied into its place on
+  // the canvas, under the panels drawn either side of it.
+  gpu.context.configure({
+    device: gpu.device,
+    format: gpu.format,
+    alphaMode: 'opaque',
+    usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.copySource | TEXTURE_USAGE.copyDestination,
+  });
+  const viewTexture = new ViewTexture(gpu);
+  const viewGpu = { device: gpu.device, format: gpu.format, context: { getCurrentTexture: () => viewTexture.texture } };
+  const scene = new SceneView(viewGpu as unknown as Gpu);
   scene.setBlocks(COURSE, ROCKS_SHOWN ? rockTriangles() : []);
   const blood = new FightBlood(gpu, surfacesOf(COURSE), location.search);
   scene.underCards = (pass) => blood.draw(pass);
@@ -102,7 +118,15 @@ async function start(): Promise<void> {
   combatRules.setCourse(STOOD);
   // Each foe's name and hands are the rules' roster's; its type's dress is made once.
   const roster = rosterOf(roomModule);
-  const input = new Input(canvas);
+  // The fight's display is drawn by the game over the view, in an interface of its own the view's size; it hears
+  // nothing. The panels either side hear the canvas.
+  let ui: Interface | null = null;
+  const face = readFace();
+  face
+    .then((read) => (ui = new Interface(new UiRenderer(viewGpu as unknown as Gpu, read))))
+    .catch((error: unknown) => console.error('the face could not be read:', error));
+  const page = new PagePanels(gpu, canvas, face, () => input.locked);
+  const input: Input = new Input(canvas, () => page.takesKeys);
   let status = 'Reading the forge…';
   let fps = 6;
   // The player before the forge has come; then the walker's.
@@ -135,7 +159,7 @@ async function start(): Promise<void> {
   const asks = new PanelAsks();
   // The light the player's left carries, where the loadout drawn lets it: the dress panel's pick.
   let light: string | null = null;
-  const showPanel = startPanel(element<HTMLElement>('#panel'), roster, {
+  const panel = new Panel(roster, {
     add: () => {
       const ahead = 3;
       const { body, yaw } = playerNow();
@@ -168,24 +192,23 @@ async function start(): Promise<void> {
   });
   // The player's gear, as the room last sent it, and the panel that shows it and asks of it.
   let gear: GearState | null = null;
-  const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => asks.ask(fight, ask));
+  const gearPanel = new GearPanel((ask) => asks.ask(fight, ask));
   // Third person's aiming view where the panel places it; held there while the box is ticked, to place it by eye.
   let aimPlace: AimPlace = AIM;
   let aimHeld = false;
-  startAimPanel(element<HTMLElement>('#panel'), (place, held) => {
+  const aimPanel = new AimPanel((place, held) => {
     [aimPlace, aimHeld] = [place, held];
   });
-  startStatusPanel(element<HTMLElement>('#panel'), (ask) => asks.ask(fight, ask));
-  const showArts = startArtsPanel(element<HTMLElement>('#panel'), (ask) => asks.ask(fight, ask));
+  const askGear = (ask: GearAsk) => asks.ask(fight, ask);
   const feel = new AttackFeel(combatRules, movement.tickSeconds);
-  startFeelPanel(element<HTMLElement>('#panel'), (set) => {
+  const feelPanel = new FeelPanel((set) => {
     feel.set(set);
     scene.light = set.light;
   });
   // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
   const aimView = (shown: Player) =>
     aboveGround(playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, STOOD, aimPlace));
-  const panelState = (looks: ForgeLooks, hair: HairColours, line: string) => ({
+  const panelState = (looks: ForgeLooks, hair: HairColours, line: string): PanelState => ({
     looks,
     hair,
     figures,
@@ -198,7 +221,33 @@ async function start(): Promise<void> {
     playing: input.locked,
     status: line,
   });
-  showPanel(panelState({ bodies: {} }, { bodies: {} }, status));
+  // What the panels show, as the page last knew it; drawn each frame from the first.
+  let shownPanel = panelState({ bodies: {} }, { bodies: {} }, status);
+  let shownGear: GearView = { gear: null, atStall: false, nodesInReach: [] };
+  let shownArts: { state: ArtState | null; standing?: GearStanding } = { state: null };
+  page.stack.add((drawn) =>
+    panels(
+      drawn,
+      [
+        ...panel.node(drawn, shownPanel),
+        ...aimPanel.node(drawn),
+        ...statusNodes(drawn, askGear),
+        ...artsNodes(drawn, askGear, shownArts.state, shownArts.standing),
+        ...feelPanel.node(drawn),
+      ],
+      gearPanel.node(drawn, shownGear, page.seconds),
+    ),
+  );
+  // Until the forge and the room are ready, the panels are drawn alone.
+  let ready = false;
+  const waiting = () => {
+    if (ready) return;
+    shownPanel = panelState({ bodies: {} }, { bodies: {} }, status);
+    page.hear();
+    page.draw();
+    requestAnimationFrame(waiting);
+  };
+  requestAnimationFrame(waiting);
   const { forge, store, looks, hair } = await openCards(scene);
   loadForgedBirds((path) => store.strip(path));
   cards = forge;
@@ -214,8 +263,9 @@ async function start(): Promise<void> {
   status = 'Click the view to play.';
   // The world's sounds wake with the first click into the view, as a browser lets sound start only after a press.
   let output: WorldOutput | null = null;
-  canvas.addEventListener('click', () => {
-    if (!input.locked) input.lock();
+  canvas.addEventListener('click', (event) => {
+    if (input.locked || !page.onView(event)) return;
+    input.lock();
     if (output || typeof AudioContext === 'undefined') return;
     const audio = new AudioContext();
     loadSamples(audio);
@@ -254,7 +304,7 @@ async function start(): Promise<void> {
   otherPlayers.takeDresses(link.dressed);
   const steps = fighting.steps(movement);
   const playerFight = new PlayerFight(fighting, combatRules, player);
-  const hud = new Hud(element<HTMLElement>('#hud'), abilityPictures, forge);
+  const hud = new Hud(abilityPictures, forge);
   const effects = new FightEffects();
   const dropsShown = new DropsShown();
   // The foes' figures, apart from the panel's figures; they and other players are drawn gliding between the room's
@@ -269,7 +319,10 @@ async function start(): Promise<void> {
     const seconds = Math.min(0.1, (now - last) / 1000);
     last = now;
     clock += seconds;
-    const controls = input.frame();
+    // The panels hear the page before the game's input is read: what they take is not the world's.
+    const tookWheel = page.hear();
+    const heardControls = input.frame();
+    const controls = tookWheel ? { ...heardControls, wheel: 0 } : heardControls;
     // The figure wears what the gear wears, and the hands hold it: the room takes no other arms. The left carries the
     // panel's light only where the room's arms allow it.
     const ownGear = gear;
@@ -295,7 +348,12 @@ async function start(): Promise<void> {
     const bodies = [...foes.placed.values(), ...others.values()].map(
       (placed) => [placed.x, placed.y, placed.z] as const,
     );
-    const aspect = canvas.width / Math.max(1, canvas.height);
+    // The view between the panels, device pixels.
+    const scale = uiScale(devicePixelRatio);
+    const side = sides(canvas.width / scale);
+    const [viewWidth, viewHeight] = [Math.max(1, canvas.width - (side.left + side.right) * scale), canvas.height];
+    viewTexture.fit(viewWidth, viewHeight);
+    const aspect = viewWidth / viewHeight;
     // Alone, the room in the page waits while the pointer is free: Escape pauses the fight.
     const running = roomUrl !== null || controls.locked;
     // An ask made from a panel while the pointer is free still goes, carried by a tick of the player standing still;
@@ -325,8 +383,6 @@ async function start(): Promise<void> {
     feel.frame(events, own, fighting.player, seconds, new Set(fighting.others.keys()));
     const frameTicks = seconds / movement.tickSeconds;
     const body = shownBody(player.player);
-    const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
-    if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
     const inFirstPerson = player.inFirstPerson;
     const sights = shown.aiming || aimHeld || (shown.rangedDrawn && inFirstPerson);
     const feltCamera = feel.camera(aimView(player.player), fighting.player, own, inFirstPerson, sights);
@@ -442,10 +498,9 @@ async function start(): Promise<void> {
     ];
     scene.setSwings(feel.arcsMesh(clock, strikers, figuresDrawn, cameraOf(camera).eye, inFirstPerson));
     blood.frame(seconds, events, fighting, bloodCamera(camera, aspect));
-    scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
+    scene.draw(camera, viewWidth, viewHeight, drawn, chosen === you ? null : chosen, (encoder, view) => {
       // The Test Ground keeps a clear afternoon: its hands are drawn as made.
-      if (inFirstPerson)
-        firstPerson.draw(encoder, view, { width: canvas.width, height: canvas.height, light: [1, 1, 1] });
+      if (inFirstPerson) firstPerson.draw(encoder, view, { width: viewWidth, height: viewHeight, light: [1, 1, 1] });
     });
     const where = (id: number): [number, number, number] | null => {
       if (id === fighting.player && own) return [own.x, own.y, own.z];
@@ -458,8 +513,9 @@ async function start(): Promise<void> {
         foes: foes.marked(fighting),
         where,
         matrix: viewProjection(camera, aspect),
-        width: canvas.clientWidth,
-        height: canvas.clientHeight,
+        // In the drawn interface's own pixels, where it lays the display out.
+        width: viewWidth / scale,
+        height: viewHeight / scale,
         events,
         blocks: STOOD,
         // The course's flat ground hides nothing.
@@ -480,20 +536,29 @@ async function start(): Promise<void> {
       },
       seconds,
     );
+    if (ui) {
+      ui.frame({ width: viewWidth, height: viewHeight, scale }, [], seconds, false, false);
+      ui.draw(hud.node(ui));
+      ui.renderer.present(viewWidth, viewHeight);
+    }
+    viewTexture.show(side.left * scale);
     const composing = forge.pending > 0 ? ` Composing ${forge.pending} frame${forge.pending === 1 ? '' : 's'}…` : '';
     const failure = forge.failure ? ` A strip did not load: ${forge.failure}` : '';
     const line = controls.locked ? 'Playing: Escape frees the mouse.' : status;
-    showPanel(panelState(looks, hair, line + composing + failure));
+    const room =
+      given !== null && link instanceof RoomConnection ? ` ${roomLine(given, link.player, link.measured)}` : '';
+    shownPanel = panelState(looks, hair, line + composing + failure + room);
     const atStall = Math.hypot(player.player.body.x - STALL.x, player.player.body.y - STALL.y) <= STALL_REACH;
-    showGear({ gear, atStall, nodesInReach: nodesInReach(player.player.body, RESOURCE_NODES, gear) });
-    showArts(fighting.arts, gear?.standing);
+    shownGear = { gear, atStall, nodesInReach: nodesInReach(player.player.body, RESOURCE_NODES, gear) };
+    shownArts = { state: fighting.arts, standing: gear?.standing };
+    page.draw();
     requestAnimationFrame(frame);
   };
+  ready = true;
   requestAnimationFrame(frame);
 }
 
 start().catch((error: unknown) => {
   const message = error instanceof GpuUnavailable || error instanceof Error ? error.message : String(error);
-  document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;padding:22px';
+  stopped(message);
 });

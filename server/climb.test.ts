@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import course from '../content/testground/course.json' with { type: 'json' };
 // The browser's side of the messages, so this run sends the room exactly the bytes a browser sends.
 import { inputBytes, readFromRoom } from '../client/src/network/messages.ts';
+import { SnapshotKeeper } from '../client/src/network/snapshots.ts';
 import { startRoomDoor } from './roomDoor.ts';
 
 const compiled = new WebAssembly.Module(
@@ -14,7 +15,7 @@ const compiled = new WebAssembly.Module(
 
 /** The room door's agreement test holds the same course, script and fingerprint
  *  (crates/room-wasm/src/climb_door_tests.rs). */
-const CLIMB_HASH = '5f9272b0';
+const CLIMB_HASH = '4b6ae766';
 /** Ticks east, then north into the ledge and up it, then facing south; the tick the player asks for a swordsman, how
  *  often they swing at it after, and the run's length. */
 const EAST = 40;
@@ -28,6 +29,7 @@ test('a foe climbs after a player to the same fingerprint through WebAssembly as
   const room = startRoomDoor(compiled);
   assert.equal(room.open(course.start, course.blocks), true);
   const player = room.join();
+  const kept = new SnapshotKeeper();
   let hash = 0x811c_9dc5;
   let highest = 0;
   for (let tick = 1; tick <= RUN_TICKS; tick++) {
@@ -39,10 +41,12 @@ test('a foe climbs after a player to the same fingerprint through WebAssembly as
     const parts = { intent, look, arms: 0, seen: BigInt(tick - 1), ...(spawn === undefined ? {} : { spawn }) };
     assert.equal(room.input(player, inputBytes(tick, parts)), 'taken');
     room.tick();
-    const bytes = room.snapshot();
+    const bytes = room.snapshot(player);
     for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x0100_0193) >>> 0;
-    const message = readFromRoom(bytes);
-    if (message?.kind !== 'snapshot') continue;
+    const read = readFromRoom(bytes);
+    // Kept whole as a page keeps it: a foe that changed comes as its numbers that changed.
+    const message = read?.kind === 'snapshot' ? kept.whole(read) : null;
+    if (!message) continue;
     for (const foe of message.foes) highest = Math.max(highest, foe.glance[2] ?? 0);
   }
   assert.equal(highest, 2.3, 'the foe stood on the ledge');

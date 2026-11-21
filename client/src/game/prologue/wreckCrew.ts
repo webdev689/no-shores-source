@@ -1,5 +1,5 @@
 // The Brig's surviving crew on the wreck: two or three of them in each zone with boarders, already fighting them when
-// the player comes, dressed as the hands who worked her deck in the storm. They fight on the players' side and can
+// the player comes, dressed as the hands who worked its deck in the storm. They fight on the players' side and can
 // fall; a zone is cleared by its boarders falling, whatever becomes of its crew.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import type { Dress } from '../../player/dressing.ts';

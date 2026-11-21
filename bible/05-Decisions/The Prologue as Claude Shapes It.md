@@ -16,7 +16,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | Choice | Chosen | Why |
 |---|---|---|
 | The foe at the end | Captain Brannoc Thule, the Grey Tithe's Boss on deck, already in the roster ([[Enemies]]) | A foe the world already has, with three phases of his own; "your foe" needed a name the story could strike on a plate |
-| The ship that rams | Thule's ship is the Frigate, at her own size, under sail in the shade the fight's captains wear; in the wreck she lies with her bow driven into the Brig's middle | [[Hulls]] gives the Frigate to Boss ships and a sea strike's flagship, and she is published; the Tithe Ram the roster names is not built |
+| The ship that rams | Thule's ship is the Frigate, at its own size, under sail in the shade the fight's captains wear; in the wreck it lies with its bow driven into the Brig's middle | [[Hulls]] gives the Frigate to Boss ships and a sea strike's flagship, and she is published; the Tithe Ram the roster names is not built |
 | The ships that attack first | Three pirate Sloops of Major rank | Pirates attack ships at sea already; on the wreck they board beside the Tithe ([[The Wreck's Boarders Are One Side]]) |
 | Where the story happens | A storm 24 km out past Saltmere's harbour, in open deep water | "deep into the ocean"; Saltmere is the island the story wakes on |
 | The intro's islands | None since the owner's [[The Intro Goes Straight to Saltmere]]: first light over the cloud, then Saltmere | The owner found the flight between islands too slow |
@@ -34,9 +34,9 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | Back from Discord | The story starts again at the helm; an account signed in with Discord alone goes on as itself | Signing in never costs the intro and the storm a second time |
 | Creation on a tall screen | The window lies along the bottom and the whole figure stands above it | "showing your full character" on a phone too |
 | The sea fight's end | Won when every pirate is beaten: sunk, going down, or struck; they never sail off; the Brig is never wrecked in it; the panel says how many are left | "destroying the ships trying to take you down", with no stall and no win without a fight |
-| The first cries | Two seconds into the sighting, once the camera looks down her deck | Every cry is heard with its speaker on screen |
+| The first cries | Two seconds into the sighting, once the camera looks down its deck | Every cry is heard with its speaker on screen |
 | The interrupt | The Lookout's "Ship to starboard!" cuts the First Mate off in her last line | "One crew member interrupts" |
-| The beaten ships in the calm | Where the fight left them, each from the pose the fight left her in; the camera looks out over the Lookout to the nearest while he asks whether to board what is left, and the First Mate says to leave them | The crew talk of what is shown, as they do |
+| The beaten ships in the calm | Where the fight left them, each from the pose the fight left it in; the camera looks out over the Lookout to the nearest while he asks whether to board what is left, and the First Mate says to leave them | The crew talk of what is shown, as they do |
 | The way through the wreck | A heap of debris across the way on from each zone, cleared when that zone's wave falls; no one climbs on the wreck ([[Climbing Is Off in the Prologue]]) | "fighting through the linear wreckage, killing foes" |
 | A death in the wreck | "Fallen", and the player rises at the last checkpoint by themselves | The room raises them there; there is nothing to press |
 | The wreck's cries | Two lines in the wake's flight from a pair on screen; "Survivor! Get that one!" from the first Tithe hand seen in the fight | Every line heard once, from a speaker on screen |
@@ -47,12 +47,12 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The stranger's words | "You're breathing. Good.", "Can you stand? Here, slowly.", then "Walk with me. You're shaking." | Plain, true on a strand and on the plaza, and what the picture shows |
 | The stranger's dress | A peasant blouse, a long skirt, boots, an auburn braid | The townsfolk's garments the forge draws in every move she makes |
 | At Overlook | Once the veil has lifted she stands before the player, says "Find your feet. Someone here will know what to do.", and walks into the town, let go once out of sight, or a minute after she sets off | "They take you back to the social space, where you are then let free" |
-| The sea fight's start | Every ship goes on under the sail and way she was sighted with; the player can take in sail | The hand-off from the sighting is whole |
+| The sea fight's start | Every ship goes on under the sail and way it was sighted with; the player can take in sail | The hand-off from the sighting is whole |
 | A cry in the sea fight | Waits up to 2.5 s for its speaker to be on the view, then is let go | Every cry is heard with its words |
 | The crew's cries | "Both sides loaded, Captain. Waiting on you.", "Took one, Captain!", "She's foundering!", "Grab a line!" | Said as these sailors would say them, not as a hundred games have |
-| The Frigate coming | 6 m/s, in a lighter shade than the fight's captains, two flashes of lightning past her | She is seen for what she is as she comes |
+| The Frigate coming | 6 m/s, in a lighter shade than the fight's captains, two flashes of lightning past it | It is seen for what it is as it comes |
 | The wreck's decks | Both ships drawn whole and holding a body as drawn, the Frigate's bow standing in the Brig's side; an opening in a deck (a hatch, a gun, a mast) is a wall | Drawing a broken deck needs clipping the ship views do not have, and what is drawn must hold what it shows |
-| The way onto the Frigate | A stair from the Brig's fore deck over her bulwark to the Frigate's starboard rail, landing at the head of her waist; her forecastle closed | Every lane a body wide, over what is drawn |
+| The way onto the Frigate | A stair from the Brig's fore deck over its bulwark to the Frigate's starboard rail, landing at the head of the Frigate's waist; its forecastle closed | Every lane a body wide, over what is drawn |
 | Thule's cries in the fight | "Kneel." once, and again only after the player strikes him | [[Dialogue]] rule 2 |
 | The celebrating crew | Thule's crew leap and cry out as the player goes over | "the enemy celebrating" |
 | The story's day | One day and night under the game's own sky: first light over the cloud, the storm at evening, the stillness at sunset, the Frigate out of the dusk, the wreck burning by night under a full moon the storm hides, and the shore at the next dawn | "Out of the dark" and masts standing against lightning want the dusk; fire wants the night; waking on the shore wants the dawn |

@@ -4,6 +4,7 @@
 //! fingerprint).
 
 use super::*;
+use crate::garrison_door_tests::FoesKept;
 use combat::{CombatInput, Stroke};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::Controls;
@@ -12,7 +13,7 @@ use room::SpawnAsk;
 use serde_json::Value;
 
 /// Both tests hold this value; a change to the course, the bake, the foes or the fight changes it in both, on purpose.
-pub const CLIMB_HASH: &str = "5f9272b0";
+pub const CLIMB_HASH: &str = "4b6ae766";
 
 /// The script: ticks east, then ticks north into the ledge and up it, then facing south; the tick the player asks for
 /// a swordsman, and how often they swing at it after; the run's length.
@@ -37,7 +38,7 @@ fn course_bytes() -> Vec<u8> {
 fn a_foe_climbs_after_a_player_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
     assert!(open(&course_bytes()));
     let player = room_join();
-    let (mut hash, mut highest) = (0x811c_9dc5_u32, 0.0_f64);
+    let (mut hash, mut highest, mut kept) = (0x811c_9dc5_u32, 0.0_f64, FoesKept::default());
     for tick in 1..=RUN_TICKS {
         let (forward, yaw) = if tick <= EAST {
             (1.0, FRAC_PI_2)
@@ -59,11 +60,12 @@ fn a_foe_climbs_after_a_player_to_the_same_fingerprint_natively_as_in_the_browse
         };
         assert_eq!(super::input(player, &protocol::input_bytes(&input)), TAKEN);
         room_tick();
-        let bytes = snapshot();
+        let bytes = snapshot(player);
         hash = bytes.iter().fold(hash, |hash, &byte| (hash ^ u32::from(byte)).wrapping_mul(0x0100_0193));
         let seen = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
-        for foe in seen.foes().unwrap() {
-            highest = highest.max(foe.glance().unwrap().get(2));
+        kept.take(&seen);
+        for numbers in kept.0.values() {
+            highest = highest.max(numbers[2]);
         }
     }
     assert!(highest == 2.3, "the foe stood on the ledge: as high as {highest} m");

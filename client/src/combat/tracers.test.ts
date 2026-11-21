@@ -159,6 +159,7 @@ test("another's ball draws its tracer from the snapshot that carried it; the pla
     velocity: [0, -600, 0],
     age: 0,
     muzzle: [0, 0, 1.5],
+    stopped: 0n,
   };
   tracers.seen([theirs, { ...theirs, owner: 1 }, { ...theirs, ranged: 1 }], 1);
   const drawn = tracers.mesh(eye, [], 1).length;
@@ -181,6 +182,7 @@ const flyingBall = (age: number): FlyingShot => ({
   velocity: [0, -70, 0],
   age,
   muzzle: null,
+  stopped: 0n,
 });
 
 test("a foe's travelling ball is one tracer moving out, its gun fired once, however many ticks carry it", () => {
@@ -296,6 +298,7 @@ test("the player's own trail takes its element, another's keeps its own", () => 
     velocity: [0, -600, 0],
     age: 0,
     muzzle: [0, 0, 1.5],
+    stopped: 0n,
   };
   const others = new Tracers();
   others.seen([theirs], 1);

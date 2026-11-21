@@ -47,8 +47,8 @@ test('the mended face is a whole TrueType font: every table where it says, each 
   assert.ok(hhea);
   assert.equal(
     view.getInt16(hhea.offset + 12),
-    60,
-    'the least left bearing is of a glyph with ink, on the first column',
+    -30,
+    "the least left bearing is of a glyph with ink, a column left of the first: Pixelify's own hyphen",
   );
   assert.ok(view.getInt16(hhea.offset + 14) < 100, 'the least right bearing, the empty glyph not counted');
 });

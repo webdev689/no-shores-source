@@ -3,59 +3,14 @@ import { test } from 'node:test';
 import { KEEPER_KINDS } from '../keepers.ts';
 import { isKeeperView, keyBeside } from './npcScreen.ts';
 
-/** A node of a stand-in page: its class, its key, its children; enough for finding a neighbour. */
-interface Node {
-  readonly className: string;
-  readonly dataset: Record<string, string>;
-  readonly children: Node[];
-  parent: Node | null;
-}
-const node = (className: string, key: string | null, ...children: Node[]): Node => {
-  const made: Node = { className, dataset: key ? { key } : {}, children, parent: null };
-  for (const child of children) child.parent = made;
-  return made;
-};
-const sibling = (from: Node, step: number) => from.parent?.children[from.parent.children.indexOf(from) + step] ?? null;
-const keyed = (from: Node): Node[] =>
-  from.children.flatMap((child) => [...(child.dataset['key'] ? [child] : []), ...keyed(child)]);
-/** The stand-in as the DOM's Element, with only what `keyBeside` reads. */
-function asElement(from: Node | null): Element | null {
-  if (!from) return null;
-  return {
-    dataset: from.dataset,
-    get nextElementSibling() {
-      return asElement(sibling(from, 1));
-    },
-    get previousElementSibling() {
-      return asElement(sibling(from, -1));
-    },
-    closest(selector: string) {
-      const wanted = selector.slice(1);
-      for (let up: Node | null = from; up; up = up.parent) if (up.className === wanted) return asElement(up);
-      return null;
-    },
-    querySelectorAll: () => keyed(from).map(asElement),
-  } as unknown as Element;
-}
-
-const ware = (key: string) => node('npc-ware', null, node('npc-tile', key), node('npc-price', null));
-
-test('the focus left by a keeper’s tile goes to the tiles beside its holder, then the next row’s first and the row before’s last', () => {
-  const art = node('npc-row', null, node('gear-heading', null), node('npc-tiles', null, ware('art'), ware('rise')));
-  const vestiges = node('npc-row', null, node('gear-heading', null), node('npc-tiles', null, ware('a'), ware('b')));
-  const opened = node('npc-row', null, node('gear-heading', null), node('npc-tiles', null, ware('opened')));
-  node('npc-rows', null, art, vestiges, opened);
-  const [first, second] = vestiges.children[1]?.children ?? [];
-  assert.deepEqual(keyBeside(asElement(first?.children[0] ?? null)), ['b', 'opened', 'rise']);
-  assert.deepEqual(keyBeside(asElement(second?.children[0] ?? null)), ['a', 'opened', 'rise']);
-  const alone = node('npc-row', null, node('npc-tiles', null, ware('last')));
-  node('npc-rows', null, alone, opened);
-  assert.deepEqual(keyBeside(asElement(alone.children[0]?.children[0]?.children[0] ?? null)), ['opened']);
-});
-
-test('elsewhere in the menu the focus goes to the press beside it, as before', () => {
-  const cells = node('grid', null, node('gear-cell', 'x'), node('gear-cell', 'y'));
-  assert.deepEqual(keyBeside(asElement(cells.children[0] ?? null)), ['y']);
+test('the focus left by a keeper’s ware goes to the one after it in its row, then before, then the next row’s first and the row before’s last', () => {
+  const rows = [['art', 'rise'], ['a', 'b'], ['opened']];
+  assert.equal(keyBeside(rows, 'a'), 'b');
+  assert.equal(keyBeside(rows, 'b'), 'a');
+  assert.equal(keyBeside([['art', 'rise'], ['last'], ['opened']], 'last'), 'opened');
+  assert.equal(keyBeside([['art'], ['last']], 'last'), 'art');
+  assert.equal(keyBeside([['alone']], 'alone'), null);
+  assert.equal(keyBeside(rows, 'never shown'), null);
 });
 
 test('every counter opens a keeper’s screen, the vault’s among them; the menu’s tabs do not', () => {

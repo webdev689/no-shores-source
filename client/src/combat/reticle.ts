@@ -1,13 +1,14 @@
 // The crosshair, after Destiny's. A ranged weapon's own shape while it aims or is out in first person: a bow a
 // chevron, a crossbow brackets, a pistolet a dot with four ticks, a thunderlock a circle. It turns red on a foe's
 // body, is ringed in gold by a bow's draw and in white by a reload, and marked as a shot lands: white for a hit, gold
-// for a crit, red for a kill. With a melee weapon drawn, a small dot closes into red brackets over a foe in reach.
+// for a crit, red for a kill. With a melee weapon drawn, a small dot closes into red brackets over a foe in reach. Drawn
+// by the interface at the view's middle, each look one picture drawn in 2D.
 import type { FightEvent } from '../network/messages.ts';
 import { FIGHT_TICKS } from '../player/fightMoves.ts';
 import { SHOOTERS } from '../player/walker.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { EVENT, HOW } from './cues.ts';
-import { element, setStyle, showNode } from '../plus/meter.ts';
+import type { Child } from '../ui/node.ts';
 
 /** Which crosshair a weapon drawn shows: a ranged weapon's by its kind, any other's (bare fists too) the melee one. */
 export type Reticle = 'bow' | 'crossbow' | 'pistolet' | 'thunderlock' | 'melee';
@@ -66,23 +67,36 @@ export function landedBy(events: readonly FightEvent[], player: number): Landed 
   return landed;
 }
 
+/** What the crosshair shows this frame: its reticle and ink, whether a melee one closes in reach, its ring's share and
+ *  ink (a bow's draw or a reload; none without), whether a draw is full, and a shot's mark fading as it lands. */
+export interface ReticleLook {
+  readonly reticle: Reticle;
+  readonly ink: 'plain' | 'foe' | 'reloading';
+  readonly reach: boolean;
+  readonly ring: { readonly fill: number; readonly ink: 'charge' | 'reload' } | null;
+  readonly full: boolean;
+  readonly mark: { readonly kind: Landed; readonly opacity: number } | null;
+}
+
+/** The inks: the plain one, a foe's red, the reload's half-faded white, the draw's gold and the ring's empty part. */
+const INKS = { plain: '#f2f2f2', foe: FOE_RED, reloading: 'rgba(242,242,242,0.5)' } as const;
+const GOLD = '#ffd95a';
+const RING_EMPTY = 'rgba(255,255,255,0.22)';
+const MARK_INKS: Readonly<Record<Landed, string>> = { hit: '#f2f2f2', crit: GOLD, kill: FOE_RED };
+/** The picture's side, CSS pixels: the 22 px crosshair, its ring 5 px past it, and room for the draw's glow. */
+const SIDE = 48;
+/** A ring's share in whole steps of 2 degrees, so a draw or a reload makes no more than 181 pictures. */
+const RING_STEPS = 180;
+
 /** The crosshair in the display's middle. */
 export class Crosshair {
-  private readonly node: HTMLElement;
-  private readonly mark: HTMLElement;
   /** The reload's ticks left as first seen, which its ring fills against; 0 while none runs. */
   private reloadFrom = 0;
   /** The reload's ticks left last frame, by which a new one is told from the last going on. */
   private left = 0;
   /** The last shot's landing, and the seconds since. */
   private landed: { readonly kind: Landed; readonly since: number } | null = null;
-
-  constructor(root: HTMLElement) {
-    this.node = element('div', 'crosshair', root);
-    this.node.hidden = true;
-    element('div', 'ring', this.node);
-    this.mark = element('div', 'landed', this.node);
-  }
+  private shown: ReticleLook | null = null;
 
   /** Shows `shown` (none hides it) for the player's fighter `own`, red or bracketed over `under`, the foe whose body
    *  it rests on, and marked by the player's shots landing among `events`. */
@@ -101,74 +115,160 @@ export class Crosshair {
     this.left = left;
     const kind = landedBy(events, player);
     this.landed = kind ? { kind, since: 0 } : this.landed && { ...this.landed, since: this.landed.since + seconds };
-    showNode(this.node, !!shown);
     // A shot that lands while no crosshair shows marks none later.
     if (!shown) this.landed = null;
-    if (!shown) return;
+    this.shown = shown && this.lookOf(shown, own, under, left);
+  }
+
+  /** What the crosshair shows, as the last frame left it; null while hidden. */
+  get look(): ReticleLook | null {
+    return this.shown;
+  }
+
+  private lookOf(shown: CrosshairFrame, own: FighterView | null, under: FighterView | null, left: number): ReticleLook {
     const melee = shown.reticle === 'melee';
     const braced = shown.reticle === 'pistolet' && this.reloadFrom <= BRACE_TICKS;
     const reload = !melee && !braced && this.reloadFrom > 0 ? 1 - left / this.reloadFrom : null;
     const level = own && under && Math.abs(under.z - own.z) <= STRIKE_HEIGHT_M;
     const apart = own && under && level ? Math.hypot(under.x - own.x, under.y - own.y) : Infinity;
-    if (this.node.dataset['reticle'] !== shown.reticle) this.node.dataset['reticle'] = shown.reticle;
-    this.node.classList.toggle('foe', !melee && !!under);
-    this.node.classList.toggle('reach', melee && apart <= (shown.reach ?? -Infinity));
-    this.node.classList.toggle('charging', shown.charge !== null);
-    this.node.classList.toggle('full', shown.charge !== null && shown.charge >= 1);
-    this.node.classList.toggle('reloading', reload !== null);
-    setStyle(this.node, '--fill', `${Math.round(Math.min(1, shown.charge ?? reload ?? 0) * 360)}deg`);
-    const mark = !melee && this.landed && this.landed.since < MARK_SECONDS ? this.landed : null;
-    showNode(this.mark, !!mark);
-    if (!mark) return;
-    if (this.mark.dataset['landed'] !== mark.kind) this.mark.dataset['landed'] = mark.kind;
-    setStyle(this.mark, 'opacity', (1 - mark.since / MARK_SECONDS).toFixed(2));
+    const landed = !melee && this.landed && this.landed.since < MARK_SECONDS ? this.landed : null;
+    const charge = shown.charge;
+    return {
+      reticle: shown.reticle,
+      ink: reload !== null ? 'reloading' : !melee && under ? 'foe' : 'plain',
+      reach: melee && apart <= (shown.reach ?? -Infinity),
+      ring:
+        charge !== null
+          ? { fill: Math.min(1, charge), ink: 'charge' }
+          : reload !== null
+            ? { fill: Math.min(1, reload), ink: 'reload' }
+            : null,
+      full: charge !== null && charge >= 1,
+      mark: landed && { kind: landed.kind, opacity: 1 - landed.since / MARK_SECONDS },
+    };
+  }
+
+  /** The crosshair centred on the view, as the last frame left it; none while hidden. */
+  node(): Child {
+    const look = this.shown;
+    if (!look) return null;
+    const steps = look.ring ? Math.round(Math.max(0, look.ring.fill) * RING_STEPS) : 0;
+    const key = [
+      'reticle',
+      look.reticle,
+      look.ink,
+      look.reach ? 'reach' : '',
+      look.ring ? `${look.ring.ink} ${steps}` : '',
+      look.full ? 'full' : '',
+    ].join(' ');
+    const centred = { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 } as const;
+    return {
+      width: SIDE,
+      height: SIDE,
+      float: centred,
+      picture: { key, source: { draw: (context, width) => drawReticle(context, width / SIDE, look, steps) } },
+      children: [
+        look.mark && {
+          width: SIDE,
+          height: SIDE,
+          opacity: look.mark.opacity,
+          float: centred,
+          picture: {
+            key: `reticle mark ${look.mark.kind}`,
+            source: { draw: (context, width) => drawMark(context, width / SIDE, MARK_INKS[look.mark?.kind ?? 'hit']) },
+          },
+        },
+      ],
+    };
   }
 }
 
-/** A bar of the reticle's ink, `width` by `height` pixels, at `place` in its box. */
-const bar = (place: string, width: number, height: number) =>
-  `linear-gradient(var(--ink), var(--ink)) ${place} / ${width}px ${height}px no-repeat`;
-/** The dot in the reticle's middle, `radius` pixels round. */
-const dot = (radius: number) => `radial-gradient(circle, var(--ink) ${radius}px, transparent ${radius + 0.5}px)`;
-/** A bracket on one side of the box, `inset` pixels in from it. */
-const bracket = (side: 'left' | 'right', inset: number) => {
-  const open = side === 'left' ? 'right' : 'left';
-  return `${side}: ${inset}px; top: 5px; width: 5px; height: 12px; border: 2px solid var(--ink); border-${open}: none;`;
-};
+/** Draws `paint` twice over: under a soft dark edge a pixel deep, so it reads on any ground, and, for a full draw, a
+ *  gold glow 4 px deep first. */
+function shaded(context: OffscreenCanvasRenderingContext2D, unit: number, glow: boolean, paint: () => void): void {
+  const pass = (colour: string, blur: number) => {
+    context.save();
+    context.shadowColor = colour;
+    context.shadowBlur = blur * unit;
+    paint();
+    context.restore();
+  };
+  if (glow) pass(GOLD, 8);
+  pass('#000000', 1);
+}
 
-/** The crosshair's sheet, laid in the display's own. */
-export function reticleCss(): string {
-  return `
-.fight-hud .crosshair { --ink: #f2f2f2; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px;
-  translate: -50% -50%; filter: drop-shadow(0 0 1px #000); background: ${dot(1.5)}; }
-.fight-hud .crosshair.foe { --ink: ${FOE_RED}; }
-.fight-hud .crosshair.reloading { --ink: #f2f2f280; }
-.fight-hud .crosshair::before, .fight-hud .crosshair::after { content: ''; position: absolute; box-sizing: border-box; }
-.fight-hud .crosshair[data-reticle='pistolet'] { background: ${dot(1.5)}, ${bar('50% 0', 2, 6)}, ${bar('50% 100%', 2, 6)},
-  ${bar('0 50%', 6, 2)}, ${bar('100% 50%', 6, 2)}; }
-.fight-hud .crosshair[data-reticle='bow']::before { left: 5px; top: 6px; width: 12px; height: 12px;
-  border-left: 2px solid var(--ink); border-top: 2px solid var(--ink); rotate: 45deg; }
-.fight-hud .crosshair[data-reticle='crossbow']::before { ${bracket('left', 2)} }
-.fight-hud .crosshair[data-reticle='crossbow']::after { ${bracket('right', 2)} }
-.fight-hud .crosshair[data-reticle='thunderlock']::before { inset: 3px; border: 2px solid var(--ink); border-radius: 50%; }
-.fight-hud .crosshair[data-reticle='melee'] { background: ${dot(1.5)}; }
-.fight-hud .crosshair[data-reticle='melee'].reach { --ink: ${FOE_RED}; }
-.fight-hud .crosshair[data-reticle='melee'].reach::before { ${bracket('left', 4)} }
-.fight-hud .crosshair[data-reticle='melee'].reach::after { ${bracket('right', 4)} }
-.fight-hud .crosshair .ring { position: absolute; inset: -5px; border-radius: 50%; display: none;
-  mask: radial-gradient(circle, transparent 12px, #000 13px, #000 15px, transparent 16px); }
-.fight-hud .crosshair.charging .ring, .fight-hud .crosshair.reloading .ring { display: block;
-  background: conic-gradient(var(--fill-ink) var(--fill), #ffffff38 var(--fill)); }
-.fight-hud .crosshair.charging { --fill-ink: #ffd95a; }
-.fight-hud .crosshair.reloading { --fill-ink: #f2f2f2; }
-.fight-hud .crosshair.full { filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 4px #ffd95a); }
-.fight-hud .crosshair .landed { position: absolute; inset: -4px; color: #f2f2f2; }
-.fight-hud .crosshair .landed[data-landed='crit'] { color: #ffd95a; }
-.fight-hud .crosshair .landed[data-landed='kill'] { color: ${FOE_RED}; }
-.fight-hud .crosshair .landed::before, .fight-hud .crosshair .landed::after { content: ''; position: absolute; left: 50%;
-  top: 50%; width: 24px; height: 2px; translate: -50% -50%; background: currentColor;
-  mask: linear-gradient(90deg, #000 30%, transparent 30% 70%, #000 70%); }
-.fight-hud .crosshair .landed::before { rotate: 45deg; }
-.fight-hud .crosshair .landed::after { rotate: -45deg; }
-`;
+/** The reticle `look` shows, `unit` device pixels a CSS pixel, its ring filled `steps` of `RING_STEPS`. The 22 px
+ *  crosshair stands in the picture's middle; every length is in CSS pixels. */
+function drawReticle(context: OffscreenCanvasRenderingContext2D, unit: number, look: ReticleLook, steps: number): void {
+  const middle = (SIDE / 2) * unit;
+  const ink = look.reticle === 'melee' ? (look.reach ? FOE_RED : INKS.plain) : INKS[look.ink];
+  // The crosshair's own box, 22 px square, its top left at (0, 0).
+  const box = (x: number, y: number, width: number, height: number) =>
+    context.fillRect(middle + (x - 11) * unit, middle + (y - 11) * unit, width * unit, height * unit);
+  const bracket = (side: 'left' | 'right', inset: number) => {
+    const [from, open] = side === 'left' ? [inset, inset + 2] : [22 - inset - 2, 22 - inset - 5];
+    box(from, 5, 2, 12);
+    box(Math.min(from, open), 5, 5, 2);
+    box(Math.min(from, open), 15, 5, 2);
+  };
+  shaded(context, unit, look.full, () => {
+    if (look.ring) {
+      const top = -Math.PI / 2;
+      const turned = top + (steps / RING_STEPS) * 2 * Math.PI;
+      context.lineWidth = 3 * unit;
+      const arc = (start: number, end: number, colour: string) => {
+        if (end <= start) return;
+        context.strokeStyle = colour;
+        context.beginPath();
+        context.arc(middle, middle, 14 * unit, start, end);
+        context.stroke();
+      };
+      arc(top, turned, look.ring.ink === 'charge' ? GOLD : INKS.plain);
+      arc(turned, top + 2 * Math.PI, RING_EMPTY);
+    }
+    context.fillStyle = ink;
+    context.beginPath();
+    context.arc(middle, middle, 1.5 * unit, 0, 2 * Math.PI);
+    context.fill();
+    if (look.reticle === 'pistolet') {
+      box(10, 0, 2, 6);
+      box(10, 16, 2, 6);
+      box(0, 10, 6, 2);
+      box(16, 10, 6, 2);
+    } else if (look.reticle === 'crossbow' || (look.reticle === 'melee' && look.reach)) {
+      const inset = look.reticle === 'crossbow' ? 2 : 4;
+      bracket('left', inset);
+      bracket('right', inset);
+    } else if (look.reticle === 'thunderlock') {
+      context.strokeStyle = ink;
+      context.lineWidth = 2 * unit;
+      context.beginPath();
+      context.arc(middle, middle, 7 * unit, 0, 2 * Math.PI);
+      context.stroke();
+    } else if (look.reticle === 'bow') {
+      // A 12 px box's left and top edges, 2 px each, turned a quarter of a right angle about its middle: a chevron.
+      context.save();
+      context.translate(middle, middle + unit);
+      context.rotate(Math.PI / 4);
+      context.fillRect(-6 * unit, -6 * unit, 2 * unit, 12 * unit);
+      context.fillRect(-6 * unit, -6 * unit, 12 * unit, 2 * unit);
+      context.restore();
+    }
+  });
+}
+
+/** A shot's mark in `colour`: a cross 24 px wide, its middle two fifths left out, so only its four ends show. */
+function drawMark(context: OffscreenCanvasRenderingContext2D, unit: number, colour: string): void {
+  const middle = (SIDE / 2) * unit;
+  shaded(context, unit, false, () => {
+    context.fillStyle = colour;
+    for (const turn of [Math.PI / 4, -Math.PI / 4]) {
+      context.save();
+      context.translate(middle, middle);
+      context.rotate(turn);
+      context.fillRect(-12 * unit, -unit, 7.2 * unit, 2 * unit);
+      context.fillRect(4.8 * unit, -unit, 7.2 * unit, 2 * unit);
+      context.restore();
+    }
+  });
 }

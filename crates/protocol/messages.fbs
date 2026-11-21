@@ -50,6 +50,9 @@ table Input {
   spawn_rank: ubyte;
   cast: ubyte;
   cast_aim: [double];
+  // The inputs before it that the room has not yet shown taken, oldest first, so one lost on the way is taken from
+  // the next to arrive; the room takes only those it has not had.
+  earlier: [Input];
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one of
@@ -173,7 +176,8 @@ table Joined {
 // whose statuses (each one's ticks left, a Veiled player's among them) follow its action's numbers, and where they
 // stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks left, 2
 // dead by straying, 3 dead by a fall in a social space, each with the ticks since. A number, not a schema enum, so the
-// TypeScript flatc makes stays erasable.
+// TypeScript flatc makes stays erasable. The player the snapshot is for has their fighter whole (`fighter`); everyone
+// else's is `packed` (crates/protocol/src/pack.rs).
 table Seen {
   player: uint;
   acknowledged: uint;
@@ -184,6 +188,11 @@ table Seen {
   fighter: [double];
   standing: ubyte;
   standing_ticks: uint;
+  packed: [ubyte];
+  // In a snapshot built on another that held this player, only the numbers that changed since go, a bit set here for
+  // each (the first number's the lowest bit of the first byte): whole in `fighter` for the player it is for, packed
+  // in `packed` for everyone else.
+  changed: [ubyte];
 }
 
 // A foe as the room last stepped it: its number, its role (1 skirmisher, 2 swordsman, 3 brute, 4 archer, 5 captain), a
@@ -193,27 +202,32 @@ table Seen {
 // 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
 // leaves after it. Last, for a companion (an officer ashore), its leader's number (0 for a foe), its officer's given
 // and family names' places in content/gear/crew.json, and its officer's post (0 First Mate to 4 Lookout), which it is
-// dressed by.
+// dressed by. All of it crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
+// `foe_numbers`); the fields between `id` and `packed` are kept deprecated only so the table's field numbers hold.
 table Foe {
   id: uint;
-  kind: ubyte;
-  glance: [double];
-  level: ubyte;
-  shield_element: ubyte;
-  shield: double;
-  shield_most: double;
-  type: ubyte;
-  rank: ubyte;
-  faction: ubyte;
-  phase: ubyte;
-  alert: ubyte;
-  expose: uint;
-  charge: uint;
-  charge_immune: uint;
-  leader: uint;
-  given: ubyte;
-  family: ubyte;
-  post: ubyte;
+  kind: ubyte (deprecated);
+  glance: [double] (deprecated);
+  level: ubyte (deprecated);
+  shield_element: ubyte (deprecated);
+  shield: double (deprecated);
+  shield_most: double (deprecated);
+  type: ubyte (deprecated);
+  rank: ubyte (deprecated);
+  faction: ubyte (deprecated);
+  phase: ubyte (deprecated);
+  alert: ubyte (deprecated);
+  expose: uint (deprecated);
+  charge: uint (deprecated);
+  charge_immune: uint (deprecated);
+  leader: uint (deprecated);
+  given: ubyte (deprecated);
+  family: ubyte (deprecated);
+  post: ubyte (deprecated);
+  packed: [ubyte];
+  // In a snapshot built on another that held this foe, `packed` holds only the numbers that changed since, a bit set
+  // here for each; the rest stand as they stood.
+  changed: [ubyte];
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -242,6 +256,8 @@ table Flying {
   velocity: [double];
   age: ushort;
   muzzle: [double];
+  // The tick a stopped ball stopped, so a page shown it once already passes it over.
+  stopped: ulong;
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it
@@ -371,7 +387,7 @@ table Spell {
 // balls aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on
 // land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
 // and each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which
-// sets its weather. Last, at sea, the islands the player sees or has found.
+// sets its weather. Then, at sea, the islands the player sees or has found.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -393,6 +409,14 @@ table Snapshot {
   decks: [Deck];
   world_start: double;
   islands: [Isle];
+  // On land, sent to one player: what changed since the snapshot of tick `base` their screen showed (0 for none, all
+  // of it): the players and foes that changed, those gone since, and what happened since it (each event, dress and
+  // stopped ball once more until a later snapshot is shown). Those that did not change stand as they stood then.
+  base: ulong;
+  gone_players: [uint];
+  gone_foes: [uint];
+  // The room's middle (x, y) that everyone's packed numbers are measured from (crates/protocol/src/pack.rs).
+  middle: [double];
 }
 
 // One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the

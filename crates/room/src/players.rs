@@ -145,6 +145,8 @@ pub struct Player {
     /// the tick that input was seeing.
     pub seen: u64,
     pub history: VecDeque<(u64, Fighter)>,
+    /// The latest tick their screen said it showed, as it said it: the snapshot their browser surely holds.
+    pub shown_tick: u64,
     /// The room tick until which the foes leave the player be, having just stood again.
     pub graced: u64,
     /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
@@ -210,6 +212,7 @@ impl Player {
             waiting: VecDeque::new(),
             seen: joined,
             history: VecDeque::new(),
+            shown_tick: 0,
             graced: 0,
             dress_next: None,
             dressed_at: None,

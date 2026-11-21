@@ -26,9 +26,6 @@ export function pixelSvg(rows: readonly string[], colours: readonly string[]): s
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${rows.length}" shape-rendering="crispEdges">${rects.join('')}</svg>`;
 }
 
-/** An SVG as a picture's address. */
-export const svgUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`;
-
 /** The wardrobe mark: a coat on a brass hanger, 16 × 16; the outline, the hanger's shade, brass and light, then the
  *  coat's shade, body and light. */
 export const WARDROBE_ROWS = [

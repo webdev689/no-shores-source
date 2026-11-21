@@ -1,5 +1,5 @@
 // A long thin bar's fine frame with pointed ends, after a souls-like display's vitals: a picture drawn pixel for pixel
-// and used at 1:1 as a three-part border, so it is never scaled. Each end comes to a point, its outline and stone line
+// and drawn at 1:1 in three parts, so it is never scaled. Each end comes to a point, its outline and stone line
 // meeting at a brass tip; the trough runs into the point, and the fill stands between the points. Light falls from the
 // top left, as on the kit's other frames, so the upper slopes and the top edge are lit and the lower ones shaded.
 import { TONES } from './tones.ts';
@@ -37,14 +37,13 @@ const SLOPE = 2;
 /** How far a bar `height` pixels tall (frame and all) reaches into each point. */
 export const tipOf = (height: number): number => SLOPE * Math.ceil(height / 2);
 
-/** The frame for a bar `height` pixels tall as an SVG: each point's `tipOf` columns, and one column between them that
- *  the border stretches along the bar. */
-export function barFrameSvg(height: number, tone: BarTone): string {
+/** The frame for a bar `height` pixels tall, row by row, each pixel its colour or null where clear: each point's
+ *  `tipOf` columns, and one column between them that is stretched along the bar. */
+export function barFrameCells(height: number, tone: BarTone): (string | null)[] {
   const tip = tipOf(height);
   const width = tip * 2 + 1;
-  const pixels: string[] = [];
-  const paint = (x: number, y: number, colour: string) =>
-    pixels.push(`<rect x='${x}' y='${y}' width='1' height='1' fill='${colour}'/>`);
+  const cells: (string | null)[] = Array.from({ length: width * height }, () => null);
+  const paint = (x: number, y: number, colour: string) => (cells[y * width + x] = colour);
   for (let y = 0; y < height; y++) {
     // Rows from the middle: 0 on the middle row (or the two of an even height), up to the top and foot.
     const fromMiddle = Math.abs(y - (height - 1) / 2) - (height % 2 === 0 ? 0.5 : 0);
@@ -68,53 +67,30 @@ export function barFrameSvg(height: number, tone: BarTone): string {
       else paint(x, y, TONES.groundTrack);
     }
   }
-  return `<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' shape-rendering='crispEdges'>${pixels.join('')}</svg>`;
-}
-
-/** The frame as a `border-image` for a bar `height` pixels tall: the picture, its slices and their widths. */
-export function barFrameImage(height: number, tone: BarTone): string {
-  const tip = tipOf(height);
-  return `${svgUrl(barFrameSvg(height, tone))} ${BAR_EDGE} ${tip} / ${BAR_EDGE}px ${tip}px stretch`;
-}
-
-/** The cells of a diamond `size` pixels across (an even number), row by row: each with how many cells in from the
- *  diamond's edge it lies (0 on the edge) and whether it is on the upper half. */
-function diamondCells(size: number): { x: number; y: number; inward: number; upper: boolean }[] {
-  const half = size / 2;
-  const cells = [];
-  for (let y = 0; y < size; y++) {
-    const fromEdge = y < half ? y : size - 1 - y;
-    const [left, right] = [half - 1 - fromEdge, half + fromEdge];
-    for (let x = left; x <= right; x++) cells.push({ x, y, inward: Math.min(x - left, right - x), upper: y < half });
-  }
   return cells;
 }
 
-/** Cells as an SVG drawn pixel for pixel. */
-const cellsSvg = (size: number, cells: readonly { x: number; y: number; colour: string }[]): string =>
-  `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' shape-rendering='crispEdges'>${cells
-    .map(({ x, y, colour }) => `<rect x='${x}' y='${y}' width='1' height='1' fill='${colour}'/>`)
-    .join('')}</svg>`;
-
-/** A healing charge's diamond frame `size` pixels across as an SVG, drawn cell by cell as a bar's frame is: the
- *  outline outermost, then the stone line, lit on the upper half and shaded on the lower; the inside left clear, so
- *  the track laid in it lies over the world as a bar's does. */
-export function diamondFrameSvg(size: number, tone: BarTone): string {
-  const frame = diamondCells(size).filter((cell) => cell.inward < BAR_EDGE);
-  const colourOf = (cell: (typeof frame)[number]) =>
-    cell.inward === 0 ? TONES.outline : cell.upper ? tone.lit : tone.shade;
-  return cellsSvg(
-    size,
-    frame.map((cell) => ({ ...cell, colour: colourOf(cell) })),
-  );
+/** A healing charge's diamond `size` pixels across (an even number), row by row, each pixel its colour or null where
+ *  clear, drawn as a bar's frame is: the outline outermost, then the stone line, lit on the upper half and shaded on
+ *  the lower; inside, `inside` up to `rows` whole pixel rows from its foot and `above` over them. */
+export function diamondCells(
+  size: number,
+  tone: BarTone,
+  rows: number,
+  inside: string,
+  above: string,
+): (string | null)[] {
+  const half = size / 2;
+  const cells: (string | null)[] = Array.from({ length: size * size }, () => null);
+  for (let y = 0; y < size; y++) {
+    const fromEdge = y < half ? y : size - 1 - y;
+    const [left, right] = [half - 1 - fromEdge, half + fromEdge];
+    const risen = size - BAR_EDGE - y <= rows;
+    for (let x = left; x <= right; x++) {
+      const inward = Math.min(x - left, right - x);
+      cells[y * size + x] =
+        inward === 0 ? TONES.outline : inward < BAR_EDGE ? (y < half ? tone.lit : tone.shade) : risen ? inside : above;
+    }
+  }
+  return cells;
 }
-
-/** The inside of a diamond frame `size + 2 * BAR_EDGE` across, as a mask `size` pixels across: every cell whole. */
-export const diamondMaskSvg = (size: number): string =>
-  cellsSvg(
-    size,
-    diamondCells(size).map((cell) => ({ ...cell, colour: '#000' })),
-  );
-
-/** An SVG as a CSS image. */
-export const svgUrl = (svg: string): string => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;

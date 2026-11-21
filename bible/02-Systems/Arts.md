@@ -4,8 +4,8 @@ status: live
 code:
   - content/arts/arts.json
   - client/src/game/artsPage.ts#artsPage
-  - client/src/game/artsPage.ts#artDiamond
-  - client/src/game/artsPage.ts#ArtsPageContext
+  - client/src/game/artsPage.ts#ArtsState
+  - client/src/game/artsRows.ts#artsRows
   - client/src/game/gearWindow.ts#startGearWindow
   - client/src/game/artsCards.ts#ArtsAsk
   - client/src/game/artsCards.ts#coreChoices
@@ -18,7 +18,6 @@ code:
   - client/src/game/artStage.ts#artStage
   - client/src/game/artsCards.ts#rechargeWords
   - client/src/game/artFragments.ts#FRAGMENT_MAPS
-  - client/src/game/arts.css
   - client/src/combat/abilityBar.ts#AbilityBar
   - client/src/combat/abilityBar.ts#abilityBarOf
   - crates/gear/src/arts.rs#WornArts
@@ -49,7 +48,7 @@ code:
   - client/src/combat/casting.ts#daggersAim
   - client/src/player/cardLooks.ts#STATUS_WGSL
   - client/src/forge/compose.ts#composeFrame
-  - client/src/testground/artsPanel.ts#startArtsPanel
+  - client/src/testground/artsPanel.ts#artsNodes
 ---
 # Arts
 
@@ -100,9 +99,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   a bell, as a gain chimes.
 - **Asks.** The screen changes nothing itself. It asks the room `{ kind: 'wearArt', art }` or
   `{ kind: 'setCore', art, slot, fragment }`, and shows the Art and Core the room last sent.
-- **Keys.** The footer lists them: Click, the arrows, Enter and Escape. The arrows move to the nearest tile that way,
-  and within an open flyout only among its fragments. Enter chooses. Escape closes the flyout, then the screen, and the
-  focus goes back to what opened it. The screen is a region named by the Art's name, so a screen reader reads it first.
+- **Keys.** The footer lists them: Click, the arrows, Enter and Escape. The arrows move to the nearest tile that way.
+  Enter chooses. Escape closes the flyout, then the screen, and the
+  focus goes back to what opened it. The screen is named by the Art's name, so a screen reader reads it first.
 - **Sizes.** The face keeps its grid: 11 for words, 22 for headings, words and keycaps where the menu is wide, 33 for
   the Art's name (55 where wide). The pictures stand at whole multiples of their cells: the large emblem's 24 cells
   and its 32-cell frame at 8 (7 on a short screen, 11 on a wide one, 10 where wide but under 1000 px tall), the three
@@ -124,8 +123,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   stands in the room right of the rows, and it fades out toward the left in a dither. Its still cells are worked out
   only when the Art or the screen's size changes; it steps six times a second round a loop of 48 steps, only while
   shown. With less motion asked for, it stands still.
-- **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle as a diamond and its glow swells
-  once, and the rows rise in turn, all within 0.4 s; wearing another Art flashes the screen in its colour and opens
+- **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle, and the rows rise in turn, all within 0.4 s; wearing another Art flashes the screen in its colour and opens
   its emblem again. The Anima's tile breathes. With less motion asked for, none of it plays.
 - **The ability bar** stands at the bottom left, left of the weapons, after Destiny's abilities ([[Interface]], "The
   Arts and weapons"). The Anima's own icon, the one the Art's screen shows, stands in a diamond 68 px across: unlit but
@@ -137,7 +135,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   (staggered, down, drinking or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and
   up) the
   diamond is 102 px and a ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and
-  each Tenet's recharge, as shares, and each frame writes only what changed. With no Art worn it is not shown.
+  each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown.
 
 ## In the rules
 

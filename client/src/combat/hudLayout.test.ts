@@ -4,7 +4,6 @@ import { CORNER, tipOf, VITAL_SIZES } from '../plus/barFrame.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { COMPASS, UNDER_COMPASS } from '../plus/compass.ts';
 import { barLength, compassWidth, hudLayout } from './hudLayout.ts';
-import { fightSheetCss } from './hudSheet.ts';
 
 type Box = readonly [left: number, top: number, right: number, bottom: number];
 
@@ -32,17 +31,7 @@ const BUFFS = 4;
 const meets = (one: Box, other: Box) =>
   Math.max(one[0], other[0]) < Math.min(one[2], other[2]) && Math.max(one[1], other[1]) < Math.min(one[3], other[3]);
 
-/** The gap the sheet lays between two healing charges' diamonds at a step. */
-function drinksGap(wide: boolean): number {
-  const rule = wide
-    ? /\n\.fight-hud\.wide \.vitals \.drinks \{ gap: (\d+)px; \}/
-    : /\n\.fight-hud \.vitals \.drinks \{ gap: (\d+)px; \}/;
-  const found = rule.exec(fightSheetCss());
-  assert.ok(found, 'the sheet lays the diamonds at each step');
-  return Number(found[1]);
-}
-
-/** The vitals' pieces in a view, as the sheet lays them at the layout's step and zoom: each bar (a player's health and
+/** The vitals' pieces in a view, as the layout lays them at its step and zoom: each bar (a player's health and
  *  stamina 100, poise 40), poise's word beside it, the healing charges' three diamonds and the buffs' row under them. */
 function vitalsOf(width: number, height: number): Record<string, Box> {
   const { wide, zoom, length } = hudLayout(width, height);
@@ -62,7 +51,7 @@ function vitalsOf(width: number, height: number): Record<string, Box> {
   const word: Box = wide
     ? [wordLeft, poise[1], wordLeft + WORD_PX.wide, poise[1] + lineHeight]
     : [wordLeft, middle - lineHeight / 2, wordLeft + WORD_PX.base * zoom, middle + lineHeight / 2];
-  const [pip, pipGap] = [sizes.drinks * zoom, drinksGap(wide) * zoom];
+  const [pip, pipGap] = [sizes.drinks * zoom, sizes.gap * zoom];
   const drinks: Box = [left, top, left + 3 * pip + 2 * pipGap, top + pip];
   top += pip + sizes.gap * zoom;
   const icon = (wide ? 36 : 24) * zoom;
@@ -130,7 +119,6 @@ test('each bar is as long as what it holds: stamina as long as health, poise two
 });
 
 test('past 1440p the compass’s column, the boss bar and the target’s plate under it stand at twice their size', () => {
-  assert.match(fightSheetCss(), /\.fight-hud\.double \.compass-column \{ zoom: 2; \}/);
   assert.equal(compassWidth(2560, 2), COMPASS.width * 2);
   assert.equal(compassWidth(1100, 2), COMPASS.share * 1100, 'never past its share of the view');
 });

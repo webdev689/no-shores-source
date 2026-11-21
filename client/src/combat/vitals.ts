@@ -6,13 +6,16 @@
 // each brightening as a charge is gained or drunk; then the player's buffs in a row. Whole and untouched, every charge
 // held, with no buff and no foe on the target plate, the bars rest out of sight, and the first point lost or spent
 // brings them back at once.
-import { ROLES } from '../plus/kit.ts';
+import { BAR_EDGE, BAR_TONES, type BarTone, CORNER, diamondCells, VITAL_SIZES } from '../plus/barFrame.ts';
+import { motionReduced } from '../plus/kit.ts';
+import { FILLS, TONES } from '../plus/tones.ts';
+import type { Node } from '../ui/node.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { poiseTrackOf, type PoiseState } from './foePlate.ts';
-import { BAR_EDGE, VITAL_SIZES } from '../plus/barFrame.ts';
+import { LOW_SHARE, lowShare, Meter } from '../plus/meter.ts';
+import { drawCells, drawMeter, hatch, mix, paintBox, type Pen, ring, span, thinBarNode } from './barDraw.ts';
 import { barLength } from './hudLayout.ts';
-import { element, LOW_SHARE, lowShare, Meter, setStyle } from '../plus/meter.ts';
 import { ownBuffs, StatusRow } from './statusIcons.ts';
 
 /** Health at or under this share of the whole warns (the kit's low law, which a ship's hull keeps too). */
@@ -79,64 +82,66 @@ export const vitalsWhole = (own: FighterView | null): boolean =>
     own.poise < 1 &&
     (own.charges ?? CHARGES_MOST) >= CHARGES_MOST);
 
-/** How long a diamond brightens as a charge is gained or drunk, in seconds: two steps (`hudSheet.ts`). */
+/** How long a diamond brightens as a charge is gained or drunk, in seconds: two steps. */
 export const CHARGE_FLASH_SECONDS = 0.4;
 
 /** How long the vitals have stood calm, `seconds` after `was`: whole, with no foe on the target plate. */
 export const calmFor = (was: number, whole: boolean, targeted: boolean, seconds: number): number =>
   whole && !targeted ? was + Math.max(0, seconds) : 0;
 
-/** One vital's bar: its framed node, its meter, and the length it was last laid at. */
+/** One vital's bar: its meter, and how long its warning has stood (`warned`, Infinity while none). */
 interface Bar {
-  readonly node: HTMLElement;
   readonly meter: Meter;
-  width: number;
+  warned: number;
 }
+
+/** How each bar's frame flashes: health's blood when low, stamina's white for a press with none, poise's brass while
+ *  open. */
+const ALERTS: Record<VitalName, BarTone> = {
+  health: BAR_TONES.blood,
+  stamina: BAR_TONES.light,
+  poise: BAR_TONES.brass,
+};
+/** The low health's blink (on for its first half), the empty stamina's (on and off each half), and the poise's flash
+ *  as it breaks, in seconds. */
+const LOW_BLINK = 0.9;
+const FLASH_BLINK = 0.15;
+const POISE_FLASH = 0.45;
+/** How the vitals go to rest (in six steps over 1.2 s) and come back (in two over 0.12 s). */
+const FADE = { out: { seconds: 1.2, steps: 6 }, back: { seconds: 0.12, steps: 2 } } as const;
+/** A healing charge filling toward the next: health's red paled toward the words' white. The bars' loss strip is a
+ *  darker red, but a fill that dark stood under 1.7:1 against the diamond's well. */
+const FILLING = mix(FILLS.health, TONES.word, 0.45);
 
 /** The vitals at the top left. */
 export class Vitals {
-  readonly root: HTMLElement;
   private readonly bars: Record<VitalName, Bar>;
-  private readonly poiseWord: HTMLElement;
-  private readonly charges: HTMLElement;
-  private readonly pips: readonly HTMLElement[];
-  /** The charges held as last shown (none before the first), and each diamond's flash's seconds left. */
-  private held: number | null = null;
+  private readonly buffs = new StatusRow('Your buffs');
+  /** The healing charges as last shown (none held before the first), and each diamond's flash's seconds left. */
+  private charges: { fills: number[]; held: number | null; text: string } = { ...chargesShown(null), held: null };
   private readonly flashes: number[] = Array.from({ length: CHARGES_MOST }, () => 0);
-  /** Each diamond's flash takes one of two names in turn, so one flashing again starts afresh. */
-  private readonly again: boolean[] = Array.from({ length: CHARGES_MOST }, () => false);
-  private readonly buffs: StatusRow;
   private calm = 0;
   private poise: PoiseState | null = null;
+  private poiseWord = '';
+  /** Seconds since poise broke into a stagger, Infinity before. */
+  private broke = Infinity;
+  private flashing = false;
+  private low = false;
+  private shown: Record<VitalName, { share: number; text: string }> = vitalsOf(null);
+  private most: Record<VitalName, number> = vitalMost(null);
+  /** How far the vitals show (1 whole, 0 at rest), where a fade began from and how long it has run. */
+  private fade = { now: 1, from: 1, age: Infinity, resting: false };
   /** Health's length, as the layout last gave it, and whether the bars stand at the larger step. */
   private length = 0;
   private wide = false;
 
-  constructor(parent: HTMLElement) {
-    this.root = element('div', 'vitals', parent);
-    this.root.role = 'group';
-    this.root.ariaLabel = 'Your vitals';
-    const bar = ([name, label]: [VitalName, string]) => {
-      const node = element('div', `vital ${name}`, this.root);
-      node.role = 'meter';
-      node.ariaLabel = label;
-      node.ariaValueMin = '0';
-      // Poise drains of itself, so it shows no lost strip and breaks off nothing.
-      const drains = name === 'poise';
-      const meter = new Meter(node, 'bar', { lossShown: !drains, pieceLeast: drains ? null : PIECE_LEAST.vital });
-      return [name, { node, meter, width: 0 }] as const;
-    };
-    this.bars = Object.fromEntries(VITALS.map(bar)) as Record<VitalName, Bar>;
-    this.poiseWord = element('span', 'poise-word', this.bars.poise.node);
-    this.charges = element('div', 'drinks', this.root);
-    this.charges.role = 'meter';
-    this.charges.ariaLabel = 'Healing charges';
-    this.charges.ariaValueMin = '0';
-    this.charges.ariaValueMax = String(CHARGES_MOST);
-    this.pips = Array.from({ length: CHARGES_MOST }, () => element('span', 'drink', this.charges));
-    this.buffs = new StatusRow(this.root, 'Your buffs');
-    // A meter is a well, not a track, here: the frame gives the bar its edge.
-    for (const [name] of VITALS) this.bars[name].meter.root.classList.remove(ROLES.track);
+  constructor() {
+    // Poise drains of itself, so it shows no lost strip and breaks off nothing.
+    const bar = (name: VitalName): Bar => ({
+      meter: new Meter({ lossShown: name !== 'poise', pieceLeast: name === 'poise' ? null : PIECE_LEAST.vital }),
+      warned: Infinity,
+    });
+    this.bars = { health: bar('health'), stamina: bar('stamina'), poise: bar('poise') };
   }
 
   /** Lays the bars at health's `length` and the step the display stands at. */
@@ -147,71 +152,187 @@ export class Vitals {
   /** Shows `own`'s vitals `seconds` on; `flashing` while the stamina flashes for a press with none, and `targeted`
    *  while a foe stands on the target plate. */
   update(own: FighterView | null, seconds: number, flashing: boolean, targeted: boolean): void {
-    const shown = vitalsOf(own);
-    const most = vitalMost(own);
-    const sizes = this.wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
+    this.shown = vitalsOf(own);
+    this.most = vitalMost(own);
     const track = own ? poiseTrackOf(own) : { state: 'empty' as const, fill: 0, word: '' };
-    for (const [name] of VITALS) {
-      const bar = this.bars[name];
-      bar.meter.set(name === 'poise' ? track.fill : shown[name].share, seconds);
-      const width = this.length > 0 ? barLength(this.length, most[name], most.health, sizes[name]) : 0;
-      if (width !== bar.width) {
-        bar.width = width;
-        bar.node.style.width = width > 0 ? `${width}px` : '';
-      }
-      const now = String(Math.round(shown[name].share * most[name]));
-      if (bar.node.ariaValueNow !== now) bar.node.ariaValueNow = now;
-      const top = String(most[name]);
-      if (bar.node.ariaValueMax !== top) bar.node.ariaValueMax = top;
-    }
-    this.bars.health.node.classList.toggle('low', healthLow(own));
-    this.bars.stamina.node.classList.toggle('flash', flashing);
-    this.showPoise(track.state, track.word, shown.poise.text);
+    for (const [name] of VITALS)
+      this.bars[name].meter.set(name === 'poise' ? track.fill : this.shown[name].share, seconds);
+    const low = healthLow(own);
+    const warn = (bar: Bar, now: boolean, was: boolean) =>
+      (bar.warned = now ? (was ? bar.warned + seconds : 0) : Infinity);
+    warn(this.bars.health, low, this.low);
+    warn(this.bars.stamina, flashing, this.flashing);
+    [this.low, this.flashing] = [low, flashing];
+    if (track.state !== this.poise) {
+      this.broke = track.state === 'staggered' && this.poise !== null ? 0 : Infinity;
+      this.poise = track.state;
+    } else this.broke += seconds;
+    this.poiseWord = track.word;
     this.showCharges(own, seconds);
     const buffs = ownBuffs(own?.statuses);
     this.buffs.show(0, buffs);
     this.calm = calmFor(this.calm, vitalsWhole(own) && !flashing && buffs.length === 0, targeted, seconds);
-    this.root.classList.toggle('rest', this.calm >= REST_SECONDS);
+    this.stepFade(this.calm >= REST_SECONDS, seconds);
   }
 
-  /** The healing charges `seconds` on: each diamond whole, filling by its share from the foot in whole pixel rows, or
-   *  empty; each charge gained or drunk flashes its own. */
-  private showCharges(own: FighterView | null, seconds: number): void {
-    const { fills, held, text } = chargesShown(own);
-    const was = this.held ?? held;
-    for (let index = Math.min(was, held); index < Math.max(was, held); index++) {
-      this.flashes[index] = CHARGE_FLASH_SECONDS;
-      this.again[index] = !this.again[index];
-    }
-    this.held = held;
-    const rows = (this.wide ? VITAL_SIZES.wide : VITAL_SIZES.base).drinks - BAR_EDGE * 2;
-    this.pips.forEach((pip, index) => {
-      const fill = fills[index] ?? 0;
-      pip.classList.toggle('full', fill >= 1);
-      setStyle(pip, '--fill', `${Math.round(fill * rows)}px`);
-      const flashing = (this.flashes[index] ?? 0) > 0;
-      pip.classList.toggle('flash', flashing && !this.again[index]);
-      pip.classList.toggle('flash-again', flashing && !!this.again[index]);
-      this.flashes[index] = Math.max(0, (this.flashes[index] ?? 0) - seconds);
+  /** What the bars warn of: health low (its frame flashing blood), stamina asked of with none (flashing white), and
+   *  poise's state, its word, and whether it is flashing as it breaks. */
+  get warnings(): { low: boolean; flashing: boolean; poise: PoiseState | null; word: string; breaking: boolean } {
+    return {
+      low: this.low,
+      flashing: this.flashing,
+      poise: this.poise,
+      word: this.poiseWord,
+      breaking: this.broke < POISE_FLASH,
+    };
+  }
+
+  /** Whether the vitals stand at rest, out of sight. */
+  get resting(): boolean {
+    return this.fade.resting;
+  }
+
+  private stepFade(resting: boolean, seconds: number): void {
+    const fade = this.fade;
+    if (resting !== fade.resting) Object.assign(fade, { from: fade.now, age: 0, resting });
+    else fade.age += seconds;
+    const { seconds: long, steps } = resting ? FADE.out : FADE.back;
+    const done = Math.min(1, Math.floor((fade.age / long) * steps + 1e-9) / steps);
+    fade.now = fade.from + ((resting ? 0 : 1) - fade.from) * done;
+  }
+
+  /** The vitals at `zoom` times their size, standing at the view's top left. */
+  node(zoom = 1): Node {
+    const sizes = this.wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
+    const buffs = this.buffs.node((this.wide ? 36 : 24) * zoom, 6 * zoom, zoom);
+    return {
+      id: 'fight-vitals',
+      label: 'Your vitals',
+      direction: 'column',
+      gap: sizes.gap * zoom,
+      opacity: this.fade.now,
+      float: { to: 'screen', x: CORNER.side * zoom, y: CORNER.top * zoom, z: 1 },
+      children: [
+        ...VITALS.map(([name, label]) => this.barNode(name, label, sizes[name], zoom)),
+        this.chargesNode(sizes.drinks, sizes.gap, zoom),
+        buffs && { padding: [4 * zoom, 0, 0, 0], children: [buffs] },
+      ],
+    };
+  }
+
+  private barNode(name: VitalName, label: string, height: number, zoom: number): Node {
+    const bar = this.bars[name];
+    const length = this.length > 0 ? barLength(this.length, this.most[name], this.most.health, height) : 160;
+    const still = motionReduced();
+    const warned = bar.warned;
+    const alert =
+      name === 'health'
+        ? warned < Infinity && (still || warned % LOW_BLINK < LOW_BLINK / 2)
+        : name === 'stamina'
+          ? warned < Infinity && (still || warned % FLASH_BLINK < FLASH_BLINK / 2)
+          : this.poise === 'open';
+    const blinkGround = name === 'stamina' && warned < Infinity && !still && warned % FLASH_BLINK >= FLASH_BLINK / 2;
+    const poise = name === 'poise' ? this.poise : null;
+    const word = name === 'poise' && this.poiseWord ? this.poiseNode(zoom) : null;
+    const percent = this.shown[name].text;
+    return thinBarNode({
+      name,
+      label: `${label}: ${name === 'poise' ? this.poiseWord || percent : percent}`,
+      length,
+      height,
+      zoom,
+      ground: blinkGround ? 'rgba(255,255,255,0.27)' : undefined,
+      fill: (pen) => this.drawFill(pen, name, poise, still),
+      alert: alert ? ALERTS[name] : null,
+      children: word ? [word] : [],
     });
-    const now = String(held);
-    if (this.charges.ariaValueNow !== now) this.charges.ariaValueNow = now;
-    if (this.charges.ariaValueText !== text) this.charges.ariaValueText = text;
   }
 
-  /** Poise's state as the foes' poise tracks read it: filling, Iron, Staggered (or Charged) or Open, its word beside
-   *  the bar; it flashes only as the player breaks into a stagger. */
-  private showPoise(state: PoiseState, word: string, percent: string): void {
-    const node = this.bars.poise.node;
-    if (state !== this.poise) {
-      const breaks = state === 'staggered' && this.poise !== null;
-      for (const was of ['empty', 'filling', 'iron', 'staggered', 'open'])
-        node.classList.toggle(`poise-${was}`, was === state);
-      node.classList.toggle('poise-flash', breaks);
-      this.poise = state;
+  /** A bar's lost strip and fill: poise in brass toward a break, an iron blow hatched in red, a stagger white, glowing
+   *  white for a moment as it breaks. */
+  private drawFill(pen: Pen, name: VitalName, poise: PoiseState | null, still: boolean): void {
+    const meter = this.bars[name].meter;
+    if (poise === 'iron') {
+      const fill = span(pen, 0, meter.shown.share);
+      hatch(pen, fill);
+      paintBox(
+        pen,
+        { ...fill, x: fill.x + fill.width - 2 * pen.scale, width: Math.min(fill.width, 2 * pen.scale) },
+        'rgba(255,255,255,0.42)',
+      );
+    } else drawMeter(pen, meter, poise === 'staggered' ? '#ffffff' : FILLS[name], 'faint');
+    if (poise === 'staggered' && !still && this.broke < POISE_FLASH) {
+      const left = 1 - this.broke / POISE_FLASH;
+      const glow = span(pen, 0, meter.shown.share);
+      for (let step = 1; step <= 3; step++)
+        ring(
+          pen,
+          {
+            ...glow,
+            x: glow.x - (step - 1) * pen.scale,
+            y: glow.y - (step - 1) * pen.scale,
+            width: glow.width + 2 * (step - 1) * pen.scale,
+            height: glow.height + 2 * (step - 1) * pen.scale,
+          },
+          `rgba(255,255,255,${(0.9 * left * left * (4 - step)) / 3})`,
+        );
     }
-    if (this.poiseWord.textContent !== word) this.poiseWord.textContent = word;
-    const said = word || percent;
-    if (node.ariaValueText !== said) node.ariaValueText = said;
+  }
+
+  /** The healing charges `seconds` on; each charge gained or drunk flashes its own diamond. */
+  private showCharges(own: FighterView | null, seconds: number): void {
+    const shown = chargesShown(own);
+    const was = this.charges.held ?? shown.held;
+    for (let index = 0; index < CHARGES_MOST; index++)
+      this.flashes[index] =
+        index >= Math.min(was, shown.held) && index < Math.max(was, shown.held)
+          ? CHARGE_FLASH_SECONDS
+          : Math.max(0, (this.flashes[index] ?? 0) - seconds);
+    this.charges = shown;
+  }
+
+  /** The healing charges' three diamonds, `size` pixels across: one held whole in health's red, the next filling from
+   *  its foot by whole pixel rows in health's red paled toward the words' white (told from a whole one by its tone as
+   *  well as its height), the rest the bars' track; a flash lights the diamond white, then the filling's tone. */
+  private chargesNode(size: number, gap: number, zoom: number): Node {
+    const still = motionReduced();
+    const rows = size - BAR_EDGE * 2;
+    const diamond = (fill: number, index: number): Node => {
+      const left = still ? 0 : (this.flashes[index] ?? 0);
+      const lit = left > CHARGE_FLASH_SECONDS / 2 ? TONES.word : left > 0 ? FILLING : null;
+      const full = fill >= 1;
+      const risen = lit || full ? rows : Math.round(fill * rows);
+      const inside = lit ?? (full ? FILLS.health : FILLING);
+      return {
+        width: size * zoom,
+        height: size * zoom,
+        draw: (ui, box, scale, clip, fade) =>
+          drawCells({ ui, box, scale: scale * zoom, clip, fade }, `charge ${size} ${risen} ${inside}`, size, size, () =>
+            diamondCells(size, BAR_TONES.stone, risen, inside, TONES.groundTrack),
+          ),
+      };
+    };
+    return {
+      direction: 'row',
+      gap: gap * zoom,
+      label: `Healing charges: ${this.charges.text}`,
+      children: this.charges.fills.map(diamond),
+    };
+  }
+
+  /** Poise's word beside its bar: Iron in red, Open in brass, the rest in the words' own colour. */
+  private poiseNode(zoom: number): Node {
+    const colour = this.poise === 'iron' ? '#ff6a5a' : this.poise === 'open' ? '#f1c04f' : TONES.word;
+    const text: Node['text'] = {
+      words: this.poiseWord.toUpperCase(),
+      size: (this.wide ? 2 : 1) * zoom,
+      colour,
+      edge: 'halo',
+      wrap: false,
+    };
+    // Its left edge stands past the bar's point; at the larger step its top meets the bar's.
+    return this.wide
+      ? { text, float: { at: [1, 0], x: 10 * zoom, z: 1 } }
+      : { text, float: { at: [1, 0.5], anchor: [0, 0.5], x: 6 * zoom, z: 1 } };
   }
 }

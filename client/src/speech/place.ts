@@ -23,7 +23,7 @@ export function underTheTop(head: readonly [number, number], above: number): rea
   return head[1] >= above ? head : [head[0], above];
 }
 
-/** A bark's height on the page: one line of 22 px words (sheet.ts). */
+/** A bark's height on the view: one line of 22 px words. */
 export const BARK_PX = 22;
 
 /** A bark's opacity: whole while it is typed and held, then fading out. */

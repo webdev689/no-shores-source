@@ -2,7 +2,7 @@
 // parted by " / ", each on its own keycap) and what it does.
 
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
-import type { Hint } from './gearDom.ts';
+import type { Hint } from './gearNodes.ts';
 import type { Standing } from './hudLaw.ts';
 
 /** What the Arts' keys add for an Art whose first Tenet is aimed while its key is held, by the Tenet's key. */

@@ -6,7 +6,7 @@ import type { SeenPirate } from '../network/messages.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
 import { HOLDER_WORDS as MAP_HOLDER_WORDS } from '../heldmap/watersWash.ts';
-import { emblemUrl, markPicture } from '../plus/emblems.ts';
+import { emblemSvg, markPicture } from '../plus/emblems.ts';
 import { rankMark } from '../rules/roster.ts';
 import type { WaterHolder, WatersRules, WatersTable } from '../rules/watersRules.ts';
 import { rankColour, shipName, sightedWords } from '../ships/shipBars.ts';
@@ -47,9 +47,9 @@ export interface HostileLook {
 export function hostileLook(pirate: SeenPirate): HostileLook {
   const mark = rankMark(pirate.rank);
   return {
-    emblem: emblemUrl(pirate.faction),
+    emblem: emblemSvg(pirate.faction),
     colour: rankColour(pirate.rank),
-    badge: mark === 'miniboss' ? markPicture(mark).url : null,
+    badge: mark === 'miniboss' ? markPicture(mark).svg : null,
   };
 }
 
