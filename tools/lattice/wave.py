@@ -94,12 +94,13 @@ def main():
     asked = argparse.ArgumentParser()
     asked.add_argument('--out', required=True)
     asked.add_argument('--samples', type=int, default=32)
-    out = os.path.abspath(asked.parse_args().out)
+    args = asked.parse_args()
+    out = os.path.abspath(args.out)
     if os.path.commonpath([out, FORGE]) == FORGE:
         sys.exit('--out is inside tools/forge/, which a Lattice render never writes into')
     os.makedirs(out, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    stage.setup(args_samples := asked.parse_args().samples)
+    stage.setup(args.samples)
     w, h, below = CELL
     stage.resize(w, h, below)
     bright, band = lights()
@@ -122,7 +123,7 @@ def main():
                 bpy.data.objects.remove(ob, do_unlink=True)
     stage.write_png(os.path.join(out, 'lattice_wave.png'), np.concatenate(cells, axis=1))
     with open(os.path.join(out, 'lattice_wave.json'), 'w') as f:
-        json.dump({'frames': FRAMES, 'cell': [w, h], 'root': list(stage.ROOT_PX), 'samples': args_samples}, f)
+        json.dump({'frames': FRAMES, 'cell': [w, h], 'root': list(stage.ROOT_PX), 'samples': args.samples}, f)
 
 
 if __name__ == '__main__':

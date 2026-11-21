@@ -10,7 +10,8 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
-sys.path[:0] = [os.path.join(TOOLS, 'lattice'), os.path.join(TOOLS, 'forge', 'tools', 'sprite-forge')]
+# Appended, so a same-named file of the Lattice's or the forge's never shadows one of the modules'.
+sys.path += [os.path.join(TOOLS, 'lattice'), os.path.join(TOOLS, 'forge', 'tools', 'sprite-forge')]
 import growth  # noqa: E402
 import props  # noqa: E402
 
@@ -88,19 +89,7 @@ def crust(module, m, pick, centre, reach, dim=1.0):
     """The ground gone to crystal round `centre`, as props.blight crusts it: flat plates of crystal whose facets catch
     the light, dark and bright, and points of it pricking up through them. Its stain is left out: the turf it lies on
     is the game's own ground."""
-    items = []
-    for k in range(int(reach * 18)):
-        turn, out, wide = pick.uniform(0.0, 2 * np.pi), reach * pick.uniform(0.0, 0.9), pick.uniform(0.06, 0.2)
-        items.append(props.rock(f'plate{len(module.objects)}_{k}', (np.cos(turn) * out, np.sin(turn) * out, 0.0),
-                                (wide, wide * pick.uniform(0.5, 1.0), 0.035), m['deep' if k % 3 else 'crystal'],
-                                pick, 9))
-    for k in range(int(reach * 14)):
-        turn, out = pick.uniform(0.0, 2 * np.pi), reach * pick.uniform(0.1, 0.85)
-        items.append(growth.shard(f'prick{len(module.objects)}_{k}', np.array((np.cos(turn) * out, np.sin(turn) * out,
-                                                                                0.0)),
-                                  UP + pick.normal(0.0, 0.5, 3) * (1, 1, 0), pick.uniform(0.03, 0.12), 0.02, turn,
-                                  m['crystal']))
-    return taken(module, items, dim, centre)
+    return taken(module, props.crust(f'crust{len(module.objects)}', m, pick, reach), dim, centre)
 
 
 def boulder(module, m, pick, centre, radii, points=22):
