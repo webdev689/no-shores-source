@@ -23,10 +23,14 @@ STATIONS = 48
 WALL_ROWS = (('crystal', 0.2), ('crystal', 0.35), ('crystal', 0.5), ('crystal', 0.62), ('crystal', 0.75),
              ('crystal', 0.88), ('crystal', 1.0))
 # The torn slabs: how far apart along a lip, and the most they are tipped back from the chasm, radians. Those at the
-# lip lie low and few, so a player walking up sees into the crack; a row further back is tipped a little more.
+# lip lie nearly flat and few, so a player walking up, or looking down from a height, sees past the near lip into
+# the crack; a row further back is tipped a little more.
 SLAB_EVERY_M = 1.25
-SLAB_TIP = 0.24
+SLAB_TIP = 0.1
 SLAB_TIP_BACK = 0.36
+# How far a wall narrows from its lip to the floor, as a share of the lip's half-width: the floor stays wide enough
+# that its light is seen from above.
+NARROWS = 0.6
 # The soil under the turf, and the turf itself, metres down from a slab's top.
 TURF_M = 0.07
 SOIL_M = 0.2
@@ -63,7 +67,7 @@ def chasm(module, stations):
             for row in range(rows + 1):
                 share = row / rows
                 # The wall falls steeply, then turns in to a narrow floor; jagged by its own draw.
-                across = half * (1 - 0.82 * share ** 1.4) + (draw.uniform(-0.12, 0.12) * half if 0 < row < rows else 0)
+                across = half * (1 - NARROWS * share ** 1.4) + (draw.uniform(-0.12, 0.12) * half if 0 < row < rows else 0)
                 z = -deep * share
                 columns[side, k, row] = len(points)
                 points.append((x, middle + sign * across, z))
@@ -226,8 +230,8 @@ def veins(module, stations, count):
 
 def fissure(module):
     """The open crack: some 12 m long and 4 across at its widest, nearly 3 m deep; turf and chalk slabs lying low
-    along its lips, a few more tipped up further back; crystal teeth leaning in over it, clusters grown out of its walls and spires standing up out of
-    its heart, crusts of crystal crept out across the turf at either end."""
+    along its lips, a few more tipped up further back; crystal teeth leaning in over it, clusters grown out of its
+    walls and spires standing up out of its heart, crusts of crystal crept out across the turf at either end."""
     m = latticekit.kinds()
     pick = latticekit.picker(module.random.randrange(1 << 30))
     stations = crack()
@@ -241,30 +245,31 @@ def fissure(module):
         if k in (0, STATIONS):
             continue
         for sign, half in ((1, north), (-1, south)):
-            # Teeth on the lip, leaning in over the crack.
+            # Teeth on the lip, leaning low in over the crack, so they frame the chasm rather than wall it.
             if draw.random() < 0.3:
-                latticekit.shard(module, m, (x + draw.uniform(-0.12, 0.12), middle + sign * half * 0.94, -0.15),
-                                 (draw.uniform(-0.3, 0.3), -sign * draw.uniform(0.3, 1.0), 0.8),
-                                 draw.uniform(0.2, 1.0) * (0.4 + half), draw.uniform(0.04, 0.1), draw.uniform(0, 3))
-            # Clusters grown out of the walls, low down, pointing up and in.
+                latticekit.shard(module, m, (x + draw.uniform(-0.12, 0.12), middle + sign * half * 0.94, -0.2),
+                                 (draw.uniform(-0.3, 0.3), -sign * draw.uniform(0.7, 1.2), 0.45),
+                                 draw.uniform(0.2, 0.7) * (0.4 + half), draw.uniform(0.04, 0.1), draw.uniform(0, 3))
+            # Clusters grown out of the walls, low down, pointing up and in, their points under the lip.
             if k % 3 == 1:
                 share = draw.uniform(0.45, 0.8)
-                latticekit.cluster(module, m, pick, (x, middle + sign * half * (1 - 0.82 * share ** 1.4) * 0.9,
+                latticekit.cluster(module, m, pick, (x, middle + sign * half * (1 - NARROWS * share ** 1.4) * 0.9,
                                                      -deep * share), (0.0, -sign * 0.6, 1.0), 4,
-                                   (0.35, 0.9 + deep * 0.3), 0.08, 0.5)
-    # Spires out of the heart, standing up over the ground, their roots crowded with shards.
-    for x, lean, tall in ((-2.6, (0.25, 0.3, 1.0), 3.4), (0.4, (-0.1, -0.25, 1.0), 4.6), (3.1, (-0.3, 0.2, 1.0), 2.9),
-                          (-0.9, (0.35, -0.2, 1.0), 2.2)):
+                                   (0.3, 0.5 + deep * 0.2), 0.08, 0.5)
+    # Spires out of the heart, standing a little over the ground, their roots crowded with shards: seen over the lip
+    # from afar, never a ridge that hides the crack.
+    for x, lean, tall in ((-2.6, (0.25, 0.3, 1.0), 1.3), (0.4, (-0.1, -0.25, 1.0), 1.9), (3.1, (-0.3, 0.2, 1.0), 1.1),
+                          (-0.9, (0.35, -0.2, 1.0), 0.8)):
         k = round((x + LENGTH_M / 2) / LENGTH_M * STATIONS)
         _, middle, _, _, deep = stations[k]
         latticekit.shard(module, m, (x, middle, -deep), lean, tall + deep, 0.3, draw.uniform(0, 3), widest=0.55)
         latticekit.cluster(module, m, pick, (x, middle, -deep * 0.85), (0.0, 0.0, 1.0), 7, (0.5, 1.4), 0.1, 0.8)
         module.part((x - 0.2, middle - 0.2, 0.0), (x + 0.2, middle + 0.2, tall * 0.6))
     # The heart's light, seen down the crack.
-    for x in (-4.0, -2.0, 0.0, 2.0, 4.0):
+    for x in (-4.5, -3.0, -1.5, 0.0, 1.5, 3.0, 4.5):
         k = round((x + LENGTH_M / 2) / LENGTH_M * STATIONS)
         _, middle, _, _, deep = stations[k]
-        latticekit.light(module, m, (x, middle, -deep + 0.15), 0.28, 2)
+        latticekit.light(module, m, (x, middle, -deep + 0.2), 0.36, 2)
     # Crystal crept out across the turf past the crack's ends and along it.
     for x in (-LENGTH_M / 2 - 0.6, LENGTH_M / 2 + 0.6):
         latticekit.crust(module, m, pick, (x, 0.0, 0.0), 1.3)
@@ -275,13 +280,21 @@ def fissure(module):
 
 
 def sealed(module):
-    """The scar the crack leaves as the seal closes it: where the crack was, grey-white chalk broken and heaped along
-    the line, dull stubs of dark crystal standing out of it, their glow dying; the slabs settled back nearly flat and
-    the teeth broken off and lying in the grass."""
+    """The scar the crack leaves as the seal closes it: where the crack was, a low ridge of dark soil heaved up along
+    the line with grey-white chalk broken and heaped on it, dull stubs of dark crystal standing out of it, their glow
+    dying; the slabs settled back nearly flat, the teeth broken off and lying in the grass, and the crust it crept out
+    across the turf at either end dulled."""
     m = latticekit.kinds()
     pick = latticekit.picker(module.random.randrange(1 << 30))
     stations = crack()
     draw = random.Random(module.random.random())
+    # The seam itself: dark soil and broken chalk heaved up along the line in a low ridge, narrowing to its ends.
+    ridge = []
+    for k in range(2, STATIONS - 1, 2):
+        x, middle, north, south, _ = stations[k]
+        wide = min(north, south)
+        ridge.append(((x, middle, -0.05), (0.55, 0.3 + wide * 0.3, 0.1 + wide * 0.07)))
+    kit.organic(module, ridge, draw.uniform(0, 99), voxel=0.12, rough=0.06, triangles=2400)
     for k in range(1, STATIONS):
         x, middle, north, south, _ = stations[k]
         wide = min(north, south)
@@ -303,6 +316,9 @@ def sealed(module):
         turn = draw.uniform(0, math.tau)
         latticekit.shard(module, m, (x, middle + sign * out, 0.04), (math.cos(turn), math.sin(turn), 0.12),
                          draw.uniform(0.2, 0.7), draw.uniform(0.04, 0.08), draw.uniform(0, 3), dim=0.08)
+    # The crust it crept out across the turf, its glow nearly gone, past either end of the seam.
+    for x in (-LENGTH_M / 2 - 0.4, LENGTH_M / 2 + 0.4):
+        latticekit.crust(module, m, pick, (x, 0.0, 0.0), 0.9, dim=0.1)
 
 
 def growth(module):

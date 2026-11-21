@@ -1,7 +1,7 @@
 """Pictures a module as Blender builds it, for a look before it goes into the game: a three-quarter view under a low
 sun, each material its own plain colour, its parts drawn as wire boxes when asked.
 
-    python -I tools/modules/render.py <module> <picture.png> [--parts] [--turn degrees]
+    python -I tools/modules/render.py <module> <picture.png> [--parts] [--turn degrees] [--eye x,y,z]
 """
 import argparse
 import math
@@ -41,6 +41,7 @@ def main():
     parser.add_argument('--parts', action='store_true')
     parser.add_argument('--turn', type=float, default=35.0)
     parser.add_argument('--near', type=float, default=1.0, help='the eye this share of its usual distance away')
+    parser.add_argument('--eye', help='the eye at this point, metres in the module\'s frame, as a player sees it')
     asked = parser.parse_args()
     kit.reset()
     module = kit.Module(asked.module, catalogue.SEEDS[asked.module])
@@ -102,6 +103,8 @@ def main():
     turn = math.radians(asked.turn)
     distance = reach * 2.2 * asked.near
     camera.location = (math.sin(turn) * distance, -math.cos(turn) * distance, distance * 0.6)
+    if asked.eye:
+        camera.location = tuple(float(v) for v in asked.eye.split(','))
     high = max(v[2] for item in module.objects for v in item.bound_box)
     direction = mathutils.Vector((0, 0, min(2.0, high * 0.4))) - camera.location
     camera.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()

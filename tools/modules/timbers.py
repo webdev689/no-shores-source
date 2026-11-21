@@ -10,6 +10,9 @@ import mathutils
 
 import kit
 
+# How far out past a tarp's corner its cords are pegged, metres.
+PEG_OUT_M = 0.12
+
 
 class Frame:
     """A place to build in: `at` (x, y, z) and `turn` radians about up, carrying a piece's own frame to the module's."""
@@ -49,7 +52,7 @@ def mesh(module, name, made, material, smooth=True, frame=None):
     made.free()
     for polygon in data.polygons:
         polygon.use_smooth = smooth
-    item = kit._object(module, f'{name}{len(module.objects)}', data, material)
+    item = kit.item_of(module, f'{name}{len(module.objects)}', data, material)
     if frame is not None:
         item.matrix_world = frame.matrix
     return item
@@ -251,16 +254,19 @@ def tarp(module, middle, size, tops, sag=0.05, torn=0.0, rope=True):
     if rope:
         for cx, cy in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
             corner = points[(0 if cy < 0 else rows - 1) * columns + (0 if cx < 0 else columns - 1)]
-            peg = (corner[0] + cx * 0.35, corner[1] + cy * 0.35, 0.0)
-            run = mathutils.Vector(peg) - mathutils.Vector(corner)
-            frame = Frame()
-            along = run.normalized()
-            item_rope = board(module, frame, tuple((mathutils.Vector(corner) + mathutils.Vector(peg)) / 2),
-                              (0.012, 0.012, run.length), 'timber', bevel=0.0)
-            item_rope.rotation_euler = mathutils.Vector((0.0, 0.0, 1.0)).rotation_difference(along).to_euler()
-            board(module, Frame(peg), (0.0, 0.0, 0.08), (0.035, 0.035, 0.2), 'timber',
-                  rotation=(cy * 0.25, -cx * 0.25, 0.0), bevel=0.0)
+            guy(module, corner, (corner[0] + cx * PEG_OUT_M, corner[1] + cy * PEG_OUT_M, 0.0), (cy * 0.25, -cx * 0.25))
     return item
+
+
+def guy(module, top, peg, lean, thick=0.012, stake=0.2):
+    """A cord from `top` down to a stake driven in at `peg` on the ground, the stake leaning `lean` (radians about x
+    and y) away from what it holds."""
+    run = mathutils.Vector(peg) - mathutils.Vector(top)
+    cord = board(module, Frame(), tuple((mathutils.Vector(top) + mathutils.Vector(peg)) / 2), (thick, thick, run.length),
+                 'timber', bevel=0.0)
+    cord.rotation_euler = mathutils.Vector((0.0, 0.0, 1.0)).rotation_difference(run.normalized()).to_euler()
+    board(module, Frame(peg), (0.0, 0.0, stake * 0.4), (stake * 0.175, stake * 0.175, stake), 'timber',
+          rotation=(*lean, 0.0), bevel=0.0)
 
 
 def ring(module, frame, middle, major, minor, material='iron', segments=12, sides=6, axis='X'):

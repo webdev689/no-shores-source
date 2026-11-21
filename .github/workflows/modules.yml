@@ -3,22 +3,68 @@ name: modules
 # Builds every handcrafted module in Blender, checks the bake makes exactly the manifest committed in
 # content/modules/modules.json (the meshes' keys are their hashes, so a commit's manifest names what this bake
 # uploads), and publishes the meshes to R2 with the repository's Cloudflare token whenever the module tools change.
+# The bake takes in the Lattice's props and the sprite forge's bodies and materials (tools/modules/latticekit.py), so
+# their files start it too.
 on:
   push:
-    paths: [tools/modules/**, content/modules/**, .github/workflows/modules.yml]
+    paths:
+      - tools/modules/**
+      - tools/lattice/props.py
+      - tools/lattice/growth.py
+      - tools/forge/tools/sprite-forge/**
+      - tools/r2.py
+      - content/modules/**
+      - .github/workflows/modules.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  publish:
+  # Installs others' code (pip), so it holds no secret: what it bakes goes on as an artifact. The packages are the
+  # exact wheels tools/modules/requirements.txt names by their hashes.
+  bake:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # The token reaches only the two steps that check it and publish: pip runs others' install scripts.
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.13'
+      - name: Install Blender's module
+        run: |
+          pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt
+      # A bake that does not make the committed manifest prints the difference: commit the manifest it made.
+      - name: Bake and check the manifest is the bake's
+        run: |
+          python -I tools/modules/bake.py "$RUNNER_TEMP/modules"
+          git diff --exit-code content/modules/modules.json || { cat content/modules/modules.json; exit 1; }
+      # A mesh is named by its hash, so a bake that changes its bytes from run to run would publish a new mesh and
+      # leave the manifest and every machine's own bake disagreeing.
+      - name: Bake again and check every mesh is the same bytes
+        run: |
+          python -I tools/modules/bake.py "$RUNNER_TEMP/again"
+          diff -r "$RUNNER_TEMP/modules" "$RUNNER_TEMP/again"
+          git diff --exit-code content/modules/modules.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: modules
+          path: ${{ runner.temp }}/modules
+          if-no-files-found: error
+          retention-days: 7
+
+  # A fresh machine with nothing installed: the publisher needs Python's own library and the repository alone.
+  publish:
+    needs: bake
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.13'
       # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
@@ -29,13 +75,11 @@ jobs:
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
           else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
-      - name: Install Blender's module
-        run: pip install bpy==5.3.0
-      # A bake that does not make the committed manifest prints the difference: commit the manifest it made.
-      - name: Bake and check the manifest is the bake's
-        run: |
-          python -I tools/modules/bake.py "$RUNNER_TEMP/modules"
-          git diff --exit-code content/modules/modules.json || { cat content/modules/modules.json; exit 1; }
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: steps.token.outputs.set == 'true'
+        with:
+          name: modules
+          path: ${{ runner.temp }}/modules
       - name: Publish the meshes
         if: steps.token.outputs.set == 'true'
         env:

@@ -59,7 +59,7 @@ def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
-def _object(module, name, mesh, material, glow=0.0):
+def item_of(module, name, mesh, material, glow=0.0):
     item = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(item)
     module.objects.append(item)
@@ -105,7 +105,7 @@ def solid_of(module, name, points, faces, material='stone', glow=0.0, smooth=Fal
     mesh.update()
     for polygon in mesh.polygons:
         polygon.use_smooth = smooth
-    return _object(module, f'{name}{len(module.objects)}', mesh, material, glow)
+    return item_of(module, f'{name}{len(module.objects)}', mesh, material, glow)
 
 
 def _box_mesh(size):
@@ -146,7 +146,7 @@ def _worn(item, bevel, wear, seed, cuts=0):
 def block(module, at, size, material='stone', turn=0.0, bevel=0.06, wear=0.04, cuts=0, part=True):
     """A cut block standing on `at` (the middle of its foot), `size` across x, y and up, turned `turn` radians about
     up; a part where it is square to the frame and `part` is asked."""
-    item = _object(module, f'block{len(module.objects)}', _box_mesh(size), material)
+    item = item_of(module, f'block{len(module.objects)}', _box_mesh(size), material)
     item.location = (at[0], at[1], at[2] + size[2] / 2)
     item.rotation_euler = (0.0, 0.0, turn)
     _worn(item, bevel, wear, len(module.objects), cuts)
@@ -164,7 +164,7 @@ def column(module, at, radius, height, material='stone', sides=12, top=1.0, wear
     bmesh.ops.translate(made, vec=(0.0, 0.0, height / 2), verts=made.verts)
     made.to_mesh(mesh)
     made.free()
-    item = _object(module, f'column{len(module.objects)}', mesh, material)
+    item = item_of(module, f'column{len(module.objects)}', mesh, material)
     item.location = at
     _worn(item, 0.03, wear, len(module.objects), 0)
     if part:
@@ -192,7 +192,7 @@ def rock(module, at, size, seed, material='rubble', part=True, flat_foot=True, d
             point.z = max(point.z, 0.0)
     made.to_mesh(mesh)
     made.free()
-    item = _object(module, f'rock{len(module.objects)}', mesh, material)
+    item = item_of(module, f'rock{len(module.objects)}', mesh, material)
     item.location = at
     if part:
         module.part(
@@ -214,7 +214,7 @@ def organic(module, blobs, seed, material='rubble', voxel=0.18, rough=0.35, tria
         bmesh.ops.translate(made, vec=mathutils.Vector(middle), verts=sphere)
     made.to_mesh(mesh)
     made.free()
-    item = _object(module, f'organic{len(module.objects)}', mesh, material)
+    item = item_of(module, f'organic{len(module.objects)}', mesh, material)
     remesh = item.modifiers.new('merge', 'REMESH')
     remesh.mode = 'VOXEL'
     remesh.voxel_size = voxel
@@ -272,7 +272,7 @@ def spire(module, at, radius, height, seed, material='rubble', hanging=False, pa
                    [made.verts[side] for side in range(sides)])
     made.to_mesh(mesh)
     made.free()
-    item = _object(module, f'spire{len(module.objects)}', mesh, material)
+    item = item_of(module, f'spire{len(module.objects)}', mesh, material)
     item.location = at
     if part and not hanging and height > 1.0:
         core = radius * 0.5

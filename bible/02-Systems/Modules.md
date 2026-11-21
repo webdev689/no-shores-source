@@ -94,42 +94,51 @@ are written with paving last, since the first group carries the parts and paving
     Lattice's crystal from the lip down, brightening to its alight heart, so from eye height the far wall reads as a
     glowing slit; slabs of turf over a band of dark soil over chalk lying low and few along both lips, turf and roots
     hanging off their edges, a row tipped up further back; chalk broken out across the turf; crystal teeth leaning in
-    over it, clusters grown out of its walls, four spires standing up out of its heart, veins of light crept out
-    through the grass and crusts of crystal at its ends. Its mouth, the outline of the crack at the ground, is in the
+    low over it, clusters grown out of its walls under the lip, four spires standing a metre or two over the ground out
+    of its heart, its floor wide and lit by seven lights so the crack is seen into from a height, veins of light crept
+    out through the grass and crusts of crystal at its ends. Its mouth, the outline of the crack at the ground, is in the
     manifest (`mouth`), so the page opens the land there.
-  - Its scar (`lattice-fissure-sealed`): grey-white chalk broken and heaped along where the crack was, dull stubs of
-    dark crystal standing out of it, their glow dying with the crack; the slabs settled back nearly flat and the teeth
-    broken off and lying in the grass.
+  - Its scar (`lattice-fissure-sealed`): a low ridge of dark soil heaved up along where the crack was, grey-white
+    chalk broken and heaped on it, dull stubs of dark crystal standing out of it, their glow dying with the crack; the
+    slabs settled back nearly flat, the teeth broken off and lying in the grass, and the crusts at its ends dulled.
   - The growth (`lattice-growth`, 5 m): a spire of crystal out of a heave of chalk, five lesser spires leaning out from
     its root, shards crowding its foot, the turf it broke through tipped up round it and crusted.
   - The shard (`lattice-shard`, half a metre): a hand's length of crystal, two lesser points off its root, alight.
   - The Grey Tithe's three stores (`tithe-stores-a`, `-b`, `-c`): crates of weathered boards bound with iron at their
     corners, barrels, sacks of grey canvas (on store c's pallet laid flat, their tied necks out) and a pallet, each
-    stack under a grey tarp pegged out at its corners; the plundered store (`tithe-stores-plundered`): a crate broken
+    stack under a grey tarp pegged close at its corners; the plundered store (`tithe-stores-plundered`): a crate broken
     open, one tipped on its side, boards strewn, sacks slit with their grain spilt in heaps, a barrel stove in and
-    rolled away, the tarp dragged off.
-  - The Tithe's banner (`tithe-banner`): a grey cloth, unmarked, on a 4 m pole, its foot cut into two tails and lifting
-    in the wind, an iron spike at its head, stones packed round its foot.
+    rolled away with its staves and a hoop by it, the tarp dragged off. Each stack is compact and square-edged, its
+    part the box round it: store a 2.4 by 1.8 m, b 2.2 by 2.1, c 2.5 by 1.3, the plundered store 2.5 by 2.0.
+  - The Tithe's banner (`tithe-banner`): a heavy grey cloth, unmarked, 3.4 m long, lashed along its sleeve to a
+    crossbar on a 5.4 m pole, a weighted rod in its hem so it hangs straight and bellies only between; three guy ropes
+    pegged out behind it and to either side, an iron spike and collar at its head, stones packed round its foot.
   - The chests (`event-chest`, iron-bound; `event-chest-heroic`, gilded and set with crystal at its corners) and their
     lids (`event-chest-lid`, `event-chest-heroic-lid`, the heroic one crowned with crystal): each lid a module of its
     own, its hinge at its origin, and the chest's `hinge` socket where that hinge sits on it.
 
 ## Baking and publishing
 
-bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as for the [[Flora]].
+bpy is Blender as a Python module, on Python 3.13:
+`pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt` installs bpy 5.3.0 and what it
+needs, each wheel by its hash. The bake takes in the Lattice's own builders (`tools/lattice/props.py` and
+`growth.py`) and through them the [[Sprite Forge]]'s bodies, rig and materials (`tools/forge/tools/sprite-forge/`),
+which need nothing more.
 
 | Command | What it does |
 |---|---|
 | `python -I tools/modules/bake.py <folder>` | Builds every module, writes each surface group's mesh to the folder under its hash and the manifest to `content/modules/modules.json`; a few seconds a module |
 | `python -I tools/modules/publish.py <folder>` | Uploads the meshes the manifest names to R2, unless R2 already serves them, and checks each answers |
-| `python -I tools/modules/render.py <module> <picture.png> [--parts]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked |
+| `python -I tools/modules/render.py <module> <picture.png> [--parts] [--eye x,y,z]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked, from a given eye when asked |
 
 A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes)
 and glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at
 most 32,000 triangles. The bake makes the same bytes from the same scripts, on any machine: the event props write a
 coordinate that rounds to nothing as a plain zero, since a float residue's sign differs between machines (the older
 modules keep the bytes they were published with). The `modules` workflow bakes on every change to the module tools,
-fails if the bake does not make the committed manifest, and publishes with the repository's Cloudflare token.
+to the Lattice's builders and the forge files they take in, or to `tools/r2.py`; it fails if the bake does not make
+the committed manifest or if a second bake does not make the same bytes, and a second job, which installs nothing,
+publishes the first bake's meshes with the repository's Cloudflare token.
 
 ## In the game
 
@@ -180,8 +189,7 @@ stand on the ground at every edge, and no cliff stair stands taller than it was 
 - The fissure's mouth opens the depth of whatever is drawn before it there, a rise of the land or a layout's piece
   standing in front of it as well as the land under it; the events stand on clear ground. Grass drawn after it can
   stand over the chasm.
-- The page does not yet hand the event-props drawer its list: `eventProps` makes it from the room's event marks, and
-  the event's view is still to call it. Every city's load fetches the event props' meshes with the rest.
+- Every city's load fetches the event props' meshes with the rest.
 - A module's surfaces carry no ambient occlusion of their own, and their pictures are laid flat by axis, not
   unwrapped.
 - A module stands square to the world, so a way may arrive at a side with no socket: the citadel's ways arrive at

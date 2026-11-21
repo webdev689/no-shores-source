@@ -12,7 +12,8 @@ import sys
 sys.dont_write_bytecode = True   # nothing written beside the forge's code
 HERE = os.path.dirname(os.path.abspath(__file__))
 FORGE = os.path.abspath(os.path.join(HERE, '..', 'forge'))
-sys.path[:0] = [HERE, os.path.join(FORGE, 'tools', 'sprite-forge')]
+# Appended, so these never shadow the files of a script that imports the props (tools/modules/latticekit.py).
+sys.path += [HERE, os.path.join(FORGE, 'tools', 'sprite-forge')]
 
 import bpy  # noqa: E402
 import bmesh  # noqa: E402
@@ -85,17 +86,23 @@ def blight(m, pick, reach=1.6):
         out = reach * pick.uniform(0.5, 0.95)
         stains.append(blob((math.cos(turn) * out, math.sin(turn) * out, -0.03),
                            (reach * pick.uniform(0.2, 0.4), reach * pick.uniform(0.15, 0.3), 0.042)))
-    crust = [lumps('blight', stains, m['blight'], res=0.015)]
+    return [lumps('blight', stains, m['blight'], res=0.015)] + crust('blight', m, pick, reach)
+
+
+def crust(name, m, pick, reach):
+    """The crust of the ground gone to crystal within `reach` of the origin: flat plates of crystal whose facets catch
+    the light, dark and bright, and points of it pricking up through them."""
+    items = []
     for k in range(int(reach * 18)):
         turn, out, wide = pick.uniform(0.0, 2 * math.pi), reach * pick.uniform(0.0, 0.9), pick.uniform(0.06, 0.2)
-        crust.append(rock(f'blight_plate_{k}', (math.cos(turn) * out, math.sin(turn) * out, 0.0),
+        items.append(rock(f'{name}_plate_{k}', (math.cos(turn) * out, math.sin(turn) * out, 0.0),
                           (wide, wide * pick.uniform(0.5, 1.0), 0.035), m['deep' if k % 3 else 'crystal'], pick, 9))
     for k in range(int(reach * 14)):   # crystal pricking up through the crust
-        turn, out = pick.uniform(0.0, 2 * math.pi), reach * pick.uniform(0.1, 0.85)
-        crust.append(growth.shard(f'blight_{k}', np.array((math.cos(turn) * out, math.sin(turn) * out, 0.0)),
+        turn, away = pick.uniform(0.0, 2 * math.pi), reach * pick.uniform(0.1, 0.85)
+        items.append(growth.shard(f'{name}_{k}', np.array((math.cos(turn) * away, math.sin(turn) * away, 0.0)),
                                   UP + pick.normal(0.0, 0.5, 3) * (1, 1, 0), pick.uniform(0.03, 0.12), 0.02, turn,
                                   m['crystal']))
-    return crust
+    return items
 
 
 def cluster(name, base, up, count, length, radius, mat, pick, spread=0.6):

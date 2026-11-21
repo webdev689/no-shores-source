@@ -127,8 +127,11 @@ asked for and one for the wave (`tools/lattice/jobs.py`), they render in paralle
 pulls the tables, lays them all in (`lattice`), adds them to what is published and ends its log with the manifest. A
 first line `publish-from <run id>` renders nothing: the publish job downloads that earlier run's `lattice-*`
 artifacts (while GitHub keeps them) and lays them into the tables as published now, so the forge's own changes to
-the tables never need the Lattice rendered again. Both workflows share one queue, as both publish the same tables.
-Each installs only the exact wheels its requirements name by their hashes, and its checkout keeps no git credential.
+the tables never need the Lattice rendered again. Both workflows publish in one concurrency group (`forge`), as
+both publish the same tables: one publishes at a time, and GitHub keeps one more waiting, so a newer run that waits
+replaces an older one still waiting. Each installs only the exact wheels its requirements name by their hashes (the
+forge `tools/forge/tools/sprite-forge/artbirds-requirements.txt`, the Lattice `tools/lattice/requirements.txt`: the
+forge's wheels and SciPy), and its checkout keeps no git credential.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the
 doll and class-look tools need Daggerfall's files and DFO's game code, so they do not run here.
