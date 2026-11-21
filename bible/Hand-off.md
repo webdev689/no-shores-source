@@ -257,7 +257,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
 - **The whole plan of the owner's four points, on branch `ccr-3320a365-bzwp4s`, merged with `main`, audited and
-  tested offline (the full check on the head pushed), in a pull request of its own that supersedes #112**: no HTML
+  tested offline (the full check) and live headless (the menu holding the keys at ratios 1 and 1.25), in #127,
+  which supersedes #112**: no HTML
   anywhere in the interface ([[The Interface Uses No HTML, Now or Later]]): the HUD, the fight's display, the menu and
   every page of it, the story's screens, the held map's marks, the Test Ground and the World Editor drawn by the game,
   each page one canvas and its script, and a repo check (`html`) refusing new HTML with no way round it; the game in a
