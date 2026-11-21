@@ -198,6 +198,8 @@ async function main() {
     await page.evaluate(() => document.getElementById('__shot')?.remove());
   };
   await page.goto(plan.url);
+  // The game's page starts its worker at once; a page with none (the World Editor) is driven itself.
+  if (!game) await page.waitForEvent('worker', { predicate: (worker) => worker.url().includes('gameWorker'), timeout: 30_000 }).catch(() => null);
   for (const step of plan.steps) {
     const started = Date.now();
     if (step.wait) await page.waitForTimeout(step.wait * 1000);

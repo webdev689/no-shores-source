@@ -48,6 +48,25 @@ test('the banner shows the event’s words, its heroic window and its bonus, in 
   assert.equal(banner.tone, null);
 });
 
+test('the banner’s rows run its whole width: its clocks at the right, its bar long', () => {
+  const banner = new PublicBanner();
+  banner.update(shown, 0.016, 'begun');
+  const laid = laidOf(banner.node(1280, 1) as Node);
+  const band = laid[0]?.box;
+  const boxOf = (words: string) => laid.find((each) => each.node.text?.words === words)?.box;
+  const [clock, window, label] = [boxOf('1:00'), boxOf('0:10'), boxOf('3 / 12 shards')];
+  assert.ok(band && clock && window && label);
+  const right = band.x + band.width - 12;
+  for (const [name, box] of [
+    ['the countdown', clock],
+    ['the heroic window', window],
+    ['the bar’s label', label],
+  ] as const)
+    assert.ok(Math.abs(box.x + box.width - right) <= 1, `${name} ends at the right, at ${box.x + box.width} of ${right}`);
+  const bar = laid.find((each) => each.node.draw && each.node.label === '3 / 12 shards')?.box;
+  assert.ok(bar && bar.width > band.width / 2, `the bar runs over half the banner, ${bar?.width}`);
+});
+
 test('between events the banner is one line, with what runs elsewhere under it', () => {
   const banner = new PublicBanner();
   const next: Banner = {
