@@ -16,6 +16,7 @@ import { prologuePlayed } from '../prologue/beat.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import { Objective } from '../prologue/objective.ts';
 import { worldOutput } from '../uiSounds.ts';
+import type { Stack } from '../../ui/stack.ts';
 import type { NodeInfo } from '../worldData.ts';
 import {
   Welcome,
@@ -117,17 +118,17 @@ export class AfterStory {
   }
 }
 
-/** What the story leaves on the game's own page: the welcome's words read from content/story/, its speech on the
- *  HUD, kept in the browser, and the development switch read from the address. */
+/** What the story leaves on the game's own page: the welcome's words read from content/story/, its speech drawn on
+ *  the game's interface, kept in the browser, and the development switch read from the address. */
 export function afterStoryOn(
-  hudRoot: HTMLElement,
+  stack: Stack,
   forge: Cards,
   groundAt: (x: number, y: number) => number | null,
 ): AfterStory {
   const read = castOf(cast);
   const voice = () => ({
-    dialogue: new DialogueBox(hudRoot, worldOutput),
-    objective: new Objective(hudRoot),
+    dialogue: new DialogueBox(stack, worldOutput),
+    objective: new Objective(stack),
   });
   // A built page served on this machine honours it too, for the headless pictures taken of a built page.
   const here = import.meta.env.DEV || location.hostname === 'localhost';

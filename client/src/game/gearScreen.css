@@ -1,7 +1,6 @@
-/* The menu's pages still made of elements, in their island over the drawn menu (client/src/game/gearIsland.ts), and
-   their hover card: the kit (client/src/plus/) paints each surface by its role; this sheet gives each its room, and the
-   rest Enhanced Plus draws: a tile's well and its rarity's bevel and glow, a card's band in its rarity, the cell's count
-   and pips. One scale of type runs through it, and what moves moves in steps, as Enhanced Plus's sigils breathe. */
+/* What the HUD's elements still made of elements take from the menu's old sheet (gearDom.ts): the kit (client/src/plus/)
+   paints each surface by its role; this sheet gives each its room, a tile's well and its rarity's bevel and glow, the
+   cell's count and pips. */
 
 .gear-screen {
   --word: #efe8d6;
@@ -75,9 +74,6 @@ kbd.gear-key {
   color: var(--word);
   text-transform: none;
 }
-  color: var(--faint);
-  font-size: var(--type-s);
-}
 .gear-heading {
   margin: 4px 0 10px;
   padding-bottom: 4px;
@@ -93,7 +89,6 @@ canvas.gear-picture {
 }
 canvas.gear-picture.gear-picture-fitted {
   image-rendering: auto;
-}
 }
 /* A press the player cannot use now still takes the focus, so its card says why; it reads as resting. */
 #hud .plus-button[aria-disabled='true'],

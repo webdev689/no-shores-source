@@ -81,8 +81,8 @@ wreck still drawn); the Frigate's view is made only once a beat draws her, so a 
 makes it.
 
 A story that cannot begin at all (its cast or scenes refused, a ship's model not loaded, a part failing as it is made)
-gives back everything it took, the last first: the screen hands the page back its touches and the canvas its ease,
-the dialogue box, the marks over heads and the nameplate leave the HUD, the GPU lets go of what was made, and the
+gives back everything it took, the last first: the screen hands the page back its touches, the dialogue box, the
+marks over heads and the nameplate leave the game's interface, the GPU lets go of what was made, and the
 player wears the look the game gave them. The player then arrives at Overlook.
 
 | Beat | What happens | Played or shown |

@@ -9,22 +9,21 @@ import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { drawnPress, drawnReach } from './uiSounds.ts';
 
-/** Whether the dialogue box under `root` holds the screen, which the drawn display gives way to.
- *  shortcut: read from the page while the dialogue box is still an element; it goes once the box is drawn. */
-export function speakingIn(root: ParentNode): boolean {
-  return root.querySelector(':scope > .speech-box:not([hidden])') !== null;
-}
-
 export class DrawnInterface {
   private ui: Interface | null = null;
   private readonly canvas: HTMLCanvasElement;
   private readonly events: CanvasEvents;
   /** When this frame's input was heard, so a press sounds unless its own sound played since. */
   private heardAt = 0;
+  /** Whether the game's own frames have begun, which end the interface's frames alone. */
+  private framing = false;
 
-  constructor(gpu: Gpu, canvas: HTMLCanvasElement) {
+  /** With `stack`, draws it alone each frame (the tap to start, while the world loads) until the game's frames
+   *  begin hearing it. */
+  constructor(gpu: Gpu, canvas: HTMLCanvasElement, stack?: Stack) {
     this.canvas = canvas;
     this.events = new CanvasEvents(canvas);
+    if (stack) this.alone(stack, performance.now());
     readFace()
       .then((face) => (this.ui = new Interface(new UiRenderer(gpu, face))))
       .catch((error: unknown) => console.error('the face could not be read:', error));
@@ -45,6 +44,7 @@ export class DrawnInterface {
   /** Hears the events since the last frame, `seconds` ago; with the pointer `free` it can be pressed, and with `keys`
    *  (a menu up) it takes the keys and the pad. Answers whether it took the wheel. */
   hear(seconds: number, free: boolean, keys: boolean): boolean {
+    this.framing = true;
     const taken = this.events.take();
     this.heardAt = performance.now();
     this.ui?.frame(this.view, taken, seconds, free, keys);
@@ -62,6 +62,19 @@ export class DrawnInterface {
     if (ui.pressed) drawnPress(this.heardAt);
     ui.renderer.present(view.width, view.height);
     this.events.sync(ui.typing, ui.cursor);
+  }
+
+  /** A frame of `stack` alone, before the game's own frames, and the next asked for. */
+  private alone(stack: Stack, before: number): void {
+    requestAnimationFrame((now) => {
+      if (this.framing) return;
+      // Heard by nothing while the world loads (the tap to start hears the page itself), so no key pressed then
+      // presses what takes the focus once the game's frames begin.
+      this.events.take();
+      this.ui?.frame(this.view, [], Math.min(0.1, (now - before) / 1000));
+      this.present(stack);
+      this.alone(stack, now);
+    });
   }
 
   private get view() {

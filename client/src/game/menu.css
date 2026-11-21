@@ -1,9 +1,0 @@
-/* The menu's station pages still made of elements (client/src/game/stationPages.ts). The gear screen's sheet gives
-   the words, wells and headings they share. */
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-}

@@ -282,7 +282,7 @@ function fitHeights(face: Face, item: Item): void {
   let least = 0;
   if (node.text) {
     item.lines = linesOf(face, item, Math.max(1, item.w - pad[1] - pad[3]));
-    fit = least = item.lines.length * lineHeight(node.text.size ?? 1);
+    fit = least = item.lines.length * (node.text.leading ?? lineHeight(node.text.size ?? 1));
   } else if (node.picture?.pixel && node.height === undefined) {
     fit = least = node.picture.pixel.height;
   } else {

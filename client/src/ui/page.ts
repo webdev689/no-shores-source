@@ -1,6 +1,6 @@
-// The page's own services that a screen drawn by the game asks for and cannot draw: opening a link in a new tab, and
-// the page's address, loaded again or left for another. Only here, canvasEvents.ts, pictures.ts and announce.ts touch
-// the page, so the interface itself runs anywhere.
+// The page's own services that a screen drawn by the game asks for and cannot draw: opening a link in a new tab, the
+// page's address, loaded again or left for another, and its touches held. Only here, canvasEvents.ts, pictures.ts and
+// announce.ts touch the page, so the interface itself runs anywhere.
 
 /** What a screen asks of the page. */
 export interface Page {
@@ -21,3 +21,9 @@ export const PAGE: Page = {
   assign: (url) => location.assign(url),
   address: () => location.href,
 };
+
+/** Holds every touch on `surface` for the game while `held`: no drag pans the page or pulls it to reload, so a touch
+ *  held is never cut short. Let go, the surface takes the page's touches again. */
+export function touchesHeld(surface: { readonly style: { touchAction: string } }, held: boolean): void {
+  surface.style.touchAction = held ? 'none' : '';
+}

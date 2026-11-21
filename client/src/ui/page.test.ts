@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { PAGE } from './page.ts';
+import { PAGE, touchesHeld } from './page.ts';
 
 test('a link opens in a new tab, apart from the game', () => {
   const opened: unknown[][] = [];
@@ -12,4 +12,12 @@ test('a link opens in a new tab, apart from the game', () => {
     Object.assign(globalThis, { window: before });
   }
   assert.deepEqual(opened, [['https://example.org/', '_blank', 'noopener']]);
+});
+
+test('a surface held keeps every touch from the page, and takes them back once let go', () => {
+  const surface = { style: { touchAction: '' } };
+  touchesHeld(surface, true);
+  assert.equal(surface.style.touchAction, 'none');
+  touchesHeld(surface, false);
+  assert.equal(surface.style.touchAction, '');
 });

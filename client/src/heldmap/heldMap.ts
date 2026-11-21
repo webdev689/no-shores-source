@@ -1,8 +1,7 @@
 // The held map at the helm: the parchment raised in the player's gauntlets, the discovered world on it, panned,
 // zoomed and clicked to choose where to sail; lowered with or without a destination. The forge's art is the owner's
 // own; its rules are DFO's held map's (heldMapLaw.ts).
-import { button, make } from '../editor/dom.ts';
-import { ROLES } from '../plus/kit.ts';
+import { TONES } from '../plus/tones.ts';
 import type { Gpu } from '../gpu.ts';
 import { forgeName } from '../firstperson/fpFrames.ts';
 import { WORLD_FRAME } from '../overworld/discovery.ts';
@@ -26,6 +25,11 @@ import {
   zoomAt,
 } from './heldMapLaw.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
+import { button } from '../ui/controls.ts';
+import type { Child, Drawing, Node, Picture } from '../ui/node.ts';
+import { colourOf } from '../ui/quads.ts';
+import type { Stack } from '../ui/stack.ts';
+import type { Interface } from '../ui/ui.ts';
 
 /** The world's frame, metres. */
 const WORLD = { width: WORLD_FRAME.widthM, height: WORLD_FRAME.heightM } as const;
@@ -80,10 +84,9 @@ export class HeldMap {
   private readonly view: HeldMapView;
   private readonly store: ForgeStore;
   private readonly plan: (to: Point2) => Course;
-  private readonly layer = make('div', '', 'held-map');
-  private readonly ship = make('div', '', 'held-ship');
-  private readonly card = make('div', '', 'held-card');
-  private readonly labels = new Map<string, HTMLElement>();
+  /** How far up the map stands and how far down its lowering it is drawn, CSS pixels, while its marks show. */
+  private shownAt: { readonly lift: number; readonly drop: number } | null = null;
+  private shipAt: { readonly x: number; readonly y: number; readonly heading: number } | null = null;
   private phase: Phase = { kind: 'closed' };
   private mapView: View = { left: 0, top: 0, scale: 1 };
   private ink: Rect = { x: 0, y: 0, width: 1, height: 1 };
@@ -98,13 +101,11 @@ export class HeldMap {
   private clock = 0;
   private lowered: (sail: Point2 | null) => void = () => undefined;
 
-  constructor(gpu: Gpu, field: CoastField, store: ForgeStore, plan: (to: Point2) => Course, root: HTMLElement) {
+  constructor(gpu: Gpu, field: CoastField, store: ForgeStore, plan: (to: Point2) => Course, stack: Stack) {
     this.view = new HeldMapView(gpu, field);
     this.store = store;
     this.plan = plan;
-    this.layer.append(this.ship, this.card);
-    this.layer.hidden = true;
-    root.append(this.layer);
+    stack.add((ui) => this.node(ui));
   }
 
   /** Whether the map is up, rising or lowering: the sea's own input waits while it is. */
@@ -132,7 +133,6 @@ export class HeldMap {
     this.mapView = viewOn(ship, this.ink, WORLD);
     this.choice = null;
     this.phase = { kind: 'opening', t: 0 };
-    this.layer.hidden = false;
   }
 
   /** Lowers the map from wherever it is in its rise; `sail` is the destination set, or null. */
@@ -236,7 +236,7 @@ export class HeldMap {
     // The rise waits for the art the first time it is asked for; lowering never waits.
     const waiting = !this.view.ready && this.phase.kind === 'opening';
     const lift = this.advance(waiting ? 0 : dt);
-    this.layer.hidden = lift === null || !this.view.ready;
+    this.shownAt = null;
     if (lift === null || !this.view.ready) return null;
     const stage = stageOf(viewport);
     if (stage.ink.width !== this.ink.width || stage.ink.height !== this.ink.height)
@@ -293,58 +293,167 @@ export class HeldMap {
     return frame < HANDS_FRAMES ? frame : 0;
   }
 
-  /** The names, the ship's arrow and the card laid over the parchment, `drop` pixels down its lowering. */
+  /** Where the names and the ship's arrow stand on the parchment, `drop` pixels down its lowering. */
   private layout(scene: HeldMapScene, drop: number, lift: number): void {
-    this.layer.style.opacity = String(lift);
+    this.shownAt = { lift, drop };
     const onSheet = (x: number, y: number) => x >= 0 && y >= 0 && x <= this.ink.width && y <= this.ink.height;
     this.placed = [];
-    const seen = new Set<string>();
     for (const place of scene.places) {
       const [x, y] = toInk(this.mapView, place.at[0], place.at[1]);
-      if (!onSheet(x, y)) continue;
-      this.placed.push({ place, x, y });
-      seen.add(place.id);
-      let label = this.labels.get(place.id);
-      if (!label) {
-        label = make('div', place.name, `held-mark ${place.kind}`);
-        this.labels.set(place.id, label);
-        this.layer.append(label);
-      }
-      label.style.transform = `translate(${this.ink.x + x}px, ${this.ink.y + y + drop}px)`;
-      label.classList.toggle('chosen', this.choice?.place === place.id);
+      if (onSheet(x, y)) this.placed.push({ place, x, y });
     }
-    for (const [id, label] of this.labels)
-      if (!seen.has(id)) {
-        label.remove();
-        this.labels.delete(id);
-      }
     const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
-    this.ship.hidden = !onSheet(shipX, shipY);
-    this.ship.style.transform = `translate(${this.ink.x + shipX}px, ${this.ink.y + shipY + drop}px) rotate(${scene.heading}rad)`;
-    this.layoutCard(drop);
+    this.shipAt = onSheet(shipX, shipY) ? { x: shipX, y: shipY, heading: scene.heading } : null;
   }
 
-  private layoutCard(drop: number): void {
-    const choice = this.choice;
-    this.card.hidden = !choice;
-    if (!choice) return;
-    const words = choice.course.ok ? `Set a course for ${choice.name}` : choice.course.why;
-    const shape = `${words} ${this.picked}`;
-    if (this.card.dataset['words'] !== shape) {
-      this.card.dataset['words'] = shape;
-      const sail = button('Set sail  Enter', () => this.setSail());
-      sail.classList.add(ROLES.primary);
-      sail.hidden = !choice.course.ok;
-      const seas = make('div', '', 'held-card-seas');
-      seas.hidden = !choice.course.ok;
-      for (const [difficulty, label, said] of DIFFICULTY_WORDS) {
-        const pick = button(label, () => (this.picked = difficulty));
-        pick.classList.add(ROLES[difficulty === this.picked ? 'primary' : 'button']);
-        pick.title = said;
-        seas.append(pick);
-      }
-      this.card.replaceChildren(make('div', words, 'held-card-words'), seas, sail);
-    }
-    this.card.style.transform = `translate(${this.ink.x + this.ink.width / 2}px, ${this.ink.y + drop - 12}px) translate(-50%, -100%)`;
+  /** The names, the ship's arrow and the card over the parchment the GPU draws, written in its ink: drawn by the game
+   *  as a layer of its interface while the map is up. */
+  node(ui: Interface): Child {
+    const shown = this.shownAt;
+    if (!shown) return null;
+    const { x, y } = this.ink;
+    const pinned = (left: number, top: number) => ({
+      to: 'screen' as const,
+      x: Math.round(x + left),
+      y: Math.round(y + top + shown.drop),
+    });
+    const ship = this.shipAt;
+    return {
+      width: 'grow',
+      height: 'grow',
+      opacity: shown.lift,
+      children: [
+        ...this.placed.map(({ place, x: left, y: top }) =>
+          markNode(place, this.choice?.place === place.id, pinned(left, top)),
+        ),
+        ship && {
+          width: 12,
+          height: 16,
+          // Turned to the ship's heading about its middle, a pixel from where the sheet turned it.
+          picture: { ...SHIP_ARROW, turn: (ship.heading * 180) / Math.PI },
+          through: true,
+          float: { to: 'screen', x: Math.round(x + ship.x - 6), y: Math.round(y + ship.y + shown.drop - 9) },
+        },
+        this.cardNode(ui, shown.drop),
+      ],
+    };
   }
+
+  /** The card over the parchment's top: where the course is set for, the seas to sail it in, and the press to sail. */
+  private cardNode(ui: Interface, drop: number): Child {
+    const choice = this.choice;
+    if (!choice) return null;
+    const ok = choice.course.ok;
+    const words = ok ? `Set a course for ${choice.name}` : choice.course.why;
+    const said = (text: string): Node => ({ text: { words: text, colour: TONES.ink, wrap: false }, through: true });
+    return {
+      id: 'held-card',
+      alignY: 'center',
+      gap: 14,
+      padding: [8, 14],
+      // Drawn, not filled, so only its presses take the pointer and a click beside them reaches the map.
+      draw: cardGround,
+      float: {
+        to: 'screen',
+        anchor: [0.5, 1],
+        x: Math.round(this.ink.x + this.ink.width / 2),
+        y: Math.round(this.ink.y + drop - 12),
+      },
+      children: [
+        said(words),
+        ok && {
+          gap: 0,
+          children: DIFFICULTY_WORDS.map(([difficulty, label, told]) =>
+            button(ui, `held-seas:${difficulty}`, label, () => (this.picked = difficulty), {
+              role: difficulty === this.picked ? 'primary' : 'button',
+              padding: [7, 14],
+              label: `${label}: ${told}`,
+            }),
+          ),
+        },
+        ok && button(ui, 'held-sail', 'Set sail  Enter', () => this.setSail(), { role: 'primary', padding: [7, 14] }),
+      ],
+    };
+  }
+}
+
+/** The card's ground and its gold edge. */
+const cardGround: Drawing = (renderer, box, scale, clip, fade) => {
+  const tone = (css: string) => {
+    const [red, green, blue, alpha] = colourOf(css);
+    return [red, green, blue, alpha * fade] as const;
+  };
+  const { x, y, width, height } = box;
+  renderer.quads.add(box, tone('rgba(10, 13, 17, 0.72)'), clip);
+  const gold = tone('#f3cf6a');
+  for (const edge of [
+    { x, y, width, height: scale },
+    { x, y: y + height - scale, width, height: scale },
+    { x, y, width: scale, height },
+    { x: x + width - scale, y, width: scale, height },
+  ])
+    renderer.quads.add(edge, gold, clip);
+};
+
+/** The ship's arrow on the map: a red point 12 px across and 16 tall. */
+const SHIP_ARROW: Picture = {
+  key: 'held ship',
+  source: {
+    draw: (context, width, height) => {
+      context.fillStyle = '#781c14';
+      context.beginPath();
+      context.moveTo(width / 2, 0);
+      context.lineTo(width, height);
+      context.lineTo(0, height);
+      context.closePath();
+      context.fill();
+    },
+  },
+};
+
+/** A ring, or a dot for a port, 9 px across in the map's ink. */
+const markDot = (port: boolean): Picture => ({
+  key: port ? 'held port' : 'held mark',
+  source: {
+    draw: (context, width, height) => {
+      const radius = Math.min(width, height) / 2 - 1;
+      context.strokeStyle = context.fillStyle = MAP_INK;
+      context.lineWidth = (1.5 * width) / 9;
+      context.beginPath();
+      context.arc(width / 2, height / 2, radius, 0, 2 * Math.PI);
+      if (port) context.fill();
+      context.stroke();
+    },
+  },
+});
+
+const MAP_INK = '#3a2816';
+const MAP_ROUTE = '#781c14';
+
+/** A place's name on the map, its ring or dot at its point and its name beside it; the chosen one in the route's red. */
+export function markNode(
+  place: MapPlace,
+  chosen: boolean,
+  pin: { readonly to: 'screen'; readonly x: number; readonly y: number },
+): Node {
+  const port = place.kind === 'port';
+  return {
+    gap: 4,
+    // Words on the map: a click on them reaches the map, which picks the place.
+    through: true,
+    float: { ...pin, x: pin.x - 4, y: pin.y - 8 },
+    children: [
+      { padding: [4, 0, 0, 0], children: [{ width: 9, height: 9, picture: markDot(port) }] },
+      {
+        text: {
+          words: place.name,
+          colour: chosen ? MAP_ROUTE : MAP_INK,
+          edge: 'halo',
+          edgeColour: '#eedebe',
+          tracking: port ? 2 : 1,
+          wrap: false,
+        },
+      },
+    ],
+  };
 }

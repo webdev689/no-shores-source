@@ -34,7 +34,9 @@ export class Stack {
     return {
       width: 'grow',
       height: 'grow',
-      children: this.layers.map((layer) => {
+      // Over a copy, so a layer that takes itself away as it is built (a window closed by its own press) leaves the
+      // layers after it drawn.
+      children: [...this.layers].map((layer) => {
         const shown = layer(ui);
         return shown && { width: 'grow', height: 'grow', float: { to: 'screen' }, children: [shown] };
       }),

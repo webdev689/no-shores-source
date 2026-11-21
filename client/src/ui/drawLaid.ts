@@ -66,8 +66,11 @@ function drawLine(
   for (const span of spans) colours.push(...Array.from(span.words, () => span.colour || ink.colour));
   const { glyphs } = layLine(ui.face, words, where.size, where.tracking);
   const { x, y, size, scale } = where;
+  // A glyph in a clear colour keeps its room and draws nothing, its edge neither: words still to be typed.
+  const unseen = colours.map((css) => colourOf(css)[3] <= 0);
   const drawn = (offsetX: number, offsetY: number, colourOf: (index: number) => Colour) => {
     for (const laid of glyphs) {
+      if (unseen[laid.index]) continue;
       const texels = ui.glyphTexels(laid.glyph);
       if (!texels) continue;
       const box = {
@@ -150,7 +153,9 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
     if (node.picture) ui.picture(node.picture, scaled(inner, scale), clip, fade);
     if (node.text) {
       const size = node.text.size ?? 1;
-      const tall = lineHeight(size);
+      const tall = node.text.leading ?? lineHeight(size);
+      // The words stand in the middle of a line set taller (or shorter) than the face's own.
+      const lift = Math.floor((tall - lineHeight(size)) / 2);
       each.lines.forEach((line, index) => {
         const tracking = node.text?.tracking;
         const width = layLine(ui.face, line.map((span) => span.words).join(''), size, tracking).width;
@@ -161,7 +166,7 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
         drawLine(
           ui,
           line,
-          { x, y: inner.y + index * tall, size, scale, tracking },
+          { x, y: inner.y + index * tall + lift, size, scale, tracking },
           { colour, edge: node.text?.edge, edgeColour: node.text?.edgeColour, edgeWidth: node.text?.edgeWidth, fade },
           clip,
         );

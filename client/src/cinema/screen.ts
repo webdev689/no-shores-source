@@ -1,10 +1,17 @@
 // What a cutscene lays over the picture: a fade to black or white, the letterbox's bars, a flash, eyelids for waking,
-// a blur on the view, the game's title and a prompt that breathes. Plain elements over the canvas; each eases by its
-// own transition, so the page never steps them frame by frame except the eyelids and the blur, which the story drives.
+// the game's title and a prompt that breathes, drawn by the game as a layer of its interface over every other; and a
+// blur on the view, which the scene draws into its own picture under the interface (game/blur.ts). Each eases by its
+// own time as the page's transitions eased, but the eyelids and the blur, which the story drives frame by frame.
 // While it stands, a touch on the view is the story's alone: no drag pans the page or pulls it to reload, so a held
 // touch is never cut short.
-
-const STYLE_ID = 'cinema-screen';
+import { motionReduced } from '../plus/kit.ts';
+import type { Child, Drawing, Node } from '../ui/node.ts';
+import { colourOf } from '../ui/quads.ts';
+import { touchesHeld } from '../ui/page.ts';
+import type { Layer, Stack } from '../ui/stack.ts';
+import type { Interface } from '../ui/ui.ts';
+import { ease } from '../ui/ease.ts';
+import { breath, dropped, Eased, pageClock, ruleOf } from './cinemaParts.ts';
 
 /** The title as the screen shows it. */
 export const TITLE = 'Overlook';
@@ -12,144 +19,112 @@ export const TITLE = 'Overlook';
 /** Whether the page is played by touch, so its prompts say tap and hold rather than name keys. */
 export const playedByTouch = (): boolean => globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;
 
-function screenCss(): string {
-  return `
-.cinema { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 30; }
-.cinema-veil { position: absolute; inset: 0; opacity: 0; transition-property: opacity; transition-timing-function: ease-in-out; }
-.cinema-black { background: #020305; }
-.cinema-white { background: #f4f1ea; }
-.cinema-bar { position: absolute; left: 0; right: 0; height: 11vh; background: #020305;
-  transition: transform 1.2s ease-in-out; }
-.cinema-bar.top { top: 0; transform: translateY(-100%); }
-.cinema-bar.bottom { bottom: 0; transform: translateY(100%); }
-.cinema.barred .cinema-bar { transform: none; }
-.cinema-lid { position: absolute; left: -5%; right: -5%; height: 52%; background: #050403; }
-.cinema-lid.top { top: 0; border-radius: 0 0 50% 50% / 0 0 22% 22%; }
-.cinema-lid.bottom { bottom: 0; border-radius: 50% 50% 0 0 / 22% 22% 0 0; }
-.cinema-title { position: absolute; left: 0; right: 0; top: 30%; text-align: center; opacity: 0;
-  transition: opacity 2.4s ease-in-out; }
-.cinema-title.shown { opacity: 1; }
-.cinema-name { display: inline-block; font-size: min(99px, 10vw); line-height: 1; letter-spacing: round(up, calc(8em / 22), 1px);
-  text-transform: uppercase; color: #e9d8a6;
-  text-shadow: 0 4px 0 #3a2c14, 0 0 22px rgba(0, 0, 0, 0.85), 0 0 4px rgba(0, 0, 0, 0.9); }
-.cinema-rule { width: 440px; max-width: 70vw; height: 4px; margin: 22px auto 0;
-  background: linear-gradient(90deg, transparent, #b8975a 18%, #e9d8a6 50%, #b8975a 82%, transparent); }
-.cinema-prompt { position: absolute; left: 0; right: 0; bottom: 18%; text-align: center; font-size: 22px;
-  letter-spacing: round(up, calc(5em / 22), 1px); text-transform: uppercase; color: #efe6cf; opacity: 0;
-  text-shadow: 0 2px 0 #000, 0 0 11px rgba(0, 0, 0, 0.9); transition: opacity 0.8s ease-in-out; }
-.cinema-prompt.shown { opacity: 1; animation: cinema-breathe 2.2s ease-in-out infinite; }
-@keyframes cinema-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-.cinema-skip { position: absolute; right: 33px; bottom: 33px; font-size: 11px; letter-spacing: 1px; color: #efe6cf;
-  text-transform: uppercase; opacity: 0; transition: opacity 0.4s; text-shadow: 0 1px 0 #000; }
-.cinema-skip.shown { opacity: 0.45; }
-.cinema-skip.shown.held { opacity: 0.9; }
-.cinema-skip i { display: block; height: 2px; margin-top: 6px; background: #e9d8a6; transform-origin: left;
-  transform: scaleX(0); }
-@media (prefers-reduced-motion: reduce) {
-  .cinema-prompt.shown { animation: none; }
-  .cinema-bar { transition: none; }
-}
-`;
-}
+/** How the screen stands over every other layer of the interface, the HUD's and the menu's. */
+export const SCREEN_Z = 30;
+const BLACK = '#020305';
+const WHITE = '#f4f1ea';
+const LID = '#050403';
+const TITLE_RULE = ruleOf('cinema rule', [
+  [0.18, '#b8975a'],
+  [0.5, '#e9d8a6'],
+  [0.82, '#b8975a'],
+]);
 
-function made(page: Document, className: string, parent: HTMLElement, text = ''): HTMLElement {
-  const element = page.createElement('div');
-  element.className = className;
-  element.textContent = text;
-  parent.append(element);
-  return element;
-}
-
-/** The screen's layers over a canvas, laid into `root`. */
-export class Screen {
-  private readonly root: HTMLElement;
-  private readonly hudRoot: HTMLElement;
-  private readonly canvas: HTMLElement;
-  private readonly black: HTMLElement;
-  private readonly white: HTMLElement;
-  private readonly lidTop: HTMLElement;
-  private readonly lidBottom: HTMLElement;
-  private readonly title: HTMLElement;
-  private readonly prompt: HTMLElement;
-  private readonly skip: HTMLElement;
-  private readonly skipFill: HTMLElement;
-
-  constructor(root: HTMLElement, canvas: HTMLElement) {
-    const page = root.ownerDocument;
-    if (!page.getElementById(STYLE_ID)) {
-      const sheet = page.createElement('style');
-      sheet.id = STYLE_ID;
-      sheet.textContent = screenCss();
-      page.head.append(sheet);
+/** An eyelid, its edge toward the eye an ellipse 22% of its height deep, as the sheet's
+ *  `border-radius: 0 0 50% 50% / 0 0 22% 22%` rounded it, drawn a row of device pixels at a time; `top` for the
+ *  upper lid. */
+function lidOf(top: boolean): Drawing {
+  const [red, green, blue] = colourOf(LID);
+  return (renderer, box, _scale, clip, fade) => {
+    const tone = [red, green, blue, fade] as const;
+    const deep = Math.round(box.height * 0.22);
+    const flat = box.height - deep;
+    renderer.quads.add({ x: box.x, y: top ? box.y : box.y + deep, width: box.width, height: flat }, tone, clip);
+    for (let row = 0; row < deep; row++) {
+      // How far across the ellipse reaches at this row, from its widest by the lid's flat part to its tip.
+      const down = (row + 0.5) / deep;
+      const half = (box.width / 2) * Math.sqrt(Math.max(0, 1 - down * down));
+      const y = top ? box.y + flat + row : box.y + deep - 1 - row;
+      renderer.quads.add({ x: box.x + box.width / 2 - half, y, width: 2 * half, height: 1 }, tone, clip);
     }
+  };
+}
+
+/** The screen's layers, drawn as a layer of `stack` over the game's interface. */
+export class Screen {
+  private readonly canvas: HTMLElement;
+  private readonly clock: () => number;
+  private readonly black = new Eased(0);
+  private readonly white = new Eased(0);
+  private readonly barred = new Eased(0);
+  private readonly titled = new Eased(0);
+  private readonly prompted = new Eased(0);
+  private readonly skipShown = new Eased(0, ease);
+  private shut = 0;
+  private blurred = 0;
+  private prompt = '';
+  private skipShare = 0;
+  private readonly skipWords: string;
+  private readonly removeLayer: () => void;
+
+  constructor(stack: Stack, canvas: HTMLElement, clock: () => number = pageClock) {
     this.canvas = canvas;
-    this.hudRoot = root;
-    for (const surface of [canvas, root]) surface.style.touchAction = 'none';
-    this.root = made(page, 'cinema', root);
-    made(page, 'cinema-bar top', this.root);
-    made(page, 'cinema-bar bottom', this.root);
-    this.lidTop = made(page, 'cinema-lid top', this.root);
-    this.lidBottom = made(page, 'cinema-lid bottom', this.root);
-    this.title = made(page, 'cinema-title', this.root);
-    made(page, 'cinema-name', this.title, TITLE);
-    made(page, 'cinema-rule', this.title);
-    this.prompt = made(page, 'cinema-prompt', this.root);
-    this.skip = made(page, 'cinema-skip', this.root, playedByTouch() ? 'Hold to skip' : 'Hold Space to skip');
-    this.skipFill = page.createElement('i');
-    this.skip.append(this.skipFill);
-    this.white = made(page, 'cinema-veil cinema-white', this.root);
-    this.black = made(page, 'cinema-veil cinema-black', this.root);
-    this.lids(0);
+    this.clock = clock;
+    this.skipWords = playedByTouch() ? 'Hold to skip' : 'Hold Space to skip';
+    touchesHeld(canvas, true);
+    const layer: Layer = (ui) => this.node(ui);
+    this.removeLayer = stack.add(layer);
   }
 
   /** Fades to black (or white) at `opacity` over `seconds`. */
   fade(opacity: number, seconds: number, colour: 'black' | 'white' = 'black'): void {
     const veil = colour === 'black' ? this.black : this.white;
-    veil.style.transitionDuration = `${Math.max(0, seconds)}s`;
-    veil.style.opacity = String(Math.min(1, Math.max(0, opacity)));
+    veil.set(Math.min(1, Math.max(0, opacity)), seconds, this.clock());
   }
 
-  /** A white flash: up at once, then down over `seconds`. */
+  /** A white flash: up at once and seen whole for a frame, then down over `seconds`. */
   flash(seconds: number): void {
-    this.fade(1, 0, 'white');
-    // The next frame's change starts the fade, so the white is seen whole first.
-    requestAnimationFrame(() => this.fade(0, seconds, 'white'));
+    const now = this.clock();
+    this.white.set(1, 0, now);
+    this.white.set(0, seconds, now, 1 / 60);
   }
 
   /** The letterbox's bars, in or out. */
   bars(shown: boolean): void {
-    this.root.classList.toggle('barred', shown);
+    this.barred.set(shown ? 1 : 0, motionReduced() ? 0 : 1.2, this.clock());
   }
 
   /** The eyelids, 0 open to 1 shut. */
   lids(shut: number): void {
-    const share = Math.min(1, Math.max(0, shut));
-    this.lidTop.style.transform = `translateY(${(share - 1) * 104}%)`;
-    this.lidBottom.style.transform = `translateY(${(1 - share) * 104}%)`;
+    this.shut = Math.min(1, Math.max(0, shut));
   }
 
   /** The view blurred by `pixels`, as eyes that cannot yet focus see it. */
   blur(pixels: number): void {
-    this.canvas.style.filter = pixels > 0.05 ? `blur(${pixels.toFixed(1)}px)` : '';
+    this.blurred = Math.max(0, pixels);
+  }
+
+  /** How far the view is blurred now, CSS pixels: the scene draws it into its picture. */
+  get blurPixels(): number {
+    return this.blurred > 0.05 ? this.blurred : 0;
   }
 
   /** The game's title over the view, or not. */
   showTitle(shown: boolean): void {
-    this.title.classList.toggle('shown', shown);
+    this.titled.set(shown ? 1 : 0, 2.4, this.clock());
   }
 
   /** A prompt that breathes under the title, or none. */
   showPrompt(text: string | null): void {
-    if (text !== null) this.prompt.textContent = text;
-    this.prompt.classList.toggle('shown', text !== null);
+    if (text !== null) this.prompt = text;
+    this.prompted.set(text === null ? 0 : 1, 0.8, this.clock());
   }
 
   /** The skip's hint, faint while a cutscene can be skipped and bright while the hold fills its `share`; null hides it
    *  where there is nothing to skip. */
   showSkip(share: number | null): void {
-    this.skip.classList.toggle('shown', share !== null);
-    this.skip.classList.toggle('held', share !== null && share > 0);
-    this.skipFill.style.transform = `scaleX(${share ?? 0})`;
+    this.skipShare = share ?? 0;
+    this.skipShown.set(share === null ? 0 : share > 0 ? 0.9 : 0.45, 0.4, this.clock(), 0);
   }
 
   /** Lets every layer go: the view back as it was. */
@@ -164,10 +139,131 @@ export class Screen {
     this.showSkip(null);
   }
 
-  /** Takes the screen away, giving the canvas and the HUD back their own touches. */
+  /** Takes the screen away, giving the canvas back its own touches. */
   remove(): void {
     this.blur(0);
-    for (const surface of [this.canvas, this.hudRoot]) surface.style.touchAction = '';
-    this.root.remove();
+    touchesHeld(this.canvas, false);
+    this.removeLayer();
+  }
+
+  /** The screen this frame, over the whole view. */
+  node(ui: Interface): Node {
+    const now = this.clock();
+    const { width, height } = ui.size;
+    const still = motionReduced();
+    const barTall = Math.round(height * 0.11);
+    const barred = this.barred.value(now);
+    const lidTall = Math.round(height * 0.52);
+    const lidWide = Math.round(width * 1.1);
+    const lid = (top: boolean): Node => ({
+      id: `cinema-lid-${top ? 'top' : 'bottom'}`,
+      width: lidWide,
+      height: lidTall,
+      draw: lidOf(top),
+      float: {
+        to: 'screen',
+        anchor: [0.5, top ? 0 : 1],
+        at: [0.5, top ? 0 : 1],
+        y: Math.round((top ? this.shut - 1 : 1 - this.shut) * 1.04 * lidTall),
+      },
+    });
+    const bar = (top: boolean): Child =>
+      barred > 0 && {
+        width,
+        height: barTall,
+        fill: BLACK,
+        float: {
+          to: 'screen',
+          at: [0, top ? 0 : 1],
+          anchor: [0, top ? 0 : 1],
+          y: Math.round((top ? -1 : 1) * (1 - barred) * barTall),
+        },
+      };
+    const veil = (eased: Eased, colour: string): Child => {
+      const shown = eased.value(now);
+      return shown > 0 && { width, height, fill: colour, opacity: shown, float: { to: 'screen' } };
+    };
+    return {
+      width: 'grow',
+      height: 'grow',
+      through: true,
+      clip: true,
+      float: { to: 'screen', z: SCREEN_Z },
+      children: [
+        bar(true),
+        bar(false),
+        this.shut > 0 && lid(true),
+        this.shut > 0 && lid(false),
+        this.titleNode(width, height, now),
+        this.promptNode(width, height, now, still),
+        this.skipNode(now),
+        veil(this.white, WHITE),
+        veil(this.black, BLACK),
+      ],
+    };
+  }
+
+  private titleNode(width: number, height: number, now: number): Child {
+    const shown = this.titled.value(now);
+    if (shown <= 0) return null;
+    // min(99px, 10vw), in the face's whole steps of 11 px.
+    const size = Math.max(1, Math.min(9, Math.floor((width * 0.1) / 11)));
+    return {
+      width,
+      direction: 'column',
+      alignX: 'center',
+      // The rule stands 22 px under the name; the name's shadow, 4 px of that, is laid in its own box.
+      gap: 18,
+      opacity: shown,
+      float: { to: 'screen', y: Math.round(height * 0.3) },
+      children: [
+        dropped(
+          { words: TITLE.toUpperCase(), size, leading: size * 11, colour: '#e9d8a6', tracking: 8, wrap: false },
+          '#3a2c14',
+          4,
+        ),
+        { width: Math.min(440, Math.round(width * 0.7)), height: 4, picture: TITLE_RULE },
+      ],
+    };
+  }
+
+  private promptNode(width: number, height: number, now: number, still: boolean): Child {
+    const shown = this.prompted.value(now);
+    if (shown <= 0 || this.prompt === '') return null;
+    const breathing = still || this.prompted.target === 0 ? 1 : breath(now);
+    return {
+      width,
+      alignX: 'center',
+      opacity: shown * breathing,
+      float: { to: 'screen', anchor: [0, 1], at: [0, 1], y: -Math.round(height * 0.18) },
+      children: [
+        dropped({ words: this.prompt.toUpperCase(), size: 2, colour: '#efe6cf', tracking: 5, wrap: false }, '#000', 2),
+      ],
+    };
+  }
+
+  private skipNode(now: number): Child {
+    const shown = this.skipShown.value(now);
+    if (shown <= 0) return null;
+    return {
+      direction: 'column',
+      gap: 6,
+      opacity: shown,
+      float: { to: 'screen', anchor: [1, 1], at: [1, 1], x: -33, y: -33 },
+      children: [
+        dropped(
+          { words: this.skipWords.toUpperCase(), size: 1, colour: '#efe6cf', tracking: 2, wrap: false },
+          '#000',
+          1,
+        ),
+        {
+          width: 'grow',
+          height: 2,
+          children: [
+            this.skipShare > 0 && { width: `${Math.round(this.skipShare * 100)}%`, height: 2, fill: '#e9d8a6' },
+          ],
+        },
+      ],
+    };
   }
 }
