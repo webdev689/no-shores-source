@@ -232,7 +232,7 @@ export interface GearState {
    *  refuses one shown before the day turned. */
   readonly day?: number;
   /** In a patrol, its dungeons' entrances, five numbers each: x, y, the ground's height, the model's yaw and which
-   *  of the four entrance models it is. */
+   *  of the six entrance models it is (0 to 5). */
   readonly dungeons?: readonly number[];
 }
 

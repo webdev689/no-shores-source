@@ -16,7 +16,7 @@ export const BEFORE_DOOR_M = 1.5;
 type Point = readonly [number, number, number];
 
 /** An entrance as the room gives it: where it stands on the ground, the model's yaw (radians clockwise from north,
- *  turning its +z as an RMB block's yaw does) and which of the four models it is. */
+ *  turning its +z as an RMB block's yaw does) and which of the six models it is. */
 export interface Entrance {
   readonly x: number;
   readonly y: number;

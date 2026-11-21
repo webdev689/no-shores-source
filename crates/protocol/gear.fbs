@@ -154,7 +154,7 @@ table Gear {
   day: uint;
   // In a patrol, the entrances of its dungeons, five numbers each in the dungeons' order: x, y, the ground's height
   // there, the model's yaw (radians clockwise from north, turning its +z as an RMB block's yaw does), and which of
-  // the four entrance models it is (0 to 3).
+  // the six entrance models it is (0 to 5).
   dungeons: [double];
 }
 
