@@ -15,18 +15,23 @@ use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
 use room::winds::epoch_of;
-use room::{Floor, FoeSeen, NodeKind, PlayerId, Refused, Room, Section, Seen};
+use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
 use serde::Deserialize;
 use std::cell::RefCell;
 
 mod course_door;
 mod deck_door;
+mod snapshot_door;
+pub use snapshot_door::snapshot;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;
+mod isle_door;
 mod roster_door;
+mod sea_door;
+mod waters_door;
 
-pub use fighter_door::{arms_code, predict, set_course, set_ground};
+pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's, and why it takes no
@@ -93,6 +98,7 @@ fn counter_of(found: &NodeCounter) -> Option<Counter> {
         "vault" => CounterKind::Vault,
         "armorsmith" => CounterKind::Vendor(Vendor::Armorsmith),
         "weaponsmith" => CounterKind::Vendor(Vendor::Weaponsmith),
+        "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
         "tailor" => CounterKind::Tailor,
         "tack" => CounterKind::Tack,
         _ => CounterKind::Faction(faction()?.id),
@@ -175,23 +181,35 @@ pub fn refusal() -> Option<String> {
     .flatten()
 }
 
-/// Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; answers whether
-/// the text was a layout.
+/// The sea's opening text with its ports: `{ "layout": <layout file>, "ports": [{ "id", "name", "continent",
+/// "centre": [x, y] }] }`, the ports as the waters' door takes them.
+#[derive(Deserialize)]
+struct SeaRequest {
+    layout: world::layout::Layout,
+    ports: Vec<world::traffic::Port>,
+}
+
+/// Opens the sea round the continents of a layout, its pirates' chances drawn from `seed`: the text is a layout file,
+/// or a layout with its ports (`SeaRequest`), whose lanes the Grey Tithe patrols. Answers whether the text was either.
 pub fn open_sea(text: &[u8], seed: u32) -> bool {
-    let Some(layout) = std::str::from_utf8(text).ok().and_then(|text| world::layout::parse(text).ok()) else {
-        return false;
+    let Ok(text) = std::str::from_utf8(text) else { return false };
+    let opened = match serde_json::from_str::<SeaRequest>(text) {
+        Ok(request) => Some((request.layout, request.ports)),
+        Err(_) => world::layout::parse(text).ok().map(|layout| (layout, Vec::new())),
     };
-    let mut sea = Sea::new(&layout, deck_door::sloop_deck().clone(), seed);
-    sea.set_epoch(EPOCH_MS.get());
+    let Some((layout, ports)) = opened else { return false };
+    let mut sea = Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports);
+    sea.set_hull_decks(deck_door::hull_decks().to_vec());
+    sea.set_world_start(EPOCH_MS.get() / 1000.0);
     keep(Opened::Sea(Box::new(sea)));
     true
 }
 
 /// Opens a fleet room on the open sea.
 pub fn open_fleet() {
-    let mut fleet = Fleet::new();
-    fleet.set_epoch(EPOCH_MS.get());
-    keep(Opened::Fleet(Box::new(fleet)));
+    keep(Opened::Fleet(Box::new(Fleet::new())));
+    // Its predictions take the same world time as the room.
+    set_epoch(EPOCH_MS.get());
 }
 
 /// Sets the wall's time at the open room's first tick, milliseconds since 1970: the room's world time runs from it,
@@ -199,10 +217,11 @@ pub fn open_fleet() {
 pub fn set_epoch(unix_ms: f64) {
     EPOCH_MS.set(unix_ms);
     with_open(|opened| match opened {
-        Opened::Sea(sea) => sea.set_epoch(unix_ms),
+        Opened::Sea(sea) => sea.set_world_start(unix_ms / 1000.0),
         Opened::Fleet(fleet) => fleet.set_epoch(unix_ms),
         Opened::Land { .. } => {}
     });
+    fleet_door::set_world_start(unix_ms / 1000.0);
 }
 
 /// Lets the open room take players' asks for foes, as a course's room does; a node's room otherwise takes none.
@@ -237,11 +256,26 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             },
         },
         Opened::Sea(sea) => {
+            // A boarder's inputs on the captain's deck are a land room's.
+            if sea.on_deck(player)
+                && let Ok(input) = protocol::read_input(bytes)
+            {
+                return match sea.deck_input(player, input) {
+                    Ok(()) => TAKEN,
+                    Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
+                    Err(Refused::BadLook) => NOT_AN_INPUT,
+                    Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
+                };
+            }
             let asked = match protocol::read_sea_input(bytes) {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
                 Ok(SeaInput::Face(heading)) => sea.face(player, heading),
                 Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
+                Ok(SeaInput::Chase(ship)) => {
+                    sea.chase(player, ship);
+                    return TAKEN;
+                }
                 Ok(SeaInput::Walk(sequence, controls)) => {
                     return match sea.walk(player, sequence, controls) {
                         Ok(()) => TAKEN,
@@ -250,6 +284,9 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                         Err(WalkRefused::NotAboard) => REFUSED,
                     };
                 }
+                Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
+                Ok(SeaInput::Board) => return if sea.board(player).is_ok() { TAKEN } else { REFUSED },
+                Ok(SeaInput::LeaveDeck) => return if sea.leave_deck(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =
                         if helm == SeaInput::LeaveHelm { sea.leave_helm(player) } else { sea.take_helm(player) };
@@ -278,55 +315,6 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
         },
     });
     answer.unwrap_or(NO_SUCH_PLAYER)
-}
-
-/// Every player and foe after the room's last tick, the dresses changed and what happened in the fight since the last
-/// snapshot, and the shots in flight with the balls just fired, as a snapshot's bytes; at sea, every ship. Empty with no room open.
-#[must_use]
-pub fn snapshot() -> Vec<u8> {
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => {
-            let changed = room.take_dress_changes();
-            let events = room.take_events();
-            let dressed: Vec<(PlayerId, &str)> =
-                changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
-            let players: Vec<Seen> = room.seen().collect();
-            let foes: Vec<FoeSeen> = room.foes_seen().collect();
-            let tick = room.clock();
-            let lines = room.take_lines();
-            let shots: Vec<combat::Shot> = room.shots().copied().collect();
-            let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
-            let snapshot = protocol::Snapshot {
-                tick,
-                players: &players,
-                dressed: &dressed,
-                foes: &foes,
-                events: &events,
-                shots: &shots,
-                lines: &lines,
-                spells: &spells,
-            };
-            protocol::snapshot_bytes(&snapshot)
-        }
-        Opened::Sea(sea) => {
-            let fights: Vec<_> = sea.fight_views().collect();
-            let aboard: Vec<(u32, u32, movement::Body)> =
-                sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
-            protocol::sea_snapshot_bytes(
-                sea.clock(),
-                &sea.ships().collect::<Vec<_>>(),
-                &sea.pirates(),
-                &fights,
-                &aboard,
-            )
-        }
-        Opened::Fleet(fleet) => {
-            let happened = fleet.take_events();
-            let acknowledged = |ship| fleet.acknowledged(ship);
-            protocol::fleet::fleet_snapshot_bytes(fleet.clock(), fleet.fight(), &acknowledged, &happened)
-        }
-    })
-    .unwrap_or_default()
 }
 
 /// The welcome's bytes for a player: their number, every dress in the room so far, and a node's id and rect.
@@ -377,6 +365,30 @@ pub unsafe extern "C" fn room_open(address: *const u8, length: usize) -> u32 {
     u32::from(open(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
+/// Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's deck by its number, its faction's
+/// deck crew for its rank (1 Minor to 5 Boss) at its level. The page's tests and pictures of the fight on its deck
+/// stand on it; the sea opens its own. Answers whether the hull and the rank are ones.
+#[must_use]
+pub fn open_deck(hull: u8, faction: u8, rank: u8, level: u8) -> bool {
+    let (Some(deck), Some(rank)) = (deck_door::hull_decks().get(usize::from(hull)), foes::Rank::from_number(rank))
+    else {
+        return false;
+    };
+    keep(Opened::Land {
+        room: Box::new(room::Room::deck(deck, faction, rank, level.max(1))),
+        node: None,
+        refusal: None,
+    });
+    true
+}
+
+/// Opens a captain's deck as a room alone (`open_deck`); 1 if it opened, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_open_deck(hull: u32, faction: u32, rank: u32, level: u32) -> u32 {
+    let byte = |number: u32| u8::try_from(number).unwrap_or(u8::MAX);
+    u32::from(open_deck(byte(hull), byte(faction), byte(rank), byte(level)))
+}
+
 /// Opens a room on the course over the open sea written at `address`, `length` bytes long; 1 if it opened, 0 if not.
 ///
 /// # Safety
@@ -415,7 +427,20 @@ pub extern "C" fn room_open_fleet() -> u32 {
     1
 }
 
-/// Sets the wall's time at the room's first tick, milliseconds since 1970.
+/// Sets the world time the open sea or fleet room's clock started at, seconds since the Unix epoch, so its weather
+/// is the world's then; a fleet room's predictions take it too. Its host calls it once it has opened the room.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_world_start(seconds: f64) {
+    with_open(|opened| match opened {
+        Opened::Sea(sea) => sea.set_world_start(seconds),
+        Opened::Fleet(fleet) => fleet.set_world_start(seconds),
+        Opened::Land { .. } => {}
+    });
+    fleet_door::set_world_start(seconds);
+}
+
+/// Sets the wall's time at the room's first tick, milliseconds since 1970: the same instant `room_world_start` sets,
+/// in the unit the sky's clock reads.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_epoch(unix_ms: f64) {
     set_epoch(unix_ms);
@@ -480,16 +505,34 @@ pub extern "C" fn room_tick() {
     });
 }
 
-/// The snapshot's bytes after the last tick.
+/// The snapshot's bytes after the last tick, every player's part in it.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot() -> u64 {
-    hand_over(snapshot())
+    hand_over(snapshot_door::snapshot())
+}
+
+/// Takes the snapshot after the last tick, for `room_snapshot_for` to hand each player their part of it.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_snapshot_prepare() {
+    snapshot_door::prepare();
+}
+
+/// The prepared snapshot's bytes as one player is sent them: at sea only what is theirs of the sea's own part.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_snapshot_for(player: PlayerId) -> u64 {
+    hand_over(snapshot_door::snapshot_for(player))
 }
 
 /// The Sloop's build as the naval rules hold it, as JSON (`deck_door::sloop_build_json`).
 #[unsafe(no_mangle)]
 pub extern "C" fn room_sloop() -> u64 {
     hand_over(deck_door::sloop_build_json().into_bytes())
+}
+
+/// The port cities' ids as JSON (`world::ports::MAIN_PORTS`): every other city is a ruin.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_main_ports() -> u64 {
+    hand_over(serde_json::to_vec(&world::ports::MAIN_PORTS).unwrap_or_default())
 }
 
 /// Every enemy type the rules know, as JSON (`roster_door::roster_json`).
@@ -510,8 +553,8 @@ pub extern "C" fn room_forbid_arts() {
     forbid_arts();
 }
 
-/// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers her
-/// ship's and her pose's numbers.
+/// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers their
+/// ship's and its pose's numbers.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.
@@ -551,3 +594,7 @@ mod fleet_door_tests;
 #[cfg(test)]
 #[path = "garrison_door_tests.rs"]
 mod garrison_door_tests;
+
+#[cfg(test)]
+#[path = "load_tests.rs"]
+mod load_tests;

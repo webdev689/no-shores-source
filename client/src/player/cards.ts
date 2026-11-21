@@ -25,7 +25,7 @@ export interface Card {
 
 /** One card to draw: where its feet stand (world metres), whether it is mirrored, its flash as it is struck (its
  *  stage, `FLASH` in cardLooks.ts, and colour), how many times life size it stands (1 unless said: a figure aboard a
- *  ship drawn larger than life is drawn as large as she is), its statuses that show (Veiled, Exposed, Charged), how
+ *  ship drawn larger than life is drawn as large as it is), its statuses that show (Veiled, Exposed, Charged), how
  *  many pixels it is shaken across, how far it has dissolved as it dies and in which element, the smear its own
  *  swing leaves behind it (figure pixels across the eye's right and up, and its colour; only the Test Ground draws
  *  one), and how hard its weapon's glow surges (1 at rest). */

@@ -28,8 +28,8 @@ fn the_low_arc_lays_for_a_range_within_the_carriage() {
     assert!((lay(25.0) + 0.2).abs() < 0.05, "{}", lay(25.0));
     assert!((lay(50.0) - 3.4).abs() < 0.05, "{}", lay(50.0));
     assert!((lay(100.0) - 8.8).abs() < 0.05, "{}", lay(100.0));
-    assert_eq!(lay(400.0), 14.0, "past her reach she lays at her highest");
-    assert_eq!(lay(0.0), -10.0, "no range lays her lowest");
+    assert_eq!(lay(400.0), 14.0, "past its reach it lays at its highest");
+    assert_eq!(lay(0.0), -10.0, "no range lays its lowest");
     let back = range_at(radians(lay(75.0)), SWIVEL_SPEED, DECK);
     assert!((back - 75.0).abs() < 1e-6, "{back}");
 }
@@ -68,7 +68,7 @@ fn the_scatter_is_the_seeds_and_within_the_spread() {
 
 #[test]
 fn a_positive_yaw_turns_toward_starboard() {
-    // Heading north (forward (0, -1)), her starboard is east (1, 0).
+    // Heading north (forward (0, -1)), its starboard is east (1, 0).
     assert_eq!(turned([0.0, -1.0], FRAC_PI_2).map(|value| value.round()), [1.0, 0.0]);
 }
 

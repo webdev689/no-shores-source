@@ -71,7 +71,7 @@ test('other players are placed in their own dress, moved as the room saw them, a
     { player: 8, dress: '{ not a dress' },
   ]);
   others.seen([seen(1, 0), seen(7, 3), seen(8, 5)], 1, forge);
-  assert.deepEqual([...others.placed.keys()], [7, 8], 'all but her own');
+  assert.deepEqual([...others.placed.keys()], [7, 8], 'all but their own');
   assert.deepEqual(others.placed.get(7)?.dress, robed, 'in the dress they sent');
   assert.equal(others.placed.get(8)?.dress.race, 'human', 'a broken dress keeps a plain one');
   others.seen([seen(1, 0), seen(7, 4)], 1, forge);

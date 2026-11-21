@@ -2,7 +2,7 @@ use super::*;
 use naval::fight::{Aim, Fight, Orders, Refusal};
 use naval::guns::SWIVEL;
 use naval::ranks::{Commission, GREY_TITHE, Rank};
-use room::fleet::{Call, Input, STANDING};
+use room::fleet::{Call, Input, Levels, STANDING};
 use sailing::ship::{Helm, Ship};
 use sailing::waters::OpenSea;
 
@@ -18,7 +18,7 @@ fn looked() -> Input {
             load: Some(Shot::Chain),
         },
         put_to_sea: Some([200_000.0, 300_000.0, 1.25]),
-        call: Call::Captain(Commission::default()),
+        call: Call::Captain(Commission::default(), Levels::default()),
     }
 }
 
@@ -57,7 +57,10 @@ fn orders_whose_parts_are_not_of_their_shape_are_refused() {
 
 #[test]
 fn a_call_names_the_faction_and_rank_of_the_captain_it_calls() {
-    let boss = Input { call: Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Boss }), ..looked() };
+    let boss = Input {
+        call: Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Boss }, Levels::default()),
+        ..looked()
+    };
     assert_eq!(read_orders(&orders_bytes(&boss)), Ok(boss));
     let write = |call_faction: u8, call_rank: u8| {
         let mut builder = flatbuffers::FlatBufferBuilder::new();
@@ -66,10 +69,33 @@ fn a_call_names_the_faction_and_rank_of_the_captain_it_calls() {
         builder.finish(orders, None);
         read_orders(builder.finished_data()).map(|input| input.call)
     };
-    assert_eq!(write(0, 0), Ok(Call::Captain(Commission::default())), "a call that names none: a Major pirate");
-    assert_eq!(write(GREY_TITHE, 0), Ok(Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Major })));
+    assert_eq!(
+        write(0, 0),
+        Ok(Call::Captain(Commission::default(), Levels::default())),
+        "a call that names none: a Major pirate"
+    );
+    assert_eq!(
+        write(GREY_TITHE, 0),
+        Ok(Call::Captain(Commission { faction: GREY_TITHE, rank: Rank::Major }, Levels::default()))
+    );
     assert!(write(3, 2).is_err(), "no captain sails for a third faction");
     assert!(write(1, 6).is_err(), "no sixth rank");
+}
+
+#[test]
+fn a_call_carries_its_captains_level_and_the_callers_ship_level_to_thirty() {
+    let levels = Levels { captain: 30, ship: 7 };
+    let called = Input { call: Call::Captain(Commission::default(), levels), ..looked() };
+    assert_eq!(read_orders(&orders_bytes(&called)), Ok(called));
+    let write = |call_level: u8, ship_level: u8| {
+        let mut builder = flatbuffers::FlatBufferBuilder::new();
+        let args = messages::OrdersArgs { sequence: 1, call: 1, call_level, ship_level, ..Default::default() };
+        let orders = messages::Orders::create(&mut builder, &args);
+        builder.finish(orders, None);
+        read_orders(builder.finished_data()).map(|input| input.call)
+    };
+    assert!(write(31, 1).is_err(), "no captain past level 30");
+    assert!(write(1, 31).is_err(), "no ship past level 30");
 }
 
 /// The fleet the client's test reads (messages.test.ts): two players' ships at known places and one captain's, and
@@ -107,6 +133,7 @@ pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
         flight: 1.0,
         gun: SWIVEL,
         shot: Shot::Round,
+        sail: None,
     };
     let events = vec![
         (7, Event::Shot(ShotEvent::Muzzle { shooter: 3, point: [1.0, 2.0, 3.0], launch: [50.0, 2.0, 4.0] })),
@@ -120,6 +147,15 @@ pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
         (10, Event::Load { ship: 3, shot: Shot::Grape }),
         (11, Event::Gone { ship: 9, end: naval::fight::End::Sunk }),
         (12, Event::Ram { ship: 9, by: 4, point: [7.0, 8.0, 1.0], dealt: 27.0 }),
+        (13, Event::Hit { ship: 9, at: [2.0, -3.0, 1.5], part: naval::fight::Part::Sail }),
+        (13, Event::SailLost { ship: 9, sail: 2 }),
+        (13, Event::MastFell { ship: 9, mast: 1 }),
+        (13, Event::Struck { ship: 9 }),
+        (14, Event::Sinking { ship: 9 }),
+        (14, Event::Splash { at: [4.0, 5.0] }),
+        (15, Event::Flotsam { id: 21, at: [6.0, 7.0], kind: naval::fight::Piece::Chest }),
+        (16, Event::Gathered { id: 21, by: 3 }),
+        (16, Event::Boarding { ship: 9 }),
     ];
     (fight, events)
 }
@@ -127,9 +163,9 @@ pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
 #[test]
 fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
     let (fight, events) = fleet();
-    let bytes = fleet_snapshot_bytes(77, &fight, &|ship| (ship == 3).then_some(12), &events);
+    let bytes = fleet_snapshot_bytes((77, 1_790_000_000.0), &fight, &|ship| (ship == 3).then_some(12), &events);
     let read = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
-    assert_eq!((read.tick(), read.fight_clock()), (77, 0.0));
+    assert_eq!((read.tick(), read.fight_clock(), read.world_start()), (77, 0.0, 1_790_000_000.0));
     let vessels: Vec<_> = read.vessels().unwrap().iter().collect();
     assert_eq!(
         vessels.iter().map(|vessel| (vessel.id(), vessel.captain())).collect::<Vec<_>>(),
@@ -138,11 +174,17 @@ fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
     let first = fight.vessel(3).unwrap();
     assert_eq!(vessels[0].ship().unwrap().iter().collect::<Vec<_>>(), first.ship.to_floats().to_vec());
     assert_eq!(vessels[0].pose().unwrap().iter().collect::<Vec<_>>(), first.pose.to_floats().to_vec());
-    assert_eq!(vessels[0].hurts().unwrap().iter().collect::<Vec<_>>(), [240.0, 240.0, 96.0, 96.0, 0.0, 0.0]);
+    assert_eq!(
+        vessels[0].hurts().unwrap().iter().collect::<Vec<_>>(),
+        [240.0, 240.0, 96.0, 96.0, 10.0, 10.0],
+        "its hull, canvas and ten hands"
+    );
     assert_eq!((vessels[0].acknowledged(), vessels[1].acknowledged()), (12, 0));
     assert_eq!((vessels[0].load(), vessels[2].mode()), (1, 0), "round shot, cruising");
     let colours: Vec<_> = vessels.iter().map(|vessel| (vessel.faction(), vessel.rank())).collect();
     assert_eq!(colours, [(0, 0), (0, 0), (1, 3)], "players' ships, then a Grey Tithe Elite");
+    let hulls: Vec<u8> = vessels.iter().map(messages::Vessel::hull).collect();
+    assert_eq!(hulls, [0, 0, 1], "players' Sloops, then the Elite's Schooner");
     let kinds: Vec<_> =
         read.naval().unwrap().iter().map(|event| (event.tick(), event.kind(), event.ship(), event.detail())).collect();
     assert_eq!(
@@ -157,7 +199,15 @@ fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
             (10, NO_SAIL, 4, 1),
             (10, LOAD, 3, 2),
             (11, GONE, 9, 0),
-            (12, RAM, 9, 0)
+            (12, RAM, 9, 0),
+            (13, STRUCK_AT, 9, 1),
+            (13, SAIL_LOST, 9, 2),
+            (13, MAST_FELL, 9, 1),
+            (13, STRUCK, 9, 0),
+            (14, SINKING, 9, 0),
+            (15, FLOTSAM, 21, 2),
+            (16, GATHERED, 21, 0),
+            (16, BOARDING, 9, 0)
         ],
         "a ball flown out of reckoning is not told"
     );
@@ -172,6 +222,6 @@ fn the_fleet_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
     let (fight, events) = fleet();
-    let bytes = fleet_snapshot_bytes(77, &fight, &|ship| (ship == 3).then_some(12), &events);
+    let bytes = fleet_snapshot_bytes((77, 1_790_000_000.0), &fight, &|ship| (ship == 3).then_some(12), &events);
     std::fs::write(format!("{folder}/fleet.bin"), bytes).unwrap();
 }

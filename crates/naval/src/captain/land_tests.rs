@@ -8,11 +8,11 @@ fn headland(x: f64, y: f64) -> bool {
 const LOOK: Lookout = Lookout { from: 2.0, near: 20.0, dist: 150.0, half: 5.0 };
 
 #[test]
-fn a_course_is_clear_only_if_her_keel_and_both_sides_find_water_the_whole_way() {
+fn a_course_is_clear_only_if_its_keel_and_both_sides_find_water_the_whole_way() {
     assert!(course_clear([0.0, 0.0], 0.0, 90.0, &headland, &LOOK));
     assert!(!course_clear([0.0, 0.0], 0.0, 150.0, &headland, &LOOK));
     assert!(course_clear([0.0, 0.0], std::f64::consts::PI, 150.0, &headland, &LOOK));
-    assert!(!course_clear([47.0, -90.0], 0.0, 150.0, &headland, &LOOK), "her side would touch it");
+    assert!(!course_clear([47.0, -90.0], 0.0, 150.0, &headland, &LOOK), "its side would touch it");
 }
 
 #[test]

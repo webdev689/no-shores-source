@@ -416,7 +416,7 @@ mod tests {
 
     /// Everything a body walks among on the plaza: the courtyard, the stations, and the parapets round it, as boxes.
     fn plaza_boxes() -> Vec<crate::collision::Box2> {
-        let (_, stalls) = crate::stations::stations(&FRAME);
+        let (_, stalls) = crate::stations::stations(&FRAME, false);
         let [west, north, east, south] = [870.0, 1940.0, 1130.0, 2060.0];
         let top = FRAME.level + PARAPET_TOP_M;
         let parapets = [
@@ -433,7 +433,7 @@ mod tests {
     }
 
     fn life() -> (Ways, Vec<Post>) {
-        let (stations, _) = crate::stations::stations(&FRAME);
+        let (stations, _) = crate::stations::stations(&FRAME, false);
         townsfolk_life(&FRAME, &stations)
     }
 
@@ -456,7 +456,7 @@ mod tests {
         assert_eq!(kept(Keep::Kept), 7, "a smith, the band of four, a dancer and a juggler");
         assert_eq!(kept(Keep::Round(0)), 4, "a sweeper's round of the obelisk's ring");
         assert_eq!(kept(Keep::Visited), 12 + 7 + 10, "every counter, seven views and five benches' talkers");
-        let (stations, _) = crate::stations::stations(&FRAME);
+        let (stations, _) = crate::stations::stations(&FRAME, false);
         for station in &stations {
             let kind = serde_json::to_value(station.kind).expect("a kind writes");
             let name = format!("counter:{}", kind.as_str().unwrap_or_default());

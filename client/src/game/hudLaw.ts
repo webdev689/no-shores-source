@@ -1,3 +1,6 @@
+import { ruinedName } from '../ruinedName.ts';
+import type { NodeInfo } from './worldData.ts';
+
 /** Where a player stands against their section's edge, as the room judges it (the reach rules in Rust). */
 export type Standing =
   | { readonly kind: 'inside' }
@@ -55,21 +58,24 @@ export const KIND_WORDS = {
   dungeon: 'Dungeon',
   boss: 'World boss',
   port: 'Port',
+  hostile: 'Hostile',
 } as const;
 
 export type MarkKind = keyof typeof KIND_WORDS;
-
-/** The islands' names the owner has given, by continent. */
-export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
-
-/** The words under a place's name: its kind, and its island's name where it has one. */
-export function placeWords(node: { readonly kind: MarkKind; readonly continent: string }): string {
-  const island = ISLANDS[node.continent];
-  return island ? `${KIND_WORDS[node.kind]} · ${island}` : KIND_WORDS[node.kind];
-}
 
 /** A distance as a mark shows it: metres near, kilometres past one. */
 export function distanceText(metres: number): string {
   if (metres < 1000) return `${Math.round(metres / 10) * 10} m`;
   return metres < 20_000 ? `${(metres / 1000).toFixed(1)} km` : `${Math.round(metres / 1000)} km`;
+}
+
+/** The islands' names the owner has given, by continent. */
+export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
+
+/** The words under a place's name: its kind, and its island's name where it has one. A ruined city's place is no
+ *  social space: it says only that it lies in ruins. */
+export function placeWords(node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string }): string {
+  const island = ISLANDS[node.continent];
+  const kind = node.name?.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
+  return island ? `${kind} · ${island}` : kind;
 }

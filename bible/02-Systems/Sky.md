@@ -103,5 +103,5 @@ what show the ground there.
 - The World Editor and the Test Ground keep a clear afternoon sky; the World Editor's ships still sail, and their
   sails fill, in the weather's wind.
 - Lamps cast no shadows, and windows are never lit: the city's plan gives windows no places.
-- Standing at the Sloop's helm, the player's torch or lantern lights nothing; only walking her deck does it.
+- Standing at the Sloop's helm, the player's torch or lantern lights nothing; only walking its deck does it.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.

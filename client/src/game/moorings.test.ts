@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MOORED_SWELL, mooredPlaces } from './moorings.ts';
+import { MOORED_SWELL, mooredPlaces, mooredShips } from './moorings.ts';
 
 test('a moored ship lies at her place on the sea, her bow along her bearing, riding a swell no higher than its own', () => {
   const moorings = [
@@ -20,4 +20,11 @@ test('a moored ship lies at her place on the sea, her bow along her bearing, rid
   }
   const [one, two] = mooredPlaces(moorings, 2);
   assert.notEqual(one?.z, two?.z, 'the two ride on beats of their own');
+});
+
+test('the moored ships are drawn as friendly sloops, each with a still footprint at her place', () => {
+  const { ships, hulls } = mooredShips([[100, 200, 0.5]], 3);
+  assert.equal(ships.length, 1);
+  assert.equal(ships[0]?.look.side, 'friendly');
+  assert.deepEqual([hulls[0]?.x, hulls[0]?.y, hulls[0]?.heading, hulls[0]?.way], [100, 200, 0.5, 0]);
 });

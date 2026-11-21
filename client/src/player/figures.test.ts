@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { bearing, cardStand, eyeOf, frameAt, viewOf } from './figures.ts';
+import { bearing, CARD_NEAREST_M, cardStand, eyeOf, frameAt, viewOf } from './figures.ts';
 
 const QUARTER = Math.PI / 2;
 
@@ -36,9 +36,14 @@ test('an eye looking north stands south of its target', () => {
   assert.ok(Math.abs(eye.x - 5) < 1e-9 && Math.abs(eye.y - 15) < 1e-9);
 });
 
-test('a figure’s card stands a body’s radius toward the eye, never past it', () => {
+test('a figure’s card stands a body’s radius toward the eye, never past it, and in first person a metre off at least', () => {
   const stand = cardStand(1, 2, 1, 12);
   assert.ok(Math.abs(stand.x - 1) < 1e-12 && Math.abs(stand.y - 2.35) < 1e-12);
-  assert.deepEqual(cardStand(1, 2, 1, 2.2), { x: 1, y: 2.2 });
+  assert.deepEqual(cardStand(1, 2, 1, 2.2), { x: 1, y: 2.2 }, 'the player’s own, the eye steeply over it');
   assert.deepEqual(cardStand(1, 2, 1, 2), { x: 1, y: 2 });
+  // A foe in a melee, 0.7 m off through the player's own eyes: its card stands a metre off along the same line.
+  const melee = cardStand(1, 2, 1, 2.7, CARD_NEAREST_M);
+  assert.ok(Math.abs(melee.x - 1) < 1e-12 && Math.abs(melee.y - 1.7) < 1e-12, `${melee.y}`);
+  const far = cardStand(1, 2, 1, 12, CARD_NEAREST_M);
+  assert.ok(Math.abs(far.y - 2.35) < 1e-12, 'one farther off stands as ever');
 });

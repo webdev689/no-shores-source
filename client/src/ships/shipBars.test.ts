@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { startWatersRules } from '../rules/watersRules.ts';
 import { BarLayout } from '../plus/barLayout.ts';
 import {
   barOver,
@@ -21,11 +23,21 @@ test('a bar is red for a Minor, orange for a Major and yellow for an Elite, a Mi
   assert.match(major ?? '', /^#e07a/, 'orange');
 });
 
-test('a captain’s Sloop is named for her faction', () => {
+test('a captain’s Sloop is named for its faction', () => {
   assert.deepEqual([shipName(1), shipName(2)], ['Tithe Sloop', 'Pirate Sloop']);
+  assert.deepEqual(
+    [0, 1, 2, 3].map((hull) => [shipName(1, hull), shipName(2, hull)]),
+    [
+      ['Tithe Sloop', 'Pirate Sloop'],
+      ['Tithe Schooner', 'Pirate Schooner'],
+      ['Tithe Brig', 'Pirate Brig'],
+      ['Tithe Frigate', 'Pirate Frigate'],
+    ],
+    'named for its faction and its hull, as the rules name it',
+  );
 });
 
-test('her bar carries her number and faction, for her emblem; a fight’s one captain is number 0', () => {
+test('its bar carries its number and faction, for its emblem; a fight’s one captain is number 0', () => {
   const sailing = { name: 'Pirate Sloop', faction: 2, rank: 3, hull: 50, maxHull: 200, state: 'sailing' };
   const place = { ship: [100, 40], pose: [1] };
   const bar = barOver({ ...sailing, ...place, id: 7 }, { leftM: 0, topM: 0 }, 1);
@@ -34,7 +46,7 @@ test('her bar carries her number and faction, for her emblem; a fight’s one ca
   assert.equal(barOver({ ...sailing, ...place, state: 'sunk' }, { leftM: 0, topM: 0 }, 1), null, 'none once sunk');
 });
 
-test('each ship’s plate stands over her masthead, a Boss’s across the top, and none off the picture', () => {
+test('each ship’s plate stands over its masthead, a Boss’s across the top, and none off the picture', () => {
   const project = ([x, y]: readonly [number, number, number]) => (x < 0 ? null : { x: x * 10, y: y * 10, depth: 100 });
   const placed = placeShipBars(
     [
@@ -54,11 +66,11 @@ test('each ship’s plate stands over her masthead, a Boss’s across the top, a
       ['Captain Brannoc Thule', 400, 0.25, rankColour(5), 'The Grey Tithe'],
     ],
   );
-  assert.equal((placed[0]?.top ?? 0) + (placed[0]?.height ?? 0), 300, 'her plate’s foot over her masthead');
+  assert.equal((placed[0]?.top ?? 0) + (placed[0]?.height ?? 0), 300, 'its plate’s foot over its masthead');
   assert.ok((placed[1]?.width ?? 0) > (placed[0]?.width ?? 0), 'the boss bar is the wider');
 });
 
-test('two ships side by side: the nearer’s plate stays over her, the farther’s lifted clear, drawn behind it', () => {
+test('two ships side by side: the nearer’s plate stays over it, the farther’s lifted clear, drawn behind it', () => {
   const project = ([x, , z]: readonly [number, number, number]) => ({ x, y: 300, depth: z });
   const placed = placeShipBars(
     [
@@ -87,7 +99,7 @@ test('a Boss’s plate is as wide as the boss bar on foot: 640 px at most, three
   assert.equal(widthAt(800), 608);
 });
 
-test('her hull’s losses read as a foe’s: she starts whole at her bar, a bite holds a pale strip, falls and flashes', () => {
+test('its hull’s losses read as a foe’s: it starts whole at its bar, a bite holds a pale strip, falls and flashes', () => {
   const hulls = new HullLosses();
   const plate = (share: number): PlacedBar => ({
     key: 4,
@@ -106,9 +118,9 @@ test('her hull’s losses read as a foe’s: she starts whole at her bar, a bite
   const first = hulls.read(plate(0.6), 0, false);
   assert.deepEqual([first.lost, first.pieces, first.flash], [0.6, [], 0], 'first seen: nothing lost to read');
   const struck = hulls.read(plate(0.5), 1 / 60, false);
-  assert.equal(struck.lost, 0.6, 'the strip holds where she stood');
+  assert.equal(struck.lost, 0.6, 'the strip holds where it stood');
   assert.deepEqual(struck.pieces, [{ left: 0.5, width: 0.09999999999999998, age: 0 }], 'the bite breaks off');
-  assert.equal(struck.flash, 1, 'her bar’s edge flashes');
+  assert.equal(struck.flash, 1, 'its bar’s edge flashes');
   assert.equal(hulls.read(plate(0.5), HULL_FLASH_SECONDS, false).flash, 0, 'for a quarter of a second');
   assert.deepEqual(hulls.read(plate(0.495), 1 / 60, false).pieces?.length, 1, 'half a hundredth breaks nothing off');
   const still = hulls.read({ ...plate(0.3), key: 5 }, 0, true);
@@ -119,4 +131,17 @@ test('her hull’s losses read as a foe’s: she starts whole at her bar, a bite
 test('a bite’s flash steps down in three: whole, two thirds, a third, then none', () => {
   const steps = [0, 0.07, 0.09, 0.17, 0.23, 0.24].map(flashLeft);
   [1, 1, 2 / 3, 1 / 3, 1 / 3, 0].forEach((left, index) => assert.ok(Math.abs((steps[index] ?? -1) - left) < 1e-12));
+});
+
+test('every ship is named as the rules name it: each faction, each hull', async () => {
+  const module = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
+  const bytes = await readFile(module).catch(() => {
+    throw new Error('room_wasm.wasm is not built: run `npm run wasm` first');
+  });
+  const layout = await readFile(new URL('../../../content/world/layout.json', import.meta.url), 'utf8');
+  const { shipNames } = startWatersRules(new WebAssembly.Module(bytes)).open(layout, []).sea;
+  shipNames.forEach((hulls, faction) =>
+    hulls.forEach((name, hull) => assert.equal(shipName(faction, hull), name, `faction ${faction}, hull ${hull}`)),
+  );
+  assert.equal(shipNames.length, 3, 'the players’, the Tithe’s and the pirates’');
 });

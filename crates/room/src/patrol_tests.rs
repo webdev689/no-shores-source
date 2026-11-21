@@ -17,7 +17,7 @@ fn patrol(difficulty: Difficulty) -> (Room, PlayerId) {
 
 #[test]
 fn a_patrol_stands_no_camps_of_its_own_its_fights_are_its_garrisons() {
-    let (mut room, _) = patrol(Difficulty::Storm);
+    let (mut room, _) = patrol(Difficulty::Abyss);
     for _ in 0..600 {
         room.tick();
     }
@@ -27,8 +27,8 @@ fn a_patrol_stands_no_camps_of_its_own_its_fights_are_its_garrisons() {
 
 #[test]
 fn resource_nodes_stand_at_their_spots_a_third_at_a_time_and_each_may_be_gathered_again_next_turn() {
-    let (mut room, player) = patrol(Difficulty::Calm);
-    let (again, _) = patrol(Difficulty::Calm);
+    let (mut room, player) = patrol(Difficulty::Normal);
+    let (again, _) = patrol(Difficulty::Normal);
     assert_eq!(room.resource_nodes.len(), SPOTS);
     assert_eq!(room.resource_nodes, again.resource_nodes, "the same spots every time, for routes to be learned");
     let ring = [[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
@@ -68,7 +68,7 @@ fn resource_nodes_stand_at_their_spots_a_third_at_a_time_and_each_may_be_gathere
 
 #[test]
 fn a_node_gathered_stays_spent_for_its_account_however_often_the_player_rejoins_this_turn() {
-    let (mut room, player) = patrol(Difficulty::Calm);
+    let (mut room, player) = patrol(Difficulty::Normal);
     room.own(player, "account-a");
     let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
     let spot = room.resource_nodes[usize::from(node)];

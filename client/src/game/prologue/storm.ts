@@ -1,7 +1,7 @@
 // The owner's second beat: from the title the camera pulls away over the sea into a stormfront (the light failing,
 // rain driving, thunder), a strike's flash covers the leap far out to sea, and the camera rushes low over the swell
-// until the Brig comes out of the rain; it rises along her side, passes over her working crew from bow to stern, and
-// comes to rest at her helm, where the player stands.
+// until the Brig comes out of the rain; it rises along its side, passes over its working crew from bow to stern, and
+// comes to rest at its helm, where the player stands.
 import { Cues } from '../../cinema/cues.ts';
 import { type RailKey, railShot } from '../../cinema/rail.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
@@ -16,15 +16,15 @@ import type { Story } from './story.ts';
 import { CREATION_LENS, creationEye, helmDeck, youAtHelm } from './helm.ts';
 
 const LENS = { fov: 0.9, near: 0.3, far: 30_000 } as const;
-/** The pull away from the title, then the leap, then the run to the Brig and over her. */
+/** The pull away from the title, then the leap, then the run to the Brig and over it. */
 const PULL_S = 7;
 const RUN_S = 20;
-/** When the run comes over her deck, seconds into it: from there its frame eases from the sea's level to her deck's
+/** When the run comes over its deck, seconds into it: from there its frame eases from the sea's level to its deck's
  *  as the helm rides it. */
 const OVER_DECK_S = 12.5;
 
-/** The run in the Brig's own frame (metres to her bow, to her starboard, up from her waterline), so it keeps with
- *  her as she sails: low over the swell astern and to port, up along her port side, over her deck aft to her helm,
+/** The run in the Brig's own frame (metres to its bow, to its starboard, up from its waterline), so it keeps with
+ *  it as it sails: low over the swell astern and to port, up along its port side, over its deck aft to its helm,
  *  where it ends on the creation's own shot for a view `aspect` wide to its height. */
 function runKeys(aspect: number): RailKey[] {
   const creation = creationEye(0, aspect);
@@ -158,8 +158,8 @@ export class StormDive implements Beat {
     };
   }
 
-  /** The run to the Brig, kept with her as she sails: a little of her rise and fall in it over the sea, then, over
-   *  her deck, more of it until it rides her as the helm's camera does. */
+  /** The run to the Brig, kept with it as it sails: a little of its rise and fall in it over the sea, then, over
+   *  its deck, more of it until it rides it as the helm's camera does. */
   private runShot(own: ShipPlace, aspect: number): Shot {
     const deck = helmDeck(own);
     const share = Math.min(1, Math.max(0, (this.since - PULL_S - OVER_DECK_S) / (RUN_S - OVER_DECK_S)));

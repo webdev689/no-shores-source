@@ -1,12 +1,13 @@
 // A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, set each
 // frame where the world clock has them, standing on the plaza's floor at their moves; and the station a player stands
-// at, whose counter offers what it deals in.
+// at, whose counter offers what it deals in. A ruin's plaza keeps no station (the city crate's `ruins`), and no one
+// lives there.
 
 import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
 import type { Opening } from './gearScreen.ts';
-import { KEEPERS, KEEPER_KINDS } from './keepers.ts';
+import { HARBOURMASTER, KEEPERS, KEEPER_KINDS } from './keepers.ts';
 import type { StationInfo } from './nodes.ts';
 import { Townsfolk, awayFromCounters, plazaOf, shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -20,14 +21,17 @@ export interface Offer {
   readonly opens: Opening;
 }
 
-/** What each station that deals with a player offers: its keeper's screen, named by its keeper's title. Shape keeps
- *  no station; his prompt is the plaza's own. */
-const OFFERS: Readonly<Record<string, Offer>> = Object.fromEntries(
-  KEEPER_KINDS.filter((kind) => kind !== 'shape').map((kind) => [
-    kind,
-    { words: KEEPERS[kind].title, opens: { view: kind } },
-  ]),
-);
+/** What each station that deals with a player offers: its keeper's screen, named by its keeper's title, and the
+ *  Harbourmaster's. Shape keeps no station; his prompt is the plaza's own. */
+const OFFERS: Readonly<Record<string, Offer>> = {
+  ...Object.fromEntries(
+    KEEPER_KINDS.filter((kind) => kind !== 'shape').map((kind) => [
+      kind,
+      { words: KEEPERS[kind].title, opens: { view: kind } },
+    ]),
+  ),
+  harbourmaster: { words: HARBOURMASTER, opens: { view: 'harbourmaster' } },
+};
 
 /** The offer of the station whose counter a player stands at, if one deals with them. */
 export function offerAt(stations: readonly StationInfo[], x: number, y: number): Offer | null {
@@ -44,7 +48,7 @@ const FLOOR_STEP_M = 0.5;
 
 /** The figures of a social space's people, kept among those drawn while the player is there. */
 export class PlazaLife {
-  private readonly folk: Townsfolk;
+  private readonly folk: Townsfolk | null;
   private readonly figures = new Map<number, Placed>();
   /** Where each person's floor was last found: it is found again only once they have walked a step from there. */
   private readonly floored = new Map<number, readonly [number, number]>();
@@ -55,7 +59,8 @@ export class PlazaLife {
   constructor(node: NodeInfo, others: Others, floor: (x: number, y: number) => number | null) {
     const plaza = plazaOf(node);
     // Seeded by the plaza, so its people are the same each visit and in every browser.
-    this.folk = new Townsfolk(plaza, Math.round(plaza.bounds[0] * 31 + plaza.bounds[1]));
+    // A ruin's plaza keeps no station, and no one lives there.
+    this.folk = node.stations?.length ? new Townsfolk(plaza, Math.round(plaza.bounds[0] * 31 + plaza.bounds[1])) : null;
     this.visitorSpots = plaza.visitorSpots ?? [];
     this.others = others;
     this.floor = floor;
@@ -66,7 +71,7 @@ export class PlazaLife {
   frame(worldS: number, gear: GearState | null = null): void {
     const shape = shapeSpot(gear?.shape, this.visitorSpots);
     const here = new Set<number>();
-    for (const person of this.folk.peopleAt(worldS, { away: awayFromCounters, shape })) {
+    for (const person of this.folk?.peopleAt(worldS, { away: awayFromCounters, shape }) ?? []) {
       here.add(person.id);
       const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
       this.figures.set(person.id, placed);

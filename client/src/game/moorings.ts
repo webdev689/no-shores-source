@@ -1,7 +1,11 @@
 // Ships lying moored beside a social space's pier while a player walks it, as the Tower's Hangar showed the ships
 // that brought its Guardians: each at her place from the city's plan, her sails furled, riding a slow swell, each on
 // her own beat so the two never rise together.
+import { hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
+import { SailRig } from '../ships/sails.ts';
+import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
+import type { HullMask } from '../water/hullMask.ts';
 
 /** How far a moored ship rises and falls, metres, and how far she pitches and rolls, radians; how long a swell takes
  *  to pass under her, seconds. */
@@ -20,4 +24,21 @@ export function mooredPlaces(moorings: readonly (readonly [number, number, numbe
       roll: MOORED_SWELL.roll * Math.sin(phase * 0.7 + 0.4),
     };
   });
+}
+
+/** Furled sails: a rig never set. */
+const FURLED = new SailRig(hullSails(SLOOP_HULL));
+
+/** The moored ships as a frame draws them, friendly sloops with their sails furled, and their still footprints on the
+ *  water. */
+export function mooredShips(
+  moorings: readonly (readonly [number, number, number])[],
+  time: number,
+): { ships: DrawnShip[]; hulls: HullMask[] } {
+  const places = mooredPlaces(moorings, time);
+  const { lengthM, beamM } = hullWaterline(SLOOP_HULL);
+  return {
+    ships: places.map((place) => ({ hull: SLOOP_HULL, place, rig: FURLED, look: { side: 'friendly' } })),
+    hulls: places.map(({ x, y, heading }) => ({ x, y, heading, halfLength: lengthM / 2, halfBeam: beamM / 2, way: 0 })),
+  };
 }

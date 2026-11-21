@@ -3,13 +3,11 @@ import { test } from 'node:test';
 import { RARITIES, RESOURCE_COUNT } from '../player/gear.ts';
 import { glyphSvg } from './gearGlyphs.ts';
 
-/** Each pixel a glyph's picture fills: its column, its row and its colour. */
+/** Each pixel a glyph's picture fills: its column, its row and its colour, each run along a row unpacked. */
 const pixelsOf = (svg: string) =>
-  [...svg.matchAll(/x="(\d+)" y="(\d+)" width="1" height="1" fill="(#\w+)"/g)].map(([, x, y, fill]) => ({
-    x: Number(x),
-    y: Number(y),
-    fill: fill ?? '',
-  }));
+  [...svg.matchAll(/x="(\d+)" y="(\d+)" width="(\d+)" height="1" fill="(#\w+)"/g)].flatMap(([, x, y, width, fill]) =>
+    Array.from({ length: Number(width) }, (unused, step) => ({ x: Number(x) + step, y: Number(y), fill: fill ?? '' })),
+  );
 const shapeOf = (svg: string) =>
   pixelsOf(svg)
     .map(({ x, y }) => `${x},${y}`)

@@ -11,6 +11,7 @@ use crate::roster::FoeType;
 use crate::shoot::Bow;
 use crate::tell::Tells;
 use crate::tuning::{BREAK, HURT_WINDOW};
+use combat::fighter::Side;
 use combat::{FighterId, Verdict};
 
 /// What a foe is about in its fight.
@@ -129,6 +130,10 @@ pub struct Brain {
     /// A garrison foe's place at its post, and why it walks back there, if it does.
     pub(crate) home: Option<Home>,
     pub(crate) returning: Option<Homeward>,
+    /// The side it fights for, its type's but for a companion's; and a companion's heel: how near its post it stands
+    /// before it walks back there.
+    pub(crate) side: Side,
+    pub(crate) heel: Option<f64>,
     /// What its group asks of it; until when it is broken, the cover it falls back behind, and whether it rages; who
     /// last struck it, and when.
     pub(crate) orders: Orders,
@@ -171,6 +176,8 @@ impl Brain {
             bow: Bow::default(),
             home: None,
             returning: None,
+            side: foe_type.side(),
+            heel: None,
             orders: Orders::default(),
             broken_until: 0,
             cover: None,
@@ -195,6 +202,24 @@ impl Brain {
     #[must_use]
     pub fn home(&self) -> Option<Home> {
         self.home
+    }
+
+    /// Makes it a companion: it fights on the players' side and heels to its post (`posted_at`), which its room moves
+    /// behind its leader each tick, walking back there once farther from it than `heel`.
+    pub fn heels(&mut self, heel: f64) {
+        self.side = Side::Players;
+        self.heel = Some(heel);
+    }
+
+    /// Makes it fight on the players' side where it stands, its post its own: a ship's hand come aboard a struck deck.
+    pub fn joins_players(&mut self) {
+        self.side = Side::Players;
+    }
+
+    /// The side it thinks as: whose noises it heeds and whose it hunts.
+    #[must_use]
+    pub fn side(&self) -> Side {
+        self.side
     }
 
     /// Whether it walks back to its post, its fight given up or its search let go; falling back with its group, it
@@ -342,7 +367,7 @@ pub fn notice(brain: &mut Brain, me: FighterId, seen: &Seen, tick: u64) {
             }
         }
         // Its own side's noises it pays no heed; an ally's shout it does.
-        Seen::Heard(noise) if noise.side != brain.foe_type.side() => brain.awareness.heard.push(*seen),
+        Seen::Heard(noise) if noise.side != brain.side => brain.awareness.heard.push(*seen),
         Seen::Shouted { .. } => brain.awareness.heard.push(*seen),
         Seen::Landed { verdict, .. } => {
             brain.blocked =

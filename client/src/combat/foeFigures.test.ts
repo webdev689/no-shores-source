@@ -173,6 +173,36 @@ test('a struck foe is drawn slid along the blow and back, its feet where the roo
   assert.ok(Math.abs(drawnY() - still) < 1e-9, 'and back');
 });
 
+test('a companion is dressed by their post, each with their type’s weapons, so two archers ashore differ', () => {
+  const figures = new FoeFigures(roster);
+  const archer = (post: number): KeptFoe => {
+    const glance = new Float64Array(GLANCE_FLOATS);
+    return {
+      id: 7,
+      kind: 2,
+      level: 3,
+      shield: null,
+      type: 16,
+      rank: 2,
+      faction: 2,
+      phase: 1,
+      alert: 2,
+      companion: { leader: 1, given: 0, family: 0, post },
+      view: glanceView(glance),
+      before: null,
+      ticks: 1,
+    };
+  };
+  const gunner = figures.dressOf(archer(1));
+  const lookout = figures.dressOf(archer(4));
+  assert.ok(gunner && lookout);
+  assert.deepEqual([gunner.outfit.right, lookout.outfit.right], ['bow_short_iron', 'bow_short_iron']);
+  assert.notDeepEqual(gunner.outfit.dyes, lookout.outfit.dyes, 'the Gunner and the Lookout dressed apart');
+  assert.equal(figures.dressOf(archer(1)), gunner, 'each made once');
+  const pirate: KeptFoe = { ...archer(1), companion: null };
+  assert.equal(figures.dressOf(pirate)?.outfit.dyes.shirt_short_v, 'Green', 'a pirate archer keeps its own');
+});
+
 test('a foe dodging is drawn facing the way its hop goes, not the fighter it faces', () => {
   const figures = new FoeFigures(roster);
   const fight = fightWith(3, -4, 10);

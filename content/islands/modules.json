@@ -1,0 +1,31 @@
+{
+  "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
+  "parts": [
+    "rock",
+    "rockAlt",
+    "sand",
+    "earth",
+    "grass",
+    "bark",
+    "leaf",
+    "leafAlt",
+    "wood",
+    "plank",
+    "rope",
+    "iron",
+    "stone",
+    "stoneAlt",
+    "moss",
+    "snow",
+    "cloth",
+    "ember"
+  ],
+  "kits": {
+    "temperate": "islands/d2b95df03bbfd49560ec2ca0c5cbd403b03c98a0ce56e2a745f6a26fb0c8507c.modules",
+    "arid": "islands/afdfbf2ffb758554de5652c2eaca69665c6310e7164ab52dd2d1d25e3471dba0.modules",
+    "tropical": "islands/8ca7f0cd7eb79d64b4c663e0942f0eec9682b632d406e2a4a1c4f2f315f472df.modules",
+    "frozen": "islands/94f00179a2ef8f23c1ef1607289e874a83c4884a0bb28f08b029952e1fbfe247.modules",
+    "common": "islands/981495d531730c6869a02725bc31bd4ff259728aead71ec930365be6c2a794b6.modules"
+  },
+  "source": "islands/3c3575a346a6fbdfca8a7410d1014190cadc56c47bea75d9a9a21c425656b662.blend"
+}

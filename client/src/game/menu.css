@@ -33,6 +33,8 @@
 .gear-later,
 .gear-ship,
 .gear-settings {
+  border-width: 2px;
+  border-style: solid;
   max-width: 640px;
   margin: 24px auto;
   padding: 18px 22px;
@@ -78,6 +80,8 @@
   padding: 14px 18px;
 }
 .gear-vault-side {
+  border-width: 2px;
+  border-style: solid;
   padding: 14px 16px;
   min-width: 0;
 }

@@ -9,7 +9,7 @@ use crate::rarity::Rarity;
 use serde_json::Value;
 
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
-const AFIELD: Here = Here { social: false, day: 0, week: 0 };
+const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0, week: 0 };
 
 /// The old character from a fixture, as text and as read now.
 fn read(text: &str) -> (Value, Character) {

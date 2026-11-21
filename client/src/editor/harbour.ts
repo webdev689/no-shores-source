@@ -1,15 +1,15 @@
 import { Sailing, type SailSource } from './sailing.ts';
 
-/** The Sloop's comings and goings in the World Editor: her model fetched once, the rules asked once to put her to
- *  sea, and both forgotten when she is brought in. `View` is what her model becomes once fetched. */
+/** The Sloop's comings and goings in the World Editor: its model fetched once, the rules asked once to put it to
+ *  sea, and both forgotten when it is brought in. `View` is what its model becomes once fetched. */
 export class Harbour<View> {
   private readonly load: () => Promise<View>;
   private readonly fail: (error: unknown) => void;
   private model: View | null = null;
-  /** Her model is being fetched, or failed: a failed one is fetched again only once she is brought in. */
+  /** Its model is being fetched, or failed: a failed one is fetched again only once it is brought in. */
   private fetching: 'no' | 'fetching' | 'failed' = 'no';
   private afloat: Sailing | null = null;
-  /** The rules are asked to put her to sea, or refused: no more is asked until she is brought in. */
+  /** The rules are asked to put it to sea, or refused: no more is asked until it is brought in. */
   private asked: 'no' | 'asking' | 'refused' = 'no';
   /** Each Sail's own number: an answer for one since brought in is dropped. */
   private voyage = 0;
@@ -27,8 +27,8 @@ export class Harbour<View> {
     return this.model;
   }
 
-  /** Each frame Sail is on: fetches her model and puts her to sea at world (x, y), each once. Answers whether she
-   *  may sail: false once the rules have refused her. */
+  /** Each frame Sail is on: fetches its model and puts it to sea at world (x, y), each once. Answers whether it
+   *  may sail: false once the rules have refused it. */
   board(source: SailSource | null, id: string, x: number, y: number, heading: number, time: number): boolean {
     this.fetchModel();
     if (!this.afloat && source && this.asked === 'no') {
@@ -52,7 +52,7 @@ export class Harbour<View> {
     return this.asked !== 'refused';
   }
 
-  /** Fetches her model, once, for a Sloop sailed elsewhere (a fleet room's) to be drawn by. */
+  /** Fetches its model, once, for a Sloop sailed elsewhere (a fleet room's) to be drawn by. */
   fetchModel(): void {
     if (this.model || this.fetching !== 'no') return;
     this.fetching = 'fetching';
@@ -67,7 +67,7 @@ export class Harbour<View> {
       });
   }
 
-  /** Brings her in: the next Sail puts her to sea afresh, and fetches again a model that failed. */
+  /** Brings it in: the next Sail puts it to sea afresh, and fetches again a model that failed. */
   leave(): void {
     [this.afloat, this.asked] = [null, 'no'];
     this.voyage++;

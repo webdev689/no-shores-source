@@ -14,6 +14,7 @@ import type { Landmass } from './landmass.ts';
 import type { ShadowMap } from '../shadow.ts';
 import type { Shot } from './camera.ts';
 import type { Drawer, GameScene } from './scene.ts';
+import { withWrecks } from './wrecks.ts';
 
 /** The forged models' tables and the RMB blocks read so far, shared by every landmass's city. */
 export interface CityAssets {
@@ -124,7 +125,8 @@ async function blocksOf(
 /**
  * A landmass's city, drawn by the city layer once its tables and blocks have come (nothing until then), and its
  * nature, which grows round the eye where the city has not set the ground, from the land as the scene last sampled
- * it close by. `biome` is the continent's `climate` in the layout.
+ * it close by. `biome` is the continent's `climate` in the layout. A ruin's wrecks are drawn with the city, at the
+ * size ships are drawn at now (`shipScale`).
  */
 export function landDrawers(
   gpu: Gpu,
@@ -133,6 +135,7 @@ export function landDrawers(
   biome: string | null,
   base: string,
   assets: Promise<CityAssets | null>,
+  shipScale: () => number,
 ): LandDrawers {
   const plan = landmass.drawnPlan;
   let [version, patch, sample] = [0, scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
@@ -197,7 +200,7 @@ export function landDrawers(
     },
   };
   return {
-    city,
+    city: plan && city && withWrecks(gpu, city, plan, shipScale),
     layouts: laid?.drawer ?? null,
     nature: natureDrawer,
     release: () => {

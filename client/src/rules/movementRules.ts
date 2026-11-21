@@ -6,6 +6,8 @@ export interface Block {
   readonly maxX: number;
   readonly maxY: number;
   readonly top: number;
+  /** Its underside: the ground's height where it stands, or below it, for a block from the ground up; over the ground
+   *  for a floor, a bridge, a roof a body walks under, or a ship's boom or yard. */
   readonly bottom: number;
 }
 

@@ -4,6 +4,9 @@ use combat::fighter::{Action, Side, Weight, fighter, player};
 use combat::shots::loose;
 use combat::{CombatInput, Fighter};
 use movement::{Controls, Flat, TICK_SECONDS, standing, step_body};
+use naval::ranks::Commission;
+use room::pirates::Pirate;
+use room::sea::Ship;
 use room::{EventKind, How};
 
 /// An input with these controls and nothing else.
@@ -53,7 +56,7 @@ pub fn foes() -> Vec<FoeSeen> {
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
     brute = combat::give(&brute, combat::Status::Expose, 200, Some(9)).unwrap();
     brute.statuses.charge_immune = 90;
-    vec![FoeSeen {
+    let brute = FoeSeen {
         foe: 12,
         kind: 3,
         foe_type: 15,
@@ -64,7 +67,23 @@ pub fn foes() -> Vec<FoeSeen> {
         fighter: brute,
         level: 7,
         shield: Some(gear::element::Shield::whole(gear::Element::Cosmic, 80.0)),
-    }]
+        companion: None,
+    };
+    // An officer ashore beside player 9: a pirate swordsman's figure on the players' side.
+    let sword = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Shield };
+    let mate = fighter(Side::Players, standing(1.0, 1.8), sword, Weight::Medium, 100.0, 50.0);
+    let companion = room::Companion {
+        leader: 9,
+        officer: 1,
+        post: gear::crew::Post::Lookout,
+        given: 2,
+        family: 5,
+        level: 4,
+        brawler: false,
+        out: false,
+    };
+    let ashore = FoeSeen { foe: 13, kind: 2, foe_type: 14, faction: 0, fighter: mate, level: 4, ..brute };
+    vec![brute, FoeSeen { shield: None, companion: Some(companion), ..ashore }]
 }
 
 pub const EVENTS: [Event; 2] = [
@@ -135,7 +154,18 @@ const SPELLS: [room::SpellSeen; 2] = [
 /// The node and rect the client's test expects in the welcome.
 const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
 /// The ships the client's test expects in the sea's snapshot.
-const PIRATES: [Pirate; 1] = [Pirate { id: 4, seed: 9, x: 1_000.5, y: 2_000.25, heading: 1.5, bold: true }];
+const PIRATES: [Pirate; 1] = [Pirate {
+    id: 4,
+    seed: 9,
+    commission: Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Elite },
+    level: 23,
+    sight_m: 25_920.0,
+    x: 1_000.5,
+    y: 2_000.25,
+    heading: 1.5,
+    bold: true,
+    quarry: None,
+}];
 
 /// Deep, still water everywhere.
 struct Open;
@@ -147,9 +177,9 @@ impl sailing::waters::Waters for Open {
 }
 
 /// Two fights as a snapshot carries them: each its player, and its view with the player's look laid to starboard, the
-/// captain's port guns run out and the player's stem ramming her; player 2's with a pirate fighting too, player 5's the
-/// same fight without her (the client's test reads both back).
-fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
+/// captain's port guns run out and the player's stem ramming it; player 2's with a pirate fighting too, player 5's the
+/// same fight without it (the client's test reads both back).
+fn fights_seen() -> Vec<room::battle::FightSeen> {
     let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
         x,
         y,
@@ -171,9 +201,11 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
     let view = |captains: &[(sailing::ship::Ship, Commission, u32)]| {
         let mut fight = naval::fight::Fight::among(captains, &Open, 0.0);
         fight.put_to_sea(player, at(0.0, 0.0, 0.0), &Open, 0.0);
-        naval::wire::view_numbers(&fight, &events, Some(&aim), &Open, 0.0)
+        naval::wire::view_numbers(&fight, naval::fight::PLAYER, &events, Some(&aim), &Open, 0.0)
     };
-    vec![(2, view(&captains), TITHE_MINIBOSS), (5, view(&captains[..1]), TITHE_MINIBOSS)]
+    let seen =
+        |player, numbers, may_board| room::battle::FightSeen { player, numbers, captain: TITHE_MINIBOSS, may_board };
+    vec![seen(2, view(&captains), true), seen(5, view(&captains[..1]), false)]
 }
 
 /// The captain of the fight the client's test reads: a Miniboss of the Grey Tithe.
@@ -351,6 +383,10 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
     assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
     assert_eq!((foe.expose(), foe.charge(), foe.charge_immune()), (200, 0, 90), "its debuffs' ticks cross");
+    assert_eq!((foe.leader(), foe.given(), foe.family()), (0, 0, 0), "a foe is no one's companion");
+    let ashore = read.foes().unwrap().get(1);
+    assert_eq!((ashore.leader(), ashore.given(), ashore.family()), (9, 2, 5), "a companion's names");
+    assert_eq!(ashore.post(), 4, "and their post, the Lookout");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);
@@ -376,7 +412,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(told, (Some(vec![1.0, -26.0, 1.1]), 30, 96, 3.0));
     assert!(spells[1].heads().is_none(), "a bolt seeks; it heads nowhere");
 
-    let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
+    let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     let ships: Vec<(PlayerId, Ship)> = sea
         .ships()
@@ -389,23 +425,28 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
             )
         })
         .collect();
-    // The pace a ship crosses at is the one she sailed at, held down near a pirate, not the one asked.
+    // The pace a ship crosses at is the one it sailed at, held down near a pirate, not the one asked.
     let sent = SHIPS.map(|(player, ship)| (player, Ship { pace: ship.rate, ..ship }));
     assert_eq!((sea.tick(), ships), (77, sent.to_vec()));
     let pirate = sea.pirates().unwrap().get(0);
     assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
-    let commission = PIRATES[0].commission();
+    let commission = PIRATES[0].commission;
     assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
+    assert_eq!(pirate.hull(), commission.hull().number(), "it sails its rank's hull");
+    assert_eq!((pirate.level(), pirate.sight()), (23, 25_920.0), "its level and the distance it is sighted from");
+    assert!((pirate.way() - 2.64).abs() < 1e-12, "an Elite's way at sea: {}", pirate.way());
     let fight = sea.fights().unwrap().get(0);
-    assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
+    assert_eq!((fight.faction(), fight.rank()), (1, 4), "the fight's captain a Grey Tithe Miniboss");
+    assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
+    assert!(fight.may_board() && !sea.fights().unwrap().get(1).may_board(), "whether each player may board");
     let numbers =
         |numbers: Option<flatbuffers::Vector<'_, f64>>| -> Option<Vec<f64>> { Some(numbers?.iter().collect()) };
     let alone = sea.fights().unwrap().get(1);
     // A page that knows one captain reads the view whole, the same with others in the fight or without them.
     assert_eq!((fight.player(), numbers(fight.view())), (2, numbers(alone.view())));
-    let (seen, others): (Vec<f64>, Vec<f64>) = (fights_seen()[0].1.clone(), numbers(fight.others()).unwrap());
+    let (seen, others): (Vec<f64>, Vec<f64>) = (fights_seen()[0].numbers.clone(), numbers(fight.others()).unwrap());
     assert_eq!((others[0], others.len()), (1.0, 1 + 3 + naval::wire::VESSEL_NUMBERS + 4), "one other captain");
-    assert!(seen.windows(others.len()).any(|part| part == others), "her numbers as the fight's view holds them");
+    assert!(seen.windows(others.len()).any(|part| part == others), "its numbers as the fight's view holds them");
     assert_eq!((alone.player(), numbers(alone.others())), (5, None), "none, as a room from before others sends it");
     let walker = sea.players().unwrap().get(0);
     let body = body_of(&walker.fighter().unwrap().iter().collect::<Vec<_>>());
@@ -429,21 +470,23 @@ fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
     let args = messages::CourseArgs { points, facing, ..Default::default() };
     let both = messages::Course::create(&mut builder, &args);
     builder.finish(both, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "a course's legs turn her, not a facing");
+    assert!(read_sea_input(builder.finished_data()).is_err(), "a course's legs turn it, not a facing");
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let facing = Some(builder.create_vector(&[0.5, 1.0]));
     let two = messages::Course::create(&mut builder, &messages::CourseArgs { facing, ..Default::default() });
     builder.finish(two, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "she faces one heading");
+    assert!(read_sea_input(builder.finished_data()).is_err(), "it faces one heading");
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let walk = Some(builder.create_vector(&[1.0, 0.0]));
     let short = messages::Course::create(&mut builder, &messages::CourseArgs { walk, ..Default::default() });
     builder.finish(short, None);
     assert!(read_sea_input(builder.finished_data()).is_err(), "a step's controls are all its numbers");
     let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let odd = messages::Course::create(&mut builder, &messages::CourseArgs { helm: 3, ..Default::default() });
+    let odd = messages::Course::create(&mut builder, &messages::CourseArgs { helm: 4, ..Default::default() });
     builder.finish(odd, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "the helm is left or taken, nothing else");
+    assert!(read_sea_input(builder.finished_data()).is_err(), "the helm is left or taken, or a chase, nothing else");
+    assert_eq!(read_sea_input(&chase_bytes(7)), Ok(SeaInput::Chase(Some(7))), "a chase of ship 7");
+    assert_eq!(read_sea_input(&chase_bytes(0)), Ok(SeaInput::Chase(None)), "the chase let go");
 }
 
 #[test]
@@ -468,6 +511,6 @@ fn the_bytes_for_the_clients_test_are_written() {
     std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE), 1_234_567.25)).unwrap();
     let snapshot = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
-    let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
+    let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }

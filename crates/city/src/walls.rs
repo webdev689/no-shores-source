@@ -5,6 +5,7 @@
 use crate::footprint::{Footprint, RAYS, Stop};
 use crate::grid::{CELL_M, Grid, SIDE_CELLS, index};
 use crate::landmarks::{ahead, column, turn_toward};
+use crate::ruins;
 use crate::solids::{Material, Shape, Solid};
 use crate::terraces::Footing;
 use land::ground::Ground;
@@ -26,6 +27,11 @@ const QUAY_FOOT_M: f64 = -4.0;
 const PIER_FOOT_M: f64 = -5.0;
 /// A pier's width, metres.
 pub const PIER_M: f64 = 10.0;
+/// A ruined wall is breached at one piece in this many; a breach's heap stands this high, metres; and a broken
+/// pier keeps this share of its length from the shore.
+const BREACH_EVERY: usize = 3;
+const HEAP_M: f64 = 4.5;
+const BROKEN_PIER_KEPT: f64 = 0.4;
 
 fn ray_end(footprint: &Footprint, ray: usize) -> [f64; 2] {
     let at = footprint.rays[ray % RAYS];
@@ -33,9 +39,11 @@ fn ray_end(footprint: &Footprint, ray: usize) -> [f64; 2] {
 }
 
 /// The wall round the city: a piece every 30 m or less between each pair of rays the land holds, its foot on the
-/// ground, a round tower every sixth piece and a gatehouse on each gate's ray.
+/// ground, a round tower every sixth piece and a gatehouse on each gate's ray. A ruined city's wall is breached at
+/// one piece in three and at every gate, each breach's stones heaped below it, and its towers stand half as high,
+/// roofless.
 #[must_use]
-pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize]) -> Vec<Solid> {
+pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize], ruined: bool) -> Vec<Solid> {
     let mut solids = Vec::new();
     let mut pieces = 0;
     for ray in 0..RAYS {
@@ -61,16 +69,25 @@ pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize]) -> Vec
                 &[ahead(middle, along, -each / 2.0), middle, ahead(middle, along, each / 2.0)],
             );
             let size = [WALL_THICK_M, each, WALL_HEIGHT_M + SINK_M + (high - low)];
-            solids.push(
-                Solid::upright(Shape::Block, [middle[0], middle[1], low - SINK_M], size, Material::Stone)
-                    .turned(turn_toward(along)),
-            );
+            if ruined && pieces % BREACH_EVERY == 1 {
+                let fallen = [WALL_THICK_M * 2.5, size[1], HEAP_M];
+                solids.push(ruins::heap([middle[0], middle[1], low], fallen, turn_toward(along)));
+            } else {
+                solids.push(
+                    Solid::upright(Shape::Block, [middle[0], middle[1], low - SINK_M], size, Material::Stone)
+                        .turned(turn_toward(along)),
+                );
+            }
             pieces += 1;
             if pieces % PIECES_PER_TOWER == 0 {
                 let (low, high) = lowest_and_highest(ground, &round(middle, 8.0));
                 let tall = WALL_HEIGHT_M + 8.0 + SINK_M + (high - low);
-                solids.push(column(middle, low - SINK_M, 16.0, tall, 1.0, Material::Stone));
-                solids.push(column(middle, low - SINK_M + tall, 19.0, 9.0, 0.0, Material::Roof));
+                if ruined {
+                    solids.push(column(middle, low - SINK_M, 16.0, (tall + SINK_M) / 2.0, 1.0, Material::Stone));
+                } else {
+                    solids.push(column(middle, low - SINK_M, 16.0, tall, 1.0, Material::Stone));
+                    solids.push(column(middle, low - SINK_M + tall, 19.0, 9.0, 0.0, Material::Roof));
+                }
             }
         }
     }
@@ -83,11 +100,23 @@ pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize]) -> Vec
             [-1.0, 1.0].iter().flat_map(|&side| round(ahead(at, across, side * 14.0), 7.0)).collect();
         let (low, high) = lowest_and_highest(ground, &spots);
         let foot = low - SINK_M;
+        let height = WALL_HEIGHT_M + 12.0 + SINK_M + (high - low);
         for side in [-1.0, 1.0] {
             let tower = ahead(at, across, side * 14.0);
-            let tall = WALL_HEIGHT_M + 12.0 + SINK_M + (high - low);
-            solids.push(column(tower, foot, 14.0, tall, 1.0, Material::Stone));
-            solids.push(column(tower, foot + tall, 17.0, 10.0, 0.0, Material::Roof));
+            if ruined {
+                solids.push(column(tower, foot, 14.0, (height + SINK_M) / 2.0, 1.0, Material::Stone));
+            } else {
+                solids.push(column(tower, foot, 14.0, height, 1.0, Material::Stone));
+                solids.push(column(tower, foot + height, 17.0, 10.0, 0.0, Material::Roof));
+            }
+        }
+        if ruined {
+            solids.push(ruins::heap(
+                [at[0], at[1], foot + SINK_M],
+                [16.0, WALL_THICK_M * 2.5, HEAP_M],
+                turn_toward(across),
+            ));
+            continue;
         }
         let arch = Solid::upright(
             Shape::Arch { opening: 0.6 },
@@ -120,9 +149,9 @@ fn round(middle: [f64; 2], reach: f64) -> [[f64; 2]; 5] {
 }
 
 /// The harbour: a quay along the shore rays' ends, and a pier out to sea from every third of them, longer at the
-/// harbour's middle.
+/// harbour's middle. A ruined harbour's piers are broken off near the shore.
 #[must_use]
-pub fn harbour_works(footprint: &Footprint) -> Vec<Solid> {
+pub fn harbour_works(footprint: &Footprint, ruined: bool) -> Vec<Solid> {
     let shore: Vec<usize> = (0..RAYS).filter(|&ray| footprint.rays[ray].stop == Stop::Shore).collect();
     let mut solids = Vec::new();
     for pair in shore.windows(2).filter(|pair| pair[1] == pair[0] + 1) {
@@ -140,7 +169,7 @@ pub fn harbour_works(footprint: &Footprint) -> Vec<Solid> {
     for (place, ray) in pier_rays(footprint) {
         let direction = footprint.rays[ray].direction;
         let middle_share = 1.0 - (place as f64 / shore.len().max(1) as f64 - 0.5).abs() * 2.0;
-        let length = 120.0 + 140.0 * middle_share;
+        let length = (120.0 + 140.0 * middle_share) * if ruined { BROKEN_PIER_KEPT } else { 1.0 };
         let middle = ahead(ray_end(footprint, ray), direction, length / 2.0);
         let size = [PIER_M, length, QUAY_TOP_M - PIER_FOOT_M];
         let pier = Solid::upright(Shape::Block, [middle[0], middle[1], PIER_FOOT_M], size, Material::Timber);

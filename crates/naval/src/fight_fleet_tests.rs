@@ -35,15 +35,15 @@ fn fleet(first: f64, second: f64, temper: Temper) -> Fight {
     let captain = fight.ships.get_mut(&PIRATE).unwrap_or_else(|| panic!("the captain"));
     captain.ship = sloop_at(0.0, 0.0);
     if let Sailor::Captain(command) = &mut captain.sailor {
-        (command.her.temper, command.her.cruise) = (temper, 0.0);
+        (command.mind.temper, command.mind.cruise) = (temper, 0.0);
     }
     fight
 }
 
-fn her(fight: &Fight) -> &Captain {
+fn mind(fight: &Fight) -> &Captain {
     match fight.vessel(PIRATE).map(|vessel| &vessel.sailor) {
-        Some(Sailor::Captain(command)) => &command.her,
-        _ => panic!("a captain sails her"),
+        Some(Sailor::Captain(command)) => &command.mind,
+        _ => panic!("a captain sails it"),
     }
 }
 
@@ -60,27 +60,27 @@ fn run(fight: &mut Fight, orders: &[(ShipId, Orders)], ticks: u32) -> Vec<Event>
 fn a_bold_captain_takes_on_the_nearer_player() {
     let mut fight = fleet(400.0, -200.0, Temper::Bold);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(SECOND));
+    assert_eq!(mind(&fight).target(), Some(SECOND));
 }
 
 #[test]
-fn she_holds_the_ship_she_fights_against_one_a_little_nearer() {
+fn it_holds_the_ship_it_fights_against_one_a_little_nearer() {
     let mut fight = fleet(300.0, -330.0, Temper::Bold);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(PLAYER));
-    // The other comes a little nearer than the one she fights, but not a fifth nearer.
+    assert_eq!(mind(&fight).target(), Some(PLAYER));
+    // The other comes a little nearer than the one it fights, but not a fifth nearer.
     fight.ships.get_mut(&SECOND).unwrap_or_else(|| panic!("second")).ship = sloop_at(-280.0, 0.0);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(PLAYER), "held");
+    assert_eq!(mind(&fight).target(), Some(PLAYER), "held");
     fight.ships.get_mut(&SECOND).unwrap_or_else(|| panic!("second")).ship = sloop_at(-150.0, 0.0);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(SECOND), "far nearer, she turns on her");
+    assert_eq!(mind(&fight).target(), Some(SECOND), "far nearer, the captain turns on it");
 }
 
 #[test]
-fn both_players_balls_strike_her_and_neither_strikes_the_other() {
+fn both_players_balls_strike_it_and_neither_strikes_the_other() {
     let mut fight = fleet(0.0, 0.0, Temper::Wary);
-    // Both players abreast of her, one each side, 50 m off, heading north: she lies on one's starboard beam and
+    // Both players abreast of it, one each side, 50 m off, heading north: it lies on one's starboard beam and
     // the other's port beam.
     fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("first")).ship = sloop_at(-50.0, 0.0);
     fight.ships.get_mut(&SECOND).unwrap_or_else(|| panic!("second")).ship = sloop_at(50.0, 0.0);
@@ -97,18 +97,18 @@ fn both_players_balls_strike_her_and_neither_strikes_the_other() {
         .collect();
     assert!(struck.iter().any(|(shooter, _)| *shooter == PLAYER), "{struck:?}");
     assert!(struck.iter().any(|(shooter, _)| *shooter == SECOND), "{struck:?}");
-    assert!(struck.iter().all(|(_, target)| *target == PIRATE), "a player's ball strikes only her: {struck:?}");
+    assert!(struck.iter().all(|(_, target)| *target == PIRATE), "a player's ball strikes only it: {struck:?}");
 }
 
 #[test]
-fn she_is_provoked_by_the_player_who_struck_her_only() {
+fn it_is_provoked_by_the_player_who_struck_it_only() {
     let mut fight = fleet(-50.0, 600.0, Temper::Wary);
     let fire = Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 50.0, ray: None }), fire: true, ..IDLE };
     run(&mut fight, &[(PLAYER, fire), (SECOND, IDLE)], 1);
     run(&mut fight, &idle_both(), 120);
-    let her = her(&fight);
-    assert_eq!(her.target(), Some(PLAYER), "the wary captain fights the one who struck her");
-    assert!(!her.hostile_to(SECOND));
+    let mind = mind(&fight);
+    assert_eq!(mind.target(), Some(PLAYER), "the wary captain fights the one who struck it");
+    assert!(!mind.hostile_to(SECOND));
 }
 
 #[test]
@@ -122,35 +122,35 @@ fn a_captain_leaves_only_once_past_every_players_ship() {
     assert_eq!(fight.over(), Some(End::Gone));
     let lay = fight.vessel(PIRATE).map(|vessel| vessel.ship);
     run(&mut fight, &idle_both(), 60);
-    assert_eq!(fight.vessel(PIRATE).map(|vessel| vessel.ship), lay, "gone, she is stepped no more");
+    assert_eq!(fight.vessel(PIRATE).map(|vessel| vessel.ship), lay, "gone, it is stepped no more");
 }
 
 #[test]
-fn a_player_who_leaves_is_forgotten_and_her_rival_fought() {
+fn a_player_who_leaves_is_forgotten_and_their_rival_fought() {
     let mut fight = fleet(200.0, -400.0, Temper::Bold);
     run(&mut fight, &idle_both(), 1);
-    assert_eq!(her(&fight).target(), Some(PLAYER));
+    assert_eq!(mind(&fight).target(), Some(PLAYER));
     fight.leave(PLAYER);
-    assert_eq!(her(&fight).target(), None);
+    assert_eq!(mind(&fight).target(), None);
     run(&mut fight, &[(SECOND, IDLE)], 1);
-    assert_eq!(her(&fight).target(), Some(SECOND));
+    assert_eq!(mind(&fight).target(), Some(SECOND));
 }
 
 #[test]
-fn a_wreck_mends_unless_a_captain_who_would_take_her_lies_near_her() {
+fn a_hurt_ship_mends_unless_a_captain_who_would_take_it_lies_near_it() {
     let mut fight = fleet(300.0, 5000.0, Temper::Bold);
     for id in [PLAYER, SECOND] {
         let player = fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}"));
-        player.damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+        player.damage.apply(Hurt { hull: 200.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     }
     run(&mut fight, &idle_both(), 60 * 20);
     let hull = |id: ShipId| fight.vessel(id).map_or(-1.0, |vessel| vessel.damage.hull);
-    assert_eq!(hull(PLAYER), 0.0, "she lies within 700 m of a bold pirate");
-    assert!(hull(SECOND) > 0.0, "far off, her hands mend her");
+    assert_eq!(hull(PLAYER), 40.0, "it lies within 700 m of a bold pirate");
+    assert!(hull(SECOND) > 40.0, "far off, its hands mend it");
 }
 
 #[test]
-fn a_player_with_no_orders_lies_where_she_was_and_one_late_catches_up() {
+fn a_player_with_no_orders_lies_where_they_were_and_one_late_catches_up() {
     let mut fight = fleet(400.0, -400.0, Temper::Wary);
     let sail = Orders { helm: Helm { steer: 0.0, crab: false, climb: 1 }, ..IDLE };
     let rowing = Orders { helm: Helm { climb: 0, ..sail.helm }, ..IDLE };
@@ -162,19 +162,19 @@ fn a_player_with_no_orders_lies_where_she_was_and_one_late_catches_up() {
     run(&mut fight, &[(PLAYER, rowing), (SECOND, rowing), (SECOND, rowing)], 1);
     let ship_of = |id: ShipId| fight.vessel(id).map(|vessel| vessel.ship);
     let (first, second) = (ship_of(PLAYER), ship_of(SECOND));
-    assert_eq!(first.map(|ship| ship.y), second.map(|ship| ship.y), "two orders in a tick catch her up to the bit");
+    assert_eq!(first.map(|ship| ship.y), second.map(|ship| ship.y), "two orders in a tick catch them up to the bit");
 }
 
 #[test]
-fn a_captain_is_called_onto_the_ring_round_the_ship_she_is_called_to() {
+fn a_captain_is_called_onto_the_ring_round_the_ship_it_is_called_to() {
     let mut fight = Fight::new(9);
     fight.put_to_sea(PLAYER, sloop_at(5000.0, -300.0), &Open, 0.0);
     fight
         .call_captain(PIRATE, &sloop_at(5000.0, -300.0), Commission::default(), &Open, 0.0)
         .unwrap_or_else(|error| panic!("{error}"));
-    let her = fight.vessel(PIRATE).map_or([0.0; 2], |vessel| [vessel.ship.x - 5000.0, vessel.ship.y + 300.0]);
-    assert!((SPAWN_RING[0]..=SPAWN_RING[1]).contains(&(her[0] * her[0] + her[1] * her[1]).sqrt()));
-    assert_eq!(fight.over(), None, "she is in the fight");
+    let off = fight.vessel(PIRATE).map_or([0.0; 2], |vessel| [vessel.ship.x - 5000.0, vessel.ship.y + 300.0]);
+    assert!((SPAWN_RING[0]..=SPAWN_RING[1]).contains(&(off[0] * off[0] + off[1] * off[1]).sqrt()));
+    assert_eq!(fight.over(), None, "it is in the fight");
     assert_eq!(Fight::new(9).over(), None, "a fight with no captain has not ended");
 }
 
@@ -202,11 +202,11 @@ fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_
     let ids: Vec<ShipId> = (CAPTAIN..).take(3).collect();
     for id in &ids {
         let Some(Sailor::Captain(command)) = fight.vessel(*id).map(|vessel| &vessel.sailor) else { panic!("{id}") };
-        assert_eq!(command.her.temper, Temper::Bold, "{id} comes to fight whatever her temper");
+        assert_eq!(command.mind.temper, Temper::Bold, "{id} comes to fight whatever its temper");
     }
     let apart = |fight: &Fight, id: ShipId| {
-        let (her, player) = (&fight.ships[&id].ship, &fight.ships[&PLAYER].ship);
-        libm::hypot(her.x - player.x, her.y - player.y)
+        let (captain, player) = (&fight.ships[&id].ship, &fight.ships[&PLAYER].ship);
+        libm::hypot(captain.x - player.x, captain.y - player.y)
     };
     let first: Vec<f64> = ids.iter().map(|id| apart(&fight, *id)).collect();
     let mut fired = BTreeMap::new();
@@ -223,6 +223,6 @@ fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_
     }
     for (at, id) in ids.iter().enumerate() {
         assert!(nearest[at] < first[at] - 50.0, "{id} closed from {} only to {}", first[at], nearest[at]);
-        assert!(fired.get(id).copied().unwrap_or(0) >= 1, "{id} fired on her: {fired:?}");
+        assert!(fired.get(id).copied().unwrap_or(0) >= 1, "{id} fired on it: {fired:?}");
     }
 }
