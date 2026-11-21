@@ -1,5 +1,5 @@
 import type { ArtState } from './artMessages.ts';
-import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, readFromRoom } from './messages.ts';
+import { type FromRoomMessage, type JoinedNode, type PlayerDress, readFromRoom } from './messages.ts';
 import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
 import { LinkMeasure, type Measured } from './linkMeasure.ts';
 import { SnapshotKeeper } from './snapshots.ts';
@@ -224,11 +224,6 @@ export class RoomConnection implements RoomLink {
     const own = snapshot.players.find((seen) => seen.player === this.player);
     if (own) this.measure.snapshot(own.acknowledged, kept, performance.now());
   };
-
-  /** Sends the sea room the player's ship's course and pace; while the socket is not open, nothing is sent. */
-  sendCourse(points: readonly (readonly [number, number])[], pace: number): void {
-    this.send(courseBytes(points, pace));
-  }
 
   /** Whether the socket is open: a room that dropped the player, or a network that dropped the room, closes it. */
   get open(): boolean {

@@ -11,7 +11,6 @@ code:
   - crates/sailing/src/ship.rs#step_pulled
   - crates/sailing/src/pose.rs#pose_of
   - crates/sailing/src/waters.rs#LandWaters
-  - crates/sailing/src/waters.rs#weather_wind
   - crates/sailing/src/pose.rs#lag_of
   - crates/room/src/sea_weather.rs#SeaWeather
   - crates/sailing/src/waters.rs#sail_wind
@@ -37,7 +36,7 @@ code:
   - client/src/ships/dress.ts#DRESSES
   - client/src/ships/flag.ts#flagGrid
   - client/src/ships/flagPictures.ts#flagPictures
-  - client/src/ships/shipView.ts#shipViewNamed
+  - client/src/ships/shipModels.ts#openHull
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -228,8 +227,8 @@ Boat's sizes; a spanker is a gaff sail:
   from its yard, head first, and floats astern; its flag comes down its mast when it strikes. The harm goes with the
   fight.
 
-Any published hull is drawn by its name (`shipViewNamed`: its mesh and its sails' corners from `ships.json`), as
-the story draws the Brig and the Frigate.
+Any published hull is drawn by its number (`openHull`: its mesh and its sails' corners from `ships.json`), as the
+story draws the Brig and the Frigate.
 
 In the editor its sails are set on the helm's top rung; at sea, while it is under way. They are drawn in the wind
 the rules sail it in, where it is, which the page reads from the sky's law.
