@@ -40,9 +40,9 @@ test('the banner shows the event’s words, its heroic window and its bonus, in 
   );
   assert.ok((node.opacity ?? 1) < 1, 'sliding in at its beat');
   banner.update(shown, 1, null);
-  assert.equal(banner.node(1280, 1)?.opacity, 1, 'in place once slid');
-  assert.equal(banner.node(1280, 1)?.width, 440, 'at most 440 px wide');
-  assert.equal(banner.node(400, 1)?.width, 304, 'three quarters of a narrow view');
+  assert.equal((banner.node(1280, 1) as Node).opacity, 1, 'in place once slid');
+  assert.equal((banner.node(1280, 1) as Node).width, 440, 'at most 440 px wide');
+  assert.equal((banner.node(400, 1) as Node).width, 304, 'three quarters of a narrow view');
   banner.update(null, 0.016);
   assert.equal(banner.node(1280, 1), null);
   assert.equal(banner.tone, null);
