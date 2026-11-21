@@ -266,7 +266,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   assets, the bible, regressions outside the events, the tests), whose rules, page and assets fixes are merged; still
   to come, its tests and bible fixes and a picture pass of every beat on a quiet machine. Tested offline:
   `cargo xtask check` passes at 41f08483, native and WebAssembly agreeing; both events played through on the built page
-  and pictured before the second audit's fixes; not tested live. The `modules` workflow's run on a2c51a17 baked and
+  and pictured before the six audits' fixes; not tested live. The `modules` workflow's run on a2c51a17 baked and
   published the 13 event modules: all 42 of their groups answer on R2 but one, the sealed scar's rubble, which the
   assets fixes (3e1bf535) re-keyed and which waits on the workflow's run of that commit. `main` is merged in again
   after the hub, the healing charges and the ship's burst: the events' banner, store bars and compass marks are drawn

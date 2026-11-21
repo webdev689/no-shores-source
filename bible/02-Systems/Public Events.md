@@ -43,19 +43,18 @@ its foes gone (unjumped, two minutes past its end). An event has 8 minutes; won 
 seconds, and the next is shown from then.
 
 **The grounds.** The layout marks them with its other sites ([[Layouts]]), in the three zones alone: three stores in the
-first hamlet with room for them, on clear ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear
-of every building, set piece and prop and 2 m off every way; the point its raiders come in from, 36 m out toward the
-zone's nearest camp (the Vale has none: from the shore); their two banners, 28 m out, 6 m either side; and in its
-first wilds where its fissure opens, 12 m (or 9, or 15)
-from its middle beside the obelisk its battlefield stands there, on ground 15.4 m east and west and 9.8 m north and
-south (the fissure's own mesh, square to the grid, its long side east and west) clear of the obelisk, the ruins and
-everything standing, and the spot its crystal growth rises, 14 to 20 m from the fissure. A store stands square to the
-grid as one of three stacks (the page draws store `n` as the stack after its own), and its box, which a body runs
-into on the page and in the room alike, covers that stack and the plundered one it turns into: 2.604 by 2.049 by 1.73
-m high, 2.5 by 2.224 by 1.4 m, or 2.6 by 2.049 by 1.0 m; each is laid out in 2.604 by 2.224 m, room for any of
-them. The bake writes a zone's grounds into its node file, for
-Saltmere's three zones only: the Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the
-middle of its stores, reaching 10 m past the farthest (20 m at least), with its stores, approach and banners.
+first hamlet with room for them, on clear ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of
+every building, set piece and prop and 2 m off every way; the point its raiders come in from, 36 m out toward the zone's
+nearest camp (the Vale has none: from the shore); their two banners, 28 m out, 6 m either side; and in its first wilds
+where its fissure opens, 12 m (or 9, or 15) from its middle beside the obelisk its battlefield stands there, on ground
+15.4 m east and west and 9.8 m north and south (the fissure's own mesh, square to the grid, its long side east and west)
+clear of the obelisk, the ruins and everything standing, and the spot its crystal growth rises, 14 to 20 m from the
+fissure. A store stands square to the grid as one of three stacks (the page draws store `n` as the stack after its own),
+and its box, which a body runs into on the page and in the room alike, covers that stack and the plundered one it turns
+into: 2.604 by 2.049 by 1.73 m high, 2.5 by 2.224 by 1.4 m, or 2.6 by 2.049 by 1.0 m; each is laid out in 2.604 by 2.224
+m, room for any of them. The bake writes a zone's grounds into its node file, for Saltmere's three zones only: the
+Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the middle of its stores, reaching 10
+m past the farthest (20 m at least), with its stores, approach and banners.
 
 **The navmesh.** A node's room bakes its mesh round its garrison only ([[Navmesh]]). As a zone's room opens, it bakes a
 rectangle round each ground (the Fissure's circle and its growth's spot; the raid's circle, its approach and where its
@@ -65,19 +64,19 @@ build, measured once at commit 2b4cb9f1: 466 ms for Saltgrass Downs, 497 ms for 
 Moors. In Node's WebAssembly the room opens in 0.7 to 1.0 s, as "Limits" gives.
 
 **Its foes**, its growth and its tithe-taker among them, stand at the event's level (the top of the island's band,
-raised by the voyage's seas), at home round the event's ground. Each but the growth and the tithe-taker hunts the
-living player nearest its home as it stands, wherever they are, and fights a player within a leash of the event's reach (its ground's radius, or its farthest
-point from its middle past it: the growth's spot, the approach, where the raid's waves form) and 16 m more, measured
-from its own place (the ground's middle, or a Collector's post at its store), on ground the room's mesh covers; past
-that it gives them up and walks back. A zone's room that holds events stands 40 foes alive at most and keeps 16 of them
-for its event (the most it stands at once: a Fissure's living foes short of a wave, its fullest wave and its growth or
-Warden); its garrison stands again, calls and arrives only while the foes not of the event stay within 24, as in any
-other node. The growth, the Warden and Marrow stand half their health more for each player at the event beyond the first
-(the most seen at the Fissure; those on the raid's ground as Marrow comes). The Fissure's growth and the raid's
-tithe-taker the room handles itself: their brains are left be, so neither moves on its own nor strikes; the growth
-stands where it rose, and the tithe-taker walks the navmesh at his own pace, keeping his way from tick to tick; their
-statuses still wear off. A raid's approach, where its waves form and its raiders' home (the stores' middle) are put on
-the navmesh as it begins, at its nearest point.
+raised by the voyage's seas), at home round the event's ground. Each but the growth and the tithe-taker hunts the living
+player nearest its home as it stands, wherever they are, and fights a player within a leash of the event's reach (its
+ground's radius, or its farthest point from its middle past it: the growth's spot, the approach, where the raid's waves
+form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post at its store), on ground
+the room's mesh covers; past that it gives them up and walks back. A zone's room that holds events stands 40 foes alive
+at most and keeps 16 of them for its event (the most it stands at once: a Fissure's living foes short of a wave, its
+fullest wave and its growth or Warden); its garrison stands again, calls and arrives only while the foes not of the
+event stay within 24, as in any other node. The growth, the Warden and Marrow stand half their health more for each
+player at the event beyond the first (the most seen at the Fissure; those on the raid's ground as Marrow comes). The
+Fissure's growth and the raid's tithe-taker the room handles itself: their brains are left be, so neither moves on its
+own nor strikes; the growth stands where it rose, and the tithe-taker walks the navmesh at his own pace, keeping his way
+from tick to tick; their statuses still wear off. A raid's approach, where its waves form and its raiders' home (the
+stores' middle) are put on the navmesh as it begins, at its nearest point.
 
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle: three foes and one more for
