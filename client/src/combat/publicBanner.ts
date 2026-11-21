@@ -1,10 +1,16 @@
 // A zone's public event as the banner under the compass shows it, after Destiny's: what it is over its name, the name
 // and the place, the countdown at the right, the objective with its bar, the heroic task with its window's countdown,
 // the bonus and whether it holds; the result for its time once it is over; and the next event's line between them.
-// It slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed).
+// It slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed). Drawn as nodes of the
+// interface the game draws (`ui/`), laid afresh each frame from what the banner keeps.
 import type { PlaceMark } from '../plus/compass.ts';
-import { HALO, TONES } from '../plus/tones.ts';
-import { element, Meter, setStyle, showNode } from '../plus/meter.ts';
+import { motionReduced } from '../plus/kit.ts';
+import { Meter } from '../plus/meter.ts';
+import { TONES } from '../plus/tones.ts';
+import { announce } from '../ui/announce.ts';
+import { cubicBezier } from '../ui/ease.ts';
+import type { Child, Node, Text } from '../ui/node.ts';
+import { drawMeter, thinBarNode } from './barDraw.ts';
 
 /** The banner's tone: an event running, one turned heroic, its result, or the next event's line between them. */
 export type BannerTone = 'running' | 'heroic' | 'won' | 'failed' | 'next';
@@ -49,112 +55,264 @@ export interface PublicShown {
 export const STORE_BAR_OVER_M = 2.3;
 
 /** Each tone's colour: the accent down its edge, its kicker's words and its bar's fill. */
-const TONE_COLOURS = {
+export const TONE_COLOURS = {
   running: '#e9b44c',
   heroic: '#ff7a3d',
   won: '#9fd86a',
   failed: '#e0483c',
   next: TONES.stoneHi,
 } as const;
+const HEROIC = '#ff7a3d';
+const HEROIC_WORDS = '#ffb27a';
+const URGENT = '#e0483c';
 
-/** The banner's elements, made once and written only when their words change. */
+/** The banner's width at most, CSS pixels, or this share of a narrower view; the slide's and the flares' seconds. */
+const WIDTH = { most: 440, share: 0.76 } as const;
+const SLIDE_S = 0.45;
+const FLARE_S = 1.2;
+const CHANCE_S = 1.6;
+
+/** Whether a blink `period` seconds long stands in its dark half at `time`, as CSS's `steps(2, end)` blinks. */
+export const blinkDark = (time: number, period: number): boolean => time % period >= period / 2;
+
+/** A diamond `size` CSS pixels a side, filled and edged as said, with a glow of `glow` round it where one is given. */
+export function diamondNode(size: number, fill: string, edge: string, glow: string | null = null): Node {
+  const halo = glow ? `<path d="M10 0 20 10 10 20 0 10Z" fill="${glow}" opacity="0.45"/>` : '';
+  return {
+    width: size,
+    height: size,
+    picture: {
+      key: `diamond ${fill} ${edge} ${glow ?? ''}`,
+      source: {
+        svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">${halo}<path d="M10 3 17 10 10 17 3 10Z" fill="${fill}" stroke="${edge}" stroke-width="1.5"/></svg>`,
+      },
+    },
+  };
+}
+
+/** The banner as it stands: what it shows, how long since its last beat, and its bar, kept across frames so its
+ *  slide plays once a beat and its bar eases as a vital's does. */
 export class PublicBanner {
-  readonly root: HTMLElement;
-  private readonly kicker: HTMLElement;
-  private readonly clock: HTMLElement;
-  private readonly title: HTMLElement;
-  private readonly place: HTMLElement;
-  private readonly objective: HTMLElement;
-  private readonly barRow: HTMLElement;
-  private readonly bar: Meter;
-  private readonly barLabel: HTMLElement;
-  private readonly heroic: HTMLElement;
-  private readonly heroicText: HTMLElement;
-  private readonly heroicClock: HTMLElement;
-  private readonly bonus: HTMLElement;
-  private readonly elsewhere: HTMLElement;
-  /** A line a screen reader reads at each beat, unseen: the banner's own words change too often to be read out. */
-  private readonly said: HTMLElement;
+  private shown: Banner | null = null;
+  private beat: BannerBeat | null = null;
+  private time = 0;
+  private beatAt = Number.NEGATIVE_INFINITY;
+  private readonly meter = new Meter({ lossShown: false });
 
-  constructor(parent: HTMLElement) {
-    this.root = element('section', 'public-banner', parent);
-    this.root.setAttribute('role', 'status');
-    this.root.setAttribute('aria-label', 'Public event');
-    this.root.setAttribute('aria-atomic', 'false');
-    const head = element('div', 'pb-head', this.root);
-    this.kicker = element('span', 'pb-kicker', head);
-    this.clock = element('span', 'pb-clock', head);
-    this.clock.setAttribute('aria-hidden', 'true');
-    const name = element('div', 'pb-name', this.root);
-    this.title = element('span', 'pb-title', name);
-    this.place = element('span', 'pb-place', name);
-    this.objective = element('div', 'pb-objective', this.root);
-    this.barRow = element('div', 'pb-bar-row', this.root);
-    this.bar = new Meter(this.barRow, 'pb-bar', { lossShown: false });
-    this.barLabel = element('span', 'pb-bar-label', this.barRow);
-    this.heroic = element('div', 'pb-heroic', this.root);
-    element('i', 'pb-heroic-mark', this.heroic);
-    this.heroicText = element('span', 'pb-heroic-text', this.heroic);
-    this.heroicClock = element('span', 'pb-heroic-clock', this.heroic);
-    this.heroicClock.setAttribute('aria-hidden', 'true');
-    this.bonus = element('div', 'pb-bonus', this.root);
-    this.elsewhere = element('div', 'pb-elsewhere', this.root);
-    this.said = element('span', 'pb-said', this.root);
-    this.root.hidden = true;
+  /** Shows `banner`, or hides it for none, `seconds` after the last frame; a `beat` slides it in afresh and is read
+   *  out on its own, never the ticking clocks. */
+  update(banner: Banner | null, seconds: number, beat: BannerBeat | null = null): void {
+    this.time += seconds;
+    this.shown = banner;
+    if (!banner) return;
+    if (banner.bar) this.meter.set(banner.bar.share, seconds);
+    if (!beat) return;
+    [this.beat, this.beatAt] = [beat, this.time];
+    const objective =
+      beat === 'heroic' || beat === 'missed' || beat === 'chance' ? banner.heroic?.text : banner.objective;
+    announce(`${banner.kicker}: ${banner.title}${objective ? `. ${objective}` : ''}`);
   }
 
-  /** Shows `banner`, or hides it for none, `seconds` after the last frame; a `beat` slides it in afresh. */
-  update(banner: Banner | null, seconds: number, beat: BannerBeat | null = null): void {
-    showNode(this.root, !!banner);
-    if (!banner) return;
-    this.root.dataset.tone = banner.tone;
-    this.root.classList.toggle('urgent', !!banner.urgent);
-    setStyle(this.root, '--tone', TONE_COLOURS[banner.tone]);
-    say(this.kicker, banner.kicker);
-    say(this.clock, banner.clock);
-    say(this.title, banner.title);
-    say(this.place, banner.place);
-    say(this.objective, banner.objective);
-    showNode(this.objective, banner.objective !== '');
-    showNode(this.barRow, !!banner.bar);
-    if (banner.bar) {
-      this.bar.set(banner.bar.share, seconds);
-      say(this.barLabel, banner.bar.label);
-    }
-    showNode(this.heroic, !!banner.heroic);
-    if (banner.heroic) {
-      this.heroic.classList.toggle('met', banner.heroic.met);
-      say(this.heroicText, banner.heroic.text);
-      say(this.heroicClock, banner.heroic.clock);
-    }
-    showNode(this.elsewhere, !!banner.elsewhere);
-    say(this.elsewhere, banner.elsewhere ?? '');
-    showNode(this.bonus, !!banner.bonus);
-    if (banner.bonus) {
-      say(this.bonus, banner.bonus.text);
-      this.bonus.dataset.state = banner.bonus.state;
-    }
-    if (beat) {
-      const objective =
-        beat === 'heroic' || beat === 'missed' || beat === 'chance' ? banner.heroic?.text : banner.objective;
-      say(this.said, `${banner.kicker}: ${banner.title}${objective ? `. ${objective}` : ''}`);
-      // Taken off and put back, so the slide plays again for each beat.
-      this.root.dataset.beat = beat;
-      this.root.classList.remove('beat');
-      void this.root.offsetWidth;
-      this.root.classList.add('beat');
-    }
+  /** The tone the banner shows in, none while it is hidden. */
+  get tone(): BannerTone | null {
+    return this.shown?.tone ?? null;
+  }
+
+  /** The banner `room` CSS pixels of view wide at `zoom`: a dark band fading to its right, its tone down its left
+   *  edge, words on the face's grid; between events one line. */
+  node(room: number, zoom: number): Child {
+    const banner = this.shown;
+    if (!banner) return null;
+    const tone = TONE_COLOURS[banner.tone];
+    const still = motionReduced();
+    const since = this.time - this.beatAt;
+    const slid = still ? 1 : cubicBezier(0.2, 0.8, 0.3, 1, Math.min(1, Math.max(0, since / SLIDE_S)));
+    const line = (text: Text, more: Partial<Node> = {}): Node => ({
+      text: { size: zoom, colour: TONES.word, edge: 'halo', ...text },
+      ...more,
+    });
+    const next = banner.tone === 'next';
+    const clock = line({
+      words: banner.clock,
+      size: next ? zoom : 2 * zoom,
+      colour: banner.urgent ? URGENT : TONES.word,
+      wrap: false,
+    });
+    const kicker = line({ words: banner.kicker.toUpperCase(), colour: tone, tracking: 3.5, wrap: false });
+    const title = line({
+      words: banner.title,
+      size: next ? zoom : 2 * zoom,
+      colour: banner.tone === 'won' || banner.tone === 'failed' ? tone : TONES.word,
+    });
+    const urgentDark = !still && !!banner.urgent && blinkDark(this.time, 1);
+    const rows: Child[] = next
+      ? [
+          {
+            direction: 'row',
+            wrap: true,
+            gap: 10 * zoom,
+            alignY: 'end',
+            children: [kicker, title, { ...clock, opacity: urgentDark ? 0.35 : 1 }],
+          },
+          !!banner.elsewhere && line({ words: banner.elsewhere, colour: TONES.wordDim }),
+        ]
+      : [
+          {
+            direction: 'row',
+            gap: 12 * zoom,
+            alignY: 'end',
+            children: [kicker, { width: 'grow' }, { ...clock, opacity: urgentDark ? 0.35 : 1 }],
+          },
+          {
+            direction: 'row',
+            wrap: true,
+            gap: 10 * zoom,
+            alignY: 'end',
+            children: [
+              title,
+              banner.place !== '' && line({ words: banner.place, colour: TONES.wordDim, tracking: 1.8 }),
+            ],
+          },
+          banner.objective !== '' && line({ words: banner.objective }, { padding: [3 * zoom, 0, 0, 0] }),
+          banner.bar && this.barNode(banner.bar.label, tone, zoom),
+          banner.heroic && this.heroicNode(banner.heroic, zoom, still),
+          banner.bonus && bonusNode(banner.bonus, tone, zoom),
+          !!banner.elsewhere && line({ words: banner.elsewhere, colour: TONES.wordDim }),
+        ];
+    return {
+      width: Math.round(Math.min(WIDTH.most, WIDTH.share * room) * zoom),
+      direction: 'column',
+      padding: next ? [4 * zoom, 12 * zoom, 4 * zoom, 10 * zoom] : [6 * zoom, 12 * zoom, 7 * zoom, 14 * zoom],
+      outline: { width: zoom, colour: this.flare(tone, since, still) ?? TONES.outline },
+      opacity: slid,
+      offset: [0, Math.round(-10 * zoom * (1 - slid))],
+      picture: {
+        key: 'public banner band',
+        source: {
+          draw: (context, width, height) => {
+            const band = context.createLinearGradient(0, 0, width, 0);
+            band.addColorStop(0, 'rgba(8,9,12,0.86)');
+            band.addColorStop(0.7, 'rgba(8,9,12,0.7)');
+            band.addColorStop(1, 'rgba(8,9,12,0.35)');
+            context.fillStyle = band;
+            context.fillRect(0, 0, width, height);
+          },
+        },
+      },
+      children: [
+        // The tone down its left edge.
+        { width: 3 * zoom, height: 'grow', fill: this.chanceEdge(since, still) ?? tone, float: { at: [0, 0], z: 1 } },
+        ...rows,
+      ],
+    };
+  }
+
+  /** The edge's colour while a beat's flare lasts: the tone at a heroic beat, a win or a coming event, orange as a
+   *  heroic chance opens; none once it has faded, or with motion reduced. */
+  private flare(tone: string, since: number, still: boolean): string | null {
+    if (still || !this.beat) return null;
+    const chance = this.beat === 'chance';
+    const lasts = chance ? CHANCE_S : FLARE_S;
+    if (!chance && !['heroic', 'won', 'soon'].includes(this.beat)) return null;
+    return since < lasts ? (chance ? HEROIC : tone) : null;
+  }
+
+  /** The left edge turns orange for the first of a heroic chance's flare. */
+  private chanceEdge(since: number, still: boolean): string | null {
+    return !still && this.beat === 'chance' && since < CHANCE_S / 2 ? HEROIC : null;
+  }
+
+  private barNode(label: string, tone: string, zoom: number): Node {
+    return {
+      direction: 'row',
+      gap: 8 * zoom,
+      alignY: 'center',
+      padding: [4 * zoom, 0, 0, 0],
+      children: [
+        {
+          ...thinBarNode({
+            name: 'public',
+            label,
+            length: 0,
+            height: 8,
+            zoom,
+            fill: (pen) => drawMeter(pen, this.meter, tone, 'faint'),
+          }),
+          width: 'grow',
+        },
+        { text: { words: label, size: zoom, colour: TONES.wordDim, edge: 'halo', wrap: false } },
+      ],
+    };
+  }
+
+  private heroicNode(heroic: NonNullable<Banner['heroic']>, zoom: number, still: boolean): Node {
+    const dark = !still && !heroic.met && blinkDark(this.time, 0.8);
+    return {
+      direction: 'row',
+      gap: 8 * zoom,
+      alignY: 'center',
+      padding: [5 * zoom, 0, 0, 0],
+      children: [
+        { ...diamondNode(12 * zoom, HEROIC, TONES.outline, HEROIC), opacity: dark ? 0.35 : 1 },
+        {
+          text: {
+            words: heroic.met ? heroic.text.toUpperCase() : heroic.text,
+            size: zoom,
+            colour: heroic.met ? HEROIC : HEROIC_WORDS,
+            edge: 'halo',
+            ...(heroic.met ? { tracking: 3.5 } : {}),
+          },
+        },
+        { width: 'grow' },
+        { text: { words: heroic.clock, size: zoom, colour: HEROIC_WORDS, edge: 'halo', wrap: false } },
+      ],
+    };
   }
 }
 
-/** A small bar over each store while a raid runs, its health, as a plate over a foe. */
-export class StoreBars {
-  private readonly layer: HTMLElement;
-  private readonly bars: { readonly root: HTMLElement; readonly meter: Meter }[] = [];
+/** The bonus: a diamond in the tone, filled once met; struck through and faded once lost. */
+function bonusNode(bonus: NonNullable<Banner['bonus']>, tone: string, zoom: number): Node {
+  const lost = bonus.state === 'lost';
+  return {
+    direction: 'row',
+    gap: 8 * zoom,
+    alignY: 'center',
+    padding: [3 * zoom, 0, 0, zoom],
+    ...(lost ? { opacity: 0.6 } : {}),
+    children: [
+      diamondNode(9 * zoom, bonus.state === 'met' ? tone : 'none', tone),
+      {
+        children: [
+          { text: { words: bonus.text, size: zoom, colour: TONES.wordDim, edge: 'halo' } },
+          lost && {
+            width: 'grow',
+            height: zoom,
+            fill: TONES.wordDim,
+            float: { at: [0, 0.5], anchor: [0, 0.5], z: 1 },
+          },
+        ],
+      },
+    ],
+  };
+}
 
-  constructor(layer: HTMLElement) {
-    this.layer = layer;
-  }
+/** How wide a store's bar is and how tall, CSS pixels. */
+const STORE_BAR = { width: 72, height: 7 } as const;
+const STORE_FILL = '#e9b44c';
+const STORE_STRUCK = '#e0483c';
+
+/** A small bar over each store while a raid runs, its health, as a plate over a foe: gold, red and blinking while the
+ *  store is under attack, faded once it is plundered. */
+export class StoreBars {
+  private readonly meters: Meter[] = [];
+  private spots: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly share: number;
+    readonly struck: boolean;
+    readonly meter: Meter;
+  }[] = [];
+  private time = 0;
 
   /** Lays a bar over each of `stores` where `project` puts the point over it (null off the screen). */
   update(
@@ -162,96 +320,34 @@ export class StoreBars {
     project: (point: readonly [number, number, number]) => { readonly x: number; readonly y: number } | null,
     seconds: number,
   ): void {
-    while (this.bars.length < stores.length) {
-      const root = element('div', 'store-bar', this.layer);
-      this.bars.push({ root, meter: new Meter(root, 'health', { lossShown: true }) });
-    }
-    this.bars.forEach((bar, index) => {
-      const store = stores[index];
-      const spot = store && project([store.at[0], store.at[1], store.at[2] + STORE_BAR_OVER_M]);
-      showNode(bar.root, !!spot);
-      if (!store || !spot) return;
-      setStyle(bar.root, 'transform', `translate(${spot.x}px, ${spot.y}px)`);
-      bar.root.classList.toggle('fallen', store.share <= 0);
-      bar.root.classList.toggle('struck', !!store.struck);
-      bar.meter.set(store.share, seconds);
+    this.time += seconds;
+    while (this.meters.length < stores.length) this.meters.push(new Meter({ lossShown: true }));
+    this.spots = stores.flatMap((store, index) => {
+      const meter = this.meters[index];
+      if (!meter) return [];
+      meter.set(store.share, seconds);
+      const spot = project([store.at[0], store.at[1], store.at[2] + STORE_BAR_OVER_M]);
+      return spot ? [{ ...spot, share: store.share, struck: !!store.struck, meter }] : [];
     });
   }
-}
 
-/** Writes words only when they change. */
-function say(node: HTMLElement, text: string): void {
-  if (node.textContent !== text) node.textContent = text;
-}
-
-/** The banner's sheet: a dark band fading to its right under the compass, its tone down its left edge; words on the
- *  face's grid, 11 px, the name at 22. */
-export function publicBannerCss(): string {
-  return `
-.fight-hud .public-banner { position: relative; box-sizing: border-box; width: min(440px, 76%);
-  padding: 6px 12px 7px 14px; border-left: 3px solid var(--tone);
-  background: linear-gradient(90deg, rgba(8,9,12,0.86), rgba(8,9,12,0.7) 70%, rgba(8,9,12,0.35));
-  box-shadow: 0 0 0 1px ${TONES.outline}; color: ${TONES.word}; text-shadow: ${HALO}; font-size: 11px;
-  line-height: 14px; font-variant-numeric: tabular-nums; pointer-events: none; }
-.fight-hud .public-banner[hidden], .fight-hud .public-banner [hidden] { display: none; }
-.fight-hud .public-banner .pb-said { position: absolute; width: 1px; height: 1px; overflow: hidden;
-  clip-path: inset(50%); white-space: nowrap; }
-.fight-hud .public-banner .pb-head { display: flex; align-items: baseline; gap: 12px; }
-.fight-hud .public-banner .pb-kicker { color: var(--tone); letter-spacing: 0.16em; text-transform: uppercase; }
-.fight-hud .public-banner .pb-clock { margin-left: auto; font-size: 22px; line-height: 22px; white-space: nowrap; }
-.fight-hud .public-banner .pb-name { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
-.fight-hud .public-banner .pb-title { font-size: 22px; line-height: 26px; font-weight: 600; }
-.fight-hud .public-banner .pb-place { color: ${TONES.wordDim}; letter-spacing: 0.08em; }
-.fight-hud .public-banner .pb-objective { margin-top: 3px; }
-.fight-hud .public-banner .pb-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
-.fight-hud .public-banner .pb-bar { --fill: var(--tone); flex: 1; height: 8px; }
-.fight-hud .public-banner .pb-bar-label { white-space: nowrap; color: ${TONES.wordDim}; }
-.fight-hud .public-banner .pb-heroic { display: flex; align-items: center; gap: 8px; margin-top: 5px; color: #ffb27a; }
-.fight-hud .public-banner .pb-heroic-mark { width: 8px; height: 8px; rotate: 45deg; flex: none;
-  background: #ff7a3d; box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 6px #ff7a3d; }
-.fight-hud .public-banner .pb-heroic:not(.met) .pb-heroic-mark { animation: pb-pulse 0.8s steps(2, end) infinite; }
-.fight-hud .public-banner .pb-heroic.met { color: #ff7a3d; letter-spacing: 0.16em; text-transform: uppercase; }
-.fight-hud .public-banner .pb-heroic-clock { margin-left: auto; }
-.fight-hud .public-banner .pb-bonus { margin-top: 3px; color: ${TONES.wordDim}; }
-.fight-hud .public-banner .pb-bonus::before { content: ''; display: inline-block; width: 6px; height: 6px;
-  margin: 0 8px 1px 1px; rotate: 45deg; border: 1px solid var(--tone); vertical-align: middle; }
-.fight-hud .public-banner .pb-bonus[data-state='met']::before { background: var(--tone); }
-.fight-hud .public-banner .pb-bonus[data-state='lost'] { text-decoration: line-through; opacity: 0.6; }
-/* Between events, one line: what comes next, where, and when. */
-.fight-hud .public-banner[data-tone='next'] { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px;
-  padding: 4px 12px 4px 10px; }
-.fight-hud .public-banner[data-tone='next'] .pb-head { display: contents; }
-.fight-hud .public-banner[data-tone='next'] .pb-clock { order: 3; font-size: 11px; line-height: 14px; }
-.fight-hud .public-banner[data-tone='next'] .pb-name { order: 2; }
-.fight-hud .public-banner[data-tone='next'] .pb-title { font-size: 11px; line-height: 14px; }
-.fight-hud .public-banner[data-tone='won'] .pb-title, .fight-hud .public-banner[data-tone='failed'] .pb-title {
-  color: var(--tone); }
-.fight-hud .public-banner.beat { animation: pb-slide 0.45s cubic-bezier(0.2, 0.8, 0.3, 1); }
-.fight-hud .public-banner.beat[data-beat='heroic'], .fight-hud .public-banner.beat[data-beat='won'],
-.fight-hud .public-banner.beat[data-beat='soon'] {
-  animation: pb-slide 0.45s cubic-bezier(0.2, 0.8, 0.3, 1), pb-flare 1.2s ease-out; }
-/* The heroic chance opens: an orange flare, whatever the tone. */
-.fight-hud .public-banner.beat[data-beat='chance'] {
-  animation: pb-slide 0.45s cubic-bezier(0.2, 0.8, 0.3, 1), pb-chance 1.6s ease-out; }
-/* The last minute: the clock red, pulsing. */
-.fight-hud .public-banner.urgent .pb-clock { color: #e0483c; animation: pb-pulse 1s steps(2, end) infinite; }
-/* Between events, what runs elsewhere on the island, under the next event's line. */
-.fight-hud .public-banner .pb-elsewhere { flex-basis: 100%; order: 4; color: ${TONES.wordDim}; }
-@keyframes pb-slide { from { translate: 0 -10px; opacity: 0; clip-path: inset(0 100% 0 0); }
-  to { translate: 0 0; opacity: 1; clip-path: inset(0 0 0 0); } }
-@keyframes pb-flare { from { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 24px var(--tone); }
-  to { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 0 transparent; } }
-@keyframes pb-chance { from { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 28px #ff7a3d; border-left-color: #ff7a3d; }
-  to { box-shadow: 0 0 0 1px ${TONES.outline}, 0 0 0 transparent; } }
-@keyframes pb-pulse { 50% { opacity: 0.35; } }
-/* Over each store, its health, as a foe's plate holds its own. */
-.fight-hud .store-bar { position: absolute; left: 0; top: 0; width: 72px; translate: -50% -100%; pointer-events: none; }
-.fight-hud .store-bar .meter.health { --fill: #e9b44c; height: 7px; }
-.fight-hud .store-bar.fallen { opacity: 0.45; }
-.fight-hud .store-bar.struck .meter.health { --fill: #e0483c; animation: pb-pulse 0.4s steps(2, end) infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .fight-hud .public-banner.beat, .fight-hud .public-banner .pb-heroic-mark,
-  .fight-hud .public-banner.urgent .pb-clock, .fight-hud .store-bar.struck .meter.health { animation: none !important; }
-}
-`;
+  /** The bars this frame, each with its foot over its store, at `zoom`. */
+  nodes(zoom: number): Node[] {
+    const still = motionReduced();
+    return this.spots.map(({ x, y, share, struck, meter }): Node => {
+      const dark = struck && !still && blinkDark(this.time, 0.4);
+      return {
+        ...thinBarNode({
+          name: 'store',
+          label: `Store: ${Math.round(share * 100)}%`,
+          length: STORE_BAR.width,
+          height: STORE_BAR.height,
+          zoom,
+          fill: (pen) => drawMeter(pen, meter, struck ? STORE_STRUCK : STORE_FILL, 'pale'),
+        }),
+        ...(share <= 0 ? { opacity: 0.45 } : dark ? { opacity: 0.6 } : {}),
+        float: { to: 'screen', anchor: [0.5, 1], x, y, z: 1 },
+      };
+    });
+  }
 }

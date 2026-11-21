@@ -28,9 +28,23 @@ export const MATERIALS = [
   'timber',
   'canvas',
   'iron',
+  'plaster',
+  'roof',
   'gold',
   'crystal',
+  'bone',
+  'glow',
+  'linen',
+  'crimson',
+  'verdant',
+  'black',
+  'straw',
+  'stormcaller_blue',
+  'lamplighter_gold',
+  'veiled_dusk',
   'paving',
+  'lawn',
+  'water',
 ] as const;
 type Material = (typeof MATERIALS)[number];
 /** A material's number in the shader, as WGSL. */

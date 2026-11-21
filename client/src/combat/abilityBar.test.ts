@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
+import type { Child } from '../ui/node.ts';
 import { test } from 'node:test';
-import { AbilityBar, ANIMA_ROWS, abilityBarOf, spentBetween, tenetShown, USED_SECONDS } from './abilityBar.ts';
-import { findAll, onFakePage } from './page.test.ts';
+import {
+  AbilityBar,
+  ANIMA_ROWS,
+  filteredSvg,
+  abilityBarOf,
+  spentBetween,
+  tenetShown,
+  USED_SECONDS,
+} from './abilityBar.ts';
+import { allOf, wordsIn } from './nodes.test.ts';
+
+/** A slot's label, or none for a slot not shown. */
+const labelOf = (slot: Child): string | undefined => (slot ? slot.label : undefined);
 
 const STORM = 1;
 const SHADOW = 3;
@@ -53,41 +65,49 @@ test('an ability is spent when it falls from full; one changing Art, or merely c
 });
 
 test('on the display a spell just cast flashes, a Tenet counting its last seconds steps back, and none can be cast while unable', () => {
-  onFakePage((root) => {
-    const pictures = () => ({ anima: '', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
-    const bar = new AbilityBar(root, pictures);
-    const [anima, quicken, arcLash] = ['anima', 'tenet'].flatMap((kind) => findAll(root, kind));
-    bar.update({ art: STORM, animaShare: 1, tenets: [0.96, 1] }, 1 / 60);
-    assert.equal(bar.root.hidden, false);
-    assert.equal(anima?.classList.contains('full'), true);
-    assert.equal(quicken?.classList.contains('counting'), true, 'Quicken has 4 s left');
-    assert.equal(arcLash?.classList.contains('ready'), true);
-    assert.equal((arcLash as unknown as Record<string, string>)['ariaLabel'], 'Arc Lash (G), ready');
-    bar.update({ art: STORM, animaShare: 0, tenets: [0.97, 1] }, 1 / 60);
-    assert.equal(anima?.classList.contains('used'), true, 'the Tempest just cast');
-    assert.equal((anima as unknown as Record<string, string>)['ariaLabel'], 'Tempest (R), charging, 0%');
-    bar.update({ art: STORM, animaShare: 0, tenets: [0.98, 1] }, USED_SECONDS);
-    assert.equal(anima?.classList.contains('used'), false, 'its flash over');
-    bar.update({ art: STORM, animaShare: 0, tenets: [0.98, 1] }, 1 / 60, true);
-    assert.equal(bar.root.classList.contains('unable'), true);
-    assert.equal((arcLash as unknown as Record<string, string>)['ariaLabel'], 'Arc Lash (G), cannot be cast now');
-  });
+  const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+  const bar = new AbilityBar(pictures);
+  const slots = () => bar.node(false)?.children ?? [];
+  const keys = (slot: number) => allOf(slots()[slot]).flatMap((node) => node.picture?.key ?? []);
+  bar.update({ art: STORM, animaShare: 1, tenets: [0.96, 1] }, 1 / 60);
+  assert.equal(slots().length, 3);
+  assert.ok(
+    allOf(slots()[0]).some((node) => node.opacity === 0.45),
+    'the Anima full, glowing',
+  );
+  assert.deepEqual(wordsIn(slots()[1]), ['4', 'Q'], 'Quicken has 4 s left');
+  assert.ok(
+    keys(1).some((key) => key.startsWith('tenet sweep')),
+    'its wedge still dark',
+  );
+  assert.equal(
+    keys(2).some((key) => key.startsWith('tenet sweep')),
+    false,
+    'Arc Lash ready',
+  );
+  assert.equal(labelOf(slots()[2]), 'Arc Lash (G), ready');
+  bar.update({ art: STORM, animaShare: 0, tenets: [0.97, 1] }, 1 / 60);
+  assert.ok(keys(0).includes(`art ${STORM} diamond 0.45 3`), 'the Tempest just cast: its frame flashes white');
+  assert.equal(labelOf(slots()[0]), 'Tempest (R), charging, 0%');
+  bar.update({ art: STORM, animaShare: 0, tenets: [0.98, 1] }, USED_SECONDS);
+  assert.equal(keys(0).includes(`art ${STORM} diamond 0.45 3`), false, 'its flash over');
+  bar.update({ art: STORM, animaShare: 0, tenets: [0.98, 1] }, 1 / 60, true);
+  assert.ok(keys(2).includes('unable hatch'), 'hatched');
+  assert.ok(
+    keys(2).every((key) => key === 'unable hatch' || / 0 [\d.]+$/.test(key)),
+    'every picture grey',
+  );
+  assert.equal(labelOf(slots()[2]), 'Arc Lash (G), cannot be cast now');
+  bar.hide();
+  assert.equal(bar.node(false), null, 'hidden with no state');
 });
 
-test('a screen reader hears each ability once, by its name and state: its pictures and its keycap say nothing more', () =>
-  onFakePage((root) => {
-    new AbilityBar(root, () => ({ anima: '', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' }));
-    const all = findAll(root);
-    const property = (node: (typeof all)[number], name: string) => (node as unknown as Record<string, unknown>)[name];
-    const pictures = all.filter((node) => node.tagName === 'IMG');
-    const keycaps = all.filter((node) => node.tagName === 'KBD');
-    assert.deepEqual([pictures.length, keycaps.length], [8, 3]);
-    assert.ok(
-      pictures.every((node) => property(node, 'alt') === ''),
-      'every picture is decoration',
-    );
-    assert.ok(
-      keycaps.every((node) => property(node, 'ariaHidden') === 'true'),
-      'the key is in the ability’s name',
-    );
-  }));
+test('a picture’s colours are turned by a filter laid over it inside its own SVG', () => {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2"><rect width="1" height="1"/></svg>';
+  assert.equal(filteredSvg(svg, 1, 1), svg, 'untouched');
+  const turned = filteredSvg(svg, 0.45, 0.8);
+  assert.match(turned, /^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" viewBox="0 0 2 2"><defs>/);
+  assert.match(turned, /type="saturate" values="0.45"/);
+  assert.match(turned, /slope="0.8"/);
+  assert.match(turned, /<g filter="url\(#turned\)"><rect width="1" height="1"\/><\/g><\/svg>$/);
+});

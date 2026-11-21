@@ -3,142 +3,239 @@
 // same as a row still shown adds to that row. It shows in play and over the menu alike, so a piece dismantled or a
 // Vestige opened shows what it gave as soon as the room answers, and each batch chimes for its rarest gain.
 
-import './acquired.css';
-import { make } from '../editor/dom.ts';
-import { RARITIES } from '../player/gear.ts';
+import { edged } from '../combat/barDraw.ts';
 import type { GearState } from '../network/gearMessages.ts';
-import { ROLES } from '../plus/kit.ts';
-import { emblemImage, emblemOf } from './emblemArt.ts';
-import { type Gain, gainsOf } from './gains.ts';
-import { glyphImage, itemIcon, rarityOf } from './gearDom.ts';
-import type { GearHere } from './gearScreen.ts';
+import { RARITIES } from '../player/gear.ts';
 import type { ItemPictures } from '../player/itemPictures.ts';
 import type { Cards } from '../player/cards.ts';
+import { motionReduced } from '../plus/kit.ts';
+import { announce } from '../ui/announce.ts';
+import type { Child, Node } from '../ui/node.ts';
+import { emblemOf } from './emblemArt.ts';
+import { type Gain, gainsOf } from './gains.ts';
+import { fineGlyph } from './gearGlyphs.ts';
+import {
+  INK,
+  emblemNode,
+  glyphNode,
+  itemIconNode,
+  rarityEdges,
+  rarityRgb,
+  rgba,
+  svgNode,
+  words,
+  type Sizes,
+} from './gearNodes.ts';
+import type { GearHere } from './gearScreen.ts';
 import { chime } from './uiSounds.ts';
 
-/** How long a row stays, how long it takes to leave, and how many stand at once, the oldest leaving first. */
+/** How long a row stays, how long it takes to come in and to leave, and how many stand at once, the oldest leaving
+ *  first. */
 const STAY_MS = 4500;
+const ENTER_MS = 220;
 const LEAVE_MS = 400;
 const ROWS_MOST = 6;
-/** How often the gear is looked at, in milliseconds. */
-const LOOK_MS = 100;
 /** How long after a room first gives the player's gear its changes are not gains: a room holds a starting character
  *  until the player's own is claimed, a claim waiting on another room for up to some seconds. */
 const SETTLE_MS = 10_000;
-/** A row's picture box, in pixels. */
+/** A row's picture box and its well, in pixels. */
 const ICON_PX = 36;
+const WELL_PX = 44;
 
-/** A row shown: its gain so far, its count's words, and when it leaves. */
+/** A row shown: its gain, its count so far, when it came, when its count last grew, and when it leaves. */
 interface Row {
-  readonly node: HTMLElement;
-  readonly count: HTMLElement;
+  readonly gain: Gain;
+  readonly key: string;
   total: number;
-  timer: number;
+  readonly since: number;
+  bumped: number;
+  leaves: number;
 }
 
-/** Starts the feed in `root`, watching the gear `here` gives, its pieces drawn by `picturesOf`'s; the feed itself,
- *  which the menu leaves readable. */
-export function startAcquiredFeed(
-  root: HTMLElement,
-  here: () => GearHere | null,
-  picturesOf: (forge: Cards) => ItemPictures,
-): HTMLElement {
-  const feed = make('div', '', 'acquired');
-  feed.setAttribute('role', 'log');
-  feed.setAttribute('aria-label', 'Acquired');
-  root.append(feed);
-  const rows = new Map<string, Row>();
-  let last: GearState | null = null;
-  let since = 0;
+export class AcquiredFeed {
+  private rows: Row[] = [];
+  private last: GearState | null = null;
+  private since = 0;
+  private readonly here: () => GearHere | null;
+  private readonly picturesOf: (forge: Cards) => ItemPictures;
+  private readonly now: () => number;
 
-  const leave = (key: string, row: Row) => {
-    rows.delete(key);
-    row.node.classList.add('acquired-leaving');
-    window.setTimeout(() => row.node.remove(), LEAVE_MS);
-  };
-  const stay = (key: string, row: Row) => {
-    window.clearTimeout(row.timer);
-    row.timer = window.setTimeout(() => leave(key, row), STAY_MS);
-  };
-  /** A gain's picture: the item's own once drawn, its own picture, an emblem's icon, or its glyph. */
-  const iconOf = (gain: Gain, row: () => HTMLElement | undefined): HTMLElement => {
-    const now = here();
-    if (gain.item) {
-      const pictures = now?.forge ? picturesOf(now.forge) : null;
-      const item = gain.item;
-      const drawn = () => {
-        const picture = pictures && now?.dress ? pictures.pictureOf(item, now.dress, () => swap()) : null;
-        return itemIcon(picture, gain.name, ICON_PX);
-      };
-      // Drawn later, the picture takes its place in the row if the row is still there.
-      const swap = () => row()?.querySelector('.acquired-icon')?.replaceChildren(drawn());
-      return drawn();
-    }
-    if (gain.icon !== null) {
-      const image = make('img', '', 'acquired-emblem');
-      [image.src, image.alt] = [gain.icon, ''];
-      return image;
-    }
-    if (gain.emblem !== null) {
-      const image = make('img', '', 'acquired-emblem');
-      image.src = emblemImage(emblemOf(gain.emblem), 'sign');
-      image.alt = '';
-      return image;
-    }
-    return glyphImage(gain.glyph === 'item' ? 'empty' : gain.glyph, gain.rarity ?? 0, gain.tint);
-  };
-  const show = (gain: Gain) => {
-    const known = rows.get(gain.key);
-    if (known) {
-      known.total += gain.count;
-      known.count.textContent = `+${known.total.toLocaleString()}`;
-      // Brought back to the front, so the latest gain is the one read last, and the last to leave.
-      feed.append(known.node);
-      rows.delete(gain.key);
-      rows.set(gain.key, known);
-      known.node.classList.remove('acquired-bump');
-      void known.node.offsetWidth;
-      known.node.classList.add('acquired-bump');
-      return stay(gain.key, known);
-    }
-    const node = make('div', '', 'acquired-row');
-    const well = make('span', '', `acquired-icon ${ROLES.tile}`);
-    rarityOf(well, gain.rarity);
-    well.append(iconOf(gain, () => (node.isConnected ? node : undefined)));
-    const name = make('span', gain.name, 'acquired-name');
-    if (gain.rarity !== null) name.style.color = RARITIES[gain.rarity]?.colour ?? '';
-    const counted = gain.count > 1 || !gain.item ? `+${gain.count.toLocaleString()}` : '';
-    // A chest's tier shows as four pips, so many lit.
-    const pips = gain.pips && `${'◆'.repeat(gain.pips)}${'◇'.repeat(Math.max(0, 4 - gain.pips))}`;
-    const count = make('b', pips || counted, 'acquired-count');
-    node.append(well, name, count);
-    feed.append(node);
-    const row: Row = { node, count, total: gain.count, timer: 0 };
-    rows.set(gain.key, row);
-    stay(gain.key, row);
-    // The oldest leaves once too many stand.
-    const extra = [...rows].slice(0, Math.max(0, rows.size - ROWS_MOST));
-    for (const [key, old] of extra) {
-      window.clearTimeout(old.timer);
-      leave(key, old);
-    }
-  };
+  constructor(
+    here: () => GearHere | null,
+    picturesOf: (forge: Cards) => ItemPictures,
+    now: () => number = () => performance.now(),
+  ) {
+    this.here = here;
+    this.picturesOf = picturesOf;
+    this.now = now;
+  }
 
-  window.setInterval(() => {
-    const gear = here()?.gear ?? null;
+  /** Looks at the gear for what was gained since it last did. */
+  look(): void {
+    const gear = this.here()?.gear ?? null;
     // A room left or joined starts afresh: what it first says the player holds is not a gain, nor the character it
     // gives them once theirs is claimed.
-    if (!gear || !last) {
-      last = gear;
-      since = performance.now();
+    if (!gear || !this.last) {
+      this.last = gear;
+      this.since = this.now();
       return;
     }
-    if (gear === last) return;
-    const gains = performance.now() - since < SETTLE_MS ? [] : gainsOf(last, gear);
-    last = gear;
+    if (gear === this.last) return;
+    const gains = this.now() - this.since < SETTLE_MS ? [] : gainsOf(this.last, gear);
+    this.last = gear;
     if (gains.length === 0) return;
-    gains.forEach(show);
+    gains.forEach((gain) => this.show(gain));
     chime(Math.max(0, ...gains.map((each) => each.rarity ?? 0)));
-  }, LOOK_MS);
-  return feed;
+  }
+
+  private show(gain: Gain): void {
+    const now = this.now();
+    const known = this.rows.find((row) => row.key === gain.key && row.leaves > now);
+    announce(`${gain.name} +${gain.count.toLocaleString()}`);
+    if (known) {
+      known.total += gain.count;
+      known.bumped = now;
+      known.leaves = now + STAY_MS;
+      // Brought back to the front, so the latest gain is the one read last, and the last to leave.
+      this.rows = [...this.rows.filter((row) => row !== known), known];
+      return;
+    }
+    this.rows.push({ gain, key: gain.key, total: gain.count, since: now, bumped: -Infinity, leaves: now + STAY_MS });
+    // The oldest leaves once too many stand.
+    const staying = this.rows.filter((row) => row.leaves > now);
+    for (const old of staying.slice(0, Math.max(0, staying.length - ROWS_MOST))) old.leaves = Math.min(old.leaves, now);
+  }
+
+  /** A gain's picture: the item's own once drawn, an emblem's sign, a mark of its own, or its glyph. */
+  private iconOf(gain: Gain, sizes: Sizes): Node {
+    const now = this.here();
+    if (gain.item) {
+      const pictures = now?.forge ? this.picturesOf(now.forge) : null;
+      const picture = pictures && now?.dress ? pictures.pictureOf(gain.item, now.dress, () => undefined) : null;
+      return itemIconNode(picture, gain.name, ICON_PX, sizes, gain.rarity ?? 0);
+    }
+    if (gain.icon !== null) return svgNode(`gain ${gain.key}`, gain.icon, 24);
+    if (gain.emblem !== null) return emblemNode(emblemOf(gain.emblem), 'sign', 24, 24, 24);
+    const glyph = gain.glyph === 'item' ? 'empty' : gain.glyph;
+    // A ship glyph's 24 cells stand at their own size, where the gear's 12 stand at three times.
+    return glyphNode(glyph, fineGlyph(glyph) ? 24 : ICON_PX, gain.rarity ?? 0, gain.tint);
+  }
+
+  /** The feed this frame at the right of `view`: low over the menu's footer while it is open (`low`). */
+  node(sizes: Sizes, view: { readonly width: number; readonly height: number }, low: boolean): Child {
+    this.look();
+    const now = this.now();
+    this.rows = this.rows.filter((row) => now - row.leaves < LEAVE_MS);
+    if (this.rows.length === 0) return null;
+    const still = motionReduced();
+    return {
+      direction: 'column',
+      alignX: 'end',
+      gap: 6,
+      float: {
+        to: 'screen',
+        anchor: [1, 1],
+        at: [1, 1],
+        x: -40,
+        y: low ? -96 : -Math.round(view.height * 0.3),
+        z: 30,
+      },
+      children: this.rows.map((row): Node => {
+        const coming = Math.min(1, (now - row.since) / ENTER_MS);
+        const going = Math.max(0, (now - row.leaves) / LEAVE_MS);
+        const slide = still ? 0 : Math.round(32 * (1 - (1 - (1 - coming) ** 2)) + 16 * going);
+        const fade = Math.min(coming, 1 - going);
+        const rarity = row.gain.rarity;
+        const pips = row.gain.pips ?? 0;
+        const count = pips > 0 ? '' : row.total > 1 || !row.gain.item ? `+${row.total.toLocaleString()}` : '';
+        return {
+          minWidth: 240,
+          gap: 12,
+          alignY: 'center',
+          padding: [4, 14, 4, 4],
+          opacity: fade,
+          offset: [slide, 0],
+          picture: {
+            key: 'acquired band',
+            source: {
+              draw: (context, width, height) => {
+                const band = context.createLinearGradient(width, 0, 0, 0);
+                band.addColorStop(0.6, 'rgba(14,11,8,0.82)');
+                band.addColorStop(1, 'rgba(14,11,8,0)');
+                context.fillStyle = band;
+                context.fillRect(0, 0, width, height);
+              },
+            },
+          },
+          children: [
+            { width: 'grow' },
+            {
+              maxWidth: 260,
+              text: {
+                words: row.gain.name,
+                size: sizes.name,
+                colour: rarity !== null ? (RARITIES[rarity]?.colour ?? INK.word) : INK.word,
+                ellipsis: true,
+                wrap: false,
+                edge: 'shadow',
+              },
+            },
+            count !== '' && {
+              minWidth: 24,
+              alignX: 'end',
+              // A row's count grows a moment as more of it comes.
+              offset: !still && now - row.bumped < ENTER_MS ? [0, -1] : undefined,
+              children: [words(count, sizes.name, INK.brassLit, { edge: 'shadow' })],
+            },
+            pips > 0 && pipsNode(pips),
+            {
+              width: WELL_PX,
+              height: WELL_PX,
+              alignX: 'center',
+              alignY: 'center',
+              fill: INK.well,
+              draw: edged(rarityEdges(rarity), 2),
+              picture: {
+                key: `acquired glow ${rarityRgb(rarity)}`,
+                source: {
+                  draw: (context, width, height) => {
+                    const light = context.createRadialGradient(
+                      width / 2,
+                      height * 1.15,
+                      0,
+                      width / 2,
+                      height * 1.15,
+                      height * 0.9,
+                    );
+                    light.addColorStop(0, rgba(rarityRgb(rarity), 0.35));
+                    light.addColorStop(1, rgba(rarityRgb(rarity), 0));
+                    context.fillStyle = light;
+                    context.fillRect(0, 0, width, height);
+                  },
+                },
+              },
+              children: [this.iconOf(row.gain, sizes)],
+            },
+          ],
+        };
+      }),
+    };
+  }
+}
+
+/** A chest's tier as four diamonds, so many filled in brass. */
+function pipsNode(lit: number): Node {
+  return {
+    direction: 'row',
+    gap: 3,
+    alignY: 'center',
+    children: [0, 1, 2, 3].map((place) => {
+      const fill = place < lit ? INK.brassLit : 'none';
+      return svgNode(
+        `chest pip ${fill}`,
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M5 1 9 5 5 9 1 5Z" fill="${fill}" stroke="${INK.brassLit}" stroke-width="1.2"/></svg>`,
+        10,
+      );
+    }),
+  };
 }

@@ -68,8 +68,9 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
-  /** Takes away every player's Art: the prologue's wreck, where the player has none yet. */
-  forbidArts(): void;
+  /** Plays the prologue's wreck: no Art (the player has none yet), the story's sword and shield, and every boarder on
+   *  one side, held to a Major (`Room::story_wreck`). */
+  storyWreck(): void;
   /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
   /** Why the room takes no player, a locked node's words; null for a room that takes them. */
@@ -83,12 +84,13 @@ export interface RoomDoor {
    *  their ship's orders in a fleet. */
   input(player: number, bytes: Uint8Array): InputAnswer;
   tick(): void;
-  /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
-   *  bytes. */
-  snapshot(): Uint8Array;
+  /** A player's snapshot after the last tick, as its bytes (`snapshotPrepare`, then `snapshotFor`). */
+  snapshot(player: number): Uint8Array;
   /** Takes the snapshot after the last tick, for `snapshotFor` to cut each player's from. */
   snapshotPrepare(): void;
-  /** The prepared snapshot as one player is sent it: at sea only what is theirs of the sea's own part. */
+  /** The prepared snapshot as one player is sent it: on land what changed since the one their screen last showed;
+   *  at sea every ship near them and only what is theirs of the sea's own part; in a fleet every ship, its balls and
+   *  what happened. */
   snapshotFor(player: number): Uint8Array;
   /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
    *  course open. */
@@ -163,7 +165,7 @@ interface RoomExports {
   room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
   room_take_foe_asks(): void;
-  room_forbid_arts(): void;
+  room_story_wreck(): void;
   room_join(): number;
   room_refusal(): bigint;
   room_joined(player: number): bigint;
@@ -171,7 +173,6 @@ interface RoomExports {
   room_parting(player: number): void;
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
-  room_snapshot(): bigint;
   room_snapshot_prepare(): void;
   room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
@@ -280,7 +281,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return new Float64Array(bytes.buffer, bytes.byteOffset, bytes.length / 8);
     },
     takeFoeAsks: () => exports.room_take_foe_asks(),
-    forbidArts: () => exports.room_forbid_arts(),
+    storyWreck: () => exports.room_story_wreck(),
     join: () => exports.room_join(),
     refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
@@ -289,7 +290,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     input: (player, bytes) =>
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
-    snapshot: () => take(exports.room_snapshot()),
+    snapshot: (player) => {
+      exports.room_snapshot_prepare();
+      return take(exports.room_snapshot_for(player));
+    },
     snapshotPrepare: () => exports.room_snapshot_prepare(),
     snapshotFor: (player) => take(exports.room_snapshot_for(player)),
     furnish: (stall, nodes) => {

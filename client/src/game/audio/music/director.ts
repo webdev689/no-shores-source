@@ -3,10 +3,12 @@
 // over two bars, never cut. A sting (a boss waking or falling, a fight won or lost) begins on the bar line and holds
 // the next song until it has played. The ambience is lowered under the music as a fight grows and let back after.
 // A sea song out of danger plays whole, once through. A place whose score is not written is silent. The story's songs
-// play in the layers of the mood it asks, and its cut stops everything at once.
+// play in the layers of the mood it asks, and its cut stops everything at once. In the social space the plaza's band
+// plays where it stands (band.ts), and the theme gives way to it near it.
 
 import { SKY_NOW } from '../../../sky/skyDriver.ts';
 import { duckAmbience, musicOutput } from '../../uiSounds.ts';
+import { Band, type BandHeard, themeUnder } from './band.ts';
 import { boardingScore } from './boardingScore.ts';
 import { coldScore } from './coldScore.ts';
 import {
@@ -167,6 +169,7 @@ export class MusicDirector {
   private bus: MusicOut | null = null;
   private players: SongPlayer[] = [];
   private stinger: SongPlayer | null = null;
+  private readonly band = new Band();
   private current: { player: SongPlayer; song: Song; roles: ReadonlySet<Role>; level: number } | null = null;
   /** A sting plays until then: nothing else begins before it ends but a song that gives it way (`waking` false). */
   private holdUntil = -Infinity;
@@ -196,8 +199,8 @@ export class MusicDirector {
       });
   }
 
-  /** One frame, `seconds` after the last. */
-  frame(hearing: Hearing, seconds: number): void {
+  /** One frame, `seconds` after the last, the plaza's band heard by `band` where it plays. */
+  frame(hearing: Hearing, seconds: number, band: BandHeard | null = null): void {
     // A moment asked while the music is cut is let go, never played late.
     const wanted = this.asked;
     this.asked = null;
@@ -207,6 +210,8 @@ export class MusicDirector {
     if (!bus || verdict.cut) return this.hush();
     if (bus.out !== this.bus?.out) this.wire(bus);
     const now = this.clockOf(bus.audio);
+    const social = verdict.cue.kind === 'social';
+    const nearBand = this.band.frame(social ? band : null, seconds, now);
     const { scores } = this;
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
     // The game's moment is played in the place's own fight score, unless the law has one of its own this frame.
@@ -222,11 +227,11 @@ export class MusicDirector {
     const song = voyage && asked === this.once && !this.current ? null : asked;
     this.once = voyage ? asked : null;
     // The social space's theme and a sea song out of danger play whole, at their own level.
-    const whole = verdict.cue.kind === 'social' || voyage;
+    const whole = social || voyage;
     const roles = whole ? ALL_ROLES : MOOD_ROLES[verdict.mood];
     const story = verdict.cue.kind === 'story' ? verdict.cue.song : null;
     const once = voyage || (story !== null && ONCE.has(story));
-    this.follow(song, roles, whole ? 1 : MOOD_LEVEL[verdict.mood], now, !once);
+    this.follow(song, roles, whole ? themeUnder(social ? nearBand : 0) : MOOD_LEVEL[verdict.mood], now, !once);
     // The story's songs leave its sea and storm heard under them, as the social space's theme leaves the harbour.
     const under = !song ? 1 : whole || story ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
     // A sting is music too: the ambience stays lowered under it.
@@ -245,8 +250,9 @@ export class MusicDirector {
     node: Parameters<typeof hearNode>[1],
     fight: FootHeard,
     seconds: number,
+    band: BandHeard | null = null,
   ) {
-    this.frame(hearNode(world, node, fight), seconds);
+    this.frame(hearNode(world, node, fight), seconds, band);
   }
 
   /** A frame at sea, under the sky as the page last drew it. */
@@ -257,6 +263,7 @@ export class MusicDirector {
   /** Pumps every player to `now`, for a render that runs no timers. */
   pump(now: number): void {
     for (const player of [...this.players, this.stinger]) player?.pump(now);
+    this.band.pump(now);
   }
 
   /** The players, on a new bus: three for songs giving way to each other, one for stings. */
@@ -268,6 +275,7 @@ export class MusicDirector {
     const make = () => new SongPlayer(bus.audio, out, { timed: this.timed, clock });
     this.players = [make(), make(), make()];
     this.stinger = make();
+    this.band.wire(bus.audio, out, { timed: this.timed, clock });
   }
 
   /** A player free for a new song: an idle one, else the one whose fade ends first. */
@@ -347,6 +355,7 @@ export class MusicDirector {
     if (bus) {
       const now = this.clockOf(bus.audio);
       for (const player of [...this.players, this.stinger]) if (player?.song) player.fade(0, now, 0.1);
+      this.band.hush(now);
     }
     [this.current, this.holdUntil] = [null, -Infinity];
     this.duck(1);

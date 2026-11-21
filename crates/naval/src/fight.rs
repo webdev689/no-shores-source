@@ -6,6 +6,7 @@
 
 use crate::arms::{Arms, LARGE_BOAT, arms_of, posed};
 use crate::ballistics::Ball;
+use crate::boost::Boost;
 use crate::captain::odds::Power;
 use crate::captain::{Captain, Own, Sighting};
 use crate::damage::{Damage, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State, WRECKED_OARS, way_share_of};
@@ -37,10 +38,12 @@ pub const STRUCK_GRACE_S: f64 = 2.0;
 /// A captain who struck lies hove to this long (seconds) for a player to board it; with no one aboard by then it is
 /// scuttled.
 pub const STRUCK_HOLD_S: f64 = 90.0;
-/// How much faster every ship sails and rows in a sea fight than at sea: half again, at the owner's word.
-pub const FIGHT_PACE: f64 = 1.5;
+/// How much faster every ship sails and rows in a sea fight than at sea (half again, and a fifth on that), and how much
+/// faster it swings and answers its helm, at the owner's word.
+pub const FIGHT_PACE: f64 = 1.8;
+pub const FIGHT_TURN: f64 = 2.0;
 
-/// A ship in the fight: its hull, its helm's numbers, how it lies, its hurts and its guns, and who sails it.
+/// A ship in the fight: its hull, its helm's numbers, how it lies, its hurts, its guns, its burst, and who sails it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Vessel {
     pub hull: HullKind,
@@ -49,6 +52,7 @@ pub struct Vessel {
     pub damage: Damage,
     pub guns: Guns,
     pub rigging: Rigging,
+    pub boost: Boost,
     pub sailor: Sailor,
 }
 
@@ -114,7 +118,7 @@ pub struct Aim {
 }
 
 /// What a player orders for a tick: their helm, the lay they hold, whether they fire it (a release: one tick),
-/// their brace held, and a load to take (a press).
+/// their brace held, a load to take (a press), and whether they tap for a burst (a press: `Boost`).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Orders {
     pub helm: Helm,
@@ -122,6 +126,7 @@ pub struct Orders {
     pub fire: bool,
     pub brace: bool,
     pub load: Option<Shot>,
+    pub boost: bool,
 }
 
 /// The fight: its clock (seconds), its stream of chances, its ships by number, the balls aloft, each player's
@@ -147,18 +152,21 @@ pub struct Hurts {
     pub way_share: f64,
     /// The share of the turn its helm asks that its trim gives it.
     pub turn: f64,
+    /// The share of its sails' and oars' pull its burst gives it (`Boost::drive`).
+    pub drive: f64,
 }
 
 impl Hurts {
     #[must_use]
     pub fn of(damage: &Damage) -> Self {
-        Self { wrecked: damage.state == State::Wrecked, sail: damage.sail, way_share: damage.way_share(), turn: 1.0 }
+        let (wrecked, way_share) = (damage.state == State::Wrecked, damage.way_share());
+        Self { wrecked, sail: damage.sail, way_share, turn: 1.0, drive: 1.0 }
     }
 
     /// Its hurts from its numbers as a snapshot gives them.
     #[must_use]
     pub fn from_numbers(wrecked: bool, sail: f64, max_sail: f64) -> Self {
-        Self { wrecked, sail, way_share: way_share_of(sail, max_sail), turn: 1.0 }
+        Self { wrecked, sail, way_share: way_share_of(sail, max_sail), turn: 1.0, drive: 1.0 }
     }
 
     /// Its hurts as its fitting trims them: the way its canvas leaves it, and its turn.
@@ -169,9 +177,10 @@ impl Hurts {
     }
 }
 
-/// A player's ship of `hull` stepped a tick by its helm, as its hurts let it: no sail sets on a wreck or with its
-/// rigging shot away, and its sails' and oars' pull is held back. Answers the ship and, when its helm climbed for sail
-/// it could not set, whether that was for its being a wreck.
+/// A player's ship of `hull` stepped a tick by its helm, as its hurts let it, at a fight's pace and swing: no sail sets
+/// on a wreck or with its rigging shot away, its sails' and oars' pull is held back, and a burst drives a ship that is
+/// no wreck. Answers the ship and, when its helm climbed for sail it could not set, whether that was for its being a
+/// wreck.
 #[must_use]
 pub fn sail_hurt(
     ship: &Ship,
@@ -191,9 +200,9 @@ pub fn sail_hurt(
         helm.climb = if ship.rung >= SAILS_SET { -1 } else { 0 };
     }
     let pull = Pull {
-        sail: if hurts.wrecked { 0.0 } else { hurts.way_share * FIGHT_PACE },
-        oars: if hurts.wrecked { WRECKED_OARS } else { 1.0 } * FIGHT_PACE,
-        turn: hurts.turn,
+        sail: if hurts.wrecked { 0.0 } else { hurts.way_share * hurts.drive * FIGHT_PACE },
+        oars: if hurts.wrecked { WRECKED_OARS } else { hurts.drive } * FIGHT_PACE,
+        turn: hurts.turn * FIGHT_TURN,
     };
     (step_pulled(ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull), refused)
 }
@@ -299,8 +308,8 @@ impl Fight {
         damage.hull = (damage.max_hull * hull_share).round().max(1.0);
         damage.sail = (damage.max_sail * sail_share).round();
         damage.crew = (damage.max_crew * crew_share).round();
-        let (guns, rigging) = (Guns::new(), Rigging::new(hull));
-        self.ships.insert(id, Vessel { hull, ship, pose, damage, guns, rigging, sailor: Sailor::Player });
+        let (guns, rigging, boost) = (Guns::new(), Rigging::new(hull), Boost::default());
+        self.ships.insert(id, Vessel { hull, ship, pose, damage, guns, rigging, boost, sailor: Sailor::Player });
     }
 
     /// A captain of `commission` in its rank's hull under number `id` put to sea on the ring round `near`, where the
@@ -415,6 +424,7 @@ impl Fight {
             damage,
             guns: Guns::new(),
             rigging: Rigging::new(hull),
+            boost: Boost::default(),
             sailor: Sailor::Captain(Box::new(command)),
         };
         self.ships.insert(id, vessel);
@@ -497,6 +507,7 @@ impl Fight {
             numbers.extend(vessel.damage.numbers());
             numbers.extend(vessel.guns.numbers());
             numbers.extend(vessel.rigging.numbers());
+            numbers.extend(vessel.boost.numbers());
             let Some(command) = vessel.command() else {
                 numbers.push(-1.0);
                 continue;

@@ -12,6 +12,7 @@ import { fightPointer } from './fightPointer.ts';
 import { plainDressOf } from './look.ts';
 import { type Started, startStory, type StoryGame } from './storyStart.ts';
 import { tapToStart } from './tap.ts';
+import type { Stack } from '../../ui/stack.ts';
 
 /** How the story leaves the player: with the epilogue to play if they played it through, and their everyday dress. */
 export interface StoryLeft {
@@ -25,11 +26,11 @@ export class StoryHost {
   private readonly ready = new Promise<Started | null>((resolve) => (this.started = resolve));
   private readonly canvas: HTMLCanvasElement;
 
-  constructor(hudRoot: HTMLElement, canvas: HTMLCanvasElement) {
+  constructor(stack: Stack, canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    void tapToStart(hudRoot, this.ready).then(async () => (this.story = await this.ready));
+    void tapToStart(stack, this.ready).then(async () => (this.story = await this.ready));
     canvas.addEventListener('pointerdown', () => this.story?.prologue.press());
-    // A touch held anywhere on the view skips, the dialogue box over the canvas too, so it is heard from the window.
+    // A touch held anywhere on the view skips, so it is heard from the window.
     addEventListener('pointerdown', (event) => event.pointerType === 'touch' && this.story?.prologue.touch(true));
     for (const ending of ['pointerup', 'pointercancel'] as const)
       addEventListener(ending, (event) => event.pointerType === 'touch' && this.story?.prologue.touch(false));

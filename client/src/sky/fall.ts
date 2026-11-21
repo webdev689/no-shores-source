@@ -1,5 +1,5 @@
 import { type Gpu, SHADER_STAGE } from '../gpu.ts';
-import type { SkyLook } from './skyUniform.ts';
+import { SKY_WGSL, type SkyLook, type SkyUniform, skyUniformFor } from './skyUniform.ts';
 
 /** The box round the eye the fall is drawn in, metres, and how much of each falls at its hardest. */
 export const FALL_BOX_M = 24;
@@ -81,6 +81,7 @@ export function fallingOf(look: SkyLook): Falling {
 }
 
 export const FALL_WGSL = /* wgsl */ `
+${SKY_WGSL}
 struct Fall {
   from_eye: mat4x4f,
   // Where the lattice stands from the eye, metres east, south and up within the box: the kind's running offset less
@@ -127,7 +128,7 @@ struct Drawn { @builtin(position) position: vec4f, @location(0) clear: f32, @loc
   }
   var from_eye = fract(moved / box) * box - box * 0.5;
   if (kind == 2u) { from_eye.z = from_eye.z - side * 0.08; }
-  if (from_eye.z < fall.shape.w) { return out; }
+  if (from_eye.z < fall.shape.w || sky_sheltered(from_eye)) { return out; }
   let distance = length(from_eye);
   let fade = (1.0 - smoothstep(side * 0.32, side * 0.5, distance)) * smoothstep(0.4, 1.5, distance);
   let tail = from_eye - velocity * select(fall.motion.w, fall.motion.w * 0.15, kind == 1u);
@@ -170,6 +171,8 @@ export class FallView {
   private readonly gpu: Gpu;
   private readonly layout: GPUBindGroupLayout;
   private readonly pipeline: GPURenderPipeline;
+  /** The sky's shelter grid: no drop is drawn under a roof. */
+  private readonly sky: SkyUniform;
   private readonly uniforms: GPUBuffer[];
   private readonly values = new Float32Array(FALL_FLOATS);
   /** Each kind's running offset, metres, and the page's time it was carried to, seconds. */
@@ -181,6 +184,8 @@ export class FallView {
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     const { device } = gpu;
+    const sky = skyUniformFor(device);
+    this.sky = sky;
     this.layout = device.createBindGroupLayout({
       entries: [
         { binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: {} },
@@ -190,7 +195,7 @@ export class FallView {
     const module = device.createShaderModule({ code: FALL_WGSL });
     const over = { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
     this.pipeline = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
+      layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout, sky.empty, sky.empty, sky.layout] }),
       vertex: { module, entryPoint: 'fall_vertex' },
       fragment: {
         module,
@@ -235,6 +240,7 @@ export class FallView {
       colorAttachments: [{ view: view.target, loadOp: 'load', storeOp: 'store' }],
     });
     pass.setPipeline(this.pipeline);
+    this.sky.bindShared(pass, [1, 2]);
     KINDS.forEach((kind, which) => {
       const count = Math.floor(kind.most * (shares[which] ?? 0));
       const [uniform, group, offset] = [this.uniforms[which], groups[which], this.offsets[which]];

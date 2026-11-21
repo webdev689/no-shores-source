@@ -34,7 +34,7 @@ code:
   - client/src/combat/foeBars.ts#bossInFight
   - client/src/player/foeDress.ts#foeDress
   - client/src/combat/foeFigures.ts#FoeFigures
-  - client/src/testground/panel.ts#startPanel
+  - client/src/testground/panel.ts#Panel
 ---
 # Enemies
 
@@ -54,7 +54,8 @@ The Lattice, the next faction, has its types in the roster and comes out of the 
 
 A fighter's side is the players' or a faction's, by its number. Fighters of different sides are enemies: foes of two
 factions fight each other as they fight players, and never their own side. The Brig's crew (number 0 for a faction)
-fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player.
+fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player. On the
+prologue's wreck every boarder fights on the Grey Tithe's side ([[The Wreck's Boarders Are One Side]]).
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|

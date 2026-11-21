@@ -33,8 +33,8 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 8 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "586b8cee";
-pub const RAID_HASH: &str = "979709e9";
+pub const FISSURE_HASH: &str = "83109f7a";
+pub const RAID_HASH: &str = "4bdce632";
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
@@ -75,17 +75,25 @@ struct Read {
     marks: Vec<(u8, u32, [f64; 2], u8)>,
 }
 
+/// A viewer who is no player: the snapshot cut for them is whole, everyone and every foe packed.
+const NO_VIEWER: PlayerId = 0;
+
+/// Reads a whole snapshot (`NO_VIEWER`'s), as the browser's test reads the same one.
 fn read(bytes: &[u8]) -> Read {
     let seen = messages::root_as_from_room(bytes).unwrap().snapshot().unwrap();
+    let middle: Vec<f64> = seen.middle().unwrap().iter().collect();
+    let middle = [middle[0], middle[1]];
+    let unpacked = |packed: &[u8], count| protocol::pack::unpack(packed, count, middle).unwrap();
     let players = seen.players().unwrap().iter().map(|player| {
-        let numbers = player.fighter().unwrap();
-        (player.player(), [numbers.get(0), numbers.get(1)])
+        let numbers = unpacked(player.packed().unwrap().bytes(), protocol::UNTRIMMED_FLOATS);
+        (player.player(), [numbers[0], numbers[1]])
     });
-    let standing = |foe: &messages::Foe<'_>| foe.glance().unwrap().get(10) > 0.0;
-    let foes = seen.foes().unwrap().iter().filter(standing).map(|foe| {
-        let glance = foe.glance().unwrap();
-        (foe.id(), foe.faction(), foe.type_(), [glance.get(0), glance.get(1)])
-    });
+    let glance = combat::floats::GLANCE_FLOATS;
+    let foes = seen.foes().unwrap().iter().map(|foe| (foe.id(), unpacked(foe.packed().unwrap().bytes(), protocol::land::FOE_NUMBERS)));
+    // Standing: its health (the glance's eleventh) left. Its type and faction follow its glance and its role.
+    let foes = foes
+        .filter(|(_, numbers)| numbers[10] > 0.0)
+        .map(|(id, numbers)| (id, numbers[glance + 3] as u8, numbers[glance + 1] as u8, [numbers[0], numbers[1]]));
     let event = seen.public_event().unwrap();
     let marks = event
         .marks()
@@ -194,9 +202,10 @@ fn play(minute: u32) -> (String, (u8, u8, u8)) {
             assert_eq!(input(player, &protocol::input_bytes(&sent)), TAKEN);
         }
         room_tick();
-        let bytes = snapshot();
+        let bytes = snapshot(players[0]);
         hash = bytes.iter().fold(hash, |hash, &byte| (hash ^ u32::from(byte)).wrapping_mul(0x0100_0193));
-        last = read(&bytes);
+        // The same tick's taken once: a second cut of it, for no one, changes nothing the room holds.
+        last = read(&snapshot(NO_VIEWER));
         if last.phase >= 2 {
             ended = ended.or(Some((tick, (last.kind, last.phase, last.heroic))));
         }

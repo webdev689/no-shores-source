@@ -42,21 +42,21 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   const walk = { forward: 1, sideways: 0, yaw: 0.3, run: false, jump: false, crouch: false, mounted: false };
   for (let tick = 0; tick < 30; tick++) walked = rules.step(walked, walk);
   assert.equal(snapshot.tick, 1234n);
+  const read = snapshot.players.map(({ player, acknowledged, body, anim, frame, facing, standing }) => ({
+    seen: [player, acknowledged, anim, frame, facing, standing],
+    body: floatsOf(body),
+  }));
   assert.deepEqual(
-    snapshot.players.map(({ player, acknowledged, body, anim, frame, facing, standing }) => [
-      player,
-      acknowledged,
-      floatsOf(body),
-      anim,
-      frame,
-      facing,
-      standing,
-    ]),
+    read.map((each) => each.seen),
     [
-      [7, 0, floatsOf(rules.standing(1.5, -2.25)), '', 0, 0, { kind: 'inside' }],
-      [9, 30, floatsOf(walked), 'attack_sword', 4, 0.75, { kind: 'warned', ticks: 432 }],
+      [7, 0, '', 0, 0, { kind: 'inside' }],
+      [9, 30, 'attack_sword', 4, 0.75, { kind: 'warned', ticks: 432 }],
     ],
   );
+  // The snapshot is player 9's: theirs crosses whole, and player 7's packed, each number within half a thousandth.
+  assert.deepEqual(read[1]?.body, floatsOf(walked));
+  const stood = floatsOf(rules.standing(1.5, -2.25));
+  assert.ok(read[0]?.body.every((number, index) => Math.abs(number - (stood[index] ?? 0)) <= 0.0005 + 1e-9));
   assert.deepEqual([snapshot.dressed, snapshot.ships], [dressed, []]);
   // The second player's fighter: a sword drawn, its lock on foe 12, stamina spent.
   const fighting = fighterView(snapshot.players[1]?.fighter ?? []);
@@ -192,9 +192,9 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
 });
 
 test('a fighting ship’s orders cross as the naval crate’s numbers', () => {
-  const helm = { steer: -0.5, crab: true, climb: 1 } as const;
+  const helm = { steer: -0.5, climb: 1 } as const;
   const aim = { bearing: 85, range: 120, ray: [4, 2.5, 6, 0.2, 1, -0.1] };
-  const orders: FightOrders = { helm, aim, fire: true, brace: false, load: 'chain' };
+  const orders: FightOrders = { helm, aim, fire: true, brace: false, load: 'chain', boost: true };
   assert.deepEqual(ordersNumbers(orders), [-0.5, 1, 1, 1, 85, 120, 1, 4, 2.5, 6, 0.2, 1, -0.1, 1, 0, 3]);
   const rayless = { ...orders, aim: { bearing: 85, range: 120 } };
   assert.deepEqual(ordersNumbers(rayless), [-0.5, 1, 1, 1, 85, 120, 0, 0, 0, 0, 0, 0, 0, 1, 0, 3]);

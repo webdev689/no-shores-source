@@ -16,11 +16,13 @@ const compiled = new WebAssembly.Module(
 );
 
 /** The room door's test holds the same node, script and fingerprints (crates/room-wasm/src/public_door_tests.rs). */
-const FISSURE_HASH = '586b8cee';
-const RAID_HASH = '979709e9';
+const FISSURE_HASH = '83109f7a';
+const RAID_HASH = '4bdce632';
 const FISSURE_MINUTE = 15_000;
 const RAID_MINUTE = 15_015;
 const MOST_TICKS = 8 * 3_600;
+/** A viewer who is no player: the snapshot cut for them is whole, everyone and every foe packed. */
+const NO_VIEWER = 0;
 /** A sword in the main hand, by combat's arms code. */
 const SWORD = 2;
 
@@ -102,9 +104,10 @@ async function play(minute: number): Promise<{ hash: string; ended: readonly num
       assert.equal(room.input(player, sent), 'taken');
     }
     room.tick();
-    const bytes = room.snapshot();
+    const bytes = room.snapshot(players[0] ?? 0);
     for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x0100_0193) >>> 0;
-    const message = readFromRoom(bytes);
+    // Read whole, as cut for a viewer who is no player, as the room door's test reads it.
+    const message = readFromRoom(room.snapshot(NO_VIEWER));
     if (message?.kind !== 'snapshot') throw new Error('a snapshot');
     last = readOf(message);
     const event = message.public;

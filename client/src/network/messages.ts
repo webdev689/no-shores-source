@@ -6,6 +6,7 @@ import { type FleetPart, commissionOf, fleetOf, heldIn, point, whole, wholeIn } 
 import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.ts';
 import { type CastAsk, type SeenSpell, spellsOf } from './artMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
+import { unpack } from './pack.ts';
 import { withOthers } from './seaFight.ts';
 import { type PublicEvent, publicOf } from './publicMessages.ts';
 import { type HarbourPart, harbourOf } from './seaHarbour.ts';
@@ -17,14 +18,16 @@ export interface Look {
   readonly facing: number;
 }
 
-/** Where a body stands with its node's section: inside, warned with `ticks` left before it dies, or dead `ticks`. */
+/** Where a body stands with its node's section: inside, warned with `ticks` left before it dies, or dead `ticks`, by
+ *  a fall in a social space or by straying. */
 export type Standing =
   | { readonly kind: 'inside' }
   | { readonly kind: 'warned'; readonly ticks: number }
-  | { readonly kind: 'dead'; readonly ticks: number };
+  | { readonly kind: 'dead'; readonly ticks: number; readonly fell: boolean };
 
-/** The standings in the order the messages number them. */
-const STANDINGS = ['inside', 'warned', 'dead'] as const;
+/** The standings in the order the messages number them: 2 dead by straying, 3 dead by a fall. */
+const STANDINGS = ['inside', 'warned', 'dead', 'dead'] as const;
+const FELL = 3;
 
 /** One player as a room last stepped them, what their figure showed with it, the number of their last input it took,
  *  their whole fighter in the combat crate's order, and where they stand with its section. In the sea room, a player
@@ -35,6 +38,9 @@ export interface SeenPlayer extends Look {
   readonly body: Body;
   readonly fighter: Float64Array | null;
   readonly standing: Standing;
+  /** In a snapshot built on another, the player's own fighter as only its numbers that changed since, a bit set for
+   *  each (`snapshots.ts` lays them over the fighter it holds); then `fighter` is null and `body` stands for nothing. */
+  readonly changes?: { readonly bits: Uint8Array; readonly numbers: Float64Array };
 }
 
 /** A player's dress as their browser wrote it; the room only carries it. */
@@ -111,6 +117,10 @@ export interface SeenFoe {
   readonly name?: string;
   /** The companion it is, an officer ashore fighting beside their leader; none for a foe. */
   readonly companion?: Companion | null;
+  /** All its numbers as they crossed, for the next snapshot to build on (`snapshots.ts`). */
+  readonly numbers?: Float64Array;
+  /** In a snapshot built on another, only its numbers that changed since, a bit set for each. */
+  readonly changes?: Changes;
 }
 
 /** A companion: their leader's player number, their officer's given and family names' places in
@@ -120,6 +130,40 @@ export interface Companion {
   readonly given: number;
   readonly family: number;
   readonly post: number;
+}
+
+/** The numbers of a fighter or a foe that changed since the snapshot one is built on, in order, a bit set for each:
+ *  the first number's the lowest bit of the first byte. */
+export interface Changes {
+  readonly bits: Uint8Array;
+  readonly numbers: Float64Array;
+}
+
+/** How many numbers a foe crosses as, packed: its glance and seventeen more (crates/protocol/src/land.rs). */
+const FOE_NUMBERS = GLANCE_FLOATS + 17;
+
+/** A foe from all its numbers as they crossed: its glance, then the rest in the order the room packs them. */
+export function foeOf(id: number, numbers: Float64Array): SeenFoe {
+  const glance = numbers.slice(0, GLANCE_FLOATS);
+  const [kind, type, rank, faction, phase, alert, level, element, left, most, expose, charge, chargeImmune, ...more] =
+    Array.from(numbers.subarray(GLANCE_FLOATS), (number) => number);
+  const shield = (element ?? 0) > 0 ? { element: element ?? 0, left: left ?? 0, most: most ?? 0 } : null;
+  const named = { type: type ?? 0, rank: rank ?? 0, faction: faction ?? 0, phase: phase ?? 0, alert: alert ?? 0 };
+  const statuses = { expose: expose ?? 0, charge: charge ?? 0, chargeImmune: chargeImmune ?? 0 };
+  // Last, a companion's leader (0 for a foe), its officer's given and family names, and post.
+  const [leader = 0, given = 0, family = 0, post = 0] = more;
+  const companion = leader > 0 ? { leader, given, family, post } : null;
+  return { id, kind: kind ?? 0, glance, level: level ?? 0, shield, ...named, statuses, companion, numbers };
+}
+
+/** The values `bytes` packs for the bits set in `bits`, each measured from `middle` by the number it is. */
+function changedValues(bytes: Uint8Array | null, bits: Uint8Array, middle: readonly number[]): Float64Array | null {
+  const places: number[] = [];
+  bits.forEach((byte, place) => {
+    for (let bit = 0; bit < 8; bit++) if (byte & (1 << bit)) places.push(place * 8 + bit);
+  });
+  const values = bytes && unpack(bytes, places.length, [0, 0]);
+  return values && values.map((value, index) => value + (middle[places[index] ?? -1] ?? 0));
 }
 
 /** A foe's debuffs as the room keeps them: the ticks left of its Expose and its Charge, and of the immunity a Charge
@@ -173,6 +217,8 @@ export interface FlyingShot {
   readonly velocity: readonly [number, number, number];
   readonly age: number;
   readonly muzzle: readonly [number, number, number] | null;
+  /** The tick a stopped ball stopped; 0 for a shot still flying. */
+  readonly stopped: bigint;
 }
 
 /** What a room says: its welcome, with the joining player's number, every dress so far, and its node in a node's
@@ -204,6 +250,11 @@ export type FromRoomMessage =
       readonly spells: readonly SeenSpell[];
       /** A zone's public events; null in a room whose zone holds none. */
       readonly public: PublicEvent | null;
+      /** On land, the tick of the snapshot this one builds on (0 for none), and the players and foes gone since it:
+       *  the players and foes it holds are those that changed since (`snapshots.ts` makes it whole again). */
+      readonly base: bigint;
+      readonly gonePlayers: readonly number[];
+      readonly goneFoes: readonly number[];
     } & FleetPart &
       HarbourPart)
   | ({ readonly kind: 'gear' } & GearState);
@@ -229,9 +280,21 @@ export interface InputParts {
 const ULONG_MOST = 2n ** 64n - 1n;
 
 /** One tick's input as its bytes, as the schema defines them: its number, its arms and a foe's type refused outside
- *  what their fields hold (a RangeError), and its frame, the tick seen and a foe's rank held within theirs. */
-export function inputBytes(sequence: number, parts: InputParts): Uint8Array<ArrayBuffer> {
-  const builder = new flatbuffers.Builder(320);
+ *  what their fields hold (a RangeError), and its frame, the tick seen and a foe's rank held within theirs. It carries
+ *  `earlier` inputs before it, oldest first, for a link that may lose one: the room takes those it has not had. */
+export function inputBytes(
+  sequence: number,
+  parts: InputParts,
+  earlier: readonly { readonly sequence: number; readonly parts: InputParts }[] = [],
+): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(320 * (1 + earlier.length));
+  const before = earlier.map((each) => inputOffset(builder, each.sequence, each.parts, 0));
+  const carried = before.length > 0 ? Input.createEarlierVector(builder, before) : 0;
+  builder.finish(inputOffset(builder, sequence, parts, carried));
+  return builder.asUint8Array().slice();
+}
+
+function inputOffset(builder: flatbuffers.Builder, sequence: number, parts: InputParts, earlier: number): number {
   const numbers = Array.from(parts.intent);
   const controls = Input.createControlsVector(builder, numbers.slice(0, CONTROLS_FLOATS));
   const combat = Input.createCombatVector(builder, numbers.slice(CONTROLS_FLOATS));
@@ -261,8 +324,8 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
   }
   if (parts.cast) Input.addCast(builder, wholeIn(parts.cast.spell, 0, 0xff, 'the spell'));
   if (aim) Input.addCastAim(builder, aim);
-  builder.finish(Input.endInput(builder));
-  return builder.asUint8Array().slice();
+  if (earlier) Input.addEarlier(builder, earlier);
+  return Input.endInput(builder);
 }
 
 /** A ship's course as its bytes: the world points it sails through in turn, and its pace, one of the steps of a
@@ -335,6 +398,7 @@ function dressesOf(count: number, entry: (index: number) => Dressed | null): Pla
 /** A standing from its number and ticks; a number the messages do not give reads as inside. */
 function standingOf(number: number, ticks: number): Standing {
   const kind = STANDINGS[number] ?? 'inside';
+  if (kind === 'dead') return { kind, ticks, fell: number === FELL };
   return kind === 'inside' ? { kind } : { kind, ticks };
 }
 
@@ -356,32 +420,49 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     if (gear) return { kind: 'gear', ...gearOf(gear) };
     const snapshot = message.snapshot();
     if (!snapshot) return null;
+    // Everyone but the player a snapshot is for crosses packed, measured from the room's middle.
+    const middle = Array.from(snapshot.middleArray() ?? [0, 0]);
+    const unpacked = (bytes: Uint8Array | null, count: number, what: string) => {
+      const numbers = bytes && unpack(bytes, count, middle);
+      if (!numbers) throw new Error(`${what} does not unpack`);
+      return numbers;
+    };
     const players = Array.from({ length: snapshot.playersLength() }, (unused, index) => {
       const seen = snapshot.players(index);
       if (!seen) throw new Error(`snapshot player ${index} is missing`);
       // A walker on a ship's deck crosses as their body alone, and has no fighter.
       const numbers = seen.fighterArray();
-      const walker = numbers?.length === BODY_FLOATS;
-      const fighter = walker ? null : whole(numbers, UNTRIMMED_FLOATS, `player ${index}'s fighter`);
+      const packed = seen.packedArray();
+      const bits = seen.changedArray();
+      // The player it is for has their changed numbers whole; everyone else theirs packed.
+      const changedNumbers = bits && (packed ? changedValues(packed, bits, middle) : Float64Array.from(numbers ?? []));
+      if (bits && !changedNumbers) throw new Error(`player ${index}'s changes do not unpack`);
+      const changes = bits && changedNumbers ? { bits, numbers: changedNumbers } : undefined;
+      const walker = !changes && numbers?.length === BODY_FLOATS;
+      const fighter =
+        walker || changes
+          ? null
+          : packed
+            ? unpacked(packed, UNTRIMMED_FLOATS, `player ${index}'s fighter`)
+            : whole(numbers, UNTRIMMED_FLOATS, `player ${index}'s fighter`);
       // A fighter's first numbers are its body: the room sends them once.
       const body = bodyOf(Array.from((fighter ?? Float64Array.from(numbers ?? [])).subarray(0, BODY_FLOATS)));
       const look = { anim: seen.anim() ?? '', frame: seen.frame(), facing: seen.facing() };
       const standing = standingOf(seen.standing(), seen.standingTicks());
-      return { player: seen.player(), acknowledged: seen.acknowledged(), body, fighter, standing, ...look };
+      const read = { player: seen.player(), acknowledged: seen.acknowledged(), body, fighter, standing, ...look };
+      return changes ? { ...read, changes } : read;
     });
     const foes = Array.from({ length: snapshot.foesLength() }, (unused, index) => {
       const foe = snapshot.foes(index);
       if (!foe) throw new Error(`snapshot foe ${index} is missing`);
-      const glance = whole(foe.glanceArray(), GLANCE_FLOATS, `foe ${index}`);
-      const element = foe.shieldElement();
-      const shield = element > 0 ? { element, left: foe.shield(), most: foe.shieldMost() } : null;
-      const named = { type: foe.type(), rank: foe.rank(), faction: foe.faction(), phase: foe.phase() };
-      const statuses = { expose: foe.expose(), charge: foe.charge(), chargeImmune: foe.chargeImmune() };
-      const read = { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
+      const bits = foe.changedArray();
+      // The name it stands under crosses each time the foe does, beside its numbers.
       const name = foe.name();
-      const companion =
-        foe.leader() > 0 ? { leader: foe.leader(), given: foe.given(), family: foe.family(), post: foe.post() } : null;
-      return { ...read, statuses, companion, ...(name ? { name } : {}) };
+      const named = name ? { name } : {};
+      if (!bits) return { ...foeOf(foe.id(), unpacked(foe.packedArray(), FOE_NUMBERS, `foe ${index}`)), ...named };
+      const numbers = changedValues(foe.packedArray(), bits, middle);
+      if (!numbers) throw new Error(`foe ${index}'s changes do not unpack`);
+      return { ...foeOf(foe.id(), new Float64Array(FOE_NUMBERS)), changes: { bits, numbers }, ...named };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);
@@ -406,6 +487,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         velocity: point(shot?.velocityArray() ?? null),
         age: shot?.age() ?? 0,
         muzzle: shot?.muzzleArray()?.length === 3 ? point(shot.muzzleArray()) : null,
+        stopped: shot?.stopped() ?? 0n,
       };
     });
     const ships = Array.from({ length: snapshot.shipsLength() }, (unused, index) => {
@@ -452,6 +534,9 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       fights,
       spells: spellsOf(snapshot),
       public: publicOf(snapshot),
+      base: snapshot.base(),
+      gonePlayers: Array.from(snapshot.gonePlayersArray() ?? []),
+      goneFoes: Array.from(snapshot.goneFoesArray() ?? []),
       ...fleetOf(snapshot),
       ...harbourOf(snapshot),
     };

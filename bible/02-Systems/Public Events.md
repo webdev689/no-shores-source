@@ -144,8 +144,8 @@ toward what it needs (shards set of shards needed, or the stores' health left pe
 in (0 while none is on its way); and its marks, each a 24-byte struct, its place in f32: the fissure (how far open),
 the growth (rising, standing, sinking, broken), each store (whole, plundered; always, even waiting), each shard lying
 (its life left) and carried (by whom), the tithe-taker (arriving, counting, leaving), each banner and the approach.
-New fight events: 14 begun, 15 next stage, 16 a shard taken, 17 a shard set, 18 heroic met, 19 heroic missed, 20 won,
-21 failed, 22 a store plundered, 23 a chest opened. A heroic window still open as the event is won or failed is told
+New fight events: 15 begun, 16 next stage, 17 a shard taken, 18 a shard set, 19 heroic met, 20 heroic missed, 21 won,
+22 failed, 23 a store plundered, 24 a chest opened. A heroic window still open as the event is won or failed is told
 missed before the result, so the result is the last beat of its tick. A foe carries the name it stands under, if any;
 a drop of kind 3 is
 a chest, with its tier. The browser reads it all in `client/src/network/publicMessages.ts`.
@@ -157,12 +157,13 @@ WebAssembly by `server/public.test.ts`, comes to the same fingerprints ([[Agree 
 
 ## The page
 
-The snapshot's `public_event` is kept by the fight (`Fighting.public`), and its events (14 to 23) apart from the
+The snapshot's `public_event` is kept by the fight (`Fighting.public`), and its events (15 to 24) apart from the
 fight's, which read every event as a blow. Each frame on foot, `game/publicView.ts` turns them into what the player
 sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event alone.
 
-- **The banner** (`combat/publicBanner.ts`), HTML through the kit as every part of the HUD is, stands in the compass's
-  column under the compass and over the boss bar and the target's plate, so neither stands on it. Running: "Public
+- **The banner** (`combat/publicBanner.ts`), drawn as nodes of the game's own interface as every part of the HUD is,
+  stands in the compass's column under the compass and over the boss bar and the target's plate, so neither stands on
+  it, 440 px wide at most or three quarters of a narrower view. Running: "Public
   event" (or "Heroic public event") over the name and place, the countdown at the right, the objective and its bar
   (shards set of needed; the stores' health, with the wave in the objective and the next one's countdown while it
   comes), the heroic task with its window's
@@ -175,8 +176,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   event, where, and in how many minutes (m:ss in its last minute, counted on by the page), and under it what runs or
   comes next elsewhere on Saltmere, from the same schedule. Its tone (gold, heroic orange, won green, failed red) runs
   down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed, the heroic
-  chance opening with an orange flare, the next a minute off). A screen reader hears each beat on a line of its own,
-  never the ticking clocks.
+  chance opening with an orange flare, the next a minute off). A screen reader hears each beat (`announce`), never the
+  ticking clocks. In a view under 1024 px wide the tracker gives way to it (it holds the same objective), and at a
+  phone's width (600 px) the place's name does too, but not to the next event's line.
 - **The tracker** (`tasks.ts`) holds the steps while one runs: the shards still to carry or the Warden; the wave and
   the stores still standing; the heroic task; the bonus while it holds. After, "Open your chest (1:48)" while a chest
   lies, over the two minutes it lies.

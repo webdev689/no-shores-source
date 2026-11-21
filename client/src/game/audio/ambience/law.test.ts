@@ -7,6 +7,7 @@ import {
   CROSSFADE_S,
   CURL_S,
   PHASES,
+  STRIDE_MOST_M,
   ambienceOf,
   boutTimes,
   breakerAt,
@@ -20,6 +21,7 @@ import {
   phasesAt,
   stepLevel,
   swellAt,
+  walkedOn,
   wander,
   wayOf,
 } from './law.ts';
@@ -144,4 +146,10 @@ test('the wind gusts smoothly, between calm and its whole, and its gusts never c
     assert.ok(apart > 0.01, `the gusts repeat ${shift * 0.05} s on`);
   }
   assert.notEqual(gustOf(10, 1), gustOf(10, 2));
+});
+
+test('feet set down far off by a moved clock or a hidden page walk no steps, and a walk counts every metre', () => {
+  assert.equal(walkedOn(0.5, 0.2), 0.7);
+  assert.equal(walkedOn(0.5, 40), 0.5, 'thirty seconds of the world clock at once');
+  assert.equal(walkedOn(0, STRIDE_MOST_M), STRIDE_MOST_M);
 });

@@ -8,6 +8,7 @@ import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { SPELLS } from '../network/artMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { readFromRoom } from '../network/messages.ts';
+import { SnapshotKeeper } from '../network/snapshots.ts';
 import type { FlyingShot } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type CombatRules, type Fired, startCombatRules } from '../rules/combatRules.ts';
@@ -17,6 +18,12 @@ import { ASKS, type GearState } from '../network/gearMessages.ts';
 import { KINDS, WORN } from '../player/gear.ts';
 import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
 import { KIND, wear } from './wornForTests.ts';
+
+/** A room's snapshot for a player made whole, as a page's link makes it; null for one passed over. */
+function wholeOf(kept: SnapshotKeeper, bytes: Uint8Array): Snapshot | null {
+  const message = readFromRoom(bytes);
+  return message?.kind === 'snapshot' ? kept.whole(message) : null;
+}
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -239,6 +246,7 @@ test("every snapshot's shots are handed over once, however many came in a frame"
     velocity: [0, -3600, 0],
     age: 0,
     muzzle: [0, 0, 1],
+    stopped: 0n,
   });
   word(0, [ball(2)]);
   word(0, [ball(3)]);
@@ -256,6 +264,7 @@ test('a dress too long for the room is never sent: the room takes every input, a
   const answers = new Set<string>();
   const dressed: string[] = [];
   let fight: Fighting | null = null;
+  const kept = new SnapshotKeeper();
   const link: RoomLink = {
     player,
     dressed: [],
@@ -265,8 +274,8 @@ test('a dress too long for the room is never sent: the room takes every input, a
     send: (bytes) => answers.add(door.input(player, bytes)),
     pump: () => {
       door.tick();
-      const message = readFromRoom(door.snapshot());
-      if (message?.kind !== 'snapshot') return;
+      const message = wholeOf(kept, door.snapshot(link.player));
+      if (!message) return;
       dressed.push(...message.dressed.map((each) => each.dress));
       fight?.receive(message);
     },
@@ -338,6 +347,9 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     ships: [],
     pirates: [],
     fights: [],
+    base: 0n,
+    gonePlayers: [],
+    goneFoes: [],
     vessels: [],
     balls: [],
     naval: [],
@@ -360,6 +372,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   const dressed: string[] = [];
   const casts: number[] = [];
   let fight: Fighting | null = null;
+  const kept = new SnapshotKeeper();
   const link = {
     player: door.join(),
     dressed: [],
@@ -372,8 +385,8 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
     },
     pump: () => {
       door.tick();
-      const message = readFromRoom(door.snapshot());
-      if (message?.kind !== 'snapshot') return;
+      const message = wholeOf(kept, door.snapshot(link.player));
+      if (!message) return;
       dressed.push(...message.dressed.map((each) => each.dress));
       fight?.receive(message);
     },
@@ -396,6 +409,8 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   fighting.cast({ spell: SPELLS.quicken, aim: null });
   // A deploy: the room starts afresh, and the link joins it as its second player.
   [door, dressed.length, casts.length] = [after, 0, 0];
+  // A new socket holds no snapshots of the room before.
+  kept.clear();
   after.join();
   Object.assign(link, { player: door.join(), joins: 2 });
   answers.clear();
@@ -418,6 +433,7 @@ test('a respawn asked goes with the next input only', () => {
   const player = door.join();
   const asked: boolean[] = [];
   let fight: Fighting | null = null;
+  const kept = new SnapshotKeeper();
   const link: RoomLink = {
     player,
     dressed: [],
@@ -430,8 +446,8 @@ test('a respawn asked goes with the next input only', () => {
     },
     pump: () => {
       door.tick();
-      const message = readFromRoom(door.snapshot());
-      if (message?.kind === 'snapshot') fight?.receive(message);
+      const message = wholeOf(kept, door.snapshot(player));
+      if (message) fight?.receive(message);
     },
   };
   const rules = startCombatRules(compiled);
@@ -456,7 +472,7 @@ test('a public event’s beats are kept apart from the fight’s events, and its
     players: [],
     dressed: [],
     foes: [],
-    events: [event(1), event(23), event(14)],
+    events: [event(1), event(24), event(15)],
     shots: [],
     spells: [],
     public: word,
@@ -468,7 +484,7 @@ test('a public event’s beats are kept apart from the fight’s events, and its
   );
   assert.deepEqual(
     fighting.takePublicEvents().map((each) => each.kind),
-    [23, 14],
+    [24, 15],
   );
   assert.equal(fighting.takePublicEvents().length, 0, 'handed over once');
   assert.equal(fighting.public, word);
@@ -478,7 +494,7 @@ test('a public event’s beats are kept apart from the fight’s events, and its
     players: [],
     dressed: [],
     foes: [],
-    events: [event(15)],
+    events: [event(16)],
     shots: [],
     spells: [],
     public: word,
@@ -488,4 +504,91 @@ test('a public event’s beats are kept apart from the fight’s events, and its
   assert.deepEqual(fighting.takePublicEvents(), [], 'nor its beats');
   (link as { rejoining: boolean }).rejoining = false;
   assert.equal(fighting.public, word, 'back once it holds again');
+});
+
+test('on a link that loses inputs and snapshots, each input carries those before it and the player still agrees', () => {
+  const door = startRoomDoor(compiled);
+  door.open(course.start, course.blocks);
+  const player = door.join();
+  const answers: string[] = [];
+  const kept = new SnapshotKeeper();
+  let [sent, pumped] = [0, 0];
+  let fight: Fighting | null = null;
+  const link: RoomLink = {
+    player,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    resend: 3,
+    // Every fourth input and every third snapshot are lost on the way.
+    send: (bytes) => void ((sent += 1) % 4 !== 0 && answers.push(door.input(player, bytes))),
+    pump: () => {
+      door.tick();
+      const message = wholeOf(kept, door.snapshot(player));
+      if ((pumped += 1) % 3 !== 0 && message) fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, link);
+  fight = fighting;
+  link.pump(TICK);
+  const steps = fighting.steps(movement);
+  for (let tick = 0; tick < 120; tick++) {
+    steps.step({} as Body, { ...STILL, forward: 1, yaw: tick < 60 ? 0 : 1 });
+    link.pump(TICK);
+  }
+  for (let tick = 0; tick < 10; tick++) {
+    steps.step({} as Body, STILL);
+    link.pump(TICK);
+  }
+  assert.deepEqual([...new Set(answers)], ['taken'], 'no input was ever missing to the room');
+  // At rest, one more tick moves no one: the room's word on the player, as the page keeps it.
+  door.tick();
+  const room = wholeOf(kept, door.snapshot(player))?.players[0]?.body;
+  const own = fighting.own;
+  assert.ok(room && own && Math.hypot(room.x - own.x, room.y - own.y) < 1e-9, 'the page and the room agree');
+  assert.ok(Math.hypot(own.x - course.start.x, own.y - course.start.y) > 3, 'having walked and turned');
+});
+
+test('a drink pressed between two ticks reaches the rules on the next tick only, as the intent’s last number', () => {
+  const door = startRoomDoor(compiled);
+  door.open(course.start, course.blocks);
+  const player = door.join();
+  const drinks: number[] = [];
+  const kept = new SnapshotKeeper();
+  let fight: Fighting | null = null;
+  const link: RoomLink = {
+    player,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: (bytes) => {
+      const input = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes));
+      drinks.push(input.combat(input.combatLength() - 1) ?? -1);
+      door.input(player, bytes);
+    },
+    pump: () => {
+      door.tick();
+      const message = wholeOf(kept, door.snapshot(player));
+      if (message) fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, link);
+  fight = fighting;
+  link.pump(TICK);
+  const steps = fighting.steps(movement);
+  fighting.press({ ...UNPRESSED, heal: true });
+  for (let count = 0; count < 3; count += 1) {
+    steps.step({} as Body, STILL);
+    fighting.press(UNPRESSED);
+    link.pump(TICK);
+  }
+  assert.deepEqual(drinks, [1, 0, 0]);
+  assert.equal(fighting.own?.charges, 3, 'a player comes into the room with all three');
+  assert.equal(fighting.own?.action.kind, 'idle', 'whole, the drink is refused');
 });

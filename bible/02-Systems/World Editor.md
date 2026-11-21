@@ -5,6 +5,14 @@ code:
   - client/editor/index.html
   - client/src/editorPage.ts
   - client/src/editor/editorMain.ts
+  - client/src/editor/islePanel.ts#islePanel
+  - client/src/editor/editorFrame.ts#EditorFrame
+  - client/src/editor/panelKit.ts#editorRoot
+  - client/src/editor/editorPanel.ts#continentsPanel
+  - client/src/editor/landPanel.ts#landPanel
+  - client/src/editor/markPass.ts#MarkPass
+  - client/src/editor/strokes.ts#inkVertices
+  - client/src/editor/viewMarks.ts#labelNode
   - client/src/editor/fleetLink.ts#offerFleet
   - client/src/editor/fleetDock.ts#FleetDock
   - client/src/editor/fleetScene.ts#FleetScene
@@ -18,6 +26,7 @@ code:
   - client/src/editor/isleEditor.ts#startIsleEditor
   - client/src/editor/placeTools.ts#PlaceTools
   - client/src/editor/siteDrawing.ts#siteMarks
+  - client/src/editor/siteDrawing.ts#siteInks
   - client/src/editor/layoutDrawing.ts#layoutMarks
   - client/src/editor/reliefTiles.ts#ReliefTiles
   - client/src/terrain/layoutMarks.ts#layoutMarksOf
@@ -88,9 +97,9 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar. Within 3 km heights are true to scale; they ease to the chosen height by 30 km |
 | Layouts (`L`) | Shows or hides the nodes' layouts over both views, with a legend of their colours |
 | Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` or the arrow keys to move (6 m/s, 40 with `Shift` on land), drag to look round. In water the walker wades, then swims; `C` dives and `Space` rises ([[Water]]). `G` again, the 2D map or `V` stops. Brushes and place tools do nothing while walking |
-| Sail (`B`) | Puts the owner's Sloop to sea at the camera's target, heading where the camera looks, and follows it ([[Sailing]]). `W` and `S` (or the up and down arrows) climb and come down the helm's ladder: oars astern, at rest, ahead, then sails set. `A` and `D` steer; on its oars, `Shift` with `A` or `D` rows it sideways. Where the water is shallower than its draught it is refused, the panel says why and the camera stands back off. `B` again, Walk, another landmass, the 2D map or `V` brings it in |
-| Fight (`F`, while sailing) | Calls a pirate captain onto the ring round the Sloop, or sends it off ([[Naval Combat]]). Hold the right mouse to aim (the camera stands past the ports on the side looked at, and where the look meets the water is the range); let go to fire, left click to hold fire, the wheel to change shot, `C` to brace. The panel shows both ships, the guns, DFO's messages and the warning to brace |
-| In a fleet (`?room=` in the address) | Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep or more: `?room=<name>` the deployed rooms' `fleet-<name>`, a local server's address its `fleet-editor`. Every other player's Sloop and every captain is drawn; `F` calls a captain round it, four at most in the room, and `X` sends them all off; aiming, firing, the brace and the load are as alone |
+| Sail (`B`) | Puts the owner's Sloop to sea at the camera's target, heading where the camera looks, and follows it ([[Sailing]]). `W` and `S` (or the up and down arrows) climb and come down the helm's ladder: oars astern, at rest, ahead, then sails set. `A` and `D` steer. Where the water is shallower than its draught it is refused, the panel says why and the camera stands back off. `B` again, Walk, another landmass, the 2D map or `V` brings it in |
+| Fight (`F`, while sailing) | Calls a pirate captain onto the ring round the Sloop, or sends it off ([[Naval Combat]]). Hold the right mouse to aim (the camera stands past the ports on the side looked at, and where the look meets the water is the range); let go to fire, left click to hold fire, the wheel to change shot, `C` to brace, `Shift` to burst. The panel shows both ships, the guns, DFO's messages and the warning to brace |
+| In a fleet (`?room=` in the address) | Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep or more: `?room=<name>` the deployed rooms' `fleet-<name>`, a local server's address its `fleet-editor`. Every other player's Sloop and every captain is drawn; `F` calls a captain round it, four at most in the room, and `X` sends them all off; aiming, firing, the brace and the load are as alone, and `Shift` gives no burst |
 | In 2D: drag, wheel | Shapes with a brush (or pans with Look, or with the right button), and zooms, 1 m to 20 km a pixel |
 | In 3D: left-drag, right-drag, middle-drag, wheel | Left-drag shapes with a brush (or orbits with Look); right-drag orbits (or pans with Look); middle-drag pans along the ground; the wheel zooms, 3 m to 5,000 km from the target |
 
@@ -172,10 +181,30 @@ The Islands mode shows one of the sea's islands at a time, from a seed and a cli
 `room.wasm` exactly as its room builds it and drawn with the sea round it ([[Island Drawing]]). Next seed steps the
 seed; Next isle steps to the next ruin or quarry; Close up looks from about 40 m over its middle and From 3 km from
 afar. The panel counts the triangles and draws. `?mode=islands&isleSeed=<seed>&isleClimate=<climate>&isleView=afar`
-opens on an island, and `?islePacks=<prefix>` reads the build's packs before they are published.
+opens on an island, and `?islePacks=<prefix>` reads the build's packs before they are published. Its panel is drawn by
+the game as the other modes' are (`islePanel`), and its island is drawn into the room right of the panel on the same
+device. A captain's fight in Land mode shows the game's own readout over the view ([[Interface]], "The sea fight's
+readout").
 
 ## How it works
 
+- **One canvas.** The page holds one canvas and its script, nothing more
+  ([[The Interface Uses No HTML, Now or Later]]). Each frame draws the mode open into the room right of the
+  panel, 300 of the interface's pixels wide, which the view's place on the page follows at any screen's ratio
+  (`panelCss`): the coasts' map, or the land's 2D map or 3D view (the 3D view drawn aside at that room's size and copied
+  in). Over it the marks (rulers, reference shapes, the scale bar, the city, the nodes, the layouts, a place being
+  drawn, the 3D scale cues) are drawn by the GPU as lines, fills and dots, each line smoothed across a pixel and each
+  shape painted once where its pieces overlap (`MarkPass`). Last the interface the game draws (`ui/`) lays the names
+  over the view, the captains' plates in a fight, and the panel at the left, which scrolls under the wheel. A frame
+  is drawn when something asks for one: an input, a change, the water moving in 3D. A lost GPU device stops the
+  editor, the page saying so and asking for a reload (`stopWhenLost`).
+- **The panel** keeps the editor's own look, a tool's and not one of the game's screens: dark slate presses with a
+  hairline edge and rounded corners, lit blue when chosen; the slider, the lists to choose from and the name fields
+  in a browser's dark grey. Tab and the arrows move the focus through it, and Enter or Space presses; a field takes
+  what is typed and hands it over on Enter or as the focus leaves it, or at once when a press on the view takes it.
+  Keys go to the view while a field is typed in never, and to the panel never while walking or sailing. Save, Open…
+  and Download hand files to and from the browser through the page's own services (`ui/page.ts`), and the questions
+  before a file replaces painting are the browser's own dialog.
 - **The land** is a grid of square-kilometre cells over the frame, one byte each: sea, or the continent that holds
   it. A brush stroke never paints over another continent, so continents cannot overlap by accident.
 - **The map** is drawn by WebGPU in one full-screen pass from a texture of that grid: sea, each continent's colour,
@@ -207,5 +236,7 @@ opens on an island, and `?islePacks=<prefix>` reads the build's packs before the
 - Building the layouts near the camera takes the page's thread about 0.25–0.6 s after each change (in Node, for the
   Saltgrass Downs and its neighbours), on top of the worker's replanning, so the view stalls that long once.
 - All of a landmass's layouts are planned again after every change, not only those it touches.
+- A paragraph breaks only at spaces, never after a hyphen, and a control's words that reach the panel's edge run on
+  under the words before them, not back at the panel's left edge.
 - The first draw uploads the whole grid, about 15 MB, to the GPU: instant on a graphics card, slow on a machine
   without one.

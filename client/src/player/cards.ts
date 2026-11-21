@@ -52,6 +52,8 @@ export interface CardAt {
   readonly surge?: number;
   /** A Lattice figure: its crystal glows of itself, never darker than a floor, so it reads at night. */
   readonly crystal?: boolean;
+  /** Leaned to face the eye rather than standing upright, as a fallen body seen from above is drawn. */
+  readonly facesEye?: boolean;
 }
 
 /** Whatever turns a composed picture into a card it can draw, and an outline's field into a texture: the Test

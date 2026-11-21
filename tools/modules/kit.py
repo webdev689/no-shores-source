@@ -12,10 +12,14 @@ import bpy  # noqa: I001 (Blender's bmesh and mathutils load with bpy)
 import bmesh
 import mathutils
 
-# The game's materials a module's surfaces wear (city's `Material`), each drawn in the climate's picture, in the order
-# its groups are written: paving last, as the first group carries the parts and paving is never run into. Crystal is
-# the Lattice's: drawn by code, not a picture, its core glowing as much as its vertices' glow says.
-MATERIALS = ('stone', 'trim', 'rubble', 'chalk', 'turf', 'timber', 'canvas', 'iron', 'gold', 'crystal', 'paving')
+# The game's materials a module's surfaces wear (city's `Material`), each drawn in the climate's picture or its plain
+# colour, in the order its groups are written: paving last of those that carry parts, as the first group carries the
+# parts and paving is never run into. Cloth is the plain dyes: undyed linen, crimson, verdant, black, straw and the
+# three factions' own. Crystal is the Lattice's: drawn by code, not a picture, its core glowing as much as its
+# vertices' glow says.
+CLOTHS = ('linen', 'crimson', 'verdant', 'black', 'straw', 'stormcaller_blue', 'lamplighter_gold', 'veiled_dusk')
+MATERIALS = ('stone', 'trim', 'rubble', 'chalk', 'turf', 'timber', 'canvas', 'iron', 'plaster', 'roof', 'gold',
+             'crystal', 'bone', 'glow', *CLOTHS, 'paving', 'lawn', 'water')
 
 
 class Module:
@@ -322,11 +326,11 @@ def battlements(module, start, end, z, thick, material='stone', every=2.0, wide=
         block(module, at, (wide, thick, high), material, turn=turn, bevel=0.03, wear=0.03, part=False)
 
 
-def _rounded(value, steady):
-    """A coordinate to a tenth of a millimetre. Steady, one that rounds to nothing is a plain zero: a residue of float
-    sines and cosines differs in its last bits from one machine to another, and its sign would survive the rounding
-    as a negative zero's bytes in the mesh file."""
-    return round(value, 4) + 0.0 if steady else round(value, 4)
+def _rounded(value):
+    """A coordinate to a tenth of a millimetre, one that rounds to nothing a plain zero: a residue of float sines and
+    cosines differs in its last bits from one machine to another, and its sign would survive the rounding as a
+    negative zero's bytes in the mesh file."""
+    return round(value, 4) + 0.0
 
 
 def _steady_normals(mesh, blender):
@@ -334,7 +338,7 @@ def _steady_normals(mesh, blender):
     point that share its smoothing (Blender's own normals for them nearly equal). Blender works its normals out in
     single floats that differ from one CPU to another in their last bits, which a rounding can turn into a different
     byte; Blender's normals only choose which faces a corner smooths with, a choice far from any edge."""
-    at = lambda loop: tuple(_rounded(v, True) for v in mesh.vertices[mesh.loops[loop].vertex_index].co)
+    at = lambda loop: tuple(_rounded(v) for v in mesh.vertices[mesh.loops[loop].vertex_index].co)
     faces, face_of, corners = {}, {}, {}
     for triangle in mesh.loop_triangles:
         a, b, c = (at(loop) for loop in triangle.loops)
@@ -356,6 +360,20 @@ def _steady_normals(mesh, blender):
             length = math.sqrt(sum(value * value for value in total))
             steady[loop] = mathutils.Vector([value / length for value in total]) if length > 0.0 else mine
     return [steady.get(loop, normal) for loop, normal in enumerate(blender)]
+
+
+def _in_order(group):
+    """Puts a group's vertices and triangles in one order, whatever order Blender made them in: an exact boolean's
+    threads hand its faces back in a different order each run, and a mesh's key is the hash of its bytes."""
+    order = sorted(range(len(group['vertices'])), key=lambda at: group['vertices'][at])
+    new = {old: at for at, old in enumerate(order)}
+    group['vertices'] = [group['vertices'][old] for old in order]
+    triangles = []
+    for triangle in group['triangles']:
+        a, b, c = (new[old] for old in triangle)
+        # Turned to start at its least vertex, so it keeps its winding.
+        triangles.append(min((a, b, c), (b, c, a), (c, a, b)))
+    group['triangles'] = sorted(triangles)
 
 
 def exported(module):
@@ -381,9 +399,9 @@ def exported(module):
             for loop in triangle.loops:
                 point = mesh.vertices[mesh.loops[loop].vertex_index].co
                 normal = normals[loop]
-                steady = module.steady
-                game = (_rounded(point.x, steady), _rounded(-point.y, steady), _rounded(point.z, steady))
-                facing = (round(normal.x, 3), round(-normal.y, 3), round(normal.z, 3))
+                game = (_rounded(point.x), _rounded(-point.y), _rounded(point.z))
+                # + 0.0 drops a zero's sign, as `_rounded` does a coordinate's.
+                facing = (round(normal.x, 3) + 0.0, round(-normal.y, 3) + 0.0, round(normal.z, 3) + 0.0)
                 key = (game, facing, round(glow, 3))
                 if key not in group['index']:
                     group['index'][key] = len(group['vertices'])
@@ -406,5 +424,10 @@ def exported(module):
                for s in module.sockets]
     size = [max(abs(low[0]), abs(high[0])) * 2, max(abs(low[1]), abs(high[1])) * 2, high[2]]
     mouth = module.mouth and [[[x, -y] for x, y, _ in lip] for lip in module.mouth]
+    unknown = set(groups) - set(MATERIALS)
+    if unknown:
+        raise ValueError(f'{module.name}: materials the game does not know: {sorted(unknown)}')
+    for group in groups.values():
+        _in_order(group)
     return dict(groups={name: groups[name] for name in MATERIALS if name in groups}, parts=parts, sockets=sockets,
                 pads=pads, size=[round(side, 3) for side in size], mouth=mouth)

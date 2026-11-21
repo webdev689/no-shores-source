@@ -101,7 +101,9 @@ pub fn open_island(text: &[u8]) -> bool {
     }) else {
         return false;
     };
-    keep(Opened::Land { room: Box::new(room), node: None, refusal: None });
+    // Its numbers are the world's, packed from its middle in whole metres (`pack::middle_of`).
+    let sent = Box::new(crate::sent::Sent::around(request.at.map(f64::floor)));
+    keep(Opened::Land { room: Box::new(room), node: None, refusal: None, sent });
     true
 }
 

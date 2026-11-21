@@ -32,6 +32,7 @@ pub(crate) fn room_at(minute: u64, players: usize) -> (Room, Vec<PlayerId>) {
     let section = Section {
         ring: vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]],
         spawns: vec![[0.0, 180.0]],
+        falls_kill: false,
     };
     let mut room = Room::node(Floor::Flat, Vec::new(), section);
     room.open_public(ZONE, grounds(), None);

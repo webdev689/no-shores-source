@@ -59,13 +59,19 @@ def baked(name):
     total = sum(group['triangles'] for group in groups)
     if total > MOST_TRIANGLES:
         sys.exit(f'{name}: {total} triangles, over {MOST_TRIANGLES}')
-    entry = dict(name=name, size=made['size'], parts=[[round(v, 3) for v in part] for part in made['parts']],
-                 sockets=made['sockets'], groups=groups)
+    sockets = [dict(socket, at=written(socket['at']), facing=written(socket['facing'])) for socket in made['sockets']]
+    entry = dict(name=name, size=made['size'], parts=[written(part) for part in made['parts']], sockets=sockets,
+                 groups=groups)
     if made['pads']:
-        entry['pads'] = [[round(v, 3) for v in pad] for pad in made['pads']]
+        entry['pads'] = [written(pad) for pad in made['pads']]
     if made['mouth']:
-        entry['mouth'] = [[[round(v, 3) for v in point] for point in lip] for lip in made['mouth']]
+        entry['mouth'] = [[written(point) for point in lip] for lip in made['mouth']]
     return entry, files
+
+
+def written(values, digits=3):
+    """Numbers as the manifest writes them: to the millimetre, a zero without its sign, the same on every machine."""
+    return [round(value, digits) + 0.0 for value in values]
 
 
 def main():

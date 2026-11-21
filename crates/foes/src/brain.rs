@@ -145,6 +145,8 @@ pub struct Brain {
     /// Since when, defending, it has held its ground before a target near its place.
     pub(crate) held_since: Option<u64>,
     pub(crate) struck_at: Option<(FighterId, u64)>,
+    /// The lower rank whose health, poise and defence it fights with, if a story holds it to one (`held_to`).
+    pub(crate) held_to: Option<Rank>,
 }
 
 impl Brain {
@@ -187,6 +189,7 @@ impl Brain {
             raging: false,
             held_since: None,
             struck_at: None,
+            held_to: None,
         }
     }
 
@@ -222,6 +225,20 @@ impl Brain {
     /// Makes it fight on the players' side where it stands, its post its own: a ship's hand come aboard a struck deck.
     pub fn joins_players(&mut self) {
         self.side = Side::Players;
+    }
+
+    /// Makes it think as `side`, whatever its type's: a story's boarders, all on one side against the players.
+    pub fn fights_for(&mut self, side: Side) {
+        self.side = side;
+    }
+
+    /// Makes it as hard to bring down as its type at `rank`, its health, poise and defence that rank's, where it
+    /// stands higher: its own rank's tier, blows and look are kept. A story's foes made gentler so.
+    pub fn held_to(&mut self, rank: Rank) {
+        if rank < self.rank {
+            self.held_to = Some(rank);
+            self.health = [self.numbers().health; SAMPLES];
+        }
     }
 
     /// The side it thinks as: whose noises it heeds and whose it hunts.
@@ -291,10 +308,15 @@ impl Brain {
         }
     }
 
-    /// Its numbers now: its type's at its rank, in its phase.
+    /// Its numbers now: its type's at its rank, in its phase; held to a lower rank (`held_to`), that rank's health,
+    /// poise and defence.
     #[must_use]
     pub fn numbers(&self) -> Numbers {
-        self.foe_type.numbers(self.rank, self.tells.phase)
+        let numbers = self.foe_type.numbers(self.rank, self.tells.phase);
+        let Some(held) = self.held_to else { return numbers };
+        let gentle = self.foe_type.numbers(held, 1);
+        let (health, poise) = (gentle.health, gentle.poise);
+        Numbers { health, poise, parry: gentle.parry, block: gentle.block, dodge: gentle.dodge, ..numbers }
     }
 
     #[must_use]

@@ -57,6 +57,11 @@ test('no key casts two things, the DFO keys stay where they were, and the abilit
   );
   assert.ok((BINDINGS.guard as readonly string[]).includes('f'), 'F still guards');
   assert.deepEqual(BINDINGS.crouch, ['c'], 'C still crouches');
+  assert.deepEqual(
+    [BINDINGS.melee, BINDINGS.ranged, BINDINGS.heal],
+    [['1'], ['2'], ['3']],
+    'a drink beside the loadouts',
+  );
 });
 
 test('the bar runs each share on by its recharge from the room’s word, and holds it at full', () => {
@@ -80,16 +85,18 @@ test('a press casts its ability only when it is ready, then waits for the room�
     { spell: SPELLS.dawnflare, aim: null },
     'Art changed',
   );
-  const staggered = new CastKeys().frame(keys(['anima']), 0, {
-    hands: true,
-    state: state(1),
-    abilities: abilitiesAt(state(1), 0, 0),
-    own: own('staggered'),
-    yaw: 0,
-    markOf: () => null,
-    floorAt,
-  });
-  assert.equal(staggered.cast, null, 'staggered, nothing is cast');
+  for (const kind of ['staggered', 'drink']) {
+    const unable = new CastKeys().frame(keys(['anima']), 0, {
+      hands: true,
+      state: state(1),
+      abilities: abilitiesAt(state(1), 0, 0),
+      own: own(kind),
+      yaw: 0,
+      markOf: () => null,
+      floorAt,
+    });
+    assert.equal(unable.cast, null, `${kind}: nothing is cast`);
+  }
 });
 
 test('after a cast the keys wait for the room’s word that it was spent, however long it takes, up to a limit', () => {

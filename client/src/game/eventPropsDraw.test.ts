@@ -27,10 +27,12 @@ test("the fissure's lips pack station by station along its x, the lower lip's y 
 
 test("the drawer's materials are the modules' kit's, in its order", () => {
   const kit = readFileSync(new URL('../../../tools/modules/kit.py', import.meta.url), 'utf8');
-  const listed = /^MATERIALS = \(([^)]*)\)/m.exec(kit)?.[1];
-  assert.ok(listed, 'kit.py names its MATERIALS');
+  const tuple = (name: string) => /^NAME = \(([^)]*)\)/m.source.replace('NAME', name);
+  const [listed, cloths] = ['MATERIALS', 'CLOTHS'].map((name) => new RegExp(tuple(name), 'm').exec(kit)?.[1]);
+  assert.ok(listed && cloths, 'kit.py names its MATERIALS and its CLOTHS');
+  const names = (text: string) => [...text.matchAll(/'([a-z_]+)'|\*CLOTHS/g)].map((found) => found[1] ?? '*');
   assert.deepEqual(
-    [...listed.matchAll(/'([a-z]+)'/g)].map((found) => found[1]),
+    names(listed).flatMap((name) => (name === '*' ? names(cloths) : [name])),
     [...MATERIALS],
   );
 });

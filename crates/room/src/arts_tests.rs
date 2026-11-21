@@ -1,6 +1,6 @@
 //! The Arts in the room: a new room's Anima empty and Tenets ready, each charging over its recharge; a cast taken
-//! only when ready, of the worn Art, with its caster able, and released 18 ticks after; kills and a crit out of
-//! Vanish giving charge back; and the asks that wear an Art and set its Core, and the Test Ground's grant.
+//! only when ready, of the worn Art, with its caster able (never drinking), and released 18 ticks after; kills and a
+//! crit out of Vanish giving charge back; and the asks that wear an Art and set its Core, and the Test Ground's grant.
 
 use crate::arts::Cast;
 use crate::asks::{Asked, Grant};
@@ -135,6 +135,47 @@ fn a_cast_is_refused_unless_charged_of_the_worn_art_and_its_caster_able() {
 }
 
 #[test]
+fn a_cast_is_refused_while_drinking_and_one_whose_caster_drinks_before_its_release_costs_nothing() {
+    let (mut room, player) = room_with_player();
+    let drinking = |room: &mut Room| {
+        let fighter = &mut room.players.get_mut(&player).expect("in").fighter;
+        (fighter.health, fighter.action) = (50.0, combat::Action::Drink { elapsed: 0 });
+    };
+    drinking(&mut room);
+    room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
+    assert_eq!(casting(&room, player).releasing, None, "drinking");
+    let (mut room, player) = room_with_player();
+    room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
+    assert!(casting(&room, player).releasing.is_some());
+    drinking(&mut room);
+    for _ in 0..19 {
+        room.tick();
+    }
+    assert_eq!(casting(&room, player).tenets[0], 1.0, "drinking as it released: it cost nothing");
+}
+
+#[test]
+fn a_cast_asked_with_a_drink_goes_off_and_holds_the_drink_off() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 2, &[]);
+    let mut hurt = *room.fighter(player).expect("in");
+    hurt.health = 30.0;
+    room.set_fighter(player, hurt);
+    let cast = Some(Cast { spell: MEND, aim: None });
+    let heal = combat::CombatInput { heal: true, ..combat::CombatInput::default() };
+    let intent = combat::Intent { combat: heal, ..combat::Intent::default() };
+    room.input(player, Input { sequence: 1, cast, intent, seen: room.clock(), ..Input::default() }).expect("in order");
+    room.tick();
+    let fighter = *room.fighter(player).expect("in");
+    assert!(!matches!(fighter.action, combat::Action::Drink { .. }), "no drink under the cast: {:?}", fighter.action);
+    for _ in 0..18 {
+        room.tick();
+    }
+    let fighter = *room.fighter(player).expect("in");
+    assert_eq!((fighter.health, fighter.charges), (70.0, combat::tuning::CHARGES), "Mend heals, no charge spent");
+}
+
+#[test]
 fn a_room_without_arts_takes_no_cast_and_charges_nothing() {
     let (mut room, player) = room_with_player();
     room.forbid_arts();
@@ -172,13 +213,13 @@ fn a_body_dead_past_its_section_casts_nothing_and_takes_no_spell() {
     let (mut room, player) = room_with_player();
     wearing(&mut room, player, 1, &[]);
     let fallen = room.join().expect("a room with space");
-    room.players.get_mut(&fallen).expect("in").standing = crate::Standing::Dead { ticks: 0 };
+    room.players.get_mut(&fallen).expect("in").standing = crate::Standing::Dead { ticks: 0, fell: false };
     cast(&mut room, player, QUICKEN, None, 0);
     assert!(room.fighter(player).expect("in").statuses.has(Status::Haste));
     assert!(!room.fighter(fallen).expect("in").statuses.has(Status::Haste), "Quicken passes the section-dead by");
     room.ready_arts(player);
     room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
-    room.players.get_mut(&player).expect("in").standing = crate::Standing::Dead { ticks: 0 };
+    room.players.get_mut(&player).expect("in").standing = crate::Standing::Dead { ticks: 0, fell: false };
     for _ in 0..30 {
         room.tick();
     }

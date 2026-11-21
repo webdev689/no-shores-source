@@ -11,7 +11,7 @@ import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
 import type { SeaRoom } from './seaRoom.ts';
-import { aimLineOf, SeaSight } from './seaSight.ts';
+import { aimLineOf } from './seaSight.ts';
 import { seaFightQuest } from './seaPanel.ts';
 import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
 import type { Quest } from './tasks.ts';
@@ -58,17 +58,11 @@ export function seaShipMarks(
   ];
 }
 
-/** The sight over the display, made the first time the guns are laid. */
-let sight: SeaSight | null = null;
-
 /** The sight while the player lays their guns in a fight: the crosshair and the aim line. */
-function showSight(here: Sea, onDeck: boolean): void {
+function showSight(hud: Hud, here: Sea, onDeck: boolean): void {
   const fight = here.fight;
   const aiming = fight !== null && fight.aimingNow && !onDeck;
-  if (!aiming && !sight) return;
-  const parent = document.querySelector<HTMLElement>('.hud');
-  if (!sight && parent) sight = new SeaSight(parent);
-  sight?.show(aiming, fight ? aimLineOf(fight.view.lay, fight.view.player) : null);
+  hud.sight(aiming, fight ? aimLineOf(fight.view.lay, fight.view.player) : null);
 }
 
 /** The place line at sea: the deck's fight's words on a struck ship's deck, the coast while landings are chosen, else
@@ -123,7 +117,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // In a fight the sea bar goes: its map, pace, Manage and Leave wait for the fight's end, as its keys do.
   const ship = { canLeave: here.inRoom, canManage: true };
   hud.seaBar(onSea && !atHelm && !aboard.active && !deck && !here.fight ? { ...shown, ...ship } : null);
-  showSight(here, deck !== null);
+  showSight(hud, here, deck !== null);
   const build = aboard.managing ? state.build() : null;
   hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);
   hud.wheelOffer(onSea && aboard.atWheel);
@@ -140,5 +134,5 @@ export function hideSeaHud(hud: Hud, quest: Quest | null = null): void {
   hud.seaBar(null);
   hud.shipPanel(null);
   hud.wheelOffer(false);
-  sight?.show(false, null);
+  hud.sight(false, null);
 }

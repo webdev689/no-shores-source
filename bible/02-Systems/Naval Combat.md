@@ -19,6 +19,7 @@ code:
   - crates/naval/src/captain/odds.rs#odds
   - crates/naval/src/fight.rs#Fight
   - crates/naval/src/fight.rs#sail_hurt
+  - crates/naval/src/boost.rs#Boost
   - crates/naval/src/fight_step.rs
   - crates/naval/src/laying.rs#preview
   - crates/naval/src/ram.rs#ram_blow
@@ -141,8 +142,17 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   or its rig where that sail is gone; a sail torn away; a mast fallen; colours struck; a ship going down; a piece of what
   floats laid, and gathered; and players gone aboard a ship.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
-- **The pace** of every ship in a fight is half again its pace at sea, under sail and under oars alike (`FIGHT_PACE`,
-  [[Ships Sail and Hit Half Again Harder in Sea Fights]]).
+- **The pace** of every ship in a fight, a player's or a captain's, is 1.8 times its pace at sea, under sail and under
+  oars alike (`FIGHT_PACE`: half again, [[Ships Sail and Hit Half Again Harder in Sea Fights]], and a fifth on that,
+  [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]),
+  and it swings twice as fast and answers its helm twice as soon (`FIGHT_TURN`): the Sloop makes about 4.8 m/s with
+  the usual breeze on its quarter, swings at up to about 28 degrees a second under sail and 40 on its oars, and from
+  slow its rudder takes hold twice as fast. A captain reckons its own swing at a fight's (`swing_rate`).
+- **The burst** (`boost.rs`, [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]): a tap of Shift drives a player's ship's sails and oars half again for 4 s; once the
+  burst is over it recharges for 12 s, so it may burst again 16 s after the tap. A tap while it bursts or recharges
+  does nothing, and a wreck cannot burst (its burst is kept). Captains never burst. The fight's view carries each
+  ship's burst, the share still to run and the share of its recharge done, which the Sloop's plate shows as a ring
+  ("How it looks", "The readout"). Sailing between ports has no burst: only a fight's helm has one.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
@@ -369,7 +379,7 @@ water floats it, heading across its waters on a slant; `F` again sends the capta
 helm's place. Holding the right mouse aims: the camera eases out to the aim eye past the ports on the side looked at,
 as the game's fight does ("The aim, as DFO's"), the look's bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
 lookReach), unless the look is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
-left click holds fire, the wheel changes shot, and `C` braces.
+left click holds fire, the wheel changes shot, `C` braces, and `Shift` bursts.
 
 The captain's ship is drawn in their hull and their faction's colours ([[Sailing]], "Its look"), and the water cuts its footprint
 as it does the player's. The balls are small lit spheres, the lay is drawn over the water as the game's fight draws
@@ -453,8 +463,8 @@ captain's number comes with them in the view, so one leaving the fight never mov
   ([[DFO's Own Sounds Join the Sound Sheet]]); each stays silent until the owner picks one.
 - **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
   turning it up to a degree a unit of jar, the jars at once added together.
-- **The readout** (`plus/seaFight.ts`, fed by `ships/fightDisplay.ts`, shown by the HUD at sea and by
-  `ships/fightOverlay.ts` in the World Editor): the Sloop's plate at the top left with its battery rose, the card under
+- **The readout** (drawn by `combat/seaReadout.ts` from `plus/seaFight.ts`'s words, fed by `ships/fightDisplay.ts`,
+  shown by the HUD at sea and over the World Editor's view): the Sloop's plate at the top left with its boost ring and battery rose, the card under
   the compass on the ship the look is on (the captain nearest where the Sloop's laid guns fall, else the nearest), and its volley's tally under the sight, in every fight from its first frame to its
   last ([[Interface]], "The sea fight's readout"). The panel leaves the Sloop's own hurts and guns to it. While a captain afloat
   stands with their guns run out, DFO's warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at: "Broadside from the Pirate Brig - C: brace". At
@@ -502,7 +512,7 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   Its level raises its strength
   in a fight (above, "Ranks and factions"). Its faction and rank are drawn as it comes and kept on it
   (`sighting.rs`). The rolls wait real seconds, and
-  are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its
+  are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the game's worker's from its
   own), so each sea sends its ships in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
   rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100, so one met head-on stays in
@@ -561,8 +571,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
-  let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, and
-  C to brace; the sea's own wait for its end, and the sea bar is hidden. Where the editor's panel lists its lines,
+  let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, C to
+  brace, and Shift to burst; the sea's own wait for its end, and the sea bar is hidden. Where the editor's panel lists its lines,
   the game's HUD shows the fight's readout, its task in the tracker and DFO's messages as notices ([[Interface]]).
   Every captain in it is drawn with their name over a bar of their hull, their plate as far over their highest sail as the
   Sloop's stands over its own (`plateOverM`). Then the view pans back up. Hostile ships at sea
@@ -575,13 +585,16 @@ The owner: the sea fight looks and aims as DFO's does ([[The Sea Fight Looks and
 DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZoom.js`:
 
 - **The eye** (`AimCamera`, in the game's fight) eases out to the aim eye over DFO's 0.22 s, smoothstepped, and home
-  again on the release; swinging the look across the ship's bow carries it to the other battery's eye eased in the ship's own frame,
-  so its way never drags it. On its way out from the ship's ports it stops 1.2 m short of any ship afloat alongside (that ship's
+  again on the release; a look carried onto the other battery carries it to that battery's eye eased in the ship's own
+  frame, so its way never drags it. Once the look lays on a side, it is held there until the aim is let go: no drag
+  and no turn of the ship takes it out of that side's arc, past 35° off the bow and short of 40° off the stern, where
+  the guns bear ([[A Held Aim Keeps the Camera on Its Side]]); an aim taken over the bow holds nothing until the look
+  first lays on a side. On its way out from the ship's ports it stops 1.2 m short of any ship afloat alongside (that ship's
   waterline's box, from its draught to a metre over its upper gun line). A crippled ship's guns are silent: its eye
   never moves. The look's ray runs from the eye drawn, so the crosshair is where it lays.
 - **The reach**: while aiming the look may rise 0.15 rad over the horizon, past the guns' longest throw on the water
   (DFO's look is free); out of the aim the orbit keeps its own clamp, 0.05 to 1.2 rad down.
-- **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, and under it DFO's aim line at 13 px in
+- **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, and under it DFO's aim line at the face's 11 px (DFO's 13) in
   the HUD's outline: the side and its shot, the range the guns are laid to (the mean of where each gun stops, out
   along the fire from the ship's ports), "(longest)" within a metre of their longest throw, " - on target" in red while the
   side can fire, or dimmed " - reloading 4.2 s", " - braced" or " - guns silent".
@@ -606,27 +619,28 @@ after the water.
 ## An ambush
 
 The prologue's ambush ([[The Game Opens With a Story Mission at Sea]]) is the same fight, begun as `Fight::ambush`:
-the player's Sloop put to sea as she lies, and each captain set where and how the story gives her, numbered from 1
-on, her temper drawn from her own seed. Every one comes to fight her at once: bold whatever her temper, and cruising
-straight for her until she is in sight (750 m). A captain set where the water does not float her is refused. The
+the player's Sloop put to sea as it lies, and each captain set where and how the story gives it, numbered from 1
+on, its temper drawn from its own seed. Every one comes to fight the player's ship at once: bold whatever its temper,
+and cruising straight for that ship until it is in sight (750 m). A captain set where the water does not float it is
+refused. The
 land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank, and an optional
-`way` in m/s: given, she comes on under sail at it, else she lies at rest); its view carries every captain after the
-first in `others`, as the sea room's wire does, each with her number in the fight (`id`, the first 1), as its events
-name her: a captain gone from the fight is left out, and every plate, message and count follows her by it. A captain
-going down carries, besides her `founder`, how she will lie
-once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry her
+`way` in m/s: given, it comes on under sail at it, else it lies at rest); its view carries every captain after the
+first in `others`, as the sea room's wire does, each with its number in the fight (`id`, the first 1), as its events
+name it: a captain gone from the fight is left out, and every plate, message and count follows it by that number. A
+captain going down carries, besides its `founder`, how it will lie
+once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry it
 on under as the rules would. A fight begun with more than one captain is sighted on the panel by how many and the
 nearest ("3 ships are sighted, the nearest 820 m off."). The game's `SeaCombat` steps a fight
 on any `FightSource`, the sea room's or the land door's, so the story's fight (`StoryFight`) is the sea's own: its
-aim, lay, effects, HUD and bars, her ship's panel naming her (the Brig). The story places each captain by her
-bearing off the player's bow and her distance, heading for her unless told, and puts every ship to sea under the
-sail and way she was sighted with, her rig drawn on from the one she was last drawn with; hears from each step a ball striking
-her, hers striking a captain, a captain going down and one sunk; and its task counts the ships left to beat.
+aim, lay, effects, HUD and bars, the player's ship's panel naming it (the Brig). The story places each captain by its
+bearing off the player's bow and its distance, heading for the player's ship unless told, and puts every ship to sea
+under the sail and way it was sighted with, its rig drawn on from the one it was last drawn with; hears from each step
+a ball striking the player's ship, the player's striking a captain, a captain going down and one sunk; and its task counts the ships left to beat.
 An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
-player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves her a point of hull); and it is over
-(`beaten`) once every captain has sunk, is going down, or has struck, her crew having given up the fight. It draws
+player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves it a point of hull); and it is over
+(`beaten`) once every captain has sunk, is going down, or has struck, its crew having given up the fight. It draws
 the player's ship as the Brig and every captain as a Sloop, each posed on the swell it is handed (a storm's too), for
-the drawing only; a captain's hurts and her going down settle, trim and list her on that swell by what the land door
+the drawing only; a captain's hurts and its going down settle, trim and list it on that swell by what the land door
 sends of each (`founder`). By the rules every ship in it is still a Sloop.
 
 ## In a fleet room

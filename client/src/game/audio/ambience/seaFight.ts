@@ -3,10 +3,12 @@
 // plays through the sea's soundscape; until a pick has come, the fight is as silent as it always was.
 import type { FightEvent, FightView, Point } from '../../../rules/fightRules.ts';
 
-/** A frame's fight as its sounds read it: its events since the last frame, and its ships as they lie. */
+/** A frame's fight as its sounds read it: its events since the last frame, its ships as they lie, and how many times
+ *  as loud its sounds are heard (1 unless said: the story's own fights are louder, to stand over its storm). */
 export interface FightHeard {
   readonly events: readonly FightEvent[];
   readonly view: FightView;
+  readonly gain?: number;
 }
 
 /** How near a fight's sound is heard whole, metres: a gun is a big sound, heard well across the fight. */

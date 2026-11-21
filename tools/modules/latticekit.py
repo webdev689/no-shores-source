@@ -2,20 +2,39 @@
 (tools/lattice/props.py and growth.py), and each Blender material they wear is read as one of the kit's, crystal
 glowing as its strain's light says: bright toward a shard's point, dark at its root, alight at its heart.
 """
+import importlib
 import os
 import re
 import sys
 
 import numpy as np
 
+import kit
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
-# Appended, so a same-named file of the Lattice's or the forge's never shadows one of the modules'.
-sys.path += [os.path.join(TOOLS, 'lattice'), os.path.join(TOOLS, 'forge', 'tools', 'sprite-forge')]
-import growth  # noqa: E402
-import props  # noqa: E402
+FOLDERS = [os.path.join(TOOLS, 'lattice'), os.path.join(TOOLS, 'forge', 'tools', 'sprite-forge')]
+# The files the modules share a name with in the Lattice's and the forge's folders.
+SHARED_NAMES = ('props', 'shapes', 'render')
 
-import kit  # noqa: E402
+
+def _theirs(*names):
+    """The Lattice's and the forge's own modules by `names`, imported with their folders first and the modules'
+    same-named files set aside meanwhile, then put back: each side keeps its own `props` and `shapes`."""
+    kept = {name: sys.modules.pop(name) for name in SHARED_NAMES if name in sys.modules}
+    path = sys.path[:]
+    sys.path[:0] = FOLDERS
+    try:
+        return [importlib.import_module(name) for name in names]
+    finally:
+        # Left at the path's end, for what their code imports as it runs.
+        sys.path[:] = path + [folder for folder in FOLDERS if folder not in path]
+        for name in SHARED_NAMES:
+            sys.modules.pop(name, None)
+        sys.modules.update(kept)
+
+
+growth, props = _theirs('growth', 'props')
 
 # The red strain is the Lattice's own crystal (the purple is the displaced's): every event prop wears it.
 STRAIN = 'red'

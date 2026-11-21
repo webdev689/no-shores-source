@@ -1,45 +1,18 @@
-// A node's ground as a room stands on it, on foot: the land's window and its boxes set under the rules, the node's
-// file a room in the page opens from, as the bake writes it for the server's, and that room opened.
+// A node's room on foot: the server's where the game is given rooms, else one in the page, opened from the node's
+// file as the bake writes it for the server's.
+import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { botPlayOf } from '../network/publicBots.ts';
-import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
+import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { FootContext } from './foot.ts';
+import { nodeText, standOn } from './footGround.ts';
+import { nodeRoom } from './rooms.ts';
 import type { Rect } from './nodes.ts';
 import { askedPublic, minuteShift } from './publicLaw.ts';
 import type { NodeInfo } from './worldData.ts';
-
-/** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the
- *  fight's on them as its room stands its bodies. Answers the boxes and the window's text. */
-export async function standOn(
-  context: FootContext,
-  combat: CombatRules,
-  rect: Rect,
-): Promise<{ boxes: readonly Block[]; ground: string }> {
-  const [ground, boxes] = await Promise.all([context.land.window(rect), context.land.boxes(rect)]);
-  context.movement.setCourse(boxes);
-  combat.setCourse(boxes);
-  if (!context.movement.setGround(ground) || !combat.setGround(ground))
-    throw new Error('the ground of this place did not load');
-  return { boxes, ground };
-}
-
-/** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
- *  cut there, its boxes, and where it fights its public events (the land's `grounds`, JSON; `null` for none). */
-export function nodeText(
-  node: NodeInfo,
-  rect: Rect,
-  ground: string,
-  boxes: readonly Block[],
-  grounds = 'null',
-): string {
-  const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
-  const { id, kind, continent, ring, spawns } = node;
-  const fought = grounds === 'null' ? '' : `,"grounds":${grounds}`;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}${fought}}`;
-}
 
 /** A room in the page on `node`'s ground, standing the foes a player asks for when `foeAsks`, its word on the
  *  player's gear kept in `alone`. It is told where the node fights its public events, as the bake tells the server's;
@@ -63,4 +36,36 @@ export async function openAlone(
     minuteShift: shift,
     play: import.meta.env.DEV ? botPlayOf(location.search) : null,
   });
+}
+
+/** The room of `node` at `seas`: the server's where the game is given rooms, its word on the player's gear kept in
+ *  `held.gear`, else one in the page (`openAlone`). The room names the rect its window was cut to, and the ground
+ *  `stood` is stood on again where that differs; a room baked from older edits is stood on as it stands. Answers the
+ *  link and the boxes stood on. */
+export async function roomOf(
+  context: FootContext,
+  { node, seas }: { node: NodeInfo; seas: Difficulty },
+  combat: CombatRules,
+  stood: { rect: Rect; ground: string; boxes: readonly Block[] },
+  received: (snapshot: Snapshot) => void,
+  held: { gear: { gear: GearState | null }; alone: { gear: GearState | null }; foeAsks: boolean },
+): Promise<{ link: RoomLink; boxes: readonly Block[] }> {
+  const { rooms } = context;
+  const session = await context.session();
+  const connection = rooms
+    ? await RoomConnection.open(rooms(nodeRoom(node, seas)), received, (sent) => (held.gear.gear = sent), session)
+    : null;
+  let stands = stood;
+  const bounds = connection?.node?.bounds;
+  try {
+    if (bounds && bounds.some((value, index) => Math.abs(value - (stood.rect[index] ?? 0)) > 0.5)) {
+      const rect: Rect = [bounds[0] ?? 0, bounds[1] ?? 0, bounds[2] ?? 0, bounds[3] ?? 0];
+      stands = { rect, ...(await standOn(context, combat, rect)) };
+    }
+  } catch (error) {
+    connection?.close();
+    throw error;
+  }
+  const link = connection ?? (await openAlone(context, node, stands, received, held.foeAsks, held.alone));
+  return { link, boxes: stands.boxes };
 }

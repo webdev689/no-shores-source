@@ -17,7 +17,7 @@ impl Waters for Flat {
 
 /// The wind blowing to the east, at a ship's rated wind.
 const EAST: [f64; 2] = [1.5, 0.0];
-const STILL: Helm = Helm { steer: 0.0, crab: false, climb: 0 };
+const STILL: Helm = Helm { steer: 0.0, climb: 0 };
 
 fn under_sail(heading: f64) -> Ship {
     Ship { x: 0.0, y: 0.0, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: SAILS_SET }

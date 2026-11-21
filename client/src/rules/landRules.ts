@@ -64,11 +64,10 @@ export interface Swell {
   readonly bearing: number;
 }
 
-/** What the helm asks for a tick (crates/sailing/src/ship.rs Helm): the rudder from -1 (port) to 1 (starboard), the
- *  oars pulling it sideways, and a rung up or down the ladder for the first tick. */
+/** What the helm asks for a tick (crates/sailing/src/ship.rs Helm): the rudder from -1 (port) to 1 (starboard), and a
+ *  rung up or down the ladder for the first tick. */
 export interface Helm {
   readonly steer: number;
-  readonly crab: boolean;
   readonly climb: -1 | 0 | 1;
 }
 
@@ -367,7 +366,7 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
       exports.land_fight_end();
     },
     sail: (ship, helm, time, ticks, world) => {
-      const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks, world]);
+      const request = new Float64Array([...ship, helm.steer, helm.climb, time, ticks, world]);
       const packed = send(exports.land_sail, new Uint8Array(request.buffer));
       const address = Number(packed >> 32n);
       const length = Number(packed & 0xffff_ffffn);

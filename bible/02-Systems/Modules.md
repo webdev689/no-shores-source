@@ -15,6 +15,8 @@ code:
   - crates/layout/src/ledges.rs#cut
   - tools/modules/stairs.py#builder
   - tools/modules/bridge.py#builder
+  - tools/modules/adorn.py#ADORNMENTS
+  - tools/modules/dress.py#DRESSING
   - crates/layout/src/pieces_land.rs#stone_bridge
   - client/src/city/modules.ts#loadModules
   - tools/modules/latticekit.py#taken
@@ -52,8 +54,9 @@ middle of its foot:
   (`tools/lattice/props.py`, `growth.py`), each of its Blender materials read as one of the kit's, its crystal glowing
   as its strain's light says: bright toward a shard's point, dark at its root, alight at its heart.
 
-Each surface wears one of the game's materials: stone, trim, rubble, chalk, turf, timber, canvas, iron, gold, crystal
-and paving. An object may wear one a face (a torn slab's turf top over its soil and its chalk). Crystal, the
+Each surface wears one of the game's materials: stone, trim, rubble, chalk, turf, timber, canvas, iron, plaster,
+roof, gold, crystal, bone, glow, the cloths, paving, lawn and water (`kit.MATERIALS`, the order its groups are
+written in). An object may wear one a face (a torn slab's turf top over its soil and its chalk). Crystal, the
 Lattice's, is drawn by code, not a picture: red where the sun reaches it, graded to purple in its shadows, a glint off
 each flat facet the sun catches, and its core glowing as much as each vertex says, more seen straight on and more at
 night.
@@ -88,6 +91,17 @@ are written with paving last, since the first group carries the parts and paving
   or past the foot where a flat arch springs under it. Its parts are the deck, the parapets, the piers, the
   cutwaters and the abutments, each as wide as the stone drawn round it, so the water and a swimmer pass under the
   arches and meet the stone where it is seen.
+- **Overlook's hub** ([[Overlook's Hub as Claude Shapes It]]): a stall for each keeper (`stall-<keeper>`, sockets
+  `counter`, `keeper` behind it, and `sign` at 3.6 m on one end of its front), the factions' chapels, the ranges and
+  their gate, the sealed gate, the war table, the bandstand (`player-1` to `player-4`), the fountain, three market
+  stalls and the court's small pieces (`front`, and `smith-1`, `smith-2` at the anvil). Its adornments
+  (`tools/modules/adorn.py`): banners, a lantern, a sconce, a wall brazier, ivy, a board of shields and a rack of
+  weapons hung by `wall` at their fixing; a sign for each stall, its device through the board; a planter, a potted
+  tree, two statues, a well, a long rug, a cart, sacks and amphorae stood by `front`; and bunting hung from `end-1`.
+  Each stands on its own foot, so a hung one's `wall` stands as high over its foot as the piece reaches below it.
+  What fills its courts (`tools/modules/dress.py`): market stalls of cloth, bread and flowers, a court tree in its
+  raised ring bed, a lawn bed, a table with benches (`seat-1` to `seat-4`), a parasol table, a woodpile, a stack of
+  barrels, a flower cart and a stack of hay bales, each stood by `front`.
 
 - **The public events' props**, drawn by the page where an event stands, never placed by a layout:
   - The Fissure (`lattice-fissure`, 12 m long): a crack nearly 3 m deep and 4 across at its widest, its walls the
@@ -133,15 +147,21 @@ which need nothing more.
 
 A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes)
 and glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at
-most 32,000 triangles. The bake makes the same bytes from the same scripts, on any machine: the event props write a
-coordinate that rounds to nothing as a plain zero, since a float residue's sign differs between machines, and work
-each corner's normal out from the rounded positions in doubles (the area-weighted faces it smooths with), since
-Blender's own single-float normals differ between CPUs in their last bits (`_steady_normals`; the older modules keep
-the bytes they were published with). The `modules` workflow bakes on every change to the module tools, to the
-Lattice's builders and the forge files they take in, or to `tools/r2.py`; it fails if the bake does not make the
-committed manifest or if a second bake does not make the same bytes, keeping a differing bake for a week
-(`modules-differed`) to set beside another machine's, and a second job, which installs nothing, publishes the first
-bake's meshes with the repository's Cloudflare token.
+most 32,000 triangles. The bake is made to give the same bytes from the same scripts on any machine: each group's
+vertices and triangles are written sorted, since an exact boolean's threads hand its faces back in a different order
+each run; positions are written to a tenth of a millimetre and normals to a thousandth, and the manifest's sockets,
+parts, pads and mouths to the millimetre, each zero without its sign, since a coordinate one machine leaves a hair
+under zero another leaves a hair over. A piece turned through an angle (a slanted rod, a turned slab) is still placed
+by trigonometry another machine's library may round a last bit differently, and a coordinate landing on a rounding's
+edge would then bake other bytes: a thin piece that need not slant (a flower's stem) stands upright. The event props
+also work each corner's normal out from the rounded positions in doubles (the area-weighted faces it smooths with),
+since Blender's own single-float normals differ between CPUs in their last bits (`_steady_normals`; the other modules
+keep Blender's). A module's random draws are seeded by its place in the catalogue, so a new module goes at the
+catalogue's end; the event props, after the hub's, keep seeds of their own. The `modules` workflow bakes on every
+change to the module tools, to the Lattice's builders and the forge files they take in, or to `tools/r2.py`; it fails
+if the bake does not make the committed manifest or if a second bake does not make the same bytes, keeping a
+differing bake for a week (`modules-differed`) to set beside another machine's, and a second job, which installs
+nothing, publishes the first bake's meshes with the repository's Cloudflare token.
 
 ## In the game
 

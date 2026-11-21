@@ -22,6 +22,8 @@ import type { HullMask } from '../water/hullMask.ts';
 import { waterUnder } from '../water/shore.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
 import { frameOf, fromEyeMatrix, type Shot } from './camera.ts';
+import { BlurView } from './blur.ts';
+import { DrainView } from './drain.ts';
 import { groundTiles } from './groundTiles.ts';
 
 /** Anything else drawn with the land, into the same pass: a city, its nature, the figures. Its points are measured
@@ -98,6 +100,8 @@ export class GameScene {
   private readonly water: WaterView;
   private readonly shadow: ShadowMap;
   private readonly copy: GPURenderPipeline;
+  private readonly drain: DrainView;
+  private readonly blur: BlurView;
   private readonly light: LightLayer;
   private readonly atmosphere: Atmosphere;
   /** What the story's sky and sea are doing, read each frame: the water drawn on its gained swell, its weather laid
@@ -130,6 +134,8 @@ export class GameScene {
     this.sky = new SkyDriver(law, skyUniformFor(gpu.device));
     this.fall = new FallView(gpu);
     this.bolts = new BoltView(gpu);
+    this.drain = new DrainView(gpu);
+    this.blur = new BlurView(gpu);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.copy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -254,7 +260,9 @@ export class GameScene {
   /** Draws one frame from `shot` into the canvas, with the drawers drawn with the land; `after` may draw over the
    *  finished picture (the first person's hands) before it is shown, `hulls` are the ships on the water (world
    *  metres), which it keeps out of and foams round, and the water's ripples follow `focus` (world metres; the eye
-   *  unless said). The sky is the weather's over the eye, in the open sea's air `atSea`, else the landmass's. */
+   *  unless said). The sky is the weather's over the eye, in the open sea's air `atSea`, else the landmass's. Last,
+   *  the whole picture blurs by a deviation of `blur` device pixels and drains toward grey by `drain` (0 to 1), under
+   *  whatever the interface draws over it. */
   draw(
     shot: Shot,
     size: { width: number; height: number },
@@ -271,6 +279,8 @@ export class GameScene {
       /** What the player's left hand carries (`torch_l`, `lantern`) and where their feet are (world metres): a light
        *  there lights round them. */
       readonly carried?: { readonly left: string | null; readonly feet: readonly [number, number, number] };
+      readonly blur?: number;
+      readonly drain?: number;
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -348,7 +358,8 @@ export class GameScene {
     copy.draw(3);
     copy.end();
     const camera = frameOf(local);
-    const target = this.gpu.context.getCurrentTexture().createView();
+    const canvas = this.gpu.context.getCurrentTexture();
+    const target = canvas.createView();
     const eyeWater = this.waterAt(shot.eye[0], shot.eye[1], time);
     // The weather's fog thickens the haze: their densities add.
     const air = { clearM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity), fogDensity: look.fogDensity };
@@ -397,6 +408,8 @@ export class GameScene {
         light: cloudLight(look),
       });
     more.after?.(encoder, target, { width: size.width, height: size.height, light: SKY_NOW.current.held });
+    this.blur.encode(encoder, canvas, more.blur ?? 0);
+    this.drain.encode(encoder, canvas, more.drain ?? 0);
     this.gpu.device.queue.submit([encoder.finish()]);
   }
 

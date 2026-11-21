@@ -181,7 +181,7 @@ fn saltmeres_rooms() -> Vec<(&'static str, Room, super::RaidGround)> {
                 approach: raid.approach,
                 banners: raid.banners,
             };
-            let section = crate::Section { ring: node.ring.clone(), spawns: node.spawns.clone() };
+            let section = crate::Section { ring: node.ring.clone(), spawns: node.spawns.clone(), falls_kill: false };
             let blocks = node.boxes.iter().map(movement::Block::from_floats).collect();
             let floor = crate::Floor::Land(Box::new(node.ground.clone()));
             let levels = gear::world::island_levels(&node.continent);

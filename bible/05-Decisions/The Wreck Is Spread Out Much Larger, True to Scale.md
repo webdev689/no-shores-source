@@ -29,8 +29,8 @@ true to scale." They wrote: "#1, the playspace needs to be much larger".
   "about three times", for "much larger"; the export refuses a wreck where under 2,000 m² is walked.
 - The player wakes on the Brig's quiet stern: no wave, no crew and nothing across the way on. A zone's wave stands
   only as the player enters it, well across from where they come in.
-- To join the ships, the Frigate's port side is stove in abreast her gun deck and her port bulwark broken forward,
-  where the way comes aboard from the wreckage; the Sloop floats higher, so her side stays out of the swell; the
-  Frigate's quarterdeck is cleared but for her wheel, and the arena's heap stands below its front, piled 3.7 m.
+- To join the ships, the Frigate's port side is stove in abreast its gun deck and its port bulwark broken forward,
+  where the way comes aboard from the wreckage; the Sloop floats higher, so its side stays out of the swell; the
+  Frigate's quarterdeck is cleared but for its wheel, and the arena's heap stands below its front, piled 3.7 m.
 - A rim round the wreck's blocks holds every body on it, and the sea is drawn round the hulls and rafts, not through
   them.

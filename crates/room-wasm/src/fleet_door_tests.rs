@@ -19,10 +19,10 @@ fn input_of(player: PlayerId, bytes: &[u8]) -> i32 {
 
 fn helm_at(sequence: u32) -> Helm {
     match sequence {
-        2 => Helm { steer: 0.0, crab: false, climb: 1 },
-        3 => Helm { steer: 0.0, crab: false, climb: 1 },
-        sequence if sequence % 50 < 20 => Helm { steer: 0.6, crab: false, climb: 0 },
-        _ => Helm { steer: -0.2, crab: false, climb: 0 },
+        2 => Helm { steer: 0.0, climb: 1 },
+        3 => Helm { steer: 0.0, climb: 1 },
+        sequence if sequence % 50 < 20 => Helm { steer: 0.6, climb: 0 },
+        _ => Helm { steer: -0.2, climb: 0 },
     }
 }
 
@@ -65,7 +65,7 @@ fn a_fleet_room_puts_ships_to_sea_by_their_orders_and_shows_them() {
     assert_eq!(send(second, orders(5)), OUT_OF_ORDER);
     assert_eq!(input_of(second, b"not orders"), NOT_AN_INPUT);
     room_tick();
-    let shown = vessels_in(&snapshot());
+    let shown = vessels_in(&snapshot(0));
     assert_eq!(
         shown.iter().map(|vessel| (vessel.id, vessel.acknowledged)).collect::<Vec<_>>(),
         [(first, 1), (second, 1)]
@@ -82,19 +82,19 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
     let player = room_join();
     assert_eq!(send(player, Input { put_to_sea: Some(AT), ..orders(1) }), TAKEN);
     room_tick();
-    let put = vessels_in(&snapshot())[0].clone();
+    let put = vessels_in(&snapshot(0))[0].clone();
     for sequence in 2..=200 {
         assert_eq!(send(player, orders(sequence)), TAKEN);
         room_tick();
     }
-    let last = vessels_in(&snapshot())[0].clone();
+    let last = vessels_in(&snapshot(0))[0].clone();
     assert_eq!(last.acknowledged, 200);
     let (sail, max_sail) = (last.hurts[2], last.hurts[3]);
     let mut request = put.ship.clone();
     request.extend([0.0, sail, max_sail, 200.0 * movement::TICK_SECONDS, 0.0]);
     for sequence in 2..=200 {
         let helm = helm_at(sequence);
-        request.extend([helm.steer, f64::from(u8::from(helm.crab)), f64::from(helm.climb)]);
+        request.extend([helm.steer, f64::from(helm.climb)]);
     }
     let predicted = predict(&request);
     let bits = |numbers: &[f64]| numbers.iter().map(|number| number.to_bits()).collect::<Vec<_>>();
@@ -102,7 +102,7 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
     assert_eq!(bits(&predicted[8..]), bits(&last.pose), "its pose at the room's time");
     assert!(predict(&[1.0, 2.0]).is_empty(), "numbers that are not a ship");
     let mut wild = request.clone();
-    wild.extend([3.0, 0.0, 0.0]);
+    wild.extend([3.0, 0.0]);
     assert!(predict(&wild).is_empty(), "a rudder past its throw");
 }
 
