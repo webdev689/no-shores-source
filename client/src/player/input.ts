@@ -76,7 +76,7 @@ export class Input {
     const keyName = (event: KeyboardEvent) =>
       /^Digit\d$/.test(event.code) ? event.code.slice('Digit'.length) : event.key.toLowerCase();
     addEventListener('keydown', (event) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || typing()) return;
+      if (typing()) return;
       press(keyName(event));
       if (this.locked && event.key === ' ') event.preventDefault();
     });

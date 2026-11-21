@@ -52,7 +52,7 @@ function lidOf(top: boolean): Drawing {
 
 /** The screen's layers, drawn as a layer of `stack` over the game's interface. */
 export class Screen {
-  private readonly canvas: HTMLElement;
+  private readonly canvas: HTMLCanvasElement;
   private readonly clock: () => number;
   private readonly black = new Eased(0);
   private readonly white = new Eased(0);
@@ -67,7 +67,7 @@ export class Screen {
   private readonly skipWords: string;
   private readonly removeLayer: () => void;
 
-  constructor(stack: Stack, canvas: HTMLElement, clock: () => number = pageClock) {
+  constructor(stack: Stack, canvas: HTMLCanvasElement, clock: () => number = pageClock) {
     this.canvas = canvas;
     this.clock = clock;
     this.skipWords = playedByTouch() ? 'Hold to skip' : 'Hold Space to skip';

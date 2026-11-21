@@ -1,6 +1,7 @@
 import { canvasSize } from './canvasSize.ts';
 import { startGame } from './game/game.ts';
 import { GpuUnavailable, startGpu } from './gpu.ts';
+import { stopped } from './ui/page.ts';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#game');
 if (!canvas) throw new Error('index.html has no <canvas id="game">');
@@ -16,12 +17,6 @@ function fitCanvas(target: HTMLCanvasElement): void {
 
 new ResizeObserver(() => fitCanvas(canvas)).observe(canvas);
 fitCanvas(canvas);
-
-/** Tells the player plainly why the game could not start. */
-function stopped(message: string): void {
-  document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;background:#000;font-size:22px;padding:24px';
-}
 
 try {
   await startGame(await startGpu(canvas), canvas);

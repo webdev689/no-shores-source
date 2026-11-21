@@ -1,5 +1,5 @@
 // The page's own services that a screen drawn by the game asks for and cannot draw: opening a link in a new tab, the
-// page's address, loaded again or left for another, its touches held and its clipboard. Only here, canvasEvents.ts, pictures.ts and
+// page's address, loaded again or left for another, its touches held, its clipboard, and words said when nothing can be drawn. Only here, canvasEvents.ts, pictures.ts and
 // announce.ts touch the page, so the interface itself runs anywhere.
 
 /** What a screen asks of the page. */
@@ -31,4 +31,11 @@ export function touchesHeld(surface: { readonly style: { touchAction: string } }
 /** Puts `words` on the clipboard where the page lets it; where it does not, nothing happens. */
 export function copyText(words: string): void {
   globalThis.navigator?.clipboard?.writeText(words).catch(() => undefined);
+}
+
+/** Tells the player plainly why the game could not start: the one time words are written into the page, as nothing
+ *  can be drawn. */
+export function stopped(message: string): void {
+  document.body.textContent = message;
+  document.body.style.cssText = 'color:#ddd;background:#000;font-size:22px;padding:24px';
 }

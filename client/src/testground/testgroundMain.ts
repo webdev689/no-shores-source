@@ -19,6 +19,7 @@ import { crosshairPoint } from '../player/crosshair.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
 import { readFace } from '../ui/faceReader.ts';
+import { stopped } from '../ui/page.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { abilityPictures } from '../player/artGlyphs.ts';
@@ -563,6 +564,5 @@ async function start(): Promise<void> {
 
 start().catch((error: unknown) => {
   const message = error instanceof GpuUnavailable || error instanceof Error ? error.message : String(error);
-  document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;padding:22px';
+  stopped(message);
 });
