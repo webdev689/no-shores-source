@@ -14,7 +14,7 @@ use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
 use gear::Slot;
 
 /// What a client is told of the fight: a blow and what it came to, a stagger, a death, a player standing again, a
-/// foe's feint, a foe arriving.
+/// foe's feint, a foe arriving, a player's drink healing them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EventKind {
     Hit = 1,
@@ -31,6 +31,8 @@ pub enum EventKind {
     /// A foe's shield took a blow, the amount what it took; and broke under one.
     Shielded = 12,
     ShieldBroken = 13,
+    /// A player's drink healed them, the amount what it gave back.
+    Healed = 14,
 }
 
 /// How a blow was struck, for the words a client shows.
@@ -138,17 +140,17 @@ impl Room {
         // whatever the foe's level, and both before the balance's ease (`PLAYER_HARM`, `FOE_HARM`), so the heat paces
         // a fight as it always has. A companion's health is a player's, unraised by level, so what they take counts
         // as a player's.
-        let lost = before.health - after.health;
+        let (lost, took) = (before.health - after.health, shielded.map_or(0.0, |(took, _)| took));
         if self.on_players_side(defender) {
             self.director.taken(lost / crate::power::FOE_HARM);
         } else if self.on_players_side(blow.striker) {
             let level = self.foes.get(&defender).map_or(0, |foe| foe.level);
-            let took = shielded.map_or(0.0, |(took, _)| took);
             self.director.dealt((lost + took) / gear::power::foe_health_times(level) / crate::power::PLAYER_HARM);
             if after.dead() {
                 self.director.killed();
             }
         }
+        self.recharge(blow.striker, defender, lost + took, after.dead());
         // A blow too far below its foe's level to harm it shares nothing of its kill; a companion's is their leader's.
         if let Some((sharer, hand)) = self.credited(blow.striker, hand)
             && blow.damage > 0.0

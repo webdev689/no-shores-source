@@ -20,7 +20,7 @@ const built = (name: string) =>
   });
 const compiled = new WebAssembly.Module(await built('room_wasm'));
 /** Forward at a walk, looking north, no fight's buttons. */
-const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN]);
+const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
 const walking = { anim: 'walk', frame: 2, facing: 0 };
 /** An input as a browser writes it, holding nothing and seeing the start of the room. */
 const asking = (sequence: number, intent: Float64Array, look: Look, dress?: string, respawn = false) =>
@@ -159,6 +159,7 @@ function play(room: RoomDoor, player: number, sequence: number, controls: Contro
     Number.NaN,
     Number.NaN,
     Number.NaN,
+    0,
   ]);
   assert.equal(room.input(player, asking(sequence, intent, walking, undefined, respawn)), 'taken');
   room.tick();

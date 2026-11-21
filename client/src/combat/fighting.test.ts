@@ -443,3 +443,43 @@ test('a respawn asked goes with the next input only', () => {
   for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
   assert.deepEqual(asked, [true, false, false]);
 });
+
+test('a drink pressed between two ticks reaches the rules on the next tick only, as the intent’s last number', () => {
+  const door = startRoomDoor(compiled);
+  door.open(course.start, course.blocks);
+  const player = door.join();
+  const drinks: number[] = [];
+  let fight: Fighting | null = null;
+  const link: RoomLink = {
+    player,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: (bytes) => {
+      const input = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes));
+      drinks.push(input.combat(input.combatLength() - 1) ?? -1);
+      door.input(player, bytes);
+    },
+    pump: () => {
+      door.tick();
+      const message = readFromRoom(door.snapshot());
+      if (message?.kind === 'snapshot') fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, link);
+  fight = fighting;
+  link.pump(TICK);
+  const steps = fighting.steps(movement);
+  fighting.press({ ...UNPRESSED, heal: true });
+  for (let count = 0; count < 3; count += 1) {
+    steps.step({} as Body, STILL);
+    fighting.press(UNPRESSED);
+    link.pump(TICK);
+  }
+  assert.deepEqual(drinks, [1, 0, 0]);
+  assert.equal(fighting.own?.charges, 3, 'a player comes into the room with all three');
+  assert.equal(fighting.own?.action.kind, 'idle', 'whole, the drink is refused');
+});

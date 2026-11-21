@@ -29,6 +29,7 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+mod recharge;
 pub mod sea;
 pub mod sea_weather;
 pub mod ship_power;
@@ -378,7 +379,7 @@ impl Room {
     }
 
     /// What a fighter's tick set off, among `view`, everyone as it saw them: a blow landing on whoever it reaches, a
-    /// shot leaving, a feint.
+    /// shot leaving, a feint, a drink's heal.
     pub(crate) fn happened(
         &mut self,
         id: FighterId,
@@ -421,6 +422,7 @@ impl Room {
                 }
             }
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
+            Some(Happening::Drank(healed)) => self.tell(EventKind::Healed, None, id, id, healed),
             _ => {}
         }
     }
@@ -513,6 +515,8 @@ mod pace_tests;
 mod patrol_tests;
 #[cfg(test)]
 mod perks_tests;
+#[cfg(test)]
+mod recharge_tests;
 #[cfg(test)]
 mod ring_tests;
 #[cfg(test)]

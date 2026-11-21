@@ -45,14 +45,15 @@ export interface KeptFoe extends Omit<SeenFoe, 'glance'> {
 }
 
 /** The fight's buttons for the ticks of a frame: a swing held (and the stroke the next one takes, 1 to 6), a shot's
- *  trigger held, the guard held, a dodge pressed, the look's pitch, a ranged weapon held up to aim and the point an
- *  aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or the guard
- *  was pressed since the last frame (even let go again). */
+ *  trigger held, the guard held, a dodge pressed, a drink pressed, the look's pitch, a ranged weapon held up to aim and
+ *  the point an aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or
+ *  the guard was pressed since the last frame (even let go again). */
 export interface FightButtons {
   readonly swing: boolean;
   readonly shoot: boolean;
   readonly guard: boolean;
   readonly dodge: boolean;
+  readonly heal?: boolean;
   readonly pitch: number;
   readonly aim?: boolean;
   readonly mark?: readonly [number, number, number] | null;
@@ -115,7 +116,13 @@ export class Fighting {
   private seen = 0n;
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
-  private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
+  private readonly latches = {
+    swing: new Latch(),
+    shoot: new Latch(),
+    guard: new Latch(),
+    dodge: new Latch(),
+    heal: new Latch(),
+  };
   private readonly spawnsQueued: { readonly foe: FoeAsk; readonly level: number }[] = [];
   private readonly gearQueued: GearAsk[] = [];
   /** A cast waiting for the next tick's input, and the room's word on the Arts with the room tick it came by. */
@@ -202,6 +209,7 @@ export class Fighting {
     if (buttons.shootPressed) this.latches.shoot.press();
     if (buttons.guardPressed) this.latches.guard.press();
     if (buttons.dodge) this.latches.dodge.press();
+    if (buttons.heal) this.latches.heal.press();
   }
 
   /** Asks the room to stand a foe of a type and a rank before the player, at a level (0, a foe of none), or to send
@@ -310,6 +318,7 @@ export class Fighting {
       pitch,
       this.buttons.aim ? 1 : 0,
       ...(this.buttons.mark ?? [Number.NaN, Number.NaN, Number.NaN]),
+      this.latches.heal.tick(false) ? 1 : 0,
     ]);
     const dress = this.dressToSend();
     const view = this.view;

@@ -43,11 +43,11 @@ pub mod ship_wire;
 pub use sea_snapshot::{IsleSeen, SeaHarbour, sea_snapshot_bytes};
 mod standing_wire;
 
-/// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
-/// aim's mark (x, y, z, none as NaN).
+/// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, the
+/// aim's mark (x, y, z, none as NaN), and a drink asked.
 const COMBAT_NUMBERS: usize = INTENT_FLOATS - CONTROLS_FLOATS;
-/// The fight's numbers of an input that carries none: nothing held, and no mark.
-const NO_FIGHT: [f64; COMBAT_NUMBERS] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f64::NAN, f64::NAN, f64::NAN];
+/// The fight's numbers of an input that carries none: nothing held, no mark, and no drink.
+const NO_FIGHT: [f64; COMBAT_NUMBERS] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f64::NAN, f64::NAN, f64::NAN, 0.0];
 
 /// The input an input's bytes hold: its number, its intent, what the player's figure shows, their dress when it
 /// changed, what their hands hold, the tick their screen showed, a foe asked for (a type and a rank) or every foe sent

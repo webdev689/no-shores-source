@@ -16,6 +16,7 @@ const TRIGGER: CombatInput = CombatInput {
     pitch: 0.0,
     aim: false,
     mark: None,
+    heal: false,
     telegraph: None,
 };
 const AIMING: CombatInput = CombatInput { shoot: false, aim: true, ..TRIGGER };
