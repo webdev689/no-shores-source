@@ -196,6 +196,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]
 - [[Foe Groups as Claude Builds Them]]
 - [[Aiming, the Figure Faces Straight Ahead]]
+- [[The Crosshair Shows Each Weapon, Its Reload, Its Hits and Melee's Reach]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

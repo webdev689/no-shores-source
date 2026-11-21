@@ -398,7 +398,7 @@ test('a settled display writes nothing more to the page and reads no layout, wit
       groundAt: null,
       ammo: 7,
       ammoMost: 24,
-      crosshair: { charge: null },
+      crosshair: { reticle: 'pistolet', charge: null, reach: null },
     };
     for (let step = 0; step < 300; step++) hud.update(frame, 1 / 60);
     assert.equal(findAll(root, 'arrow').length, 1, 'the arrow shows');

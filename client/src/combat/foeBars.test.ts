@@ -141,6 +141,18 @@ test('in a crowd, a plate shows for the foe nearest the crosshair, the locked an
     );
   }));
 
+test('the crosshair rests on the foe whose body it is on, never on an ally of the players', () =>
+  onFakePage((root) => {
+    const bars = new FoeBars(root, root, root);
+    const spotOf = (view: FighterView) => ({ x: 400 + view.x * 10, y: 300, depth: view.y });
+    const ahead = placed(1, 0, 10);
+    bars.update([ahead], null, spotOf, LOOKING_NORTH, 1 / 60);
+    assert.equal(bars.under, 1);
+    const ally = { ...ahead, view: { ...ahead.view, side: 'players' as const } };
+    bars.update([ally], null, spotOf, LOOKING_NORTH, 1 / 60);
+    assert.equal(bars.under, null, 'a companion or a boarding hand');
+  }));
+
 test('a foe fought shows wherever it is, fading as the fight lets it go', () =>
   onFakePage((root) => {
     const bars = new FoeBars(root, root, root);
