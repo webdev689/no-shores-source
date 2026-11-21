@@ -166,7 +166,8 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
 - **The Elite Dungeon of the week**, once: a Legendary Vestige (its item at level 20) and 3 Essence of each stock.
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
   and the Abyss boon until the week turns: a quarter more of each kill's XP, rounded down, and as much more
-  reputation for the faction pledged while its cape is worn ([[Factions]]), as `boon_xp` pays it.
+  reputation for the faction pledged while its cape is worn ([[Factions]]), as `boon_xp` pays it. A kill on a ship's
+  deck earns no boon, as it pays no officer ([[Naval Combat]]).
 - **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and keeps the
   Vestige with the record that pays it, in the carried ten or else the vault, so a Vestige once paid is never lost; only
   with both full does it lie 1.4 m before the cache (`pay_clear`, `keep_paid`). A player playing unkept finds the
@@ -188,7 +189,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
   counts it and every one above; a place named counts only a feat known to be there. The room tells the rules each
   feat (`Feat`) as it happens, and `Character::saw` counts it toward each bounty held today and each side quest held,
   up to its target; the account keeps the count. A room whose day is not the record's counts no bounty.
-- **The rooms count** each foe felled for each player who shares its kill, each resource node gathered, and each
+- **The rooms count** each foe felled for each player who shares its kill, but on a ship's deck, which is no island,
+  so a boarding counts toward no land bounty; each resource node gathered, and each
   dungeon cleared for each player the room keeps as its cache opens, the way the clear pays. A dungeon's room counts
   its clear for an account once a day at most (`Run::count_clear`), though its end post stands again and its cache
   opens again, so one dungeon farms no "Clear 3 dungeons."; a run is a room of its own, so each run counts. A room
@@ -298,5 +300,6 @@ Each is Claude's, open to the owner's change: the resets at 09:00 UTC and Tuesda
 rather than one, with three rewards a day across them; Elite and Abyss seas opening at levels 10 and 20; the week's two
 with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a run starting short after a minute, Find
 a Company's bands of ten levels, and a group found sharing one run without becoming a company; five shared revives,
-restored by a wipe; the modifier set; the rewards above and the quarter-more boon; six bounties a day paying XP and
-Aurem; one engine for quests and bounties; and the screen's names, Find a Company and the Journal's Timers.
+restored by a wipe; the modifier set; the rewards above and the quarter-more boon; a kill on a ship's deck counting
+toward no land bounty and earning no boon; six bounties a day paying XP and Aurem; one engine for quests and bounties;
+and the screen's names, Find a Company and the Journal's Timers.

@@ -175,8 +175,8 @@ impl Room {
     }
 
     /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, with the
-    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each; on land its XP pays their officers
-    /// ashore too.
+    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each; off a ship's deck its XP also pays
+    /// their officers ashore and the Abyss boon's share, and the kill counts toward their bounties and quests.
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
@@ -191,15 +191,18 @@ impl Room {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
-            found.character.boon_xp(week, reward.xp, Some(hand));
+            // A ship's deck is no island: what is felled there counts toward no land bounty and earns no boon.
             if !deck {
+                found.character.boon_xp(week, reward.xp, Some(hand));
                 found.character.earn_officer_xp(reward.xp, false);
             }
             let great = brain.rank as u8 >= foes::Rank::Miniboss as u8;
             found.character.add_shapes(gear::shape::found(great, self.difficulty, &dice));
             found.gear_changed = true;
             self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
-            self.saw(player, &felled);
+            if !deck {
+                self.saw(player, &felled);
+            }
         }
     }
 }

@@ -123,3 +123,26 @@ fn the_board_numbers_factions_and_ranks_as_the_foes_and_the_ships_do() {
     assert_eq!([ELITE_RANK, MINIBOSS_RANK], [::foes::Rank::Elite as u8, ::foes::Rank::Miniboss as u8]);
     assert_eq!([ELITE_RANK, MINIBOSS_RANK], [naval::ranks::Rank::Elite as u8, naval::ranks::Rank::Miniboss as u8]);
 }
+
+#[test]
+fn a_foe_felled_on_a_ships_deck_counts_toward_no_land_bounty_and_earns_no_boon() {
+    let felled = |deck: bool| {
+        let mut room = Room::new(Vec::new(), (0.0, 0.0));
+        if deck {
+            room.floor = crate::Floor::Deck(Box::new(crate::deck::test_deck().heights.clone()));
+        }
+        room.set_minute(FRIDAY_NINE);
+        let player = holding(&mut room, &[0]);
+        room.players.get_mut(&player).expect("in").character.activity.this_week(2_968).boon = true;
+        let foe = crate::arts::arts_tests::stand_foe(&mut room, 2.0, 0.0, 1.0);
+        let clock = room.clock;
+        let standing = room.foes.get_mut(&foe).expect("standing");
+        standing.brain.foe_type = ::foes::foe_type(::foes::roster::COLLECTOR).expect("the Grey Tithe's");
+        standing.struck_by.insert(player, (clock, gear::Slot::Melee));
+        room.pay_kill(foe);
+        (count(&room, player, 0), room.players[&player].character.xp)
+    };
+    let ((land_count, land_xp), (deck_count, deck_xp)) = (felled(false), felled(true));
+    assert_eq!((land_count, deck_count), (Some(1), Some(0)));
+    assert_eq!(land_xp, deck_xp + deck_xp / 4, "the boon's quarter more on land alone");
+}
