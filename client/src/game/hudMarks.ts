@@ -2,6 +2,7 @@
 // hostile ship's in its rank's colour round its faction's emblem, a Miniboss's mark over it; its name under it and its
 // kind and distance under that, gold with a glow when chosen, grey with a lock when locked, and an arrow on its ring's
 // edge pointing the way while it is held at the picture's edge. Each is a press: choosing it calls `chosen`.
+import { CANVAS_FACE } from '../face.ts';
 import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
@@ -51,7 +52,7 @@ const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
   dungeon: '#c193e6',
   boss: '#ee7c6e',
   port: '#e8e4d6',
-  // A hostile ship's mark wears its rank's colour; the page's ink stood for none.
+  // A hostile ship's mark wears its rank's colour, so its kind's own colour is the ink's.
   hostile: TONES.ink,
   locked: '#8a8f96',
 };
@@ -67,7 +68,7 @@ const glyphPx = (size: number): number => Math.max(11, Math.floor(size / 2 / 11)
  *  the ship nears it reuses a few pictures rather than laying a new one in the atlas at every pixel it grows. */
 const texels = (size: number) => Math.ceil(size / 8) * 16;
 
-/** The ring and its glyph, drawn in the page's own face, which holds the glyphs Pixelify lacks. */
+/** The ring and its glyph, the glyph in the mended face, which holds the ones Pixelify lacks. */
 function ring(glyph: string, colour: string, size: number, hovered: boolean, chosen: boolean): Picture {
   const edge = chosen ? GOLD : colour;
   const side = texels(size);
@@ -86,7 +87,7 @@ function ring(glyph: string, colour: string, size: number, hovered: boolean, cho
         context.strokeStyle = edge;
         context.stroke();
         context.fillStyle = colour;
-        context.font = `${glyphPx(size) * unit}px sans-serif`;
+        context.font = `${glyphPx(size) * unit}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText(glyph, middle[0], middle[1]);
@@ -134,7 +135,7 @@ function arrow(colour: string): Picture {
     source: {
       draw: (context, width, height) => {
         context.fillStyle = colour;
-        context.font = `${height}px sans-serif`;
+        context.font = `${height}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillText('▲', width / 2, height / 2);

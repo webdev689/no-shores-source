@@ -9,6 +9,10 @@ import { trueType } from './trueType.ts';
 
 /** The mended font's name in a 2D canvas's font stacks. */
 export const MENDED = 'Pixelify Mended';
+/** The family Pixelify Sans is read under where the game runs (`ui/faceReader.ts`), apart from any page's own. */
+export const READ_FAMILY = 'Pixelify Cells';
+/** The face's stack for words a 2D canvas writes once the face is read: the mended glyphs first, then Pixelify. */
+export const CANVAS_FACE = `'${MENDED}', '${READ_FAMILY}', monospace`;
 
 /** A glyph: its code point, its outline as closed contours on the grid, and how far the pen moves after it. */
 export interface Outline {
@@ -147,7 +151,7 @@ export const MENDED_RANGE = Object.keys(DRAWINGS)
 
 /** Makes the drawn glyphs a font in `fonts` (the page's or a worker's), for words a 2D canvas writes in a stack that
  *  names it first. Each keeps Pixelify's own line, so a line holding one stands as tall as any other. */
-export function useMendedFace(fonts: FontFaceSet): void {
+export async function useMendedFace(fonts: FontFaceSet): Promise<void> {
   if (typeof FontFace === 'undefined') return;
   const face = new FontFace(MENDED, mendedFont().buffer as ArrayBuffer, {
     unicodeRange: MENDED_RANGE,
@@ -157,5 +161,5 @@ export function useMendedFace(fonts: FontFaceSet): void {
     display: 'swap',
   });
   fonts.add(face);
-  void face.load();
+  await face.load();
 }

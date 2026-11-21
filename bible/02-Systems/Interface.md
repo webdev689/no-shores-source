@@ -154,6 +154,7 @@ code:
   - client/src/player/elementGlyphs.ts#elementSvg
   - client/src/face.ts#outlineOf
   - client/src/face.ts#useMendedFace
+  - client/src/face.ts#CANVAS_FACE
   - client/src/trueType.ts#trueType
 ---
 # Interface
@@ -204,8 +205,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
   and its offers, Manage's panel, the menu, the prompt for E and the veil. Each stands where the page's sheet stood
   it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
-  let a click through to the world; the marks, presses and panels take it. The glyphs Pixelify lacks (a mark's) are
-  drawn in the browser's plain face into a picture. It gives way to the fight's display as that says it shows, and to the
+  let a click through to the world; the marks, presses and panels take it. A mark's glyph is
+  drawn into a picture in the mended face (`CANVAS_FACE`), which holds the ones Pixelify lacks. It gives way to the fight's display as that says it shows, and to the
   dialogue box while a named speaker's words are up (`speaking`).
 - **The menu.** The menu's frame (its tabs, the account's mark, the banner, the footer and the world dimmed behind
   it), the Character, Inventory, Ship, Social and Settings pages and the pages to come, an item's page, the hover card, the holds and their bursts, what the player

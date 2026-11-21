@@ -7,11 +7,10 @@ import latinExt from '@fontsource-variable/pixelify-sans/files/pixelify-sans-lat
 import latin from '@fontsource-variable/pixelify-sans/files/pixelify-sans-latin-wght-normal.woff2?url';
 import sheet from '@fontsource-variable/pixelify-sans/index.css?raw';
 import { facesOf } from './fontFaces.ts';
-import { useMendedFace } from '../face.ts';
+import { READ_FAMILY as FAMILY, useMendedFace } from '../face.ts';
 import { type Glyph, glyphRead, MENDED_GLYPHS } from './glyphs.ts';
 
 /** The family the reader loads Pixelify under, apart from the page's own. */
-const FAMILY = 'Pixelify Cells';
 /** Pixels an em when a glyph is first read, and when a grey sample is read again. */
 const COARSE_EM = 100;
 const FINE_EM = 2000;
@@ -39,10 +38,10 @@ export interface FaceCells {
 export async function readFace(): Promise<FaceCells> {
   const faces = facesOf(sheet);
   const fonts = (globalThis as { fonts?: FontFaceSet }).fonts ?? document.fonts;
-  // The held map's lettering, written by a 2D canvas where the face is read, takes the mended glyphs as a font.
-  useMendedFace(fonts);
-  await Promise.all(
-    faces.map(async ({ file, ranges }) => {
+  // Words a 2D canvas writes where the face is read (the held map's, a mark's glyph) take the mended glyphs as a font.
+  await Promise.all([
+    useMendedFace(fonts),
+    ...faces.map(async ({ file, ranges }) => {
       const url = FILES[file];
       if (!url) throw new Error(`Pixelify's ${file} is not served`);
       const face = new FontFace(FAMILY, `url(${url})`, {
@@ -51,7 +50,7 @@ export async function readFace(): Promise<FaceCells> {
       });
       fonts.add(await face.load());
     }),
-  );
+  ]);
   const held = (code: number) =>
     !COMBINING.test(String.fromCodePoint(code)) &&
     faces.some(({ ranges }) => ranges.some(([from, to]) => code >= from && code <= to));

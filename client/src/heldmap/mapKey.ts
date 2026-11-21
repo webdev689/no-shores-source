@@ -1,6 +1,7 @@
 // The held map's key: one framed panel naming the waters' holders by their colours, and under them the difficulty
 // ramp, each group under its title. It stands in a corner of the map that covers no land, no word, no mark and no
 // hand (mapLayout.ts says what it yields to when no corner is clear).
+import { CANVAS_FACE } from '../face.ts';
 import { type CoastField, NO_ISLAND } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
 import { HATCHES, HOLDER_WORDS, levelColour, washedOver, type WaterHolder } from './watersWash.ts';
@@ -8,7 +9,7 @@ import { HATCHES, HOLDER_WORDS, levelColour, washedOver, type WaterHolder } from
 /** The face the key is lettered in, as the map's smaller words: the mended glyphs first (face.ts), then Pixelify Sans
  *  under the name the interface loads it by where the game runs (ui/faceReader.ts). Its inks: iron-gall, and the parchment's own colour, which fills the
  *  panel. Its lengths are units, pixels at a scale of 1. */
-export const FACE = "'Pixelify Mended', 'Pixelify Cells', monospace";
+export const FACE = CANVAS_FACE;
 export const KEY_FONT = `500 13px ${FACE}`;
 export const INK = '#3a2816';
 const PANEL = 'rgba(238, 222, 190, 0.92)';
