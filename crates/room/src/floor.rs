@@ -31,6 +31,10 @@ impl Terrain for Floor {
     fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
         matches!(self, Floor::Sea(rim) if rim.walled(from, to))
     }
+
+    fn climbs(&self) -> bool {
+        !matches!(self, Floor::Sea(rim) if !rim.climbs())
+    }
 }
 
 /// A body standing at (x, y) on the floor and the blocks: its feet on the ground there, or on a block's top within
