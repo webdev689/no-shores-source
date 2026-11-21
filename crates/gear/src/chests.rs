@@ -8,8 +8,9 @@ use crate::kinds::Stock;
 use crate::vestige;
 use crate::world::Difficulty;
 
-/// What a chest of each tier (1 won, 2 won with the bonus, 3 heroic, 4 heroic with the bonus) holds at level 5, and
-/// at a level as a kill's worth grows: XP, Aurem, each Fragment, each Essence and the island's resource.
+/// What a chest of each tier (1 won, 2 won with the bonus, 3 heroic, 4 heroic with the bonus) holds: XP and Aurem at
+/// level 5, growing with the level as a kill's worth does; each Fragment, each Essence and the island's resource as
+/// they stand, at any level.
 pub const CHEST_XP: [u32; 4] = [1_500, 2_200, 3_200, 4_500];
 pub const CHEST_AUREM: [u32; 4] = [120, 180, 260, 360];
 pub const CHEST_FRAGMENTS: [u16; 4] = [2, 3, 5, 7];
