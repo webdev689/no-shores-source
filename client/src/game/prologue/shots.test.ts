@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { railShot } from '../../cinema/rail.ts';
-import { fightMove } from './fighters.ts';
 import { homeRail, type IslandFrame, shipsOff, titleEye } from './introShots.ts';
 import { thrownAt } from './overboard.ts';
 import { lidsAt } from './waking.ts';
@@ -28,13 +27,6 @@ test('ships off an island sail out from it, and the anchored one stays', () => {
   assert.equal(early.length, 3);
   assert.ok(Math.hypot((later[0]?.x ?? 0) - (early[0]?.x ?? 0), (later[0]?.y ?? 0) - (early[0]?.y ?? 0)) > 40);
   assert.deepEqual([later[2]?.x, later[2]?.y], [early[2]?.x, early[2]?.y]);
-});
-
-test('a pair of fighters take turns: one strikes while the other guards', () => {
-  const blows = ['over1h', 'side1h'];
-  const striking = (clock: number, phase: number) => blows.includes(fightMove(blows, clock, phase));
-  for (let clock = 0; clock < 9; clock += 0.25) assert.ok(!(striking(clock, 0) && striking(clock, 2.2)), `at ${clock}`);
-  assert.ok([0, 0.5, 1, 2.5, 3].some((clock) => striking(clock, 0)));
 });
 
 test('the eyes blink open over the first seconds and stay open', () => {

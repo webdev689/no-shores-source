@@ -1,7 +1,8 @@
 use crate::Room;
 use crate::power::{arms_allowed, loadout_arms};
+use crate::story::WOKE_HEALTH;
 use ::foes::Rank;
-use gear::Kind;
+use gear::{Ask, At, Kind, Slot};
 use movement::Block;
 
 /// A deck 2.3 m over the sea, from x -6 to 6.
@@ -10,17 +11,30 @@ fn wreck() -> Room {
 }
 
 #[test]
-fn the_wreck_arms_every_player_with_the_story_s_sword_and_shield_before_or_after_they_join() {
+fn on_the_wreck_a_player_wakes_hurt_and_bare_handed_then_takes_the_story_s_arms_once_and_wears_them() {
     let mut room = wreck();
     let early = room.join().expect("a room with space");
-    let shield = loadout_arms(Kind::SwordAndShield);
-    assert!(!arms_allowed(&room.players[&early].character).contains(&shield), "a new player's plain sword");
     room.story_wreck();
     let late = room.join().expect("a room with space");
+    let shield = loadout_arms(Kind::SwordAndShield);
     for player in [early, late] {
-        assert!(arms_allowed(&room.players[&player].character).contains(&shield), "player {player}");
+        let found = &room.players[&player];
+        assert!(found.character.worn(Slot::Melee).is_none(), "player {player} wakes with no weapon");
+        let fighter = &found.fighter;
+        assert!((fighter.health - fighter.health_max * WOKE_HEALTH).abs() < 1e-9, "and hurt by the ram");
     }
     assert!(!room.arts_on(), "and no Art");
+    assert!(room.story_take_arms(early));
+    assert!(!room.story_take_arms(early), "taken once");
+    let character = &mut room.players.get_mut(&early).expect("joined").character;
+    let (&id, (_, at)) =
+        character.items.iter().find(|(_, (item, _))| item.kind == Kind::SwordAndShield).expect("in the pack");
+    assert_eq!(*at, At::Carried, "carried, not worn");
+    assert!(!arms_allowed(character).contains(&shield));
+    // Worn by the gear's own ask, as the page's Equip asks it.
+    let dice = gear::dice::Dice { seed: 0, tick: 0, player: early };
+    assert!(character.ask(Ask::Wear { item: id, slot: Slot::Melee }, gear::Here::default(), &dice).is_ok());
+    assert!(arms_allowed(character).contains(&shield), "the sword and shield drawn");
 }
 
 #[test]
@@ -79,4 +93,21 @@ fn an_elite_boarder_keeps_its_rank_but_is_brought_down_as_a_major_and_thule_is_n
     let thule = story.stand_foe_at(12, 5, (0.0, 0.0), 0.0, 4).expect("Thule");
     let boss = plain.stand_foe_at(12, 5, (0.0, 0.0), 0.0, 4).expect("Thule");
     assert_eq!(story.foes[&thule].fighter.health_max, plain.foes[&boss].fighter.health_max, "Thule as he was");
+}
+
+#[test]
+fn on_the_wreck_a_boarder_sent_at_a_player_comes_for_them_though_it_never_saw_them() {
+    let mut room = wreck();
+    let player = room.join().expect("a room with space");
+    assert!(!room.story_hunt(1, player), "outside the story, none is sent");
+    room.story_wreck();
+    // Behind the player, facing away from them: it neither sees nor hears them.
+    let boarder = room.stand_foe_at(8, 1, (5.0, 0.0), std::f64::consts::FRAC_PI_2, 1).expect("a Tithe hookman");
+    for _ in 0..60 {
+        room.tick();
+    }
+    assert_eq!(room.foes[&boarder].brain.target(), None, "unaware of the player");
+    assert!(room.story_hunt(boarder, player));
+    assert!(!room.story_hunt(boarder, player + 99), "no such player");
+    assert_eq!(room.foes[&boarder].brain.target(), Some(player), "sent at them");
 }

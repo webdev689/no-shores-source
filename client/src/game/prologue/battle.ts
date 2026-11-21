@@ -19,7 +19,7 @@ import { fought, sung } from './music.ts';
 import type { Founder, Sailed, ShipDraw } from './sailing.ts';
 import { INBOUND_WAY_M_S, STORM_SOUND } from './sighted.ts';
 import { STORM } from './skies.ts';
-import { QUEST } from './lessons.ts';
+import { QUEST } from './tutorial.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 

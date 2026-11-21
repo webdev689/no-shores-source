@@ -1,22 +1,28 @@
-// The owner's ninth and tenth beats, played: the player fights through the wreck's foes on foot, as on any node, each
-// heap across the way clearing as the wave holding it falls; at its end the camera drives forward to Captain Brannoc
-// Thule, his nameplate struck in as he cries out, and the arena closes on a fight one on one that cannot be won. It
-// ends as the run says, the player felled or overpowered, and the screen fades out on it.
+// The owner's ninth and tenth beats, played: the player is taught on the wreck's quiet deck (tutorial.ts), the fight
+// frozen on a boarder's blows until they parry and dodge, then fights through the wreck's foes on foot, as on any node,
+// each heap across the way clearing as the wave holding it falls; at its end the camera drives forward to Captain
+// Brannoc Thule, his nameplate struck in as he cries out, and the arena closes on a fight one on one that cannot be
+// won. It ends as the run says, the player felled or overpowered, and the screen fades out on it.
 import { Cues } from '../../cinema/cues.ts';
+import { EVENT } from '../../combat/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
+import type { InputFrame } from '../../player/input.ts';
 import type { FootFight } from '../foot.ts';
+import { gearScreenOpen, type GearHere } from '../gearScreen.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import type { Overlay } from '../scene.ts';
+import type { Quest } from '../tasks.ts';
 import type { Beat, Tick } from './beat.ts';
 import { ACTOR_IDS, type Actor } from './actors.ts';
 import type { HeardFoe, Hearing } from '../audio/music/directorLaw.ts';
 import { type FootHeard, hearFoot } from '../audio/music/hearing.ts';
 import { fought } from './music.ts';
-import { type Done, Lessons } from './lessons.ts';
 import type { Nameplate } from './nameplate.ts';
+import { unarmed } from './look.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
+import { type Done, Freeze, Tutorial } from './tutorial.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { setAblaze, type WreckScenery } from './wreckScenery.ts';
@@ -31,6 +37,14 @@ const BACK_S = 5.6;
 const BARK_GAP_S = 9;
 /** How long the screen takes to fade out on the fight's end, seconds. */
 const END_S = 0.6;
+/** What the frozen fight asks of the player, and how long the reminder of both stays once they have done each. */
+const ANSWER = { parry: 'Press F to parry', dodge: 'Press V to dodge' } as const;
+const REMINDER = 'F parries a blow as it lands; V dodges it';
+const REMIND_S = 6;
+
+/** Whether the player answered the frozen fight's `lesson` this frame. */
+const answered = (controls: InputFrame, lesson: keyof typeof ANSWER) =>
+  controls.pressed(lesson === 'parry' ? 'guard' : 'dodge');
 
 export class WreckFight implements Beat {
   readonly name = 'wreck';
@@ -46,8 +60,17 @@ export class WreckFight implements Beat {
   private coming: { since: number; cues: Cues; from: Shot } | null = null;
   private fought = false;
   private barked = { struck: -Infinity, strikes: -Infinity };
-  /** The tasks on the wreck: the controls learned in its quiet first zone, then the fight's own. */
-  private readonly lessons = new Lessons();
+  /** The teaching on the wreck's quiet deck, then the fight's own task; and the fight frozen on a blow to teach. */
+  private readonly tutorial = new Tutorial();
+  private readonly freeze = new Freeze();
+  /** The prompt the frozen fight shows, and how long the reminder after both lessons has left, seconds. */
+  private prompting: string | null = null;
+  private remindFor = 0;
+  /** The run's own clock, held while the fight is frozen; and whether the player is dressed with their arms. */
+  private playClock: number | null = null;
+  private dressedArmed: boolean | null = null;
+  /** Whether a Tithe hand and one of the Brig's crew have cried out at each other, seen together. */
+  private cried = false;
   /** Whether the player has struck Thule since he last told them to kneel: he says it again only then. */
   private struckSinceKneel = true;
   private clock = 0;
@@ -76,6 +99,11 @@ export class WreckFight implements Beat {
   /** Whether the player plays: the pointer is theirs to lock. */
   get playing(): boolean {
     return !!this.run && !this.coming && this.ending === null;
+  }
+
+  /** The player's gear in the wreck's room, for the menu, while they play. */
+  get gear(): GearHere | null {
+    return this.playing ? (this.run?.gearHere(this.story.walker.you.dress) ?? null) : null;
   }
 
   private thuleAt(): Point3 {
@@ -183,10 +211,15 @@ export class WreckFight implements Beat {
     const { story } = this;
     const { stage, walker, firstPerson } = story;
     this.clock += tick.seconds;
+    // Frozen, the fight and its storm stand still: only the player's answer moves them on.
+    const frozen = this.frozen(run, tick.controls);
+    const seconds = frozen ? 0 : tick.seconds;
+    this.playClock = this.playClock === null ? tick.clock : this.playClock + seconds;
+    this.dress(run.arms === 'worn');
     // No storm's strikes on the wreck; its one is the strike behind Thule as he cries out.
     const [wakeX, wakeY] = this.layout.wake.at;
-    const strike = story.lightning.step(tick.seconds, [wakeX, wakeY]);
-    stage.stepWeather(tick.seconds, strike.flash, strike.bolt);
+    const strike = story.lightning.step(seconds, [wakeX, wakeY]);
+    stage.stepWeather(seconds, strike.flash, strike.bolt);
     if (this.coming) {
       this.coming.since += tick.seconds;
       this.coming.cues.step(this.coming.since);
@@ -195,11 +228,13 @@ export class WreckFight implements Beat {
     const coming = this.coming;
     const held = !!coming || this.ending !== null;
     const aspect = tick.size.width / Math.max(1, tick.size.height);
-    const shown = run.frame(tick.controls, tick.seconds, tick.clock, {
-      paused: held,
+    // Over the menu the player's presses rest, though the room runs on, so what they equip is worn at once.
+    const shown = run.frame(tick.controls, tick.seconds, this.playClock, {
+      paused: held || gearScreenOpen(),
       hands: tick.controls.locked && !held,
       aspect,
       held,
+      frozen,
     });
     if (run.arena && !this.fought && !coming) this.bossComes(shown.shot);
     const [thuleX, thuleY] = this.layout.arena.thule;
@@ -208,14 +243,14 @@ export class WreckFight implements Beat {
     this.fallen(shown.fight.own?.action.kind === 'dead');
     this.end(tick.seconds, !!run.outcome);
     const { footView, hud, scene } = stage.parts;
-    const fight = footView.frame(run, shown, tick.seconds, {
+    const fight = footView.frame(run, shown, seconds, {
       size: tick.size,
       viewport: tick.viewport,
       groundAt: (x, y) => scene.groundAt(x, y),
     });
     hud.hints(held ? [] : shown.hints);
     // Read every frame, a cutscene's too, so a turn the camera makes for it is never taken for the player's look.
-    const tasks = this.lessons.frame(this.didNow(run, shown.fight, tick.seconds));
+    const tasks = this.teach(run, shown.fight, seconds);
     hud.tasks.show(held ? null : tasks);
     hud.reach(shown.standing);
     const thule = coming ? this.thuleActor(tick.clock - coming.since) : null;
@@ -244,37 +279,92 @@ export class WreckFight implements Beat {
     };
   }
 
-  /** The first Tithe hand the player sees cries out at them, once. */
+  /** The first Tithe hand the player sees cries out at them, once; and the first time a Tithe hand and one of the
+   *  Brig's crew are seen together, they cry out at each other, once. */
   private spot(
     shot: Shot,
     heads: ReadonlyMap<string, readonly [number, number, number]>,
     view: { readonly width: number; readonly height: number },
   ): void {
-    if (this.spotted) return;
-    for (const [name, point] of heads) {
-      if (!name.startsWith('tithe-') || !headOnView(onScreen(shot, view, point), view)) continue;
+    const seen = (side: string) =>
+      [...heads].find(([name, point]) => name.startsWith(side) && headOnView(onScreen(shot, view, point), view))?.[0];
+    const [tithe, crew] = [seen('tithe-'), seen('crew-')];
+    if (!this.spotted && tithe) {
       this.spotted = true;
-      void this.story.stage.play('survivor', true, { tithe: name });
-      return;
+      void this.story.stage.play('survivor', true, { tithe });
+    } else if (!this.cried && tithe && crew) {
+      this.cried = true;
+      void this.story.stage.play('wreck', true, { tithe, crew });
     }
   }
 
-  /** What the player did this frame, for the tasks: where they stand and look, what their fight does, the foes
-   *  alive, and whether the boss fight is on. */
+  /** Whether the fight stands frozen this frame on the boarder's blow, its prompt shown while it does. The press that
+   *  answers it, with the pointer the game's, lets the blow play on, the press the fight's own; a pointer let go
+   *  leaves it frozen until it is taken again. */
+  private frozen(run: WreckRun, controls: InputFrame): boolean {
+    const lesson = this.tutorial.lesson;
+    const held = !!this.coming || this.ending !== null;
+    let frozen = !held && this.freeze.holds(run.boarderView, run.fight.player, lesson, run.fight.parryOpen);
+    if (frozen && lesson && controls.locked && answered(controls, lesson)) {
+      this.freeze.answer();
+      frozen = false;
+    }
+    const prompt = frozen && lesson ? ANSWER[lesson] : null;
+    if (prompt !== this.prompting) {
+      this.prompting = prompt;
+      this.story.stage.parts.screen.showPrompt(prompt);
+    }
+    return frozen;
+  }
+
+  /** Dresses the player as their arms are: in hand once worn, without them until then. */
+  private dress(armed: boolean): void {
+    if (armed === this.dressedArmed) return;
+    this.dressedArmed = armed;
+    const { story } = this;
+    story.walker.you.dress = armed ? story.dress : unarmed(story.dress);
+  }
+
+  /** The teaching this frame: what the player did read, the boarder stood when one is wanted, the waves held until
+   *  the duel is won, and the reminder once both lessons are learned. */
+  private teach(run: WreckRun, fight: FootFight, seconds: number): Quest {
+    const lesson = this.tutorial.lesson;
+    const quest = this.tutorial.frame(this.didNow(run, fight, seconds));
+    if (lesson === 'dodge' && this.tutorial.lesson === null) this.remindFor = REMIND_S;
+    this.remindFor = Math.max(0, this.remindFor - seconds);
+    if (this.tutorial.wantsBoarder(run.boarder)) run.standBoarder();
+    run.holdWaves(this.tutorial.holding);
+    return quest;
+  }
+
+  /** What the player did this frame, for the tasks: where they stand and look, how they move, what their fight does
+   *  and what came of it, their arms, the menu, the boarder, the foes alive, and whether the boss fight is on. */
   private didNow(run: WreckRun, fight: FootFight, seconds: number): Done {
     const { body, yaw } = this.story.walker.player;
-    // The crew stand on the players' side: neither counted as foes nor taken for one coming at the player.
+    const { player } = fight;
+    // The crew stand on the players' side: not counted as foes.
     const hostile = fight.foes.filter((foe) => foe.view.side === 'foes' && foe.view.health > 0);
-    const engaged = hostile.some((foe) => foe.view.target === fight.player);
-    const action = fight.own?.action.kind;
+    // A drink's heal is the drinker's own, on either side of its event.
+    const befell = (kinds: readonly number[]) =>
+      fight.events.some((event) => kinds.includes(event.kind) && event.defender === player);
+    const drank = fight.events.some(
+      (event) => event.kind === EVENT.healed && (event.striker === player || event.defender === player),
+    );
     return {
       seconds,
       x: body.x,
       y: body.y,
       yaw,
-      action,
+      speed: Math.hypot(body.vx, body.vy),
+      rising: body.mode === 'air' && body.vz > 0,
+      action: fight.own?.action.kind,
+      arms: run.arms,
+      menu: gearScreenOpen(),
+      healed: drank,
+      parried: befell([EVENT.parried]),
+      dodged: befell([EVENT.dodged, EVENT.perfect]),
+      boarder: run.boarder,
       foes: hostile.length,
-      engaged,
       boss: this.fought || run.arena,
     };
   }
@@ -282,7 +372,9 @@ export class WreckFight implements Beat {
   /** A death before the boss fight says what happens, for as long as the player lies dead: the room raises them at
    *  the last checkpoint. Felled in the boss fight, the fight ends, though the run learns it a frame later. */
   private fallen(dead: boolean): void {
-    this.story.stage.parts.hud.toast(...(dead && !this.fought ? ['You will rise at the last checkpoint.'] : []));
+    const said =
+      dead && !this.fought ? ['You will rise at the last checkpoint.'] : this.remindFor > 0 ? [REMINDER] : [];
+    this.story.stage.parts.hud.toast(...said);
   }
 
   /** Once the fight has ended, the screen fades out on it, and the beat is done when it is black. */
@@ -320,10 +412,12 @@ export class WreckFight implements Beat {
   }
 
   /** Hands the game back as it was before the wreck: no nameplate, prompt, hints, death or fight's display, the
-   *  letterbox's bars down, the pointer free, and the run's room let go. */
+   *  letterbox's bars down, the player in their story dress, the pointer free, and the run's room let go. */
   leave(): void {
     const { hud, footView, screen } = this.story.stage.parts;
     this.nameplate.hide();
+    screen.showPrompt(null);
+    this.story.walker.you.dress = this.story.dress;
     hud.hints([]);
     hud.reach({ kind: 'inside' });
     footView.hide();

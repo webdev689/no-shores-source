@@ -241,6 +241,10 @@ export function markLine(
 const REACH_M = 1.5;
 const REACH_UP_M = 2;
 
+/** Whether feet at `feet` are near enough a drop resting at `rest` to take it. */
+export const inReach = (feet: Point, rest: Point): boolean =>
+  Math.hypot(feet[0] - rest[0], feet[1] - rest[1]) <= REACH_M && Math.abs(feet[2] - rest[2]) <= REACH_UP_M;
+
 /** A drop's key among the others: what it is and its number. */
 const keyOf = (drop: GearDrop) => `${drop.kind}-${drop.id}`;
 
@@ -307,8 +311,7 @@ export class DropsShown {
    *  after `frame`, which knows which drops rest. */
   ammoFull(drops: readonly GearDrop[], feet: Point, full: boolean): boolean {
     const was = this.refused;
-    const under = (drop: GearDrop) =>
-      Math.hypot(feet[0] - drop.at[0], feet[1] - drop.at[1]) <= REACH_M && Math.abs(feet[2] - drop.at[2]) <= REACH_UP_M;
+    const under = (drop: GearDrop) => inReach(feet, drop.at);
     const boxes = drops.filter((drop) => drop.kind === DROPPED.ammoBox && this.rested.has(keyOf(drop)) && under(drop));
     this.refused = new Set(full ? boxes.map(keyOf) : []);
     return [...this.refused].some((key) => !was.has(key));

@@ -4,6 +4,7 @@
 import { HoldToSkip } from '../../cinema/cues.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
+import type { GearHere } from '../gearScreen.ts';
 import { hushed } from './music.ts';
 import { asWreck, Battle, type Wreck } from './battle.ts';
 import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed } from './beat.ts';
@@ -212,6 +213,11 @@ export class Prologue {
   /** Whether the player is playing a beat where the pointer is theirs to lock (the wreck). */
   get wantsPointer(): boolean {
     return this.beat instanceof WreckFight && this.beat.playing;
+  }
+
+  /** The player's gear for the menu, while they play on the wreck; none elsewhere in the story. */
+  get gear(): GearHere | null {
+    return this.beat instanceof WreckFight ? this.beat.gear : null;
   }
 
   /** The sea fight the pointer drives, while one is on. */

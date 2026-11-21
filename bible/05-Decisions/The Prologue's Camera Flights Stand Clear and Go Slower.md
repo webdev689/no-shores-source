@@ -14,6 +14,7 @@ status: in force
 - The storm's run to the Brig's helm stands well out from the ship, clear of its sails and rigging, until it comes
   in to the helm.
 - The wake's flight over the wreck goes at an easy pace and ends over the player's shoulder, clear of the wreck.
+  Replaced in part by [[The Wreck Opens by Teaching the Player]]: the flight is dropped.
 
 ## Claude's calls
 

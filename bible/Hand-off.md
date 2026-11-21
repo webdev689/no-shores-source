@@ -281,6 +281,17 @@ Where the work stands now, for the next session. Each session rewrites this note
   Tithe-Mate is in the wreck's own level too (`tools/wreck/wreck_level.py`), rebuilt by the wreck workflow with the
   owner's yes ("Do it"): only its Blender source is new. Open: the fleet room has no burst; and this session's
   toolkit could not be installed (its installer was refused by the session's permission check).
+- **#126, the wreck opened by teaching the player, waits on the owner's yes** to merge
+  ([[The Wreck Opens by Teaching the Player]]): the gun deck's Tithe-Mate in the wreck's level; the waking eyes under
+  shaped lids, their lashes and the fires' light through them, the blur clearing with the heart; the wake's flight
+  dropped, the camera easing out of the eyes to over the shoulder; and the teaching on the quiet deck: the sword and
+  shield found on the deck and equipped from the Character page, the feet found, the player readied (a swing, a guard,
+  a healing charge drunk), and a Tithe boarder met one on one, its first blow frozen until F parries it and its next
+  until V dodges it, the waves held until it falls. Tested offline: the full check, and the freeze's ticks against the
+  real room (a press there parries, and dodges). Not yet seen or played in a browser: the eyes, the arms' Vestige on
+  the deck, the menu over the story, the frozen frame and its prompt. Open: the wreck's tool still writes the flight's
+  masts and way back into its layout, which the page no longer reads; the step up to where the player wakes is too
+  high for foes, so a player who stays up there is never reached until they come down.
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through
