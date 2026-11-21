@@ -11,6 +11,9 @@ export interface Picture {
   readonly root?: readonly [number, number];
   /** Drawn level by the forge, its business end to the right (a weapon's large picture): never turned to lay it so. */
   readonly level?: boolean;
+  /** The palette it keeps to (a weapon's large picture): shrunk to its box, it is cut at half cover and snapped to it
+   *  again, so what shows is the palette's colours, as the figure's are. */
+  readonly snap?: (pixels: Uint8ClampedArray) => void;
 }
 
 /** A loadout in both hands as one picture: the left hand's (a shield or a second weapon) at this share of its size,
@@ -36,7 +39,7 @@ export function overlapped(main: Picture, second: Picture): Picture {
   };
   lay(second, across, down);
   lay(main, 0, 0);
-  return { width, height, pixels, level: true };
+  return { width, height, pixels, level: true, ...(main.snap ? { snap: main.snap } : {}) };
 }
 
 /** A speck of the figure the piece leaves showing (a collar's skin, a strand of hair) is any part of what differs that

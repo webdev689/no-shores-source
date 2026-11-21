@@ -261,11 +261,11 @@ export function pictureCanvas(picture: Picture, box: number, cap?: number): HTML
   own.getContext('2d')?.putImageData(image, -west, -north, west, north, width, height);
   // An icon long and thin is laid on its tile's diagonal, so a weapon reads at the tile's size; a large picture stands.
   const laid = cap === undefined ? diagonalFit(width, height, box, devicePixelRatio) : null;
-  if (laid) return diagonalCanvas(canvas, own, laid, box);
+  if (laid) return diagonalCanvas(canvas, own, laid, box, picture.snap);
   // Grown by whole pixels first, so the one smooth step down never blurs a pixel into its neighbour; one larger than
   // its box is shrunk to it by an area average, and drawn as that leaves it.
-  const shrinks = fit.width < width;
-  const grown = shrinks ? shrunkCanvas(own, fit.width, fit.height) : document.createElement('canvas');
+  const shrinks = fit.width < width || fit.height < height;
+  const grown = shrinks ? shrunkCanvas(own, fit.width, fit.height, picture.snap) : document.createElement('canvas');
   const growing = shrinks ? null : grown.getContext('2d');
   if (growing) {
     [grown.width, grown.height] = [width * fit.grown, height * fit.grown];
@@ -285,18 +285,19 @@ export function pictureCanvas(picture: Picture, box: number, cap?: number): HTML
   return canvas;
 }
 
-/** A long thin picture grown by whole pixels, or shrunk by an area average, then turned onto the diagonal of a square
- *  box and smoothed once. */
+/** A long thin picture grown by whole pixels, or shrunk by an area average (and snapped to `snap`'s palette, where it
+ *  keeps to one), then turned onto the diagonal of a square box and smoothed once. */
 function diagonalCanvas(
   canvas: HTMLCanvasElement,
   own: HTMLCanvasElement,
   laid: NonNullable<ReturnType<typeof diagonalFit>>,
   box: number,
+  snap?: (pixels: Uint8ClampedArray) => void,
 ): HTMLCanvasElement {
   const shrinks = laid.scale < 1;
   const shrunkTo = (side: number) => Math.max(1, Math.round(side * laid.scale));
   const grown = shrinks
-    ? shrunkCanvas(own, shrunkTo(own.width), shrunkTo(own.height))
+    ? shrunkCanvas(own, shrunkTo(own.width), shrunkTo(own.height), snap)
     : document.createElement('canvas');
   const growing = shrinks ? null : grown.getContext('2d');
   if (growing) {

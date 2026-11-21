@@ -80,7 +80,8 @@ export class ItemPictures {
           : Promise.all([this.forge.picture(worn, anim, VIEW), this.forge.picture(bare, anim, VIEW)]).then(
               ([withIt, without]) => (withIt && without ? addedBy(withIt, without, onePiece) : null),
             );
-      const large = onePiece ? this.largeOf(worn) : Promise.resolve(null);
+      // A large picture that fails to load gives way to the cut-out, as one not published does.
+      const large = onePiece ? this.largeOf(worn).catch(() => null) : Promise.resolve(null);
       large
         .then((picture) => picture ?? cutOut())
         .then((picture) => {

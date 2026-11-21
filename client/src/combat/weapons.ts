@@ -267,7 +267,9 @@ export function weaponsCss(): string {
 .fight-hud .weapon.low .shots { color: #f1c04f; }
 .fight-hud .weapon.empty .shots, .fight-hud .weapon.empty .most { color: #e8968a; }
 .fight-hud .weapon .picture { position: relative; display: flex; align-items: center; }
-.fight-hud .weapon .element { position: absolute; top: 0; right: 0; filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
+/* The glyph stands just past its picture's top right, in the row's own margin, clear of a blade's point. */
+.fight-hud .weapon .element { position: absolute; top: 0; left: calc(100% + 4px);
+  filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
 .fight-hud .weapon .element:empty { display: none; }
 .fight-hud .weapon .element svg { display: block; width: 100%; height: 100%; }
 .fight-hud .weapon .picture canvas { display: block; image-rendering: pixelated;

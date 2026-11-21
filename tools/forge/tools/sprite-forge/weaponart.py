@@ -234,6 +234,7 @@ def main():
         check()
         return
     layers.load_body(BODY)   # the man's proportions, tints, lights and grades: those his layers in hand are drawn in
+    forge.GRADE.setdefault('leather', armour.LEATHER_GRADE)   # a bow's or staff's grip, as the figure's weapon run
     pixels_a_metre = stage.PX_PER_M * shape.SHAPE['scale'] * SIZE
     stage.ELEVATION = 0.0
     stage.PX_PER_M = pixels_a_metre

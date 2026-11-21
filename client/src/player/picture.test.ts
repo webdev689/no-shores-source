@@ -69,6 +69,8 @@ test('a loadout in both hands is one picture: the left hand’s behind the right
   assert.deepEqual(texel(1, 2), blade, 'the right hand’s in front');
   assert.deepEqual(texel(3, 3), blade);
   assert.deepEqual(texel(8, 0), [0, 0, 0, 0], 'a clear ground round them');
+  const snap = () => {};
+  assert.equal(overlapped({ ...picture(10, 2, blade), snap }, picture(4, 4, shield)).snap, snap, 'its palette kept');
   const pair = overlapped(picture(4, 2, blade), picture(6, 2, shield));
   assert.deepEqual([pair.width, pair.height], [6, 3], 'a second longer than the first stands out past its left end');
   assert.deepEqual([...pair.pixels.slice(0, 4)], shield);

@@ -145,6 +145,24 @@ test('a loadout the forge draws large is its large picture, level; else the cut-
   assert.deepEqual(texels(shirt), [[...SHIRT]], 'armour is never a weapon’s large picture');
 });
 
+test('a large picture that fails to load gives way to the figure’s cut-out', async () => {
+  const store = {
+    strip: (path: string) =>
+      path.startsWith('@art/weapons/')
+        ? Promise.reject(new Error('the pack did not come'))
+        : Promise.resolve(strips[path] ?? null),
+  } as unknown as ForgeStore;
+  const failing = new Cards(
+    scene,
+    store,
+    looks,
+    { skins: { bodies: {} }, hair: { bodies: {} } },
+    { palette: [], clothing: {}, armour: {} },
+  );
+  const sword = await drawn(new ItemPictures(failing), item('sword', 0));
+  assert.deepEqual([sword?.level, texels(sword).length], [undefined, 3], 'the figure’s three texels of sword');
+});
+
 test('a loadout in both hands is one picture, the left hand’s smaller behind the right’s at its left', async () => {
   const both = { '@art/weapons/sword_iron.png': LARGE_BLADE, '@art/weapons/shield_buckler_iron.png': LARGE_BUCKLER };
   const loadout = await drawn(new ItemPictures(forgeOver(both)), item('sword_and_shield', 0));

@@ -140,13 +140,24 @@ export function shrunk(
   return out;
 }
 
-/** A canvas of `own`'s pixels shrunk to `width` by `height` (`shrunk`). */
-export function shrunkCanvas(own: HTMLCanvasElement, width: number, height: number): HTMLCanvasElement {
+/** A canvas of `own`'s pixels shrunk to `width` by `height` (`shrunk`); given a palette's `snap`, cut at half cover and
+ *  snapped to it, so a picture that keeps to a palette still shows only its colours. */
+export function shrunkCanvas(
+  own: HTMLCanvasElement,
+  width: number,
+  height: number,
+  snap?: (pixels: Uint8ClampedArray) => void,
+): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   [canvas.width, canvas.height] = [width, height];
   const pixels = own.getContext('2d')?.getImageData(0, 0, own.width, own.height).data ?? [];
-  canvas
-    .getContext('2d')
-    ?.putImageData(new ImageData(shrunk(own.width, own.height, pixels, width, height), width), 0, 0);
+  const small = shrunk(own.width, own.height, pixels, width, height);
+  if (snap) {
+    for (let texel = 0; texel < small.length; texel += 4)
+      if ((small[texel + 3] ?? 0) < 128) small.fill(0, texel, texel + 4);
+      else small[texel + 3] = 255;
+    snap(small);
+  }
+  canvas.getContext('2d')?.putImageData(new ImageData(small, width), 0, 0);
   return canvas;
 }

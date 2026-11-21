@@ -216,7 +216,8 @@ export class Cards {
         else pixels[texel + 3] = 255;
     }
     this.snap?.snap(pixels);
-    return { width, height, pixels, level: true };
+    const { snap } = this;
+    return { width, height, pixels, level: true, ...(snap ? { snap: (shown) => snap.snap(shown) } : {}) };
   }
 
   /** What a body can wear, as the forge draws it; null for a body it has not. */

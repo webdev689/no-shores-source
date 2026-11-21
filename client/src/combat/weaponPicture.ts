@@ -125,7 +125,7 @@ export function weaponCanvas(
   const [grownWidth, grownHeight] = shrinks
     ? [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))]
     : [width * grownBy, height * grownBy];
-  const grown = shrinks ? shrunkCanvas(own, grownWidth, grownHeight) : document.createElement('canvas');
+  const grown = shrinks ? shrunkCanvas(own, grownWidth, grownHeight, picture.snap) : document.createElement('canvas');
   const growing = shrinks ? null : grown.getContext('2d');
   if (growing) {
     [grown.width, grown.height] = [grownWidth, grownHeight];
