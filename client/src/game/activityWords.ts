@@ -45,6 +45,8 @@ export interface WeekRow {
   readonly shut: boolean;
   readonly standing: Standing;
   readonly band: readonly [number, number] | null;
+  /** Whether this character's level stands in the band. */
+  readonly yours: boolean;
 }
 
 /** One of the week's two, with the level its foes stand at, its rules (and an Abyss run's revives), modifiers and
@@ -131,17 +133,19 @@ export function thisWeekOf(
   gates: Gates | null,
   record: ActivityRecord | null,
   named: Named,
+  level: number | null = null,
 ): ThisWeek {
   const tiers = SEAS.map((name, tier) => {
     const shut = gates?.day[tier] ?? null;
     const taken = takenToday(drawn, record, tier);
     const [state, standing] = [stateOf(shut, record, taken), standingOf(shut, record, taken)];
-    return { name, about: '', state, shut: shut !== null, standing, band: null };
+    return { name, about: '', state, shut: shut !== null, standing, band: null, yours: false };
   });
   const dungeons = drawn.ofTheDay.map(({ continent, patrol, number }) => {
     const band = bandAt(drawn, continent, 0);
     const about = band ? levelWords(band) : '';
-    return { name: named.dungeon(patrol, number), about, state: null, shut: false, standing: null, band };
+    const yours = band !== null && level !== null && level >= band[0] && level <= band[1];
+    return { name: named.dungeon(patrol, number), about, state: null, shut: false, standing: null, band, yours };
   });
   const weekly = (which: 'elite' | 'abyss'): WeekDungeon => {
     const weekOn = which === 'elite' ? drawn.weekElite : drawn.weekAbyss;
@@ -155,6 +159,7 @@ export function thisWeekOf(
       shut: shut !== null,
       standing: standingOf(shut, record, taken),
       band: null,
+      yours: false,
       kind: which,
       level: weekOn.level,
       revives: which === 'abyss' ? drawn.revives : null,

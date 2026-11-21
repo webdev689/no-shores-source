@@ -142,9 +142,10 @@ export function startJournal(source: JournalSource | null, now: () => number = (
         ['◂', -1, 'back', 'the page before', pageAt === 0],
         ['▸', 1, 'next', 'the next page', pageAt >= count - 1],
       ] as const
-    ).map(([glyph, step, key, words, none]) => {
+    ).map(([, step, key, words, none]) => {
       const turn = () => ((pageAt = Math.max(0, Math.min(count - 1, pageAt + step))), journal.page());
-      const arrow = keep(pressOf(glyph, turn), `quests-${key}`);
+      const arrow = keep(pressOf('', turn), `quests-${key}`);
+      arrow.append(iconImage(key, '', 24));
       arrow.setAttribute('aria-label', `Quests: ${words}`);
       arrow.setAttribute('aria-disabled', String(none));
       // One page has no other to turn to, so its arrows are not stops for Tab.

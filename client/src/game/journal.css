@@ -59,8 +59,15 @@
   scrollbar-color: var(--edge) transparent;
   scrollbar-width: thin;
 }
-/* A group's head: its reset's icon and its name, and at its right the one countdown its rows all run to. */
+/* A group's head: its reset's icon and its name, and at its right the one countdown its rows all run to. It stays at
+   the list's top while its rows scroll under it, so every row keeps its clock in sight. */
 .journal-timers-group {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  background-color: #12151b;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -77,6 +84,7 @@
 }
 .journal-timers-group-name {
   margin-right: auto;
+  white-space: nowrap;
 }
 .journal-timers-clock {
   display: flex;
@@ -230,8 +238,15 @@ img.journal-icon.gear-glyph {
 }
 .journal-isle-band {
   flex: none;
-  color: var(--brass-lit);
+  color: var(--faint);
   font-variant-numeric: tabular-nums;
+}
+/* The island whose band this character's level stands in. */
+.journal-isle-yours .journal-isle-name {
+  color: var(--word);
+}
+.journal-isle-yours .journal-isle-band {
+  color: var(--brass-lit);
 }
 /* The words of whatever is pointed at or focused, over a brass rule; at rest only the rule stands. */
 .journal-timers-said {
@@ -273,8 +288,10 @@ img.journal-icon.gear-glyph {
   max-height: 100%;
   min-height: 0;
   overflow-y: auto;
-  /* The bounties' panel's edge and inset, so the two titles stand on one line. */
-  padding-top: 14px;
+  /* The bounties' panel's edge and inset, so the two titles stand on one line; and room at its sides for a focus
+     ring, which a scrolling box would cut. */
+  padding: 14px 4px 0;
+  margin-inline: -4px;
 }
 .journal-quests-head,
 .journal-bounties-head {
@@ -314,9 +331,10 @@ img.journal-icon.gear-glyph {
   color: var(--faint);
   white-space: nowrap;
 }
-/* An arrow with no page to turn to rests, its glyph too. */
-#hud .journal-pager .plus-button[aria-disabled='true'] {
-  color: var(--faint);
+/* An arrow with no page to turn to rests, its drawn arrow too. */
+#hud .journal-pager .plus-button[aria-disabled='true'] img {
+  filter: grayscale(1);
+  opacity: 0.4;
 }
 #hud .journal-pager .plus-button {
   width: 33px;
@@ -368,10 +386,11 @@ img.journal-icon.gear-glyph {
   -webkit-line-clamp: 2;
   overflow: hidden;
 }
-/* The step's name is cut short where it must be; its number and Done always show. */
+/* The step's name is cut short where it must be; its number and its tick always show, the tick standing in the
+   line's height rather than raising it. */
 .journal-card-step {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
   margin: 0;
 }
@@ -383,6 +402,9 @@ img.journal-icon.gear-glyph {
 }
 .journal-card-step > :not(:nth-child(2)) {
   flex: none;
+}
+.journal-card-step > img.journal-icon {
+  margin-block: -6px;
 }
 .journal-step-number {
   min-width: 1.6em;
@@ -454,6 +476,14 @@ img.journal-icon.gear-glyph {
   .journal-timer-count {
     font-size: var(--type-xl);
   }
+  /* The marks under a row's name at three times their twelve, beside names at their own size. */
+  .journal-marks img.journal-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .journal-mark {
+    min-height: 40px;
+  }
   .journal-card {
     grid-template-columns: 80px minmax(0, 1fr);
   }
@@ -499,6 +529,7 @@ img.journal-icon.gear-glyph {
   }
   .journal-quests {
     padding-top: 0;
+    margin-inline: 0;
   }
 }
 

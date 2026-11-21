@@ -175,7 +175,7 @@ export function startActivityScreens(
       // A save with no story counts as past the prologue, as the rules read it.
       const gates = kept ? gatesAt(laying, kept.level, kept.prologueDone ?? true) : null;
       const drawn = activitiesAt(laying, minute);
-      const board = thisWeekOf(drawn, gates, kept?.activity ?? null, named);
+      const board = thisWeekOf(drawn, gates, kept?.activity ?? null, named, kept?.level ?? null);
       built = { minute, gear: kept, board };
       return board;
     },

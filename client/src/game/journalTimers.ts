@@ -124,13 +124,9 @@ function modifierImage(modifier: KeyedModifier): HTMLImageElement {
   return iconImage(drawn?.name ?? 'breach', '', MARK_ICON, drawn?.tones);
 }
 
-/** A modifier: its icon and its name, the Art a Burn is of left to its flame's colours. */
+/** A modifier: its icon alone, as on the day's seas; its name and what it does are its words. */
 function modifierMark(modifier: KeyedModifier): HTMLElement {
-  const chip = mark(
-    modifierImage(modifier),
-    `${modifier.name}: ${modifier.words}`,
-    modifier.name.replace(/ \(.+\)$/, ''),
-  );
+  const chip = mark(modifierImage(modifier), `${modifier.name}: ${modifier.words}`);
   chip.classList.add('journal-modifier');
   return chip;
 }
@@ -171,7 +167,10 @@ function dayMarks(today: ThisWeek['today']): HTMLElement[] {
   const tiers = today.tiers.flatMap((row, tier) => standingMark(row, SEAS[tier], tier > 0 ? today.modifier : null));
   const isles = make('ul', '', 'journal-isles');
   for (const row of today.dungeons) {
-    const isle = saying(make('li', '', 'journal-isle'), `${row.name}: ${row.about}`);
+    const isle = saying(
+      make('li', '', `journal-isle${row.yours ? ' journal-isle-yours' : ''}`),
+      `${row.name}: ${row.about}`,
+    );
     isle.append(make('span', row.name, 'journal-isle-name'));
     if (row.band) isle.append(make('span', `${row.band[0]}–${row.band[1]}`, 'journal-isle-band'));
     isles.append(isle);
@@ -219,11 +218,7 @@ function groupsOf(week: ThisWeek): readonly Group[] {
   const boon: Timer[] = week.week.boon
     ? [{ id: 'boon', icon: 'boon', name: 'Abyss boon', marks: marksLine(boonMark), words: week.week.boon }]
     : [];
-  // The board's six by where they count, two of each kind.
   const sixWords = 'Six a day, from the board in Overlook’s plaza: two on land, two at sea, two in dungeons.';
-  const kinds = (['land', 'sea', 'dungeon'] as const).map((kind) =>
-    mark(iconImage(kind, '', MARK_ICON), sixWords, '2'),
-  );
   const local = 'in your local time.';
   return [
     {
@@ -242,7 +237,7 @@ function groupsOf(week: ThisWeek): readonly Group[] {
           id: 'bounties',
           icon: 'bounty',
           name: 'Bounties',
-          marks: marksLine(...kinds),
+          marks: [],
           words: sixWords,
         },
       ],

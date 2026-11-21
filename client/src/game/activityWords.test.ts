@@ -49,7 +49,14 @@ test('This Week says what is on, what each pays, and what this character has tak
     shut: false,
     standing: null,
     band: [1, 4],
+    yours: false,
   });
+  const at12 = thisWeekOf(drawn, null, record, named, 12).today.dungeons.filter((row) => row.yours);
+  assert.deepEqual(
+    at12.map((row) => row.about),
+    ['Levels 10 to 13'],
+    'the island whose band a level 12 stands in',
+  );
   assert.deepEqual(
     board.today.tiers.map((row) => row.standing),
     ['open', 'taken', 'open'],

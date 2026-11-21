@@ -66,15 +66,17 @@ test('what each row stands for is drawn, not written: the seas and how they stan
   for (const words of ['Pays once: a Vestige.', 'Pays once: a richer cache.', 'Pays once: a Legendary Vestige.'])
     assert.ok(labels.includes(words), words);
   assert.ok(labels.includes('5 revives for the company.') && labels.includes('A wipe starts the run over.'));
-  const six = 'Six a day, from the board in Overlook’s plaza: two on land, two at sea, two in dungeons.';
-  assert.equal(labels.filter((label) => label === six).length, 3, 'the bounties by kind, two of each');
   assert.ok(root.find('+25%'), 'the boon by XP’s glyph and what it adds');
   assert.deepEqual(
     classed(root, 'journal-level').map((level) => level.textContent),
     ['Lv26', 'Lv30'],
     'each level as its number',
   );
-  assert.ok(root.find('Burn') && root.find('Lightswitch'), 'a week’s modifier keeps its short name beside its icon');
+  assert.ok(
+    labels.some((label) => label.startsWith('Lightswitch: ')),
+    'a week’s modifier by its icon, its name and words read and said',
+  );
+  assert.equal(root.find('Lightswitch'), undefined, 'and not written on the row');
   for (const sentence of [
     'Once a day at each tier, on any island: a Vestige and a richer cache.',
     'Once a week: a Legendary Vestige and Essence.',

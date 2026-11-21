@@ -433,7 +433,7 @@ never while a press is held. Each press is an ask the room answers.
   browsers ask.
 - **Journal** ([[Activities]], [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]):
   - **The quests**: cards six a page in two columns (one under 900 px), story missions first, then side quests, then
-    kinds to come; how many are held stands beside the title, and the page among its arrows at the head's right. Each
+    kinds to come; how many are held stands beside the title, and the page between its drawn arrows at the head's right. Each
     card shows its banner (a story mission's swallowtail in blood and brass; a side quest's stone shield, which a kind
     to come wears too), its name, a line of its tale and its step's number in a brass badge with its name, and a
     brass tick once every step is done. A name or tale too long for its card is cut short there and kept whole in its
@@ -451,11 +451,13 @@ never while a press is held. Each press is an ask the room answers.
     is its icon in a sunk well, its name and its marks. Under Today: the dungeon of the day (an arched door), each
     tier's seas (calm water, a rearing wave, a maelstrom) with this character's tick or padlock, the day's modifier's
     icon on the Elite and the Abyss seas it is on, what it pays (the Vestige glyph and a chest), and each island's
-    dungeon with its levels, read down its columns; and the bounties (a sealed notice), two of each kind by its mark.
+    dungeon with its levels, read down its columns, the band this character's level falls in lit; and the bounties (a
+    sealed notice), their six a day said at the foot.
     Under This week: the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a
     burning eye), each its level, its tick or padlock, the Abyss's five revives (a heart) and its wipe (a skull), its
-    modifiers by icon and name (Burn's flame in its Art's colours, Brawler's fist, Marksman's target, Lightswitch's
-    claws, Ironclad's shield, Trickle's drop, Juggler's three balls, Exposure's broken heart) and its pay (the Vestige
+    modifiers each by its icon alone, its name and what it does said at the foot (Burn's flame in its Art's colours,
+    Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield, Trickle's drop, Juggler's three balls on
+    an arc, Exposure's broken heart) and its pay (the Vestige
     in its rarity, Essence, the boon's star); and the Abyss boon while held, by XP's glyph. Under Later, Breaches (a
     rift). The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
     to a screen reader; the arrows step between the rows. Each countdown is rewritten as each second turns. The panel

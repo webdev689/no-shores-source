@@ -25,6 +25,8 @@ const NAMES: readonly IconName[] = [
   'xp',
   'revive',
   'wipe',
+  'back',
+  'next',
   'burn',
   'brawler',
   'marksman',
