@@ -41,6 +41,8 @@ pub struct NodeFile {
     /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
     /// space still locked (`city::social_open`).
     pub locked: bool,
+    /// In a patrol area, its layout's resource places, where its room's nodes stand, in the layout's order.
+    pub resources: Vec<[f64; 2]>,
 }
 
 /// A counter of a social space: its station, and its middle.
@@ -149,6 +151,7 @@ pub fn nodes_of(
             counters,
             shape_spots,
             locked: false,
+            resources: Vec::new(),
         }
     };
     let whole =
@@ -159,7 +162,11 @@ pub fn nodes_of(
             || (whole(&node.ring), whole(&node.spawns)),
             |layout| (layout.ring.clone(), layout.spawns.clone()),
         );
-        cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns)
+        let resources = laid.map_or_else(Vec::new, |layout| {
+            let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource);
+            places.map(|site| site.at).collect()
+        });
+        NodeFile { resources, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -261,10 +268,15 @@ mod tests {
                 && south <= 361_100.0 + 100.0
         );
         let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
-        let _ = layout::settle::settle(&mut whole, &layout::book::Book::default(), &layout::brief::Briefs::default());
+        let laid =
+            layout::settle::settle(&mut whole, &layout::book::Book::default(), &layout::brief::Briefs::default());
         for (x, y) in [(260_500.25, 360_500.75), (259_950.5, 361_050.5)] {
             assert_eq!(node.ground.height_at(x, y).to_bits(), whole.surface.height_at(x, y).to_bits());
         }
+        // Its room's nodes stand at its layout's resource places, in their order.
+        let glade = laid.iter().find(|each| each.id == "glade").expect("laid");
+        let resource = |site: &&layout::sites::Site| site.kind == layout::sites::SiteKind::Resource;
+        assert_eq!(node.resources, glade.sites.iter().filter(resource).map(|site| site.at).collect::<Vec<_>>());
     }
 
     #[test]

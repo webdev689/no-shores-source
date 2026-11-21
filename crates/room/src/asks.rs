@@ -9,11 +9,16 @@ use gear::dice::Dice;
 use gear::vendor::Vendor;
 use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
 
-/// How near the stall a player must stand for a social space's asks, a counter for its own, and a resource node for
-/// gathering, in metres. A counter's is a metre past where the browser offers it, for a body still walking up.
+/// How near the stall a player must stand for a social space's asks, a counter for its own, and a resource node's
+/// middle for gathering, in metres. A counter's is a metre past where the browser offers it, for a body still walking
+/// up; a node's reaches past its dressing's edge (an outcrop's rubble, a log stack turned across), so it is gathered
+/// from any side a body can stand.
 pub const STALL_REACH: f64 = 4.0;
 pub const COUNTER_REACH: f64 = 4.0;
-pub const NODE_REACH: f64 = 2.5;
+pub const NODE_REACH: f64 = 3.5;
+/// How long a node takes to gather, ticks (two seconds), and how far the body may stir meanwhile, metres.
+pub const GATHER_TICKS: u64 = 120;
+pub const GATHER_STIR_M: f64 = 0.3;
 /// How often, in ticks, one player's asks are answered: five a second, no more often than their gear is sent, so each
 /// answer reaches them before the next is made. How many asks are held for their turn; past those, they are let go.
 pub const ASK_EVERY_TICKS: u64 = crate::players::GEAR_EVERY_TICKS;
@@ -29,10 +34,11 @@ pub const STOCK_FULL: u8 = 102;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Asked {
     Gear(Ask),
-    /// Gathers the room's resource node by its place in the room's list.
+    /// Begins to gather the room's resource node by its place in the room's list, E held; and lets go of it.
     Gather {
         node: u8,
     },
+    StopGather,
     /// Scavenges a sea island's wreck by its place in the island's list.
     Scavenge {
         wreck: u8,
@@ -93,6 +99,16 @@ pub struct ResourceNode {
     pub x: f64,
     pub y: f64,
     pub resource: u8,
+}
+
+/// A gather under way: its node, the tick it began, where the body stood and its health then. Stirring, being hurt,
+/// falling or the node's turn passing stops it; `GATHER_TICKS` on, the node is gathered.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Gathering {
+    pub node: u8,
+    pub since: u64,
+    pub at: [f64; 2],
+    pub health: f64,
 }
 
 /// A social space's counter that serves a player's gear: the Mage's identifies Vestiges, a vault's keeps gear, a
@@ -259,6 +275,12 @@ impl Room {
                 }
             }
             Asked::Gather { node } => self.gather(player, node),
+            Asked::StopGather => {
+                if let Some(found) = self.players.get_mut(&player) {
+                    found.gathering = None;
+                }
+                0
+            }
             Asked::Scavenge { wreck } => self.scavenge(player, wreck),
             Asked::Grant(grant) if self.is_test_ground() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
@@ -290,11 +312,8 @@ impl Room {
         if found.character.materials.resource(usize::from(spot.resource)) >= gear::character::STOCK_MOST {
             return STOCK_FULL;
         }
-        found.spent.push(node);
-        if let (Some(owner), Some(patrol)) = (&found.owner, self.patrol.as_mut()) {
-            patrol.gathered.entry(owner.clone()).or_default().push(node);
-        }
-        found.character.gather(usize::from(spot.resource));
+        let (since, at, health) = (self.clock, [fighter.body.x, fighter.body.y], fighter.health);
+        found.gathering = Some(Gathering { node, since, at, health });
         0
     }
 

@@ -36,6 +36,8 @@ export const ASKS = {
   train: 61,
   chooseOfficer: 62,
   gather: 20,
+  /** A gather let go of before it is done: E released. */
+  stopGather: 64,
   grantVestige: 30,
   grantNamed: 31,
   grantItem: 32,

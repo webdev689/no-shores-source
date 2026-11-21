@@ -13,8 +13,11 @@ import { KEEPERS } from './keepers.ts';
 import { shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** How near a resource node a player stands to gather it, as the room has it. */
-export const NODE_REACH_M = 2.5;
+/** How near a resource node's middle a player stands to gather it, past its dressing's edge; how long E is held to
+ *  gather it, and how far the body may stir meanwhile: as the room has them (`asks.rs`). */
+export const NODE_REACH_M = 3.5;
+export const GATHER_S = 2;
+export const GATHER_STIR_M = 0.3;
 /** A station's ring in brass, a resource node's in sea green, each beating slowly so it is seen across the ground. */
 const BRASS = [0.93, 0.74, 0.32] as const;
 const NODE = [0.35, 0.85, 0.7] as const;
@@ -30,10 +33,11 @@ const SHAPE_OFFER = { words: KEEPERS.shape.title, opens: { view: 'shape' } } as 
 /** The stations of the place a player stands in, and where Shape may stand there. */
 type Here = Pick<NodeInfo, 'stations' | 'visitorSpots'>;
 
-/** What E does where a player stands: its deed in words, and the doing. */
+/** What E does where a player stands: its deed in words, and the doing; and for a node, which, as E is held there. */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
+  readonly gather?: number;
 }
 
 /** The use within reach of a player at (x, y): a station's offer, then Shape's, before a node, so a counter is never
@@ -51,7 +55,11 @@ export function useAt(
   if (offer) return { words: offer.words, run: () => openGearWindow(offer.opens) };
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
   if (!node) return null;
-  return { words: `Gather ${resourceName(node.resource)}`, run: () => ask({ kind: ASKS.gather, node: node.index }) };
+  return {
+    words: `Hold to gather ${resourceName(node.resource)}`,
+    run: () => ask({ kind: ASKS.gather, node: node.index }),
+    gather: node.index,
+  };
 }
 
 /** A beam of light standing `height` over `base`, in two crossed planes so it is seen from every side, fading upward. */

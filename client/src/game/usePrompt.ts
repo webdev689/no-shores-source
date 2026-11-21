@@ -9,11 +9,17 @@ import { edged } from '../combat/barDraw.ts';
 const BRASS_KEY = ['#f3cf86', '#8a5f17', '#8a5f17', '#f3cf86'];
 const BRASS_KEY_DEPTHS = [1, 1, 3, 1];
 
+/** How long the bar of a deed held is, CSS pixels. */
+const HELD_PX = 132;
+
 export class UsePrompt {
   private said: string | null = null;
+  private held: number | null = null;
 
-  /** Shows the deed within reach, or nothing; a new deed is told aloud, as a status is. */
-  show(deed: string | null): void {
+  /** Shows the deed within reach, or nothing, and how far E has been held for it (0 to 1), or null where it is not
+   *  being held; a new deed is told aloud, as a status is. */
+  show(deed: string | null, held: number | null = null): void {
+    this.held = deed === null ? null : held;
     if (deed === this.said) return;
     this.said = deed;
     if (deed !== null) announce(deed);
@@ -40,7 +46,23 @@ export class UsePrompt {
           draw: edged(BRASS_KEY, BRASS_KEY_DEPTHS),
           children: [{ text: { words: 'E', colour: TONES.brassHi, wrap: false } }],
         },
-        { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
+        {
+          direction: 'column',
+          gap: 4,
+          children: [
+            { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
+            ...(this.held === null
+              ? []
+              : [
+                  {
+                    width: HELD_PX,
+                    height: 3,
+                    fill: 'rgba(239,232,214,0.18)',
+                    children: [{ width: Math.round(HELD_PX * this.held), height: 3, fill: TONES.brassHi }],
+                  },
+                ]),
+          ],
+        },
       ],
     };
   }

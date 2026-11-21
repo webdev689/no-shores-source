@@ -509,10 +509,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);
   const fighting = () => footView.shown.fight;
   stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, () => playing.flow.mode === 'story'));
-  addEventListener(
-    'keyup',
-    (event) => void (playing.flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)),
-  );
+  addEventListener('keyup', (event) => {
+    const key = event.key.toLowerCase();
+    if (playing.flow.mode === 'story') story?.key(key, false);
+    // E let go: a gather under way is let go of.
+    else if (key === 'e') playing.foot?.hold.release();
+  });
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat || ui.typing) return;

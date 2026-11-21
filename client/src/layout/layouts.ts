@@ -97,9 +97,11 @@ interface Placed {
   readonly ring: readonly Point[];
   readonly spawns: readonly Point[];
   readonly centre: Point;
+  readonly resources?: readonly Point[];
 }
 
-/** The drawn nodes with each laid node's section and spawns in place of the ring it was drawn with. */
+/** The drawn nodes with each laid node's section and spawns in place of the ring it was drawn with, and its resource
+ *  places, where its room's nodes stand, in the layout's order (as the bake writes them). */
 export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: readonly NodeLayout[]): Node[] {
   const byId = new Map(layouts.map((layout) => [layout.id, layout]));
   return drawn.map((node) => {
@@ -109,7 +111,8 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
       0, 0,
     ] as const);
     const centre = [sum[0] / laid.ring.length, sum[1] / laid.ring.length] as const;
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre };
+    const resources = laid.sites.filter((site) => site.kind === 'resource').map((site) => site.at);
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources };
   });
 }
 

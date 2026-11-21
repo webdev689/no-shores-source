@@ -21,10 +21,10 @@ export async function standOn(
   return { boxes, ground };
 }
 
-/** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
- *  cut there, and its boxes. */
+/** A node's file as the bake writes it, for a room in the page: its section, its resource places and window rect, the
+ *  window of the land cut there, and its boxes. */
 export function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[]): string {
   const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
-  const { id, kind, continent, ring, spawns } = node;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
+  const { id, kind, continent, ring, spawns, resources = [] } = node;
+  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"resources":${JSON.stringify(resources)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
 }

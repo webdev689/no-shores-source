@@ -23,6 +23,8 @@ export interface NodeInfo {
   readonly posts?: readonly Post[];
   /** A patrol area or mission no one may enter until a pass is done on it (`sitesOf`). */
   readonly locked?: boolean;
+  /** A patrol area's resource places, where its room's nodes stand, in its layout's order. */
+  readonly resources?: readonly Point[];
 }
 
 /** A continent's port city, as its edits file names it. */

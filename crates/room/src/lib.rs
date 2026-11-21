@@ -307,6 +307,7 @@ impl Room {
         self.step_players();
         self.spawn_asked();
         self.keep_patrol();
+        self.keep_gathering();
         self.keep_companions();
         self.step_foes();
         self.keep_on_course();

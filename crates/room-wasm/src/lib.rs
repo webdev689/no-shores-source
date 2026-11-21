@@ -83,6 +83,9 @@ struct NodeFile {
     counters: Vec<NodeCounter>,
     #[serde(default)]
     shape_spots: Vec<[f64; 2]>,
+    /// In a patrol area, its layout's resource places, where its nodes stand.
+    #[serde(default)]
+    resources: Vec<[f64; 2]>,
 }
 
 /// A social space's counter as the bake writes it: its station, and its middle.
@@ -171,7 +174,7 @@ pub fn open_node(text: &[u8]) -> bool {
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource
     {
-        room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default());
+        room.start_patrol(u8::try_from(resource).unwrap_or_default(), &node.resources);
     }
     let refusal = node.locked.then(|| format!("{} is locked", node.name));
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));

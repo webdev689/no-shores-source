@@ -20,7 +20,8 @@ test('E at a counter opens its tab, and near a node asks the room to gather it',
   const ask = (each: GearAsk) => asked.push(each);
   assert.match(useAt(0.5, 0.5, { stations: [WEAPONSMITH] }, lying, ask)?.words ?? '', /^The Weaponsmith/);
   const gather = useAt(10 + NODE_REACH_M - 0.1, 0, { stations: [WEAPONSMITH] }, lying, ask);
-  assert.match(gather?.words ?? '', /^Gather /);
+  assert.match(gather?.words ?? '', /^Hold to gather /);
+  assert.equal(gather?.gather, 3, 'held there, it gathers that node');
   gather?.run();
   assert.deepEqual(asked, [{ kind: ASKS.gather, node: 3 }]);
   assert.equal(

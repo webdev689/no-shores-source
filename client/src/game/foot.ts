@@ -12,7 +12,7 @@ import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { GearAsk, GearState } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
@@ -23,7 +23,7 @@ import { CARD_NEAREST_M, cardStand, frameAt, type Placed, viewOf } from '../play
 import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
-import type { InputFrame } from '../player/input.ts';
+import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, newPlayer, playerCamera, shownBody } from '../player/player.ts';
 import { AIM } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
@@ -39,6 +39,7 @@ import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
+import { GatherHold } from './gatherHold.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Hint } from './gearNodes.ts';
@@ -82,16 +83,6 @@ const CAMERA_CLEARANCE_M = 0.3;
 /** How far down a player arriving in a social space looks, radians: over the parapet onto the city, as the Tower's
  *  arrival looks out over the City. */
 const OVER_THE_PARAPET = 0.3;
-/** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
-export const IDLE: InputFrame = {
-  held: () => false,
-  pressed: () => false,
-  released: () => false,
-  lookX: 0,
-  lookY: 0,
-  wheel: 0,
-  locked: true,
-};
 
 /** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
  *  tells of that). */
@@ -148,6 +139,14 @@ export class Foot {
   readonly folk: Placed[];
   private readonly prompt: UsePrompt;
   private using: Use | null = null;
+  /** A node being gathered while E is held. */
+  readonly hold = new GatherHold(
+    () => this.gear?.ask({ kind: ASKS.stopGather }),
+    () => ({
+      at: [this.context.walker.player.body.x, this.context.walker.player.body.y],
+      health: this.fight.own?.health ?? 0,
+    }),
+  );
   /** What E does on a sea island where the player stands: a wreck scavenged, the dungeon's door. */
   private uses: Uses | null = null;
 
@@ -298,9 +297,11 @@ export class Foot {
     return this.standing.kind === 'dead' || this.fight.own?.action.kind === 'dead';
   }
 
-  /** Does what E does where the player stands, if anything is within reach. */
+  /** Does what E does where the player stands, if anything is within reach: at a node, begins to gather it while E is
+   *  held. */
   use(): void {
     this.using?.run();
+    this.hold.begin(this.using?.gather);
   }
 
   /** Whether the room's socket closed and the page is joining it again. */
@@ -471,7 +472,7 @@ export class Foot {
     const { x, y } = walker.player.body;
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     this.using = able ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked))) : null;
-    this.prompt.show(this.using?.words ?? null);
+    this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able, gear?.gear ?? null));
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
       if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];

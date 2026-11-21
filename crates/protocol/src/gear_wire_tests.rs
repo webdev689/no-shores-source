@@ -93,6 +93,10 @@ fn furnished() -> (Room, PlayerId) {
     let sword = room.player(player).and_then(|found| found.character.items.keys().max().copied()).expect("granted");
     ask(&mut room, 3, Asked::Gear(Ask::Wear { item: sword, slot: Slot::Melee }));
     ask(&mut room, 4, Asked::Gather { node: 0 });
+    // A gather is held two seconds before it is done.
+    for _ in 0..room::asks::GATHER_TICKS {
+        room.tick();
+    }
     ask(&mut room, 5, Asked::Grant(Grant::Vestige { rarity: Rarity::Atheric, slot: Slot::Head, level: 20 }));
     // Each stock a count of its own, so a reader can tell them apart by their order.
     let mut kept = room.kept_character(player).expect("a player of the room");
