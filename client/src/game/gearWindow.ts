@@ -451,6 +451,8 @@ export function startGearWindow(
       id: 'gear-body',
       width: 'grow',
       height: 'grow',
+      // A column, as only a column's children scroll up and down in it.
+      direction: 'column',
       scroll: element === null && item === null,
       padding: [10, 20, 14, 20],
       children: [page, item?.page],
