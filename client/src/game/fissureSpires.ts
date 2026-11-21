@@ -41,8 +41,6 @@ export class SpireCourse {
     this.courses = courses;
   }
 
-  /** Stands the spires as `event` has its fissure open (running, its mark there), or takes them away; nothing for a
-   *  frame with no word from the room. */
   /** Stands the spires as `event` has its fissure open (running, its mark there) at its ground's middle, in the
    *  room's own f64, or takes them away, as for a frame with no word from the room (lost, or not yet come). */
   frame(event: PublicEvent | null, floor: (x: number, y: number) => number): void {

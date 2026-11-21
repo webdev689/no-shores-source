@@ -164,7 +164,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - **The banner** (`combat/publicBanner.ts`), drawn as nodes of the game's own interface as every part of the HUD is,
   stands in the compass's column under the compass and over the boss bar and the target's plate, so neither stands on
   it, 440 px wide at most or three quarters of a narrower view (in a view under 480 px high, two lines across three
-  quarters of it, clear of the crosshair: the name, the heroic task and the clock, then the objective and its count).
+  quarters of it, clear of the crosshair: the result once over, the name, the heroic task and the clock, then the
+  objective and its count).
   Running: "Public event" (or "Heroic public event") over the name and place, the countdown at the right, the
   objective and its bar (shards set of needed; the stores' health, with the wave in the objective and the next one's
   countdown while it comes), the heroic task with its window's countdown while it is open ("Break the growth", "Kill
@@ -221,8 +222,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   heroic task missed (the interface's refusal); the heroic chance (`cast.charge` at its target); the next a minute off
   and the start (`drop.land` at the player and a chime); the Warden climbing out (`amb.ice.crack` and `story.crash`); a
   chest coming (`drop.land`); the last ten seconds (the interface's tick); a Fissure failed (`amb.ice.crack`); a raid
-  won (`story.flash`) or failed (`story.crash`). The interface's own (the chimes, the tick, the refusal) wait while the
-  game is paused. A chest opened shows in the reward feed with its tier as four pips,
+  won (`story.flash`) or failed (`story.crash`). The interface's own (the chimes, the tick, the refusal) are not played
+  while the game is paused. A chest opened shows in the reward feed with its tier as four pips,
   its XP and its reputation. **Stings**, through the music director's `moment`, in the place's own fight score: its
   cadence as one begins, its victory for heroic met and won, its defeat for failed.
 - **Alone**, the page asks its land worker for the node's grounds (`land_grounds`, from

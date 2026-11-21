@@ -476,4 +476,11 @@ test('in a short, narrow view (844 by 390) a running banner stands clear of the 
   for (const words of ['The Fissure', '4:12', 'Break the growth 0:10', '3 / 12 shards'])
     assert.ok(said.includes(words), words);
   assert.ok(!said.includes('Bonus: seal it before 4:00'), 'no bonus line in a short view');
+  const ended = { ...banner, tone: 'failed' as const, kicker: 'Event failed', heroic: null, bar: null };
+  const over = new Hud();
+  over.update({ ...frame, public: { banner: ended, beat: null, places: [], stores: [] } }, 1);
+  const overSaid = laidOf(drawn(over, width, height), width, height).flatMap((each) =>
+    each.node.text ? [each.node.text.words] : [],
+  );
+  assert.ok(overSaid.includes('EVENT FAILED'), 'the result in words, not by colour alone');
 });

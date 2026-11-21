@@ -190,7 +190,7 @@ export class PublicView {
     const moments = this.moments.frame(event, stale ? [] : events, bodies.feet, bodies.where, chests, clock, wall);
     const beat = events.reduce<BannerBeat | null>((last, each) => BEATS[each.kind] ?? last, null) ?? moments.beat;
     const sounds = stale ? [] : [...this.sounds(event, events, bodies, clock), ...moments.sounds];
-    // The event's own interface sounds wait while the game is paused, as the world's do.
+    // The event's own interface sounds are not played while the game is paused, as the world's are not.
     const loud = !stale && !quiet;
     if (loud && moments.chime !== null) rarityChime(moments.chime);
     if (loud && moments.tick) play('tab');

@@ -120,7 +120,7 @@ export class PublicBanner {
 
   /** The banner `room` CSS pixels of view wide at `zoom`: a dark band fading to its right, its tone down its left
    *  edge, words on the face's grid; between events one line. In a `short` view, two lines that stand clear of the
-   *  crosshair: the name, the heroic task and the clock, then the objective and its count. */
+   *  crosshair: the result once over, the name, the heroic task and the clock, then the objective and its count. */
   node(room: number, zoom: number, short = false): Child {
     const banner = this.shown;
     if (!banner) return null;
@@ -172,6 +172,7 @@ export class PublicBanner {
               gap: 10 * zoom,
               alignY: 'end',
               children: [
+                (banner.tone === 'won' || banner.tone === 'failed') && kicker,
                 line({ words: banner.title, colour: titleColour }),
                 banner.heroic && heroicWords(banner.heroic),
                 { width: 'grow' },
