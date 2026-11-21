@@ -23,7 +23,7 @@ const MENU: StripHint = ['menu', 'Menu'];
 
 /** The keys each moment shows, the strip's last entry with them. */
 export const HINTS = {
-  landMap: [['Drag', 'Pan'], ['Wheel', 'Zoom'], ['landMap', 'Close'], ALL_CONTROLS],
+  landMap: [['Drag', 'Pan'], ['Wheel', 'Zoom'], ['landMap / Esc', 'Close'], ALL_CONTROLS],
   dead: [['respawn', 'Respawn'], ALL_CONTROLS],
   sea: [
     ['Left button', 'Sail there'],

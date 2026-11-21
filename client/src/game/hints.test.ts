@@ -161,3 +161,8 @@ test("the strip shows the pad's buttons while the pad was played last, a stick f
   const swapped = rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, 'c').binds;
   assert.deepEqual(words(footHints(AT_REST), 'keys', swapped).slice(2, 4), ['C Jump', 'Space Crouch']);
 });
+
+test("the land's held map names its way to close on the keys and on the pad, which has no button for the map", () => {
+  assert.deepEqual(words(HINTS.landMap).at(-2), 'N / Esc Close');
+  assert.deepEqual(words(HINTS.landMap, 'pad').at(-2), 'pad:B Close');
+});
