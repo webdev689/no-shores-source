@@ -258,7 +258,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   modifiers out. Tested offline: the full check, and pictures of the Journal, the timers and the board in the game's own
   face from a harness with the real modules (at 390x844, 860x600, 1280x720, 1920x1080 and 2560x1440, no box wider than
   its room), read by two design critiques. Not yet tested live. At 390 px wide the menu's own tab row overlaps itself,
-  as it did before.
+  as it did before. It now holds #88 with #72 and main through #75 (83ffaa42): the sea keeps characters, so ships sunk
+  or taken count toward the sea bounties; the sea's and the islands' rooms gate by their tier on the server; a deck's
+  kills count toward no land bounty and earn no boon; main's muster and Shipwright turn at 09:00 UTC with the clock;
+  the prologue's and the board's asks are 64 to 66; an island's door goes into its dungeon. Not yet seen in a picture
+  since: the Journal's and the board's kit surfaces with the borders main's framed-surface test now gives them.
 - **#72, the dungeons, is finished and waits on the owner's yes to merge**: DFO's Dungeons 2.0 within the patrol
   areas, perfect and insanely varied as the owner asked ([[The Dungeons Are Perfect and Insanely Varied]], Claude's
   calls in [[Dungeons as Claude Builds Them]], [[Dungeons]]). Six styles, two to five blocks, a deeper last block in

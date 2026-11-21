@@ -65,7 +65,8 @@ place loads, as Destiny's orbit does.
 choosing a landing; on foot and at sea a menu may be open. It is pure: the page hands it what happened and draws what
 it answers. `gameBoot.ts` makes the pieces (the rooms, the modules, the scene, the world and the place arrived at),
 `game.ts` keeps the flow, the travel between places and the player's actions, and `gameFrame.ts` draws each frame of
-the mode the flow is in; each mode is its own module.
+the mode the flow is in, a frame on foot first heeding the activities' word (`startActivities`: a gate that shut, a
+company that fell); each mode is its own module.
 
 | From | Happening | To |
 |---|---|---|
