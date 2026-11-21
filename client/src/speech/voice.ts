@@ -1,9 +1,7 @@
-// The one voice every speaker is heard in, a voice blurb: a syllable-long slice of the owner's Freesound pick of
-// talk at a place of its own, or, until it is picked, a buzz through two band-passes set to a vowel; then a low-pass
-// that muffles it, as speech heard through wind and timber rather than words made out. Each call is one syllable, so a
-// run of them reads as talk without being a language. A speaker differs only by the numbers in its profile.
-
-import { playSample } from '../soundSamples.ts';
+// The one voice every speaker is heard in, a voice blurb: a buzz through two band-passes set to a vowel, then a
+// low-pass that muffles it, as speech heard through wind and timber rather than words made out. Each call is one
+// syllable with a vowel of its own, so a run of them reads as talk without being a language. A speaker differs only by
+// the numbers in its profile.
 
 /** A speaker's voice, as content/story/cast.json gives it. */
 export interface VoiceProfile {
@@ -34,9 +32,6 @@ const EMPHASIS_VOLUME = 0.1;
 /** How far above its floor the muffle may be rolled, so the voice shimmers rather than drones. */
 const MUFFLE_SHIMMER_HZ = 400;
 const ATTACK_S = 0.012;
-/** The pitch the recording of talk is heard at: each speaker's own moves it by the square root of their ratio to it,
- *  so a voice differs without sounding sped up or slowed. */
-const RECORDED_HZ = 140;
 
 /** Rolls one syllable of `voice`. */
 export function syllableOf(voice: VoiceProfile, emphasis: boolean, roll: () => number = Math.random): Syllable {
@@ -76,10 +71,6 @@ export function speakSyllable(
     .connect(envelope)
     .connect(new StereoPannerNode(audio, { pan: options.pan ?? 0 }))
     .connect(out);
-  const rate = Math.sqrt(syllable.pitchHz / RECORDED_HZ);
-  // A slice is measured in the recording's own time: heard at `rate`, a syllable takes its length times it.
-  const slice = { at: Math.random(), seconds: syllable.lengthS * rate };
-  if (playSample(audio, muffle, 'speech.voice', rate, { when: start, slice })) return;
   const buzz = new OscillatorNode(audio, { type: 'sawtooth', frequency: syllable.pitchHz });
   const vowel = new GainNode(audio);
   for (const [frequency, sharpness] of [

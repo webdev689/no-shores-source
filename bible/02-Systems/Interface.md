@@ -451,12 +451,12 @@ never while a press is held. Each press is an ask the room answers.
 - **Sounds.** Every control makes a sound: a tick as the pointer or the keys reach it, a press, a step back, a tab
   turned, the menu opened and shut, a hold's charge rising, a dismantle, a feed, a gain's chime by its rarity, a
   refusal. Each is the owner's pick on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the
-  tick, press, step back, opening, dismantle and feed are recordings from Freesound, listed with their credits in
-  `content/audio/sounds.json`, kept on R2 and levelled to one peak and one loudness; the gains are the synthesiser's Brass bells, one
-  bell for a Normal or Magic gain, a rising run for a Rare, a longer run over a held chord for a Legendary or
-  Atheric; a hold builds up as the synthesiser's Shimmer, high thin air swelling over the hold and glinting faster
-  toward its end; the tab, the close and the refusal are the synthesiser's own, which also stands in while a recording
-  loads. One listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
+  tick, press, step back, tab, opening, close, dismantle and feed are recordings from Freesound, listed with their
+  credits in `content/audio/sounds.json`, kept on R2, levelled to one peak and one loudness, and silent until each has
+  come; the gains are the synthesiser's Brass bells, one bell for a Normal or Magic gain, a rising run for a Rare, a
+  longer run over a held chord for a Legendary or Atheric; a hold builds up as the synthesiser's Shimmer, high thin air
+  swelling over the hold and glinting faster toward its end; the refusal is the synthesiser's low double buzz. One
+  listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
   browsers ask.
 - **Ship.** The Sloop's details, as Manage shows them at sea: its hull, canvas, guns, loads and measure; its voyage
   while it is at sea; its cargo and crew marked Later.
