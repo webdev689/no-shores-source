@@ -243,20 +243,21 @@ fn the_bounty_board_stands_on_its_landing_facing_the_court_read_clear_of_every_c
         .filter(|solid| !matches!(solid.shape, crate::solids::Shape::Module { .. }))
         .map(crate::solids::Solid::bounds)
         .filter(|piece| {
-            let apart = ((piece[0] + piece[2]) / 2.0 - board.at[0]).hypot((piece[1] + piece[3]) / 2.0 - board.at[1]);
+            let apart =
+                libm::hypot((piece[0] + piece[2]) / 2.0 - board.at[0], (piece[1] + piece[3]) / 2.0 - board.at[1]);
             apart < 2.2 && piece[4] > landing[4] + 1e-9
         })
         .collect();
     assert_eq!(pieces.len(), 11, "its posts, face, six notices, lamp and roof");
     assert!(pieces.iter().all(|piece| piece[4] >= landing[5] - 1e-9), "standing on its top");
     let middle = [(social.bounds[0] + social.bounds[2]) / 2.0, (social.bounds[1] + social.bounds[3]) / 2.0];
-    let from = |[x, y]: [f64; 2]| (x - middle[0]).hypot(y - middle[1]);
+    let from = |[x, y]: [f64; 2]| libm::hypot(x - middle[0], y - middle[1]);
     assert!(from(board.front) < from(board.at) - 1.9, "its face toward the court");
     // Twice a counter's reach (the room's 4 m) apart, so where the board serves no other counter does: every
     // station's, the Harbourmaster's among them, and every spot Shape may stand at.
     let counters = social.stations.iter().map(|station| station.counter).chain(social.visitor_spots.iter().copied());
     for [x, y] in counters {
-        let apart = (board.front[0] - x).hypot(board.front[1] - y);
+        let apart = libm::hypot(board.front[0] - x, board.front[1] - y);
         assert!(apart > 8.0, "a counter {apart:.1} m from where the board is read");
     }
 }
