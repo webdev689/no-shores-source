@@ -59,9 +59,9 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 
 ## On the wire
 
-- **Asks**: 55 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
+- **Asks**: 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
   the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), answered only within reach of that counter;
-  56 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
+  65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
 - **The gear message** carries, at the end of its table: the quest walked (`quest`, its place in the file counted
   from 1, 0 for none), its task (`quest_task`), that task's goals' counts (`quest_counts`), each quest done
   (`quests_done`, 1 or 0 by place), each Art's earned bits (`arts_earned`: 1 the Art, 2 its first Tenet, 4 its
@@ -76,7 +76,7 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
   mid-road says nothing it has said before.
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
-  with" and the keeper's name; pressed, it asks 55 and the lines are said. Otherwise the counter opens as before.
+  with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map marks the nodes the task's goals name.
 - **Locks**: the Art's screen and the ability bar show an Art, a Tenet or a Core fragment not earned locked, saying
   which road earns it; a fragment choice waiting is offered on the Art's screen, its unowned fragments to choose from.
