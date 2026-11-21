@@ -44,10 +44,11 @@ seconds, and the next is shown from then.
 **The grounds.** The layout marks them with its other sites ([[Layouts]]): three stores in each hamlet, on clear
 ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of every building, set piece and prop and 2 m
 off every way; the point its raiders come in from, 36 m out toward the zone's nearest camp (the Vale has none: from the
-shore); their two banners, 28 m out, 6 m either side; and in each wilds the spot its crystal growth rises, 14 to 20 m
-from its middle. A store stands 2.4 m east and west, 1.6 m north and south and 1.6 m high, square to the grid, and is
+shore); their two banners, 28 m out, 6 m either side; and in each wilds where its fissure opens, 12 m (or 9, or 15)
+from its middle beside the obelisk its battlefield stands there, on ground 14 m across clear of the obelisk, the ruins
+and everything standing, and the spot its crystal growth rises, 14 to 20 m from the fissure. A store stands 2.4 m east and west, 1.6 m north and south and 1.6 m high, square to the grid, and is
 a box a body runs into on the page and in the room alike. The bake writes a zone's grounds into its node file, for
-Saltmere's three zones only: the Fissure's at its wilds' middle, 25 m round, with its growth's spot; the raid's at the
+Saltmere's three zones only: the Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the
 middle of its stores, reaching 10 m past the farthest (20 m at least), with its stores, approach and banners.
 
 **The navmesh.** A node's room bakes its mesh round its garrison only ([[Navmesh]]). As a zone's room opens, it bakes a
@@ -183,6 +184,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - The scripted players stand at level 6 with Rare gear at 6, over Saltmere's band of 1 to 4: two players at its band
   were not tried against a heroic raid's third wave.
 - The Heart is in the roster only: it has no phases of its own and stands in no event.
-- The stores, banners and growth spots are chosen before the layout stands its beacons and resource marks, so
-  they could meet; `crates/room/tests/grounds_planned.rs` holds Saltmere's three layouts clear of them.
+- The stores, banners, fissures and growth spots are chosen before the layout stands its beacons and resource marks,
+  so they could meet; `crates/room/tests/grounds_planned.rs` holds Saltmere's three layouts clear of them, and each
+  fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.

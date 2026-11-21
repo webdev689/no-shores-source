@@ -35,8 +35,11 @@ pub enum SiteKind {
     /// Where a hamlet's raiders come in from, and where each of their two banners is planted.
     Approach,
     Banner,
-    /// Where a wilds' crystal growth rises, 14 to 20 m from its middle; the site names the wilds.
+    /// Where a wilds' crystal growth rises, 14 to 20 m from its fissure; the site names the wilds.
     Growth,
+    /// Where a wilds' fissure opens: clear ground beside its middle, off the obelisk and the ruins its battlefield
+    /// stands there; the site names the wilds.
+    Fissure,
 }
 
 /// A site: what it is for, where, how much ground it takes, and what it holds or leads to.

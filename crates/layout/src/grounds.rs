@@ -1,7 +1,8 @@
 //! Where a zone's public events are fought, marked with its other sites: each hamlet's three stores (stacked crates,
 //! sacks and barrels under a tarp, on clear ground beside its houses near its plaza, off the ways), the point its
 //! raiders come in from (toward the zone's camp, or from the shore where it has none) and the two banners they plant
-//! at its edge; and in each wilds, the spot its crystal growth rises at. A store stands square to the grid, its long
+//! at its edge; and in each wilds, where its fissure opens (beside the battlefield's obelisk, clear of its ruins) and
+//! the spot its crystal growth rises at. A store stands square to the grid, its long
 //! side east and west, and a body runs into it on the page and in the room alike.
 
 use crate::areas::Area;
@@ -28,8 +29,14 @@ const STORE_OFF_WAYS: f64 = 2.0;
 const APPROACH_M: f64 = 36.0;
 const BANNERS_M: f64 = 28.0;
 const BANNERS_APART: f64 = 6.0;
-/// How far from the wilds' middle its crystal growth rises: the nearest of these that is clear.
+/// How far from the fissure its crystal growth rises: the nearest of these that is clear.
 const GROWTH_M: [f64; 3] = [17.0, 14.0, 20.0];
+/// How far from the wilds' middle its fissure opens, the nearest of these that is clear: off the obelisk the
+/// battlefield stands at its middle, and inside the ring of ruins and rocks round it. The crack's ground, half of it
+/// each way, and how far it keeps clear of everything standing.
+const FISSURE_M: [f64; 3] = [12.0, 9.0, 15.0];
+pub const FISSURE_HALF: f64 = 7.0;
+const FISSURE_CLEAR: f64 = 1.0;
 
 /// What a box covers, west, north, east and south.
 type Print = [f64; 4];
@@ -131,19 +138,30 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating) ->
         }
     }
     for area in areas.iter().filter(|area| area.kind == AreaKind::Wilds) {
-        let tries = GROWTH_M.iter().flat_map(|&out| {
-            (0..12).map(move |turn| {
-                let angle = TAU * f64::from(turn) / 12.0;
-                [area.at[0] + libm::sin(angle) * out, area.at[1] - libm::cos(angle) * out]
-            })
-        });
-        let mut tries = tries.collect::<Vec<_>>().into_iter();
-        let first = tries.clone().next();
-        if let Some(at) = tries.find(|&at| open(field, around, at, [2.5, 2.5], 1.0)).or(first) {
+        let half = [FISSURE_HALF, FISSURE_HALF];
+        let Some(fissure) = nearest_clear(area.at, &FISSURE_M, |at| open(field, around, at, half, FISSURE_CLEAR))
+        else {
+            continue;
+        };
+        sites.push(site(SiteKind::Fissure, fissure, FISSURE_HALF, &area.name));
+        if let Some(at) = nearest_clear(fissure, &GROWTH_M, |at| open(field, around, at, [2.5, 2.5], 1.0)) {
             sites.push(site(SiteKind::Growth, at, 2.5, &area.name));
         }
     }
     sites
+}
+
+/// The first point clear by `clear`, round `from` at each of `rings` in turn, twelve ways from the north; the first
+/// tried when none is.
+fn nearest_clear(from: [f64; 2], rings: &[f64], clear: impl Fn([f64; 2]) -> bool) -> Option<[f64; 2]> {
+    let tries = rings.iter().flat_map(|&out| {
+        (0..12).map(move |turn| {
+            let angle = TAU * f64::from(turn) / 12.0;
+            [from[0] + libm::sin(angle) * out, from[1] - libm::cos(angle) * out]
+        })
+    });
+    let tries = tries.collect::<Vec<_>>();
+    tries.iter().copied().find(|&at| clear(at)).or(tries.first().copied())
 }
 
 /// The box a body runs into at each store, standing on the ground as `height` has it.
@@ -175,7 +193,8 @@ pub struct Grounds {
     pub raid: Option<RaidGround>,
 }
 
-/// The Fissure's ground: the middle of its wilds, how far round it the event is fought, and where its growth rises.
+/// The Fissure's ground: where its fissure opens in its wilds, how far round it the event is fought, and where its
+/// growth rises.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct FissureGround {
     pub at: [f64; 2],
@@ -206,8 +225,9 @@ pub fn grounds_of(laid: &crate::Layout) -> Option<Grounds> {
         marked.map(|site| site.at).collect()
     };
     let fissure = laid.areas.iter().filter(|area| area.kind == AreaKind::Wilds).find_map(|area| {
+        let at = *of(SiteKind::Fissure, &area.name).first()?;
         let growth = *of(SiteKind::Growth, &area.name).first()?;
-        Some(FissureGround { at: area.at, radius: FISSURE_RADIUS, growth })
+        Some(FissureGround { at, radius: FISSURE_RADIUS, growth })
     });
     let raid = laid.areas.iter().filter(|area| area.kind == AreaKind::Hamlet).find_map(|area| {
         let (stores, banners) = (of(SiteKind::Store, &area.name), of(SiteKind::Banner, &area.name));

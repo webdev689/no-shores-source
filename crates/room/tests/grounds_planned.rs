@@ -96,3 +96,26 @@ fn saltmeres_stores_banners_and_growths_keep_clear_of_its_beacons_and_resource_m
         }
     }
 }
+
+#[test]
+fn saltmeres_fissures_open_on_clear_ground_beside_their_battlefields_obelisk_never_on_it_or_its_ruins() {
+    let layouts = continent_one();
+    let half = [layout::grounds::FISSURE_HALF, layout::grounds::FISSURE_HALF];
+    for id in bake::EVENT_ZONES {
+        let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
+        let fissure = bake::grounds_of(laid).and_then(|grounds| grounds.fissure).expect("its wilds holds a fissure");
+        let wilds = laid.areas.iter().find(|area| area.kind == layout::brief::AreaKind::Wilds).expect("its wilds");
+        assert!(distance(fissure.at, wilds.at) >= 9.0 - 1e-9, "{id}: off the battlefield's middle");
+        let standing = laid.seating.buildings.iter().chain(&laid.seating.props).map(|seated| {
+            let [west, north, east, south] = seated.footprint;
+            [west, north, east, south, 0.0, 0.0]
+        });
+        for print in standing.chain(laid.seating.solids.iter().map(|solid| solid.bounds())) {
+            assert!(
+                !overlaps(fissure.at, half, 0.0, print),
+                "{id}: the fissure at {:?} stands on {print:?}",
+                fissure.at
+            );
+        }
+    }
+}

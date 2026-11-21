@@ -31,6 +31,7 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The stores | Three per hamlet, within 35 m of the plaza beside its houses, 8 m apart, square to the grid, 2.4 x 1.6 x 1.6 m | Near enough to defend together; a box the page and room share |
 | The raiders' approach and banners | 36 m out toward the nearest camp, or from the shore; banners 28 m out, 6 m either side | The Tithe come from where they hold ground |
 | The grounds' sizes | The Fissure 25 m round; the raid 10 m past its farthest store, 20 m at least | Each ground's mesh is baked at open; a larger one cost too much |
+| Where the fissure opens | Beside its wilds' middle, 12 m (or 9, or 15) out, on ground 14 m across clear of the obelisk and ruins the wilds' battlefield stands there | The crack opened through the obelisk; the old stone now stands over it, a landmark |
 | The navmesh for events | A rectangle round each ground (and the approach), 4 m further, joined to the garrison's | Its cost measured: the open grows by 150 to 250 ms |
 | The room's foes | 32 at most in a room that holds events, any other node's still 24 | A garrison and an event's foes at once |
 | The Fissure's waves | 3 foes and 1 per extra player (6 at most), when 2 or fewer stand but 30 s after the last at the soonest, or every 40 s, under 10 standing | The shards' pace sets the event's: scripted players at Saltmere's levels seal it in 2.5 to 3 minutes, heroic in 3 to 4.5 |
