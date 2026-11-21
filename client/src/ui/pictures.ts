@@ -48,7 +48,7 @@ export class Pictures {
     if (!entry) {
       entry = { placed: this.room(width, height), ready: false, version: -1 };
       this.entries.set(key, entry);
-      if (entry.placed && !('image' in source)) this.load(entry, source, width, height, Boolean(picture.pixel));
+      if (entry.placed && !('image' in source)) this.load(key, entry, source, width, height, Boolean(picture.pixel));
     }
     if ('image' in source && entry.placed && entry.version !== source.version) {
       entry.version = source.version;
@@ -58,10 +58,16 @@ export class Pictures {
     return entry.ready ? entry.placed : null;
   }
 
-  private load(entry: Entry, source: PictureSource, width: number, height: number, pixel: boolean): void {
+  /** Every picture forgotten, as the atlas is laid afresh: one still coming is not copied where it was to stand. */
+  clear(): void {
+    this.entries.clear();
+  }
+
+  private load(key: string, entry: Entry, source: PictureSource, width: number, height: number, pixel: boolean): void {
     const placed = entry.placed;
     if (!placed) return;
     const done = (image: Image) => {
+      if (this.entries.get(key) !== entry) return;
       this.copy(placed, image);
       entry.ready = true;
     };

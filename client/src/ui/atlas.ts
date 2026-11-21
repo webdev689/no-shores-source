@@ -54,6 +54,16 @@ export class Layers {
     return Math.max(1, this.layers.length);
   }
 
+  /** Every layer empty again, to be laid afresh from its first. */
+  clear(): void {
+    this.layers.length = 0;
+  }
+
+  /** Whether a `width` by `height` picture could stand on an empty layer. */
+  fits(width: number, height: number): boolean {
+    return width + 1 <= this.size && height + 1 <= this.size;
+  }
+
   /** Room for a `width` by `height` picture, or null once every layer is full. */
   place(width: number, height: number): Placed | null {
     for (const [layer, shelves] of this.layers.entries()) {

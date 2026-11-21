@@ -156,7 +156,8 @@ moves to the game's own drawing
   drawn moved or faded. `layout` lays it out after Clay's model, every length in whole CSS pixels.
 - **Pictures.** A picture is laid into the atlas at the size it is drawn, as it is first wanted: a file, SVG markup,
   RGBA pixels, 2D drawing, or a live image copied in again as its version changes; pixel art keeps its own texels. The
-  atlas grows a layer at a time, up to 8 of 2048 square, and a quad can turn about its middle, as an arrow does.
+  atlas grows a layer at a time, up to 8 of 2048 square; full, it is laid afresh once the frame is
+  drawn, each picture laid again as it is next wanted. A quad can turn about its middle, as an arrow does.
 - **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the
   pointer is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that
   way, or by the pad's cross, A pressing and B going back; the wheel scrolling the list under it, and focus by keys

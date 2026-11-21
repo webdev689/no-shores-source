@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Shelves } from './atlas.ts';
+import { Layers, Shelves } from './atlas.ts';
 import { colourOf, QUAD_FLOATS, QuadList, UNCLIPPED } from './quads.ts';
 
 test('the kit’s colours read as their channels, from #rgb, #rrggbb and rgba()', () => {
@@ -47,4 +47,15 @@ test('pictures lie on shelves a texel apart, a new shelf under the tallest, and 
   assert.equal(shelves.place(16, 1), null, 'never wider than the square less its gutter');
   assert.deepEqual(shelves.place(4, 7), { x: 6, y: 7, width: 4, height: 7 });
   assert.equal(shelves.place(15, 3), null, 'no room left under the shelves');
+});
+
+test('layers laid full start again from their first once cleared, and a picture larger than a layer never fits', () => {
+  const layers = new Layers(8, 2);
+  assert.deepEqual(layers.place(7, 7), { x: 0, y: 0, width: 7, height: 7, layer: 0 });
+  assert.deepEqual(layers.place(7, 7), { x: 0, y: 0, width: 7, height: 7, layer: 1 });
+  assert.equal(layers.place(7, 7), null, 'both full');
+  assert.equal(layers.fits(7, 7), true);
+  assert.equal(layers.fits(8, 1), false);
+  layers.clear();
+  assert.deepEqual(layers.place(7, 7), { x: 0, y: 0, width: 7, height: 7, layer: 0 });
 });

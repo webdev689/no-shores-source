@@ -27,6 +27,8 @@ export class UiRenderer {
   private readonly layers = new Layers();
   private readonly placed = new Map<Glyph | string, Placed | null>();
   private readonly pictures: Pictures;
+  /** Whether the atlas had no room left this frame: it is laid afresh once the frame is drawn. */
+  private full = false;
   private instances: GPUBuffer | null = null;
 
   constructor(gpu: Gpu, face: Face) {
@@ -98,6 +100,7 @@ export class UiRenderer {
   /** Room in the atlas for a `width` by `height` picture, a layer more opened when the last is full. */
   private room(width: number, height: number): Placed | null {
     const box = this.layers.place(width, height);
+    if (!box && this.layers.fits(width, height)) this.full = true;
     if (box && box.layer >= this.atlas.depthOrArrayLayers) {
       const grown = this.atlasOf(this.layers.count);
       const encoder = this.gpu.device.createCommandEncoder();
@@ -202,6 +205,14 @@ export class UiRenderer {
       device.queue.submit([encoder.finish()]);
     }
     this.quads.clear();
+    // A full atlas starts again from empty, once this frame no longer reads it: what the next frame wants is laid
+    // again as it is wanted, so pictures drawn at sizes now gone (a window resized) give back their room.
+    if (this.full) {
+      this.full = false;
+      this.layers.clear();
+      this.placed.clear();
+      this.pictures.clear();
+    }
   }
 
   /** `picture` over `box` (device pixels) inside `clip`, faded by `fade`; nothing until its pixels have come. */
