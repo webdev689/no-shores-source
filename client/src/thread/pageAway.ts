@@ -4,6 +4,7 @@
 // last), and its canvas (the page's, drawn on from here, its events heard as the page sends them). Each asks the page, through `send`, for what only a
 // page can do.
 import { canvasSize } from '../canvasSize.ts';
+import { FrameGuard } from '../frameGuard.ts';
 import { hearFromAway, type PageEvents } from '../ui/canvasEvents.ts';
 import { type KeptSignIn, useSignIns } from '../ui/page.ts';
 import { useSvgDrawer } from '../ui/pictures.ts';
@@ -330,6 +331,7 @@ function ticksOf(send: Send): (() => void) | null {
   if (typeof globalThis.requestAnimationFrame === 'function') return null;
   let waiting = new Map<number, FrameRequestCallback>();
   let next = 1;
+  const guard = new FrameGuard();
   send({ kind: 'ticks' });
   Object.assign(globalThis, {
     requestAnimationFrame: (callback: FrameRequestCallback) => (waiting.set(next, callback), next++),
@@ -339,6 +341,7 @@ function ticksOf(send: Send): (() => void) | null {
     const due = waiting;
     waiting = new Map();
     const now = performance.now();
-    for (const callback of due.values()) callback(now);
+    // As a browser's own frames run them: one callback that throws is reported, and the rest still run.
+    for (const callback of due.values()) guard.run(() => callback(now));
   };
 }
