@@ -3,8 +3,8 @@
 //! through them. Each player may gather each node once while it stands, holding E while their figure works it. Its
 //! fights are its garrison's (`garrison.rs`).
 
-use crate::asks::{GATHER_STIR_M, GATHER_TICKS};
-use crate::{PlayerId, ResourceNode, Room, Standing};
+use crate::asks::{GATHER_GRACE_TICKS, GATHER_STIR_M, GATHER_TICKS};
+use crate::{PlayerId, ResourceNode, Room};
 use gear::Difficulty;
 use std::collections::BTreeMap;
 
@@ -62,33 +62,29 @@ impl Room {
         }
     }
 
-    /// Keeps each gather under way for a tick: one whose body stirred, was hurt or fell, or whose node's turn passed or
-    /// whose resource filled, stops; one held `GATHER_TICKS` gathers its node, spent for the player this turn.
+    /// Keeps each gather under way for a tick: one whose player may no longer gather it (`gather_refused`) or was hurt
+    /// stops; one stepped off or let go of stops, unless within `GATHER_GRACE_TICKS` of its end, when it is gathered;
+    /// one held `GATHER_TICKS` gathers its node, spent for the player this turn.
     pub(crate) fn keep_gathering(&mut self) {
         let under_way: Vec<PlayerId> =
             self.players.iter().filter(|(_, found)| found.gathering.is_some()).map(|(&id, _)| id).collect();
         for player in under_way {
-            let fighter = self.fighter(player).copied();
-            let Some(found) = self.players.get(&player) else { continue };
-            let Some(gathering) = found.gathering else { continue };
-            let index = usize::from(gathering.node);
-            let node = self.resource_nodes.get(index).copied();
-            let standing = self.node_standing(index) && !found.spent.contains(&gathering.node);
-            let kept = fighter.zip(node).is_some_and(|(fighter, node)| {
-                let stirred = libm::hypot(fighter.body.x - gathering.at[0], fighter.body.y - gathering.at[1]);
-                let full =
-                    found.character.materials.resource(usize::from(node.resource)) >= gear::character::STOCK_MOST;
-                let fallen = fighter.dead() || matches!(found.standing, Standing::Dead { .. });
-                standing && stirred <= GATHER_STIR_M && fighter.health >= gathering.health && !fallen && !full
-            });
-            let done = kept && self.clock >= gathering.since + GATHER_TICKS;
+            let Some(gathering) = self.players.get(&player).and_then(|found| found.gathering) else { continue };
+            let Some(fighter) = self.fighter(player).copied() else { continue };
+            let stirred = libm::hypot(fighter.body.x - gathering.at[0], fighter.body.y - gathering.at[1]);
+            let broken = self.gather_refused(player, gathering.node).is_some() || fighter.health < gathering.health;
+            let left = (gathering.since + GATHER_TICKS).saturating_sub(self.clock);
+            let ended = gathering.let_go || stirred > GATHER_STIR_M;
+            let done = !broken && (left == 0 || (ended && left <= GATHER_GRACE_TICKS));
             let Some(found) = self.players.get_mut(&player) else { continue };
-            if kept && !done {
+            if !(broken || ended || done) {
+                // A blow is measured from the health it found last, so a heal meanwhile hides none.
+                found.gathering = Some(crate::asks::Gathering { health: fighter.health, ..gathering });
                 continue;
             }
             found.gathering = None;
             found.gear_changed = true;
-            let Some(node) = node.filter(|_| done) else { continue };
+            let Some(node) = self.resource_nodes.get(usize::from(gathering.node)).filter(|_| done) else { continue };
             found.spent.push(gathering.node);
             if let (Some(owner), Some(patrol)) = (&found.owner, self.patrol.as_mut()) {
                 patrol.gathered.entry(owner.clone()).or_default().push(gathering.node);

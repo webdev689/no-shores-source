@@ -102,7 +102,8 @@ fn letting_go_stirring_or_being_hurt_stops_a_gather() {
     stand_by(&mut room, player, node, 1.0);
     hold(&mut room, player, node, 30);
     room.answer(player, asks::Asked::StopGather);
-    assert!(!gathering(&room));
+    room.tick();
+    assert!(!gathering(&room), "let go of well before its end");
     // Stirred: the body walked half a metre on.
     hold(&mut room, player, node, 30);
     stand_by(&mut room, player, node, 1.5);
@@ -142,4 +143,86 @@ fn a_node_gathered_stays_spent_for_its_account_however_often_the_player_rejoins_
     stand_by(&mut room, other, node, 1.0);
     assert_eq!(hold(&mut room, other, node, GATHER_TICKS + 1), 0, "another account gathers it");
     assert!(spent(&room, other, node));
+}
+
+#[test]
+fn letting_go_as_the_ring_fills_still_gathers_the_room_counting_from_its_answer() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    stand_by(&mut room, player, node, 1.0);
+    // The page's ring, counted from the press, fills a crossing before the room's count does.
+    hold(&mut room, player, node, GATHER_TICKS - 5);
+    room.take_ask(player, asks::Asked::StopGather);
+    room.tick();
+    assert!(spent(&room, player, node), "let go as it filled, it is gathered");
+}
+
+#[test]
+fn a_blow_after_a_heal_stops_a_gather() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    stand_by(&mut room, player, node, 1.0);
+    let mut hurt = *room.fighter(player).expect("in");
+    hurt.health -= 20.0;
+    room.set_fighter(player, hurt);
+    hold(&mut room, player, node, 20);
+    let mut healed = *room.fighter(player).expect("in");
+    healed.health += 10.0;
+    room.set_fighter(player, healed);
+    room.tick();
+    healed.health -= 5.0;
+    room.set_fighter(player, healed);
+    room.tick();
+    assert!(room.player(player).expect("in").gathering.is_none(), "still above where it began, but struck");
+}
+
+#[test]
+fn pressing_e_again_and_again_leaves_no_gather_running_once_it_is_let_go() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    stand_by(&mut room, player, node, 1.0);
+    for _ in 0..3 {
+        room.take_ask(player, asks::Asked::Gather { node });
+        room.take_ask(player, asks::Asked::StopGather);
+    }
+    for _ in 0..GATHER_TICKS * 2 {
+        room.tick();
+    }
+    assert!(!spent(&room, player, node), "every press let go of");
+}
+
+#[test]
+fn a_gather_is_not_begun_on_horseback_and_mounting_stops_one() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    stand_by(&mut room, player, node, 1.0);
+    room.players.get_mut(&player).expect("in").mounted = true;
+    assert_eq!(hold(&mut room, player, node, 0), asks::MOUNTED);
+    room.players.get_mut(&player).expect("in").mounted = false;
+    hold(&mut room, player, node, 30);
+    room.players.get_mut(&player).expect("in").mounted = true;
+    room.tick();
+    assert!(room.player(player).expect("in").gathering.is_none(), "mounting stops it");
+}
+
+#[test]
+fn a_full_stock_or_the_turn_passing_stops_a_gather() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    stand_by(&mut room, player, node, 1.0);
+    hold(&mut room, player, node, 30);
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    while character.materials.resource(0) < gear::character::STOCK_MOST {
+        character.gather(0);
+    }
+    room.tick();
+    assert!(room.player(player).expect("in").gathering.is_none(), "full");
+    let (mut room, player) = patrol(Difficulty::Normal);
+    while room.clock % ROTATE_TICKS != ROTATE_TICKS - GATHER_TICKS / 2 {
+        room.tick();
+    }
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    stand_by(&mut room, player, node, 1.0);
+    hold(&mut room, player, node, GATHER_TICKS + 1);
+    assert!(!spent(&room, player, node), "its turn passed before it was gathered");
 }

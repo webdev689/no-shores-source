@@ -173,8 +173,9 @@ pub struct Player {
     pub answered: u32,
     /// The room's resource nodes they have gathered from this turn, spent for them; on a sea island, the wrecks.
     pub spent: Vec<u8>,
-    /// The node they are gathering, E held, if they are.
+    /// The node they are gathering, E held, if they are, and whether their last input rode a horse.
     pub gathering: Option<crate::asks::Gathering>,
+    pub mounted: bool,
     /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
     pub owner: Option<String>,
     /// What their worn gear trims of the fight's numbers with the loadout drawn; and with each drawn, Melee then
@@ -230,6 +231,7 @@ impl Player {
             answered: 0,
             spent: Vec::new(),
             gathering: None,
+            mounted: false,
             owner: None,
             trim: combat::Trim::PLAIN,
             trims: [combat::Trim::PLAIN; 2],

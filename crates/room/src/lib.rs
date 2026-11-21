@@ -345,6 +345,9 @@ impl Room {
             while taken < CATCH_UP {
                 let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
+                if let Some(found) = self.players.get_mut(&id) {
+                    found.mounted = input.intent.controls.mounted;
+                }
                 if let Some(asked) = input.ask.take() {
                     self.take_ask(id, asked);
                 }
