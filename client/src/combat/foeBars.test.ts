@@ -295,6 +295,18 @@ test('a plate leaving the cone fades out over a quarter of a second, then is gon
   assert.notEqual(bars.drawn[0]?.plate, plate);
 });
 
+test('a plate held (a ward a step defends) shows wherever it is, as a foe fought does, never fading', () => {
+  const bars = new FoeBars();
+  const viewing: PlateViewing = { ...LOOKING_NORTH, fought: () => 0 };
+  const spotOf = () => ({ x: 400, y: 300, depth: 10 });
+  const ward = placed(1, 120, 10);
+  bars.update([{ ...ward, held: true }], null, spotOf, viewing, 1);
+  bars.update([{ ...ward, held: true }], null, spotOf, viewing, 1);
+  assert.equal(bars.drawn[0]?.cone, 1, 'behind the player, whole');
+  bars.update([ward], null, spotOf, viewing, 1);
+  assert.equal(bars.drawn.length, 0, 'not held: gone');
+});
+
 test("a companion's plate is drawn in the players' colour, by their own name, with no level square", () => {
   const bars = new FoeBars();
   // Both fought lately, so both plates show.

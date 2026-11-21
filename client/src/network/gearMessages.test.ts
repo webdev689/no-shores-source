@@ -237,6 +237,7 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
   Gear.addArtsEarned(builder, earned);
   Gear.addFragmentChoices(builder, choices);
   Gear.addQuestAt(builder, where);
+  Gear.addClaimed(builder, true);
   builder.finish(Gear.endGear(builder));
   const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
   assert.deepEqual(read.quest, {
@@ -246,7 +247,7 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
     done: [1, 0, 0, 0],
     choices: [1, 0, 0],
     at: [120.5, -40, 30],
-    ...{ clock: null, fails: [], points: [], figures: [], ward: null },
+    ...{ clock: null, fails: [], points: [], figures: [], ward: null, claimed: true },
   });
   assert.deepEqual(read.arts?.earned, [0b011, 0, 0]);
   assert.deepEqual(
@@ -272,8 +273,9 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
       points: [],
       figures: [],
       ward: null,
+      claimed: false,
     },
-    'none walked',
+    "none walked, nor on the player's own character",
   );
   assert.equal(earnedOf(none.arts, 3), 0b111, 'a room that says nothing of it locks nothing');
 });

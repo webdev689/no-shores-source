@@ -113,7 +113,7 @@ const coloursOf = (marks: readonly number[]) =>
     ),
   );
 
-test("a puzzle's points stand ringed under beams, gold once lit; E uses the one within reach, asking 66", () => {
+test("a puzzle's points stand ringed under beams, gold once lit; E uses an unlit one within reach, asking 66", () => {
   const points = [
     { x: 50, y: 0, lit: false },
     { x: 60, y: 0, lit: true },
@@ -124,7 +124,22 @@ test("a puzzle's points stand ringed under beams, gold once lit; E uses the one 
   assert.equal(near?.words, 'Use the west rod');
   near?.run();
   assert.deepEqual(used, [{ kind: ASKS.usePoint, column: 0 }]);
-  assert.equal(useAt(60, 0.5, {}, rods, () => undefined)?.words, 'Use the north rod', 'lit, it may be used again');
+  assert.equal(
+    useAt(60, 0.5, {}, rods, () => undefined),
+    null,
+    'lit, it is used no more',
+  );
+  const theirs = { ...rods, quest: { ...rods.quest!, claimed: false } } as GearState;
+  assert.equal(
+    useAt(50, 0, {}, theirs, () => undefined),
+    null,
+    "a room's starting character's rods",
+  );
+  assert.deepEqual(
+    groundRings(theirs, {}, () => 0, 0),
+    [],
+    'nor ringed',
+  );
   assert.equal(
     useAt(50 + POINT_REACH_M + 0.1, 0, {}, rods, () => undefined),
     null,

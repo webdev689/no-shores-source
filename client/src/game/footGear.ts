@@ -61,7 +61,9 @@ export function useAt(
   const near = shape && Math.hypot(shape[0] - x, shape[1] - y) <= SERVED_M;
   const offer = offerAt(here.stations ?? [], x, y) ?? (near ? SHAPE_OFFER : null);
   if (offer) return speak(offer.opens.view, ask) ?? { words: offer.words, run: () => openGearWindow(offer.opens) };
-  const point = puzzlePoints(gear?.quest).find((each) => Math.hypot(each.x - x, each.y - y) <= POINT_REACH_M);
+  // A point already lit is used no more: the room would take it as a wrong one.
+  const reached = (each: { x: number; y: number }) => Math.hypot(each.x - x, each.y - y) <= POINT_REACH_M;
+  const point = puzzlePoints(gear?.quest).find((each) => !each.lit && reached(each));
   if (point) {
     const named = point.name.replace(/^The /, 'the ');
     return { words: `Use ${named}`, run: () => ask({ kind: ASKS.usePoint, column: point.index }) };
@@ -124,8 +126,8 @@ export function groundRings(
     markBeam(out, base, NODE_BEAM, [...colour, lit ? 1 : Math.min(1, beat + 0.25)]);
   }
   // A ward a figure stands for is drawn as that figure (quests/quests.ts); a named one is marked here.
-  const ward = gear?.quest?.ward;
-  if (ward && !goalOf(gear.quest, 'defend')?.who) {
+  const ward = gear?.quest?.claimed === false ? null : gear?.quest?.ward;
+  if (ward && !goalOf(gear?.quest, 'defend')?.who) {
     const base = [ward.x, ward.y, floor(ward.x, ward.y)] as const;
     markRing(out, base, 1.4, 1.6, [...WARD, 0.7]);
     markBeam(out, base, NODE_BEAM, [...WARD, Math.min(1, beat + 0.25)]);

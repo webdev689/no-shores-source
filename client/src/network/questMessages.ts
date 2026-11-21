@@ -20,6 +20,9 @@ export interface QuestState {
   readonly points?: readonly QuestPoint[];
   readonly figures?: readonly QuestFigure[];
   readonly ward?: QuestWard | null;
+  /** Whether the word is on the player's own character: a room holds a starting character until the account's is
+   *  given, and the page shows nothing of it. Left out, as a test's own word leaves it, it is. */
+  readonly claimed?: boolean;
 }
 
 /** A puzzle's point where it stands, and whether it is lit. */
@@ -79,6 +82,7 @@ export function questOf(gear: Gear): QuestState {
       }),
     ),
     ward: wardOf(Array.from(gear.questWardArray() ?? [])),
+    claimed: gear.claimed(),
   };
 }
 

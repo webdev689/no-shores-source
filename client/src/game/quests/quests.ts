@@ -24,7 +24,7 @@ import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
 import { COUNTERS, goalNodes, markedGoal, talkAt, trackedOf } from './questBook.ts';
-import { questActors, wardPlate } from './questFigures.ts';
+import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
 import { QuestWatch } from './questWatch.ts';
 
 /** What the lines are said in: the dialogue box, as the welcome's (welcome.ts WelcomeVoice). */
@@ -53,10 +53,11 @@ export class Quests {
   private here: GearState | null = null;
   private past = false;
   private readonly waiting: string[] = [];
-  private saying = false;
+  /** The scene being said, if one is. */
+  private saying: string | null = null;
   private toasted: { readonly text: string; readonly until: number }[] = [];
-  /** The talk goals asked of the room and said, by quest, task and goal, so a second press says them no more. */
-  private readonly asked = new Set<string>();
+  /** The step's figures, drawn between the room's words on them. */
+  private readonly glides = new FigureGlides();
   /** The forge the figures are drawn by, and the rules' roster their looks are read from, once it has come. */
   private readonly forge: Cards | null;
   roster: readonly FoeType[] = [];
@@ -86,8 +87,14 @@ export class Quests {
     clock: number,
     groundAt: (x: number, y: number) => number | null,
   ): CardAt[] {
-    const actors = questActors(this.here?.quest, this.roster, groundAt);
-    return this.forge ? actorCards(actors, this.forge, eye, clock) : [];
+    const now = this.now();
+    const actors = questActors(this.here?.quest, this.roster, groundAt, (index, figure) => {
+      return this.glides.place(index, now) ?? [figure.x, figure.y, figure.z];
+    });
+    const forge = this.forge;
+    if (!forge) return [];
+    for (const actor of actors) forge.warm(actor.dress, () => FIGURE_MOVES, 0, actor.id);
+    return actorCards(actors, forge, eye, clock);
   }
 
   /** The plate over the ward the step defends in the room the player is in, as the fight's display draws a
@@ -97,10 +104,13 @@ export class Quests {
   }
 
   /** The room's word on the player's gear, wherever they are: none, as a room just joined has given, keeps the last
-   *  for the roads but marks no place, which only that room can say. */
+   *  for the roads but marks no place, which only that room can say; a word not on the player's own character (a
+   *  room's starting character) is none at all. */
   hear(gear: GearState | null | undefined): void {
-    this.here = gear ?? null;
-    if (gear) this.gear = gear;
+    const own = gear && gear.quest?.claimed !== false ? gear : null;
+    if (own !== this.here) this.glides.heard(own?.quest?.figures ?? [], this.now());
+    this.here = own;
+    if (own) this.gear = own;
   }
 
   /** A frame `seconds` long, `past` whether the story and the welcome are past, `held` while a screen stands over the
@@ -108,13 +118,15 @@ export class Quests {
   frame(seconds: number, past: boolean, held: boolean): void {
     this.past = past;
     const now = this.now();
-    const news = this.watch.look(this.gear, past, now);
+    const news = this.watch.look(this.gear, past);
     this.waiting.push(...news.scenes);
+    // A moment's line waiting or being said already is not said twice: the player hears it once for the moment.
+    for (const line of news.moments) if (line !== this.saying && !this.waiting.includes(line)) this.waiting.push(line);
     this.toasted = [
       ...this.toasted.filter((toast) => toast.until > now),
       ...news.toasts.map((text) => ({ text, until: now + TOAST_MS })),
     ];
-    const next = !held && !this.saying ? this.waiting.shift() : undefined;
+    const next = !held && this.saying === null ? this.waiting.shift() : undefined;
     if (next !== undefined) this.say(next);
     this.spoken?.frame(held ? 0 : seconds);
   }
@@ -124,8 +136,8 @@ export class Quests {
     const lines = this.scenes[scene];
     if (!lines) return console.error(`the roads' scene ${scene} is not in houses.json`);
     this.spoken ??= this.voice();
-    this.saying = true;
-    const said = () => void (this.saying = false);
+    this.saying = scene;
+    const said = () => void (this.saying = null);
     this.spoken.play(lines, this.cast, { auto: true }).then(said, (error: unknown) => {
       console.error(`the roads' scene ${scene} could not be played:`, error);
       said();
@@ -154,8 +166,8 @@ export class Quests {
   }
 
   /** What E does at the counter of a station of kind `counter` (its offer's view), while a talk goal of the task names
-   *  it: speaks with its keeper, asking the room (ask 64) and saying the goal's scene. Null otherwise, so the counter
-   *  opens as before. */
+   *  it: speaks with its keeper, asking the room (ask 64); the goal's scene is said as the room meets it. Null
+   *  otherwise, so the counter opens as before. */
   speak(counter: string, ask: (asked: GearAsk) => void): Use | null {
     const state = this.gear?.quest;
     const goal = this.past ? talkAt(state, counter) : null;
@@ -163,28 +175,21 @@ export class Quests {
     if (!state || !goal || column === undefined) return null;
     const keeper = keeperOf(counter);
     const name = (keeper && this.cast.speakers[keeper.speaker]?.name) ?? HARBOURMASTER;
-    const key = `${state.quest} ${state.task} ${counter}`;
-    return {
-      words: `Speak with ${name}`,
-      run: () => {
-        ask({ kind: ASKS.speakWith, column });
-        if (this.asked.has(key)) return;
-        this.asked.add(key);
-        if (goal.scene) this.waiting.push(goal.scene);
-      },
-    };
+    return { words: `Speak with ${name}`, run: () => ask({ kind: ASKS.speakWith, column }) };
   }
 
   /** The quest's mark on the screen through `shot` on a picture `viewport` CSS pixels, standing on `groundAt`'s
-   *  ground, named for its goal, its distance from the player at `from`; none while there is no place to mark. */
+   *  ground, named for its goal in the node `node` the player is in, its distance from the player at `from`; none
+   *  while there is no place to mark. */
   marks(
     shot: Shot,
     viewport: { readonly width: number; readonly height: number },
     from: readonly [number, number],
     groundAt: (x: number, y: number) => number | null,
+    node: string,
   ): ScreenMark[] {
     const where = this.goalAt;
-    const goal = markedGoal(this.gear?.quest);
+    const goal = markedGoal(this.here?.quest, node);
     if (!where || !goal) return [];
     const [x, y] = where;
     const point = [x, y, (groundAt(x, y) ?? shot.eye[2]) + MARK_RISE_M] as const;

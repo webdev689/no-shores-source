@@ -484,7 +484,7 @@ function flyoutNode(
 }
 
 /** The fragments its road's choice may take, while one waits for the Art: each not owned, chosen by a click (an ask
- *  the room answers, owning it); none while no choice waits. */
+ *  the room answers, owning it); none while no choice waits, or once every fragment is owned. */
 function choiceRow(context: MenuContext, art: Art, look: ArtLook, state: ArtsState, rise: number): Node | null {
   const { ui, gear, sizes } = context;
   const waiting = gear.quest?.choices[art.id - 1] ?? 0;
@@ -514,6 +514,8 @@ function choiceRow(context: MenuContext, art: Art, look: ArtLook, state: ArtsSta
       }),
     ];
   });
+  // A choice its Art has no fragment left for is the room's to pay in Aurem: none to offer.
+  if (tiles.length === 0) return null;
   return {
     id: 'arts-choice',
     width: 'grow',

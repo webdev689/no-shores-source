@@ -88,6 +88,7 @@ test('the figures a step walks stand where the room sends them, walking or stand
     { look: lookOf('tobin'), x: 11, y: 21, z: 3, facing: 0.4, state: 4 },
     { look: ROSTER_LOOKS + COLLECTOR.type, x: 0, y: 0, z: 0, facing: 0, state: 2 },
     { look: 999, x: 0, y: 0, z: 0, facing: 0, state: 1 },
+    { look: lookOf('tobin'), x: 50, y: 60, z: 2, facing: 2.5, state: 3 },
   ];
   const actors = questActors(lamp('bring-tobin-moorend', { figures }), [COLLECTOR], ground);
   assert.deepEqual(
@@ -95,12 +96,14 @@ test('the figures a step walks stand where the room sends them, walking or stand
     [
       ['walk', 10, 20, 3, 1.2, 0.85],
       ['idle', 11, 21, 3, 0.4, 0.85],
-      ['idle', 0, 0, 0, 0, undefined],
+      ['walk', 0, 0, 0, 0, undefined],
+      ['idle', 50, 60, 2, 2.5, 0.85],
     ],
-    'walking; held by an ambush; noticed; a look none knows left out',
+    'walking; held by an ambush; a quarry that noticed walking back; a look none knows left out; arrived, standing',
   );
-  assert.equal(new Set(actors.map((actor) => actor.id)).size, 3, 'each its own figure');
+  assert.equal(new Set(actors.map((actor) => actor.id)).size, 4, 'each its own figure');
   assert.deepEqual(questActors(undefined, [], ground), []);
+  assert.deepEqual(questActors(lamp('bring-tobin-moorend', { figures, claimed: false }), [COLLECTOR], ground), []);
 });
 
 test("the ward stands with a plate in the players' green, its name and health; a named one has no figure", () => {
@@ -109,8 +112,9 @@ test("the ward stands with a plate in the players' green, its name and health; a
   const plate = wardPlate(wounded, CAST, ground);
   assert.ok(plate);
   assert.deepEqual(
-    [plate.id, plate.name, plate.ally, plate.view.side, plate.view.health / plate.view.healthMax],
-    [WARD_PLATE_ID, 'The wounded', true, 'players', 0.25],
+    [plate.id, plate.name, plate.ally, plate.held, plate.view.side, plate.view.health / plate.view.healthMax],
+    [WARD_PLATE_ID, 'The wounded', true, true, 'players', 0.25],
+    'held in view as a fought foe’s',
   );
   assert.deepEqual([plate.view.x, plate.view.y, plate.view.z], [40, -2, 5], 'over its mark');
   assert.equal(wardPlate(lamp('hold-saltgrass'), CAST, ground), null, 'none in this room');

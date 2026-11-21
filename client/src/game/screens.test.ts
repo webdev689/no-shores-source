@@ -9,6 +9,7 @@ import { type Face, widthOf } from '../ui/text.ts';
 import { Interface, type UiEvent } from '../ui/ui.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
 import { appearanceRows } from './appearance/appearanceModel.ts';
+import { NO_ART_WORDS } from './characterPage.ts';
 import { levelOf, owns } from './artLevels.ts';
 import { ARTS, artOf, coreChoices } from './artsCards.ts';
 import { HOLD_MS } from './gearHold.ts';
@@ -295,4 +296,25 @@ test("a fragment choice waiting is offered on the Art's screen: its fragments no
   none.open('character');
   none.click('art-diamond');
   assert.equal(none.ui.boxOf('arts-choice'), null, 'none waiting, none offered');
+  const every = menu({ ...sample, standing: { ...standing, artOwned: [0b11_1111] }, quest: choosing });
+  every.open('character');
+  every.click('art-diamond');
+  assert.equal(every.ui.boxOf('arts-choice'), null, 'every fragment owned: the room pays the choice in Aurem');
+});
+
+test("with no Art worn, the Character page says a house's road gives one, and the Arts' screen shows all three locked", () => {
+  const sample = sampleGear();
+  const gear = { ...sample, arts: { ...sample.arts!, art: 0, earned: [0, 0, 0] } };
+  const { ui, click, open, asked, labelOf } = menu(gear);
+  open('character');
+  assert.equal(labelOf('art-diamond'), `Art: none. ${NO_ART_WORDS}`);
+  assert.equal(NO_ART_WORDS, 'Pledge to a house; its road gives its Art.');
+  click('art-diamond');
+  assert.ok(ui.boxOf('arts-page'), "the Arts' screen opens");
+  for (const art of ARTS) {
+    assert.match(labelOf(`art-${art.id}`) ?? '', /not earned\. Earned on the .+ road\.$/, `${art.name} locked`);
+    assert.doesNotMatch(labelOf(`art-${art.id}`) ?? '', /worn/, 'none worn');
+  }
+  click('art-1');
+  assert.deepEqual(asked, [], 'none may be worn');
 });

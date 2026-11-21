@@ -156,7 +156,8 @@ function picksNode(context: MenuContext, art: Art, look: ArtLook, ask: ArtsState
     label: 'Arts',
     children: ARTS.map((each): Node => {
       const id = `art-${each.id}`;
-      const worn = each.id === art.id;
+      // The Art shown is the first while none is worn, and none is marked worn.
+      const worn = each.id === gear.arts?.art;
       const level = levelOf(gear.standing, each.id).level;
       const tone = lookOf(each, look.wide, look.short).tone;
       const earned = (earnedOf(gear.arts, each.id) & 1) !== 0;

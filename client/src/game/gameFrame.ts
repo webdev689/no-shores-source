@@ -202,7 +202,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.through = paused || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
     hud.hints(shown.hints);
-    hud.marks(quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt));
+    hud.marks(quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     hud.tasks.show(quests.tracked);
     hud.toast(...quests.toasts);
     hideSeaHud(hud);
