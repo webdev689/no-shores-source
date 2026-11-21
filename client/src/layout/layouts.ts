@@ -48,6 +48,8 @@ export interface LaidSite {
   readonly at: Point;
   readonly radius: number;
   readonly holds?: string;
+  /** Where a resource's node stands: before its dressing, toward its path. */
+  readonly node?: Point;
 }
 
 /** A run breaking off a patrol area, as the layout crate writes it: its kind, its line and its beats. */
@@ -111,7 +113,9 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
       0, 0,
     ] as const);
     const centre = [sum[0] / laid.ring.length, sum[1] / laid.ring.length] as const;
-    const resources = laid.sites.filter((site) => site.kind === 'resource').map(({ at, holds }) => ({ at, holds }));
+    const resources = laid.sites
+      .filter((site) => site.kind === 'resource')
+      .map(({ at, node, holds }) => ({ at: node ?? at, holds }));
     return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources };
   });
 }

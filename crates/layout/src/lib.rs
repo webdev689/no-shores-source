@@ -316,14 +316,17 @@ pub fn plan(
             at: beat.at,
             radius: beat.radius,
             holds: None,
+            node: None,
         }));
         sites.extend(end.map(|end| sites::Site {
             kind: sites::SiteKind::Objective,
             at: end.at,
             radius: end.radius,
             holds: named.clone(),
+            node: None,
         }));
-        sites.push(sites::Site { kind: sites::SiteKind::Door, at: run.door, radius: 3.0, holds: named });
+        let door = sites::Site { kind: sites::SiteKind::Door, at: run.door, radius: 3.0, holds: named, node: None };
+        sites.push(door);
     }
     // What comes after keeps off the ways, a run's on past its end beat's middle to its door too.
     let ways = ways_of(&paths, &runs);

@@ -164,7 +164,7 @@ pub fn nodes_of(
         );
         let resources = laid.map_or_else(Vec::new, |layout| {
             let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource);
-            places.map(|site| site.at).collect()
+            places.map(|site| site.node.unwrap_or(site.at)).collect()
         });
         NodeFile { resources, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
@@ -276,7 +276,14 @@ mod tests {
         // Its room's nodes stand at its layout's resource places, in their order.
         let glade = laid.iter().find(|each| each.id == "glade").expect("laid");
         let resource = |site: &&layout::sites::Site| site.kind == layout::sites::SiteKind::Resource;
-        assert_eq!(node.resources, glade.sites.iter().filter(resource).map(|site| site.at).collect::<Vec<_>>());
+        let nodes: Vec<_> = glade.sites.iter().filter(resource).filter_map(|site| site.node).collect();
+        assert!(!nodes.is_empty(), "the glade lays resources");
+        for site in glade.sites.iter().filter(resource) {
+            let [x, y] = site.node.expect("a resource's node");
+            let off = (x - site.at[0]).hypot(y - site.at[1]);
+            assert!((off - layout::sites::NODE_FRONT_M).abs() < 1e-6, "before its dressing: {off}");
+        }
+        assert_eq!(node.resources, nodes, "each where its node stands, before its dressing");
     }
 
     #[test]

@@ -40,6 +40,9 @@ pub struct Site {
     pub radius: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub holds: Option<String>,
+    /// Where a resource's node stands: `NODE_FRONT_M` before its dressing, toward the path it lies off.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node: Option<[f64; 2]>,
 }
 
 /// How far apart resource nodes stand along the paths, metres, and how far off a path they lie at most.
@@ -47,6 +50,9 @@ const RESOURCE_EVERY_M: f64 = 180.0;
 /// The most resource nodes a layout holds.
 const RESOURCE_MOST: usize = 16;
 const RESOURCE_OFF_M: f64 = 55.0;
+/// How far before its dressing, toward its path, a resource's node stands, metres: past the dressing's widest pieces
+/// (`marks`), so its picture stands clear of them.
+pub const NODE_FRONT_M: f64 = 5.0;
 
 /// Whether a point is clear to stand a site on: walkable land not under a building or within a metre of one.
 fn clear(field: &Field, seating: &Seating, at: [f64; 2]) -> bool {
@@ -73,7 +79,8 @@ fn off_paths(paths: &[Path], at: [f64; 2]) -> bool {
 #[must_use]
 pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec<Site> {
     let mut sites = Vec::new();
-    let site = |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site { kind, at, radius, holds };
+    let site =
+        |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site { kind, at, radius, holds, node: None };
     for (number, area) in areas.iter().enumerate() {
         match area.kind {
             AreaKind::Landing | AreaKind::Entrance => sites.push(site(SiteKind::Landing, area.at, area.radius, None)),
@@ -136,7 +143,10 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, se
                 && off_paths(paths, at)
                 && areas.iter().all(|area| distance(area.at, at) > area.radius * 0.6)
             {
-                sites.push(site(SiteKind::Resource, at, 2.0, Some(resource_at(field, at).to_owned())));
+                let back = NODE_FRONT_M / off;
+                let node = [at[0] + (pair[1][0] - at[0]) * back, at[1] + (pair[1][1] - at[1]) * back];
+                let holds = Some(resource_at(field, at).to_owned());
+                sites.push(Site { node: Some(node), ..site(SiteKind::Resource, at, 2.0, holds) });
             }
         }
     }
