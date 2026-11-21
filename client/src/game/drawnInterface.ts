@@ -78,6 +78,7 @@ export class DrawnInterface {
   }
 
   private get view() {
-    return { width: this.canvas.width, height: this.canvas.height, scale: uiScale(devicePixelRatio) };
+    const ratio = devicePixelRatio;
+    return { width: this.canvas.width, height: this.canvas.height, scale: uiScale(ratio), ratio };
   }
 }

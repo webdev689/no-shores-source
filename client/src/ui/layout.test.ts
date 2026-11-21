@@ -215,3 +215,86 @@ test("a share of a row's room is held to its least and most, as a column's is", 
   assert.equal(boxOf(laid, 'capped')?.width, 340);
   assert.equal(boxOf(laid, 'floored')?.width, 60);
 });
+
+test('a span keeps its colour after a leading space and after two spaces at a break', () => {
+  const [red, green] = ['#ff0000', '#00ff00'];
+  const lead = lay({
+    id: 't',
+    text: {
+      words: [
+        { words: ' ', colour: red },
+        { words: 'Gold', colour: green },
+      ],
+    },
+  });
+  assert.deepEqual(lead.find((each) => each.node.id === 't')?.lines, [
+    [
+      { words: ' ', colour: red },
+      { words: 'Gold', colour: green },
+    ],
+  ]);
+  const broken = lay({
+    width: widthOf(face, 'ab', 1),
+    direction: 'column',
+    children: [
+      {
+        id: 't',
+        text: {
+          words: [
+            { words: 'ab  ', colour: red },
+            { words: 'cd', colour: green },
+          ],
+        },
+      },
+    ],
+  });
+  assert.deepEqual(broken.find((each) => each.node.id === 't')?.lines, [
+    [{ words: 'ab', colour: red }],
+    [{ words: 'cd', colour: green }],
+  ]);
+});
+
+test('words cut short with an ellipsis stand on one line, their newlines spaces', () => {
+  const laid = lay({ id: 't', width: 200, text: { words: 'one\ntwo\nthree', ellipsis: true } });
+  const text = laid.find((each) => each.node.id === 't');
+  assert.equal(text?.lines.length, 1);
+  assert.equal(text?.box.height, lineHeight(1));
+});
+
+test('room is shared out whole among many grown children of many sizes, and never past a most', () => {
+  const kids: Node[] = Array.from({ length: 100 }, (_unused, index) => ({
+    id: `k${index}`,
+    width: 'grow',
+    minWidth: index + 1,
+    height: 5,
+  }));
+  const grown = lay({ width: 20000, children: kids });
+  const total = kids.reduce((sum, kid) => sum + (boxOf(grown, kid.id ?? '')?.width ?? 0), 0);
+  assert.equal(total, 20000, 'all the room handed out');
+  const shrunk = lay({
+    width: 4000,
+    children: Array.from({ length: 100 }, (_unused, index) => ({
+      id: `s${index}`,
+      text: { words: 'x'.repeat(index + 1), ellipsis: true },
+    })),
+  });
+  const used = Array.from({ length: 100 }, (_unused, index) => boxOf(shrunk, `s${index}`)?.width ?? 0);
+  assert.equal(
+    used.reduce((sum, width) => sum + width, 0),
+    4000,
+    'all the room taken back',
+  );
+  const capped = lay({
+    width: 31,
+    children: [
+      { id: 'a', width: 'grow', maxWidth: 10, height: 10 },
+      { id: 'b', width: 'grow', height: 10 },
+      { id: 'c', width: 'grow', height: 10 },
+    ],
+  });
+  assert.deepEqual(
+    ['a', 'b', 'c'].map((id) => boxOf(capped, id)?.width),
+    [10, 11, 10],
+    'the spare pixel goes where there is room for it',
+  );
+});

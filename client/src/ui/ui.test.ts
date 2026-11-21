@@ -4,8 +4,10 @@ import { glyphDrawn } from './glyphs.ts';
 import type { Node } from './node.ts';
 import { QuadList } from './quads.ts';
 import { type Face, widthOf } from './text.ts';
+import { Stack } from './stack.ts';
 import { Interface, type UiEvent } from './ui.ts';
-import type { UiRenderer } from './uiRenderer.ts';
+import { FAKE_FACE, fakeInterface } from './uiForTests.ts';
+import { type UiRenderer, uiScale } from './uiRenderer.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
 const face: Face = { glyph: () => block };
@@ -280,4 +282,253 @@ test('the interface as last laid answers whether it takes the pointer at a point
   step(ui, presses());
   assert.equal(ui.takes(15, 15), true, 'on a press');
   assert.equal(ui.takes(300, 250), false, 'the empty view is the world’s');
+});
+
+test('at a ratio that is not whole, the page’s CSS pixels reach what is drawn under them, and typing’s box is the page’s', () => {
+  for (const ratio of [1.25, 1.5, 1.75]) {
+    const scale = uiScale(ratio);
+    const device = { width: Math.round(1000 * ratio), height: Math.round(600 * ratio) };
+    const { ui, step } = fakeInterface(400, 300);
+    const view = { ...device, scale, ratio };
+    const root: Node = {
+      width: 'grow',
+      height: 'grow',
+      alignX: 'end',
+      children: [
+        { id: 'far', press: true, role: 'button', width: 100, height: 40 },
+        { id: 'list', scroll: true, direction: 'column', width: 50, height: 40, children: [{ height: 400 }] },
+        { id: 'typed', field: {}, width: 100, height: 20 },
+      ],
+    };
+    const frame = (events: UiEvent[] = []) => {
+      ui.frame(view, events, 1 / 60);
+      ui.draw(root);
+    };
+    frame();
+    // Where each is drawn on the page, in its CSS pixels: device pixels over the ratio.
+    const onPage = (id: string) => {
+      const box = ui.boxOf(id);
+      assert.ok(box);
+      return { x: ((box.x + box.width / 2) * scale) / ratio, y: ((box.y + box.height / 2) * scale) / ratio };
+    };
+    const far = onPage('far');
+    frame([
+      { kind: 'down', ...far, button: 0 },
+      { kind: 'up', ...far, button: 0 },
+    ]);
+    assert.equal(ui.clicked('far'), true, `clicked at ${ratio}`);
+    assert.equal(ui.takes(far.x, far.y), true);
+    frame([{ kind: 'wheel', ...onPage('list'), dy: 30 }]);
+    assert.equal(ui.tookWheel, true, `the list under the wheel at ${ratio}`);
+    const typed = onPage('typed');
+    frame([
+      { kind: 'down', ...typed, button: 0 },
+      { kind: 'up', ...typed, button: 0 },
+    ]);
+    const box = ui.typing?.box;
+    const laidBox = ui.boxOf('typed');
+    assert.ok(box && laidBox);
+    assert.equal(box.x, (laidBox.x * scale) / ratio, 'the page is handed its own pixels');
+    assert.equal(box.width, (laidBox.width * scale) / ratio);
+    void step;
+  }
+});
+
+/** A world press under a modal window of two presses, its scrim taking the pointer. */
+const underModal = (stack: Stack): void => {
+  stack.add(() => ({ children: [{ id: 'world', press: true, width: 60, height: 20 }] }));
+  stack.add(() => ({
+    width: 'grow',
+    height: 'grow',
+    solid: true,
+    alignX: 'center',
+    alignY: 'center',
+    children: [
+      {
+        id: 'window',
+        modal: true,
+        direction: 'column',
+        children: [
+          { id: 'ok', press: true, width: 60, height: 20 },
+          { id: 'cancel', press: true, width: 60, height: 20 },
+        ],
+      },
+    ],
+  }));
+};
+
+test('while a modal window is laid, Tab, arrows and the pad walk only what it holds, and Enter presses nothing under it', () => {
+  const { ui, step } = fakeInterface(400, 300);
+  const stack = new Stack();
+  underModal(stack);
+  const build = () => stack.node(ui);
+  step(build);
+  ui.focusOn('world');
+  step(build);
+  assert.equal(ui.focusedId, null, 'focus under a modal window is let go');
+  const walked: string[] = [];
+  for (const event of [
+    { kind: 'key', key: 'Tab' },
+    { kind: 'key', key: 'Tab' },
+    { kind: 'key', key: 'Tab', shift: true },
+    { kind: 'key', key: 'Tab', shift: true },
+    { kind: 'key', key: 'ArrowUp' },
+    { kind: 'pad', button: 'up' },
+    { kind: 'pad', button: 'left' },
+  ] as const) {
+    step(build, [event]);
+    walked.push(String(ui.focusedId));
+  }
+  assert.ok(!walked.includes('world'), `walked ${walked.join(', ')}`);
+  ui.focusOn('world');
+  ui.frame({ width: 400, height: 300, scale: 1 }, [{ kind: 'key', key: 'Enter' }], 1 / 60);
+  assert.equal(ui.clicked('world'), false, 'Enter presses nothing under the window');
+  ui.draw(build());
+});
+
+test('a click in a hidden field puts the caret among the stars drawn, never inside a pair, and the browser’s edit keeps the caret within the words', () => {
+  const narrow = glyphDrawn({ rows: ['#'], advance: 300 });
+  const wide = glyphDrawn({ rows: ['###'], advance: 1200 });
+  const faced: Face = { glyph: (code) => (code === 87 ? wide : narrow) };
+  const ui = new Interface({
+    ...renderer(),
+    face: faced,
+    measure: (words: string) => widthOf(faced, words, 1),
+  } as unknown as UiRenderer);
+  ui.speak = () => undefined;
+  const root: Node = { id: 'pw', field: { secret: true }, width: 300, height: 20 };
+  step(ui, root);
+  ui.setFieldText('pw', 'WWWWWW');
+  step(ui, root);
+  const x = widthOf(faced, '***', 1) + 1;
+  step(ui, root, [
+    { kind: 'down', x, y: 10, button: 0 },
+    { kind: 'up', x, y: 10, button: 0 },
+  ]);
+  assert.equal(ui.typing?.state.caret, 3, 'after the third star');
+
+  const { ui: plain, step: plainStep } = fakeInterface(400, 300);
+  const field: Node = { id: 'f', field: { most: 6 }, width: 300, height: 20 };
+  plainStep(field);
+  plain.setFieldText('f', '😀😀');
+  plainStep(field);
+  const half = widthOf(FAKE_FACE, '\ud83d', 1) - 2;
+  plainStep(field, [
+    { kind: 'down', x: half, y: 10, button: 0 },
+    { kind: 'up', x: half, y: 10, button: 0 },
+  ]);
+  assert.ok([0, 2].includes(plain.typing?.state.caret ?? -1), 'the caret stands beside the pair, not in it');
+  plainStep(field, [{ kind: 'edit', from: 4, to: 4, text: 'abcd', caret: 8, anchor: 8 }]);
+  assert.deepEqual(plain.typing?.state, { text: '😀😀ab', caret: 6, anchor: 6 }, 'the caret held to the words kept');
+});
+
+test('focus by keys scrolls every list that holds it into sight, the outer as well as the inner', () => {
+  const { ui, step } = fakeInterface(400, 300);
+  const inner: Node = {
+    id: 'inner',
+    direction: 'column',
+    scroll: true,
+    height: 40,
+    children: Array.from({ length: 6 }, (_unused, index): Node => ({
+      id: `in${index}`,
+      press: true,
+      width: 60,
+      height: 20,
+    })),
+  };
+  const outer: Node = {
+    id: 'outer',
+    direction: 'column',
+    scroll: true,
+    height: 60,
+    children: [{ id: 'top', press: true, width: 60, height: 60 }, { height: 100 }, inner],
+  };
+  step(outer);
+  step(outer, [{ kind: 'key', key: 'Tab' }]);
+  step(outer, [{ kind: 'key', key: 'Tab' }]);
+  step(outer);
+  const focused = ui.boxOf(String(ui.focusedId));
+  const shown = ui.boxOf('outer');
+  assert.ok(focused && shown);
+  assert.ok(focused.y >= shown.y && focused.y + focused.height <= shown.y + shown.height, 'in sight');
+});
+
+test('a press held as it goes is let go', () => {
+  const { ui, step } = fakeInterface(400, 300);
+  const shown: Node = { children: [{ id: 'gone', press: true, width: 50, height: 20 }] };
+  step(shown);
+  step(shown, [{ kind: 'down', x: 5, y: 5, button: 0 }]);
+  assert.equal(ui.pressing('gone'), true);
+  step({ children: [] });
+  assert.equal(ui.pressing('gone'), false);
+  assert.equal(ui.drag('gone'), null);
+});
+
+test('what the interface keeps by id goes with the ids, and a hidden field’s words go the frame it does', () => {
+  const { ui, step } = fakeInterface(400, 300);
+  for (let index = 0; index < 50; index++) {
+    const root: Node = {
+      children: [
+        { id: `list${index}`, scroll: true, direction: 'column', height: 10, children: [{ height: 50 }] },
+        { id: `field${index}`, field: {}, width: 50, height: 20 },
+      ],
+    };
+    ui.fieldText(`field${index}`);
+    step(root);
+  }
+  step({ children: [] });
+  const kept = ui as unknown as Record<'scrolls' | 'fields' | 'fieldScroll', Map<string, unknown>>;
+  assert.deepEqual([kept.scrolls.size, kept.fields.size, kept.fieldScroll.size], [0, 0, 0]);
+  const password: Node = { id: 'pw', field: { secret: true }, width: 200, height: 20 };
+  step(password);
+  step(password, [
+    { kind: 'down', x: 5, y: 5, button: 0 },
+    { kind: 'up', x: 5, y: 5, button: 0 },
+  ]);
+  step(password, [{ kind: 'text', text: 'hunter2' }]);
+  step({ children: [] });
+  assert.equal(kept.fields.has('pw'), false, 'gone with its field');
+  const asked: Node = { children: [] };
+  ui.setFieldText('later', 'kept');
+  step(asked);
+  assert.equal(ui.fieldText('later'), 'kept', 'words set before their field is laid wait for it a frame');
+});
+
+test('focus given by a screen says its label, once', () => {
+  const ui = new Interface(renderer());
+  const heard: string[] = [];
+  ui.speak = (words) => heard.push(words);
+  step(ui, presses());
+  ui.focusOn('one');
+  ui.focusOn('one');
+  step(ui, presses());
+  step(ui, presses());
+  assert.deepEqual(heard, ['One']);
+});
+
+test('a field takes the mouse as a page’s does: a drag selects, Shift extends, a double click takes a word', () => {
+  const { ui, step } = fakeInterface(400, 300);
+  const field: Node = { id: 'f', field: {}, width: 300, height: 20 };
+  step(field);
+  ui.setFieldText('f', 'one two three');
+  step(field);
+  const xAt = (place: number) => widthOf(FAKE_FACE, 'one two three'.slice(0, place), 1);
+  step(field, [
+    { kind: 'down', x: xAt(4), y: 10, button: 0 },
+    { kind: 'pointer', x: xAt(7), y: 10 },
+  ]);
+  assert.deepEqual(ui.typing?.state, { text: 'one two three', caret: 7, anchor: 4 }, 'dragged over "two"');
+  step(field, [{ kind: 'up', x: xAt(7), y: 10, button: 0 }]);
+  step(field, [{ kind: 'pointer', x: xAt(1), y: 10 }]);
+  assert.equal(ui.typing?.state.caret, 7, 'let go, the pointer moves no caret');
+  step(field, [{ kind: 'down', x: xAt(13), y: 10, button: 0, shift: true }]);
+  assert.deepEqual(ui.typing?.state, { text: 'one two three', caret: 13, anchor: 4 }, 'Shift extends');
+  step(field, [{ kind: 'up', x: xAt(13), y: 10, button: 0 }], 1);
+  step(field, [
+    { kind: 'down', x: xAt(9), y: 10, button: 0 },
+    { kind: 'up', x: xAt(9), y: 10, button: 0 },
+    { kind: 'down', x: xAt(9), y: 10, button: 0 },
+    { kind: 'up', x: xAt(9), y: 10, button: 0 },
+  ]);
+  assert.deepEqual(ui.typing?.state, { text: 'one two three', caret: 13, anchor: 8 }, 'the word clicked twice');
 });

@@ -30,6 +30,8 @@ export class UiRenderer {
   /** Whether the atlas had no room left this frame: it is laid afresh once the frame is drawn. */
   private full = false;
   private instances: GPUBuffer | null = null;
+  /** Pictures already said to be too large to draw, so each is said once. */
+  private readonly tooLarge = new Set<string>();
 
   constructor(gpu: Gpu, face: Face) {
     this.gpu = gpu;
@@ -215,10 +217,22 @@ export class UiRenderer {
     }
   }
 
-  /** `picture` over `box` (device pixels) inside `clip`, faded by `fade`; nothing until its pixels have come. */
+  /** `picture` over `box` (device pixels) inside `clip`, faded by `fade`; nothing until its pixels have come. One
+   *  larger than a layer of the atlas is laid there scaled down to fit and stretched back over its box; one whose own
+   *  texels are given (pixel art, raw pixels) cannot be scaled, and is said once and not drawn. */
   picture(picture: Picture, box: Box, clip: Box = UNCLIPPED, fade = 1): void {
-    const width = picture.pixel?.width ?? Math.round(box.width);
-    const height = picture.pixel?.height ?? Math.round(box.height);
+    let width = picture.pixel?.width ?? Math.round(box.width);
+    let height = picture.pixel?.height ?? Math.round(box.height);
+    const most = ATLAS_SIZE - 1;
+    if (width > most || height > most) {
+      if (picture.pixel || 'pixels' in picture.source) {
+        if (!this.tooLarge.has(picture.key)) console.warn(`a picture larger than the atlas holds: ${picture.key}`);
+        this.tooLarge.add(picture.key);
+        return;
+      }
+      const fit = most / Math.max(width, height);
+      [width, height] = [Math.max(1, Math.floor(width * fit)), Math.max(1, Math.floor(height * fit))];
+    }
     const texels = this.pictures.texels(picture, width, height);
     if (!texels) return;
     const [red, green, blue, alpha] = picture.tint ? colourOf(picture.tint) : [1, 1, 1, 1];

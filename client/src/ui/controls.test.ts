@@ -163,3 +163,73 @@ test('a slider whose low end has more decimals than its step can still stand at 
   ui.draw(build());
   assert.equal(value, 0.25);
 });
+
+test("the pad's cross up and down leaves a slider, its left and right step it, and each step says the value", () => {
+  const ui = new Interface(renderer());
+  const heard: string[] = [];
+  ui.speak = (words) => heard.push(words);
+  let volume = 50;
+  const build = (): Node => {
+    const made = slider(ui, 'volume', volume, { low: 0, high: 100, step: 5, width: 200 });
+    volume = made.value;
+    return {
+      direction: 'column',
+      gap: 10,
+      children: [
+        { id: 'above', press: true, width: 200, height: 20 },
+        made.node,
+        { id: 'below', press: true, width: 200, height: 20 },
+      ],
+    };
+  };
+  const step = (events: UiEvent[] = []) => {
+    ui.frame(VIEW, events, 0.016);
+    ui.draw(build());
+  };
+  step();
+  ui.focusOn('volume');
+  step();
+  heard.length = 0;
+  step([{ kind: 'pad', button: 'right' }]);
+  step([{ kind: 'key', key: 'ArrowLeft' }]);
+  step([{ kind: 'key', key: 'ArrowLeft' }]);
+  assert.equal(volume, 45);
+  assert.deepEqual(heard, ['55', '50', '45'], 'each step said');
+  step([{ kind: 'pad', button: 'down' }]);
+  assert.equal(ui.focusedId, 'below');
+  step([{ kind: 'pad', button: 'up' }]);
+  step([{ kind: 'pad', button: 'up' }]);
+  assert.equal(ui.focusedId, 'above', 'up through the slider and past it');
+  assert.equal(volume, 45, 'the cross up and down moved no value');
+});
+
+test("a choice's open list shuts on a press anywhere but on it", () => {
+  const ui = new Interface(renderer());
+  let chosen = 'a';
+  const build = (): Node => {
+    const made = choice(ui, 'pick', chosen, [
+      { value: 'a', words: 'Alpha' },
+      { value: 'b', words: 'Beta' },
+    ]);
+    chosen = made.chosen;
+    return {
+      padding: 10,
+      direction: 'column',
+      children: [made.node, { id: 'other', press: true, width: 50, height: 20 }],
+    };
+  };
+  const step = (events: UiEvent[] = []) => {
+    ui.frame(VIEW, events, 0.016);
+    ui.draw(build());
+  };
+  step();
+  step(click(15, 15));
+  assert.ok(ui.boxOf('pick:list'), 'open');
+  const list = ui.boxOf('pick:list');
+  assert.ok(list);
+  step([{ kind: 'wheel', x: list.x + 2, y: list.y + 2, dy: 5 }]);
+  assert.ok(ui.boxOf('pick:list'), 'the wheel over it keeps it open');
+  step(click(390, 290));
+  assert.equal(ui.boxOf('pick:list'), null, 'a press on the empty ground shut it');
+  assert.equal(chosen, 'a');
+});

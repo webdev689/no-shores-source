@@ -1,9 +1,9 @@
 // The page's side of the interface's input: what the pointer, wheel, keys, pad and typing do on the canvas, gathered
 // as plain events (`ui.ts`) for the interface to hear each frame, wherever it runs. Typing goes through the browser's
-// `EditContext` where it has one (Chromium), so composition and its keyboards work on the canvas; elsewhere through
-// keys and paste. What the interface is typing in is handed back each frame (`sync`), so the browser's typing starts
+// `EditContext` where it has one (Chromium), so composition and its keyboards work on the canvas; elsewhere, and for a
+// hidden field (whose words are never handed to the browser), through keys and paste. What the interface is typing in is handed back each frame (`sync`), so the browser's typing starts
 // from the same words, caret and place.
-import type { Typing, UiEvent } from './ui.ts';
+import type { Typing, UiEvent } from './uiEvent.ts';
 
 type PadButton = 'up' | 'down' | 'left' | 'right' | 'accept' | 'back';
 
@@ -100,7 +100,8 @@ export class CanvasEvents implements PageEvents {
       (event) => {
         if (!locked()) {
           const touch = event.pointerType === 'touch' || event.pointerType === 'pen';
-          this.events.push({ kind: 'down', ...(this.pointer = placed(event)), button: event.button, touch });
+          const where = (this.pointer = placed(event));
+          this.events.push({ kind: 'down', ...where, button: event.button, touch, shift: event.shiftKey });
         }
       },
       first,
@@ -119,15 +120,19 @@ export class CanvasEvents implements PageEvents {
       'keydown',
       (event) => {
         const typingHere = this.typing !== null;
-        const ctrl = event.ctrlKey || event.metaKey;
+        // AltGr is Ctrl and Alt together, and types a character (an @ on a German keyboard): it is no Ctrl.
+        const ctrl = (event.ctrlKey && !event.altKey) || event.metaKey;
         // Keys the browser's typing does itself; and, without it (or while the drawn keys hold the field), a
         // character typed is words.
-        const browsers = typingHere && this.context !== null && !this.typing?.onScreen;
+        const browsers = this.browserTypes();
         const typed = browsers && (event.key.length === 1 || /^(Backspace|Delete)$/.test(event.key));
         this.events.push({ kind: 'key', key: event.key, shift: event.shiftKey, ctrl, typed });
-        if (typingHere && !browsers && event.key.length === 1 && !ctrl)
-          this.events.push({ kind: 'text', text: event.key });
-        if (typingHere && (event.key === 'Tab' || event.key === 'Backspace' || event.key === ' '))
+        const words = typingHere && !browsers && event.key.length === 1 && !ctrl;
+        if (words) this.events.push({ kind: 'text', text: event.key });
+        // Tab moves the interface's focus, not the page's; without the browser's typing, a key that types words, or
+        // Backspace, does nothing of the page's own (Firefox's quick find takes ' and /). The browser's typing does
+        // Space and Backspace itself, so they stay its own there.
+        if (typingHere && (event.key === 'Tab' || words || (!browsers && event.key === 'Backspace')))
           event.preventDefault();
         // Heard before any page's own listener, so one that keeps a key from the game keeps it from no drawn screen.
       },
@@ -170,6 +175,13 @@ export class CanvasEvents implements PageEvents {
     return this.typing !== null;
   }
 
+  /** Whether the browser's own typing types the field: where it has `EditContext`, never for the drawn keys or for a
+   *  hidden field. */
+  private browserTypes(): boolean {
+    const typing = this.typing;
+    return typing !== null && this.context !== null && !typing.onScreen && !typing.secret;
+  }
+
   /** The events since the last call, with the pad's presses read now. */
   take(): UiEvent[] {
     const now = performance.now();
@@ -188,8 +200,9 @@ export class CanvasEvents implements PageEvents {
       this.canvas.style.cursor = cursor;
     const context = this.context;
     if (!context) return;
-    // The drawn keys type for a touch or the pad: the browser's own typing, and its keyboard, stay away.
-    if (!typing || typing.onScreen) {
+    // The drawn keys type for a touch or the pad, and a hidden field's words stay out of the browser: its own typing,
+    // and its keyboard, stay away.
+    if (!this.browserTypes()) {
       if (this.canvas.editContext) this.canvas.editContext = null;
       return;
     }
@@ -197,6 +210,7 @@ export class CanvasEvents implements PageEvents {
       this.canvas.editContext = context;
       this.canvas.focus();
     }
+    if (!typing) return;
     const { text, caret, anchor } = typing.state;
     if (context.text !== text) context.updateText(0, context.text.length, text);
     if (context.selectionStart !== anchor || context.selectionEnd !== caret) context.updateSelection(anchor, caret);

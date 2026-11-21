@@ -17,6 +17,10 @@ const ROWS: readonly (readonly string[])[] = [
   ['@', '_', '!', '?', 'space', '#', '&', 'done'],
 ];
 
+/** The keys' window's padding and the room between keys, CSS pixels. */
+const PADDING = 8;
+const GAP = 4;
+
 /** What a key that is not a character says, on it and to a screen reader. */
 const NAMES: Readonly<Record<string, string>> = { shift: 'Shift', back: 'Back', space: 'Space', done: 'Done' };
 
@@ -67,6 +71,10 @@ export function pressed(
 export function screenKeysNode(keys: ScreenKeys, view: Box, over: Box | null, padDriven: boolean): Node {
   const low = over !== null && over.y + over.height / 2 > view.height / 2;
   const width = Math.min(view.width - 16, 560);
+  // A letter takes a tenth of a row, as the rows' letters stand in even columns; Space grows into what its row leaves,
+  // and Shift and Back share what theirs does.
+  const columns = Math.max(...ROWS.map((row) => row.length));
+  const letter = Math.max(1, Math.floor((width - 2 * PADDING - (columns - 1) * GAP) / columns));
   const keyNode = (key: string, rowIndex: number, column: number): Child => {
     const named = NAMES[key];
     const lit = padDriven && rowIndex === keys.row && column === keys.column;
@@ -77,7 +85,7 @@ export function screenKeysNode(keys: ScreenKeys, view: Box, over: Box | null, pa
       label: keyLabel(key, keys.shift),
       role: key === 'done' ? 'primary' : 'button',
       state: lit ? 'hover' : key === 'shift' && keys.shift ? 'active' : undefined,
-      width: key === 'space' ? 'grow' : named ? 64 : 'grow',
+      width: key === 'done' ? 64 : named ? 'grow' : letter,
       height: 34,
       alignX: 'center',
       alignY: 'center',
@@ -93,13 +101,13 @@ export function screenKeysNode(keys: ScreenKeys, view: Box, over: Box | null, pa
     id: 'screen-keys',
     role: 'window',
     direction: 'column',
-    gap: 4,
-    padding: 8,
+    gap: GAP,
+    padding: PADDING,
     width,
     float: { to: 'screen', anchor: [0.5, low ? 0 : 1], at: [0.5, low ? 0 : 1], y: low ? 8 : -8, z: 90 },
     children: ROWS.map((row, rowIndex) => ({
       width: 'grow',
-      gap: 4,
+      gap: GAP,
       children: row.map((key, column) => keyNode(key, rowIndex, column)),
     })),
   };

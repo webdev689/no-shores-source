@@ -139,6 +139,9 @@ export interface Node {
   /** Lets the pointer through, it and all it holds, to what lies under it, as words laid over the world do: nothing
    *  in it is pressed, hovered or scrolled. */
   readonly through?: boolean;
+  /** While it is laid, the keys and the pad are its alone, as an open dialog's are: focus moves only among what acts
+   *  inside it (the topmost such node, where several are laid), and Enter, Space and A press nothing outside it. */
+  readonly modal?: boolean;
   readonly draw?: Drawing;
 }
 

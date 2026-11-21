@@ -68,3 +68,26 @@ test('lines set taller than the face are laid that tall, their words in the midd
   assert.equal(tall.height, 2 * 33);
   assert.equal((tall.top ?? 0) - (plain.top ?? 0), 3, 'the 7 px more shared, the odd one under');
 });
+
+test('what a scrolled list holds out of its sight is not drawn', () => {
+  const ui = renderer();
+  const rows = (count: number) =>
+    Array.from({ length: count }, (_unused, index) => ({ height: 20, fill: '#fff', text: { words: `row ${index}` } }));
+  const draw = (count: number) => {
+    ui.quads.clear();
+    const laid = layout(
+      { id: 'list', scroll: true, direction: 'column', height: 40, width: 100, children: rows(count) },
+      { x: 0, y: 0, width: 400, height: 300 },
+      { face, scrollOf: () => 0 },
+    );
+    drawLaid(ui, laid, 1, {
+      clock: 0,
+      field: () => null,
+      focused: () => false,
+      state: () => 'rest',
+      fieldScroll: new Map(),
+    });
+    return ui.quads.count;
+  };
+  assert.equal(draw(100), draw(3), 'the two rows in sight and the next, whose shadow could reach in; no more');
+});

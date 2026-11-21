@@ -1,7 +1,7 @@
 // A picture of the interface for checking it headless, with nothing else drawn: a node tree built by `build` drawn
 // through the real renderer onto a texture of its own over a plain ground, read back as a PNG's data URL. It takes a
-// few frames so pictures have come, hearing `events` on the first. Used by `tools/uiShot.mjs`; the game never
-// imports it.
+// few frames so pictures have come, hearing `events` on the second, once the first has laid what they press. Used by
+// `tools/uiShot.mjs`; the game never imports it.
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { readFace } from './faceReader.ts';
 import type { Node } from './node.ts';
@@ -30,7 +30,7 @@ export async function shot(
   });
   const gpu = { device, format, context: { getCurrentTexture: () => target } } as unknown as Gpu;
   const ui = new Interface(new UiRenderer(gpu, await readFace()));
-  const frames = more.frames ?? 4;
+  const frames = Math.max(2, more.frames ?? 4);
   const [red = 0.2, green = 0.25, blue = 0.3] = more.ground ?? [];
   for (let frame = 0; frame < frames; frame++) {
     const encoder = device.createCommandEncoder();
@@ -42,7 +42,7 @@ export async function shot(
       })
       .end();
     device.queue.submit([encoder.finish()]);
-    ui.frame({ width, height, scale: view.scale }, frame === 0 ? (more.events ?? []) : [], 1 / 60);
+    ui.frame({ width, height, scale: view.scale }, frame === 1 ? (more.events ?? []) : [], 1 / 60);
     ui.draw(build(ui));
     ui.renderer.present(width, height);
     await device.queue.onSubmittedWorkDone();

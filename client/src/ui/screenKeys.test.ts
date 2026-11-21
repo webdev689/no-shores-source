@@ -94,3 +94,29 @@ test('focus taken from the field sends the keys away', () => {
   step(form);
   assert.equal(ui.boxOf(`${SCREEN_KEY}h`), null);
 });
+
+test('A on a field the pad reached opens the keys again once B has put them away', () => {
+  const { ui, step } = fakeInterface(400, 300);
+  step(form);
+  step(form, [{ kind: 'pad', button: 'down' }]);
+  step(form);
+  assert.equal(ui.typing?.onScreen, true);
+  step(form, [{ kind: 'pad', button: 'back' }]);
+  assert.equal(ui.typing?.onScreen, false);
+  ui.frame({ width: 400, height: 300, scale: 1 }, [{ kind: 'pad', button: 'accept' }], 1 / 60);
+  assert.equal(ui.submitted('name'), false, 'A does not send the field');
+  ui.draw(form);
+  assert.equal(ui.typing?.onScreen, true, 'it opens the keys');
+});
+
+test('the keys stand in even columns, a tenth of the row each, Space taking the room the rest leave', () => {
+  const { ui, step } = fakeInterface(640, 400);
+  step(form);
+  step(form, tapOn(ui, 'name'));
+  step(form);
+  const widths = (keys: string[]) => keys.map((key) => ui.boxOf(`${SCREEN_KEY}${key}`)?.width ?? 0);
+  const [one, ...letters] = widths(['1', 'q', 'a', 'z', '@']);
+  assert.ok(one && letters.every((width) => width === one), 'every letter alike');
+  const [space] = widths(['space']);
+  assert.ok((space ?? 0) > 2 * (one ?? 0), `Space ${space} wide against a letter's ${one}`);
+});

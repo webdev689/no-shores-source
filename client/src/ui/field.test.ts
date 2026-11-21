@@ -29,3 +29,9 @@ test('the caret moves by character, word and end, and Shift grows the selection'
   assert.equal(moved(grown, 1, false).caret, 7, 'an arrow without Shift goes to the selection’s end');
   assert.equal(selected(allSelected(field)), 'one two');
 });
+
+test('a field kept to its most never cuts a pair in half', () => {
+  assert.deepEqual(typed(emptyField('abc'), '😀', 4), { text: 'abc', caret: 3, anchor: 3 });
+  assert.deepEqual(typed(emptyField('ab'), 'x😀', 4), { text: 'abx', caret: 3, anchor: 3 });
+  assert.deepEqual(typed(emptyField('ab'), '😀', 4), { text: 'ab😀', caret: 4, anchor: 4 });
+});

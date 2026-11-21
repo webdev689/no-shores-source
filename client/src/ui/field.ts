@@ -28,7 +28,8 @@ export function replaced(
   caret?: number,
 ): FieldState {
   const room = Math.max(0, most - (state.text.length - (to - from)));
-  const put = text.slice(0, room);
+  // Cut at the most, but never between a pair's halves.
+  const put = text.slice(0, room).replace(/[\ud800-\udbff]$/, '');
   const words = state.text.slice(0, from) + put + state.text.slice(to);
   const place = Math.min(words.length, caret ?? from + put.length);
   return { text: words, caret: place, anchor: place };
@@ -78,3 +79,27 @@ export function moved(state: FieldState, to: -1 | 1 | 'start' | 'end', select: b
 
 /** All of it selected. */
 export const allSelected = (state: FieldState): FieldState => ({ ...state, caret: state.text.length, anchor: 0 });
+
+/** The place in `text` nearest `units` along it, by `widthTo` (how wide its words stand up to a place): never inside
+ *  a surrogate pair. */
+export function placeNear(text: string, units: number, widthTo: (place: number) => number): number {
+  let [place, before] = [0, 0];
+  for (const char of text) {
+    const next = place + char.length;
+    const width = widthTo(next);
+    if (width >= units) return units - before < width - units ? place : next;
+    [place, before] = [next, width];
+  }
+  return text.length;
+}
+
+/** The word round `place` selected, the caret at its end; the run of spaces there when it stands among them. */
+export function wordAt(state: FieldState, place: number): FieldState {
+  const { text } = state;
+  const space = /\s/.test(text[place] ?? text[place - 1] ?? '');
+  const alike = (index: number) => index >= 0 && index < text.length && /\s/.test(text[index] ?? '') === space;
+  let [start, end] = [place, place];
+  while (alike(start - 1)) start--;
+  while (alike(end)) end++;
+  return { text, caret: end, anchor: start };
+}

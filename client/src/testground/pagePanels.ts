@@ -54,7 +54,8 @@ export class PagePanels {
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
     if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
     const free = !this.locked();
-    const view = { width: canvas.width, height: canvas.height, scale: uiScale(devicePixelRatio) };
+    const ratio = devicePixelRatio;
+    const view = { width: canvas.width, height: canvas.height, scale: uiScale(ratio), ratio };
     this.ui?.frame(view, this.events.take(), this.seconds, free, free);
     return Boolean(this.ui?.tookWheel);
   }

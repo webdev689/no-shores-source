@@ -4,7 +4,7 @@
 // then every box placed. Every length comes out in whole CSS pixels, so every edge lands on whole screen pixels at the
 // interface's whole scale.
 import type { Box } from './quads.ts';
-import type { Align, Child, Laid, Node, Padding, Size, Span } from './node.ts';
+import type { Align, Child, Laid, Node, Padding, Size, Span, Text } from './node.ts';
 import { type Face, lineHeight, widthOf, wrapped } from './text.ts';
 
 /** A node at work: its children in the flow and those floated, its size, the least it can shrink to, and its place. */
@@ -18,7 +18,7 @@ interface Item {
   least: number;
   x: number;
   y: number;
-  lines: Span[][];
+  lines: readonly (readonly Span[])[];
   content: number;
 }
 
@@ -50,48 +50,67 @@ const percentOf = (size: Size | undefined): number | null =>
 
 const clamp = (value: number, low = 0, high = Number.POSITIVE_INFINITY) => Math.max(low, Math.min(high, value));
 
-/** The text's words as one string, and the colour of each of its characters. */
-function flat(words: string | readonly Span[], colour: string | undefined): { text: string; colours: string[] } {
-  const spans: readonly Span[] = typeof words === 'string' ? [{ words, colour }] : words;
-  const colours: string[] = [];
-  let text = '';
-  for (const span of spans) {
-    text += span.words;
-    colours.push(...Array.from(span.words, () => span.colour ?? colour ?? ''));
-  }
-  return { text, colours };
+/** A text's lines at a width, and its widths unbroken, by face and by what decides them: laid once while they stay. */
+const textCache = new WeakMap<Face, Map<string, unknown>>();
+/** shortcut: emptied whole at this many, so the frame after breaks every text again; drop the least used instead if
+ *  words that change every frame make that frame show. */
+const MOST_CACHED = 4096;
+
+/** What `make` answers for `text` at `width`, kept across frames under all that decides it. */
+function cached<Kept>(face: Face, text: Text, width: number | string, make: () => Kept): Kept {
+  let kept = textCache.get(face);
+  if (!kept) textCache.set(face, (kept = new Map()));
+  const words =
+    typeof text.words === 'string'
+      ? text.words
+      : text.words.map((span) => `${span.colour ?? ''}\u0001${span.words}`).join('\u0002');
+  const how = [text.size, text.tracking, text.wrap, text.ellipsis, text.balance, text.colour].join('|');
+  const key = `${width}|${how}|${words}`;
+  if (kept.has(key)) return kept.get(key) as Kept;
+  const made = make();
+  if (kept.size >= MOST_CACHED) kept.clear();
+  kept.set(key, made);
+  return made;
 }
 
 /** The text's lines at `width` units (unbroken when `width` is null), each a list of spans by colour. */
-function linesOf(face: Face, item: Item, width: number | null): Span[][] {
-  const text = item.node.text;
-  if (!text) return [];
+const linesOf = (face: Face, text: Text, width: number | null): readonly (readonly Span[])[] =>
+  cached(face, text, width ?? 'none', () => brokenLines(face, text, width));
+
+function brokenLines(face: Face, text: Text, width: number | null): Span[][] {
   const size = text.size ?? 1;
   const tracking = text.tracking ?? 1;
-  const { text: all, colours } = flat(text.words, text.colour);
+  const spans: readonly Span[] = typeof text.words === 'string' ? [{ words: text.words }] : text.words;
+  // Each character's colour, as the index of its span, by code point.
+  const spanAt = spans.flatMap((span, index) => Array.from(span.words, () => index));
+  const all = spans.map((span) => span.words).join('');
   const chars = [...all];
+  const colourAt = (index: number) => spans[spanAt[index] ?? -1]?.colour ?? text.colour ?? '';
   const lines: Span[][] = [];
   let next = 0;
-  for (const paragraph of all.split('\n')) {
+  // Words cut short with an ellipsis stand on one line, a newline a space, as a browser's `nowrap` sets them.
+  const paragraphs = text.ellipsis ? [all.replace(/\n/g, ' ')] : all.split('\n');
+  for (const paragraph of paragraphs) {
     const broken =
       width === null || text.wrap === false || text.ellipsis
         ? [paragraph]
         : text.balance
           ? balanced(face, paragraph, size, width, tracking)
           : wrapped(face, paragraph, size, width, tracking);
-    for (const line of broken) {
-      const spans: Span[] = [];
+    broken.forEach((line, index) => {
+      const spansOf: Span[] = [];
       for (const char of line) {
-        const colour = colours[next] ?? '';
-        const last = spans.at(-1);
-        if (last && last.colour === colour) spans[spans.length - 1] = { words: last.words + char, colour };
-        else spans.push({ words: char, colour });
+        const colour = colourAt(next);
+        const last = spansOf.at(-1);
+        if (last && last.colour === colour) spansOf[spansOf.length - 1] = { words: last.words + char, colour };
+        else spansOf.push({ words: char, colour });
         next += 1;
       }
-      lines.push(width !== null && text.ellipsis ? cut(face, spans, size, width, tracking) : spans);
-      // The space a break took, or the paragraph's newline.
-      if (chars[next] === ' ' || chars[next] === '\n') next += 1;
-    }
+      lines.push(width !== null && text.ellipsis ? cut(face, spansOf, size, width, tracking) : spansOf);
+      // The spaces a break dropped, or the paragraph's newline.
+      if (index < broken.length - 1) while (chars[next] === ' ') next += 1;
+      else if (chars[next] === '\n') next += 1;
+    });
   }
   return lines;
 }
@@ -132,6 +151,19 @@ function cut(face: Face, line: Span[], size: number, width: number, tracking: nu
   return kept;
 }
 
+/** Words' width unbroken, and the least they can shrink to: their widest word, or an ellipsis. */
+const fitOf = (face: Face, text: Text): readonly [number, number] =>
+  cached(face, text, 'fit', () => {
+    const size = text.size ?? 1;
+    const tracking = text.tracking ?? 1;
+    const lines = linesOf(face, text, null);
+    const fit = Math.max(0, ...lines.map((line) => widthOf(face, lineWords(line), size, tracking)));
+    if (text.ellipsis) return [fit, widthOf(face, ELLIPSIS, size, tracking)] as const;
+    if (text.wrap === false) return [fit, fit] as const;
+    const words = lines.flatMap((line) => lineWords(line).split(' '));
+    return [fit, Math.max(0, ...words.map((word) => widthOf(face, word, size, tracking)))] as const;
+  });
+
 /** Pass one, leaves up: each node's width as its content needs it, and the least it can shrink to. */
 function fitWidths(face: Face, item: Item): void {
   for (const kid of [...item.kids, ...item.floats]) fitWidths(face, kid);
@@ -139,20 +171,8 @@ function fitWidths(face: Face, item: Item): void {
   const across = pad[1] + pad[3];
   let fit = 0;
   let least = 0;
-  if (node.text) {
-    const size = node.text.size ?? 1;
-    const tracking = node.text.tracking ?? 1;
-    const lines = linesOf(face, item, null);
-    fit = Math.max(0, ...lines.map((line) => widthOf(face, lineWords(line), size, tracking)));
-    least = node.text.ellipsis
-      ? widthOf(face, ELLIPSIS, size, tracking)
-      : node.text.wrap === false
-        ? fit
-        : Math.max(
-            0,
-            ...lines.flatMap((line) => lineWords(line).split(' ')).map((word) => widthOf(face, word, size, tracking)),
-          );
-  } else if (node.picture?.pixel && node.width === undefined) {
+  if (node.text) [fit, least] = fitOf(face, node.text);
+  else if (node.picture?.pixel && node.width === undefined) {
     fit = least = node.picture.pixel.width;
   } else {
     const row = node.direction !== 'column';
@@ -186,7 +206,8 @@ function evened(sizes: number[], lows: number[], highs: number[], change: number
   const out = [...sizes];
   let left = change;
   const growing = change > 0;
-  for (let round = 0; round < 64 && Math.abs(left) > 0.001; round++) {
+  // Each round evens the edge up to the next size or spends what is left, so twice the count of rounds is enough.
+  for (let round = 0; round <= 2 * out.length && Math.abs(left) > 0.001; round++) {
     const open = out
       .map((_size, index) => index)
       .filter((index) => (growing ? out[index]! < highs[index]! : out[index]! > lows[index]!));
@@ -207,10 +228,13 @@ function evened(sizes: number[], lows: number[], highs: number[], change: number
       left -= bounded;
     }
   }
-  // Whole pixels: each floored, the pixels that frees given back one each from the first.
+  // Whole pixels: each floored, the pixels that frees given back one each from the first that was cut and has room.
   const floored = out.map(Math.floor);
   let spare = Math.round(out.reduce((sum, size) => sum + size, 0) - floored.reduce((sum, size) => sum + size, 0));
-  for (let index = 0; spare > 0 && index < floored.length; index++, spare--) floored[index]! += 1;
+  for (let index = 0; spare > 0 && index < floored.length; index++) {
+    const whole = floored[index]!;
+    if (whole < out[index]! && whole + 1 <= highs[index]!) [floored[index], spare] = [whole + 1, spare - 1];
+  }
   return floored;
 }
 
@@ -283,7 +307,7 @@ function fitHeights(face: Face, item: Item): void {
   let fit = 0;
   let least = 0;
   if (node.text) {
-    item.lines = linesOf(face, item, Math.max(1, item.w - pad[1] - pad[3]));
+    item.lines = linesOf(face, node.text, Math.max(1, item.w - pad[1] - pad[3]));
     fit = least = item.lines.length * (node.text.leading ?? lineHeight(node.text.size ?? 1));
   } else if (node.picture?.pixel && node.height === undefined) {
     fit = least = node.picture.pixel.height;

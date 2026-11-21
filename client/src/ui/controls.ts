@@ -57,8 +57,8 @@ export function toggle(ui: Interface, id: string, words: string, ticked: boolean
   };
 }
 
-/** A value from `low` to `high` in steps of `step`, set by dragging along its track or by the arrows with focus;
- *  answers the node and the value now. */
+/** A value from `low` to `high` in steps of `step`, set by dragging along its track, or by the arrows or the pad's
+ *  left and right with focus (up and down move focus on); answers the node and the value now. */
 export function slider(
   ui: Interface,
   id: string,
@@ -75,7 +75,11 @@ export function slider(
   const held = ui.drag(id);
   const box = ui.boxOf(id);
   if (held && box && box.width > 0) now = kept(low + ((held.x - box.x) / box.width) * (high - low));
-  for (const key of ui.keysOn(id)) now = kept(now + (key === 'arrowleft' || key === 'arrowdown' ? -step : step));
+  for (const key of ui.keysOn(id)) {
+    now = kept(now + (key === 'arrowleft' || key === 'arrowdown' ? -step : step));
+    // Stepped by keys, a screen reader hears where it stands now, as a page's range input says it.
+    ui.speak(`${now}`);
+  }
   const share = high > low ? (now - low) / (high - low) : 0;
   return {
     value: now,
@@ -93,7 +97,8 @@ export function slider(
   };
 }
 
-/** One of `options` chosen from a list that opens under it; answers the node and the choice now. */
+/** One of `options` chosen from a list that opens under it, and shuts on Escape or a press anywhere else; answers the
+ *  node and the choice now. */
 export function choice(
   ui: Interface,
   id: string,
@@ -108,7 +113,7 @@ export function choice(
       now = option.value;
       open = false;
     }
-  if (open && ui.escaped) open = false;
+  if (open && (ui.escaped || ui.pressedAway(id))) open = false;
   ui.store.set(id, open);
   const words = options.find((option) => option.value === now)?.words ?? now;
   return {

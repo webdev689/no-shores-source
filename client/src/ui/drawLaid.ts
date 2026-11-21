@@ -5,9 +5,9 @@ import { TONES } from '../plus/tones.ts';
 import type { FieldState } from './field.ts';
 import { meet } from './layout.ts';
 import type { Laid, Padding, Span } from './node.ts';
-import { paint, type State } from './paint.ts';
+import { grown, LOOKS, paint, type State } from './paint.ts';
 import { type Box, type Colour, colourOf } from './quads.ts';
-import { layLine, lineHeight } from './text.ts';
+import { type Laid as Glyph, layLine, lineHeight } from './text.ts';
 import type { UiRenderer } from './uiRenderer.ts';
 
 /** What drawing needs of the interface's state. */
@@ -21,6 +21,8 @@ export interface DrawState {
 }
 
 const SELECTION = 'rgba(243,207,106,0.35)';
+/** How far past its box the kit paints a node, CSS pixels: a window's frame and the widest shadow. */
+const SHADE_REACH = 12;
 
 const sidesOf = (padding: Padding | undefined): readonly [number, number, number, number] => {
   if (padding === undefined) return [0, 0, 0, 0];
@@ -41,17 +43,13 @@ const scaled = (box: Box, scale: number): Box => ({
   height: box.height * scale,
 });
 
-/** Draws one line of spans with its top-left at `x`, `y` (CSS pixels), each glyph in its span's colour or `colour`. */
+/** Draws one line of spans, laid as `glyphs`, with its top-left at `x`, `y` (CSS pixels), each glyph in its span's
+ *  colour or `colour`. */
 function drawLine(
   ui: UiRenderer,
   spans: readonly Span[],
-  where: {
-    readonly x: number;
-    readonly y: number;
-    readonly size: number;
-    readonly scale: number;
-    readonly tracking?: number;
-  },
+  glyphs: readonly Glyph[],
+  where: { readonly x: number; readonly y: number; readonly size: number; readonly scale: number },
   ink: {
     readonly colour: string;
     readonly edge?: 'shadow' | 'halo';
@@ -61,16 +59,18 @@ function drawLine(
   },
   clip: Box,
 ): void {
-  const words = spans.map((span) => span.words).join('');
-  const colours: string[] = [];
-  for (const span of spans) colours.push(...Array.from(span.words, () => span.colour || ink.colour));
-  const { glyphs } = layLine(ui.face, words, where.size, where.tracking);
   const { x, y, size, scale } = where;
-  // A glyph in a clear colour keeps its room and draws nothing, its edge neither: words still to be typed.
-  const unseen = colours.map((css) => colourOf(css)[3] <= 0);
-  const drawn = (offsetX: number, offsetY: number, colourOf: (index: number) => Colour) => {
+  // Each glyph's span, walked along as the glyphs are, which come in the order of their characters.
+  const tones = spans.map((span) => faded(span.colour || ink.colour, ink.fade));
+  const ends: number[] = [];
+  for (const span of spans) ends.push((ends.at(-1) ?? 0) + [...span.words].length);
+  const drawn = (offsetX: number, offsetY: number, edge: Colour | null) => {
+    let span = 0;
     for (const laid of glyphs) {
-      if (unseen[laid.index]) continue;
+      while (span < ends.length - 1 && laid.index >= (ends[span] ?? 0)) span += 1;
+      const tone = tones[span];
+      // A glyph in a clear colour keeps its room and draws nothing, its edge neither: words still to be typed.
+      if (!tone || tone[3] <= 0) continue;
       const texels = ui.glyphTexels(laid.glyph);
       if (!texels) continue;
       const box = {
@@ -79,12 +79,12 @@ function drawLine(
         width: laid.glyph.width * size * scale,
         height: laid.glyph.height * size * scale,
       };
-      ui.quads.add(box, colourOf(laid.index), clip, texels);
+      ui.quads.add(box, edge ?? tone, clip, texels);
     }
   };
   const edge = faded(ink.edgeColour ?? TONES.outline, ink.fade);
   const step = ink.edgeWidth ?? 1;
-  if (ink.edge === 'shadow') drawn(step, step, () => edge);
+  if (ink.edge === 'shadow') drawn(step, step, edge);
   if (ink.edge === 'halo')
     for (const [across, down] of [
       [-1, -1],
@@ -96,14 +96,8 @@ function drawLine(
       [0, 1],
       [1, 1],
     ] as const)
-      drawn(across * step, down * step, () => edge);
-  const tones = new Map<string, Colour>();
-  drawn(0, 0, (index) => {
-    const css = colours[index] ?? ink.colour;
-    let tone = tones.get(css);
-    if (!tone) tones.set(css, (tone = faded(css, ink.fade)));
-    return tone;
-  });
+      drawn(across * step, down * step, edge);
+  drawn(0, 0, null);
 }
 
 /** Draws `laid`, in order, with `ui` at `scale` device pixels a CSS pixel. */
@@ -117,6 +111,13 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
     if (fade <= 0) continue;
     const moved = shiftOf(each.parent);
     const box = { ...each.box, x: each.box.x + moved, y: each.box.y + moved };
+    // Out of its clip's sight (a list's rows scrolled away), its shadows and frame too, nothing of it is drawn; its
+    // words' colour still passes on.
+    const seen = meet(grown(box, SHADE_REACH), each.clip);
+    if (seen.width <= 0 || seen.height <= 0) {
+      if (node.role) ink.set(each, LOOKS[node.role][node.state ?? state.state(each)].word);
+      continue;
+    }
     const device = scaled(box, scale);
     const clip = scaled(each.clip, scale);
     if (node.fill) ui.quads.add(device, faded(node.fill, fade), clip);
@@ -156,20 +157,14 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
       const tall = node.text.leading ?? lineHeight(size);
       // The words stand in the middle of a line set taller (or shorter) than the face's own.
       const lift = Math.floor((tall - lineHeight(size)) / 2);
+      const { tracking, align = 'start', edge, edgeColour, edgeWidth } = node.text;
+      const colour = node.text.colour ?? inkOf(each.parent);
       each.lines.forEach((line, index) => {
-        const tracking = node.text?.tracking;
-        const width = layLine(ui.face, line.map((span) => span.words).join(''), size, tracking).width;
+        const { width, glyphs } = layLine(ui.face, line.map((span) => span.words).join(''), size, tracking);
         const free = inner.width - width;
-        const align = node.text?.align ?? 'start';
         const x = inner.x + (align === 'center' ? Math.floor(free / 2) : align === 'end' ? free : 0);
-        const colour = node.text?.colour ?? inkOf(each.parent);
-        drawLine(
-          ui,
-          line,
-          { x, y: inner.y + index * tall + lift, size, scale, tracking },
-          { colour, edge: node.text?.edge, edgeColour: node.text?.edgeColour, edgeWidth: node.text?.edgeWidth, fade },
-          clip,
-        );
+        const where = { x, y: inner.y + index * tall + lift, size, scale };
+        drawLine(ui, line, glyphs, where, { colour, edge, edgeColour, edgeWidth, fade }, clip);
       });
     }
     if (node.field && node.id) drawField(ui, each, inner, scale, clip, state, inkOf(each));
@@ -214,16 +209,17 @@ function drawField(
       within,
     );
   }
-  if (shown)
-    drawLine(ui, [{ words: shown }], { x: left, y: top, size, scale }, { colour: ink, fade: each.fade }, within);
-  else if (field?.placeholder)
+  const line = (words: string, x: number, colour: string) =>
     drawLine(
       ui,
-      [{ words: field.placeholder }],
-      { x: inner.x, y: top, size, scale },
-      { colour: TONES.wordDim, fade: each.fade },
+      [{ words }],
+      layLine(ui.face, words, size).glyphs,
+      { x, y: top, size, scale },
+      { colour, fade: each.fade },
       within,
     );
+  if (shown) line(shown, left, ink);
+  else if (field?.placeholder) line(field.placeholder, inner.x, TONES.wordDim);
   if (focused && Math.floor(state.clock * 2) % 2 === 0)
     ui.quads.add(scaled({ x: left + caretX, y: top, width: 1, height: tall }, scale), faded(ink, each.fade), within);
 }

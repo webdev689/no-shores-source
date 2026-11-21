@@ -46,3 +46,9 @@ test('words break at spaces into lines no wider than asked, a word too wide stan
   assert.deepEqual(wrapped(face, 'AAAA A', 1, 10), ['AAAA', 'A']);
   assert.deepEqual(wrapped(face, 'A', 1, 1), ['A']);
 });
+
+test('a line broken at spaces keeps a paragraph’s leading space, and drops every space at the break', () => {
+  assert.deepEqual(wrapped(face, ' A', 1, 100), [' A']);
+  assert.deepEqual(wrapped(face, 'A  A', 1, 10), ['A', 'A'], 'both spaces at the break hang');
+  assert.deepEqual(wrapped(face, 'A  A', 1, 100), ['A  A'], 'spaces inside a line stay');
+});

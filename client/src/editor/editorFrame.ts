@@ -134,7 +134,8 @@ export class EditorFrame {
     const now = performance.now();
     const seconds = Math.min(0.25, (now - this.last) / 1000);
     this.last = now;
-    const view = { width: size.width, height: size.height, scale: uiScale(devicePixelRatio || 1) };
+    const ratio = devicePixelRatio || 1;
+    const view = { width: size.width, height: size.height, scale: uiScale(ratio), ratio };
     ui.frame(view, this.events.take(), seconds, true, this.keys());
     const scale = size.width / Math.max(1, canvas.clientWidth);
     const texture = this.gpu.context.getCurrentTexture();

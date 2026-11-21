@@ -17,6 +17,5 @@ export function cubicBezier(fromX: number, fromY: number, toX: number, toY: numb
 
 /** CSS's named eases at `share` of the way. */
 export const ease = (share: number): number => cubicBezier(0.25, 0.1, 0.25, 1, share);
-export const easeIn = (share: number): number => cubicBezier(0.42, 0, 1, 1, share);
 export const easeOut = (share: number): number => cubicBezier(0, 0, 0.58, 1, share);
 export const easeInOut = (share: number): number => cubicBezier(0.42, 0, 0.58, 1, share);

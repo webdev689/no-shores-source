@@ -5,8 +5,8 @@
 //
 // shots.json: { "size": [w, h], "scale": 2, "shots": [{ "module": "/src/game/tasks.ts", "build": "trackerShot",
 // "out": "target/ui/tracker.png", "size": [w, h], "events": [...] }] }. `build` is a function the module exports that
-// takes the interface (`Interface`) and answers the tree; `events` are heard on the first frame. Shader problems and
-// the page's errors are printed.
+// takes the interface (`Interface`) and answers the tree; `events` are heard on the second frame, once the first has
+// laid what they press. Shader problems and the page's errors are printed.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createRequire } from 'node:module';

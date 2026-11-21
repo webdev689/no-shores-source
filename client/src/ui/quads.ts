@@ -19,8 +19,23 @@ export const QUAD_FLOATS = 20;
 /** No clip: a box wider than any screen. */
 export const UNCLIPPED: Box = { x: -1e6, y: -1e6, width: 2e6, height: 2e6 };
 
+/** Colours read, by what they were written as: each is parsed once, not at every glyph and frame. */
+const colours = new Map<string, Colour>();
+/** shortcut: emptied whole at this many, as colours written afresh each frame would grow it without end; drop the
+ *  least used instead if a page's colours ever number near it. */
+const MOST_COLOURS = 1024;
+
 /** A CSS colour as the kit writes them: `#rgb`, `#rrggbb` or `rgba(r, g, b, a)`. */
 export function colourOf(css: string): Colour {
+  const known = colours.get(css);
+  if (known) return known;
+  const read = parsed(css);
+  if (colours.size >= MOST_COLOURS) colours.clear();
+  colours.set(css, read);
+  return read;
+}
+
+function parsed(css: string): Colour {
   const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(css)?.[1];
   if (hex) {
     const full = hex.length === 3 ? [...hex].map((digit) => digit + digit).join('') : hex;

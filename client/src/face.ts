@@ -37,7 +37,6 @@ const ROWS: readonly (readonly [number, number])[] = [
 /** Pixelify's own right edge on its widest letters falls a unit past the grid. */
 const LAST_COLUMN_RIGHT = 531;
 
-/** Each drawing's rows from the top, `#` a cell drawn; `base` is the row of its last line, 0 on the baseline. */
 /** A glyph drawn in cells: its rows from the top, `#` a cell drawn; `base` the row of its last line (0 on the baseline,
  *  below it negative); `left` the column of its first (0 unless said); and its advance in font units, the grid's own
  *  unless said. */
@@ -97,7 +96,8 @@ export const DRAWINGS: Readonly<Record<string, Drawing>> = {
   ð: { rows: ['....#', '.####', '#..##', '....#', '.####', '#...#', '#...#', '.###.'], advance: 605 },
   '×': { rows: ['.#.#', '..#.', '.#.#'], base: 2, advance: 600 },
   // Marks Pixelify draws in half cells, which a reading of its whole cells garbles: each drawn in whole cells at its
-  // own place and advance (the at sign at a capital's height, so its loop reads).
+  // own place (the at sign at a capital's height, so its loop reads) and its own advance; but the asterisk and the
+  // caret, whose three cells are wider than Pixelify's narrow advance for them, take the grid's own.
   '@': { rows: ['.###.', '#...#', '#.###', '#.#.#', '#.###', '#....', '.####'], advance: 615 },
   '=': { rows: ['#####', '.....', '#####'], base: 2, advance: 600 },
   '~': { rows: ['###.#', '#.###'], base: 2, advance: 600 },
