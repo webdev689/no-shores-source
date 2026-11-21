@@ -261,8 +261,24 @@ Where the work stands now, for the next session. Each session rewrites this note
   as it did before. It now holds #88 with #72 and main through #75 (83ffaa42): the sea keeps characters, so ships sunk
   or taken count toward the sea bounties; the sea's and the islands' rooms gate by their tier on the server; a deck's
   kills count toward no land bounty and earn no boon; main's muster and Shipwright turn at 09:00 UTC with the clock;
-  the prologue's and the board's asks are 64 to 66; an island's door goes into its dungeon. Not yet seen in a picture
-  since: the Journal's and the board's kit surfaces with the borders main's framed-surface test now gives them.
+  the prologue's and the board's asks are 64 to 66; an island's door goes into its dungeon. The Journal's and the
+  board's kit surfaces wear the borders main's framed-surface test gives them, pictured after the merge with nothing
+  moved.
+- **#122, the server's authority**, stacked on #97, waits on the owner's yes ("We should be server authoritive 100%
+  across the codebase", [[The Server Is the Authority Over Everything]]): a node's room, its dungeons' and runs' judge
+  where a kept character comes from (`server/arrival.ts`); `?entrance=` stands a player at an entrance only on the
+  server's word; a ship first puts to sea only by a port's roadstead; a sea island's dungeon opens only behind an
+  island the sea holds; a look's eye lays guns only from within 100 m of the player's ship; every keeping room sends
+  away a socket with no session in five seconds; the Test Ground opens only for `test-` names; a dress shows only
+  what is worn; a mounted input fights with nothing; and the asset workflows publish with `R2_TOKEN`, a token for R2
+  alone, which the owner creates (its description says how). The prologue's end stays the page's word while it pays
+  nothing. Tested offline: the full check. Not tested live: the accounts' migration and the deployed rooms.
+- **#123, the Postmaster**, stacked on #122, waits on the owner's yes ("Implement a mail vendor who acts as a mailbox
+  for lost items, ingame mail, etc", game mail only; [[A Mail Vendor Keeps Lost Items and the Game's Mail]]): a
+  mailbox of the game's letters, each holding what a player lost (a Vestige left lying or lying out its time, a first
+  clear's Vestige or flotsam with the carried ten full, a salvaged module with nine carried), taken at his counter in
+  Overlook's plaza. Tested offline: the full check, and pictures of his screen at three sizes. Not pictured: his
+  figure and his counter; another session is working on the social space, whose counter places are its own.
 - **#72, the dungeons, is finished and waits on the owner's yes to merge**: DFO's Dungeons 2.0 within the patrol
   areas, perfect and insanely varied as the owner asked ([[The Dungeons Are Perfect and Insanely Varied]], Claude's
   calls in [[Dungeons as Claude Builds Them]], [[Dungeons]]). Six styles, two to five blocks, a deeper last block in
@@ -392,6 +408,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **#97 once #88 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
   merge; then play the Journal and the board in a deployed room (tested live): take a bounty, count it, turn it in,
   and drop the timers with T.
+- **#122 once #97 is in and the owner says yes**: the owner creates `R2_TOKEN` first, or the asset workflows publish
+  nothing; then retarget, merge main in, check and merge, and play an arrival of each kind in the deployed rooms
+  (tested live): a landing, a gate, a dungeon and back out at its entrance, a company join, and one refused.
+- **#123 once #122 is in and the owner says yes**: retarget, merge main in, check and merge; then leave a Vestige
+  lying in a deployed room and take it from the Postmaster (tested live), and picture his counter and figure.
 - **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
   `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA).
 - **The islands** ([[Islands]]): coming out of a door's dungeon back onto its island, before the door, rather than at
