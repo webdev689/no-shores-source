@@ -212,7 +212,7 @@ fn snare_slows_a_foe_within_thirty_metres_of_it() {
             let before = [free.ships[&CAPTAIN].ship, snared.ships[&CAPTAIN].ship];
             free.step(&[(PLAYER, IDLE)], &Open, &|_| [6.0, 0.0], 0.0);
             snared.step(&[(PLAYER, IDLE)], &Open, &|_| [6.0, 0.0], 0.0);
-            let moved = |was: Ship, now: Ship| (now.x - was.x).hypot(now.y - was.y);
+            let moved = |was: Ship, now: Ship| libm::hypot(now.x - was.x, now.y - was.y);
             went_free += moved(before[0], free.ships[&CAPTAIN].ship);
             went_snared += moved(before[1], snared.ships[&CAPTAIN].ship);
         }

@@ -98,7 +98,7 @@ fn a_kept_named_module_keeps_each_bought_perk_where_it_moved_and_never_takes_on_
     let sails = kept("windmaidens_canvas", Slot::Sails, old.clone(), &[(4, 1)], (4, 1));
     // And with Patched Sails, merged into a hull's perk: a plain perk stands in its place, Lookout Yard.
     let patched = kept("windmaidens_canvas", Slot::Sails, old, &[(4, 0)], (4, 0));
-    let had = character.materials.ship.clone();
+    let had = character.materials.ship;
     let read = Character::from_json(&character.to_json()).expect("a character");
     let rigging = read.item(rigging).expect("kept");
     assert!(rigging.has(0, 0) && !rigging.has(0, 1), "Quick Braces bought where it stands now");
@@ -134,7 +134,7 @@ fn a_kept_named_module_whose_bought_perk_has_only_a_trade_off_in_its_place_gives
     sails.bought |= sails.node_bit(2, 1).expect("a node");
     sails.chosen[2] = 1;
     character.items.insert(sails_id, (sails, At::Carried));
-    let had = character.materials.ship.clone();
+    let had = character.materials.ship;
     let read = Character::from_json(&character.to_json()).expect("a character");
     let guns = read.item(id).expect("kept");
     assert!(!guns.has(column, 0) && !guns.has(column, 1), "Overcharged is never pressed on it");
