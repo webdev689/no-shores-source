@@ -65,14 +65,15 @@ pub(crate) struct Taker {
     pub pace: f64,
 }
 
-/// A raid as it plays: each store's middle and health (0 to 1), where a Collector stands at each, the approach and
-/// the banners, the wave and how many come, the foes of the wave standing, the tick the next comes, each Collector's
+/// A raid as it plays: each store's middle and health (0 to 1), where a Collector stands at each, the approach, the
+/// raiders' home (the stores' middle; both on the navmesh), the banners, the wave and how many come, the foes of the wave standing, the tick the next comes, each Collector's
 /// store, and the tithe-taker.
 #[derive(Debug)]
 pub(crate) struct Raid {
     pub stores: Vec<([f64; 3], f64)>,
     pub posts: Vec<[f64; 3]>,
     pub approach: [f64; 3],
+    pub home: [f64; 3],
     pub banners: Vec<[f64; 3]>,
     pub wave: u8,
     pub waves: u8,
@@ -93,7 +94,9 @@ impl Raid {
 
 impl Room {
     pub(crate) fn raid_of(&self, ground: &super::RaidGround) -> Raid {
-        let approach = self.on_ground(ground.approach);
+        // Off the navmesh no path is found to or from a point, and a walker the room moves goes straight through boxes.
+        let on_mesh = |at: [f64; 2]| self.nav.nearest_point(self.on_ground(at)).unwrap_or(self.on_ground(at));
+        let (approach, home) = (on_mesh(ground.approach), on_mesh(ground.at));
         let stores: Vec<([f64; 3], f64)> = ground.stores.iter().map(|&at| (self.on_ground(at), 1.0)).collect();
         let posts = stores
             .iter()
@@ -107,6 +110,7 @@ impl Room {
             stores,
             posts,
             approach,
+            home,
             banners: ground.banners.iter().map(|&at| self.on_ground(at)).collect(),
             wave: 0,
             waves: 3,
@@ -249,7 +253,7 @@ impl Room {
             self.tell(EventKind::PublicStage, None, 0, 0, f64::from(raid.wave));
         }
         if raid.wave == 2 && running.heroic == Heroic::NotYet {
-            self.send_taker(public, running, raid);
+            self.send_taker(running, raid);
         }
     }
 
@@ -259,7 +263,7 @@ impl Room {
         let (middle, _) = self.ground_of(public, running.kind);
         let mut draws = self.wave_draws(running, u32::from(raid.wave) * 8 + raid.wave_foes.len() as u32);
         let start = draws.draw() * TAU;
-        let (approach, home) = (raid.approach, self.on_ground(middle));
+        let (approach, home) = (raid.approach, raid.home);
         let count = members.len();
         for (turn, member) in members.into_iter().enumerate() {
             let facing = start + TAU * turn as f64 / count as f64;
@@ -280,7 +284,7 @@ impl Room {
     }
 
     /// The tithe-taker comes in at the approach to walk his round of the standing stores, nearest first, and back.
-    fn send_taker(&mut self, public: &Public, running: &mut Running, raid: &mut Raid) {
+    fn send_taker(&mut self, running: &mut Running, raid: &mut Raid) {
         let from = raid.approach;
         let mut left: Vec<usize> = (0..raid.stores.len()).filter(|at| raid.stores[*at].1 > 0.0).collect();
         let mut round = Vec::new();
@@ -303,7 +307,7 @@ impl Room {
         let walking = TITHE_TAKER_TICKS.saturating_sub(counted).max(60) as f64 / 60.0;
         let pace = (length / walking).clamp(WALK_LEAST, WALK_MOST);
         let facing = bearing([from[0], from[1]], [round[0].0[0], round[0].0[1]]);
-        let home = (self.on_ground(self.ground_of(public, running.kind).0), 0);
+        let home = (raid.home, 0);
         let Some(foe) = self.stand_event_foe(running, (TITHE_TAKER, Elite), (from, facing), home) else { return };
         self.inert.insert(foe);
         raid.taker = Some(Taker { foe, round, leg: 0, counting: None, pace });

@@ -59,3 +59,40 @@ fn saltmeres_zones_have_their_stores_approaches_banners_and_growths_and_only_the
         assert!(other.sites.iter().any(|site| site.kind == SiteKind::Store), "{}: every hamlet stores", other.id);
     }
 }
+
+/// Whether a print round `at`, `half` across and widened by `clear`, overlaps a solid's print.
+fn overlaps(at: [f64; 2], half: [f64; 2], clear: f64, solid: [f64; 6]) -> bool {
+    let [west, north, east, south, _, _] = solid;
+    at[0] + half[0] + clear > west
+        && at[0] - half[0] - clear < east
+        && at[1] + half[1] + clear > north
+        && at[1] - half[1] - clear < south
+}
+
+#[test]
+fn saltmeres_stores_banners_and_growths_keep_clear_of_its_beacons_and_resource_marks() {
+    let layouts = continent_one();
+    for id in bake::EVENT_ZONES {
+        let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
+        let marked: Vec<[f64; 2]> = laid
+            .sites
+            .iter()
+            .filter(|site| matches!(site.kind, SiteKind::Beacon | SiteKind::Resource))
+            .map(|site| site.at)
+            .collect();
+        assert!(!marked.is_empty(), "{id}: beacons and resources");
+        // What a beacon or a resource stands reaches at most this from its site.
+        let near_mark =
+            |solid: &&city::solids::Solid| marked.iter().any(|at| distance(*at, [solid.at[0], solid.at[1]]) < 8.0);
+        let solids: Vec<[f64; 6]> = laid.seating.solids.iter().filter(near_mark).map(|solid| solid.bounds()).collect();
+        let grounds = bake::grounds_of(laid).expect("an event zone has grounds");
+        let raid = grounds.raid.expect("a raid");
+        let fissure = grounds.fissure.expect("a fissure");
+        let kept = raid.stores.iter().map(|at| (*at, [1.2, 0.8], 1.5, "store"));
+        let kept = kept.chain(raid.banners.iter().map(|at| (*at, [0.5, 0.5], 0.5, "banner")));
+        for (at, half, clear, what) in kept.chain([(fissure.growth, [2.5, 2.5], 1.0, "growth")]) {
+            let hit = solids.iter().find(|solid| overlaps(at, half, clear, **solid));
+            assert!(hit.is_none(), "{id}: the {what} at {at:?} stands on a mark's solid {hit:?}");
+        }
+    }
+}

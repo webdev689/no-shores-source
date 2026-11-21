@@ -63,3 +63,21 @@ fn a_leavers_chest_vestige_with_their_ten_full_goes_to_their_vault() {
     assert_eq!((character.vestiges_held(false), character.vestiges_held(true)), (10, 1), "kept in the vault");
     assert!(room.drops_for(player).all(|drop| drop.id != chest), "and the chest is gone");
 }
+
+#[test]
+fn a_leavers_chest_vestige_with_their_ten_and_their_vault_full_is_kept_in_the_vault_never_lost() {
+    let (mut room, player, _) = chested();
+    let character = &mut room.players.get_mut(&player).unwrap().character;
+    for _ in 0..gear::character::VESTIGES_MOST {
+        let id = character.take_id();
+        assert!(character.pick_up(gear::Vestige::new(id, gear::Rarity::Normal, gear::Slot::Head, 1)));
+    }
+    for _ in 0..gear::character::VAULT_MOST {
+        let id = character.take_id();
+        character.vestiges.insert(id, (gear::Vestige::new(id, gear::Rarity::Normal, gear::Slot::Head, 1), true));
+    }
+    room.open_chests_of(player);
+    let character = &room.players[&player].character;
+    assert_eq!(character.vestiges_held(true), gear::character::VAULT_MOST + 1, "kept in the vault, over its limit");
+    assert_eq!(room.drops_for(player).count(), 0, "nothing laid on the ground for leave() to sweep away");
+}

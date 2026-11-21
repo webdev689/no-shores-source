@@ -457,6 +457,7 @@ impl Room {
         for id in gone {
             self.foes.remove(&id);
             self.board.forget(id);
+            self.names.remove(&id);
         }
     }
 

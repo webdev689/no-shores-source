@@ -157,3 +157,55 @@ fn a_wave_the_room_has_no_room_for_waits_and_one_killed_late_still_brings_the_th
     room.tick();
     assert_eq!((running(&room).heroic, raid(&room).wave_foes.len()), (Heroic::Met, 7), "its heroic two came");
 }
+
+/// Saltmere's three zones' rooms as their node files open them, each with its grounds.
+fn saltmeres_rooms() -> Vec<(&'static str, Room, super::RaidGround)> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
+    let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
+    let continent = world.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
+    let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
+    let builders = bake::builders(&root).expect("the builders read");
+    let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
+    let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("continent-1 bakes");
+    super::ZONES
+        .into_iter()
+        .map(|zone| {
+            let node = nodes.iter().find(|node| node.id == zone).expect("the zone bakes");
+            let read = node.grounds.clone().expect("its grounds");
+            let raid = read.raid.expect("its raid");
+            let raid = super::RaidGround {
+                at: raid.at,
+                radius: raid.radius,
+                stores: raid.stores,
+                approach: raid.approach,
+                banners: raid.banners,
+            };
+            let section = crate::Section { ring: node.ring.clone(), spawns: node.spawns.clone() };
+            let blocks = node.boxes.iter().map(movement::Block::from_floats).collect();
+            let mut room = Room::node(crate::Floor::Land(Box::new(node.ground.clone())), blocks, section);
+            room.open_public(zone, super::Grounds { fissure: None, raid: Some(raid.clone()) }, None);
+            (zone, room, raid)
+        })
+        .collect()
+}
+
+#[test]
+fn on_saltmeres_real_grounds_the_raiders_come_in_and_make_for_their_home_on_the_navmesh() {
+    for (zone, mut room, ground) in saltmeres_rooms() {
+        let minute =
+            (15_000..15_030).find(|minute| super::schedule(zone, *minute) == Some((super::Kind::Raid, *minute)));
+        room.minute = minute.expect("a raid within half an hour");
+        room.tick();
+        let on_mesh = |point: [f64; 3]| {
+            room.nav
+                .nearest_point(point)
+                .is_some_and(|near| combat::sight::apart([near[0], near[1]], [point[0], point[1]]) < 1e-6)
+        };
+        let home = raid(&room).home;
+        assert!(combat::sight::apart([home[0], home[1]], ground.at) < 5.0, "{zone}: home is by the stores' middle");
+        assert!(on_mesh(raid(&room).approach), "{zone}: the approach {:?} is on the navmesh", raid(&room).approach);
+        assert!(on_mesh(home), "{zone}: the raiders' home {home:?} is on the navmesh");
+        assert!(room.nav.find_path(raid(&room).approach, home).is_some(), "{zone}: a way in");
+    }
+}

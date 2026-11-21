@@ -65,3 +65,34 @@ fn two_zones_rooms_agree_on_the_clock_each_showing_the_next_the_other_runs_five_
     assert_ne!(vale_kind as u8, downs.kind, "neighbours run different events at once");
     assert_eq!(ZONE, ZONES[0]);
 }
+
+/// A Fissure begun with a player at its ground, then minutes passing with no tick, as for a room left empty.
+fn left_running(minutes: u64) -> crate::Room {
+    let (mut room, _) = room_at(FISSURE_MINUTE, 1);
+    room.tick();
+    assert!(!super::fixture::standing(&room).is_empty(), "its first wave stands");
+    room.minute += minutes;
+    room.take_events();
+    room.tick();
+    room
+}
+
+#[test]
+fn a_room_whose_minute_jumps_keeps_its_event_to_the_countdown_its_start_minute_leaves() {
+    let room = left_running(3);
+    assert!(running(&room).ticks_left <= COUNTDOWN_TICKS - 3 * TICKS_PER_MINUTE, "three minutes gone");
+}
+
+#[test]
+fn a_room_whose_minute_jumps_past_its_events_end_ends_it_quietly_and_begins_the_next_on_time() {
+    let mut room = left_running(10);
+    assert!(room.public.as_ref().unwrap().running.is_none(), "its time is past");
+    let events = room.take_events();
+    let shown = |kind| events.iter().any(|event: &crate::Event| event.kind == kind);
+    assert!(!shown(crate::EventKind::PublicFailed) && !shown(crate::EventKind::PublicWon), "no result shown");
+    let events_foes = room.foes.values().count();
+    assert_eq!(events_foes, 0, "its foes gone");
+    let mut room = left_running(PERIOD_MINUTES);
+    assert_eq!((running(&room).kind, running(&room).start), (Kind::Raid, FISSURE_MINUTE + PERIOD_MINUTES));
+    assert!(room.take_events().iter().all(|event| event.kind != crate::EventKind::PublicFailed));
+}

@@ -39,22 +39,23 @@ impl Room {
         }
         let drop = self.drops.remove(at);
         if let Dropped::Chest { tier, level } = drop.what {
-            self.pay_chest(player, (tier, level), drop.at);
+            self.pay_chest(player, (tier, level), drop.at, false);
         }
         0
     }
 
     /// Pays a chest to its player: what it holds goes to their gear, its Vestige to their ten, else to their vault,
-    /// else onto the ground where the chest stood when both are full.
-    pub(crate) fn pay_chest(&mut self, player: PlayerId, (tier, level): (u8, u8), at: [f64; 3]) {
+    /// else onto the ground where the chest stood when both are full; a leaver's into their vault however full.
+    pub(crate) fn pay_chest(&mut self, player: PlayerId, (tier, level): (u8, u8), at: [f64; 3], leaving: bool) {
         let dice = self.dice(player);
         let resource = self.resource_nodes.first().map(|node| usize::from(node.resource));
         let Some(found) = self.players.get_mut(&player) else { return };
         let Some(paid) = found.character.open_chest(tier, level, resource, &dice) else { return };
         found.gear_changed = true;
         let character = &mut found.character;
-        // A leaver's chest is paid as they go, so the vault keeps what the ten cannot: the ground would lose it.
-        let vaulted = character.vestiges_held(true) < gear::character::VAULT_MOST;
+        // A leaver's chest is paid as they go, so the vault keeps what the ten cannot, over its limit if it must: the
+        // ground would lose it, and the gear crate holds nothing else waiting for a player.
+        let vaulted = leaving || character.vestiges_held(true) < gear::character::VAULT_MOST;
         if !character.pick_up(paid.vestige.clone()) {
             if vaulted {
                 character.vestiges.insert(paid.vestige.id, (paid.vestige, true));
@@ -73,7 +74,7 @@ impl Room {
         self.drops = rest;
         for drop in theirs {
             if let Dropped::Chest { tier, level } = drop.what {
-                self.pay_chest(player, (tier, level), drop.at);
+                self.pay_chest(player, (tier, level), drop.at, true);
             }
         }
     }

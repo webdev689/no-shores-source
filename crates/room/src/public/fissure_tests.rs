@@ -213,3 +213,87 @@ fn the_growth_never_holds_back_a_wave_two_lesser_foes_left_beside_it_bring_the_n
     // Counted with the growth, three would stand, and the wave would wait for WAVE_EVERY.
     assert_eq!(fissure(&room).waves, waves + 1, "two lesser foes and the growth standing: the next wave comes");
 }
+
+#[test]
+fn sealed_with_half_the_countdown_left_keeps_the_bonus_though_the_warden_falls_later() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    let player = players[0];
+    room.tick();
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, player);
+    }
+    let growth = fissure(&room).growth.unwrap();
+    strike(&mut room, player, growth, 1.0e6);
+    room.tick();
+    while fissure(&room).warden.is_none() {
+        seal_one(&mut room, player);
+    }
+    assert!(running(&room).bonus, "sealed with more than half the countdown left");
+    running_mut(&mut room).ticks_left = COUNTDOWN_TICKS / 2 - 10;
+    ticks(&mut room, 20);
+    let warden = fissure(&room).warden.unwrap();
+    strike(&mut room, player, warden, 1.0e7);
+    room.tick();
+    assert_eq!(running(&room).phase, Phase::Won);
+    assert_eq!(chests(&room, player), [4], "heroic, and the bonus earned when it sealed");
+}
+
+/// Where each of `kinds` first comes among the events told since the room was last asked.
+fn told_order(room: &mut Room, kinds: [EventKind; 2]) -> [Option<usize>; 2] {
+    let events = room.take_events();
+    kinds.map(|kind| events.iter().position(|event| event.kind == kind))
+}
+
+#[test]
+fn won_or_failed_with_the_growth_standing_tells_the_heroic_task_missed_before_the_result() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    room.tick();
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, players[0]);
+    }
+    let needed = fissure(&room).needed();
+    fissure_mut(&mut room).set = needed - 1;
+    room.take_events();
+    seal_one(&mut room, players[0]);
+    assert_eq!(running(&room).phase, Phase::Won);
+    let [missed, won] = told_order(&mut room, [EventKind::HeroicMissed, EventKind::PublicWon]);
+    assert!(missed.is_some() && missed < won, "missed told before won: {missed:?} {won:?}");
+
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    room.tick();
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, players[0]);
+    }
+    running_mut(&mut room).ticks_left = 1;
+    room.take_events();
+    room.tick();
+    assert_eq!(running(&room).phase, Phase::Failed);
+    let [missed, failed] = told_order(&mut room, [EventKind::HeroicMissed, EventKind::PublicFailed]);
+    assert!(missed.is_some() && missed < failed, "missed told before failed: {missed:?} {failed:?}");
+}
+
+#[test]
+fn a_status_on_the_growth_wears_off_though_the_room_moves_it_itself() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    room.tick();
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, players[0]);
+    }
+    let growth = fissure(&room).growth.unwrap();
+    let foe = room.foes.get_mut(&growth).unwrap();
+    foe.fighter = combat::status::give(&foe.fighter, combat::status::Status::Expose, 60, None).expect("exposed");
+    ticks(&mut room, 61);
+    assert!(!room.foes[&growth].fighter.statuses.has(combat::status::Status::Expose), "worn off");
+}
+
+#[test]
+fn a_named_foe_gone_from_the_room_takes_its_name_with_it() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    room.tick();
+    let foe = lesser(&room)[0];
+    room.names.insert(foe, WARDEN_NAME);
+    strike(&mut room, players[0], foe, 1.0e6);
+    ticks(&mut room, u64::from(combat::tuning::FOE_GONE) + 2);
+    assert!(!room.foes.contains_key(&foe), "its body gone");
+    assert!(!room.names.contains_key(&foe), "and its name");
+}

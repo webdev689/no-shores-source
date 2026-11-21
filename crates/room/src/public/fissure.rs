@@ -139,7 +139,8 @@ impl Room {
             }
         }
         let warden_fell = fissure.warden.is_some_and(|id| self.foes.get(&id).is_none_or(|foe| foe.fighter.dead()));
-        if running.bonus && running.ticks_left * 2 < super::COUNTDOWN_TICKS {
+        // Sealed, the bonus is settled: a Warden falling late keeps it.
+        if running.bonus && !sealed && running.ticks_left * 2 < super::COUNTDOWN_TICKS {
             running.bonus = false;
         }
         let won = (sealed && running.heroic != Heroic::Met) || warden_fell;

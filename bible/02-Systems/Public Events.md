@@ -36,7 +36,9 @@ alternates its two, and the zone after it runs the other one at the same time. `
 event a Unix minute falls in and the minute it starts; it is a pure function, so the room, the page and the tests agree.
 The host sets the room's minute about once a second; an event begins in the first tick its minute comes, and a room
 opened during one starts it with the countdown its start minute leaves, to the minute. A room keeps no event across
-its closing. An event has 8 minutes; won or failed, its result shows for 12 seconds, and the next is shown from then.
+its closing. A room left empty stops ticking but may stay open: when the minute it is given jumps, its event keeps no
+more than the countdown its start minute leaves, and one a whole minute past its end is ended quietly, with no result,
+no chests and its foes gone. An event has 8 minutes; won or failed, its result shows for 12 seconds, and the next is shown from then.
 
 **The grounds.** The layout marks them with its other sites ([[Layouts]]): three stores in each hamlet, on clear
 ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of every building, set piece and prop and 2 m
@@ -61,7 +63,8 @@ files, measured once, best of three:
 **Its foes** stand at the top of the island's band and the voyage's seas, at home round the event's ground, hunting
 the nearest player there; they never leash back to a garrison's post. They count toward the 32 foes alive a zone's room that holds events stands (24 in any other node's). The
 Fissure's growth and the raid's tithe-taker the room moves itself: their brains are left be, so neither moves on its
-own nor strikes, and each walks the navmesh at its own pace.
+own nor strikes, and each walks the navmesh at its own pace; their statuses still wear off. A raid's approach and its
+raiders' home (the stores' middle) are put on the navmesh as it begins, at its nearest point.
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle: three foes and one more for
 each player seen at it beyond the first (six at most), drawn from Husks, Flickers, an Idol and a Ravager. Another
@@ -75,7 +78,7 @@ beyond the first, 40 at most. Sealed, it closes: every foe of it still standing 
   for 45 seconds, 2 rising and 2 sinking, then sinks back. Broken in time, the event turns heroic: half of the shards
   still needed are added, every wave after holds an Elite (a Bulwark or a Ravager by turns), and the seal complete
   brings out the Warden (a Bulwark Miniboss, "The Warden of the Fissure"), who must fall to win; then the rest shatter.
-- **Bonus:** sealed with at least half of the 8 minutes left.
+- **Bonus:** sealed with at least half of the 8 minutes left; a Warden falling later keeps it.
 
 **The raid.** Its banners are planted and its first wave comes in round its approach: two Collectors, two Runners and a
 Crossbowman, the Runners and the Crossbowman Minors. The second brings two Collectors, an Enforcer, a Crossbowman and a
@@ -109,7 +112,8 @@ event's level as a kill's worth does: 1,500, 2,200, 3,200 and 4,500 XP by tier, 
 pledged while its cape is worn as a kill's XP does; 120 to 360 Aurem; 2 to 7 of each Fragment; Essence from the heroic
 tiers (1, 2); 3 to 8 of the island's resource; and a Vestige always, a foe's colours from a plain chest and a Boss's
 from a heroic one, the bonus's tier rolling twice and keeping the better. A Vestige with no room in the ten goes to
-the vault, and with no room there either lies on the ground where the chest stood, as any drop does.
+the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a leaver's goes
+to the vault however full, since the ground they leave would lose it.
 
 **The wire.** Each snapshot of a zone's room carries `public_event` ([[Server]]): the event running or showing its
 result (kind 1 the Fissure, 2 the raid, 0 none) and its phase (0 waiting, 1 running, 2 won, 3 failed), its ground and
@@ -119,7 +123,8 @@ toward what it needs (shards set of shards needed, or the stores' health left pe
 the growth (rising, standing, sinking, broken), each store (whole, plundered; always, even waiting), each shard lying
 (its life left) and carried (by whom), the tithe-taker (arriving, counting, leaving), each banner and the approach.
 New fight events: 14 begun, 15 next stage, 16 a shard taken, 17 a shard set, 18 heroic met, 19 heroic missed, 20 won,
-21 failed, 22 a store plundered, 23 a chest opened. A foe carries the name it stands under, if any; a drop of kind 3 is
+21 failed, 22 a store plundered, 23 a chest opened. A heroic window still open as the event is won or failed is told
+missed before the result, so the result is the last beat of its tick. A foe carries the name it stands under, if any; a drop of kind 3 is
 a chest, with its tier. The browser reads it all in `client/src/network/publicMessages.ts`.
 
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their
@@ -170,3 +175,6 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - The scripted players stand at level 6 with Rare gear at 6, over Saltmere's band of 1 to 4: two players at its band
   were not tried against a heroic raid's third wave.
 - The Heart is in the roster only: it has no phases of its own and stands in no event.
+- The stores, banners and growth spots are chosen before the layout stands its beacons and resource marks, so
+  they could meet; `crates/room/tests/grounds_planned.rs` holds Saltmere's three layouts clear of them.
+- A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
