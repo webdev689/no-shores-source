@@ -390,9 +390,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   and drop the timers with T.
 - **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
   `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA).
-- **The islands** ([[Islands]]): the door's trip into its dungeon, once the Dungeons session pushes its
-  `sea-dungeon-…` room and trip (the page names the room; until then E at the door says it is not open); the
-  islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
+- **The islands** ([[Islands]]): coming out of a door's dungeon back onto its island, before the door, rather than at
+  the ship (the trip takes the door's point already, `SeaBack`); the islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
   its own height, turn and size); pictures of the landfall offer, E's prompts and washing up in the game itself (staging at sea
   headless outran its budget here).
 - **The sea after #75**: the friendly ships' port factions (deferred by the owner); ships' own upgrade materials,

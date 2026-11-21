@@ -353,9 +353,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     discovered.nodes(playing.sea.view.landings);
   };
 
-  /** The dungeon behind an island's door: the dungeons' trip takes its room and door from here. */
-  // shortcut: the second stack's trip takes it (`trips.enterSeaDungeon(door.room, { x, y, facing })`); until then, said.
-  const enterDungeon = (_door: DungeonDoor) => hud.note('The way down is not open yet.');
+  /** The dungeon behind an island's door, by its room's name, coming back out before the door. */
+  const enterDungeon = ({ room, at: [x, y], facing }: DungeonDoor) => trips.enterSeaDungeon(room, { x, y, facing });
 
   /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. The sea
    *  is left only once the island's room has opened: one that does not (it faded, or the sea no longer holds it)

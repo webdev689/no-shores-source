@@ -207,7 +207,7 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   Normal, as a member who came in by the Roster does. "Go to them" for a
   member in a dungeon goes into the very room they are in, at their seas, the veil saying "Joining your company at"
   its name.
-- **A sea island's dungeon** is entered from its door in the sea's room by its room's name
+- **A sea island's dungeon** is entered by E at its door on the island ([[Islands]], "The door") by its room's name
   (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`, with `--elite` or `--abyss` after it for
   its tier), shared at Normal and a run above it. It is laid by its seed and style and named "The <Style> of the
   Sea", the veil saying "Entering The Caverns of the Sea". Leaving it the veil says "Leaving" it and the player goes
