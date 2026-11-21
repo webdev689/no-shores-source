@@ -99,6 +99,12 @@ pub extern "C" fn room_story_hunt(foe: u32, player: u32) -> u32 {
     u32::from(on_land(|room| room.story_hunt(foe, player)).unwrap_or(false))
 }
 
+/// The story moves a crewman's post (`Room::story_post`): where, and the way he faces; 1 if moved, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_story_post(crew: u32, x: f64, y: f64, facing: f64) -> u32 {
+    u32::from(on_land(|room| room.story_post(crew, (x, y), facing)).unwrap_or(false))
+}
+
 /// Stands a block (`stand_block`) from its west, north, east and south edges, its top and its underside; 1 if stood,
 /// 0 if not.
 #[unsafe(no_mangle)]

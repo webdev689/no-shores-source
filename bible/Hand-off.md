@@ -275,13 +275,30 @@ Where the work stands now, for the next session. Each session rewrites this note
   show the system cursor), the binds' D1 migration and route live, the marks on a real GPU.
 - **The dungeons-to-mail stack** (#72 → #88 → #97 → #122 → #123): a second and third audit's findings are all fixed,
   and each layer passes the full check on its head (64ca61c6, 4878453b, ad1c2084, 1b7dab08, b87ffb3e). It conflicts
-  with `main` since #118, #126, #119, #130, #133 and #134, so it needs a catch-up before it merges, with the owner's
+  with `main` since #118, #126, #119, #130, #133, #134 and #136 to #138, so it needs a catch-up before it merges, with the owner's
   yes. #122's move of the asset workflows to `R2_TOKEN` waits on the owner's named yes. Meeting #134, the Postmaster's
   letter mark should beat while mail waits (his ring did), the board wear a gold "!", an entrance a door.
 - **The picture driver and the game's worker**: main draws in a worker, so `webgpu-shot.cjs` fails headless ("A valid
   external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
   So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
   (cfd75bba), unmerged; the marks were pictured with it.
+- **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
+  ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map
+  message they sent is an injected script's, not the game's.
+  - #136 (branch `claude/keen-cannon-4nbe4z`): any error thrown in a frame stopped the game's loop for good, the
+    picture frozen and the music playing on; each frame now runs under `FrameGuard` (`frameGuard.ts`), which reports
+    it and asks for the next. And the leaks two audits found, each fixed with a test that fails without it: the blood
+    view's pictures, an audio node a frame for a bed not yet come, unclosed bitmaps, figure frames never trimmed in
+    cutscenes, a sea join after the player left, a failed landing's socket, the worker's waits with no page audio, a
+    wreck run opened late, the forge's last cards. Tested offline (the full check).
+  - The second (branch `claude/keen-cannon-4nbe4z-audio`, stacked on #136): every recording was decoded at the
+    first tap, about 112 minutes of audio, some 2.5 GB of samples and a second copy in the worker. Now recordings come
+    as they are wanted, long ones a 1 MB chunk at a time, held once on the page within 192 MB, every file kept in the
+    browser's Cache Storage ([[Interface]], "How recordings load"). Tested against R2 headless: 26 MiB held after the
+    wake, a reload asking R2 for 4 files where the first visit asked for 96. Not yet heard: the seams between a bed's
+    chunks.
+  - Not seen on a real GPU: headless Chromium in the cloud container loses the game's WebGPU device about 2 s after
+    start on every commit tried (the published page too), so the intro could not be run headless at all.
 - **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
   after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
   and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three
@@ -354,10 +371,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   named here. Tested offline: the full check, and the freeze against the real room (a press there parries, and
   dodges, each at its first freeze). Not yet seen or played in a browser: the eyes over the scene, the arms on the
   deck, the menu over the story, the frozen frame. Open: the owner's "teaching them the inventory" is taught on the
-  Character page (I), where gear is worn, which the owner may want otherwise; the wreck's tool still writes the
-  flight's masts and way back into its layout, which the page no longer reads (removing them rebuilds and publishes
-  the wreck); the step up to where the player wakes is too high for foes, so a player who stays up there is not
+  Character page (I), where gear is worn, which the owner may want otherwise; the step up to where the player wakes is too high for foes, so a player who stays up there is not
   reached until they come down; the game's headless pictures cannot draw the game since it draws in a worker.
+- **The playtest's wreck notes, on branch `claude/beautiful-mendel-rnj0xh`, wait on the owner's yes** to merge: the
+  ramp from the Frigate's gun deck up onto the raft off its port quarter, where that zone's wave fights, was walled by
+  splinters (gaps of 0.3 to 0.6 m) since climbing went off, so the wave was never reached, its heap on the last ramp
+  never cleared, and the arena could not be reached; every ramp's way is now cleared where it meets a deck
+  (`clear_ways`), and the level's check walks with a body's width, which found the Frigate's waist's pistoleer boxed in
+  on her forecastle, now stood on her waist just aft of it. The Brig's crew still standing regroup at each zone's
+  checkpoint as the player reaches it ([[The Crew Still Standing Regroup Ahead]]). The layout no longer carries the
+  dropped flight's masts and way back. The wreck is rebuilt by its workflow and the layout taken whole from it.
+  Tested offline: the full check, the wreck built and its level checked here with Blender's module (bpy 5.3.0, as
+  CI), the ramp pictured before and after, and a crewman walking from one zone to the next in the real room.
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through
@@ -544,6 +569,16 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **Areas in chunks, after the recordings** ([[Areas Load in Chunks With Proper Caching]]): the forge's picture packs
+  read in fixed blocks kept in Cache Storage (at the intro's start some 60 range requests went to one pack within
+  2 ms; one block holds them all), through `contentCache.ts`; the next area's land, pictures and sounds fetched ahead
+  of a switch; a cap on what the browser's storage keeps, least lately used let go; R2's `Cache-Control: immutable`
+  set by `tools/r2.py` once it is checked that Cloudflare's object API takes the header (and marking the files
+  already there writes to R2: the owner's yes); then the hitching measured on a real GPU, which a cloud session
+  cannot do.
+- **Memory still worth measuring**: the figure cards' 4000-texture budget (`player/cards.ts`) against a real GPU's
+  memory; the scene's full-size targets, about 590 MB at 5120 by 2880 (`scene.ts`), with no cap at the device's
+  limits; the item pictures' cache (`player/itemPictures.ts`), uncapped.
 - **Overlook's hub** ([[Overlook's Hub as Claude Shapes It]]): a frame's cost on a real GPU with some 125 figures and
   the courts' pieces; the audit's risks left open (a walker's step to the side of a post's line or round a sharp turn
   is not walked against the real hub's boxes, kept posts' people are not booked against walkers, routines' maths may

@@ -502,8 +502,8 @@ picture, so the interface the game draws over the world keeps its colour.
 
 - A save the game makes as the tab closes is sent from the worker to the page's storage. A closing test page still
   stored it; whether a real tab's close always does is unchecked.
-- A sound's samples are held twice: those the game fills itself are copied to the page, not moved, and every recording
-  the page decodes is kept there as its buffer and in the worker as a copy of its samples, for the game to read.
+- The samples of a sound the game fills itself are held twice: copied to the page, not moved. A recording is held
+  once, on the page, the worker keeping only its shape and how it measures ([[Interface]], "How recordings load").
 - A browser that cannot hand its canvas to a worker says so and does not start.
 
 - Until the city's tables and blocks have come, the land shows without its city.
