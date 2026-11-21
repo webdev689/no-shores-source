@@ -244,11 +244,14 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **#120, three healing charges, waits on the owner's yes** ([[Three Healing Charges, Refilled by Blows and Kills]]):
-  built to the owner's picks, then a five-part audit (rules and room, wire and prediction, tests and notes, balance
-  against the roster, a design pass with pictures) and a last verification audit, every finding fixed or named in
-  the decision page. Tested offline with the full check; not yet seen or heard in a browser on a real GPU, nor
-  played in a company. Its merge deploys the rooms and the page, and a tab still on the old page reloads once.
+- **#120, three healing charges, is on `main`**, merged with the owner's yes ("Merge and deploy"), which deployed the
+  rooms and the page ([[Three Healing Charges, Refilled by Blows and Kills]]): built to the owner's picks, then a
+  five-part audit (rules and room, wire and prediction, tests and notes, balance against the roster, a design pass
+  with pictures) and a last verification audit, every finding fixed or named in the decision page. Tested offline
+  with the full check. Not yet seen or heard in a browser on a real GPU, nor played in a company: the diamonds under
+  the vitals, the drink on `3`, the green word and its sound, and charges coming back in a fight. Left as named in
+  the decision: a heal and a blow judged in the same tick or two can both stand, and dying or rejoining refills all
+  three.
 - **Overlook's hub's flora**: whether "any flora like bushes or trees" also covers the wall ivy and the cut flowers
   sold at the flower stall and cart, which are the hub's own (the world grows no climber; cut flowers are goods).
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
