@@ -258,7 +258,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
-  rolled among those that reach the locked foe. Alone, Escape pauses the fight.
+  the chain's next that reaches the locked foe ([[Combat]], "Swings"). Alone, Escape pauses the fight.
 - **Others.** Foes and other players are drawn between the room's snapshots along a clock that runs at the frames'
   pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
   takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.

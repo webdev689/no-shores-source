@@ -212,6 +212,7 @@ export class Fighting {
     this.foes.clear();
     this.others.clear();
     this.spells.clear();
+    this.struck = null;
   }
 
   get player(): number {
@@ -382,6 +383,7 @@ export class Fighting {
     this.sentLately = resend > 0 ? [...this.sentLately, sent].slice(-resend) : [];
     // Dead, the room steps the fighter as it lies, whatever is asked: nothing is swung or shot, and it falls on.
     if (this.standing.kind === 'dead') {
+      this.struck = null;
       this.fighter = this.lying(this.fighter, view);
       return bodyOf(Array.from(this.fighter.subarray(0, 22)));
     }
@@ -395,12 +397,11 @@ export class Fighting {
       this.shotsLoosed += 1;
     }
     if (drawing && this.fighter[ACTION_AT] === IDLE) this.drawsDropped += 1;
-    if ((this.fighter[BLOWS_AT] ?? 0) !== before) {
-      this.swingsBegun += 1;
-      this.struck = this.fighter[ACTION_AT + 1] ?? this.stroke;
-    }
-    this.rested = this.fighter[ACTION_AT] === ATTACK ? 0 : this.rested + 1;
-    this.stroke = this.next();
+    if ((this.fighter[BLOWS_AT] ?? 0) !== before) this.swingsBegun += 1;
+    // The swing under way, the page's or one the room's word began, is the chain's last.
+    const swinging = this.fighter[ACTION_AT] === ATTACK;
+    if (swinging) this.struck = this.fighter[ACTION_AT + 1] ?? this.struck;
+    this.rested = swinging ? 0 : this.rested + 1;
     return bodyOf(Array.from(this.fighter.subarray(0, 22)));
   }
 

@@ -251,13 +251,7 @@ async function start(): Promise<void> {
   const { forge, store, looks, hair } = await openCards(scene);
   loadForgedBirds((path) => store.strip(path));
   cards = forge;
-  // The first person swings in the direction the fight's rules began the swing with.
-  const strokeShare = () => {
-    const action = fight?.own?.action;
-    const stroke = action?.kind === 'attack' ? action.stroke : (fight?.stroke ?? 1);
-    return (stroke - 0.5) / 6;
-  };
-  const firstPerson = await FirstPerson.open(gpu, store, strokeShare);
+  const firstPerson = await FirstPerson.open(gpu, store);
   const player = new Walker(standing, you, firstPerson, forge);
   walker = player;
   status = 'Click the view to play.';

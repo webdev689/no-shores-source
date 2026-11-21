@@ -163,7 +163,7 @@ export class Walker {
     this.you = you;
     this.firstPerson = firstPerson;
     const own = firstPerson.strokes;
-    // The first person's share of DFO's six ways that names the stroke: the six are the combat crate's strokes in order.
+    // The first person's share of DFO's six ways naming the stroke: the six are the combat crate's strokes in order.
     firstPerson.strokes = () => (this.fightStroke === null ? own() : (this.fightStroke - 0.5) / 6);
     this.forge = forge;
     this.dress = you.dress;

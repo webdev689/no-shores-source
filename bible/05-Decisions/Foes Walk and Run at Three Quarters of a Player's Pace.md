@@ -23,7 +23,7 @@ Claude's calls:
 - A foe asks no more of itself than three quarters of a player's walk or run, and the rules move it as they move
   anyone. Its slower moves (circling on its ring, stepping in and out, keeping its place in a line) keep their speeds,
   and steering apart from its allies may still push it a little faster for a moment, so its groups keep their lines
-  and rings, and its crowds their room, as before.
+  and rings, and its crowds their room, as before; running, no push carries it on along its way past its own run.
 - A slower figure's run strides as much slower as its walk does, so a foe's feet keep to the ground, and a foe shows
   running above three quarters of the speed a player shows it at.
 

@@ -319,8 +319,9 @@ export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): num
  * progress or looping; in the air the jump by rising or falling; mounted, the horse's; a cast; a blow, the owner's blow
  * for the stroke and the hold where drawn, else a stroke of the weapon's attack (frames 0-2, the next blow 3-5); a
  * shot, its weapon's own move, then its reload; crouching; running, its strides slowed below a full run; else the
- * weapon's own walk and rest, the walk's steps slowed below a full walk. `draws` says whether the forge draws a held thing in a move. Moving, a blow, a shot,
- * a reload, a ranged weapon aimed and the cast play their own on the move where the figure draws it whole (`walking`).
+ * weapon's own walk and rest, the walk's steps slowed below a full walk. `draws` says whether the forge draws a held
+ * thing in a move. Moving, a blow, a shot, a reload, a ranged weapon aimed and the cast play their own on the move
+ * where the figure draws it whole (`walking`).
  */
 export function shownMove(
   doing: Doing,

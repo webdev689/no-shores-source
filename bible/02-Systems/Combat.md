@@ -117,7 +117,7 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
   (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
   at once, but a swap begun as another was put away runs on. A click made in a swap is kept until it ends, however
-  early, and its swing starts on the tick the swap ends, once, with the stroke the click rolled for the new weapon
+  early, and its swing starts on the tick the swap ends, once, with the stroke the chain gives the new weapon
   ([[A Click During a Weapon Swap Swings as It Ends]]); the page predicts it by the same rules, so the first person
   and the figure swing on that tick. A trigger pulled in a swap to a ranged weapon fires then if it is loaded, as a
   pull at rest does, and does nothing if not. The newest press wins: a guard, a dodge or another swap pressed after

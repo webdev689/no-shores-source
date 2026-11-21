@@ -173,6 +173,12 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
     if !ask.unspaced {
         wish = spaced(here, wish);
     }
+    // Running, no push from an ally carries it on along its way past its own run, so a player running away gets away.
+    if let Some((way, _)) = ask.way.filter(|_| ask.run) {
+        let ahead = [libm::sin(way), -libm::cos(way)];
+        let over = (wish[0] * ahead[0] + wish[1] * ahead[1] - here.pace()).max(0.0);
+        wish = [wish[0] - ahead[0] * over, wish[1] - ahead[1] * over];
+    }
     let whole = libm::sqrt(wish[0] * wish[0] + wish[1] * wish[1]);
     let length = whole.min(1.0);
     let share = if whole > 1e-9 { [wish[0] / whole * length, wish[1] / whole * length] } else { [0.0, 0.0] };
