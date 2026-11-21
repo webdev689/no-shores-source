@@ -72,7 +72,7 @@ on Cloudflare.
   a respawn stands them there too.
   A room holds 16 players; past that, it turns the next away.
 - **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused, as is one with a
-  number in it that is not a number. An input is one tick's intent, the controls ([[Movement]]) and the fight's
+  movement or facing that is not a number. An input is one tick's intent, the controls ([[Movement]]) and the fight's
   buttons ([[Combat]]), with what the player's hands hold and the room tick their screen last showed. It steps that
   player's fighter once by combat's player tick, on the room's ground, among the fighters as that screen showed them,
   exactly as the browser that predicted it did, so a prediction can only differ where the server knows more
