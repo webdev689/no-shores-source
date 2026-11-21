@@ -96,6 +96,7 @@ pub fn harbour(social: &mut Social, frame: &Frame, way: &Harboured<'_>) {
             }
         }
         offices([top[0], top[1], top[2]], [foot[0] - top[0], foot[1] - top[1]], &mut laid);
+        social.areas.push(crate::social::NamedPlace { name: "Quay".to_owned(), at: [foot[0], foot[1]] });
     }
     let landings: Vec<&&Ramp> = ramps.iter().filter(|ramp| ramp.piece == Piece::Landing).collect();
     if let (Some(low), Some(high)) = (

@@ -9,6 +9,8 @@ import {
   NEAR_M,
   PEAK_HOLD_S,
   QUIET,
+  RESTS,
+  type SongClock,
   TENSION_HOLD_S,
   type Verdict,
   bossPart,
@@ -51,7 +53,7 @@ function run(frames: readonly Hearing[], memory: Memory = QUIET, seconds = 0.1) 
 }
 const times = (count: number, hearing: Hearing): Hearing[] => Array.from({ length: count }, () => hearing);
 
-test('roaming is silent, and a foe near turning alert brings in the tension of the island family fight score', () => {
+test('arriving is silent, and a foe near turning alert brings in the tension of the island family fight score', () => {
   assert.equal(run([calm]).mood, 'silent');
   assert.deepEqual(run([calm]).cue, { kind: 'none' });
   assert.equal(run([{ ...calm, foes: [foe({ alert: 1 })] }]).mood, 'silent', 'a stir is not yet danger');
@@ -160,10 +162,62 @@ test("a boss's fall is its sting; a boss that lets the player go resolves like a
   assert.notEqual(leashed.mood, 'boss');
 });
 
-test("the social space plays Saltmere's theme while nothing threatens", () => {
-  const social = { ...calm, place: { kind: 'social', climate: 'temperate-coast' } as const };
-  assert.deepEqual(run([social]).cue, { kind: 'social' });
-  assert.equal(run([social]).mood, 'silent');
+/** Each piece a hundred seconds long, three to a place, every rest the middle of its range. */
+const pieces: SongClock = { lengthOf: () => 100, pieces: () => 3, random: () => 0.5 };
+/** What played each second for `seconds`, from `memory`, and the memory after. */
+function heard(seconds: number, hearing: (second: number) => Hearing, memory: Memory = QUIET, songs = pieces) {
+  const cues: string[] = [];
+  for (let second = 0; second < seconds; second++) {
+    const verdict = hear(memory, hearing(second), 1, songs);
+    memory = verdict.memory;
+    cues.push(JSON.stringify(verdict.cue));
+  }
+  return { cues, memory };
+}
+const SOCIAL = { ...calm, place: { kind: 'social', climate: 'temperate-coast' } as const };
+const none = JSON.stringify({ kind: 'none' });
+
+test("the social space's pieces come a little after arriving, once through, with minutes of silence between", () => {
+  const { cues } = heard(700, (second) => (second < 10 ? calm : SOCIAL));
+  const playedAt = cues.findIndex((cue, second) => second >= 10 && cue !== none);
+  assert.equal(playedAt, 10 + RESTS.social.least, 'its first after the least wait');
+  assert.equal(JSON.parse(cues[playedAt] ?? '{}').kind, 'social');
+  const quietFor = cues.slice(playedAt + 100).findIndex((cue) => cue !== none);
+  const [lowest, highest] = RESTS.social.after;
+  assert.equal(quietFor, (lowest + highest) / 2, 'then a rest');
+  const pieceOf = (cue: string | undefined) => JSON.parse(cue ?? '{}').piece;
+  assert.notEqual(
+    pieceOf(cues[playedAt + 100 + quietFor]),
+    pieceOf(cues[playedAt]),
+    'never the same piece twice running',
+  );
+});
+
+test("an island plays its family's calm pieces now and then; danger ends one, and the wait begins again", () => {
+  const { cues } = heard(200, () => calm, { ...QUIET, where: 'wet', restUntil: RESTS.island.least });
+  // The clock reads a second at the first frame.
+  const first = RESTS.island.least - 1;
+  assert.equal(
+    cues.findIndex((cue) => cue !== none),
+    first,
+  );
+  assert.equal(JSON.parse(cues[first] ?? '{}').kind, 'roam');
+  assert.equal(JSON.parse(cues[first] ?? '{}').family, 'wet');
+  const brute = { ...calm, foes: [foe({ alert: 3 })] };
+  const fight = heard(300, (second) => (second >= 130 && second < 140 ? brute : calm), {
+    ...QUIET,
+    where: 'wet',
+    restUntil: RESTS.island.least,
+  });
+  assert.equal(JSON.parse(fight.cues[135] ?? '{}').kind, 'family', 'danger plays the fight score');
+  const after = fight.cues.slice(140).findIndex((cue) => JSON.parse(cue).kind === 'roam');
+  assert.ok(after === -1 || after >= RESTS.island.least - TENSION_HOLD_S, 'no calm piece soon after');
+});
+
+test('no calm piece in rain, a storm or fog, nor where none is written', () => {
+  const rain = { ...SOCIAL, sky: { falling: 0.4, storm: 0, fog: 0, windMS: 5, night: false } };
+  assert.ok(heard(300, () => rain).cues.every((cue) => cue === none));
+  assert.ok(heard(300, () => SOCIAL, QUIET, { ...pieces, pieces: () => 0 }).cues.every((cue) => cue === none));
 });
 
 test('at sea a hostile ship closing brings the tension, a fight the fight, held in one sea song', () => {

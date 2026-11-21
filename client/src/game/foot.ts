@@ -314,15 +314,16 @@ export class Foot {
     return this.link.open ? `In the room as player ${this.link.player}` : 'The room was lost: playing on alone';
   }
 
-  /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, the fight's buttons only
-   *  while `hands`), the room's clock runs, the camera follows, and every figure, foe and mark is placed for an eye
-   *  there. */
+  /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, nor while `looking` at the
+   *  held map, though the world is heard as ever; the fight's buttons only while `hands`), the room's clock runs, the
+   *  camera follows, and every figure, foe and mark is placed for an eye there. */
   frame(
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, hands, aspect }: { paused: boolean; hands: boolean; aspect: number },
+    { paused, looking = false, hands, aspect }: { paused: boolean; looking?: boolean; hands: boolean; aspect: number },
   ): FootFrame {
+    const still = paused || looking;
     const { walker, movement, forge, groundAt } = this.context;
     const { fight, foes, effects } = this;
     this.dressInGear();
@@ -340,9 +341,9 @@ export class Foot {
     const aimed = () =>
       playerCamera(walker.player, movement, [...this.boxes, ...(this.context.cameraBlocks ?? [])], AIM, groundAt);
     const camera = () => pushedIn(aimed(), effects.anima.push);
-    const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
+    const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
-      hands: hands && !paused,
+      hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
       zoomOf: () => camera().zoom ?? 1,
       handsSeconds: feel.shownSeconds(fight.player, seconds),
@@ -466,8 +467,8 @@ export class Foot {
     // The arcs are measured from the eye, as the marks are, so they keep their centimetres far out in the world.
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
     showAnimaEdge(effects.anima);
-    // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
-    const able = !paused && !this.fallen;
+    // E does nothing while a menu or the held map is up, or the player lies dead, past the edge or felled by a foe.
+    const able = !still && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
     const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);

@@ -3,9 +3,8 @@
 // shelter, and each lightning strike's thunder: where it is heard from, when it arrives, and which it is.
 
 import type { SkyReading, Strike } from '../../../sky/skyLaw.ts';
-import type { BedKey } from './beds.ts';
 import type { Phase } from './law.ts';
-import type { SoundKey } from './sounds.ts';
+import type { BedKey, SoundKey } from './recordings.ts';
 
 /** The twilight is whole while the sun is within the first height of the horizon, degrees, and gone past the second:
  *  dawn as it rises in the east, dusk as it sets in the west. */
@@ -69,8 +68,6 @@ export const gustDepth = (depth: number, weather: HeardWeather): number =>
 
 /** A rain bed's level by how hard it falls: a drizzle is heard, a downpour fills the air. */
 export const rainLevel = (rain: number): number => Math.max(0, rain) ** 0.6;
-/** A rain bed's top, Hz: soft and dark in a drizzle, open and hissing in a downpour. */
-export const rainCorner = (rain: number): number => 1800 * 2 ** (2.2 * Math.max(0, Math.min(1, rain)));
 
 /** Falling snow muffles the land: every bed but the weather's own is softened by up to this share. */
 const SNOW_SOFTENS = 0.45;
