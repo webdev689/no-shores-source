@@ -49,18 +49,19 @@ export function loadNodeCards(
 
 /** The cards of a layout's nodes: each its island resource's picture (what its place holds) at its place (`places`,
  *  numbered as the room numbers its nodes) on `floor`, standing where the room stands it for the player (`gear`'s
- *  `nodes`), gathered where they gathered it (its `spent`); none at a place resting this turn, nor for one whose
- *  picture has not come. */
+ *  `nodes`), and as it lies gathered until it stands again (a node the player gathered, or one resting its turn); none
+ *  where the room stands no node at all (a mission's places), nor for one whose picture has not come. */
 export function nodeCardsAt(
   places: readonly Pick<LaidSite, 'at' | 'holds'>[],
   gear: Pick<GearState, 'nodes' | 'spent'> | null,
   floor: (x: number, y: number) => number,
 ): CardAt[] {
-  const [standing, spent] = [new Set(gear?.nodes.map((node) => node.index)), new Set(gear?.spent)];
+  const standing = new Set(gear?.nodes.map((node) => node.index));
+  // A room that stands none, nor has any spent, has no nodes here: before its first word, or a mission's places.
+  if (standing.size === 0 && (gear?.spent.length ?? 0) === 0) return [];
   return places.flatMap((place, index): CardAt[] => {
     const width = place.holds === undefined ? undefined : NODE_WIDTH_M[place.holds];
-    const shown = standing.has(index) || spent.has(index);
-    const card = width && place.holds && shown && cards.get(nodePicturePath(place.holds, !standing.has(index)));
+    const card = width && place.holds && cards.get(nodePicturePath(place.holds, !standing.has(index)));
     if (!card || !width) return [];
     const [x, y] = place.at;
     return [{ card, x, y, z: floor(x, y), flip: false, scale: (width * PX_PER_M) / card.width }];

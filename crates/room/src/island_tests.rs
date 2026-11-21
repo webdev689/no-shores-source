@@ -150,7 +150,7 @@ fn where_landings_are_checked_only_an_account_the_sea_says_landed_scavenges() {
     let [far, guest, landed] = [far, guest, landed].map(|player| player.expect("a room with space"));
     room.own(far, "far-off");
     room.own(landed, "anchored");
-    assert!(room.land("anchored"));
+    assert!(room.land("anchored", 1));
     for player in [far, guest, landed] {
         stand_at(&mut room, player, [wreck[0] + 1.0, wreck[1]]);
     }
@@ -210,4 +210,35 @@ fn an_islands_nodes_all_stand_and_each_is_gathered_once_by_each_account_while_it
     again.own(landed, "account-a");
     assert!(again.nodes_for(landed).any(|(index, _)| index == 0), "back on the next landing");
     assert!(Room::island(&plan, AT, None, None, None).resource_nodes.is_empty(), "none without a resource");
+}
+
+#[test]
+fn where_landings_are_checked_a_node_is_gathered_by_the_landed_alone_and_stands_again_on_their_next_landing() {
+    let plan = plan(Kind::Cove);
+    const BRINEGLASS: u8 = 0;
+    let mut room = Room::island(&plan, AT, None, None, Some(BRINEGLASS));
+    assert!(room.check_landings());
+    let node = isle::placed(plan.sites.nodes[0], AT);
+    let gather = |room: &mut Room, player: PlayerId| {
+        stand_at(room, player, [node[0] + 1.0, node[1]]);
+        room.answer(player, asks::Asked::Gather { node: 0 });
+        room.player(player).expect("in").answer
+    };
+    let player = room.join().expect("a room with space");
+    room.own(player, "anchored");
+    assert_eq!(gather(&mut room, player), asks::OUT_OF_REACH, "not landed: no gathering, as no scavenging");
+    room.land("anchored", 7);
+    assert_eq!(gather(&mut room, player), 0);
+    for _ in 0..=asks::GATHER_TICKS {
+        room.tick();
+    }
+    assert!(room.player(player).expect("in").spent.contains(&0), "gathered");
+    // Rejoined in the same landing, it stays spent; the sea's next landing makes it stand again.
+    room.leave(player);
+    let back = room.join().expect("a room with space");
+    room.own(back, "anchored");
+    room.land("anchored", 7);
+    assert!(!room.nodes_for(back).any(|(index, _)| index == 0), "the same visit");
+    room.land("anchored", 8);
+    assert!(room.nodes_for(back).any(|(index, _)| index == 0), "a new landing, a new visit");
 }

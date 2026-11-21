@@ -171,7 +171,8 @@ pub struct Player {
     pub answer: u8,
     pub identified: u32,
     pub answered: u32,
-    /// The room's resource nodes they have gathered from this turn, spent for them; on a sea island, the wrecks.
+    /// The room's resource nodes they have gathered from, spent for them: this turn on a patrol, this landing on a sea
+    /// island.
     pub spent: Vec<u8>,
     /// The node they are gathering, E held, if they are, and whether their last input rode a horse.
     pub gathering: Option<crate::asks::Gathering>,

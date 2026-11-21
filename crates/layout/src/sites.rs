@@ -22,7 +22,7 @@ pub enum SiteKind {
     Event,
     /// A patrol beacon.
     Beacon,
-    /// A resource node: ore, herbs, timber or salvage.
+    /// A place the island's resource comes from, dressed as a pile of it, its node standing before it.
     Resource,
     /// Where foes hold ground.
     Foes,
@@ -54,6 +54,35 @@ const RESOURCE_OFF_M: f64 = 55.0;
 /// How far before its dressing, toward its path, a resource's node stands, metres: past the dressing's widest pieces
 /// (`marks`), so its picture stands clear of them.
 pub const NODE_FRONT_M: f64 = 5.0;
+/// How clear of every piece standing over the floor, and of every planting, a resource's node stands, metres.
+pub const NODE_CLEAR_M: f64 = 1.0;
+const NODE_PLANTING_M: f64 = 1.5;
+/// How far apart resource places stand from each other and from beacons, metres: each place's pieces clear of the
+/// other's.
+const RESOURCE_APART_M: f64 = 12.0;
+
+/// Whether a resource's node can stand at `node` once the layout is laid: inside its ring (the room's bounds), on dry
+/// floor, and clear of every solid taller than a step and of every planting; one that cannot has none, and its place
+/// is only dressed.
+#[must_use]
+pub fn node_stands(
+    node: [f64; 2],
+    ring: &[[f64; 2]],
+    field: &Field,
+    (solids, plantings): (&[city::solids::Solid], &[crate::plantings::Planting]),
+) -> bool {
+    let [x, y] = node;
+    let dry = field.water[field.nearest(x, y)] == crate::field::Water::Dry;
+    let blocked = solids.iter().any(|solid| {
+        let [west, north, east, south, bottom, top] = solid.bounds();
+        let near =
+            x > west - NODE_CLEAR_M && x < east + NODE_CLEAR_M && y > north - NODE_CLEAR_M && y < south + NODE_CLEAR_M;
+        near && top - bottom > 0.3
+    });
+    let planted =
+        plantings.iter().flat_map(|planting| &planting.points).any(|&point| distance(point, node) < NODE_PLANTING_M);
+    crate::field::ring_holds(ring, x, y) && dry && !blocked && !planted
+}
 
 /// Whether a point is clear to stand a site on: walkable land not under a building or within a metre of one.
 fn clear(field: &Field, seating: &Seating, at: [f64; 2]) -> bool {
@@ -148,7 +177,12 @@ pub fn mark(
             let off = 18.0 + rand01(seed, &[count, 5]) * (RESOURCE_OFF_M - 18.0);
             let at = [pair[1][0] - south / length * off * side, pair[1][1] + east / length * off * side];
             let resources = sites.iter().filter(|other| other.kind == SiteKind::Resource).count();
+            let apart = sites
+                .iter()
+                .filter(|other| matches!(other.kind, SiteKind::Resource | SiteKind::Beacon))
+                .all(|other| distance(other.at, at) > RESOURCE_APART_M);
             if resources < RESOURCE_MOST
+                && apart
                 && clear(field, seating, at)
                 && off_paths(paths, at)
                 && areas.iter().all(|area| distance(area.at, at) > area.radius * 0.6)

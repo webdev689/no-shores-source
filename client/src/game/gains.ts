@@ -1,4 +1,4 @@
-// What the player gained between two words from the room on their gear: Aurem and Shapes, XP and Prestige, each
+// What the player gained between two words from the room on their gear: Aurem and Shapes, XP, each
 // faction's reputation, each Art's progress and fragments, fragments, essence and Fruit of Dagon, each island's
 // resource, the ship's materials and XP, ammunition from an Ammo box, Ammo crates, and every item, Vestige, emblem and
 // cosmetic new to them. What they spent or moved is not a gain, nor the ammunition a crate they used gave back.

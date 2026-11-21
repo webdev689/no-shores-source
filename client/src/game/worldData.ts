@@ -23,8 +23,8 @@ export interface NodeInfo {
   readonly posts?: readonly Post[];
   /** A patrol area or mission no one may enter until a pass is done on it (`sitesOf`). */
   readonly locked?: boolean;
-  /** A patrol area's resource places (where, and what they hold: ore, herbs, timber or salvage), where its room's
-   *  nodes stand, in its layout's order. */
+  /** A patrol area's resource places (where, and the island's resource they hold), where its room's nodes stand, in
+   *  its layout's order. */
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
 }
 

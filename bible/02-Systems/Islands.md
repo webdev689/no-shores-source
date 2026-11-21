@@ -112,8 +112,8 @@ The sea room holds its islands (`sea_islands.rs`):
 - **Resource nodes.** Each island carries the resource of the island whose waters it lies in ([[Gear]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]): two to four
   nodes inland, a third to three fifths of the way from its middle to its coast on gentle shores, 20 m apart and 15 m
   from every other place, laid on a draw of their own and kept clear by the dressing. Its room stands them all at once;
-  each is gathered by holding E as a patrol's is, once by each account while the room is open, and stands again on the
-  next landing. They are drawn as the resource's picture alone, with no place built round them.
+  each is gathered by holding E as a patrol's is, by a player landed there, once by each account a landing, and stands
+  again for it on its next. They are drawn as the resource's picture alone, with no place built round them.
 - **The door** stands where the dungeon of its style is entered: E there gives the dungeons' trip its room,
   `sea-dungeon-<continent>-<style>-<the island's seed folded to 32 bits, 8 hex digits>` and the sea's tier
   (`--elite`, `--abyss`), and the door's place in the world and the bearing its front faces (`isleLaw.ts`,

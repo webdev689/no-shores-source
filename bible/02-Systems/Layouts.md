@@ -223,9 +223,10 @@ from the sea, fresh water and the claim's edge), then:
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
-   5 m clear of every way's edge, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
-   nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies off
-   the section's floor), and a patrol stands its material nodes there, a third at a time ([[Server]]). Each beacon and
+   5 m clear of every way's edge, each resource 12 m from every other and from each beacon, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
+   nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
+   the section's ring, on water, within a metre of a solid taller than a step or within 1.5 m of a planting, once all is
+   laid), and a patrol stands its material nodes there, a third at a time ([[Server]]). Each beacon and
    resource is a place (`marks`): a beacon's brazier glowing on a stone plinth in a ring of standing stones; and at each
    resource node the place its resource comes from, built of the solids' own materials: Brineglass's tide pool ringed
    with wet stones and salt shards, Cairn Iron's stacked cairn seamed with iron, Heartwood Resin's broad old stump with

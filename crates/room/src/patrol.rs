@@ -1,7 +1,6 @@
-//! A patrol's land: its island's resource at its layout's resource places (an outcrop, salvage, a drying rack, felled
-//! logs), a third of them holding a node at once and the next third after a while, so a player can plan a route
-//! through them. Each player may gather each node once while it stands, holding E while their figure works it. Its
-//! fights are its garrison's (`garrison.rs`).
+//! A patrol's land: its island's resource at its layout's resource places (each a pile of that resource), a third of
+//! them holding a node at once and the next third after a while, so a player can plan a route through them. Each
+//! player may gather each node once while it stands, holding E. Its fights are its garrison's (`garrison.rs`).
 
 use crate::asks::{GATHER_GRACE_TICKS, GATHER_STIR_M, GATHER_TICKS};
 use crate::{PlayerId, ResourceNode, Room};

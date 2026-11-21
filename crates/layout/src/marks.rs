@@ -66,6 +66,23 @@ fn part(
     kit.solid(Solid { lean, ..upright.turned(turn) });
 }
 
+/// A stem on the ground at `spot`, turned `turn` and leaned `lean`, with its head set on its tip, sunk 5 cm onto it.
+fn stem_and_head(
+    kit: &mut Kit,
+    spot: [f64; 2],
+    stem: (Shape, Material, [f64; 3]),
+    head: (Shape, Material, [f64; 3]),
+    (turn, lean): (f64, f64),
+) {
+    let (shape, material, size) = stem;
+    let upright = Solid::upright(shape, [spot[0], spot[1], kit.height(spot)], size, material).turned(turn);
+    let stem = Solid { lean, ..upright };
+    let [x, y, z] = stem.place([0.0, 0.0, size[2]]);
+    kit.solid(stem);
+    let (shape, material, size) = head;
+    kit.solid(Solid::upright(shape, [x, y, z - 0.05], size, material).turned(turn));
+}
+
 /// `count` spots round `at` between `from` and `to` metres out, each at a turn of its own.
 fn round(kit: &mut Kit, at: [f64; 2], count: u32, (from, to): (f64, f64)) -> Vec<([f64; 2], f64)> {
     let start = kit.draw() * TAU;
@@ -93,16 +110,25 @@ fn resource_place(kit: &mut Kit, resource: &str, at: [f64; 2]) {
     }
 }
 
-/// Brineglass: a tide pool ringed with wet stones, salt grown clear as glass in shards at its rim.
+/// Brineglass: a tide pool ringed with wet stones, salt grown pale as glass in shards at its rim.
 fn brineglass(kit: &mut Kit, at: [f64; 2]) {
-    part(kit, (Shape::Column { sides: 12, top: 1.0 }, Material::Water), at, 0.02, [3.0, 3.0, 0.06], 0.0, 0.0);
-    for (spot, _) in round(kit, at, 8, (1.5, 1.8)) {
+    let rim = round(kit, at, 8, (1.5, 1.8));
+    // Level at the lowest ground under its rim, so on a slope it is neither buried nor afloat.
+    let low = rim.iter().map(|&(spot, _)| kit.height(spot)).fold(kit.height(at), f64::min);
+    let pool = Solid::upright(
+        Shape::Column { sides: 12, top: 1.0 },
+        [at[0], at[1], low - 0.02],
+        [3.0, 3.0, 0.06],
+        Material::Water,
+    );
+    kit.solid(pool);
+    for (spot, _) in rim {
         let across = 0.5 + kit.draw() * 0.5;
         stone(kit, Shape::Dome { sides: 6 }, [spot[0], spot[1], kit.height(spot)], [across, across * 0.8, 0.35], 0.2);
     }
     for (spot, angle) in round(kit, at, 7, (0.9, 1.4)) {
         let tall = 0.4 + kit.draw() * 0.6;
-        let shard = (Shape::Pyramid { top: 0.1 }, Material::Plaster);
+        let shard = (Shape::Pyramid { top: 0.1 }, Material::Bone);
         let tipped = (kit.draw() - 0.5) * 0.7;
         part(kit, shard, spot, 0.05, [0.22, 0.22, tall], angle, tipped);
     }
@@ -129,10 +155,14 @@ fn cairn_iron(kit: &mut Kit, at: [f64; 2]) {
 fn heartwood_resin(kit: &mut Kit, at: [f64; 2]) {
     part(kit, (Shape::Column { sides: 10, top: 0.85 }, Material::Timber), at, 0.1, [1.6, 1.6, 1.3], 0.0, 0.0);
     for (spot, angle) in round(kit, at, 5, (0.8, 1.0)) {
-        part(kit, (Shape::Block, Material::Timber), spot, 0.15, [0.35, 1.1, 0.35], angle, 0.5);
+        // Its own +y faces the stump: leaned back, it rises into the stump and dives into the ground outward.
+        part(kit, (Shape::Block, Material::Timber), spot, 0.15, [0.35, 1.1, 0.35], angle, -0.5);
     }
-    for (spot, angle) in round(kit, at, 6, (0.6, 0.72)) {
+    for (_, angle) in round(kit, at, 6, (0.0, 0.0)) {
         let rise = 0.3 + kit.draw() * 0.8;
+        // On the bark: the stump narrows from 0.8 m round at its foot (0.1 m down) to 0.68 m at its top (1.3 m up).
+        let bark = 0.8 - 0.12 * (rise + 0.1) / 1.3;
+        let spot = ahead(at, [0.0, -1.0], bark, angle);
         part(kit, (Shape::Dome { sides: 6 }, Material::Gold), spot, -rise, [0.22, 0.18, 0.2], angle, 0.0);
     }
     for (spot, angle) in round(kit, at, 3, (1.0, 1.2)) {
@@ -168,9 +198,8 @@ fn mistbloom(kit: &mut Kit, at: [f64; 2]) {
     let turned = kit.draw() * TAU;
     part(kit, (Shape::Dome { sides: 10 }, Material::Verdant), at, 0.1, [2.6, 2.2, 0.55], turned, 0.0);
     for (spot, angle) in round(kit, at, 9, (0.3, 1.2)) {
-        part(kit, (Shape::Column { sides: 5, top: 1.0 }, Material::Verdant), spot, 0.0, [0.05, 0.05, 0.6], angle, 0.15);
-        let head = ahead(spot, [0.0, -1.0], 0.04, angle);
-        part(kit, (Shape::Dome { sides: 6 }, Material::Linen), head, -0.55, [0.3, 0.3, 0.16], angle, 0.0);
+        let stem = (Shape::Column { sides: 5, top: 1.0 }, Material::Verdant, [0.05, 0.05, 0.6]);
+        stem_and_head(kit, spot, stem, (Shape::Dome { sides: 6 }, Material::Linen, [0.3, 0.3, 0.16]), (angle, 0.15));
     }
 }
 
@@ -178,10 +207,9 @@ fn mistbloom(kit: &mut Kit, at: [f64; 2]) {
 fn windthistle(kit: &mut Kit, at: [f64; 2]) {
     for (spot, angle) in round(kit, at, 8, (0.2, 1.4)) {
         let tall = 0.7 + kit.draw() * 0.5;
-        part(kit, (Shape::Column { sides: 5, top: 0.7 }, Material::Verdant), spot, 0.0, [0.08, 0.08, tall], angle, 0.1);
         let shade = if kit.draw() < 0.5 { Material::Crimson } else { Material::Linen };
-        let head = (Shape::Dome { sides: 6 }, shade);
-        part(kit, head, spot, -tall, [0.26, 0.26, 0.24], angle, 0.0);
+        let stem = (Shape::Column { sides: 5, top: 0.7 }, Material::Verdant, [0.08, 0.08, tall]);
+        stem_and_head(kit, spot, stem, (Shape::Dome { sides: 6 }, shade, [0.26, 0.26, 0.24]), (angle, 0.1));
         for (leaf, turn) in round(kit, spot, 2, (0.15, 0.2)) {
             part(kit, (Shape::Pyramid { top: 0.0 }, Material::Verdant), leaf, 0.0, [0.3, 0.06, 0.35], turn, 0.7);
         }
@@ -198,16 +226,59 @@ fn bog_pearl(kit: &mut Kit, at: [f64; 2]) {
         part(kit, (Shape::Dome { sides: 6 }, Material::Bone), spot, -0.05, [across, across * 0.7, 0.12], angle, 0.3);
     }
     for (spot, angle) in round(kit, at, 2, (1.3, 1.45)) {
-        part(kit, (Shape::Dome { sides: 8 }, Material::Trim), spot, -0.12, [0.12, 0.12, 0.1], angle, 0.0);
+        part(kit, (Shape::Dome { sides: 8 }, Material::Linen), spot, -0.03, [0.12, 0.12, 0.1], angle, 0.0);
     }
 }
 
 /// Rimecrystal: a frozen rock, spikes of frost that never melts grown out of it and round it.
 fn rimecrystal(kit: &mut Kit, at: [f64; 2]) {
     stone(kit, Shape::Dome { sides: 7 }, [at[0], at[1], kit.height(at)], [2.0, 1.7, 0.9], 0.15);
-    for (spot, angle) in round(kit, at, 9, (0.2, 1.4)) {
+    for (spot, angle) in round(kit, at, 9, (0.9, 1.4)) {
         let tall = 0.5 + kit.draw() * 0.9;
         let lean = (kit.draw() - 0.5) * 0.8;
-        part(kit, (Shape::Pyramid { top: 0.05 }, Material::Plaster), spot, -0.2, [0.3, 0.26, tall], angle, lean);
+        part(kit, (Shape::Pyramid { top: 0.05 }, Material::Bone), spot, 0.1, [0.3, 0.26, tall], angle, lean);
+    }
+    // Bedded in the rock: sunk a quarter of its 0.9 m, it stands about 0.68 m at its crown and 0.6 m a third of a
+    // metre off it.
+    for (spot, angle) in round(kit, at, 3, (0.0, 0.35)) {
+        let tall = 0.4 + kit.draw() * 0.5;
+        part(kit, (Shape::Pyramid { top: 0.05 }, Material::Bone), spot, -0.5, [0.24, 0.2, tall], angle, 0.0);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::book::Book;
+    use crate::seat::Seating;
+    use land::edits::Edits;
+    use land::grid::Grid;
+    use land::ground::Ground;
+
+    #[test]
+    fn every_islands_pile_rests_on_the_ground_or_on_itself_in_colours_of_its_own() {
+        let land = Grid::new(40, 40, -1000.0, -1000.0, 50.0).like(100.0);
+        let coast = land.like(land::relief::COAST_REACH_M);
+        let ground = Ground::new(&land, &coast, &vec![0.0; land.data.len()], &[], &Edits::default(), 1);
+        let book = Book::default();
+        for continent in 1..=9 {
+            let resource = crate::resources::of(&format!("continent-{continent}")).expect("each island's resource");
+            let mut seating = Seating::default();
+            let mut kit = Kit { ground: &ground, book: &book, seed: 7, draws: 0, into: &mut seating };
+            resource_place(&mut kit, resource, [0.0, 0.0]);
+            let solids = &seating.solids;
+            assert!(!solids.is_empty(), "{resource} has a pile");
+            for (nth, solid) in solids.iter().enumerate() {
+                // A climate's wall pictures read as a wall's, not as salt, frost or pearl.
+                assert!(!matches!(solid.material, Material::Plaster | Material::Trim), "{resource}: {solid:?}");
+                let [west, north, east, south, bottom, _] = solid.bounds();
+                let on_ground = bottom <= ground.height_at(solid.at[0], solid.at[1]) + 0.02;
+                let on_another = solids.iter().enumerate().any(|(other, under)| {
+                    let [w, n, e, s, low, top] = under.bounds();
+                    other != nth && low < bottom && top >= bottom && w < east && e > west && n < south && s > north
+                });
+                assert!(on_ground || on_another, "{resource}: part {nth} afloat: {solid:?}");
+            }
+        }
     }
 }

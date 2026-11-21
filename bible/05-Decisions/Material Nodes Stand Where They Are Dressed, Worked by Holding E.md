@@ -64,7 +64,7 @@ the resources' own nodes and "Match the resource").
   as Brineglass, Cairnwatch's as Cairn Iron, and so on for all nine, and the 3D pile at its spot matches the
   resource. Ore, herbs, timber and salvage are no longer kinds of node.
 - **The sea's procedural islands carry the resource** of the island whose waters they lie in ([[Islands]]): two to four
-  nodes on each, all standing at once, each gathered once per player while that isle's room is open.
+  nodes on each, all standing at once, each gathered once per player a visit and standing again on the next landing.
 - **The land map marks each node** with one resource glyph, named for the island's resource ([[Held Map]]).
 - **The pickup feed tells of everything gained**: XP, faction reputation, Art progress and what is gathered at sea
   besides what it tells now ([[Interface]]). Currency, XP and reputation stand as short lines, a count beside its

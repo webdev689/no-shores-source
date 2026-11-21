@@ -1,6 +1,6 @@
 //! Where an island's places stand, drawn from its seed over its shape before its ground is laid: the beach landed on
-//! and the anchorage off it, the dungeon's door, an isle's landmark, guards' posts and camp, and the wrecks on its
-//! shore. Each that wants level ground sets a pad in the shape.
+//! and the anchorage off it, the dungeon's door, an isle's landmark, guards' posts and camp, the wrecks on its shore,
+//! and its resource nodes inland. Each that wants level ground sets a pad in the shape.
 
 use crate::Kind;
 use crate::draws::Draws;
@@ -135,7 +135,7 @@ fn wrecks(shape: &Shape, cliffs: f64, kind: Kind, draws: &mut Draws, kept: &[[f6
 
 /// The resource nodes: two to four inland, between a third and three fifths of the way from the middle to the coast,
 /// on gentle shores' bearings, apart from each other and from every place kept, and clear of a quarry's pit. Drawn on
-/// a stream of their own, so the island's other places stand where they did before it had any.
+/// a stream of their own, so they move none of the island's other places.
 fn nodes(shape: &Shape, cliffs: f64, seed: u64, kept: &[[f64; 2]]) -> Vec<[f64; 2]> {
     let mut draws = Draws::of(seed, 11);
     let wanted = 2 + draws.index(3);

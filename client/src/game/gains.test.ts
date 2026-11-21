@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { ARTS } from './artsCards.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { gainsOf } from './gains.ts';
 
@@ -152,7 +153,7 @@ test('XP, reputation and an Art’s progress are short lines; a level, a fragmen
     ['Stormcallers reputation', 25, true],
     ['Storm XP', 40, true],
     ['Divine level 2', 1, false],
-    [shown[4]?.[0], 1, false],
+    [ARTS[2]?.core[0]?.name, 1, false],
     ['Timber', 2, false],
     ['Ship XP', 30, true],
   ]);

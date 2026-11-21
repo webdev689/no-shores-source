@@ -74,9 +74,11 @@ pub struct Islands {
     found: BTreeMap<PlayerId, BTreeSet<u32>>,
     /// Each continent's climate and resource, in the layout's order.
     climates: Vec<(String, Option<u8>)>,
-    /// Each account landed on an island, by its number: its ship lay at rest at that island's anchorage when last at
-    /// sea. Its island's room lets only those scavenge.
-    landed: BTreeMap<String, u32>,
+    /// Each account landed on an island, by its number, and the landing's own number: its ship lay at rest at that
+    /// island's anchorage when last at sea. Its island's room lets only those scavenge and gather, and a landing of a
+    /// new number is a new visit, its nodes standing again for it. How many landings there have been.
+    landed: BTreeMap<String, (u32, u32)>,
+    landings: u32,
 }
 
 fn apart(one: [f64; 2], other: [f64; 2]) -> f64 {
@@ -124,6 +126,7 @@ impl Islands {
             next_id: 1,
             found: BTreeMap::new(),
             landed: BTreeMap::new(),
+            landings: 0,
             climates,
         }
     }
@@ -178,10 +181,11 @@ impl Islands {
         self.standing.iter().filter(move |island| apart(island.at, at) <= SIGHT_M || self.found(player, island.id))
     }
 
-    /// Whether an account is landed on the standing island `id` of `seed`.
+    /// The number of an account's landing on the standing island `id` of `seed`, if it is landed there.
     #[must_use]
-    pub fn landed(&self, id: u32, seed: u64, account: &str) -> bool {
-        self.landed.get(account) == Some(&id) && self.by_id(id).is_some_and(|island| island.seed == seed)
+    pub fn landed(&self, id: u32, seed: u64, account: &str) -> Option<u32> {
+        let (on, landing) = *self.landed.get(account)?;
+        (on == id && self.by_id(id).is_some_and(|island| island.seed == seed)).then_some(landing)
     }
 
     /// Whether a player has found an island.
@@ -341,11 +345,18 @@ impl Sea {
             let lies =
                 at.and_then(|at| islands.standing.iter().find(|island| apart(island.anchorage, at) <= LANDING_M));
             match lies {
-                Some(island) => islands.landed.insert(account.clone(), island.id),
-                None => islands.landed.remove(account),
-            };
+                // Still lying where it landed, the same landing; at another island, a new one.
+                Some(island) if islands.landed.get(account).is_some_and(|&(on, _)| on == island.id) => {}
+                Some(island) => {
+                    islands.landings = islands.landings.wrapping_add(1).max(1);
+                    islands.landed.insert(account.clone(), (island.id, islands.landings));
+                }
+                None => {
+                    islands.landed.remove(account);
+                }
+            }
         }
-        islands.landed.retain(|_, id| islands.standing.iter().any(|island| island.id == *id));
+        islands.landed.retain(|_, (id, _)| islands.standing.iter().any(|island| island.id == *id));
     }
 
     /// The nearest standing island the player has found to a point: its number and where a ship anchors off it.

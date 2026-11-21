@@ -15,17 +15,18 @@ const BRASS_KEY_DEPTHS = [1, 1, 3, 1];
 const RING_OUT = 3;
 const RING_LINE = 2;
 
-/** The keycap's edge traced clockwise from its top's middle, `share` of the way round, as boxes `line` thick. */
+/** The keycap's edge traced clockwise from its top's middle, `share` of the way round, as boxes `line` thick that
+ *  never lie over each other, so a faint whole is painted once everywhere. */
 export function traced(box: Box, line: number, share: number): Box[] {
   const { x, y, width, height } = box;
   const runs: [number, (from: number, to: number) => Box][] = [
     [width / 2, (from, to) => ({ x: x + width / 2 + from, y, width: to - from, height: line })],
-    [height, (from, to) => ({ x: x + width - line, y: y + from, width: line, height: to - from })],
-    [width, (from, to) => ({ x: x + width - to, y: y + height - line, width: to - from, height: line })],
-    [height, (from, to) => ({ x, y: y + height - to, width: line, height: to - from })],
+    [height - line, (from, to) => ({ x: x + width - line, y: y + line + from, width: line, height: to - from })],
+    [width - line, (from, to) => ({ x: x + width - line - to, y: y + height - line, width: to - from, height: line })],
+    [height - 2 * line, (from, to) => ({ x, y: y + height - line - to, width: line, height: to - from })],
     [width / 2, (from, to) => ({ x: x + from, y, width: to - from, height: line })],
   ];
-  let left = Math.max(0, Math.min(1, share)) * 2 * (width + height);
+  let left = Math.max(0, Math.min(1, share)) * runs.reduce((sum, [length]) => sum + length, 0);
   const boxes: Box[] = [];
   for (const [length, part] of runs) {
     if (left <= 0) break;

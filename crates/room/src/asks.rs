@@ -336,7 +336,13 @@ impl Room {
             return Some(OUT_OF_REACH);
         };
         let dead = fighter.dead() || matches!(found.standing, Standing::Dead { .. });
-        if found.spent.contains(&node) || !self.node_standing(usize::from(node)) || dead {
+        // On a sea island, only an account the sea says is landed there gathers, as only one scavenges.
+        let landed = self
+            .isle
+            .as_ref()
+            .and_then(|isle| isle.landed.as_ref())
+            .is_none_or(|landed| found.owner.as_ref().is_some_and(|owner| landed.contains_key(owner)));
+        if found.spent.contains(&node) || !self.node_standing(usize::from(node)) || dead || !landed {
             Some(OUT_OF_REACH)
         } else if found.mounted {
             Some(MOUNTED)

@@ -744,12 +744,13 @@ fn the_wilds_hold_cover_round_their_ring() {
 }
 
 #[test]
-fn each_of_saltmeres_resource_nodes_is_brineglass_before_its_tide_pool() {
+fn each_of_saltmeres_resource_nodes_is_brineglass_clear_before_its_tide_pool() {
     for id in ZONES {
         let laid = zone(id);
         let resources: Vec<_> =
             laid.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource).collect();
         assert!(!resources.is_empty(), "{id} lays resource nodes");
+        let mut standing = 0;
         for site in resources {
             assert_eq!(site.holds.as_deref(), Some("brineglass"), "{id}: Saltmere's resource");
             // Its tide pool: still water at the place's middle, its node standing clear before it.
@@ -757,8 +758,27 @@ fn each_of_saltmeres_resource_nodes_is_brineglass_before_its_tide_pool() {
                 solid.material == Material::Water && layout::field::distance([solid.at[0], solid.at[1]], site.at) < 0.1
             });
             assert!(pool, "{id}: a resource place at {:?} with no tide pool", site.at);
-            let node = site.node.expect("its node on the floor");
+            let Some(node) = site.node else { continue };
             assert!(layout::field::distance(node, site.at) > 4.0, "{id}: its node clear of the pool");
+            // Where the room gathers it and the page draws it: in bounds, clear of what stands and what grows.
+            assert!(layout::field::ring_holds(&laid.ring, node[0], node[1]), "{id}: node {node:?} out of bounds");
+            let blocked = laid.seating.solids.iter().find(|solid| {
+                let [west, north, east, south, bottom, top] = solid.bounds();
+                let clear = layout::sites::NODE_CLEAR_M;
+                top - bottom > 0.3
+                    && node[0] > west - clear
+                    && node[0] < east + clear
+                    && node[1] > north - clear
+                    && node[1] < south + clear
+            });
+            assert!(blocked.is_none(), "{id}: node {node:?} against {blocked:?}");
+            let planted = laid.plantings.iter().flat_map(|planting| &planting.points);
+            assert!(
+                planted.into_iter().all(|&point| layout::field::distance(point, node) >= 1.5),
+                "{id}: node {node:?} planted over"
+            );
+            standing += 1;
         }
+        assert!(standing > 0, "{id}: no node stands");
     }
 }

@@ -11,7 +11,7 @@ use ::foes::factions::PIRATES;
 use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, REEVE, RUNNER};
 use gear::ship::found::{Source, Taken, salvage};
 use isle::{Kind, Plan};
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 
 /// How near a wreck's heap a player must stand to scavenge it, metres: a little past where the browser offers it.
 pub const WRECK_REACH: f64 = 4.0;
@@ -35,8 +35,9 @@ pub struct Isle {
     pub levels: Option<(u8, u8)>,
     pub wrecks: Vec<[f64; 2]>,
     pub door: [f64; 2],
-    /// None where nobody checks (the page's own room); else the accounts whose ships the sea holds at its anchorage.
-    pub(crate) landed: Option<BTreeSet<String>>,
+    /// None where nobody checks (the page's own room); else the accounts whose ships the sea holds at its anchorage,
+    /// each with its landing's number.
+    pub(crate) landed: Option<BTreeMap<String, u32>>,
     pub hauls: Vec<(PlayerId, u8, Taken)>,
 }
 
@@ -157,20 +158,26 @@ impl Room {
         }
     }
 
-    /// Lets the sea's word on landings be checked: from now only the accounts `land` names may scavenge. Whether this
-    /// is an island's room.
+    /// Lets the sea's word on landings be checked: from now only the accounts `land` names may scavenge and gather.
+    /// Whether this is an island's room.
     pub fn check_landings(&mut self) -> bool {
         let Some(isle) = self.isle.as_mut() else { return false };
-        isle.landed.get_or_insert_with(BTreeSet::new);
+        isle.landed.get_or_insert_with(BTreeMap::new);
         true
     }
 
-    /// The sea's word that an account's ship lies at this island's anchorage: its players may scavenge. Whether this
-    /// is an island's room.
-    pub fn land(&mut self, account: &str) -> bool {
+    /// The sea's word that an account's ship lies at this island's anchorage, by its landing's number: its players may
+    /// scavenge and gather. A landing of another number than the one before is a new visit: the nodes the account
+    /// gathered stand for it again. Whether this is an island's room.
+    pub fn land(&mut self, account: &str, landing: u32) -> bool {
         let Some(isle) = self.isle.as_mut() else { return false };
-        if let Some(landed) = isle.landed.as_mut() {
-            landed.insert(account.to_owned());
+        let Some(landed) = isle.landed.as_mut() else { return true };
+        if landed.insert(account.to_owned(), landing).is_some_and(|before| before != landing) {
+            self.gathered.remove(account);
+            for found in self.players.values_mut().filter(|found| found.owner.as_deref() == Some(account)) {
+                found.spent.clear();
+                found.gear_changed = true;
+            }
         }
         true
     }
@@ -186,7 +193,7 @@ impl Room {
         let dead = fighter.dead() || matches!(found.standing, Standing::Dead { .. });
         let Some(isle) = self.isle.as_ref() else { return crate::asks::OUT_OF_REACH };
         let landed =
-            isle.landed.as_ref().is_none_or(|landed| found.owner.as_ref().is_some_and(|it| landed.contains(it)));
+            isle.landed.as_ref().is_none_or(|landed| found.owner.as_ref().is_some_and(|it| landed.contains_key(it)));
         let Some(&[x, y]) = isle.wrecks.get(usize::from(wreck)) else { return crate::asks::OUT_OF_REACH };
         let far = libm::hypot(fighter.body.x - x, fighter.body.y - y) > WRECK_REACH;
         let spent = found.character.scavenged_on(isle.seed).contains(&wreck);
