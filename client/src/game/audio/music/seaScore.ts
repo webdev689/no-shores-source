@@ -201,8 +201,8 @@ const HARMONY = {
 const tunes = (w: Write, track: Track, first: number, bars: Tune, velocity: number, how = {}) =>
   lay(w, track, first, bars, velocity, how);
 
-/** The storm: the drive and the choir; the horn's theme; the second harmony with the stabs and the strings' theme high;
- *  a breath of drive and choir alone; the brass's theme over everything. */
+/** The storm: the drive and the choir; the horn's theme; the second harmony with the stabs and the strings on the
+ *  theme; a breath of drive and choir alone; the brass's theme over everything, in the horn's octave, never high. */
 const storm = () =>
   seaSong('storm', (w) => {
     const [first, second] = [HARMONY.storm, HARMONY.stormB];
@@ -238,9 +238,9 @@ const storm = () =>
             w.note('drive', bar, i * 0.25, 0.22, n, 46 + (i % 4 === 0 ? 10 : 0));
     });
     tunes(w, 'horn', 8, TUNES.storm, 96);
-    tunes(w, 'strings', 24, TUNES.storm, 84, { octave: 1, legato: 0.96 });
+    tunes(w, 'strings', 24, TUNES.storm, 84, { legato: 0.96 });
     tunes(w, 'horn', 40, TUNES.storm, 98);
-    tunes(w, 'brass', 40, TUNES.storm, 92, { octave: 1 });
+    tunes(w, 'brass', 40, TUNES.storm, 92);
   });
 
 /** Landfall, the coast sighted and home: broad, in D with its flat seventh. The fiddle's tune over held strings, cello
@@ -306,7 +306,7 @@ const fight = () =>
     tunes(w, 'brass', 8, TUNES.fightA, 100);
     tunes(w, 'brass', 16, TUNES.fightB, 102);
     tunes(w, 'fiddle', 24, TUNES.fightA, 98);
-    tunes(w, 'strings', 24, TUNES.fightA, 80, { octave: 1, legato: 0.96 });
+    tunes(w, 'strings', 24, TUNES.fightA, 80, { legato: 0.96 });
     tunes(w, 'brass', 32, TUNES.fightA, 104);
     tunes(w, 'horn', 32, TUNES.fightA, 92, { octave: -1 });
     tunes(w, 'brass', 40, TUNES.fightB, 106);
