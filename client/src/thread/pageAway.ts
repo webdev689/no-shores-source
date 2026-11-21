@@ -158,8 +158,16 @@ function canvasOf(canvas: OffscreenCanvas, view: () => View, send: Send): HTMLCa
 }
 
 /** An event as the page heard it, made again here with what the game reads of it. */
-function eventOf(type: string, fields: Readonly<Record<string, unknown>>): Event {
-  return Object.assign(new Event(type, { cancelable: true }), fields);
+/** The page's event, and whether a listener has stopped it. Each stage of the worker's dispatch is a dispatch of its
+ *  own, and a browser may forget the stop once one ends, so it is kept here. */
+function eventOf(type: string, fields: Readonly<Record<string, unknown>>): [Event, () => boolean] {
+  const event = Object.assign(new Event(type, { cancelable: true }), fields);
+  let stopped = false;
+  for (const name of ['stopPropagation', 'stopImmediatePropagation'] as const) {
+    const own = event[name].bind(event);
+    event[name] = () => ((stopped = true), own());
+  }
+  return [event, () => stopped];
 }
 
 /** The window's listeners for the page's own events, kept by phase, as a page's window keeps them: one heard in the
@@ -270,10 +278,10 @@ export function pageAway(start: Start, send: Send): Away {
           events.pointer = message.pointer;
           // As on a page: down through the window's capture listeners, to the canvas, and back up through its plain
           // ones, each stage reached only if no listener before it stopped the event; at the window itself, both.
-          const event = eventOf(message.type, message.fields);
+          const [event, stopped] = eventOf(message.type, message.fields);
           window.capture.dispatchEvent(event);
-          if (message.on === 'canvas' && !event.cancelBubble) canvas.dispatchEvent(event);
-          if (message.on === 'window' || !event.cancelBubble) window.bubble.dispatchEvent(event);
+          if (message.on === 'canvas' && !stopped()) canvas.dispatchEvent(event);
+          if (message.on === 'window' || !stopped()) window.bubble.dispatchEvent(event);
           return;
         }
         case 'ui':

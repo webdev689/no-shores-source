@@ -103,6 +103,15 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     addEventListener('keydown', () => keys.push('game'));
     away.heard({ kind: 'event', on: 'page', type: 'keydown', fields: { key: 'm' }, pointer: null });
     assert.deepEqual(keys, ['menu']);
+    // It holds where a browser forgets the stop once a stage's dispatch ends, as the specification has it.
+    const kept = Object.getOwnPropertyDescriptor(Event.prototype, 'cancelBubble');
+    Object.defineProperty(Event.prototype, 'cancelBubble', { configurable: true, get: () => false });
+    try {
+      away.heard({ kind: 'event', on: 'page', type: 'keydown', fields: { key: 'm' }, pointer: null });
+    } finally {
+      if (kept) Object.defineProperty(Event.prototype, 'cancelBubble', kept);
+    }
+    assert.deepEqual(keys, ['menu', 'menu']);
     // At the window itself (its blur) every listener hears it, as at a target.
     const blurred: string[] = [];
     addEventListener('blur', (event) => (blurred.push('capture'), event.stopPropagation()), true);
