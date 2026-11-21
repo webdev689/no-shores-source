@@ -236,71 +236,50 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## In progress: Overlook's hub (branch `claude/game-experience-factions-94un6s`, draft #113)
 
 The owner's words are in [[Overlook Becomes a Hub of Courts and Ways, After the Tower]] ("Build this to perfection
-... Return when this is 100%"; then wall adornments and banners); every call is in [[Overlook's Hub as Claude Shapes
-It]]. Nothing is audited or seen whole in the page yet.
+... Return when this is 100%"; then wall adornments and banners), [[The Hub's Fidelity Goes Beyond the Limits, by
+Procedural Textures]], [[The Hub Feels Lively, Its Ground Populated]], [[The Hub's Pieces Tell a Story, and Its Paths
+Are Paved Apart]], [[The Hub's Paths Are Smooth and Rounded]] and [[The Hub's Plants Are the World's Low-Poly Ones]];
+every call is in [[Overlook's Hub as Claude Shapes It]]. The owner then asked for a comprehensive audit: five
+independent read-only reviews (the hub's plan, the rules and room, the client's drawing, the game and the fall, the
+modules and the bible), each finding measured with a test before its fix. `main` is merged in as of 21 November.
 
-Built on the branch, `main` merged in (#98, #102, #107, and main as of 21 November):
-- **The hub** (`crates/city/src/hub/`, Overlook's own social plan; other cities keep the courtyard): the seaward walk
-  and spawns, the Watch Court (obelisk, two vault houses, the Mage's study, the notice board's landing
+On the branch:
+- **The hub** (`crates/city/src/hub/`, Overlook's own social plan; other cities keep the courtyard; [[Cities]]): the
+  seaward walk and spawns, the Watch Court (obelisk, two vault houses, the Mage's study, the notice board's landing
   `hub::BOARD_LANDING_M` for the activities session's board), two stone ranges with arched passages, the West Court
-  (Tailor, fountain, bandstand, well) and the Forge Yard (Weaponsmith, Armorsmith, anvil yard), the Beacon Walk with
-  its market lane and the portico, the Hall of the Arts inside the Beacon's hollow base (the three factions' chapels,
-  the war table), the Stair Yard round the base's east side (the Tack's stable at the Harbour Stair's head), sealed
-  gates, and the harbour way down the city's switchback and ramps to the quay (Harbourmaster, chandler) and the pier,
-  with two ships moored there. The ring is the outline of every walked rectangle (`hub/ring.rs`).
+  and the Forge Yard, the Beacon Walk's market and the portico, the Hall of the Arts with the three factions' chapels
+  and the war table, the Stair Yard (the Tack's stable), sealed gates, and the harbour way down the switchback and
+  ramps to the quay and the pier, two ships moored there riding the swell, mooring posts beside them. The ring is
+  the outline of every walked rectangle (`hub/ring.rs`).
+- **Its ground** (`hub/ground.rs`): the ways as flagstone walks in short pieces, every corner where they meet, cross
+  or turn curved; lawn and earth under them; the fountain and bandstand on rounds of flagstones, the obelisk's round
+  of stone in a flagstone border. **Its scenes** (`hub/dress.rs`), a walker's place at each piece, up to 48 walkers.
+  **Its plants** (`hub/plants.rs`, `client/src/game/cityPlants.ts`) are the land's own oak and gorse ([[Nature]]).
 - **Its modules** (`tools/modules`, [[Modules]]): every keeper's stall, the chapels, ranges, gates, war table,
-  bandstand, fountain, market stalls and props, and the 29 adornments `hub/adorn.rs` hangs and stands
-  (`tools/modules/adorn.py`), each rendered and looked at in Blender. The bake now writes each group sorted, so it
-  makes the same bytes each run (the chapels' exact booleans did not). A piece the manifest lacks fails the hub's
-  tests (`debug_assert` in `Laid`).
-- **Ramps** for every city's avenues (`crates/city/src/ramps.rs`), a switchback at each avenue's head and a flight
-  onto the quay; walked in a room test.
-- **The fall**: in a social space a fall of 6 m or more kills at once; dead bodies fall on; the camera holds and turns
-  after the body; "You fell." once it lands. Going over the edge in the air starts no warning until the feet are down
-  (`crates/reach`).
-- **Townsfolk on ways** (`crates/city/src/life.rs`, `client/src/game/life/`): A* over the plan's ways, keeping right,
-  routines on the world clock, the band heard by distance, Maren on the ways. `life/check.rs` walks every way and
-  every post a walker comes to; a kept post (a market keeper, a smith) is checked standing clear, not walked to.
+  bandstand, fountain, market stalls, props, the 29 adornments and the courts' pieces. CI bakes the committed manifest
+  byte for byte and publishes the meshes. A piece the manifest lacks fails the hub's tests (`debug_assert` in `Laid`).
+- **Ramps** for every city's avenues (`crates/city/src/ramps.rs`), walked in a room test.
+- **The fall** ([[Reach]]): in a social space a fall of 6 m or more from where the feet last stood kills; the dead
+  fall on; the camera holds and turns after the body; the world greys once death is told.
+- **Townsfolk on ways** (`crates/city/src/life.rs`, `client/src/game/life/`, [[Game]]): A* over the plan's ways,
+  routines on the world clock, the band heard by distance, Maren on the ways. `life/check.rs` walks every way and post.
+- **No rain indoors** ([[Weather]], "Shelter"), and the city's iron, gold, bone, cloth and water painted in the shader.
 
-Tested offline: the full `cargo xtask check`. Seen headless in the built page (morning, in rain), twelve views: the
-Watch Court from the walk and from above, the east passage, the West Court, the Forge Yard, the Beacon Walk and its
-market, the portico, the Hall from its door and from the war table, and a sealed gate. Banners, lanterns, bunting,
-ivy, planters, the well, the rug, the war table and the townsfolk all stand where placed. The views are taken with
-`webgpu-shot.cjs`, a `views` list (the hub's middle is east 2809214, south 1201297; seaward is north, bearing 0),
-`?at=overlook-social&spawn=2809214,1201241,180`, an `init` shifting `Date.now` to the hour wanted (a day is one real
-hour from `EPOCH_UNIX_MS`; `Date.now` pinned to 1795217100000 ms brings rain over the hub), and `routes` to a local
-bake's meshes until CI publishes them.
-
-Since then, under the owner's [[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]: no rain, wet,
-puddle or snow under anything a body meets overhead ([[Weather]], "Shelter"); the city's iron, gold, bone and cloth
-painted texel by texel and each flame flickering ([[Cities]]); the Hall paved wall to wall round its rug, which lies on
-the levelled land so it shows; and a module bake that CI makes byte for byte (signed zeros dropped), its meshes
-published to R2 by CI. Seen in the built page under rain pinned by the clock: no rain or puddles in the Hall, rain on
-the courts and before the portico, the rug crimson from first and third person.
-
-Then, under the owner's [[The Hub Feels Lively, Its Ground Populated]] and
-[[The Hub's Pieces Tell a Story, and Its Paths Are Paved Apart]] (a first scatter of some 900 pieces was "way too
-crowded"): the platform's ways laid as flagstone walks (material `path`), the gardens' open ground as lawn and the
-Forge Yard's as trodden earth (`lawn`, `earth`), and each court set as a scene by
-`hub/dress.rs` (eleven pieces new in `tools/modules/dress.py`), each new stall's keeper at work, a walker's place at
-each piece, up to 48 walkers. A test pins every scene standing (`every_court_is_set_as_a_scene_and_its_ways_are_walks`);
-a test build prints any piece a scene asks for that is left out, and why.
-
-`main` merged in again on 21 November (its ruins, friendly traffic, islands, and the frames moved from `game.ts` to
-`gameFrame.ts`): the pier's two moored ships are now drawn as main draws ships, friendly sloops with their sails
-furled and a still footprint on the water (`moorings.ts` `mooredShips`), with the traffic's. The flowers' stems in
-the bake stand upright: a slanted rod's turn rounded differently on CI's machine, so its meshes differed.
+Tested offline: the full `cargo xtask check` on the head before each push. Seen headless in the built page: the
+courts, the market, the portico, the fountain, the obelisk, the Forge Yard, the pier and the Hall, by day and in rain
+and snow. The views are taken with `webgpu-shot.cjs`, a `views` list (the hub's middle is east 2809214, south
+1201297; seaward is north, bearing 0; the pier runs north from about 2809310, 1200805; the Hall's door is at
+2809214, 1201411), `?at=overlook-social&spawn=2809214,1201241,180`, an `init` shifting `Date.now` to the hour wanted
+(a day is one real hour from `EPOCH_UNIX_MS`), and `routes` to a local bake's meshes until CI publishes them.
 
 Left to do, in order:
-1. How the page holds some 125 figures and the courts' pieces: a frame's cost on a real GPU is unmeasured.
-2. More fidelity by procedural textures: the pictured materials (stone, timber, plaster, roof, paving) are still one
-   picture a material for the whole hub, and grime at a wall's foot or under a sill would need the ground's height
-   in the shader. A thin piece laid over a face tens of metres wide can still lose to it: the city's 5 cm pull toward
-   the eye bends across such a face (`clip_of`).
-3. Pictures not yet taken: the Harbour Stair, the road and the pier, a stall's sign close up, the fall, the townsfolk
-   at work, a patrol area's walk-in building in rain.
-4. Bible notes for the hub, ramps, the fall and the townsfolk (Cities, Reach, Movement, Navmesh, Ambience, Interface,
-   Code Map), independent audits, then the draft pull request's description for the owner.
+1. The owner's call: whether "any flora" also covers the wall ivy and the cut flowers sold at the flower stall and
+   cart, which are the hub's own (the world grows no climber, and cut flowers are goods).
+2. How the page holds some 125 figures and the courts' pieces: a frame's cost on a real GPU is unmeasured.
+3. What the audit left as risks: a walker's step to the side of a post's line (0.7 m) or round a sharp turn is not
+   walked against the real hub's boxes; kept posts' people are not booked against walkers; routines use `Math.hypot`
+   and trigonometry, which engines may round differently in the last bit; puddles form on lawn as on flat stone.
+4. Pictures not yet taken: the Harbour Stair and the road, a stall's sign close up, the fall, the townsfolk at work.
 - Coordination: the activities session (#97) reads `Social.board` from its branch and checks its board against the
   ways; whichever merges second sets `Social.board` from `hub::BOARD_LANDING_M`. It keeps `gear::clock`'s moves.
 
