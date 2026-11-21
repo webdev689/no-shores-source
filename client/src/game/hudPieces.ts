@@ -267,7 +267,7 @@ export function shipPanelNode(ui: Interface, panel: ShipPanel, back: () => void)
         width: 'grow',
         padding: [10, 18, 12, 18],
         ...footer(),
-        children: [hudPress(ui, 'ship:back', 'Back to the sea  B', back, { width: 'grow' })],
+        children: [hudPress(ui, 'ship:back', 'Back to the sea  B', back, { width: 'grow', alignX: 'center' })],
       },
     ],
   };
