@@ -1,5 +1,5 @@
 ---
-id: 46
+id: 73
 title: "Two sessions resumed the same unfinished work, and one learned it only from list_sessions"
 status: open
 type: internal
