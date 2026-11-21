@@ -79,16 +79,8 @@ export async function friendAsk(
       .run();
     return done;
   }
-  // Their ask waiting is accepted, by accepting it or by asking them back.
-  const acceptTheirs = () =>
-    database
-      .prepare('UPDATE friends SET accepted = 1 WHERE asker_id = ?1 AND asked_id = ?2 AND accepted = 0')
-      .bind(them.id, own)
-      .run();
-  if ((await acceptTheirs()).meta.changes === 1) return done;
-  if (asked === 'accept') return notAsked;
   // Each player's count is their friends and their own asks, so strangers' asks cannot fill it; a list that holds
-  // the most takes no new asks.
+  // the most takes no new asks, and accepts none either, since an ask accepted is a friend more.
   const counts = await database
     .prepare(
       `SELECT (SELECT COUNT(*) FROM friends WHERE asker_id = ?1 OR (asked_id = ?1 AND accepted = 1)) AS mine,
@@ -96,7 +88,15 @@ export async function friendAsk(
     )
     .bind(own, them.id)
     .first<{ mine: number; theirs: number }>();
+  // Their ask waiting is accepted, by accepting it or by asking them back: theirs was counted as they made it.
+  const acceptTheirs = () =>
+    database
+      .prepare('UPDATE friends SET accepted = 1 WHERE asker_id = ?1 AND asked_id = ?2 AND accepted = 0')
+      .bind(them.id, own)
+      .run();
   if ((counts?.mine ?? 0) >= FRIENDS_MOST) return said(409, `You can keep ${FRIENDS_MOST} friends and asks at most.`);
+  if ((await acceptTheirs()).meta.changes === 1) return done;
+  if (asked === 'accept') return notAsked;
   if ((counts?.theirs ?? 0) >= FRIENDS_MOST) return said(409, 'Their list is full.');
   const made = await database
     .prepare('INSERT OR IGNORE INTO friends (asker_id, asked_id, created_at) VALUES (?1, ?2, ?3)')

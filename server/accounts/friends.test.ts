@@ -135,6 +135,28 @@ test('the one asked is counted as the asker is, so strangers asking cannot close
   assert.deepEqual([full.status, full.body['error']], [409, 'Their list is full.'], 'a hundred of his own asks do not');
 });
 
+test('a full list accepts no ask, by accepting it or by asking back', async () => {
+  const { ask, deps, ada, ben } = await three();
+  const { database } = deps;
+  const own = await database.prepare("SELECT id FROM accounts WHERE username = 'Ada'").first<{ id: string }>();
+  assert.equal((await friend(ask, 'ask', 'Ada', ben)).status, 200, 'Ben asks while she has room');
+  for (let index = 0; index < FRIENDS_MOST; index++) {
+    const stranger = `stranger-${index}`;
+    await database.prepare('INSERT INTO accounts (id, created_at) VALUES (?1, 0)').bind(stranger).run();
+    await database
+      .prepare('INSERT INTO friends (asker_id, asked_id, created_at) VALUES (?1, ?2, 0)')
+      .bind(own?.id, stranger)
+      .run();
+  }
+  const full = `You can keep ${FRIENDS_MOST} friends and asks at most.`;
+  for (const asked of ['accept', 'ask'] as const) {
+    const answer = await friend(ask, asked, 'Ben', ada);
+    assert.deepEqual([answer.status, answer.body['error']], [409, full], asked);
+  }
+  assert.equal(await mine(ask, ada), FRIENDS_MOST);
+  assert.deepEqual((await listOf(ask, ada)).asking, ['Ben'], 'his ask still waits');
+});
+
 test('accepting or removing tells nothing of which names exist', async () => {
   const { ask, ada } = await three();
   const nobody = await friend(ask, 'accept', 'Nobody', ada);
