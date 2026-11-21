@@ -34,11 +34,13 @@ export interface GearView {
 /** How long a Fruit of Dagon is held before it is eaten, in milliseconds. */
 const HOLD_MS = 800;
 
-/** Words shown under `id` while the pointer is over it or the keys' focus is on it, as a page's `title` shows. */
+/** Words shown under `id` while the pointer is over it or the keys' focus is on it; the pointer passes through it to what
+ *  lies under. */
 function tip(ui: Interface, id: string, words: string): Node | false {
   return (
     (ui.hovered(id) || (ui.keyFocused && ui.focused(id))) && {
       float: { at: [0, 1], y: 2, z: 20 },
+      through: true,
       fill: '#000000',
       outline: { width: 1, colour: LOOK.pressLine },
       padding: [3, 5],
@@ -66,7 +68,7 @@ function named(ui: Interface, id: string, item: GearItem): Node {
 const ARROW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 6"><path d="M1 0 6 3 1 6Z" fill="#e8e8e8"/></svg>`;
 
 /** The press that opens an item's nodes, its words followed by an arrow, right while shut and down while open (the
- *  face draws no ▸ or ▾). */
+ *  face has no ▸ or ▾). */
 function opener(made: Node, open: boolean): Node {
   return {
     ...made,

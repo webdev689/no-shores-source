@@ -4,7 +4,7 @@
 import { AIM, type AimPlace } from '../player/playerCamera.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { heading, labelled, line, press, slide, tick } from './panelKit.ts';
+import { heading, labelled, copyLine, press, slide, tick } from './panelKit.ts';
 
 const KEPT_KEY = 'overlook.testground.aim';
 
@@ -89,7 +89,7 @@ export class AimPanel {
       heading('Third-person aim'),
       labelled('Hold the aiming view', { ...held.node, label: `Hold the aiming view: ${this.held ? 'on' : 'off'}` }),
       ...rows,
-      line(aimLine(this.place)),
+      copyLine(ui, 'tg:aim:line', aimLine(this.place), 'The aim’s numbers to copy'),
       { children: [reset] },
     ];
   }

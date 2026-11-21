@@ -4,6 +4,7 @@
 import { choice, slider, toggle } from '../ui/controls.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
+import { copyText } from '../ui/page.ts';
 
 /** The panels' colours. */
 export const LOOK = {
@@ -21,7 +22,7 @@ export const LOOK = {
   activeLine: '#6f9fd1',
 } as const;
 
-/** The page's title. */
+/** The Test Ground's title. */
 export const title = (words: string): Node => ({ text: { words, size: 2 }, padding: [0, 0, PARAGRAPH, 0] });
 
 /** A section's heading: small capitals, spaced, dim. */
@@ -30,10 +31,10 @@ export const heading = (words: string): Node => ({
   padding: [12, 0, 2, 0],
 });
 
-/** A paragraph's room under it, past the panel's gap, as the page's paragraphs stood 11 px apart. */
+/** A paragraph's room under it, past the panel's gap: paragraphs stand 11 px apart. */
 const PARAGRAPH = 7;
 
-/** A paragraph, dimmed unless `colour` says, as the page's hints were. */
+/** A paragraph, dimmed unless `colour` says. */
 export const hint = (words: string, colour: string = LOOK.dim): Node => ({
   text: { words, colour },
   padding: [0, 0, PARAGRAPH, 0],
@@ -61,14 +62,14 @@ export function press(
     padding: [5, 8],
     fill: more.active ? LOOK.active : LOOK.press,
     outline: { width: 1, colour: more.active || lit ? LOOK.activeLine : LOOK.pressLine },
-    children: [{ text: { words } }],
+    children: [{ text: { words, colour: more.disabled ? LOOK.dim : LOOK.words } }],
   };
 }
 
-/** Presses side by side, running on into more lines, as a page's buttons flow. */
+/** Presses side by side, running on into more lines. */
 export const presses = (children: readonly Child[]): Node => ({ gap: 6, wrap: true, width: 'grow', children });
 
-/** `made` ringed while the keys' focus is on it, as a page rings a focused control. */
+/** `made` ringed while the keys' focus is on it, so the keys' place is seen. */
 const ringed = (ui: Interface, made: Node): Node =>
   made.id && ui.keyFocused && ui.focused(made.id) ? { ...made, outline: { width: 1, colour: LOOK.activeLine } } : made;
 
@@ -114,7 +115,7 @@ export function pick(
     options.map(([key, words]) => ({ value: key, words })),
   );
   if (made.chosen !== value && !disabled) onPick(made.chosen);
-  // As a page's drop-down, its words kept to one line.
+  // Its words kept to one line, cut short where they run past it.
   const [words, ...rest] = made.node.children ?? [];
   const shown = words && words.text ? { ...words, text: { ...words.text, ellipsis: true } } : words;
   return {
@@ -142,6 +143,12 @@ export const field = (
   field: { placeholder: more.placeholder },
 });
 
+/** Words to copy, wrapped as plain words: a press puts them on the clipboard, as the drawn words cannot be selected. */
+export function copyLine(ui: Interface, id: string, words: string, label: string): Node {
+  if (ui.clicked(id)) copyText(words);
+  return { id, press: true, label: `${label}: ${words}. Press to copy.`, children: [{ text: { words } }] };
+}
+
 /** The number typed in field `id`, `initial` until it is typed in, held between `least` and `most`; `fallback` for
  *  words that are no number. */
 export function numberIn(
@@ -157,7 +164,7 @@ export function numberIn(
   return Math.min(most, Math.max(least, words !== '' && Number.isFinite(typed) ? typed : fallback));
 }
 
-/** The panels' widths either side of the view `width` (CSS pixels), as the page's grid set them: 22% of it between
+/** The panels' widths either side of the view `width` (CSS pixels), 22% of it between
  *  220 and 320 on the left, 24% between 240 and 360 on the right. */
 export function sides(width: number): { readonly left: number; readonly right: number } {
   const clamp = (share: number, least: number, most: number) =>

@@ -88,7 +88,8 @@ export class Panel {
   /** The foes the panel stands: a faction, one of its types (with where it is met) and one of the ranks that type
    *  comes in, each list following the one before, its level and its shield; then spawn one, or send every foe away. */
   private foes(ui: Interface): Node[] {
-    const types = this.roster.filter((each) => each.faction === this.faction);
+    // Read as each list is built, so a faction picked this frame shows its own types at once.
+    const types = () => this.roster.filter((each) => each.faction === this.faction);
     const level = Math.round(numberIn(ui, 'tg:foe:level', 0, 0, 30, 0));
     const shields = ['No shield', ...ELEMENTS.flatMap((each) => (each ? [`${each.name} shield`] : []))];
     return [
@@ -111,10 +112,10 @@ export class Panel {
         pick(
           ui,
           'tg:foe:type',
-          types.map((each) => [String(each.type), `${each.name} (${each.domain})`] as const),
+          types().map((each) => [String(each.type), `${each.name} (${each.domain})`] as const),
           String(this.type?.type ?? ''),
           (value) => {
-            this.type = types.find((each) => each.type === Number(value));
+            this.type = types().find((each) => each.type === Number(value));
             this.rank = this.type?.ranks[0] ?? 0;
           },
         ),
@@ -183,7 +184,7 @@ export class Panel {
     const moveShown = (placed: Placed) => placed.id !== state.playerId && !state.remote.has(placed);
     const typed = ui.fieldText('tg:fig:fps', String(state.fps)).trim();
     const fps = Number(typed);
-    if (typed !== '' && Number.isFinite(fps) && fps !== state.fps) handlers.fps(fps);
+    if (typed !== '' && Number.isFinite(fps) && Math.min(30, Math.max(1, fps)) !== state.fps) handlers.fps(fps);
     const figures = state.figures.map((placed) => {
       const who = placed.id === state.playerId ? 'You' : `${placed.id}`;
       const words = `${who}: ${placed.dress.race}, ${placed.dress.body}${moveShown(placed) ? `, ${placed.anim}` : ''}`;

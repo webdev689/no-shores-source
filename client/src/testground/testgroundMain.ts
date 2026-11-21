@@ -264,7 +264,7 @@ async function start(): Promise<void> {
   // The world's sounds wake with the first click into the view, as a browser lets sound start only after a press.
   let output: WorldOutput | null = null;
   canvas.addEventListener('click', (event) => {
-    if (input.locked || page.takes(event.offsetX, event.offsetY)) return;
+    if (input.locked || !page.onView(event)) return;
     input.lock();
     if (output || typeof AudioContext === 'undefined') return;
     const audio = new AudioContext();

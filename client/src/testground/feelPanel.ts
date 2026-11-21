@@ -3,7 +3,7 @@
 import { FEEL, type Feel } from '../combat/attackFeel.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { LOOK, heading, labelled, line, pick, press, slide, tick } from './panelKit.ts';
+import { LOOK, heading, labelled, copyLine, pick, press, slide, tick } from './panelKit.ts';
 
 const KEPT_KEY = 'overlook.testground.feel';
 
@@ -147,6 +147,11 @@ export class FeelPanel {
       keep(this.feel);
       this.onChange(this.feel);
     }
-    return [heading('Attack feel'), ...cards, line(feelLine(this.feel)), { children: [reset] }];
+    return [
+      heading('Attack feel'),
+      ...cards,
+      copyLine(ui, 'tg:feel:line', feelLine(this.feel), 'The attack feel’s numbers to copy'),
+      { children: [reset] },
+    ];
   }
 }

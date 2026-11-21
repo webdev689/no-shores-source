@@ -675,8 +675,9 @@ button's corner and screen, and the Tailor's wares.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not
   the game's screens. The Test Ground's drop-downs, ticks and sliders wear the kit's look, not a browser's; its number
   fields take words, not the browser's step arrows; its words in the face, not the page's monospace for the numbers
-  to copy; a name or a node's words show over it, as a page's `title` did, while the pointer or the keys' focus is on
-  it.
+  to copy, which cannot be selected: a press on them copies them whole (`copyText`); a name or a node's words show
+  over it, as a page's `title` did, while the pointer or the keys' focus is on it. With the mouse free, Tab or an
+  arrow moves focus into the panels, and the keys stay theirs until the view is clicked.
 - The vitals always rest when whole: DFO's switch for it waits on a settings screen.
 - A plate keeps its size on any screen; DFO's names also grew with the screen's height.
 - Bars at the top of the screen (the boss bar, the soft lock's, a Boss ship's) stand where they are set; only bars

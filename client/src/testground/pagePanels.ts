@@ -18,12 +18,15 @@ export class PagePanels {
   private readonly events: CanvasEvents;
   private readonly locked: () => boolean;
   private heardAt = performance.now();
+  /** Whether the pointer last went down on a panel, so a drag let go over the view is not a click on it. */
+  private downOnPanel = false;
 
   /** Hears `canvas` once `face` is read; `locked` says whether the pointer is locked to look round. */
   constructor(gpu: Gpu, canvas: HTMLCanvasElement, face: Promise<Face>, locked: () => boolean) {
     this.canvas = canvas;
     this.locked = locked;
     this.events = new CanvasEvents(canvas);
+    canvas.addEventListener('pointerdown', (event) => (this.downOnPanel = this.takes(event.offsetX, event.offsetY)));
     face.then((read) => (this.ui = new Interface(new UiRenderer(gpu, read)))).catch(() => undefined);
   }
 
@@ -35,6 +38,11 @@ export class PagePanels {
   /** Whether the panels, as last laid, take the pointer at `x`, `y` (CSS pixels on the canvas). */
   takes(x: number, y: number): boolean {
     return Boolean(this.ui?.takes(x, y));
+  }
+
+  /** Whether `click` is the world's: pressed and let go on the view, not on a panel. */
+  onView(click: MouseEvent): boolean {
+    return !this.downOnPanel && !this.takes(click.offsetX, click.offsetY);
   }
 
   /** Sizes the canvas to the page and hears the events since the last frame; answers whether a panel took the wheel. */

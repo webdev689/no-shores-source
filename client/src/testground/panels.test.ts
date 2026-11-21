@@ -21,6 +21,7 @@ test('the panels stand either side of the view as the page laid them: 22% and 24
   const driven = new Driven((ui) => [{ width: 1280, height: 600, children: [panels(ui, [], [])] }]);
   assert.equal(driven.ui.boxOf('tg:left')?.width, 281, 'its line beside it');
   assert.equal(driven.ui.boxOf('tg:right')?.x, 1280 - 307 + 1);
+  driven.frame([]);
   assert.ok(driven.ui.takes(10, 10) && driven.ui.takes(1270, 10), 'the panels take the pointer');
   assert.ok(!driven.ui.takes(640, 300), 'the view between them is the world’s');
 });
@@ -64,6 +65,7 @@ test('the foes panel stands the faction, type and rank picked, at the level type
   };
   const driven = new Driven((ui) => panel.node(ui, state));
   driven.pick('tg:foe:faction', '2');
+  assert.ok(driven.has('tg:foe:type') && !driven.has('tg:foe:type:1'), 'the list closed');
   driven.pick('tg:foe:rank', '2');
   driven.type('tg:foe:level', '45');
   driven.pick('tg:foe:shield', '1');
@@ -92,7 +94,8 @@ test('the gear panel opens an item’s nodes, feeds a Fruit of Dagon only once h
   driven.press('tg:gear:7:nodes');
   assert.ok(driven.has('tg:gear:7:grid'), 'its nodes open');
   driven.hold('tg:gear:7:feed', 0.5);
-  assert.deepEqual(asked, [], 'not yet');
+  driven.hold('tg:gear:7:feed', 0.5);
+  assert.deepEqual(asked, [], 'not yet: letting go starts the hold again');
   driven.hold('tg:gear:7:feed', 1.5);
   assert.deepEqual(asked, [{ kind: ASKS.feed, item: 7 }], 'fed once, however long held');
   view = { ...view, gear: gearState({ items: [sword], answer: 1 }) };
@@ -120,6 +123,8 @@ test('the attack feel switches an effect off, dims its sliders and keeps them st
   const driven = new Driven((ui) => panel.node(ui));
   driven.press('tg:feel:arc');
   assert.equal(heard.at(-1)?.arc, !FEEL.arc);
+  driven.keys('tg:feel:arcBrightness', 'ArrowRight');
+  assert.equal(heard.at(-1)?.arcBrightness, FEEL.arcBrightness, 'an effect switched off keeps its sliders still');
   driven.keys('tg:feel:kickStrength', 'ArrowRight');
   assert.equal(heard.at(-1)?.kickStrength, FEEL.kickStrength + 0.05);
   driven.press('tg:feel:reset');
@@ -152,4 +157,15 @@ test('the room’s readout says its name, the player, and the link’s lag and l
     roomLine('playtest', 3, { lagMs: 41.6, strayMs: 7.2, lost: 0.014 }),
     'Room playtest, player 3: lag 42 ms (±7), 1% lost.',
   );
+});
+
+test('the numbers to copy go to the clipboard when pressed', () => {
+  const copied: string[] = [];
+  const clipboard = { writeText: async (words: string) => void copied.push(words) };
+  Object.defineProperty(globalThis.navigator, 'clipboard', { value: clipboard, configurable: true });
+  const panel = new AimPanel(() => undefined);
+  const driven = new Driven((ui) => panel.node(ui));
+  driven.press('tg:aim:line');
+  assert.equal(copied.length, 1);
+  assert.match(copied[0] ?? '', /^shoulder: .*thirdZoom: /);
 });
