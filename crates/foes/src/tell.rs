@@ -107,17 +107,18 @@ fn order(
         windup_ticks(here, &phase, numbers(shape).windup, true, WINDUP_LEAST)
     };
     let iron = iron(here, shape);
+    // The wind-up as it runs: an iron one holds its extra too, and the cooldown counts from its end.
+    let whole = windup + if iron { combat::ticks(IRON_EXTRA) } else { 0 };
     tells.windups += 1;
     let since_feint = tells.last_feint.map_or(u32::MAX, |last| tells.windups - last);
     let may_feint = here.numbers.feints && !chain && shape != Shape::Aimed && !GAP_CLOSERS.contains(&shape);
     let feint_at =
         (may_feint && since_feint >= FEINT_GAP && here.dice.roll(Purpose::Feint) < FEINT_CHANCE).then(|| {
             tells.last_feint = Some(tells.windups);
-            let whole = windup + if iron { combat::ticks(IRON_EXTRA) } else { 0 };
             combat::ticks(f64::from(whole) * FEINT_AT / 60.0)
         });
     let order = TelegraphOrder { shape, windup, iron, feint_at, bearing, ahead };
-    tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &phase);
+    tells.blow_ready = here.tick() + u64::from(whole) + cooldown(here, &phase);
     tells.windup = Some(Windup { order, begun: false, ended_at: None, roar: false });
     tells.last = Some(shape);
     if !chain {
@@ -300,7 +301,7 @@ pub fn roar(brain: &mut Brain, here: &Here<'_, '_>) -> Option<TelegraphOrder> {
     let order =
         TelegraphOrder { shape: Shape::Ring, windup, iron: true, feint_at: None, bearing: brain.heading, ahead: 0.0 };
     let roared = brain.foe_type.phase(brain.rank, brain.tells.phase + 1);
-    brain.tells.blow_ready = here.tick() + u64::from(windup) + cooldown(here, &roared);
+    brain.tells.blow_ready = here.tick() + u64::from(windup + combat::ticks(IRON_EXTRA)) + cooldown(here, &roared);
     brain.tells.windup = Some(Windup { order, begun: false, ended_at: None, roar: true });
     brain.tells.last = Some(Shape::Ring);
     brain.tells.chained = 0;
