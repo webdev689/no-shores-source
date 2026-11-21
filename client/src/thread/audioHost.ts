@@ -65,7 +65,11 @@ export class AudioHost {
 
   run(ops: readonly AudioOp[]): void {
     const audio = this.audio;
-    if (!audio) return;
+    if (!audio) {
+      // Nothing sounds without a context, so what the game waits on is answered at once, and it holds nothing for it.
+      for (const told of ops) this.unanswered(told);
+      return;
+    }
     for (const told of ops) {
       try {
         this.one(audio, told);
@@ -74,6 +78,12 @@ export class AudioHost {
       }
     }
     this.clock();
+  }
+
+  /** What the game waits on, answered with no context to make it on: a sound's end, a recording's decoding. */
+  private unanswered(told: AudioOp): void {
+    if (told[0] === 'ended') this.reply({ kind: 'ended', id: told[1] });
+    else if (told[0] === 'decode') this.reply({ kind: 'decoded', id: told[1], error: 'the page plays no sound' });
   }
 
   private one(audio: AudioContext, told: AudioOp): void {
@@ -145,6 +155,7 @@ export class AudioHost {
         const node = this.held.get(id);
         if (node instanceof EventTarget)
           node.addEventListener('ended', () => this.reply({ kind: 'ended', id }), { once: true });
+        else this.reply({ kind: 'ended', id });
         return;
       }
       case 'forget':

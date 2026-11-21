@@ -52,7 +52,7 @@ export function hearing(forge: Cards) {
       frame: null,
       spin: false,
     }),
-    remove: () => undefined,
+    remove: (placed) => forge.forget(placed.id),
   });
   const heard: { fight: Fighting | null } = { fight: null };
   const received = (snapshot: Snapshot) => {
