@@ -3,6 +3,15 @@ type: system
 status: live
 code:
   - client/src/plus/kit.ts#ROLES
+  - client/src/cinema/screen.ts#Screen
+  - client/src/speech/dialogue.ts#DialogueBox
+  - client/src/speech/overheads.ts#Overheads
+  - client/src/game/prologue/tap.ts#tapToStart
+  - client/src/game/prologue/nameplate.ts#Nameplate
+  - client/src/game/prologue/objective.ts#Objective
+  - client/src/game/prologue/creation.ts#windowNode
+  - client/src/heldmap/heldMap.ts#markNode
+  - client/src/ui/page.ts#touchesHeld
   - client/src/plus/kit.ts#kitCss
   - client/src/plus/kit.ts#wearKit
   - client/src/plus/frame.ts#frameSvg
@@ -173,7 +182,7 @@ moves to the game's own drawing
   it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
   let a click through to the world; the marks, presses and panels take it. The glyphs Pixelify lacks (a mark's) are
   drawn in the page's own face into a picture. It gives way to the fight's display as that says it shows, and to the
-  dialogue box, still the page's, as the page shows it (`speakingIn`).
+  dialogue box while a named speaker's words are up (`speaking`).
 - **The menu.** The menu's frame (its tabs, the account's mark, the banner, the footer and the world dimmed behind
   it), the Character and Inventory pages, an item's page, the hover card, the holds and their bursts, what the player
   gains and the company on the heads-up display are one layer of the game's drawing (`startGearWindow`).
@@ -185,6 +194,15 @@ moves to the game's own drawing
   Escape's steps. A page still made of elements (Ship, Social, Settings, the pages to come, the Art's screen,
   Appearance and the keepers' screens with the vault) takes `PageContext` and stands in an island laid over the drawn
   body each frame, with its own hover card, until it is drawn; while its controls have the focus the keys are its own.
+- **The story's screens** are layers of their own, each where the page stood it: the tap to start over everything,
+  the cinema's screen (its veils, bars, eyelids, flash, title, prompt and skip) over the HUD and the menu, a boss's
+  nameplate and the objective under it, the dialogue box and the barks over heads under every other layer, and the
+  creation's two windows at the helm, whose fields are typed through the interface and whose keys are the
+  interface's while either is up (`creationOpen`). Words over the world and the veils let the pointer through to the
+  view; the tap to start and the windows take it. The tap's own wake of the browser's sound is still heard from the
+  page's pointer and keys.
+- **The held map's** names, the ship's arrow and the card to set sail are a layer over the parchment the GPU draws,
+  rising and falling with it; the card's presses take the pointer, so a click on them never picks a place.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
 
@@ -636,7 +654,8 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
-- Drawn by the game: the heads-up display, the toasts, the fight's display and the menu; the menu's Ship, Social,
+- Drawn by the game: the heads-up display, the toasts, the fight's display, the menu, the story's screens and the held
+  map's marks; the menu's Ship, Social,
   Settings, Art, Appearance and keepers' pages stand in their island of elements. Tab does not cross from the drawn
   menu into the island: the pointer reaches it, or a press of its own. A word's soft shade past its hard outline is
   not drawn, as a blur has no crisp form, nor a chosen mark's or a ship's mark's blur (a chosen mark's glow is a drawn
@@ -656,8 +675,12 @@ button's corner and screen, and the Tailor's wares.
 - The drawn menu is not doubled past 1440p: the interface draws at one scale, so the menu there stands at 1280 by
   720's sizes rather than twice them. A tile's soft glow and a card's drop shadow are drawn as hard light and no
   shadow; a charging picture quivers but does not brighten.
-- A cutscene's blur is still a filter on the canvas, which would blur what the game draws over it too. It moves into
-  the scene's own drawing with the cinema's screen.
+- A boss's name strikes in by fading alone: the page grew it from 1.6 times its size, which the face's whole steps
+  cannot. The tap's and the title's soft dark glows are not drawn, only their hard shadows. What each of the held
+  map's seas does, a tooltip on the page, is told only to a screen reader, in the press's label.
+- The creation's windows wear the kit's window, wells and presses, where the page's sheet had cleared the kit's frames
+  to plain light borders.
+- The tap to start shows once the face is read, a moment after the page opens; the page showed it at once.
 - A screen reader hears what the game draws only in Chromium (`ariaNotify`): a toast, a new task, a broadside run out
   at her, the prompt for E, the menu's answers, what is gained, and each press's label as focus reaches it.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
