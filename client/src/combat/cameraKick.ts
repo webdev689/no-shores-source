@@ -4,7 +4,7 @@
 import type { Orbit } from '../editor/orbit.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { type StrokeDirection, directionOf } from '../rules/fighters.ts';
-import { EVENT, HOW } from './cues.ts';
+import { EVENT, HOW, landsAsSpell } from './cues.ts';
 
 /** A push on the view: turned right (`yaw`) and down (`pitch`), radians; moved ahead, to the right and up, metres. */
 export interface Push {
@@ -50,7 +50,7 @@ const LANDED: Readonly<Record<number, number | undefined>> = {
 export function kicksOf(events: readonly FightEvent[], player: number): { pushes: Push[]; trauma: number } {
   const blows = new Map<string, FightEvent[]>();
   for (const event of events) {
-    const notABlow = event.how === HOW.shot || event.how === HOW.spell;
+    const notABlow = event.how === HOW.shot || landsAsSpell(event);
     if (notABlow || (event.striker !== player && event.defender !== player)) continue;
     const struck = event.striker === player ? 'all' : event.defender;
     const key = `${event.tick}:${event.striker}:${struck}`;

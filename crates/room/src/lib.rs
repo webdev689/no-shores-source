@@ -6,6 +6,7 @@
 
 mod arts;
 pub mod asks;
+mod atheric;
 pub mod battle;
 pub mod boarding_hands;
 pub mod chart;
@@ -113,6 +114,8 @@ pub struct Room {
     pub(crate) groups: BTreeMap<u32, Group>,
     pub(crate) next_group: u32,
     pub(crate) events: Vec<judging::Event>,
+    /// The fighter an Atheric's leap or burst being judged came from, which its events tell (`atheric.rs`).
+    pub(crate) chain_from: Option<FighterId>,
     /// The verdicts (striker, defender) and telegraphed blows ended (foe, found no one, dodged perfectly) since the
     /// foes' brains were last told: one a player's leaving ends between ticks is told at the next.
     pub(crate) verdicts: Vec<(FighterId, FighterId, Verdict)>,
@@ -187,6 +190,7 @@ impl Room {
             groups: BTreeMap::new(),
             next_group: 1,
             events: Vec::new(),
+            chain_from: None,
             verdicts: Vec::new(),
             ended_telegraphs: Vec::new(),
             spawns: Vec::new(),
@@ -416,7 +420,9 @@ impl Room {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
-                    let loosed = self.held(id, gear::Slot::Ranged);
+                    // A shot loosed from the draw strikes harder than a quick one (`combat::shots::aimed_power`).
+                    let aimed = shot.damage > combat::shots::shot_numbers(shot.ranged).1;
+                    let loosed = self.held(id, gear::Slot::Ranged).map(|held| power::Loosed { aimed, ..held });
                     self.shots.push((shot, loosed));
                 }
             }

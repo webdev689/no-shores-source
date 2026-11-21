@@ -2,7 +2,7 @@
 // kick and the lunge, each at its default here and switched and set in the Test Ground's panel. Only the drawing moves:
 // the fight's rules and their clock never do.
 import { CameraKick, kicksOf, leanOf } from './cameraKick.ts';
-import { EVENT, HOW } from './cues.ts';
+import { EVENT, HOW, landsAsSpell } from './cues.ts';
 import { HitStops, heldBack } from './hitStop.ts';
 import { lungeOf } from './lunge.ts';
 import { type Smear, type Swing, SwingArcs, type Vector, weaponTint } from './swingArcs.ts';
@@ -130,7 +130,7 @@ export class AttackFeel {
     this.stops.struck(events, feel.stop ? feel.stopLength : 0);
     for (const event of events) {
       // Only a blade's own blow flares its arc: a spell or a shot landing mid-swing never touched it.
-      if (event.how === HOW.shot || event.how === HOW.spell) continue;
+      if (event.how === HOW.shot || landsAsSpell(event)) continue;
       const flare = event.kind === EVENT.hit && event.amount <= 0 ? 0 : (ARC_FLARE[event.kind] ?? 0);
       if (flare > 0) this.arcs.struck(event.striker, flare, this.lag(event.striker));
     }

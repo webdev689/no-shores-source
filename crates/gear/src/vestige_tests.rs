@@ -26,9 +26,9 @@ fn a_rolled_weapon_may_be_offered_the_verbs_in_pools_grown_alike() {
         catalogue().pool(column, kind).into_iter().map(|found| found.id.clone()).collect()
     };
     let sizes = |kind: Kind| [Column::Handling(2), Column::Finish(2), Column::Perk(2)].map(|at| pool(at, kind).len());
-    assert_eq!(sizes(Kind::Greatsword), [4, 5, 8], "handling, finish, perks");
-    assert_eq!(sizes(Kind::MaceAndShield), [4, 5, 9], "and Bulwark");
-    assert_eq!(sizes(Kind::Thunderlock), [4, 5, 6]);
+    assert_eq!(sizes(Kind::Greatsword), [6, 7, 8], "handling, finish, perks");
+    assert_eq!(sizes(Kind::MaceAndShield), [6, 7, 9], "and Bulwark");
+    assert_eq!(sizes(Kind::Thunderlock), [6, 7, 6]);
     assert_eq!(pool(Column::Perk(2), Kind::Head).len(), 6);
     let offered =
         |kind: Kind| [Column::Handling(2), Column::Finish(2), Column::Perk(2)].map(|at| pool(at, kind)).concat();
@@ -49,7 +49,9 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
     let items = r#"{"items": [{"id": "odd", "name": "Odd", "kind": "sword", "rarity": "legendary",
         "resource": "nowhere", "words": "w", "layout": [["light_grip", "light_grip", "own"], ["missing"]]},
         {"id": "guild_blade", "name": "Guild Blade", "kind": "greatsword", "rarity": "legendary", "faction": "nobody",
-        "resource": "nowhere", "words": "w", "layout": []}]}"#;
+        "resource": "nowhere", "words": "w", "layout": []},
+        {"id": "bare_atheric", "name": "Bare", "kind": "sword", "rarity": "atheric", "resource": "nowhere", "words": "w",
+        "layout": []}]}"#;
     let resources = r#"{"resources": []}"#;
     let rolled = r#"{"names": {}}"#;
     let problems = Catalogue::parse(traits, items, resources, rolled).expect("well formed").problems();
@@ -60,6 +62,7 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
         "no names for a Normal Sword",
         "guild_blade: its faction is none the factions' file holds",
         "no Legendary Greatsword",
+        "bare_atheric: an Atheric weapon has an intrinsic",
     ] {
         assert!(problems.iter().any(|problem| problem == expected), "{expected} in {problems:#?}");
     }

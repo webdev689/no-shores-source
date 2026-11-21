@@ -223,13 +223,16 @@ gives every one through one door, `Room::give`, for the status's own time unless
   striker's Linked (as the striker stands then) and its defender's Expose, each multiplying the others, before a foe's
   shield takes its share. Only a swing makes a Veiled backstab. The event it tells says whether the blow was a crit
   (for a hit, a block or a guard broken) and the element it carried: a weapon's own, a spell's Art's, none for a fist;
-  a kill's event carries the killing blow's ([[Server]]).
+  a kill's event carries the killing blow's ([[Server]]). It says how the blow was struck: a swing, a riposte, a
+  counter, a telegraphed or iron blow, a shot, a spell, or an Atheric's leap, burst or bite ([[Gear]], "Atherics"); a
+  leap's and a burst's say too which fighter they came from.
 - **Haste in the movement rules.** The movement rules step a body at a share of its pace on the ground; a Hasted
   fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does.
 - **A foe walking home** sheds its Expose and its Charge, with the Charge's stagger and the immunity after one, as it
   turns home, so its next fight is fresh ([[Foes]], "The leash").
 - **The Arts** give statuses through the same door: Quicken's Haste, Arc Lash's Charge, the Sunwell's Linked,
-  Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]).
+  Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]). So do
+  the weapons' verbs and the Atherics' perks ([[Gear]], "Verbs" and "Atherics").
 - **The weapons' perks** give them through it too, as a player's blow lands on a foe or the foe falls ([[Gear]],
   "Verbs"): Expose from Exposing Strikes and Marked Shot, Charge from Thunderclap and Shocking Rounds, Crit from Keen
   Eye; Exploit marks a swing on an Exposed foe a crit. Each is the perk of the loadout the blow came from, never of a

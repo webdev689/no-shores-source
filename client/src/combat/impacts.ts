@@ -7,6 +7,7 @@ import type { FightEvent } from '../network/messages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import { STROKE_DIRECTIONS } from '../rules/fighters.ts';
 import { Bits } from './bits.ts';
+import { chained } from './chainLooks.ts';
 import { EVENT, HOW } from './cues.ts';
 import {
   CRACKED_SHIELD,
@@ -217,7 +218,8 @@ export class Impacts {
     const look = told.lookOf(event);
     const away = Math.hypot(from[0] - feet[0], from[1] - feet[1]) || 1;
     const back = [(from[0] - feet[0]) / away, (from[1] - feet[1]) / away] as const;
-    const spell = event.how === HOW.spell;
+    // An Atheric's leap or burst lands as a spell does, its own marks drawn with the spells' (`chainLooks.ts`).
+    const spell = event.how === HOW.spell || chained(event);
     const shot = event.how === HOW.shot;
     const harms = event.kind === EVENT.hit && event.amount > 0;
     const base = { feet, striker: from, look, crit: !!event.crit && harms, age: 0, seed: this.seeds++ } as const;

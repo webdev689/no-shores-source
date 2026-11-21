@@ -20,12 +20,14 @@ pub const PLAYER_HARM: f64 = 2.0;
 pub const FOE_HARM: f64 = 0.5;
 
 /// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
-/// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it.
+/// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it, and
+/// whether it was aimed (loosed from the draw, striking harder than a quick shot), for Storm Gull.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Loosed {
     pub attack: u32,
     pub element: Option<gear::Element>,
     pub trim: combat::Trim,
+    pub aimed: bool,
 }
 
 /// What a loadout puts in a player's hands, drawn: a pair's second blade or mace and an "& Shield"'s shield in the
@@ -138,7 +140,8 @@ impl Room {
         let player = self.players.get(&striker)?;
         let character = &player.character;
         let element = character.worn(loadout).and_then(|item| item.element);
-        Some(Loosed { attack: character.attack(loadout).unwrap_or(0), element, trim: player.fighter.trim })
+        let attack = character.attack(loadout).unwrap_or(0);
+        Some(Loosed { attack, element, trim: player.fighter.trim, aimed: false })
     }
 
     /// A blow as `empower` makes it, a player's by the Attack and trim `held` gives.
