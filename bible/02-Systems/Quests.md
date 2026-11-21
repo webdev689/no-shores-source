@@ -17,6 +17,7 @@ code:
   - client/src/game/quests/questWatch.ts#QuestWatch
   - client/src/game/quests/quests.ts#Quests
   - client/src/player/factionNames.ts#earnedOn
+  - client/src/combat/casting.ts#CastKeys
 ---
 # Quests
 
@@ -105,6 +106,11 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 - **News waits for the page to settle**: the first 10 s of a page's word on a character are where it stands, so a goal
   met in them says no lines; a word that goes back (a room's starting character, before the player's own is given) is
   never news.
+- **A quest's `begin` is said once for an account in a browser**, which keeps it (`overlook.roads.begun.<account>`):
+  as the quest is first walked from its first task, or on the first settled word for a character on its first task
+  with nothing counted (one from before the roads). A switch back to a road says nothing. What a step says while the
+  story or the welcome holds the screen waits for it to pass; the begin of a quest left meanwhile (the opening, left by
+  a pledge during the welcome) is never said.
 - **The tracker and the marks show on foot**; at sea the tracker keeps a sea fight's task. The held map rings only
   nodes the player has found.
 - **A keeper's lines are said on the press**, before the room answers; speaking with a keeper no goal asks for is
