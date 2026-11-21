@@ -2,7 +2,7 @@
 type: system
 status: live
 code:
-  - client/src/plus/kit.ts#ROLES
+  - client/src/ui/paint.ts#PaintedRole
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
   - client/src/speech/overheads.ts#Overheads
@@ -12,8 +12,6 @@ code:
   - client/src/game/prologue/creation.ts#windowNode
   - client/src/heldmap/heldMap.ts#markNode
   - client/src/ui/page.ts#touchesHeld
-  - client/src/plus/kit.ts#kitCss
-  - client/src/plus/kit.ts#wearKit
   - client/src/plus/frame.ts#frameSvg
   - client/src/plus/frame.ts#framePixels
   - client/src/ui/faceReader.ts#readFace
@@ -137,9 +135,7 @@ code:
   - content/story/keepers.json
   - client/src/game/gearNodes.ts#ringNode
   - client/src/game/elementGlyphs.ts#elementSvg
-  - client/src/face.css
-  - client/src/face.ts#useMendedFace
-  - client/src/trueType.ts#trueType
+  - client/src/face.ts#outlineOf
 ---
 # Interface
 
@@ -156,7 +152,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **One draw.** Each frame's glyphs and surfaces are quads in one list, drawn in one instanced pass over the frame at
   its end, from one atlas of glyphs and tiles, read by whole texels and never filtered (`UiRenderer`).
 - **The roles, painted.** `paint` lays a role's drop shadows, ground, bands, inner shades and bevel or carved frame as
-  the kit's sheet paints them for a page; at a whole scale they match the page's pixels. A CSS pixel is drawn at the
+  the kit's sheet painted them for a page; at a whole scale they match its pixels. A CSS pixel is drawn at the
   screen's ratio rounded to a whole pixel (`uiScale`), so a ratio of 1.5 draws at 2.
 - **Announced.** A toast's words, and each press's label as focus reaches it, go to a screen reader through
   `document.ariaNotify` where the browser has it.
@@ -230,8 +226,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   (the one press a surface is for, in brass), a warn (a press that costs something, its edge in blood), a tile, a
   chip (a readout), a well, a header, a footer, a rule, a rail, a track (a bar's dark trough, sunk into its edge, a
   hairline at 1 px) and a meter (a bar's fill, lit along its top, shaded along its foot, its leading edge lit, in the
-  colour its surface gives it). A surface takes its role by taking its class (`ROLES`); a role no surface wears yet
-  comes over from DFO's kit when one does.
+  colour its surface gives it). A node takes its role by naming it (`PaintedRole`); a role no surface wears yet comes
+  over from DFO's kit when one does.
 - **Presses answer alike.** A button or primary is raised stone; it goes brass under the pointer or focus, sinks while
   held and goes flat when it cannot be pressed. A warn lights in blood, never brass.
 - **Paint only.** The kit writes colours, bevels, grounds and shadows, never a width, padding or size, so dressing a
@@ -250,7 +246,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   cover a bar already placed is lifted just above it. The order changes only when a figure comes 6% nearer, a lifted bar
   comes down only once it is 10 px further clear, and a bar eases to a new height, so the bars hold still from frame to
   frame.
-- **Where it is worn.** The [[Game]]'s heads-up display lays the kit's sheet once. The sea bar is a window, its groups
+- **Where it is worn.** The sea bar is a window, its groups
   (Navigation, Pace and Ship) parted by rails; the dock or landing offer, Take the helm and Respawn are primaries;
   the status line is a chip; the menu is a window under a header.
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
@@ -433,7 +429,8 @@ it has no italic. Shadows under it are hard, a pixel's step.
 Six of its glyphs misread and eleven symbols are missing, so a second face, listed first, stands in for just those
 ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]): a 2, a 5, a B, a Z and square brackets, and the
 rarities' diamonds, the map's house, triangles, skull and anchor. Each is drawn in `face.ts` as rows of cells on Pixelify's grid at its
-weight, and made into a font in the page when it opens (`trueType.ts`), so nothing generated is kept.
+weight, and the interface draws those cells where it would read the face's own (`ui/glyphs.ts`), so nothing generated
+is kept.
 
 ## The menu
 

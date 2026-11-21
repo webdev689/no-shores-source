@@ -6,6 +6,7 @@ import { canvasSize } from '../canvasSize.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { readFace } from '../ui/faceReader.ts';
+import { stopped } from '../ui/page.ts';
 import type { Child } from '../ui/node.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
@@ -63,7 +64,7 @@ export class EditorFrame {
       })
       .catch((error: unknown) => {
         // Nothing can be drawn without the face: the page says why, as it does when the GPU will not start.
-        document.body.textContent = `The editor's face could not be read: ${String(error)}`;
+        stopped(`The editor's face could not be read: ${String(error)}`);
       });
     const asked = () => this.request();
     for (const kind of ['pointermove', 'pointerdown', 'pointerup', 'pointerleave', 'wheel'] as const)
@@ -148,10 +149,9 @@ export class EditorFrame {
     this.marks.draw(texture.createView(), drawn.inks, { ...size, scale, left: PANEL_WIDTH });
     ui.draw(editorRoot(drawn));
     ui.renderer.present(size.width, size.height);
-    this.events.sync(ui.typing, ui.cursor);
     const pointer = this.events.pointer;
-    if (drawn.cursor && ui.cursor === 'default' && pointer && !this.takes(pointer.x, pointer.y))
-      canvas.style.cursor = drawn.cursor;
+    const overView = drawn.cursor && ui.cursor === 'default' && pointer && !this.takes(pointer.x, pointer.y);
+    this.events.sync(ui.typing, overView ? drawn.cursor : ui.cursor);
     // A press may change what the panel shows; a field's caret blinks; the water moves.
     if (ui.pressed || ui.typing || drawn.again) this.request();
   }

@@ -27,7 +27,7 @@ decision, made in the same change as its entry here.
 | `client/src/game/audio/ambience/ambienceWorker.ts`, `bank.ts` | The worker that makes the ambience's beds and calls off the page's thread, and the page's side that asks it and keeps their buffers |
 | `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's controls, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, the crosshair, and the [[Arts]]' pictures |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
-| `client/src/face.css`, `face.ts`, `trueType.ts` | Every page's face: Pixelify Sans at its sizes, with the glyphs it misreads or lacks drawn in code and made into a font in the page ([[Interface]], "The face") |
+| `client/src/face.ts` | The glyphs Pixelify Sans misreads or lacks, drawn in code on its grid for the interface to draw ([[Interface]], "The face") |
 | `client/src/shadow.ts` | The sun's shadow map round the eye, which every drawer of the [[Game]]'s scene casts into and reads |
 | `client/src/soundSamples.ts` | The recorded sounds the owner picked from Freesound, fetched, levelled and played for the [[Interface]]'s cues and the world's, with their credits |
 | `client/src/elementGlow.ts` | The [[Weapon Glow]]'s colours, outline field, shader and bursts, which the figures, the first person and the fight's effects draw with |

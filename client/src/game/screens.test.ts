@@ -48,7 +48,14 @@ function menu(gear: GearState) {
   const asked: GearAsk[] = [];
   const here = () => ({ gear, ask: (ask: GearAsk) => asked.push(ask), forge: null, dress: null });
   const stack = new Stack();
-  stack.add(startGearWindow(() => false, null, here, () => null));
+  stack.add(
+    startGearWindow(
+      () => false,
+      null,
+      here,
+      () => null,
+    ),
+  );
   const ui = new Interface(renderer());
   ui.speak = () => undefined;
   const frame = (events: UiEvent[] = []) => {

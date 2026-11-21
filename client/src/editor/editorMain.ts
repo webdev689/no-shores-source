@@ -1,7 +1,7 @@
 import { GpuUnavailable, startGpu, TEXTURE_USAGE } from '../gpu.ts';
 import { startWorldRules, type WorldRules } from '../rules/worldRules.ts';
 import type { Node } from '../ui/node.ts';
-import { ask, saveFile } from '../ui/page.ts';
+import { ask, saveFile, stopped } from '../ui/page.ts';
 import type { Interface } from '../ui/ui.ts';
 import { type Camera, fitFrame, niceLength, pan, screenToWorld, zoomAt } from './camera.ts';
 import { EditorFrame, type EditorDrawn, type EditorFrameView } from './editorFrame.ts';
@@ -438,6 +438,5 @@ async function start(): Promise<void> {
 
 start().catch((error: unknown) => {
   const message = error instanceof GpuUnavailable || error instanceof Error ? error.message : String(error);
-  document.body.textContent = message;
-  document.body.style.cssText = 'color:#ddd;padding:22px';
+  stopped(message);
 });
