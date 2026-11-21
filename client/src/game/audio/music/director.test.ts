@@ -6,7 +6,7 @@ import { makeSong } from './score.ts';
 
 const scores = overlookScores();
 /** The scores with the green family's fight and Saltmere's theme unwritten. */
-const unwritten: Scores = { ...scores, families: { ...scores.families, green: null }, social: null };
+const unwritten: Scores = { ...scores, families: { ...scores.families, green: null }, social: [] };
 
 /** An audio context that builds nothing, keeping when each source was asked to start. */
 function fakeAudio() {
@@ -86,9 +86,9 @@ test("a cue's song: a family's fight, Saltmere's theme, a boss score's last phas
   assert.equal(songOf(scores, { kind: 'family', family: 'dry' })?.name, 'dry-fight');
   assert.equal(songOf(scores, { kind: 'family', family: 'wet' })?.name, 'wet-fight');
   assert.equal(songOf(scores, { kind: 'family', family: 'cold' })?.name, 'cold-fight');
-  assert.equal(songOf(scores, { kind: 'social' })?.name, 'saltmere');
+  assert.equal(songOf(scores, { kind: 'social', piece: 0 })?.name, 'saltmere');
   assert.equal(songOf(unwritten, { kind: 'family', family: 'green' }), null, 'a score not written is silence');
-  assert.equal(songOf(unwritten, { kind: 'social' }), null);
+  assert.equal(songOf(unwritten, { kind: 'social', piece: 0 }), null);
   assert.equal(songOf(scores, { kind: 'none' }), null);
   assert.equal(songOf(scores, { kind: 'sea', song: 'storm' })?.name, 'sea-storm');
   assert.equal(songOf(scores, { kind: 'boss', boss: 'reckoning', part: 2 })?.name, 'reckoning-2');
@@ -139,9 +139,12 @@ test('a family score leads into the fight: its tension quietly, its fight on the
   assert.ok(starts.filter((when) => when > clock() - 3).length === 0 && starts.length === quiet, 'and silence after');
 });
 
-test("Saltmere's theme plays in the social space while nothing threatens, the ambience a little under it", () => {
+test("a piece of the social space's plays a while after arriving there, the ambience a little under it", () => {
   const { frames, starts, ducks } = directed();
+  frames(island, 1);
   frames({ ...island, place: { kind: 'social', climate: 'temperate-coast' } }, 2);
+  assert.equal(starts.length, 0, 'not at once');
+  frames({ ...island, place: { kind: 'social', climate: 'temperate-coast' } }, 30);
   assert.ok(starts.length > 0);
   assert.deepEqual(ducks, [0.8]);
 });

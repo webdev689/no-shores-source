@@ -96,6 +96,10 @@ export function fmVoice(programNumber: number): FmVoice {
   return { ...FAMILY_VOICES[FAMILIES[held >> 3] ?? 'piano'], ...PROGRAM_VOICES[held] };
 }
 
+/** A struck tone this high dies within `RINGING_S`, seconds. */
+export const RINGING_HZ = 1500;
+export const RINGING_S = 0.1;
+
 /** A drum: a sine at `hz` falling to `drop` times it over its decay (1 holds: a bell, a block, a triangle), or a band
  *  of noise about `hz` (`q` its narrowness); its attack and decay in seconds and its loudness; and, for a song's own
  *  kit, the beater's `click` over it and a skin's `body` (hertz) under a noise's crack. */
@@ -112,7 +116,8 @@ export interface Drum {
 }
 
 /** General MIDI's drum keys, 35 to 87: [key, kind, hertz, attack, decay, loudness, drop]. A skin falls an octave
- *  unless it says otherwise; struck metal and wood hold their pitch. */
+ *  unless it says otherwise; struck metal and wood hold their pitch. No tone over `RINGING_HZ` lasts past
+ *  `RINGING_S`: a high pure tone held is a whine. */
 const KIT: readonly (readonly [number, 'tone' | 'noise', number, number, number, number, number?])[] = [
   [35, 'tone', 55, 0.002, 0.28, 1], // acoustic bass drum
   [36, 'tone', 60, 0.002, 0.24, 1], // bass drum
@@ -132,7 +137,7 @@ const KIT: readonly (readonly [number, 'tone' | 'noise', number, number, number,
   [50, 'tone', 230, 0.002, 0.2, 0.8], // high tom
   [51, 'noise', 5500, 0.002, 0.5, 0.4], // ride cymbal
   [52, 'noise', 4000, 0.002, 0.7, 0.5], // china cymbal
-  [53, 'tone', 2200, 0.001, 0.4, 0.45, 1], // ride bell
+  [53, 'tone', 1180, 0.001, 0.4, 0.45, 1], // ride bell, under the ringing range
   [54, 'noise', 9000, 0.001, 0.12, 0.55], // tambourine
   [55, 'noise', 6500, 0.002, 0.35, 0.45], // splash cymbal
   [56, 'tone', 800, 0.001, 0.22, 0.55, 1], // cowbell
@@ -150,8 +155,8 @@ const KIT: readonly (readonly [number, 'tone' | 'noise', number, number, number,
   [68, 'tone', 850, 0.001, 0.2, 0.55, 1], // low agogo
   [69, 'noise', 8000, 0.001, 0.07, 0.4], // cabasa
   [70, 'noise', 8500, 0.001, 0.06, 0.4], // maracas
-  [71, 'tone', 2300, 0.002, 0.12, 0.4, 1], // short whistle
-  [72, 'tone', 2300, 0.002, 0.35, 0.4, 1], // long whistle
+  [71, 'tone', 2300, 0.002, 0.08, 0.4, 1], // short whistle
+  [72, 'tone', 2300, 0.002, 0.09, 0.4, 1], // long whistle
   [73, 'noise', 2200, 0.002, 0.1, 0.45], // short guiro
   [74, 'noise', 2200, 0.002, 0.3, 0.45], // long guiro
   [75, 'tone', 2400, 0.001, 0.06, 0.6, 1], // claves
@@ -160,9 +165,9 @@ const KIT: readonly (readonly [number, 'tone' | 'noise', number, number, number,
   [78, 'tone', 600, 0.002, 0.1, 0.5, 0.9], // muted cuica
   [79, 'tone', 500, 0.002, 0.25, 0.5, 0.9], // open cuica
   [80, 'tone', 6000, 0.001, 0.08, 0.35, 1], // muted triangle
-  [81, 'tone', 6000, 0.001, 0.6, 0.35, 1], // open triangle
+  [81, 'tone', 6000, 0.001, 0.09, 0.35, 1], // open triangle
   [82, 'noise', 9000, 0.001, 0.07, 0.4], // shaker
-  [83, 'tone', 5000, 0.001, 0.3, 0.4, 1], // jingle bell
+  [83, 'tone', 5000, 0.001, 0.09, 0.4, 1], // jingle bell
   [84, 'noise', 7500, 0.002, 0.7, 0.35], // bell tree
   [85, 'noise', 4000, 0.001, 0.05, 0.5], // castanets
   [86, 'tone', 90, 0.002, 0.16, 0.85], // muted surdo

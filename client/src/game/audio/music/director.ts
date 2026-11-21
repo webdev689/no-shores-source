@@ -2,8 +2,9 @@
 // the playing song's next bar line; a new song begins on it while the old fades over a bar; a fight that ends fades
 // over two bars, never cut. A sting (a boss waking or falling, a fight won or lost) begins on the bar line and holds
 // the next song until it has played. The ambience is lowered under the music as a fight grows and let back after.
-// A sea song out of danger plays whole, once through. A place whose score is not written is silent. The story's songs
-// play in the layers of the mood it asks, and its cut stops everything at once.
+// A calm piece out of danger (the sea's, the social space's, an island's) plays whole, once through. A place whose
+// score is not written is silent. The story's songs play in the layers of the mood it asks, and its cut stops
+// everything at once.
 
 import { SKY_NOW } from '../../../sky/skyDriver.ts';
 import { duckAmbience, musicOutput } from '../../uiSounds.ts';
@@ -26,10 +27,11 @@ import {
 import { dryScore } from './dryScore.ts';
 import { greenScore } from './greenScore.ts';
 import { type FootHeard, type SeaHeard, hearNode, hearSea, heardSky } from './hearing.ts';
+import { islandPieces } from './islandPieces.ts';
 import { reckoningScore } from './reckoningScore.ts';
-import { saltmereScore } from './saltmereScore.ts';
 import { ROLES, type Role, type Song, TICKS_PER_BEAT, songSeconds } from './score.ts';
 import { type SeaSong, seaSongs } from './seaScore.ts';
+import { socialPieces } from './socialPieces.ts';
 import { START_LEAD_S, SongPlayer, songTail } from './songPlayer.ts';
 import { type StorySong, storyScores } from './storyScore.ts';
 import { wetScore } from './wetScore.ts';
@@ -55,7 +57,9 @@ export interface BossScore {
 
 export interface Scores {
   readonly families: Readonly<Record<Family, FightScore | null>>;
-  readonly social: Song | null;
+  /** The social space's calm pieces, and each family's for its islands. */
+  readonly social: readonly Song[];
+  readonly roaming: Readonly<Record<Family, readonly Song[]>>;
   readonly sea: Readonly<Record<SeaSong, Song>>;
   readonly bosses: Readonly<Record<Boss, BossScore>>;
   readonly story: Readonly<Record<StorySong, Song>>;
@@ -66,7 +70,8 @@ export function overlookScores(): Scores {
   const boarding = boardingScore();
   return {
     families: { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: coldScore() },
-    social: saltmereScore(),
+    social: socialPieces(),
+    roaming: islandPieces(),
     sea: seaSongs(),
     bosses: { boarding: { ...boarding, defeat: boarding.end }, reckoning: reckoningScore(), wrath: wrathScore() },
     story: storyScores(),
@@ -79,9 +84,11 @@ export function songOf(scores: Scores, cue: Cue): Song | null {
     case 'none':
       return null;
     case 'social':
-      return scores.social;
+      return scores.social[cue.piece] ?? null;
     case 'family':
       return scores.families[cue.family]?.song ?? null;
+    case 'roam':
+      return scores.roaming[cue.family][cue.piece] ?? null;
     case 'sea':
       return scores.sea[cue.song];
     case 'boss': {
@@ -113,7 +120,7 @@ const CEILING_DB = -1;
 /** Seconds the ambience takes to be lowered, and to come back. */
 const DUCK_S = 2;
 const UNDUCK_S = 4;
-/** The social space's theme plays whole, the ambience a little under it. */
+/** A calm piece plays whole, the ambience a little under it. */
 const ALL_ROLES: ReadonlySet<Role> = new Set(ROLES);
 const SOCIAL_DUCK = 0.8;
 /** The story's songs played once through: the ram, which the crash cuts short. */
@@ -171,7 +178,7 @@ export class MusicDirector {
   private holdUntil = -Infinity;
   private waking = false;
   private ducked = 1;
-  /** The sea song last begun once through: one already heard is never begun again over its own cue. */
+  /** The calm piece last begun once through: one already heard is never begun again over its own cue. */
   private once: Song | null = null;
 
   constructor({
@@ -183,9 +190,14 @@ export class MusicDirector {
     random = Math.random,
   }: DirectorOptions = {}) {
     [this.output, this.duckTo, this.timed, this.clockOf, this.scores] = [output, duck, timed, clock, scores()];
-    // A sea song ends once its last note has rung, a bar line after it is asked for.
-    const lengthOf = (song: SeaSong) => songTail(this.scores.sea[song]) + START_LEAD_S + barOf(this.scores.sea[song]);
-    this.songClock = { lengthOf, random };
+    // A calm piece ends once its last note has rung, a bar line after it is asked for.
+    const lengthOf = (cue: Cue) => {
+      const song = songOf(this.scores, cue);
+      return song ? songTail(song) + START_LEAD_S + barOf(song) : 0;
+    };
+    const pieces = (where: Family | 'social') =>
+      where === 'social' ? this.scores.social.length : this.scores.roaming[where].length;
+    this.songClock = { lengthOf, pieces, random };
     // A hidden page's timers are slowed to a wake a second, too few to keep a song whole: it falls silent instead.
     if (typeof document !== 'undefined')
       document.addEventListener('visibilitychange', () => {
@@ -205,15 +217,16 @@ export class MusicDirector {
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
     if (verdict.sting) this.sting(stingOf(scores, verdict.sting), verdict.sting.kind === 'wake', now);
     const asked = songOf(scores, verdict.cue);
-    const voyage = verdict.cue.kind === 'sea' && verdict.mood === 'silent';
+    const { kind } = verdict.cue;
+    const calm = kind === 'social' || kind === 'roam' || (kind === 'sea' && verdict.mood === 'silent');
     // A hidden page cut it short: the law's clock stood while the page's ran on, so it is not played again.
-    const song = voyage && asked === this.once && !this.current ? null : asked;
-    this.once = voyage ? asked : null;
-    // The social space's theme and a sea song out of danger play whole, at their own level.
-    const whole = verdict.cue.kind === 'social' || voyage;
+    const song = calm && asked === this.once && !this.current ? null : asked;
+    this.once = calm ? asked : null;
+    // A calm piece plays whole, at its own level, once through.
+    const whole = calm;
     const roles = whole ? ALL_ROLES : MOOD_ROLES[verdict.mood];
     const story = verdict.cue.kind === 'story' ? verdict.cue.song : null;
-    const once = voyage || (story !== null && ONCE.has(story));
+    const once = calm || (story !== null && ONCE.has(story));
     this.follow(song, roles, whole ? 1 : MOOD_LEVEL[verdict.mood], now, !once);
     // The story's songs leave its sea and storm heard under them, as the social space's theme leaves the harbour.
     const under = !song ? 1 : whole || story ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];

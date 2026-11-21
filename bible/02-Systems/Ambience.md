@@ -25,8 +25,8 @@ code:
 
 What the world sounds like where the player is: the open sea, Saltmere's social space and its port, and each of the
 nine islands by its climate. Each is its own: beds of wind, water and leaves under it, and the calls of birds,
-beasts, insects, timbers and a city's work over it, placed round the listener. It is DFO's soundscape, made by our
-synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthesiser]]).
+beasts, insects, timbers and a city's work over it, placed round the listener. It is DFO's soundscape, grown to eleven places
+([[Music and Ambience Come From DFO's Synthesiser]]), its every sound becoming a Freesound recording the owner picks.
 
 ## How it works
 
@@ -83,9 +83,13 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
   game shows no place, so the ambience fades to nothing and comes back with the next place. A hidden page fades out.
 - **Made off the page.** Beds and calls are made in a worker as a place is first heard, a place's whole set in about
   a second; until they come it is silent. Only the places sounding keep their sounds (about 18 to 30 MB each).
-- **Recordings.** Gulls, a crow, a raven, a crowd, parrots, a heron and a lion are also cues on the sound sheet
-  ([[Sounds Come From Freesound, Judged on a Test Sheet]]). Once the owner picks one, it plays in place of the
-  synthesiser's call; parrots, the heron and the lion have no synthesised call and are silent until picked.
+- **Recordings.** Every bed and every call of every place is a cue on the sound sheet
+  ([[Sounds Come From Freesound, Judged on a Test Sheet]],
+  [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]): the sea's as picked, and each of the
+  land's and the social space's by `RECORDINGS` (`recordings.ts`), its bed or its first sound's cue, a place naming
+  its own where it differs (the swamp's still water). Once the owner picks one, it plays in place of the synthesiser's
+  sound, the synthesiser's until then; parrots, the heron and the lion have no synthesised call and are silent until
+  picked. When the picks are in, the synthesiser goes.
   Saltmere's gutters and both thunders play the owner's picks too ([[The Weather's Gutters and Thunder Come From
   Freesound]]), the synthesiser's until they come.
 - **The sea's recordings.** Every sound of the open sea (its beds and its calls), the surf at every island's edge and
