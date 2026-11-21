@@ -31,6 +31,8 @@ code:
   - client/src/ui/field.ts#typed
   - client/src/ui/paint.ts#paint
   - client/src/ui/announce.ts#announce
+  - client/src/ui/page.ts#saveFile
+  - client/src/ui/page.ts#openFile
   - client/src/game/toasts.ts#layToasts
   - client/src/plus/tones.ts#TONES
   - client/src/plus/tones.ts#FILLS
@@ -83,7 +85,7 @@ code:
   - client/src/combat/hitWords.ts#wordsOf
   - client/src/combat/foePlate.ts#wardOf
   - client/src/plus/kit.ts#motionReduced
-  - client/src/ships/shipBars.ts#drawShipBars
+  - client/src/ships/shipBars.ts#ShipPlates
   - client/src/ships/shipBars.ts#HullLosses
   - client/src/game/gearScreen.ts#characterOf
   - client/src/game/gearScreen.ts#itemDetailOf
@@ -199,8 +201,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   Social, Settings and the pages to come) takes only the interface, the room, the sizes and the holds
   (`PlainContext`); Social and Settings keep what the accounts answered while they show, asked again each time they
   open, and the Roster takes Escape's step first while its panel or a player's details are open. The page's own
-  services a page asks for (a link opened in a new tab, the address left or loaded again, words copied) are
-  `ui/page.ts`.
+  services a screen asks for are `ui/page.ts`: a link opened in a new tab, the address left or loaded again, words
+  copied, a file saved or opened from the player's chooser, a yes or no asked in the browser's dialog; each borrows the
+  page for a moment, and nothing of them is drawn interface.
 - **The story's screens** are layers of their own, each where the page stood it: the tap to start over everything,
   the cinema's screen (its veils, bars, eyelids, flash, title, prompt and skip) over the HUD and the menu, a boss's
   nameplate and the objective under it, the dialogue box and the barks over heads under every other layer, and the
@@ -215,6 +218,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the shared toggle, slider and choice (`panels`, `Panel`, `GearPanel`). The view between them is drawn into a
   texture of its own, the fight's display over it in an interface the view's size, and copied into its place
   (`ViewTexture`); a click there is the world's, and the wheel over a panel scrolls it.
+- **The World Editor's panel** is drawn too: its page is one canvas, the panel at the left in the game's face and the
+  map or the land's view to its right, its overlays' marks drawn on the GPU and their names in the interface.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
 
@@ -386,7 +391,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   140 px with an 8 px bar under the whole name; a Minor's as wide, since "? Crossbowman" fills it in the face, but its
   bar 6 px and only three fifths as long, still a row of its red and of a shield's colour when drawn at three quarters
   far off; an Elite's and up 176 px with a 10 px bar, cut in thirds by dark marks edged light, so they read over the
-  fill and the empty trough alike. Ships' plates are drawn alike on an SVG, at the sizes in `PLATES`: a Major's 140 by
+  fill and the empty trough alike. Ships' plates are drawn alike by the interface, at the sizes in `PLATES`: a Major's 140 by
   26 px over a figure, and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
   wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
@@ -708,7 +713,8 @@ button's corner and screen, and the Tailor's wares.
   fields take words, not the browser's step arrows; its words in the face, not the page's monospace for the numbers
   to copy, which cannot be selected: a press on them copies them whole (`copyText`); a name or a node's words show
   over it, as a page's `title` did, while the pointer or the keys' focus is on it. With the mouse free, Tab or an
-  arrow moves focus into the panels, and the keys stay theirs until the view is clicked.
+  arrow moves focus into the panels, and the keys stay theirs until the view is clicked. The World Editor's panel is drawn by the game in its own look, its names over the view with a
+  halo a pixel wide where the page's stroke stood a pixel and a half out.
 - The vitals always rest when whole: DFO's switch for it waits on a settings screen.
 - A plate keeps its size on any screen; DFO's names also grew with the screen's height.
 - Bars at the top of the screen (the boss bar, the soft lock's, a Boss ship's) stand where they are set; only bars

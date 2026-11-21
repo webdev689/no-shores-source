@@ -1,6 +1,8 @@
 import type { FightEvent } from '../rules/fightRules.ts';
 import type { FleetLay, FleetLook } from '../rules/fleetRules.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
+import type { PlacedBar } from '../ships/shipBars.ts';
+import type { Node } from '../ui/node.ts';
 
 /** A captain asked for: none, one called round her ship, or every one sent off. */
 export type FleetCall = 'none' | 'captain' | 'send off';
@@ -93,6 +95,19 @@ export function chosenCaptain(): CaptainChoice {
 /** The page offers its fleet room, before the editor opens: none sails alone. */
 export function offerFleet(harbour: FleetHarbour | null): void {
   offered = harbour;
+}
+
+/** The captains' plates as the interface draws them, as the page offers that drawing (the game's); none until it does. */
+let plates: (bars: readonly PlacedBar[]) => readonly Node[] = () => [];
+
+/** Offers the drawing of the captains' plates. */
+export function offerPlates(drawn: (bars: readonly PlacedBar[]) => readonly Node[]): void {
+  plates = drawn;
+}
+
+/** The captains' plates of `bars` as nodes over the view. */
+export function platesOf(bars: readonly PlacedBar[]): readonly Node[] {
+  return plates(bars);
 }
 
 /** The fleet room the page offered, if any. */

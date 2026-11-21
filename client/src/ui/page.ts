@@ -1,6 +1,8 @@
 // The page's own services that a screen drawn by the game asks for and cannot draw: opening a link in a new tab, the
-// page's address, loaded again or left for another, its touches held, its clipboard, and words said when nothing can be drawn. Only here, canvasEvents.ts, pictures.ts and
-// announce.ts touch the page, so the interface itself runs anywhere.
+// page's address, loaded again or left for another, its touches held, its clipboard, a file saved or opened from the
+// player's chooser, a yes or no asked in the browser's dialog, and words said when nothing can be drawn. Each borrows
+// the page for a moment and builds no interface. Only here, canvasEvents.ts, pictures.ts and announce.ts touch the
+// page, so the interface itself runs anywhere.
 
 /** What a screen asks of the page. */
 export interface Page {
@@ -38,4 +40,34 @@ export function copyText(words: string): void {
 export function stopped(message: string): void {
   document.body.textContent = message;
   document.body.style.cssText = 'color:#ddd;background:#000;font-size:22px;padding:24px';
+}
+
+/** Hands the player `text` as a file named `name` to save. */
+export function saveFile(text: string, name: string, type = 'application/json'): void {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([text], { type }));
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+/** Opens the browser's file chooser for files of `accept` (as an input's `accept` writes it); answers the chosen
+ *  file's text, or null when none was chosen. */
+export function openFile(accept: string): Promise<string | null> {
+  const chooser = document.createElement('input');
+  chooser.type = 'file';
+  chooser.accept = accept;
+  return new Promise((resolve) => {
+    chooser.addEventListener('change', () => {
+      const file = chooser.files?.[0];
+      resolve(file ? file.text() : null);
+    });
+    chooser.addEventListener('cancel', () => resolve(null));
+    chooser.click();
+  });
+}
+
+/** Asks the player `question` in the browser's dialog: whether they said yes. */
+export function ask(question: string): boolean {
+  return window.confirm(question);
 }

@@ -109,7 +109,7 @@ export function layoutMarks(
       const edge = pathThrough(circle(project, area.at, area.radius));
       // Cut by the view, an area is only outlined: a fill would close each piece with a chord across it.
       const fill = edge.whole ? { fill: `${colour}2e` } : {};
-      if (edge.box) below.push({ shape: 'line', path: edge.path, colour, width: 1.5, ...fill });
+      if (edge.box) below.push({ shape: 'line', runs: edge.runs, closed: edge.closed, colour, width: 1.5, ...fill });
     }
     for (const { tier, points, heights } of layout.paths) {
       const { widthM, colour, thinnestPx } = PATHS[tier];
@@ -118,7 +118,7 @@ export function layoutMarks(
         false,
       );
       const width = Math.max(thinnestPx, Math.round(widthM * pixelsPerMetre * 10) / 10);
-      if (way.box) below.push({ shape: 'line', path: way.path, colour, width, casing: true });
+      if (way.box) below.push({ shape: 'line', runs: way.runs, closed: false, colour, width, casing: true });
     }
     for (const run of layout.runs) {
       const colour = BUILDING_RUNS.has(run.kind) ? RUN_COLOURS.building : RUN_COLOURS.open;
@@ -127,17 +127,25 @@ export function layoutMarks(
         false,
       );
       const width = Math.max(RUN_THINNEST_PX, Math.round(2 * RUN_HALF_M * pixelsPerMetre * 10) / 10);
-      if (way.box) below.push({ shape: 'line', path: way.path, colour, width, casing: true });
+      if (way.box) below.push({ shape: 'line', runs: way.runs, closed: false, colour, width, casing: true });
       for (const beat of run.beats) {
         const edge = pathThrough(circle(project, beat.at, beat.radius));
-        if (edge.box) below.push({ shape: 'line', path: edge.path, colour, width: 1.5, dash: '3 3' });
+        if (edge.box)
+          below.push({ shape: 'line', runs: edge.runs, closed: edge.closed, colour, width: 1.5, dash: [3, 3] });
       }
       const door = project(...run.door);
       if (door) dots.push({ shape: 'dot', ...door, radius: 5, fill: SITE_COLOURS.door ?? colour, stroke: '#000000cc' });
       const mouth = run.line[0] && project(...run.line[0]);
       if (mouth) labels.place(mouth.x, mouth.y - 8, `${run.name} · ${run.kind}`, colour);
     }
-    below.push({ shape: 'line', path: outline.path, colour: RING_COLOUR, width: 1.5, dash: '6 4' });
+    below.push({
+      shape: 'line',
+      runs: outline.runs,
+      closed: outline.closed,
+      colour: RING_COLOUR,
+      width: 1.5,
+      dash: [6, 4],
+    });
     for (const area of areas) {
       const middle = project(...area.at);
       if (middle && area.radius * 2 * pixelsPerMetre >= AREA_NAME_FROM_PX)
@@ -156,10 +164,11 @@ export function layoutMarks(
       if (ring?.box)
         below.push({
           shape: 'line',
-          path: ring.path,
+          runs: ring.runs,
+          closed: ring.closed,
           colour,
           width: 2.5,
-          ...(site.kind === 'event' ? { dash: '6 3' } : {}),
+          ...(site.kind === 'event' ? { dash: [6, 3] } : {}),
         });
       else dots.push({ shape: 'dot', ...spot, radius: 4, fill: colour, stroke: '#000000cc' });
       // A gate's and a landing's names are their areas', and an event's or foes' would repeat their area's: a
