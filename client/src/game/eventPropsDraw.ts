@@ -48,7 +48,7 @@ const VERTEX_LAYOUT: GPUVertexBufferLayout = {
 };
 
 const PLACE_WGSL = /* wgsl */ `
-struct View { from_eye: mat4x4f, clock: vec4f }
+struct View { from_eye: mat4x4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Prop { place: vec4f, shape: vec4f, about: vec4f }
 @group(2) @binding(0) var<storage, read> props: array<Prop>;
@@ -337,7 +337,7 @@ export class EventPropsDraw implements Drawer {
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
     });
-    this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
+    this.view = device.createBuffer({ size: 64, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.viewGroup = device.createBindGroup({
       layout: viewLayout,
       entries: [{ binding: 0, resource: { buffer: this.view } }],
@@ -393,10 +393,7 @@ export class EventPropsDraw implements Drawer {
       if (made) drawn.push([prop, made, drawn.length]);
     }
     if (drawn.length === 0) return drawn;
-    const values = new Float32Array(20);
-    values.set(fromEye.subarray(0, 16));
-    values[16] = performance.now() / 1000;
-    this.gpu.device.queue.writeBuffer(this.view, 0, values);
+    this.gpu.device.queue.writeBuffer(this.view, 0, fromEye.slice(0, 16));
     const rows = new Float32Array(drawn.length * PROP_FLOATS);
     drawn.forEach(([prop, made], row) => {
       rows.set(

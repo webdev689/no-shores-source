@@ -15,14 +15,8 @@ class Frame:
     """A place to build in: `at` (x, y, z) and `turn` radians about up, carrying a piece's own frame to the module's."""
 
     def __init__(self, at=(0.0, 0.0, 0.0), turn=0.0, tilt=(0.0, 0.0)):
-        self.at = mathutils.Vector(at)
-        self.turn = turn
-        self.tilt = tilt
-        self.matrix = (mathutils.Matrix.Translation(self.at) @ mathutils.Matrix.Rotation(turn, 4, 'Z')
+        self.matrix = (mathutils.Matrix.Translation(mathutils.Vector(at)) @ mathutils.Matrix.Rotation(turn, 4, 'Z')
                        @ mathutils.Matrix.Rotation(tilt[1], 4, 'Y') @ mathutils.Matrix.Rotation(tilt[0], 4, 'X'))
-
-    def point(self, local):
-        return self.matrix @ mathutils.Vector(local)
 
     def inner(self, at=(0.0, 0.0, 0.0), turn=0.0, tilt=(0.0, 0.0)):
         """A frame inside this one."""
