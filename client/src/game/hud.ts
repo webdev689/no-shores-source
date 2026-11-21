@@ -9,7 +9,7 @@ import { ease, easeInOut } from '../ui/ease.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import type { Interface } from '../ui/ui.ts';
-import type { Hint } from './gearDom.ts';
+import type { Hint } from './gearNodes.ts';
 import { countdownText, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
 import { Tween } from './hudParts.ts';

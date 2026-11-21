@@ -34,10 +34,6 @@ const RECORDED: Partial<Record<Cue, string>> = {
   dismantle: 'hold.dismantle',
   feed: 'hold.feed',
 };
-/** What a press is: buttons and what acts like them. */
-const PRESSABLE = 'button, a[href], summary, select, [role="button"], [role="tab"], input[type="checkbox"]';
-/** What a tick is heard on, reached by the pointer. */
-const TICKED = `${PRESSABLE}, .gear-cell`;
 
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -395,38 +391,8 @@ export function drawnReach(): void {
   play('hover');
 }
 
-export function installInterfaceSounds(root: HTMLElement): void {
-  let gestureAt = -Infinity;
-  let keyed = false;
-  let over: Element | null = null;
-  addEventListener('pointerdown', () => ((gestureAt = performance.now()), (keyed = false), wake()), true);
-  addEventListener('keydown', () => ((keyed = true), wake()), true);
-  // After the press's own handlers, so a press that made its own sound makes no other.
-  addEventListener(
-    'click',
-    (event) => {
-      const target = event.target instanceof Element ? event.target.closest(PRESSABLE) : null;
-      if (!target || !root.contains(target) || target.matches(':disabled, [aria-disabled="true"]')) return;
-      const when = event.detail > 0 ? gestureAt : performance.now();
-      window.setTimeout(() => lastCueAt < when && play(target.getAttribute('role') === 'tab' ? 'tab' : 'press'), 0);
-    },
-    true,
-  );
-  // A control reached by a press or key that already sounded (a tab opened, a tab moved to) ticks no more.
-  const tick = (target: Element | null) => {
-    if (target === over) return;
-    over = target;
-    if (!target) return;
-    const now = performance.now();
-    if (now - Math.max(lastTickAt, lastCueAt) < TICK_MS || target.matches('.gear-vacant')) return;
-    lastTickAt = now;
-    play('hover');
-  };
-  root.addEventListener('pointerover', (event) => {
-    if (event.pointerType !== 'mouse') return;
-    tick(event.target instanceof Element ? event.target.closest(TICKED) : null);
-  });
-  root.addEventListener('focusin', (event) => {
-    if (keyed) tick(event.target instanceof Element ? event.target.closest(TICKED) : null);
-  });
+/** Wakes the sounds at the player's every press or key (`wake`). */
+export function wakeOnGesture(): void {
+  addEventListener('pointerdown', () => wake(), true);
+  addEventListener('keydown', () => wake(), true);
 }

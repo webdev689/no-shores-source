@@ -5,7 +5,7 @@
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import type { Hint } from './gearDom.ts';
+import type { Hint } from './gearNodes.ts';
 import { footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
 import type { ShipPanel } from './shipPanel.ts';
 

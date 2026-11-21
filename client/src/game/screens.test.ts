@@ -36,7 +36,7 @@ function renderer(): UiRenderer {
 
 /** The menu on a fake page with `gear`, a frame at a time, the keys pressed on the page, and every ask it made. */
 function menu(gear: GearState) {
-  const { root, window } = fakePage();
+  const { window } = fakePage();
   Object.assign(globalThis, {
     devicePixelRatio: 1,
     innerWidth: VIEW.width,
@@ -48,7 +48,7 @@ function menu(gear: GearState) {
   const asked: GearAsk[] = [];
   const here = () => ({ gear, ask: (ask: GearAsk) => asked.push(ask), forge: null, dress: null });
   const stack = new Stack();
-  stack.add(startGearWindow(root as never, null, here, () => null));
+  stack.add(startGearWindow(() => false, null, here, () => null));
   const ui = new Interface(renderer());
   ui.speak = () => undefined;
   const frame = (events: UiEvent[] = []) => {
@@ -57,7 +57,6 @@ function menu(gear: GearState) {
   };
   const key = (name: string) => {
     const event = new FakeEvent('keydown', { key: name });
-    event.target = root;
     window.dispatchEvent(event);
     frame([{ kind: 'key', key: name }]);
     frame();

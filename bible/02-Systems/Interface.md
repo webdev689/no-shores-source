@@ -55,7 +55,6 @@ code:
   - client/src/combat/meter.ts#Meter
   - client/src/ui/stack.ts#Stack
   - client/src/plus/tones.ts#HALO
-  - client/src/plus/compass.ts#Compass
   - client/src/plus/compass.ts#compassPlace
   - client/src/plus/compass.ts#markPlace
   - client/src/game/seaHud.ts#seaShipMarks
@@ -92,7 +91,6 @@ code:
   - client/src/game/characterPage.ts#characterPage
   - client/src/game/itemPage.ts#itemPage
   - client/src/game/inventoryPage.ts#inventoryPage
-  - client/src/game/gearDom.ts#holdOn
   - client/src/game/acquiredFeed.ts#AcquiredFeed
   - client/src/game/menuPage.ts#MenuContext
   - client/src/game/gearHold.ts#Holds
@@ -145,10 +143,8 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-The game draws its heads-up display, its fight's display and its menu itself; its other panels and words are still
-HTML laid over the canvas, and by the owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each
-moves to the game's own drawing
-("Drawn by the game", below).
+The game draws every screen itself, and by the owner's word no HTML is laid over the canvas
+([[The Interface Uses No HTML, Now or Later]]): the game's page is one canvas ("Drawn by the game", below).
 
 ## Drawn by the game
 
@@ -187,7 +183,7 @@ moves to the game's own drawing
   and its offers, Manage's panel, the menu, the prompt for E and the veil. Each stands where the page's sheet stood
   it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
   let a click through to the world; the marks, presses and panels take it. The glyphs Pixelify lacks (a mark's) are
-  drawn in the page's own face into a picture. It gives way to the fight's display as that says it shows, and to the
+  drawn in the browser's plain face into a picture. It gives way to the fight's display as that says it shows, and to the
   dialogue box while a named speaker's words are up (`speaking`).
 - **The menu.** The menu's frame (its tabs, the account's mark, the banner, the footer and the world dimmed behind
   it), the Character, Inventory, Ship, Social and Settings pages and the pages to come, an item's page, the hover card, the holds and their bursts, what the player
@@ -234,8 +230,8 @@ moves to the game's own drawing
 - **Presses answer alike.** A button or primary is raised stone; it goes brass under the pointer or focus, sinks while
   held and goes flat when it cannot be pressed. A warn lights in blood, never brass.
 - **Paint only.** The kit writes colours, bevels, grounds and shadows, never a width, padding or size, so dressing a
-  surface never sizes or spaces it; only a held press sinks a pixel. The page's own sheet gives each surface its
-  room, and each window and press the 2 px border the kit's bevel and frame land on.
+  surface never sizes or spaces it; only a held press sinks a pixel. Each surface's nodes give it its room, and each
+  window and press the 2 px border the kit's bevel and frame land on.
 - **The frame** is a 25 px square picture drawn pixel for pixel and used at 1:1: the outline, the stone bevel lit
   from the top left, an engraved line and a dark lip, with a brass fitting and its rivet at each corner. It reaches
   6 px outside its box, so it takes no room.
@@ -264,8 +260,8 @@ moves to the game's own drawing
   view 890 px wide or less; the toasts in the middle over the dialogue box's top. The key strip gives way while
   someone speaks in the dialogue box. The edge's warning stands under the compass's column.
 - **The fight's display** ([[Enemies]], [[Test Ground]]) is drawn by the game, a layer of its interface under the
-  game's own windows that lets the pointer through to the world (`combat/hud.ts`); in the [[Game]] the page's own
-  pieces at the top make way for it while it shows (`data-fight` on the HUD). It stands the compass at
+  game's own windows that lets the pointer through to the world (`combat/hud.ts`); in the [[Game]] the company
+  at the top makes way for it while it shows. It stands the compass at
   the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does; the vitals at the
   top left; and the Arts and weapons at the bottom left
   ([[The Vitals Go Top Left and the Arts and Weapons Bottom Left]], with Claude's choices in
@@ -308,7 +304,7 @@ moves to the game's own drawing
   its picture and words over the row's own dark band. In a view too narrow for the vitals beside the compass, the
   weapons stand over the Arts, so the corner keeps clear of the view's middle and the hands drawn there
   (`combat/weapons.ts`). The display is built afresh each frame from what its pieces keep; an arrow at the edge keeps
-  clear of the corners where they were laid the frame before, and reads the page's own pieces only while it shows.
+  clear of the corners where they were laid the frame before, and reads the HUD's key strip only while it shows.
 - **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
   colours (Crit a burst and Linked two rings in Blaze; Expose a diamond cracked through, the mark the Arts' fragments
   give it, and Veiled a crescent in Cosmic; Charge a crackling bolt and Haste two chevrons in Volt), over a thin line
@@ -377,7 +373,7 @@ moves to the game's own drawing
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
   rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while
   the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
-  the page's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
+  the game's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
   and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round and a soft shade past it, as a ship's plate strokes its words (`HALO`), so they read over bright sky. The

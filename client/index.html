@@ -5,13 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Overlook</title>
-    <link rel="stylesheet" href="/src/face.css" />
     <style>
       :root {
         color-scheme: dark;
-        --ink: #f2efe6;
-        --panel: rgba(10, 13, 17, 0.72);
-        --gold: #f3cf6a;
       }
       html,
       body {
@@ -20,43 +16,16 @@
         background: #000;
         overflow: hidden;
       }
-      /* The world's canvas fills the page; every other canvas (an emote, a gear picture) keeps a size of its own. */
+      /* The game is one canvas that fills the page. */
       #game {
         display: block;
         width: 100%;
         height: 100%;
       }
-      #hud {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        color: var(--ink);
-        text-shadow: 1px 1px 0 #000;
-      }
-      /* What still stands over the canvas as the page's wears the Enhanced Plus kit (client/src/plus/), which paints
-         each surface by its role; this sheet gives each press the 2 px border the kit's frame lands on. A rule here
-         that outranks the kit's sets a border's width and style only, never its colour. */
-      #hud button {
-        pointer-events: auto;
-        font: inherit;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 0;
-        padding: 7px 14px;
-        cursor: pointer;
-        text-shadow: 1px 1px 0 #000;
-      }
-      #hud button:disabled {
-        cursor: default;
-      }
-      [hidden] {
-        display: none !important;
-      }
     </style>
   </head>
   <body>
     <canvas id="game"></canvas>
-    <div id="hud"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

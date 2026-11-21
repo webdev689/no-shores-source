@@ -145,25 +145,6 @@ export function emblemPixels(emblem: Emblem, shape: Shape, cells = WIDTHS[shape]
   return pixels;
 }
 
-const drawn = new Map<string, string>();
-
-/** An emblem in its shape as an image's address, drawn once a page; a banner at the cells it is asked for, the last
- *  kept. */
-export function emblemImage(emblem: Emblem, shape: Shape, cells = WIDTHS[shape]): string {
-  const key = `${emblem.id}:${shape}:${cells}`;
-  const known = drawn.get(key);
-  if (known) return known;
-  const canvas = document.createElement('canvas');
-  const pixels = emblemPixels(emblem, shape, cells);
-  [canvas.width, canvas.height] = [pixels.length / 4 / SIGN_CELLS, SIGN_CELLS];
-  canvas.getContext('2d')?.putImageData(new ImageData(pixels, canvas.width, canvas.height), 0, 0);
-  const address = canvas.toDataURL();
-  // A banner is drawn to whatever width the window gives it, so only the last one is kept, not one a width.
-  if (shape === 'banner') for (const old of drawn.keys()) if (old.includes(':banner:')) drawn.delete(old);
-  drawn.set(key, address);
-  return address;
-}
-
 /** The colour a band ends in, which a row longer than it is filled with. */
 export function plateEnd(emblem: Emblem): string {
   const pixels = emblemPixels(emblem, 'band');

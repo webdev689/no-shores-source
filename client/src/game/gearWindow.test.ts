@@ -31,7 +31,7 @@ function renderer(): UiRenderer {
 /** The menu on a fake page, its gear `gear` (null for none), resting while `resting` says; with a step of frames and
  *  the keys pressed on the page, and every ask it made. */
 function menu(gear: GearState | null = sampleGear(), resting = () => false) {
-  const { root, window } = fakePage();
+  const { window } = fakePage();
   Object.assign(globalThis, {
     devicePixelRatio: 1,
     innerWidth: VIEW.width,
@@ -45,7 +45,7 @@ function menu(gear: GearState | null = sampleGear(), resting = () => false) {
   const stack = new Stack();
   stack.add(
     startGearWindow(
-      root as never,
+      () => false,
       null,
       here ?? (() => null),
       () => null,
@@ -61,7 +61,6 @@ function menu(gear: GearState | null = sampleGear(), resting = () => false) {
   };
   const key = (name: string, kind = 'keydown') => {
     const event = new FakeEvent(kind, { key: name });
-    event.target = root;
     window.dispatchEvent(event);
   };
   /** A click on what `id` names, laid last frame. */

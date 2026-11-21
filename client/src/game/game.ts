@@ -44,7 +44,7 @@ import { standingDrawers } from './standing.ts';
 import { afterStoryOn } from './welcome/afterStory.ts';
 import { StoryHost } from './prologue/host.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
-import { installInterfaceSounds } from './uiSounds.ts';
+import { wakeOnGesture } from './uiSounds.ts';
 import { Stack } from '../ui/stack.ts';
 import { DrawnInterface } from './drawnInterface.ts';
 import { speaking } from '../speech/dialogue.ts';
@@ -65,14 +65,13 @@ const CHART_EVERY_S = 1;
  * an island's side and lands at a node, each through a veil while the place loads. This wires the pieces and keeps
  * the flow; each mode is its own module.
  */
-export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement): Promise<void> {
+export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<void> {
   /** The interface's layers, each part of it drawn over the whole view. */
   const stack = new Stack();
   const hud = new Hud();
   stack.add((ui) => hud.node(ui));
-  // The HUD gives way to the fight's display and the dialogue box while they hold the screen.
   // The first tap or key wakes the sound, so the story's intro begins heard.
-  installInterfaceSounds(hudRoot);
+  wakeOnGesture();
   const asked = new URLSearchParams(location.search).get('at');
   // With `?at=` the page goes straight to a node; otherwise the story opens the game behind a tap to start.
   let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
@@ -244,7 +243,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     story.begin({ ...game, ...more, ...lands }, () => ((flow = arriving(FIRST_NODE, 'Overlook')), arrive()));
   }
 
-  installQaViews(window, location.search, !rooms, { node: () => foot?.node ?? null, arrive: goFoot, walker });
+  const dead = () => foot?.standing.kind === 'dead';
+  installQaViews(window, location.search, !rooms, { node: () => foot?.node ?? null, arrive: goFoot, walker, dead });
   const landAt = (id: string) => {
     discovered.nodes([id]);
     const landing = sea?.view.landingOf(id);
@@ -354,7 +354,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The Ship tab's papers: her voyage only while she is at sea.
   const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
   const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
-  stack.add(startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story'));
+  const fighting = () => footView.shown.fight;
+  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, () => flow.mode === 'story'));
   addEventListener('keyup', (event) => void (flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)));
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -578,7 +579,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     ambience.frame(seconds);
-    footView.mark(hudRoot);
     ui.present(stack);
     if (flow.mode === 'loading' && ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.

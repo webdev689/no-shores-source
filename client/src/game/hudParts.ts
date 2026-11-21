@@ -1,7 +1,7 @@
 // The heads-up display's small drawn parts, shared by its pieces: a border of four colours as a sheet writes one, the
 // kit's header, footer, rule and rail bands (which `ui/paint.ts` leaves to a sheet), a key on its keycap, words over
 // the world, a press of the display, and a value that eases to each new one it is set to, as a CSS transition does.
-import type { Hint } from './gearDom.ts';
+import type { Hint } from './gearNodes.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Drawing, Node, Text } from '../ui/node.ts';
 import { colourOf, type Box } from '../ui/quads.ts';

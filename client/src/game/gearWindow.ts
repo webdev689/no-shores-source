@@ -1,4 +1,3 @@
-import './gearScreen.css';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, answerText, itemName } from '../player/gear.ts';
@@ -93,7 +92,7 @@ const ofGear = (view: View) => view === 'character' || view === 'inventory' || !
  * the layer that draws it, with the company and what the player gains, which show in play too.
  */
 export function startGearWindow(
-  root: HTMLElement,
+  fighting: () => boolean,
   link: AccountLink | null,
   here: () => GearHere | null,
   ship: () => ShipPanel | null,
@@ -140,13 +139,6 @@ export function startGearWindow(
   /** Asked when a picture comes; the layer is drawn each frame, so it has nothing more to do. */
   const redraw = () => undefined;
 
-  /** The HUD's other parts, out of reach of the keys and a screen reader while the menu is open, and out of sight:
-   *  shortcut: they are elements over the canvas the menu is drawn on, so they would stand over it; they go once the
-   *  HUD is drawn, under the menu's layer. */
-  const beneath = (asleep: boolean) => {
-    root.classList.toggle('gear-open', asleep);
-    for (const part of root.children) if (part instanceof HTMLElement) part.inert = asleep;
-  };
   const shut = () => {
     holds.letGo();
     view = null;
@@ -154,7 +146,6 @@ export function startGearWindow(
     hush();
     play('close');
     setGearScreenOpen(false);
-    beneath(false);
     // The pages go with the menu, so nothing on them, a list asked for again among them, runs while it is shut.
     [roster, accountPanel] = [null, null];
     ui?.focusOn(null);
@@ -188,7 +179,6 @@ export function startGearWindow(
     npcOpened(wanted);
     play(opening ? 'open' : 'tab');
     setGearScreenOpen(true);
-    beneath(true);
     document.exitPointerLock();
     // Opened, or moved to a station: the tab, or the station's first press.
     focusNext = isTab(wanted) ? tabId(wanted) : null;
@@ -416,12 +406,11 @@ export function startGearWindow(
     holds.frame(frame);
     const box = frame.boxOf(LAYER) ?? { width: innerWidth, height: innerHeight };
     if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
-    // The company stands under the fight's vitals while they show, as game.ts marks them.
-    const fighting = root.dataset['fight'] !== undefined;
     const sizes = sizesOf(box.width, box.height, uiScale(devicePixelRatio));
     const shown = view;
     const children: Child[] = [
-      company.node(fighting),
+      // The company stands under the fight's vitals while they show.
+      company.node(fighting()),
       ...(shown !== null ? menu(frame, shown, box) : []),
       feed.node(sizes, box, view !== null),
       ...holds.burstNodes(),
@@ -439,10 +428,8 @@ export function startGearWindow(
     'keydown',
     (event) => {
       const key = event.key.toLowerCase();
-      const typing =
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement ||
-        Boolean(view !== null && ui?.typing);
+      // A drawn field typed in anywhere keeps its letters.
+      const typing = Boolean(ui?.typing);
       const opens = !typing && !resting() && (key === 'i' || key === 'o');
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.

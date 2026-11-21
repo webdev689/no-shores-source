@@ -70,15 +70,6 @@ export class FootView {
     return { fight: this.showing, bossed: this.showing && this.hud.bossed };
   }
 
-  /** Marks `root` while the display shows (`data-fight`, "bossed" under a Boss's bar), for the page's own pieces that
-   *  make way for it. */
-  mark(root: HTMLElement): void {
-    const { fight, bossed } = this.shown;
-    const shown = fight ? (bossed ? 'bossed' : '') : null;
-    if (shown === null) root.removeAttribute('data-fight');
-    else if (root.dataset['fight'] !== shown) root.dataset['fight'] = shown;
-  }
-
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */
   private bloodOf(foot: FootShown, groundAt: (x: number, y: number) => number | null) {
     if (this.blood?.foot === foot) return this.blood;
