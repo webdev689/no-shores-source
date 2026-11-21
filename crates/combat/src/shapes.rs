@@ -1,10 +1,12 @@
 //! A foe's telegraphed blows, as DFO's TELL draws them: each a shape on the ground its foe winds up to, marked so
 //! the player can read it, landing on whoever's feet stand in it when the wind-up ends. Iron ones cannot be guarded.
 
+use crate::Surroundings;
 use crate::sight::clear_line;
 use crate::ticks;
 use crate::tuning::{CHEST, STRIKE_HEIGHT};
-use movement::Block;
+use movement::blocks::{ground_at, pushed_out, slide};
+use movement::{Block, Body, Near};
 
 /// The shapes. A lunge and a charge are lanes ahead; a sweep an arc; a slam a disc just ahead; a ring an annulus about
 /// the foe's feet, safe close in; a leap a disc where its target stood; an aimed shot a line its arrow flies along.
@@ -202,4 +204,28 @@ impl Telegraph {
         };
         Some([self.origin[0] + libm::sin(self.bearing) * reach, self.origin[1] - libm::cos(self.bearing) * reach])
     }
+}
+
+/// A charge crosses its lane and a leap flies to its disc in the last ticks of the wind-up.
+pub(crate) fn travel<B: Near + ?Sized>(
+    body: &Body,
+    telegraph: &Telegraph,
+    around: &Surroundings<'_, B>,
+) -> Option<Body> {
+    let landing = telegraph.landing()?;
+    let travel = telegraph.travel_ticks();
+    let begun = telegraph.windup.saturating_sub(travel);
+    if telegraph.elapsed < begun || travel == 0 {
+        return None;
+    }
+    let left = f64::from(telegraph.windup.saturating_sub(telegraph.elapsed).max(1));
+    let (step_x, step_y) = ((landing[0] - body.x) / left, (landing[1] - body.y) / left);
+    let share = f64::from(telegraph.elapsed - begun + 1) / f64::from(travel);
+    let rise = if telegraph.shape == Shape::Leap { 4.8 * share * (1.0 - share) } else { 0.0 };
+    let (x, y) = slide(around.blocks, around.terrain, body, step_x, step_y);
+    // Off a drop its feet come down beside the block it slid off at its old height: it is set down clear of it.
+    let feet = |x, y| ground_at(around.blocks, around.terrain, x, y, body.z) + rise;
+    let (x, y) = pushed_out(around.blocks, around.terrain, x, y, body.height(), feet);
+    let facing = telegraph.bearing;
+    Some(Body { x, y, z: feet(x, y), vx: 0.0, vy: 0.0, vz: 0.0, facing, moving: true, ..*body })
 }
