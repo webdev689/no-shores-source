@@ -7,7 +7,7 @@
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import { CUT, type Ink, inkVertices, VERTEX_FLOATS } from './strokes.ts';
 
-const SHADER = /* wgsl */ `
+export const MARK_SHADER = /* wgsl */ `
 struct View { size: vec2f, spare: vec2f }
 @group(0) @binding(0) var<uniform> view: View;
 
@@ -93,7 +93,7 @@ export class MarkPass {
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     const { device, format } = gpu;
-    const module = device.createShaderModule({ code: SHADER });
+    const module = device.createShaderModule({ code: MARK_SHADER });
     const attribute = (shaderLocation: number, offset: number, size: 2 | 4) => ({
       shaderLocation,
       offset: offset * 4,
