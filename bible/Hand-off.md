@@ -336,10 +336,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   named here. Tested offline: the full check, and the freeze against the real room (a press there parries, and
   dodges, each at its first freeze). Not yet seen or played in a browser: the eyes over the scene, the arms on the
   deck, the menu over the story, the frozen frame. Open: the owner's "teaching them the inventory" is taught on the
-  Character page (I), where gear is worn, which the owner may want otherwise; the wreck's tool still writes the
-  flight's masts and way back into its layout, which the page no longer reads (removing them rebuilds and publishes
-  the wreck); the step up to where the player wakes is too high for foes, so a player who stays up there is not
+  Character page (I), where gear is worn, which the owner may want otherwise; the step up to where the player wakes is too high for foes, so a player who stays up there is not
   reached until they come down; the game's headless pictures cannot draw the game since it draws in a worker.
+- **The playtest's wreck notes, on branch `claude/beautiful-mendel-rnj0xh`, wait on the owner's yes** to merge: the
+  ramp from the Frigate's gun deck up onto the raft off its port quarter, where that zone's wave fights, was walled by
+  splinters (gaps of 0.3 to 0.6 m) since climbing went off, so the wave was never reached, its heap on the last ramp
+  never cleared, and the arena could not be reached; every ramp's way is now cleared where it meets a deck
+  (`clear_ways`), and the level's check walks with a body's width, which found the Frigate's waist's pistoleer boxed in
+  on her forecastle, now stood on her waist just aft of it. The Brig's crew still standing regroup at each zone's
+  checkpoint as the player reaches it ([[The Crew Still Standing Regroup Ahead]]). The layout no longer carries the
+  dropped flight's masts and way back. The wreck is rebuilt by its workflow and the layout taken whole from it.
+  Tested offline: the full check, the wreck built and its level checked here with Blender's module (bpy 5.3.0, as
+  CI), the ramp pictured before and after, and a crewman walking from one zone to the next in the real room.
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through
