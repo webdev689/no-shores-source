@@ -178,6 +178,16 @@ test('every rebind from the defaults leaves no two controls that act alike on on
           const after = rebind(DEFAULTS, { id, device, place }, name);
           if (after.binds) assert.deepEqual(clashesIn(after.binds), [], `${id} ${device} ${place} to ${name}`);
         }
+  // Rebinds one after another, each from the binds the last left, a fixed walk through them.
+  let binds: Binds = DEFAULTS;
+  for (let step = 0, seed = 7; step < 400; step++) {
+    seed = (seed * 48271) % 2147483647;
+    const id = BIND_IDS[seed % BIND_IDS.length] ?? 'jump';
+    const device = seed % 2 === 0 ? 'keys' : 'pad';
+    const name = names(device)[seed % names(device).length] ?? 'x';
+    binds = rebind(binds, { id, device, place: seed % 3 }, name).binds ?? binds;
+    assert.deepEqual(clashesIn(binds), [], `step ${step}: ${id} ${device} to ${name}`);
+  }
   const used = rebind(DEFAULTS, { id: 'use', device: 'keys', place: 0 }, 'c');
   assert.deepEqual([used.binds?.use.keys, used.binds?.crouch.keys, used.binds?.brace.keys], [['c'], ['e'], ['e']]);
   assert.deepEqual(used.binds && used.swapped, ['crouch', 'brace'], 'each control that gave it up is named');
