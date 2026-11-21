@@ -67,13 +67,14 @@ status: in force
   weather, past ships, fights and towns, and ends over Saltmere with its ambience and birds, the title, and a
   pulsing prompt to begin.
   The flight to each island is replaced by [[The Intro Goes Straight to Saltmere]].
-- Beginning takes the camera out to a storm at sea and a brig, across her working crew to the helm, where character
+- Beginning takes the camera out to a storm at sea and a brig, across its working crew to the helm, where character
   creation shows the player's whole figure. The player creates their account and chooses their skin tone and race.
   They start in armour with a sword and shield.
 - The mission runs in the owner's thirteen beats: vessels sighted, a fight at sea, a still moment on deck, a larger
-  ship ramming her, waking in first person in the wreck of both, fighting through it to a boss with a nameplate of
+  ship ramming it, waking in first person in the wreck of both, fighting through it to a boss with a nameplate of
   its own, a fight that cannot be won, thrown overboard, sinking past the fallen crew to a flash and a strange voice,
   and waking on Saltmere's shore, where a bystander takes the player to the social space and play is theirs.
+  The camera's run through the wreckage on waking is replaced by [[The Wreck Opens by Teaching the Player]].
 - Characters show their feelings with a mark over their heads, as an emote, and speak through fight-life's voice
   blurb system, in voice and in text ([[Speech]]).
 - Dialogue follows a rule of its own, for this mission and every one after it ([[Dialogue]]). It is never

@@ -26,7 +26,14 @@ code:
   - crates/protocol/messages.fbs
   - crates/protocol/src/lib.rs#read_input
   - crates/protocol/src/lib.rs#read_course
-  - crates/protocol/src/lib.rs#snapshot_bytes
+  - crates/protocol/src/land.rs#snapshot_bytes
+  - crates/protocol/src/pack.rs#pack
+  - crates/protocol/src/lib.rs#read_inputs
+  - crates/room-wasm/src/sent.rs#Sent
+  - client/src/network/snapshots.ts#SnapshotKeeper
+  - client/src/network/pack.ts#unpack
+  - client/src/network/linkMeasure.ts#LinkMeasure
+  - tools/wireSizes.mjs
   - crates/room-wasm/src/lib.rs#room_input
   - crates/room-wasm/src/lib.rs#open_node
   - crates/room-wasm/src/lib.rs#refusal
@@ -304,7 +311,22 @@ an older reader skips them.
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the pirates' Major) or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window, and the protocol's version: the hash of the schema, of the fight's number layouts (`crates/combat/src/floats.rs`: a fighter, an intent and a glance cross as plain lists of numbers) and of the content the wire numbers by place (cosmetics, emblems, factions, items, resources, rolled names and the Arts), so a page built from another schema, other layouts or another order of that content loads again, once |
-| Snapshot | The room | The room's tick; every player: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses that changed since the last snapshot; every foe: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves; the fight's events since the last snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the last snapshot as its last segment with the point it left its gun; and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
+| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
+
+**Each player's own snapshot.** On land a snapshot is written for each player. Their own fighter crosses whole, as
+they predict from it; everyone else's numbers, and every foe's, cross packed: each in thousandths, a whole number
+zigzagged into a varint, x and y measured from the room's middle (the snapshot says where), so a whole number crosses
+exactly and any other within half a thousandth (`pack.rs`). The room keeps two seconds of what its snapshots held
+(`sent.rs`), and a player's next holds only what changed since the one their screen last showed (the tick their
+input names): the players and foes that changed, each as only its numbers that changed with a bit for each, their
+own fighter likewise but whole, and those gone. The fight's events, dresses changed and balls stopped since that
+tick go each time until a later one is shown, so a snapshot lost on the way costs nothing the next does not carry.
+A player whose screen is further behind is sent everything. A foe's packed numbers end with its companion's four (0
+for a foe). An island's room measures from its middle, floored to whole metres; a course's from the world's middle. A
+deck boarded at sea sends each boarder their own snapshot inside the sea's: their fighter whole, the rest packed, and
+all of it each tick, since the sea's snapshot is not built on another. At sea, each player is sent their own fight
+alone. An input may carry the inputs before it, which the room takes when it has not had them (`read_inputs`); a
+boarder's input on a deck is taken alone (`read_input`).
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
 starboard), a tap for a burst (1 or 0, acting once) and climb; whether a look is laid, its bearing off its bow
@@ -379,7 +401,8 @@ so every decision is Rust and the shell only carries bytes and time.
   as a join, so none gets in. Should the room's WebAssembly ever trap, every socket is closed and the object starts
   over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
-  sends every player the snapshot after each tick, and their own gear when it changed; a socket closing as it is sent to is passed over, so the rest
+  sends every player their own snapshot after each tick (taken once, `room_snapshot_prepare`, then cut for each,
+  `room_snapshot_for`), and their own gear when it changed; a socket closing as it is sent to is passed over, so the rest
   still get the tick. When the last player leaves it stops, and the room goes with the object.
 
 ## The browser's side
@@ -395,6 +418,17 @@ every other figure drawn on from where the new room has it, though its clock sta
   [[Test Ground]], the [[Game]]'s node rooms and sea, and a fleet each follow it so; at sea, and in a fleet, the ship
   puts to sea again where it lies. A room that sends the player away for not keeping to the messages (1008, 1009),
   or because its node is locked (4003), is not joined again, and the page says why.
+- **Whole snapshots.** `SnapshotKeeper` holds four seconds of the snapshots it made whole, lays each new one over
+  the one it names (players and foes changed, their changed numbers over theirs, those gone taken out) and hands on
+  each event and stopped ball once; one older than the last, or built on one no longer held, is passed over. Each
+  socket keeps its own, so a rejoin starts afresh.
+- **Inputs that survive a loss.** On a link that may lose a message, each input carries up to the 8 before it
+  (`RoomLink.resend`); a WebSocket loses none, so it carries none. An input carrying more is refused, and the server
+  sends its socket away (1008). A browser's message is read under tight verifier limits (a few tables deep, the
+  tables nine inputs need, twice a message's bytes), so one table pointed at again and again cannot stall a room.
+- **Lag and loss.** `RoomConnection` measures its link (`LinkMeasure`): the time from an input sent to the snapshot
+  that shows it taken, smoothed as TCP smooths its round trip, how much it strays, and the share of snapshots passed
+  over.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
   with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOnNode` cuts the
   rect the welcome names from the landmass open in the land's door and stands the movement rules on it, with the
@@ -458,12 +492,11 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - Any page can join a room, under any name; a player is known only by the session their page gives ([[Accounts]]).
 - A full sea of sockets each asking for the costliest course it may holds about a third of the sea's time: 40
   snapshots a second against 57, with 63 such sockets on the local runtime (tested offline).
-- A snapshot sends every player's whole fighter and look and every foe's glance every tick. The runtime deflates it
-  on the wire (WebSocket compression, on from the rooms' compatibility date), its window reaching back over the
-  snapshots before, so what stands still costs next to nothing and a foe walking its beat costs most: a node's room
-  with its garrison and one player sends 1.8 to 4.7 KB a tick, 3.5 KB at the median over the 90 garrisoned nodes,
-  and 0.05 to 0.53 KB deflated, 0.35 KB at the median, about 21 KB a second (tested offline; 0.20 to 0.36 KB on the
-  local runtime, over four nodes).
+- A node's room with its garrison and one player running and swinging sends a snapshot of 0.30 to 0.73 KB a tick,
+  0.34 KB at the median over the 31 nodes that take players, and 0.04 to 0.13 KB as the WebSocket deflates it (its
+  window reaching back over the snapshots before), 0.06 KB at the median, about 4 KB a second; 0.3% of snapshots
+  (the first whole ones after a join) are larger than a datagram's 1,100 bytes (tested offline,
+  `node tools/wireSizes.mjs`). A snapshot's fields the sea and the fleet added before these hold 10 to 30 bytes of its table's layout.
 - A player's view may lag 24 ticks at most; a screen further behind is judged as it stands. A player could hold a
   claimed lag at the most to gain up to 24 ticks of reaction; nothing checks it.
 - Arrows and bolts are not judged as their shooter saw: they fly in the room's time.
@@ -472,6 +505,8 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   the World Editor asks for open water 15 m deep before it joins. A fleet's lay is judged at the room's tick, not as
   the player's screen showed the ships (a ball's flight is long beside the lag).
 - Players do not harm one another.
+- On a boarded deck each boarder's snapshot is sent whole every tick, not as what changed (the sea's page reads it
+  without a keeper), and a boarder's input is read alone, without the inputs it carries from before.
 - A dress travels with a player's inputs, which flow only while they play: until then, others see a plain figure.
 - A player who sends nothing waits a view's lag, then stands still where they were until their inputs come. The
   section judges them all the same, so the warning's count runs on.

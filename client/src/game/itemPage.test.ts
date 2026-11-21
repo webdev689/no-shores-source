@@ -2,10 +2,18 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { item, state } from '../network/gearForTests.ts';
 import { KINDS } from '../player/gear.ts';
+import { glyphDrawn } from '../ui/glyphs.ts';
+import type { Child, Node } from '../ui/node.ts';
+import { QuadList } from '../ui/quads.ts';
+import { type Face, widthOf } from '../ui/text.ts';
+import { Interface } from '../ui/ui.ts';
+import type { UiRenderer } from '../ui/uiRenderer.ts';
+import { traitNode } from './gearCard.ts';
 import { cardOf, intrinsicOf } from './gearCards.ts';
-import { traitNode } from './gearDom.ts';
+import { Holds } from './gearHold.ts';
+import { INK, sizesOf } from './gearNodes.ts';
 import { itemPage } from './itemPage.ts';
-import { type FakeElement, fakePage } from './pageForTests.ts';
+import type { MenuContext } from './menuPage.ts';
 
 const reefwall = item({ named: 'the_reefwall', kind: KINDS.indexOf('sword_and_shield'), rarity: 4, attack: 200 });
 
@@ -16,24 +24,45 @@ test('an Atheric names its intrinsic, and no other item has one', () => {
   assert.equal(intrinsicOf(item({})), null, 'a rolled piece');
 });
 
+const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
+const face: Face = { glyph: () => block };
+const renderer = {
+  face,
+  quads: new QuadList(),
+  tileTexels: () => null,
+  glyphTexels: () => null,
+  picture: () => undefined,
+  measure: (words: string, size: number) => widthOf(face, words, size),
+} as unknown as UiRenderer;
+
 const context = {
+  ui: new Interface(renderer),
   gear: state({}),
   ask: () => {},
-  tip: { over: () => {}, hide: () => {} },
   picture: () => null,
   figure: null,
-  room: 600,
+  room: { width: 1180, height: 520 },
+  sizes: sizesOf(1280, 720, 1),
+  holds: new Holds(() => 0),
+  card: () => {},
   inspect: () => {},
+  details: () => {},
   atVault: false,
-};
+} as unknown as MenuContext;
 
-/** The page's left column's nodes, laid as the page lays them. */
-function leftOf(shown: typeof reefwall): FakeElement {
-  fakePage();
-  const { page } = itemPage(context as never, shown, () => {});
-  const left = (page as unknown as FakeElement).all().find((node) => node.className === 'gear-item-left');
-  assert.ok(left);
-  return left;
+/** Every text a tree shows, in order, with its colour. */
+function textsOf(node: Child): { words: string; colour: string | undefined }[] {
+  if (!node) return [];
+  const own = node.text
+    ? [
+        {
+          words:
+            typeof node.text.words === 'string' ? node.text.words : node.text.words.map((span) => span.words).join(''),
+          colour: node.text.colour,
+        },
+      ]
+    : [];
+  return [...own, ...(node.children ?? []).flatMap(textsOf)];
 }
 
 const own = (chosen: number) => ({
@@ -43,19 +72,21 @@ const own = (chosen: number) => ({
   chosen: [chosen],
 });
 
+const pageTexts = (shown: ReturnType<typeof own>) => textsOf(itemPage(context, shown, () => {}).page as Node);
+
 test("an Atheric's page shows both its perks at its head, its own node's even before it is chosen", () => {
-  const left = leftOf(own(255));
-  const [heading, intrinsic, riptide] = left.children;
-  assert.equal(heading?.textContent, 'Atheric');
-  assert.match(intrinsic?.textContent ?? '', /^Coral Guard.*Intrinsic: always on/);
-  assert.match(riptide?.textContent ?? '', /^Riptide.*not yet chosen/);
-  assert.match(riptide?.className ?? '', /gear-trait-off/, 'dim until it is chosen');
-  const headings = left.children.filter((node) => node.tagName === 'H3').map((node) => node.textContent);
-  assert.equal(headings[0], 'Atheric', 'first, before the perks and the nodes');
-  const chosen = leftOf(own(0));
-  assert.doesNotMatch(chosen.children[2]?.className ?? '', /gear-trait-off/);
-  const perks = chosen.children.filter((node) => node.tagName === 'H3').map((node) => node.textContent);
-  assert.ok(!perks.includes('Perks'), 'its own node is no perk listed twice');
+  const texts = pageTexts(own(255));
+  const place = (said: string | RegExp) =>
+    texts.findIndex((text) => (typeof said === 'string' ? text.words === said : said.test(text.words)));
+  assert.ok(place('ATHERIC') >= 0, 'its heading');
+  assert.ok(place('ATHERIC') < place('Coral Guard') && place('Coral Guard') < place('Riptide'), 'the intrinsic first');
+  assert.ok(place(/^INTRINSIC: ALWAYS ON$/) > place('Coral Guard'), 'marked always on');
+  assert.ok(place('Riptide') < place('NODES'), 'before the nodes');
+  assert.equal(texts[place('Riptide')]?.colour, INK.faint, 'dim until it is chosen');
+  const chosen = pageTexts(own(0));
+  assert.equal(chosen.find((text) => text.words === 'Riptide')?.colour, INK.brassLit, 'lit once chosen');
+  assert.equal(chosen.filter((text) => text.words === 'Riptide').length, 1, 'its own node is no perk listed twice');
+  assert.ok(!chosen.some((text) => text.words === 'PERKS'));
 });
 
 test("an Atheric's card names its intrinsic first", () => {
@@ -63,16 +94,22 @@ test("an Atheric's card names its intrinsic first", () => {
   assert.equal(cardOf(item({ named: 'harpooner' })).traits.length, 0, "a Legendary's lists only what it gives now");
 });
 
-test('a perk that gives and takes sets its cost apart', () => {
-  fakePage();
-  const line = traitNode({
-    name: 'Hair Trigger',
-    words: '',
-    kind: 1,
-    gives: 'Reloads 25% faster.',
-    takes: 'An aimed shot strikes 10% softer.',
-  }) as unknown as FakeElement;
-  const cost = line.all().find((node) => node.className === 'gear-trait-takes');
-  assert.equal(cost?.textContent, 'An aimed shot strikes 10% softer.');
-  assert.ok(line.textContent?.includes('Reloads 25% faster.'));
+test('a perk that gives and takes sets its cost apart, in the colour of a loss', () => {
+  const texts = textsOf(
+    traitNode(
+      {
+        name: 'Hair Trigger',
+        words: '',
+        kind: 1,
+        gives: 'Reloads 25% faster.',
+        takes: 'An aimed shot strikes 10% softer.',
+      },
+      1,
+    ),
+  );
+  assert.deepEqual(
+    texts.map((text) => text.words),
+    ['Hair Trigger', 'Reloads 25% faster.', 'An aimed shot strikes 10% softer.'],
+  );
+  assert.equal(texts[2]?.colour, INK.loss);
 });

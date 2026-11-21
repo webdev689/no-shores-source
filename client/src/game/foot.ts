@@ -41,14 +41,14 @@ import { FallWatch } from './fallWatch.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
-import type { Hint } from './gearDom.ts';
+import type { Hint } from './gearNodes.ts';
 import { keysShown } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
 import { chime, worldOutput } from './uiSounds.ts';
-import { UsePrompt } from './usePrompt.ts';
+import type { UsePrompt } from './usePrompt.ts';
 import { OTHERS_FPS, folkCards, hearing, nextOtherId, rulesOf } from './footRoom.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -66,6 +66,8 @@ export interface FootContext {
   readonly groundAt: (x: number, y: number) => number | null;
   readonly foesAsked: readonly FoeAsk[];
   readonly session: () => Promise<string | null>;
+  /** What E does where the player stands, drawn low in the middle of the view. */
+  readonly usePrompt: UsePrompt;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }
@@ -144,7 +146,7 @@ export class Foot {
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
   readonly folk: Placed[];
-  private readonly prompt: UsePrompt | null;
+  private readonly prompt: UsePrompt;
   private using: Use | null = null;
   /** What E does on a sea island where the player stands: a wreck scavenged, the dungeon's door. */
   private uses: Uses | null = null;
@@ -166,8 +168,7 @@ export class Foot {
     [this.otherPlayers, this.gearHeld, this.folk] = [people.otherPlayers, people.gear, people.folk];
     this.foes = new FoeFigures(parts.roster);
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
-    const hud = document.querySelector<HTMLElement>('#hud');
-    this.prompt = hud ? new UsePrompt(hud) : null;
+    this.prompt = context.usePrompt;
     const floor = (x: number, y: number) => context.movement.standing(x, y).z;
     const placing: Others = {
       place: (dress, x, y, facing) => {
@@ -314,15 +315,16 @@ export class Foot {
     return this.link.open ? `In the room as player ${this.link.player}` : 'The room was lost: playing on alone';
   }
 
-  /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, the fight's buttons only
-   *  while `hands`), the room's clock runs, the camera follows, and every figure, foe and mark is placed for an eye
-   *  there. */
+  /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, nor while `looking` at the
+   *  held map, though the world is heard as ever; the fight's buttons only while `hands`), the room's clock runs, the
+   *  camera follows, and every figure, foe and mark is placed for an eye there. */
   frame(
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, hands, aspect }: { paused: boolean; hands: boolean; aspect: number },
+    { paused, looking = false, hands, aspect }: { paused: boolean; looking?: boolean; hands: boolean; aspect: number },
   ): FootFrame {
+    const still = paused || looking;
     const { walker, movement, forge, groundAt } = this.context;
     const { fight, foes, effects } = this;
     this.dressInGear();
@@ -340,9 +342,9 @@ export class Foot {
     const aimed = () =>
       playerCamera(walker.player, movement, [...this.boxes, ...(this.context.cameraBlocks ?? [])], AIM, groundAt);
     const camera = () => pushedIn(aimed(), effects.anima.push);
-    const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
+    const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
-      hands: hands && !paused,
+      hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
       zoomOf: () => camera().zoom ?? 1,
       handsSeconds: feel.shownSeconds(fight.player, seconds),
@@ -463,13 +465,13 @@ export class Foot {
     // The arcs are measured from the eye, as the marks are, so they keep their centimetres far out in the world.
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
     showAnimaEdge(effects.anima);
-    // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
-    const able = !paused && !this.fallen;
+    // E does nothing while a menu or the held map is up, or the player lies dead, past the edge or felled by a foe.
+    const able = !still && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     this.using = able ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked))) : null;
-    this.prompt?.show(this.using?.words ?? null);
+    this.prompt.show(this.using?.words ?? null);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
       if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
@@ -583,7 +585,7 @@ export class Foot {
     if (this.link instanceof RoomConnection) this.link.close();
     this.otherPlayers.clear();
     this.plaza?.close();
-    this.prompt?.remove();
+    this.prompt.show(null);
     this.falling.close();
     // The figure stands again wherever the walker goes next, at sea as on foot.
     this.context.walker.fall = null;

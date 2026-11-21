@@ -3,6 +3,8 @@ type: reference
 code:
   - crates/xtask/src/toolchain.rs#STEPS
   - crates/xtask/src/checks/mod.rs#run_all
+  - crates/xtask/src/checks/html.rs#check_scripts
+  - crates/xtask/src/checks/html.rs#check_pages
   - crates/xtask/src/shaders.rs#problem_in
 ---
 # Checks
@@ -33,7 +35,8 @@ order a failure is cheapest to read:
 | layout | the top level to the known list; every folder under `crates/` is a crate named after its folder | [[Code Map]] |
 | size | source files to 600 lines, tests to 800 | [[Small Files]] |
 | comments | comments to eight lines, with no dates, issue numbers, ticket tags or `bible/` paths; lines in fenced examples are checked too, and so are Python's docstrings and the comments after its code | [[Comments Say Why]] |
-| layers | client imports follow the declared layers; no Node modules in client code; no WebGL. It reads `import` and `export … from` in every form, backtick imports, `new URL(…, import.meta.url)` and `import.meta.glob` | [[Code Map]], [[WebGPU Only]] |
+| layers | client imports follow the declared layers; no Node modules in client code; no WebGL; nothing imports an entry point (`main.ts`, `gameWorker.ts`, `editorPage.ts`) but another, as the page names the game's worker. It reads `import` and `export … from` in every form, backtick imports, `new URL(…, import.meta.url)` and `import.meta.glob` | [[Code Map]], [[WebGPU Only]] |
+| html | a client page holds its head, one canvas and one module script loaded from its file: no other element, no words but its title, no script written in the page, no `on…` handler or `style` attribute, no stylesheet linked or preloaded (`rel` and `as` read in any case or quote), and a `<style>` only for `html`, `body`, `:root` and the canvas's own id; no stylesheet in the client (`.css`, `.scss`, `.sass`, `.less` or `.styl`, in any case); no client script makes an element, puts one or words into the page, writes HTML, styles an element, brings in a stylesheet (any import of one, but a `?raw` read as text) or names an element but the canvas, in any spelling (`document['createElement']`, a space before the bracket, strings joined by `+`), and `.append(` or `.prepend(` only on what its file makes with `new` or on a URL's `searchParams`. Free of it: the page's bridge in `ui/` (`canvasEvents.ts`, which sets the canvas's cursor; `pictures.ts`, which decodes SVG through an image it never shows; `page.ts`, which holds the page's touches, borrows a link and a file input for a moment and writes the words that say the game could not start), and the tests and their `…ForTests.ts` aids while nothing but tests reaches them | [[The Interface Uses No HTML, Now or Later]] |
 | crates | every crate is declared, takes the workspace's lints, and depends only on the crates its rule allows, read by real package name through renames and per-platform tables; any attribute naming `unsafe_code` outside a door crate is refused | [[Code Map]] |
 | assets | no file over 1 MB; media only in `bible/Attachments/`, and no WebAssembly or ship mesh anywhere | [[Generated Files Stay Out of Git]] |
 | vault | every wikilink resolves; every `code:` path exists and holds its symbol | [[Notes Say How It Works Now]] |

@@ -263,7 +263,7 @@ impl Room {
         let fighter = player(self.stand(spawn), BARE_HANDS);
         let mut joined = Player::new(fighter, self.clock, self.is_test_ground());
         if self.story {
-            story::arm_for_story(&mut joined.character);
+            story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
         Some(id)
@@ -298,6 +298,7 @@ impl Room {
             found.acknowledged = found.acknowledged.wrapping_add(1);
         }
         found.received = input.sequence;
+        found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
         // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
         if let Some(dress) = input.dress.take() {
             found.dress_next = (dress != found.dress_sent).then_some(dress);
@@ -482,6 +483,13 @@ impl Room {
         } else if let Some(foe) = self.foes.get_mut(&id) {
             foe.fighter = fighter;
         }
+    }
+
+    /// The number of a player's last input received, the latest tick their screen said it showed, and the tick they
+    /// joined at; none for no such player.
+    #[must_use]
+    pub fn heard(&self, player: PlayerId) -> Option<(u32, u64, u64)> {
+        self.players.get(&player).map(|found| (found.received, found.shown_tick, found.joined))
     }
 
     /// Every player as the room last stepped them, in the order of their numbers.

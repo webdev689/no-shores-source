@@ -211,8 +211,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   [[Crew]]): a ship's level, Attack, Defense and Prestige by the character's law; four modules with the gear's grid,
   ship materials, salvage, the Shipwright and infusion; officers at posts that change its fight, ashore as companions,
   recruited at a pledged faction's counter or taken from won decks; ten hands who load its guns and board with the
-  player. The sea's fights measured by ship level are in #99's description. Every kit-framed surface has a border
-  (`framed.test.ts`), officers' pages name their perks, and rarity names hold 4.5:1 (`rarityContrast.test.ts`).
+  player. The sea's fights measured by ship level are in #99's description. Every kit-framed surface has a border,
+  officers' pages name their perks, and rarity names hold 4.5:1 (`rarityContrast.test.ts`).
 - The sea's procedural [[Islands]], from draft PR #101, merged into #75's branch and tested offline: coves
   and rarer guarded isles built from a seed by the `isle` crate (the same bits natively and in the page), dressed with
   95 Blender modules ([[Island Modules]]) and drawn by the islands layer ([[Island Drawing]]), with a World Editor
@@ -241,44 +241,59 @@ Where the work stands now, for the next session. Each session rewrites this note
   and gorse in its beds, no rain indoors, procedural iron, gold, bone, cloth and water, ramps on every city's avenues,
   the fall that kills in a social space, townsfolk on the plan's ways, and the harbour way to the pier with its two
   moored ships. Tested offline with the full check; CI baked its modules byte for byte. Not yet seen on a real GPU.
+- **The held map on land**, on `main` (#128), merged with the owner's yes ("Merge and deploy"), which deploys the page
+  ([[The Held Map Comes to the Social Spaces and Every Land Area]], [[Held Map]]): N anywhere on foot raises it from the
+  player's eyes, only to look at, the world going on; a social space's plan, a patrol area's or an island's ground, in
+  the map's inks and washes, every keeper and site an icon glyph from the game's own devices, and a table that says
+  what each is. Audited by two independent reviewers and every finding fixed with a test. Tested offline with the
+  full check; seen headless at Overlook and the Saltgrass Downs. Not yet seen: an island's map, a real GPU, a fall
+  while it is up.
 
-- **Three healing charges**, on `main` (#120), merged with the owner's yes ("Merge and deploy"), which deploys
-  the page and the rooms ([[Three Healing Charges, Refilled by Blows and Kills]]):
-  built to the owner's picks, then a five-part audit (rules and room, wire and prediction, tests and notes, balance
-  against the roster, a design pass with pictures) and a last verification audit, every finding fixed or named in
-  the decision page. Tested offline with the full check; not yet seen or heard in a browser on a real GPU, nor
-  played in a company. A tab still on the old page reloads once.
+- **The perk pass**, on `main` (#119), merged with the owner's yes ("Merge and deploy"), which deploys the page and the
+  rooms ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]], [[The Perk Pass as Claude Shapes It]]):
+  ten Atheric weapons, each with an intrinsic and an own node (Gullwing's lightning leaping foe to foe, the owner's
+  example); six weapon and eleven ship perks that give and take; the ship's near-duplicate perks merged; the four
+  Atheric modules as exotics in the naval fight; every forge weapon and armour model worn on both bodies, named pieces
+  each their own look and rolled ones climbing the ladders with rarity and level; the 145 large weapon pictures
+  published (`content/forge/renders.json`). Audited twice, then by four area auditors and a design pass, and every
+  open item fixed after ("Fix anything"), each with a test: kept pieces keep the perks they bought, never a trade-off
+  pressed on them; chain blows strike once and only from the living; a shot takes its own bow's perks; Snare reaches
+  the oars; an Atheric's two perks head its page, a trade-off's cost reads as a cost. The `forge` workflow can draw
+  figure strips (`figures`), the repository's key being an Actions secret ("Key is in the repo"). Tested offline with
+  the full check; Gullwing seen headless in the Test Ground. Not yet seen on a real GPU.
 
 ## Waiting on the owner
 
-- **#119, the perk pass, waits on the owner's yes to merge**, which deploys the page and the rooms
-  ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]], [[The Perk Pass as Claude Shapes It]]).
-  Ten Atheric weapons, each with an intrinsic and an own node (Gullwing's lightning leaping foe to foe, the owner's
-  example); six weapon and eleven ship perks that give and take; the ship's near-duplicate perks merged; the four
-  Atheric modules as exotics in the naval fight; every forge weapon and armour model worn on both bodies, named pieces
-  each their own look and rolled ones climbing the ladders with rarity and level. Audited twice, then a deep audit by
-  four area auditors and a design pass, every finding measured and fixed with a test or recorded as a limit: kept
-  pieces keep the perks they bought, never a trade-off pressed on them; chain blows strike once and only from the
-  living; Snare reaches the oars; an Atheric's two perks head its page, a trade-off's cost reads as a cost. `cargo xtask
-  check` passes; Gullwing seen headless in the Test Ground and the item pages pictured from a fixture, tested offline.
-  The 145 large weapon pictures are rendered and published by the `forge` workflow from this branch, with the
-  owner's go-ahead ("Fix anything"), and `content/forge/renders.json` holds their index. Then every open item was
-  fixed: a shot takes the perks of the bow it was loosed from; rigging hits take the canvas and crew perks; a player
-  back in a sea fight keeps a spent Hard to Kill and no ship number is given twice; Shape's purchase names the piece
-  shown; a kept rolled perk left in another column is replaced; the figure's left twin and short sword take their
-  metal's grade (`layers.set_of`) when the forge draws them here. What is published already had it: of their 558
-  strips drawn again, 526 match R2's to the texel and the rest differ in a few texels of one move, so nothing was
-  published again. A run asked for of the `forge` workflow now draws figure strips too (`figures`), the repository's
-  key being an Actions secret ("Key is in the repo"). Main (#120 and the hub) is merged in and the check
-  passes on it. The Thunderlock at port arms is held trigger to the front, as drill holds it, after the owner's "fix the
-  thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`); its rest, walk and sprint are not drawn again,
-  the owner's "Blades only for now": the arms move, so every layer in those three moves, every set and body, must be,
-  about 27,000 solid frames a body with its cloth, some 400 Actions minutes. Until then the game holds it as before.
-  Open for the owner, each a call made in the design note: the Atheric armour pieces keep their one signature; a
-  rolled Rare reaches daedric at level 20; a faction's
-  shield and bow keep one make; whether named weapons keep an element of their own (a leap is Volt on any Gullwing);
-  a blow on a foe four or more levels above sets off no chain blow, since the blow itself does nothing. Not yet seen
-  on a real GPU.
+- **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
+  after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
+  and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three
+  moves, every set and both bodies, must be, about 27,000 solid frames a body with its cloth, some 400 Actions minutes
+  through the `forge` workflow's `figures`. Until then the game holds it as before. And the design note's calls: the
+  Atheric armour pieces keep their one signature; a rolled Rare reaches daedric at level 20; a faction's shield and
+  bow keep one make; whether named weapons keep an element of their own (a leap is Volt on any Gullwing); a blow on a
+  foe four or more levels above sets off no chain blow, since the blow itself does nothing.
+- **#118, every sound from Freesound and the music's pass** (`ccr-c504a08b-gyns6o`), the owner's words in
+  [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]], is on `main`, merged with the owner's yes
+  ("Merge and deploy"), which deploys the page and the rooms. Every sound effect and ambience sound plays the owner's
+  Freesound pick (`content/audio/sounds.json`, 185); the synthesiser behind them is deleted but the four the owner
+  kept (the gains' chimes, a hold's build-up, the menu's refusal, the spoken voice). Each recorded bed and thunder
+  keeps the synthesiser's measured level (`recordings.ts` `BED_LOUD`, `player.ts`). No hyena, no separate wave crash;
+  the ice's creak plays the ice's crack, a ship going down the sea's Breaking wood, the story's rain, gulls and
+  thunder the world's picks. Music: calm pieces now and then everywhere with each place's silences, fourteen new calm
+  pieces (`calm.ts`), no note over B5, no FM partial past 6 kHz, no ringing drum, no pitched swell in a fight, held by
+  tests; the owner kept every piece on the sheet (https://claude.ai/artifact/PBSynEeW37HPSvX89EYUbA). Tested offline:
+  the full check, every song rendered and measured headless, the sheet's players. Not yet: anything heard in a running
+  game or on a real GPU.
+- **#120, three healing charges, is on `main`**, merged with the owner's yes ("Merge and deploy"), which deployed the
+  rooms and the page ([[Three Healing Charges, Refilled by Blows and Kills]]): built to the owner's picks, then a
+  five-part audit (rules and room, wire and prediction, tests and notes, balance against the roster, a design pass
+  with pictures) and a last verification audit, every finding fixed or named in the decision page. Tested offline
+  with the full check. Not yet seen or heard in a browser on a real GPU, nor played in a company: the diamonds under
+  the vitals, the drink on `3`, the green word and its sound, and charges coming back in a fight. Left as named in
+  the decision: a heal and a blow judged in the same tick or two can both stand, and dying or rejoining refills all
+  three.
+- **The held map on land's fog of war**: on land the sheet has none, so all of a land shows the first time the map is
+  raised there; whether it should be fogged as the sea is.
 - **Overlook's hub's flora**: whether "any flora like bushes or trees" also covers the wall ivy and the cut flowers
   sold at the flower stall and cart, which are the hub's own (the world grows no climber; cut flowers are goods).
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
@@ -304,10 +319,27 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Wreck's Boarders Are One Side]]); and the storm's run and the wake's flight stand clear and go slower
   ([[The Prologue's Camera Flights Stand Clear and Go Slower]]). Tested offline: the full check, the client's story
   fight over the real land rules for 15 minutes of play, and the storm's run and the wake's flight pictured headless.
-  Not yet seen on a real GPU, nor played through by hand; the burst's ring not yet seen at all. Open: the gun deck's
-  wave is a Tithe-Mate in `content/prologue/wreck.json` but still Thule (type 12) in `tools/wreck/wreck_level.py`,
-  left so because a push there rebuilds and publishes the wreck; the fleet room has no burst; and this session's
+  Not yet seen on a real GPU, nor played through by hand; the burst's ring not yet seen at all. The gun deck's
+  Tithe-Mate is in the wreck's own level too (`tools/wreck/wreck_level.py`), rebuilt by the wreck workflow with the
+  owner's yes ("Do it"): only its Blender source is new. Open: the fleet room has no burst; and this session's
   toolkit could not be installed (its installer was refused by the session's permission check).
+- **#126, the wreck opened by teaching the player, is on `main`**, merged with the owner's yes ("Please do that"),
+  which deploys the page and the rooms ([[The Wreck Opens by Teaching the Player]]): the gun deck's Tithe-Mate in the wreck's level; the waking eyes as an
+  almond under shaped lids, an uneven fringe of lashes and the fires' light through them, the blur clearing a step at
+  each beat; the wake's flight dropped, the camera easing out of the eyes to over the shoulder; and the teaching on
+  the quiet deck: the sword and shield, drawn on the deck as the item itself, found and equipped from the Character
+  page and then held as worn, the feet found, the
+  player readied (a swing, a guard, a healing charge drunk), and a Tithe boarder met one on one, its first blow frozen
+  until F parries it and its next until V dodges it, the world held still and greyed while frozen, the waves held
+  until it falls. Audited before merge (the room and its door, the client's teaching, the rules and the notes) and
+  given a design pass with pictures of the lids, the prompts and the tracker; every finding is fixed in the branch or
+  named here. Tested offline: the full check, and the freeze against the real room (a press there parries, and
+  dodges, each at its first freeze). Not yet seen or played in a browser: the eyes over the scene, the arms on the
+  deck, the menu over the story, the frozen frame. Open: the owner's "teaching them the inventory" is taught on the
+  Character page (I), where gear is worn, which the owner may want otherwise; the wreck's tool still writes the
+  flight's masts and way back into its layout, which the page no longer reads (removing them rebuilds and publishes
+  the wreck); the step up to where the player wakes is too high for foes, so a player who stays up there is not
+  reached until they come down; the game's headless pictures cannot draw the game since it draws in a worker.
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through
@@ -318,6 +350,79 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
+- **The whole plan of the owner's four points, on branch `ccr-3320a365-bzwp4s`, merged with `main`, audited and
+  tested offline (the full check) and live headless (the menu holding the keys at ratios 1 and 1.25), in #127,
+  which supersedes #112**: no HTML
+  anywhere in the interface ([[The Interface Uses No HTML, Now or Later]]): the HUD, the fight's display, the menu and
+  every page of it, the story's screens, the held map's marks, the Test Ground and the World Editor drawn by the game,
+  each page one canvas and its script, and a repo check (`html`) refusing new HTML with no way round it; the game in a
+  worker of its own ([[Work Leaves the Main Thread Where It Can]], [[Game]], "Threads"), the page's thread busy 0.0 ms
+  a frame where it was 41 (SwiftShader, 480 by 270); the network packed and sent as changes
+  ([[The Network Is Made Smaller and Readied for WebTransport]]). The owner's "make the best decision" let Claude make
+  the open calls ([[Claude Makes the Four Points' Open Calls]]): one pull request; Chromium's password store for
+  sign-ins; no relay outside Cloudflare; the files' own address once the owner has a domain; the layers' widening
+  stands; no shared memory. Five audits (the drawn interface, the screens, the thread, the network, the repo's rules)
+  found an input that stalled a room (verified now under tight limits), a pointer off at a fractional ratio, a Discord
+  sign-in's return that stopped the game, keys leaking past the menu, Space and Backspace lost in a field, no modal
+  scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Needs the owner's yes:
+  the `html` check by name (a new check), and the merge. Playing alone at sea is now sent the per-player cut of the
+  snapshot, as with others.
+- **The co-dev's `webgpu-shot` cannot picture the game now**: it reads the page's WebGPU canvas, and the game draws
+  from its worker. Its picture runs work for the Test Ground and the World Editor, which stay on the page; for the
+  game, a worker-aware measure is in the session's notes (it times the worker's frames through Playwright's worker
+  handle). The kit is kept as shipped, so its fix is the co-dev's (observation 0068 logs the port lesson).
+- **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
+  without HTML; whether the welcome's "Follow" moves onto the tracker, and whether the keepers' marks come back as
+  something else; the wreck's rebuilt look and its zones' size; whether a fire burns half again; and Thule's fight now
+  that a player's blows land at 0.94 of their worth.
+- **#102's and #107's open points**, both merged, in their descriptions: whether defending foes should hold their ground
+  longer than a foe's patience; whether any lower rank screening any leader under a Miniboss is the screen meant by
+  "Minors screening an Elite"; whether a wave is enough without a drop; whether a wave the room's limit has no room for
+  should come later; whether "no blurbs" also rules out a break's sound and the plate's alert mark; whether ships'
+  plates come under "enemy health bars" (Claude's recommendation: they stay as they are); whether a fought foe's plate
+  should stay whole the full 6 s; and whether a plate fading out of the cone may overlap the one taking it.
+- **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
+  none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
+  places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
+  are wanted as a cliff climb of their own, beside the ledges' stairs, and where.
+- The Dungeons session (#82, the owner's loop decisions) plans to move each patrol's procedural dungeon entrances
+  onto the layouts' places, and will coordinate before it touches the layout code.
+- **#95's and #96's open points**, both merged: the target's own plate over its head is to be looked at again once the
+  owner has played with which plates show, and #95's calls (in its description) are the owner's to change; for #96,
+  where the claude-mem store lives (an archive, kept out of git).
+- **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
+  day and night, its music and its sound.
+- **The sea's sounds** ([[The Sea's Sounds Come From Freesound]]): none yet heard in the game, nor their level judged
+  by ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
+- **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
+  the prologue names the Cube or a crystal, and the voice in the deep is not named.
+- **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**, on
+  `main`, merged with the owner's yes ("Merge and deploy"), which deploys the page and the rooms. The owner named the
+  factions and the elder, said yes to faction gear "with its own unique color" and chose its colours: the Stormcallers
+  "#1 with color accents" (storm grey and silver; the storm blue of the accents is Claude's), the Lamplighters "White
+  and gold", the Veiled "Black and silver"; then their look, "Top strip, fixes kept". The owner also decided that
+  characters made before the Arts' levels start every Art at level 1, that no save-keeping lands on `main` first (so a
+  rollback of the rooms after the merge loses this round's progress), that the page publishes only after the rooms
+  deploy, and that Maren keeps her ruins line before the ruins are drawn. Every call made under the owner's "autonomy"
+  is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full check. Tested in
+  a local room (`npm run server`, the built page headless): Shape present with his six wares, "From level 20" and the
+  right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its colour; Maren greeting a
+  browser that had played the story before, the keys' hints giving way while she speaks. Not yet seen: anything on a
+  real GPU or the deployed rooms, two players seeing each other's dyes, horses and faction gear, a faction set worn in
+  the page (composed offline from the published strips), and Maren's whole walk (her start and her coming by the lanes
+  are tested offline; headless frames take about a second each). The open questions are in [[Open Questions]]. The
+  Wraith Mist barding's first-person ride strips on R2 are blank: a forge re-render. Sunspire's and Rimeholt's ports are
+  #75's; this round only locks their social spaces.
+- **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
+  repository's Cloudflare token, as the ships workflow does. Each run keeps the `content/prologue/wreck.json` it
+  wrote as the artifact `wreck-level`: commit that file whole, its keys with its level, as a build elsewhere can lay a
+  slightly different ground from the published mesh.
+- fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
+  session that finished the prologue, so the likeness is unchecked.
+- Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch
+  layer yet"). A touch player can start the story but not play its fights.
+- Without `?room=` the page has no accounts, so creation's account step only says accounts are kept online. The online
+  default is the owner's.
 - #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
   then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
   the owner's yes to merge: foes show their level, patrol
@@ -449,6 +554,61 @@ Where the work stands now, for the next session. Each session rewrites this note
   public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+- **After the four points**: the game's frame time on a real GPU, in and out of the worker; a sound heard by a person
+  from the worker's cues; holding a press with the pad's A, which waits on an "A held" signal from the interface (main
+  had no pad holds either).
+- **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
+  `server/garrison.test.ts`): its 13 foes stand all 1500 ticks and its player falls about tick 900, run straight into
+  the wall #63 gave its node, steered round it, or with the starting sword asked for; its swings seem never to land.
+  So nothing after a foe's fall (drops, a group's break, fallback and last stand, waves) is checked natively against
+  WebAssembly: their agreement rests on `clippy.toml`'s banned maths methods and on ordered maps. Next: a scripted
+  player that turns to its nearest foe and lands its blows, and a guard that needs a foe to fall.
+- **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is on `main` (#63),
+  tested offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
+  kinds' levels on raised floors, every way graded between them as one network, walked without a step and carved no
+  steeper than a track; a hamlet's blocks stepping up its hillside on terraces of their own, as the owner chose; a
+  ruin's spokes on tiers; a terraced massif top in plateaus that follows the floors ([[Land]]); ledges with cliff
+  stairs between heights; stone bridges over the Vale's river; the Hollow Coven's cavern under real rock, its roofs
+  resting on rock that stands whole beside the cave; gates in clefts; dead rock answered by climbs to lookouts and by
+  valleys at their floors' levels; foes on floors under roofs ([[Navmesh]]); and the handcrafted [[Modules]] scripted
+  in Blender ([[Handcrafted Playspaces Are Scripted in Blender]]), each walked by a body
+  (`crates/room/tests/modules_walked.rs`). A third audit found what the second missed, each fixed at its cause with a
+  test (the pull request lists them). On a cloud session's machine continent 1's layouts settle in about 2.3 s
+  natively, and the World Editor's whole settle of continent 1 takes about 3.5 s. Left: switchbacks (waiting on the
+  owner, above), and the other 24 zones take heights once the owner has looked at Saltmere's.
+- The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
+  low enough to climb in places: its runs will need their end arenas cut deeper or walled.
+- The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
+  is the terrain's only), and the land texts and the city's assets fetch the same files twice.
+- The layouts' open ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities
+  that will stand on the sites (public events, beacons, resource nodes, foes).
+- **After #92**: reputation from bounties and activities when they exist; Shape at Sunspire and Rimeholt when their
+  social spaces open; a hide and mane mask from the forge for coats (the ride's `_uv` strips are one); the Elite and
+  Abyss tiers' names on the voyage's card (#82), where Shapes are found; a faction set worn and two players seen in
+  the page on a real GPU; the welcome and the prologue's marks kept per character rather than per browser, if the
+  owner wants it.
+- **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
+  through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
+  with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
+  whether its foes can be seen well enough away from the fires.
+- **The weather and day and night (#76, on `main`)**, tested offline: the full check, the weather's statistics per
+  climate and its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under
+  cloud, at sunset and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to
+  compile. Four audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old
+  wind, a fleet sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun
+  for moon in daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording
+  held under its synthesised sound's peak. Pictures across the islands (#90) have since shown bolts at Mistfall by day
+  and night, snow on the tundra and at Rimeholt, a sandstorm, dawn fog and clear nights; `?at=<node id>` lands the
+  page at any node, and the pictures' steps are made by freezing the page's clock at a moment. Not yet: ships and
+  marks under the lamps, a real GPU's frame time, and a person playing through an hour's day.
+- **The music and the ambience (#73, on `main`)**, tested offline: every piece rendered and measured, and the built
+  game headless in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the
+  green score in as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both
+  running. Left open, now done on #74: the story's songs and its hearing in the director. #76 gives the night
+  ambiences their time of day, plays the four sea songs while sailing, and sets each recording at the loudness of the
+  synthesised sound it replaces.
+- **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
+  its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
   heard in the game, the layer on foot in a browser, the walking blows looked at frame by frame.
 - **Publishing the world's picks**: read the sheet's `marks` with ArtifactData; set each Freesound pick as the cue's
@@ -597,6 +757,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   built page under `vite preview`, never the dev server, which reloads on an edit; a frame there takes seconds, so a
   fight is seen beginning, not fought through.
 - The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
-  map, the charted sea's wash laid while the map is up.
+  map, the charted sea's wash laid while the map is up; on land, the relief read off the worker's exact ground past the
+  2 km the camera keeps (a patrol area's far side reads the 1 km grid), and lakes, which only the 1 km grid holds.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.

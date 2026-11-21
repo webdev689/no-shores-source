@@ -1,57 +1,81 @@
 // The first thing the page shows: black, the game's name, and a prompt to tap or press, while the world loads behind
-// it. The tap is what lets the browser play sound, so the intro begins heard.
-import { make } from '../../editor/dom.ts';
-import { playedByTouch, TITLE } from '../../cinema/screen.ts';
+// it, drawn by the game as a layer of its interface over every other. The tap is what lets the browser play sound, so
+// it is heard from the page's own pointer and keys, and the intro begins heard.
+import { breath, dropped, Eased, pageClock } from '../../cinema/cinemaParts.ts';
+import { playedByTouch, SCREEN_Z, TITLE } from '../../cinema/screen.ts';
+import { motionReduced } from '../../plus/kit.ts';
+import { announce } from '../../ui/announce.ts';
+import type { Child } from '../../ui/node.ts';
+import type { Stack } from '../../ui/stack.ts';
+import type { Interface } from '../../ui/ui.ts';
 
-const STYLE_ID = 'story-tap';
-const CSS = `
-.story-tap { position: absolute; inset: 0; display: grid; place-content: center; gap: 33px; text-align: center;
-  background: #020305; z-index: 40; pointer-events: auto; cursor: pointer; transition: opacity 1.2s ease-in-out; }
-.story-tap.gone { opacity: 0; pointer-events: none; }
-.story-tap-name { font-size: min(44px, 8vw); letter-spacing: round(up, calc(8em / 22), 1px); text-transform: uppercase;
-  color: #b9a37a; }
-.story-tap-press { font-size: 22px; letter-spacing: round(up, calc(5em / 22), 1px); text-transform: uppercase;
-  color: #efe6cf; animation: story-tap-breathe 2.2s ease-in-out infinite; }
-.story-tap-loading { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #6f6656; min-height: 11px; }
-@keyframes story-tap-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .story-tap-press { animation: none; } }
-`;
+/** Over the cinema's screen, which stands under it as the story starts. */
+const TAP_Z = SCREEN_Z + 10;
+const FADE_S = 1.2;
 
-/** Shows the tap to start over `root`; resolves on the first tap, click or key, and lets the screen fade once
- *  `ready` has resolved too. */
-export function tapToStart(root: HTMLElement, ready: Promise<unknown>): Promise<void> {
-  const page = root.ownerDocument;
-  if (!page.getElementById(STYLE_ID)) {
-    const sheet = page.createElement('style');
-    sheet.id = STYLE_ID;
-    sheet.textContent = CSS;
-    page.head.append(sheet);
-  }
-  const screen = make('div', '', 'story-tap');
-  const loading = make('div', '', 'story-tap-loading');
-  screen.append(
-    make('div', TITLE, 'story-tap-name'),
-    make('div', playedByTouch() ? 'Tap to start' : 'Click or press any key to start', 'story-tap-press'),
-    loading,
-  );
-  screen.setAttribute('role', 'button');
-  screen.tabIndex = 0;
-  root.append(screen);
-  screen.focus();
+/** Whether a tap to start stands, untapped: the key that taps it is its own, not a window's under it. */
+let untapped = false;
+export const tapStanding = (): boolean => untapped;
+
+/** The tap to start this frame: `name` and `press` over black, `loading` under them, faded by `shown`. */
+export function tapNode(
+  ui: Interface,
+  words: { readonly press: string; readonly loading: string },
+  shown: number,
+  now: number,
+): Child {
+  if (shown <= 0) return null;
+  const { width, height } = ui.size;
+  const said = (text: string, size: number, colour: string, tracking: number) =>
+    dropped({ words: text.toUpperCase(), size, colour, tracking, wrap: false }, '#000', 1);
+  return {
+    id: 'story-tap',
+    width,
+    height,
+    fill: '#020305',
+    // Fading, it lets the pointer through to the game.
+    solid: shown >= 1,
+    through: shown < 1,
+    opacity: shown,
+    direction: 'column',
+    alignX: 'center',
+    alignY: 'center',
+    gap: 33,
+    label: `${TITLE}. ${words.press}`,
+    float: { to: 'screen', z: TAP_Z },
+    children: [
+      // min(44px, 8vw), in the face's whole steps of 11 px.
+      said(TITLE, Math.max(1, Math.min(4, Math.floor((width * 0.08) / 11))), '#b9a37a', 8),
+      { opacity: motionReduced() ? 1 : breath(now), children: [said(words.press, 2, '#efe6cf', 5)] },
+      { minHeight: 11, children: [words.loading !== '' && said(words.loading, 1, '#6f6656', 2)] },
+    ],
+  };
+}
+
+/** Shows the tap to start on `stack`; resolves on the first tap, click or key, and lets the screen fade once `ready`
+ *  has resolved too. */
+export function tapToStart(stack: Stack, ready: Promise<unknown>, clock: () => number = pageClock): Promise<void> {
+  const shown = new Eased(1);
+  const words = { press: playedByTouch() ? 'Tap to start' : 'Click or press any key to start', loading: '' };
+  const removeLayer = stack.add((ui) => tapNode(ui, words, shown.value(clock()), clock()));
+  announce(`${TITLE}. ${words.press}`);
+  untapped = true;
   return new Promise((resolve) => {
     let tapped = false;
     const tap = () => {
       if (tapped) return;
       tapped = true;
+      untapped = false;
       removeEventListener('keydown', tap);
-      loading.textContent = 'Loading';
+      removeEventListener('pointerdown', tap);
+      words.loading = 'Loading';
       void ready.then(() => {
-        screen.classList.add('gone');
-        window.setTimeout(() => screen.remove(), 1300);
+        shown.set(0, FADE_S, clock());
+        setTimeout(removeLayer, 1300);
         resolve();
       });
     };
-    screen.addEventListener('pointerdown', tap);
+    addEventListener('pointerdown', tap);
     addEventListener('keydown', tap);
   });
 }

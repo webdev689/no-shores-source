@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightLay, FightVessel } from '../rules/fightRules.ts';
-import { aimLineOf } from './seaSight.ts';
+import { allOf } from '../combat/nodes.test.ts';
+import { aimLineOf, SeaSight } from './seaSight.ts';
 
 const vessel: FightVessel = {
   ship: [0, 0, 0, 0, 0, 0, 0, 2],
@@ -64,4 +65,40 @@ test('while the side reloads, braces or its guns are silent, the line says why a
   assert.equal(aimLineOf(LAY, braced)?.tail, ' - braced');
   assert.equal(aimLineOf(LAY, { ...vessel, state: 'wrecked' })?.tail, ' - guns silent');
   assert.equal(aimLineOf(null, vessel), null);
+});
+
+test('the sight shows only while the guns are laid: the crosshair at the middle, the aim line under it in capitals', () => {
+  const sight = new SeaSight();
+  sight.show(false, aimLineOf(LAY, vessel));
+  assert.equal(sight.node(), null, 'not aiming: nothing');
+  sight.show(true, null);
+  const crossOnly = allOf(sight.node());
+  assert.ok(crossOnly.some((node) => node.picture?.key === 'sea sight'));
+  assert.equal(
+    crossOnly.some((node) => node.text),
+    false,
+    'no lay yet: no line',
+  );
+  sight.show(true, {
+    words: 'Port broadside, grapeshot - ',
+    range: '154 m',
+    tail: ' - on target',
+    hot: true,
+    dim: false,
+  });
+  const root = sight.node();
+  assert.equal(root?.through, true, "a click is the world's");
+  const line = allOf(root).find((node) => node.text?.edge === 'halo')?.text?.words;
+  assert.deepEqual(line, [
+    { words: 'PORT BROADSIDE, GRAPESHOT - ', colour: '#ffb4a6' },
+    { words: '154 M', colour: '#ff8a76' },
+    { words: ' - ON TARGET', colour: '#ffb4a6' },
+  ]);
+});
+
+test('a side that will not fire yet dims its line', () => {
+  const sight = new SeaSight();
+  sight.show(true, { words: 'Port broadside, chain shot - ', range: '96 m', tail: ' - braced', hot: false, dim: true });
+  const line = allOf(sight.node()).find((node) => node.text?.edge === 'halo')?.text?.words;
+  assert.deepEqual(Array.isArray(line) ? line.map((span) => span.colour) : [], ['#a39a86', '#8f8670', '#a39a86']);
 });

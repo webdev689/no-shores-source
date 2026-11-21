@@ -41,10 +41,12 @@ export function slotOf(kind: number): number {
   const name = KINDS[kind] ?? '';
   return ARMOUR_SLOTS[name] ?? (RANGED.has(name) ? 1 : 0);
 }
+/** `word` with its first letter a capital. */
+export const capital = (word: string): string => word.charAt(0).toUpperCase() + word.slice(1);
 /** A kind's name as the screens show it: Sword & Shield, Double Daggers, Great Axe. */
 export function kindName(kind: number): string {
   const words = (KINDS[kind] ?? '').split('_').filter(Boolean);
-  return words.map((word) => (word === 'and' ? '&' : word.charAt(0).toUpperCase() + word.slice(1))).join(' ');
+  return words.map((word) => (word === 'and' ? '&' : capital(word))).join(' ');
 }
 /** The elements by the gear crate's numbers (0 is none): each one's name, its colour, and its glyph's outline, body
  *  and light. */

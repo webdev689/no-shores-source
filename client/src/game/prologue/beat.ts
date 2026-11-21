@@ -32,6 +32,9 @@ export interface Beat {
   leave?(): void;
   /** What its moment asks of the music this frame (music.ts); a beat that asks nothing lets what plays ring out. */
   music?(): Hearing;
+  /** Whether the beat holds its world still: its time, the sea, the fires, the birds and the words all stopped, the
+   *  music playing on. */
+  readonly still?: boolean;
 }
 
 /** The story's beats in order, as the owner set them: each name is where a page under development may start

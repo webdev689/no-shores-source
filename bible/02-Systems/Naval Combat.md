@@ -463,12 +463,13 @@ captain's number comes with them in the view, so one leaving the fight never mov
   `ship.hit` (16, 1000); a magazine `ship.blast` (26, 1800); a boarding's grapnels `ship.grapple` (6, 240); a captain
   running out `ship.runout` (24, 900); a side of the player's come ready `ship.ready` (10, 80); a ship going down
   `ship.sinking` (18, 420); a ball going by the player's ship `ship.whistle` (8, 90); a ball in the water `shot.splash` (12, 600).
-  The `ship.` cues are on the sound sheet with DFO's own synthesised sounds as their candidates
-  ([[DFO's Own Sounds Join the Sound Sheet]]); each stays silent until the owner picks one.
+  Each `ship.` cue plays the owner's Freesound pick
+  ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]), the sinking the sea's break-up; each is
+  silent until its recording has come.
 - **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
   turning it up to a degree a unit of jar, the jars at once added together.
-- **The readout** (`plus/seaFight.ts`, fed by `ships/fightDisplay.ts`, shown by the HUD at sea and by
-  `ships/fightOverlay.ts` in the World Editor): the Sloop's plate at the top left with its boost ring and battery rose, the card under
+- **The readout** (drawn by `combat/seaReadout.ts` from `plus/seaFight.ts`'s words, fed by `ships/fightDisplay.ts`,
+  shown by the HUD at sea and over the World Editor's view): the Sloop's plate at the top left with its boost ring and battery rose, the card under
   the compass on the ship the look is on (the captain nearest where the Sloop's laid guns fall, else the nearest), and its volley's tally under the sight, in every fight from its first frame to its
   last ([[Interface]], "The sea fight's readout"). The panel leaves the Sloop's own hurts and guns to it. While a captain afloat
   stands with their guns run out, DFO's warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at: "Broadside from the Pirate Brig - C: brace". At
@@ -516,7 +517,7 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   Its level raises its strength
   in a fight (above, "Ranks and factions"). Its faction and rank are drawn as it comes and kept on it
   (`sighting.rs`). The rolls wait real seconds, and
-  are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its
+  are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the game's worker's from its
   own), so each sea sends its ships in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
   rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100, so one met head-on stays in
@@ -598,7 +599,7 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   never moves. The look's ray runs from the eye drawn, so the crosshair is where it lays.
 - **The reach**: while aiming the look may rise 0.15 rad over the horizon, past the guns' longest throw on the water
   (DFO's look is free); out of the aim the orbit keeps its own clamp, 0.05 to 1.2 rad down.
-- **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, and under it DFO's aim line at 13 px in
+- **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, and under it DFO's aim line at the face's 11 px (DFO's 13) in
   the HUD's outline: the side and its shot, the range the guns are laid to (the mean of where each gun stops, out
   along the fire from the ship's ports), "(longest)" within a metre of their longest throw, " - on target" in red while the
   side can fire, or dimmed " - reloading 4.2 s", " - braced" or " - guns silent".
@@ -623,27 +624,28 @@ after the water.
 ## An ambush
 
 The prologue's ambush ([[The Game Opens With a Story Mission at Sea]]) is the same fight, begun as `Fight::ambush`:
-the player's Sloop put to sea as she lies, and each captain set where and how the story gives her, numbered from 1
-on, her temper drawn from her own seed. Every one comes to fight her at once: bold whatever her temper, and cruising
-straight for her until she is in sight (750 m). A captain set where the water does not float her is refused. The
+the player's Sloop put to sea as it lies, and each captain set where and how the story gives it, numbered from 1
+on, its temper drawn from its own seed. Every one comes to fight the player's ship at once: bold whatever its temper,
+and cruising straight for that ship until it is in sight (750 m). A captain set where the water does not float it is
+refused. The
 land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank, and an optional
-`way` in m/s: given, she comes on under sail at it, else she lies at rest); its view carries every captain after the
-first in `others`, as the sea room's wire does, each with her number in the fight (`id`, the first 1), as its events
-name her: a captain gone from the fight is left out, and every plate, message and count follows her by it. A captain
-going down carries, besides her `founder`, how she will lie
-once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry her
+`way` in m/s: given, it comes on under sail at it, else it lies at rest); its view carries every captain after the
+first in `others`, as the sea room's wire does, each with its number in the fight (`id`, the first 1), as its events
+name it: a captain gone from the fight is left out, and every plate, message and count follows it by that number. A
+captain going down carries, besides its `founder`, how it will lie
+once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry it
 on under as the rules would. A fight begun with more than one captain is sighted on the panel by how many and the
 nearest ("3 ships are sighted, the nearest 820 m off."). The game's `SeaCombat` steps a fight
 on any `FightSource`, the sea room's or the land door's, so the story's fight (`StoryFight`) is the sea's own: its
-aim, lay, effects, HUD and bars, her ship's panel naming her (the Brig). The story places each captain by her
-bearing off the player's bow and her distance, heading for her unless told, and puts every ship to sea under the
-sail and way she was sighted with, her rig drawn on from the one she was last drawn with; hears from each step a ball striking
-her, hers striking a captain, a captain going down and one sunk; and its task counts the ships left to beat.
+aim, lay, effects, HUD and bars, the player's ship's panel naming it (the Brig). The story places each captain by its
+bearing off the player's bow and its distance, heading for the player's ship unless told, and puts every ship to sea
+under the sail and way it was sighted with, its rig drawn on from the one it was last drawn with; hears from each step
+a ball striking the player's ship, the player's striking a captain, a captain going down and one sunk; and its task counts the ships left to beat.
 An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
-player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves her a point of hull); and it is over
-(`beaten`) once every captain has sunk, is going down, or has struck, her crew having given up the fight. It draws
+player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves it a point of hull); and it is over
+(`beaten`) once every captain has sunk, is going down, or has struck, its crew having given up the fight. It draws
 the player's ship as the Brig and every captain as a Sloop, each posed on the swell it is handed (a storm's too), for
-the drawing only; a captain's hurts and her going down settle, trim and list her on that swell by what the land door
+the drawing only; a captain's hurts and its going down settle, trim and list it on that swell by what the land door
 sends of each (`founder`). By the rules every ship in it is still a Sloop.
 
 ## In a fleet room

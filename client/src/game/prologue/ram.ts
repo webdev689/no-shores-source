@@ -111,7 +111,7 @@ export class Ram implements Beat {
         }),
       ],
       [IMPACT_S + 0.45, () => screen.fade(1, 0.5)],
-      [IMPACT_S + 0.5, heard(() => ambience.ringing(6))],
+      [IMPACT_S + 0.5, heard(() => ambience.ringing())],
       [IMPACT_S + 1.6, () => (this.done = true)],
     ]);
   }

@@ -1,8 +1,8 @@
 // The game's recorded sounds, the interface's and the world's: the owner's picks from Freesound and from DFO's own
 // (content/audio/sounds.json), kept on R2 under the hash of their bytes. Each is fetched once the page's sound wakes,
 // levelled to one peak and one loudness so a quiet recording and a loud one sit together, and played for its cue, one
-// of its files in turn where it has several; until it has come, or where it cannot, the interface plays its
-// synthesiser's sound and the world plays nothing. Each Freesound recording carries its credit, which Settings lists.
+// of its files in turn where it has several; until it has come, or where it cannot, it is silent. Each Freesound
+// recording carries its credit, which Settings lists.
 
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
 
@@ -17,7 +17,7 @@ export interface SoundCredit {
   readonly changes: string;
 }
 
-/** The peak a recorded sound is levelled to, the synthesiser's own presses' loudness; and the loudness none passes, as
+/** The peak a recorded sound is levelled to, the interface's presses' loudness; and the loudness none passes, as
  *  its loudest 20 ms (-24 dBFS): a held tone levelled by its peak alone sounds far louder than a click. */
 const PEAK = 0.3;
 const LOUD = 0.063;
@@ -116,19 +116,15 @@ export function loadSamples(audio: AudioContext): void {
         .catch(() => undefined);
 }
 
-/** When a recording starts (the context's time; at once where not given), and the synthesiser's sound it stands in for
- *  (its buffer, or its loudness measured ahead where it is made live), whose loudness over `windowS` it takes in place
- *  of its own levelling, its peak never past `most` (that sound's own where not given): what the mix's ceiling leaves
- *  it. */
+/** When a recording starts (the context's time; at once where not given), and the loudness of the sound it took the
+ *  place of, measured over `windowS`, which it takes in place of its own levelling, its peak never past `most` (that
+ *  sound's own where not given): what the mix's ceiling leaves it. */
 export interface SamplePlay {
   readonly when?: number;
-  readonly like?: (
-    { readonly sound: AudioBuffer; readonly measured?: never } | { readonly measured: Loudness; readonly sound?: never }
-  ) & { readonly windowS: number; readonly most?: number };
+  readonly like?: { readonly measured: Loudness; readonly windowS: number; readonly most?: number };
 }
 
-/** Plays a recorded sound into `out`, its pitch at `rate`, answering it as it plays; null where it has not come, so the
- *  caller plays its own or nothing. */
+/** Plays a recorded sound into `out`, its pitch at `rate`, answering it as it plays; null where it has not come. */
 export function playSample(
   audio: AudioContext,
   out: AudioNode,
@@ -147,9 +143,9 @@ export function playSample(
   source.playbackRate.value = rate;
   const gain = audio.createGain();
   const { like } = play;
-  const theirs = like && (like.measured ?? measureOfBuffer(like.sound, like.windowS));
-  gain.gain.value =
-    like && theirs ? matchedLevel(measureOfBuffer(sound.buffer, like.windowS), theirs, like.most) : sound.level;
+  gain.gain.value = like
+    ? matchedLevel(measureOfBuffer(sound.buffer, like.windowS), like.measured, like.most)
+    : sound.level;
   source.connect(gain).connect(out);
   source.start(play.when ?? 0);
   return source;

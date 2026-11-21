@@ -1,15 +1,14 @@
 // The bars over captains' ships, in the fight display's layout: its faction's emblem in a square at the left and, to
 // its right, its name above a long thin bar of its hull, coloured by its rank, over a dark trough with a hairline edge;
-// a Boss's the same, wide across the top of the screen. Drawn on an SVG laid over the picture, in the kit's palette.
+// a Boss's the same, wide across the top of the screen, laid here and drawn by the interface (`game/shipPlates.ts`).
 // Its hull's losses read as a foe's do on foot: a pale strip where the bar stood, a real bite breaking off and falling,
 // and the bar's edge flashing with it.
 
 import { BarLayout, PLATES } from '../plus/barLayout.ts';
-import { bitten, type Loss, PIECE_LEAST, pieceAt, stepLoss } from '../plus/barLoss.ts';
-import { EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
+import { bitten, type Loss, PIECE_LEAST, stepLoss } from '../plus/barLoss.ts';
 import { motionReduced } from '../plus/kit.ts';
-import { FILLS, TONES } from '../plus/tones.ts';
-import { rankBand, rankMark } from '../rules/roster.ts';
+import { FILLS } from '../plus/tones.ts';
+import { rankBand } from '../rules/roster.ts';
 
 /** The factions whose captains sail, by their numbers (crates/naval/src/ranks.rs), each with its Sloop's name. */
 export const SHIP_FACTIONS = [
@@ -121,15 +120,6 @@ export function flashLeft(age: number): number {
   return age >= 0 && age < HULL_FLASH_SECONDS ? 1 - Math.floor((age / HULL_FLASH_SECONDS) * 3) / 3 : 0;
 }
 
-/** A colour a share of the way to the cream the losses are lit with, as `#rrggbb`. */
-function toward(colour: string, share: number): string {
-  const channel = (hex: string, start: number) => Number.parseInt(hex.slice(start, start + 2), 16);
-  const mixed = [1, 3, 5].map((start) =>
-    Math.round(channel(colour, start) + (channel('#fff6e4', start) - channel(colour, start)) * share),
-  );
-  return `#${mixed.map((value) => value.toString(16).padStart(2, '0')).join('')}`;
-}
-
 /** Each ship's plate where `project` puts the point over it (none off the picture), laid by `layout` so none covers
  *  another, `seconds` on; a Boss's across the top of a picture `width` CSS pixels wide instead, one under another. */
 export function placeShipBars(
@@ -181,97 +171,6 @@ export function placeShipBars(
       words: '',
     }));
   return [...overheads, ...placedBosses];
-}
-
-/** Draws the plates onto `svg`, the farthest first so the nearest stands in front: each an emblem's square, a name
- *  over a trough, its fill and its hairline edge. */
-export function drawShipBars(svg: SVGSVGElement, bars: readonly PlacedBar[]): void {
-  const add = (name: string, attributes: Record<string, string | number>, text = '') => {
-    const node = svg.ownerDocument.createElementNS('http://www.w3.org/2000/svg', name);
-    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
-    node.textContent = text;
-    svg.append(node);
-    return node;
-  };
-  const pixels = (href: string, x: number, y: number, width: number, height: number) =>
-    add('image', { href, x, y, width, height, style: 'image-rendering: pixelated' });
-  const edge = (x: number, y: number, width: number, height: number, stroke: string) =>
-    add('rect', { x: x + 0.5, y: y + 0.5, width: width - 1, height: height - 1, fill: 'none', stroke });
-  const words = { 'stroke': TONES.outline, 'stroke-width': 3, 'paint-order': 'stroke', 'font-weight': 600 };
-  for (const bar of bars) {
-    const square = bar.height;
-    add('rect', { x: bar.left, y: bar.top, width: square, height: square, fill: TONES.groundChip });
-    edge(bar.left, bar.top, square, square, TONES.stoneMid);
-    const emblem = emblemUrl(bar.faction);
-    const side = Math.floor((square - 4) / EMBLEM_PIXELS) * EMBLEM_PIXELS;
-    if (emblem) pixels(emblem, bar.left + (square - side) / 2, bar.top + (square - side) / 2, side, side);
-    const [left, right] = [bar.left + square + 5, bar.left + bar.width];
-    const barTop = bar.top + bar.height - bar.bar;
-    const span = right - left;
-    add('rect', { x: left, y: barTop, width: span, height: bar.bar, fill: TONES.groundTrack });
-    const pale = { 'fill': toward(bar.colour, 0.55), 'opacity': 0.6 };
-    if ((bar.lost ?? 0) > bar.share)
-      add('rect', { ...pale, x: left, y: barTop, width: span * (bar.lost ?? 0), height: bar.bar });
-    add('rect', { x: left, y: barTop, width: span * bar.share, height: bar.bar, fill: bar.colour });
-    add('rect', { x: left, y: barTop, width: span * bar.share, height: 1, fill: 'rgba(255,255,255,0.34)' });
-    edge(left - 1, barTop - 1, span + 2, bar.bar + 2, TONES.stoneLo);
-    const flash = bar.flash ?? 0;
-    if (flash > 0)
-      add('rect', {
-        x: left - 0.5,
-        y: barTop - 0.5,
-        width: span + 1,
-        height: bar.bar + 1,
-        fill: 'none',
-        'stroke': '#fff6e4',
-        'opacity': flash,
-      });
-    for (const piece of bar.pieces ?? []) {
-      const pieceLeft = left + span * piece.left;
-      const halves = [
-        [pieceAt(piece.age, 'left'), pieceLeft, span * piece.width * 0.55],
-        [pieceAt(piece.age, 'right'), pieceLeft + span * piece.width * 0.55, span * piece.width * 0.45],
-      ] as const;
-      for (const [fallen, x, width] of halves) {
-        if (!fallen) continue;
-        const [shownX, shownY] = [x + fallen.x, barTop + fallen.y];
-        add('rect', {
-          x: shownX,
-          y: shownY,
-          width,
-          height: bar.bar,
-          fill: bar.colour,
-          opacity: fallen.opacity,
-          'stroke': TONES.outline,
-          'stroke-width': 1,
-        });
-        add('rect', {
-          x: shownX,
-          y: shownY,
-          width,
-          height: Math.min(2, bar.bar),
-          fill: '#fff6e4',
-          opacity: fallen.opacity,
-        });
-      }
-    }
-    const baseline = barTop - 4;
-    const fontSize = bar.bar > PLATE.bar ? 18 : 12;
-    const name = add(
-      'text',
-      { ...words, 'x': left, 'y': baseline, 'fill': TONES.word, 'font-size': fontSize },
-      bar.name,
-    );
-    const mark = rankMark(bar.rank);
-    const picture = mark && markPicture(mark);
-    if (picture && name instanceof SVGTextElement) {
-      const [width, height] = [picture.width * 2, picture.height * 2];
-      pixels(picture.url, left + name.getComputedTextLength() + 5, baseline - height, width, height);
-    }
-    const after = left + (name instanceof SVGTextElement ? name.getComputedTextLength() : 0) + 12;
-    const small = { 'x': after, 'y': baseline, 'font-size': 11, 'letter-spacing': '0.14em', 'fill': TONES.wordDim };
-    if (bar.words) add('text', { ...words, ...small }, bar.words.toUpperCase());
-  }
 }
 
 /** A ship's hull as its bar last read it: the strip, the two pieces its bites fall as in turn, how many bites, and how
@@ -331,24 +230,20 @@ export class ShipPlates {
   }
   private drawnAt: number | null = null;
 
-  /** Draws `bars` onto `svg` at `now` (seconds), each where `project` puts the point over it, the picture `width`
-   *  CSS pixels wide. */
-  draw(
-    svg: SVGSVGElement,
+  /** Lays `bars` at `now` (seconds), each where `project` puts the point over it, the picture `width` CSS pixels
+   *  wide, each reading its hull's losses since the last time. */
+  place(
     bars: readonly ShipBar[],
     project: Parameters<typeof placeShipBars>[1],
     width: number,
     now: number,
-  ): void {
+  ): PlacedBar[] {
     const seconds = this.drawnAt === null ? Infinity : now - this.drawnAt;
     this.drawnAt = now;
     const still = motionReduced();
     const placed = placeShipBars(bars, project, width, this.layout, still ? Infinity : seconds);
     this.hulls.keep(new Set(bars.map((bar) => bar.key)));
     const shownSeconds = Number.isFinite(seconds) ? seconds : 0;
-    drawShipBars(
-      svg,
-      placed.map((bar) => this.hulls.read(bar, shownSeconds, still)),
-    );
+    return placed.map((bar) => this.hulls.read(bar, shownSeconds, still));
   }
 }

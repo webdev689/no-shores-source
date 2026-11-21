@@ -16,6 +16,7 @@ import {
 } from '../client/src/network/messages.ts';
 import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
 import { ASKS } from '../client/src/network/gearMessages.ts';
+import { SnapshotKeeper } from '../client/src/network/snapshots.ts';
 import { fightViewOf } from '../client/src/network/seaFight.ts';
 import { startFleetRules } from '../client/src/rules/fleetRules.ts';
 import { chargesOf, fighterView } from '../client/src/rules/fighters.ts';
@@ -65,7 +66,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   assert.equal(room.input(second, asking(1, walk, { ...walking, anim: 'Not A Move' })), 'not an input');
   assert.equal(room.input(second, new Uint8Array([1, 2, 3])), 'not an input');
   for (let tick = 0; tick < 30; tick++) room.tick();
-  const snapshot = readFromRoom(room.snapshot());
+  const snapshot = readFromRoom(room.snapshot(first));
   assert.equal(snapshot?.kind, 'snapshot');
   if (snapshot?.kind !== 'snapshot') return;
   const [walker, stander] = snapshot.players;
@@ -76,8 +77,11 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   // The walker's look came with its last input, and its dress once, to everyone and to whoever joins after.
   assert.deepEqual([walker?.anim, walker?.frame], ['walk', 2]);
   assert.deepEqual(snapshot.dressed, [{ player: first, dress: '{"body":"male"}' }]);
+  // Once the page says its screen showed that snapshot, the dress is not sent it again.
+  const shown = inputBytes(31, { intent: walk, look: walking, arms: 0, seen: snapshot.tick });
+  assert.equal(room.input(first, shown), 'taken');
   room.tick();
-  assert.deepEqual((readFromRoom(room.snapshot()) as { dressed: unknown }).dressed, []);
+  assert.deepEqual((readFromRoom(room.snapshot(first)) as { dressed: unknown }).dressed, []);
   const third = room.join();
   assert.deepEqual(readFromRoom(room.joined(third)), {
     kind: 'joined',
@@ -116,7 +120,7 @@ test('a player who leaves is no longer seen, and each room is a room of its own'
   const player = room.join();
   room.leave(player);
   room.tick();
-  const snapshot = readFromRoom(room.snapshot());
+  const snapshot = readFromRoom(room.snapshot(player));
   assert.deepEqual(snapshot?.kind === 'snapshot' ? snapshot.players : null, []);
   const another = startRoomDoor(compiled);
   another.open(course.start, course.blocks);
@@ -173,7 +177,7 @@ function play(room: RoomDoor, player: number, sequence: number, controls: Contro
   ]);
   assert.equal(room.input(player, asking(sequence, intent, walking, undefined, respawn)), 'taken');
   room.tick();
-  const snapshot = readFromRoom(room.snapshot());
+  const snapshot = readFromRoom(room.snapshot(player));
   const seen = snapshot?.kind === 'snapshot' ? snapshot.players.find((each) => each.player === player) : undefined;
   if (!seen) throw new Error(`the room did not see player ${player}`);
   return seen;
@@ -199,9 +203,13 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.equal(movement.setGround(ground), true);
   movement.setCourse([{ minX: -5, minY: -8, maxX: 5, maxY: -7, top: 13, bottom: 12 }]);
   room.tick();
-  const joined = readFromRoom(room.snapshot());
+  const joined = readFromRoom(room.snapshot(first));
   const bodies = joined?.kind === 'snapshot' ? joined.players.map((seen) => floatsOf(seen.body)) : [];
-  assert.deepEqual(bodies, [floatsOf(movement.standing(0, 0)), floatsOf(movement.standing(30, -40))], 'in turn');
+  assert.deepEqual(bodies[0], floatsOf(movement.standing(0, 0)), 'the first, whole');
+  // The second crosses to the first packed: each number within half a thousandth.
+  const standing = floatsOf(movement.standing(30, -40));
+  const near = (number: number, index: number) => Math.abs(number - (standing[index] ?? 0)) <= 0.0005 + 1e-9;
+  assert.ok(bodies[1]?.every(near), 'in turn');
 
   const still = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
   const east = { ...still, forward: 1, yaw: Math.PI / 2, run: true };
@@ -245,7 +253,7 @@ test('a node’s room stands the foes a player asks for only once a page playing
     const spawn = { type: 2, rank: 1 };
     room.input(player, inputBytes(1, { intent: walk, look: walking, arms: 0, seen: 0n, spawn }));
     room.tick();
-    const snapshot = readFromRoom(room.snapshot());
+    const snapshot = readFromRoom(room.snapshot(player));
     return snapshot?.kind === 'snapshot' ? snapshot.foes.map((foe) => foe.type) : [];
   };
   // The patrol node's own garrison stands either way; the ask adds a Collector only when the room is told to take it.
@@ -284,7 +292,7 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
   );
   assert.equal(room.input(second, asking(1, walk, walking)), 'not an input', 'the sea takes courses');
   for (let tick = 0; tick < 60; tick++) room.tick();
-  const snapshot = readFromRoom(room.snapshot());
+  const snapshot = readFromRoom(room.snapshot(first));
   const ships = snapshot?.kind === 'snapshot' ? snapshot.ships : [];
   assert.equal(ships.length, 1, 'only the ship whose course was taken is at sea');
   assert.deepEqual([ships[0]?.player, ships[0]?.x, ships[0]?.heading, ships[0]?.pace], [first, 50_000, 0, 10]);
@@ -314,7 +322,7 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (tick === 6_523) assert.equal(room.input(player, courseBytes([[53_327, 53_450]], 10)), 'taken');
     room.tick();
     if (tick % 60 !== 0) continue;
-    const bytes = room.snapshot();
+    const bytes = room.snapshot(player);
     for (const byte of bytes) hash = ((hash ^ BigInt(byte)) * 0x0100_0000_01b3n) & 0xffff_ffff_ffff_ffffn;
     const snapshot = readFromRoom(bytes);
     const fight = snapshot?.kind === 'snapshot' ? snapshot.fights[0] : undefined;
@@ -348,7 +356,7 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   assert.equal(room.input(second, new Uint8Array([9, 9, 9])), 'not an input');
   room.tick();
   const read = () => {
-    const snapshot = readFromRoom(room.snapshot());
+    const snapshot = readFromRoom(room.snapshot(first));
     if (snapshot?.kind !== 'snapshot') throw new Error('a fleet room answers snapshots');
     return snapshot;
   };
@@ -415,6 +423,33 @@ test('the Test Ground’s room lays out its stall and nodes, and sends each play
   assert.equal(sea.furnish(course.stall, course.resources), false, 'a fleet keeps no gear');
 });
 
+test('an input carrying those before it is taken whole after a loss, and what the room already had is passed over', () => {
+  const room = startRoomDoor(compiled);
+  room.open(course.start, course.blocks);
+  const player = room.join();
+  const parts = { intent: walk, look: walking, arms: 0, seen: 0n };
+  assert.equal(room.input(player, inputBytes(1, parts)), 'taken');
+  // Input 2 is lost on the way; 3 carries it, and 4 carries 2 and 3 again.
+  assert.equal(room.input(player, inputBytes(3, parts, [{ sequence: 2, parts }])), 'taken');
+  assert.equal(
+    room.input(
+      player,
+      inputBytes(
+        4,
+        parts,
+        [2, 3].map((sequence) => ({ sequence, parts })),
+      ),
+    ),
+    'taken',
+  );
+  assert.equal(room.input(player, inputBytes(4, parts)), 'taken', 'one the room already had is no wrong');
+  assert.equal(room.input(player, inputBytes(7, parts, [{ sequence: 6, parts }])), 'out of order', 'five was lost too');
+  for (let tick = 0; tick < 4; tick++) room.tick();
+  const snapshot = readFromRoom(room.snapshot(player));
+  const seen = snapshot?.kind === 'snapshot' ? snapshot.players[0] : undefined;
+  assert.equal(seen?.acknowledged, 4, 'all four stepped the player, in order');
+});
+
 test('a sea that keeps characters sails a course only once the keeper has answered, and sends gear at sea', () => {
   const room = startRoomDoor(compiled);
   const square = [
@@ -429,7 +464,7 @@ test('a sea that keeps characters sails a course only once the keeper has answer
   for (const player of [kept, unkept]) assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
   room.tick();
   const ships = () => {
-    const snapshot = readFromRoom(room.snapshot());
+    const snapshot = readFromRoom(room.snapshot(kept));
     return snapshot?.kind === 'snapshot' ? snapshot.ships.map((ship) => [ship.player, ship.x, ship.y]) : [];
   };
   assert.deepEqual(ships(), [], 'held for the keeper');
@@ -450,6 +485,7 @@ test('a wounded player’s drink through the room heals them, and the page reads
   assert.equal(room.open(course.start, course.blocks), true);
   const player = room.join();
   let sequence = 0;
+  const kept = new SnapshotKeeper();
   /** One tick of the player at rest, a drink asked if `heal`: what the page reads of them, and the fight's events. */
   const step = (heal = false) => {
     const intent = new Float64Array([
@@ -473,8 +509,9 @@ test('a wounded player’s drink through the room heals them, and the page reads
     ]);
     assert.equal(room.input(player, asking(++sequence, intent, walking)), 'taken');
     room.tick();
-    const snapshot = readFromRoom(room.snapshot());
-    if (snapshot?.kind !== 'snapshot') throw new Error('no snapshot');
+    // As the page reads them: each event handed on once, though the room tells it again until a later tick is shown.
+    const snapshot = kept.whole(readFromRoom(room.snapshot(player)) as never);
+    if (!snapshot) throw new Error('no snapshot');
     const seen = snapshot.players.find((each) => each.player === player);
     if (!seen?.fighter) throw new Error('the room did not see the player');
     return { fighter: seen.fighter, events: snapshot.events as readonly FightEvent[] };

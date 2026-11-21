@@ -7,11 +7,13 @@ code:
   - client/src/testground/testgroundMain.ts
   - client/src/combat/reticle.ts#Crosshair
   - client/src/combat/worldSounds.ts#WorldSounds
-  - client/src/testground/aimPanel.ts
-  - client/src/testground/statusPanel.ts#startStatusPanel
-  - client/src/testground/artsPanel.ts#startArtsPanel
+  - client/src/testground/aimPanel.ts#AimPanel
+  - client/src/testground/gearPanel.ts#GearPanel
+  - client/src/testground/panelKit.ts#panels
+  - client/src/testground/statusPanel.ts#statusNodes
+  - client/src/testground/artsPanel.ts#artsNodes
   - client/src/combat/attackFeel.ts#AttackFeel
-  - client/src/testground/feelPanel.ts#startFeelPanel
+  - client/src/testground/feelPanel.ts#FeelPanel
   - client/src/combat/swingArcs.ts#SwingArcs
   - client/src/combat/swingCourse.ts#courseOf
   - client/src/combat/swingMesh.ts#layStreak
@@ -34,10 +36,10 @@ code:
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
   - client/src/combat/fightBlood.ts#FightBlood
-  - client/src/testground/panel.ts#startPanel
+  - client/src/testground/panel.ts#Panel
   - client/src/player/foeDress.ts#foeDress
   - client/src/combat/foeBars.ts#FoeBars
-  - client/src/combat/hudSheet.ts#wearFightSheet
+  - client/src/combat/hud.ts#Hud
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/tracers.ts#Tracers
   - client/src/combat/gunLooks.ts#GunLooks
@@ -56,6 +58,10 @@ it ([[The Player Plays as in DFO]]), the same [[Player]] the [[Game]] plays. It 
 `https://lattymoy.github.io/overlook-source/testground/`. Under `npm run dev`, open `/testground/`.
 
 ## Playing
+
+The page is one canvas: the view, with a panel either side of it drawn by the game ([[Interface]], "Drawn by the
+game"). The panels scroll under the wheel, and while the mouse is free their controls take Tab, the arrows, Enter
+and the pad, and a field takes the keys typed into it.
 
 Click the view to play; Escape frees the mouse. The body moves by the [[Movement]] rules, and the controls are DFO's:
 
@@ -307,7 +313,8 @@ are the room's, the same for everyone in it, and fight whoever is near. Every ot
 room stands where the room last saw them, dressed as they dress themselves, showing the move and frame their own
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
-which player this is. A foe an older room sends with no type is drawn as the pirates' type in its role.
+which player this is, the room's name, and the link's lag (how much it strays) and the share of
+snapshots lost, as the page measures them. A foe an older room sends with no type is drawn as the pirates' type in its role.
 
 When the room's socket closes, for a deploy or a dropped network, the page joins the room again by itself ([[Server]],
 "The browser's side"): a new player there, standing where the room puts them, their dress and what their hands hold
@@ -387,7 +394,8 @@ The figure is dressed as DFO's game dresses it ([[DFO's Sprite Forge Comes Over 
 
 ## How it draws
 
-The page reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
+A lost GPU device stops the Test Ground, the page saying so and asking for a reload (`stopWhenLost`). The page
+reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
 its pack by its byte range; a body shorter than its range is fetched once more past the cache, never decoded. One that
 fails to arrive is asked for again 5 s later, not every frame. Decoded strips are kept while there is room: 128 MB in
 the worker that composes the figures, 96 MB on the page, the least lately asked for let go and fetched again if asked.

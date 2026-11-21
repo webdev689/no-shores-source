@@ -20,6 +20,12 @@ import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { gearScreenOpen } from './gearWindow.ts';
+import { HINTS, withMapKey } from './hints.ts';
+import { gearTakesKeys } from './gearScreen.ts';
+import type { Drain } from './drain.ts';
+import type { DrawnInterface } from './drawnInterface.ts';
+import { creationOpen } from './prologue/creation.ts';
+import type { Stack } from '../ui/stack.ts';
 import type { Hud } from './hud.ts';
 import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
@@ -71,6 +77,10 @@ export interface FrameParts {
   readonly gpu: Gpu;
   readonly canvas: HTMLCanvasElement;
   readonly hud: Hud;
+  /** The interface the game draws, its layers, and death's grey drawn under it. */
+  readonly ui: DrawnInterface;
+  readonly stack: Stack;
+  readonly drain: Drain;
   readonly input: Input;
   readonly scene: GameScene;
   readonly walker: Walker;
@@ -107,8 +117,11 @@ export interface FrameParts {
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
 export function startFrames(parts: FrameParts, playing: Playing): void {
   const { gpu, canvas, hud, input, scene, walker, firstPerson, footView, traffic, discovered, charting } = parts;
+  const { ui, stack, drain } = parts;
   let [last, clock] = [performance.now(), 0];
   let wasWalking = false;
+  /** Whether the view was in the player's eyes before the land's held map took it there; null while it has not. */
+  let eyesBeforeMap: boolean | null = null;
 
   /** The drawers that stand on the open landmass this frame (`standingDrawers`). */
   const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) =>
@@ -127,30 +140,51 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   const showStanding = (shown: Standing) => {
     hud.reach(shown);
-    // Death's grey on the canvas is the one mark of it, once death is told (a fall plays out in colour first):
+    // Death's grey over the world is the one mark of it, once death is told (a fall plays out in colour first):
     // leaving a place takes it off.
-    const [dead, wasDead] = [greyed(shown), canvas.classList.contains('dead')];
+    const [dead, wasDead] = [greyed(shown), drain.dead];
     if (dead && !wasDead) document.exitPointerLock();
-    if (dead !== wasDead) canvas.classList.toggle('dead', dead);
+    drain.toward(dead);
   };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
-    const { flow } = playing;
+    const { flow, helmMap } = playing;
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
-    const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
+    // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
+    const looking = helmMap.looking;
+    if (looking !== (eyesBeforeMap !== null)) {
+      const firstPerson = eyesBeforeMap ?? true;
+      eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
+      walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
+    }
+    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: controls.locked, aspect });
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
     scene.keepMiddle([body.x, body.y], parts.closeSource);
-    const hands = walker.inFirstPerson
-      ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
-      : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
+    const mapDraw = helmMap.footFrame(seconds, {
+      free: !paused && !here.fallen,
+      viewport,
+      dpr: canvas.width / Math.max(1, canvas.clientWidth),
+      hands: walker.you.dress.outfit.armour.gauntlets ?? null,
+      eyes: walker.inFirstPerson,
+      at: [body.x, body.y],
+      heading: walker.player.yaw,
+    });
+    // The held map, or the player's own hands in first person, over the finished picture.
+    const hands =
+      mapDraw ??
+      (walker.inFirstPerson
+        ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
+        : undefined);
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
+    // The fight's crosshair, plates and compass give way to the map while it is up.
+    if (looking) footView.hideDisplay();
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
@@ -167,15 +201,21 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
     const moored = mooredShips(moorings, clock, water);
-    const more = { after: hands, hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS), carried };
+    const more = {
+      after: hands,
+      hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS),
+      carried,
+      drain: drain.share,
+    };
     const ships = [...moored.ships, ...fleet.ships];
     scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     // As E's other use, a gate takes no one while a menu is up or the player is down.
-    playing.through = paused || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
+    playing.through =
+      paused || looking || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    hud.hints(shown.hints);
+    hud.hints(looking ? HINTS.landMap : withMapKey(shown.hints));
     hud.marks([]);
     hideSeaHud(hud);
     hud.note(here.roomNote);
@@ -228,7 +268,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const fleet = traffic.atSea(shown, parts.waterHere(), seconds, clock);
     // Walking its deck, what the player carries lights round them as it does ashore.
     const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
-    const more = { hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, ...(swell ? { swell } : {}) };
+    const more = {
+      ...{ hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, drain: drain.share },
+      ...(swell ? { swell } : {}),
+    };
     const drawers = standing([...shown.ships, ...fleet.ships], shown.figures, herDeck);
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
     showStanding(here.boarding.standing ?? { kind: 'inside' });
@@ -282,7 +325,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const seconds = Math.min(0.1, elapsed);
     last = now;
     clock += seconds;
-    const controls = input.frame();
+    drain.step(seconds);
+    const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
+    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys() || creationOpen());
+    const heard = input.frame();
+    // The wheel turned over the interface scrolls it, not the camera.
+    const controls = tookWheel ? { ...heard, wheel: 0 } : heard;
     const size = { width: canvas.width, height: canvas.height };
     const { flow, foot, sea, ready } = playing;
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;
@@ -292,6 +340,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     parts.ambience.frame(seconds);
+    ui.present(stack);
     if (playing.flow.mode === 'loading' && playing.ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
       playing.waited += elapsed;

@@ -1,31 +1,40 @@
-import { canvasSize } from '../canvasSize.ts';
-import { startGpu } from '../gpu.ts';
+import type { Node } from '../ui/node.ts';
+import { ask } from '../ui/page.ts';
 import type { Brush } from '../rules/landRules.ts';
 import { type Camera, pan, screenToWorld, worldToScreen, zoomAt } from './camera.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { loadLandTexts } from '../terrain/landTexts.ts';
-import { drawScaleCues, shownExaggeration } from './closeUp.ts';
+import { scaleCues, shownExaggeration } from './closeUp.ts';
 import { AIM_HIGHEST_LOOK, AimInput } from './aimInput.ts';
-import { BRUSHES, buildLandPanel, LAND_TOOLS, type LandTool, SITE_TOOLS } from './landPanel.ts';
+import type { EditorDrawn, EditorFrame, EditorFrameView } from './editorFrame.ts';
+import { BRUSHES, LAND_TOOLS, landPanel, type LandPanelHandlers, type LandTool, SITE_TOOLS } from './landPanel.ts';
 import { LandSession } from './landSession.ts';
+import { LandStroke } from './landStroke.ts';
 import type { CellRect } from './landMask.ts';
 import { LandScene } from './landScene.ts';
 import { fitOrbit, type Orbit, panOrbit, pickTerrain, rayAt, rotateOrbit, zoomOrbit } from './orbit.ts';
-import { drawDraft, snapPoint, type Spot } from './placeDrawing.ts';
+import { draftInks, snapPoint, type Spot } from './placeDrawing.ts';
+import { PANEL_WIDTH, panelCss } from './panelKit.ts';
 import { PlaceTools } from './placeTools.ts';
 import { ReliefTiles, tilesWanted } from './reliefTiles.ts';
 import { fitWindow, heightAt, readoutAt, ReliefView } from './reliefView.ts';
-import { drawSites, groundProjector, siteMarks } from './siteDrawing.ts';
+import { groundProjector, siteInks, siteMarks } from './siteDrawing.ts';
+import type { Ink } from './strokes.ts';
+import { inView, type Label, labelNode, onScreen } from './viewMarks.ts';
 import { NODE_COLOURS, siteFocus } from './sites.ts';
 import type { TerrainData } from '../terrain/terrainView.ts';
 import { FleetDock } from './fleetDock.ts';
-import { fleetOffered } from './fleetLink.ts';
+import { fleetOffered, platesOf, readoutOffered } from './fleetLink.ts';
 
 /** The Land mode: the land the generator makes from the painted coasts, shaped by the owner's brushes. */
 export interface LandEditor {
   /** Shows the Land mode for this layout, generating its landmasses in the background. */
   activate(layoutText: string): void;
   deactivate(): void;
+  /** Draws the land into the view right of the panel; answers its marks, what is laid over it and its panel. */
+  draw(frame: EditorFrameView): EditorDrawn;
+  /** Whether the panel may take the keys: not while walking or sailing, whose keys are the walker's or the Sloop's. */
+  keys(): boolean;
 }
 
 const DEFAULT_STRENGTH: Partial<Record<LandTool, number>> = { raise: 40, lower: 40, smooth: 50, flatten: 50 };
@@ -33,13 +42,16 @@ const DEFAULT_STRENGTH: Partial<Record<LandTool, number>> = { raise: 40, lower: 
 const REACH_PX = 12;
 /** The 2D map zooms closer than the coasts' map, so a node a few hundred metres across can be drawn. */
 const ZOOM = { closest: 1, farthest: 20_000 } as const;
-export async function startLandEditor(
-  canvas: HTMLCanvasElement,
-  overlay: SVGSVGElement,
-  panelRoot: HTMLElement,
+export function startLandEditor(
+  editor: EditorFrame,
   frame: { readonly widthM: number; readonly heightM: number },
 ): Promise<LandEditor> {
-  const gpu = await startGpu(canvas);
+  const { gpu, canvas } = editor;
+  const requestFrame = () => editor.request();
+  /** The view right of the panel, CSS pixels. */
+  const panelEdge = () => panelCss(devicePixelRatio || 1);
+  const viewWidth = () => Math.max(1, canvas.clientWidth - panelEdge());
+  const onView = (event: MouseEvent) => ({ x: event.offsetX - panelEdge(), y: event.offsetY });
   const relief = new ReliefView(gpu);
   const worker = startLandWorker();
   // Read once: every landmass is settled with them, as the game settles it.
@@ -61,7 +73,6 @@ export async function startLandEditor(
   let orbit: Orbit = fitOrbit(1, 1, 1);
   let pointer = { x: 0, y: 0, inside: false };
   let dragging: { x: number; y: number; button: number } | null = null;
-  let stroke: { brush: Brush; last: readonly [number, number] } | null = null;
   let editsVersion = 0;
   let walking = false;
   let sailing = false;
@@ -76,11 +87,10 @@ export async function startLandEditor(
   const pressed: string[] = [];
   let status = '';
   let active = false;
-  let frameQueued = false;
 
   const landmass = () => session?.landmasses.get(selected) ?? null;
   const shown = () => landmass()?.view ?? null;
-  const aspect = () => canvas.clientWidth / Math.max(1, canvas.clientHeight);
+  const aspect = () => viewWidth() / Math.max(1, canvas.clientHeight);
   const terrainData = (): TerrainData | null => {
     const now = landmass();
     return now?.view && now.marks ? { ...now.view, marks: now.marks } : null;
@@ -89,7 +99,14 @@ export async function startLandEditor(
     status = error instanceof Error ? error.message : String(error);
     requestFrame();
   };
-  const scene = new LandScene(gpu, requestFrame, fail, overlay);
+  const scene = new LandScene(gpu, requestFrame, fail);
+  // Defined below; a stroke refreshes the views as each dab lands.
+  const strokes = new LandStroke({
+    session: () => session,
+    selected: () => selected,
+    refresh: (rect) => refresh(rect),
+    fail,
+  });
 
   const showSelected = (fit: boolean) => {
     // A new view (another landmass, or the layout redrawn) makes any close-up of the old land stale.
@@ -98,7 +115,7 @@ export async function startLandEditor(
     if (!now?.view || !now.marks) return;
     relief.show(now.view, now.marks);
     if (fit) {
-      camera = fitWindow(now.view, canvas.clientWidth, canvas.clientHeight);
+      camera = fitWindow(now.view, viewWidth(), canvas.clientHeight);
       orbit = fitOrbit(now.view.width * now.view.cellM, now.view.height * now.view.cellM, aspect());
     }
     scene.reset();
@@ -118,11 +135,11 @@ export async function startLandEditor(
 
   /** The world point under a pixel of the canvas: on the map in 2D, on the ground in 3D. */
   const worldAt = (pixelX: number, pixelY: number): { x: number; y: number } | null => {
-    if (viewMode === '2d') return screenToWorld(camera, canvas.clientWidth, canvas.clientHeight, pixelX, pixelY);
+    if (viewMode === '2d') return screenToWorld(camera, viewWidth(), canvas.clientHeight, pixelX, pixelY);
     const data = terrainData();
     const view = shown();
     if (!data || !view) return null;
-    const ndc = [(pixelX / canvas.clientWidth) * 2 - 1, 1 - (pixelY / canvas.clientHeight) * 2] as const;
+    const ndc = [(pixelX / viewWidth()) * 2 - 1, 1 - (pixelY / canvas.clientHeight) * 2] as const;
     const shownHeight = shownExaggeration(exaggeration, orbit.distance);
     const hit = pickTerrain(rayAt(orbit, aspect(), ndc[0], ndc[1]), data, shownHeight);
     return hit ? { x: hit.x + view.leftM, y: hit.y + view.topM } : null;
@@ -150,24 +167,6 @@ export async function startLandEditor(
     }
   };
 
-  /** One dab at a world point; the first of a stroke starts it, and a flatten takes its level there. */
-  const dabAt = (x: number, y: number, starts: boolean) => {
-    if (!session || !stroke) return;
-    const point = [Math.round(x), Math.round(y)] as const;
-    stroke = { ...stroke, last: point };
-    const id = selected;
-    session
-      .dab(id, stroke.brush, point, starts)
-      .then((patch) => {
-        if (id === selected) refresh(patch.rect);
-      })
-      .catch((error: unknown) => {
-        // A stroke whose first dab is refused must not go on: its next dabs would join the stroke before it.
-        if (starts) stroke = null;
-        fail(error);
-      });
-  };
-
   const startStroke = (x: number, y: number) => {
     const view = shown();
     if (!session || !view || !BRUSHES.includes(tool)) return;
@@ -184,32 +183,8 @@ export async function startLandEditor(
       strength: strength[tool] ?? 1,
       ...(tool === 'flatten' ? { level_m: level } : {}),
     };
-    stroke = { brush, last: [x, y] };
     status = '';
-    dabAt(x, y, true);
-  };
-
-  /** Dabs along the drag every quarter of the brush's radius, so a fast stroke leaves no gaps. */
-  const continueStroke = (x: number, y: number) => {
-    if (!stroke) return;
-    const [lastX, lastY] = stroke.last;
-    const spacing = stroke.brush.radius_m / 4;
-    const steps = Math.floor(Math.hypot(x - lastX, y - lastY) / spacing);
-    for (let step = 1; step <= steps; step++)
-      dabAt(
-        lastX + ((x - lastX) * step * spacing) / Math.hypot(x - lastX, y - lastY),
-        lastY + ((y - lastY) * step * spacing) / Math.hypot(x - lastX, y - lastY),
-        false,
-      );
-  };
-
-  const endStroke = () => {
-    if (!stroke || !session) return;
-    stroke = null;
-    session
-      .finishStroke(selected)
-      .then(() => refresh(null))
-      .catch(fail);
+    strokes.start(brush, x, y);
   };
 
   /** Changes the open landmass's places, once it is open for shaping. */
@@ -241,7 +216,7 @@ export async function startLandEditor(
     tool = places.city?.id === id ? 'city' : 'node';
     tools.draft = null;
     if (tool === 'node') tools.choose(id);
-    const across = Math.max(1, Math.min(canvas.clientWidth, canvas.clientHeight));
+    const across = Math.max(1, Math.min(viewWidth(), canvas.clientHeight));
     camera = { centreX: focus.x, centreY: focus.y, metresPerPixel: Math.max(ZOOM.closest, focus.acrossM / across) };
     if (view)
       orbit = { ...orbit, targetX: focus.x - view.leftM, targetY: focus.y - view.topM, distance: focus.acrossM };
@@ -270,7 +245,7 @@ export async function startLandEditor(
       change(value);
       requestFrame();
     };
-  const panel = buildLandPanel(panelRoot, {
+  const handlers: LandPanelHandlers = {
     select: (id) => {
       selected = id;
       status = '';
@@ -303,7 +278,7 @@ export async function startLandEditor(
     undo: () => step(-1),
     redo: () => step(1),
     save: () => void save().catch(fail),
-  });
+  };
 
   /** Starts or stops walking: the camera drops to just behind a walker's eyes on the ground at its target. */
   function toggleWalk() {
@@ -337,12 +312,10 @@ export async function startLandEditor(
     requestFrame();
   }
 
-  const frameNow = () => {
-    frameQueued = false;
-    if (!active) return;
-    const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio || 1);
-    if (canvas.width !== size.width || canvas.height !== size.height)
-      [canvas.width, canvas.height] = [size.width, size.height];
+  /** The land's frame: the 2D map or the 3D view into the view right of the panel, the places, layouts and cues over
+   *  it, and the Land panel. */
+  const drawNow = (shot: EditorFrameView): EditorDrawn => {
+    const { ui, flat, scale, inward } = shot;
     const world = pointer.inside ? worldAt(pointer.x, pointer.y) : null;
     const view = shown();
     const brushShown = world && BRUSHES.includes(tool) ? { ...world, radiusM: radiusKm * 1000 } : null;
@@ -350,7 +323,10 @@ export async function startLandEditor(
     const places = session?.places(selected) ?? {};
     const laid = landmass()?.layouts ?? [];
     const layouts = layoutsShown ? laid : [];
-    overlay.replaceChildren();
+    const inks: Ink[] = [];
+    const labels: Label[] = [];
+    const over: Node[] = [];
+    let again = false;
     // Brought in, or walking or on the map before the room let it join, it leaves the fleet.
     if (fleet && !sailing && (fleet.sloop || (fleet.joining && (walking || viewMode === '2d')))) {
       if (fleet.joining) status = '';
@@ -363,63 +339,76 @@ export async function startLandEditor(
         radiusM: brushShown.radiusM,
       };
       const source = session;
-      const drawn = scene.draw({
-        id: selected,
-        data,
-        view,
-        orbit,
-        size,
-        exaggeration,
-        brush,
-        walking,
-        sailing,
-        held,
-        pressed,
-        ...aim.take(),
-        source,
-        fleet: sailing ? (fleet?.sloop ?? null) : null,
-        editsVersion,
-        stroking: stroke !== null,
-        buildings: buildingsShown ? laid : null,
-      });
+      const drawn = editor.aside(shot, (target, size) =>
+        scene.draw({
+          id: selected,
+          data,
+          view,
+          orbit,
+          size,
+          flat,
+          target,
+          readout: readoutOffered(),
+          exaggeration,
+          brush,
+          walking,
+          sailing,
+          held,
+          pressed,
+          ...aim.take(),
+          source,
+          fleet: sailing ? (fleet?.sloop ?? null) : null,
+          editsVersion,
+          stroking: strokes.drawing,
+          buildings: buildingsShown ? laid : null,
+        }),
+      );
       orbit = drawn.orbit;
       // A refused Sail stands the camera back off, as bringing it in does.
       if (sailing && !drawn.sailing) orbit = { ...orbit, distance: 600, pitch: 0.5 };
       sailing = drawn.sailing;
-      const flat = { width: canvas.clientWidth, height: canvas.clientHeight };
       const shownHeight = shownExaggeration(exaggeration, orbit.distance);
       const exact = (x: number, y: number) => scene.exactGround(selected, x, y);
       // The scale cues first, so no name is laid over them.
-      const cues = drawn.feet ? drawScaleCues(overlay, orbit, flat, drawn.feet, shownHeight) : null;
+      const cues = drawn.feet ? scaleCues(orbit, flat, drawn.feet, shownHeight) : null;
+      if (cues) [inks.push(...cues.inks), labels.push(...cues.labels)];
       const project = groundProjector(view, orbit, flat, shownHeight, exact);
-      drawSites(overlay, siteMarks(places, project, layouts, cues ? [cues] : []));
+      const marks = siteInks(siteMarks(places, project, layouts, cues ? [cues.box] : []));
+      inks.push(...marks.inks);
+      labels.push(...marks.labels);
+      over.push(...platesOf(drawn.plates).map((plate) => onScreen(plate, PANEL_WIDTH, inward)));
+      const fight = readoutOffered()?.node();
+      if (fight) over.push(inView(fight, PANEL_WIDTH, flat.width, flat.height, inward));
       // The water moves, so the 3D view draws every frame.
-      requestFrame();
+      again = true;
     } else {
-      const { clientWidth, clientHeight } = canvas;
       const open = session;
       // No tile is asked for while a stroke is drawn, so its dabs wait behind one in the worker at most once.
-      if (open && !stroke) {
+      if (open && !strokes.drawing) {
         const ground = (left: number, top: number, step: number, samples: number) =>
           open.ground(selected, left, top, step, samples).then((close) => close?.patch ?? null);
-        tiles.keep(selected, editsVersion, tilesWanted(camera, clientWidth, clientHeight, laid), { ground });
+        tiles.keep(selected, editsVersion, tilesWanted(camera, flat.width, flat.height, laid), { ground });
       }
-      const scale = size.width / clientWidth;
+      // The map is drawn over the whole canvas, its middle moved right by half the panel, so the view's middle is
+      // the camera's.
+      const centreX = camera.centreX - (panelEdge() / 2) * camera.metresPerPixel;
       relief.draw(
         {
-          camera: { ...camera, metresPerPixel: camera.metresPerPixel / scale },
+          camera: { ...camera, centreX, metresPerPixel: camera.metresPerPixel / scale },
           frameWidthM: frame.widthM,
           frameHeightM: frame.heightM,
           brushX: brushShown?.x ?? 0,
           brushY: brushShown?.y ?? 0,
           brushRadiusM: brushShown?.radiusM ?? 0,
         },
-        size.width,
-        size.height,
+        shot.size.width,
+        shot.size.height,
         tiles.kept,
       );
-      const project = (x: number, y: number) => worldToScreen(camera, clientWidth, clientHeight, x, y);
-      drawSites(overlay, siteMarks(places, project, layouts));
+      const project = (x: number, y: number) => worldToScreen(camera, flat.width, flat.height, x, y);
+      const marks = siteInks(siteMarks(places, project, layouts));
+      inks.push(...marks.inks);
+      labels.push(...marks.labels);
     }
     const reach = REACH_PX * camera.metresPerPixel;
     const cursorSpot: Spot | null = !world
@@ -427,58 +416,64 @@ export async function startLandEditor(
       : tools.draft?.kind === 'road'
         ? snapPoint(places, [world.x, world.y], reach)
         : [world.x, world.y];
-    const flat = { camera, width: canvas.clientWidth, height: canvas.clientHeight };
-    if (viewMode === '2d') drawDraft(overlay, flat, tools.draft, cursorSpot, NODE_COLOURS[tools.nodeKind]);
+    if (viewMode === '2d')
+      inks.push(...draftInks({ camera, ...flat }, tools.draft, cursorSpot, NODE_COLOURS[tools.nodeKind]));
     const nodeFields = tools.nodeFields();
-    panel.update({
-      landmasses: [...(session?.landmasses ?? [])].map(([id, held]) => ({
-        id,
-        state: held.state,
-        unsaved: session?.unsaved(id) ?? false,
-      })),
-      selected,
-      tool,
-      radiusKm,
-      strength: strength[tool] ?? 0,
-      widthM: tool === 'road' ? tools.width.road : tools.width.river,
-      depthM: tools.depth,
-      nodeKind: nodeFields.kind,
-      nodeName: nodeFields.name,
-      chosen: nodeFields.chosen,
-      city: places.city ?? null,
-      sites: [
-        ...(places.city ? [{ id: places.city.id, name: places.city.name, kind: 'city' as const }] : []),
-        ...(places.nodes ?? []).map(({ id, name, kind }) => ({ id, name, kind })),
-      ],
-      problems: (view?.problems ?? []).map(({ subject, message }) => `${subject}: ${message}`),
-      view: viewMode,
-      walking,
-      sailing,
-      layouts: layoutsShown,
-      buildings: buildingsShown,
-      exaggeration,
-      cursor: (walking || sailing) && view ? scene.describe(view, orbit) : readoutAt(view, world),
-      fight: sailing ? scene.fightLines() : [],
-      status: session?.storageFailed
-        ? `${status} This browser could not keep your shaping: Save often.`.trim()
-        : status,
-    });
+    const panel = landPanel(
+      ui,
+      {
+        landmasses: [...(session?.landmasses ?? [])].map(([id, held]) => ({
+          id,
+          state: held.state,
+          unsaved: session?.unsaved(id) ?? false,
+        })),
+        selected,
+        tool,
+        radiusKm,
+        strength: strength[tool] ?? 0,
+        widthM: tool === 'road' ? tools.width.road : tools.width.river,
+        depthM: tools.depth,
+        nodeKind: nodeFields.kind,
+        nodeName: nodeFields.name,
+        chosen: nodeFields.chosen,
+        city: places.city ?? null,
+        sites: [
+          ...(places.city ? [{ id: places.city.id, name: places.city.name, kind: 'city' as const }] : []),
+          ...(places.nodes ?? []).map(({ id, name, kind }) => ({ id, name, kind })),
+        ],
+        problems: (view?.problems ?? []).map(({ subject, message }) => `${subject}: ${message}`),
+        view: viewMode,
+        walking,
+        sailing,
+        layouts: layoutsShown,
+        buildings: buildingsShown,
+        exaggeration,
+        cursor: (walking || sailing) && view ? scene.describe(view, orbit) : readoutAt(view, world),
+        fight: sailing ? scene.fightLines() : [],
+        status: session?.storageFailed
+          ? `${status} This browser could not keep your shaping: Save often.`.trim()
+          : status,
+      },
+      handlers,
+    );
+    return {
+      inks,
+      over: [...labels.map((label) => labelNode(label, PANEL_WIDTH, inward)), ...over],
+      panel,
+      again,
+    };
   };
-
-  function requestFrame() {
-    if (frameQueued) return;
-    frameQueued = true;
-    requestAnimationFrame(frameNow);
-  }
 
   canvas.addEventListener('contextmenu', (event) => event.preventDefault());
   canvas.addEventListener('pointerdown', (event) => {
+    if (!active || editor.takes(event.offsetX, event.offsetY)) return;
     // A field being typed in reports its value now, before the press can start another node.
-    if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
+    editor.settle();
     canvas.setPointerCapture(event.pointerId);
-    dragging = { x: event.offsetX, y: event.offsetY, button: event.button };
+    const spot = onView(event);
+    dragging = { ...spot, button: event.button };
     if (sailing && aim.down(event.button)) return;
-    const world = event.button === 0 && !walking && !sailing ? worldAt(event.offsetX, event.offsetY) : null;
+    const world = event.button === 0 && !walking && !sailing ? worldAt(spot.x, spot.y) : null;
     if (world && BRUSHES.includes(tool)) startStroke(world.x, world.y);
     else if (world && tool !== 'look') {
       if (viewMode === '3d') status = 'Draw places on the 2D map: press V.';
@@ -487,31 +482,34 @@ export async function startLandEditor(
     }
   });
   canvas.addEventListener('pointermove', (event) => {
-    pointer = { x: event.offsetX, y: event.offsetY, inside: true };
-    if (dragging && stroke) {
-      const world = worldAt(event.offsetX, event.offsetY);
-      if (world) continueStroke(world.x, world.y);
+    if (!active) return;
+    const spot = onView(event);
+    pointer = { ...spot, inside: !editor.takes(event.offsetX, event.offsetY) };
+    if (dragging && strokes.drawing) {
+      const world = worldAt(spot.x, spot.y);
+      if (world) strokes.continue(world.x, world.y);
     } else if (dragging) {
-      const [moveX, moveY] = [event.offsetX - dragging.x, event.offsetY - dragging.y];
+      const [moveX, moveY] = [spot.x - dragging.x, spot.y - dragging.y];
       if (dragging.button === 0 && tool !== 'look' && !walking && !sailing) return;
       const orbiting = walking || sailing || dragging.button === 0 || (dragging.button === 2 && tool !== 'look');
       if (viewMode === '2d') camera = pan(camera, moveX, moveY);
       else if (orbiting) orbit = rotateOrbit(orbit, moveX * 0.005, -moveY * 0.005, lowestLook());
       else orbit = panOrbit(orbit, moveX, moveY, canvas.clientHeight);
     }
-    if (dragging) dragging = { ...dragging, x: event.offsetX, y: event.offsetY };
+    if (dragging) dragging = { ...dragging, ...spot };
     requestFrame();
   });
   // A left press while the right is held is a chord: pointer events tell it only as a move, mouse events as a press.
   canvas.addEventListener('mousedown', (event) => {
-    if (sailing && event.button === 0) aim.down(0);
+    if (active && sailing && event.button === 0 && dragging) aim.down(0);
   });
   canvas.addEventListener('pointerup', (event) => {
     dragging = null;
     aim.up(event.button);
-    endStroke();
+    strokes.end();
   });
-  canvas.addEventListener('dblclick', () => {
+  canvas.addEventListener('dblclick', (event) => {
+    if (!active || editor.takes(event.offsetX, event.offsetY)) return;
     tools.finish();
     requestFrame();
   });
@@ -523,16 +521,18 @@ export async function startLandEditor(
     'wheel',
     (event) => {
       event.preventDefault();
+      if (!active || editor.takes(event.offsetX, event.offsetY)) return;
       if (sailing && aim.wheel(event.deltaY, performance.now() / 1000)) return;
       const factor = Math.exp(event.deltaY * 0.0015);
+      const spot = onView(event);
       if (viewMode === '3d') orbit = zoomOrbit(orbit, factor);
-      else camera = zoomAt(camera, canvas.clientWidth, canvas.clientHeight, event.offsetX, event.offsetY, factor, ZOOM);
+      else camera = zoomAt(camera, viewWidth(), canvas.clientHeight, spot.x, spot.y, factor, ZOOM);
       requestFrame();
     },
     { passive: false },
   );
   window.addEventListener('keydown', (event) => {
-    if (!active || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+    if (!active || editor.typing) return;
     const key = event.key.toLowerCase();
     const siteTool = event.ctrlKey || event.metaKey ? undefined : SITE_TOOLS.find(([, , letter]) => letter === key);
     const moving = ['w', 'a', 's', 'd', 'shift', 'c', 'f', 'x', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
@@ -569,9 +569,8 @@ export async function startLandEditor(
     held.delete(event.key.toLowerCase());
   });
   window.addEventListener('blur', () => held.clear());
-  new ResizeObserver(requestFrame).observe(canvas);
 
-  return {
+  return Promise.resolve({
     activate(nextLayout) {
       active = true;
       if (nextLayout !== layoutText) {
@@ -581,7 +580,7 @@ export async function startLandEditor(
         session?.close();
         const next = new LandSession(worker, nextLayout, texts);
         const question = 'Restore the shaping you left unsaved in this browser? Cancel opens the saved edits.';
-        restoring = first ? next.keptAny() && window.confirm(question) : true;
+        restoring = first ? next.keptAny() && ask(question) : true;
         if (first && !restoring) next.forgetKept();
         session = next;
         const ids = [...next.landmasses.keys()];
@@ -595,5 +594,7 @@ export async function startLandEditor(
       [active, sailing] = [false, false];
       fleet?.leave();
     },
-  };
+    draw: drawNow,
+    keys: () => !walking && !sailing,
+  });
 }

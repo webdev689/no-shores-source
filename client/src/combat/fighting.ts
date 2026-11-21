@@ -1,4 +1,13 @@
-import type { FoeAsk, Look, FightEvent, FlyingShot, SeenFoe, SeenPlayer, Standing } from '../network/messages.ts';
+import type {
+  FoeAsk,
+  FightEvent,
+  FlyingShot,
+  InputParts,
+  Look,
+  SeenFoe,
+  SeenPlayer,
+  Standing,
+} from '../network/messages.ts';
 import type { ArtState, CastAsk } from '../network/artMessages.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
@@ -113,6 +122,8 @@ export class Fighting {
   /** The link's welcomes the page has followed: one more means the player joined the room again. */
   private joined: number;
   private fighter: Float64Array | null = null;
+  /** The last inputs sent, which go again with the next on a link that may lose one (`RoomLink.resend`). */
+  private sentLately: { readonly sequence: number; readonly parts: InputParts }[] = [];
   /** The trim last laid on the fighter from the room's word on the player's gear. */
   private trimTaken: readonly number[] | null = null;
   private seen = 0n;
@@ -179,6 +190,7 @@ export class Fighting {
     if (this.link.joins === this.joined) return;
     this.joined = this.link.joins;
     [this.prediction, this.fighter, this.seen, this.view, this.sentDress] = [new Prediction(), null, 0n, [], ''];
+    this.sentLately = [];
     [this.castQueued, this.castSent, this.artsTaken, this.artsAt] = [null, null, null, 0];
     this.foes.clear();
     this.others.clear();
@@ -345,7 +357,12 @@ export class Fighting {
       ...(cast === null ? {} : { cast }),
     };
     this.respawnAsked = false;
-    this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
+    const sent = { sequence, parts: dress === undefined ? parts : { ...parts, dress } };
+    this.link.send(inputBytes(sent.sequence, sent.parts, this.sentLately));
+    this.link.inputSent?.(sequence);
+    // Kept to go again with the next, on a link that may lose one; a WebSocket keeps none.
+    const resend = this.link.resend ?? 0;
+    this.sentLately = resend > 0 ? [...this.sentLately, sent].slice(-resend) : [];
     // Dead, the room steps the fighter as it lies, whatever is asked: nothing is swung or shot, and it falls on.
     if (this.standing.kind === 'dead') {
       this.fighter = this.lying(this.fighter, view);

@@ -68,8 +68,8 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
-  /** Plays the prologue's wreck: no Art (the player has none yet), the story's sword and shield, and every boarder on
-   *  one side, held to a Major (`Room::story_wreck`). */
+  /** Plays the prologue's wreck: no Art (the player has none yet), the player waking hurt with no weapon, and every
+   *  boarder on one side, held to a Major (`Room::story_wreck`). */
   storyWreck(): void;
   /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
@@ -82,12 +82,13 @@ export interface RoomDoor {
    *  their ship's orders in a fleet. */
   input(player: number, bytes: Uint8Array): InputAnswer;
   tick(): void;
-  /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
-   *  bytes. */
-  snapshot(): Uint8Array;
+  /** A player's snapshot after the last tick, as its bytes (`snapshotPrepare`, then `snapshotFor`). */
+  snapshot(player: number): Uint8Array;
   /** Takes the snapshot after the last tick, for `snapshotFor` to cut each player's from. */
   snapshotPrepare(): void;
-  /** The prepared snapshot as one player is sent it: at sea only what is theirs of the sea's own part. */
+  /** The prepared snapshot as one player is sent it: on land what changed since the one their screen last showed;
+   *  at sea every ship near them and only what is theirs of the sea's own part; in a fleet every ship, its balls and
+   *  what happened. */
   snapshotFor(player: number): Uint8Array;
   /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
    *  course open. */
@@ -135,6 +136,11 @@ export interface RoomDoor {
   setSpawn(x: number, y: number): boolean;
   /** A page alone: stands a player at once on the top under (x, y), keeping their health; false for no such player. */
   putPlayer(player: number, x: number, y: number): boolean;
+  /** The story's sword and shield taken from the deck into `player`'s pack, unworn (`Room::story_take_arms`):
+   *  whether they were given. */
+  storyTakeArms(player: number): boolean;
+  /** On the wreck, sends a foe at a player, alert, as a foe called to a fight is sent; whether it was. */
+  storyHunt(foe: number, player: number): boolean;
   /** A page alone: stands a block on the course at once, as a way closing; false with no room on land. */
   standBlock(block: CourseBlock): boolean;
   /** A page alone: takes a block from the course at once, as a way opening; false when the room holds no such block. */
@@ -169,7 +175,6 @@ interface RoomExports {
   room_leave(player: number): void;
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
-  room_snapshot(): bigint;
   room_snapshot_prepare(): void;
   room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
@@ -190,6 +195,8 @@ interface RoomExports {
   room_clear_foes(): number;
   room_set_spawn(x: number, y: number): number;
   room_put_player(player: number, x: number, y: number): number;
+  room_story_take_arms(player: number): number;
+  room_story_hunt(foe: number, player: number): number;
   room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
   room_take_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
 }
@@ -286,7 +293,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     input: (player, bytes) =>
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
-    snapshot: () => take(exports.room_snapshot()),
+    snapshot: (player) => {
+      exports.room_snapshot_prepare();
+      return take(exports.room_snapshot_for(player));
+    },
     snapshotPrepare: () => exports.room_snapshot_prepare(),
     snapshotFor: (player) => take(exports.room_snapshot_for(player)),
     furnish: (stall, nodes) => {
@@ -320,6 +330,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     clearFoes: () => exports.room_clear_foes() === 1,
     setSpawn: (x, y) => exports.room_set_spawn(x, y) === 1,
     putPlayer: (player, x, y) => exports.room_put_player(player, x, y) === 1,
+    storyTakeArms: (player) => exports.room_story_take_arms(player) === 1,
+    storyHunt: (foe, player) => exports.room_story_hunt(foe, player) === 1,
     standBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>
       exports.room_stand_block(minX, minY, maxX, maxY, top, bottom) === 1,
     takeBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>

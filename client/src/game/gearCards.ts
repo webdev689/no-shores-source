@@ -12,6 +12,7 @@ import {
   STOCK_NAMES,
   VAULTED,
   WORN,
+  capital,
   isModule,
   isWeapon,
   itemWords,
@@ -31,8 +32,6 @@ export const CARRIED_MOST = 9;
 export const VESTIGES_MOST = 10;
 export const VAULT_MOST = 20;
 export const CRATES_MOST = 5;
-
-const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
 /** An item's card, as Enhanced Plus's hover card shows it. */
 export interface Card {

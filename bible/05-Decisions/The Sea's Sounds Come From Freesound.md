@@ -22,7 +22,7 @@ surf".
 - **The story's sea sounds**: the prologue's waves, wind, timbers, the ram's crash, splashes, the deep, the wreck's
   fire and the rush through cloud.
 - **The sea fight** gains sounds of its own from Freesound: cannon fire, shot striking a hull, shot falling in the sea,
-  and a ship breaking up as she sinks.
+  and a ship breaking up as it sinks.
 - **The shore**: the surf at every island's edge and the water lapping in Saltmere's harbour.
 - Each is picked by the owner on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]). Until a
   pick comes, the synthesiser's sound plays, and the sea fight's new sounds are silent.
@@ -54,12 +54,12 @@ done"; for the hull's slap they chose None of these with the note "use wave3", K
 
 | Sound | Pick |
 |---|---|
-| The wash along her hull | Walking.With.Microphones's "boat wake" (556052, CC0) |
+| The wash along its hull | Walking.With.Microphones's "boat wake" (556052, CC0) |
 | The rigging | timsc's "shipyard2" (179899, CC0) |
 | Rain on the sea | tomtenney's "Rain_Light_Ocean" (126580, CC BY) |
-| Rain on her deck | douglasbruce's "Rainfall on roof of sailboat at the dock" (849790, CC0) |
+| Rain on its deck | douglasbruce's "Rainfall on roof of sailboat at the dock" (849790, CC0) |
 | Her hull's creak | "shipcreaks2", by a deleted account (113362, CC0) |
-| A wave slapping her side | Kayyy's "wave3" (61013, CC BY) |
+| A wave slapping its side | Kayyy's "wave3" (61013, CC BY) |
 | Her bow's thump | Kayyy's "wave4" (61014, CC BY) |
 | A block knocking | InspectorJ's "Light, Pulley Switch, On, B" (414439, CC BY) |
 | The story's splash | Kayyy's "Splash" (61015, CC BY) |

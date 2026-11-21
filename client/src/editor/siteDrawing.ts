@@ -7,6 +7,8 @@ import type { Places } from './marks.ts';
 import type { Orbit } from './orbit.ts';
 import { type Box, Labels, pathThrough, type Project, type SiteMark, span } from './screenMarks.ts';
 import { NODE_COLOURS, WALL_RADIUS_M } from './sites.ts';
+import type { Ink } from './strokes.ts';
+import type { Label } from './viewMarks.ts';
 
 /** A node smaller than this on screen, pixels across, is drawn as a dot so it stays seen. */
 const DOT_BELOW_PX = 10;
@@ -45,7 +47,7 @@ export function siteMarks(
       return project(centreX + Math.cos(angle) * WALL_RADIUS_M, centreY + Math.sin(angle) * WALL_RADIUS_M);
     });
     const wall = pathThrough(ring);
-    if (wall.box && span(wall.box) >= WALL_FROM_PX) below.push({ shape: 'wall', path: wall.path });
+    if (wall.box && span(wall.box) >= WALL_FROM_PX) below.push({ shape: 'wall', runs: wall.runs, closed: wall.closed });
     const centre = project(centreX, centreY);
     if (centre) {
       dots.push({ shape: 'dot', x: centre.x, y: centre.y, radius: 6, fill: CITY_COLOUR, stroke: '#1b1b1b' });
@@ -63,7 +65,7 @@ export function siteMarks(
     const middle = { x: (box.left + box.right) / 2, y: (box.top + box.bottom) / 2 };
     const small = span(box) < DOT_BELOW_PX;
     if (small) dots.push({ shape: 'dot', ...middle, radius: 4, fill: colour, stroke: '#000000aa' });
-    else below.push({ shape: 'section', path: outline.path, colour, whole: outline.whole });
+    else below.push({ shape: 'section', runs: outline.runs, closed: outline.closed, colour, whole: outline.whole });
     if (span(box) >= SPAWNS_FROM_PX)
       for (const [x, y] of node.spawns) {
         const spawn = project(x, y);
@@ -99,64 +101,34 @@ export function groundProjector(
   };
 }
 
-/** Adds the marks to the overlay. */
-export function drawSites(svg: SVGSVGElement, marks: readonly SiteMark[]): void {
-  const add = (name: string, attributes: Record<string, string | number>, text = '') => {
-    const node = document.createElementNS('http://www.w3.org/2000/svg', name);
-    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
-    node.textContent = text;
-    svg.append(node);
-  };
+/** The marks as the view draws them: their lines, fills and dots as inks, in order, and their names. */
+export function siteInks(marks: readonly SiteMark[]): { inks: Ink[]; labels: Label[] } {
+  const inks: Ink[] = [];
+  const labels: Label[] = [];
   for (const mark of marks) {
     if (mark.shape === 'wall')
-      add('path', {
-        'd': mark.path,
-        'fill': 'none',
-        'stroke': CITY_COLOUR,
-        'stroke-width': 1.5,
-        'stroke-dasharray': '7 5',
+      inks.push({
+        kind: 'stroke',
+        runs: mark.runs,
+        closed: mark.closed,
+        colour: CITY_COLOUR,
+        width: 1.5,
+        dash: [7, 5],
       });
     else if (mark.shape === 'line') {
-      const line = { 'd': mark.path, 'fill': 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' };
-      if (mark.casing) add('path', { ...line, 'stroke': '#000000a0', 'stroke-width': mark.width + 2 });
-      add('path', {
-        ...line,
-        'fill': mark.fill ?? 'none',
-        'stroke': mark.colour,
-        'stroke-width': mark.width,
-        ...(mark.dash ? { 'stroke-dasharray': mark.dash } : {}),
-      });
-    } else if (mark.shape === 'section')
-      add('path', {
-        'd': mark.path,
-        'fill': mark.whole ? `${mark.colour}30` : 'none',
-        'stroke': mark.colour,
-        'stroke-width': 2,
-        'stroke-linejoin': 'round',
-      });
-    else if (mark.shape === 'dot')
-      add('circle', {
-        cx: mark.x,
-        cy: mark.y,
-        r: mark.radius,
-        fill: mark.fill,
-        stroke: mark.stroke,
-        'stroke-width': 1.5,
-      });
-    else
-      add(
-        'text',
-        {
-          'x': mark.x,
-          'y': mark.y,
-          'fill': mark.colour,
-          'font-size': 11,
-          'text-anchor': 'middle',
-          'paint-order': 'stroke',
-          'stroke': '#000000cc',
-          'stroke-width': 3,
-        },
-        mark.text,
-      );
+      const line = { kind: 'stroke', runs: mark.runs, closed: mark.closed, round: true } as const;
+      if (mark.casing) inks.push({ ...line, colour: '#000000a0', width: mark.width + 2 });
+      const ring = mark.closed ? mark.runs[0] : undefined;
+      if (mark.fill && ring) inks.push({ kind: 'fill', ring, colour: mark.fill });
+      inks.push({ ...line, colour: mark.colour, width: mark.width, ...(mark.dash ? { dash: mark.dash } : {}) });
+    } else if (mark.shape === 'section') {
+      const ring = mark.whole ? mark.runs[0] : undefined;
+      if (ring) inks.push({ kind: 'fill', ring, colour: `${mark.colour}30` });
+      inks.push({ kind: 'stroke', runs: mark.runs, closed: mark.closed, colour: mark.colour, width: 2 });
+    } else if (mark.shape === 'dot') {
+      inks.push({ kind: 'disc', x: mark.x, y: mark.y, radius: mark.radius, colour: mark.fill });
+      inks.push({ kind: 'ring', x: mark.x, y: mark.y, radius: mark.radius, width: 1.5, colour: mark.stroke });
+    } else labels.push({ ...mark, anchor: 'middle', halo: 'rgba(0, 0, 0, 0.8)' });
   }
+  return { inks, labels };
 }

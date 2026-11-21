@@ -34,7 +34,7 @@ code:
   - client/src/combat/foeBars.ts#bossInFight
   - client/src/player/foeDress.ts#foeDress
   - client/src/combat/foeFigures.ts#FoeFigures
-  - client/src/testground/panel.ts#startPanel
+  - client/src/testground/panel.ts#Panel
 ---
 # Enemies
 
