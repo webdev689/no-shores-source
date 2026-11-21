@@ -47,7 +47,8 @@ export class TaskTracker {
     const written = JSON.stringify(quest);
     if (written === this.written) return;
     this.written = written;
-    const met = justMet(this.shown, quest);
+    const before = this.shown;
+    const met = justMet(before, quest);
     const fresh = quest !== null && (this.shown?.task !== quest.task || this.shown.name !== quest.name);
     this.shown = quest;
     if (met.length > 0) [this.met, this.metAt] = [met, now];
@@ -55,6 +56,13 @@ export class TaskTracker {
       this.freshAt = now;
       this.met = [];
       announce(`${quest.name}: ${quest.task}`);
+    } else if (quest && before) {
+      // As the page's status region told each change: a step met or its count changed.
+      for (const step of quest.steps) {
+        const was = before.steps.find((each) => each.text === step.text);
+        if (was && was.done === step.done && was.count === step.count) continue;
+        announce(`${step.text}${step.count === undefined ? '' : ` ${step.count}`}${step.done ? ', done' : ''}`);
+      }
     }
   }
 

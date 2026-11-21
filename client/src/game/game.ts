@@ -390,6 +390,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   });
   seaPointer(canvas, input, {
     atSea: () => flow.mode === 'sea' && !flow.menu,
+    overInterface: () => ui.takesPointer,
     sea: () => sea,
     map: () => helmMap.held,
   });

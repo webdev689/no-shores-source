@@ -87,7 +87,7 @@ export const said = (words: string, more: Omit<Text, 'words'> = {}): Node => ({
 /** A key on its keycap, its words at `size`: square and bevelled as the kit's stone is, its foot deeper. */
 export function keycap(key: string, size = 1): Node {
   return {
-    minWidth: 18 * size,
+    minWidth: 30,
     padding: [2, 6, 4, 6],
     fill: '#16181d',
     alignX: 'center',

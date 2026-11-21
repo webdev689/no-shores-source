@@ -37,7 +37,7 @@ export class UsePrompt {
       float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 },
       children: [
         {
-          minWidth: 22,
+          minWidth: 36,
           padding: [2, 7, 4, 7],
           fill: 'rgba(192,138,62,0.15)',
           alignX: 'center',

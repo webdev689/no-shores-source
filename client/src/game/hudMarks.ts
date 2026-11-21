@@ -143,6 +143,7 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
       mark.chosen && {
         width: size + 2 * GLOW,
         height: size + 2 * GLOW,
+        through: true,
         float: { to: 'screen', anchor: [0.5, 0.5], x, y },
         picture: glow(size),
       },

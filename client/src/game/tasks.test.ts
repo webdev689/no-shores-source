@@ -56,3 +56,23 @@ test('a new task slides in from the right, fading in; a step just met flashes an
   assert.equal(lit(3), undefined);
   assert.deepEqual(justMet(quest, { ...quest, steps: [{ text: 'Move', done: true }] }), [0]);
 });
+
+test('each change to a task is told aloud, as the page’s status region told it: a new task, a count, a step met', () => {
+  const said: string[] = [];
+  const page = globalThis as unknown as Record<string, unknown>;
+  page['document'] = { ariaNotify: (words: string) => said.push(words) };
+  const tracker = new TaskTracker();
+  tracker.show(quest, 0);
+  tracker.show(
+    {
+      ...quest,
+      steps: [
+        { text: 'Move', keys: ['W'], done: true },
+        { text: 'Foes', count: 2 },
+      ],
+    },
+    1,
+  );
+  delete page['document'];
+  assert.deepEqual(said, ['The Wreck: Find the captain', 'Move, done', 'Foes 2']);
+});

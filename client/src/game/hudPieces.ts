@@ -131,7 +131,7 @@ export function statusNode(view: HudView, text: string): Node | null {
       role: 'chip',
       through: true,
       padding: [7, 12],
-      maxWidth: Math.max(0, most),
+      maxWidth: Math.max(0, most) + 24,
       float: { to: 'screen', at: [1, 0], anchor: [1, 0], x: -28, y: top },
       children: [said(text, { size, align: 'end' })],
     };
@@ -221,7 +221,8 @@ export function shipPanelNode(ui: Interface, panel: ShipPanel, back: () => void)
   return {
     role: 'window',
     direction: 'column',
-    width: 300,
+    // The page's 300 was its words' room, its padding and border besides.
+    width: 340,
     padding: 2,
     solid: true,
     float: { to: 'screen', at: [1, 0], anchor: [1, 0], x: -28, y: 84 },
@@ -277,7 +278,7 @@ export function menuNode(ui: Interface, title: string, choices: readonly Choice[
   return {
     role: 'window',
     direction: 'column',
-    minWidth: 240,
+    minWidth: 288,
     padding: 2,
     solid: true,
     float: { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0.5] },

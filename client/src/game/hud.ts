@@ -366,7 +366,8 @@ export class Hud {
 
   /** The veil over the view while a place loads, its words breathing; it takes the pointer while it stands. */
   private veilNode(clock: number, still: boolean): Node | null {
-    const shown = this.veilShade.value(clock, still);
+    // Reduced motion stills the words' breath, never the veil's fade, as the page's did.
+    const shown = this.veilShade.value(clock);
     if (shown <= 0) return null;
     const breath = still ? 1 : 1 - 0.55 * easeInOut(1 - Math.abs(((clock / BREATH_S) % 1) * 2 - 1));
     return {

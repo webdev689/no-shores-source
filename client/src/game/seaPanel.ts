@@ -121,7 +121,7 @@ export class FightPanel {
           { width: label, children: [dim(words)] },
           {
             width: 'grow',
-            height: big ? 12 : 8,
+            height: big ? 14 : 10,
             role: 'track',
             bevel: 1,
             padding: 1,
