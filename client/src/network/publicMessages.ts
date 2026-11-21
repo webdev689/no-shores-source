@@ -63,8 +63,8 @@ export function publicOf(snapshot: Snapshot): PublicEvent | null {
   const marks = Array.from({ length: event.marksLength() }, (unused, index): PublicMark => {
     const mark = event.marks(index);
     if (!mark) throw new Error(`public mark ${index} is missing`);
-    const at: [number, number, number] = [mark.x(), mark.y(), mark.z()];
-    return { kind: mark.kind(), id: mark.id(), at, health: mark.health(), state: mark.state() };
+    const place: [number, number, number] = [mark.x(), mark.y(), mark.z()];
+    return { kind: mark.kind(), id: mark.id(), at: place, health: mark.health(), state: mark.state() };
   });
   return {
     kind: event.kind(),
