@@ -346,11 +346,18 @@ pub(crate) fn dress(
 /// How wide a walk is laid and how high its flags stand over the cobbles, metres.
 const WALK_WIDE_M: f64 = 3.2;
 const WALK_HIGH_M: f64 = 0.06;
+/// The longest piece a walk's strip is laid in, metres: the city is drawn a few centimetres nearer than it stands,
+/// which bends a long face, and a short one keeps over the lawn laid under it.
+const WALK_PIECE_M: f64 = 3.0;
+/// How far round a joint where walks meet is laid, metres, so they turn into each other on a curve; and the sides of a
+/// round.
+const JOINT_M: f64 = 2.4;
+const ROUND_SIDES: u32 = 40;
 
-/// Lays the platform's ways as walks of dressed flagstones over its cobbles: a strip along each link, a round at each
-/// end so the strips meet.
+/// Lays the platform's ways as walks of dressed flagstones over its cobbles and lawns: a strip along each link in short
+/// pieces, a round at each end the width of the walk, and a wider round where walks meet, so every corner curves.
 pub(crate) fn walks(frame: &Frame, laid: &mut Laid) {
-    let mut ends: Vec<[f64; 2]> = Vec::new();
+    let mut ends: Vec<([f64; 2], usize)> = Vec::new();
     for [from, to] in super::folk::platform_links() {
         let [one, two] = [frame.at(from[0], from[1]), frame.at(to[0], to[1])];
         let along = [two[0] - one[0], two[1] - one[1]];
@@ -358,23 +365,24 @@ pub(crate) fn walks(frame: &Frame, laid: &mut Laid) {
         if long < 1e-6 {
             continue;
         }
-        let middle = [(one[0] + two[0]) / 2.0, (one[1] + two[1]) / 2.0, frame.level];
-        let strip = Solid::upright(Shape::Block, middle, [WALK_WIDE_M, long, WALK_HIGH_M], Material::Path);
-        laid.solids.push(strip.turned(turn_toward(along)));
+        let pieces = (long / WALK_PIECE_M).ceil();
+        for piece in 0..pieces as usize {
+            let share = (piece as f64 + 0.5) / pieces;
+            let middle = [one[0] + along[0] * share, one[1] + along[1] * share, frame.level];
+            let strip = Solid::upright(Shape::Block, middle, [WALK_WIDE_M, long / pieces, WALK_HIGH_M], Material::Path);
+            laid.solids.push(strip.turned(turn_toward(along)));
+        }
         for end in [one, two] {
-            if !ends.iter().any(|&known| libm::hypot(known[0] - end[0], known[1] - end[1]) < 0.01) {
-                ends.push(end);
+            match ends.iter_mut().find(|(known, _)| libm::hypot(known[0] - end[0], known[1] - end[1]) < 0.01) {
+                Some((_, meeting)) => *meeting += 1,
+                None => ends.push((end, 1)),
             }
         }
     }
-    for [x, y] in ends {
-        let round = Shape::Column { sides: 16, top: 1.0 };
-        laid.solids.push(Solid::upright(
-            round,
-            [x, y, frame.level],
-            [WALK_WIDE_M, WALK_WIDE_M, WALK_HIGH_M],
-            Material::Path,
-        ));
+    for ([x, y], meeting) in ends {
+        let wide = if meeting > 1 { 2.0 * JOINT_M } else { WALK_WIDE_M };
+        let round = Shape::Column { sides: ROUND_SIDES, top: 1.0 };
+        laid.solids.push(Solid::upright(round, [x, y, frame.level], [wide, wide, WALK_HIGH_M], Material::Path));
     }
 }
 
@@ -385,19 +393,15 @@ const GROUNDS: [([f64; 2], [f64; 2], Material); 3] = [
     ([-52.0, 46.0], [-128.0, -66.0], Material::Lawn),
     ([-52.0, 46.0], [66.0, 128.0], Material::Earth),
 ];
-/// The ground's cells' side, how far a cell keeps from a walk's edge and from what stands, and how thick it is laid.
+/// The ground's cells' side, how far a cell keeps from what stands, and how thick it is laid: under the walks, whose
+/// own edges bound it, so it meets them straight and round.
 const CELL_M: f64 = 1.0;
-const OFF_WALK_M: f64 = 0.4;
 const OFF_STANDING_M: f64 = 0.3;
 const GROUND_HIGH_M: f64 = 0.03;
 
-/// Lays each court's open ground: every cell clear of the walks, of what stands (a stall, a plinth, a band of inlaid
-/// stone) and of the ring's edge, the cells of a row run together into one length.
+/// Lays each court's open ground, under its walks: every cell clear of what stands (a stall, a plinth, a band of
+/// inlaid stone) and of the ring's edge, the cells of a row run together into one length.
 pub(crate) fn grounds(frame: &Frame, laid: &mut Laid, ring: &[[f64; 2]]) {
-    let walks: Vec<[[f64; 2]; 2]> = super::folk::platform_links()
-        .into_iter()
-        .map(|[from, to]| [frame.at(from[0], from[1]), frame.at(to[0], to[1])])
-        .collect();
     let standing: Vec<Rect> = laid
         .solids
         .iter()
@@ -420,7 +424,6 @@ pub(crate) fn grounds(frame: &Frame, laid: &mut Laid, ring: &[[f64; 2]]) {
                 let rect = [middle[0] - half, middle[1] - half, middle[0] + half, middle[1] + half];
                 let kept = column < columns
                     && corners(rect).iter().all(|&corner| inside(ring, corner))
-                    && walks.iter().all(|&walk| segment_to_rect(walk, rect) >= WALK_WIDE_M / 2.0 + OFF_WALK_M)
                     && standing.iter().all(|&other| rect_gap(rect, other) >= OFF_STANDING_M);
                 run = match (run, kept) {
                     (None, true) => Some((across, across)),

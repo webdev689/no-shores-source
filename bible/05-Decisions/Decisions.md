@@ -200,6 +200,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]
 - [[The Hub Feels Lively, Its Ground Populated]]
 - [[The Hub's Pieces Tell a Story, and Its Paths Are Paved Apart]]
+- [[The Hub's Paths Are Smooth and Rounded]]
 - [[Aiming, the Figure Faces Straight Ahead]]
 
 - [[Overlook Is Our Own Game]]

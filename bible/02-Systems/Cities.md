@@ -217,7 +217,8 @@ burnished and worn through to the bronze; bone's grain and yellowing; cloth's dy
 taken unevenly. A picture is lighter or darker in patches some metres wide, so its repeats do not line up. A walk's flagstones
 (`path`) wear their own picture over the paving's, the flags in courses, lighter and warmer, so a way reads apart
 from the ground; a garden's lawn (`lawn`) and a working yard's trodden earth (`earth`) wear their climate's own grass
-and dirt. The glow
+and dirt. These three take their pattern on top from the world, not the piece, so their pieces join as one surface
+where they meet or overlap (`solidMesh.ts`, `grounded`). The glow
 is lit warm and unshaded, brighter at night, each flame flickering on its own, and each glowing solid is a lamp
 ([[Sky]]). Faces are lit as the land is, with a
 little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen.

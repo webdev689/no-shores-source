@@ -31,6 +31,8 @@ export const CHUNK_CELLS = 4;
  *  chunk's bounds. */
 const TALLEST_M = 60;
 const OVERHANG_M = 20;
+/** The materials laid as ground, whose pieces join as one surface: a walk's flagstones, a lawn, trodden earth. */
+const GROUNDS: ReadonlySet<Solid['material']> = new Set(['path', 'lawn', 'earth']);
 /** A retaining wall's thickness, as the planner lays it. */
 const RETAINING_THICK_M = 1.2;
 /** How far a decal stands over the ground it is laid on, so the land's own triangles never show through it. */
@@ -230,7 +232,8 @@ export function buildCity(
     );
     const layer = retaining(solid) || onRamp(solid) ? book.terrace : book.materials[solid.material];
     const picture = book.pictures[layer] ?? { width: 64, height: 64 };
-    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height }, chunkMeshes[chunk]);
+    const grounded = GROUNDS.has(solid.material);
+    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height, grounded }, chunkMeshes[chunk]);
     const reach = solidReach(solid);
     const [east, south] = [solid.at[0] - origin[0], solid.at[1] - origin[1]];
     const box = solidBoxes[chunk];
