@@ -179,6 +179,8 @@ pub struct Player {
     pub casting: crate::arts::Casting,
     /// What their perks count from blow to blow, kept while they are in the room.
     pub(crate) counts: crate::perks::PerkCounts,
+    /// What their Atheric's perks count, beside them.
+    pub(crate) atheric: crate::atheric::AthericCounts,
 }
 
 impl Player {
@@ -223,6 +225,7 @@ impl Player {
             trims: [combat::Trim::PLAIN; 2],
             casting: crate::arts::Casting::default(),
             counts: crate::perks::PerkCounts::default(),
+            atheric: crate::atheric::AthericCounts::default(),
         }
     }
 

@@ -6,7 +6,7 @@ import type { FightEvent } from '../network/messages.ts';
 import { FLASH } from '../player/cardLooks.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { EVENT, HOW, blowLook } from './cues.ts';
+import { EVENT, HOW, blowLook, landsAsSpell } from './cues.ts';
 import { GOLD } from './markSprites.ts';
 
 type Point = readonly [number, number, number];
@@ -151,7 +151,7 @@ export class Flashes {
   private take(event: FightEvent, told: StruckBy | null): void {
     const player = told?.player ?? null;
     const harms = event.amount > 0;
-    const melee = event.how !== HOW.shot && event.how !== HOW.spell;
+    const melee = event.how !== HOW.shot && !landsAsSpell(event);
     if (harms) {
       const own = event.defender === player;
       const look = blowLook(event, { player: player ?? -1, own: told?.look ?? 0, spellLook: told?.spellLook });

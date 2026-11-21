@@ -405,7 +405,8 @@ never while a press is held. Each press is an ask the room answers.
   keys moved: a page built anew under a resting pointer, or a focus a click left, opens none over what the player
   looks at.
 - **An item's page** lies over the menu, as Destiny 1's weapon page does: its name on its rarity's band, its kind,
-  level, pips and element; its words; its main number large over a meter of it; what it changes over the piece worn;
+  level, pips and element; an Atheric's intrinsic first, under "Intrinsic", apart from its nodes, for a weapon and a
+  module alike; its words; its main number large over a meter of it; what it changes over the piece worn;
   the perks its chosen nodes give; and its node grid. Each node is a tile of the kit's stone with its kind's glyph:
   sunk while locked, a ring inside it lit as far as the item has grown toward it; glowing when it can be bought; its
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a

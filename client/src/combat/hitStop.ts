@@ -3,7 +3,7 @@
 // drawing is held: the rules' clock never stops.
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { EVENT, HOW } from './cues.ts';
+import { EVENT, HOW, landsAsSpell } from './cues.ts';
 
 /** How long each meeting holds both still (seconds): a blow that harms, a kill, a guard broken, a stagger, a parry
  *  and a block; and a crit landing. A kill holds longest, so it lands hardest. */
@@ -46,7 +46,7 @@ export class HitStops {
     for (const event of events) {
       const crit = event.kind === EVENT.hit && event.crit ? CRIT_HOLD : 0;
       const hold = Math.max(HOLD[event.kind] ?? 0, crit) * length;
-      const notABlow = event.how === HOW.shot || event.how === HOW.spell;
+      const notABlow = event.how === HOW.shot || landsAsSpell(event);
       if (hold <= 0 || notABlow || (event.kind === EVENT.hit && event.amount <= 0)) continue;
       for (const [id, struck] of [
         [event.striker, false],

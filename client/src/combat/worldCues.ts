@@ -5,7 +5,7 @@ import { SPELLS } from '../network/artMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { Action, StatusName } from '../rules/fighters.ts';
 import type { Block, Mode } from '../rules/movementRules.ts';
-import { EVENT, HOW } from './cues.ts';
+import { EVENT, HOW, landsAsSpell } from './cues.ts';
 import type { Surface } from './shotMarks.ts';
 
 type Point = readonly [number, number, number];
@@ -83,7 +83,7 @@ export function eventCues(
   switch (event.kind) {
     case EVENT.hit: {
       const cues: EventCue[] = [];
-      if (event.how !== HOW.spell) cues.push(atDefender(hitCue(event.how, striker)));
+      if (!landsAsSpell(event)) cues.push(atDefender(hitCue(event.how, striker)));
       if (event.crit) cues.push(atDefender('crit'));
       if (element && event.how !== HOW.spell) cues.push(atDefender(`element.${element}`));
       return cues;

@@ -16,10 +16,15 @@ export const EVENT = {
   shielded: 12,
   shieldBroken: 13,
 } as const;
-export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7 } as const;
+export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
 
-/** The element a blow burns in where it lands: a spell's in its caster's Art's, the player's own blow or shot in their
- *  weapon's glow as their page shows it, and any other in what the room says it carried. */
+/** Whether a blow lands as a spell's does, no weapon's swing behind it: a spell, or an Atheric's leap or burst. */
+export const landsAsSpell = (event: FightEvent): boolean =>
+  event.how === HOW.spell || event.how === HOW.leap || event.how === HOW.burst;
+
+/** The element a blow burns in where it lands: a spell's in its caster's Art's, an Atheric's leap or burst in its
+ *  perk's own, the player's own blow or shot in their weapon's glow as their page shows it, and any other in what the
+ *  room says it carried. */
 export function blowLook(
   event: FightEvent,
   {
@@ -30,6 +35,7 @@ export function blowLook(
 ): GlowLook {
   const carried = event.element === 1 || event.element === 2 || event.element === 3 ? event.element : 0;
   if (event.how === HOW.spell) return carried || (spellLook?.(event.striker) ?? 0);
+  if (event.how === HOW.leap || event.how === HOW.burst) return carried;
   if (event.striker === player && own) return own;
   return carried;
 }
