@@ -3,14 +3,11 @@ import { test } from 'node:test';
 import { seeded } from './dsp.ts';
 import {
   AMBIENCES,
-  BREAKER_S,
   CROSSFADE_S,
-  CURL_S,
   PHASES,
   STRIDE_MOST_M,
   ambienceOf,
   boutTimes,
-  breakerAt,
   breathOf,
   byPhase,
   fadeGain,
@@ -116,14 +113,7 @@ test("a ship's way is none hove to and grows with its pace, and the coast's near
   assert.ok(nearness(1000, 600, 3000) > nearness(2000, 600, 3000));
 });
 
-test('a breaker curls up to its crash and runs back to the surf floor; the swell stays within 0 and 1', () => {
-  assert.ok(breakerAt(0, 9) < 0.3);
-  assert.equal(breakerAt(CURL_S, 9), 1);
-  assert.ok(breakerAt(CURL_S + 4, 9) < 0.35);
-  for (let time = 0; time < BREAKER_S[1]; time += 0.1) {
-    const swell = breakerAt(time, BREAKER_S[0]);
-    assert.ok(swell > 0 && swell <= 1);
-  }
+test("the sea's swell stays within 0 and 1", () => {
   for (let time = 0; time < 200; time += 0.3) assert.ok(swellAt(time) >= 0 && swellAt(time) <= 1);
 });
 

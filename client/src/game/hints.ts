@@ -16,6 +16,7 @@ const MENU: Hint = ['M', 'Menu'];
 
 /** The keys each moment shows, the strip's last entry with them. */
 export const HINTS = {
+  landMap: [['Drag', 'Pan'], ['Wheel', 'Zoom'], ['N / Esc', 'Close'], ALL_CONTROLS],
   dead: [['Enter', 'Respawn'], ALL_CONTROLS],
   sea: [['Left button', 'Sail there'], ['A / D', 'Steer'], ['W', 'Sail on'], ['S', 'Heave to'], MENU, ALL_CONTROLS],
   manage: [['Drag', 'Turn'], ['Wheel', 'Zoom'], ['B', 'Back'], ALL_CONTROLS],
@@ -140,6 +141,12 @@ export function footHints(foot: OnFoot): readonly Hint[] {
 export function keysShown(standing: Standing, foot: OnFoot): readonly Hint[] {
   if (standing.kind !== 'dead') return footHints(foot);
   return standing.told ? HINTS.dead : [];
+}
+
+/** The keys shown on foot where the held map is raised (not in the story, nor on a ship's deck): N beside the
+ *  menu's M. */
+export function withMapKey(hints: readonly Hint[]): readonly Hint[] {
+  return hints.flatMap((hint): Hint[] => (hint[0] === 'M' ? [['N', 'Map'], hint] : [hint]));
 }
 
 /** What the player is doing at sea, for the keys shown: fighting and aiming the guns, choosing a landing, at the helm

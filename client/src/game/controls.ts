@@ -82,6 +82,7 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
     name: 'Menus',
     controls: [
       keyed('M', 'Menu'),
+      keyed('N', 'Map'),
       keyed('I', 'Character'),
       keyed('O', 'Inventory'),
       keyed('X', 'Details'),

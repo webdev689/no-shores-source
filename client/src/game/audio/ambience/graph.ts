@@ -1,9 +1,8 @@
-// The ambience's nodes: a place's room (its reverberation), a bed's emitter (wide about the ear, or standing at a point
+// The ambience's nodes: a place's room (its reverberation), a bed's way out (wide about the ear, or standing at a point
 // through a panner), and a call's chain (its level, the air darkening it with distance, its panner, and its share of
 // the room). Each chain lets its nodes go once it has sounded.
 
-import { type Random, between, roomResponse } from './dsp.ts';
-import { BREAKER_S } from './law.ts';
+import { type Random, roomResponse } from './dsp.ts';
 import type { Point3 } from './places.ts';
 import type { Room } from './scapes.ts';
 
@@ -39,18 +38,6 @@ export function roomOf(audio: BaseAudioContext, room: Room, random: Random, out:
   return send;
 }
 
-/** A bed's emitter: its sources, its gain, its tone where gusts open its top, its panner where it stands at a point,
- *  and a shore's breaker clock. */
-export interface Emitter {
-  readonly sources: AudioBufferSourceNode[];
-  readonly gain: GainNode;
-  readonly tone: BiquadFilterNode | null;
-  readonly panner: PannerNode | null;
-  point: Point3 | null;
-  wave: number;
-  period: number;
-}
-
 /** A standing bed's share of the room. */
 const BED_ROOM = 0.35;
 
@@ -66,9 +53,9 @@ function bedPanner(audio: BaseAudioContext, near: number): PannerNode {
   return panner;
 }
 
-/** A recorded bed's way out, as its synthesiser's emitter goes: its level, then wide into `out`, or standing through
- *  a panner with a little in the room. */
-export function recordedBedChain(
+/** A bed's way out: its level, then wide into `out`, or standing through a panner heard whole within `near` metres,
+ *  with a little in the room. */
+export function bedChain(
   audio: BaseAudioContext,
   how: { readonly standing: boolean; readonly near: number },
   out: AudioNode,
@@ -88,88 +75,24 @@ export function recordedBedChain(
   return { level, panner };
 }
 
-/** A bed's emitter: wide, two plays of its loop half a loop apart, one to each ear; or one play standing at a point
- *  through a panner, heard whole within `near` metres, a little of it in the room. A gusty bed's top is opened and closed by `tone`. */
-export function emitterOf(
-  audio: BaseAudioContext,
-  buffer: AudioBuffer,
-  how: { readonly standing: boolean; readonly gusty: boolean; readonly near: number },
-  random: Random,
-  out: AudioNode,
-  send: AudioNode,
-): Emitter {
-  const gain = audio.createGain();
-  gain.gain.value = 0;
-  const start = audio.currentTime + 0.02;
-  const source = (offset: number) => {
-    const played = audio.createBufferSource();
-    [played.buffer, played.loop] = [buffer, true];
-    played.start(start, offset * buffer.duration);
-    return played;
-  };
-  const tone = how.gusty ? audio.createBiquadFilter() : null;
-  if (tone) [tone.type, tone.frequency.value] = ['lowpass', 4000];
-  const into = tone ?? gain;
-  if (tone) tone.connect(gain);
-  if (how.standing) {
-    const panner = bedPanner(audio, how.near);
-    const played = source(random());
-    played.connect(into);
-    gain.connect(panner).connect(out);
-    const share = audio.createGain();
-    share.gain.value = BED_ROOM;
-    panner.connect(share).connect(send);
-    return {
-      sources: [played],
-      gain,
-      tone,
-      panner,
-      point: null,
-      wave: random() * 8,
-      period: between(random, BREAKER_S),
-    };
-  }
-  const merger = audio.createChannelMerger(2);
-  const offset = random();
-  const [left, right] = [source(offset), source((offset + 0.5) % 1)];
-  left.connect(merger, 0, 0);
-  right.connect(merger, 0, 1);
-  merger.connect(into);
-  gain.connect(out);
-  return { sources: [left, right], gain, tone, panner: null, point: null, wave: 0, period: 1 };
-}
-
-/** Lets an emitter go, faded over `fade` seconds first where it may still sound. */
-export function release(audio: BaseAudioContext, emitter: Emitter, fade = 0): void {
-  const now = audio.currentTime;
-  if (fade > 0) emitter.gain.gain.setTargetAtTime(0, now, fade / 5);
-  for (const source of emitter.sources) source.stop(now + fade);
-  emitter.sources[0]?.addEventListener('ended', () =>
-    [...emitter.sources, emitter.tone, emitter.gain, emitter.panner].forEach((part) => part?.disconnect()),
-  );
-}
-
 /** Where and how a call sounds: its point and the ear's, the frame's origin, the distance it is heard whole at, when
- *  it starts, how far it drifts a second and for how long, and its level. */
+ *  it starts, and its level. */
 export interface CallShape {
   readonly point: Point3;
   readonly ear: Point3;
   readonly origin: readonly [number, number];
   readonly near: number;
   readonly when: number;
-  readonly drift: number;
-  readonly seconds: number;
   readonly gain: number;
   /** Its top, Hz, where its own distance darkens it rather than the air's: thunder. */
   readonly corner?: number;
 }
 
-/** A call's chain: its level, the air, its panner (a drifting call's moves over its seconds), and its share of the
- *  room. Answers the node to play into, and a release for once it has sounded. */
+/** A call's chain: its level, the air, its panner, and its share of the room. Answers the node to play into, and a
+ *  release for once it has sounded. */
 export function callChain(
   audio: BaseAudioContext,
   shape: CallShape,
-  random: Random,
   out: AudioNode,
   send: AudioNode,
 ): { readonly input: GainNode; readonly done: () => void } {
@@ -190,16 +113,12 @@ export function callChain(
     maxDistance: 10000,
   });
   const [x, y, z] = toAudio(shape.point, shape.origin);
-  const bearing = random() * 2 * Math.PI;
-  const travel = shape.drift * shape.seconds;
-  for (const [param, from, change] of [
-    [panner.positionX, x, Math.sin(bearing) * travel],
-    [panner.positionY, y, 0],
-    [panner.positionZ, z, Math.cos(bearing) * travel],
-  ] as const) {
-    param.setValueAtTime(from, shape.when);
-    if (change !== 0) param.linearRampToValueAtTime(from + change, shape.when + shape.seconds);
-  }
+  for (const [param, value] of [
+    [panner.positionX, x],
+    [panner.positionY, y],
+    [panner.positionZ, z],
+  ] as const)
+    param.setValueAtTime(value, shape.when);
   const share = audio.createGain();
   share.gain.value = roomShare(distance, shape.near);
   level.connect(air).connect(panner).connect(out);

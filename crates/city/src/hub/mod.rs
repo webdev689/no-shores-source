@@ -34,6 +34,16 @@ pub const HUB_CITY: &str = "overlook";
 /// Where the arrivals stand: on the seaward walk, 4 m inside the parapet, across the landing court's middle.
 const SPAWNS_ACROSS_M: [f64; 4] = [-30.0, -10.0, 10.0, 30.0];
 const SPAWN_TOWARD_M: f64 = 56.0;
+/// The hub's places by name, each at its middle (metres seaward of the plaza's middle, and across it).
+const AREAS: [(&str, f64, f64); 7] = [
+    ("Seaward Walk", SPAWN_TOWARD_M, 0.0),
+    ("Watch Court", -3.0, 0.0),
+    ("West Court", -3.0, -97.0),
+    ("Forge Yard", -3.0, 97.0),
+    ("Beacon Walk", -80.0, 0.0),
+    ("Hall of the Arts", -140.0, 0.0),
+    ("Stair Yard", -125.0, 112.0),
+];
 /// The parapet's thickness, metres.
 const PARAPET_THICK_M: f64 = 0.8;
 
@@ -142,6 +152,13 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
         ways,
         posts,
         moorings: Vec::new(),
+        areas: AREAS
+            .iter()
+            .map(|&(name, toward, across)| crate::social::NamedPlace {
+                name: name.to_owned(),
+                at: frame.at(toward, across),
+            })
+            .collect(),
     }
 }
 
