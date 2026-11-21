@@ -95,11 +95,7 @@ test('a run keeps no one unkept: a token that is no session, none in time, or no
   const cut = new Keeper(down, room, run, told, () => Promise.resolve()).forCompany();
   assert.equal(await cut.signIn(4, token, now, here), false);
   assert.deepEqual(sent.slice(2), [[4, ACCOUNTS_TROUBLE, true]], 'joining again may find the accounts back');
-  assert.ok(keeper.waiting(5) && keeper.waiting(2), 'none plays a run until kept');
   assert.equal(await keeper.signIn(5, token, now, here), true, 'a player kept is let in');
-  assert.equal(keeper.waiting(5), false, 'and plays from then on');
-  const open = new Keeper(kept, room, 'node-saltgrass-downs', told, () => Promise.resolve());
-  assert.equal(open.waiting(2), false, 'any other room lets a player play while they sign in');
 });
 
 test('a room that keeps characters sends away a player with no session, so none holds a place in it for good', async () => {

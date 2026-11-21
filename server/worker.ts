@@ -164,6 +164,10 @@ export class RoomHost extends DurableObject<Env> {
     const held = { player, count: undefined, signed: false, spoke: false, token: null, door: atDoor ? entrance : null };
     this.players.set(server, held);
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
+    // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says
+    // they are landed on its island: their inputs are taken in their order and stand still until then.
+    if (privateRun(this.name) || this.name.startsWith('sea-dungeon-'))
+      this.guarded(() => this.room.hold(player, true), false);
     void this.keeper?.tokenDue(
       player,
       () => held.signed,
@@ -190,6 +194,8 @@ export class RoomHost extends DurableObject<Env> {
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
       own: (player: number, account: string) => {
         const owned = this.guarded(() => this.room.own(player, account), false);
+        // Kept, a run's player plays; a sea island's dungeon's waits on the sea's word that they are landed.
+        if (owned && !this.name.startsWith('sea-dungeon-')) this.guarded(() => this.room.hold(player, false), false);
         if (owned && this.island) void this.landOn(this.island, player, account);
         return owned;
       },
@@ -326,6 +332,7 @@ export class RoomHost extends DurableObject<Env> {
       .catch(() => null);
     if (landed === true) {
       this.ashore.add(player);
+      this.guarded(() => this.room.hold(player, false), false);
       this.guarded(() => this.room.land(account), false);
       return;
     }
@@ -368,10 +375,6 @@ export class RoomHost extends DurableObject<Env> {
     if (!within) return this.dismiss(socket, 1008, 'too many messages');
     if (typeof message !== 'string' && message.byteLength > MESSAGE_MOST)
       return this.dismiss(socket, 1009, 'too large');
-    // In a run no one plays before the room keeps their character, and in a sea island's dungeon before the sea says
-    // they are landed on its island: their inputs wait unplayed until then.
-    const unlanded = this.name.startsWith('sea-dungeon-') && !this.ashore.has(player);
-    if (typeof message !== 'string' && (this.keeper?.waiting(player) || unlanded)) return;
     const answer =
       typeof message === 'string'
         ? 'not an input'

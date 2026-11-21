@@ -135,6 +135,8 @@ export interface RoomDoor {
   shut(player: number, kept: string | null): string;
   /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
   own(player: number, account: string): boolean;
+  /** Holds a player's inputs, or lets them play: held, each is taken in its order and played as standing still. */
+  hold(player: number, held: boolean): boolean;
   /** The open sea keeps characters from now on: a player's courses wait for the keeper's word on theirs (a character
    *  given back, or `noneKept`), so a ship comes back where the room last kept it; false if no sea is open. */
   keepCharacters(): boolean;
@@ -219,6 +221,7 @@ interface RoomExports {
   room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
   room_restore_character(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
+  room_hold(player: number, held: number): number;
   room_keep_characters(): number;
   room_none_kept(player: number): void;
   room_furnish(address: number, length: number): number;
@@ -364,6 +367,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
+    hold: (player, held) => exports.room_hold(player, held ? 1 : 0) === 1,
     shut: (player, kept) => {
       const bytes = new TextEncoder().encode(kept ?? '');
       return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_shut(player, address, bytes.length))));

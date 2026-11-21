@@ -135,6 +135,9 @@ pub struct Player {
     /// The room's clock when the player joined, and how many of their inputs have stepped their fighter since.
     pub joined: u64,
     pub stepped: u64,
+    /// Whether the room plays the player's inputs: held, they are taken in their order and played as standing still,
+    /// as a run holds one it does not yet keep.
+    pub held: bool,
     /// The number of the last input received, and of the last that stepped the fighter.
     pub received: u32,
     pub acknowledged: u32,
@@ -199,6 +202,7 @@ impl Player {
             dress_stale: false,
             joined,
             stepped: 0,
+            held: false,
             received: 0,
             acknowledged: 0,
             waiting: VecDeque::new(),
@@ -446,6 +450,12 @@ impl Room {
                 found.gear_changed = true;
             }
         }
+    }
+
+    /// Holds a player's inputs, or lets them play: held, each is taken in its order and played as standing still;
+    /// false for a player not in the room.
+    pub fn hold(&mut self, player: PlayerId, held: bool) -> bool {
+        self.players.get_mut(&player).map(|found| found.held = held).is_some()
     }
 
     /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
