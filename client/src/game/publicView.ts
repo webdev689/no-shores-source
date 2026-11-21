@@ -40,10 +40,11 @@ const HAND_FIRST = { forward: 0.55, left: 0.3, down: 0.42 } as const;
 /** How near a chest the player stands to open it (crates/room/src/public/chest.rs CHEST_REACH, CHEST_HEIGHT). */
 const CHEST_REACH_M = 2.5;
 const CHEST_HEIGHT_M = 2;
-/** How long an opened chest stands, its lid up, after the room has taken it off the ground, seconds. */
+/** How long a chest asked to open stands with its lid up, seconds: once the room has taken it off the ground, or,
+ *  if the room still leaves it lying (it refuses one a step out of reach), until it closes and E may ask again. */
 const CHEST_KEPT_S = 6;
-/** How long an asked chest waits on the room before E may ask again: the room refuses one a step out of reach. */
-const CHEST_RETRY_S = 1.5;
+/** A gap between frames this long, seconds, is a hidden tab come back: the beats kept meanwhile are not played. */
+const STALE_S = 2;
 /** The player's own shard taken chimes as a Vestige of this rarity does coming to rest. */
 const SHARD_CHIME = 3;
 
@@ -118,6 +119,9 @@ export class PublicView {
   } | null = null;
   /** The chests the player asked to open, when, and as they last lay. */
   private readonly opened = new Map<number, { readonly at: number; readonly chest: ChestLike }>();
+  /** The last frame's clock, and whether the room's event was there: with none (its room lost), no chest is shown. */
+  private last: number | null = null;
+  private present = true;
 
   constructor(zone: string) {
     this.zone = zone;
@@ -135,9 +139,13 @@ export class PublicView {
     floor: (x: number, y: number) => number,
   ): PublicFrame {
     const beat = events.reduce<BannerBeat | null>((last, each) => BEATS[each.kind] ?? last, null);
-    const sounds = this.sounds(event, events, bodies, clock);
+    // Back from a hidden tab, the last beat shows; what was heard meanwhile is long over.
+    const stale = this.last !== null && clock - this.last > STALE_S;
+    this.last = clock;
+    const sounds = stale ? [] : this.sounds(event, events, bodies, clock);
     this.lay(event, marks, floor, clock, bodies.shot.eye);
-    const chests = this.chests(drops, clock);
+    this.present = event !== null;
+    const chests = this.chests(this.present ? drops : [], clock);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));
     const age = this.clock.ager(clock);
     const props = eventProps(
@@ -146,15 +154,17 @@ export class PublicView {
       age,
       clock,
     );
-    this.clock.done();
+    this.clock.done(event !== null);
     const ownShard = events.some((each) => each.kind === EVENT.shardTaken && each.striker === bodies.player);
-    const chime = events.some((each) => each.kind === EVENT.heroicMissed)
-      ? 'refused'
-      : events.some((each) => each.kind === EVENT.chestOpened && each.striker === bodies.player)
-        ? 'open'
-        : ownShard
-          ? 'shard'
-          : null;
+    const chime = stale
+      ? null
+      : events.some((each) => each.kind === EVENT.heroicMissed)
+        ? 'refused'
+        : events.some((each) => each.kind === EVENT.chestOpened && each.striker === bodies.player)
+          ? 'open'
+          : ownShard
+            ? 'shard'
+            : null;
     if (chime === 'shard') rarityChime(SHARD_CHIME);
     else if (chime) play(chime);
     const raiding = event?.kind === PUBLIC_KIND.raid && event.phase === PUBLIC_PHASE.running;
@@ -172,17 +182,19 @@ export class PublicView {
       quest: questOf(event, this.zone),
       props,
       sounds,
-      sting: beat ? (STINGS[beat] ?? null) : null,
+      sting: beat && !stale ? (STINGS[beat] ?? null) : null,
       chime,
     };
   }
 
-  /** What E does at the player's feet: opens their chest in reach, if one is. */
+  /** What E does at the player's feet: opens their chest in reach not yet asked, if one is. */
   use(drops: readonly GearDrop[], feet: Point, ask: (asked: GearAsk) => void, clock: number) {
+    if (!this.present) return null;
     const chest = drops.find(
       (drop) =>
         drop.kind === DROPPED.chest &&
         drop.flying === 0 &&
+        !this.opened.has(drop.id) &&
         Math.hypot(drop.at[0] - feet[0], drop.at[1] - feet[1]) <= CHEST_REACH_M &&
         Math.abs(drop.at[2] - feet[2]) <= CHEST_HEIGHT_M,
     );
@@ -190,28 +202,25 @@ export class PublicView {
     return {
       words: chest.tier >= 3 ? 'Open the heroic chest' : 'Open the chest',
       run: () => {
-        const asked = this.opened.get(chest.id);
-        if (asked && clock - asked.at < CHEST_RETRY_S) return;
+        if (this.opened.has(chest.id)) return;
         this.opened.set(chest.id, { at: clock, chest: { id: chest.id, at: chest.at, tier: chest.tier, opened: 0 } });
         ask({ kind: ASKS.openChest, item: chest.id });
       },
     };
   }
 
-  /** The chests to draw: each lying for the player, its lid swinging from when they opened it; one the room has
-   *  taken off the ground once opened stands open a little longer. */
+  /** The chests to draw: each lying for the player, its lid swinging from when they asked to open it; one asked
+   *  stands open CHEST_KEPT_S, lying or taken off the ground, and one the room still leaves lying then (refused)
+   *  closes again. */
   private chests(drops: readonly GearDrop[], clock: number): ChestLike[] {
+    for (const [id, { at }] of this.opened) if (clock - at > CHEST_KEPT_S) this.opened.delete(id);
     const lying = drops.filter((drop) => drop.kind === DROPPED.chest);
     const shown: ChestLike[] = lying.map((drop) => {
-      // One the room still leaves lying a while after it was asked was refused: its lid closes again.
-      if (clock - (this.opened.get(drop.id)?.at ?? clock) > CHEST_RETRY_S) this.opened.delete(drop.id);
       const opened = this.opened.get(drop.id);
       return { id: drop.id, at: drop.at, tier: drop.tier, opened: opened ? clock - opened.at : null };
     });
-    for (const [id, { at, chest }] of this.opened) {
-      if (clock - at > CHEST_KEPT_S && !lying.some((drop) => drop.id === id)) this.opened.delete(id);
-      else if (!lying.some((drop) => drop.id === id)) shown.push({ ...chest, opened: clock - at });
-    }
+    for (const [id, { at, chest }] of this.opened)
+      if (!lying.some((drop) => drop.id === id)) shown.push({ ...chest, opened: clock - at });
     return shown;
   }
 
@@ -304,9 +313,13 @@ export class PublicView {
         case EVENT.shardSet:
           heard.push({ cue: 'finish.cosmic', at: fissure });
           break;
-        case EVENT.heroicMet:
-          heard.push({ cue: fissureEvent ? 'shield.break' : 'kill', at: placeOf(each.defender) });
+        case EVENT.heroicMet: {
+          const target = event.marks.find(
+            (mark) => (mark.kind === MARK.growth || mark.kind === MARK.titheTaker) && mark.id === each.defender,
+          );
+          heard.push({ cue: fissureEvent ? 'shield.break' : 'kill', at: target?.at ?? placeOf(each.defender) });
           break;
+        }
         case EVENT.publicWon:
           if (fissureEvent) {
             heard.push({ cue: 'story.crash', at: fissure });

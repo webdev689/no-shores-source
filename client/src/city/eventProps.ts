@@ -117,11 +117,13 @@ const CHEST_LIGHT = [0.6, 0.42, 0.2] as const;
 /** Seconds a mark has been in its state, by its kind, id and state: StateClock keeps them for the page. */
 export type Ager = (kind: number, id: number, state: number) => number;
 
-/** When each mark came into the state it is in, so a prop's motion runs from there. A mark not seen for a frame is
- *  forgotten. */
+/** When each mark came into the state it is in, so a prop's motion runs from there. The marks already there on the
+ *  first frame the room's event is seen came before the page did: they stand as long done, so no beat is played
+ *  again. A mark not seen for a frame is forgotten. */
 export class StateClock {
   private readonly since = new Map<string, { state: number; at: number }>();
   private seen = new Set<string>();
+  private begun = false;
 
   /** The clock for one frame at `seconds`: call `age` for each mark drawn, then `done`. */
   ager(seconds: number): Ager {
@@ -130,14 +132,15 @@ export class StateClock {
       this.seen.add(key);
       const known = this.since.get(key);
       if (known?.state === state) return seconds - known.at;
-      this.since.set(key, { state, at: seconds });
-      return 0;
+      this.since.set(key, { state, at: this.begun ? seconds : -Infinity });
+      return this.begun ? 0 : Infinity;
     };
   }
 
-  /** Forgets the marks this frame did not ask after. */
-  done(): void {
+  /** Forgets the marks this frame did not ask after; `seen` says the room's event was there (by default, any mark). */
+  done(seen = this.seen.size > 0): void {
     for (const key of this.since.keys()) if (!this.seen.has(key)) this.since.delete(key);
+    this.begun ||= seen;
     this.seen = new Set();
   }
 }
@@ -147,6 +150,9 @@ export function turnOf(id: number): number {
   const mixed = Math.imul(id ^ 0x9e3779b9, 0x85ebca6b) >>> 0;
   return (mixed / 2 ** 32) * Math.PI * 2;
 }
+
+/** A turn brought into one turn, so a float on the GPU keeps its precision however long the page has run. */
+const wrapped = (turn: number): number => ((turn % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
 const ease = (share: number): number => {
   const clamped = Math.min(1, Math.max(0, share));
@@ -243,9 +249,14 @@ export function eventProps(
         const blink = fading ? 0.5 + 0.5 * Math.sign(Math.sin(seconds * (6 + 10 * (1 - mark.health)))) : 1;
         const bob = MOTION.shardBobM * (1 + Math.sin(seconds * 2.3 + mark.id));
         props.push(
-          prop('lattice-shard', [mark.at[0], mark.at[1], mark.at[2] + bob], turn + seconds * MOTION.shardTurnRadS, {
-            glow: 1.2 * blink,
-          }),
+          prop(
+            'lattice-shard',
+            [mark.at[0], mark.at[1], mark.at[2] + bob],
+            wrapped(turn + seconds * MOTION.shardTurnRadS),
+            {
+              glow: 1.2 * blink,
+            },
+          ),
         );
         break;
       }

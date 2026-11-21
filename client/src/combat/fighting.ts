@@ -150,7 +150,7 @@ export class Fighting {
   events: FightEvent[] = [];
   /** The zone's public events as the room last sent them, and their events (begun, a shard set, won...) since the
    *  page last asked: kept apart from the fight's, which read every event as a blow. */
-  public: PublicEvent | null = null;
+  private publicWord: PublicEvent | null = null;
   publicEvents: FightEvent[] = [];
   shots: readonly FlyingShot[] = [];
   /** Every spell in the room, as its snapshots send them, for a drawer to draw. */
@@ -417,7 +417,7 @@ export class Fighting {
     const isPublic = (event: FightEvent) => event.kind >= EVENT.publicBegun;
     this.events = [...this.events, ...snapshot.events.filter((event) => !isPublic(event))].slice(-QUEUED_MOST);
     this.publicEvents = [...this.publicEvents, ...snapshot.events.filter(isPublic)].slice(-QUEUED_MOST);
-    this.public = snapshot.public ?? null;
+    this.publicWord = snapshot.public ?? null;
   }
 
   /** Lets the room's clock run, for a room in the page. */
@@ -433,11 +433,21 @@ export class Fighting {
     return shots;
   }
 
-  /** The public events' events since the page last asked, handed over once. */
+  /** Whether the room holds: one lost, or rejoining, leaves nothing of its public event on the screen. */
+  private get holds(): boolean {
+    return !this.link.rejoining && this.link.lost === null;
+  }
+
+  /** The zone's public event as the room last sent it, while the room holds. */
+  get public(): PublicEvent | null {
+    return this.holds ? this.publicWord : null;
+  }
+
+  /** The public events' events since the page last asked, handed over once; none while the room does not hold. */
   takePublicEvents(): FightEvent[] {
     const events = this.publicEvents;
     this.publicEvents = [];
-    return events;
+    return this.holds ? events : [];
   }
 
   /** The events since the page last asked, handed over once. */

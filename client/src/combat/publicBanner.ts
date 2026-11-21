@@ -17,6 +17,10 @@ export interface Banner {
   readonly title: string;
   readonly place: string;
   readonly clock: string;
+  /** The event's last minute: its clock red and pulsing. */
+  readonly urgent?: boolean;
+  /** What runs or comes next elsewhere on the island, between events. */
+  readonly elsewhere?: string;
   readonly objective: string;
   readonly bar: { readonly share: number; readonly label: string } | null;
   readonly heroic: { readonly text: string; readonly clock: string; readonly met: boolean } | null;
@@ -62,14 +66,18 @@ export class PublicBanner {
   private readonly heroicText: HTMLElement;
   private readonly heroicClock: HTMLElement;
   private readonly bonus: HTMLElement;
+  /** A line a screen reader reads at each beat, unseen: the banner's own words change too often to be read out. */
+  private readonly said: HTMLElement;
 
   constructor(parent: HTMLElement) {
     this.root = element('section', 'public-banner', parent);
     this.root.setAttribute('role', 'status');
     this.root.setAttribute('aria-label', 'Public event');
+    this.root.setAttribute('aria-atomic', 'false');
     const head = element('div', 'pb-head', this.root);
     this.kicker = element('span', 'pb-kicker', head);
     this.clock = element('span', 'pb-clock', head);
+    this.clock.setAttribute('aria-hidden', 'true');
     const name = element('div', 'pb-name', this.root);
     this.title = element('span', 'pb-title', name);
     this.place = element('span', 'pb-place', name);
@@ -81,7 +89,9 @@ export class PublicBanner {
     element('i', 'pb-heroic-mark', this.heroic);
     this.heroicText = element('span', 'pb-heroic-text', this.heroic);
     this.heroicClock = element('span', 'pb-heroic-clock', this.heroic);
+    this.heroicClock.setAttribute('aria-hidden', 'true');
     this.bonus = element('div', 'pb-bonus', this.root);
+    this.said = element('span', 'pb-said', this.root);
     this.root.hidden = true;
   }
 
@@ -114,6 +124,8 @@ export class PublicBanner {
       this.bonus.dataset.state = banner.bonus.state;
     }
     if (beat) {
+      const objective = beat === 'heroic' || beat === 'missed' ? banner.heroic?.text : banner.objective;
+      say(this.said, `${banner.kicker}: ${banner.title}${objective ? `. ${objective}` : ''}`);
       // Taken off and put back, so the slide plays again for each beat.
       this.root.dataset.beat = beat;
       this.root.classList.remove('beat');
@@ -169,6 +181,8 @@ export function publicBannerCss(): string {
   box-shadow: 0 0 0 1px ${TONES.outline}; color: ${TONES.word}; text-shadow: ${HALO}; font-size: 11px;
   line-height: 14px; font-variant-numeric: tabular-nums; pointer-events: none; }
 .fight-hud .public-banner[hidden], .fight-hud .public-banner [hidden] { display: none; }
+.fight-hud .public-banner .pb-said { position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; }
 .fight-hud .public-banner .pb-head { display: flex; align-items: baseline; gap: 12px; }
 .fight-hud .public-banner .pb-kicker { color: var(--tone); letter-spacing: 0.16em; text-transform: uppercase; }
 .fight-hud .public-banner .pb-clock { margin-left: auto; font-size: 22px; line-height: 22px; white-space: nowrap; }

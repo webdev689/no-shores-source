@@ -134,7 +134,7 @@ test('E opens the chest in reach, once; it stands open a while after the room ha
   use?.run();
   assert.deepEqual(asked, [{ kind: ASKS.openChest, item: 4 }]);
   const lids = (drops: readonly GearDrop[], clock: number) =>
-    view.frame(null, [], drops, bodies(), clock, [], () => 0).props.filter((prop) => prop.module.endsWith('-lid'));
+    view.frame(raid([]), [], drops, bodies(), clock, [], () => 0).props.filter((prop) => prop.module.endsWith('-lid'));
   assert.ok((lids(lying, 5.3)[0]?.lid ?? 0) > 0, 'its lid swings up');
   assert.equal(lids([], 8).length, 1, 'taken off the ground, it still stands open');
   assert.equal(lids([], 12).length, 0, 'and then it is gone');
@@ -146,9 +146,73 @@ test('a chest the room refuses closes again, and E asks again', () => {
   const lying = [chest(5, [1, 0, 0], 1)];
   view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 0)?.run();
   const lid = (clock: number) =>
-    view.frame(null, [], lying, bodies(), clock, [], () => 0).props.find((prop) => prop.module === 'event-chest-lid');
+    view
+      .frame(raid([]), [], lying, bodies(), clock, [], () => 0)
+      .props.find((prop) => prop.module === 'event-chest-lid');
   assert.ok((lid(0.5)?.lid ?? 0) > 0, 'swinging while the room is asked');
-  assert.equal(lid(2)?.lid, 0, 'still lying once the wait is over: refused, closed');
-  view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 2)?.run();
+  assert.ok((lid(3)?.lid ?? 0) > 0, 'held open while the room is slow to take it');
+  assert.equal(
+    view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 3),
+    null,
+    'nothing to ask of one asked',
+  );
+  assert.equal(lid(7)?.lid, 0, 'still lying once the wait is over: refused, closed');
+  view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 7)?.run();
   assert.equal(asked.length, 2);
+});
+
+test('E passes over a chest already asked to the next in reach', () => {
+  const view = new PublicView('saltgrass-downs');
+  const asked: GearAsk[] = [];
+  const lying = [chest(5, [1, 0, 0], 1), chest(6, [0, 1, 0], 1)];
+  view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 0)?.run();
+  view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 0.1)?.run();
+  assert.deepEqual(
+    asked.map((ask) => ask.item),
+    [5, 6],
+  );
+});
+
+const fissure = (marks: PublicEvent['marks']): PublicEvent => ({ ...raid(marks), kind: PUBLIC_KIND.fissure });
+
+test('the heroic task met is heard where the growth or the tithe-taker stood', () => {
+  const growth = { kind: MARK.growth, id: 9, at: [5, 6, 1] as const, health: 0, state: 4 };
+  const view = new PublicView('saltgrass-downs');
+  view.frame(fissure([growth]), [], [], bodies(), 0, [], () => 0);
+  const heard = view.frame(fissure([growth]), [happened(EVENT.heroicMet, 1, 9)], [], bodies(), 0.1, [], () => 0);
+  assert.deepEqual(heard.sounds, [{ cue: 'shield.break', at: [5, 6, 1] }]);
+  const taker = { kind: MARK.titheTaker, id: 9, at: [7, 8, 2] as const, health: 0, state: 3 };
+  const raided = new PublicView('saltgrass-downs');
+  raided.frame(raid([taker]), [], [], bodies(), 0, [], () => 0);
+  const killed = raided.frame(raid([taker]), [happened(EVENT.heroicMet, 1, 9)], [], bodies(), 0.1, [], () => 0);
+  assert.deepEqual(killed.sounds, [{ cue: 'kill', at: [7, 8, 2] }]);
+});
+
+test('beats kept while the tab was hidden: the last shows, their sounds and stings are dropped', () => {
+  const view = new PublicView('saltgrass-downs');
+  view.frame(fissure([]), [], [], bodies(), 0, [], () => 0);
+  const back = view.frame(
+    fissure([]),
+    [happened(EVENT.publicBegun), happened(EVENT.shardSet), happened(EVENT.publicWon)],
+    [],
+    bodies(),
+    40,
+    [],
+    () => 0,
+  );
+  assert.equal(back.shown?.beat, 'won');
+  assert.deepEqual(back.sounds, []);
+  assert.equal(back.sting, null);
+  const next = view.frame(fissure([]), [happened(EVENT.shardSet)], [], bodies(), 40.02, [], () => 0);
+  assert.equal(next.sounds.length, 1, 'heard again once frames run');
+});
+
+test('with no event (its room lost) no chest is drawn, and E opens none', () => {
+  const view = new PublicView('saltgrass-downs');
+  const lying = [chest(5, [1, 0, 0], 1)];
+  assert.equal(view.frame(null, [], lying, bodies(), 0, [], () => 0).props.length, 0);
+  assert.equal(
+    view.use(lying, [0, 0, 0], () => undefined, 0),
+    null,
+  );
 });

@@ -11,6 +11,7 @@ import {
   latticeHidden,
   latticeMove,
   withoutLayers,
+  latticeDresses,
 } from './lattice.ts';
 
 const STILL: Doing = {
@@ -134,4 +135,21 @@ test('a shot held in its tell is a shot, and a Bulwark slain as it changes dies,
   assert.equal(telegraphed?.anim, 'ravager_hurl');
   const slain = latticeMove('bulwark', { ...STILL, fight: { kind: 'dead', progress: 0 } }, MAN, frames, true, 0.2);
   assert.equal(slain?.anim, 'bulwark_hurt');
+});
+
+test('a Lattice foe is warmed in the dresses it is drawn in, each with only the moves that show it', () => {
+  const frames = () => 12;
+  const heart = latticeDresses('heart', false, frames);
+  const torn = heart.find((dress) => dress.hidden.length === 0);
+  assert.deepEqual(torn?.anims, ['heart_tear'], 'the torn heart shows in its tear alone');
+  assert.ok(heart.find((dress) => dress.hidden.includes('lattice_heart_torn'))?.anims.includes('heart_idle'));
+  const changed = latticeDresses('bulwark', true, frames);
+  assert.deepEqual(
+    changed.map((dress) => dress.hidden),
+    [['lattice_bulwark_shield']],
+    'a changed Bulwark never shows its shield again, nor both at once',
+  );
+  assert.ok(latticeDresses('bulwark', false, frames).every((dress) => dress.hidden.length === 1));
+  const ravager = latticeDresses('ravager', false, frames);
+  assert.deepEqual(ravager.find((dress) => dress.hidden.length > 0)?.anims, ['ravager_hurl']);
 });

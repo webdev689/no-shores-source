@@ -4,7 +4,7 @@
 // the Ravager throws. Drawn as the fight's effects are, cell by cell in four stops. Drawing only: the rules are the
 // room's.
 import { type Texels, spriteOfTexels } from './forgedBirds.ts';
-import { layLine, layUpright, ringSprite } from './impactPixels.ts';
+import { cached, layLine, layUpright, ringSprite } from './impactPixels.ts';
 import { HURL_FIRST_THROW, type Strain } from './lattice.ts';
 import { type Ramp, rampOf } from './markSprites.ts';
 import { BODY, CELL_M, CLEAR, DARK, HOT, LIGHT, type Sprite, sprite } from './spellPixels.ts';
@@ -127,10 +127,12 @@ export interface LatticeShown {
 /** A disc of `radius` cells: its heart white-hot, its body light, its edge its body's stop. */
 function orb(radius: number): Sprite {
   const reach = Math.max(1, Math.round(radius));
-  return sprite(reach * 2 + 1, reach * 2 + 1, (across, up) => {
-    const out = Math.hypot(across, up) / reach;
-    return out > 1 ? CLEAR : out < 0.4 ? HOT : out < 0.75 ? LIGHT : BODY;
-  });
+  return cached(`orb:${reach}`, () =>
+    sprite(reach * 2 + 1, reach * 2 + 1, (across, up) => {
+      const out = Math.hypot(across, up) / reach;
+      return out > 1 ? CLEAR : out < 0.4 ? HOT : out < 0.75 ? LIGHT : BODY;
+    }),
+  );
 }
 
 /** The Idol's beam and the Bulwark's flare reach this far when nothing is aimed at (metres); a beam is this wide, its
@@ -156,7 +158,7 @@ export function layLatticeLooks(out: number[], shown: LatticeShown, eye: Point):
   const aimed = (from: Point): Point =>
     shown.target ?? [from[0] + ahead[0] * LOOKS.reach, from[1] + ahead[1] * LOOKS.reach, from[2]];
   const cell = CELL_M * scale;
-  if (shown.anim === 'idol_charge') {
+  if (shown.anim === 'idol_charge' && shown.frames > 0) {
     // The lens's glow grows through the charge.
     layUpright(out, orb(1 + (3 * (frame + 1)) / shown.frames), ramp, place(SPOTS.lens), eye, cell);
   } else if (shown.anim === 'idol_fire' && frame < FRAMES.beam) {

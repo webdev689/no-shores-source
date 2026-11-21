@@ -84,3 +84,9 @@ test('the game draws what the pictures cannot: the lens and beam, the core’s f
   assert.equal(looks('ravager_hurl', 3), 0, 'wound up, nothing thrown');
   assert.ok(looks('ravager_hurl', 4) > 0, 'its first shard flies');
 });
+
+test('a move with no frames draws no glow, and throws nothing', () => {
+  const out: number[] = [];
+  assert.doesNotThrow(() => layLatticeLooks(out, { ...shown('idol_charge', 0), frames: 0 }, EYE));
+  assert.equal(out.length, 0);
+});

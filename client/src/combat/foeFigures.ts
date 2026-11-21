@@ -18,8 +18,8 @@ import {
   LATTICE_PLAIN,
   blinkShare,
   bulwarkChanged,
-  latticeAnims,
   latticeBlinks,
+  latticeDresses,
   latticeHidden,
   latticeMove,
   latticeOfBody,
@@ -208,9 +208,12 @@ export class FoeFigures {
         ...likelyMoves(right, left, draws, dress.outfit.grip ?? null, walking),
         ...['thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death'],
       ];
-      forge.warm(dress, own ? () => latticeAnims(own.body) : likely, 0, placed.id);
-      // A part taken away is a dress of its own: warmed under its own name, so the whole dress's queue stays.
-      if (own && drawnDress !== dress) forge.warm(drawnDress, () => latticeAnims(own.body), 0, `${placed.id} part`);
+      // A Lattice foe's every dress it is drawn in, each by the parts it hides and under a name of its own (so one's
+      // queue never drops another's), with only the moves that show it.
+      if (own)
+        for (const { hidden, anims } of latticeDresses(own.body, changed.changed, frames))
+          forge.warm(withoutLayers(dress, hidden), () => anims, 0, `${placed.id} ${hidden.join(' ')}`);
+      else forge.warm(dress, likely, 0, placed.id);
       const moved = feel ? feel.shift(kept.id, kept.view) : ([0, 0, 0] as const);
       const alive = kept.view.action.kind !== 'dead';
       const knocked = flashes.knockOf(kept.id, alive);

@@ -6,6 +6,7 @@
 // The story tells it what to play. Pure: the game's state, the memory and a die in, the mood, the score and any sting
 // out; the director plays them on bar lines.
 
+import { PUBLIC_CLIMAX } from '../../../rules/roster.ts';
 import type { Climate, Place } from '../place.ts';
 import type { Role } from './score.ts';
 import type { SeaSong } from './seaScore.ts';
@@ -109,6 +110,8 @@ export interface Hearing {
   readonly sky: HeardSky | null;
   /** What the story asks, while it plays; never outside it. */
   readonly story?: StoryHeard;
+  /** The least mood a public event holds the player to, on its ground while it runs. */
+  readonly least?: Mood;
 }
 
 /** The ranks: an Elite and a Miniboss bring the peak, a Boss its own score. */
@@ -286,7 +289,10 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   const kept = memory.boss;
   const alive = (foe: HeardFoe) => foe.health > 0;
   const bossFoe = foes.find(
-    (foe) => foe.rank >= BOSS && alive(foe) && (foe.engaged || (foe.id === kept?.id && foe.alert >= ALERT)),
+    (foe) =>
+      (foe.rank >= BOSS || PUBLIC_CLIMAX.has(foe.name)) &&
+      alive(foe) &&
+      (foe.engaged || (foe.id === kept?.id && foe.alert >= ALERT)),
   );
   let boss = kept;
   if (bossFoe) {
@@ -325,7 +331,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
       : clock - lastDanger < TENSION_HOLD_S
         ? 'tension'
         : 'silent';
-  const mood = story ? atLeast(heard, story.least) : heard;
+  const mood = atLeast(story ? atLeast(heard, story.least) : heard, hearing.least ?? 'silent');
   const playing = mood !== 'silent';
   const seaSong = atSea && playing ? (memory.seaSong ?? seaSongFor(sea)) : null;
   const voyage = voyageOf(memory, clock, atSea && !playing && !boss, hearing, songs);
