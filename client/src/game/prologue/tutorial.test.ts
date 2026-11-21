@@ -81,14 +81,14 @@ test('equipping is taught on the Character page: opened, the arms equipped, and 
     quest.steps.map((step) => [step.text, step.keys]),
     [
       ['Open your Character page', ['I']],
-      ['Equip your sword and shield', undefined],
+      ['Equip them from the Melee slot', undefined],
       ['Close it', ['Esc']],
     ],
   );
   assert.deepEqual(ticked(tutorial, { ...carried, menu: true }), ['Open your Character page']);
   assert.deepEqual(ticked(tutorial, { ...STILL, arms: 'worn', menu: true }), [
     'Open your Character page',
-    'Equip your sword and shield',
+    'Equip them from the Melee slot',
   ]);
   assert.equal(ticked(tutorial, { ...STILL, arms: 'worn', seconds: 2 }).length, 3, 'the page closed');
   assert.equal(tutorial.frame({ ...STILL, arms: 'worn' }).task, 'Find your feet');

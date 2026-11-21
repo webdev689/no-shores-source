@@ -250,6 +250,12 @@ export class WreckRun {
     return this.unseen.has(this.boarderId) || this.boarderView ? 'standing' : 'fallen';
   }
 
+  /** `marks` with the arms lying on the deck laid after them, while they lie. */
+  private lyingMarks(marks: number[], clock: number, eye: readonly [number, number, number]): number[] {
+    this.lying?.mark(marks, clock, eye);
+    return marks;
+  }
+
   /** The arms lying on the deck are taken up once the player walks over them: the room puts them in the pack. */
   private takeArms(): void {
     const lying = this.lying;
@@ -416,7 +422,7 @@ export class WreckRun {
       origin: shot.eye,
       groundAt,
       drawn: { foes: foes.placed, others: new Map() },
-      more: [...foes.overheads(shot.eye, clock), ...(this.lying?.marks(clock, shot.eye) ?? [])],
+      more: this.lyingMarks(foes.overheads(shot.eye, clock), clock, shot.eye),
     });
     this.sounds.frame({
       seconds,

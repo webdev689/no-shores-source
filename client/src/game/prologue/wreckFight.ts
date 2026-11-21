@@ -41,6 +41,10 @@ const END_S = 0.6;
 const ANSWER = { parry: 'Press F to parry', dodge: 'Press V to dodge' } as const;
 const REMINDER = 'F parries a blow as it lands; V dodges it';
 const REMIND_S = 6;
+/** While the fight is frozen the world drains this far toward grey under the interface, easing there and back over
+ *  this long, so the stop reads as time held. */
+const FROZEN_DRAIN = 0.55;
+const DRAIN_S = 0.2;
 
 /** Whether the player answered the frozen fight's `lesson` this frame. */
 const answered = (controls: InputFrame, lesson: keyof typeof ANSWER) =>
@@ -66,6 +70,8 @@ export class WreckFight implements Beat {
   /** The prompt the frozen fight shows, and how long the reminder after both lessons has left, seconds. */
   private prompting: string | null = null;
   private remindFor = 0;
+  /** How far the world is drained toward grey now, easing toward `FROZEN_DRAIN` while frozen and back after. */
+  private drained = 0;
   /** The run's own clock, held while the fight is frozen; and whether the player is dressed with their arms. */
   private playClock: number | null = null;
   private dressedArmed: boolean | null = null;
@@ -214,6 +220,8 @@ export class WreckFight implements Beat {
     // Frozen, the fight and its storm stand still: only the player's answer moves them on.
     const frozen = this.frozen(run, tick.controls);
     const seconds = frozen ? 0 : tick.seconds;
+    const easing = tick.seconds / DRAIN_S;
+    this.drained = frozen ? Math.min(FROZEN_DRAIN, this.drained + easing) : Math.max(0, this.drained - easing);
     this.playClock = this.playClock === null ? tick.clock : this.playClock + seconds;
     this.dress(run.arms === 'worn');
     // No storm's strikes on the wreck; its one is the strike behind Thule as he cries out.
@@ -276,6 +284,7 @@ export class WreckFight implements Beat {
       heads,
       focus: [shown.shot.eye[0], shown.shot.eye[1]],
       heard: { at: 'sea', deck: true, sailing: false },
+      drain: this.drained,
     };
   }
 

@@ -50,7 +50,7 @@ export type Stage = (typeof STAGES)[number];
 const STEPS = {
   take: { text: 'Take them up' },
   open: { text: 'Open your Character page', keys: ['I'] },
-  equip: { text: 'Equip your sword and shield' },
+  equip: { text: 'Equip them from the Melee slot' },
   close: { text: 'Close it', keys: ['Esc'] },
   move: { text: 'Move', keys: ['W', 'A', 'S', 'D'] },
   look: { text: 'Look round', keys: ['Mouse'] },

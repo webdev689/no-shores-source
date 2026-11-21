@@ -29,7 +29,9 @@ test("the player's sword and shield lie on the quiet deck a few steps ahead of w
   assert.ok(ahead / away > Math.cos(Math.PI / 4), 'ahead of them as they stand, so seen as their eyes open');
   const arms = new LyingArms(layout);
   assert.ok(arms.reached([x + 1, y, z]) && !arms.reached([x + 2, y, z]), 'taken up by walking over them');
-  assert.ok(arms.marks(0, [wakeX, wakeY, z + 1.6]).length > 0, 'drawn as a dropped piece of gear');
+  const marks: number[] = [];
+  arms.mark(marks, 0, [wakeX, wakeY, z + 1.6]);
+  assert.ok(marks.length > 0, 'drawn as a dropped piece of gear');
 });
 
 test('the boarder comes on the quiet deck, from its far end or back by the wake, the farther from the player', () => {

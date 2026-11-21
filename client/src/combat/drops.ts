@@ -236,6 +236,20 @@ export function markLine(
   }
 }
 
+/** A piece of gear lying at rest at `place` as its own `picture`, with its rarity's line over it: as a drop of a
+ *  Vestige rests, for a piece the world lays down itself. */
+export function markLying(
+  out: number[],
+  picture: PixelPicture,
+  { place, rarity }: { readonly place: Point; readonly rarity: number },
+  seconds: number,
+  eye: Point,
+): void {
+  markPicture(out, picture, place, eye);
+  const crown: Point = [place[0], place[1], place[2] + picture.rows.length * PIXEL_M + LIFT_M];
+  markLine(out, crown, LINE_M[rarity] ?? AMMO_LINE_M, LINE_COLOURS[rarity] ?? WHITE, 1, seconds, eye);
+}
+
 /** How near the player's feet come to a drop to take it, across and up, metres (crates/room/src/drops.rs
  *  PICK_UP_REACH). */
 const REACH_M = 1.5;

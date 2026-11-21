@@ -1,8 +1,9 @@
 // What the wreck's teaching stands on its deck: the player's sword and shield lying where the ram threw them, drawn as
-// any dropped piece of gear is (a Normal Vestige and its line of light), until the player walks over them; and where
+// a dropped piece of gear is (its picture and its Normal line of light), until the player walks over them; and where
 // the Tithe boarder the player meets one on one comes from.
-import { DropsShown, inReach } from '../../combat/drops.ts';
-import { DROPPED, type GearDrop, type GearState } from '../../network/gearMessages.ts';
+import { inReach, markLying } from '../../combat/drops.ts';
+import { OUTLINE, type PixelPicture } from '../../combat/dropPictures.ts';
+import type { GearState } from '../../network/gearMessages.ts';
 import { CARRIED, KINDS, WORN } from '../../player/gear.ts';
 import type { Arms } from './tutorial.ts';
 import { pointAlong, topAt, type WreckLayout } from './wreckLayout.ts';
@@ -18,6 +19,26 @@ const BOARDER_ALONG_M = [13, 4.5] as const;
 export const BOARDER = { type: 8, rank: 1 } as const;
 
 const SWORD_AND_SHIELD = KINDS.indexOf('sword_and_shield');
+
+/** The sword and shield as they lie, in the drops' pixel style: a steel kite shield with a brass boss, and a steel
+ *  sword, its grip in leather and its guard and pommel in brass. */
+export const ARMS_PICTURE: PixelPicture = {
+  rows: [
+    '...........a..',
+    'aaaaaaaa..afa.',
+    'abbbbbba..aea.',
+    'abccccda.afffa',
+    'abcffcda..aba.',
+    'abcffcda..aba.',
+    '.abccda...aba.',
+    '.abccda...aba.',
+    '..abda....aba.',
+    '..abda....aba.',
+    '...aa.....aba.',
+    '...........a..',
+  ],
+  colours: [OUTLINE, '#d4d8dc', '#9aa0a7', '#5d636b', '#6b4a2b', '#c9a25a'],
+};
 
 /** Where the player's sword and shield lie on the deck. */
 export function armsAt(layout: WreckLayout): Point {
@@ -42,21 +63,19 @@ export function boarderAt(layout: WreckLayout, x: number, y: number): { at: [num
 
 /** The arms lying on the deck as the player sees them. */
 export class LyingArms {
-  private readonly drop: GearDrop;
-  private readonly shown = new DropsShown();
+  private readonly place: Point;
 
   constructor(layout: WreckLayout) {
-    const lies = armsAt(layout);
-    this.drop = { id: 0, rarity: 0, slot: 0, kind: DROPPED.vestige, at: lies, from: lies, flying: 0 };
+    this.place = armsAt(layout);
   }
 
-  /** The marks that draw them for an eye at `eye`, `clock` seconds on the page's clock. */
-  marks(clock: number, eye: Point): number[] {
-    return this.shown.frame([this.drop], clock, eye).marks;
+  /** Lays the marks that draw them for an eye at `eye` into `out`, `clock` seconds on the page's clock. */
+  mark(out: number[], clock: number, eye: Point): void {
+    markLying(out, ARMS_PICTURE, { place: this.place, rarity: 0 }, clock, eye);
   }
 
   /** Whether feet at `feet` stand over them, near enough to take them up. */
   reached(feet: Point): boolean {
-    return inReach(feet, this.drop.at);
+    return inReach(feet, this.place);
   }
 }
