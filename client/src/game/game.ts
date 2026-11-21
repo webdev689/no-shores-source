@@ -200,12 +200,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     playing.foot = null;
     playing.sea?.leaveRoom();
     playing.foot = await Foot.enter(footContext, node, facing, seas);
+    // The rain stops under whatever a body meets overhead there: a roof, a ceiling, an arch.
+    scene.sky.shelterUnder(playing.foot.boxes);
   };
 
   const goSea = async () => {
     leaveHere();
     playing.foot?.leave();
     playing.foot = null;
+    scene.sky.shelterUnder([]);
     if (!playing.sea) {
       const plan = playing.landmass.plan;
       const social = playing.landmass.nodes[0]?.centre ?? [0, 0];
@@ -361,6 +364,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       playing.sea?.leaveRoom();
       ashore = held;
       playing.foot = foot;
+      scene.sky.shelterUnder(foot.boxes);
     });
   };
 

@@ -20,11 +20,9 @@ export class Prediction<Ask> {
   }
 
   /** The state the room saw after the player's input `acknowledged`, with every input it has not taken yet stepped
-   *  on top by the same rules. While the room agrees, this is the state the browser already predicted, to the bit. A
-   *  state the room says is `still`, as a dead body's is, stays where the room saw it: the room takes its inputs
-   *  without moving it. */
-  corrected<State>(state: State, acknowledged: number, step: (state: State, ask: Ask) => State, still = false): State {
+   *  on top by the same rules. While the room agrees, this is the state the browser already predicted, to the bit. */
+  corrected<State>(state: State, acknowledged: number, step: (state: State, ask: Ask) => State): State {
     this.waiting = this.waiting.filter((input) => input.sequence > acknowledged);
-    return still ? state : this.waiting.reduce((stepped, input) => step(stepped, input.ask), state);
+    return this.waiting.reduce((stepped, input) => step(stepped, input.ask), state);
   }
 }

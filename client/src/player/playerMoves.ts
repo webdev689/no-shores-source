@@ -42,10 +42,13 @@ export interface Doing {
 }
 
 /** What a fight holds a figure to: dead, knocked down, staggered or flinching, hopping aside, deflecting a blow,
- *  guarding, winding up a telegraphed blow (`stroke` the move it is struck with), overreached after one, or drawing a
- *  bow. */
+ *  guarding, winding up a telegraphed blow (`stroke` the move it is struck with), overreached after one, drawing a
+ *  bow, or tumbling down dead from a fall. */
 export type Fight =
-  | { readonly kind: 'dead' | 'down' | 'struck' | 'dodge' | 'parry' | 'guard' | 'draw'; readonly progress: number }
+  | {
+      readonly kind: 'dead' | 'down' | 'struck' | 'dodge' | 'parry' | 'guard' | 'draw' | 'tumble';
+      readonly progress: number;
+    }
   | { readonly kind: 'windup' | 'overreach'; readonly stroke: string; readonly progress: number };
 
 /** A move to show: its animation, and either a fixed frame or how long each frame lasts as it loops. */
@@ -60,6 +63,8 @@ const jumpFrame = (rising: number) => (rising > 1.5 ? 0 : rising < -1.5 ? 2 : 1)
 
 /** How long a walking frame lasts at a full walk; a run's is half, a crouch's double, a ride's a quarter of a run's. */
 const WALK_FRAME = 0.25;
+/** How long each frame of a tumble's hurt move shows, seconds. */
+const TUMBLE_FRAME_S = 0.09;
 /** The movement rules' full walk, metres a second, the pace the walk's frames are drawn for. */
 export const FULL_WALK = 4.43;
 
@@ -419,6 +424,9 @@ function fightMove(
       return fight.progress >= 1 ? still('fallen') : byProgress('death', fight.progress);
     case 'down':
       return still('fallen');
+    case 'tumble':
+      // Struck over and over as it drops: the hurt move played round, quick.
+      return loop(own('hurt'), TUMBLE_FRAME_S);
     case 'struck':
       return byProgress(own('hurt'), fight.progress);
     case 'dodge':

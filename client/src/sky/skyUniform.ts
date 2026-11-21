@@ -1,3 +1,5 @@
+import { SHELTER_CELL_M, SHELTER_CELLS } from './shelter.ts';
+
 /** The most lamps lit round the eye at once, the night's lights that reach the ground. */
 export const LAMPS_MOST = 16;
 /** The ground's noise repeats every NOISE_CELLS cells: the clouds' shadows' cells (as wide as a cloud's patch) and the
@@ -8,6 +10,8 @@ const DAPPLE_CELL_M = 384;
 const PUDDLE_CELL_M = DAPPLE_CELL_M / 128;
 const DRIFT_TO_DAPPLE = 20;
 export const WRAP_M = NOISE_CELLS * DAPPLE_CELL_M;
+/** The shelter grid's cells, four to a row of the uniform. */
+const SHELTER_VEC4S = (SHELTER_CELLS * SHELTER_CELLS) / 4;
 /** The bind group every sunlit shader reads the sky at: past the frame (0), the shadow map (1) and a card's (2). */
 export const SKY_GROUP = 3;
 
@@ -33,7 +37,11 @@ struct Sky {
   drift_next: vec4f,
   puddle_place: vec4f,
   lamp_count: vec4f,
+  // The eye from the shelter grid's north-west corner, east and south, and from its base height; w 1 once one is laid.
+  shelter_place: vec4f,
   lamps: array<vec4f, ${LAMPS_MOST * 2}>,
+  // Each cell's highest underside over the base, four cells a row (shelter.ts).
+  shelter: array<vec4f, ${SHELTER_VEC4S}>,
 }
 @group(${SKY_GROUP}) @binding(0) var<uniform> sky_state: Sky;
 
@@ -62,6 +70,21 @@ fn sky_direct(normal: vec3f, shade: f32) -> vec3f {
 // lamp_count.yz, and lamp_count.w is 1 once it is known (a view that never writes the sky has no place, and no dapple).
 fn sky_place(from_eye: vec3f) -> vec2f {
   return sky_state.lamp_count.yz + from_eye.xy;
+}
+
+// Whether a point at 'from_eye' stands under shelter: something a body meets stands over it, its underside higher
+// than the point, in the grid laid round the eye. Off the grid, or with none laid, it stands under the open sky.
+fn sky_sheltered(from_eye: vec3f) -> bool {
+  if (sky_state.shelter_place.w < 0.5) {
+    return false;
+  }
+  let cell = vec2i(floor((from_eye.xy + sky_state.shelter_place.xy) / ${SHELTER_CELL_M.toFixed(1)}));
+  if (any(cell < vec2i(0)) || any(cell >= vec2i(${SHELTER_CELLS}))) {
+    return false;
+  }
+  let index = u32(cell.y * ${SHELTER_CELLS} + cell.x);
+  let under = sky_state.shelter[index / 4u][index % 4u];
+  return from_eye.z + sky_state.shelter_place.z < under - 0.05;
 }
 
 // A cloud field read where the pattern lies now ('now') and where the next lies ('next'), the next faded in over a
@@ -252,7 +275,8 @@ export const AFTERNOON: SkyLook = {
   moonPhase: 0.5,
 };
 
-const VEC4S = 15 + LAMPS_MOST * 2;
+/** The rows written each frame: the sky, the eye's places and the lamps; the shelter grid follows them. */
+const VEC4S = 16 + LAMPS_MOST * 2;
 
 /** A world metre wrapped into [0, period), WRAP_M where none is named. */
 const wrapped = (metres: number, period = WRAP_M): number => ((metres % period) + period) % period;
@@ -265,6 +289,7 @@ export function skyNumbers(
   look: SkyLook,
   lamps: readonly Lamp[],
   eye?: readonly [number, number, number],
+  shelterPlace: readonly [number, number, number, number] = [0, 0, 0, 0],
 ): Float32Array {
   const shown = lamps.slice(0, LAMPS_MOST);
   const numbers = new Float32Array(VEC4S * 4);
@@ -284,6 +309,7 @@ export function skyNumbers(
     [...look.driftNext, look.driftFade, 0],
     eye ? [wrapped(eye[0], PUDDLE_WRAP_M), wrapped(eye[1], PUDDLE_WRAP_M), eye[2], 0] : [0, 0, 0, 0],
     eye ? [shown.length, wrapped(eye[0]), wrapped(eye[1]), 1] : [shown.length, 0, 0, 0],
+    shelterPlace,
     ...shown.flatMap((lamp) => [
       [...lamp.fromEye, lamp.reachM],
       [...lamp.light, 0],
@@ -310,16 +336,26 @@ export class SkyUniform {
   constructor(device: GPUDevice) {
     this.device = device;
     // GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, spelled out where the browser's constants are not at hand.
-    this.buffer = device.createBuffer({ size: VEC4S * 16, usage: 0x40 | 0x8 });
+    this.buffer = device.createBuffer({ size: (VEC4S + SHELTER_VEC4S) * 16, usage: 0x40 | 0x8 });
     // GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT.
     this.layout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: 0x1 | 0x2, buffer: {} }] });
     this.empty = device.createBindGroupLayout({ entries: [] });
     this.write(AFTERNOON, []);
   }
 
-  write(look: SkyLook, lamps: readonly Lamp[], eye?: readonly [number, number, number]): void {
+  write(
+    look: SkyLook,
+    lamps: readonly Lamp[],
+    eye?: readonly [number, number, number],
+    shelterPlace?: readonly [number, number, number, number],
+  ): void {
     this.look = look;
-    this.device.queue.writeBuffer(this.buffer, 0, skyNumbers(look, lamps, eye));
+    this.device.queue.writeBuffer(this.buffer, 0, skyNumbers(look, lamps, eye, shelterPlace));
+  }
+
+  /** Lays a shelter grid's undersides (`shelter.ts`) after the rows written each frame. */
+  writeShelter(undersides: Float32Array): void {
+    this.device.queue.writeBuffer(this.buffer, VEC4S * 16, undersides);
   }
 
   /** An empty group, for a gap below SKY_GROUP in a pipeline laid out by hand. */

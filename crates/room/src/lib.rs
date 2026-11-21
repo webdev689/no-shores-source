@@ -68,9 +68,9 @@ use judging::{Check, Group, Pending, how_of_swing};
 pub use land::sites::NodeKind;
 #[cfg(test)]
 use movement::standing;
-use movement::{Block, Body};
+use movement::{Block, Body, Mode};
 use players::Player;
-use reach::respawn_point;
+use reach::{Place, respawn_point};
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -326,8 +326,9 @@ impl Room {
     /// Each player's inputs step their fighter, as many as the clock allows and CATCH_UP at most; a player whose
     /// inputs have stopped coming is stepped standing still once they fall a view's lag behind, so nothing they were
     /// doing (a dodge's safe stretch, a guard's parry window) outlasts its time while they are away. A body the section
-    /// killed lies still: its inputs are taken without moving it, and one asking to respawn, once the section allows,
-    /// stands it at the spawn nearest where it fell. Then each player is judged against the section.
+    /// killed falls under its own weight (`lying_still`): its inputs are taken without steering it, and one asking to
+    /// respawn, once the section allows, stands it at the spawn nearest where it fell. Then each player is judged
+    /// against the section, from the height their feet last stood at.
     fn step_players(&mut self) {
         // The kept views are lent to each input, not copied: they stand aside while the players step.
         let past = std::mem::take(&mut self.past);
@@ -351,13 +352,16 @@ impl Room {
                 if let Standing::Dead { .. } = found.standing {
                     found.shown = input.shown;
                     found.remember(seen);
+                    let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
+                    found.fighter = player_tick(id, &dead, &lying, &view, &self.blocks, &self.floor).0;
                     if input.respawn && found.standing.may_respawn() {
-                        let fallen = found.fighter;
-                        let body = self.stand_again(fallen.body.x, fallen.body.y);
+                        let lain = found.fighter;
+                        let body = self.stand_again(lain.body.x, lain.body.y);
                         let graced = self.clock + GRACE;
                         if let Some(found) = self.players.get_mut(&id) {
-                            found.fighter = found.armed(player(body, fallen.arms));
+                            found.fighter = found.armed(player(body, lain.arms));
                             found.standing = Standing::Inside;
+                            found.stood = body.z;
                             found.graced = graced;
                         }
                     }
@@ -378,8 +382,10 @@ impl Room {
                 self.stand_stalled(id);
             }
             if let (Some(section), Some(found)) = (&self.section, self.players.get_mut(&id)) {
-                let body = found.fighter.body;
-                found.standing = found.standing.tick(section, body.x, body.y);
+                let Body { x, y, z, mode, .. } = found.fighter.body;
+                let at = Place { x, y, z, aloft: mode == Mode::Air };
+                found.standing = found.standing.tick(section, at, found.stood);
+                found.stood = reach::stood(found.stood, at);
             }
         }
         self.past = past;

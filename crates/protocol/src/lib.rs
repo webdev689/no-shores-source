@@ -322,7 +322,10 @@ pub fn joined_bytes(player: u32, dressed: &[(PlayerId, &str)], node: Option<(&st
 /// The numbers the messages give each standing.
 pub const INSIDE: u8 = 0;
 pub const WARNED: u8 = 1;
+/// Dead by straying past the section's edge.
 pub const DEAD: u8 = 2;
+/// Dead by a fall in a social space.
+pub const FELL: u8 = 3;
 
 /// A standing as the messages carry it: its number and its ticks, left of a warning or dead.
 #[must_use]
@@ -330,7 +333,7 @@ pub fn standing_parts(standing: Standing) -> (u8, u32) {
     match standing {
         Standing::Inside => (INSIDE, 0),
         Standing::Warned { ticks_left } => (WARNED, ticks_left),
-        Standing::Dead { ticks } => (DEAD, ticks),
+        Standing::Dead { ticks, fell } => (if fell { FELL } else { DEAD }, ticks),
     }
 }
 
@@ -339,7 +342,8 @@ pub fn standing_parts(standing: Standing) -> (u8, u32) {
 pub fn standing_of(kind: u8, ticks: u32) -> Standing {
     match kind {
         WARNED => Standing::Warned { ticks_left: ticks },
-        DEAD => Standing::Dead { ticks },
+        DEAD => Standing::Dead { ticks, fell: false },
+        FELL => Standing::Dead { ticks, fell: true },
         _ => Standing::Inside,
     }
 }
