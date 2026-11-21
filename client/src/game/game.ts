@@ -411,7 +411,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
+    // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
+    if (shown.sting) music.moment(shown.sting);
     music.onFoot(world, here.node, shown.fight, seconds);
+    eventProps.set(shown.props ?? []);
+    hud.tasks.show(shown.quest ?? null);
     ambience.onFoot(here.node, landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
@@ -454,6 +458,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     const swell = scene.land?.swell;
     footView.hide();
+    eventProps.set([]);
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
     if (!paused && !helmMap.shown)
       here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);

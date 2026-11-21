@@ -12,6 +12,7 @@ import { coldScore } from './coldScore.ts';
 import {
   type Boss,
   type Cue,
+  FAMILY_OF,
   type Family,
   type Hearing,
   MOOD_DUCK,
@@ -173,6 +174,8 @@ export class MusicDirector {
   private ducked = 1;
   /** The sea song last begun once through: one already heard is never begun again over its own cue. */
   private once: Song | null = null;
+  /** A moment the game asks for outside the law's own (a public event begun, won or lost), played next frame. */
+  private asked: 'cadence' | 'victory' | 'defeat' | null = null;
 
   constructor({
     output = musicOutput,
@@ -195,6 +198,9 @@ export class MusicDirector {
 
   /** One frame, `seconds` after the last. */
   frame(hearing: Hearing, seconds: number): void {
+    // A moment asked while the music is cut is let go, never played late.
+    const wanted = this.asked;
+    this.asked = null;
     const verdict = hear(this.memory, hearing, seconds, this.songClock);
     this.memory = verdict.memory;
     const bus = this.output();
@@ -203,7 +209,13 @@ export class MusicDirector {
     const now = this.clockOf(bus.audio);
     const { scores } = this;
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
-    if (verdict.sting) this.sting(stingOf(scores, verdict.sting), verdict.sting.kind === 'wake', now);
+    // The game's moment is played in the place's own fight score, unless the law has one of its own this frame.
+    const moment: Sting | null =
+      verdict.sting ??
+      (wanted && hearing.place.kind !== 'sea'
+        ? { kind: wanted, cue: { kind: 'family', family: FAMILY_OF[hearing.place.climate] } }
+        : null);
+    if (moment) this.sting(stingOf(scores, moment), moment.kind === 'wake', now);
     const asked = songOf(scores, verdict.cue);
     const voyage = verdict.cue.kind === 'sea' && verdict.mood === 'silent';
     // A hidden page cut it short: the law's clock stood while the page's ran on, so it is not played again.
@@ -219,6 +231,12 @@ export class MusicDirector {
     const under = !song ? 1 : whole || story ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
     // A sting is music too: the ambience stays lowered under it.
     this.duck(now < this.holdUntil ? Math.min(under, MOOD_DUCK.combat) : under);
+  }
+
+  /** Plays a fight score's moment on the next frame, as a public event begins (its cadence), is won (its victory) or
+   *  is lost (its defeat). */
+  moment(kind: 'cadence' | 'victory' | 'defeat'): void {
+    this.asked = kind;
   }
 
   /** A frame on foot in `node` of `world`, from the fight it showed. */

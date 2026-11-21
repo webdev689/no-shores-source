@@ -151,13 +151,16 @@ should be ([[HTML Is Avoided Where It Can Be]]).
   px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
   and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
   strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
-  under its rule, 56 px down: a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px
+  under its rule, 56 px down: a public event's banner ([[Public Events]]), then a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px
   long beside the compass stands the whole column under the vitals instead. On foot past 1440p the whole column (the
   compass, the boss bar and the target's plate) stands at twice its size, as the corners do. At sea it marks each ship
   within 900 m on its top edge, a bow pointing up, at her bearing on the same quarter turn, so one north-east stands
   under NE; one off the strip is held at the end on the side to turn toward. She is red while she would take the player
   (a hostile ship, or a hostile captain in the fight), bone for another player's or a captain who is not hostile, and
-  grey once her colours are down; one going down has no mark. The compass hides with the view while the held map is up
+  grey once her colours are down; one going down has no mark. On foot in a zone that holds public events it marks
+  the event's ground on its foot with a gold diamond (the next one's between events), held at the nearer end while off
+  the strip as a ship is, and the growth or the tithe-taker with an orange one, blinking, while the heroic window is
+  open. The compass hides with the view while the held map is up
   at the helm.
 - **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
   over stamina over poise, each in a fine stone frame whose ends come to a point at a brass tip (`plus/barFrame.ts`),

@@ -190,6 +190,19 @@
       #hud:has(> .fight.bossed:not([hidden])) .place {
         visibility: hidden;
       }
+      /* A public event's banner under the compass: in a view too narrow for the tracker to stand clear of the
+         compass's column, the tracker gives way to it (the banner holds the same objective); at a phone's width the
+         place's name does too, as it does to a boss's bar. */
+      @media (max-width: 900px) {
+        #hud:has(.public-banner:not([hidden])) .tasks {
+          display: none;
+        }
+      }
+      @media (max-width: 600px) {
+        #hud:has(.public-banner:not([hidden])) .place {
+          visibility: hidden;
+        }
+      }
       /* At sea the line stands under the compass. */
       #hud > .status {
         position: absolute;

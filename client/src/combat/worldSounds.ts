@@ -69,6 +69,8 @@ export interface WorldFrame {
   readonly ground: StepGround;
   readonly landed: readonly Point[];
   readonly crates: number | null;
+  /** Cues heard where something else happened: a public event's beats (game/publicView.ts). */
+  readonly heard?: readonly { readonly cue: string; readonly at: Point }[];
 }
 
 type Play = (audio: AudioContext, out: AudioNode, id: string, rate: number) => AudioBufferSourceNode | null;
@@ -181,6 +183,7 @@ export class WorldSounds {
     this.shots(frame, hear);
     this.spellsCast(fight, hear);
     for (const place of frame.landed) hear('drop.land', place, null);
+    for (const { cue, at } of frame.heard ?? []) hear(cue, at, null);
     if (this.crates !== null && frame.crates !== null && frame.crates < this.crates)
       hear('ammo.refill', walker.feet, fight.player);
     this.crates = frame.crates;

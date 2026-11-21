@@ -13,7 +13,7 @@ code:
   - crates/gear/src/chests.rs#open_chest
   - crates/layout/src/grounds.rs#mark
   - crates/layout/src/grounds.rs#store_boxes
-  - crates/bake/src/lib.rs#grounds_of
+  - crates/layout/src/grounds.rs#grounds_of
   - crates/navmesh/src/lib.rs#join
   - crates/foes/src/factions.rs#LATTICE
   - crates/protocol/src/public_wire.rs#public_offset
@@ -129,7 +129,39 @@ comes to the same fingerprints ([[Agree to the Bit]]).
 
 ## The page
 
-Drawn elsewhere for now: the page's part (the banner, the marks, the props, the stings) is added by another change.
+The snapshot's `public_event` is kept by the fight (`Fighting.public`), and its events (14 to 23) apart from the
+fight's, which read every event as a blow. Each frame on foot, `game/publicView.ts` turns them into what the player
+sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event alone.
+
+- **The banner** (`combat/publicBanner.ts`), HTML through the kit as every part of the HUD is, stands in the compass's
+  column under the compass and over the boss bar and the target's plate, so neither stands on it. Running: "Public
+  event" (or "Heroic public event") over the name and place, the countdown at the right, the objective and its bar
+  (shards set of needed; the stores' health, with the wave in the objective), the heroic task with its window's
+  countdown while it is open ("Break the growth", "Kill the tithe-taker") or "Heroic" once met, and the bonus, struck
+  through once lost. Over, for its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Between
+  events, one line: the next event, where, and in how many minutes. Its tone (gold, heroic orange, won green, failed
+  red) runs down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed).
+- **The tracker** (`tasks.ts`) holds the steps while one runs: the shards still to carry or the Warden; the wave and
+  the stores still standing; the heroic task; the bonus while it holds.
+- **The compass** marks the ground (the next one's between events) with a gold diamond, and the growth or the
+  tithe-taker with an orange one, blinking, while the heroic window is open.
+- **Marks**: a ring at the ground's edge while it runs, laid on the land arc by arc; a pillar of red light over each
+  shard on the ground, fading with it; a small bar over each store while a raid runs.
+- **Props**: the marks go through `eventProps()` to the props' drawer every frame, each carried shard moved to its
+  carrier's off hand as drawn (the player's own low in the left of a first-person view); the player's chests come
+  from their drops (drawn as props, not as drop pictures), and E within 2.5 m opens the one in reach (its lid swings
+  and it stands open 6 s after the room has taken it). The crystal's lamps go with them. The Fissure won bursts the
+  Lattice's death wave at four times a man's size where it seals (`sealWave`).
+- **Sounds**, all samples the game already holds: the ground splitting (`story.deep`) or the Tithe sighted
+  (`foe.alert`) as one begins and at each stage; a shard taken (`element.cosmic`, and the player's own chimes) and
+  set (`finish.cosmic`); the growth broken (`shield.break`) or the tithe-taker killed (`kill`); the seal's burst
+  (`story.crash`); a store plundered (`sea.ship.break`); a chest opened (`story.creak` and the interface's open); a
+  heroic task missed (the interface's refusal). **Stings**, through the music director's `moment`, in the place's own
+  fight score: its cadence as one begins, its victory for heroic met and won, its defeat for failed.
+- **Alone**, the page asks its land worker for the node's grounds (`land_grounds`, from
+  `layout::grounds::grounds_of`, which the bake calls too, on the same layouts), so a room in the page runs the
+  events the server's does. Under `npm run dev` (or a build made with `NODE_ENV=development`),
+  `/?at=<zone>&public=fissure|raid` sets the room's clock so that event starts at once.
 
 ## Limits
 

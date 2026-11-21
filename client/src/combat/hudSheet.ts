@@ -11,6 +11,7 @@ import { ELEMENTS } from '../player/gear.ts';
 import { OVERHEAD_SIZES } from './foePlate.ts';
 import { EDGE, VITAL_SIZES } from './hudLayout.ts';
 import { PLATE_SIZE } from './plateSight.ts';
+import { publicBannerCss } from './publicBanner.ts';
 import { statusCss } from './statusIcons.ts';
 import { weaponsCss } from './weapons.ts';
 import { wordsCss } from './wordsSheet.ts';
@@ -272,7 +273,7 @@ ${shieldWords}
 
 /** The whole sheet. */
 export function fightSheetCss(): string {
-  return cuesCss() + platesCss() + vitalsCss() + weaponsCss() + statusCss() + wordsCss();
+  return cuesCss() + platesCss() + vitalsCss() + weaponsCss() + statusCss() + wordsCss() + publicBannerCss();
 }
 
 /** Lays the kit's sheet, the compass's and then the display's on `page`, once each. */
