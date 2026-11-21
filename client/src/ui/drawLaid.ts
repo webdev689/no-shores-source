@@ -50,6 +50,7 @@ function drawLine(
     readonly colour: string;
     readonly edge?: 'shadow' | 'halo';
     readonly edgeColour?: string;
+    readonly edgeWidth?: number;
     readonly fade: number;
   },
   clip: Box,
@@ -73,7 +74,8 @@ function drawLine(
     }
   };
   const edge = faded(ink.edgeColour ?? TONES.outline, ink.fade);
-  if (ink.edge === 'shadow') drawn(1, 1, () => edge);
+  const step = ink.edgeWidth ?? 1;
+  if (ink.edge === 'shadow') drawn(step, step, () => edge);
   if (ink.edge === 'halo')
     for (const [across, down] of [
       [-1, -1],
@@ -85,7 +87,7 @@ function drawLine(
       [0, 1],
       [1, 1],
     ] as const)
-      drawn(across, down, () => edge);
+      drawn(across * step, down * step, () => edge);
   const tones = new Map<string, Colour>();
   drawn(0, 0, (index) => {
     const css = colours[index] ?? ink.colour;
@@ -153,7 +155,7 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
           ui,
           line,
           { x, y: inner.y + index * tall, size, scale },
-          { colour, edge: node.text?.edge, edgeColour: node.text?.edgeColour, fade },
+          { colour, edge: node.text?.edge, edgeColour: node.text?.edgeColour, edgeWidth: node.text?.edgeWidth, fade },
           clip,
         );
       });

@@ -30,6 +30,8 @@ export interface Text {
   /** A hard shadow a step down and right (`shadow`), or a step all round (`halo`), as the sheets write them. */
   readonly edge?: 'shadow' | 'halo';
   readonly edgeColour?: string;
+  /** How many CSS pixels the shadow or halo stands out from the words: 1 unless said. */
+  readonly edgeWidth?: number;
   readonly wrap?: boolean;
   /** Kept to one line, cut short with '...' where it does not fit, as CSS's `text-overflow: ellipsis`. */
   readonly ellipsis?: boolean;

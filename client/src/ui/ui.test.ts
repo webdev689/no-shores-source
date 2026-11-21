@@ -206,3 +206,25 @@ test('a node that lets the pointer through takes no hit, nor do its children, so
   ui.frame(VIEW, [], 1 / 60);
   assert.equal(ui.takesPointer, true);
 });
+
+test('words drawn with a wider edge stand their halo that many pixels out all round, one unless said', () => {
+  const lettered = () => {
+    const made = renderer();
+    return Object.assign(made, { glyphTexels: () => ({ x: 0, y: 0, width: 1, height: 1 }) });
+  };
+  const leftmost = (edgeWidth?: number) => {
+    const ui = new Interface(lettered());
+    ui.frame(VIEW, [], 1 / 60);
+    const root: Node = {
+      padding: 10,
+      children: [{ text: { words: 'A', edge: 'halo', ...(edgeWidth ? { edgeWidth } : {}) } }],
+    };
+    ui.draw(root);
+    const data = ui.renderer.quads.data;
+    const lefts = Array.from({ length: ui.renderer.quads.count }, (_unused, index) => data[index * 20] ?? 0);
+    return Math.min(...lefts);
+  };
+  const plain = leftmost();
+  assert.equal(leftmost(3), plain - 2, 'three pixels out where one stood one out');
+  assert.equal(leftmost(1), plain);
+});
