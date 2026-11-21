@@ -3,10 +3,10 @@
     python -I tools/modules/bake.py <folder>
 
 Each surface group is a mesh file in the folder named by its hash, as R2 names it (`modules/<sha-256>.mesh`): a
-vertex count and a triangle count (two little-endian u32), then each vertex's position in the game's frame (3 floats)
-and its normal (3 signed bytes) and its glow (a byte, 0 to 127: only crystal's is ever more than 0), then each triangle's three vertex numbers (u32). The manifest,
-content/modules/modules.json, names R2's base and each module's size, parts, sockets and groups; `publish.py`
-uploads the meshes it names.
+vertex count and a triangle count (two little-endian u32), then each vertex's position in the game's frame (3 floats),
+its normal (3 signed bytes) and its glow (a byte, 0 to 127: only crystal's is ever more than 0), then each triangle's
+three vertex numbers (u32). The manifest, content/modules/modules.json, names R2's base and each module's size, parts,
+sockets, groups and, where it opens the land, its mouth; `publish.py` uploads the meshes it names.
 """
 import hashlib
 import json

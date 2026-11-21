@@ -232,7 +232,7 @@ export function pictureBook(
   materials.rubble = layerAt(rubbleKey);
   materials.chalk = layerAt(chalkKey);
   materials.canvas = materials.plaster;
-  materials.turf = layerAt(groundKeys.get(GRASS) ?? groundKeys.get(2));
+  materials.turf = layerAt(groundKeys.get(GRASS));
   return {
     pictures,
     layerOf: (archive, record) => layerAt(turnOf(archive, record)),

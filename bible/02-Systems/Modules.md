@@ -123,9 +123,10 @@ bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as f
 | `python -I tools/modules/render.py <module> <picture.png> [--parts]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked |
 
 A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes)
-and glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at most 32,000 triangles. The bake makes the same
-bytes from the same scripts. The `modules` workflow bakes on every change to the module tools, fails if the bake
-does not make the committed manifest, and publishes with the repository's Cloudflare token.
+and glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at
+most 32,000 triangles. The bake makes the same bytes from the same scripts. The `modules` workflow bakes on every
+change to the module tools, fails if the bake does not make the committed manifest, and publishes with the
+repository's Cloudflare token.
 
 ## In the game
 
@@ -151,7 +152,7 @@ does not make the committed manifest, and publishes with the repository's Cloudf
   a bridge does. A turned part's boxes are cut in slices no longer than the part is thick, so a parapet's keep off
   the way they line.
 - **The public events' props** are drawn by the page's event-props drawer (`EventPropsDraw`, among the scene's drawers
-  after the layouts and before the nature) from a list it is handed each frame (`eventProps`: from the room's event
+  after the layouts and before the nature) from a list it is handed (`eventProps` makes it from the room's event
   marks and the player's chests): each prop at its place, turn and scale, risen out of the ground as far as it has
   come (the growth rising and sinking, a banner driven in; what is under the ground is not drawn), the fissure opening
   from a line as it widens and deepens, a lid swung about its hinge, its crystal glowing as strongly as it is asked.
@@ -173,9 +174,11 @@ stand on the ground at every edge, and no cliff stair stands taller than it was 
 
 - The city draws a module's crystal half alight everywhere: its glow by vertex reaches only the event props' drawer,
   and only that drawer gives crystal's light into the light layer.
-- The fissure's mouth opens the depth of whatever is drawn before it there, a layout's piece standing in front of it
-  as well as the land; the events stand on clear ground. Grass drawn after it can stand over the chasm.
-
+- The fissure's mouth opens the depth of whatever is drawn before it there, a rise of the land or a layout's piece
+  standing in front of it as well as the land under it; the events stand on clear ground. Grass drawn after it can
+  stand over the chasm.
+- The page does not yet hand the event-props drawer its list: `eventProps` makes it from the room's event marks, and
+  the event's view is still to call it. Every city's load fetches the event props' meshes with the rest.
 - A module's surfaces carry no ambient occlusion of their own, and their pictures are laid flat by axis, not
   unwrapped.
 - A module stands square to the world, so a way may arrive at a side with no socket: the citadel's ways arrive at

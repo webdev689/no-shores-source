@@ -51,7 +51,9 @@ def main():
         kept = [polygon.material_index for polygon in item.data.polygons]
         item.data.materials.clear()
         for slot in module.slots[item.name]:
-            item.data.materials.append(materials.setdefault(slot, coloured(*slot)))
+            if slot not in materials:
+                materials[slot] = coloured(*slot)
+            item.data.materials.append(materials[slot])
         item.data.polygons.foreach_set('material_index', kept)
     if asked.parts:
         for number, (x0, y0, z0, x1, y1, z1) in enumerate(module.parts):

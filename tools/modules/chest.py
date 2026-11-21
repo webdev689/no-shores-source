@@ -84,7 +84,7 @@ def lid(module, kind):
                   for k in range(11)]
         inner = [(p[0] - x * 0.026, p[1], p[2]) for p in points]
         faces = [tuple(range(11)), tuple(11 + k for k in range(11))]
-        faces += [(k, k + 1, 12 + k, 11 + k) for k in range(10)]
+        faces += [(k, k + 1, 12 + k, 11 + k) for k in range(10)] + [(10, 0, 11, 21)]
         middle = (x * (w / 2 - 0.013), -d / 2, arch / 3)
         kit.solid_of(module, 'end', points + inner, kit.oriented(points + inner, faces, lambda at: tuple(
             at[axis] - middle[axis] for axis in range(3))), 'timber')

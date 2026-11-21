@@ -8,7 +8,7 @@ import math
 import mathutils
 
 import kit
-from timbers import Frame, barrel, board, cloth, crate, sack, tarp  # noqa: F401 (cloth for the banner)
+from timbers import Frame, barrel, board, cloth, crate, sack, tarp
 
 CRATE = (0.8, 0.8, 0.75)
 SMALL = (0.62, 0.55, 0.5)

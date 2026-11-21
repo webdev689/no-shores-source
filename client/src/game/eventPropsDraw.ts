@@ -77,7 +77,8 @@ fn placed(vertex: Vertex) -> Placed {
     normal = vec3f(normal.x * across * deep, normal.y * deep, normal.z * across);
   } else {
     local.z -= (1.0 - prop.shape.y) * prop.about.y;
-    below = local.z;
+    // Cut at the ground only while rising: standing, a lid's hasp hangs under its hinge and stays drawn.
+    below = select(1.0, local.z, prop.shape.y < 1.0);
   }
   let lid = vec2f(cos(prop.shape.z), sin(prop.shape.z));
   local = vec3f(local.x, local.y * lid.x - local.z * lid.y, local.y * lid.y + local.z * lid.x);
@@ -312,8 +313,9 @@ export class EventPropsDraw implements Drawer {
       depthStencil: depth(true, REVERSED_DEPTH.compare),
       multisample: { count: SAMPLES },
     });
-    // shortcut: the mouth opens the depth of whatever is drawn before it there (the land, a layout's piece standing
-    // in front alike); the events stand on clear ground. A stencil would open the land alone.
+    // shortcut: the mouth opens the depth of whatever is drawn before it there, a rise of the land or a layout's piece
+    // standing in front alike, as the depth test reads the depth the mouth writes; the events stand on clear ground.
+    // A stencil would open the land alone.
     this.open = device.createRenderPipeline({
       layout,
       vertex,
