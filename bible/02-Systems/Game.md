@@ -117,9 +117,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The room.** The node's room is the authority, always. Alone, the room crate runs in the page, ticked by its clock,
   on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
 - **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
-  weapon, 1 draws the Melee loadout and 2 the Ranged, the right button swings or aims, the left button or F guards,
-  parries or fires, V or Mouse5 dodges, R, Q and G cast the worn Art's spells ([[Arts]]), and the soft lock holds a
-  foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
+  weapon, 1 draws the Melee loadout and 2 the Ranged, 3 drinks a healing charge ([[Combat]], "Healing charges"), the
+  right button swings or aims, the left button or F guards, parries or fires, V or Mouse5 dodges, R, Q and G cast
+  the worn Art's spells ([[Arts]]), and the soft lock holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The key strip
   shows the fight's keys and the body's beyond walking, the Arts' (R Anima, Q and G Tenets) only while an Art is worn,
   and how to aim Dusk Daggers only while Shadow is. Every key hint, on foot and at sea, is a key on its keycap and
