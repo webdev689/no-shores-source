@@ -23,7 +23,13 @@ export async function standOn(
 
 /** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
  *  cut there, its boxes, and where it fights its public events (the land's `grounds`, JSON; `null` for none). */
-export function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[], grounds = 'null'): string {
+export function nodeText(
+  node: NodeInfo,
+  rect: Rect,
+  ground: string,
+  boxes: readonly Block[],
+  grounds = 'null',
+): string {
   const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
   const { id, kind, continent, ring, spawns } = node;
   const fought = grounds === 'null' ? '' : `,"grounds":${grounds}`;
