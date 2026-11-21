@@ -374,8 +374,10 @@ impl Room {
                             + last;
                     let blow = loosed.map_or(blow, |loosed| Self::at_range(blow, covered, &loosed.trim));
                     let blow = self.vigil(blow, covered);
+                    // An arrow on a foe slain earlier this tick strikes no one alive: no lightning leaps from it.
+                    let alive = self.fighter(defender).is_some_and(|foe| !foe.dead());
                     let verdict = self.blow_lands(&blow, How::Shot, defender, Check::Shot);
-                    if let Some(verdict) = verdict.filter(|_| loosed.is_some_and(|loosed| loosed.aimed)) {
+                    if let Some(verdict) = verdict.filter(|_| alive && loosed.is_some_and(|loosed| loosed.aimed)) {
                         self.storm_gull(&blow, defender, &verdict);
                     }
                 }

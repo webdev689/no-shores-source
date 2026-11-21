@@ -8,7 +8,7 @@ import { BODY_HEIGHT } from '../player/crosshair.ts';
 import { STROKE_DIRECTIONS } from '../rules/fighters.ts';
 import { Bits } from './bits.ts';
 import { chained } from './chainLooks.ts';
-import { EVENT, HOW } from './cues.ts';
+import { EVENT, HOW, cameFrom } from './cues.ts';
 import {
   CRACKED_SHIELD,
   GOLD,
@@ -213,7 +213,7 @@ export class Impacts {
   }
 
   private take(event: FightEvent, told: Told, killed: boolean): void {
-    const [feet, from] = [told.where(event.defender), told.where(event.striker)];
+    const [feet, from] = [told.where(event.defender), told.where(cameFrom(event))];
     if (!feet || !from) return;
     const look = told.lookOf(event);
     const away = Math.hypot(from[0] - feet[0], from[1] - feet[1]) || 1;

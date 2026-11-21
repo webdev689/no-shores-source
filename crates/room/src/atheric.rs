@@ -127,7 +127,9 @@ impl Room {
             return;
         }
         if matches!(verdict, Verdict::Blocked { .. }) && self.foes.contains_key(&blow.striker) {
-            self.bite(blow, defender);
+            if !after.dead() {
+                self.bite(blow, defender);
+            }
             return;
         }
         if !self.players.contains_key(&blow.striker) || !self.foes.contains_key(&defender) {
@@ -135,6 +137,10 @@ impl Room {
         }
         let (player, clock) = (blow.striker, self.clock);
         let hand = if matches!(blow.kind, BlowKind::Shot(_)) { Slot::Ranged } else { self.striking(player) };
+        // A punch with a ranged weapon drawn is no blow of its Atheric's.
+        if hand == Slot::Ranged && !matches!(blow.kind, BlowKind::Shot(_)) {
+            return;
+        }
         let [called, conduit, riptide, ninth] =
             ["call_and_answer", "conduit", "riptide", "the_ninth"].map(|id| self.perk_on(blow, id));
         let swing = matches!(blow.kind, BlowKind::Swing(_));
@@ -146,8 +152,10 @@ impl Room {
                 found.atheric.called = !found.atheric.called;
             }
             if conduit && arts {
+                let ready = found.casting.tenets.map(|share| share >= 1.0);
                 found.casting.cut(CONDUIT_SHARE);
-                found.gear_changed = true;
+                // The page is told as a Tenet comes ready, not at every blow: the gear message carries every item.
+                found.gear_changed |= found.casting.tenets.map(|share| share >= 1.0) != ready;
             }
             let counts = &mut found.atheric;
             if ninth && swing && counts.ninth_tick != clock {
@@ -233,6 +241,10 @@ impl Room {
             .into_iter()
             .filter(|foe| *foe != centre && !self.sweep.contains(foe));
         let caught: Vec<FighterId> = caught.collect();
+        // Within a sweep, a foe one of its bursts caught is caught by no other of them.
+        if !self.sweep.is_empty() {
+            self.sweep.extend(&caught);
+        }
         caught
             .into_iter()
             .filter(|foe| {

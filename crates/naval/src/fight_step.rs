@@ -161,8 +161,9 @@ impl Fight {
         // Its rank's way pulls its sails and its oars alike, half again in a fight.
         let way = command.mind.commission.rank.scale().way;
         let pull = sailing::ship::Pull {
+            // A Snare slows it however it goes, under sail or at its oars.
             sail: vessel.damage.way_share() * way * FIGHT_PACE * slowed,
-            oars: way * FIGHT_PACE,
+            oars: way * FIGHT_PACE * slowed,
             turn,
         };
         vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull);

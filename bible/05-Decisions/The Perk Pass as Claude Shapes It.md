@@ -126,7 +126,7 @@ into Quick Braces; Sealed Magazine into Boarding Nets.
 ### Every model worn
 
 Every weapon and armour model the forge draws is worn by some piece a player can hold; a test lists the forge's layers
-and fails on any no piece wears, but a class's own (the archer's dark helm, the class sword and axe) and the laced
+and fails on any no piece wears, but a class's own (the archer's dark helm, the woman's horned one, the class sword and axe) and the laced
 boots, a garment.
 
 | Choice | Chosen | Why |

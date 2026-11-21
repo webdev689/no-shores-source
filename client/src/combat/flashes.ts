@@ -6,7 +6,7 @@ import type { FightEvent } from '../network/messages.ts';
 import { FLASH } from '../player/cardLooks.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { EVENT, HOW, blowLook, landsAsSpell } from './cues.ts';
+import { EVENT, blowLook, cameFrom, notABlow } from './cues.ts';
 import { GOLD } from './markSprites.ts';
 
 type Point = readonly [number, number, number];
@@ -151,7 +151,7 @@ export class Flashes {
   private take(event: FightEvent, told: StruckBy | null): void {
     const player = told?.player ?? null;
     const harms = event.amount > 0;
-    const melee = event.how !== HOW.shot && !landsAsSpell(event);
+    const melee = !notABlow(event);
     if (harms) {
       const own = event.defender === player;
       const look = blowLook(event, { player: player ?? -1, own: told?.look ?? 0, spellLook: told?.spellLook });
@@ -175,9 +175,9 @@ export class Flashes {
     } else if (event.defender === player && event.kind === EVENT.blocked) this.contact ??= 'blocked';
   }
 
-  /** Starts or strengthens `event`'s defender's slide, away from its striker. */
+  /** Starts or strengthens `event`'s defender's slide, away from the fighter its blow came from (`cameFrom`). */
   private knock(event: FightEvent, kind: KnockKind, where?: (id: number) => Point | null): void {
-    const [from, to] = [where?.(event.striker), where?.(event.defender)];
+    const [from, to] = [where?.(cameFrom(event)), where?.(event.defender)];
     if (!from || !to) return;
     const apart = Math.hypot(to[0] - from[0], to[1] - from[1]);
     if (apart < 1e-6) return;

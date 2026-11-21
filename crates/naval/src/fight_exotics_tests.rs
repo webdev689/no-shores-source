@@ -156,6 +156,26 @@ fn web_slows_the_turn_of_a_ship_its_balls_strike_in_the_rigging_for_six_seconds(
     assert_eq!(fight.hampered(CAPTAIN), (1.0, 1.0), "a ball in its hull does not");
     strike(&mut fight, PLAYER, CAPTAIN, Zone::Rig);
     assert!((fight.hampered(CAPTAIN).1 - 0.7).abs() < 1e-12);
+    // A webbed captain turns slower than the same captain free, struck in the rigging again each second.
+    let mut free = abeam(25.0, Some(Trim { web: 0.3, ..Trim::default() }));
+    let mut webbed = abeam(25.0, Some(Trim { web: 0.3, ..Trim::default() }));
+    let (mut turned_free, mut turned_webbed) = (0.0, 0.0);
+    for tick in 0..400 {
+        if tick % 60 == 0 {
+            strike(&mut webbed, PLAYER, CAPTAIN, Zone::Rig);
+            strike(&mut free, PLAYER, CAPTAIN, Zone::Hull);
+        }
+        let before = [free.ships[&CAPTAIN].ship.heading, webbed.ships[&CAPTAIN].ship.heading];
+        free.step(&[(PLAYER, IDLE)], &Open, &|_| [6.0, 0.0], 0.0);
+        webbed.step(&[(PLAYER, IDLE)], &Open, &|_| [6.0, 0.0], 0.0);
+        let turned = |was: f64, now: f64| {
+            (now - was + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
+        };
+        turned_free = f64::max(turned_free, turned(before[0], free.ships[&CAPTAIN].ship.heading).abs());
+        turned_webbed = f64::max(turned_webbed, turned(before[1], webbed.ships[&CAPTAIN].ship.heading).abs());
+    }
+    assert!(turned_free > 0.0, "it turns at all");
+    assert!(turned_webbed < turned_free * 0.8, "its fastest turn a tick: {turned_webbed} against {turned_free}");
     fight.clock += 6.0;
     fight.exotics(0.0);
     assert_eq!(fight.hampered(CAPTAIN), (1.0, 1.0));
@@ -167,14 +187,38 @@ fn snare_slows_a_foe_within_thirty_metres_of_it() {
     assert!((near.hampered(CAPTAIN).0 - 0.85).abs() < 1e-12);
     assert_eq!(near.hampered(PLAYER), (1.0, 1.0), "never itself");
     assert_eq!(abeam(40.0, Some(Trim { snare: 0.15, ..Trim::default() })).hampered(CAPTAIN), (1.0, 1.0));
-    // A snared captain sails behind the same captain unsnared.
-    let mut free = abeam(25.0, None);
-    let mut snared = near;
-    for _ in 0..400 {
-        free.step(&[(PLAYER, IDLE)], &Open, &|_| [6.0, 0.0], 0.0);
-        snared.step(&[(PLAYER, IDLE)], &Open, &|_| [6.0, 0.0], 0.0);
+    // A snared captain covers less ground than the same captain unsnared, under sail or, its canvas gone, at its oars.
+    for canvas in [true, false] {
+        let mut free = abeam(25.0, None);
+        let mut snared = abeam(25.0, Some(Trim { snare: 0.15, ..Trim::default() }));
+        for fight in [&mut free, &mut snared] {
+            // Under way already: its sails set, or with no canvas at its oars.
+            if let Some(captain) = fight.ships.get_mut(&CAPTAIN) {
+                captain.ship.rung = if canvas { sailing::ship::SAILS_SET } else { 1 };
+                if !canvas {
+                    captain.damage.sail = 0.0;
+                }
+            }
+        }
+        let (mut went_free, mut went_snared) = (0.0, 0.0);
+        for _ in 0..400 {
+            // The player's ship kept 20 m off it, so it stays within the Snare's reach.
+            for fight in [&mut free, &mut snared] {
+                let captain = fight.ships[&CAPTAIN].ship;
+                if let Some(player) = fight.ships.get_mut(&PLAYER) {
+                    player.ship = Ship { x: captain.x + 20.0, y: captain.y, ..player.ship };
+                }
+            }
+            let before = [free.ships[&CAPTAIN].ship, snared.ships[&CAPTAIN].ship];
+            free.step(&[(PLAYER, IDLE)], &Open, &|_| [6.0, 0.0], 0.0);
+            snared.step(&[(PLAYER, IDLE)], &Open, &|_| [6.0, 0.0], 0.0);
+            let moved = |was: Ship, now: Ship| (now.x - was.x).hypot(now.y - was.y);
+            went_free += moved(before[0], free.ships[&CAPTAIN].ship);
+            went_snared += moved(before[1], snared.ships[&CAPTAIN].ship);
+        }
+        assert!(went_free > 1.0, "it moves at all, canvas {canvas}: {went_free}");
+        assert!(went_snared < went_free * 0.95, "canvas {canvas}: {went_snared} against {went_free}");
     }
-    assert_ne!(free.ships[&CAPTAIN].ship, snared.ships[&CAPTAIN].ship);
 }
 
 #[test]

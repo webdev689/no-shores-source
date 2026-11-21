@@ -131,34 +131,70 @@ impl Shields {
     }
 }
 
-/// An item read against the catalogue as it is now. A named item follows its entry: its columns offer the entry's
-/// traits, each node bought and choice kept, so a reworked Atheric's new perk stands where its old one was bought, as
-/// Destiny's reworked exotics changed in every copy, and nothing is given back or lost. A rolled item offering a trait
-/// the catalogue no longer holds offers in its place, bought and chosen as it was, the first of its column's pool it
-/// does not offer already. A node bought whose trait no longer fits the item (armour kept with a shield's Bulwark from
-/// before the loadouts) is given back once, for what it cost, and its choice is cleared.
+/// The ship's perks merged into another by the perk pass ([[The Perk Pass as Claude Shapes It]]), each with the one it
+/// merged into: a kept rolled module offering one offers that in its place.
+const MERGED: [(&str, &str); 14] = [
+    ("topgallants", "flying_jib"),
+    ("running_blocks", "flying_jib"),
+    ("fair_winds", "flying_jib"),
+    ("seasoned_timbers", "oak_ribs"),
+    ("gunlayers_eye", "steady_lay"),
+    ("bored_true", "steady_lay"),
+    ("powder_monkeys", "quick_tackle"),
+    ("grapeshot_drill", "grape_locker"),
+    ("swivel_crews", "grape_locker"),
+    ("fighting_tops", "grape_locker"),
+    ("patched_sails", "carpenters_stores"),
+    ("doubled_shrouds", "storm_canvas"),
+    ("trim_crew", "quick_braces"),
+    ("sealed_magazine", "boarding_nets"),
+];
+
+/// An item read against the catalogue as it is now. A named item of its entry's rarity follows its entry: its columns
+/// offer the entry's traits, each node bought and choice kept, so a reworked Atheric's new perk stands where its old one
+/// was bought, as Destiny's reworked exotics changed in every copy, and nothing is given back or lost. A rolled item
+/// offering a trait the catalogue no longer holds offers in its place, bought and chosen as it was, the perk it merged
+/// into where that fits it, else the first plain perk of its column's pool it does not offer already; with none left
+/// but perks that give and take, the first of those, its node given back, so no cost is pressed on a player who never
+/// chose it. A node bought whose trait no longer fits the item (armour kept with a shield's Bulwark from before the
+/// loadouts) is given back once, for what it cost, and its choice is cleared.
 pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
     let content = catalogue();
-    if let Some(entry) = item.named.as_deref().and_then(|named| content.named(named)) {
-        item.layout.clone_from(&entry.layout);
+    let entry = item.named.as_deref().and_then(|named| content.named(named));
+    if let Some(entry) = entry.filter(|entry| entry.rarity == item.rarity) {
+        item = follow(character, item, entry);
     }
-    let trait_columns: Vec<Column> = item.columns().iter().copied().filter(|kind| kind.traits()).collect();
-    for (place, column) in trait_columns.into_iter().enumerate() {
+    let mut pressed: Vec<(usize, u8)> = Vec::new();
+    let trait_columns: Vec<(usize, Column)> =
+        item.columns().iter().copied().enumerate().filter(|(_, kind)| kind.traits()).collect();
+    for (place, (index, column)) in trait_columns.into_iter().enumerate() {
         for node in 0..item.layout.get(place).map_or(0, Vec::len) {
-            if content.trait_def(&item.layout[place][node]).is_some() {
+            let gone = item.layout[place][node].clone();
+            if content.trait_def(&gone).is_some() {
                 continue;
             }
             let offered = |id: &str| item.layout.iter().flatten().any(|each| each == id);
-            if let Some(found) = content.pool(column, item.kind).into_iter().find(|found| !offered(&found.id)) {
-                item.layout[place][node].clone_from(&found.id);
+            let merged = MERGED.iter().find(|(old, _)| *old == gone).map(|(_, into)| *into);
+            let merged = merged.filter(|into| !offered(into) && content.trait_fits(into, item.kind, None));
+            let pool = content.pool(column, item.kind);
+            let plain =
+                pool.iter().find(|found| found.takes.is_none() && !offered(&found.id)).map(|found| found.id.as_str());
+            let trading = pool.iter().find(|found| !offered(&found.id)).map(|found| found.id.as_str());
+            let Some(id) = merged.or(plain).or(trading) else { continue };
+            if merged.is_none() && plain.is_none() {
+                pressed.push((index, u8::try_from(node).unwrap_or(u8::MAX)));
             }
+            item.layout[place][node] = id.to_owned();
         }
     }
     let fits = |id: &String| content.trait_fits(id, item.kind, item.named.as_deref());
     let misfits: Vec<(usize, u8)> = (item.columns().iter().enumerate())
         .flat_map(|(column, kind)| (0..kind.nodes()).map(move |node| (column, node)))
         .filter(|&(column, node)| item.has(column, node))
-        .filter(|&(column, node)| item.traits_of(column).get(usize::from(node)).is_some_and(|id| !fits(id)))
+        .filter(|&(column, node)| {
+            pressed.contains(&(column, node))
+                || item.traits_of(column).get(usize::from(node)).is_some_and(|id| !fits(id))
+        })
         .collect();
     give_back(character, &item, |column, node| misfits.contains(&(column, node)));
     for (column, node) in misfits {
@@ -167,6 +203,68 @@ pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
             item.chosen[column] = NONE_CHOSEN;
         }
     }
+    item
+}
+
+/// A named item made its entry's: in each column whose traits changed, a node bought moves with its perk to where
+/// the perk stands now, else to the perk it merged into, else stays where it was if a plain perk stands there (a
+/// reworked one); one with only a perk that gives and takes, or a place another took, is given back for what it cost.
+/// Each choice follows its node.
+fn follow(character: &mut Character, mut item: Item, entry: &crate::catalogue::NamedDef) -> Item {
+    let content = catalogue();
+    let plain = |id: &str| content.trait_def(id).is_some_and(|found| found.takes.is_none());
+    let mut placed: Vec<(usize, Vec<Option<u8>>)> = Vec::new();
+    let trait_columns = item.columns().iter().enumerate().filter(|(_, kind)| kind.traits()).map(|(column, _)| column);
+    for (place, column) in trait_columns.enumerate() {
+        let new = entry.layout.get(place).map_or(&[][..], Vec::as_slice);
+        let old = item.traits_of(column);
+        if old == new {
+            continue;
+        }
+        let at = |id: &str| new.iter().position(|each| each == id);
+        let merged = |id: &str| MERGED.iter().find(|(gone, _)| *gone == id).and_then(|(_, into)| at(into));
+        let mut to: Vec<Option<u8>> = vec![None; old.len()];
+        let mut taken = vec![false; new.len()];
+        // The same perk where it moved first, then what it merged into, then a plain perk in its own place.
+        for pass in 0..3 {
+            for (node, id) in old.iter().enumerate() {
+                let Ok(bit) = u8::try_from(node) else { continue };
+                if to[node].is_some() || !item.has(column, bit) {
+                    continue;
+                }
+                let wanted = match pass {
+                    0 => at(id),
+                    1 => merged(id),
+                    _ => new.get(node).filter(|here| plain(here)).map(|_| node),
+                };
+                if let Some(spot) = wanted.filter(|spot| !taken[*spot]) {
+                    taken[spot] = true;
+                    to[node] = u8::try_from(spot).ok();
+                }
+            }
+        }
+        placed.push((column, to));
+    }
+    let lost = |column: usize, node: u8| {
+        placed.iter().any(|(at, to)| *at == column && to.get(usize::from(node)).is_some_and(Option::is_none))
+    };
+    give_back(character, &item, lost);
+    for (column, to) in placed {
+        let bought: Vec<u8> = (0..item.columns()[column].nodes()).filter(|node| item.has(column, *node)).collect();
+        for node in 0..item.columns()[column].nodes() {
+            item.bought &= !item.node_bit(column, node).unwrap_or(0);
+        }
+        for node in bought {
+            if let Some(spot) = to.get(usize::from(node)).copied().flatten() {
+                item.bought |= item.node_bit(column, spot).unwrap_or(0);
+            }
+        }
+        let chosen = item.chosen.get(column).copied().unwrap_or(NONE_CHOSEN);
+        if let Some(slot) = item.chosen.get_mut(column) {
+            *slot = to.get(usize::from(chosen)).copied().flatten().unwrap_or(NONE_CHOSEN);
+        }
+    }
+    item.layout.clone_from(&entry.layout);
     item
 }
 

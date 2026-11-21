@@ -32,6 +32,9 @@ pub struct TraitDef {
     pub column: TraitColumn,
     pub fits: String,
     pub words: String,
+    /// What a perk that gives and takes costs, apart from what it gives (`words`); none for any other.
+    #[serde(default)]
+    pub takes: Option<String>,
 }
 
 /// A named item: a Legendary, an Atheric or a cloak. Its layout is the traits each of its trait columns offers, in
@@ -202,6 +205,17 @@ impl Catalogue {
         duplicates("trait", self.traits.iter().map(|found| found.id.as_str()), &mut problems);
         duplicates("item", self.items.iter().map(|found| found.id.as_str()), &mut problems);
         duplicates("resource", self.resources.iter().map(|found| found.id.as_str()), &mut problems);
+        let classes = ["melee", "ranged", "weapon", "armour", "shield", "ship", "guns", "hull", "sails", "rigging"];
+        // An officer's perks fit every post (`officer`) or one post's own key (`crew::recruit::pool`).
+        let posts = crate::crew::Post::ALL.map(crate::crew::Post::key);
+        let classes: Vec<&str> = classes.into_iter().chain(["officer"]).chain(posts).collect();
+        for found in &self.traits {
+            let named = matches!(found.column, TraitColumn::Signature | TraitColumn::Intrinsic);
+            let known = if named { self.named(&found.fits).is_some() } else { classes.contains(&found.fits.as_str()) };
+            if !known {
+                problems.push(format!("trait {} fits {}, which is nothing it may fit", found.id, found.fits));
+            }
+        }
         for item in &self.items {
             self.item_problems(item, &mut problems);
         }
@@ -245,8 +259,8 @@ impl Catalogue {
             problems.push(format!("{id}: its faction is none the factions' file holds"));
         }
         if item.kind == Kind::Cloak {
-            if !item.layout.is_empty() || item.resource.is_some() {
-                problems.push(format!("cloak {id} has no nodes and asks for no resource"));
+            if !item.layout.is_empty() || item.resource.is_some() || item.intrinsic.is_some() {
+                problems.push(format!("cloak {id} has no nodes, no intrinsic and asks for no resource"));
             }
             return;
         }

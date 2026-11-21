@@ -14,8 +14,8 @@ pub const NAMED_LEVEL: u8 = 20;
 pub const ITEM_LEVEL_MOST: u8 = 20;
 
 /// An item as a player holds it. Its own number is the player's for it; a named item's traits are copied from the
-/// catalogue when it is made, so the item stays what it was. `bucket` is the slot whose carried items it counts
-/// among: its kind's own.
+/// catalogue when it is made, and follow it as a kept character is read (`old_hands::unfit`). `bucket` is the slot
+/// whose carried items it counts among: its kind's own.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Item {
     pub id: u32,
@@ -170,7 +170,9 @@ impl Item {
     /// it is read).
     pub fn active_traits(&self) -> impl Iterator<Item = &str> {
         let content = crate::catalogue::catalogue();
-        let intrinsic = self.named.as_deref().and_then(|named| content.named(named)?.intrinsic.as_deref());
+        let entry =
+            self.named.as_deref().and_then(|named| content.named(named)).filter(|entry| entry.rarity == self.rarity);
+        let intrinsic = entry.and_then(|entry| entry.intrinsic.as_deref());
         let chosen = self.chosen.iter().enumerate().filter_map(move |(column, &node)| {
             (node != NONE_CHOSEN && self.has(column, node))
                 .then(|| self.traits_of(column).get(usize::from(node)).map(String::as_str))

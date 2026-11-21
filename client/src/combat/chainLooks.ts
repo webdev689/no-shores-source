@@ -19,18 +19,22 @@ export const chainVerdict = (event: FightEvent): boolean =>
 /** Leaves the marks of a frame's leaps and bursts, each between the figures where `frame` has them: one ring for each
  *  foe a burst came from. */
 export function chainMarks(frame: Frame, events: readonly FightEvent[], lands: Lands): void {
-  const ringed = new Set<number>();
+  if (events.length === 0) return;
+  // One ring for each burst: its source, its striker and its element, so two players' bursts round one foe both show.
+  const ringed = new Set<string>();
   const feetOf = (id: number) =>
     frame.foes.find((one) => one.id === id)?.feet ?? frame.players.find((one) => one.id === id)?.feet;
   const chest = (feet: Point): Point => [feet[0], feet[1], feet[2] + CHEST_M];
   for (const event of events) {
     const look = event.element;
     const [to, from] = [feetOf(event.defender), feetOf(event.from ?? 0)];
-    if ((look !== 1 && look !== 2 && look !== 3) || !to || !from) continue;
+    if ((look !== 1 && look !== 2 && look !== 3) || !to) continue;
     const seed = event.defender * 31 + (event.from ?? 0);
-    if (event.how === HOW.leap) lands.add('zap', chest(from), look, frame.clock, { to: chest(to), seed });
-    else if (!ringed.has(event.from ?? 0)) {
-      ringed.add(event.from ?? 0);
+    const ring = `${event.from ?? 0}:${event.striker}:${look}`;
+    // A source the page no longer has leaves the foe struck its impact, and no bolt or ring.
+    if (from && event.how === HOW.leap) lands.add('zap', chest(from), look, frame.clock, { to: chest(to), seed });
+    else if (from && !ringed.has(ring)) {
+      ringed.add(ring);
       lands.add('ring', from, look, frame.clock, { size: BURST_RING });
     }
     if (event.kind === EVENT.hit) lands.add('impact', chest(to), look, frame.clock);

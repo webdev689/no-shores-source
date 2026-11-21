@@ -196,6 +196,27 @@ fn a_burst_passes_by_the_foes_its_own_sweep_strikes_so_one_blow_strikes_a_foe_on
 }
 
 #[test]
+fn bursts_from_one_sweep_strike_a_bystander_once() {
+    // The sweep slays the first two; the third stands within 4 m of both and outside the sweep.
+    let (mut room, player, foes) = room_with("the_drowned_oath", true, &[0.0, 2.0, 1.0]);
+    if let Some(foe) = room.foes.get_mut(&foes[2]) {
+        foe.fighter.body.y += 1.0;
+    }
+    room.sweep = vec![foes[0], foes[1]];
+    landed(&mut room, player, SWING, foes[0], KILL);
+    landed(&mut room, player, SWING, foes[1], KILL);
+    assert!(close(taken(&room, foes[2]), 10.0 / 3.0), "dragged under once: {}", taken(&room, foes[2]));
+}
+
+#[test]
+fn a_punch_with_a_ranged_atheric_drawn_sets_off_none_of_its_perks() {
+    let (mut room, player, foes) = room_with("lanternfall", true, &[0.0, 3.0]);
+    landed(&mut room, player, SWING, foes[0], KILL);
+    assert_eq!(taken(&room, foes[1]), 0.0, "no Lantern's Wake from a fist");
+    assert!(told(&room, How::Burst).is_empty());
+}
+
+#[test]
 fn lanterns_wake_bursts_in_blaze_and_last_light_reloads() {
     let (mut room, player, foes) = room_with("lanternfall", true, &[0.0, 3.0]);
     let fighter = *room.fighter(player).expect("in");
@@ -232,6 +253,11 @@ fn coral_guard_bites_back_on_a_block_by_the_weapons_attack() {
     assert_eq!(room.fighter(player).expect("in").stamina, 35.0, "15 stamina back");
     room.settle(&blow(foes[0], SWING), How::Swing, player, HIT, None);
     assert_eq!(told(&room, How::Bite).len(), 1, "a blow that lands bites nothing");
+    // A block whose chip slays its player bites nothing either.
+    let fighter = *room.fighter(player).expect("in");
+    let dying = Fighter { health: 0.0, action: combat::fighter::Action::Dead { elapsed: 0 }, ..fighter };
+    room.atheric_after(&blow(foes[0], SWING), player, &fighter, &blocked, &dying);
+    assert_eq!(told(&room, How::Bite).len(), 1, "the dead bite nothing");
 }
 
 #[test]
@@ -312,6 +338,54 @@ fn conduit_cuts_the_tenets_for_each_blow_that_lands() {
     landed(&mut room, player, SWING, foes[0], Verdict::Dodged { perfect: false });
     let tenets = room.player(player).expect("in").casting.tenets;
     assert!(close(tenets[0], 0.52) && close(tenets[1], 0.52), "{tenets:?}");
+    // The page is told as a Tenet comes ready, not at every blow.
+    let changed = |room: &mut Room| std::mem::take(&mut room.players.get_mut(&player).expect("in").gear_changed);
+    changed(&mut room);
+    landed(&mut room, player, SWING, foes[0], HIT);
+    assert!(!changed(&mut room), "a cut that readies nothing sends no gear");
+    room.players.get_mut(&player).expect("in").casting.tenets = [0.99, 0.5];
+    landed(&mut room, player, SWING, foes[0], HIT);
+    assert!(changed(&mut room), "one that readies a Tenet does");
+}
+
+#[test]
+fn a_shorter_linked_given_over_a_sunwells_keeps_its_share() {
+    let (mut room, player, _) = room_with("deepwatch", false, &[]);
+    room.give(player, Status::Linked, Some(600), Some(player));
+    room.spells.linked.insert(player, 1.5);
+    room.give(player, Status::Linked, Some(180), Some(player));
+    assert_eq!(room.spells.linked.get(&player), Some(&1.5), "the longer Linked held, its share with it");
+    room.give(player, Status::Linked, Some(900), Some(player));
+    assert_eq!(room.spells.linked.get(&player), None, "one that outlasts it heals as written");
+}
+
+#[test]
+fn an_arrow_on_a_foe_slain_this_tick_leaps_nowhere() {
+    let (mut room, player, foes) = room_with("gullwing", false, &[0.0, 6.0]);
+    let held = room.held(player, Slot::Ranged).expect("a player");
+    if let Some(foe) = room.foes.get_mut(&foes[0]) {
+        foe.fighter.health = 1.0;
+    }
+    for _ in 0..2 {
+        let shot = combat::shots::loose(player, Ranged::Bow, [0.0, 0.0, 1.0], 0.0, 0.0, 1.2);
+        room.shots.push((shot, Some(crate::power::Loosed { aimed: true, ..held })));
+    }
+    for _ in 0..10 {
+        room.fly_shots();
+    }
+    assert_eq!(told(&room, How::Leap).len(), 1, "the arrow that slew it leaps; the one on its body does not");
+}
+
+#[test]
+fn a_shot_loosed_from_the_draw_is_marked_aimed_as_it_leaves() {
+    let (mut room, player, _) = room_with("gullwing", false, &[]);
+    let fighter = *room.fighter(player).expect("in");
+    for (power, aimed) in [(1.0, false), (1.2, true), (0.9, true)] {
+        let shot = combat::shots::loose(player, Ranged::Bow, [0.0, 0.0, 1.0], 0.0, 0.0, power);
+        room.happened(player, &fighter, Some(combat::Happening::Loosed(shot)), &[]);
+        let loosed = room.shots.last().and_then(|(_, loosed)| *loosed).expect("loosed by a player");
+        assert_eq!(loosed.aimed, aimed, "power {power}");
+    }
 }
 
 #[test]

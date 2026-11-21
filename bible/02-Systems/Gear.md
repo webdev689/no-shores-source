@@ -90,7 +90,7 @@ number is one of [[Gear as Claude Shapes It]].
   Aurem, and more as the rarity rises: a Magic's upgrades a fragment, a Rare's nodes one and its upgrades three; a
   Legendary's or Atheric's handling, finish and perks 2 fragments and 5 of its island's resource, a weapon's upgrades
   before its last three 5 fragments and 10 of the resource, and its last three upgrades (every upgrade of an armour
-  piece) 6 Essence each; an Atheric's own, 1 Essence ([[Gear as Claude Shapes It]]).
+  piece) 6 Essence each; an Atheric's own, 1,000 Aurem and 1 Essence ([[Gear as Claude Shapes It]]).
 - **XP.** A kill's XP goes to every player who struck the foe in its last 10 s, a tenth more with Scholar worn; for
   each, to the loadout whose blow last landed and to every armour piece worn. An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
@@ -213,8 +213,8 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
 [[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]], in [[The Perk Pass as Claude Shapes It]]'s
 shape.
 
-- **Two perks of its own.** An Atheric weapon has an intrinsic, on whenever it is worn, and its own node, bought for 1
-  Essence in the column the Atheric has for it. Its other columns offer what a Legendary's do. Its page shows the
+- **Two perks of its own.** An Atheric weapon has an intrinsic, on whenever it is worn, and its own node, bought for 1,000
+  Aurem and 1 Essence in the column the Atheric has for it. Its other columns offer what a Legendary's do. Its page shows the
   intrinsic at its head, apart from the nodes ([[Interface]]).
 - **The ten.**
   - Gullwing, a bow. Storm Gull: an aimed shot (one loosed from the draw, which strikes harder than a quick one) that
@@ -491,10 +491,10 @@ Officers ashore fight beside their player, as DFO's crew companions did
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
 - A look is chosen, not drawn for each item: by a rolled item's rarity, level, name and number, a named item's
-  written look, or a faction's. A test wears every item a player can hold, at every level, and fails on any weapon or
-  armour layer of the forge no item wears but a class's own (the class sword, axe, bow and staff, the archer's dark
-  helm) and the laced boots, a garment. A gilded double pistolet's left gun is worn only by a named gilded double pistolet,
-  Brass Chorus.
+  written look, or a faction's. A test wears every item a player can hold, at every level, on the man's body and the
+  woman's, and fails on any weapon or armour layer of the forge no item wears but a class's own (the class sword, axe,
+  bow and staff, the archer's dark helm, the woman's horned one) and the laced boots, a garment. A gilded double
+  pistolet's left gun is worn only by a named gilded double pistolet, Brass Chorus.
 - No Breach items exist yet. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
   Vestige never opens to ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them

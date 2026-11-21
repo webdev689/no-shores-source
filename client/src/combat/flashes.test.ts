@@ -90,6 +90,22 @@ test('a struck figure slides out along the blow in whole pixels and settles back
   assert.deepEqual(flashes.knockOf(1, true), [0, 0], 'let go once it stands again');
 });
 
+test('a burst pushes the foes it strikes away from the foe it came from; a bite leaves a block a block', () => {
+  const flashes = new Flashes();
+  const places: Record<number, readonly [number, number, number]> = { 40: [0, 0, 0], 5: [10, 0, 0], 6: [10, 2, 0] };
+  const where = (id: number) => places[id] ?? null;
+  flashes.update([blow(EVENT.hit, 6, 5, { how: HOW.burst, from: 5 })], 0, { player: 40, look: 0, where });
+  flashes.update([], KNOCK.out * FRAME);
+  const [east, south] = flashes.knockOf(6, true);
+  assert.ok(Math.abs(east) < 1e-9 && south > 0, `out from the ring's foe, not the player: ${east}, ${south}`);
+  // The Reefwall's block and its bite back, told in one tick: the player's contact stays the block's.
+  const guard = new Flashes();
+  const block = blow(EVENT.blocked, 40, 0, { striker: 7 });
+  const bite = blow(EVENT.hit, 7, 4, { how: HOW.bite, from: 40 });
+  guard.update([block, bite], 0, { player: 40, look: 0, where });
+  assert.equal(guard.ownOf(null).contact, 'blocked');
+});
+
 test('a stagger shakes its figure a pixel either way for six frames', () => {
   const flashes = new Flashes();
   flashes.update([blow(EVENT.staggered, 3, 0)], 0);

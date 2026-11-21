@@ -45,13 +45,17 @@ fn a_rolled_weapon_may_be_offered_the_verbs_in_pools_grown_alike() {
 fn a_catalogue_that_breaks_a_rule_says_which() {
     let traits = r#"{"traits": [
         {"id": "light_grip", "name": "Light Grip", "column": "handling", "fits": "melee", "words": "w"},
-        {"id": "own", "name": "Own", "column": "signature", "fits": "someone_else", "words": "w"}]}"#;
+        {"id": "own", "name": "Own", "column": "signature", "fits": "someone_else", "words": "w"},
+        {"id": "typo", "name": "Typo", "column": "handling", "fits": "mele", "words": "w"},
+        {"id": "worn", "name": "Worn", "column": "intrinsic", "fits": "mantle", "words": "w"}]}"#;
     let items = r#"{"items": [{"id": "odd", "name": "Odd", "kind": "sword", "rarity": "legendary",
         "resource": "nowhere", "words": "w", "layout": [["light_grip", "light_grip", "own"], ["missing"]]},
         {"id": "guild_blade", "name": "Guild Blade", "kind": "greatsword", "rarity": "legendary", "faction": "nobody",
         "resource": "nowhere", "words": "w", "layout": []},
         {"id": "bare_atheric", "name": "Bare", "kind": "sword", "rarity": "atheric", "resource": "nowhere", "words": "w",
-        "layout": []}]}"#;
+        "layout": []},
+        {"id": "mantle", "name": "Mantle", "kind": "cloak", "rarity": "legendary", "words": "w", "layout": [],
+        "intrinsic": "worn"}]}"#;
     let resources = r#"{"resources": []}"#;
     let rolled = r#"{"names": {}}"#;
     let problems = Catalogue::parse(traits, items, resources, rolled).expect("well formed").problems();
@@ -63,6 +67,8 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
         "guild_blade: its faction is none the factions' file holds",
         "no Legendary Greatsword",
         "bare_atheric: an Atheric weapon or module has an intrinsic",
+        "trait typo fits mele, which is nothing it may fit",
+        "cloak mantle has no nodes, no intrinsic and asks for no resource",
     ] {
         assert!(problems.iter().any(|problem| problem == expected), "{expected} in {problems:#?}");
     }

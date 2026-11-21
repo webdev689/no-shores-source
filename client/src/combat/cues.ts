@@ -22,6 +22,11 @@ export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 
 export const landsAsSpell = (event: FightEvent): boolean =>
   event.how === HOW.spell || event.how === HOW.leap || event.how === HOW.burst;
 
+/** The fighter a blow came from, which way it pushes its defender and throws its motes: a leap's or a burst's source
+ *  foe, else its striker. */
+export const cameFrom = (event: FightEvent): number =>
+  (event.how === HOW.leap || event.how === HOW.burst) && event.from ? event.from : event.striker;
+
 /** Whether a blow is no weapon's own swing or shot on its foe: a shot, a blow that lands as a spell's, or an Atheric's
  *  bite back on a block, which flashes on the foe bitten but neither kicks the view, holds the fight nor flares the arc. */
 export const notABlow = (event: FightEvent): boolean =>

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
+import female from '../../../tools/forge/tools/sprite-forge/fitted/female.json' with { type: 'json' };
 import male from '../../../tools/forge/tools/sprite-forge/fitted/male.json' with { type: 'json' };
 import type { Outfit } from '../forge/outfit.ts';
 import type { GearItem } from '../network/gearMessages.ts';
@@ -10,12 +12,17 @@ import { wardrobeOf } from './dressing.ts';
 import { KINDS, MELEE, RANGED_SLOT, WORN, slotOf, writtenLook } from './gear.ts';
 import { gearOutfit } from './gearLooks.ts';
 
-/** Every layer of the fitted male body, by the moves it is drawn in, as the page loads a body's layers. */
-const layers: Record<string, string[]> = {};
-for (const [move, heads] of Object.entries(male))
-  for (const names of Object.values(heads as Record<string, string[]>))
-    for (const name of names) (layers[name] ??= []).includes(move) || layers[name].push(move);
-const wardrobe = wardrobeOf('male', layers);
+/** Every layer of a fitted body, by the moves it is drawn in, as the page loads a body's layers. */
+function layersOfBody(fitted: object): Record<string, string[]> {
+  const found: Record<string, string[]> = {};
+  for (const [move, heads] of Object.entries(fitted))
+    for (const names of Object.values(heads as Record<string, string[]>))
+      for (const name of names) (found[name] ??= []).includes(move) || found[name].push(move);
+  return found;
+}
+const BODIES = { male: layersOfBody(male), female: layersOfBody(female) };
+const layers = BODIES.male;
+let wardrobe = wardrobeOf('male', layers);
 
 const plain: Outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: true, hair: null };
 const RARITIES = ['normal', 'magic', 'rare'] as const;
@@ -30,7 +37,7 @@ const WEAPON_OR_ARMOUR =
 /** The weapon and armour layers no item wears, each with why. */
 const LEFT_OUT: readonly { readonly layers: RegExp; readonly why: string }[] = [
   { layers: /^(sword|sword_l|axe|bow|staff|helm|cuirass|pauldrons|boots)$/, why: "a class's own, no item's" },
-  { layers: /^helm_dark$/, why: "the archer class's helm, of no set" },
+  { layers: /^helm_(dark|horned)$/, why: "a class outfit's helm, of no set: the archer's dark, the woman's horned" },
   { layers: /^boots_laced$/, why: 'a garment, not armour' },
 ];
 /** Every weapon and armour item the game can hold: each named piece, and each rolled kind at each rarity a Vestige or
@@ -73,11 +80,26 @@ function layersOf(fields: Partial<GearItem> & { readonly kind: number }): string
   return [...armour, ...[outfit.right, outfit.left].filter((hand) => hand !== null)];
 }
 
-test('every weapon and armour layer the forge draws is worn by some item the game can hold', () => {
-  const worn = new Set(held().flatMap(layersOf));
-  const forge = Object.keys(layers).filter((layer) => WEAPON_OR_ARMOUR.test(layer));
-  const unworn = forge.filter((layer) => !worn.has(layer) && !LEFT_OUT.some((left) => left.layers.test(layer)));
-  assert.deepEqual(unworn.sort(), [], 'layers no item wears');
+test('every weapon and armour layer the forge draws is worn by some item the game can hold, on either body', () => {
+  for (const [body, drawn] of Object.entries(BODIES)) {
+    wardrobe = wardrobeOf(body, drawn);
+    const worn = new Set(held().flatMap(layersOf));
+    const forge = Object.keys(drawn).filter((layer) => WEAPON_OR_ARMOUR.test(layer));
+    const unworn = forge.filter((layer) => !worn.has(layer) && !LEFT_OUT.some((left) => left.layers.test(layer)));
+    assert.deepEqual(unworn.sort(), [], `layers no item wears on the ${body} body`);
+  }
+  wardrobe = wardrobeOf('male', layers);
+});
+
+test("a faction's armour and weapons wear its own set and metal", () => {
+  for (const each of items.items) {
+    const faction = factions.factions.find((one) => 'faction' in each && one.key === each.faction);
+    const kind = KINDS.indexOf(each.kind as never);
+    if (!faction || each.kind === 'cloak') continue;
+    const worn = layersOf({ kind, named: each.id, rarity: 3 });
+    const own = slotOf(kind) <= RANGED_SLOT ? faction.gear.metal : faction.gear.armour;
+    assert.ok(worn.length > 0 && worn.every((layer) => layer.includes(own)), `${each.id}: ${worn.join(', ')}, ${own}`);
+  }
 });
 
 test('each named piece wears its own look and make, its shield too', () => {

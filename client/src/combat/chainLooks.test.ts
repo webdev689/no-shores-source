@@ -61,6 +61,16 @@ test('a burst is one ring round the foe it came from, and an impact on each foe 
   ]);
 });
 
+test('two bursts round one foe, of two players or two elements, each ring; a gone source still leaves the impact', () => {
+  const burst = (fields: Partial<FightEvent>) => event({ how: HOW.burst, defender: 3, element: 1, ...fields });
+  const rings = (events: FightEvent[]) => marked(events).filter((mark) => (mark as unknown[])[0] === 'ring');
+  assert.equal(rings([burst({}), burst({ striker: 9 })]).length, 2, 'two players');
+  assert.equal(rings([burst({}), burst({ element: 3 })]).length, 2, 'two elements');
+  assert.equal(rings([burst({}), burst({ defender: 4 })]).length, 1, 'one burst, two foes struck');
+  assert.deepEqual(marked([event({ from: 77 })]), [['impact', [6, -2, 1.1], null, 2]], 'its source gone from the page');
+  assert.deepEqual(marked([]), []);
+});
+
 test('only a leap or a burst’s verdict is drawn, once, and burns in its own element, not the weapon’s glow', () => {
   assert.equal(chainVerdict(event({})), true);
   assert.equal(chainVerdict(event({ kind: EVENT.killed })), false, 'its kill is told beside it');

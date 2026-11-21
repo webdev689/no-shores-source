@@ -171,7 +171,9 @@ def material_ids(obs, classify):
 def graded(work, ids, names, layer, dyed):
     """The work render graded as the figure's layer is (layers.py `render`, `set_graded`): its set's own grades over
     the body's, and a dyed layer's metal laid grey on the steel band for the page's ramp."""
-    own = armour.SET_GRADE.get({name.lower(): name for name in armour.SETS}.get(layer.rsplit('_', 1)[-1]), {})
+    # Its set is the last word of its name but a short sword's own (`sword_orcish_short`).
+    own = armour.SET_GRADE.get({name.lower(): name for name in armour.SETS}.get(
+        layer.removesuffix('_short').rsplit('_', 1)[-1]), {})
     kept = dict(forge.GRADE)
     forge.GRADE.update(own)
     try:
