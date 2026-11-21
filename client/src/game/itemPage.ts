@@ -109,7 +109,9 @@ function nodePress(
   };
   const held = !node.bought && node.ask !== null;
   const charged = held ? holds.press(ui, id, run) : 0;
-  if (!held && ui.clicked(id)) run();
+  // Asked every frame, so a hold let go off its press is forgotten.
+  const justHeld = holds.heldDown(ui, id);
+  if (!held && ui.clicked(id) && !justHeld) run();
   context.card(id, () => nodeCard(context, node), 'nodes');
   const found = RARITIES[item.rarity];
   const hover = ui.hovered(id) && node.ask !== null;

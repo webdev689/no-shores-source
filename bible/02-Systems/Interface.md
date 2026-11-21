@@ -617,6 +617,8 @@ button's corner and screen, and the Tailor's wares.
 - Drawn by the game, only the toasts and the menu so far; the menu's Ship, Social, Settings, Art, Appearance and
   keepers' pages stand in their island of elements. Tab does not cross from the drawn menu into the island: the
   pointer reaches it, or a press of its own.
+- The company on the heads-up display is drawn under the HUD's elements, so the veil, still an element, hides it while
+  the player travels, until the veil is drawn too.
 - The drawn menu is not doubled past 1440p: the interface draws at one scale, so the menu there stands at 1280 by
   720's sizes rather than twice them. Words keep the face's one letter spacing, so the sheet's wide capitals (headings,
   labels) are as tightly spaced as other words. A tile's soft glow and a card's drop shadow are drawn as hard light

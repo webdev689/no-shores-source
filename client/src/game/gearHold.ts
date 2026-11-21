@@ -9,7 +9,7 @@ import type { Box } from '../ui/quads.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { Node } from '../ui/node.ts';
 import { rgba } from './gearNodes.ts';
-import { charge, play } from './uiSounds.ts';
+import { charge, play, quietPress } from './uiSounds.ts';
 
 /** How long a held press is held before it acts, in milliseconds. */
 export const HOLD_MS = 800;
@@ -115,6 +115,8 @@ export class Holds {
     const held = this.held?.id === id ? this.held : null;
     const keyed = ui.focused(id) && (this.keys.has('enter') || this.keys.has(' '));
     const pointed = ui.pressing(id) && ui.hovered(id);
+    // A hold's press, let go, makes no press's sound: its charge was its sound.
+    if (ui.clicked(id)) quietPress();
     if (this.spent === id) {
       if (pointed || keyed) return 1;
       this.spent = null;
@@ -131,9 +133,19 @@ export class Holds {
     this.seen.add(id);
     this.next.set(id, { rarity, run, rgb });
     if (ui.hovered(id) || (ui.focused(id) && ui.keyFocused) || (ui.focused(id) && !this.aimed)) this.aimed = id;
+    else if (this.aimed === id && !ui.focused(id)) this.aimed = null;
     // The pointer moved off what F held: it is let go, as Destiny's is.
     if (this.held?.by === 'f' && this.held.id === id && !ui.hovered(id) && !ui.focused(id)) this.letGo();
     return this.step(id);
+  }
+
+  /** Whether press `id` was just held to act and is still held or let go this frame, so its release (or a key's
+   *  repeat) is not taken as a click on what it has become (a node bought, now to be chosen). */
+  heldDown(ui: Interface, id: string): boolean {
+    if (this.spent !== id) return false;
+    const keyed = ui.focused(id) && (this.keys.has('enter') || this.keys.has(' '));
+    if (!ui.pressing(id) && !keyed) this.spent = null;
+    return true;
   }
 
   /** How far what `id` names (a press, or what a press charges) is charged now, 0 to 1. */

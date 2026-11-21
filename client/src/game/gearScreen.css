@@ -27,6 +27,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* shortcut: while the drawn menu is open the HUD's elements, which stand over the canvas it is drawn on, are out of
+   sight, as the menu's dimmed world once held them; they go once the HUD is drawn (gearWindow.ts). */
+#hud.gear-open > :not(.gear-island, .gear-tip) {
+  visibility: hidden;
+}
 /* shortcut: a page still made of elements stands over the drawn body, with the body's padding and scroll, until
    those pages are drawn (gearIsland.ts). */
 #hud .gear-island {

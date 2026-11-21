@@ -4,11 +4,18 @@ import type { Interface } from '../ui/ui.ts';
 import { HOLD_MS, Holds, dismantleMs, quiver } from './gearHold.ts';
 
 /** An interface where `state` says what is held, under the pointer and focused. */
-function fakeUi(state: { pressing?: string; hovered?: string; focused?: string; keyFocused?: boolean }): Interface {
+function fakeUi(state: {
+  pressing?: string;
+  hovered?: string;
+  focused?: string;
+  keyFocused?: boolean;
+  clicked?: string;
+}): Interface {
   return {
     pressing: (id: string) => state.pressing === id,
     hovered: (id: string) => state.hovered === id,
     focused: (id: string) => state.focused === id,
+    clicked: (id: string) => state.clicked === id,
     get keyFocused() {
       return Boolean(state.keyFocused);
     },
@@ -108,4 +115,30 @@ test('F held over a carried piece dismantles it after as long as its rarity asks
 test('a picture quivers only in the last half of its hold', () => {
   assert.equal(quiver(0.3), undefined);
   assert.ok(quiver(0.9));
+});
+
+test('a press held to act is not clicked by its release, though a later click is its own', () => {
+  const { holds, frame, wait } = setup();
+  const held = fakeUi({ pressing: 'buy', hovered: 'buy' });
+  frame(held);
+  wait(HOLD_MS);
+  frame(held);
+  assert.ok(holds.heldDown(held, 'buy'), 'still held after it acted');
+  const released = fakeUi({ hovered: 'buy', clicked: 'buy' });
+  assert.ok(holds.heldDown(released, 'buy'), 'its release is the hold’s');
+  assert.ok(!holds.heldDown(released, 'buy'), 'the next click is a click');
+});
+
+test('F aims at a tile the pointer has left only while it keeps the focus', () => {
+  const holds = new Holds(() => 0);
+  const gone: number[] = [];
+  const frame = (ui: Interface) => {
+    holds.frame(ui);
+    holds.dismantle(ui, 'item-3', 0, '1,2,3', () => gone.push(3));
+    holds.end();
+  };
+  frame(fakeUi({ hovered: 'item-3' }));
+  frame(fakeUi({}));
+  assert.ok(!holds.key('f', true), 'the pointer moved off: F holds nothing');
+  assert.deepEqual(gone, []);
 });

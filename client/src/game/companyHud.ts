@@ -1,6 +1,8 @@
 // The company on the heads-up display, after Destiny 1's: each other member's nameplate at the top left, with their
-// name and where they are, the leader's marked; and an invite waiting, said under them. It stands over the veil too,
-// so the company shows while the player travels, as Destiny's loading screens show it.
+// name and where they are, the leader's marked; and an invite waiting, said under them. It is drawn with the menu's
+// layer, under the HUD's elements: shortcut: the veil is still an element, so while the player travels it hides the
+// company, which stood over it as Destiny's loading screens show it; it shows over the veil again once the veil is
+// drawn under the menu's layer.
 
 import type { AccountLink, Roster } from '../network/accounts.ts';
 import type { Child, Node } from '../ui/node.ts';

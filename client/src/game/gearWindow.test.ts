@@ -141,14 +141,19 @@ test('a slot opens its flyout of nine, a carried piece is worn by a click, and E
 test('a right press opens an item’s page over the menu; X on a focused piece does too; Escape closes it first', () => {
   const { ui, click, open, key, frame } = menu();
   open('character');
+  ui.focusOn('slot-0');
   click('slot-0', 2);
+  frame();
   assert.ok(ui.boxOf('item-page'), 'the item’s page lies over the body');
   assert.ok(ui.boxOf('press-Take off'), 'its presses go to the footer');
+  assert.equal(ui.boxOf('slot-1'), null, 'the page under it is out of reach');
+  assert.equal(ui.focusedId, 'item-name', 'it is read from its name');
   key('Escape');
   frame();
   frame();
   assert.equal(ui.boxOf('item-page'), null);
   assert.ok(ui.boxOf('gear-screen'));
+  assert.equal(ui.focusedId, 'slot-0', 'the focus goes back to the slot it was asked from');
   ui.focusOn('slot-1');
   frame();
   key('x');
@@ -157,7 +162,7 @@ test('a right press opens an item’s page over the menu; X on a focused piece d
   assert.ok(ui.boxOf('item-page'), 'X opens the focused piece’s page');
 });
 
-test('Escape lets go of a hold under way, so a step back never dismantles what was held', async () => {
+test('a dismantle held on an item’s page that Escape closes does nothing', async () => {
   const { ui, open, frame, key, asked } = menu();
   open('character');
   frame();

@@ -13,7 +13,7 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
-import { accountMark, MARK } from './accountMark.ts';
+import { accountMark } from './accountMark.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
@@ -133,6 +133,8 @@ export function startGearWindow(
   let said = '';
   /** The press to give the focus to on the next frame: a tab as the menu opens, a tile as a page over it closes. */
   let focusNext: string | null = null;
+  /** The tile to give the focus back to once an item's page closes. */
+  let returnTo: string | null = null;
   /** A page of elements, kept while what it shows stays the same; and whether it is held down. */
   let built: { key: string; page: HTMLElement } | null = null;
   let pressing = false;
@@ -147,8 +149,11 @@ export function startGearWindow(
   let details = new Map<string, GearItem>();
   const redraw = () => drawn++;
 
-  /** The HUD's other parts, out of reach of the keys and a screen reader while the menu is open. */
+  /** The HUD's other parts, out of reach of the keys and a screen reader while the menu is open, and out of sight:
+   *  shortcut: they are elements over the canvas the menu is drawn on, so they would stand over it; they go once the
+   *  HUD is drawn, under the menu's layer. */
   const beneath = (asleep: boolean) => {
+    root.classList.toggle('gear-open', asleep);
     for (const part of root.children)
       if (part instanceof HTMLElement && ![island.node, tip.node].includes(part)) part.inert = asleep;
   };
@@ -171,7 +176,7 @@ export function startGearWindow(
   const back = () => {
     holds.letGo();
     if (!here()?.gear) [inspecting, slot, artSlot, arts, appearance] = [null, null, null, false, false];
-    if (inspecting !== null) inspecting = null;
+    if (inspecting !== null) [inspecting, focusNext] = [null, returnTo];
     else if (slot !== null) slot = null;
     else if (artSlot !== null) artSlot = null;
     else if (arts) [arts, focusNext] = [false, ART_DIAMOND_KEY];
@@ -181,8 +186,9 @@ export function startGearWindow(
   };
   const open = (wanted: View, onShelf?: string) => {
     if (view === wanted && onShelf === undefined) return shut();
-    // A hold under way on the page left behind does not act on it unseen.
+    // A hold under way on the page left behind does not act on it unseen, nor does its card stay.
     holds.letGo();
+    tip.hide();
     const opening = view === null;
     [view, slot, inspecting, built] = [wanted, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
@@ -326,8 +332,8 @@ export function startGearWindow(
         },
         inspect: (inspected) => {
           inspecting = inspected.id;
-          // Back to the tile it was asked from once its page closes.
-          focusNext = frame.focusedId ?? `item-${inspected.id}`;
+          // The page is read from its name; once it closes, the focus goes back to the tile it was asked from.
+          [returnTo, focusNext] = [frame.focusedId ?? `item-${inspected.id}`, ITEM_NAME];
           tip.hide();
         },
         details: (id, detailed) => details.set(id, detailed),
@@ -389,7 +395,12 @@ export function startGearWindow(
           appearancePage({ ...pageContext, forge: now.forge ?? null, dress, close }),
         );
         aside = APPEARANCE_HINTS;
-      } else if (!worn && shown === 'character') page = characterPage(context, slot, (chosen) => (slot = chosen));
+      }
+      // Under an item's page the menu's own page is not laid, so neither the pointer nor the keys reach it.
+      const inspected = gear.items.find((each) => each.id === inspecting);
+      if (!inspected) inspecting = null;
+      if (inspected || worn || appearance || !ofGear(shown)) page = null;
+      else if (shown === 'character') page = characterPage(context, slot, (chosen) => (slot = chosen));
       else if (shown === 'inventory') page = inventoryPage(context, shelf, (chosen) => (shelf = chosen));
       else if (isKeeperView(shown)) {
         element = islandPage(JSON.stringify([shown, gear.answered, gear.items.length, drawn, room.height]), () =>
@@ -397,10 +408,7 @@ export function startGearWindow(
         );
         if (npcChoosing()) aside = npcHints(shown);
       }
-      const inspected = gear.items.find((each) => each.id === inspecting);
-      if (!inspected) inspecting = null;
-      item = inspected ? itemPage(context, inspected, () => ((inspecting = null), tip.hide())) : null;
-      if (item && frame.focusedId === null) focusNext ??= ITEM_NAME;
+      item = inspected ? itemPage(context, inspected, back) : null;
     }
     if (answer !== said && answer) announce(answer);
     said = answer;
@@ -464,7 +472,6 @@ export function startGearWindow(
     holds.frame(frame);
     const box = frame.boxOf(LAYER) ?? { width: innerWidth, height: innerHeight };
     if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
-    if (frame.clicked(MARK)) open('settings');
     // shortcut: the fight's vitals are still elements; the company stands under them while they show, read from the
     // page until the fight's HUD is drawn.
     const fighting = root.querySelector(':scope > .fight:not([hidden])') !== null;
@@ -507,16 +514,25 @@ export function startGearWindow(
       if (key === 'escape') {
         event.preventDefault();
         stepOnce();
-      } else if (key === 'x' && !typing && !island.focused) {
+      } else if (key === 'x' && !typing && island.focused) {
+        // On a page of elements, X sends the focused piece a right press, which opens its details.
+        const focused = document.activeElement;
+        if (!(focused instanceof HTMLElement) || focused.dataset['details'] === undefined) return;
+        event.preventDefault();
+        focused.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+      } else if (key === 'x' && !typing) {
         // X shows the focused piece's details, as a right press does.
         const shown = ui?.focusedId ? details.get(ui.focusedId) : undefined;
         if (!shown) return;
         event.preventDefault();
         inspecting = shown.id;
-        focusNext = ui?.focusedId ?? null;
+        [returnTo, focusNext] = [ui?.focusedId ?? null, ITEM_NAME];
       } else if (opens && !event.repeat) {
         event.preventDefault();
         open(key === 'i' ? 'character' : 'inventory');
+      } else if (key === 'tab' && !island.focused) {
+        // Tab walks the drawn menu, which has heard it, and never the page's elements behind it.
+        event.preventDefault();
       } else if (!typing && !island.focused) {
         const chord = event.ctrlKey || event.metaKey || event.altKey;
         if (holds.key(event.key, true, event.repeat, chord)) event.preventDefault();

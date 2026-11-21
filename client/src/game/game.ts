@@ -381,8 +381,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
   });
   canvas.addEventListener('click', () => {
-    // A click on what the game draws of its interface is the interface's, not a look round.
-    if (ui.takesPointer) return;
+    // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open
+    // the pointer stays free, though the click comes before the interface has heard where it is.
+    if (ui.takesPointer || gearScreenOpen()) return;
     if (flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     if (flow.mode === 'foot' && !flow.menu && foot?.standing.kind !== 'dead' && !input.locked) input.lock();
     if (flow.mode === 'sea' && !flow.menu && sea?.aboard.walking && !input.locked) input.lock();

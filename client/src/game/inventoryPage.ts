@@ -61,14 +61,14 @@ function cellCard(context: MenuContext, cell: Cell): Node {
 }
 
 /** An empty place, vacant: a Vestige's a dark Vestige, a shelf's bare. */
-export function vacantNode(vestige = false): Node {
+function vacantNode(vestige = false): Node {
   return tileNode(CELL_TILE, null, 'rest', vestige ? [{ ...glyphNode('vestige'), opacity: 0.35 }] : [], {
     faded: vestige ? 1 : 0.55,
   });
 }
 
 /** A cell's tile: its picture in a well of its rarity, its count and pips, its card, and its presses. */
-export function cellNode(context: MenuContext, cell: Cell): Node {
+function cellNode(context: MenuContext, cell: Cell): Node {
   const { ui, holds: held, sizes } = context;
   if (cell.glyph === 'empty') return vacantNode();
   const id = `cell-${cell.key}`;
@@ -141,7 +141,7 @@ export function cellNode(context: MenuContext, cell: Cell): Node {
 }
 
 /** A grid of tiles `across` a row, `gap` apart. */
-export function gridNode(tiles: readonly Node[], across: number): Node {
+function gridNode(tiles: readonly Node[], across: number): Node {
   const rows: Node[] = [];
   for (let start = 0; start < tiles.length; start += across)
     rows.push({ gap: 6, children: tiles.slice(start, start + across) });

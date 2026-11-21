@@ -67,7 +67,7 @@ interface Hold {
 let holding: { readonly node: HTMLElement; readonly letGo: () => void } | null = null;
 
 /** Lets go of the hold under way on `node`, or any with none named. */
-export function letGoHold(node?: HTMLElement): void {
+function letGoHold(node?: HTMLElement): void {
   if (holding && (!node || holding.node === node)) holding.letGo();
 }
 
@@ -468,7 +468,6 @@ export class HoverCard {
   get node(): HTMLElement {
     return this.tip;
   }
-  private anchor: HTMLElement | null = null;
   /** What the pointer or the focus showed the card for, which may stand beside another (its row, its flyout). */
   private source: HTMLElement | null = null;
 
@@ -481,7 +480,6 @@ export class HoverCard {
   }
 
   show(anchor: HTMLElement, content: HTMLElement, source: HTMLElement = anchor): void {
-    this.anchor = anchor;
     this.source = source;
     this.tip.replaceChildren(content);
     this.tip.hidden = false;
@@ -500,14 +498,8 @@ export class HoverCard {
   }
 
   hide(): void {
-    this.anchor = null;
     this.source = null;
     this.tip.hidden = true;
-  }
-
-  /** Hides the card once what it describes has left the page, as a page built again leaves it. */
-  keep(): void {
-    if (this.anchor && !this.anchor.isConnected) this.hide();
   }
 
   /** Shows `content()` while the pointer is over `anchor` or it holds the focus, beside `beside` (the anchor itself

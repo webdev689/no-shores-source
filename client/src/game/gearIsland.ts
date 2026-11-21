@@ -8,6 +8,7 @@ export class Island {
   /** The element the page stands in, over the menu's body. */
   readonly node: HTMLElement;
   private shown: HTMLElement | null = null;
+  private placed = '';
 
   constructor(root: HTMLElement) {
     this.node = document.createElement('div');
@@ -29,9 +30,14 @@ export class Island {
     if (page !== this.shown) {
       this.node.replaceChildren(...(page ? [page] : []));
       this.shown = page;
+      this.placed = '';
     }
     this.node.hidden = !page || !box;
     if (!page || !box) return;
+    // Measured only as the body moves, so the page is not laid out again each frame.
+    const where = `${box.x} ${box.y} ${box.width} ${box.height}`;
+    if (where === this.placed) return;
+    this.placed = where;
     const parent = this.node.parentElement?.getBoundingClientRect();
     const own = canvas?.getBoundingClientRect();
     const [left, top] = [(own?.left ?? 0) - (parent?.left ?? 0) + box.x, (own?.top ?? 0) - (parent?.top ?? 0) + box.y];

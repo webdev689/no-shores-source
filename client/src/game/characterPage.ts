@@ -171,18 +171,25 @@ function flyoutNode(context: MenuContext, slot: number, end: boolean, low: boole
   };
 }
 
-/** Closes an open slot's flyout once the pointer is off the slot, the flyout and the strip between them; a key's
- *  focus keeps it, as a touch and a click close it as any press does. */
+/** Closes an open slot's flyout once a pointer that was over the slot, the flyout or the strip between them leaves
+ *  them; one the keys opened while the pointer rests elsewhere stays, and a click or Escape closes it as any does. */
 function closedOffHover(context: MenuContext, slot: number): boolean {
   const pointer = context.ui.pointerAt;
   const [tile, grid] = [context.ui.boxOf(`slot-${slot}`), context.ui.boxOf('flyout')];
   if (!pointer || !tile || !grid) return false;
+  // Only a pointer that was over them leaves them.
+  const was = context.ui.store.get(FLYOUT_HELD) === slot;
   const inside = (box: { x: number; y: number; width: number; height: number }) =>
     pointer.x >= box.x && pointer.y >= box.y && pointer.x < box.x + box.width && pointer.y < box.y + box.height;
   const [left, right] = grid.x > tile.x ? [tile.x + tile.width, grid.x] : [grid.x + grid.width, tile.x];
   const strip = { x: left, y: grid.y, width: right - left, height: grid.height };
-  return !inside(tile) && !inside(grid) && !inside(strip);
+  const over = inside(tile) || inside(grid) || inside(strip);
+  context.ui.store.set(FLYOUT_HELD, over ? slot : null);
+  return was && !over;
 }
+
+/** Where the menu keeps which slot's flyout the pointer is over, between frames. */
+const FLYOUT_HELD = 'flyout-hovered';
 
 /** A worn slot: its item's picture in a tile of its rarity, its words beside it, and its flyout while open. */
 function slotNode(
