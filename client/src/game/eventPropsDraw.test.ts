@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { moduleMouth, moduleNumber } from '../city/modules.ts';
-import { EventPropsDraw, MATERIALS, packLips } from './eventPropsDraw.ts';
+import { EventPropsDraw } from './eventPropsDraw.ts';
+import { MATERIALS, packLips } from './eventPropsPack.ts';
 import type { Gpu } from '../gpu.ts';
 
 test("the fissure's lips pack station by station along its x, the lower lip's y under the higher's", () => {
