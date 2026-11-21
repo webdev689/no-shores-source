@@ -354,3 +354,35 @@ test('a room that turns an arrival away judges before it claims, so the room pla
   await first.due(clock.now + 3_600_000);
   assert.deepEqual(lost, [], 'the plaza still holds the character: its next save is its own');
 });
+
+test('a room that judges arrivals, whose look the accounts never answer, leaves the player unkept without a claim', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const claims: string[] = [];
+  const silent = {
+    ...kept,
+    look: () => Promise.reject(new Error('the accounts are down')),
+    claim: (asked: string, holder: string) => (claims.push(holder), kept.claim(asked, holder)),
+  };
+  const sent: [number, string | undefined][] = [];
+  const judging = new Keeper(
+    silent,
+    room,
+    'node-gullwing-vale',
+    (player, why) => sent.push([player, why]),
+    () => Promise.resolve(),
+  );
+  judging.judgingArrivals(() => true);
+  assert.equal(
+    await judging.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    false,
+  );
+  assert.deepEqual(claims, [], 'never taken from the room that plays it');
+  assert.deepEqual(sent, [], 'it plays on unkept');
+});

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { arriving, type Flow, next } from './flow.ts';
+import { arriving, type Flow, next, onTheSea } from './flow.ts';
 
 test('the player arrives through a veil, on foot in their node', () => {
   const first = arriving('overlook-social', 'Overlook');
@@ -183,4 +183,17 @@ test('a company that falls in an Abyss run is taken out to its entrance, the vei
     'even with the menu open',
   );
   assert.deepEqual(next({ mode: 'sea', menu: false }, happening), { mode: 'sea', menu: false });
+});
+
+test('the player is on the sea while sailing or choosing where to land, never on foot or between places', () => {
+  const sea: Flow = { mode: 'sea', menu: true };
+  assert.equal(onTheSea(sea), true);
+  assert.equal(onTheSea({ mode: 'landing', chosen: null }), true);
+  assert.equal(onTheSea({ mode: 'foot', node: 'overlook-social', menu: false }), false);
+  assert.equal(onTheSea(arriving('saltgrass-downs', 'The Saltgrass Downs')), false, 'a trip from land to land');
+  assert.equal(
+    onTheSea(next({ mode: 'foot', node: 'overlook-social', menu: false }, { kind: 'return-to-ship' })),
+    false,
+  );
+  assert.equal(onTheSea({ mode: 'story' }), false);
 });

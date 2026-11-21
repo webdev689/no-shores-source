@@ -466,8 +466,8 @@ so every decision is Rust and the shell only carries bytes and time.
   replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket
   there that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no session, is closed with 4003 and "Sign in to
   play online." (in a run, "Sign in to enter this run."), so sockets that never sign in cannot hold a room's places;
-  every page of the game sends one, a guest's included. While the accounts do not answer a claim, the player plays on
-  unkept. The Test Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts
+  every page of the game sends one, a guest's included. While the accounts do not answer a claim, or the look before it, the player plays on
+  unkept, and a look unanswered claims nothing. The Test Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts
   ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's reason. A save keeps the keys a
   room does not know, at its top, in its materials, Arts, allegiance and cosmetics, in its day's activity and its story,
   and in each item and Vestige, so a room that knows fewer fields carries the newer ones through; a room built before
@@ -539,7 +539,7 @@ every other figure drawn on from where the new room has it, though its clock sta
   secret, only while that commit is still `main`'s head, and only when what the rooms are built from differs from the
   commit they were last deployed from: the crates of `room-wasm` and of the bake, `server/` and the page's files it imports, the schema's
   maker and its list, the content they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in
-  `rooms.yml`; `server/roomsDeploy.test.ts` fails when it misses a crate, or a file those crates build in). A merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms`
+  `rooms.yml`; `server/roomsDeploy.test.ts` fails when it misses a crate, or a file those crates or their build scripts build in). A merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms`
   environment, which the next run compares with; with none found, it deploys. Without the secret it warns and deploys
   nothing, and when the rooms had something to deploy the page is not published either. Run by hand from `main`, it
   deploys whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token itself.

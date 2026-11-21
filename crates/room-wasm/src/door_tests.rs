@@ -640,6 +640,26 @@ fn at_sea_a_players_gear_is_sent_from_the_character_the_sea_keeps_once_it_change
 }
 
 #[test]
+fn at_sea_each_sailors_gear_carries_their_own_characters_story_alone() {
+    small_sea();
+    let (done, new) = (room_join(), room_join());
+    for player in [done, new] {
+        assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    }
+    room_tick();
+    let mut past = gear::Character::starting();
+    past.story.prologue = true;
+    assert!(gear_door::restore_character(done, past.to_json().as_bytes()));
+    assert!(gear_door::restore_character(new, gear::Character::starting().to_json().as_bytes()));
+    let prologue = |player| {
+        let bytes = gear_door::gear(player);
+        messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear").prologue_done()
+    };
+    // Written one after the other, as the sea writes each sailor's.
+    assert_eq!((prologue(done), prologue(new)), (true, false), "one's prologue is not another's");
+}
+
+#[test]
 fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_the_players_within_60_km() {
     small_sea();
     let (one, near, far) = (room_join(), room_join(), room_join());

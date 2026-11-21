@@ -412,3 +412,36 @@ fn a_band_foe_never_sees_a_player_beyond_the_rock_but_sees_one_in_its_own_room()
     }
     assert!(cases >= 3, "{cases} dungeons with a band foe that faces the rock");
 }
+
+#[test]
+fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
+    // Posts where a body stands by rock or a solid and no way round them fits a chest, as a post on odd floor would.
+    let style = dungeon::style_of("halls").expect("a style");
+    let dungeon = Dungeon::forge(1, style);
+    let floor = Floor::of_dungeon(&dungeon).expect("a dungeon's ground");
+    let Floor::Dungeon(ground) = &floor else { panic!("a dungeon's ground") };
+    let mut room = Room::dungeon_of("isle-test--dungeon", 1, style, LEVELS).expect("an island's dungeon");
+    let player = room.join().expect("room");
+    room.garrison[0].cleared_at = Some(0);
+    let mut on_post = 0;
+    for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != Cell::Rock) {
+        let [x, y] = dungeon.centre(cell);
+        for step in 0..64 {
+            let post = [x - 1.4 + f64::from(step % 8) * 0.4, y - 1.4 + f64::from(step / 8) * 0.4];
+            if !ground.clear_between(post, post, TUNING.radius) {
+                continue;
+            }
+            let cache = cache_by(&floor, &dungeon, [post[0], post[1], 0.0]).expect("its cache");
+            if apart([cache.at[0], cache.at[1]], post) > 1e-9 {
+                continue;
+            }
+            on_post += 1;
+            room.cache = Some(cache);
+            room.keep_cache();
+            let vestige = room.drops_for(player).last().expect("its Vestige");
+            let lies = [vestige.at[0], vestige.at[1]];
+            assert!(ground.clear_between(post, lies, 0.0), "{post:?}: its Vestige thrown into rock or a solid");
+        }
+    }
+    assert!(on_post > 0, "some post where no way round fits");
+}

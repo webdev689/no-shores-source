@@ -127,8 +127,10 @@ export class Keeper {
       // judged again, as the character may have moved on meanwhile.
       const looked = await this.tried(() => characters.look(token), here);
       const shut = looked ? await this.judged(player, looked, here) : looked === null ? this.unsigned : undefined;
-      // Outside a run, accounts that do not answer leave the player to play unkept, as a claim unanswered does.
-      if (shut !== '' && (shut !== undefined || this.company)) {
+      // Outside a run, accounts that do not answer leave the player to play unkept, as a claim unanswered does, and
+      // claim nothing: a claim judged after them could take the character from the room that plays it.
+      if (shut === undefined && !this.company) return false;
+      if (shut !== '') {
         const trouble = shut === undefined;
         if (here()) this.lost(player, shut ?? ACCOUNTS_TROUBLE, trouble);
         return false;

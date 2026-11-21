@@ -71,6 +71,9 @@ fn sea_gear_bytes(character: &gear::Character, minute: u64) -> Option<Vec<u8>> {
             *held = room.join().map(|player| (room, player));
         }
         let (room, player) = held.as_mut()?;
+        // A player new to the room each time, so no sailor's story is carried into the next one's (`Story::merged`).
+        room.leave(*player);
+        *player = room.join()?;
         room.set_minute(minute);
         room.restore_character(*player, &character.to_json()).then(|| protocol::gear_wire::gear_bytes(room, *player))?
     })
