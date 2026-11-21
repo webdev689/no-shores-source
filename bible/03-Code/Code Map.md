@@ -18,7 +18,7 @@ decision, made in the same change as its entry here.
 | `client/index.html` | The [[Game]]'s page: its canvas, its heads-up display and their look |
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU and hands both to the game layer |
 | `client/src/canvasSize.ts` | A canvas's drawing buffer in device pixels, from its size on the page and the screen's pixel ratio, for every page's canvas |
-| `client/src/editorPage.ts` | The [[World Editor]]'s entry point: offers the editor a fleet room, through the combat layer, when its address carries `?room=`, then starts it |
+| `client/src/editorPage.ts` | The [[World Editor]]'s entry point: offers the editor a fleet room, through the combat layer, when its address carries `?room=`, and the game's drawing of the captains' plates, then starts it |
 | `client/src/game/` | The game layer: the [[Game]]'s flow from arriving to landing, on foot in a node, at sea in the [[Overworld]], the scene every drawer draws into, and the heads-up display |
 | `client/src/game/audio/music/` | The [[Music]]: the FM voice bank, the song player, the score format with its layer roles, the scores (the sea's six songs and the three boss scores), and the director that plays them as danger nears, with what it hears of the game on foot and at sea |
 | `client/src/game/audio/ambience/ambience.ts`, `player.ts`, `graph.ts` | The [[Ambience]] the game calls each frame on foot and at sea, one place sounding, and its nodes: rooms, beds' emitters and calls' chains |
@@ -116,8 +116,8 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 
 Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and `water`
 (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
-(imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain`, `ships`, `city`
-and `layout`),
+(imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain`, `ships`, `city`,
+`layout` and `ui`, which draws its panel and the names over its views),
 `combat` (imports `rules`, `network`, `plus`, `player`, the editor's camera and `ui`, whose nodes its display builds), `player` (imports `rules`, `network`,
 `forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`,
 the editor's panel helpers and `ui`, which draws the fight's display there), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and

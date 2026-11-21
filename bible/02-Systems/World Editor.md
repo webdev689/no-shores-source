@@ -5,6 +5,13 @@ code:
   - client/editor/index.html
   - client/src/editorPage.ts
   - client/src/editor/editorMain.ts
+  - client/src/editor/editorFrame.ts#EditorFrame
+  - client/src/editor/panelKit.ts#editorRoot
+  - client/src/editor/editorPanel.ts#continentsPanel
+  - client/src/editor/landPanel.ts#landPanel
+  - client/src/editor/markPass.ts#MarkPass
+  - client/src/editor/strokes.ts#inkVertices
+  - client/src/editor/viewMarks.ts#labelNode
   - client/src/editor/fleetLink.ts#offerFleet
   - client/src/editor/fleetDock.ts#FleetDock
   - client/src/editor/fleetScene.ts#FleetScene
@@ -17,6 +24,7 @@ code:
   - client/src/editor/landEditor.ts#startLandEditor
   - client/src/editor/placeTools.ts#PlaceTools
   - client/src/editor/siteDrawing.ts#siteMarks
+  - client/src/editor/siteDrawing.ts#siteInks
   - client/src/editor/layoutDrawing.ts#layoutMarks
   - client/src/editor/reliefTiles.ts#ReliefTiles
   - client/src/terrain/layoutMarks.ts#layoutMarksOf
@@ -167,6 +175,21 @@ browser cannot keep it, the status says so. To keep shaping done on the site, pu
 
 ## How it works
 
+- **One canvas.** The page holds one canvas and its script, nothing more
+  ([[The Interface Uses No HTML, Now or Later]]). Each frame draws the mode open into the room right of the 300 px
+  panel: the coasts' map, or the land's 2D map or 3D view (the 3D view drawn aside at that room's size and copied
+  in). Over it the marks (rulers, reference shapes, the scale bar, the city, the nodes, the layouts, a place being
+  drawn, the 3D scale cues) are drawn by the GPU as lines, fills and dots, each line smoothed across a pixel and each
+  shape painted once where its pieces overlap (`MarkPass`). Last the interface the game draws (`ui/`) lays the names
+  over the view, the captains' plates in a fight, and the panel at the left, which scrolls under the wheel. A frame
+  is drawn when something asks for one: an input, a change, the water moving in 3D.
+- **The panel** keeps the editor's own look, a tool's and not one of the game's screens: dark slate presses with a
+  hairline edge and rounded corners, lit blue when chosen; the slider, the lists to choose from and the name fields
+  in a browser's dark grey. Tab and the arrows move the focus through it, and Enter or Space presses; a field takes
+  what is typed and hands it over on Enter or as the focus leaves it, or at once when a press on the view takes it.
+  Keys go to the view while a field is typed in never, and to the panel never while walking or sailing. Save, Open…
+  and Download hand files to and from the browser through the page's own services (`ui/page.ts`), and the questions
+  before a file replaces painting are the browser's own dialog.
 - **The land** is a grid of square-kilometre cells over the frame, one byte each: sea, or the continent that holds
   it. A brush stroke never paints over another continent, so continents cannot overlap by accident.
 - **The map** is drawn by WebGPU in one full-screen pass from a texture of that grid: sea, each continent's colour,
@@ -198,5 +221,7 @@ browser cannot keep it, the status says so. To keep shaping done on the site, pu
 - Building the layouts near the camera takes the page's thread about 0.25–0.6 s after each change (in Node, for the
   Saltgrass Downs and its neighbours), on top of the worker's replanning, so the view stalls that long once.
 - All of a landmass's layouts are planned again after every change, not only those it touches.
+- A paragraph breaks only at spaces, never after a hyphen, and a control's words that reach the panel's edge run on
+  under the words before them, not back at the panel's left edge.
 - The first draw uploads the whole grid, about 15 MB, to the GPU: instant on a graphics card, slow on a machine
   without one.

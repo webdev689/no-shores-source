@@ -20,6 +20,8 @@ code:
   - client/src/ui/field.ts#typed
   - client/src/ui/paint.ts#paint
   - client/src/ui/announce.ts#announce
+  - client/src/ui/page.ts#saveFile
+  - client/src/ui/page.ts#openFile
   - client/src/game/toasts.ts#layToasts
   - client/src/plus/tones.ts#TONES
   - client/src/plus/tones.ts#FILLS
@@ -73,7 +75,7 @@ code:
   - client/src/combat/hitWords.ts#wordsOf
   - client/src/combat/foePlate.ts#wardOf
   - client/src/plus/kit.ts#motionReduced
-  - client/src/ships/shipBars.ts#drawShipBars
+  - client/src/ships/shipBars.ts#ShipPlates
   - client/src/ships/shipBars.ts#HullLosses
   - client/src/game/gearScreen.ts#characterOf
   - client/src/game/gearScreen.ts#itemDetailOf
@@ -188,6 +190,8 @@ moves to the game's own drawing
   the figures, the horse and the keepers drawn from the forge's pixels, kept whole. A page still made of elements
   (Ship, Social, Settings, the pages to come) stands in an island laid over the drawn body each frame until it is
   drawn; while its controls have the focus the keys are its own.
+- **The page's own services.** Saving a file, opening one the player chooses, and asking a yes or no in the
+  browser's dialog borrow the page for a moment (`page.ts`); nothing of them is drawn interface.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
 
@@ -359,7 +363,7 @@ moves to the game's own drawing
   140 px with an 8 px bar under the whole name; a Minor's as wide, since "? Crossbowman" fills it in the face, but its
   bar 6 px and only three fifths as long, still a row of its red and of a shield's colour when drawn at three quarters
   far off; an Elite's and up 176 px with a 10 px bar, cut in thirds by dark marks edged light, so they read over the
-  fill and the empty trough alike. Ships' plates are drawn alike on an SVG, at the sizes in `PLATES`: a Major's 140 by
+  fill and the empty trough alike. Ships' plates are drawn alike by the interface, at the sizes in `PLATES`: a Major's 140 by
   26 px over a figure, and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
   wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
@@ -666,7 +670,8 @@ button's corner and screen, and the Tailor's wares.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not
-  the game's screens.
+  the game's screens. The World Editor's panel is drawn by the game in its own look, its names over the view with a
+  halo a pixel wide where the page's stroke stood a pixel and a half out.
 - The vitals always rest when whole: DFO's switch for it waits on a settings screen.
 - A plate keeps its size on any screen; DFO's names also grew with the screen's height.
 - Bars at the top of the screen (the boss bar, the soft lock's, a Boss ship's) stand where they are set; only bars
