@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
-import { AMMO_BOX, AMMO_CRATE, type PixelPicture, VESTIGE_ROWS } from './dropPictures.ts';
+import { AMMO_BOX, AMMO_CRATE, type PixelPicture, VESTIGE_ROWS, resourcePicture } from './dropPictures.ts';
 import { DropsShown, FLIGHT_S, LINE_M, PIXEL_M, RISE_S, flightAt, lineLight, markPicture, pictureOf } from './drops.ts';
 import { MARK_FLOATS } from './marks.ts';
 
@@ -181,7 +181,7 @@ const drawn = (picture: PixelPicture): string[][] =>
   );
 
 test('a picture is laid in layers, each colour over those laid before it, in fewer quads, and reads as drawn', () => {
-  const pictures = [pictureOf(drop({ rarity: 4 })), AMMO_BOX, AMMO_CRATE];
+  const pictures = [pictureOf(drop({ rarity: 4 })), AMMO_BOX, AMMO_CRATE, resourcePicture(4)];
   for (const picture of pictures) {
     assert.ok(picture);
     const layered: number[] = [];

@@ -1,6 +1,7 @@
 import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
+import { marksSeen } from '../combat/marksOver.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
@@ -39,7 +40,7 @@ import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
 import { type Use, nodeBeams, useAt } from './footGear.ts';
-import { markedHere, overheadMarks } from './overheadMarks.ts';
+import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Hint } from './gearNodes.ts';
@@ -99,8 +100,8 @@ export const IDLE: InputFrame = {
 export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
- *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
- *  of its blows, in world metres; and what its display shows), and the keys listed. */
+ *  fight (its marks on the ground and in the air, measured from the eye, with the marks over what the player can use
+ *  and the nodes' beams; the arcs of its blows, in world metres; and what its display shows), and the keys listed. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
@@ -116,8 +117,8 @@ export interface FootFrame {
  * whatever foes its room holds as the Test Ground fights. The node's room is the authority: alone, the room crate runs
  * in the page on the same ground; online, the server's. It judges the edge and the fight, and the page predicts the
  * player by its own rules and takes its word; every other player and foe is shown where it last saw them. Online, the
- * room keeps the player's gear, which their figure wears; its rings mark what E uses within reach: a station's counter
- * or a resource node. A social space's keepers and townsfolk walk it.
+ * room keeps the player's gear, which their figure wears; a mark stands over what E uses within reach: a station's
+ * keeper, Shape or a resource node. A social space's keepers and townsfolk walk it.
  */
 export class Foot {
   readonly node: NodeInfo;
@@ -407,10 +408,10 @@ export class Foot {
     );
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
-    const floor = (x: number, y: number) => movement.standing(x, y).z;
+    const marked = markedHere(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z);
     const dropped = this.dropMarks(clock, shot.eye, [
-      ...nodeBeams(this.gear?.gear ?? null, floor, clock),
-      ...overheadMarks(markedHere(this.gear?.gear ?? null, this.node, floor), shot.eye, clock),
+      ...nodeBeams(marked, clock),
+      ...marksSeen(marked, shot.eye, clock),
       ...foes.overheads(shot.eye, clock),
     ]);
     const marks = effects.marks(fight, seconds, {

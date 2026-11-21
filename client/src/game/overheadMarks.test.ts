@@ -1,22 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MARK_FLOATS } from '../combat/marks.ts';
+import { resourcePicture } from '../combat/dropPictures.ts';
+import { markPicture } from '../combat/drops.ts';
+import { OVER_HEAD_M, OVER_NODE_M, marksSeen } from '../combat/marksOver.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
-import { resourcePicture } from './gearGlyphs.ts';
 import type { StationInfo } from './nodes.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
-import {
-  MIN_RAD,
-  MOST,
-  OVER_HEAD_M,
-  OVER_NODE_M,
-  REACH_M,
-  WIDTH_M,
-  markOfKind,
-  markedHere,
-  overheadMarks,
-} from './overheadMarks.ts';
+import { markOfKind, markedHere } from './overheadMarks.ts';
+import { STATIONS } from './welcome/plazaForTests.ts';
 
 const station = (kind: string, keeper: readonly [number, number]): StationInfo => ({
   kind,
@@ -66,39 +58,20 @@ test("Shape wears his mark on his week's spot, and each node to gather its resou
   assert.deepEqual(marked[1]?.at, [5, 5, 1 + OVER_NODE_M]);
 });
 
-/** The widest a laid mark stands across, metres, from its vertices. */
-const widthOf = (vertices: readonly number[]): number => {
-  const across = vertices.filter((unused, index) => index % MARK_FLOATS === 0);
-  return Math.max(...across) - Math.min(...across);
-};
-
-test('a mark is a hand across near, never narrower on the screen than MIN_RAD far, faded at the end of its reach', () => {
-  const picture = keeperPicture('mage');
-  assert.ok(picture);
-  const over = [0, 0, 2] as const;
-  const seen = (far: number) => overheadMarks([{ picture, at: over }], [0, -far, 2], 0, true);
-  assert.ok(Math.abs(widthOf(seen(3)) - WIDTH_M) < 0.05, 'a hand across, near');
-  const far = 25;
-  assert.ok(Math.abs(widthOf(seen(far)) - 2 * far * Math.tan(MIN_RAD)) < 0.1, 'wider far off, so it still shows');
-  const opacities = (vertices: readonly number[]) => vertices.filter((unused, index) => index % MARK_FLOATS === 6);
-  assert.ok(
-    opacities(seen(10)).every((opacity) => opacity === 1),
-    'whole within the reach',
+test("near, the hub's twelve marks are laid in layers, in under half the vertices of laying them flat", () => {
+  const pictures = [...STATIONS.map((station) => markOfKind(station.kind)), keeperPicture('shape')].filter(
+    (picture) => picture !== null,
   );
-  assert.ok(
-    opacities(seen(REACH_M - 1)).every((opacity) => opacity > 0 && opacity < 1),
-    'fading at its end',
-  );
-  assert.deepEqual(seen(REACH_M + 1), [], 'none past it');
-});
-
-test('a mark bobs on a phase of its own, holds still under reduced motion, and only the nearest are laid', () => {
-  const picture = keeperPicture('vault');
-  assert.ok(picture);
-  const one = [{ picture, at: [0, 0, 2] as const }];
-  assert.notDeepEqual(overheadMarks(one, [0, -5, 2], 0, false), overheadMarks(one, [0, -5, 2], 0.25, false));
-  assert.deepEqual(overheadMarks(one, [0, -5, 2], 0, true), overheadMarks(one, [0, -5, 2], 0.25, true), 'held still');
-  const each = overheadMarks(one, [0, -5, 2], 0, true).length;
-  const many = Array.from({ length: MOST + 4 }, (unused, place) => ({ picture, at: [place * 0.5, 0, 2] as const }));
-  assert.equal(overheadMarks(many, [0, -5, 2], 0, true).length, MOST * each, `the nearest ${MOST}`);
+  assert.equal(pictures.length, 12, 'eleven counters that deal with a player, and Shape');
+  const around = pictures.map((picture, index) => ({
+    picture,
+    at: [5 * Math.cos(index), 5 * Math.sin(index), 2] as const,
+  }));
+  const layered = marksSeen(around, [0, 0, 1.7], 0, true).length;
+  const flat = pictures.reduce((sum, picture) => {
+    const out: number[] = [];
+    markPicture(out, picture, [0, 0, 0], [0, -5, 0], 1, 0.5);
+    return sum + out.length;
+  }, 0);
+  assert.ok(layered < flat / 2, `${layered} numbers a frame against ${flat}`);
 });

@@ -1,8 +1,10 @@
 // What a player's gear lays on foot: over each resource node they may still gather a beam of light seen across the
-// patrol, so a route can be planned through them; the marks over what they can use are overheadMarks.ts's, the drops
-// lying for them their own pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's
-// offer opened, or a node within reach gathered. The room judges every gather; the beams only show where.
+// patrol, so a route can be planned through them, standing clear over the node's mark; the marks over what they can
+// use are `combat/marksOver.ts`'s, the drops lying for them their own pictures (`combat/drops.ts`). And what E does
+// where they stand: a station's or Shape's offer opened, or a node within reach gathered. The room judges every
+// gather; the beams only show where.
 
+import { type Marked, TALLEST_M } from '../combat/marksOver.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { resourceName } from '../player/gear.ts';
 import { openGearWindow } from './gearScreen.ts';
@@ -76,11 +78,12 @@ function markBeam(
   }
 }
 
-/** The nodes' beams at `seconds` of the page's clock, each standing on `floor`'s height where it is. */
-export function nodeBeams(gear: GearState | null, floor: (x: number, y: number) => number, seconds: number): number[] {
+/** The beams over the marks that stand under one (the nodes') at `seconds` of the page's clock, each standing over
+ *  the tallest its mark is drawn, so the mark reads clear of it. */
+export function nodeBeams(marked: readonly Marked[], seconds: number): number[] {
   const out: number[] = [];
   const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
-  for (const { x, y } of gear?.nodes ?? [])
-    markBeam(out, [x, y, floor(x, y)], NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
+  for (const { at, beam } of marked)
+    if (beam) markBeam(out, [at[0], at[1], at[2] + TALLEST_M], NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
   return out;
 }

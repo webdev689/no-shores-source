@@ -20,8 +20,8 @@ to come over, over what a player can use, each wearing its keeper's own mark
 
 - The mark's form: a pixel picture standing on a point over the crown, turned to the eye, hidden by what stands before
   it, never narrower on the screen than a set angle of the view, faded out over the last fifth of its reach.
-- Its numbers: 0.2 m over the crown, a reach of 30 m, a bob of 6 cm once a second on a phase of each mark's own,
-  holding still under reduced motion, the nearest few laid.
+- Its numbers: 0.2 m over the crown, 0.32 m across, a reach of 30 m, a bob of 6 cm once a second on a phase of each
+  mark's own, holding still under reduced motion, the nearest twelve laid.
 
 ## What stays behind
 
