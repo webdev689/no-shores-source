@@ -412,7 +412,9 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   in every mounted move, drawn over the hide unless it lies more than 0.15 m behind it, so its far side and inside stay
   hidden, and in the riding view its own published strip. Own Colours, Bay and Bare change nothing. The room puts the
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
-  player's dress naming one that is not of its kind is refused as any broken dress is. Of the colours a dress lays by
+  player's dress naming one that is not of its kind is refused as any broken dress is. A dress's armour and the things
+  in its hands keep only the pieces of the slots worn, by the same layer names (`layers_of`), and a light in the left
+  hand. Of the colours a dress lays by
   layer, the room keeps a faction's only on the layers of that faction's pieces worn (a helm's, a cuirass's, its
   pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape
   worn, and a dye the player keeps on any (`colours_shown`, `dressed`); a page test holds the room's layer names to

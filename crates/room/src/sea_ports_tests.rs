@@ -15,6 +15,22 @@ pub(super) fn sea() -> Sea {
     sea
 }
 
+impl Sea {
+    /// Sets a player's course as though their ship lay by a port city's roadstead: the tests' and the measurements'
+    /// ships put to sea far from their port cities, so these stand aside while it is set.
+    pub(crate) fn course_anywhere(
+        &mut self,
+        player: PlayerId,
+        points: &[[f64; 2]],
+        pace: u16,
+    ) -> Result<(), crate::sea::CourseRefused> {
+        let ports = std::mem::take(&mut self.harbour.harbours);
+        let set = self.course(player, points, pace);
+        self.harbour.harbours = ports;
+        set
+    }
+}
+
 pub(super) fn ticks(sea: &mut Sea, count: usize) {
     for _ in 0..count {
         sea.tick();
@@ -25,7 +41,7 @@ pub(super) fn ticks(sea: &mut Sea, count: usize) {
 pub(super) fn met(out: f64, rank: Rank) -> (Sea, PlayerId) {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let commission = Commission { faction: PIRATES, rank };
     let bold = Pirate { level: 9, ..Pirate::standing(1, 7, commission, [50_000.0, 50_000.0 - out], 0.0, true) };
     sea.pirates.sailing.push(bold);
@@ -50,7 +66,7 @@ pub(super) fn told(sea: &Sea, player: PlayerId, code: f64) -> Option<Vec<f64>> {
 fn a_voyage_sails_at_its_paces_way_by_the_canvas_it_keeps_never_under_half() {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     sea.tick();
     let ticks_waited = super::super::COURSE_EVERY_TICKS as usize;
     for (canvas, way) in [(0.8, 0.8), (0.2, 0.5)] {
@@ -70,7 +86,7 @@ fn a_voyage_sails_at_its_paces_way_by_the_canvas_it_keeps_never_under_half() {
 fn a_wary_ship_meets_a_player_whose_sloop_it_outguns_and_lets_a_sound_one_be() {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let minor = Commission { faction: PIRATES, rank: Rank::Minor };
     sea.pirates.sailing.push(Pirate::standing(1, 7, minor, [50_000.0, 49_400.0], 0.0, false));
     sea.tick();
@@ -120,7 +136,7 @@ fn a_ships_hurts_are_kept_after_a_fight_and_it_starts_the_next_with_them() {
 fn a_ships_hurts_are_kept_in_the_players_character_across_sessions() {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let mut character = gear::Character::starting();
     character.ship = [5_000, 10_000, 2_500];
     assert!(sea.restore_character(player, &character.to_json()));
@@ -151,7 +167,7 @@ fn by_a_port_at_rest_a_ship_is_repaired_free_over_a_second_a_hundredth_and_saili
     let (kept, left) = sea.kept(player).unwrap();
     assert!((kept[0] - 30.0 / REPAIR_MOST_S).abs() < 1e-6 && left == 0.0, "stopped where it stood: {kept:?}");
     let far = sea.join();
-    sea.course(far, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(far, &[[50_000.0, 50_000.0]], 10).unwrap();
     sea.tick();
     sea.berths.get_mut(&far).unwrap().kept = [0.5; 3];
     assert_eq!(sea.repair(far), Err(RepairRefused::NotThere), "10 km from the nearest roadstead");

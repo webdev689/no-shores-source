@@ -64,3 +64,16 @@ test("an island's room checks landings, which only a sea answers", () => {
   assert.equal(door.land('account-a'), true);
   assert.equal(door.seaLanded(1, '41', 'account-a'), false, 'an island room is no sea');
 });
+
+test("a sea island's dungeon has its sea's word only behind the door of an island the sea holds", () => {
+  const door = startRoomDoor(compiled);
+  const layout = `{ "continents": [{ "id": "continent-4", "climate": "desert", "outline": ${JSON.stringify([
+    [100000, 100000],
+    [200000, 100000],
+    [200000, 200000],
+    [100000, 200000],
+  ])} }], "isles": [] }`;
+  assert.equal(door.openSea(layout, 7), true);
+  assert.equal(door.seaDungeon('sea-dungeon-continent-4-caverns-0a1b2c3d'), '', 'no island stands');
+  assert.equal(startRoomDoor(compiled).seaDungeon('sea-dungeon-continent-4-caverns-0a1b2c3d'), '', 'no sea is open');
+});

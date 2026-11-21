@@ -208,6 +208,19 @@ impl Room {
         let body = Body { facing, ..standing_on(&self.floor, &self.blocks, x, y) };
         Some(self.join_standing(body))
     }
+
+    /// Stands a player joined before an entrance at the next spawn instead, as an ordinary join stands them: the
+    /// server learns only once their character is kept whether they came out of its dungeon. False for no such player.
+    pub fn stand_at_spawn(&mut self, player: PlayerId) -> bool {
+        if !self.players.contains_key(&player) {
+            return false;
+        }
+        let body = self.next_spawn();
+        self.players.get_mut(&player).is_some_and(|found| {
+            found.fighter.body = body;
+            true
+        })
+    }
 }
 
 #[cfg(test)]

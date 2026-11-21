@@ -40,7 +40,7 @@ fn a_player_who_leaves_mid_fight_is_kept_with_their_hurts_as_the_fight_has_them_
 fn back_at_sea_their_ship_lies_where_the_room_last_kept_it_not_where_the_page_first_put_it() {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[40_000.0, 40_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[40_000.0, 40_000.0]], 10).unwrap();
     let mut character = gear::Character::starting();
     character.ship_at = Some([60_000, 50_000]);
     assert!(sea.restore_character(player, &character.to_json()));
@@ -185,21 +185,54 @@ fn a_page_whose_character_is_not_kept_sails_its_held_course_once_the_keeper_says
     let mut sea = sea();
     sea.keep_characters();
     let player = sea.join();
-    sea.course(player, &[[40_000.0, 40_000.0]], 10).unwrap();
-    sea.course(player, &[[41_000.0, 40_000.0]], 10).unwrap();
+    sea.course(player, &[[58_000.0, 50_000.0]], 10).unwrap();
+    sea.course(player, &[[58_500.0, 50_000.0]], 10).unwrap();
     sea.tick();
     assert!(sea.ships().all(|(each, _)| each != player));
     sea.none_kept(player);
     let ship = sea.ships().find(|(each, _)| *each == player).unwrap().1;
-    assert_eq!((ship.x, ship.y), (41_000.0, 40_000.0), "the latest course held, put to sea at its first point");
+    assert_eq!((ship.x, ship.y), (58_500.0, 50_000.0), "the latest course held, put to sea at its first point");
     sea.none_kept(player);
     ticks(&mut sea, 31);
-    assert_eq!(sea.course(player, &[[42_000.0, 40_000.0]], 10), Ok(()), "and sails as any ship does after");
+    assert_eq!(sea.course(player, &[[40_000.0, 40_000.0]], 10), Ok(()), "and sails as any ship does after");
     let mut character = gear::Character::starting();
     character.ship_at = Some([60_000, 50_000]);
     let unkept_by_the_page = sea.join();
     sea.none_kept(unkept_by_the_page);
     assert!(sea.restore_character(unkept_by_the_page, &character.to_json()));
+}
+
+#[test]
+fn a_ship_puts_to_sea_only_by_a_port_citys_roadstead_and_a_new_character_lies_at_overlooks() {
+    let mut sea = sea();
+    sea.harbour.harbours.ports.push(("overlook".into(), [10_000.0, 10_000.0]));
+    sea.keep_characters();
+    let far_out = sea.join();
+    sea.course(far_out, &[[40_000.0, 40_000.0], [41_000.0, 40_000.0]], 10).unwrap();
+    sea.none_kept(far_out);
+    assert!(sea.ships().all(|(each, _)| each != far_out), "the page's word puts no ship to sea far from a port");
+    ticks(&mut sea, 31);
+    assert_eq!(sea.course(far_out, &[[40_000.0, 40_000.0]], 10), Err(crate::sea::CourseRefused::BadCourse));
+    // A new character, kept with no place yet, puts to sea by Overlook alone: at its roadstead, wherever else the page
+    // asked, or put it before the keeper answered.
+    let new = sea.join();
+    sea.course(new, &[[40_000.0, 40_000.0]], 10).unwrap();
+    let by_east = sea.join();
+    sea.none_kept(by_east);
+    sea.course(by_east, &[[58_000.0, 50_000.0]], 10).unwrap();
+    for player in [new, by_east] {
+        assert!(sea.restore_character(player, &gear::Character::starting().to_json()));
+        let ship = sea.ships().find(|(each, _)| *each == player).unwrap().1;
+        assert_eq!((ship.x, ship.y, ship.pace), (10_000.0, 10_000.0, 0));
+        let moored = told(&sea, player, crate::harbour::MOORED).map(|numbers| numbers[2..4].to_vec());
+        assert_eq!(moored, Some(vec![10_000.0; 2]));
+    }
+    // The page's own start off Overlook's harbour, within reach of its roadstead, is where it sails from.
+    let off_harbour = sea.join();
+    sea.course(off_harbour, &[[11_500.0, 11_000.0], [12_000.0, 12_000.0]], 10).unwrap();
+    assert!(sea.restore_character(off_harbour, &gear::Character::starting().to_json()));
+    let ship = sea.ships().find(|(each, _)| *each == off_harbour).unwrap().1;
+    assert_eq!((ship.x, ship.y, ship.pace), (11_500.0, 11_000.0, 10));
 }
 
 #[test]

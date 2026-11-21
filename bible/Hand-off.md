@@ -324,11 +324,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   effects stay, and at what settings, is the owner's to say; each is one line in `combat/attackFeel.ts` (`FEEL`).
 - A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
   draws none in the left fist there. Whether the forge should, is the owner's to say.
-- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
-  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
-  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into
-  `main` that changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run
-  by hand.
+- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `rooms` workflow alone reads;
+  the workflows that publish to R2 read `R2_TOKEN`, a token for R2 alone, which the owner has still to create. The one
+  the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy writes the
+  stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into `main` that
+  changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run by hand.
 - #62's: no weapon is seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and
   `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes

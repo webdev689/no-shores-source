@@ -130,6 +130,17 @@ pub fn sea_island(id: u32) -> String {
     word.flatten().unwrap_or_default()
 }
 
+/// The open sea's word on the standing island whose door leads into the dungeon room `room` (its name at Normal,
+/// `room::sea::islands::dungeon_room`), as `sea_island` gives it; empty if none does.
+#[must_use]
+pub fn sea_dungeon(room: &str) -> String {
+    let id = with_open(|opened| match opened {
+        Opened::Sea(sea) => sea.island_behind(room).map(|island| island.id),
+        _ => None,
+    });
+    id.flatten().map(sea_island).unwrap_or_default()
+}
+
 /// Holds the open sea's island `id` of `seed` while players stand ashore on it: whether it stands.
 #[must_use]
 pub fn hold_ashore(id: u32, seed: u64) -> bool {
@@ -180,6 +191,17 @@ pub unsafe extern "C" fn room_open_island(address: *const u8, length: usize) -> 
 #[unsafe(no_mangle)]
 pub extern "C" fn room_sea_island(id: u32) -> u64 {
     hand_over(sea_island(id).into_bytes())
+}
+
+/// The open sea's word on the island behind the dungeon room named at `address` (`sea_dungeon`).
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_sea_dungeon(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let room = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(address, length) }).into_owned();
+    hand_over(sea_dungeon(&room).into_bytes())
 }
 
 /// Holds the open sea's island `id` of the seed whose halves are given while players stand ashore (`hold_ashore`); 1

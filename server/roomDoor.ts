@@ -65,6 +65,9 @@ export interface RoomDoor {
   openIsland(word: string): boolean;
   /** The open sea's word on its island by its number, as JSON: empty if it does not stand. */
   seaIsland(id: number): string;
+  /** The open sea's word on the standing island whose door leads into a dungeon's room (its name at Normal), as
+   *  `seaIsland` gives it: empty if no island the sea holds has that door. */
+  seaDungeon(room: string): string;
   /** Holds the open sea's island by its number and seed while players stand ashore: whether it stands. */
   holdAshore(id: number, seed: string): boolean;
   /** Whether the open sea has an account landed on its island of that number and seed: its ship at rest at the
@@ -89,6 +92,8 @@ export interface RoomDoor {
   /** A new player's number, standing before the door of the open patrol's entrance numbered `entrance`, facing away
    *  from it; 0 when the room is no patrol, has no such entrance, is full or its node locked. */
   joinAt(entrance: number): number;
+  /** Stands a player who joined before an entrance at the room's next spawn instead, as an ordinary join. */
+  standAtSpawn(player: number): boolean;
   /** Why the room takes no player, a locked node's words; null for a room that takes them. */
   refusal(): string | null;
   /** The welcome's bytes for a player. */
@@ -187,6 +192,7 @@ interface RoomExports {
   room_open_fleet(): number;
   room_open_island(address: number, length: number): number;
   room_sea_island(id: number): bigint;
+  room_sea_dungeon(address: number, length: number): bigint;
   room_hold_ashore(id: number, low: number, high: number): number;
   room_sea_landed(id: number, low: number, high: number, address: number, length: number): number;
   room_isle_check_landings(): number;
@@ -198,6 +204,7 @@ interface RoomExports {
   room_forbid_arts(): void;
   room_join(): number;
   room_join_at(entrance: number): number;
+  room_stand_at_spawn(player: number): number;
   room_refusal(): bigint;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -301,6 +308,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     openIsland: (word) => openWith(exports.room_open_island, word),
     seaIsland: (id) => new TextDecoder().decode(take(exports.room_sea_island(id >>> 0))),
+    seaDungeon: (room) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_dungeon, room))),
     holdAshore: (id, seed) => exports.room_hold_ashore(id >>> 0, ...halves(seed)) === 1,
     seaLanded: (id, seed, account) =>
       openWith((address, length) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, length), account),
@@ -328,6 +336,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     forbidArts: () => exports.room_forbid_arts(),
     join: () => exports.room_join(),
     joinAt: (entrance) => exports.room_join_at(entrance >>> 0),
+    standAtSpawn: (player) => exports.room_stand_at_spawn(player) === 1,
     refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),

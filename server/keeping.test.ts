@@ -11,6 +11,7 @@ import {
   type KeptRoom,
   SAVE_AFTER_CHANGE_MS,
   SAVE_UNCHANGED_MS,
+  SIGN_IN,
   SIGN_IN_FOR_RUN,
 } from './keeping.ts';
 
@@ -434,9 +435,33 @@ test('a run keeps no one unkept: a token that is no session, none in time, or no
   assert.equal(keeper.waiting(5), false, 'and plays from then on');
   const open = new Keeper(kept, room, 'node-saltgrass-downs', told, () => Promise.resolve());
   assert.equal(open.waiting(2), false, 'any other room lets a player play while they sign in');
-  await open.tokenDue(2, () => false, here);
-  assert.equal(await open.signIn(2, 'f'.repeat(64), now, here), false);
-  assert.equal(sent.length, 3, 'any other room still lets a player play unkept');
+});
+
+test('a room that keeps characters sends away a player with no session, so none holds a place in it for good', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  for (const player of [1, 2, 3, 4, 5]) room.held.set(player, '{"starting":true}');
+  const sent: unknown[][] = [];
+  const told = (player: number, why?: string, rejoinable?: boolean) => void sent.push([player, why, rejoinable]);
+  const keeper = new Keeper(kept, room, 'node-overlook-social', told, () => Promise.resolve());
+  const [now, here] = [() => clock.now, () => true];
+  await keeper.tokenDue(1, () => false, here);
+  await keeper.tokenDue(2, () => true, here);
+  await keeper.tokenDue(
+    3,
+    () => false,
+    () => false,
+  );
+  assert.deepEqual(sent, [[1, SIGN_IN, false]], 'no token after the wait; a token on its way, or one gone, is not');
+  assert.equal(await keeper.signIn(4, 'f'.repeat(64), now, here), false);
+  assert.deepEqual(sent.slice(1), [[4, SIGN_IN, false]], 'a token that is no session');
+  const down = { ...kept, claim: () => Promise.reject(new Error('the accounts are down')) };
+  const cut = new Keeper(down, room, 'node-overlook-social', told, () => Promise.resolve());
+  assert.equal(await cut.signIn(5, token, now, here), false);
+  assert.equal(sent.length, 2, 'while the accounts do not answer, a player plays on unkept');
+  const nothing = new Keeper(null, room, 'test-playtest', told, () => Promise.resolve());
+  await nothing.tokenDue(1, () => false, here);
+  assert.equal(sent.length, 2, 'a room that keeps nothing sends no one away');
 });
 
 test('a run asks again for a player’s company the accounts did not give, then sends them to try again', async () => {

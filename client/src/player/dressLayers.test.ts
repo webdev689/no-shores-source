@@ -60,6 +60,12 @@ test("every layer the page dresses a faction piece's colour on, and that colour,
     );
     const coloured = Object.entries(dressed.dyes).filter(([, colour]) => factionColours.has(colour));
     assert.ok(coloured.length > 0, `${piece.named} is dressed in its faction's colour`);
+    const armour = Object.entries(dressed.armour).map(([part, set]) => `${part}_${set}`);
+    for (const layer of [...armour, dressed.right, dressed.left].filter((each) => each !== null))
+      assert.ok(
+        piece.on.some((start) => layer.startsWith(start)),
+        `${piece.named}: the room drops ${layer}`,
+      );
     for (const [layer, colour] of coloured) {
       assert.ok(
         piece.on.some((start) => layer.startsWith(start)),
