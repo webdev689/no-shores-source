@@ -73,10 +73,11 @@ test('a dungeon or a run is entered from its node’s room, and left back into i
   const run = 'node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6';
   assert.equal(arrives(run, 'node-gullwing-vale--elite', null, null), true);
   assert.equal(arrives(run, 'node-gullwing-vale', null, null), false);
-  // An Elite Dungeon's run at Normal from its node at any seas; the week's at Abyss only from its node at Abyss.
+  // An Elite Dungeon's run, at Normal or the week's at its own tier, from its node at any seas: its tier is its own.
   assert.equal(arrives('node-krakens-grotto--run-k3j4h5g6', 'node-krakens-grotto--abyss', null, null), true);
   assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-krakens-grotto--abyss', null, null), true);
-  assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-krakens-grotto', null, null), false);
+  assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-krakens-grotto', null, null), true);
+  assert.equal(arrives('node-krakens-grotto--abyss--run-k3j4h5g6', 'node-gullwing-vale', null, null), false);
   // Out again, at the seas the dungeon was gone into at.
   assert.equal(arrives('node-gullwing-vale', 'node-gullwing-vale--dungeon-1', null, reach()), true);
   assert.equal(arrives('node-gullwing-vale--elite', run, null, reach()), true);

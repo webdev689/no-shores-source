@@ -35,8 +35,8 @@ test('each of the day’s bounties is taken, counted, turned in once done, and t
     rows.slice(0, 4).map((row) => [row.state, row.progress, row.press?.label ?? null]),
     [
       ['open', '', 'Take'],
-      ['held', '1 / 2', null],
-      ['done', '3 / 3', 'Turn in'],
+      ['held', '1/2', null],
+      ['done', '3/3', 'Turn in'],
       ['paid', 'Turned in', null],
     ],
   );
@@ -54,8 +54,8 @@ test('each of the day’s bounties is taken, counted, turned in once done, and t
 test('a bounty’s state reads as its count while held, then done, turned in, or not taken', () => {
   assert.deepEqual(bountyRows(gear).slice(0, 4).map(bountyWords), [
     'Not taken',
-    '1 / 2',
-    'Done. Turn it in at the bounty board.',
+    '1/2',
+    'Done. Turn it in at the board.',
     'Turned in',
   ]);
 });
@@ -128,7 +128,7 @@ test('the board is the day’s six as tiles, a row a kind, with no words on a ti
 test('the chosen tile’s card says its name, kind, words, count and pay, and E or a click takes or turns it in', () => {
   const { root, asked, done } = boardOf(sixOnTheBoard);
   const card = () => keyed(root, 'bounty-card');
-  for (const words of ['Tithe Collector', 'Land bounty', 'Defeat 30 Grey Tithe foes.', '0 / 30', '+3,500', '+210'])
+  for (const words of ['Tithe Collector', 'Land bounty', 'Defeat 30 Grey Tithe foes.', '0/30', '+3,500', '+210'])
     assert.ok(card()?.find(words), words);
   assert.ok(
     card()
@@ -140,7 +140,7 @@ test('the chosen tile’s card says its name, kind, words, count and pay, and E 
   keyed(root, 'bounty-2')?.dispatchEvent(new FakeEvent('pointerenter'));
   assert.ok(card()?.find('Broadside') && card()?.find('Sea bounty') && labelled(root, 'Turn in: Broadside'));
   keyed(root, 'bounty-3')?.dispatchEvent(new FakeEvent('focus'));
-  assert.ok(card()?.find('Turned in') && card()?.find('1 / 1'));
+  assert.ok(card()?.find('Turned in') && card()?.find('1/1'));
   keyed(root, 'bounty-0')?.click();
   const grid = classed(root, 'gear-board-grid')[0];
   keyed(root, 'bounty-2')?.focus();

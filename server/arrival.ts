@@ -76,9 +76,10 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   const [to, was] = [nodeOf(room), nodeOf(from)];
   if (!to) return false;
   if (was && was.id === to.id) {
-    // Into a dungeon from its node's room at its seas, an Elite Dungeon's run at Normal from its node at any; out of
-    // the node's own dungeon or run at the seas it was gone into at.
-    if (inside(to)) return !inside(was) && (was.seas === to.seas || (to.dungeon === null && to.seas === 0));
+    // Into a dungeon from its node's room at its seas, an Elite Dungeon's run (the week's at its own tier, or at
+    // Normal) from its node at any, as its tier is its own whatever the seas; out of the node's own dungeon or run at
+    // the seas it was gone into at.
+    if (inside(to)) return !inside(was) && (was.seas === to.seas || (to.dungeon === null && to.run !== null));
     if (inside(was)) return was.seas === to.seas;
   }
   if (inside(to)) return false;

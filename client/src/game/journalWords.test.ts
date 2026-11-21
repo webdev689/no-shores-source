@@ -75,8 +75,8 @@ test('the bounties taken stand in the board’s order, each with its count, done
   assert.deepEqual(
     column.taken.map((row) => [row.place, row.pool, bountyWords(row)]),
     [
-      [1, 0, '1 / 2'],
-      [2, 1, 'Done. Turn it in at the bounty board.'],
+      [1, 0, '1/2'],
+      [2, 1, 'Done. Turn it in at the board.'],
       [3, 1, 'Turned in'],
     ],
   );

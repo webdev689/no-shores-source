@@ -233,7 +233,7 @@ fn a_players_mail_crosses_with_where_each_letters_holding_came_from_and_what_it_
 #[test]
 fn a_patrols_players_are_sent_its_entrances_and_no_one_else_is() {
     let ring = vec![[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]];
-    let section = room::Section { ring, spawns: vec![[0.0, 0.0]] };
+    let section = room::Section { ring, spawns: vec![[0.0, 0.0]], falls_kill: false };
     let mut room = Room::node(room::Floor::Flat, Vec::new(), section);
     room.start_patrol("saltgrass-downs", 0);
     let player = room.join().expect("a room with space");

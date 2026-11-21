@@ -11,7 +11,7 @@ the seed of a sea island's dungeon, the sea's tiers' gates), the owner wrote:
 > "We should be server authoritive 100% across the codebase"
 
 Asked how the prologue should be judged, since its wreck fight runs in the page and the page says when it is done,
-the owner first chose that the server run it, then asked:
+the owner first chose "Server runs it (Recommended)", then asked:
 
 > "I mean, does it need to be SA?"
 

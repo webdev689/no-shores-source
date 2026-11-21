@@ -85,8 +85,9 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
-  /** Takes away every player's Art: the prologue's wreck, where the player has none yet. */
-  forbidArts(): void;
+  /** Plays the prologue's wreck: no Art (the player has none yet), the story's sword and shield, and every boarder on
+   *  one side, held to a Major (`Room::story_wreck`). */
+  storyWreck(): void;
   /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
   /** A new player's number, standing before the door of the open patrol's entrance numbered `entrance`, facing away
@@ -138,6 +139,8 @@ export interface RoomDoor {
   shut(player: number, kept: string | null): string;
   /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
   own(player: number, account: string): boolean;
+  /** Holds a player's inputs, or lets them play: held, each is taken in its order and played as standing still. */
+  hold(player: number, held: boolean): boolean;
   /** The open sea keeps characters from now on: a player's courses wait for the keeper's word on theirs (a character
    *  given back, or `noneKept`), so a ship comes back where the room last kept it; false if no sea is open. */
   keepCharacters(): boolean;
@@ -201,7 +204,7 @@ interface RoomExports {
   room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
   room_take_foe_asks(): void;
-  room_forbid_arts(): void;
+  room_story_wreck(): void;
   room_join(): number;
   room_join_at(entrance: number): number;
   room_stand_at_spawn(player: number): number;
@@ -223,6 +226,7 @@ interface RoomExports {
   room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
   room_restore_character(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
+  room_hold(player: number, held: number): number;
   room_keep_characters(): number;
   room_none_kept(player: number): void;
   room_furnish(address: number, length: number): number;
@@ -333,7 +337,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return new Float64Array(bytes.buffer, bytes.byteOffset, bytes.length / 8);
     },
     takeFoeAsks: () => exports.room_take_foe_asks(),
-    forbidArts: () => exports.room_forbid_arts(),
+    storyWreck: () => exports.room_story_wreck(),
     join: () => exports.room_join(),
     joinAt: (entrance) => exports.room_join_at(entrance >>> 0),
     standAtSpawn: (player) => exports.room_stand_at_spawn(player) === 1,
@@ -369,6 +373,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
+    hold: (player, held) => exports.room_hold(player, held ? 1 : 0) === 1,
     shut: (player, kept) => {
       const bytes = new TextEncoder().encode(kept ?? '');
       return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_shut(player, address, bytes.length))));

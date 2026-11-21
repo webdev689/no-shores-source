@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { railShot } from '../../cinema/rail.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
 import type { Tick } from './beat.ts';
 import { Brig } from './brig.ts';
 import { creationShot, helmDeck } from './helm.ts';
 import { STORM } from './skies.ts';
-import { StormDive } from './storm.ts';
+import { runKeys, StormDive } from './storm.ts';
 import type { Story } from './story.ts';
 
 const VIEW = { width: 1600, height: 900 };
@@ -79,4 +80,19 @@ test("the storm's run ends in the helm's own shot of it riding the swell, so the
   assert.ok(Math.abs(last.shot.yaw - helm.yaw) < 1e-6, 'yaw');
   assert.ok(Math.abs(last.shot.pitch - helm.pitch) < 1e-6, 'pitch');
   assert.ok(Math.abs(last.shot.fov - helm.fov) < 1e-6, 'lens');
+});
+
+test("the run to the helm keeps clear of the Brig's yards and spanker, coming in only under the boom, aft", () => {
+  // In the Brig's own frame: its yards reach 6.5 m out each side and its spanker swings some 8 m out over its
+  // quarter, its boom 5.9 m up. Within 9 m of its middle the eye is under the boom and aft of the helm's own shot.
+  for (const aspect of [16 / 9, 9 / 16]) {
+    const keys = runKeys(aspect);
+    const helm = keys.at(-1)?.eye[0] ?? 0;
+    for (let time = 9.5; time <= 20; time += 0.05) {
+      const [forward, starboard, up] = railShot(keys, time, 0.9).eye;
+      if (Math.abs(starboard) >= 9) continue;
+      const where = `${time.toFixed(2)} s: ${forward.toFixed(1)}, ${starboard.toFixed(1)}, ${up.toFixed(1)}`;
+      assert.ok(forward <= helm + 1e-9 && up < 5.9, `among the rig at ${where}`);
+    }
+  }
 });

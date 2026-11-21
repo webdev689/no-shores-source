@@ -54,7 +54,7 @@ export function bountyCard(row: BountyRow, pay: Pay, foot: HTMLElement | null): 
   card.append(make('b', row.name, 'bounty-card-name'), kind, make('p', row.words, 'bounty-card-words'));
   const counted = make('div', '', 'bounty-card-count');
   counted.append(gauge(row.state === 'paid' ? row.target : row.count, row.target));
-  counted.append(make('span', `${row.state === 'paid' ? row.target : row.count} / ${row.target}`));
+  counted.append(make('span', `${row.state === 'paid' ? row.target : row.count}/${row.target}`));
   // What it pays, each by its glyph: XP by its letters, Aurem by its coin.
   const paid = make('p', '', 'bounty-card-pay');
   const aurem = glyphImage('aurem');

@@ -241,14 +241,18 @@ fn in_air<B: Near + ?Sized>(
         && ahead.block.top - z <= TUNING.reach + TUNING.reach_in_air
     {
         let rise = ahead.block.top - z;
-        // A lip too low to hang from, with the feet clear of the ground, is climbed straight over.
-        let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, terrain, x, y, body.z);
-        if rise <= TUNING.vault || low_lip {
+        let floor = ground_at(blocks, terrain, x, y, body.z);
+        // A lip too low to hang from, with the feet clear of the ground, is climbed straight over. Where bodies never
+        // climb, only a lip within a vault of the floor is gone over, and none is hung from.
+        let low_lip = ahead.block.top - TUNING.hang < floor;
+        let goes_over =
+            if terrain.climbs() { rise <= TUNING.vault || low_lip } else { ahead.block.top - floor <= TUNING.vault };
+        if goes_over {
             // Over it, unless the terrain walls the way past it: then it lands as if no lip stood there.
             if let Some(over) = go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead), blocks, terrain) {
                 return over;
             }
-        } else {
+        } else if terrain.climbs() {
             return Body {
                 z: ahead.block.top - TUNING.hang,
                 mode: Mode::Hang,
@@ -304,7 +308,9 @@ fn on_ground<B: Near + ?Sized>(
     if controls.jump && grounded >= TUNING.grounded_to_jump && !controls.mounted {
         let ahead = if controls.forward > 0.0 { wall_ahead(blocks, &next, controls.yaw) } else { None };
         // A lip in reach from the ground is vaulted if low and thin, else mantled; a higher one is caught in the air.
-        if let Some(ahead) = ahead.filter(|ahead| ahead.block.top - next.z <= TUNING.reach)
+        // Where bodies never climb, the reach is a vault's.
+        let reach = if terrain.climbs() { TUNING.reach } else { TUNING.vault };
+        if let Some(ahead) = ahead.filter(|ahead| ahead.block.top - next.z <= reach)
             && let Some(over) =
                 go_over(&next, &ahead, controls.yaw, vaults(ahead.block.top - next.z, &ahead), blocks, terrain)
         {
@@ -322,8 +328,9 @@ fn on_ground<B: Near + ?Sized>(
         };
     }
     // Pressing into a wall too high to grab, the body takes hold of it, square to it, and climbs: standing to, so not
-    // where a crouched body has no room to stand.
-    let wall = if controls.forward > 0.0 && !controls.mounted { wall_ahead(blocks, &next, controls.yaw) } else { None };
+    // where a crouched body has no room to stand, nor where bodies never climb.
+    let takes_hold = controls.forward > 0.0 && !controls.mounted && terrain.climbs();
+    let wall = if takes_hold { wall_ahead(blocks, &next, controls.yaw) } else { None };
     let can_stand = !next.crouched || room_to_stand(blocks, next.x, next.y, next.z);
     let into = wall
         .filter(|wall| wall.block.top - next.z > TUNING.reach && can_stand)

@@ -15,7 +15,7 @@ impl Waters for Open {
 
 const WIND: [f64; 2] = [1.5, 0.0];
 const ROWING: Orders =
-    Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: false, load: None };
+    Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: false, load: None, boost: false };
 
 /// How far the captain's side lies off the player's bow at the start, metres.
 const GAP_M: f64 = 0.67;

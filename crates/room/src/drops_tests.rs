@@ -88,8 +88,11 @@ fn a_drop_stays_where_it_was_thrown_from_behind_a_thin_wall_off_a_drop_or_past_t
     let room = Room::new(vec![step], (0.0, 0.0));
     assert!((room.rest_at([0.0, 0.0, 0.2], north)[1] + THROW_M).abs() < 1e-9, "but down a step");
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
-    room.section =
-        Some(crate::Section { ring: vec![[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]], spawns: vec![] });
+    room.section = Some(crate::Section {
+        ring: vec![[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]],
+        spawns: vec![],
+        falls_kill: false,
+    });
     assert_eq!(room.rest_at(from, north), from, "not past the section's ring");
 }
 

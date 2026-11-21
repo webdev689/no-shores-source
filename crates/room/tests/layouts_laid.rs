@@ -395,10 +395,18 @@ fn no_city_walls_underside_stands_off_the_ground_on_a_slope() {
         let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
         let bare = landmass.surface.clone();
         let Some(plan) = city::settle(&mut landmass, &city).expect("its city settles") else { continue };
+        // A ramp's walls stand on its pad, never on the bare ground: they are not the city's wall.
+        let on_ramp = |solid: &&city::solids::Solid| {
+            plan.ramps.iter().any(|ramp| {
+                let [west, north, east, south] = ramp.pad.bounds;
+                (west..=east).contains(&solid.at[0]) && (north..=south).contains(&solid.at[1])
+            })
+        };
         let lengths = plan.works.iter().filter(|solid| {
             solid.material == Material::Stone
                 && solid.shape == Shape::Block
                 && (solid.size[0] - city::walls::WALL_THICK_M).abs() < 1e-9
+                && !on_ramp(solid)
         });
         for length in lengths {
             checked += 1;

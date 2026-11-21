@@ -308,7 +308,7 @@ fn a_bold_pirate_in_sight_begins_a_fight_where_it_and_the_ship_lie() {
 fn a_fight_steps_by_the_players_orders_and_moves_their_ship_with_it() {
     let (mut sea, player) = met_at_sea(700.0);
     sea.tick();
-    let helm = Helm { steer: 1.0, crab: false, climb: 0 };
+    let helm = Helm { steer: 1.0, climb: 0 };
     sea.orders(player, Orders { helm, ..QUIET }).unwrap();
     ticks(&mut sea, 600);
     let fought = &sea.fights().next().unwrap().1.fight;

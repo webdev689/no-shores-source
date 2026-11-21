@@ -19,6 +19,12 @@ code:
   - crates/city/src/lib.rs#social_open
   - content/world/social.json
   - crates/city/src/courtyard.rs#courtyard
+  - crates/city/src/hub/mod.rs#overlook
+  - crates/city/src/hub/ground.rs#walks
+  - crates/city/src/hub/dress.rs#dress
+  - crates/city/src/hub/plants.rs#plants
+  - crates/city/src/hub/harbour.rs#harbour
+  - crates/city/src/ramps.rs#lay
   - crates/city/src/articulation.rs#articulated
   - crates/city/src/collision.rs#boxes_within
   - crates/city/src/ruins.rs#is_ruined
@@ -101,7 +107,7 @@ city stands on it:
    1.1 m high, the landward side too, since past the landmark's base the ground may be a terrace far below. Its
    section is its own edge, so its floor is walked right to the parapet and only climbing over it warns; its four
    spawns stand 40 m apart, 4 m inside the seaward parapet, looking down over the city. It is laid out as the Tower's
-   courtyard (`courtyard`): on the landward side a portico up three steps (a podium, six columns, an entablature and
+   courtyard (`courtyard`), as every city's but Overlook's is (Overlook's is its hub, below): on the landward side a portico up three steps (a podium, six columns, an entablature and
    a pediment) before a great timber door in an arch, and either side of it an arcade with a lamp in each alcove; in
    the middle a stepped plinth with an obelisk 18 m high capped in gold, a brazier either side and two toward the
    ends; lanterns on the seaward parapet and stone benches facing the sea, midway between the spawns; and bands of
@@ -114,22 +120,36 @@ city stands on it:
    Stormcallers', the Lamplighters' and the Veiled's), and a chandler's stall
    ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]], [[Factions]]). Eight quiet
    places stand clear of every solid for a visitor who keeps no counter (`visitor_spots`): by each brazier, landward
-   of the two outer benches and before the portico's two ends, where Shape stands one week each. In Overlook's plaza
-   alone the bounty board stands free (`board`, [[Activities]]): 24 m seaward of the middle and 45 m across on the
-   Mage's side, seaward of the braziers, clear of the courtyard, the spawns and the processional way, and away from
-   the Harbourmaster. It is two timber posts and a timber face 3.6 m wide, six plaster notices in two rows, a lamp and
-   a small gable roof, all facing the sea, so the plaza draws, collides and lights it as the rest. It is no station
-   and no keeper stands at it; a player reads it from 2 m before its face, where its counter is. Across from it on the
-   factions' side, at the same 24 m and 45 m, stands the mail counter (`mail`, [[Gear]], "The mail"), a station of
-   its own: a timber counter with two parcels, the Postmaster behind it facing the sea, and behind him a rack of
-   pigeonholes holding letters under a lamp, more than 8 m from every other counter, Shape's spots and the board, and
-   off the townsfolk's lanes, who pass it by. Its node is
+   of the two outer benches and before the portico's two ends, where Shape stands one week each. In Overlook's hub
+   alone the bounty board stands (`board`, [[Activities]]), on the notice board's landing against the Watch Court's
+   west range (`hub::BOARD_LANDING_M`), a metre in from its back and facing the court, read from the landing more
+   than 8 m from every counter and every place of Shape's. It is two timber posts and a timber face 3.6 m wide, six
+   plaster notices in two rows, a lamp and a small gable roof, so the hub draws, collides and lights it as the rest.
+   It is no station and no keeper stands at it; a player reads it from 2 m before its face, where its counter is. On
+   the court's west side between the landing and the west vault house, 12 m landward of the middle and 42 m across,
+   stands the mail counter (`mail`, [[Gear]], "The mail"), a station of its own: a timber counter with two parcels,
+   the Postmaster behind it facing the court, and behind him a rack of pigeonholes holding letters under a lamp, more
+   than 8 m from every other counter, Shape's spots, the arrivals and the board. Its node is
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
    from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep
    their own levels and are built on as any other, the plaza's pad standing over its own footprint with its parapet
    for a wall, so what is built beneath it is hidden and the city runs right up to its foot. No terrace wall crosses
    it.
+
+   **Overlook's hub** (`hub`; [[Overlook Becomes a Hub of Courts and Ways, After the Tower]], every call in
+   [[Overlook's Hub as Claude Shapes It]]) lays Overlook's social space as courts and ways after the Tower: the
+   Watch Court where players land, stone ranges with arched passages to the West Court and the Forge Yard, the Beacon
+   Walk's market and the portico, the Hall of the Arts inside the Beacon's base with the three factions' chapels, the
+   Stair Yard, sealed gates, and the harbour way down the city's switchback and ramps to the quay and its pier, where
+   two ships lie moored. Each keeper stands in a stall of their own placed by its sockets. Its ways are laid as
+   flagstone walks, every corner where they meet curved, and its gardens' ground as lawn and the Forge Yard's as earth
+   under them ([[The Hub's Paths Are Smooth and Rounded]]); each court is a scene of its own pieces
+   ([[The Hub's Pieces Tell a Story, and Its Paths Are Paved Apart]]), its trees and bushes the land's own plants
+   ([[The Hub's Plants Are the World's Low-Poly Ones]], [[Nature]]). Its townsfolk walk its ways ([[Game]]), and in it
+   a fall of 6 m or more kills ([[Reach]]).
+10. **Ramps** (`ramps`): every avenue's terraces are joined by a ramp the road's width, and a switchback climbs at
+   each avenue's head; Overlook's harbour way is walked down them to the quay.
 
 **Open and locked.** Only Overlook's social space opens for now (`content/world/social.json`, read by the city crate and the page;
 [[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
@@ -222,8 +242,17 @@ at that level shows over it.
 nearest up close and mipmapped far off. Daggerfall's stone is dark, so a solid's picture may be painted lighter or
 warmer, a factor a channel, as its own layer. The ground's tiles and the solids' pictures come first, then the
 forged models' by how much the city wears them. Up to four workers paint them; a layer shows its guessed colour until
-painted, and what is painted is kept for the next city. Gold, iron and bone are plain colours; the glow is lit warm
-and unshaded, brighter at night, and each glowing solid is a lamp ([[Sky]]). Faces are lit as the land is, with a
+painted, and what is painted is kept for the next city. Gold, iron, bone, cloth and water are painted in the shader
+on the texels a picture would have, 24 a metre ([[The Hub's Fidelity Goes Beyond the Limits, by Procedural
+Textures]]): wrought iron's hammer marks, pits and rust, most on what faces up; gilding burnished and worn through to
+the bronze; bone's grain and yellowing; cloth's dye under a weave of uneven threads, taken unevenly; still water
+(`water`: a fountain, a trough) deep green-blue, its face stirring slowly. A picture is lighter or darker in patches some metres wide, so its repeats do not line up. A walk's flagstones
+(`path`) wear their own picture over the paving's, the flags in courses, lighter and warmer, so a way reads apart
+from the ground; a garden's lawn (`lawn`) and a working yard's trodden earth (`earth`) wear their climate's own grass
+and dirt. These three take their pattern on top from the world, not the piece, so their pieces join as one surface
+where they meet or overlap (`solidMesh.ts`, `grounded`). The glow
+is lit warm and unshaded, brighter at night, each flame flickering on its own, and each glowing solid is a lamp
+([[Sky]]). Faces are lit as the land is, with a
 little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen.
 In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one, and each
 building's masses (its hull past where the masses are drawn) into the far one, a few boxes standing in for a model

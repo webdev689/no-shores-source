@@ -40,6 +40,9 @@ code:
   - client/src/combat/weapons.ts#WeaponRows
   - client/src/combat/weapons.ts#weaponsOf
   - client/src/combat/weaponPicture.ts#lengthwise
+  - client/src/player/itemPictures.ts#ItemPictures
+  - client/src/player/picture.ts#overlapped
+  - client/src/player/iconFit.ts#shrunk
   - client/src/combat/statusIcons.ts#StatusRow
   - client/src/combat/foePlate.ts#FoePlate
   - client/src/plus/barLoss.ts#stepLoss
@@ -99,7 +102,7 @@ code:
   - client/src/game/bountyBoard.ts#boardPage
   - client/src/game/gearDom.ts#itemMarks
   - client/src/game/gearDom.ts#nodeRing
-  - client/src/game/elementGlyphs.ts#elementSvg
+  - client/src/player/elementGlyphs.ts#elementSvg
   - client/src/face.css
   - client/src/face.ts#useMendedFace
   - client/src/trueType.ts#trueType
@@ -206,12 +209,14 @@ should be ([[HTML Is Avoided Where It Can Be]]).
   the first point lost or spent brings them back in two.
 - **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
   ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
-  picture in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or muzzle to the right
-  (`combat/weaponPicture.ts`), drawn again when the screen's pixel ratio changes. A Ranged weapon's shots stand large
+  picture (see "Pictures" below) in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or
+  muzzle to the right (`combat/weaponPicture.ts`), drawn again when the screen's pixel ratio changes. A Ranged weapon's shots stand large
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
   name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
-  and its own shots. The rows change weapons as the fight's rules take them up, only at rest: one pressed, or put
+  and its own shots. A weapon with an element bears its glyph just past its picture's top right, in the row's
+  margin clear of a blade's point, as a gear tile bears it in its corner, 16 px in hand and 12 under it (22 and 16 at the larger step), and its row's words name the element. The rows
+  change weapons as the fight's rules take them up, only at rest: one pressed, or put
   away, during a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over
   its 0.4 s, and a swap pressed during one trades them again from
   the start; a reload fills a line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys
@@ -371,11 +376,17 @@ never while a press is held. Each press is an ask the room answers.
 
 - **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
   do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
-- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped;
-  a loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip; one in
-  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is
-  fitted to its place as Enhanced Plus fits its icons; an icon long and thin (a blade, a staff, a gun) is laid on its
-  tile's diagonal, as Destiny lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
+- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped.
+  A loadout is the forge's large picture of what its hands hold
+  ([[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): the right hand's level, its business end to the
+  right, and a shield or a pair's second behind it at its left, at three quarters of its size, its middle on the
+  first's top edge a fifth of the way along it. Each is dyed as the figure's layer is, a faction's colour too, and
+  snapped to the palette; a greatsword shows its metal's sword. Until every piece in hand has a large picture, a
+  loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip, and one in
+  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is fitted to its place as
+  Enhanced Plus fits its icons, and one larger than its place is shrunk by an area average, each screen pixel the mean
+  of the pixels it covers, a weapon's large picture then cut at half cover and snapped to the palette again; an icon long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny
+  lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
   name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
   is, mostly in its island's colour. The ship's glyphs (its materials, its modules and its officers' posts) are drawn
   at 24 by 24, as the Arts' emblems are, so a module shows a picture where a piece shows the forge's: shaded lit from
@@ -597,8 +608,11 @@ falling pieces).
   wear): Hull over Sails over Crew (hull red as health and at its height, sails bone, crew green as stamina, both at
   stamina's height), each as long as the vitals' health is laid for the view, stepping and doubling with the display,
   with no words inside; a reader hears each by its name and percentage. The hull's frame flashes blood at a quarter or
-  less as health's does. Under them an "On fire" chip while it burns and a "Braced" chip while it braces, the kit's
-  chips, as the buffs stand under the vitals. In a fight the place's name gives way to the plate.
+  less as health's does. Under them its boost ring, the word Boost beside a small ring lit clockwise from the top:
+  brass and glowing once its burst is ready, bright and draining while it bursts, dim and filling as it recharges
+  ([[Naval Combat]], "How it works"); a reader hears "Boost ready", "Boosting" or "Boost recharging". Beside it an "On
+  fire" chip while it burns and a "Braced" chip while it braces, the kit's chips, as the buffs stand under the vitals.
+  In a fight the place's name gives way to the plate.
 - **The battery rose** under the chips, as wide as its longest words ("Heated 88s" a side): bow over stern, port and starboard either side. Each side is a chip with its load
   ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
   loaded, glowing gold round its edge where the look lays it, flashing twice over 0.7 s as it comes ready. The side a

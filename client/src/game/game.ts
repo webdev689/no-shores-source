@@ -218,6 +218,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     playing.sea?.leaveRoom();
     playing.foot = await entering();
     if (!playing.foot.dungeon) dungeons.forget();
+    // The rain stops under whatever a body meets overhead there: a roof, a ceiling, an arch.
+    scene.sky.shelterUnder(playing.foot.boxes);
   };
   const goFoot = (node: NodeInfo, facing: number, seas = playing.helmMap.difficulty) =>
     goInto(() => Foot.enter(footContext, node, facing, seas));
@@ -227,6 +229,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     playing.foot?.leave();
     playing.foot = null;
     dungeons.forget();
+    scene.sky.shelterUnder([]);
     if (!playing.sea) {
       // The ship first lies facing the city, so the view over it looks at the island.
       const { anchorage, heading } = firstAnchorage(playing.landmass);
@@ -378,6 +381,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       playing.sea?.leaveRoom();
       ashore = held;
       playing.foot = foot;
+      scene.sky.shelterUnder(foot.boxes);
     });
   };
 
@@ -492,7 +496,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const goThrough = () => {
     const way = playing.through;
     // A gate shut on a locked node takes no one: its offer only says so.
-    if (way?.happening && playing.flow.mode === 'foot') travel(way.happening, () => goFoot(way.node, way.facing));
+    // Through a gate at the seas of the room the player stands in, as the rooms judge where they come from.
+    if (way?.happening && playing.flow.mode === 'foot')
+      travel(way.happening, () => goFoot(way.node, way.facing, playing.foot?.seas));
   };
   hud.onPassage(goThrough);
   const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);

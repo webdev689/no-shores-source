@@ -124,6 +124,8 @@ pub struct Player {
     pub fighter: Fighter,
     /// Where the player stands with the room's section: always inside a room with none.
     pub standing: Standing,
+    /// The height their feet last stood at, that a fall in a social space is measured from (`reach::stood`).
+    pub stood: f64,
     pub shown: Shown,
     /// The dress as others are shown it (`dressed`), and whether it changed since it was last passed on.
     pub dress: String,
@@ -135,6 +137,9 @@ pub struct Player {
     /// The room's clock when the player joined, and how many of their inputs have stepped their fighter since.
     pub joined: u64,
     pub stepped: u64,
+    /// Whether the room plays the player's inputs: held, they are taken in their order and played as standing still,
+    /// as a run holds one it does not yet keep.
+    pub held: bool,
     /// The number of the last input received, and of the last that stepped the fighter.
     pub received: u32,
     pub acknowledged: u32,
@@ -192,6 +197,7 @@ impl Player {
         Player {
             fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },
             standing: Standing::Inside,
+            stood: fighter.body.z,
             shown: Shown::default(),
             dress: String::new(),
             dress_changed: false,
@@ -199,6 +205,7 @@ impl Player {
             dress_stale: false,
             joined,
             stepped: 0,
+            held: false,
             received: 0,
             acknowledged: 0,
             waiting: VecDeque::new(),
@@ -302,6 +309,8 @@ impl Room {
             .players
             .iter()
             .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
+            // One the section killed too stands again only by its own respawn, which ends that death as well.
+            .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
             .map(|(id, found)| (*id, found.fighter))
             .collect();
         for (id, fighter) in fallen {
@@ -312,6 +321,8 @@ impl Room {
             let graced = self.clock + GRACE;
             if let Some(found) = self.players.get_mut(&id) {
                 found.fighter = found.armed(player(body, fighter.arms));
+                // A fall is measured from where the feet stand again, not from where the player died.
+                found.stood = body.z;
                 found.graced = graced;
                 raised.push(id);
             }
@@ -448,6 +459,12 @@ impl Room {
         }
     }
 
+    /// Holds a player's inputs, or lets them play: held, each is taken in its order and played as standing still;
+    /// false for a player not in the room.
+    pub fn hold(&mut self, player: PlayerId, held: bool) -> bool {
+        self.players.get_mut(&player).map(|found| found.held = held).is_some()
+    }
+
     /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
     /// spent for them again, however often they rejoin, as on a sea island are the wrecks it scavenged; the Arts' charge
     /// the room kept for it is theirs again; and in a run that counts revives, the body it left with. False, noting
@@ -487,27 +504,31 @@ impl Room {
     }
 
     /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim;
-    /// a body the section killed lies still, but the tick counts, so time spent dead is not banked to catch up on.
+    /// a body the section killed falls on as `lying_still` steps it, and the tick counts, so time spent dead is not
+    /// banked to catch up on.
     pub(crate) fn stand_stalled(&mut self, id: PlayerId) {
         let clock = self.clock;
         let Some(found) = self.players.get_mut(&id) else { return };
         if found.stepped + VIEW_LAG >= clock - found.joined {
             return;
         }
-        if matches!(found.standing, Standing::Dead { .. }) {
-            found.stepped += 1;
-            return;
-        }
-        let standing = combat::Intent {
-            controls: movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() },
-            combat: combat::CombatInput::default(),
+        let dead = matches!(found.standing, Standing::Dead { .. });
+        let standing = if dead {
+            lying_still(&found.fighter)
+        } else {
+            let controls = movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() };
+            combat::Intent { controls, combat: combat::CombatInput::default() }
         };
         let view = self.fighters();
         let Some(found) = self.players.get_mut(&id) else { return };
         found.stepped += 1;
-        let (next, happening) = combat::player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
+        let fighter = if dead { found.armed(found.fighter) } else { found.fighter };
+        let (next, happening) = combat::player_tick(id, &fighter, &standing, &view, &self.blocks, &self.floor);
         found.fighter = next;
-        self.happened(id, &next, happening, &view);
+        // A dead body only falls: nothing it was doing as it died lands now.
+        if !dead {
+            self.happened(id, &next, happening, &view);
+        }
     }
 
     /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never
@@ -525,4 +546,14 @@ impl Room {
             input.seen.min(clock).min(found.seen + SEEN_STEP).max(found.seen).max(clock.saturating_sub(VIEW_LAG));
         Some((input, seen))
     }
+}
+
+/// What a body the section killed is stepped by each tick: no push and its facing kept, letting go of any wall or lip
+/// it held, so it falls under its own weight and lies where it lands, as a fight's dead do. The page steps its own
+/// dead body by the same (`combat/fighting.ts`).
+#[must_use]
+pub(crate) fn lying_still(fighter: &combat::Fighter) -> combat::Intent {
+    let holding = matches!(fighter.body.mode, movement::Mode::Hang | movement::Mode::Climb);
+    let controls = movement::Controls { yaw: fighter.body.facing, crouch: holding, ..movement::Controls::default() };
+    combat::Intent { controls, combat: combat::CombatInput::default() }
 }

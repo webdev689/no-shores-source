@@ -19,6 +19,7 @@ const ship = {
   crew: 1,
   fire: false,
   braced: false,
+  boost: { state: 'ready', share: 1 } as const,
   port: side(),
   starboard: side(),
   blow: null,

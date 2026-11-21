@@ -59,7 +59,7 @@ test('with no quest written the Journal says so plainly, the bounties at its sid
     false,
     'no pages to turn',
   );
-  assert.ok(root.find('0 / 6'));
+  assert.ok(root.find('0/6'));
   assert.equal(classed(root, 'journal-slot').length, 6, 'six empty frames');
   assert.ok(root.find('None taken yet. Take them at the bounty board in Overlook’s plaza.'));
   assert.equal(keyed(root, 'timers')?.hidden, true);
@@ -73,7 +73,7 @@ test('the quests held are cards six a page, story missions first, each at its st
   const held = written.map(({ id }, index) => ({ id, step: index % 2, done: id === 'd' }));
   const { root } = journalOf({ week: () => null, kept: () => geared(held), written });
   const cards = () => classed(root, 'journal-card');
-  assert.ok(root.find('1 / 2') && root.find('8'), 'the page among its arrows, and how many are held by the title');
+  assert.ok(root.find('1/2') && root.find('8'), 'the page among its arrows, and how many are held by the title');
   assert.ok(root.find('8 held') && root.find('Page 1 of 2'), 'each read in words to a reader');
   const seen = root.find('8');
   assert.equal(seen?.getAttribute('aria-hidden'), 'true', 'the shown number hidden from a reader, who hears its words');
@@ -95,7 +95,7 @@ test('the quests held are cards six a page, story missions first, each at its st
   );
   assert.equal(keyed(root, 'quests-back')?.getAttribute('aria-disabled'), 'true');
   keyed(root, 'quests-next')?.click();
-  assert.ok(root.find('2 / 2'));
+  assert.ok(root.find('2/2'));
   assert.deepEqual(
     cards().map((card) => card.dataset['key']),
     ['quest-h', 'quest-g'],
@@ -139,12 +139,12 @@ test('each bounty taken is a tile marked where it counts, its state its look; th
     [poolMarkUrl(0), poolMarkUrl(1), poolMarkUrl(1)],
   );
   assert.equal(classed(root, 'journal-slot').length, 3);
-  assert.ok(root.find('3 / 6'));
+  assert.ok(root.find('3/6'));
   const said = () => keyed(root, 'bounty-said');
-  assert.ok(said()?.find('Defeat 2 foes of Miniboss rank or higher.') && said()?.find('1 / 2'), 'the first at first');
+  assert.ok(said()?.find('Defeat 2 foes of Miniboss rank or higher.') && said()?.find('1/2'), 'the first at first');
   assert.ok(said()?.find('Land bounty') && said()?.find('+3,500'), 'its kind, and its XP by its glyph');
   tiles[1]?.dispatchEvent(new FakeEvent('pointerenter'));
-  assert.ok(said()?.find('Sink or take 3 ships.') && said()?.find('Done. Turn it in at the bounty board.'));
+  assert.ok(said()?.find('Sink or take 3 ships.') && said()?.find('Done. Turn it in at the board.'));
   tiles[2]?.dispatchEvent(new FakeEvent('focus'));
   assert.ok(said()?.find('Turned in'));
   const presses = root.all().filter((node) => node.tagName === 'BUTTON' && node.textContent.startsWith('T'));
@@ -155,7 +155,7 @@ test('gear of another day’s board, kept at sea through the reset, shows no bou
   const { root } = journalOf({ week: () => weekEnding(FRIDAY_AT, 20_779), kept: () => geared([]), written: [] });
   assert.equal(classed(root, 'bounty-tile').length, 0);
   assert.ok(root.find('Six a day, from the board in Overlook’s plaza.'));
-  assert.equal(root.find('0 / 0'), undefined, 'no count without a board to count');
+  assert.equal(root.find('0/0'), undefined, 'no count without a board to count');
 });
 
 test('the hourglass or T drops the timers from the top; Escape, Close or the hourglass take them up, the focus going back', () => {
@@ -205,7 +205,7 @@ test('the timers stay down and the focus stays put as the minute, the day and th
   gear = { ...geared([], more), day: 20_779 } as GearState;
   journal.page();
   assert.equal((document.activeElement as unknown as FakeElement).dataset['key'], 'bounty-1');
-  assert.ok(keyed(root, 'bounty-said')?.find('13 / 30'), 'rebuilt with its new count');
+  assert.ok(keyed(root, 'bounty-said')?.find('13/30'), 'rebuilt with its new count');
 });
 
 test('a focused tile gone as the day turns leaves the focus on the page, not lost; T with Ctrl is the browser’s', () => {

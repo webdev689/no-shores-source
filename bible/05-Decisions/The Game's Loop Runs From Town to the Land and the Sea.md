@@ -45,7 +45,8 @@ status: in force
   [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]. **What opens when**:
   [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]]. **The story**:
   [[The Story Is Nine Missions, With Side Quests Between Them]].
-- **Nothing of it is built yet**: these decisions put the game's plan straight first.
+- **What is built**: the days and the weeks ([[The Activities Are Built in Full, Before the Story's Missions]]); the
+  rest of the plan stands as decided.
 
 It builds on [[Gear and Power Follow Destiny 1 Vanilla]], [[The World Map]] and
 [[Every Island Is Seen Whole and Reached by Nodes]].

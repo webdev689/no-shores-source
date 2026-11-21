@@ -40,7 +40,7 @@ export function bountyRows(gear: GearState): readonly BountyRow[] {
   return (gear.bounties ?? []).map((bounty, place) => {
     const { count, target } = bounty;
     const state = bounty.paid ? 'paid' : !bounty.held ? 'open' : count >= target ? 'done' : 'held';
-    const progress = state === 'paid' ? 'Turned in' : state === 'open' ? '' : `${count} / ${target}`;
+    const progress = state === 'paid' ? 'Turned in' : state === 'open' ? '' : `${count}/${target}`;
     const press =
       !open || state === 'held' || state === 'paid'
         ? null
@@ -63,7 +63,7 @@ export const payOf = (gear: GearState): Pay => ({ xp: gear.bountyXp ?? 0, aurem:
 
 /** A bounty's state in words: its count while held, done, turned in, or not taken. */
 export function bountyWords(row: BountyRow): string {
-  const said = { open: 'Not taken', done: 'Done. Turn it in at the bounty board.', paid: 'Turned in' } as const;
+  const said = { open: 'Not taken', done: 'Done. Turn it in at the board.', paid: 'Turned in' } as const;
   return row.state === 'held' ? row.progress : said[row.state];
 }
 

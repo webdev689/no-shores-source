@@ -153,7 +153,7 @@ impl Room {
         let ([x, y], [toward_x, toward_y]) = dungeon.arrival();
         let ring = vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]];
         // Its jambs and pillars are its ground's own walls, not blocks a body could climb.
-        let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]] });
+        let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]], falls_kill: false });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
         // Shut by its seas alone, as a node with no patrol is; a patrol's own dungeon is gated as its patrol.
         room.place = Some(gear::gate::Place::Node);

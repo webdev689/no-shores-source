@@ -231,7 +231,7 @@ const TEMPERATE = { climate: 'temperate', season: 'summer' } as const;
 
 test("a port city's drawing is as it was before ruins were laid", () => {
   const port = buildCity({ ...madePlan(), ruined: false, wrecks: [] }, TEMPERATE, blocksOf(), TABLES);
-  assert.equal(drawingFingerprint(port), '91122aa6');
+  assert.equal(drawingFingerprint(port), '1c90ebf6');
   assert.ok(!port.ruined && [...port.near.values()].flat().every((each) => each.cut === 0));
 });
 

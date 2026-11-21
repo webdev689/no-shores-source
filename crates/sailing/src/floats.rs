@@ -6,8 +6,8 @@ use crate::ship::Ship;
 
 /// x, y, heading, ahead, abeam, turn, sail way, rung.
 pub const SHIP_FLOATS: usize = 8;
-/// Steer, crab (1 or 0), climb: the helm's numbers in a request.
-pub const HELM_FLOATS: usize = 3;
+/// Steer, climb: the helm's numbers in a request.
+pub const HELM_FLOATS: usize = 2;
 /// Heave, pitch, roll, aground (1 or 0).
 pub const POSE_FLOATS: usize = 4;
 

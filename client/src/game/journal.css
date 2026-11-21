@@ -71,7 +71,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 18px 0 4px;
+  margin: 0 0 4px;
   padding-bottom: 6px;
   font-size: var(--type-xs);
   font-weight: 500;
@@ -79,8 +79,11 @@
   text-transform: uppercase;
   color: var(--brass);
 }
-.journal-timers-group:first-child {
-  margin-top: 4px;
+.journal-timers-section {
+  margin-top: 12px;
+}
+.journal-timers-section:first-child {
+  margin-top: 0;
 }
 .journal-timers-group-name {
   margin-right: auto;
@@ -176,6 +179,7 @@ img.journal-icon.gear-glyph {
    height and one edge; a shut tier's seas rest, its padlock does not. */
 .journal-standing,
 .journal-modifier,
+.journal-rule,
 .journal-level {
   padding: 1px 6px 1px 2px;
   border: 1px solid rgba(163, 152, 128, 0.2);
@@ -192,6 +196,10 @@ img.journal-icon.gear-glyph {
   font-weight: 500;
   color: var(--brass-lit);
   font-variant-numeric: tabular-nums;
+}
+/* The Abyss's rules boxed as its modifiers are, their count in brass as a level's is. */
+.journal-rule .journal-mark-words {
+  color: var(--brass-lit);
 }
 .journal-modifier {
   padding-left: 4px;
@@ -295,12 +303,14 @@ img.journal-icon.gear-glyph {
   padding: 14px 4px 0;
   margin-inline: -4px;
 }
+/* Both heads one height, so their titles stand on one line whether or not the pages to turn are shown. */
 .journal-quests-head,
 .journal-bounties-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   margin-bottom: 10px;
 }
 .journal-quests-head > .gear-chip,

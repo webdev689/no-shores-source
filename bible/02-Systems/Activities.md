@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: built
 code:
   - crates/gear/src/clock.rs#day_of
   - crates/gear/src/activity.rs#Activity
@@ -44,9 +44,8 @@ them.
 - **Gates kept by the rooms.** No client can skip a level gate or take a reward twice. The prologue's end is the page's
   word, since the story plays in the page alone and may be passed over ([[Prologue]]).
 
-**Not now:** Breaches themselves and sea Breaches ("I dont want to build this yet"), the story's missions and side
-quests past the prologue (the quest engine below is built for them), and dungeons on the sea's islands, which wait on
-the islands themselves.
+**Not now:** Breaches themselves and sea Breaches ("I dont want to build this yet"), and the story's missions and side
+quests past the prologue (the quest engine below is built for them).
 
 **Must not happen:** a second clock; a reward taken twice in its period by leaving and coming back; an activity a
 player cannot tell is on, or cannot tell why it is shut; Destiny's own words on screen ([[A Group of Players Is a
@@ -112,9 +111,10 @@ Company]]).
   both of the week's. A dungeon at Normal in a patrol stays in the patrol's shared room, as does a sea island's.
 - **A run's room** is named by an instance after its dungeon's name (`--run-` and eight lowercase letters or digits,
   [[Server]]). Once its first player is in, only those it let in and their companies join, for as long as it lives
-  (`Keeper.forCompany`); a player from another is sent back saying "This run is another company's.", and one it cannot keep (no session, or no token in time)
-  saying "Sign in to enter this run.". No one plays in a run unkept. It is forgotten a minute after its last player
-  leaves.
+  (`Keeper.forCompany`); a player from another is sent back saying "This run is another company's.", and one it cannot
+  keep (no session, or no token in time) saying "Sign in to enter this run.". No one plays in a run unkept: until the
+  room keeps their character, a player's inputs are taken in their order and stand still (`Room::hold`). It is forgotten
+  a minute after its last player leaves.
 - **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band (tens of
   levels, from the level their room last kept), from the entrance's card. A run starts with four, or with fewer after
   a minute's wait, never with two where one blocks the other, and those found go into it together ([[Accounts]],
@@ -124,7 +124,8 @@ Company]]).
 
 ## Abyss's rules
 
-They hold in every Abyss run, which the owner gave "Nightfall's rules: limited revives, and a wipe ends the run".
+They hold in every Abyss run: the hardest seas take Nightfall's rules, limited revives and a wipe ending the run, as
+the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]]).
 
 - **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, the
   lowest player number first when two fall together; when none are left, the fallen stay down. Leaving stands no one
@@ -196,8 +197,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
   opens again, so one dungeon farms no "Clear 3 dungeons."; a run is a room of its own, so each run counts. A room
   knows its island from its node's file, or from the patrol, the Elite Dungeon or the sea island its dungeon is of
   (`Room::set_island`); a room on no island counts no place.
-- **The bounty board** stands free in Overlook's plaza, seaward of the braziers on the Mage's side and away from
-  the Harbourmaster ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
+- **The bounty board** stands on the notice board's landing in the Watch Court of Overlook's hub, its face to the
+  court ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
   plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is
   no station and has no keeper. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
   places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an
@@ -214,7 +215,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
   that goes down, sunk or taken (a ship taken is scuttled once her boarders leave her), on the character it keeps for
   each player who fought her, once each however often they are listed, by the water she went down in (its
   continent's id, none off every water) and her captain's rank, on the sea's day (`Sea::count_down`,
-  `gear::objectives::count_ship_down`). A count that moves is saved and sent.
+  `gear::objectives::count_ship_down`), one fighting on a captain's deck among them: stepping off, they keep it
+  (`step_off`). A count that moves is saved and sent.
 - **Quests** (side quests, and the story's missions as quests of kind story) use the same objectives, kept until
   done, and are written as data (`content/gear/quests.json`, read by `gear::quests`, none written yet): each its id,
   its kind (story or side), its name, one line of its tale, an optional banner key (else the Journal gives it one of

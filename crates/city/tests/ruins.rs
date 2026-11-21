@@ -53,12 +53,11 @@ fn overlook_is_planned_as_it_was() {
     assert!(!plan.ruined && plan.wrecks.is_empty());
     assert_eq!(plan.name, "Overlook");
     assert!(!plan.social.stations.is_empty(), "a port city keeps its counters");
-    assert!(plan.social.board.is_some(), "Overlook's plaza holds the bounty board");
+    assert!(plan.social.board.is_some(), "Overlook's hub holds the bounty board");
     let mail = plan.social.stations.iter().filter(|station| station.kind == city::stations::StationKind::Mail);
     assert_eq!(mail.count(), 1, "and the mail counter");
-    // The plan with its plaza's bounty board and mail counter, pinned: a port city's plan must not change with the
-    // ruins.
-    assert_eq!(fingerprint(&plan), "d4261d5e5a1ada42");
+    // The plan with its hub's bounty board and mail counter, pinned: a port city's plan must not change with the ruins.
+    assert_eq!(fingerprint(&plan), "b1cf535a55f2690f");
 }
 
 #[test]
@@ -120,5 +119,5 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     assert!(ruin.works.iter().all(|solid| !matches!(solid.shape, Shape::Arch { .. })), "every gate breached");
     // The same every time, and pinned, so every machine lays the same ruin.
     assert_eq!(ruin, plan_as(&city, &landmass.surface, &blocks, true).expect("the ruin plans again"));
-    assert_eq!(fingerprint(&ruin), "6a2f9bdc46af90c3");
+    assert_eq!(fingerprint(&ruin), "0aa79975fce0e825");
 }

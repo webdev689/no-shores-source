@@ -45,16 +45,16 @@ fn pose_from(numbers: &[f64]) -> Option<Pose> {
     Some(Pose { heave, pitch, roll, aground: aground != 0.0 })
 }
 
-/// A helm's numbers, checked as the room checks them: a rudder within its throw, a crab or none, a rung at most.
+/// A helm's numbers, checked as the room checks them: a rudder within its throw and a rung at most.
 fn helm_of(numbers: &[f64]) -> Option<Helm> {
-    let [steer, crab, climb] = numbers[..] else { return None };
-    let fits = (-1.0..=1.0).contains(&steer) && (crab == 0.0 || crab == 1.0) && [-1.0, 0.0, 1.0].contains(&climb);
-    fits.then_some(Helm { steer, crab: crab == 1.0, climb: climb as i8 })
+    let [steer, climb] = numbers[..] else { return None };
+    let fits = (-1.0..=1.0).contains(&steer) && [-1.0, 0.0, 1.0].contains(&climb);
+    fits.then_some(Helm { steer, climb: climb as i8 })
 }
 
 /// The player's ship stepped by each helm in turn, as the fleet room steps it: from the ship's numbers, whether
 /// it is a wreck, its sail and its whole sail, the room's time for its pose, the room's world time at its first tick
-/// (which the wind needs not: the room's wind is the one it opened in), then three numbers a helm. Answers the ship's
+/// (which the wind needs not: the room's wind is the one it opened in), then two numbers a helm. Answers the ship's
 /// numbers and its pose at that time; none for numbers that are not that.
 #[must_use]
 pub fn predict(numbers: &[f64]) -> Vec<f64> {

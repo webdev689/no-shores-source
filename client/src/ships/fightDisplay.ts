@@ -1,8 +1,8 @@
 // The sea fight's readout as the Plus kit shows it (plus/seaFight.ts), from the fight's view and its feel: the ship's
-// plate and rose, the card on the captain the look is on (the nearest while its guns are not laid), its last volley's
-// tally, and the broadside warning under the card.
-import type { SeaFightModel } from '../plus/seaFight.ts';
-import type { FightCaptain, FightView } from '../rules/fightRules.ts';
+// plate, boost ring and rose, the card on the captain the look is on (the nearest while its guns are not laid), its
+// last volley's tally, and the broadside warning under the card.
+import type { BoostRing, SeaFightModel } from '../plus/seaFight.ts';
+import type { FightBoost, FightCaptain, FightView } from '../rules/fightRules.ts';
 import type { FightFeel } from './fightFeel.ts';
 import { rankBand } from '../rules/roster.ts';
 import { hullOfCaptain, HULL_NAMES } from './hulls.ts';
@@ -12,6 +12,12 @@ export const READY_FLASH_S = 0.7;
 
 const word = (name: string) => `${name[0]?.toUpperCase() ?? ''}${name.slice(1)}`;
 const share = (have: number, most: number) => (most > 0 ? have / most : 0);
+
+/** The boost ring for a ship's burst: draining while it bursts, filling as it recharges, whole once ready. */
+export function boostRing([burst, charged]: FightBoost): BoostRing {
+  if (burst > 0) return { state: 'burst', share: burst };
+  return charged >= 1 ? { state: 'ready', share: 1 } : { state: 'charging', share: charged };
+}
 
 /** The readout at `now`: whether the card's captain can be boarded now, and the key that boards it; the player's
  *  ship's kind (`own`) its plate names. */
@@ -62,6 +68,7 @@ export function fightDisplay(
       crew: share(player.crew, player.max_crew),
       fire: player.fires > 0,
       braced: guns.braced,
+      boost: boostRing(player.boost),
       port: side(0),
       starboard: side(1),
       blow: feel.blow(now),

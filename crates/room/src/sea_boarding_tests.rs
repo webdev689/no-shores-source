@@ -251,3 +251,27 @@ fn a_boarders_vestige_lying_on_the_deck_goes_to_their_mail_as_they_leave_the_sea
         assert_eq!(posted, [gear::Rarity::Rare], "leaving the sea: {leaving_the_sea}");
     }
 }
+
+#[test]
+fn a_ship_sunk_toward_a_bounty_while_its_player_fights_a_deck_is_still_counted_when_they_step_off() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    let ship = sea.fights.of_mut(player).unwrap().1.ship;
+    vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+    sea.board(player).unwrap();
+    // Another of the fight's ships goes down meanwhile: the sea counts it on the character it keeps.
+    let held = sea.harbour.characters.get_mut(&player).unwrap();
+    held.activity.today.bounties.insert(4, 1);
+    let room = &mut sea.decks.boarded[0].room;
+    let hands = room.ashore.hands.clone();
+    for (id, foe) in &mut room.foes {
+        if !hands.contains_key(id) {
+            foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+        }
+    }
+    sea.tick();
+    ticks(&mut sea, HOLD_TICKS as usize + 1);
+    assert!(!sea.on_deck(player), "stepped off");
+    assert_eq!(sea.harbour.characters[&player].activity.today.bounties.get(&4), Some(&1), "the count kept");
+}

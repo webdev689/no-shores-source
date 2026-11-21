@@ -157,3 +157,29 @@ fn a_move_name_that_is_not_one_and_a_look_past_its_limit_are_refused() {
     assert_eq!(room.input(player, huge), Err(Refused::BadLook));
     assert_eq!(room.input(player, showing("crouch_walk")), Ok(()));
 }
+
+#[test]
+fn a_held_players_inputs_are_taken_in_order_and_stand_still_until_they_are_let_play() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("in");
+    let at = |room: &Room| {
+        let body = room.players[&player].fighter.body;
+        [body.x, body.y]
+    };
+    let start = at(&room);
+    assert!(room.hold(player, true));
+    let ahead =
+        |sequence| Input { sequence, intent: Intent { controls: WALK, ..Intent::default() }, ..Input::default() };
+    for sequence in 1..=30 {
+        assert_eq!(room.input(player, ahead(sequence)), Ok(()), "every input taken in its order while held");
+        room.tick();
+    }
+    assert_eq!(at(&room), start, "held, the player stood still");
+    assert!(room.hold(player, false));
+    for sequence in 31..=60 {
+        assert_eq!(room.input(player, ahead(sequence)), Ok(()), "and the next follows on");
+        room.tick();
+    }
+    assert_ne!(at(&room), start, "let play, the player walks");
+    assert!(!room.hold(99, true), "no such player");
+}

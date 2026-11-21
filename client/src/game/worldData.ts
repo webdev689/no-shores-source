@@ -1,5 +1,5 @@
 import { ruinedName } from '../ruinedName.ts';
-import { type StationInfo, socialLocked } from './nodes.ts';
+import { type Post, type StationInfo, type Ways, socialLocked } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */
 export type NodeKind = 'social' | 'patrol' | 'mission' | 'dungeon' | 'boss';
@@ -20,6 +20,9 @@ export interface NodeInfo {
   readonly visitorSpots?: readonly Point[];
   /** A social space's bounty board, where a player stands to read it (the city crate's `board`). */
   readonly board?: Point | null;
+  /** A social space's ways its townsfolk walk, and the posts they keep and visit (`life/`). */
+  readonly ways?: Ways;
+  readonly posts?: readonly Post[];
   /** A patrol area or mission no one may enter until a pass is done on it (`sitesOf`). */
   readonly locked?: boolean;
 }

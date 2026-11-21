@@ -1,12 +1,13 @@
 //! Stage I: the city's social space, the one part of it a player walks, as Destiny 1's Tower is the one part of its
 //! City walked. A plaza the Tower's size beside the landmark on its seaward side, level with the landmark's foot,
-//! walled all round with a parapet and laid out as a courtyard (`courtyard`), with the bounty board and the mail counter
-//! in Overlook's alone (`board`, `mail`); from it the city below and the harbour are seen whole and never reached.
+//! walled all round with a parapet and laid out as a courtyard (`courtyard`); Overlook's is its hub (`hub`), the bounty
+//! board and the mail counter on it (`board`, `mail`). From it the city below and the harbour are seen whole and never
+//! reached.
 
-use crate::board::{Board, board};
-use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, visitor_spots};
+use crate::board::Board;
+use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, townsfolk_life, visitor_spots};
 use crate::landmarks::{Landmark, ahead};
-use crate::mail::mail_counter;
+use crate::life::{Post, Ways};
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::{Station, stations};
 use land::ground::Ground;
@@ -22,7 +23,7 @@ const SPAWN_INSET_M: f64 = 4.0;
 const APART_M: f64 = 10.0;
 
 /// The social space: its plaza's bounds (west, north, east, south) and level, its section's ring, its spawns, its
-/// parapets, retaining walls and courtyard, and its stations.
+/// parapets, retaining walls and courtyard, its stations, and its townsfolk's ways and posts.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Social {
     pub bounds: [f64; 4],
@@ -32,10 +33,20 @@ pub struct Social {
     pub solids: Vec<Solid>,
     /// The stations in its arcades' alcoves (`stations`).
     pub stations: Vec<Station>,
-    /// Overlook's bounty board (`board`); none in any other city's plaza.
+    /// Overlook's bounty board, on its hub's landing (`board`); none in any other city's plaza, whose plan says nothing.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub board: Option<Board>,
     /// Where a visitor of no counter may stand, one a week (`visitor_spots`): Shape's places.
     pub visitor_spots: Vec<[f64; 2]>,
+    /// The ways its townsfolk walk, and the posts where they work, play or stay a while (`life`).
+    pub ways: Ways,
+    pub posts: Vec<Post>,
+    /// Where ships lie moored beside its pier, if it reaches one: each one's middle (east, south) and the bearing her
+    /// bow points along (radians clockwise from north), drawn while a player walks it (`hub::harbour`).
+    pub moorings: Vec<[f64; 3]>,
+    /// The trees and bushes its beds, pots and planters stand, drawn as the world's own plants (`hub::plants`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub plants: Vec<crate::hub::plants::Plant>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -58,21 +69,26 @@ pub fn plaza_bounds(centre: [f64; 2], seaward: [f64; 2], reach: f64) -> ([f64; 4
 
 /// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
 /// looks out over the city to the sea. A ruined city's plaza is empty: its counters stand bare and keep no station.
-/// With `with_board`, the bounty board stands in it, and the mail counter.
+/// The city of the hub (`hub::HUB_CITY`) lays its own on it.
 #[must_use]
 pub fn plaza(
+    city_id: &str,
     ground: &Ground,
     centre: [f64; 2],
     level: f64,
     seaward: [f64; 2],
     landmark: &Landmark,
     ruined: bool,
-    with_board: bool,
 ) -> Social {
     let (bounds, along_seaward) = plaza_bounds(centre, seaward, landmark.reach);
     let (extent_x, extent_y) = (bounds[2] - bounds[0], bounds[3] - bounds[1]);
     let middle = [(bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0];
     let depth = if along_seaward[0] == 0.0 { extent_y } else { extent_x };
+    let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
+    if city_id == crate::hub::HUB_CITY {
+        let frame = Frame { middle, seaward: along_seaward, depth, length, level };
+        return crate::hub::overlook(ground, &frame, bounds);
+    }
     // The section is the plaza's own edge, along the parapet's middle: the floor is walked right to the parapet to look
     // down over it, and only climbing onto it or over it warns.
     let ring = vec![[bounds[0], bounds[1]], [bounds[2], bounds[1]], [bounds[2], bounds[3]], [bounds[0], bounds[3]]];
@@ -107,21 +123,24 @@ pub fn plaza(
         [extent_x, extent_y, 0.05],
         Material::Paving,
     ));
-    let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
     let frame = Frame { middle, seaward: along_seaward, depth, length, level };
     solids.extend(courtyard(&frame));
-    let (mut stations, stalls) = stations(&frame, ruined);
+    let (stations, stalls) = stations(&frame, ruined);
     solids.extend(stalls);
-    let board = with_board.then(|| {
-        let (board, pieces) = board(&frame);
-        solids.extend(pieces);
-        board
-    });
-    if with_board {
-        let (mail, pieces) = mail_counter(&frame);
-        stations.push(mail);
-        solids.extend(pieces);
-    }
     let visitor_spots = visitor_spots(&frame);
-    Social { bounds, level, ring, spawns, solids, stations, board, visitor_spots }
+    let (ways, posts) = townsfolk_life(&frame, &stations);
+    Social {
+        bounds,
+        level,
+        ring,
+        spawns,
+        solids,
+        stations,
+        board: None,
+        visitor_spots,
+        ways,
+        posts,
+        moorings: Vec::new(),
+        plants: Vec::new(),
+    }
 }

@@ -172,13 +172,13 @@ fn a_body_dead_past_its_section_casts_nothing_and_takes_no_spell() {
     let (mut room, player) = room_with_player();
     wearing(&mut room, player, 1, &[]);
     let fallen = room.join().expect("a room with space");
-    room.players.get_mut(&fallen).expect("in").standing = crate::Standing::Dead { ticks: 0 };
+    room.players.get_mut(&fallen).expect("in").standing = crate::Standing::Dead { ticks: 0, fell: false };
     cast(&mut room, player, QUICKEN, None, 0);
     assert!(room.fighter(player).expect("in").statuses.has(Status::Haste));
     assert!(!room.fighter(fallen).expect("in").statuses.has(Status::Haste), "Quicken passes the section-dead by");
     room.ready_arts(player);
     room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
-    room.players.get_mut(&player).expect("in").standing = crate::Standing::Dead { ticks: 0 };
+    room.players.get_mut(&player).expect("in").standing = crate::Standing::Dead { ticks: 0, fell: false };
     for _ in 0..30 {
         room.tick();
     }
