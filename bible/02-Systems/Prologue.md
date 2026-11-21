@@ -361,15 +361,15 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   - "Face the Tithe boarder": a Grey Tithe Hookman, the lowest rank, stands at the far end of the quiet deck, or 4.5 m
     along the path should the player stand there, and comes for the player at once (`Room::story_hunt`). Its first
     blow at the player that a parry can meet freezes the fight at most 8 ticks before it lands, if a press then could
-    answer it (the player alive, on their feet, at rest or guarding, and facing the blow within 60 degrees): the
-    room, the bodies, the figures, the storm, the sea, the fires and the barks stand still (the beat's `still`), the
-    world drains a little toward grey, and "Press F to parry" breathes on the screen until F or the left button is
-    pressed with the pointer the game's, which lets the blow play on into the parry (`Freeze`). Once a parry is
-    made, the next blow freezes at most 10 ticks before it lands (the player on their feet with stamina left, facing
-    any way), "Press V to dodge", until V or the side button. A blow answered never freezes again, and one no press
-    could answer passes; a lesson the answer did not meet (a parry spoiled by a press left unused) is asked again of
-    the next. Once both are made, whichever came last, "F parries a blow as it lands; V dodges it" shows for 6 s and
-    the fight runs as any. A boarder brought down before both are made is followed by another. Steps: Parry a blow
+    answer it (the player alive, on their feet, at rest or guarding, and aimed at the blow within 60 degrees, as the
+    rules judge a guard): the room, the bodies, the figures, the storm, the sea, the fires and the barks stand still
+    (the beat's `still`), the world drains a little toward grey, and "Press F to parry" breathes on the screen until F
+    or the left button is pressed with the pointer the game's, which lets the blow play on into the parry (`Freeze`).
+    Once a parry is made, the next blow freezes at most 10 ticks before it lands (the player on their feet with stamina
+    left, facing any way), "Press V to dodge", until V or the side button. A blow answered never freezes again, and one
+    no press could answer passes; a lesson the answer did not meet (a parry spoiled by a press left unused) is asked
+    again of the next. Once both are made, whichever came last, "F parries a blow as it lands; V dodges it" shows for 6
+    s and the fight runs as any. A boarder brought down before both are made is followed by another. Steps: Parry a blow
     (F), Dodge a blow (V), Bring the boarder down.
   - "Fight your way through the wreck", counting the hostile foes standing while any do. Until it, the zones' waves
     wait: a zone reached keeps its wave waiting and its way on shut (`WreckProgress.held`).

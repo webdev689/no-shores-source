@@ -206,8 +206,8 @@ test('a walk and a turn are counted again from where a fallen player rises', () 
 /** A foe winding up `action` at `target`. */
 const foe = (action: Action, target: number | null = 1): FighterView =>
   ({ target, action, x: 0, y: -2 }) as unknown as FighterView;
-/** The player standing at rest 2 m south of the foe, facing it, as `more` changes them. */
-const READY = { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0 };
+/** The player standing at rest 2 m south of the foe, facing it and aimed at it, as `more` changes them. */
+const READY = { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0, aim: 0 };
 const own = (more: Record<string, unknown> = {}) => ({ ...READY, ...more }) as unknown as FighterView;
 const swing = (left: number): Action => ({
   kind: 'attack',
@@ -309,7 +309,9 @@ test('a blow the player could not answer at once passes unfrozen, and the lesson
     assert.ok(!frozenFor(lesson, own({ health: 0, action: { kind: 'dead' } })), `${lesson}: fallen`);
   }
   assert.ok(!frozenFor('dodge', own({ stamina: 0 })), 'a dodge with no stamina left');
-  assert.ok(frozenFor('dodge', own({ facing: Math.PI })), 'a dodge whichever way they face');
-  assert.ok(!frozenFor('parry', own({ facing: Math.PI })), 'a parry with their back to it');
-  assert.ok(frozenFor('parry', own({ facing: 0.9 })), 'a parry with the blow off to one side');
+  assert.ok(frozenFor('dodge', own({ facing: Math.PI, aim: Math.PI })), 'a dodge whichever way they face');
+  assert.ok(!frozenFor('parry', own({ aim: Math.PI })), 'a parry aimed away from it');
+  assert.ok(frozenFor('parry', own({ aim: 0.9 })), 'a parry with the blow off to one side');
+  // The rules judge a guard by its aim: a body standing turned away, its aim on the foe, parries.
+  assert.ok(frozenFor('parry', own({ facing: Math.PI })), 'a parry aimed at it, the body turned away');
 });

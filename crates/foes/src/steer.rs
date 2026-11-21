@@ -18,7 +18,7 @@ const WIDE_OF_SQUARE: f64 = 0.02;
 /// What a foe's thinking asks of its body and its arms this tick.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Ask {
-    /// The bearing to move along and at what share of a walk; none to stand.
+    /// The bearing to move along and at what share of a player's walk (or run), held to its own pace; none to stand.
     pub way: Option<(f64, f64)>,
     /// The bearing to face; none to face its way.
     pub face: Option<f64>,
@@ -167,6 +167,7 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
     if let Some((way, pace)) = ask.way
         && (!ask.walk_facing || off(brain.heading, way) <= WALK_FACE)
     {
+        let pace = pace.min(here.pace());
         wish = [libm::sin(way) * pace, -libm::cos(way) * pace];
     }
     if !ask.unspaced {

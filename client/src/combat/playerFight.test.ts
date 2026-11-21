@@ -43,17 +43,28 @@ function controls(held: Action[] = [], pressed: Action[] = []): InputFrame {
  *  what the forge warms, and the room's last word on the gear. */
 function fightingPlayer(right = 'sword_iron', start: { readonly x: number; readonly y: number } = course.start) {
   type State = { right?: string | null; pose?: unknown; pace?: unknown; spare?: unknown };
-  const shown: { attackPressed: boolean; right: unknown; pose: unknown; pace: unknown; spare: unknown }[] = [];
+  type Shown = {
+    attackPressed: boolean;
+    right: unknown;
+    pose: unknown;
+    pace: unknown;
+    spare: unknown;
+    way: number | null;
+  };
+  const shown: Shown[] = [];
   const said: { gear: GearMessage | null } = { gear: null };
   const loads = { count: 0 };
   const hands = {
+    strokes: () => 0,
     swing: null,
     muzzle: null,
     cancel: () => undefined,
     loaded: () => (loads.count += 1),
     update: (_seconds: number, button: { attackPressed: boolean }, state: State) => {
       const { right = null, pose = null, pace = null, spare = null } = state;
-      shown.push({ attackPressed: button.attackPressed, right, pose, pace, spare });
+      // The way, 1 to 6, the hands draw a swing begun now: their share of DFO's six, as the walker sets it.
+      const way = button.attackPressed ? Math.floor(hands.strokes() * 6) + 1 : null;
+      shown.push({ attackPressed: button.attackPressed, right, pose, pace, spare, way });
     },
   } as unknown as ConstructorParameters<typeof Walker>[2];
   const warmed: { right: string | null; glow: unknown; owner: unknown }[] = [];
@@ -268,7 +279,16 @@ test('a swing clicked early in a weapon swap plays in the first person on the ve
   );
   assert.equal(shown.filter((each) => each.attackPressed).length, 1, 'once');
   const action = fighting.own?.action;
-  assert.ok(action?.kind === 'attack' && action.stroke === stroke, 'with the stroke the click rolled');
+  assert.ok(action?.kind === 'attack' && action.stroke === stroke, 'with the stroke the click chose');
+});
+
+test('in the first person each swing is drawn the way the chain strikes it: side cut, overhead, thrust', () => {
+  const { shown, frame } = fightingPlayer();
+  frame(controls());
+  frame(controls(['swing'], ['swing']));
+  for (let tick = 0; tick < 150; tick++) frame(controls(['swing']));
+  const ways = shown.flatMap((each) => (each.way === null ? [] : [each.way]));
+  assert.deepEqual(ways.slice(0, 4), [3, 1, 6, 3]);
 });
 
 test('locked on, a dodge is drawn rolling the way it goes, while the rules keep the fighter facing its foe', () => {

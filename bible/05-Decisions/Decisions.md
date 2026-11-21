@@ -220,6 +220,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue's Camera Flights Stand Clear and Go Slower]]
 - [[Three Healing Charges, Refilled by Blows and Kills]]
 - [[The Wreck Opens by Teaching the Player]]
+- [[Foes Walk and Run at Three Quarters of a Player's Pace]]
+- [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -397,7 +397,7 @@ function taughtRun(state: {
     fight: {
       player: 1,
       parryOpen: true,
-      own: { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0 },
+      own: { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0, aim: 0 },
     },
     armedDress: (dress: Dress) => ({
       ...dress,

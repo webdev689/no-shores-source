@@ -120,16 +120,19 @@ phases) is [[Enemies]].
   Backing off or running, no blow draws it; mid-blow, winding up or reeling, it turns once free. With one fighter in
   sight a foe fights as it always did; turns, the beat, the line, the flanker, the chase and the leash stay each
   target's own.
-- **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
-  steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off, and, in its
-  turn, after a target walking away from it faster than 0.5 m/s, which at a walk it would never close on: it closes in
-  by as far as the target walks on while its blow comes round, but no nearer than their bodies touch, and there keeps
-  the target's pace; it follows it through its swing at a swing's pace, so the blow lands. Foes without a turn keep
-  their places on the ring. It finds its way by the room's routes, and stops by its distance to the target, never to a
-  route's corner. Foes of one side steer apart inside 1.2 m of each other, pushed at up to 0.7 of a walk, and the part
-  of a foe's move that walks into an ally turns aside round it, all of it within 0.8 m, so a foe going in slips past an
-  ally rather than through it. Each ally turns the move as asked, not as another already turned it, so a foe between
-  two is held back rather than tossed from one to the other. Nothing is moved but by its own controls.
+- **Moving.** A foe walks and runs at three quarters of a player's pace, 3.3 and 5.7 m/s
+  ([[Foes Walk and Run at Three Quarters of a Player's Pace]]). It asks no more of itself (`FOE_PACE`): its slower moves
+  keep their speeds, and steering apart from its allies may push it a little faster for a moment. It faces a bearing of
+  its own and turns at 320 degrees a second; walking somewhere it turns first and steps only within 45 degrees of its
+  way, so no foe walks backwards. It runs to a spot more than 5 m off, and, in its turn, after a target walking away
+  from it faster than 0.5 m/s, which at a walk it would never close on: it closes in by as far as the target walks on
+  while its blow comes round, but no nearer than their bodies touch, and there keeps the target's pace; it follows it
+  through its swing at a swing's pace, so the blow lands. Foes without a turn keep their places on the ring. It finds
+  its way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes of one side
+  steer apart inside 1.2 m of each other, pushed at up to 0.7 of a walk, and the part of a foe's move that walks into an
+  ally turns aside round it, all of it within 0.8 m, so a foe going in slips past an ally rather than through it. Each
+  ally turns the move as asked, not as another already turned it, so a foe between two is held back rather than tossed
+  from one to the other. Nothing is moved but by its own controls.
 - **Climbing.** A foe climbs and drops by the [[Movement]] rules, as a player does, where its way crosses one of the
   [[Navmesh]]'s links. At the link's start it turns square to the block's side, then walks on, neither running nor
   steered apart, pressing jump where the link goes over: the rules vault it, mantle it, catch the lip it jumps for, or
@@ -146,7 +149,7 @@ phases) is [[Enemies]].
   it has), it gives its fight up once no wind-up of its own is under way: its target, its turn, the blow it saw coming
   and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for. It sheds its Expose
   and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the share of what it
-  lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 9 s), then turns to face
+  lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s), then turns to face
   as its place does and stands idle. Walking back it heeds nothing it sees or hears and shows as idle, so the one it
   gave up on cannot draw it out again at once. A blow on it brings it back, alert with the striker as its target; one
   struck from past its leash it gives up again. A foe a player asked for, or one a Boss called, has no post and never
@@ -154,7 +157,7 @@ phases) is [[Enemies]].
   posted where it stands and leashes to it; a Boss stood so calls no one in its phases, so a scene that places its own
   foes keeps them as it placed them.
 - **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds
-  back first) walks home the same way, healing (from 20 m, about 5 s). On this walk it heeds what it sees and hears
+  back first) walks home the same way, healing (from 20 m, about 6 s). On this walk it heeds what it sees and hears
   as ever: they raise its awareness, and once it is alert it takes its target or searches again; short of that it
   walks on home, so a passing stir never leaves it standing short of its post. Either walk home takes a Boss or a
   Miniboss back to its first phase, and the foes it called fall ([[Enemies]]). With nothing stirring it, a garrison

@@ -154,11 +154,17 @@ export class Walker {
   private drank = false;
   /** The seconds a tick of the rules lasts, as the last step took them. */
   private tickSeconds = 1 / 60;
+  /** The stroke (1 to 6) of the fight's swing under way, which the first person draws its swing with; out of a fight's
+   *  swing, none, and the hands choose their own. */
+  private fightStroke: number | null = null;
 
   constructor(player: Player, you: Placed, firstPerson: FirstPerson, forge: Cards) {
     this.player = player;
     this.you = you;
     this.firstPerson = firstPerson;
+    const own = firstPerson.strokes;
+    // The first person's share of DFO's six ways that names the stroke: the six are the combat crate's strokes in order.
+    firstPerson.strokes = () => (this.fightStroke === null ? own() : (this.fightStroke - 0.5) / 6);
     this.forge = forge;
     this.dress = you.dress;
     this.worn = you.dress;
@@ -277,6 +283,7 @@ export class Walker {
     // than the hands' own clock: the next shot they let go plays.
     if (fight && own && shooter && own.action.kind !== 'reload') firstPerson.loaded();
     const free = swings && !(own && HELD.has(own.action.kind));
+    this.fightStroke = own?.action.kind === 'attack' ? own.action.stroke : null;
     firstPerson.glow = outfit.drawn ? this.shownGlow : NO_GLOW;
     firstPerson.update(fight?.handsSeconds ?? seconds, this.button(controls, free, shooter, fight), {
       right: outfit.right,
