@@ -282,58 +282,39 @@ Where the work stands now, for the next session. Each session rewrites this note
   Tested offline: the full check, and the game's HUD with a sea fight on it pictured headless at 1280x720, 1920x1080
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
-  room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
-- **#97, the activities**, stacked on #88 (and #88 on #72), waits on the owner's yes, which deploys the page and the
-  rooms: the clock, the gates, the dungeon of the day, Elite Dungeons and their Bosses, the week's two, modifiers,
-  Abyss's revives and wipes, private runs, companies of four and Find a Company, quests and bounties on one engine, the
-  bounty board in the plaza, and the Journal ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at
-  Its Top]]): the quests as cards under twelve banners, the bounties as tiles beside them, each bounty its own glyph,
-  the timers dropping from DFO's hourglass, led by icons drawn for them ("more icons and less text"), each clock once in
-  its group's head and each mark's words said at the panel's foot; and the board's screen as tiles after Destiny's
-  Bounty Tracker, each bounty named. Claude's calls are in its description. Three questions wait there: should dungeon
-  interiors give ground and call waves as #102's encounters do on Mission and Dungeon nodes; is the timers' row layout,
-  borrowed from DFO's cut timers window, within the owner's word; and should the fight director's heat divide a run's
-  modifiers out. Tested offline: the full check, and pictures of the Journal, the timers and the board in the game's own
-  face from a harness with the real modules (at 390x844, 860x600, 1280x720, 1920x1080 and 2560x1440, no box wider than
-  its room), read by two design critiques. Not yet tested live. At 390 px wide the menu's own tab row overlaps itself,
-  as it did before. It now holds #88 with #72 and main through #75 (83ffaa42): the sea keeps characters, so ships sunk
-  or taken count toward the sea bounties; the sea's and the islands' rooms gate by their tier on the server; a deck's
-  kills count toward no land bounty and earn no boon; main's muster and Shipwright turn at 09:00 UTC with the clock;
-  the prologue's and the board's asks are 64 to 66; an island's door goes into its dungeon. The Journal's and the
-  board's kit surfaces wear the borders main's framed-surface test gives them, pictured after the merge with nothing
-  moved.
-- **#122, the server's authority**, stacked on #97, waits on the owner's yes ("We should be server authoritive 100%
-  across the codebase", [[The Server Is the Authority Over Everything]]): a node's room, its dungeons' and runs' judge
-  where a kept character comes from (`server/arrival.ts`); `?entrance=` stands a player at an entrance only on the
-  server's word; a ship first puts to sea only by a port's roadstead; a sea island's dungeon opens only behind an
-  island the sea holds; a look's eye lays guns only from within 100 m of the player's ship; every keeping room sends
-  away a socket with no session in five seconds; the Test Ground opens only for `test-` names; a dress shows only
-  what is worn; a mounted input fights with nothing; and the asset workflows publish with `R2_TOKEN`, a token for R2
-  alone, which the owner creates (its description says how). The prologue's end stays the page's word while it pays
-  nothing. Tested offline: the full check. Not tested live: the accounts' migration and the deployed rooms.
-- **#123, the Postmaster**, stacked on #122, waits on the owner's yes ("Implement a mail vendor who acts as a mailbox
-  for lost items, ingame mail, etc", game mail only; [[A Mail Vendor Keeps Lost Items and the Game's Mail]]): a
-  mailbox of the game's letters, each holding what a player lost (a Vestige left lying or lying out its time, a first
-  clear's Vestige or flotsam with the carried ten full, a salvaged module with nine carried), taken at his counter in
-  Overlook's plaza. Tested offline: the full check, and pictures of his screen at three sizes. Not pictured: his
-  figure and his counter; another session is working on the social space, whose counter places are its own.
-- **#72, the dungeons, is finished and waits on the owner's yes to merge**: DFO's Dungeons 2.0 within the patrol
-  areas, perfect and insanely varied as the owner asked ([[The Dungeons Are Perfect and Insanely Varied]], Claude's
-  calls in [[Dungeons as Claude Builds Them]], [[Dungeons]]). Six styles, two to five blocks, a deeper last block in
-  about half, rooms shaped, purposed, named, furnished and lit by their style, vaults, domes and caves, cave mouths
-  for the caverns and the mines. Tested offline: `cargo xtask check`, and headless pictures of every room of six
-  dungeons, one of each style. Two reviews' findings are fixed, each with a test; #72 lists them. Not tested live: a
-  deployed dungeon room.
-
-- **#88, the dungeon modules, stacked on #72, waits on the owner's yes after #72**: each style's own pieces built
-  by script in Blender, a kit of eighteen and three landmarks
-  ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]], [[Dungeon Modules]], Claude's calls in
-  [[Dungeons as Claude Builds Them]], "The modules"). The rules place the landmarks; the page places the kits and
-  draws both from packs the `dungeon-modules` workflow publishes to R2. Tested offline: `cargo xtask check`, the
-  packs built twice to the same bytes here and by the workflow, four code reviews and five rounds of headless
-  pictures of over a dozen dungeons that hold every style and landmark, every finding fixed at its cause with a test.
-  The last two fixes (rock hiding a flame from still water, the mines' drifts strewing rock) are not yet pictured.
-  Not tested live.
+  room through `Sea.minute`; #97 takes an island's door into its dungeon.
+- **The stack #72, #88, #97, #122, #123 waits on the owner's yes, in that order**; each merge deploys the page and
+  the rooms. Each holds main through #121 (a3e8110f) and passed `cargo xtask check` on its head, tested offline, after
+  a second audit of the whole stack whose findings are fixed at their layer. A player's gear stands in
+  `crates/protocol/gear.fbs`, which `messages.fbs` includes, so the schema keeps under 600 lines.
+  - **#72, the dungeons**: DFO's Dungeons 2.0 within the patrol areas, perfect and insanely varied as the owner asked
+    ([[The Dungeons Are Perfect and Insanely Varied]], Claude's calls in [[Dungeons as Claude Builds Them]],
+    [[Dungeons]]). Six styles, two to five blocks, rooms shaped, purposed, named, furnished and lit by their style,
+    cave mouths for the caverns and the mines. Headless pictures of every room of six dungeons. It asks the owner
+    whether the dungeons' taking DFO's moods, dressing and landmarks as law, which the Pick List had left behind, stands.
+  - **#88, the dungeon modules**: each style's own pieces built by script in Blender, a kit of eighteen and three
+    landmarks ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]], [[Dungeon Modules]]), drawn from packs the
+    `dungeon-modules` workflow publishes to R2. Its shader tests run the shader's own functions on numbers.
+  - **#97, the activities**: the clock, the gates, the dungeon of the day, Elite Dungeons and their Bosses, the week's
+    two, modifiers, Abyss's revives and wipes, private runs, companies and Find a Company, quests and bounties on one
+    engine, and the Journal ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]). The
+    bounty board stands on the hub's notice board landing, facing the Watch Court (`hub::BOARD_LANDING_M`). A run
+    holds a joining player's inputs as standing still until it keeps them (`Room::hold`). Three questions wait in its
+    description: dungeon interiors and #102's encounters, the timers' borrowed row layout, and the fight director's
+    heat with a run's modifiers.
+  - **#122, the server's authority** ([[The Server Is the Authority Over Everything]]): rooms judge where a kept
+    character comes from on a look before they claim it; `?entrance=` on the server's word; a ship first puts to sea
+    by a port's roadstead; a sea island's dungeon opens behind an island the sea holds and lets go a player the sea
+    does not land within 20 s; a look's eye within 100 m; no socket without a session past five seconds; `test-`
+    names; a dress shows what is worn; and the asset workflows' `R2_TOKEN`, which needs the owner's named yes and the
+    owner's token. Not tested live: the accounts' migration.
+  - **#123, the Postmaster** ([[A Mail Vendor Keeps Lost Items and the Game's Mail]]): a mailbox of the game's
+    letters for what a player would lose, its counter in the hub's Watch Court; fifty letters, the one holding the
+    least let go first; a first clear's Vestige to the vault before the mail. Not pictured: his figure and counter in
+    the hub.
+- **#125, main's screens**, off `main`, waits on the owner's yes: the Harbourmaster's wares wear their rows again, and
+  under 600 px the menu's tabs scroll, a keeper stands over the rest and the vault's sides stack. Tested offline; it
+  merges into `main` cleanly.
 
 - #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
   then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
@@ -445,12 +426,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
 - **#97 once #88 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
   merge; then play the Journal and the board in a deployed room (tested live): take a bounty, count it, turn it in,
-  and drop the timers with T.
+  and drop the timers with T; and picture the board on the hub's landing. Known, small: the Journal shows a sea
+  bounty's count only once the player is ashore (it reads the foot's gear), and before any gear has come a tier's
+  seas show open, the server still refusing them.
 - **#122 once #97 is in and the owner says yes**: the owner creates `R2_TOKEN` first, or the asset workflows publish
   nothing; then retarget, merge main in, check and merge, and play an arrival of each kind in the deployed rooms
   (tested live): a landing, a gate, a dungeon and back out at its entrance, a company join, and one refused.
 - **#123 once #122 is in and the owner says yes**: retarget, merge main in, check and merge; then leave a Vestige
   lying in a deployed room and take it from the Postmaster (tested live), and picture his counter and figure.
+- **#125 once the owner says yes**: merge it; the stack's screens take it as main comes in.
 - **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
   `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA).
 - **Overlook's hub** ([[Overlook's Hub as Claude Shapes It]]): a frame's cost on a real GPU with some 125 figures and
