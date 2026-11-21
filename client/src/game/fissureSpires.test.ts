@@ -60,7 +60,7 @@ test("at a spire the page's movement and the room's fight both stop a body runni
       mounted: false,
     });
   assert.ok(body.x < spire.minX, `the page's movement stopped at ${body.x}, short of ${spire.minX}`);
-  let fighter = new Float64Array(FIGHTER_FLOATS);
+  let fighter: Float64Array = new Float64Array(FIGHTER_FLOATS);
   fighter.set([spire.minX - 2, middleY, 0, 0, 0, 0, yaw, 0, 0, 0, 1]);
   fighter.set([0, 0, 1, 100, 100, 100, 0, 0, 40, 0, 0, yaw, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], 22);
   const intent = new Float64Array([1, 0, yaw, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0, Number.NaN, Number.NaN, Number.NaN]);
