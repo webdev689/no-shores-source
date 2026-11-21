@@ -135,12 +135,18 @@ fn a_body_walks_from_the_arrivals_through_each_range_into_the_side_courts() {
 fn a_body_walks_up_the_portico_through_the_great_door_into_the_hall() {
     let hub = hub();
     let from = hub.plan.social.spawns[1];
+    // Along the hub's ways, which the courts' pieces keep clear: round the obelisk and down the court to the portico.
     let path = [
-        hub.at(30.0, 18.0),
-        hub.at(-50.0, 18.0),
+        hub.at(36.0, 0.0),
+        hub.at(21.0, 0.0),
+        hub.at(8.0, 13.0),
+        hub.at(-5.0, 0.0),
+        hub.at(-30.0, 0.0),
+        hub.at(-52.0, 0.0),
         hub.at(-80.0, 0.0),
         hub.at(-100.0, 0.0),
-        hub.at(-118.0, 0.0),
+        hub.at(-115.0, 0.0),
+        hub.at(-121.0, -8.0),
         hub.at(-130.0, -8.0),
     ];
     let (body, passed) = walked(hub, from, &path, 90.0);

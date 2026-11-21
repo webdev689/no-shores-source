@@ -157,16 +157,32 @@ fn corners([west, north, east, south]: Rect) -> [[f64; 2]; 4] {
     [[west, north], [east, north], [east, south], [west, south]]
 }
 
+/// Whether a segment crosses a rectangle, by clipping it to the rectangle's four sides.
+fn crosses(segment: [[f64; 2]; 2], [west, north, east, south]: Rect) -> bool {
+    let along = [segment[1][0] - segment[0][0], segment[1][1] - segment[0][1]];
+    let (mut low, mut high) = (0.0_f64, 1.0_f64);
+    for (step, room) in [
+        (-along[0], segment[0][0] - west),
+        (along[0], east - segment[0][0]),
+        (-along[1], segment[0][1] - north),
+        (along[1], south - segment[0][1]),
+    ] {
+        if step == 0.0 {
+            if room < 0.0 {
+                return false;
+            }
+        } else if step < 0.0 {
+            low = low.max(room / step);
+        } else {
+            high = high.min(room / step);
+        }
+    }
+    low <= high
+}
+
 /// How far a segment passes from a rectangle: none where it crosses it.
 fn segment_to_rect(segment: [[f64; 2]; 2], rect: Rect) -> f64 {
-    let [west, north, east, south] = rect;
-    let crosses = (0..=16).any(|step| {
-        let share = f64::from(step) / 16.0;
-        let x = segment[0][0] + (segment[1][0] - segment[0][0]) * share;
-        let y = segment[0][1] + (segment[1][1] - segment[0][1]) * share;
-        x >= west && x <= east && y >= north && y <= south
-    });
-    if crosses {
+    if crosses(segment, rect) {
         return 0.0;
     }
     let ends = segment.iter().map(|&end| point_to_rect(end, rect));
@@ -371,4 +387,17 @@ pub(crate) fn walkers_places(dressed: &[Dressed], laid: &Laid, ways: &Ways, leve
         }
     }
     found
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_segment_through_a_thin_box_crosses_it_and_one_beside_it_does_not() {
+        let wall = [9.9, -5.0, 10.1, 5.0];
+        assert_eq!(segment_to_rect([[0.0, 0.0], [20.0, 0.0]], wall), 0.0, "through its middle");
+        assert!((segment_to_rect([[0.0, 6.0], [20.0, 6.0]], wall) - 1.0).abs() < 1e-9, "a metre past its end");
+        assert!((segment_to_rect([[0.0, 0.0], [9.0, 0.0]], wall) - 0.9).abs() < 1e-9, "short of it");
+    }
 }

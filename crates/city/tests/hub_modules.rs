@@ -8,7 +8,7 @@ use city::solids::Material;
 use movement::{Block, Body, Controls, Flat, TICK_SECONDS, TUNING, standing, step_body};
 
 /// Every hub piece, in the order the catalogue appends them.
-const HUB: [&str; 26] = [
+const HUB: [&str; 37] = [
     "stall-mage",
     "stall-vault",
     "stall-weaponsmith",
@@ -35,6 +35,17 @@ const HUB: [&str; 26] = [
     "anvil-yard",
     "hay-cart",
     "bollards",
+    "market-stall-cloth",
+    "market-stall-bread",
+    "market-stall-flowers",
+    "court-tree",
+    "lawn-bed",
+    "table-benches",
+    "parasol-table",
+    "woodpile",
+    "barrel-stack",
+    "flower-cart",
+    "bale-stack",
 ];
 
 const NORTH: Controls =
@@ -86,7 +97,7 @@ fn every_hub_piece_lies_inside_its_size_and_carries_its_parts_on_no_paving() {
 #[test]
 fn every_keeper_stands_behind_a_counter_facing_the_customer() {
     let selling: Vec<&Module> = HUB.iter().map(|name| piece(name)).filter(|module| sells(module)).collect();
-    assert_eq!(selling.len(), 14, "eight stalls, three chapels, three market stalls");
+    assert_eq!(selling.len(), 17, "eight stalls, three chapels, six market stalls");
     for module in selling {
         let (counter, keeper) = (socket(module, "counter"), socket(module, "keeper"));
         let behind =
@@ -136,7 +147,7 @@ fn a_customer_walking_at_a_counter_is_stopped_by_it() {
 
 #[test]
 fn every_place_a_body_is_set_is_clear_of_the_parts() {
-    let placed = ["keeper", "counter", "player-", "smith-"];
+    let placed = ["keeper", "counter", "player-", "smith-", "seat-"];
     for module in HUB.iter().map(|name| piece(name)) {
         for socket in module.sockets.iter().filter(|socket| placed.iter().any(|kind| socket.name.starts_with(kind))) {
             let [x, y, z] = socket.at;

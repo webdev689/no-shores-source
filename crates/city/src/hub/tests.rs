@@ -91,3 +91,39 @@ fn the_hubs_ways_are_walked_clear_from_the_seaward_walk_to_the_pier() {
     let faults = crate::life::check::faults(&social.ways, &social.posts, &social.ring, &boxes, &Ground(ground));
     assert!(faults.is_empty(), "{} faults:\n{}", faults.len(), faults.join("\n"));
 }
+
+/// The courts filled, after the owner's "Populate everything": every piece made to fill them stands several times
+/// over, and the walkers have a couple of hundred places to go to.
+#[test]
+fn every_court_is_filled_and_its_pieces_have_walkers_places() {
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let stood = |name: &str| {
+        social
+            .solids
+            .iter()
+            .filter(|solid| {
+                let crate::solids::Shape::Module { module, group: 0 } = solid.shape else { return false };
+                crate::modules::all().get(module as usize).is_some_and(|found| found.name == name)
+            })
+            .count()
+    };
+    let filling = [
+        "market-stall-cloth",
+        "market-stall-bread",
+        "market-stall-flowers",
+        "court-tree",
+        "lawn-bed",
+        "table-benches",
+        "parasol-table",
+        "woodpile",
+        "barrel-stack",
+        "flower-cart",
+        "bale-stack",
+    ];
+    for name in filling {
+        assert!(stood(name) >= 4, "{name} stands {} times", stood(name));
+    }
+    let visited = social.posts.iter().filter(|post| post.keep == crate::life::Keep::Visited).count();
+    assert!(visited >= 200, "{visited} places for the walkers");
+}

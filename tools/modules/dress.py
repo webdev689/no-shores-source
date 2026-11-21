@@ -68,7 +68,7 @@ def market_stall_flowers(module):
         bunch(module, (-1.85 + number * 0.74, market.COUNTER_Y + 0.3, top), palettes[number % 4], high=0.35)
     for number in range(5):
         bunch(module, (-1.8 + number * 0.55, 0.75 + (number % 2) * 0.25, 0.0), palettes[(number + 1) % 4])
-    module.part((-2.1, 0.45, 0.0), (0.4, 1.15, 0.8))
+    module.part((-2.1, 0.6, 0.0), (0.4, 1.15, 0.8))
     for hung in range(5):
         x = -1.6 + hung * 0.8
         shapes.rod(module, (x, 1.3, 2.4), (x, 1.3, 2.15), 0.006, 'linen', sides=3)
