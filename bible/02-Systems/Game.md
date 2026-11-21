@@ -197,7 +197,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   ways; the walk's frames go at the pace they stroll, each in a step of its own. The floor under each is found again
   only once they have walked a step. The fight never takes them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
-  player. Each resource node stands as the forge's picture of its kind (`nodeCards`, [[Sprite Forge]]), 3.2 m across,
+  player. Each resource node stands as the forge's picture of its kind (`nodeCards`, [[Sprite Forge]]), every kind at one
+  scale (a felled stack 1.6 m across, an outcrop 1.2 m), about knee high,
   before its place's dressing: an outcrop of ore, a patch of herbs, felled timber or piled salvage, while the room
   stands it for the player, and as it looks spent once they gathered it, until its turn comes round; a place resting
   its turn shows only its dressing. The picture alone marks a node: no ring, no beam. Each drop lying for them stands
@@ -205,7 +206,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
   ([[Interface]], "The social space's counters"); within 2.5 m of a node it reads "Hold to gather" and its
-  resource, and held it asks the room to gather it (`GatherHold`): a ring round the keycap fills over the two seconds
+  resource, and held it asks the room to gather it (`GatherHold`): a ring traced round the keycap's edge fills over the two seconds
   with the menus' build-up sound, the figure works the node, and in first person the hands work it with its tool
   (`firstperson/working.ts`: the Pick-Axe on ore, the Wood-Axe on timber, the Sickle on herbs, the bare hand in
   salvage, in the gauntlets worn). Letting go of E before the ring is full asks the room to stop, as does leaving

@@ -37,6 +37,8 @@ Asked after the change's audit:
 > with the sprite alone marking a node: "#1" (in front of the dressing: a few metres off it toward the path, the 3D
 > dressing staying as the place around it)
 
+Seeing them in the game: "The harvest nodes are way too big"; at half the size, "Nvm size looks good now".
+
 ## What it settles
 
 - **A patrol's material nodes stand at its layout's dressed resource places** ([[Layouts]]): the ore outcrop, the
@@ -44,7 +46,7 @@ Asked after the change's audit:
   ([[Server]]).
 - **No ring and no beam**: each node is drawn as a sprite baked in the owner's Blender pipeline ([[Sprite Forge]]),
   for its detail, and the sprite alone marks it. It stands in front of its place's dressing, a few metres toward the
-  path, and the room gathers it there.
+  path, and the room gathers it there, about knee high beside a body: half the size it was first drawn.
 - **Gathering is E held about two seconds** while the player's figure works the node, with a progress ring and a
   sound; moving or being hit stops it. A node gathered looks spent until it returns ([[Game]]). It is not done on
   horseback.
