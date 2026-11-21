@@ -13,6 +13,7 @@ import { HULL_NAMES } from '../ships/hulls.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
+import { boundWord } from './controls.ts';
 import { arriving, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { HelmMap } from './helmMap.ts';
@@ -183,7 +184,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       })
       .catch((error: unknown) => {
         const why = error instanceof Error ? error.message : String(error);
-        hud.veil(`${words} failed: ${why}. Press Enter to try again.`);
+        hud.veil(`${words} failed: ${why}. Press ${boundWord('confirm')} to try again.`);
         retry = () => behindVeil(words, work);
       });
   };

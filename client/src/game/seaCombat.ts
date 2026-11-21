@@ -520,7 +520,8 @@ export class SeaCombat {
   /** The fight's readout at `now`: its plate and rose, the card on the nearest captain, E to board one struck
    *  alongside, and its last volley's tally; none once the fight is over. */
   display(now: number): SeaFightModel | null {
-    return this.naval.display(now, { boardable: this.room.mayBoard, boardKey: boundWord('use') });
+    const keys = { boardKey: boundWord('use'), braceKey: boundWord('brace') };
+    return this.naval.display(now, { boardable: this.room.mayBoard, ...keys });
   }
 
   /** The fight's messages standing at `now`, DFO's toasts. */

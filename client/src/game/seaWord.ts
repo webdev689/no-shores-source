@@ -7,6 +7,7 @@ import { TOLD } from '../network/seaHarbour.ts';
 import { RARITIES, capital } from '../player/gear.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
 import { shipName } from '../ships/shipBars.ts';
+import { boundWord } from './controls.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import type { Kept } from './shipPanel.ts';
 import type { PortCity } from './worldData.ts';
@@ -77,7 +78,9 @@ export function linesOf(told: readonly (readonly number[])[], naval: readonly Na
   };
   for (const event of naval) {
     if (event.kind === 'Struck')
-      lines.push(capital(`${whose(event.ship)} colours are down: come alongside and press E to board it.`));
+      lines.push(
+        capital(`${whose(event.ship)} colours are down: come alongside and press ${boundWord('use')} to board it.`),
+      );
     if (event.kind === 'Boarding') lines.push(`Boarders away: ${whose(event.ship)} crew stands to meet them.`);
   }
   for (const numbers of told) {

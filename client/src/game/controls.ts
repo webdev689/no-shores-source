@@ -180,6 +180,12 @@ export function boundWord(id: BindId, device: Device = BINDS.device, binds: Bind
   return device === 'keys' ? keyName(first) : first;
 }
 
+/** `words` with a control's first key or button after them, as a press says it ("Map  N"); alone where it has none. */
+export function withKey(words: string, id: BindId): string {
+  const key = boundWord(id);
+  return key ? `${words}  ${key}` : words;
+}
+
 /** A control's first key or button as a keycap draws it (`pad:` before a pad's); none where it has none. */
 export function boundCap(id: BindId, device: Device = BINDS.device, binds: Binds = BINDS.now): string {
   const [first] = binds[id][device];

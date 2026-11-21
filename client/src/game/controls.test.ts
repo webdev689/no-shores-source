@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { BIND_IDS, DEFAULTS, type Device, rebind } from '../player/binds.ts';
-import { CONTROL_GROUPS, type Row, boundCap, boundWord, cellsOf, controlWords, doesFor } from './controls.ts';
+import type { NavalEvent } from '../network/seaFight.ts';
+import { BINDS } from '../player/input.ts';
+import { CONTROL_GROUPS, type Row, boundCap, boundWord, cellsOf, controlWords, doesFor, withKey } from './controls.ts';
+import { linesOf } from './seaWord.ts';
 
 const ROWS = CONTROL_GROUPS.flatMap((group) => group.controls);
 const rowDoing = (does: string): Row => {
@@ -68,4 +71,20 @@ test('each row says what it does in a few words, for the keys and the pad', () =
 test("a prompt names a control's first key, or the pad's button, as last played", () => {
   assert.deepEqual([boundWord('use', 'keys'), boundWord('use', 'pad'), boundWord('ashore', 'pad')], ['E', 'X', '']);
   assert.deepEqual([boundCap('confirm', 'keys'), boundCap('confirm', 'pad')], ['Enter', 'pad:A']);
+});
+
+test("a press names its control's key as bound now, on the keys or the pad played last, and none where it has none", () => {
+  const map = rebind(DEFAULTS, { id: 'map', device: 'keys', place: 0 }, 'j').binds ?? DEFAULTS;
+  BINDS.set(map);
+  assert.equal(withKey('Map', 'map'), 'Map  J');
+  BINDS.device = 'pad';
+  assert.deepEqual([withKey('Map', 'map'), withKey('Dock', 'ashore')], ['Map  Up', 'Dock']);
+  const lines = linesOf([], [{ kind: 'Struck', ship: 1 } as NavalEvent], {
+    kinds: new Map(),
+    ports: [],
+    nameOf: () => null,
+  });
+  assert.deepEqual(lines, ['Its colours are down: come alongside and press X to board it.']);
+  BINDS.device = 'keys';
+  BINDS.set(DEFAULTS);
 });
