@@ -767,6 +767,9 @@ button's corner and screen, and the Tailor's wares.
   where DFO's was 13, so the broadside warning stands smaller; the laid side's soft 8 px glow stands in hard rings,
   and a long ship's name on the card is cut short a little sooner, the face's letters being wider than the page's.
 - The notices write at the face's 11 px, where DFO's wrote 14.
+- The place line's small words stay at the face's 11 px at the larger step, where the page wrote 16, and over the held
+  map at 11 (22 at the larger step), where it wrote 13 (20): the face has no step between, and 22 would stand them
+  level with the place's name above them.
 - The Harbourmaster's wares lay their words on one line under each tile, 6 px apart, where the page's ran together;
   the muster stays inside the keeper's side on a view 1024 px wide, where the page's ran past it.
 - The World Editor's drop-downs stand a pixel shorter than a browser's. A captain's fight's readout shows over the

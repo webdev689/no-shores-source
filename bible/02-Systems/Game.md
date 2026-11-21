@@ -155,8 +155,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   shows the fight's keys and the body's beyond walking, the Arts' (R Anima, Q and G Tenets) only while an Art is worn,
   and how to aim Dusk Daggers only while Shadow is. Every key hint, on foot and at sea, is a key on its keycap and
   its action, with no colon. Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), its keys
-  stand at 22 px, at the bottom right ([[Interface]]), and the place line's small words under its name at 16 px (20
-  px over the held map).
+  stand at 22 px, at the bottom right ([[Interface]]), and the place line's small words under its name at the face's 11 px
+  (22 over the held map; [[Interface]], "Limits").
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
   Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of
