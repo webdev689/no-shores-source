@@ -235,3 +235,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[PostgreSQL]], by [[Accounts Start as Guests, on Cloudflare D1]]
 - [[New Ships Are Planned in the Sloop's Style, After the System]], by [[The Ships as Claude Shapes Them]]
 - [[The Vitals Keep Their Panel Under DFO's Compass]], by [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]
+- [[What a Player Can Use Wears Its Mark Over It]]

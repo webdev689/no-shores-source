@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
-import { NODE_REACH_M, groundRings, useAt } from './footGear.ts';
+import { NODE_REACH_M, nodeBeams, useAt } from './footGear.ts';
+import { markedHere } from './overheadMarks.ts';
 import { OPEN_AT } from './gearScreen.ts';
 import { SERVED_M } from './plazaLife.ts';
 import { awayFromCounters } from './townsfolk.ts';
@@ -41,27 +42,25 @@ test('a counter whose keeper is away still opens, which calls her back to it', (
   awayFromCounters.add('lamplighters');
   try {
     assert.equal(useAt(0, 0, here, null, () => undefined)?.words, 'Lamplighters', 'offered while she walks the plaza');
-    assert.equal(groundRings(null, here, () => 0, 0).length > 0, true, 'and ringed');
+    assert.equal(markedHere(null, here, () => 0).length, 1, 'and marked');
   } finally {
     awayFromCounters.delete('lamplighters');
   }
 });
 
-test('the ground rings each dealing counter, and each node twice under a beam, on the floor; a drop is no ring', () => {
-  const one = groundRings(null, { stations: [WEAPONSMITH] }, () => 0, 0).length;
-  assert.equal(one % MARK_FLOATS, 0);
-  assert.equal(
-    groundRings(null, { stations: [WEAPONSMITH, CHANDLER] }, () => 0, 0).length,
-    one,
-    'the chandler deals with no one',
-  );
-  const all = groundRings(lying, { stations: [WEAPONSMITH] }, () => 2, 0);
+test('each node still to gather stands under a beam on the floor; a drop has none', () => {
+  const beams = nodeBeams(lying, () => 2, 0);
   // A beam is two crossed planes of two triangles each.
-  assert.equal(all.length, one * 3 + 12 * MARK_FLOATS);
-  assert.ok(Math.abs((all[one + 2] ?? 0) - 2) < 0.1, "a node's ring stands on the floor's height, just over it");
+  assert.equal(beams.length, 12 * MARK_FLOATS);
+  assert.ok(Math.abs((beams[2] ?? 0) - 2) < 1e-9, "a node's beam stands on the floor's height");
+  assert.deepEqual(
+    nodeBeams(null, () => 0, 0),
+    [],
+    'no gear, no nodes',
+  );
 });
 
-test("Shape's offer is within a counter's reach of his week's spot, ringed there, and gone with him", () => {
+test("Shape's offer is within a counter's reach of his week's spot, marked there, and gone with him", () => {
   const visitorSpots = [
     [40, 40],
     [60, 0],
@@ -90,6 +89,9 @@ test("Shape's offer is within a counter's reach of his week's spot, ringed there
     null,
     'he has left',
   );
-  const counter = groundRings(null, here, () => 0, 0).length;
-  assert.equal(groundRings(shape, here, () => 0, 0).length, counter * 2, 'a ring of his own');
+  assert.equal(
+    markedHere(shape, here, () => 0).length,
+    markedHere(null, here, () => 0).length + 1,
+    'a mark of his own',
+  );
 });

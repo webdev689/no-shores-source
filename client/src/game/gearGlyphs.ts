@@ -294,6 +294,13 @@ const MATERIALS: readonly { readonly rows: readonly string[]; readonly colours: 
   },
 ];
 
+/** An island's resource as its picture, by its place in the catalogue; none past its end. */
+export function resourcePicture(
+  place: number,
+): { readonly rows: readonly string[]; readonly colours: readonly string[] } | null {
+  return MATERIALS[place] ?? null;
+}
+
 /** A glyph as an SVG picture; a material past the catalogue's end shows an empty place. */
 export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): string {
   if (glyph === 'resource') {

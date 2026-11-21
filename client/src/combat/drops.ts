@@ -161,17 +161,24 @@ function acrossFrom(eye: Point, base: Point): [number, number] {
 }
 
 /** A picture standing on `base`, turned to the eye, each run of one colour along a row two triangles, as marks'
- *  vertices into `out`. */
-export function markPicture(out: number[], picture: PixelPicture, base: Point, eye: Point): void {
+ *  vertices into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through). */
+export function markPicture(
+  out: number[],
+  picture: PixelPicture,
+  base: Point,
+  eye: Point,
+  scale = 1,
+  opacity = 1,
+): void {
   const [right, ahead] = acrossFrom(eye, base);
   const runs = runsOf(picture);
   const [x, y, z] = base;
   let next = out.length;
   for (let start = 0; start < runs.length; start += RUN) {
-    const left = runs[start] ?? 0;
-    const end = runs[start + 1] ?? 0;
-    const foot = z + (runs[start + 2] ?? 0);
-    const top = z + (runs[start + 3] ?? 0);
+    const left = (runs[start] ?? 0) * scale;
+    const end = (runs[start + 1] ?? 0) * scale;
+    const foot = z + (runs[start + 2] ?? 0) * scale;
+    const top = z + (runs[start + 3] ?? 0) * scale;
     const red = runs[start + 4] ?? 0;
     const green = runs[start + 5] ?? 0;
     const blue = runs[start + 6] ?? 0;
@@ -179,12 +186,12 @@ export function markPicture(out: number[], picture: PixelPicture, base: Point, e
     const leftY = y + ahead * left;
     const endX = x + right * end;
     const endY = y + ahead * end;
-    next = put(out, next, leftX, leftY, foot, red, green, blue, 1);
-    next = put(out, next, endX, endY, foot, red, green, blue, 1);
-    next = put(out, next, endX, endY, top, red, green, blue, 1);
-    next = put(out, next, leftX, leftY, foot, red, green, blue, 1);
-    next = put(out, next, endX, endY, top, red, green, blue, 1);
-    next = put(out, next, leftX, leftY, top, red, green, blue, 1);
+    next = put(out, next, leftX, leftY, foot, red, green, blue, opacity);
+    next = put(out, next, endX, endY, foot, red, green, blue, opacity);
+    next = put(out, next, endX, endY, top, red, green, blue, opacity);
+    next = put(out, next, leftX, leftY, foot, red, green, blue, opacity);
+    next = put(out, next, endX, endY, top, red, green, blue, opacity);
+    next = put(out, next, leftX, leftY, top, red, green, blue, opacity);
   }
 }
 

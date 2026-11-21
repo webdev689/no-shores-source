@@ -23,7 +23,8 @@ code:
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
-  - client/src/game/footGear.ts#groundRings
+  - client/src/game/footGear.ts#nodeBeams
+  - client/src/game/overheadMarks.ts#overheadMarks
   - client/src/game/footGround.ts#standOn
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
@@ -196,9 +197,15 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the
   ways; the walk's frames go at the pace they stroll, each in a step of its own. The floor under each is found again
   only once they have walked a step. The fight never takes them for targets.
-- **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
-  player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
-  patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
+- **Over what a player can use** (`overheadMarks`; [[What a Player Can Use Wears Its Mark Over It]]), drawn among the fight's marks, after DFO's marks
+  over the people who do something: over each keeper who deals with the player their own mark as their screen shows
+  it, their sign in its brass diamond (the Harbourmaster's an anchor) or a faction's emblem in the diamond edged in its
+  Art's colour; over Shape on his spot his own; over each resource node they may still gather its resource's picture,
+  1.2 m over its ground, under a sea-green beam 40 m tall seen across the patrol, so a route can be planned through
+  them (`footGear`). A mark's foot stands 0.2 m over the crown, 0.42 m across, turned to the eye and hidden by what
+  stands before it, never narrower on the screen than 0.017 radians either side so a keeper across the plaza still
+  shows one; it bobs 6 cm once a second on a phase of its own, holding still under reduced motion, and fades out
+  over the last fifth of its 30 m, the nearest sixteen laid. Each drop lying for them stands as its own picture under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu

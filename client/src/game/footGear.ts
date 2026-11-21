@@ -1,10 +1,8 @@
-// What a player's gear lays on the ground on foot: each resource node they may still gather, a ring in sea green
-// under a beam of light seen across the patrol, so a route can be planned through them; each station that deals with
-// them, a brass ring at its counter, and Shape's spot while he is here. The drops lying for them stand as their own
-// pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's offer opened, or a node within
-// reach gathered. The room judges every gather; the rings only show where.
+// What a player's gear lays on foot: over each resource node they may still gather a beam of light seen across the
+// patrol, so a route can be planned through them; the marks over what they can use are overheadMarks.ts's, the drops
+// lying for them their own pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's
+// offer opened, or a node within reach gathered. The room judges every gather; the beams only show where.
 
-import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { resourceName } from '../player/gear.ts';
 import { openGearWindow } from './gearScreen.ts';
@@ -15,8 +13,7 @@ import type { NodeInfo } from './worldData.ts';
 
 /** How near a resource node a player stands to gather it, as the room has it. */
 export const NODE_REACH_M = 2.5;
-/** A station's ring in brass, a resource node's in sea green, each beating slowly so it is seen across the ground. */
-const BRASS = [0.93, 0.74, 0.32] as const;
+/** A resource node's beam in sea green, beating slowly so it is seen across the ground. */
 const NODE = [0.35, 0.85, 0.7] as const;
 /** How tall a node's beam stands, and half of how wide it is, metres: it is seen across the patrol, hundreds of metres
  *  off. */
@@ -79,25 +76,11 @@ function markBeam(
   }
 }
 
-/** The rings on the ground at `seconds` of the page's clock, each standing on `floor`'s height where it is. */
-export function groundRings(
-  gear: GearState | null,
-  here: Here,
-  floor: (x: number, y: number) => number,
-  seconds: number,
-): number[] {
+/** The nodes' beams at `seconds` of the page's clock, each standing on `floor`'s height where it is. */
+export function nodeBeams(gear: GearState | null, floor: (x: number, y: number) => number, seconds: number): number[] {
   const out: number[] = [];
   const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
-  const stations = here.stations ?? [];
-  const counters = stations.filter((station) => offerAt([station], ...station.counter)).map((each) => each.counter);
-  const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
-  for (const [x, y] of shape ? [...counters, shape] : counters)
-    markRing(out, [x, y, floor(x, y)], SERVED_M - 0.12, SERVED_M, [...BRASS, 0.6]);
-  for (const { x, y } of gear?.nodes ?? []) {
-    const base = [x, y, floor(x, y)] as const;
-    markRing(out, base, NODE_REACH_M - 0.1, NODE_REACH_M, [...NODE, 0.5]);
-    markRing(out, base, 0.3, 0.6, [...NODE, beat]);
-    markBeam(out, base, NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
-  }
+  for (const { x, y } of gear?.nodes ?? [])
+    markBeam(out, [x, y, floor(x, y)], NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
   return out;
 }

@@ -15,6 +15,7 @@ renderer's `drawScreenQuad`/`uploadTexture`; raw WebGL lives only in `ui/intro/i
 
 | Folder / module | What it is (<=12 words) | Kind | Verdict | Lands as | Seam or reason (<=25 words) | Effort | Evidence |
 |---|---|---|---|---|---|---|---|
+| **NPC marks** (`src/scenes/npcMarksHost.js`, `src/render/npcMarkPass.js`): approved, [[Pick - NPC Marks]] | | | | | | | |
 | **src/ui (top, 258 files, 101k)** | | | | | | | |
 | `src/ui/windowStack.js, uiScreen.js, messageBox.js, yesNoBox.js, inputMessageBox.js, decisionBox.js, listPicker.js, verticalScrollBar.js, horizontalSlider.js, howManyField.js, pageWindow.js, statusBox.js, toolTip.js, fadeLayer.js, windowMotion.js` | Classic window kernel: stack, parchment popups, scroll bars, tooltip | UI | Can't | — | DFU UserInterfaceManager, DaggerfallMessageBox, ToolTip ported whole on ARENA2 parchment art. Salvage: modal stack and focus order. | — | `src/ui/windowStack.js` |
 | `src/ui/text.js, textFont.js, textureCanvas.js, bitmapCanvas.js, iconFit.js, meshStamp.js, modelIcon.js, pixelDial.js, pixelGround.js, pixelifyFive.js, glyphFace.js, inkRaster.js, localeFaces.js` | Glyph atlases, picture canvases, icon stamps, font choice | UI | Cut | TS port + WebGPU rewrite (screen-quad layer) | `text.js` reads FNT fonts, IMG/CIF art and draws via `renderer.drawScreenQuad`; `textFont.js` (system/dyslexic fonts) and pixel faces are ours. | M | `src/ui/text.js` |

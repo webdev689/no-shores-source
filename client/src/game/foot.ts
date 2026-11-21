@@ -38,7 +38,8 @@ import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { type Use, groundRings, useAt } from './footGear.ts';
+import { type Use, nodeBeams, useAt } from './footGear.ts';
+import { markedHere, overheadMarks } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Hint } from './gearNodes.ts';
@@ -405,8 +406,10 @@ export class Foot {
     );
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
+    const floor = (x: number, y: number) => movement.standing(x, y).z;
     const dropped = this.dropMarks(clock, shot.eye, [
-      ...groundRings(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z, clock),
+      ...nodeBeams(this.gear?.gear ?? null, floor, clock),
+      ...overheadMarks(markedHere(this.gear?.gear ?? null, this.node, floor), shot.eye, clock),
       ...foes.overheads(shot.eye, clock),
     ]);
     const marks = effects.marks(fight, seconds, {
