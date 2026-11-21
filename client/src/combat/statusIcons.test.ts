@@ -136,5 +136,9 @@ test('the vitals show the player’s buffs under their bars, and never rest whil
 test('past 1440p an icon’s line stands at twice its size with the rest of the display', () => {
   const line = (zoom: number) =>
     statusNode({ name: 'haste', left: 60, faded: false }, 1, 24 * zoom, zoom).children?.[1];
-  assert.deepEqual([line(1) && line(1)?.height, line(2) && line(2)?.height], [2, 4]);
+  const heightOf = (zoom: number) => {
+    const laid = line(zoom);
+    return laid ? laid.height : undefined;
+  };
+  assert.deepEqual([heightOf(1), heightOf(2)], [2, 4]);
 });

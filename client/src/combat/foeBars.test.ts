@@ -175,7 +175,7 @@ test('over a figure a plate is laid at its rank’s width: an Elite’s longer t
     [176, '560.0', '300.0'],
   ]);
   const [, lifted] = laidOut(3, 3);
-  assert.match(lifted?.[2] ?? '', /^27\d\.\d$/, 'two Elites: the farther lifted clear');
+  assert.match(String(lifted?.[2] ?? ''), /^27\d\.\d$/, 'two Elites: the farther lifted clear');
 });
 
 test('the cone keeps its foe while another stands less than a degree nearer, and gives it up once one does', () => {

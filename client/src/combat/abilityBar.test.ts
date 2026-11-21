@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import type { Child } from '../ui/node.ts';
 import { test } from 'node:test';
 import {
   AbilityBar,
@@ -10,6 +11,9 @@ import {
   USED_SECONDS,
 } from './abilityBar.ts';
 import { allOf, wordsIn } from './nodes.test.ts';
+
+/** A slot's label, or none for a slot not shown. */
+const labelOf = (slot: Child): string | undefined => (slot ? slot.label : undefined);
 
 const STORM = 1;
 const SHADOW = 3;
@@ -81,10 +85,10 @@ test('on the display a spell just cast flashes, a Tenet counting its last second
     false,
     'Arc Lash ready',
   );
-  assert.equal(slots()[2] && slots()[2]?.label, 'Arc Lash (G), ready');
+  assert.equal(labelOf(slots()[2]), 'Arc Lash (G), ready');
   bar.update({ art: STORM, animaShare: 0, tenets: [0.97, 1] }, 1 / 60);
   assert.ok(keys(0).includes(`art ${STORM} diamond 0.45 3`), 'the Tempest just cast: its frame flashes white');
-  assert.equal(slots()[0] && slots()[0]?.label, 'Tempest (R), charging, 0%');
+  assert.equal(labelOf(slots()[0]), 'Tempest (R), charging, 0%');
   bar.update({ art: STORM, animaShare: 0, tenets: [0.98, 1] }, USED_SECONDS);
   assert.equal(keys(0).includes(`art ${STORM} diamond 0.45 3`), false, 'its flash over');
   bar.update({ art: STORM, animaShare: 0, tenets: [0.98, 1] }, 1 / 60, true);
@@ -93,7 +97,7 @@ test('on the display a spell just cast flashes, a Tenet counting its last second
     keys(2).every((key) => key === 'unable hatch' || / 0 [\d.]+$/.test(key)),
     'every picture grey',
   );
-  assert.equal(slots()[2] && slots()[2]?.label, 'Arc Lash (G), cannot be cast now');
+  assert.equal(labelOf(slots()[2]), 'Arc Lash (G), cannot be cast now');
   bar.hide();
   assert.equal(bar.node(false), null, 'hidden with no state');
 });
