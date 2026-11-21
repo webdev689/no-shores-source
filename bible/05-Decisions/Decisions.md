@@ -197,6 +197,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Foe Groups as Claude Builds Them]]
 - [[Aiming, the Figure Faces Straight Ahead]]
 - [[The Crosshair Shows Each Weapon, Its Reload, Its Hits and Melee's Reach]]
+- [[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]
 - [[The Prologue's Fights Are Heard Louder]]
 - [[A Held Aim Keeps the Camera on Its Side]]
 - [[Climbing Is Off in the Prologue]]

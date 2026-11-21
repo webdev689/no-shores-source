@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - tools/forge/tools/sprite-forge/layers.py
+  - tools/forge/tools/sprite-forge/weaponart.py
   - tools/forge/tools/sprite-forge/fanout.py
   - tools/forge/tools/forgeViewer/pack.py
   - tools/forge_publish.py#publish
@@ -56,6 +57,13 @@ four wing beats and the five views a figure is drawn in, a little from above, re
 Cycles and averaged down, each texel's light weighted by its cover, as light alone for the page to colour in the
 caster's element. They are published as `@art/arts/birds/<bird>-<view>-<beat>.png`.
 
+It draws the weapons large for the weapon rows and gear screens (`weaponart.py`,
+[[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): each look a loadout's hand takes, in every metal
+the forge makes it in, 99 in all, its model alone at four times the man's pixels a metre (about 250), level with its
+business end to the right. Each is made, lit, graded (a bow's grip on the armour's leather, as the weapon run's) and
+laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin
+(`dagger_iron_l`) is its right hand's picture.
+
 ## Where it lives
 
 `tools/forge/` holds the forge as DFO laid it out, so its paths work unchanged: the code in `tools/sprite-forge/`, the
@@ -102,10 +110,12 @@ python -I tools/sprite-forge/forgepoints.py --body male
 
 A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
-The `forge` workflow renders the Arts' birds and adds them to what is published with the repository's Cloudflare token
-whenever `artbirds.py` or its pinned packages change on main, or when a run is asked for on a branch; its log ends with
-the manifest, which a commit takes into `content/forge/renders.json`. It installs only the exact wheels
-`artbirds-requirements.txt` names by their hashes, and its checkout keeps no git credential.
+The `forge` workflow renders the Arts' birds and the weapons drawn large and adds them to what is published with the
+repository's Cloudflare token whenever `artbirds.py`, `weaponart.py` or their pinned packages change on main, or when
+a run is asked for on a branch; its log ends with the manifest, which a commit takes into `content/forge/renders.json`.
+It installs only the exact wheels `artbirds-requirements.txt` names by their hashes, and its checkout keeps no git
+credential. The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without
+rendering.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the
 doll and class-look tools need Daggerfall's files and DFO's game code, so they do not run here.
