@@ -221,7 +221,7 @@ export class WreckFight implements Beat {
     const easing = tick.seconds / DRAIN_S;
     this.drained = frozen ? Math.min(FROZEN_DRAIN, this.drained + easing) : Math.max(0, this.drained - easing);
     this.playClock = this.playClock === null ? tick.clock : this.playClock + seconds;
-    this.dress(run.arms === 'worn');
+    this.dress(run);
     // No storm's strikes on the wreck; its one is the strike behind Thule as he cries out.
     const [wakeX, wakeY] = this.layout.wake.at;
     const strike = story.lightning.step(seconds, [wakeX, wakeY]);
@@ -331,11 +331,14 @@ export class WreckFight implements Beat {
     return frozen;
   }
 
-  /** Dresses the player as their arms are: in hand once worn, without them until then. */
-  private dress(armed: boolean): void {
+  /** Dresses the player as their arms are: without them until worn, then holding them as their gear has them, the
+   *  story's dress after the wreck too. */
+  private dress(run: WreckRun): void {
+    const armed = run.arms === 'worn';
     if (armed === this.dressedArmed) return;
     this.dressedArmed = armed;
     const { story } = this;
+    if (armed) story.dress = run.armedDress(story.dress);
     story.walker.you.dress = armed ? story.dress : unarmed(story.dress);
   }
 

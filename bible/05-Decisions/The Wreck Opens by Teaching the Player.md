@@ -47,7 +47,8 @@ flyover: Go straight from waking into the gear and lessons; the wreck is seen as
 | The blur's pulses | A step just after each beat, held between beats, a beat behind the heart; clear a second after the eyes open | Clearing with the heart, not smoothly |
 | Out of the eyes | The camera eases out of the eyes to over the player's shoulder in 2.5 s, their hands empty | Play begins from the shot the run's own camera takes, without a cut |
 | Where the arms lie | 3 m along the path ahead of where the player wakes, below the step down from it | Just ahead as play begins |
-| How they look | A steel kite shield and a sword in the drops' pixel style, with the Normal line of light over them | Read as the player's own arms, and as a drop is found |
+| How they look | The item itself: the forge's picture of it, as the Character page shows it, lying face up to the eye at its true size, with a Normal drop's line of light over it | The owner asked whether it should be "the actual rendered iten"; it is the one item on the deck, on the page and in hand |
+| In hand, once equipped | The item as the gear has it, a Normal Sword & Shield drawn in iron, for the rest of the story | The same item the player found and equipped, not the steel pair the story dressed them in |
 | How they are taken | Walked over, as a drop is; dismantled, they lie on the deck again | The game's own way to take a drop, and the teaching never sticks |
 | "The inventory" | The Character page (I): open it, equip them from the Melee slot, close it (Esc); opening the menu at all counts for the first step | The gear is worn from the Character page alone; Inventory (O) holds no gear |
 | The basic controls | "Find your feet" (move, look round, run, jump), then "Ready yourself" (swing, guard, drink a healing charge) | Short tasks, each step ticked as it is done, and steps done early stay done, so nothing is asked twice |

@@ -225,8 +225,9 @@ on one taller than wide, with the window along the bottom (`creationEye`).
 
 **The player** is dressed for the story in steel with no helm, a steel sword sheathed at the hip and a kite shield
 slung on the back (`armouredDress`; [[The Player's Sword and Shield Are Holstered]]): they stand at the helm with
-their hands free. The ram throws the sword and shield from them: they wake on the wreck without them (`unarmed`) and
-wear them again once equipped there, and a swing draws them, as the game's does. Their look is kept in the browser (`overlook.look`) and dresses them in the game afterwards.
+their hands free. The ram throws the sword and shield from them: they wake on the wreck without them (`unarmed`), and
+once they equip the story's there they hold the item as their gear has it and the Character page shows it, a Normal
+Sword & Shield drawn in iron (`holdingArms`), for the rest of the story; a swing draws them, as the game's does. Their look is kept in the browser (`overlook.look`) and dresses them in the game afterwards.
 
 ## The wreck
 
@@ -346,8 +347,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   serves; a step done early stays done, and a task stays up 1.5 s once all of it is met, so its last tick is seen. In
   turn:
   - "Find your sword and shield": they lie on the deck 3 m along the path from where the player wakes, below the step
-    down from it, drawn as a dropped piece of gear is (`LyingArms`): a steel kite shield and a sword in the drops'
-    pixel style, with the Normal line over them. Walked over, the room puts them in the pack
+    down from it, drawn as the item itself (`LyingArms`): the forge's picture of it, as the Character page shows it,
+    lying face up to the eye at its true size, with a Normal drop's line of light over it. Walked over, the room puts
+    them in the pack
     (`Room::story_take_arms`). Should they leave the pack (dismantled), they lie on the deck again.
   - "Equip your sword and shield": Open your Character page (I; ticked by the menu open once the arms are taken),
     Equip them from the Melee slot, Close it (Esc).

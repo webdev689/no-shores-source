@@ -202,6 +202,7 @@ function stillRun(
     heads: () => new Map(boss ? [['thule', boss.head]] : []),
     beginBoss: () => undefined,
     fight: { player: 1, parryOpen: true },
+    armedDress: (dress: Dress) => dress,
     arms: 'worn',
     boarder: 'none',
     boarderView: null,
@@ -398,6 +399,10 @@ function taughtRun(state: {
       parryOpen: true,
       own: { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0 },
     },
+    armedDress: (dress: Dress) => ({
+      ...dress,
+      outfit: { ...dress.outfit, right: 'sword_iron', left: 'shield_kite_iron' },
+    }),
     get arms() {
       return state.arms;
     },
@@ -445,7 +450,8 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
   step();
   assert.equal(frames.at(-1)?.paused, true, "over the menu the player's presses rest");
   setGearScreenOpen(false);
-  assert.equal(walker.you.dress?.outfit.right, armed.outfit.right, 'the sword in hand once worn');
+  assert.equal(walker.you.dress?.outfit.right, 'sword_iron', 'once worn, the sword their gear has in hand');
+  assert.equal(story.dress.outfit.right, 'sword_iron', 'and in the story after the wreck');
   onFor(2);
   Object.assign(body, { x: 3, vx: 7, mode: 'air', vz: 1 });
   walker.player.yaw = 1.2;

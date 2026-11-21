@@ -236,17 +236,15 @@ export function markLine(
   }
 }
 
-/** A piece of gear lying at rest at `place` as its own `picture`, with its rarity's line over it: as a drop of a
- *  Vestige rests, for a piece the world lays down itself. */
-export function markLying(
+/** The line of light a drop at rest stands under, in its rarity's colour and height, rising from `over` metres above
+ *  `place`: for a piece of gear the world lays down itself, drawn as it is. */
+export function markDropLine(
   out: number[],
-  picture: PixelPicture,
-  { place, rarity }: { readonly place: Point; readonly rarity: number },
+  { place, rarity, over }: { readonly place: Point; readonly rarity: number; readonly over: number },
   seconds: number,
   eye: Point,
 ): void {
-  markPicture(out, picture, place, eye);
-  const crown: Point = [place[0], place[1], place[2] + picture.rows.length * PIXEL_M + LIFT_M];
+  const crown: Point = [place[0], place[1], place[2] + over + LIFT_M];
   markLine(out, crown, LINE_M[rarity] ?? AMMO_LINE_M, LINE_COLOURS[rarity] ?? WHITE, 1, seconds, eye);
 }
 

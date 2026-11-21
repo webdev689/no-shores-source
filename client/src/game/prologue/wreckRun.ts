@@ -34,7 +34,7 @@ import { WreckCrew } from './wreckCrew.ts';
 import { courseOf, titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
-import { armsOf, BOARDER, boarderAt, LyingArms } from './wreckTeaching.ts';
+import { armsOf, BOARDER, boarderAt, holdingArms, LyingArms } from './wreckTeaching.ts';
 
 /** What the wreck needs of the game: the movement rules, the walker, the forge's cards, the room's compiled module,
  *  the ground as the scene draws it, the GPU, and the wreck's mesh and baked light, fetched the first time they are
@@ -119,7 +119,7 @@ export class WreckRun {
     this.foes = new FoeFigures(rosterOf(parts.module));
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     [this.scenery, this.gearHeld] = [drawn.scenery, drawn.gear];
-    this.lying = new LyingArms(layout);
+    this.lying = new LyingArms(layout, context.forge);
     this.progress = new WreckProgress(layout);
     this.boxes = this.base;
     this.node = { spawns: [drawn.origin], centre: drawn.origin };
@@ -214,6 +214,11 @@ export class WreckRun {
   gearHere(dress: Dress): GearHere {
     const { fight } = this;
     return { gear: this.gearHeld.value, ask: (ask) => fight.askGear(ask), forge: this.context.forge, dress };
+  }
+
+  /** `dress` holding the arms the player wears, as their gear has them. */
+  armedDress(dress: Dress): Dress {
+    return holdingArms(dress, this.gearHeld.value, this.context.forge);
   }
 
   /** Where the player's sword and shield are. */
@@ -417,6 +422,8 @@ export class WreckRun {
     figures.push(
       ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, tickSeconds, effects.flashes, foeFeel),
     );
+    const lying = this.armsLie ? this.lying.figure(walker.you.dress) : null;
+    if (lying) figures.push(lying);
     const muzzle = walker.muzzle;
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
@@ -494,6 +501,7 @@ export class WreckRun {
    *  movement, and the room let go of. */
   leave(): void {
     showAnimaEdge(QUIET);
+    this.lying.leave();
     this.context.movement.setHeights(null);
     this.room = null;
   }

@@ -5,18 +5,54 @@ import { EVENT } from '../../combat/cues.ts';
 import { Fighting } from '../../combat/fighting.ts';
 import { ASKS, type GearState } from '../../network/gearMessages.ts';
 import { LocalRoom } from '../../network/localRoom.ts';
+import type { Cards } from '../../player/cards.ts';
 import { slotOf, WORN } from '../../player/gear.ts';
+import type { Picture } from '../../player/picture.ts';
 import { startCombatRules } from '../../rules/combatRules.ts';
 import type { MovementRules } from '../../rules/movementRules.ts';
+import { armouredDress, FIRST_LOOK } from './look.ts';
 import { Freeze } from './tutorial.ts';
 import { courseOf, inArea, readWreck, topAt } from './wreckLayout.ts';
 import { IN_THE_SEA_M } from './wreckProgress.ts';
-import { armsAt, armsOf, ARMS_ALONG_M, BOARDER, boarderAt, LyingArms, SWORD_AND_SHIELD } from './wreckTeaching.ts';
+import {
+  ARMS_ITEM,
+  armsAt,
+  armsOf,
+  ARMS_ALONG_M,
+  BOARDER,
+  boarderAt,
+  holdingArms,
+  LyingArms,
+  SWORD_AND_SHIELD,
+} from './wreckTeaching.ts';
 
 const layout = readWreck();
 const course = courseOf(layout);
 const [wakeX, wakeY] = layout.wake.at;
 const quiet = layout.zones[0]?.area ?? [0, 0, 0, 0];
+
+/** A forge that draws each weapon's large picture a plain block, its swords and kite shields in iron and steel, and
+ *  writes down each picture it made a card of. */
+function forged(): { forge: Cards; carded: Picture[] } {
+  const carded: Picture[] = [];
+  const art = (width: number): Picture => ({ width, height: 12, pixels: new Uint8ClampedArray(width * 48).fill(255) });
+  const forge = {
+    wardrobe: () => ({
+      right: ['sword_iron', 'sword_steel'],
+      left: ['shield_kite_iron', 'shield_kite_steel'],
+      garments: [],
+      hairStyles: [],
+    }),
+    draws: () => true,
+    picture: () => Promise.resolve(null),
+    weaponArt: (dress: unknown, layer: string, share = 1) => Promise.resolve(art(Math.round(64 * share))),
+    cardOf: (picture: Picture) => {
+      carded.push(picture);
+      return { texture: { destroy: () => undefined }, width: picture.width, height: picture.height, root: [0, 0] };
+    },
+  } as unknown as Cards;
+  return { forge, carded };
+}
 
 test("the player's sword and shield lie on the quiet deck a few steps ahead of where they wake", () => {
   const [x, y, z] = armsAt(layout);
@@ -27,11 +63,37 @@ test("the player's sword and shield lie on the quiet deck a few steps ahead of w
   const { facing } = layout.wake;
   const ahead = (x - wakeX) * Math.sin(facing) - (y - wakeY) * Math.cos(facing);
   assert.ok(ahead / away > Math.cos(Math.PI / 4), 'ahead of them as they stand, as play begins');
-  const arms = new LyingArms(layout);
+  const arms = new LyingArms(layout, forged().forge);
   assert.ok(arms.reached([x + 1, y, z]) && !arms.reached([x + 2, y, z]), 'taken up by walking over them');
   const marks: number[] = [];
   arms.mark(marks, 0, [wakeX, wakeY, z + 1.6]);
-  assert.ok(marks.length > 0, 'drawn as a dropped piece of gear');
+  assert.ok(marks.length > 0, "a drop's line of light over them");
+});
+
+test('the arms on the deck are the item itself, drawn once as the Character page draws it, lying true to size', async () => {
+  const { forge, carded } = forged();
+  const arms = new LyingArms(layout, forge);
+  const body = armouredDress(FIRST_LOOK);
+  assert.equal(arms.figure(body), null, 'nothing until the forge has drawn it');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const lying = arms.figure(body);
+  assert.ok(lying, 'then the item');
+  assert.deepEqual([lying.x, lying.y, lying.z], [...armsAt(layout)]);
+  assert.equal(lying.facesEye, true, 'lying face up to the eye');
+  assert.equal(lying.scale, 1 / 4, "the forge draws a weapon four times a figure's pixels a metre");
+  arms.figure(body);
+  assert.equal(carded.length, 1, 'one card, made once');
+  assert.ok((carded[0]?.width ?? 0) > 64, "the sword with the shield behind it, as a loadout's picture");
+});
+
+test('once worn, the player holds the arms their gear has, as the Character page shows them', () => {
+  const { forge } = forged();
+  const body = armouredDress(FIRST_LOOK);
+  const gear = (where: number) => ({ items: [{ ...ARMS_ITEM, at: where }] }) as unknown as GearState;
+  const held = holdingArms(body, gear(WORN), forge).outfit;
+  assert.deepEqual([held.right, held.left], ['sword_iron', 'shield_kite_iron'], 'a Normal piece is iron');
+  assert.equal(holdingArms(body, gear(0), forge), body, 'carried, not held');
+  assert.equal(holdingArms(body, null, forge), body);
 });
 
 test('the boarder comes on the quiet deck, from its far end or back by the wake, the farther from the player', () => {
@@ -68,6 +130,12 @@ test('on the wreck the room has the player wake without their arms, and puts the
   // The room's word on the gear comes within the second.
   room.pump(1);
   assert.equal(armsOf(gear), 'carried');
+  const given = (gear as GearState | null)?.items.find((item) => item.kind === SWORD_AND_SHIELD);
+  assert.deepEqual(
+    given && [given.kind, given.rarity, given.level, given.bucket],
+    [ARMS_ITEM.kind, ARMS_ITEM.rarity, ARMS_ITEM.level, ARMS_ITEM.bucket],
+    'the item the deck shows is the item the room gives',
+  );
   assert.ok(!room.storyTakeArms(), 'taken once');
   const sent = gear as GearState | null;
   assert.ok(sent);

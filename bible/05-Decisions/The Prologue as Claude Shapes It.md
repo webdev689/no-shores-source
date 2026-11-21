@@ -27,7 +27,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The crew who speak | The First Mate, the Lookout, the Bosun and the Gunner, by role, no names | [[Dialogue]]: no names the owner has not set |
 | The voice in the deep | No name; "Not yet." then "Wake." | "a snippet of mysterious dialouge"; a mystery stays one |
 | The bystander | A woman of Saltmere's town, called Stranger | The player does not know her |
-| The story's dress | Steel armour without a helm, so the face shows, a steel sword and a kite shield, drawn | "armor with a sword and shield"; character creation shows the whole figure |
+| The story's dress (the arms in part replaced: from the wreck on, the item worn, [[The Wreck Opens by Teaching the Player]]) | Steel armour without a helm, so the face shows, a steel sword and a kite shield, drawn | "armor with a sword and shield"; character creation shows the whole figure |
 | After the story | The player's look dresses them in the game; with an account, their gear does, as before | The story's armour is the story's |
 | The fight that cannot be won | Thule three levels over the player, so their blows land at 0.47, doubled by the whole game's balance pass to 0.94; it ends when the player falls, when Thule is brought under a third, or after 150 s | "which you cannot win", and never a dead end |
 | The account step without the accounts | When the accounts cannot be reached, or an ask has no answer in 10 s, "Go on without an account" plays on signed out | Creation always finishes, as the game played before the story |

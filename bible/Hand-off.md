@@ -306,7 +306,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   which deploys the page and the rooms ([[The Wreck Opens by Teaching the Player]]): the gun deck's Tithe-Mate in the wreck's level; the waking eyes as an
   almond under shaped lids, an uneven fringe of lashes and the fires' light through them, the blur clearing a step at
   each beat; the wake's flight dropped, the camera easing out of the eyes to over the shoulder; and the teaching on
-  the quiet deck: the sword and shield found on the deck and equipped from the Character page, the feet found, the
+  the quiet deck: the sword and shield, drawn on the deck as the item itself, found and equipped from the Character
+  page and then held as worn, the feet found, the
   player readied (a swing, a guard, a healing charge drunk), and a Tithe boarder met one on one, its first blow frozen
   until F parries it and its next until V dodges it, the world held still and greyed while frozen, the waves held
   until it falls. Audited before merge (the room and its door, the client's teaching, the rules and the notes) and
