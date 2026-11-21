@@ -558,7 +558,9 @@ impl Room {
 
     /// Every foe as the room last stepped it, in the order of their numbers.
     pub fn foes_seen(&self) -> impl Iterator<Item = FoeSeen> + '_ {
-        self.foes.iter().map(|(&foe, found)| {
+        // A ward is its player's alone, sent them with their gear (`steps.rs`).
+        let shown = self.foes.iter().filter(|(foe, _)| !self.quests.wards.contains(foe));
+        shown.map(|(&foe, found)| {
             let brain = &found.brain;
             FoeSeen {
                 foe,

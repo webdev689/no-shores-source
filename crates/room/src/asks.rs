@@ -40,6 +40,10 @@ pub enum Asked {
     Grant(Grant),
     /// Wears an Art, or sets a fragment in a slot of one's Core.
     Art(gear::arts::ArtAsk),
+    /// Uses a puzzle's point, by its place among the goal's points (`steps.rs`).
+    UsePoint {
+        point: u8,
+    },
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -279,6 +283,7 @@ impl Room {
             Asked::Grant(grant) if self.is_test_ground() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),
+            Asked::UsePoint { point } => self.use_point(player, point),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;

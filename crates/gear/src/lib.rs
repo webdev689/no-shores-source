@@ -21,6 +21,7 @@ pub mod item;
 pub mod kinds;
 mod old_hands;
 pub mod power;
+mod quest_defs;
 pub mod quests;
 pub mod rarity;
 pub mod rewards;

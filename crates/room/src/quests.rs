@@ -33,6 +33,11 @@ pub(crate) type QuestMesh = (String, navmesh::Bounds, NavMesh);
 pub(crate) struct QuestGround {
     pub node: Option<String>,
     pub places: Vec<Place>,
+    /// The paths its layout lays, that a figure walks (`steps.rs`); each player's step running here; and the wards
+    /// standing, which no snapshot shows.
+    pub paths: Vec<Vec<[f64; 2]>>,
+    pub steps: BTreeMap<PlayerId, crate::steps::Step>,
+    pub wards: std::collections::BTreeSet<FighterId>,
     pub levels: Option<(u8, u8)>,
     pub groups: Vec<([usize; 3], Vec<FighterId>)>,
     pub fallen: Vec<([usize; 3], u64)>,
@@ -59,7 +64,7 @@ fn named(name: &str, rank: &str) -> Option<(&'static FoeType, Rank)> {
 
 /// The point the mesh holds nearest a point on the ground: there, else the nearest found looking outward in rings
 /// `RING_STEP` apart, as far as `reach`.
-fn held_near(mesh: &NavMesh, floor: &Floor, [x, y]: [f64; 2], reach: f64) -> Option<[f64; 3]> {
+pub(crate) fn held_near(mesh: &NavMesh, floor: &Floor, [x, y]: [f64; 2], reach: f64) -> Option<[f64; 3]> {
     let on = |east: f64, south: f64| mesh.nearest_point([east, south, floor.height_at(east, south)]);
     let apart = |point: &[f64; 3]| libm::hypot(point[0] - x, point[1] - y);
     let rings = (1..).map(|ring| f64::from(ring) * RING_STEP).take_while(|out| *out <= reach);
@@ -199,15 +204,36 @@ impl Room {
     /// where the middle stands off the mesh (in a building or a heap of stones), round the nearest point within the
     /// place's reach the mesh holds. None while the room's living foes leave no room, or the mesh holds no point there.
     fn stand_group(&mut self, key: [usize; 3], goal: &'static GoalDef, place: &Place) {
-        let members: Vec<(&'static FoeType, Rank)> =
-            goal.spawn.iter().filter_map(|(name, rank)| named(name, rank)).collect();
+        let members: Vec<(u8, Rank)> = goal
+            .spawn
+            .iter()
+            .filter_map(|(name, rank)| named(name, rank))
+            .map(|(foe, rank)| (foe.number, rank))
+            .collect();
         if members.is_empty() || self.living_foes() + members.len() > self.foes_most {
             return;
         }
         let ground = self.ground_of(place);
-        let (mesh, reach) = (&self.quests.grounds[ground].2, place.radius);
-        let Some(at) = held_near(mesh, &self.floor, place.at, reach) else { return };
         let seed = self.world_seed ^ QUEST_STREAM ^ (key[0] << 16 | key[1] << 8 | key[2]) as u64;
+        if let Some(stood) = self.stand_arriving(ground, place.at, place.radius, &members, SPREAD, seed) {
+            self.quests.groups.push((key, stood));
+        }
+    }
+
+    /// Stands foes as an arriving post on one of the room's place meshes: round the point it holds nearest `centre`
+    /// within `reach`, each `out` metres round it facing out, at the island's levels raised by the seas, drawn from
+    /// `seed`. Their numbers, or none where the mesh holds no point there.
+    pub(crate) fn stand_arriving(
+        &mut self,
+        ground: usize,
+        centre: [f64; 2],
+        reach: f64,
+        members: &[(u8, Rank)],
+        out: f64,
+        seed: u64,
+    ) -> Option<Vec<FighterId>> {
+        let mesh = &self.quests.grounds.get(ground)?.2;
+        let at = held_near(mesh, &self.floor, centre, reach)?;
         let start = draws_of(seed).draw() * TAU;
         let mut post = Post {
             at,
@@ -223,29 +249,34 @@ impl Room {
             anchor: None,
             arrival: true,
         };
-        for (nth, &(foe, rank)) in members.iter().enumerate() {
+        for (nth, &(number, rank)) in members.iter().enumerate() {
             let facing = start + TAU * nth as f64 / members.len() as f64;
-            let wanted = [at[0] + libm::sin(facing) * SPREAD, at[1] - libm::cos(facing) * SPREAD];
+            let wanted = [at[0] + libm::sin(facing) * out, at[1] - libm::cos(facing) * out];
             let spot = held_near(mesh, &self.floor, wanted, reach).unwrap_or(at);
             let (level, shield) = gird_of(seed, u32::try_from(nth).unwrap_or(0), self.quests.levels);
-            post.members.push((foe.number, rank, spot, facing));
+            post.members.push((number, rank, spot, facing));
             post.girds.push((level, shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss))));
         }
         self.garrison.push(post);
         let stood = self.garrison.len() - 1;
         self.stand_post(stood);
-        self.quests.groups.push((key, self.garrison[stood].standing.clone()));
+        Some(self.garrison[stood].standing.clone())
     }
 
     /// Where the first goal not yet met of a player's task with a place in this room stands: its middle and its
-    /// reach; none when no such goal is here.
+    /// reach, or a step's own spot (`step_spot`); none when no such goal is here.
     #[must_use]
     pub fn quest_at(&self, player: PlayerId) -> Option<[f64; 3]> {
         let node = self.quests.node.as_deref()?;
         let found = self.players.get(&player)?;
-        found.character.goals_unmet().find_map(|(_, goal)| {
-            let name = goal.place.as_deref().filter(|_| goal.node.as_deref() == Some(node))?;
-            let place = self.quests.places.iter().find(|place| place.name == name)?;
+        found.character.goals_unmet().find_map(|(at, goal)| {
+            if goal.node.as_deref() != Some(node) {
+                return None;
+            }
+            if goal.kind.stepped() {
+                return self.step_spot(player, at, goal);
+            }
+            let place = self.quests.places.iter().find(|place| Some(place.name.as_str()) == goal.place.as_deref())?;
             Some([place.at[0], place.at[1], place.radius])
         })
     }
@@ -253,8 +284,8 @@ impl Room {
 
 #[cfg(test)]
 #[path = "quests_tests.rs"]
-mod quests_tests;
+pub(crate) mod quests_tests;
 
 #[cfg(test)]
 #[path = "quest_grounds_tests.rs"]
-mod quest_grounds_tests;
+pub(crate) mod quest_grounds_tests;

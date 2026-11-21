@@ -52,6 +52,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Grant(Grant::Worn(Kind::Thunderlock)),
         Asked::Gear(Ask::Speak { keeper: 12 }),
         Asked::Gear(Ask::ChooseFragment { art: 2, fragment: 4 }),
+        Asked::UsePoint { point: 3 },
     ]
 }
 
@@ -94,8 +95,8 @@ fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where
     assert_eq!(gear.quest_at().map(|at| at.len()), Some(0), "no place of the opening's is here");
     let mut pledged = gear::Character::starting();
     pledged.allegiance.pledge = 1;
-    pledged.quests.roads[0].done = true;
-    pledged.quests.roads[1].task = 3;
+    pledged.quests.roads.get_mut("house").unwrap().done = true;
+    pledged.quests.set_task(1, 3);
     pledged.quests.choices[0] = 2;
     pledged.arts.earned = Some(vec![gear::arts::EARNED_ART, 0, 0]);
     pledged.arts.worn = 1;
@@ -104,7 +105,7 @@ fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where
     assert_eq!((gear.quest(), gear.quest_task(), gear.art()), (2, 3, 1), "the Stormcallers' fourth task, Storm worn");
     assert_eq!((list(gear.quests_done()), list(gear.arts_earned())), (Some(vec![1, 0, 0, 0]), Some(vec![1, 0, 0])));
     assert_eq!(list(gear.fragment_choices()), Some(vec![2, 0, 0]));
-    pledged.quests.roads[1].task = 0;
+    pledged.quests.set_task(1, 0);
     let bytes = quest_gear(&pledged);
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     let at = gear.quest_at().map(|at| at.iter().collect::<Vec<_>>());
@@ -411,4 +412,44 @@ fn the_ships_part_carries_its_power_stores_hands_and_each_officer_in_their_grid(
     }
     assert_eq!(ship.offers().map(|offers| offers.len()), Some(0), "none offered away from a counter");
     assert_eq!(ship.trim().map(|trim| trim.len()), Some(character.ship_trim().to_floats().len()));
+}
+
+/// The gear message a player on a step is sent: their road at `task` of quest `quest`, in a room of `node` holding
+/// `places`, a tick on.
+fn step_gear(node: &str, places: &[(&str, [f64; 2], f64)], quest: usize, task: usize, at: [f64; 2]) -> Vec<u8> {
+    let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
+    let section = room::Section { ring, spawns: vec![[0.0, 180.0]], falls_kill: false };
+    let mut room = Room::garrisoned(room::Floor::Flat, Vec::new(), section, room::NodeKind::Social, (node, None));
+    let place = |&(name, at, radius): &(&str, [f64; 2], f64)| gear::quests::Place { name: name.to_owned(), at, radius };
+    room.set_places(places.iter().map(place).collect());
+    let mut character = gear::Character::starting();
+    character.allegiance.pledge = gear::quests::quests().quests[quest].faction;
+    character.quests.set_task(quest, task);
+    let player = room.join().expect("a room with space");
+    assert!(room.restore_character(player, &character.to_json()));
+    assert!(room.put_player(player, at[0], at[1]));
+    room.tick();
+    gear_bytes(&room, player).expect("a player of the room")
+}
+
+#[test]
+fn the_gear_message_carries_a_steps_figure_points_ward_clock_and_failures() {
+    let escort = step_gear(
+        "driftwood-moors",
+        &[("Drowned Men's Graves", [0.0, 100.0], 65.0), ("Moorend", [0.0, -100.0], 70.0)],
+        2,
+        2,
+        [0.0, 160.0],
+    );
+    let gear = flatbuffers::root::<messages::FromRoom>(&escort).expect("a message").gear().expect("the gear");
+    let tobin = gear::quests::speaker_place("tobin").expect("Tobin speaks") as f64 + 1.0;
+    let figures: Vec<f64> = gear.quest_figures().map(|it| it.iter().collect()).unwrap_or_default();
+    assert_eq!(figures, [tobin, 0.0, 100.0, 0.0, figures.get(4).copied().unwrap_or(0.0), 0.0], "Tobin waiting");
+    assert_eq!((gear.quest_clock(), gear.quest_fails().map(|it| it.len())), (-1.0, Some(1)));
+    let puzzle = step_gear("driftwood-moors", &[("Grey Point Light", [0.0, 0.0], 30.0)], 1, 8, [0.0, 20.0]);
+    let gear = flatbuffers::root::<messages::FromRoom>(&puzzle).expect("a message").gear().expect("the gear");
+    assert_eq!(gear.quest_points().map(|it| it.len()), Some(12), "four points, each x, y and lit");
+    let defence = step_gear("saltgrass-downs", &[("The High Downs", [0.0, 0.0], 60.0)], 1, 2, [0.0, 10.0]);
+    let gear = flatbuffers::root::<messages::FromRoom>(&defence).expect("a message").gear().expect("the gear");
+    assert_eq!(gear.quest_ward().map(|it| it.iter().collect::<Vec<_>>()), Some(vec![0.0, 0.0, 1.0]), "the glass whole");
 }

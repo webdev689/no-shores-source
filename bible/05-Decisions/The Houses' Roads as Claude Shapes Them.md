@@ -81,7 +81,7 @@ kinds came, each a goal any later mission may use ([[Quests]]), and each road to
 | Defend | Keep a ward standing through two waves of foes; if it falls, try again | The Stormcallers hold the storm-glass on the High Downs while the storm finds it (the Art comes as it does); the Lamplighters hold Saltgrass's wounded against the Tithe while mending them |
 | Puzzle | Use four points round a place in the order a line gives | The Stormcallers strike Grey Point's rods as the storm walks (west, north, east, south: Pell's lines); the Lamplighters light the Old Stones as dawn comes (east, south, west, north: Maren's); the Veiled open the reckoner's chest at Moorhold by his marks (tithe, debt, interest, fee: Sable's) |
 | Unseen | Reach a place with no foe alert on the player | The Veiled wait under Valeguard unseen (the Art comes there) |
-| Race | Pass checkpoints in order within a time | The Stormcallers run the river road from Weir Mill by Gullwing to the Water Meadows in 150 s after the tally riders |
+| Race | Pass checkpoints in order within a time | The Stormcallers run the river road from Weir Mill by Gullwing to the Water Meadows in 270 s after the tally riders (about 1,800 m along the paths: about 240 s at a run, less with Quicken) |
 
 Each road is now eleven tasks: the puzzle comes before its instance. A failed step says its own line (the glass broken,
 the riders gone, seen, noticed, a wrong rod, stone or mark) and is tried again: a defence or an escort after 10 s, an

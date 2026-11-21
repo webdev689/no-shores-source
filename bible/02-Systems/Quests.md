@@ -12,6 +12,17 @@ code:
   - crates/room/src/quests.rs#set_places
   - crates/room/src/quests.rs#ground_of
   - crates/room/src/quests.rs#held_near
+  - crates/gear/src/quest_defs.rs#GoalDef
+  - crates/gear/src/quest_defs.rs#speaker_place
+  - crates/room/src/steps.rs#Step
+  - crates/room/src/steps.rs#way_between
+  - crates/room/src/steps_kinds.rs#step_seen
+  - crates/room/src/steps_kinds.rs#use_point
+  - client/src/network/questMessages.ts#questOf
+  - client/src/game/quests/questFigures.ts#questActors
+  - client/src/game/quests/questFigures.ts#wardPlate
+  - client/src/game/quests/questLooks.ts#FACES
+  - client/src/game/quests/questWatch.ts#failsBetween
   - crates/protocol/src/quest_wire.rs#quests_of
   - crates/bake/src/lib.rs#places_of
   - client/src/game/quests/questBook.ts#trackedOf
@@ -114,7 +125,17 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 ## Limits
 
 - **Online only.** A page playing alone (no `?room=`) keeps no character, so it walks no road, as it keeps no gear.
-- **Quests are kept by their place in the file**, so a new quest goes at its end.
+- **Saves by id**: a road is kept by its quest's id and its place by its task's id; a task the file no longer holds
+  reads as its quest's first.
+- **Steps**: a task holds one of the six varied kinds at most. A figure walks at the game's walk (4.43 m/s) along the
+  layout's paths between its places (each path's points within 6 m join it to another), straight where none comes
+  within a place's reach, on the ground's height, and is no fighter. An ambush stands 6 m round it, on a mesh baked
+  there. A ward has 700 health (a player's is 100), stands where it is put and fights no one, and only its player is
+  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto ground a body stands on within 6 m of where it is
+  meant to stand. A failed defence, a tail noticed and an unseen step seen wait 10 s. A place's mesh is baked the first
+  time a kill group, a defence, a puzzle or an ambush needs it (about 140 to 270 ms that tick, natively).
+- **Figures, wards and points are the player's own**: they stand where the room's last word put them, unglided, and
+  show only from the room the player is in, once it has spoken; other players do not see them.
 - **News waits for the page to settle**: the first 10 s of a page's word on a character are where it stands, so a goal
   met in them says no lines; a word that goes back (a room's starting character, before the player's own is given) is
   never news.

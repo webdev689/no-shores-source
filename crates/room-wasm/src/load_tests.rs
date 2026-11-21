@@ -175,7 +175,7 @@ fn load_of_a_roads_groups_standing() {
                 let opening = start.elapsed().as_secs_f64() * 1000.0;
                 let mut character = gear::Character::starting();
                 character.allegiance.pledge = def.faction;
-                character.quests.roads[quest].task = u8::try_from(task).unwrap();
+                character.quests.set_task(quest, task);
                 let place = goal.place.as_deref().unwrap();
                 let ticks = with_open(|opened| {
                     let Opened::Land { room, .. } = opened else { panic!("a node's room") };
@@ -201,4 +201,64 @@ fn load_of_a_roads_groups_standing() {
             }
         }
     }
+}
+
+#[test]
+#[ignore = "a measurement, run by hand in release, after `npm run bake`"]
+// The wall clock is what this measures; the rules themselves never read it.
+#[allow(clippy::disallowed_methods)]
+fn load_of_a_roads_steps() {
+    use gear::quests::quests;
+    // The Lamplighters' escort, the Stormcallers' defence and puzzle, and the Veiled's tail; a player on each.
+    for (quest, task, follow) in [(2, 2, true), (1, 2, false), (1, 8, false), (3, 3, true)] {
+        let goal = quests().quests[quest].tasks[task].goals.iter().find(|goal| goal.kind.stepped()).unwrap();
+        let id = goal.node.as_deref().unwrap();
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/nodes/").to_owned() + id + ".json";
+        assert!(open_node(std::fs::read_to_string(path).unwrap().as_bytes()));
+        let mut character = gear::Character::starting();
+        character.allegiance.pledge = quests().quests[quest].faction;
+        character.quests.set_task(quest, task);
+        let times = with_open(|opened| {
+            let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+            let player = room.join().unwrap();
+            let idle = (0..300).map(|_| tick_timed(room)).fold(0.0, f64::max);
+            assert!(room.restore_character(player, &character.to_json()));
+            let first = goal.from.as_deref().or(goal.place.as_deref()).unwrap();
+            let start = room.place_grounds();
+            let at = room_place(room, first);
+            assert!(room.put_player(player, at[0], at[1] + if follow { 10.0 } else { 0.0 }));
+            let begun = tick_timed(room);
+            let mut ticks: Vec<f64> = (0..600)
+                .map(|_| {
+                    let seen = room.step_seen(player).figures;
+                    if follow && seen.len() == 6 {
+                        let back = seen[4] + core::f64::consts::PI;
+                        let [x, y] = [seen[1] + back.sin() * 12.0, seen[2] - back.cos() * 12.0];
+                        room.put_player(player, x, y);
+                    }
+                    tick_timed(room)
+                })
+                .collect();
+            ticks.sort_by(f64::total_cmp);
+            (idle, begun, ticks[300], ticks[594], room.place_grounds() - start)
+        });
+        let (idle, begun, median, p99, baked) = times.unwrap();
+        eprintln!(
+            "STEP {:?} on {id}: slowest idle tick {idle:.2} ms; the tick it begins {begun:.1} ms ({baked} mesh baked); then {median:.2} ms a tick (p99 {p99:.2})",
+            goal.kind
+        );
+    }
+}
+
+/// A tick of the open room, timed in milliseconds.
+#[allow(clippy::disallowed_methods)]
+fn tick_timed(room: &mut room::Room) -> f64 {
+    let start = Instant::now();
+    room.tick();
+    start.elapsed().as_secs_f64() * 1000.0
+}
+
+/// A place's middle in the open room, by its name.
+fn room_place(room: &room::Room, name: &str) -> [f64; 2] {
+    room.place(name).map(|place| place.at).unwrap()
 }

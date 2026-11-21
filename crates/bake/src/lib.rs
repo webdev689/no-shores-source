@@ -43,6 +43,8 @@ pub struct NodeFile {
     pub locked: bool,
     /// The places the houses' roads name: each of its layout's areas, and each run at its mouth.
     pub places: Vec<Place>,
+    /// Its layout's paths, each its points, that a road's figure walks between places.
+    pub paths: Vec<Vec<[f64; 2]>>,
 }
 
 /// A place of a node: its name, middle and reach, metres.
@@ -158,7 +160,7 @@ pub fn nodes_of(
         let mut boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
         boxes.extend(layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
         let continent = continent.id.clone();
-        let (counters, shape_spots, places) = (Vec::new(), Vec::new(), Vec::new());
+        let (counters, shape_spots, places, paths) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
         NodeFile {
             id,
             kind,
@@ -173,6 +175,7 @@ pub fn nodes_of(
             shape_spots,
             locked: false,
             places,
+            paths,
         }
     };
     let whole =
@@ -184,7 +187,9 @@ pub fn nodes_of(
             |layout| (layout.ring.clone(), layout.spawns.clone()),
         );
         let places = laid.map(places_of).unwrap_or_default();
-        NodeFile { places, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
+        let paths =
+            laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
+        NodeFile { places, paths, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -304,6 +309,7 @@ mod tests {
         let [west, north, east, south] = node.bounds;
         assert!((west..east).contains(&camp.at[0]) && (north..south).contains(&camp.at[1]), "within its window");
         assert!(serde_json::to_string(&node).unwrap().contains(r#""places":[{"name":"The Camp","at":["#));
+        assert!(!node.paths.is_empty() && node.paths.iter().all(|path| path.len() >= 2), "its paths, each a way");
     }
 
     #[test]

@@ -27,7 +27,7 @@ fn every_foe_a_road_names_is_one_of_the_roster_at_a_rank_it_comes_in() {
 
 /// A node's room named `id` on open ground 400 m square round the origin, its spawn near its southern edge, holding
 /// no garrison, with these places.
-fn node_room(id: &str, places: &[(&str, [f64; 2], f64)]) -> Room {
+pub(crate) fn node_room(id: &str, places: &[(&str, [f64; 2], f64)]) -> Room {
     let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
     let section = Section { ring, spawns: vec![[0.0, 180.0]], falls_kill: false };
     let mut room = Room::garrisoned(Floor::Flat, Vec::new(), section, NodeKind::Social, (id, None));
@@ -37,33 +37,33 @@ fn node_room(id: &str, places: &[(&str, [f64; 2], f64)]) -> Room {
 }
 
 /// A character pledged to `faction`, its road at `task`.
-fn on_road(faction: u8, task: u8) -> Character {
+pub(crate) fn on_road(faction: u8, task: u8) -> Character {
     let mut character = Character::starting();
     character.allegiance.pledge = faction;
-    character.quests.roads[usize::from(faction)].task = task;
+    character.quests.set_task(usize::from(faction), usize::from(task));
     Character::from_json(&character.to_json()).expect("made whole")
 }
 
 /// A player joined with the character given, standing at a point.
-fn joined(room: &mut Room, character: &Character, at: [f64; 2]) -> PlayerId {
+pub(crate) fn joined(room: &mut Room, character: &Character, at: [f64; 2]) -> PlayerId {
     let player = room.join().expect("a room with space");
     assert!(room.restore_character(player, &character.to_json()));
     stand_at(room, player, at);
     player
 }
 
-fn stand_at(room: &mut Room, player: PlayerId, [x, y]: [f64; 2]) {
+pub(crate) fn stand_at(room: &mut Room, player: PlayerId, [x, y]: [f64; 2]) {
     let mut there = *room.fighter(player).expect("in");
     (there.body.x, there.body.y) = (x, y);
     room.set_fighter(player, there);
 }
 
-fn now(room: &Room, player: PlayerId) -> (Option<(usize, usize)>, Vec<u16>) {
+pub(crate) fn now(room: &Room, player: PlayerId) -> (Option<(usize, usize)>, Vec<u16>) {
     let character = &room.player(player).expect("in").character;
     (character.quest_now(), character.quest_counts())
 }
 
-fn run(room: &mut Room, ticks: u32) {
+pub(crate) fn run(room: &mut Room, ticks: u32) {
     for _ in 0..ticks {
         room.tick();
     }
@@ -105,7 +105,7 @@ fn a_place_is_reached_standing_within_its_reach_in_its_own_node_only() {
 }
 
 /// A player's ball of a million through a foe's chest from a step south of it, over a tick.
-fn shoot_dead(room: &mut Room, player: PlayerId, foe: FighterId) {
+pub(crate) fn shoot_dead(room: &mut Room, player: PlayerId, foe: FighterId) {
     let body = room.foes[&foe].fighter.body;
     let from = [body.x, body.y + 1.0, body.z + combat::tuning::CHEST];
     let mut ball = combat::shots::loose(player, combat::Ranged::Pistolet, from, 0.0, 0.0, 1.0);
@@ -116,7 +116,7 @@ fn shoot_dead(room: &mut Room, player: PlayerId, foe: FighterId) {
 }
 
 /// The foes of the room standing alive.
-fn living(room: &Room) -> Vec<FighterId> {
+pub(crate) fn living(room: &Room) -> Vec<FighterId> {
     room.foes.iter().filter(|(_, foe)| !foe.fighter.dead()).map(|(id, _)| *id).collect()
 }
 
@@ -157,7 +157,7 @@ fn a_kill_goals_group_stands_for_a_player_on_it_within_150_m_and_each_kill_they_
 #[test]
 fn a_node_is_entered_and_a_sea_island_landed_on_as_the_character_arrives() {
     let mut maw = node_room("maw-shallows", &[]);
-    let player = joined(&mut maw, &on_road(1, 8), [0.0, 0.0]);
+    let player = joined(&mut maw, &on_road(1, 9), [0.0, 0.0]);
     assert_eq!(now(&maw, player).1, [1, 0, 0]);
     let seed = (0..).find(|&seed| Kind::of(seed) == Kind::Cove).unwrap_or(0);
     let plan = Plan::new(seed, "woodland").expect("woodland dresses islands");

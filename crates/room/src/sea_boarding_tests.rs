@@ -222,7 +222,7 @@ fn an_officer_who_joins_at_sea_while_its_player_fights_a_deck_never_shares_an_id
 fn on_road(sea: &mut Sea, player: PlayerId, faction: u8, task: u8) {
     let mut character = gear::Character::starting();
     character.allegiance.pledge = faction;
-    character.quests.roads[usize::from(faction)].task = task;
+    character.quests.set_task(usize::from(faction), usize::from(task));
     sea.harbour.characters.insert(player, gear::Character::from_json(&character.to_json()).unwrap());
 }
 

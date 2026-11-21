@@ -38,6 +38,7 @@ pub mod ship_power;
 pub mod sighting;
 mod spells;
 mod statuses;
+mod steps;
 mod story;
 pub mod threat;
 pub mod winds;
@@ -56,6 +57,7 @@ pub use players::{
 };
 pub use power::{allowed_arms, arms_allowed, loadout_arms};
 pub use spells::{BOLT, SpellSeen};
+pub use steps::{StepSeen, way_between, way_length};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{FighterId, player};
@@ -267,6 +269,7 @@ impl Room {
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
+        self.end_step(player);
         self.part(player);
         self.drops.retain(|drop| drop.player != player);
         let (gone, kept): (Vec<Pending>, Vec<Pending>) =
@@ -325,6 +328,7 @@ impl Room {
         self.raise_the_dead();
         self.keep_garrison();
         self.keep_quests();
+        self.keep_steps();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {

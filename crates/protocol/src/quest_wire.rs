@@ -1,6 +1,6 @@
 //! What the gear message carries of the houses' roads: the quest walked, its task and that task's counts, each quest
-//! done, each Art's earned bits and fragment choices, and where the task's first unmet goal with a place stands in the
-//! player's room.
+//! done, each Art's earned bits and fragment choices, where the task's first unmet goal with a place stands in the
+//! player's room, and their step there: its clock, each goal's failures, its points, its figure and its ward.
 
 use flatbuffers::{FlatBufferBuilder, Vector, WIPOffset};
 use gear::Character;
@@ -15,6 +15,11 @@ pub(crate) struct Quests<'built> {
     pub earned: WIPOffset<Vector<'built, u8>>,
     pub choices: WIPOffset<Vector<'built, u8>>,
     pub at: WIPOffset<Vector<'built, f64>>,
+    pub clock: f64,
+    pub fails: WIPOffset<Vector<'built, u16>>,
+    pub points: WIPOffset<Vector<'built, f64>>,
+    pub figures: WIPOffset<Vector<'built, f64>>,
+    pub ward: WIPOffset<Vector<'built, f64>>,
 }
 
 /// Builds the quest fields for a player of `room`: the quest by its place in the file counted from 1 (0 for none).
@@ -31,6 +36,7 @@ pub(crate) fn quests_of<'built>(
     let earned: Vec<u8> = arts.iter().map(|art| character.earned(art.id)).collect();
     let choices: Vec<u8> = arts.iter().map(|art| character.fragment_choices(art.id)).collect();
     let at = room.quest_at(player).map_or_else(Vec::new, |at| at.to_vec());
+    let step = room.step_seen(player);
     Quests {
         quest: now.map_or(0, |(quest, _)| number(quest).saturating_add(1)),
         task: now.map_or(0, |(_, task)| number(task)),
@@ -39,5 +45,10 @@ pub(crate) fn quests_of<'built>(
         earned: builder.create_vector(&earned),
         choices: builder.create_vector(&choices),
         at: builder.create_vector(&at),
+        clock: step.clock,
+        fails: builder.create_vector(&step.fails),
+        points: builder.create_vector(&step.points),
+        figures: builder.create_vector(&step.figures),
+        ward: builder.create_vector(&step.ward),
     }
 }

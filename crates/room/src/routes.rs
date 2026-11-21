@@ -61,6 +61,11 @@ impl Room {
         let mut intents = Vec::with_capacity(on.len());
         for &(id, mesh) in &on {
             let Some(foe) = self.foes.get(&id) else { continue };
+            // A ward thinks nothing: it stands where it was stood.
+            if self.quests.wards.contains(&id) {
+                intents.push((id, (foe.brain.clone(), combat::Intent::default())));
+                continue;
+            }
             let world = World {
                 tick: self.clock,
                 seed: self.world_seed,

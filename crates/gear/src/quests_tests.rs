@@ -36,11 +36,15 @@ fn the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_tha
         for task in &quest.tasks {
             said.extend([task.start.as_ref(), task.end.as_ref()]);
             for goal in &task.goals {
-                said.push(goal.scene.as_ref());
+                let lines = [&goal.scene, &goal.shout, &goal.noticed, &goal.lost, &goal.wrong, &goal.seen, &goal.late];
+                said.extend(lines.map(Option::as_ref));
                 if let Some(node) = &goal.node {
                     assert!(nodes.contains(&node.as_str()), "{node} is a node of continent-1");
-                    let place = goal.place.as_deref();
-                    assert!(place.is_none_or(|place| named(node, place)), "{place:?} is a place of {node}");
+                    let ends = [&goal.place, &goal.from].into_iter().flatten().chain(&goal.checkpoints);
+                    let ends = ends.chain(goal.to.as_ref().filter(|_| goal.kind != GoalKind::Talk));
+                    for place in ends {
+                        assert!(named(node, place), "{place} is a place of {node}");
+                    }
                 }
             }
         }
@@ -102,6 +106,7 @@ fn meeting<'told>(goal: &'told GoalDef, places: &'told [Place]) -> Event<'told> 
         GoalKind::Land => Event::Land(text(&goal.island)),
         GoalKind::Scavenge => Event::Scavenge,
         GoalKind::Enter => Event::Enter(text(&goal.node)),
+        kind => Event::Stepped { kind, node: text(&goal.node), anchor: goal.anchor().unwrap_or_default() },
     }
 }
 
@@ -154,7 +159,7 @@ fn kill<'told>(foe: &'told str, rank: u8, node: Option<&'told str>) -> Kill<'tol
 #[test]
 fn a_kill_counts_within_its_place_and_forty_metres_past_of_its_type_rank_node_and_island() {
     let road = &quests().quests[2];
-    let tomb = &road.tasks[8].goals[2];
+    let tomb = &road.tasks[9].goals[2];
     assert_eq!((tomb.text.as_str(), tomb.rank.as_deref()), ("The Reeve of the Tomb", Some("Miniboss")));
     assert!(tomb.met_by(&Event::Kill(kill("Reeve", 4, Some("pearl-tomb")))));
     assert!(tomb.met_by(&Event::Kill(kill("Reeve", 5, Some("pearl-tomb")))), "a higher rank");
@@ -230,10 +235,10 @@ fn a_road_walked_to_its_end_gives_its_art_worn_at_once_then_each_tenet_then_thre
     let art = EARNED_ART;
     let both = art | EARNED_TENET_ONE;
     let expected = [(0, 0, 0, 0), (1, 0, 0, 0), (2, art, 1, 0), (3, both, 1, 0), (4, both, 1, 0), (5, both, 1, 0)];
-    assert_eq!(given[..6], expected);
+    assert_eq!(given[..6], expected, "the Art as the glass is held, the first Tenet at the mill");
     assert_eq!(given[6], (6, both, 1, 1), "the isle's fragment");
-    assert_eq!(given[7], (7, ALL_EARNED, 1, 1), "the second Tenet");
-    assert_eq!(given[8..], [(8, ALL_EARNED, 1, 2), (9, ALL_EARNED, 1, 3)], "the instance's and the road's end");
+    assert_eq!(given[7..9], [(7, ALL_EARNED, 1, 1), (8, ALL_EARNED, 1, 1)], "the second Tenet; the rods give none");
+    assert_eq!(given[9..], [(9, ALL_EARNED, 1, 2), (10, ALL_EARNED, 1, 3)], "the instance's and the road's end");
     assert_eq!(character.quests_done(), [false, true, false, false]);
     assert!(!character.tell(&Event::Gather), "a road done takes nothing");
     assert_eq!((character.earned(2), character.earned(3)), (0, 0), "the other houses' Arts");
@@ -288,15 +293,32 @@ fn a_character_kept_before_quests_reads_every_quest_unbegun_and_every_art_earned
 fn the_quest_log_keeps_keys_it_does_not_know_and_is_made_whole_as_read() {
     let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).unwrap();
     kept["quests"]["later"] = "kept".into();
-    kept["quests"]["roads"][1] = serde_json::json!({ "task": 40, "counts": [9, 9, 9], "seen": 1 });
+    kept["quests"]["roads"]["stormcallers"] = serde_json::json!({ "task": "gone", "counts": [9, 9], "seen": 1 });
+    kept["quests"]["roads"]["lamplighters"] = serde_json::json!({ "task": "free-old-stones", "counts": [9, 9] });
+    kept["quests"]["roads"]["a-later-road"] = serde_json::json!({ "task": "its-first", "counts": [2] });
     let back = Character::from_json(&kept.to_string()).unwrap();
     let written: serde_json::Value = serde_json::from_str(&back.to_json()).unwrap();
+    let roads = &written["quests"]["roads"];
     assert_eq!(
-        (written["quests"]["later"].as_str(), written["quests"]["roads"][1]["seen"].as_u64()),
-        (Some("kept"), Some(1))
+        (
+            written["quests"]["later"].as_str(),
+            roads["stormcallers"]["seen"].as_u64(),
+            roads["a-later-road"]["counts"][0].as_u64()
+        ),
+        (Some("kept"), Some(1), Some(2)),
+        "keys and roads this room does not know, kept"
     );
-    let road = &back.quests.roads[1];
-    assert_eq!((road.task, road.counts.as_slice()), (9, &[1][..]), "the last task, its one goal within its count");
+    let (storm, lamp) = (&back.quests.roads["stormcallers"], &back.quests.roads["lamplighters"]);
+    assert_eq!(
+        (storm.task.as_str(), storm.counts.as_slice()),
+        ("climb-old-beacon", &[0][..]),
+        "a task gone: the first"
+    );
+    assert_eq!(
+        (lamp.task.as_str(), lamp.counts.as_slice()),
+        ("free-old-stones", &[1, 4][..]),
+        "by id, within its counts"
+    );
     assert_eq!(back.quests.choices, [0, 0, 0]);
 }
 
@@ -320,16 +342,86 @@ fn a_fragment_the_art_has_none_left_to_give_is_its_counters_price_in_aurem() {
     let places = every_place();
     let mut character = Character::starting();
     assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
-    character.quests.roads[1].task = 6;
+    character.quests.set_task(1, 6);
     character.arts.owned = Some(vec![0b01_1111, 0, 0]);
     character.quests = std::mem::take(&mut character.quests).kept();
     meet_task(&mut character, &places);
     assert_eq!((character.fragment_choices(1), character.materials.aurem), (1, 0), "one left unowned: a choice");
-    for task in 7..9 {
+    for task in 7..10 {
         assert_eq!(character.quest_now(), Some((1, task)));
         meet_task(&mut character, &places);
     }
     let price = crate::factions::factions().fragment_aurem;
     assert_eq!((character.fragment_choices(1), character.materials.aurem), (1, price), "none left beyond the choice");
     assert_eq!(price, 7_500);
+}
+
+#[test]
+fn a_save_keeps_each_road_and_task_by_id_wherever_the_file_puts_them() {
+    let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).unwrap();
+    kept["allegiance"]["pledge"] = 3.into();
+    kept["quests"]["roads"]["veiled"] = serde_json::json!({ "task": "reckoner-chest", "counts": [0] });
+    let back = Character::from_json(&kept.to_string()).unwrap();
+    let at = quests().quests[3].tasks.iter().position(|task| task.id == "reckoner-chest");
+    assert_eq!(back.quest_now(), Some((3, at.unwrap())));
+    let mut character = back.clone();
+    character.quests.set_task(3, 0);
+    assert_eq!(
+        (character.quest_now(), character.quests.roads["veiled"].task.as_str()),
+        (Some((3, 0)), "meet-wren-follow")
+    );
+}
+
+#[test]
+fn a_quest_or_task_without_an_id_of_its_own_is_a_problem() {
+    let mut file = quests().clone();
+    file.quests[1].tasks[3].id = file.quests[1].tasks[2].id.clone();
+    assert_eq!(file.problems().len(), 1, "two tasks of one id");
+    file.quests[1].tasks[3].id = String::new();
+    assert_eq!(file.problems().len(), 1, "an empty id");
+    let mut file = quests().clone();
+    file.quests[2].id = "stormcallers".to_owned();
+    assert!(!file.problems().is_empty(), "two quests of one id");
+}
+
+#[test]
+fn a_step_missing_what_its_kind_needs_or_holding_a_value_none_of_its_own_is_a_problem() {
+    let with = |text: &str| {
+        let mut file = quests().clone();
+        file.quests[1].tasks[0].goals[0] = goal(text);
+        file.problems()
+    };
+    let escort = r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "near": 15, "text": "" }"#;
+    assert!(with(escort).is_empty());
+    for broken in [
+        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "nobody", "near": 15, "text": "" }"#,
+        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "near": 15, "text": "" }"#,
+        r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "far": 40, "near": 10, "foe": "Collector", "text": "" }"#,
+        r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "far": 10, "near": 40, "text": "" }"#,
+        r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[]], "ward": "w", "text": "" }"#,
+        r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Minor"]]], "text": "" }"#,
+        r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Huge"]]], "ward": "w", "text": "" }"#,
+        r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 0, "at": 5 }], "order": [1], "text": "" }"#,
+        r#"{ "kind": "unseen", "node": "n", "text": "" }"#,
+        r#"{ "kind": "race", "node": "n", "checkpoints": ["a", "b"], "seconds": 0, "text": "" }"#,
+    ] {
+        assert_eq!(with(broken).len(), 1, "{broken}");
+    }
+    let mut file = quests().clone();
+    file.quests[1].tasks[0].goals.push(goal(escort));
+    file.quests[1].tasks[0].goals.push(goal(escort));
+    assert_eq!(file.problems().len(), 1, "two steps in one task");
+}
+
+#[test]
+fn a_step_is_met_by_its_own_kind_in_its_node_at_its_anchor_alone() {
+    let road = &quests().quests[2].tasks[2].goals[0];
+    assert_eq!((road.kind, road.anchor()), (GoalKind::Escort, Some("Moorend")));
+    let stepped = |kind, node, anchor| Event::Stepped { kind, node, anchor };
+    assert!(road.met_by(&stepped(GoalKind::Escort, "driftwood-moors", "Moorend")));
+    assert!(!road.met_by(&stepped(GoalKind::Tail, "driftwood-moors", "Moorend")), "another kind");
+    assert!(!road.met_by(&stepped(GoalKind::Escort, "gullwing-vale", "Moorend")), "another node");
+    assert!(!road.met_by(&stepped(GoalKind::Escort, "driftwood-moors", "Moorhold")), "another end");
+    let race = &quests().quests[1].tasks[4].goals[0];
+    assert_eq!((race.kind, race.anchor()), (GoalKind::Race, Some("The Water Meadows")), "a race's last checkpoint");
 }

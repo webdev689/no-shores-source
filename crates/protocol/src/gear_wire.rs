@@ -81,6 +81,8 @@ pub const BUY_FROM_SHAPE: u8 = 57;
 pub const SPEAK: u8 = 64;
 /// A fragment chosen for a choice a house's road gave: the Art in `column`, the fragment's place in `node`.
 pub const CHOOSE_FRAGMENT: u8 = 65;
+/// A puzzle's point used, by its place among its goal's points in `column`.
+pub const USE_POINT: u8 = 66;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -168,6 +170,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         BUY_FROM_SHAPE => Asked::Gear(Ask::BuyFromShape { ware: node }),
         SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
+        USE_POINT => Asked::UsePoint { point: column },
         _ => return None,
     })
 }
@@ -240,6 +243,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
+        Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -501,6 +505,11 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         arts_earned: Some(quests.earned),
         fragment_choices: Some(quests.choices),
         quest_at: Some(quests.at),
+        quest_clock: quests.clock,
+        quest_fails: Some(quests.fails),
+        quest_points: Some(quests.points),
+        quest_figures: Some(quests.figures),
+        quest_ward: Some(quests.ward),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =
