@@ -321,9 +321,14 @@ the levelled land so it shows; and a module bake that CI makes byte for byte (si
 published to R2 by CI. Seen in the built page under rain pinned by the clock: no rain or puddles in the Hall, rain on
 the courts and before the portico, the rug crimson from first and third person.
 
+Then, under the owner's [[The Hub Feels Lively, Its Ground Populated]] ("Populate everything"): every court filled
+by `hub/dress.rs`, each court's own pieces on a seeded scatter clear of every way and post (about 290 pieces, eleven
+of them new in `tools/modules/dress.py`), each new stall's keeper at work, a walker's place at each piece (246 places,
+77 kept posts), and up to 48 walkers. A test pins it (`every_court_is_filled_and_its_pieces_have_walkers_places`).
+
 Left to do, in order:
-1. The Forge Yard reads bare at ground level, a wide court with an anvil yard, a cart and crates: more of the court's
-   own work (a smithy's lean-to, a quench, racks, carts of ore) would fill it.
+1. Look at the filled courts in the page from the ground and from above, and at how the page holds some 125 figures
+   and 290 more pieces: a frame's cost on a real GPU is unmeasured.
 2. More fidelity by procedural textures: the pictured materials (stone, timber, plaster, roof, paving) are still one
    picture a material for the whole hub, and grime at a wall's foot or under a sill would need the ground's height
    in the shader. A thin piece laid over a face tens of metres wide can still lose to it: the city's 5 cm pull toward
