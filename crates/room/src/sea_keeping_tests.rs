@@ -213,20 +213,26 @@ fn a_ship_puts_to_sea_only_by_a_port_citys_roadstead_and_a_new_character_lies_at
     assert!(sea.ships().all(|(each, _)| each != far_out), "the page's word puts no ship to sea far from a port");
     ticks(&mut sea, 31);
     assert_eq!(sea.course(far_out, &[[40_000.0, 40_000.0]], 10), Err(crate::sea::CourseRefused::BadCourse));
-    // A new character, kept with no place yet: at Overlook's roadstead, wherever the page asked.
+    // A new character, kept with no place yet, puts to sea by Overlook alone: at its roadstead, wherever else the page
+    // asked, or put it before the keeper answered.
     let new = sea.join();
     sea.course(new, &[[40_000.0, 40_000.0]], 10).unwrap();
-    assert!(sea.restore_character(new, &gear::Character::starting().to_json()));
-    let ship = sea.ships().find(|(each, _)| *each == new).unwrap().1;
-    assert_eq!((ship.x, ship.y, ship.pace), (10_000.0, 10_000.0, 0));
-    assert_eq!(told(&sea, new, crate::harbour::MOORED).map(|numbers| numbers[2..4].to_vec()), Some(vec![10_000.0; 2]));
-    // One the page put to sea by another port before the keeper answered stays where it lies.
     let by_east = sea.join();
     sea.none_kept(by_east);
     sea.course(by_east, &[[58_000.0, 50_000.0]], 10).unwrap();
-    assert!(sea.restore_character(by_east, &gear::Character::starting().to_json()));
-    let ship = sea.ships().find(|(each, _)| *each == by_east).unwrap().1;
-    assert_eq!((ship.x, ship.y), (58_000.0, 50_000.0));
+    for player in [new, by_east] {
+        assert!(sea.restore_character(player, &gear::Character::starting().to_json()));
+        let ship = sea.ships().find(|(each, _)| *each == player).unwrap().1;
+        assert_eq!((ship.x, ship.y, ship.pace), (10_000.0, 10_000.0, 0));
+        let moored = told(&sea, player, crate::harbour::MOORED).map(|numbers| numbers[2..4].to_vec());
+        assert_eq!(moored, Some(vec![10_000.0; 2]));
+    }
+    // The page's own start off Overlook's harbour, within reach of its roadstead, is where it sails from.
+    let off_harbour = sea.join();
+    sea.course(off_harbour, &[[11_500.0, 11_000.0], [12_000.0, 12_000.0]], 10).unwrap();
+    assert!(sea.restore_character(off_harbour, &gear::Character::starting().to_json()));
+    let ship = sea.ships().find(|(each, _)| *each == off_harbour).unwrap().1;
+    assert_eq!((ship.x, ship.y, ship.pace), (11_500.0, 11_000.0, 10));
 }
 
 #[test]

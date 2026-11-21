@@ -236,9 +236,9 @@ will take it, by the room's own tick.
   accounts answered for them waits, then sails from where the room last kept it once their character is given back
   (a fight met from the page's spot meanwhile is over for it), or as asked once the host says none is kept
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives it
-  back where it was kept). A character given back with no place kept in it (a new one) lies at Overlook's roadstead,
-  wherever the page asked, unless its ship already put to sea by a port city. A new account's character is the one
-  the room holds, given back to it. The account the
+  back where it was kept). A character given back with no place kept in it (a new one) puts to sea by Overlook
+  alone: where the page put it or asks, within 3 km of Overlook's roadstead, else at that roadstead. A new account's
+  character is the one the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
   they join once more. Whatever
   changes a character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up, the character

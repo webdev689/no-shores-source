@@ -6,7 +6,7 @@
 use super::{Berth, Sea, Ship};
 use crate::PlayerId;
 use crate::battle::{Outcome, Sank};
-use crate::harbour::{HELD, JOINED, MOORED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
+use crate::harbour::{HELD, JOINED, MOORED, REPAIR_REACH_M, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
 use crate::players::GEAR_EVERY_TICKS;
 use movement::TICK_SECONDS;
 use naval::fight::Event;
@@ -335,8 +335,9 @@ impl Sea {
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea,
     /// the text is not a character, or the sea's gate shuts to it (`shut`). Their ship lies where the room last kept
     /// it, wherever the page first put it to sea: a fight they met from the page's spawn is over for them. With nowhere
-    /// kept (a new character), a ship not yet at sea lies at the starting port's roadstead (`Harbours::starting`), never
-    /// where the page asked; in a sea with no port cities the course held for them sails.
+    /// kept (a new character) it puts to sea by the starting port alone (`Harbours::starting`): where the page put it,
+    /// or the course held for them, within reach of its roadstead, else at that roadstead. In a sea with no port cities
+    /// the course held for them sails.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
@@ -346,8 +347,13 @@ impl Sea {
         }
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
-        let not_at_sea = self.berths.get(&player).is_some_and(|berth| berth.sailing.is_none());
-        let at = at.or(self.harbour.harbours.starting().filter(|_| not_at_sea));
+        let start = self.harbour.harbours.starting();
+        let sailing = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref());
+        let first = sailing.map(|sailing| [sailing.ship.x, sailing.ship.y]);
+        let first = first.or(held.as_ref().and_then(|(points, _)| points.first().copied()));
+        let by_start =
+            |[x, y]: [f64; 2]| start.is_some_and(|port| libm::hypot(port[0] - x, port[1] - y) <= REPAIR_REACH_M);
+        let at = at.or(start.filter(|_| !first.is_some_and(by_start)));
         if at.is_some() && self.fights.fighting(player) {
             self.leave_decks(player);
             self.fights.leave(player);
